@@ -13,7 +13,8 @@ const { authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers } = requ
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));  // ✅ serve from root (index.html is here)
+app.use(express.static(path.join(__dirname)));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ── SUMMARY ──────────────────────────────────────────────────
 app.get('/api/summary', async (req, res) => {
