@@ -17,13 +17,10 @@ async function authenticate() {
   } catch(e) { console.error('❌ Authentication failed:', e.message); }
 }
 
-// Search RC users by name or extension for autocomplete
 async function searchRCUsers(query) {
   try {
     const response = await platform.get('/restapi/v1.0/account/~/extension', {
-      status: 'Enabled',
-      type: 'User',
-      perPage: 100
+      status: 'Enabled', type: 'User', perPage: 100
     });
     const data = await response.json();
     const records = data.records || [];
@@ -49,7 +46,7 @@ async function searchRCUsers(query) {
 }
 
 async function resolveAgentRcIds() {
-  const agents = getMonitoredAgents();
+  const agents = await getMonitoredAgents(); // ✅ fixed
   const unresolved = agents.filter(a => !a.rc_id);
   if (!unresolved.length) return;
   console.log(`🔍 Resolving RC IDs for ${unresolved.length} agents...`);
@@ -61,7 +58,7 @@ async function resolveAgentRcIds() {
       const data = await response.json();
       if (data.records && data.records.length > 0) {
         const rcId = String(data.records[0].id);
-        updateAgentRcId(agent.extension, rcId);
+        await updateAgentRcId(agent.extension, rcId); // ✅ fixed
         console.log(`✅ Resolved ${agent.name} → RC ID: ${rcId}`);
       }
       await new Promise(r => setTimeout(r, 500));
@@ -72,14 +69,14 @@ async function resolveAgentRcIds() {
 async function fetchPresenceForAll() {
   try {
     await resolveAgentRcIds();
-    const agents = getMonitoredAgents().filter(a => a.rc_id);
+    const agents = (await getMonitoredAgents()).filter(a => a.rc_id); // ✅ fixed
     if (!agents.length) { console.log('⚠️ No monitored agents'); return; }
     console.log(`📋 Fetching presence for ${agents.length} agents...`);
     for (const agent of agents) {
       try {
         const response = await platform.get(`/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`);
         const data = await response.json();
-        insertPresenceEvent(agent.rc_id, agent.name, data.presenceStatus || 'Unknown');
+        await insertPresenceEvent(agent.rc_id, agent.name, data.presenceStatus || 'Unknown'); // ✅ fixed
         await new Promise(r => setTimeout(r, 300));
       } catch(e) { console.error(`❌ Presence error for ${agent.name}:`, e.message); }
     }
@@ -89,7 +86,7 @@ async function fetchPresenceForAll() {
 
 async function fetchCallLogs() {
   try {
-    const agents = getMonitoredAgents().filter(a => a.rc_id);
+    const agents = (await getMonitoredAgents()).filter(a => a.rc_id); // ✅ fixed
     if (!agents.length) return;
     const today = new Date(); today.setHours(0,0,0,0);
     console.log(`📞 Fetching call logs for ${agents.length} agents...`);
@@ -100,7 +97,7 @@ async function fetchCallLogs() {
         });
         const data = await response.json();
         for (const call of (data.records || [])) {
-          insertCallLog({
+          await insertCallLog({ // ✅ fixed
             agentId: agent.rc_id, agentName: agent.name,
             callId: call.id, direction: call.direction,
             result: call.result, duration: call.duration, startTime: call.startTime
