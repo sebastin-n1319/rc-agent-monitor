@@ -8,6 +8,38 @@ const rcsdk = new RC({
   clientSecret: process.env.RC_CLIENT_SECRET
 });
 const platform = rcsdk.platform();
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function normalizeStatus(presenceStatus, telephonyStatus) {
+  const t = (telephonyStatus || '').toLowerCase();
+  const p = (presenceStatus || '').toLowerCase();
+  if (t === 'callconnected' || t === 'talking') return 'On Call';
+  if (t === 'ringing') return 'Ringing';
+  if (p === 'available') return 'Available';
+  if (p === 'busy' || p === 'unavailable' || p === 'dnd') return 'Unavailable';
+  if (p === 'offline') return 'Offline';
+  return presenceStatus || 'Unknown';
+}
+
+// Extract ring time, hold time, transfer, voicemail from call legs
+function parseCallDetails(call) {
+  let ringDuration = 0, holdDuration = 0, transferred = false, isVoicemail = false;
+  const legs = call.legs || [];
+  for (const leg of legs) {
+    ringDuration += leg.ringDuration || 0;
+    holdDuration += leg.holdDuration || 0;
+    if (leg.action === 'VoicemailScreening' || leg.action === 'VoiceMailDepositing' ||
+        (call.result && call.result.toLowerCase().includes('voicemail'))) {
+      isVoicemail = true;
+    }
+    if (leg.action === 'Transfer' || leg.action === 'BlindTransfer' || leg.action === 'WarmTransfer') {
+      transferred = true;
+    }
+  }
+  // Also check result for voicemail
+  if (call.result && call.result.toLowerCase().includes('voicemail')) isVoicemail = true;
+  return { ringDuration, holdDuration, transferred, isVoicemail };
+}
 
 async function authenticate() {
   try {
@@ -18,18 +50,16 @@ async function authenticate() {
 
 async function searchRCUsers(query) {
   try {
-    let allRecords = [];
-    let page = 1;
+    let allRecords = [], page = 1;
     while (true) {
-      const response = await platform.get('/restapi/v1.0/account/~/extension', {
+      const r = await platform.get('/restapi/v1.0/account/~/extension', {
         status: 'Enabled', type: 'User', perPage: 200, page
       });
-      const data = await response.json();
-      const records = data.records || [];
-      allRecords = allRecords.concat(records);
-      if (!data.navigation || !data.navigation.nextPage) break;
+      const d = await r.json();
+      allRecords = allRecords.concat(d.records || []);
+      if (!d.navigation || !d.navigation.nextPage) break;
       page++;
-      await new Promise(r => setTimeout(r, 300));
+      await sleep(300);
     }
     const q = query.toLowerCase();
     return allRecords
@@ -41,8 +71,7 @@ async function searchRCUsers(query) {
       })
       .slice(0, 15)
       .map(r => ({
-        id: String(r.id),
-        name: r.name,
+        id: String(r.id), name: r.name,
         extension: r.extensionNumber,
         email: r.contact && r.contact.email || ''
       }));
@@ -51,19 +80,17 @@ async function searchRCUsers(query) {
 
 async function resolveAgentRcIds() {
   const agents = await getMonitoredAgents();
-  const unresolved = agents.filter(a => !a.rc_id);
-  if (!unresolved.length) return;
-  for (const agent of unresolved) {
+  for (const agent of agents.filter(a => !a.rc_id)) {
     try {
-      const response = await platform.get('/restapi/v1.0/account/~/extension', {
+      const r = await platform.get('/restapi/v1.0/account/~/extension', {
         extensionNumber: agent.extension, status: 'Enabled'
       });
-      const data = await response.json();
-      if (data.records && data.records.length > 0) {
-        await updateAgentRcId(agent.extension, String(data.records[0].id));
-        console.log(`✅ Resolved ${agent.name} → ${data.records[0].id}`);
+      const d = await r.json();
+      if (d.records && d.records.length > 0) {
+        await updateAgentRcId(agent.extension, String(d.records[0].id));
+        console.log(`✅ Resolved ${agent.name} → ${d.records[0].id}`);
       }
-      await new Promise(r => setTimeout(r, 400));
+      await sleep(400);
     } catch(e) { console.error(`❌ Resolve ext ${agent.extension}:`, e.message); }
   }
 }
@@ -75,10 +102,14 @@ async function fetchPresenceForAll() {
     if (!agents.length) return;
     for (const agent of agents) {
       try {
-        const response = await platform.get(`/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`);
-        const data = await response.json();
-        await insertPresenceEvent(agent.rc_id, agent.name, data.presenceStatus || 'Unknown');
-        await new Promise(r => setTimeout(r, 300));
+        const r = await platform.get(
+          `/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`,
+          { detailedTelephonyState: true }
+        );
+        const d = await r.json();
+        await insertPresenceEvent(agent.rc_id, agent.name,
+          normalizeStatus(d.presenceStatus, d.telephonyStatus));
+        await sleep(300);
       } catch(e) { console.error(`❌ Presence ${agent.name}:`, e.message); }
     }
     console.log('✅ Presence snapshot saved');
@@ -92,18 +123,22 @@ async function fetchCallLogs() {
     const today = new Date(); today.setHours(0,0,0,0);
     for (const agent of agents) {
       try {
-        const response = await platform.get(`/restapi/v1.0/account/~/extension/${agent.rc_id}/call-log`, {
-          dateFrom: today.toISOString(), perPage: 200, view: 'Detailed'
-        });
-        const data = await response.json();
-        for (const call of (data.records || [])) {
+        const r = await platform.get(
+          `/restapi/v1.0/account/~/extension/${agent.rc_id}/call-log`,
+          { dateFrom: today.toISOString(), perPage: 200, view: 'Detailed' }
+        );
+        const d = await r.json();
+        for (const call of (d.records || [])) {
+          const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
           await insertCallLog({
             agentId: agent.rc_id, agentName: agent.name,
             callId: call.id, direction: call.direction,
-            result: call.result, duration: call.duration, startTime: call.startTime
+            result: call.result, duration: call.duration || 0,
+            ringDuration, holdDuration, transferred, isVoicemail,
+            startTime: call.startTime
           });
         }
-        await new Promise(r => setTimeout(r, 300));
+        await sleep(300);
       } catch(e) { console.error(`❌ Call log ${agent.name}:`, e.message); }
     }
     console.log('✅ Call logs synced');
@@ -116,29 +151,25 @@ async function fetchLiveCallStatus() {
     const liveStatus = {};
     for (const agent of agents) {
       try {
-        const response = await platform.get(`/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`, {
-          detailedTelephonyState: true
-        });
-        const data = await response.json();
-        const tel = data.telephonyStatus;
+        const r = await platform.get(
+          `/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`,
+          { detailedTelephonyState: true }
+        );
+        const d = await r.json();
+        const tel = d.telephonyStatus;
         const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
         let direction = null, callDuration = 0;
-        if (isOnCall && data.activeCalls && data.activeCalls.length > 0) {
-          const activeCall = data.activeCalls[0];
-          direction = activeCall.direction;
-          const startTime = activeCall.startTime ? new Date(activeCall.startTime).getTime() : Date.now();
-          callDuration = Math.floor((Date.now() - startTime) / 1000);
+        if (isOnCall && d.activeCalls && d.activeCalls.length > 0) {
+          const ac = d.activeCalls[0];
+          direction = ac.direction;
+          callDuration = ac.startTime ? Math.floor((Date.now()-new Date(ac.startTime).getTime())/1000) : 0;
         }
         liveStatus[agent.rc_id] = {
-          agentId: agent.rc_id,
-          agentName: agent.name,
-          telephonyStatus: tel,
-          isOnCall,
-          direction,
-          callDuration,
-          presenceStatus: data.presenceStatus
+          agentId: agent.rc_id, agentName: agent.name,
+          telephonyStatus: tel, isOnCall, direction, callDuration,
+          presenceStatus: d.presenceStatus
         };
-        await new Promise(r => setTimeout(r, 200));
+        await sleep(200);
       } catch(e) {}
     }
     return liveStatus;
