@@ -4,7 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>T1 CS Tracker</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer>
+
+function deleteRoleBtn(btn){
+  deleteRole(btn.dataset.email);
+}
+function removeAgentBtn(btn){
+  const ext=btn.dataset.ext;
+  const name=btn.dataset.name;
+  removeAgent(ext,name);
+}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -752,7 +762,7 @@ async function loadEventLog(){
       const last=evts[evts.length-1];
       const key=agent.replace(/\s/g,'_');
       const rows=evts.slice().reverse().map(e=>'<div class="evt-row"><div class="evt-time">'+toDateTime(e.timestamp)+'</div><div><span class="pill '+pillCls(e.status)+'">'+e.status+'</span></div></div>').join('');
-      return'<div class="evt-group" id="eg-'+key+'"><div class="evt-hdr" onclick="document.getElementById('eg-'+key+'').classList.toggle('open')"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body">'+rows+'</div></div>';
+      return'<div class="evt-group" id="eg-'+key+'"><div class="evt-hdr" onclick="document.getElementById(&quot;eg-'+key+'&quot;).classList.toggle(&quot;open&quot;)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body">'+rows+'</div></div>';
     }).join('');
   }catch(e){}
 }
@@ -760,13 +770,22 @@ async function loadEventLog(){
 // ── AGENTS MGMT ────────────────────────────────────────────────
 async function loadAgents(){
   try{
-    const res=await fetch(BACKEND+'/api/agents');const json=await res.json();const agents=json.data||[];
+    const res=await fetch(BACKEND+'/api/agents');
+    const json=await res.json();
+    const agents=json.data||[];
     document.getElementById('agentCount').textContent=agents.length;
     if(!agents.length){document.getElementById('agentGrid').innerHTML='<div class="no-data">No agents yet.</div>';return;}
-    document.getElementById('agentGrid').innerHTML=agents.map(a=>'<div class="agent-card"><div><div class="agent-card-name">'+a.name+'</div><div class="agent-card-meta">Ext '+a.extension+(a.email?' &middot; '+a.email:'')+' &middot; <span class="'+(a.rc_id?'verified':'pending')+'">'+(a.rc_id?'Verified':'Pending')+'</span></div></div><button class="btn btn-danger btn-sm" onclick="removeAgent(''+a.extension+'',''+a.name.replace(/'/g,"\'")+'')" >Remove</button></div>').join('');
+    document.getElementById('agentGrid').innerHTML=agents.map(a=>{
+      const vCls=a.rc_id?'verified':'pending';
+      const vTxt=a.rc_id?'Verified':'Pending';
+      const safeName=a.name.replace(/'/g,"\'");
+      return '<div class="agent-card"><div><div class="agent-card-name">'+a.name+'</div>'+
+        '<div class="agent-card-meta">Ext '+a.extension+(a.email?' &middot; '+a.email:'')+
+        ' &middot; <span class="'+vCls+'">'+vTxt+'</span></div></div>'+
+        '<button class="btn btn-danger btn-sm" data-ext="'+a.extension+'" data-name="'+a.name+'" onclick="removeAgentBtn(this)">Remove</button></div>';
+    }).join('');
   }catch(e){showToast('Error loading agents');}
 }
-
 async function addAgent(){
   const name=document.getElementById('agentName').value.trim();
   const ext=document.getElementById('agentExt').value.trim();
@@ -790,13 +809,23 @@ async function removeAgent(ext,name){
 // ── ROLES ──────────────────────────────────────────────────────
 async function loadRoles(){
   try{
-    const res=await fetch(BACKEND+'/api/roles');const json=await res.json();const roles=json.data||[];
+    const res=await fetch(BACKEND+'/api/roles');
+    const json=await res.json();
+    const roles=json.data||[];
     document.getElementById('roleCount').textContent=roles.length+' users';
     if(!roles.length){document.getElementById('roleGrid').innerHTML='<div class="no-data">No roles.</div>';return;}
-    document.getElementById('roleGrid').innerHTML=roles.map(r=>'<div class="role-card"><div><div class="role-email">'+r.email+'</div><div class="role-by">by '+(r.added_by||'system')+'</div></div><div style="display:flex;align-items:center;gap:8px;"><span class="role-pill '+(r.role==='admin'?'role-admin':'role-agent')+'">'+r.role.toUpperCase()+'</span>'+(!CORE_ADMINS.includes(r.email)?'<button class="btn btn-danger btn-sm" onclick="deleteRole(''+r.email+'')">Remove</button>':'<span style="font-size:10px;color:var(--text3)">Core</span>')+'</div></div>').join('');
+    document.getElementById('roleGrid').innerHTML=roles.map(r=>{
+      const isCore=CORE_ADMINS.includes(r.email);
+      const rCls=r.role==='admin'?'role-admin':'role-agent';
+      const removeBtn=isCore?'<span style="font-size:10px;color:var(--text3)">Core</span>':
+        '<button class="btn btn-danger btn-sm" data-email="'+r.email+'" onclick="deleteRoleBtn(this)">Remove</button>';
+      return '<div class="role-card"><div><div class="role-email">'+r.email+'</div>'+
+        '<div class="role-by">by '+(r.added_by||'system')+'</div></div>'+
+        '<div style="display:flex;align-items:center;gap:8px;">'+
+        '<span class="role-pill '+rCls+'">'+r.role.toUpperCase()+'</span>'+removeBtn+'</div></div>';
+    }).join('');
   }catch(e){showToast('Error loading roles');}
 }
-
 async function addRole(){
   const email=document.getElementById('roleEmail').value.trim();
   const role=document.getElementById('roleSelect').value;
