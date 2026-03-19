@@ -494,16 +494,34 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
   <!-- AGENTS -->
   <div class="page" id="tab-agents">
     <div class="card">
-      <div class="card-hdr"><span class="card-title">Add Agent</span></div>
-      <div class="form-row">
-        <div class="field" style="flex:2"><label>Search by Name</label><input type="text" id="agentName" placeholder="Start typing agent name..." oninput="searchAgents(this.value)" autocomplete="off"><div class="ac-list" id="acList"></div></div>
-        <div class="field"><label>Extension</label><input type="text" id="agentExt" placeholder="Auto-filled"></div>
-        <div class="field"><label>Email</label><input type="text" id="agentEmail" placeholder="Auto-filled"></div>
-        <div style="padding-top:20px"><button class="btn btn-primary" onclick="addAgent()">+ Add Agent</button></div>
+      <div class="card-hdr">
+        <span class="card-title">Search &amp; Add Agents</span>
+        <span style="font-size:10px;color:var(--text3)">Search by name, extension or email &mdash; select multiple &mdash; add all at once</span>
+      </div>
+      <div class="form-row" style="align-items:center;">
+        <div class="field" style="flex:2;position:relative;">
+          <label>Search RC Directory</label>
+          <input type="text" id="agentSearchInput" placeholder="Type name, extension or email..." oninput="searchAgentsPanel(this.value)" autocomplete="off">
+        </div>
+        <div style="padding-top:20px;display:flex;gap:8px;">
+          <button class="btn btn-success btn-sm" onclick="selectAllSearchResults()">Select All</button>
+          <button class="btn btn-primary" onclick="addSelectedAgents()" id="addSelectedBtn" style="display:none">+ Add Selected (<span id="selectedCount">0</span>)</button>
+        </div>
+      </div>
+      <!-- Search results with checkboxes -->
+      <div id="agentSearchResults" style="display:none;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px;">
+        <div style="padding:8px 14px;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border);font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="checkAllResults" onchange="toggleAllResults(this.checked)" style="cursor:pointer;">
+          <span id="searchResultsLabel">Results</span>
+        </div>
+        <div id="searchResultsList"></div>
       </div>
     </div>
     <div class="card">
-      <div class="card-hdr"><span class="card-title">Monitored Agents (<span id="agentCount">0</span>)</span><button class="btn btn-success btn-sm" onclick="doRefresh()">&#8635; Sync All</button></div>
+      <div class="card-hdr">
+        <span class="card-title">Monitored Agents (<span id="agentCount">0</span>)</span>
+        <button class="btn btn-success btn-sm" onclick="doRefresh()">&#8635; Sync All</button>
+      </div>
       <div id="agentGrid" class="agent-grid"><div class="no-data">No agents yet.</div></div>
     </div>
   </div>
@@ -741,23 +759,8 @@ function switchTab(tab,el){
   if(tab==='access')loadRoles();
 }
 
-// AUTOCOMPLETE
-async function searchAgents(q){
-  clearTimeout(acTimeout);
-  const list=document.getElementById('acList');
-  if(q.length<2){list.style.display='none';return;}
-  acTimeout=setTimeout(async()=>{
-    try{
-      const r=await fetch(BACKEND+'/api/rc-search?q='+encodeURIComponent(q));
-      const j=await r.json();
-      if(!j.success||!j.data.length){list.innerHTML='<div class="ac-item" style="color:var(--text3)">No results</div>';list.style.display='block';return;}
-      list.innerHTML=j.data.map(u=>'<div class="ac-item" onclick="selectAgent(this)" data-name="'+u.name.replace(/"/g,'&quot;')+'" data-ext="'+u.extension+'" data-email="'+(u.email||'')+'"><div class="ac-name">'+u.name+'</div><div class="ac-meta">Ext: '+u.extension+(u.email?' &middot; '+u.email:'')+'</div></div>').join('');
-      list.style.display='block';
-    }catch(e){list.style.display='none';}
-  },300);
-}
-function selectAgent(el){document.getElementById('agentName').value=el.dataset.name;document.getElementById('agentExt').value=el.dataset.ext;document.getElementById('agentEmail').value=el.dataset.email;document.getElementById('acList').style.display='none';}
-document.addEventListener('click',e=>{if(!e.target.closest('.field'))document.getElementById('acList').style.display='none';});
+// Old single-agent autocomplete removed - using bulk panel
+document.addEventListener('click',e=>{if(!e.target.closest('#tab-agents')){}});
 
 // DATA
 async function loadTodaySummary(){
@@ -915,7 +918,109 @@ async function loadEventLog(){
   }catch(e){console.error('loadEventLog',e);}
 }
 
-// AGENTS
+// AGENTS - BULK ADD
+let searchResultsData = [];
+let selectedAgents = new Set();
+
+async function searchAgentsPanel(q){
+  const resultsWrap = document.getElementById('agentSearchResults');
+  const resultsList = document.getElementById('searchResultsList');
+  const label = document.getElementById('searchResultsLabel');
+  if(q.length < 2){ resultsWrap.style.display='none'; return; }
+  clearTimeout(acTimeout);
+  acTimeout = setTimeout(async()=>{
+    try{
+      const r = await fetch(BACKEND+'/api/rc-search?q='+encodeURIComponent(q));
+      const j = await r.json();
+      if(!j.success || !j.data.length){
+        resultsList.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center;">No results found</div>';
+        resultsWrap.style.display='block';
+        return;
+      }
+      // Get already-monitored agents to mark them
+      const monitored = await fetch(BACKEND+'/api/agents').then(r=>r.json()).catch(()=>({data:[]}));
+      const monitoredExts = new Set((monitored.data||[]).map(a=>a.extension));
+      searchResultsData = j.data;
+      label.textContent = j.data.length + ' results';
+      resultsList.innerHTML = j.data.map((u,i) => {
+        const isAdded = monitoredExts.has(u.extension);
+        const isSelected = selectedAgents.has(u.extension);
+        const chkAttr = isAdded ? 'disabled checked' : (isSelected ? 'checked' : '');
+        const nameHtml = isAdded ? u.name+' <span style="color:var(--green);font-size:10px;font-weight:400">&#10003; Added</span>' : u.name;
+        const cursor = isAdded ? 'not-allowed' : 'pointer';
+        const opacity = isAdded ? 'opacity:0.5;' : '';
+        const emailPart = u.email ? ' &middot; '+u.email : '';
+        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);'+opacity+'">' +
+          '<input type="checkbox" '+chkAttr+' onchange="toggleAgentCb(this)" style="cursor:'+cursor+';" data-ext="'+u.extension+'" data-name="'+u.name+'" data-email="'+(u.email||'')+'">' +
+          '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:'+(isAdded?'var(--text3)':'var(--text)')+'">'+nameHtml+'</div>' +
+          '<div style="font-size:10px;color:var(--text3);font-family:JetBrains Mono,monospace;margin-top:2px;">Ext: '+u.extension+emailPart+'</div></div>' +
+          '</div>';
+      }).join('');
+      resultsWrap.style.display='block';
+      updateAddBtn();
+    }catch(e){ resultsList.innerHTML='<div style="padding:14px;color:var(--red);font-size:12px;">Search error</div>'; }
+  }, 300);
+}
+
+function toggleAgentCb(cb){
+  const ext = cb.dataset.ext;
+  if(cb.checked) selectedAgents.add(ext);
+  else selectedAgents.delete(ext);
+  updateAddBtn();
+}
+
+function toggleAllResults(checked){
+  const checkboxes = document.querySelectorAll('#searchResultsList input[type=checkbox]:not([disabled])');
+  checkboxes.forEach(cb => {
+    const ext = cb.dataset.ext;
+    if(checked) selectedAgents.add(ext);
+    else selectedAgents.delete(ext);
+    cb.checked = checked;
+  });
+  updateAddBtn();
+}
+
+function selectAllSearchResults(){
+  document.getElementById('checkAllResults').checked = true;
+  toggleAllResults(true);
+}
+
+function updateAddBtn(){
+  const btn = document.getElementById('addSelectedBtn');
+  const cnt = document.getElementById('selectedCount');
+  if(selectedAgents.size > 0){
+    btn.style.display='inline-flex';
+    cnt.textContent = selectedAgents.size;
+  } else {
+    btn.style.display='none';
+  }
+}
+
+async function addSelectedAgents(){
+  if(!selectedAgents.size){ showToast('No agents selected','warning'); return; }
+  const toAdd = searchResultsData.filter(u => selectedAgents.has(u.extension));
+  showToast('Adding '+toAdd.length+' agent(s)...','info');
+  let added=0, failed=0;
+  for(const agent of toAdd){
+    try{
+      const res = await fetch(BACKEND+'/api/agents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:agent.name,extension:agent.extension,email:agent.email||''})});
+      const json = await res.json();
+      if(json.success) added++;
+      else failed++;
+    }catch(e){ failed++; }
+  }
+  selectedAgents.clear();
+  document.getElementById('agentSearchInput').value='';
+  document.getElementById('agentSearchResults').style.display='none';
+  document.getElementById('checkAllResults').checked=false;
+  updateAddBtn();
+  if(added>0) showToast(added+' agent(s) added successfully!','success');
+  if(failed>0) showToast(failed+' failed to add','error');
+  loadAgents();
+  // Trigger sync for new agents
+  setTimeout(()=>fetch(BACKEND+'/api/refresh',{method:'POST'}),500);
+}
+
 async function loadAgents(){
   try{
     const res=await fetch(BACKEND+'/api/agents');const json=await res.json();const agents=json.data||[];
@@ -928,19 +1033,7 @@ async function loadAgents(){
   }catch(e){showToast('Error loading agents','error');}
 }
 
-async function addAgent(){
-  const name=document.getElementById('agentName').value.trim();
-  const ext=document.getElementById('agentExt').value.trim();
-  const email=document.getElementById('agentEmail').value.trim();
-  if(!name||!ext){showToast('Name and extension required','warning');return;}
-  showToast('Adding '+name+'...','info');
-  try{
-    const res=await fetch(BACKEND+'/api/agents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,extension:ext,email})});
-    const json=await res.json();
-    if(json.success){document.getElementById('agentName').value='';document.getElementById('agentExt').value='';document.getElementById('agentEmail').value='';showToast(name+' added!','success');loadAgents();}
-    else showToast('Error: '+json.error,'error');
-  }catch(e){showToast('Error','error');}
-}
+// addAgent replaced by addSelectedAgents
 
 function removeAgentBtn(btn){
   if(!confirm('Remove '+btn.dataset.name+'?'))return;

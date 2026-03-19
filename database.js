@@ -1,6 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const db = new sqlite3.Database(path.join(__dirname, 'productivity.db'));
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'productivity.db');
+const db = new sqlite3.Database(dbPath);
+console.log('Using DB at:', dbPath);
 const run = (sql, params=[]) => new Promise((res,rej) => db.run(sql, params, function(err){err?rej(err):res(this);}));
 const get = (sql, params=[]) => new Promise((res,rej) => db.get(sql, params, (err,row)=>err?rej(err):res(row)));
 const all = (sql, params=[]) => new Promise((res,rej) => db.all(sql, params, (err,rows)=>err?rej(err):res(rows)));
@@ -84,10 +86,29 @@ async function getAgentSummary(date){
     const agentId=agent.rc_id||agent.extension;
     const events=await all(`SELECT status,timestamp FROM presence_events WHERE agent_id=? AND DATE(timestamp)=? ORDER BY timestamp ASC`,[agentId,date]);
     let availTime=0,unavailTime=0,toggleCount=0;
-    for(let i=0;i<events.length-1;i++){
-      const dur=(new Date(events[i+1].timestamp)-new Date(events[i].timestamp))/1000;
-      if(events[i].status==='Available')availTime+=dur;else unavailTime+=dur;
-      toggleCount++;
+    // Calculate from FIRST presence event (when agent first appeared), not midnight
+    if(events.length>0){
+      // Segment durations between consecutive events
+      for(let i=0;i<events.length-1;i++){
+        const dur=(new Date(events[i+1].timestamp)-new Date(events[i].timestamp))/1000;
+        if(events[i].status==='Available')availTime+=dur;
+        else unavailTime+=dur;
+        if(i>0 && events[i].status!==events[i-1].status) toggleCount++;
+      }
+      // Add time from last event to now (only for today)
+      const today=new Date().toISOString().split('T')[0];
+      if(date===today){
+        const lastEvt=events[events.length-1];
+        const sinceLastSec=(Date.now()-new Date(lastEvt.timestamp).getTime())/1000;
+        // Cap at 2 hours to avoid inflating if server missed events
+        const cappedSec=Math.min(sinceLastSec, 7200);
+        if(lastEvt.status==='Available')availTime+=cappedSec;
+        else unavailTime+=cappedSec;
+      }
+      // Count total toggles
+      for(let i=1;i<events.length;i++){
+        if(events[i].status!==events[i-1].status) toggleCount++;
+      }
     }
     // Inbound
     const inb=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold,SUM(CASE WHEN result='Missed' THEN 1 ELSE 0 END) as missed,SUM(is_voicemail) as voicemails FROM call_logs WHERE agent_id=? AND DATE(start_time)=? AND direction='Inbound'`,[agentId,date]);
