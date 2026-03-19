@@ -529,7 +529,7 @@ async function handleGoogleCredential(response){
   startApp(name,role,picture);
 }
 
-function parseJwt(token){const b=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));}
+function parseJwt(token){const b=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));}
 function startApp(username,role,picture){
   currentUser=username;currentRole=role;
   document.getElementById('loginScreen').style.display='none';
