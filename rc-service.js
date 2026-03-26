@@ -9,6 +9,15 @@ const rcsdk = new RC({
 });
 const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+const LIVE_STATUS_TTL_MS = 45000;
+const QUEUE_STATUS_TTL_MS = 120000;
+
+let customerServiceQueueId = null;
+let lastQueueStatuses = {};
+let lastQueueStatusAt = 0;
+let lastLiveStatusSnapshot = {};
+let lastLiveStatusAt = 0;
+let presenceSyncPromise = null;
 
 function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus) {
   const t = (telephonyStatus || '').toLowerCase();
@@ -58,7 +67,37 @@ function parseCallDetails(call) {
   return { ringDuration, holdDuration, transferred, isVoicemail };
 }
 
-let customerServiceQueueId = null;
+function isRateLimitError(err, data) {
+  const msg = `${err?.message || ''} ${data?.message || ''} ${data?.errorCode || ''}`.toLowerCase();
+  return msg.includes('rate limit') || msg.includes('rate exceeded') || msg.includes('too many requests') || data?.errorCode === 'CMN-301';
+}
+
+function buildLiveStatusEntry(agent, data, fetchedAt) {
+  const tel = data.telephonyStatus;
+  const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
+  let direction = null, callDuration = 0, callStartTime = null;
+  const normalizedStatus = normalizeStatus(
+    data.presenceStatus, data.telephonyStatus, data.userStatus, data.dndStatus
+  );
+  if (isOnCall && data.activeCalls && data.activeCalls.length > 0) {
+    const ac = data.activeCalls[0];
+    direction = ac.direction;
+    callStartTime = ac.startTime || null;
+    callDuration = ac.startTime ? Math.floor((Date.now()-new Date(ac.startTime).getTime())/1000) : 0;
+  }
+  return {
+    agentId: agent.rc_id,
+    agentName: agent.name,
+    telephonyStatus: tel,
+    isOnCall,
+    direction,
+    callDuration,
+    presenceStatus: data.presenceStatus,
+    normalizedStatus,
+    callStartTime,
+    fetchedAt
+  };
+}
 
 async function authenticate() {
   try {
@@ -97,6 +136,10 @@ async function findQueueId() {
 }
 
 async function fetchQueueStatuses() {
+  const now = Date.now();
+  if (now - lastQueueStatusAt < QUEUE_STATUS_TTL_MS && Object.keys(lastQueueStatuses).length) {
+    return lastQueueStatuses;
+  }
   if (!customerServiceQueueId) {
     await findQueueId();
     if (!customerServiceQueueId) return {};
@@ -112,11 +155,13 @@ async function fetchQueueStatuses() {
         statusMap[String(rec.member.id)] = rec.acceptCurrentQueueCalls ? 'In Queue' : 'Out of Queue';
       }
     }
+    lastQueueStatuses = statusMap;
+    lastQueueStatusAt = now;
     console.log(`📋 Queue statuses fetched: ${Object.keys(statusMap).length} members`);
     return statusMap;
   } catch(e) {
     console.error('❌ fetchQueueStatuses:', e.message);
-    return {};
+    return lastQueueStatuses;
   }
 }
 
@@ -167,8 +212,13 @@ async function resolveAgentRcIds() {
   }
 }
 
-async function fetchPresenceForAll() {
-  try {
+async function fetchPresenceForAll(force = false) {
+  if (presenceSyncPromise && !force) {
+    console.log('⏭️ Presence sync already running, reusing current run');
+    return presenceSyncPromise;
+  }
+
+  presenceSyncPromise = (async () => {
     await resolveAgentRcIds();
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
@@ -184,6 +234,9 @@ async function fetchPresenceForAll() {
     }
 
     console.log(`📡 Presence fetch: ${totalAgents} agents in ${batches.length} batch(es)`);
+    const fetchedAt = new Date().toISOString();
+    const queueStatuses = await fetchQueueStatuses().catch(() => lastQueueStatuses || {});
+    const snapshot = { ...lastLiveStatusSnapshot };
 
     for (let b = 0; b < batches.length; b++) {
       const batch = batches[b];
@@ -209,13 +262,34 @@ async function fetchPresenceForAll() {
             data.presenceStatus, data.telephonyStatus,
             data.userStatus, data.dndStatus
           );
+          snapshot[agent.rc_id] = {
+            ...buildLiveStatusEntry(agent, data, fetchedAt),
+            queueStatus: queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || 'Unknown'
+          };
           console.log(`✅ ${agent.name}: presence=${data.presenceStatus} → ${status}`);
           await insertPresenceEvent(agent.rc_id, agent.name, status);
-        } catch(e) { console.error(`❌ Presence ${agent.name}:`, e.message); }
+        } catch(e) {
+          console.error(`❌ Presence ${agent.name}:`, e.message);
+          if (snapshot[agent.rc_id]) {
+            snapshot[agent.rc_id] = {
+              ...snapshot[agent.rc_id],
+              stale: true,
+              staleReason: isRateLimitError(e) ? 'rate_limited' : 'fetch_failed'
+            };
+          }
+        }
       }
     }
+    lastLiveStatusSnapshot = snapshot;
+    lastLiveStatusAt = Date.now();
     console.log('✅ Presence snapshot saved');
-  } catch(e) { console.error('❌ fetchPresenceForAll:', e.message); }
+  })().catch(e => {
+    console.error('❌ fetchPresenceForAll:', e.message);
+  }).finally(() => {
+    presenceSyncPromise = null;
+  });
+
+  return presenceSyncPromise;
 }
 
 async function fetchCallLogs() {
@@ -252,38 +326,16 @@ async function fetchCallLogs() {
 
 async function fetchLiveCallStatus() {
   try {
-    const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
-    const liveStatus = {};
-    for (const agent of agents) {
-      try {
-        const r = await platform.get(
-          `/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`,
-          { detailedTelephonyState: true }
-        );
-        const d = await r.json();
-        const tel = d.telephonyStatus;
-        const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
-        let direction = null, callDuration = 0;
-        if (isOnCall && d.activeCalls && d.activeCalls.length > 0) {
-          const ac = d.activeCalls[0];
-          direction = ac.direction;
-          callDuration = ac.startTime ? Math.floor((Date.now()-new Date(ac.startTime).getTime())/1000) : 0;
-        }
-        liveStatus[agent.rc_id] = {
-          agentId: agent.rc_id, agentName: agent.name,
-          telephonyStatus: tel, isOnCall, direction, callDuration,
-          presenceStatus: d.presenceStatus
-        };
-        await sleep(1000);
-      } catch(e) {}
+    const hasFreshSnapshot = Object.keys(lastLiveStatusSnapshot).length && (Date.now() - lastLiveStatusAt < LIVE_STATUS_TTL_MS);
+    if (!hasFreshSnapshot) {
+      if (presenceSyncPromise) {
+        await presenceSyncPromise;
+      } else {
+        await fetchPresenceForAll();
+      }
     }
-    // Add queue status to live status
-    const queueStatuses = await fetchQueueStatuses().catch(() => ({}));
-    for (const rcId of Object.keys(liveStatus)) {
-      liveStatus[rcId].queueStatus = queueStatuses[rcId] || 'Unknown';
-    }
-    return liveStatus;
-  } catch(e) { return {}; }
+    return lastLiveStatusSnapshot;
+  } catch(e) { return lastLiveStatusSnapshot || {}; }
 }
 
 module.exports = { authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus };
