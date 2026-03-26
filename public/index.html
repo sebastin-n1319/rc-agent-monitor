@@ -765,6 +765,7 @@ function calcScore(avail,unavail,inC,outC,missed,toggles){
 
 function normalizeLiveStatus(live, fallbackStatus){
   if(!live) return fallbackStatus||'Unknown';
+  if(live.normalizedStatus) return live.normalizedStatus;
   const tel=(live.telephonyStatus||'').toLowerCase();
   const pres=(live.presenceStatus||'').toLowerCase();
 

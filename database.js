@@ -7,6 +7,15 @@ const run = (sql, params=[]) => new Promise((res,rej) => db.run(sql, params, fun
 const get = (sql, params=[]) => new Promise((res,rej) => db.get(sql, params, (err,row)=>err?rej(err):res(row)));
 const all = (sql, params=[]) => new Promise((res,rej) => db.all(sql, params, (err,rows)=>err?rej(err):res(rows)));
 
+function toSqliteUtc(date){
+  if(!(date instanceof Date)) date = new Date(date);
+  return date.toISOString().slice(0,19).replace('T',' ');
+}
+
+function isQueueReady(status, queueStatus){
+  return status === 'Available' && queueStatus === 'In Queue';
+}
+
 async function initDB() {
   await run(`CREATE TABLE IF NOT EXISTS monitored_agents (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
@@ -70,7 +79,7 @@ async function getPresenceEvents(date){
   const pEnd = new Date(pStart.getTime() + 86400000);
   return all(
     `SELECT * FROM presence_events WHERE timestamp >= ? AND timestamp < ? AND agent_id IN (${rcIds.map(()=>'?').join(',')}) ORDER BY timestamp ASC`,
-    [pStart.toISOString(), pEnd.toISOString(), ...rcIds]
+    [toSqliteUtc(pStart), toSqliteUtc(pEnd), ...rcIds]
   );
 }
 
@@ -91,37 +100,48 @@ async function getAgentSummary(date){
   const results=[];
   for(const agent of agents){
     const agentId=agent.rc_id||agent.extension;
-    // IST = UTC+5:30, so IST midnight = UTC 18:30 previous day
     const istMidnight = new Date(date + 'T00:00:00+05:30');
     const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
+    const dayStartSql = toSqliteUtc(istMidnight);
+    const dayEndSql = toSqliteUtc(istNextMidnight);
     const events=await all(
       `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC`,
-      [agentId, istMidnight.toISOString(), istNextMidnight.toISOString()]
+      [agentId, dayStartSql, dayEndSql]
+    );
+    const previousEvent = await get(
+      `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND timestamp < ? ORDER BY timestamp DESC LIMIT 1`,
+      [agentId, dayStartSql]
     );
     let availTime=0,unavailTime=0,toggleCount=0;
-    // Calculate from FIRST presence event of the day (not midnight)
-    if(events.length>0){
-      // Count time between consecutive events
-      for(let i=0;i<events.length-1;i++){
-        const dur=(new Date(events[i+1].timestamp)-new Date(events[i].timestamp))/1000;
-        if(events[i].status==='Available') availTime+=dur;
-        else unavailTime+=dur;
+    const segments = [];
+    if(previousEvent){
+      segments.push({
+        status: previousEvent.status,
+        timestamp: dayStartSql,
+        queue_status: previousEvent.queue_status || 'Unknown'
+      });
+    }
+    segments.push(...events);
+
+    if(segments.length){
+      for(let i=0;i<segments.length-1;i++){
+        const start = new Date(segments[i].timestamp);
+        const end = new Date(segments[i+1].timestamp);
+        const dur = Math.max(0, (end - start) / 1000);
+        if(isQueueReady(segments[i].status, segments[i].queue_status)) availTime += dur;
+        else unavailTime += dur;
       }
-      // Add time from last event to NOW (only for today's date)
-      // Check if this is today's IST shift date
-      const nowIST=new Date(Date.now()+5.5*3600000).toISOString().split('T')[0];
-      if(date===nowIST){
-        const lastEvt=events[events.length-1];
-        const secSinceLast=(Date.now()-new Date(lastEvt.timestamp).getTime())/1000;
-        // Only add if last event was within 30 mins (1 sync cycle max = 5min, use 30min buffer)
-        if(secSinceLast < 1800){
-          if(lastEvt.status==='Available') availTime+=secSinceLast;
-          else unavailTime+=secSinceLast;
-        }
-      }
-      // Count status changes (toggles)
-      for(let i=1;i<events.length;i++){
-        if(events[i].status!==events[i-1].status) toggleCount++;
+
+      const nowIST = new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
+      const dayEnd = date===nowIST ? new Date(Math.min(Date.now(), istNextMidnight.getTime())) : istNextMidnight;
+      const lastEvt = segments[segments.length-1];
+      const secSinceLast = Math.max(0, (dayEnd.getTime() - new Date(lastEvt.timestamp).getTime()) / 1000);
+      if(isQueueReady(lastEvt.status, lastEvt.queue_status)) availTime += secSinceLast;
+      else unavailTime += secSinceLast;
+
+      const toggleEvents = previousEvent ? [previousEvent, ...events] : events;
+      for(let i=1;i<toggleEvents.length;i++){
+        if(toggleEvents[i].status!==toggleEvents[i-1].status) toggleCount++;
       }
     }
     // IST date range for call logs

@@ -10,7 +10,7 @@ const rcsdk = new RC({
 const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 5000);
-const QUEUE_STATUS_TTL_MS = 120000;
+const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 
 let customerServiceQueueId = null;
 let lastQueueStatuses = {};
@@ -99,16 +99,18 @@ function deriveQueueAwareStatus(data, queueInfo) {
     return normalizeStatus(data.presenceStatus, data.telephonyStatus, data.userStatus, data.dndStatus);
   }
 
+  if (queueInfo.acceptQueueCalls === false || queueInfo.acceptCurrentQueueCalls === false) {
+    return 'Unavailable';
+  }
+
   if (direction === 'inbound') {
     if (tel === 'Ringing') return 'Ringing';
     if (isOnCall) return 'On Call';
   }
 
-  if (queueInfo.acceptQueueCalls === false || queueInfo.acceptCurrentQueueCalls === false) {
-    return 'Unavailable';
-  }
+  if (basePresence !== 'Available') return 'Unavailable';
 
-  return basePresence;
+  return 'Available';
 }
 
 function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
