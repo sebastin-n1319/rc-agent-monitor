@@ -447,7 +447,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>RC Status</th><th>Queue</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
+        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>RC Status</th><th>Queue Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
         <tbody id="agent-table"><tr><td colspan="15" class="no-data">Loading...</td></tr></tbody>
       </table>
       </div>
@@ -725,9 +725,9 @@ function toTime(iso){if(!iso)return'--';return new Date(iso).toLocaleTimeString(
 function toDateTime(iso){if(!iso)return'--';return new Date(iso).toLocaleString('en-US',{timeZone:TZ[currentTZ],month:'2-digit',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
 function nowTZ(){return new Date().toLocaleTimeString('en-US',{timeZone:TZ[currentTZ],hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
 function todayStr(){
-  // Return CST date - matches agent shift day
-  // DB now queries by CST date range (midnight CST to midnight CST)
-  return new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+  // Return IST date - agents work in IST timezone
+  // DB queries by IST date range (midnight IST to midnight IST)
+  return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
 }
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
 function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
@@ -838,7 +838,15 @@ async function loadAgentStatuses(){
       const evts=timelineData[a.rc_id]||[];
       const lastEvent=evts[evts.length-1];
       const status=lastEvent?lastEvent.status:(a.rc_id?'Offline':'Unknown');
-      const sinceTs=lastEvent?lastEvent.timestamp:null;
+      // Find last STATUS CHANGE (not last polled event)
+      let sinceTs=null;
+      for(let ei=evts.length-1;ei>=0;ei--){
+        if(ei===0||(evts[ei].status!==evts[ei-1].status)){
+          sinceTs=evts[ei].timestamp;
+          break;
+        }
+      }
+      if(!sinceTs&&lastEvent)sinceTs=lastEvent.timestamp;
       const ss=sinceTs?Math.floor((now-new Date(sinceTs).getTime())/1000):0;
       const sl=(status||'').toLowerCase();
       if(sl==='available')totAvail++;
@@ -919,7 +927,11 @@ async function loadAgentStatuses(){
         const evts=timelineData[a.rc_id]||[];
         const lastEvent=evts[evts.length-1];
         const status=lastEvent?lastEvent.status:'Unknown';
-        const sinceTs=lastEvent?lastEvent.timestamp:null;
+        let sinceTs=null;
+        for(let ei=evts.length-1;ei>=0;ei--){
+          if(ei===0||(evts[ei].status!==evts[ei-1].status)){sinceTs=evts[ei].timestamp;break;}
+        }
+        if(!sinceTs&&lastEvent)sinceTs=lastEvent.timestamp;
         const live=liveCallData[a.rc_id]||{};
         const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
         const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;

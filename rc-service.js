@@ -222,13 +222,15 @@ async function fetchCallLogs() {
   try {
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
-    const today = new Date(); today.setHours(0,0,0,0);
+    // Use IST midnight as start of shift day
+    const istMidnight = new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}) + 'T00:00:00+05:30');
+    console.log(`📞 Fetching calls from IST midnight: ${istMidnight.toISOString()}`);
     for (const agent of agents) {
       try {
-        await sleep(3000); // 3s between agents to avoid rate limit
+        await sleep(3000);
         const r = await platform.get(
           `/restapi/v1.0/account/~/extension/${agent.rc_id}/call-log`,
-          { dateFrom: today.toISOString(), perPage: 200, view: 'Detailed' }
+          { dateFrom: istMidnight.toISOString(), perPage: 200, view: 'Detailed' }
         );
         const d = await r.json();
         for (const call of (d.records || [])) {

@@ -65,7 +65,13 @@ async function getPresenceEvents(date){
   const agents=await getMonitoredAgents();
   const rcIds=agents.map(a=>a.rc_id).filter(Boolean);
   if(!rcIds.length)return[];
-  return all(`SELECT * FROM presence_events WHERE DATE(timestamp)=? AND agent_id IN (${rcIds.map(()=>'?').join(',')}) ORDER BY timestamp ASC`,[date,...rcIds]);
+  // IST date range
+  const pStart = new Date(date + 'T00:00:00+05:30');
+  const pEnd = new Date(pStart.getTime() + 86400000);
+  return all(
+    `SELECT * FROM presence_events WHERE timestamp >= ? AND timestamp < ? AND agent_id IN (${rcIds.map(()=>'?').join(',')}) ORDER BY timestamp ASC`,
+    [pStart.toISOString(), pEnd.toISOString(), ...rcIds]
+  );
 }
 
 // CALL LOGS - now with ring/hold/transfer/voicemail
@@ -85,7 +91,13 @@ async function getAgentSummary(date){
   const results=[];
   for(const agent of agents){
     const agentId=agent.rc_id||agent.extension;
-    const events=await all(`SELECT status,timestamp FROM presence_events WHERE agent_id=? AND DATE(timestamp)=? ORDER BY timestamp ASC`,[agentId,date]);
+    // IST = UTC+5:30, so IST midnight = UTC 18:30 previous day
+    const istMidnight = new Date(date + 'T00:00:00+05:30');
+    const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
+    const events=await all(
+      `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC`,
+      [agentId, istMidnight.toISOString(), istNextMidnight.toISOString()]
+    );
     let availTime=0,unavailTime=0,toggleCount=0;
     // Calculate from FIRST presence event of the day (not midnight)
     if(events.length>0){
@@ -96,8 +108,9 @@ async function getAgentSummary(date){
         else unavailTime+=dur;
       }
       // Add time from last event to NOW (only for today's date)
-      const todayUTC=new Date().toISOString().split('T')[0];
-      if(date===todayUTC){
+      // Check if this is today's IST shift date
+      const nowIST=new Date(Date.now()+5.5*3600000).toISOString().split('T')[0];
+      if(date===nowIST){
         const lastEvt=events[events.length-1];
         const secSinceLast=(Date.now()-new Date(lastEvt.timestamp).getTime())/1000;
         // Only add if last event was within 30 mins (1 sync cycle max = 5min, use 30min buffer)
@@ -111,12 +124,15 @@ async function getAgentSummary(date){
         if(events[i].status!==events[i-1].status) toggleCount++;
       }
     }
+    // IST date range for call logs
+    const callStart = new Date(date + 'T00:00:00+05:30').toISOString();
+    const callEnd = new Date(new Date(date + 'T00:00:00+05:30').getTime() + 86400000).toISOString();
     // Inbound
-    const inb=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold,SUM(CASE WHEN result='Missed' THEN 1 ELSE 0 END) as missed,SUM(is_voicemail) as voicemails FROM call_logs WHERE agent_id=? AND DATE(start_time)=? AND direction='Inbound'`,[agentId,date]);
+    const inb=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold,SUM(CASE WHEN result='Missed' THEN 1 ELSE 0 END) as missed,SUM(is_voicemail) as voicemails FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`,[agentId,callStart,callEnd]);
     // Outbound
-    const out=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold FROM call_logs WHERE agent_id=? AND DATE(start_time)=? AND direction='Outbound'`,[agentId,date]);
+    const out=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`,[agentId,callStart,callEnd]);
     // Transfers
-    const xfer=await get(`SELECT SUM(transferred) as total FROM call_logs WHERE agent_id=? AND DATE(start_time)=?`,[agentId,date]);
+    const xfer=await get(`SELECT SUM(transferred) as total FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`,[agentId,callStart,callEnd]);
 
     results.push({
       agentId, agentName:agent.name, extension:agent.extension,
