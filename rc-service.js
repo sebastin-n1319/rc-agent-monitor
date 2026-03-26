@@ -9,7 +9,7 @@ const rcsdk = new RC({
 });
 const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const LIVE_STATUS_TTL_MS = 45000;
+const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 5000);
 const QUEUE_STATUS_TTL_MS = 120000;
 
 let customerServiceQueueId = null;
@@ -208,6 +208,29 @@ async function fetchQueueStatuses() {
   }
 }
 
+async function fetchAccountPresenceMap() {
+  const r = await platform.get('/restapi/v1.0/account/~/presence', {
+    detailedTelephonyState: true
+  });
+  const data = await r.json();
+  if (data.errorCode) {
+    const err = new Error(data.message || data.errorCode);
+    err.rcData = data;
+    throw err;
+  }
+  const presenceMap = {};
+  for (const rec of (data.records || [])) {
+    const extId = String(
+      (rec.extension && rec.extension.id) ||
+      rec.extensionId ||
+      rec.id ||
+      ''
+    );
+    if (extId) presenceMap[extId] = rec;
+  }
+  return presenceMap;
+}
+
 async function searchRCUsers(query) {
   try {
     let allRecords = [], page = 1;
@@ -265,58 +288,41 @@ async function fetchPresenceForAll(force = false) {
     await resolveAgentRcIds();
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
-    // RC Heavy API limit: 10 requests/60s
-    // Dynamic batching: auto-calculates based on agent count
-    const RC_LIMIT = 8; // Use 8 (not 10) as safe buffer
-    const RC_WAIT_MS = 65000; // 65s between batches
-
-    const totalAgents = agents.length;
-    const batches = [];
-    for (let i = 0; i < totalAgents; i += RC_LIMIT) {
-      batches.push(agents.slice(i, i + RC_LIMIT));
-    }
-
-    console.log(`📡 Presence fetch: ${totalAgents} agents in ${batches.length} batch(es)`);
+    console.log(`📡 Presence fetch: ${agents.length} agents via account presence snapshot`);
     const fetchedAt = new Date().toISOString();
     const queueStatuses = await fetchQueueStatuses().catch(() => lastQueueStatuses || {});
+    const presenceMap = await fetchAccountPresenceMap();
     const snapshot = { ...lastLiveStatusSnapshot };
 
-    for (let b = 0; b < batches.length; b++) {
-      const batch = batches[b];
-      if (b > 0) {
-        console.log(`⏳ Waiting 65s before batch ${b + 1}/${batches.length}...`);
-        await sleep(RC_WAIT_MS);
-      }
-      console.log(`📡 Batch ${b + 1}/${batches.length}: ${batch.length} agents`);
-      for (let i = 0; i < batch.length; i++) {
-        const agent = batch[i];
-        if (i > 0) await sleep(6000); // 6s between each agent
-        try {
-          const r = await platform.get(
-            `/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`,
-            { detailedTelephonyState: true }
-          );
-          const data = await r.json();
-          if (data.errorCode) {
-            console.error(`❌ ${agent.name}: ${data.errorCode} - ${data.message}`);
-            continue;
-          }
-          const queueInfo = queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null;
-          const status = deriveQueueAwareStatus(data, queueInfo);
+    for (const agent of agents) {
+      try {
+        const data = presenceMap[agent.rc_id];
+        if (!data) {
+          console.warn(`⚠️ Presence missing for ${agent.name} (${agent.rc_id})`);
+          continue;
+        }
+        const queueInfo = queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null;
+        const status = deriveQueueAwareStatus(data, queueInfo);
+        const nextEntry = buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo);
+        const prevEntry = snapshot[agent.rc_id];
+        const statusChanged = !prevEntry ||
+          prevEntry.normalizedStatus !== nextEntry.normalizedStatus ||
+          prevEntry.queueStatus !== nextEntry.queueStatus;
+
+        snapshot[agent.rc_id] = nextEntry;
+
+        if (statusChanged) {
+          console.log(`✅ ${agent.name}: ${prevEntry ? prevEntry.normalizedStatus : '--'} → ${status} (${nextEntry.queueStatus})`);
+          await insertPresenceEvent(agent.rc_id, agent.name, status, nextEntry.queueStatus);
+        }
+      } catch(e) {
+        console.error(`❌ Presence ${agent.name}:`, e.message);
+        if (snapshot[agent.rc_id]) {
           snapshot[agent.rc_id] = {
-            ...buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo)
+            ...snapshot[agent.rc_id],
+            stale: true,
+            staleReason: isRateLimitError(e) ? 'rate_limited' : 'fetch_failed'
           };
-          console.log(`✅ ${agent.name}: presence=${data.presenceStatus} → ${status}`);
-          await insertPresenceEvent(agent.rc_id, agent.name, status);
-        } catch(e) {
-          console.error(`❌ Presence ${agent.name}:`, e.message);
-          if (snapshot[agent.rc_id]) {
-            snapshot[agent.rc_id] = {
-              ...snapshot[agent.rc_id],
-              stale: true,
-              staleReason: isRateLimitError(e) ? 'rate_limited' : 'fetch_failed'
-            };
-          }
         }
       }
     }

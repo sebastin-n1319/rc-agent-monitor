@@ -462,7 +462,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       </div>
       <div id="event-log"><div class="no-data">Loading...</div></div>
     </div>
-    <div class="refresh-info">Auto-refresh every 15s &nbsp;&middot;&nbsp; <span id="last-update">Never</span> &nbsp;&middot;&nbsp; <span id="tz-display">CST</span></div>
+    <div class="refresh-info">Auto-refresh every 5s &nbsp;&middot;&nbsp; <span id="last-update">Never</span> &nbsp;&middot;&nbsp; <span id="tz-display">CST</span></div>
   </div>
 
   <!-- REPORTS -->
@@ -576,7 +576,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     </table>
     </div>
   </div>
-  <div class="refresh-info">Auto-refresh every 15s &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
+  <div class="refresh-info">Auto-refresh every 5s &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
 </div>
 
 <footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v">RC-MONITOR-v3.2</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
@@ -1306,7 +1306,7 @@ async function refresh(){
 // INIT
 updateClock();
 setInterval(updateClock,1000);
-setInterval(()=>{if(currentUser)refresh();},15000);
+setInterval(()=>{if(currentUser)refresh();},5000);
 initParticles();
 initConfetti();
 

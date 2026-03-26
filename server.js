@@ -9,6 +9,7 @@ const {
   getAllRoles, setRole, removeRole, getRoleForEmail
 } = require('./database');
 const { authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus } = require('./rc-service');
+const REALTIME_SYNC_MS = Number(process.env.REALTIME_SYNC_MS || 5000);
 
 const app = express();
 app.use(cors());
@@ -116,9 +117,9 @@ app.get('/api/role-check', async (req, res) => {
 });
 
 async function startScheduler() {
-  cron.schedule('*/5 * * * *', async () => { await fetchPresenceForAll(); });
+  setInterval(() => { void fetchPresenceForAll(); }, REALTIME_SYNC_MS);
   cron.schedule('*/15 * * * *', async () => { await fetchCallLogs(); });
-  console.log('✅ Scheduler started');
+  console.log(`✅ Scheduler started (live sync every ${REALTIME_SYNC_MS}ms)`);
 }
 
 async function start() {
