@@ -58,11 +58,66 @@ function parseCallDetails(call) {
   return { ringDuration, holdDuration, transferred, isVoicemail };
 }
 
+let customerServiceQueueId = null;
+
 async function authenticate() {
   try {
     await platform.login({ jwt: process.env.RC_JWT });
     console.log('✅ Authenticated with RingCentral');
+    // Find Customer Service queue ID
+    await findQueueId();
   } catch(e) { console.error('❌ Auth failed:', e.message); }
+}
+
+async function findQueueId() {
+  try {
+    const r = await platform.get('/restapi/v1.0/account/~/call-queues', { perPage: 100 });
+    const data = await r.json();
+    const queues = data.records || [];
+    // Look for Customer Service queue
+    const csQueue = queues.find(q =>
+      q.name && (
+        q.name.toLowerCase().includes('customer service') ||
+        q.name.toLowerCase().includes('t1 cs') ||
+        q.name.toLowerCase().includes('cs stars')
+      )
+    );
+    if (csQueue) {
+      customerServiceQueueId = csQueue.id;
+      console.log(`✅ Found queue: "${csQueue.name}" (ID: ${csQueue.id})`);
+    } else {
+      // Use first queue as fallback
+      if (queues.length > 0) {
+        customerServiceQueueId = queues[0].id;
+        console.log(`⚠️ Using first queue: "${queues[0].name}" (ID: ${queues[0].id})`);
+      }
+      console.log('All queues:', queues.map(q => q.name).join(', '));
+    }
+  } catch(e) { console.error('❌ findQueueId:', e.message); }
+}
+
+async function fetchQueueStatuses() {
+  if (!customerServiceQueueId) {
+    await findQueueId();
+    if (!customerServiceQueueId) return {};
+  }
+  try {
+    const r = await platform.get(
+      `/restapi/v1.0/account/~/call-queues/${customerServiceQueueId}/presence`
+    );
+    const data = await r.json();
+    const statusMap = {};
+    for (const rec of (data.records || [])) {
+      if (rec.member && rec.member.id) {
+        statusMap[String(rec.member.id)] = rec.acceptCurrentQueueCalls ? 'In Queue' : 'Out of Queue';
+      }
+    }
+    console.log(`📋 Queue statuses fetched: ${Object.keys(statusMap).length} members`);
+    return statusMap;
+  } catch(e) {
+    console.error('❌ fetchQueueStatuses:', e.message);
+    return {};
+  }
 }
 
 async function searchRCUsers(query) {
@@ -219,6 +274,11 @@ async function fetchLiveCallStatus() {
         };
         await sleep(1000);
       } catch(e) {}
+    }
+    // Add queue status to live status
+    const queueStatuses = await fetchQueueStatuses().catch(() => ({}));
+    for (const rcId of Object.keys(liveStatus)) {
+      liveStatus[rcId].queueStatus = queueStatuses[rcId] || 'Unknown';
     }
     return liveStatus;
   } catch(e) { return {}; }

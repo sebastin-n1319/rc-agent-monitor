@@ -14,7 +14,7 @@ async function initDB() {
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE TABLE IF NOT EXISTS presence_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT, agent_id TEXT NOT NULL,
-    agent_name TEXT, status TEXT NOT NULL,
+    agent_name TEXT, status TEXT NOT NULL, queue_status TEXT DEFAULT 'Unknown',
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE TABLE IF NOT EXISTS call_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, agent_id TEXT NOT NULL,
@@ -35,6 +35,7 @@ async function initDB() {
   // Migrations
   for (const sql of [
     `ALTER TABLE monitored_agents ADD COLUMN email TEXT`,
+    `ALTER TABLE presence_events ADD COLUMN queue_status TEXT DEFAULT 'Unknown'`,
     `ALTER TABLE login_logs ADD COLUMN ip TEXT`,
     `ALTER TABLE login_logs ADD COLUMN location TEXT`,
     `ALTER TABLE login_logs ADD COLUMN system_info TEXT`,
@@ -57,8 +58,8 @@ function getMonitoredAgents(){return all(`SELECT * FROM monitored_agents ORDER B
 function updateAgentRcId(ext,rcId){return run(`UPDATE monitored_agents SET rc_id=? WHERE extension=?`,[rcId,ext]);}
 
 // PRESENCE
-function insertPresenceEvent(agentId,agentName,status){
-  return run(`INSERT INTO presence_events (agent_id,agent_name,status) VALUES (?,?,?)`,[agentId,agentName,status]);
+function insertPresenceEvent(agentId,agentName,status,queueStatus){
+  return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status) VALUES (?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown']);
 }
 async function getPresenceEvents(date){
   const agents=await getMonitoredAgents();

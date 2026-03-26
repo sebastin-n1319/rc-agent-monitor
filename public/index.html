@@ -186,6 +186,8 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 .p-oncall{background:rgba(30,143,255,0.1);color:var(--blue2);border:1px solid rgba(30,143,255,0.2);}
 .p-ringing{background:rgba(255,214,10,0.1);color:var(--yellow);border:1px solid rgba(255,214,10,0.2);}
 .p-unknown{background:rgba(61,90,120,0.2);color:var(--text3);border:1px solid var(--border);}
+.p-inqueue{background:rgba(0,196,212,0.1);color:var(--teal);border:1px solid rgba(0,196,212,0.2);}
+.p-outqueue{background:rgba(240,120,32,0.1);color:var(--orange2);border:1px solid rgba(240,120,32,0.2);}
 .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
 .p-avail .dot{animation:pulse 2s infinite;}
 .p-oncall .dot{animation:pulse 0.8s infinite;box-shadow:0 0 4px currentColor;}
@@ -445,7 +447,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
+        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>RC Status</th><th>Queue</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
         <tbody id="agent-table"><tr><td colspan="15" class="no-data">Loading...</td></tr></tbody>
       </table>
       </div>
@@ -733,6 +735,12 @@ function todayDisplayStr(){
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
 function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
 function fmtTimer(s){s=Math.round(s||0);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function queuePillCls(qs){
+  if(!qs||qs==='Unknown')return'p-unknown';
+  if(qs==='In Queue')return'p-inqueue';
+  if(qs==='Out of Queue')return'p-outqueue';
+  return'p-unknown';
+}
 function pillCls(st){
   if(!st)return'p-unknown';
   const s=st.toLowerCase();
@@ -873,7 +881,7 @@ async function loadAgentStatuses(){
     });
 
     const tbody=document.getElementById('agent-table');
-    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="15" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
+    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="16" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
 
     document.getElementById('m-avail').textContent=totAvail;
     document.getElementById('m-unavail').textContent=totUnavail;
