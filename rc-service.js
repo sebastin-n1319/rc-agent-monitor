@@ -15,18 +15,26 @@ function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus)
   const p = (presenceStatus || '').toLowerCase();
   const u = (userStatus || '').toLowerCase();
   const d = (dndStatus || '').toLowerCase();
-  // Call state takes priority
+
+  // 1. Active call state takes highest priority
   if (t === 'callconnected' || t === 'oncall' || t === 'talking') return 'On Call';
   if (t === 'ringing') return 'Ringing';
-  // DND = Unavailable
+
+  // 2. DND always = Unavailable
   if (d === 'donotdisturb') return 'Unavailable';
-  // User status (most reliable for available/unavailable)
+
+  // 3. In RC, agents manually set status to Busy when they go Unavailable
+  // presenceStatus reflects what the agent manually set in the RC app
+  // 'Busy' = agent clicked Unavailable in RC app
+  // 'Available' = agent is available for calls
+  if (p === 'available') return 'Available';
+  if (p === 'busy' || p === 'unavailable' || p === 'dnd' || p === 'away') return 'Unavailable';
+  if (p === 'offline') return 'Offline';
+
+  // 4. Fallback to userStatus
   if (u === 'available') return 'Available';
   if (u === 'busy' || u === 'unavailable' || u === 'away') return 'Unavailable';
-  // Presence status fallback
-  if (p === 'available') return 'Available';
-  if (p === 'busy' || p === 'unavailable' || p === 'dnd') return 'Unavailable';
-  if (p === 'offline') return 'Offline';
+
   return presenceStatus || 'Unknown';
 }
 
