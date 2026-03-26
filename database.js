@@ -86,26 +86,26 @@ async function getAgentSummary(date){
     const agentId=agent.rc_id||agent.extension;
     const events=await all(`SELECT status,timestamp FROM presence_events WHERE agent_id=? AND DATE(timestamp)=? ORDER BY timestamp ASC`,[agentId,date]);
     let availTime=0,unavailTime=0,toggleCount=0;
-    // Calculate from FIRST presence event (when agent first appeared), not midnight
+    // Calculate from FIRST presence event of the day (not midnight)
     if(events.length>0){
-      // Segment durations between consecutive events
+      // Count time between consecutive events
       for(let i=0;i<events.length-1;i++){
         const dur=(new Date(events[i+1].timestamp)-new Date(events[i].timestamp))/1000;
-        if(events[i].status==='Available')availTime+=dur;
+        if(events[i].status==='Available') availTime+=dur;
         else unavailTime+=dur;
-        if(i>0 && events[i].status!==events[i-1].status) toggleCount++;
       }
-      // Add time from last event to now (only for today)
-      const today=new Date().toISOString().split('T')[0];
-      if(date===today){
+      // Add time from last event to NOW (only for today's date)
+      const todayUTC=new Date().toISOString().split('T')[0];
+      if(date===todayUTC){
         const lastEvt=events[events.length-1];
-        const sinceLastSec=(Date.now()-new Date(lastEvt.timestamp).getTime())/1000;
-        // Cap at 2 hours to avoid inflating if server missed events
-        const cappedSec=Math.min(sinceLastSec, 7200);
-        if(lastEvt.status==='Available')availTime+=cappedSec;
-        else unavailTime+=cappedSec;
+        const secSinceLast=(Date.now()-new Date(lastEvt.timestamp).getTime())/1000;
+        // Only add if last event was within 30 mins (1 sync cycle max = 5min, use 30min buffer)
+        if(secSinceLast < 1800){
+          if(lastEvt.status==='Available') availTime+=secSinceLast;
+          else unavailTime+=secSinceLast;
+        }
       }
-      // Count total toggles
+      // Count status changes (toggles)
       for(let i=1;i<events.length;i++){
         if(events[i].status!==events[i-1].status) toggleCount++;
       }

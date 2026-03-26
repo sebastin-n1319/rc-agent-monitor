@@ -722,7 +722,14 @@ function toggleTZ(){
 function toTime(iso){if(!iso)return'--';return new Date(iso).toLocaleTimeString('en-US',{timeZone:TZ[currentTZ],hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
 function toDateTime(iso){if(!iso)return'--';return new Date(iso).toLocaleString('en-US',{timeZone:TZ[currentTZ],month:'2-digit',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
 function nowTZ(){return new Date().toLocaleTimeString('en-US',{timeZone:TZ[currentTZ],hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
-function todayStr(){return new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});}
+function todayStr(){
+  // Return UTC date to match how DB stores timestamps
+  return new Date().toISOString().split('T')[0];
+}
+function todayDisplayStr(){
+  // For display purposes only - shows CST date
+  return new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+}
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
 function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
 function fmtTimer(s){s=Math.round(s||0);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
@@ -1060,12 +1067,25 @@ async function addSelectedAgents(){
 
 async function loadAgents(){
   try{
-    const res=await fetch(BACKEND+'/api/agents');const json=await res.json();const agents=json.data||[];
+    const res=await fetch(BACKEND+'/api/agents');
+    const json=await res.json();
+    const agents=json.data||[];
     document.getElementById('agentCount').textContent=agents.length;
-    if(!agents.length){document.getElementById('agentGrid').innerHTML='<div class="no-data">No agents yet.</div>';return;}
+    if(!agents.length){
+      document.getElementById('agentGrid').innerHTML='<div class="no-data">No agents yet. Search above to add agents.</div>';
+      return;
+    }
     document.getElementById('agentGrid').innerHTML=agents.map(a=>{
       const vCls=a.rc_id?'verified':'pending';
-      return'<div class="agent-card"><div><div class="agent-card-name">'+a.name+'</div><div class="agent-card-meta">Ext '+a.extension+(a.email?' &middot; '+a.email:'')+' &middot; <span class="'+vCls+'">'+(a.rc_id?'&#10003; Verified':'&#8987; Pending')+'</span></div></div><button class="btn btn-danger btn-sm" data-ext="'+a.extension+'" data-name="'+a.name+'" onclick="removeAgentBtn(this)">Remove</button></div>';
+      const vTxt=a.rc_id?'&#10003; Synced':'&#8987; Pending sync';
+      return '<div class="agent-card">'+
+        '<div>'+
+          '<div class="agent-card-name">'+a.name+'</div>'+
+          '<div class="agent-card-meta">Ext '+a.extension+(a.email?' &middot; '+a.email:'')+
+          ' &middot; <span class="'+vCls+'">'+vTxt+'</span></div>'+
+        '</div>'+
+        '<button class="btn btn-danger btn-sm" data-ext="'+a.extension+'" data-name="'+a.name+'" onclick="removeAgentBtn(this)">&#10005; Remove</button>'+
+      '</div>';
     }).join('');
   }catch(e){showToast('Error loading agents','error');}
 }
@@ -1073,8 +1093,16 @@ async function loadAgents(){
 // addAgent replaced by addSelectedAgents
 
 function removeAgentBtn(btn){
-  if(!confirm('Remove '+btn.dataset.name+'?'))return;
-  fetch(BACKEND+'/api/agents/'+btn.dataset.ext,{method:'DELETE'}).then(r=>r.json()).then(j=>{if(j.success){showToast('Removed','success');loadAgents();}else showToast('Error','error');}).catch(()=>showToast('Error','error'));
+  const name=btn.dataset.name, ext=btn.dataset.ext;
+  if(!confirm('Remove '+name+' from monitoring?\nThis will stop tracking their status and calls.'))return;
+  btn.disabled=true;btn.textContent='Removing...';
+  fetch(BACKEND+'/api/agents/'+ext,{method:'DELETE'})
+    .then(r=>r.json())
+    .then(j=>{
+      if(j.success){showToast(name+' removed from monitoring','success');loadAgents();}
+      else{showToast('Error: '+j.error,'error');btn.disabled=false;btn.textContent='&#10005; Remove';}
+    })
+    .catch(()=>{showToast('Network error','error');btn.disabled=false;btn.textContent='&#10005; Remove';});
 }
 
 // ROLES
