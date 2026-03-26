@@ -10,7 +10,7 @@ const {
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus,
-  handleWebhookNotification, liveEvents, getFallbackSyncMs
+  handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription
 } = require('./rc-service');
 
 const app = express();
@@ -81,6 +81,14 @@ app.get('/api/live-stream', (req, res) => {
   res.write(`event: ready\ndata: ${JSON.stringify({ at: new Date().toISOString() })}\n\n`);
   sseClients.add(res);
   req.on('close', () => sseClients.delete(res));
+});
+
+app.get('/api/rc-webhook', (req, res) => {
+  res.status(200).json({ ok: true, service: 'rc-webhook' });
+});
+
+app.head('/api/rc-webhook', (req, res) => {
+  res.status(200).end();
 });
 
 app.post('/api/rc-webhook', async (req, res) => {
@@ -164,6 +172,7 @@ async function start() {
       await fetchPresenceForAll();
       await fetchCallLogs();
       await startScheduler();
+      setTimeout(() => { void ensureRealtimeSubscription(); }, 15000);
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }

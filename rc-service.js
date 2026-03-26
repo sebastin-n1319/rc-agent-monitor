@@ -14,6 +14,7 @@ const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 5000);
 const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
 const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
+const WEBHOOK_RETRY_MS = Number(process.env.WEBHOOK_RETRY_MS || 30000);
 
 let customerServiceQueueId = null;
 let lastQueueStatuses = {};
@@ -23,6 +24,7 @@ let lastLiveStatusAt = 0;
 let presenceSyncPromise = null;
 let subscriptionInfo = null;
 let subscriptionRenewTimer = null;
+let subscriptionRetryTimer = null;
 
 const liveEvents = new EventEmitter();
 liveEvents.setMaxListeners(50);
@@ -242,8 +244,10 @@ async function ensureRealtimeSubscription() {
     console.warn('⚠️ Webhook base URL not configured; using fallback polling only');
     return;
   }
+  if (subscriptionInfo && subscriptionInfo.id) return;
   const eventFilters = getSubscriptionFilters();
   try {
+    console.log(`🔗 Ensuring realtime subscription at ${address}`);
     const resp = await platform.post('/restapi/v1.0/subscription', {
       eventFilters,
       deliveryMode: { transportType: 'WebHook', address },
@@ -251,10 +255,21 @@ async function ensureRealtimeSubscription() {
     });
     const data = await resp.json();
     subscriptionInfo = data;
+    if (subscriptionRetryTimer) {
+      clearTimeout(subscriptionRetryTimer);
+      subscriptionRetryTimer = null;
+    }
     scheduleSubscriptionRenewal();
     console.log(`✅ Realtime subscription ready: ${data.id}`);
   } catch (e) {
     console.error('❌ ensureRealtimeSubscription:', e.message);
+    if (!subscriptionRetryTimer) {
+      subscriptionRetryTimer = setTimeout(async () => {
+        subscriptionRetryTimer = null;
+        await ensureRealtimeSubscription();
+      }, WEBHOOK_RETRY_MS);
+      console.log(`⏳ Retrying realtime subscription in ${WEBHOOK_RETRY_MS}ms`);
+    }
   }
 }
 
@@ -264,7 +279,6 @@ async function authenticate() {
     console.log('✅ Authenticated with RingCentral');
     // Find Customer Service queue ID
     await findQueueId();
-    await ensureRealtimeSubscription();
   } catch(e) { console.error('❌ Auth failed:', e.message); }
 }
 
@@ -552,6 +566,7 @@ function getFallbackSyncMs() {
 
 module.exports = {
   authenticate,
+  ensureRealtimeSubscription,
   fetchPresenceForAll,
   fetchCallLogs,
   searchRCUsers,
