@@ -10,7 +10,7 @@ const rcsdk = new RC({
 });
 const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 5000);
+const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 60000);
 const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
 const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
@@ -519,13 +519,13 @@ async function fetchCallLogs() {
 
 async function fetchLiveCallStatus() {
   try {
-    const hasFreshSnapshot = Object.keys(lastLiveStatusSnapshot).length && (Date.now() - lastLiveStatusAt < LIVE_STATUS_TTL_MS);
-    if (!hasFreshSnapshot) {
-      if (presenceSyncPromise) {
-        await presenceSyncPromise;
-      } else {
-        await fetchPresenceForAll();
-      }
+    const hasSnapshot = Object.keys(lastLiveStatusSnapshot).length > 0;
+
+    // Important: /api/live-status must be read-only.
+    // Browser refreshes should not trigger new RingCentral presence pulls,
+    // otherwise the UI itself causes rate limiting and stale data.
+    if (!hasSnapshot && !presenceSyncPromise) {
+      void fetchPresenceForAll();
     }
     return lastLiveStatusSnapshot;
   } catch(e) { return lastLiveStatusSnapshot || {}; }
@@ -539,6 +539,7 @@ async function handleWebhookNotification(payload) {
     const fetchedAt = payload.timestamp || new Date().toISOString();
 
     if (event.includes('/call-queues/') && Array.isArray(body.records)) {
+      console.log(`📨 Queue webhook: ${body.records.length} record(s)`);
       for (const rec of body.records) {
         const agentId = String(rec.member && rec.member.id || '');
         if (!agentId || !agentMap[agentId]) continue;
@@ -558,6 +559,7 @@ async function handleWebhookNotification(payload) {
 
     const accountPresence = body.extensionId || body.presenceStatus || body.telephonyStatus;
     if (event.includes('/account/~/presence') || accountPresence) {
+      console.log(`📨 Presence webhook: ${body.extensionId || body.id || 'unknown'}`);
       const agentId = String(body.extensionId || body.id || '');
       if (!agentId || !agentMap[agentId]) return;
       const agent = agentMap[agentId];

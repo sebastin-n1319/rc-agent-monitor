@@ -170,7 +170,7 @@ async function start() {
     try {
       await authenticate();
       await fetchPresenceForAll();
-      await fetchCallLogs();
+      setTimeout(() => { void fetchCallLogs(); }, 20000);
       await startScheduler();
       setTimeout(() => { void ensureRealtimeSubscription(); }, 15000);
     } catch(e) { console.error('❌ Startup error:', e.message); }
