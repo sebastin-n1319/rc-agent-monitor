@@ -438,17 +438,20 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     </div>
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Agent Status &mdash; Live</span>
+        <span class="card-title">Live Presence &amp; Queue View</span>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <span style="font-size:10px;color:var(--text3)"><span style="color:var(--green)">&bull;</span> Avail &nbsp;<span style="color:var(--red)">&bull;</span> Unavail &nbsp;<span style="color:var(--blue2)">&bull;</span> On Call</span>
           <span class="chip" id="agent-count">0 agents</span>
           <button class="btn btn-primary btn-sm" id="syncBtn" onclick="doRefresh()">&#8635; Sync</button>
         </div>
       </div>
+      <div style="padding:0 16px 12px;color:var(--text3);font-size:10px;line-height:1.5;">
+        Live Presence reflects the agent's real-time RingCentral status. Queue Membership shows whether they are currently accepting calls from the selected queue.
+      </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>RC Status</th><th>Queue Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
-        <tbody id="agent-table"><tr><td colspan="15" class="no-data">Loading...</td></tr></tbody>
+        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Live Presence</th><th>Queue Membership</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
+        <tbody id="agent-table"><tr><td colspan="16" class="no-data">Loading...</td></tr></tbody>
       </table>
       </div>
     </div>
