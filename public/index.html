@@ -295,6 +295,74 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 .rpt-val{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;}
 .mono{font-family:'JetBrains Mono',monospace;font-size:11px;}
 
+/* AGENT OPS VIEW */
+.ops-hero{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:14px;padding:20px 22px;border:1px solid rgba(6,196,212,0.14);border-radius:18px;background:
+  radial-gradient(circle at top right, rgba(255,123,0,0.12), transparent 28%),
+  radial-gradient(circle at left center, rgba(30,143,255,0.12), transparent 32%),
+  linear-gradient(145deg, rgba(19,36,61,0.98), rgba(8,19,35,0.98));
+  box-shadow:0 20px 48px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);}
+.ops-kicker{font-size:10px;color:var(--teal);font-weight:700;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;}
+.ops-title{font-size:28px;line-height:1.05;letter-spacing:-0.05em;font-weight:800;color:var(--text);max-width:560px;}
+.ops-copy{font-size:12px;line-height:1.7;color:var(--text2);margin-top:8px;max-width:680px;}
+.ops-hero-meta{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;}
+.ops-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;}
+.ops-chip strong{color:var(--text);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.ops-metrics{grid-template-columns:repeat(6,1fr);}
+.ops-metrics-4{grid-template-columns:repeat(4,1fr);}
+.ops-pulse{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.pulse-card{padding:14px 16px;border-radius:14px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);}
+.pulse-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;margin-bottom:8px;}
+.pulse-value{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);}
+.pulse-sub{font-size:11px;color:var(--text2);line-height:1.6;margin-top:6px;}
+.ops-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:14px;margin-bottom:14px;}
+.danger-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.danger-card{border-radius:14px;padding:16px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);}
+.danger-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:currentColor;opacity:0.8;}
+.danger-critical{color:#ff8a9e;background:linear-gradient(145deg, rgba(240,64,96,0.14), rgba(240,64,96,0.05));border-color:rgba(240,64,96,0.2);}
+.danger-warning{color:#ffbc5b;background:linear-gradient(145deg, rgba(255,123,0,0.14), rgba(255,123,0,0.05));border-color:rgba(255,123,0,0.2);}
+.danger-watch{color:#67d7e1;background:linear-gradient(145deg, rgba(6,196,212,0.14), rgba(6,196,212,0.05));border-color:rgba(6,196,212,0.18);}
+.danger-card h4{font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.danger-card p{font-size:11px;line-height:1.65;color:var(--text2);}
+.danger-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.danger-pill{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;}
+.abandon-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.abandon-stat{padding:14px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}
+.abandon-stat .label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+.abandon-stat .value{font-size:22px;font-family:'JetBrains Mono',monospace;font-weight:800;margin-top:8px;}
+.abandon-stat .sub{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5;}
+.abandon-board{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding-right:2px;}
+.abandon-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);}
+.abandon-rank{width:28px;height:28px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.abandon-main{min-width:0;}
+.abandon-title{font-size:12px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.abandon-meta{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;}
+.abandon-time{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right;}
+.abandon-ring{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);}
+.abandon-band{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;}
+.abandon-short{background:rgba(6,196,212,0.12);color:var(--teal);border:1px solid rgba(6,196,212,0.18);}
+.abandon-medium{background:rgba(255,214,10,0.1);color:var(--yellow);border:1px solid rgba(255,214,10,0.18);}
+.abandon-long{background:rgba(240,64,96,0.1);color:var(--red);border:1px solid rgba(240,64,96,0.18);}
+.watch-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.watch-card{border-radius:16px;padding:16px;background:
+  linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015));
+  border:1px solid rgba(255,255,255,0.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);}
+.watch-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+.watch-name{font-size:13px;font-weight:700;color:var(--text);}
+.watch-ext{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+.watch-risk{padding:6px 10px;border-radius:999px;font-size:10px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.watch-risk-high{background:rgba(240,64,96,0.12);color:var(--red);border:1px solid rgba(240,64,96,0.2);}
+.watch-risk-mid{background:rgba(255,123,0,0.12);color:var(--orange2);border:1px solid rgba(255,123,0,0.2);}
+.watch-risk-low{background:rgba(0,216,126,0.12);color:var(--green);border:1px solid rgba(0,216,126,0.18);}
+.watch-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.watch-pills .pill{font-size:9px;padding:3px 8px;}
+.watch-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px;}
+.watch-stat{padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+.watch-stat .label{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;font-weight:700;}
+.watch-stat .value{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);margin-top:4px;}
+.watch-line{font-size:11px;color:var(--text2);line-height:1.6;margin-top:12px;}
+.ops-roster-note{font-size:10px;color:var(--text3);margin-bottom:12px;line-height:1.6;}
+
 /* MISC */
 .no-data{text-align:center;padding:36px;color:var(--text3);font-size:12px;}
 .refresh-info{font-size:10px;color:var(--text3);text-align:right;margin-top:8px;font-family:'JetBrains Mono',monospace;}
@@ -307,8 +375,8 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
 .toast.show{opacity:1;transform:translateY(0);}
 .toast-icon{font-size:14px;}
 
-@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid{grid-template-columns:1fr;}.watch-grid,.danger-grid,.ops-pulse{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.watch-grid,.danger-grid,.ops-pulse{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -560,19 +628,139 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
 
 <!-- AGENT VIEW -->
 <div id="agentView" style="display:none;padding:20px 24px;">
-  <div class="metrics">
-    <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="am-avail">--</div></div>
-    <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="am-unavail">--</div></div>
-    <div class="metric m-blue"><div class="metric-lbl">On Call</div><div class="metric-val" id="am-oncall">--</div></div>
-    <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="am-inbound">--</div></div>
-    <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="am-outbound">--</div></div>
+  <div class="ops-hero">
+    <div>
+      <div class="ops-kicker">Agent Ops Cockpit</div>
+      <div class="ops-title">See queue risk, abandonment pressure, and watchlist drift before the queue feels it.</div>
+      <div class="ops-copy">
+        This view is tuned for shift leads and floor managers. Queue-ready coverage, danger pockets, and abandoned-call pressure are pulled forward so the team can react fast without reading the whole roster first.
+      </div>
+    </div>
+    <div class="ops-hero-meta">
+      <span class="ops-chip">Live Team <strong id="ops-team-size">0</strong></span>
+      <span class="ops-chip">Queue Ready <strong id="ops-queue-ready">0</strong></span>
+      <span class="ops-chip">Abandoned Today <strong id="ops-abandon-count">0</strong></span>
+      <span class="ops-chip">Longest Ring <strong id="ops-longest-ring">--</strong></span>
+    </div>
   </div>
+
+  <div class="metrics ops-metrics">
+    <div class="metric m-green">
+      <div class="metric-lbl">Queue Ready Now</div>
+      <div class="metric-val" id="am-avail">--</div>
+      <div class="metric-sub" id="am-avail-sub">Agents who can take queue calls right now</div>
+    </div>
+    <div class="metric m-red">
+      <div class="metric-lbl">Coverage Gap</div>
+      <div class="metric-val" id="am-unavail">--</div>
+      <div class="metric-sub" id="am-unavail-sub">Unavailable or queue-disabled agents</div>
+    </div>
+    <div class="metric m-blue">
+      <div class="metric-lbl">On Call Now</div>
+      <div class="metric-val" id="am-oncall">--</div>
+      <div class="metric-sub" id="am-oncall-sub">Live conversations in progress</div>
+    </div>
+    <div class="metric m-orange">
+      <div class="metric-lbl">Abandoned Today</div>
+      <div class="metric-val" id="am-abandoned">--</div>
+      <div class="metric-sub" id="am-abandoned-sub">Missed inbound calls that dropped</div>
+    </div>
+    <div class="metric m-teal">
+      <div class="metric-lbl">Longest Ring</div>
+      <div class="metric-val" id="am-longest-ring" style="font-size:22px">--</div>
+      <div class="metric-sub" id="am-longest-ring-sub">Longest unanswered queue ring</div>
+    </div>
+    <div class="metric m-purple">
+      <div class="metric-lbl">Floor Risk</div>
+      <div class="metric-val" id="am-risk" style="font-size:22px">--</div>
+      <div class="metric-sub" id="am-risk-sub">Average watch score across the team</div>
+    </div>
+  </div>
+
+  <div class="ops-pulse">
+    <div class="pulse-card">
+      <div class="pulse-label">Coverage Pulse</div>
+      <div class="pulse-value" id="ops-coverage-pulse">--</div>
+      <div class="pulse-sub" id="ops-coverage-copy">Reading live readiness and queue toggles.</div>
+    </div>
+    <div class="pulse-card">
+      <div class="pulse-label">Abandon Pulse</div>
+      <div class="pulse-value" id="ops-abandon-pulse">--</div>
+      <div class="pulse-sub" id="ops-abandon-copy">Watching today&apos;s dropped inbound pressure.</div>
+    </div>
+    <div class="pulse-card">
+      <div class="pulse-label">Most At Risk</div>
+      <div class="pulse-value" id="ops-risk-owner">--</div>
+      <div class="pulse-sub" id="ops-risk-copy">Next likely danger owner.</div>
+    </div>
+    <div class="pulse-card">
+      <div class="pulse-label">Shift Drift</div>
+      <div class="pulse-value" id="ops-shift-drift">--</div>
+      <div class="pulse-sub" id="ops-shift-copy">Live mix of queue-off, on-call, and missed pressure.</div>
+    </div>
+  </div>
+
+  <div class="ops-grid">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Danger Zone</span>
+        <span class="chip" id="danger-zone-count">0 insights</span>
+      </div>
+      <div class="danger-grid" id="danger-zone-grid">
+        <div class="no-data">Loading danger signals...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Abandon Radar</span>
+        <span class="chip" id="abandon-radar-count">0 calls</span>
+      </div>
+      <div class="abandon-summary">
+        <div class="abandon-stat">
+          <div class="label">Abandoned Count</div>
+          <div class="value" id="abandon-total">--</div>
+          <div class="sub" id="abandon-total-sub">Calls that dropped before pickup.</div>
+        </div>
+        <div class="abandon-stat">
+          <div class="label">Longest Wait</div>
+          <div class="value" id="abandon-longest">--</div>
+          <div class="sub" id="abandon-longest-sub">Worst ring delay seen today.</div>
+        </div>
+        <div class="abandon-stat">
+          <div class="label">Most Exposed Agent</div>
+          <div class="value" id="abandon-owner">--</div>
+          <div class="sub" id="abandon-owner-sub">Highest abandoned count in this shift.</div>
+        </div>
+      </div>
+      <div class="abandon-board" id="abandon-board">
+        <div class="no-data">Loading abandoned calls...</div>
+      </div>
+    </div>
+  </div>
+
   <div class="card">
-    <div class="card-hdr"><span class="card-title">Team Status</span><span class="chip" id="agent-view-count">0 agents</span></div>
+    <div class="card-hdr">
+      <span class="card-title">Watchlist</span>
+      <span class="chip" id="watchlist-count">0 agents</span>
+    </div>
+    <div class="watch-grid" id="watchlist-grid">
+      <div class="no-data">Building watchlist...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr">
+      <span class="card-title">Operations Roster</span>
+      <span class="chip" id="agent-view-count">0 agents</span>
+    </div>
+    <div class="ops-roster-note">
+      Score blends queue readiness, missed pressure, abandonment exposure, and instability. Agents nearer the top deserve the next operational check-in.
+    </div>
     <div class="tbl-wrap">
     <table>
-      <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>Score</th></tr></thead>
-      <tbody id="agent-view-table"><tr><td colspan="12" class="no-data">Loading...</td></tr></tbody>
+      <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Status</th><th>Queue</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Abandoned</th><th>Longest Ring</th><th>Missed</th><th>24h</th><th>Risk</th><th>Score</th></tr></thead>
+      <tbody id="agent-view-table"><tr><td colspan="14" class="no-data">Loading...</td></tr></tbody>
     </table>
     </div>
   </div>
@@ -591,7 +779,7 @@ const TZ={CST:'America/Chicago',IST:'Asia/Kolkata'};
 const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
-let currentTZ='CST',currentUser=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={};
+let currentTZ='CST',currentUser=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[];
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
 // PARTICLES & CONFETTI
@@ -818,11 +1006,236 @@ function deriveStatusInfo(agentId, fallbackStatus){
   return { evts, lastEvent, live, status, sinceTs };
 }
 
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
+function normalizeQueueStatus(live, lastEvent){
+  if(live && live.queueStatus) return live.queueStatus;
+  if(lastEvent && lastEvent.queue_status) return lastEvent.queue_status;
+  return 'Unknown';
+}
+
+function isQueueReadyLive(status, queueStatus){
+  return status==='Available' && queueStatus==='In Queue';
+}
+
+function isQueueOff(queueStatus){
+  return queueStatus==='All Queues Off' || queueStatus==='This Queue Off' || queueStatus==='Out of Queue';
+}
+
+function getAbandonBand(ringSeconds){
+  const ring=Math.round(ringSeconds||0);
+  if(ring>=25) return { cls:'abandon-long', label:'Critical Ring' };
+  if(ring>=12) return { cls:'abandon-medium', label:'Slow Pick' };
+  return { cls:'abandon-short', label:'Short Ring' };
+}
+
+function buildAbandonIndex(calls){
+  return (calls||[]).reduce((acc,call)=>{
+    const keys=[call.agentId, call.extension].filter(Boolean);
+    keys.forEach(key=>{
+      if(!acc[key]) acc[key]=[];
+      acc[key].push(call);
+    });
+    return acc;
+  },{});
+}
+
+function getRiskBucket(score){
+  if(score>=70) return { label:'HIGH', cls:'watch-risk-high' };
+  if(score>=40) return { label:'WATCH', cls:'watch-risk-mid' };
+  return { label:'STABLE', cls:'watch-risk-low' };
+}
+
+function computeAgentRisk(agentOp){
+  const totalSeconds=(agentOp.availableSeconds||0)+(agentOp.unavailableSeconds||0);
+  const unavailableShare=totalSeconds>0?(agentOp.unavailableSeconds||0)/totalSeconds:1;
+  let score=8;
+
+  if(agentOp.status==='Unavailable') score+=30;
+  else if(agentOp.status==='On Call') score+=18;
+  else if(agentOp.status==='Ringing') score+=22;
+
+  if(agentOp.queueStatus==='All Queues Off') score+=28;
+  else if(agentOp.queueStatus==='This Queue Off' || agentOp.queueStatus==='Out of Queue') score+=18;
+  else if(agentOp.queueStatus==='Unknown') score+=10;
+
+  score+=Math.round(unavailableShare*18);
+  score+=Math.min(18,(agentOp.missedCalls||0)*6);
+  score+=Math.min(18,(agentOp.abandonedCount||0)*6);
+
+  if((agentOp.longestAbandonRing||0)>=25) score+=16;
+  else if((agentOp.longestAbandonRing||0)>=12) score+=8;
+
+  if((agentOp.toggleCount||0)>=6) score+=10;
+  else if((agentOp.toggleCount||0)>=3) score+=5;
+
+  if(agentOp.queueReady) score-=18;
+  if(agentOp.queueReady && (agentOp.missedCalls||0)===0 && (agentOp.abandonedCount||0)===0) score-=8;
+
+  score=clamp(Math.round(score),0,100);
+  const bucket=getRiskBucket(score);
+  const reasons=[];
+  if(agentOp.queueStatus==='All Queues Off') reasons.push('all queues off');
+  else if(agentOp.queueStatus==='This Queue Off' || agentOp.queueStatus==='Out of Queue') reasons.push('queue off');
+  if(agentOp.status==='Unavailable') reasons.push('currently unavailable');
+  if((agentOp.abandonedCount||0)>0) reasons.push(`${agentOp.abandonedCount} abandoned`);
+  if((agentOp.missedCalls||0)>0) reasons.push(`${agentOp.missedCalls} missed`);
+  if((agentOp.longestAbandonRing||0)>=12) reasons.push(`ring ${fmt(agentOp.longestAbandonRing)}`);
+
+  return {
+    riskScore:score,
+    riskBucket:bucket,
+    riskCopy:reasons.length?reasons.join(' · '):'healthy coverage'
+  };
+}
+
+function buildAgentOpsDataset(agents, today){
+  const abandonIndex=buildAbandonIndex(abandonedCalls);
+  return agents.map((a,idx)=>{
+    const sum=todaySummary[a.rc_id]||{};
+    const info=deriveStatusInfo(a.rc_id, a.rc_id?'Offline':'Unknown');
+    const queueStatus=normalizeQueueStatus(info.live, info.lastEvent);
+    const agentAbandons=abandonIndex[a.rc_id]||abandonIndex[a.extension]||[];
+    const longestAbandonRing=agentAbandons.reduce((mx,call)=>Math.max(mx,call.ringDuration||0),0);
+    const op={
+      idx,
+      agent:a,
+      sum,
+      evts:info.evts,
+      live:info.live,
+      status:info.status,
+      sinceTs:info.sinceTs,
+      queueStatus,
+      queueReady:isQueueReadyLive(info.status, queueStatus),
+      queueOff:isQueueOff(queueStatus),
+      availableSeconds:sum.availableSeconds||0,
+      unavailableSeconds:sum.unavailableSeconds||0,
+      inboundCalls:sum.inboundCalls||0,
+      outboundCalls:sum.outboundCalls||0,
+      missedCalls:sum.missedCalls||0,
+      toggleCount:sum.toggleCount||info.evts.filter((e,i)=>i>0&&info.evts[i-1].status!==e.status).length,
+      abandonedCount:agentAbandons.length,
+      longestAbandonRing,
+      abandons:agentAbandons,
+      timelineHtml:buildTL(a.rc_id,today),
+      performanceScore:calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,sum.inboundCalls||0,sum.outboundCalls||0,sum.missedCalls||0,sum.toggleCount||0)
+    };
+    return {...op,...computeAgentRisk(op)};
+  });
+}
+
+function buildDangerCards(agentOps){
+  if(!agentOps.length)return'<div class="no-data">No monitored agents yet.</div>';
+
+  const coverageGap=agentOps.filter(op=>!op.queueReady).sort((a,b)=>b.riskScore-a.riskScore);
+  const abandonedHot=agentOps.filter(op=>op.abandonedCount>0).sort((a,b)=>b.abandonedCount-a.abandonedCount||b.longestAbandonRing-a.longestAbandonRing);
+  const volatile=agentOps.filter(op=>op.toggleCount>0).sort((a,b)=>b.toggleCount-a.toggleCount);
+  const missHeavy=agentOps.filter(op=>op.missedCalls>0).sort((a,b)=>b.missedCalls-a.missedCalls||b.riskScore-a.riskScore);
+
+  const cards=[
+    coverageGap.length ? {
+      cls:'danger-critical',
+      title:`${coverageGap.length} agents are not queue-ready`,
+      body:`${coverageGap[0].agent.name} is the highest-risk coverage gap right now with ${coverageGap[0].status.toLowerCase()} / ${coverageGap[0].queueStatus.toLowerCase()}.`,
+      meta:[`Worst: ${coverageGap[0].agent.name}`, `Since ${toTime(coverageGap[0].sinceTs)}`, coverageGap[0].riskCopy]
+    } : {
+      cls:'danger-watch',
+      title:'Coverage is holding',
+      body:'Everyone currently shown as queue-ready can still take calls, so there is no immediate floor coverage gap.',
+      meta:['No immediate gap', 'Queue-ready now']
+    },
+    abandonedHot.length ? {
+      cls:'danger-warning',
+      title:`${abandonedCalls.length} abandoned calls need review`,
+      body:`${abandonedHot[0].agent.name} owns the heaviest abandon exposure with ${abandonedHot[0].abandonedCount} dropped calls and a top ring of ${fmt(abandonedHot[0].longestAbandonRing)}.`,
+      meta:[`Owner: ${abandonedHot[0].agent.name}`, `Longest ${fmt(abandonedHot[0].longestAbandonRing)}`, `${abandonedHot.length} affected agents`]
+    } : {
+      cls:'danger-watch',
+      title:'No abandoned pressure detected',
+      body:'Inbound misses are not currently turning into abandoned-call pressure for the monitored team.',
+      meta:['0 abandoned', 'Clean abandon board']
+    },
+    missHeavy.length ? {
+      cls:'danger-warning',
+      title:`Missed-call hotspot around ${missHeavy[0].agent.name}`,
+      body:`${missHeavy[0].agent.name} has ${missHeavy[0].missedCalls} missed calls today, which makes them the first place to inspect before the queue slips further.`,
+      meta:[`Missed ${missHeavy[0].missedCalls}`, `Queue ${missHeavy[0].queueStatus}`, `Risk ${missHeavy[0].riskScore}`]
+    } : {
+      cls:'danger-watch',
+      title:'Missed-call pressure is quiet',
+      body:'No agent is showing meaningful missed-call buildup right now, which lowers immediate callback risk.',
+      meta:['Low miss pressure', 'Keep watching live']
+    },
+    volatile.length ? {
+      cls:'danger-watch',
+      title:`${volatile[0].agent.name} is the most volatile shift signal`,
+      body:`${volatile[0].agent.name} has toggled ${volatile[0].toggleCount} times today, which usually points to instability, call bursts, or queue-switch behavior.`,
+      meta:[`Toggles ${volatile[0].toggleCount}`, `Status ${volatile[0].status}`, `Queue ${volatile[0].queueStatus}`]
+    } : {
+      cls:'danger-watch',
+      title:'Status volatility is calm',
+      body:'The roster is not bouncing between states much, so the current shift looks operationally stable.',
+      meta:['Low toggle count', 'Stable floor']
+    }
+  ];
+
+  return cards.map(card=>'<div class="danger-card '+card.cls+'"><h4>'+card.title+'</h4><p>'+card.body+'</p><div class="danger-meta">'+card.meta.map(item=>'<span class="danger-pill">'+item+'</span>').join('')+'</div></div>').join('');
+}
+
+function buildAbandonBoard(agentOps){
+  if(!abandonedCalls.length){
+    return '<div class="no-data">No abandoned calls yet today.</div>';
+  }
+  return abandonedCalls.slice(0,10).map((call,idx)=>{
+    const band=getAbandonBand(call.ringDuration||0);
+    return '<div class="abandon-row">'+
+      '<div class="abandon-rank">'+String(idx+1).padStart(2,'0')+'</div>'+
+      '<div class="abandon-main">'+
+        '<div class="abandon-title">'+(call.agentName||'Unknown Agent')+' <span class="pill p-unavail"><span class="dot"></span>Abandoned</span></div>'+
+        '<div class="abandon-meta">'+
+          '<span>Ext '+(call.extension||'--')+'</span>'+
+          '<span>At '+toTime(call.startTime)+'</span>'+
+          '<span>Hold '+fmt(call.holdDuration||0)+'</span>'+
+          '<span>Call '+String(call.callId||'').slice(-6)+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="abandon-time">'+
+        '<div class="abandon-ring">'+fmt(call.ringDuration||0)+'</div>'+
+        '<span class="abandon-band '+band.cls+'">'+band.label+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function buildWatchlist(agentOps){
+  if(!agentOps.length)return'<div class="no-data">No agents to watch yet.</div>';
+  const watched=agentOps.slice().sort((a,b)=>b.riskScore-a.riskScore||b.abandonedCount-a.abandonedCount).slice(0,6);
+  return watched.map(op=>
+    '<div class="watch-card">'+
+      '<div class="watch-head">'+
+        '<div><div class="watch-name">'+op.agent.name+'</div><div class="watch-ext">Ext '+op.agent.extension+' · Since '+toTime(op.sinceTs)+'</div></div>'+
+        '<div class="watch-risk '+op.riskBucket.cls+'">'+op.riskBucket.label+' '+op.riskScore+'</div>'+
+      '</div>'+
+      '<div class="watch-pills">'+
+        '<span class="pill '+pillCls(op.status)+'"><span class="dot"></span>'+op.status+'</span>'+
+        '<span class="pill '+queuePillCls(op.queueStatus)+'"><span class="dot"></span>'+op.queueStatus+'</span>'+
+      '</div>'+
+      '<div class="watch-stats">'+
+        '<div class="watch-stat"><div class="label">Abandoned</div><div class="value">'+op.abandonedCount+'</div></div>'+
+        '<div class="watch-stat"><div class="label">Missed</div><div class="value">'+op.missedCalls+'</div></div>'+
+        '<div class="watch-stat"><div class="label">Longest Ring</div><div class="value">'+fmt(op.longestAbandonRing)+'</div></div>'+
+        '<div class="watch-stat"><div class="label">Toggles</div><div class="value">'+op.toggleCount+'</div></div>'+
+      '</div>'+
+      '<div class="watch-line">'+op.riskCopy+'</div>'+
+    '</div>'
+  ).join('');
+}
+
 // TIMELINE
 function buildTL(agentId,date){
   const segs=timelineData[agentId]||[];
   if(!segs.length)return'<div class="tl-bar"><div class="tl-seg tl-gap" style="width:100%"></div></div>';
-  const dayStart=new Date(date+'T00:00:00Z').getTime();
+  const dayStart=new Date(date+'T00:00:00+05:30').getTime();
   const now=Math.min(Date.now(),dayStart+86400000);
   const total=now-dayStart;
   let html='',pos=dayStart;
@@ -871,19 +1284,26 @@ async function loadTodaySummary(){
   const today=todayStr();
   const yesterday=shiftDate(today,-1);
   try{
-    const[sr,tr,lr,yr]=await Promise.all([
+    const[sr,tr,lr,yr,ar]=await Promise.all([
       fetch(BACKEND+'/api/summary?date='+today),
       fetch(BACKEND+'/api/presence-events?date='+today),
       fetch(BACKEND+'/api/live-status'),
-      fetch(BACKEND+'/api/summary?date='+yesterday)
+      fetch(BACKEND+'/api/summary?date='+yesterday),
+      fetch(BACKEND+'/api/abandoned-calls?date='+today)
     ]);
     const sd=await sr.json(),td=await tr.json(),ld=await lr.json(),yd=await yr.json();
+    let ad={success:false,data:[]};
+    try{
+      const ct=ar.headers.get('content-type')||'';
+      if(ar.ok&&ct.includes('application/json')) ad=await ar.json();
+    }catch(e){}
     todaySummary={};if(sd.success)sd.data.forEach(r=>{todaySummary[r.agentId]=r;});
     yesterdaySummary={};if(yd.success)yd.data.forEach(r=>{yesterdaySummary[r.agentId]=r;});
     timelineData={};
     if(td.success)td.data.forEach(s=>{if(!timelineData[s.agent_id])timelineData[s.agent_id]=[];timelineData[s.agent_id].push(s);});
     liveCallData=ld.success?ld.data:{};
-  }catch(e){todaySummary={};}
+    abandonedCalls=ad.success?ad.data:[];
+  }catch(e){todaySummary={};abandonedCalls=[];}
 }
 
 async function loadAgentStatuses(){
@@ -892,13 +1312,12 @@ async function loadAgentStatuses(){
     const json=await res.json();
     if(!json.success)return;
     const agents=json.data,today=todayStr(),now=Date.now();
+    const agentOps=buildAgentOpsDataset(agents,today);
     let totAvail=0,totUnavail=0,totOncall=0,totIn=0,totOut=0,totMissed=0;
     let ahtInSum=0,ahtOutSum=0,ahtInCnt=0,ahtOutCnt=0;
 
-    const rows=agents.map((a,idx)=>{
-      const sum=todaySummary[a.rc_id]||{};
-      const { evts, live, status, sinceTs } = deriveStatusInfo(a.rc_id, a.rc_id?'Offline':'Unknown');
-      const ss=sinceTs?Math.floor((now-new Date(sinceTs).getTime())/1000):0;
+    const rows=agentOps.map((op,idx)=>{
+      const { agent:a, sum, evts, live, status, sinceTs, queueStatus }=op;
       const sl=(status||'').toLowerCase();
       if(sl==='available')totAvail++;
       else if(sl==='unavailable')totUnavail++;
@@ -910,7 +1329,6 @@ async function loadAgentStatuses(){
       if(outC>0){ahtOutSum+=ahtOut*outC;ahtOutCnt+=outC;}
       const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;
       const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
-      const tl=buildTL(a.rc_id,today);
       const tLog=buildToggleLog(a.rc_id);
       let liveBadge='<span style="color:var(--text3);font-size:11px">&mdash;</span>';
       if(live.isOnCall){
@@ -924,11 +1342,11 @@ async function loadAgentStatuses(){
       return'<tr><td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
         '<td><div class="agent-name">'+a.name+'</div><div class="agent-ext">'+a.extension+'</div></td>'+
         '<td>'+liveBadge+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td>'+
-        '<td><span class="pill '+queuePillCls(live.queueStatus)+'"><span class="dot"></span>'+(live.queueStatus||'Unknown')+'</span></td>'+
+        '<td><span class="pill '+queuePillCls(queueStatus)+'"><span class="dot"></span>'+queueStatus+'</span></td>'+
         '<td class="mono">'+toTime(sinceTs)+'</td>'+
         '<td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td>'+
         '<td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td>'+
-        '<td>'+tLog+'</td><td>'+tl+'</td>'+
+        '<td>'+tLog+'</td><td>'+op.timelineHtml+'</td>'+
         '<td class="mono" style="color:var(--teal)">'+inC+'</td>'+
         '<td class="mono" style="color:var(--orange2)">'+outC+'</td>'+
         '<td>'+missedBadge+'</td>'+
@@ -973,21 +1391,76 @@ async function loadAgentStatuses(){
     });
 
     if(currentViewMode==='agent'){
-      const agentRows=agents.map((a,idx)=>{
-        const sum=todaySummary[a.rc_id]||{};
-        const { evts, live, status, sinceTs } = deriveStatusInfo(a.rc_id, 'Unknown');
-        const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
-        const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;
-        const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
-        const tl=buildTL(a.rc_id,todayStr());
+      const sortedOps=agentOps.slice().sort((a,b)=>b.riskScore-a.riskScore||b.abandonedCount-a.abandonedCount||a.agent.name.localeCompare(b.agent.name));
+      const queueReadyNow=agentOps.filter(op=>op.queueReady).length;
+      const coverageGap=agentOps.filter(op=>!op.queueReady).length;
+      const queueOffNow=agentOps.filter(op=>op.queueOff).length;
+      const longestRing=abandonedCalls.reduce((mx,call)=>Math.max(mx,call.ringDuration||0),0);
+      const avgRisk=agentOps.length?Math.round(agentOps.reduce((sum,op)=>sum+op.riskScore,0)/agentOps.length):0;
+      const affectedAgentCount=new Set(abandonedCalls.map(call=>call.agentId||call.extension).filter(Boolean)).size;
+      const topRisk=sortedOps[0];
+      const topAbandonOwner=sortedOps.slice().sort((a,b)=>b.abandonedCount-a.abandonedCount||b.longestAbandonRing-a.longestAbandonRing)[0];
+      const agentRows=sortedOps.map((op,idx)=>{
         let lb='<span style="color:var(--text3)">&mdash;</span>';
-        if(live.isOnCall){const dir=live.direction==='Inbound'?'IN':'OUT';lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
-        return'<tr><td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+a.name+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td><td class="mono">'+toTime(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td>'+tl+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
+        if(op.live.isOnCall){
+          const dir=op.live.direction==='Inbound'?'IN':'OUT';
+          lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';
+        }
+        return'<tr>'+
+          '<td style="color:var(--text3)">'+(idx+1)+'</td>'+
+          '<td><div class="agent-name">'+op.agent.name+'</div><div class="agent-ext">'+op.agent.extension+'</div></td>'+
+          '<td>'+lb+'</td>'+
+          '<td><span class="pill '+pillCls(op.status)+'"><span class="dot"></span>'+op.status+'</span></td>'+
+          '<td><span class="pill '+queuePillCls(op.queueStatus)+'"><span class="dot"></span>'+op.queueStatus+'</span></td>'+
+          '<td class="mono">'+toTime(op.sinceTs)+'</td>'+
+          '<td class="mono" style="color:var(--green)">'+fmt(op.availableSeconds)+'</td>'+
+          '<td class="mono" style="color:var(--red)">'+fmt(op.unavailableSeconds)+'</td>'+
+          '<td class="mono">'+op.abandonedCount+'</td>'+
+          '<td class="mono">'+fmt(op.longestAbandonRing)+'</td>'+
+          '<td><span class="missed-badge '+(op.missedCalls>0?'missed-red':'missed-zero')+'">'+op.missedCalls+'</span></td>'+
+          '<td>'+op.timelineHtml+'</td>'+
+          '<td><span class="watch-risk '+op.riskBucket.cls+'">'+op.riskBucket.label+'</span></td>'+
+          '<td><span class="score '+op.performanceScore.c+'">'+op.performanceScore.v+'</span></td>'+
+        '</tr>';
       });
       const at=document.getElementById('agent-view-table');
-      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="12" class="no-data">No agents</td></tr>';
-      document.getElementById('am-avail').textContent=totAvail;document.getElementById('am-unavail').textContent=totUnavail;
-      document.getElementById('am-oncall').textContent=totOncall;document.getElementById('am-inbound').textContent=totIn;document.getElementById('am-outbound').textContent=totOut;
+      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="14" class="no-data">No agents</td></tr>';
+      document.getElementById('ops-team-size').textContent=agents.length;
+      document.getElementById('ops-queue-ready').textContent=queueReadyNow;
+      document.getElementById('ops-abandon-count').textContent=abandonedCalls.length;
+      document.getElementById('ops-longest-ring').textContent=longestRing?fmt(longestRing):'--';
+      document.getElementById('am-avail').textContent=queueReadyNow;
+      document.getElementById('am-avail-sub').textContent=queueReadyNow===agents.length?'Everyone is queue-ready now.':(agents.length-queueReadyNow)+' agents need attention before coverage improves.';
+      document.getElementById('am-unavail').textContent=coverageGap;
+      document.getElementById('am-unavail-sub').textContent=queueOffNow>0?queueOffNow+' are queue-switched off right now.':'Coverage gap is purely live status driven.';
+      document.getElementById('am-oncall').textContent=totOncall;
+      document.getElementById('am-oncall-sub').textContent=totIn+' inbound / '+totOut+' outbound calls processed today.';
+      document.getElementById('am-abandoned').textContent=abandonedCalls.length;
+      document.getElementById('am-abandoned-sub').textContent=affectedAgentCount?affectedAgentCount+' agents have abandon exposure today.':'No abandoned-call exposure yet.';
+      document.getElementById('am-longest-ring').textContent=longestRing?fmt(longestRing):'--';
+      document.getElementById('am-longest-ring-sub').textContent=longestRing>=25?'Critical queue delay detected.':(longestRing>=12?'Watch slow answer windows.':'No major ring delays spotted.');
+      document.getElementById('am-risk').textContent=avgRisk;
+      document.getElementById('am-risk-sub').textContent=avgRisk>=70?'Floor is in a high-risk state.':avgRisk>=40?'Watch drift is building.':'Shift looks stable right now.';
+      document.getElementById('ops-coverage-pulse').textContent=queueReadyNow+'/'+agents.length;
+      document.getElementById('ops-coverage-copy').textContent=coverageGap?coverageGap+' agents are not queue-ready; '+queueOffNow+' are queue-switched off.':'Full queue-ready coverage right now.';
+      document.getElementById('ops-abandon-pulse').textContent=abandonedCalls.length?String(abandonedCalls.length):'0';
+      document.getElementById('ops-abandon-copy').textContent=abandonedCalls.length?affectedAgentCount+' agents affected. Longest ring '+fmt(longestRing)+'.':'No abandoned inbound calls today.';
+      document.getElementById('ops-risk-owner').textContent=topRisk?topRisk.agent.name.split(' ')[0]:'--';
+      document.getElementById('ops-risk-copy').textContent=topRisk?topRisk.riskCopy:'No immediate owner.';
+      document.getElementById('ops-shift-drift').textContent=queueOffNow+' off / '+totOncall+' live';
+      document.getElementById('ops-shift-copy').textContent=totMissed+' missed today across '+agents.length+' monitored agents.';
+      document.getElementById('danger-zone-grid').innerHTML=buildDangerCards(agentOps);
+      document.getElementById('danger-zone-count').textContent='4 insights';
+      document.getElementById('abandon-radar-count').textContent=abandonedCalls.length+' calls';
+      document.getElementById('abandon-total').textContent=abandonedCalls.length;
+      document.getElementById('abandon-total-sub').textContent=abandonedCalls.length?'Dropped inbound calls still needing review.':'The queue has not produced an abandoned call today.';
+      document.getElementById('abandon-longest').textContent=longestRing?fmt(longestRing):'--';
+      document.getElementById('abandon-longest-sub').textContent=longestRing?('Worst abandoned ring happened at '+toTime(abandonedCalls[0]?.startTime||null)+'.'):'No long ring delay logged.';
+      document.getElementById('abandon-owner').textContent=topAbandonOwner&&topAbandonOwner.abandonedCount?topAbandonOwner.agent.name.split(' ')[0]:'--';
+      document.getElementById('abandon-owner-sub').textContent=topAbandonOwner&&topAbandonOwner.abandonedCount?(topAbandonOwner.abandonedCount+' abandoned calls · longest '+fmt(topAbandonOwner.longestAbandonRing)): 'No single exposed owner right now.';
+      document.getElementById('abandon-board').innerHTML=buildAbandonBoard(agentOps);
+      document.getElementById('watchlist-grid').innerHTML=buildWatchlist(sortedOps);
+      document.getElementById('watchlist-count').textContent=Math.min(sortedOps.length,6)+' agents';
       document.getElementById('agent-view-count').textContent=agents.length+' agents';
       document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
     }
