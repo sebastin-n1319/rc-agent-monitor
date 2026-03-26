@@ -67,7 +67,10 @@ function getMonitoredAgents(){return all(`SELECT * FROM monitored_agents ORDER B
 function updateAgentRcId(ext,rcId){return run(`UPDATE monitored_agents SET rc_id=? WHERE extension=?`,[rcId,ext]);}
 
 // PRESENCE
-function insertPresenceEvent(agentId,agentName,status,queueStatus){
+function insertPresenceEvent(agentId,agentName,status,queueStatus,timestamp){
+  if(timestamp){
+    return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status,timestamp) VALUES (?,?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown',timestamp]);
+  }
   return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status) VALUES (?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown']);
 }
 async function getPresenceEvents(date){

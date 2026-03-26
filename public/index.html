@@ -778,6 +778,7 @@ function calcScore(avail,unavail,inC,outC,missed,toggles){
 
 function normalizeLiveStatus(live, fallbackStatus){
   if(!live) return fallbackStatus||'Unknown';
+  if(live.displayStatus) return live.displayStatus;
   if(live.normalizedStatus) return live.normalizedStatus;
   const tel=(live.telephonyStatus||'').toLowerCase();
   const pres=(live.presenceStatus||'').toLowerCase();
@@ -799,7 +800,8 @@ function deriveStatusInfo(agentId, fallbackStatus){
   const status=normalizeLiveStatus(live, live.normalizedStatus||lastEvent?.status||fallbackStatus);
   let sinceTs=null;
 
-  if(status==='On Call' || status==='Ringing') sinceTs=live.callStartTime||null;
+  if(live.stateSince) sinceTs=live.stateSince;
+  if(!sinceTs && (status==='On Call' || status==='Ringing')) sinceTs=live.callStartTime||null;
 
   if(!sinceTs){
     for(let ei=evts.length-1;ei>=0;ei--){

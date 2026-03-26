@@ -99,27 +99,33 @@ function deriveQueueStatus(queueInfo) {
 }
 
 function deriveQueueAwareStatus(data, queueInfo) {
+  return deriveDisplayStatus(data, queueInfo);
+}
+
+function deriveDisplayStatus(data, queueInfo) {
   const tel = data.telephonyStatus;
   const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
-  const activeCall = data.activeCalls && data.activeCalls.length > 0 ? data.activeCalls[0] : null;
-  const direction = (activeCall && activeCall.direction || '').toLowerCase();
   const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
 
   if (!queueInfo) {
     return normalizeStatus(data.presenceStatus, data.telephonyStatus, data.userStatus, data.dndStatus);
   }
 
-  if (queueInfo.acceptQueueCalls === false || queueInfo.acceptCurrentQueueCalls === false) {
-    return 'Unavailable';
-  }
+  if (tel === 'Ringing') return 'Ringing';
+  if (isOnCall) return 'On Call';
+  if (queueInfo.acceptQueueCalls === false || queueInfo.acceptCurrentQueueCalls === false) return 'Unavailable';
+  if (basePresence === 'Available') return 'Available';
+  return 'Unavailable';
+}
 
-  if (direction === 'inbound') {
-    if (tel === 'Ringing') return 'Ringing';
-    if (isOnCall) return 'On Call';
-  }
+function deriveQueueReadyStatus(data, queueInfo) {
+  const tel = (data.telephonyStatus || '').toLowerCase();
+  const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
+  const canTakeQueueCalls = queueInfo && queueInfo.acceptQueueCalls !== false && queueInfo.acceptCurrentQueueCalls !== false;
 
+  if (!canTakeQueueCalls) return 'Unavailable';
   if (basePresence !== 'Available') return 'Unavailable';
-
+  if (tel === 'ringing' || tel === 'callconnected' || tel === 'oncall' || tel === 'talking') return 'Unavailable';
   return 'Available';
 }
 
@@ -127,7 +133,8 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
   const tel = data.telephonyStatus;
   const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
   let direction = null, callDuration = 0, callStartTime = null;
-  const normalizedStatus = deriveQueueAwareStatus(data, queueInfo);
+  const displayStatus = deriveDisplayStatus(data, queueInfo);
+  const queueReadyStatus = deriveQueueReadyStatus(data, queueInfo);
   if (isOnCall && data.activeCalls && data.activeCalls.length > 0) {
     const ac = data.activeCalls[0];
     direction = ac.direction;
@@ -142,10 +149,12 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
     direction,
     callDuration,
     presenceStatus: data.presenceStatus,
+    displayStatus,
+    queueReadyStatus,
+    normalizedStatus: displayStatus,
     userStatus: data.userStatus || null,
     dndStatus: data.dndStatus || null,
     activeCalls: data.activeCalls || [],
-    normalizedStatus,
     callStartTime,
     fetchedAt,
     queueStatus: deriveQueueStatus(queueInfo),
@@ -201,17 +210,27 @@ function emitLiveUpdate(reason, agentId) {
 async function upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, reason = 'sync') {
   const nextEntry = buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo);
   const prevEntry = lastLiveStatusSnapshot[agent.rc_id];
-  const changed = !prevEntry || !snapshotsEqual(prevEntry, nextEntry);
+  const displayChanged = !prevEntry || prevEntry.displayStatus !== nextEntry.displayStatus;
+  const queueReadyChanged = !prevEntry ||
+    prevEntry.queueReadyStatus !== nextEntry.queueReadyStatus ||
+    prevEntry.queueStatus !== nextEntry.queueStatus;
+
+  nextEntry.stateSince = displayChanged
+    ? (nextEntry.callStartTime || fetchedAt)
+    : (prevEntry && prevEntry.stateSince) || (nextEntry.callStartTime || fetchedAt);
 
   lastLiveStatusSnapshot[agent.rc_id] = nextEntry;
   lastLiveStatusAt = Date.now();
 
-  if (changed) {
-    await insertPresenceEvent(agent.rc_id, agent.name, nextEntry.normalizedStatus, nextEntry.queueStatus);
+  if (queueReadyChanged) {
+    await insertPresenceEvent(agent.rc_id, agent.name, nextEntry.queueReadyStatus, nextEntry.queueStatus, fetchedAt);
+  }
+
+  if (displayChanged || queueReadyChanged) {
     emitLiveUpdate(reason, agent.rc_id);
   }
 
-  return { changed, nextEntry, prevEntry };
+  return { changed: displayChanged || queueReadyChanged, nextEntry, prevEntry, displayChanged, queueReadyChanged };
 }
 
 async function renewSubscription(subscription) {
@@ -436,12 +455,12 @@ async function fetchPresenceForAll(force = false) {
           continue;
         }
         const queueInfo = queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null;
-        const status = deriveQueueAwareStatus(data, queueInfo);
+        const status = deriveDisplayStatus(data, queueInfo);
         const prevEntry = snapshot[agent.rc_id];
         const { changed, nextEntry } = await upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, 'poll');
         snapshot[agent.rc_id] = nextEntry;
         if (changed) {
-          console.log(`✅ ${agent.name}: ${prevEntry ? prevEntry.normalizedStatus : '--'} → ${status} (${nextEntry.queueStatus})`);
+          console.log(`✅ ${agent.name}: ${prevEntry ? prevEntry.displayStatus : '--'} → ${status} (${nextEntry.queueStatus})`);
         }
       } catch(e) {
         console.error(`❌ Presence ${agent.name}:`, e.message);
