@@ -117,17 +117,47 @@ async function fetchPresenceForAll() {
     await resolveAgentRcIds();
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
-    for (const agent of agents) {
-      try {
-        const r = await platform.get(
-          `/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`,
-          { detailedTelephonyState: true }
-        );
-        const d = await r.json();
-        await insertPresenceEvent(agent.rc_id, agent.name,
-          normalizeStatus(d.presenceStatus, d.telephonyStatus));
-        await sleep(1200);
-      } catch(e) { console.error(`❌ Presence ${agent.name}:`, e.message); }
+    // RC Heavy API limit: 10 requests/60s
+    // Dynamic batching: auto-calculates based on agent count
+    const RC_LIMIT = 8; // Use 8 (not 10) as safe buffer
+    const RC_WAIT_MS = 65000; // 65s between batches
+
+    const totalAgents = agents.length;
+    const batches = [];
+    for (let i = 0; i < totalAgents; i += RC_LIMIT) {
+      batches.push(agents.slice(i, i + RC_LIMIT));
+    }
+
+    console.log(`📡 Presence fetch: ${totalAgents} agents in ${batches.length} batch(es)`);
+
+    for (let b = 0; b < batches.length; b++) {
+      const batch = batches[b];
+      if (b > 0) {
+        console.log(`⏳ Waiting 65s before batch ${b + 1}/${batches.length}...`);
+        await sleep(RC_WAIT_MS);
+      }
+      console.log(`📡 Batch ${b + 1}/${batches.length}: ${batch.length} agents`);
+      for (let i = 0; i < batch.length; i++) {
+        const agent = batch[i];
+        if (i > 0) await sleep(6000); // 6s between each agent
+        try {
+          const r = await platform.get(
+            `/restapi/v1.0/account/~/extension/${agent.rc_id}/presence`,
+            { detailedTelephonyState: true }
+          );
+          const data = await r.json();
+          if (data.errorCode) {
+            console.error(`❌ ${agent.name}: ${data.errorCode} - ${data.message}`);
+            continue;
+          }
+          const status = normalizeStatus(
+            data.presenceStatus, data.telephonyStatus,
+            data.userStatus, data.dndStatus
+          );
+          console.log(`✅ ${agent.name}: presence=${data.presenceStatus} → ${status}`);
+          await insertPresenceEvent(agent.rc_id, agent.name, status);
+        } catch(e) { console.error(`❌ Presence ${agent.name}:`, e.message); }
+      }
     }
     console.log('✅ Presence snapshot saved');
   } catch(e) { console.error('❌ fetchPresenceForAll:', e.message); }
