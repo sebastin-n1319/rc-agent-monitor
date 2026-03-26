@@ -950,46 +950,48 @@ async function loadEventLog(){
 // AGENTS - BULK ADD
 let searchResultsData = [];
 let selectedAgents = new Set();
+let panelTimeout = null;
 
-let panelTimeout=null;
 async function searchAgentsPanel(q){
   const resultsWrap = document.getElementById('agentSearchResults');
   const resultsList = document.getElementById('searchResultsList');
   const label = document.getElementById('searchResultsLabel');
+  if(!resultsWrap || !resultsList) return;
   if(q.length < 2){ resultsWrap.style.display='none'; return; }
   clearTimeout(panelTimeout);
-  acTimeout = setTimeout(async()=>{
+  panelTimeout = setTimeout(async()=>{
+    resultsList.innerHTML = '<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center;">Searching...</div>';
+    resultsWrap.style.display = 'block';
     try{
       const r = await fetch(BACKEND+'/api/rc-search?q='+encodeURIComponent(q));
       const j = await r.json();
       if(!j.success || !j.data.length){
         resultsList.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center;">No results found</div>';
-        resultsWrap.style.display='block';
         return;
       }
-      // Get already-monitored agents to mark them
       const monitored = await fetch(BACKEND+'/api/agents').then(r=>r.json()).catch(()=>({data:[]}));
       const monitoredExts = new Set((monitored.data||[]).map(a=>a.extension));
       searchResultsData = j.data;
-      label.textContent = j.data.length + ' results';
+      label.textContent = j.data.length + ' result(s) — select to add';
       resultsList.innerHTML = j.data.map((u,i) => {
         const isAdded = monitoredExts.has(u.extension);
         const isSelected = selectedAgents.has(u.extension);
-        const chkAttr = isAdded ? 'disabled checked' : (isSelected ? 'checked' : '');
-        const nameHtml = isAdded ? u.name+' <span style="color:var(--green);font-size:10px;font-weight:400">&#10003; Added</span>' : u.name;
-        const cursor = isAdded ? 'not-allowed' : 'pointer';
+        const chk = isAdded ? 'disabled checked' : (isSelected ? 'checked' : '');
         const opacity = isAdded ? 'opacity:0.5;' : '';
-        const emailPart = u.email ? ' &middot; '+u.email : '';
-        return '<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);'+opacity+'">' +
-          '<input type="checkbox" '+chkAttr+' onchange="toggleAgentCb(this)" style="cursor:'+cursor+';" data-ext="'+u.extension+'" data-name="'+u.name+'" data-email="'+(u.email||'')+'">' +
-          '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:'+(isAdded?'var(--text3)':'var(--text)')+'">'+nameHtml+'</div>' +
-          '<div style="font-size:10px;color:var(--text3);font-family:JetBrains Mono,monospace;margin-top:2px;">Ext: '+u.extension+emailPart+'</div></div>' +
-          '</div>';
+        const addedBadge = isAdded ? ' <span style="color:var(--green);font-size:10px;">&#10003; Already monitored</span>' : '';
+        return '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);'+opacity+'transition:background 0.15s;">'+
+          '<input type="checkbox" '+chk+' id="srcb-'+i+'" onchange="toggleAgentCb(this)" style="width:15px;height:15px;cursor:'+(isAdded?'not-allowed':'pointer')+';" data-ext="'+u.extension+'" data-name="'+u.name+'" data-email="'+(u.email||'')+'">'+
+          '<label for="srcb-'+i+'" style="flex:1;cursor:'+(isAdded?'not-allowed':'pointer')+';">'+
+          '<div style="font-size:12px;font-weight:600;color:'+(isAdded?'var(--text3)':'var(--text)')+'">'+u.name+addedBadge+'</div>'+
+          '<div style="font-size:10px;color:var(--text3);font-family:JetBrains Mono,monospace;margin-top:2px;">Ext: '+u.extension+(u.email?' &middot; '+u.email:'')+'</div>'+
+          '</label></div>';
       }).join('');
-      resultsWrap.style.display='block';
+      resultsWrap.style.display = 'block';
       updateAddBtn();
-    }catch(e){ resultsList.innerHTML='<div style="padding:14px;color:var(--red);font-size:12px;">Search error</div>'; }
-  }, 300);
+    }catch(e){
+      resultsList.innerHTML='<div style="padding:14px;color:var(--red);font-size:12px;">Search error: '+e.message+'</div>';
+    }
+  }, 400);
 }
 
 function toggleAgentCb(cb){
@@ -1000,12 +1002,10 @@ function toggleAgentCb(cb){
 }
 
 function toggleAllResults(checked){
-  const checkboxes = document.querySelectorAll('#searchResultsList input[type=checkbox]:not([disabled])');
-  checkboxes.forEach(cb => {
-    const ext = cb.dataset.ext;
-    if(checked) selectedAgents.add(ext);
-    else selectedAgents.delete(ext);
+  document.querySelectorAll('#searchResultsList input[type=checkbox]:not([disabled])').forEach(cb=>{
     cb.checked = checked;
+    if(checked) selectedAgents.add(cb.dataset.ext);
+    else selectedAgents.delete(cb.dataset.ext);
   });
   updateAddBtn();
 }
@@ -1018,37 +1018,44 @@ function selectAllSearchResults(){
 function updateAddBtn(){
   const btn = document.getElementById('addSelectedBtn');
   const cnt = document.getElementById('selectedCount');
+  if(!btn) return;
   if(selectedAgents.size > 0){
-    btn.style.display='inline-flex';
-    cnt.textContent = selectedAgents.size;
+    btn.style.display = 'inline-flex';
+    if(cnt) cnt.textContent = selectedAgents.size;
   } else {
-    btn.style.display='none';
+    btn.style.display = 'none';
   }
 }
 
 async function addSelectedAgents(){
-  if(!selectedAgents.size){ showToast('No agents selected','warning'); return; }
+  if(!selectedAgents.size){ showToast('Select at least one agent','warning'); return; }
   const toAdd = searchResultsData.filter(u => selectedAgents.has(u.extension));
   showToast('Adding '+toAdd.length+' agent(s)...','info');
   let added=0, failed=0;
   for(const agent of toAdd){
     try{
-      const res = await fetch(BACKEND+'/api/agents',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:agent.name,extension:agent.extension,email:agent.email||''})});
+      const res = await fetch(BACKEND+'/api/agents',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:agent.name, extension:agent.extension, email:agent.email||''})
+      });
       const json = await res.json();
       if(json.success) added++;
-      else failed++;
-    }catch(e){ failed++; }
+      else { console.error('Failed:', agent.name, json.error); failed++; }
+    }catch(e){ console.error('Error:', agent.name, e); failed++; }
   }
+  // Reset state
   selectedAgents.clear();
-  document.getElementById('agentSearchInput').value='';
-  document.getElementById('agentSearchResults').style.display='none';
-  document.getElementById('checkAllResults').checked=false;
+  document.getElementById('agentSearchInput').value = '';
+  document.getElementById('agentSearchResults').style.display = 'none';
+  const chkAll = document.getElementById('checkAllResults');
+  if(chkAll) chkAll.checked = false;
   updateAddBtn();
-  if(added>0) showToast(added+' agent(s) added successfully!','success');
-  if(failed>0) showToast(failed+' failed to add','error');
+  if(added > 0){ showToast(added+' agent(s) added!','success'); }
+  if(failed > 0){ showToast(failed+' failed to add','error'); }
   loadAgents();
-  // Trigger sync for new agents
-  setTimeout(()=>fetch(BACKEND+'/api/refresh',{method:'POST'}),500);
+  // Trigger RC sync for newly added agents
+  if(added > 0) setTimeout(()=>fetch(BACKEND+'/api/refresh',{method:'POST'}),1000);
 }
 
 async function loadAgents(){

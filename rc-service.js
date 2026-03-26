@@ -68,7 +68,7 @@ async function searchRCUsers(query) {
       allRecords = allRecords.concat(d.records || []);
       if (!d.navigation || !d.navigation.nextPage) break;
       page++;
-      await sleep(300);
+      await sleep(1200);
     }
     const q = query.toLowerCase();
     return allRecords
@@ -99,7 +99,7 @@ async function resolveAgentRcIds() {
         await updateAgentRcId(agent.extension, String(d.records[0].id));
         console.log(`✅ Resolved ${agent.name} → ${d.records[0].id}`);
       }
-      await sleep(400);
+      await sleep(1500);
     } catch(e) { console.error(`❌ Resolve ext ${agent.extension}:`, e.message); }
   }
 }
@@ -118,7 +118,7 @@ async function fetchPresenceForAll() {
         const d = await r.json();
         await insertPresenceEvent(agent.rc_id, agent.name,
           normalizeStatus(d.presenceStatus, d.telephonyStatus));
-        await sleep(300);
+        await sleep(1200);
       } catch(e) { console.error(`❌ Presence ${agent.name}:`, e.message); }
     }
     console.log('✅ Presence snapshot saved');
@@ -132,6 +132,7 @@ async function fetchCallLogs() {
     const today = new Date(); today.setHours(0,0,0,0);
     for (const agent of agents) {
       try {
+        await sleep(3000); // 3s between agents to avoid rate limit
         const r = await platform.get(
           `/restapi/v1.0/account/~/extension/${agent.rc_id}/call-log`,
           { dateFrom: today.toISOString(), perPage: 200, view: 'Detailed' }
@@ -147,7 +148,7 @@ async function fetchCallLogs() {
             startTime: call.startTime
           });
         }
-        await sleep(300);
+        console.log(`✅ ${agent.name}: ${(d.records||[]).length} calls today`);
       } catch(e) { console.error(`❌ Call log ${agent.name}:`, e.message); }
     }
     console.log('✅ Call logs synced');
@@ -178,7 +179,7 @@ async function fetchLiveCallStatus() {
           telephonyStatus: tel, isOnCall, direction, callDuration,
           presenceStatus: d.presenceStatus
         };
-        await sleep(200);
+        await sleep(1000);
       } catch(e) {}
     }
     return liveStatus;
