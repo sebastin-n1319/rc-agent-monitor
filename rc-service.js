@@ -82,6 +82,130 @@ function parseCallDetails(call) {
   return { ringDuration, holdDuration, transferred, isVoicemail };
 }
 
+function isAbandonedStyleResult(result) {
+  const normalized = String(result || '').toLowerCase();
+  return normalized === 'missed' || normalized === 'voicemail' || normalized === 'abandoned';
+}
+
+function isCustomerServiceLabel(value) {
+  const normalized = String(value || '').toLowerCase();
+  return normalized.includes('customer service') ||
+    normalized.includes('t1 cs') ||
+    normalized.includes('cs stars');
+}
+
+function buildAgentLookups(agents) {
+  const byId = {};
+  const byExt = {};
+  const byName = {};
+
+  for (const agent of agents) {
+    if (agent.rc_id) byId[String(agent.rc_id)] = agent;
+    if (agent.extension) byExt[String(agent.extension)] = agent;
+    if (agent.name) byName[String(agent.name).toLowerCase()] = agent;
+  }
+
+  return { byId, byExt, byName };
+}
+
+function resolveCallOwner(call, lookups) {
+  const { byId, byExt, byName } = lookups;
+  const idCandidates = [
+    call.extension && call.extension.id,
+    call.extensionId,
+    call.to && call.to.extensionId,
+    call.from && call.from.extensionId
+  ].filter(Boolean).map(v => String(v));
+
+  for (const leg of (call.legs || [])) {
+    if (leg.extension && leg.extension.id) idCandidates.push(String(leg.extension.id));
+  }
+
+  for (const candidate of idCandidates) {
+    if (byId[candidate]) return byId[candidate];
+  }
+
+  const extCandidates = [
+    call.extension && call.extension.extensionNumber,
+    call.extensionNumber,
+    call.to && call.to.extensionNumber,
+    call.from && call.from.extensionNumber
+  ].filter(Boolean).map(v => String(v));
+
+  for (const leg of (call.legs || [])) {
+    if (leg.extension && leg.extension.extensionNumber) extCandidates.push(String(leg.extension.extensionNumber));
+  }
+
+  for (const candidate of extCandidates) {
+    if (byExt[candidate]) return byExt[candidate];
+  }
+
+  const nameCandidates = [
+    call.extension && call.extension.name,
+    call.extensionName,
+    call.to && call.to.name,
+    call.from && call.from.name
+  ].filter(Boolean).map(v => String(v).toLowerCase());
+
+  for (const leg of (call.legs || [])) {
+    if (leg.extension && leg.extension.name) nameCandidates.push(String(leg.extension.name).toLowerCase());
+  }
+
+  for (const candidate of nameCandidates) {
+    if (byName[candidate]) return byName[candidate];
+  }
+
+  return null;
+}
+
+async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
+  const lookups = buildAgentLookups(agents);
+  const r = await platform.get('/restapi/v1.0/account/~/call-log', {
+    dateFrom: istMidnight.toISOString(),
+    perPage: 200,
+    view: 'Detailed',
+    direction: 'Inbound'
+  });
+  const d = await r.json();
+  let imported = 0;
+
+  for (const call of (d.records || [])) {
+    if (!isAbandonedStyleResult(call.result)) continue;
+
+    const owner = resolveCallOwner(call, lookups) || (
+      isCustomerServiceLabel(call.to && call.to.name) ||
+      isCustomerServiceLabel(call.from && call.from.name) ||
+      isCustomerServiceLabel(call.extension && call.extension.name) ||
+      isCustomerServiceLabel(call.extensionName)
+        ? {
+            rc_id: `queue:${customerServiceQueueId || 'customer-service'}`,
+            name: (call.to && call.to.name) || (call.extension && call.extension.name) || call.extensionName || 'Customer Service Queue'
+          }
+        : null
+    );
+
+    if (!owner) continue;
+
+    const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+    await insertCallLog({
+      agentId: owner.rc_id,
+      agentName: owner.name,
+      callId: call.id,
+      direction: call.direction,
+      result: call.result,
+      duration: call.duration || 0,
+      ringDuration: ringDuration || call.ringDuration || call.duration || 0,
+      holdDuration: holdDuration || call.holdDuration || 0,
+      transferred,
+      isVoicemail,
+      startTime: call.startTime
+    });
+    imported++;
+  }
+
+  console.log(`✅ Account call log abandon sync: ${imported} relevant inbound calls`);
+}
+
 function isRateLimitError(err, data) {
   const msg = `${err?.message || ''} ${data?.message || ''} ${data?.errorCode || ''}`.toLowerCase();
   return msg.includes('rate limit') || msg.includes('rate exceeded') || msg.includes('too many requests') || data?.errorCode === 'CMN-301';
@@ -517,6 +641,11 @@ async function fetchCallLogs() {
     // Use IST midnight as start of shift day
     const istMidnight = new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}) + 'T00:00:00+05:30');
     console.log(`📞 Fetching calls from IST midnight: ${istMidnight.toISOString()}`);
+    try {
+      await fetchAccountQueueAbandonCalls(istMidnight, agents);
+    } catch (e) {
+      console.error('❌ Account call log abandon sync:', e.message);
+    }
     for (const agent of agents) {
       try {
         await sleep(3000);

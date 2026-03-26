@@ -177,6 +177,38 @@ async function getAgentSummary(date){
   return results;
 }
 
+async function getAbandonedCalls(date){
+  const callStart = new Date(date + 'T00:00:00+05:30').toISOString();
+  const callEnd = new Date(new Date(date + 'T00:00:00+05:30').getTime() + 86400000).toISOString();
+  return all(
+    `SELECT
+      c.agent_id AS agentId,
+      COALESCE(c.agent_name, m.name, 'Customer Service Queue') AS agentName,
+      m.extension AS extension,
+      c.call_id AS callId,
+      c.result,
+      c.duration,
+      CASE
+        WHEN COALESCE(c.ring_duration, 0) > 0 THEN c.ring_duration
+        WHEN lower(COALESCE(c.result, '')) IN ('missed','voicemail','abandoned') THEN COALESCE(c.duration, 0)
+        ELSE COALESCE(c.ring_duration, 0)
+      END AS ringDuration,
+      c.hold_duration AS holdDuration,
+      c.start_time AS startTime
+    FROM call_logs c
+    LEFT JOIN monitored_agents m ON m.rc_id = c.agent_id
+    WHERE c.direction='Inbound'
+      AND (
+        lower(COALESCE(c.result, '')) IN ('missed','voicemail','abandoned')
+        OR c.is_voicemail = 1
+      )
+      AND c.start_time >= ?
+      AND c.start_time < ?
+    ORDER BY ringDuration DESC, c.start_time DESC`,
+    [callStart, callEnd]
+  );
+}
+
 // LOGIN LOGS
 function insertLoginLog(u,e,r,ip,loc,sys){return run(`INSERT INTO login_logs (username,email,role,ip,location,system_info) VALUES (?,?,?,?,?,?)`,[u,e,r,ip||null,loc||null,sys||null]);}
 function getLoginLogs(){return all(`SELECT * FROM login_logs ORDER BY logged_in_at DESC LIMIT 500`);}
@@ -190,7 +222,7 @@ async function getRoleForEmail(e){const row=await get(`SELECT role FROM app_role
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,getAgentSummary,
+  insertCallLog,getAgentSummary,getAbandonedCalls,
   insertLoginLog,getLoginLogs,
   getAllRoles,setRole,removeRole,getRoleForEmail
 };
