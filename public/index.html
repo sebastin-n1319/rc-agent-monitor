@@ -462,7 +462,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       </div>
       <div id="event-log"><div class="no-data">Loading...</div></div>
     </div>
-    <div class="refresh-info">Auto-refresh every 5s &nbsp;&middot;&nbsp; <span id="last-update">Never</span> &nbsp;&middot;&nbsp; <span id="tz-display">CST</span></div>
+    <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="last-update">Never</span> &nbsp;&middot;&nbsp; <span id="tz-display">CST</span></div>
   </div>
 
   <!-- REPORTS -->
@@ -576,7 +576,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     </table>
     </div>
   </div>
-  <div class="refresh-info">Auto-refresh every 5s &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
+  <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
 </div>
 
 <footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v">RC-MONITOR-v3.2</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
@@ -592,7 +592,7 @@ const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
 let currentTZ='CST',currentUser=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={};
-let acTimeout=null,liveTimers={};
+let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
 // PARTICLES & CONFETTI
 function initParticles(){
@@ -627,6 +627,18 @@ function showToast(msg,type='info',dur=3000){
   if(tm)tm.textContent=msg;
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+function scheduleRefresh(delay=150){
+  if(refreshDebounce)clearTimeout(refreshDebounce);
+  refreshDebounce=setTimeout(()=>{if(currentUser)refresh();},delay);
+}
+
+function setupLiveStream(){
+  if(liveStream)liveStream.close();
+  liveStream=new EventSource(BACKEND+'/api/live-stream');
+  liveStream.addEventListener('live-update',()=>scheduleRefresh(120));
+  liveStream.onerror=()=>{};
 }
 
 // AUTH
@@ -683,6 +695,7 @@ function startApp(username,role,picture){
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.style.display=role==='admin'?'inline-flex':'none';
   applyView(role);
+  setupLiveStream();
   refresh();
   setTimeout(firstLoadSync,2000);
 }
@@ -1307,7 +1320,7 @@ async function refresh(){
 // INIT
 updateClock();
 setInterval(updateClock,1000);
-setInterval(()=>{if(currentUser)refresh();},5000);
+setInterval(()=>{if(currentUser)refresh();},30000);
 initParticles();
 initConfetti();
 

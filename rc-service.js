@@ -1,4 +1,5 @@
 const RC = require('@ringcentral/sdk').SDK;
+const { EventEmitter } = require('events');
 const { insertPresenceEvent, insertCallLog, getMonitoredAgents, updateAgentRcId } = require('./database');
 require('dotenv').config();
 
@@ -11,6 +12,8 @@ const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 5000);
 const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
+const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
+const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
 
 let customerServiceQueueId = null;
 let lastQueueStatuses = {};
@@ -18,6 +21,11 @@ let lastQueueStatusAt = 0;
 let lastLiveStatusSnapshot = {};
 let lastLiveStatusAt = 0;
 let presenceSyncPromise = null;
+let subscriptionInfo = null;
+let subscriptionRenewTimer = null;
+
+const liveEvents = new EventEmitter();
+liveEvents.setMaxListeners(50);
 
 function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus) {
   const t = (telephonyStatus || '').toLowerCase();
@@ -132,6 +140,9 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
     direction,
     callDuration,
     presenceStatus: data.presenceStatus,
+    userStatus: data.userStatus || null,
+    dndStatus: data.dndStatus || null,
+    activeCalls: data.activeCalls || [],
     normalizedStatus,
     callStartTime,
     fetchedAt,
@@ -141,12 +152,119 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
   };
 }
 
+function resolveWebhookBaseUrl() {
+  const explicit = process.env.APP_BASE_URL || process.env.WEBHOOK_PUBLIC_URL;
+  if (explicit) return explicit.replace(/\/$/, '');
+  if (process.env.RAILWAY_PUBLIC_DOMAIN) return `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`;
+  return null;
+}
+
+function getWebhookAddress() {
+  const base = resolveWebhookBaseUrl();
+  return base ? `${base}/api/rc-webhook` : null;
+}
+
+function getSubscriptionFilters() {
+  if (!customerServiceQueueId) return ['/restapi/v1.0/account/~/presence'];
+  return [
+    '/restapi/v1.0/account/~/presence',
+    `/restapi/v1.0/account/~/call-queues/${customerServiceQueueId}/presence`
+  ];
+}
+
+function snapshotsEqual(a, b) {
+  if (!a || !b) return false;
+  return a.normalizedStatus === b.normalizedStatus &&
+    a.queueStatus === b.queueStatus &&
+    a.telephonyStatus === b.telephonyStatus &&
+    a.presenceStatus === b.presenceStatus &&
+    a.userStatus === b.userStatus &&
+    a.dndStatus === b.dndStatus &&
+    a.direction === b.direction &&
+    a.callStartTime === b.callStartTime;
+}
+
+async function getAgentMap() {
+  await resolveAgentRcIds();
+  const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+  const byId = {};
+  for (const agent of agents) byId[String(agent.rc_id)] = agent;
+  return byId;
+}
+
+function emitLiveUpdate(reason, agentId) {
+  liveEvents.emit('update', { reason, agentId, at: new Date().toISOString() });
+}
+
+async function upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, reason = 'sync') {
+  const nextEntry = buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo);
+  const prevEntry = lastLiveStatusSnapshot[agent.rc_id];
+  const changed = !prevEntry || !snapshotsEqual(prevEntry, nextEntry);
+
+  lastLiveStatusSnapshot[agent.rc_id] = nextEntry;
+  lastLiveStatusAt = Date.now();
+
+  if (changed) {
+    await insertPresenceEvent(agent.rc_id, agent.name, nextEntry.normalizedStatus, nextEntry.queueStatus);
+    emitLiveUpdate(reason, agent.rc_id);
+  }
+
+  return { changed, nextEntry, prevEntry };
+}
+
+async function renewSubscription(subscription) {
+  try {
+    const resp = await platform.put(`/restapi/v1.0/subscription/${subscription.id}`, {
+      eventFilters: subscription.eventFilters,
+      deliveryMode: subscription.deliveryMode,
+      expiresIn: 7 * 24 * 60 * 60
+    });
+    const data = await resp.json();
+    subscriptionInfo = data;
+    scheduleSubscriptionRenewal();
+    console.log(`🔄 Subscription renewed: ${data.id}`);
+  } catch (e) {
+    console.error('❌ renewSubscription:', e.message);
+  }
+}
+
+function scheduleSubscriptionRenewal() {
+  if (subscriptionRenewTimer) clearTimeout(subscriptionRenewTimer);
+  if (!subscriptionInfo || !subscriptionInfo.expirationTime) return;
+  const renewAt = new Date(subscriptionInfo.expirationTime).getTime() - SUBSCRIPTION_RENEW_BEFORE_MS;
+  const delay = Math.max(30000, renewAt - Date.now());
+  subscriptionRenewTimer = setTimeout(() => { void renewSubscription(subscriptionInfo); }, delay);
+}
+
+async function ensureRealtimeSubscription() {
+  const address = getWebhookAddress();
+  if (!address) {
+    console.warn('⚠️ Webhook base URL not configured; using fallback polling only');
+    return;
+  }
+  const eventFilters = getSubscriptionFilters();
+  try {
+    const resp = await platform.post('/restapi/v1.0/subscription', {
+      eventFilters,
+      deliveryMode: { transportType: 'WebHook', address },
+      expiresIn: 7 * 24 * 60 * 60
+    });
+    const data = await resp.json();
+    subscriptionInfo = data;
+    scheduleSubscriptionRenewal();
+    console.log(`✅ Realtime subscription ready: ${data.id}`);
+  } catch (e) {
+    console.error('❌ ensureRealtimeSubscription:', e.message);
+  }
+}
+
 async function authenticate() {
   try {
     await platform.login({ jwt: process.env.RC_JWT });
     console.log('✅ Authenticated with RingCentral');
     // Find Customer Service queue ID
     await findQueueId();
+    await ensureRealtimeSubscription();
   } catch(e) { console.error('❌ Auth failed:', e.message); }
 }
 
@@ -305,17 +423,11 @@ async function fetchPresenceForAll(force = false) {
         }
         const queueInfo = queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null;
         const status = deriveQueueAwareStatus(data, queueInfo);
-        const nextEntry = buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo);
         const prevEntry = snapshot[agent.rc_id];
-        const statusChanged = !prevEntry ||
-          prevEntry.normalizedStatus !== nextEntry.normalizedStatus ||
-          prevEntry.queueStatus !== nextEntry.queueStatus;
-
+        const { changed, nextEntry } = await upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, 'poll');
         snapshot[agent.rc_id] = nextEntry;
-
-        if (statusChanged) {
+        if (changed) {
           console.log(`✅ ${agent.name}: ${prevEntry ? prevEntry.normalizedStatus : '--'} → ${status} (${nextEntry.queueStatus})`);
-          await insertPresenceEvent(agent.rc_id, agent.name, status, nextEntry.queueStatus);
         }
       } catch(e) {
         console.error(`❌ Presence ${agent.name}:`, e.message);
@@ -386,4 +498,65 @@ async function fetchLiveCallStatus() {
   } catch(e) { return lastLiveStatusSnapshot || {}; }
 }
 
-module.exports = { authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus };
+async function handleWebhookNotification(payload) {
+  try {
+    const agentMap = await getAgentMap();
+    const event = payload.event || '';
+    const body = payload.body || {};
+    const fetchedAt = payload.timestamp || new Date().toISOString();
+
+    if (event.includes('/call-queues/') && Array.isArray(body.records)) {
+      for (const rec of body.records) {
+        const agentId = String(rec.member && rec.member.id || '');
+        if (!agentId || !agentMap[agentId]) continue;
+        lastQueueStatuses[agentId] = {
+          ...(lastQueueStatuses[agentId] || {}),
+          acceptQueueCalls: rec.acceptQueueCalls !== false,
+          acceptCurrentQueueCalls: rec.acceptCurrentQueueCalls !== false
+        };
+        lastQueueStatusAt = Date.now();
+        const existing = lastLiveStatusSnapshot[agentId];
+        if (!existing) continue;
+        const agent = agentMap[agentId];
+        await upsertSnapshotEntry(agent, existing, lastQueueStatuses[agentId], fetchedAt, 'queue-webhook');
+      }
+      return;
+    }
+
+    const accountPresence = body.extensionId || body.presenceStatus || body.telephonyStatus;
+    if (event.includes('/account/~/presence') || accountPresence) {
+      const agentId = String(body.extensionId || body.id || '');
+      if (!agentId || !agentMap[agentId]) return;
+      const agent = agentMap[agentId];
+      const queueInfo = lastQueueStatuses[agentId] || null;
+      const existing = lastLiveStatusSnapshot[agentId] || {};
+      const merged = {
+        ...existing,
+        ...body,
+        presenceStatus: body.presenceStatus ?? existing.presenceStatus,
+        telephonyStatus: body.telephonyStatus ?? existing.telephonyStatus,
+        userStatus: body.userStatus ?? existing.userStatus,
+        dndStatus: body.dndStatus ?? existing.dndStatus,
+        activeCalls: body.activeCalls ?? existing.activeCalls ?? []
+      };
+      await upsertSnapshotEntry(agent, merged, queueInfo, fetchedAt, 'presence-webhook');
+    }
+  } catch (e) {
+    console.error('❌ handleWebhookNotification:', e.message);
+  }
+}
+
+function getFallbackSyncMs() {
+  return FALLBACK_SYNC_MS;
+}
+
+module.exports = {
+  authenticate,
+  fetchPresenceForAll,
+  fetchCallLogs,
+  searchRCUsers,
+  fetchLiveCallStatus,
+  handleWebhookNotification,
+  liveEvents,
+  getFallbackSyncMs
+};

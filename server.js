@@ -8,15 +8,26 @@ const {
   getPresenceEvents, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, removeRole, getRoleForEmail
 } = require('./database');
-const { authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus } = require('./rc-service');
-const REALTIME_SYNC_MS = Number(process.env.REALTIME_SYNC_MS || 5000);
+const {
+  authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus,
+  handleWebhookNotification, liveEvents, getFallbackSyncMs
+} = require('./rc-service');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+const sseClients = new Set();
+
+function broadcastLiveEvent(payload) {
+  const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
+  for (const res of sseClients) res.write(msg);
+}
+
 initDB().then(() => console.log('DB ready'));
+
+liveEvents.on('update', payload => broadcastLiveEvent(payload));
 
 app.get('/api/summary', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
@@ -59,6 +70,28 @@ app.get('/api/rc-search', async (req, res) => {
 app.get('/api/live-status', async (req, res) => {
   try { res.json({ success: true, data: await fetchLiveCallStatus() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/live-stream', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache, no-transform',
+    Connection: 'keep-alive'
+  });
+  res.write(`event: ready\ndata: ${JSON.stringify({ at: new Date().toISOString() })}\n\n`);
+  sseClients.add(res);
+  req.on('close', () => sseClients.delete(res));
+});
+
+app.post('/api/rc-webhook', async (req, res) => {
+  const validationToken = req.get('Validation-Token');
+  if (validationToken) {
+    res.set('Validation-Token', validationToken);
+    return res.status(200).end();
+  }
+
+  res.status(200).json({ ok: true });
+  void handleWebhookNotification(req.body);
 });
 
 app.post('/api/refresh', async (req, res) => {
@@ -117,20 +150,22 @@ app.get('/api/role-check', async (req, res) => {
 });
 
 async function startScheduler() {
-  setInterval(() => { void fetchPresenceForAll(); }, REALTIME_SYNC_MS);
+  setInterval(() => { void fetchPresenceForAll(); }, getFallbackSyncMs());
   cron.schedule('*/15 * * * *', async () => { await fetchCallLogs(); });
-  console.log(`✅ Scheduler started (live sync every ${REALTIME_SYNC_MS}ms)`);
+  console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
 async function start() {
-  try {
-    await authenticate();
-    await fetchPresenceForAll();
-    await fetchCallLogs();
-    await startScheduler();
-    const PORT = process.env.PORT || 8080;
-    app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
-  } catch(e) { console.error('❌ Startup error:', e.message); }
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, async () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+    try {
+      await authenticate();
+      await fetchPresenceForAll();
+      await fetchCallLogs();
+      await startScheduler();
+    } catch(e) { console.error('❌ Startup error:', e.message); }
+  });
 }
 
 start();
