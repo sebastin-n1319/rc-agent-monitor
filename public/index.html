@@ -743,7 +743,7 @@ function fmtTimer(s){s=Math.round(s||0);return String(Math.floor(s/60)).padStart
 function queuePillCls(qs){
   if(!qs||qs==='Unknown')return'p-unknown';
   if(qs==='In Queue')return'p-inqueue';
-  if(qs==='Out of Queue')return'p-outqueue';
+  if(qs==='Out of Queue'||qs==='This Queue Off'||qs==='All Queues Off')return'p-outqueue';
   return'p-unknown';
 }
 function pillCls(st){

@@ -21,13 +21,18 @@ let presenceSyncPromise = null;
 
 function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus) {
   const t = (telephonyStatus || '').toLowerCase();
-  const p = (presenceStatus || '').toLowerCase();
-  const u = (userStatus || '').toLowerCase();
-  const d = (dndStatus || '').toLowerCase();
 
   // 1. Active call state takes highest priority
   if (t === 'callconnected' || t === 'oncall' || t === 'talking') return 'On Call';
   if (t === 'ringing') return 'Ringing';
+
+  return normalizePresenceOnly(presenceStatus, userStatus, dndStatus);
+}
+
+function normalizePresenceOnly(presenceStatus, userStatus, dndStatus) {
+  const p = (presenceStatus || '').toLowerCase();
+  const u = (userStatus || '').toLowerCase();
+  const d = (dndStatus || '').toLowerCase();
 
   // 2. DND always = Unavailable
   if (d === 'donotdisturb') return 'Unavailable';
@@ -73,12 +78,44 @@ function isRateLimitError(err, data) {
 }
 
 function buildLiveStatusEntry(agent, data, fetchedAt) {
+  return buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, null);
+}
+
+function deriveQueueStatus(queueInfo) {
+  if (!queueInfo) return 'Unknown';
+  if (queueInfo.acceptQueueCalls === false) return 'All Queues Off';
+  if (queueInfo.acceptCurrentQueueCalls === false) return 'This Queue Off';
+  return 'In Queue';
+}
+
+function deriveQueueAwareStatus(data, queueInfo) {
+  const tel = data.telephonyStatus;
+  const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
+  const activeCall = data.activeCalls && data.activeCalls.length > 0 ? data.activeCalls[0] : null;
+  const direction = (activeCall && activeCall.direction || '').toLowerCase();
+  const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
+
+  if (!queueInfo) {
+    return normalizeStatus(data.presenceStatus, data.telephonyStatus, data.userStatus, data.dndStatus);
+  }
+
+  if (direction === 'inbound') {
+    if (tel === 'Ringing') return 'Ringing';
+    if (isOnCall) return 'On Call';
+  }
+
+  if (queueInfo.acceptQueueCalls === false || queueInfo.acceptCurrentQueueCalls === false) {
+    return 'Unavailable';
+  }
+
+  return basePresence;
+}
+
+function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
   const tel = data.telephonyStatus;
   const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
   let direction = null, callDuration = 0, callStartTime = null;
-  const normalizedStatus = normalizeStatus(
-    data.presenceStatus, data.telephonyStatus, data.userStatus, data.dndStatus
-  );
+  const normalizedStatus = deriveQueueAwareStatus(data, queueInfo);
   if (isOnCall && data.activeCalls && data.activeCalls.length > 0) {
     const ac = data.activeCalls[0];
     direction = ac.direction;
@@ -95,7 +132,10 @@ function buildLiveStatusEntry(agent, data, fetchedAt) {
     presenceStatus: data.presenceStatus,
     normalizedStatus,
     callStartTime,
-    fetchedAt
+    fetchedAt,
+    queueStatus: deriveQueueStatus(queueInfo),
+    acceptQueueCalls: queueInfo ? queueInfo.acceptQueueCalls : null,
+    acceptCurrentQueueCalls: queueInfo ? queueInfo.acceptCurrentQueueCalls : null
   };
 }
 
@@ -152,7 +192,10 @@ async function fetchQueueStatuses() {
     const statusMap = {};
     for (const rec of (data.records || [])) {
       if (rec.member && rec.member.id) {
-        statusMap[String(rec.member.id)] = rec.acceptCurrentQueueCalls ? 'In Queue' : 'Out of Queue';
+        statusMap[String(rec.member.id)] = {
+          acceptQueueCalls: rec.acceptQueueCalls !== false,
+          acceptCurrentQueueCalls: rec.acceptCurrentQueueCalls !== false
+        };
       }
     }
     lastQueueStatuses = statusMap;
@@ -258,13 +301,10 @@ async function fetchPresenceForAll(force = false) {
             console.error(`❌ ${agent.name}: ${data.errorCode} - ${data.message}`);
             continue;
           }
-          const status = normalizeStatus(
-            data.presenceStatus, data.telephonyStatus,
-            data.userStatus, data.dndStatus
-          );
+          const queueInfo = queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null;
+          const status = deriveQueueAwareStatus(data, queueInfo);
           snapshot[agent.rc_id] = {
-            ...buildLiveStatusEntry(agent, data, fetchedAt),
-            queueStatus: queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || 'Unknown'
+            ...buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo)
           };
           console.log(`✅ ${agent.name}: presence=${data.presenceStatus} → ${status}`);
           await insertPresenceEvent(agent.rc_id, agent.name, status);
