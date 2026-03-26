@@ -972,7 +972,7 @@ async function loadAgentStatuses(){
       if(!t.interval){t.interval=setInterval(()=>{const el=document.getElementById(t.el);if(el)el.textContent=fmtTimer(Math.floor((Date.now()-t.start)/1000));else{clearInterval(t.interval);delete liveTimers[rcId];}},1000);}
     });
 
-    if(currentRole==='agent'){
+    if(currentViewMode==='agent'){
       const agentRows=agents.map((a,idx)=>{
         const sum=todaySummary[a.rc_id]||{};
         const { evts, live, status, sinceTs } = deriveStatusInfo(a.rc_id, 'Unknown');
