@@ -725,11 +725,8 @@ function toTime(iso){if(!iso)return'--';return new Date(iso).toLocaleTimeString(
 function toDateTime(iso){if(!iso)return'--';return new Date(iso).toLocaleString('en-US',{timeZone:TZ[currentTZ],month:'2-digit',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
 function nowTZ(){return new Date().toLocaleTimeString('en-US',{timeZone:TZ[currentTZ],hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
 function todayStr(){
-  // Return UTC date to match how DB stores timestamps
-  return new Date().toISOString().split('T')[0];
-}
-function todayDisplayStr(){
-  // For display purposes only - shows CST date
+  // Return CST date - matches agent shift day
+  // DB now queries by CST date range (midnight CST to midnight CST)
   return new Date().toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
 }
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
