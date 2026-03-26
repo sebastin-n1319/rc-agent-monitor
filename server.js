@@ -39,8 +39,6 @@ app.post('/api/agents', async (req, res) => {
   if (!name || !extension) return res.status(400).json({ success: false, error: 'Name and extension required' });
   try {
     await addAgent(name.trim(), extension.trim(), email ? email.trim() : null);
-    await fetchPresenceForAll();
-    await fetchCallLogs();
     res.json({ success: true, message: `${name} added` });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -70,11 +68,19 @@ app.post('/api/refresh', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Login log - also auto-registers user in access list
 app.post('/api/login-log', async (req, res) => {
   const { username, email, role, ip, location, systemInfo } = req.body;
   const realIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || ip;
-  try { await insertLoginLog(username, email, role, realIp, location, systemInfo); res.json({ success: true }); }
-  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  try {
+    await insertLoginLog(username, email, role, realIp, location, systemInfo);
+    // Auto-add to roles if not already there (preserves existing role)
+    const existingRole = await getRoleForEmail(email);
+    if (!existingRole) {
+      await setRole(email, 'agent', 'auto');
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/login-logs', async (req, res) => {

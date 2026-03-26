@@ -10,11 +10,20 @@ const rcsdk = new RC({
 const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-function normalizeStatus(presenceStatus, telephonyStatus) {
+function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus) {
   const t = (telephonyStatus || '').toLowerCase();
   const p = (presenceStatus || '').toLowerCase();
-  if (t === 'callconnected' || t === 'talking') return 'On Call';
+  const u = (userStatus || '').toLowerCase();
+  const d = (dndStatus || '').toLowerCase();
+  // Call state takes priority
+  if (t === 'callconnected' || t === 'oncall' || t === 'talking') return 'On Call';
   if (t === 'ringing') return 'Ringing';
+  // DND = Unavailable
+  if (d === 'donotdisturb') return 'Unavailable';
+  // User status (most reliable for available/unavailable)
+  if (u === 'available') return 'Available';
+  if (u === 'busy' || u === 'unavailable' || u === 'away') return 'Unavailable';
+  // Presence status fallback
   if (p === 'available') return 'Available';
   if (p === 'busy' || p === 'unavailable' || p === 'dnd') return 'Unavailable';
   if (p === 'offline') return 'Offline';

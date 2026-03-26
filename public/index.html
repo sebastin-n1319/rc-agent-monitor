@@ -389,6 +389,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       <span id="userLabel">--</span>
       <span id="userRoleTag" class="role-pill role-admin">ADMIN</span>
     </div>
+    <button class="btn btn-sm" id="viewToggleBtn" onclick="toggleView()" style="display:none;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text2);font-size:11px;border-radius:8px;padding:5px 11px;">Switch to Agent View</button>
     <button class="logout-btn" onclick="doLogout()">Logout</button>
   </div>
 </header>
@@ -662,8 +663,10 @@ function parseJwt(token){
   return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')));
 }
 
+let currentViewMode = 'admin'; // 'admin' or 'agent'
+
 function startApp(username,role,picture){
-  currentUser=username;currentRole=role;
+  currentUser=username;currentRole=role;currentViewMode=role;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('mainApp').style.display='block';
   document.getElementById('userLabel').textContent=username.split(' ')[0];
@@ -671,10 +674,27 @@ function startApp(username,role,picture){
   document.getElementById('userRoleTag').textContent=role.toUpperCase();
   document.getElementById('userRoleTag').className='role-pill '+(role==='admin'?'role-admin':'role-agent');
   if(picture){const av=document.getElementById('userAvatar');av.src=picture;av.style.display='block';}
-  document.getElementById('adminView').style.display=role==='agent'?'none':'block';
-  document.getElementById('agentView').style.display=role==='agent'?'block':'none';
+  // Show toggle button only for admins
+  const toggleBtn=document.getElementById('viewToggleBtn');
+  if(toggleBtn)toggleBtn.style.display=role==='admin'?'inline-flex':'none';
+  applyView(role);
   refresh();
   setTimeout(firstLoadSync,2000);
+}
+
+function applyView(view){
+  currentViewMode=view;
+  const isAdmin=view==='admin';
+  document.getElementById('adminView').style.display=isAdmin?'block':'none';
+  document.getElementById('agentView').style.display=isAdmin?'none':'block';
+  const toggleBtn=document.getElementById('viewToggleBtn');
+  if(toggleBtn)toggleBtn.textContent=isAdmin?'Switch to Agent View':'Switch to Admin View';
+}
+
+function toggleView(){
+  if(currentRole!=='admin')return;
+  applyView(currentViewMode==='admin'?'agent':'admin');
+  refresh();
 }
 
 function doLogout(){
@@ -706,7 +726,16 @@ function todayStr(){return new Date().toLocaleDateString('en-CA',{timeZone:'Amer
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
 function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
 function fmtTimer(s){s=Math.round(s||0);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
-function pillCls(st){if(!st)return'p-unknown';const s=st.toLowerCase();if(s==='available')return'p-avail';if(s==='unavailable'||s==='busy')return'p-unavail';if(s==='on call'||s==='talking'||s==='oncall'||s==='callconnected')return'p-oncall';if(s==='ringing')return'p-ringing';return'p-unknown';}
+function pillCls(st){
+  if(!st)return'p-unknown';
+  const s=st.toLowerCase();
+  if(s==='available')return'p-avail';
+  if(s==='unavailable'||s==='busy'||s==='dnd'||s==='away')return'p-unavail';
+  if(s==='on call'||s==='talking'||s==='oncall'||s==='callconnected')return'p-oncall';
+  if(s==='ringing')return'p-ringing';
+  if(s==='offline')return'p-unknown';
+  return'p-unknown';
+}
 function calcScore(avail,unavail,inC,outC,missed,toggles){
   const t=avail+unavail;if(!t)return{v:0,c:'s-low'};
   const calls=inC+outC;
@@ -922,12 +951,13 @@ async function loadEventLog(){
 let searchResultsData = [];
 let selectedAgents = new Set();
 
+let panelTimeout=null;
 async function searchAgentsPanel(q){
   const resultsWrap = document.getElementById('agentSearchResults');
   const resultsList = document.getElementById('searchResultsList');
   const label = document.getElementById('searchResultsLabel');
   if(q.length < 2){ resultsWrap.style.display='none'; return; }
-  clearTimeout(acTimeout);
+  clearTimeout(panelTimeout);
   acTimeout = setTimeout(async()=>{
     try{
       const r = await fetch(BACKEND+'/api/rc-search?q='+encodeURIComponent(q));
