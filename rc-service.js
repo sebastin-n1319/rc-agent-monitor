@@ -91,6 +91,22 @@ function buildLiveStatusEntry(agent, data, fetchedAt) {
   return buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, null);
 }
 
+function mergeQueueInfoWithPresence(queueInfo, data) {
+  const merged = queueInfo ? { ...queueInfo } : {};
+  const d = (data?.dndStatus || '').toLowerCase();
+
+  // RingCentral maps acceptQueueCalls to DnD status:
+  // - TakeAllCalls => queue calls allowed
+  // - DoNotAcceptDepartmentCalls / DoNotAcceptAnyCalls => queue calls blocked
+  if (d === 'takeallcalls') {
+    merged.acceptQueueCalls = true;
+  } else if (d === 'donotacceptdepartmentcalls' || d === 'donotacceptanycalls') {
+    merged.acceptQueueCalls = false;
+  }
+
+  return Object.keys(merged).length ? merged : null;
+}
+
 function deriveQueueStatus(queueInfo) {
   if (!queueInfo) return 'Unknown';
   if (queueInfo.acceptQueueCalls === false) return 'All Queues Off';
@@ -103,25 +119,29 @@ function deriveQueueAwareStatus(data, queueInfo) {
 }
 
 function deriveDisplayStatus(data, queueInfo) {
+  const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = data.telephonyStatus;
   const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
   const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
 
-  if (!queueInfo) {
+  if (!resolvedQueueInfo) {
     return normalizeStatus(data.presenceStatus, data.telephonyStatus, data.userStatus, data.dndStatus);
   }
 
   if (tel === 'Ringing') return 'Ringing';
   if (isOnCall) return 'On Call';
-  if (queueInfo.acceptQueueCalls === false || queueInfo.acceptCurrentQueueCalls === false) return 'Unavailable';
+  if (resolvedQueueInfo.acceptQueueCalls === false || resolvedQueueInfo.acceptCurrentQueueCalls === false) return 'Unavailable';
   if (basePresence === 'Available') return 'Available';
   return 'Unavailable';
 }
 
 function deriveQueueReadyStatus(data, queueInfo) {
+  const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = (data.telephonyStatus || '').toLowerCase();
   const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
-  const canTakeQueueCalls = queueInfo && queueInfo.acceptQueueCalls !== false && queueInfo.acceptCurrentQueueCalls !== false;
+  const canTakeQueueCalls = resolvedQueueInfo &&
+    resolvedQueueInfo.acceptQueueCalls !== false &&
+    resolvedQueueInfo.acceptCurrentQueueCalls !== false;
 
   if (!canTakeQueueCalls) return 'Unavailable';
   if (basePresence !== 'Available') return 'Unavailable';
@@ -130,11 +150,12 @@ function deriveQueueReadyStatus(data, queueInfo) {
 }
 
 function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
+  const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = data.telephonyStatus;
   const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
   let direction = null, callDuration = 0, callStartTime = null;
-  const displayStatus = deriveDisplayStatus(data, queueInfo);
-  const queueReadyStatus = deriveQueueReadyStatus(data, queueInfo);
+  const displayStatus = deriveDisplayStatus(data, resolvedQueueInfo);
+  const queueReadyStatus = deriveQueueReadyStatus(data, resolvedQueueInfo);
   if (isOnCall && data.activeCalls && data.activeCalls.length > 0) {
     const ac = data.activeCalls[0];
     direction = ac.direction;
@@ -157,9 +178,9 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
     activeCalls: data.activeCalls || [],
     callStartTime,
     fetchedAt,
-    queueStatus: deriveQueueStatus(queueInfo),
-    acceptQueueCalls: queueInfo ? queueInfo.acceptQueueCalls : null,
-    acceptCurrentQueueCalls: queueInfo ? queueInfo.acceptCurrentQueueCalls : null
+    queueStatus: deriveQueueStatus(resolvedQueueInfo),
+    acceptQueueCalls: resolvedQueueInfo ? resolvedQueueInfo.acceptQueueCalls : null,
+    acceptCurrentQueueCalls: resolvedQueueInfo ? resolvedQueueInfo.acceptCurrentQueueCalls : null
   };
 }
 
@@ -454,7 +475,11 @@ async function fetchPresenceForAll(force = false) {
           console.warn(`⚠️ Presence missing for ${agent.name} (${agent.rc_id})`);
           continue;
         }
-        const queueInfo = queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null;
+        const queueInfo = mergeQueueInfoWithPresence(
+          queueStatuses[agent.rc_id] || lastQueueStatuses[agent.rc_id] || null,
+          data
+        );
+        if (queueInfo) lastQueueStatuses[agent.rc_id] = queueInfo;
         const status = deriveDisplayStatus(data, queueInfo);
         const prevEntry = snapshot[agent.rc_id];
         const { changed, nextEntry } = await upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, 'poll');
@@ -563,7 +588,6 @@ async function handleWebhookNotification(payload) {
       const agentId = String(body.extensionId || body.id || '');
       if (!agentId || !agentMap[agentId]) return;
       const agent = agentMap[agentId];
-      const queueInfo = lastQueueStatuses[agentId] || null;
       const existing = lastLiveStatusSnapshot[agentId] || {};
       const merged = {
         ...existing,
@@ -574,6 +598,11 @@ async function handleWebhookNotification(payload) {
         dndStatus: body.dndStatus ?? existing.dndStatus,
         activeCalls: body.activeCalls ?? existing.activeCalls ?? []
       };
+      const queueInfo = mergeQueueInfoWithPresence(lastQueueStatuses[agentId] || null, merged);
+      if (queueInfo) {
+        lastQueueStatuses[agentId] = queueInfo;
+        lastQueueStatusAt = Date.now();
+      }
       await upsertSnapshotEntry(agent, merged, queueInfo, fetchedAt, 'presence-webhook');
     }
   } catch (e) {
