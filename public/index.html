@@ -729,6 +729,11 @@ function todayStr(){
   // DB queries by IST date range (midnight IST to midnight IST)
   return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
 }
+function shiftDate(dateStr, days){
+  const dt = new Date(dateStr+'T00:00:00+05:30');
+  dt.setUTCDate(dt.getUTCDate()+days);
+  return dt.toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
+}
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
 function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
 function fmtTimer(s){s=Math.round(s||0);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
@@ -753,6 +758,45 @@ function calcScore(avail,unavail,inC,outC,missed,toggles){
   const calls=inC+outC;
   const v=Math.round((avail/t)*60+(calls>0?(1-missed/calls)*25:25)+(1-Math.min(1,toggles/20))*15);
   return{v,c:v>=75?'s-high':v>=50?'s-mid':'s-low'};
+}
+
+function normalizeLiveStatus(live, fallbackStatus){
+  if(!live) return fallbackStatus||'Unknown';
+  const tel=(live.telephonyStatus||'').toLowerCase();
+  const pres=(live.presenceStatus||'').toLowerCase();
+
+  if(tel==='callconnected' || tel==='oncall' || tel==='talking') return 'On Call';
+  if(tel==='ringing') return 'Ringing';
+
+  if(pres==='available') return 'Available';
+  if(pres==='busy' || pres==='unavailable' || pres==='dnd' || pres==='away') return 'Unavailable';
+  if(pres==='offline') return 'Offline';
+
+  return fallbackStatus||'Unknown';
+}
+
+function deriveStatusInfo(agentId, fallbackStatus){
+  const evts=timelineData[agentId]||[];
+  const lastEvent=evts[evts.length-1];
+  const live=liveCallData[agentId]||{};
+  const status=normalizeLiveStatus(live, live.normalizedStatus||lastEvent?.status||fallbackStatus);
+  let sinceTs=null;
+
+  if(status==='On Call' || status==='Ringing') sinceTs=live.callStartTime||null;
+
+  if(!sinceTs){
+    for(let ei=evts.length-1;ei>=0;ei--){
+      if(evts[ei].status===status && (ei===0 || evts[ei-1].status!==evts[ei].status)){
+        sinceTs=evts[ei].timestamp;
+        break;
+      }
+    }
+  }
+
+  if(!sinceTs && lastEvent && lastEvent.status===status) sinceTs=lastEvent.timestamp;
+  if(!sinceTs && live.fetchedAt) sinceTs=live.fetchedAt;
+
+  return { evts, lastEvent, live, status, sinceTs };
 }
 
 // TIMELINE
@@ -806,8 +850,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('#tab-agents')){}});
 // DATA
 async function loadTodaySummary(){
   const today=todayStr();
-  const ydDate=new Date();ydDate.setDate(ydDate.getDate()-1);
-  const yesterday=ydDate.toLocaleDateString('en-CA',{timeZone:'America/Chicago'});
+  const yesterday=shiftDate(today,-1);
   try{
     const[sr,tr,lr,yr]=await Promise.all([
       fetch(BACKEND+'/api/summary?date='+today),
@@ -835,18 +878,7 @@ async function loadAgentStatuses(){
 
     const rows=agents.map((a,idx)=>{
       const sum=todaySummary[a.rc_id]||{};
-      const evts=timelineData[a.rc_id]||[];
-      const lastEvent=evts[evts.length-1];
-      const status=lastEvent?lastEvent.status:(a.rc_id?'Offline':'Unknown');
-      // Find last STATUS CHANGE (not last polled event)
-      let sinceTs=null;
-      for(let ei=evts.length-1;ei>=0;ei--){
-        if(ei===0||(evts[ei].status!==evts[ei-1].status)){
-          sinceTs=evts[ei].timestamp;
-          break;
-        }
-      }
-      if(!sinceTs&&lastEvent)sinceTs=lastEvent.timestamp;
+      const { evts, live, status, sinceTs } = deriveStatusInfo(a.rc_id, a.rc_id?'Offline':'Unknown');
       const ss=sinceTs?Math.floor((now-new Date(sinceTs).getTime())/1000):0;
       const sl=(status||'').toLowerCase();
       if(sl==='available')totAvail++;
@@ -857,7 +889,6 @@ async function loadAgentStatuses(){
       totIn+=inC;totOut+=outC;totMissed+=missed;
       if(inC>0){ahtInSum+=ahtIn*inC;ahtInCnt+=inC;}
       if(outC>0){ahtOutSum+=ahtOut*outC;ahtOutCnt+=outC;}
-      const live=liveCallData[a.rc_id]||{};
       const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;
       const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
       const tl=buildTL(a.rc_id,today);
@@ -874,6 +905,7 @@ async function loadAgentStatuses(){
       return'<tr><td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
         '<td><div class="agent-name">'+a.name+'</div><div class="agent-ext">'+a.extension+'</div></td>'+
         '<td>'+liveBadge+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td>'+
+        '<td><span class="pill '+queuePillCls(live.queueStatus)+'"><span class="dot"></span>'+(live.queueStatus||'Unknown')+'</span></td>'+
         '<td class="mono">'+toTime(sinceTs)+'</td>'+
         '<td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td>'+
         '<td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td>'+
@@ -924,15 +956,7 @@ async function loadAgentStatuses(){
     if(currentRole==='agent'){
       const agentRows=agents.map((a,idx)=>{
         const sum=todaySummary[a.rc_id]||{};
-        const evts=timelineData[a.rc_id]||[];
-        const lastEvent=evts[evts.length-1];
-        const status=lastEvent?lastEvent.status:'Unknown';
-        let sinceTs=null;
-        for(let ei=evts.length-1;ei>=0;ei--){
-          if(ei===0||(evts[ei].status!==evts[ei-1].status)){sinceTs=evts[ei].timestamp;break;}
-        }
-        if(!sinceTs&&lastEvent)sinceTs=lastEvent.timestamp;
-        const live=liveCallData[a.rc_id]||{};
+        const { evts, live, status, sinceTs } = deriveStatusInfo(a.rc_id, 'Unknown');
         const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
         const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;
         const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
