@@ -86,9 +86,18 @@ function parseCallDetails(call) {
   return { ringDuration, holdDuration, transferred, isVoicemail };
 }
 
+function normalizeCallResult(result) {
+  return String(result || '').trim().toLowerCase();
+}
+
+function isVoicemailResult(result) {
+  const normalized = normalizeCallResult(result);
+  return normalized.includes('voicemail');
+}
+
 function isAbandonedStyleResult(result) {
-  const normalized = String(result || '').toLowerCase();
-  return normalized === 'missed' || normalized === 'voicemail' || normalized === 'abandoned';
+  const normalized = normalizeCallResult(result);
+  return normalized === 'missed' || normalized === 'abandoned';
 }
 
 function isCustomerServiceLabel(value) {
@@ -251,6 +260,7 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
     if (!owner) continue;
 
     const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+    const voicemailResult = isVoicemail || isVoicemailResult(call.result);
     await insertCallLog({
       agentId: owner.rc_id,
       agentName: owner.name,
@@ -261,7 +271,7 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
       ringDuration: ringDuration || call.ringDuration || call.duration || 0,
       holdDuration: holdDuration || call.holdDuration || 0,
       transferred,
-      isVoicemail,
+      isVoicemail: voicemailResult,
       startTime: call.startTime
     });
     imported++;
@@ -332,7 +342,9 @@ async function fetchQueueDashboardSummary(dateStr, force = false) {
     if (!relevantInbound && !relevantOutbound) continue;
 
     const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
-    const result = String(call.result || '').toLowerCase();
+    const result = normalizeCallResult(call.result);
+    const voicemailResult = isVoicemail || isVoicemailResult(call.result);
+    const abandonedResult = isAbandonedStyleResult(call.result);
     const effectiveRing = ringDuration || call.ringDuration || call.duration || 0;
     const effectiveHold = holdDuration || call.holdDuration || 0;
 
@@ -351,12 +363,12 @@ async function fetchQueueDashboardSummary(dateStr, force = false) {
 
     if (relevantInbound) {
       summary.inboundCount++;
-      if (!isVoicemail && result !== 'missed' && result !== 'abandoned' && result !== 'voicemail' && (call.duration || 0) > 0) {
+      if (!voicemailResult && !abandonedResult && (call.duration || 0) > 0) {
         inboundTalkTotal += call.duration || 0;
         inboundTalkCount++;
       }
-      if (isVoicemail || result.includes('voicemail')) summary.voicemailCount++;
-      if (!isVoicemail && (result === 'missed' || result === 'abandoned')) {
+      if (voicemailResult) summary.voicemailCount++;
+      if (!voicemailResult && abandonedResult) {
         summary.abandonedCount++;
         summary.abandonedCalls.push({
           agentId: owner ? owner.rc_id : `queue:${customerServiceQueueId || 'customer-service'}`,
