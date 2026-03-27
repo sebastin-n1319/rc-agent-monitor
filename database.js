@@ -211,7 +211,7 @@ async function getAbandonedCalls(date){
       c.duration,
       CASE
         WHEN COALESCE(c.ring_duration, 0) > 0 THEN c.ring_duration
-        WHEN lower(COALESCE(c.result, '')) IN ('missed','voicemail','abandoned') THEN COALESCE(c.duration, 0)
+        WHEN lower(COALESCE(c.result, '')) IN ('missed','abandoned') THEN COALESCE(c.duration, 0)
         ELSE COALESCE(c.ring_duration, 0)
       END AS ringDuration,
       c.hold_duration AS holdDuration,
@@ -219,10 +219,7 @@ async function getAbandonedCalls(date){
     FROM call_logs c
     LEFT JOIN monitored_agents m ON m.rc_id = c.agent_id
     WHERE c.direction='Inbound'
-      AND (
-        lower(COALESCE(c.result, '')) IN ('missed','voicemail','abandoned')
-        OR c.is_voicemail = 1
-      )
+      AND lower(COALESCE(c.result, '')) IN ('missed','abandoned')
       AND c.start_time >= ?
       AND c.start_time < ?
     ORDER BY ringDuration DESC, c.start_time DESC`,

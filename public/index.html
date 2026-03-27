@@ -169,6 +169,12 @@ header{background:linear-gradient(180deg,var(--navy2),var(--navy3));border-botto
 .tbl-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 th{text-align:left;padding:8px 10px;color:var(--text3);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--border);white-space:nowrap;background:rgba(255,255,255,0.015);}
+th.sortable{cursor:pointer;user-select:none;transition:color 0.15s ease,background 0.15s ease;}
+th.sortable:hover{color:var(--text2);background:rgba(255,255,255,0.03);}
+th.sortable.active-sort{color:var(--text);}
+.sort-head{display:inline-flex;align-items:center;gap:6px;}
+.sort-indicator{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0;}
+th.sortable.active-sort .sort-indicator{color:var(--orange);}
 td{padding:11px 10px;border-bottom:1px solid rgba(26,51,82,0.5);color:var(--text2);vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
 tr{transition:background 0.15s;animation:rowIn 0.3s ease both;}
@@ -595,7 +601,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Live Presence</th><th>Queue Membership</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>Toggles</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
+        <thead><tr><th class="sortable" data-table="admin" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="admin" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="admin" data-sort-key="status" data-label="Live Presence">Live Presence</th><th class="sortable" data-table="admin" data-sort-key="queueStatus" data-label="Queue Membership">Queue Membership</th><th class="sortable" data-table="admin" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="admin" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="admin" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th class="sortable" data-table="admin" data-sort-key="toggleCount" data-label="Toggles">Toggles</th><th>24h</th><th class="sortable" data-table="admin" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="admin" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="admin" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="admin" data-sort-key="ahtInbound" data-label="AHT In">AHT In</th><th class="sortable" data-table="admin" data-sort-key="ahtOutbound" data-label="AHT Out">AHT Out</th><th class="sortable" data-table="admin" data-sort-key="score" data-label="Score">Score</th></tr></thead>
         <tbody id="agent-table"><tr><td colspan="16" class="no-data">Loading...</td></tr></tbody>
       </table>
       </div>
@@ -716,7 +722,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     <div class="card-hdr"><span class="card-title">Team Status</span><span class="chip" id="agent-view-count">0 agents</span></div>
     <div class="tbl-wrap">
     <table>
-      <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>24h</th><th>IN</th><th>OUT</th><th>Missed</th><th>Score</th></tr></thead>
+      <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th>24h</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
       <tbody id="agent-view-table"><tr><td colspan="12" class="no-data">Loading...</td></tr></tbody>
     </table>
     </div>
@@ -737,6 +743,7 @@ const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
 let currentTZ='CST',currentUser=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={};
+let dashboardSortState={admin:{key:'idx',dir:'asc'},agent:{key:'idx',dir:'asc'}};
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
 // PARTICLES & CONFETTI
@@ -926,6 +933,95 @@ function calcScore(avail,unavail,inC,outC,missed,toggles){
   const calls=inC+outC;
   const v=Math.round((avail/t)*60+(calls>0?(1-missed/calls)*25:25)+(1-Math.min(1,toggles/20))*15);
   return{v,c:v>=75?'s-high':v>=50?'s-mid':'s-low'};
+}
+
+function getDefaultSortDir(key){
+  return ['name','status','queueStatus','sinceTs','idx'].includes(key)?'asc':'desc';
+}
+
+function getStatusRank(status){
+  const s=String(status||'').toLowerCase();
+  if(s==='on call'||s==='talking'||s==='callconnected') return 0;
+  if(s==='ringing') return 1;
+  if(s==='available') return 2;
+  if(s==='unavailable'||s==='busy'||s==='dnd'||s==='away') return 3;
+  return 4;
+}
+
+function getQueueRank(queueStatus){
+  const s=String(queueStatus||'').toLowerCase();
+  if(s==='in queue') return 0;
+  if(s==='this queue off') return 1;
+  if(s==='all queues off' || s==='out of queue') return 2;
+  return 3;
+}
+
+function getSortValue(op, key){
+  switch(key){
+    case 'idx': return op.idx ?? 0;
+    case 'name': return String(op.agent?.name||'');
+    case 'status': return getStatusRank(op.status);
+    case 'queueStatus': return getQueueRank(op.queueStatus);
+    case 'sinceTs': return parseStamp(op.sinceTs)?.getTime() || 0;
+    case 'availableSeconds': return op.availableSeconds || 0;
+    case 'unavailableSeconds': return op.unavailableSeconds || 0;
+    case 'toggleCount': return op.toggleCount || 0;
+    case 'inboundCalls': return op.inboundCalls || 0;
+    case 'outboundCalls': return op.outboundCalls || 0;
+    case 'missedCalls': return op.missedCalls || 0;
+    case 'ahtInbound': return op.sum?.ahtInbound || 0;
+    case 'ahtOutbound': return op.sum?.ahtOutbound || 0;
+    case 'score': return op.performanceScore?.v || 0;
+    default: return 0;
+  }
+}
+
+function sortAgentOps(agentOps, table){
+  const state=dashboardSortState[table]||{key:'idx',dir:'asc'};
+  const dir=state.dir==='asc'?1:-1;
+  return agentOps.slice().sort((a,b)=>{
+    const av=getSortValue(a,state.key);
+    const bv=getSortValue(b,state.key);
+    let cmp=0;
+    if(typeof av==='string' || typeof bv==='string'){
+      cmp=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});
+    }else{
+      cmp=(Number(av)||0)-(Number(bv)||0);
+    }
+    if(cmp===0) cmp=String(a.agent?.name||'').localeCompare(String(b.agent?.name||''),undefined,{numeric:true,sensitivity:'base'});
+    if(cmp===0) cmp=(a.idx||0)-(b.idx||0);
+    return cmp*dir;
+  });
+}
+
+function renderSortHeaders(){
+  document.querySelectorAll('th.sortable').forEach(th=>{
+    const table=th.dataset.table;
+    const key=th.dataset.sortKey;
+    const label=th.dataset.label||th.textContent.trim();
+    const state=dashboardSortState[table]||{key:'idx',dir:'asc'};
+    const active=state.key===key;
+    th.classList.toggle('active-sort',active);
+    th.innerHTML='<span class="sort-head">'+label+'<span class="sort-indicator">'+(active?(state.dir==='asc'?'▲':'▼'):'↕')+'</span></span>';
+  });
+}
+
+function bindSortHeaders(){
+  document.querySelectorAll('th.sortable').forEach(th=>{
+    if(th.dataset.bound==='1') return;
+    th.dataset.bound='1';
+    th.addEventListener('click',()=>{
+      const table=th.dataset.table;
+      const key=th.dataset.sortKey;
+      const state=dashboardSortState[table]||{key:'idx',dir:'asc'};
+      if(state.key===key) state.dir=state.dir==='asc'?'desc':'asc';
+      else { state.key=key; state.dir=getDefaultSortDir(key); }
+      dashboardSortState[table]=state;
+      renderSortHeaders();
+      refresh();
+    });
+  });
+  renderSortHeaders();
 }
 
 function normalizeLiveStatus(live, fallbackStatus){
@@ -1218,18 +1314,24 @@ async function loadTodaySummary(){
   const today=todayStr();
   const yesterday=shiftDate(today,-1);
   try{
-    const[sr,tr,lr,yr,qr]=await Promise.all([
+    const[sr,tr,lr,yr,qr,ar]=await Promise.all([
       fetch(BACKEND+'/api/summary?date='+today),
       fetch(BACKEND+'/api/presence-events?date='+today),
       fetch(BACKEND+'/api/live-status'),
       fetch(BACKEND+'/api/summary?date='+yesterday),
-      fetch(BACKEND+'/api/queue-dashboard?date='+today)
+      fetch(BACKEND+'/api/queue-dashboard?date='+today),
+      fetch(BACKEND+'/api/abandoned-calls?date='+today)
     ]);
     const sd=await sr.json(),td=await tr.json(),ld=await lr.json(),yd=await yr.json();
     let qd={success:false,data:null};
+    let ad={success:false,data:null};
     try{
       const ct=qr.headers.get('content-type')||'';
       if(qr.ok&&ct.includes('application/json')) qd=await qr.json();
+    }catch(e){}
+    try{
+      const ct=ar.headers.get('content-type')||'';
+      if(ar.ok&&ct.includes('application/json')) ad=await ar.json();
     }catch(e){}
     todaySummary={};if(sd.success)sd.data.forEach(r=>{todaySummary[r.agentId]=r;});
     yesterdaySummary={};if(yd.success)yd.data.forEach(r=>{yesterdaySummary[r.agentId]=r;});
@@ -1237,7 +1339,7 @@ async function loadTodaySummary(){
     if(td.success)td.data.forEach(s=>{if(!timelineData[s.agent_id])timelineData[s.agent_id]=[];timelineData[s.agent_id].push(s);});
     liveCallData=ld.success?ld.data:{};
     queueDashboardSummary=qd.success&&qd.data?qd.data:{};
-    abandonedCalls=queueDashboardSummary.abandonedCalls||[];
+    abandonedCalls=ad.success&&Array.isArray(ad.data)?ad.data:(queueDashboardSummary.abandonedCalls||[]);
   }catch(e){todaySummary={};abandonedCalls=[];queueDashboardSummary={};}
 }
 
@@ -1251,7 +1353,8 @@ async function loadAgentStatuses(){
     let totAvail=0,totUnavail=0,totOncall=0,totIn=0,totOut=0,totMissed=0;
     let ahtInSum=0,ahtOutSum=0,ahtInCnt=0,ahtOutCnt=0;
 
-    const rows=agentOps.map((op,idx)=>{
+    const sortedAdminOps=sortAgentOps(agentOps,'admin');
+    const rows=sortedAdminOps.map((op,idx)=>{
       const { agent:a, sum, evts, live, status, sinceTs, queueStatus }=op;
       const sl=(status||'').toLowerCase();
       if(sl==='available')totAvail++;
@@ -1296,19 +1399,21 @@ async function loadAgentStatuses(){
     document.getElementById('m-unavail').textContent=totUnavail;
     document.getElementById('m-oncall').textContent=totOncall;
     const queueDash=queueDashboardSummary&&queueDashboardSummary.date===today?queueDashboardSummary:null;
-    const dashboardInbound=queueDash?queueDash.inboundCount:totIn;
-    const dashboardOutbound=queueDash?queueDash.outboundCount:totOut;
-    const dashboardAbandoned=queueDash?queueDash.abandonedCount:abandonedCalls.length;
-    const dashboardVoicemail=queueDash?queueDash.voicemailCount:agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).voicemails||0),0);
-    const dashboardTransfers=queueDash?queueDash.transferCount:agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).transferCount||0),0);
+    const teamVoicemailTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).voicemails||0),0);
+    const teamTransferTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).transferCount||0),0);
+    const dashboardInbound=totIn;
+    const dashboardOutbound=totOut;
+    const dashboardAbandoned=Math.max(queueDash?queueDash.abandonedCount||0:0,abandonedCalls.length);
+    const dashboardVoicemail=Math.max(queueDash?queueDash.voicemailCount||0:0,teamVoicemailTotal);
+    const dashboardTransfers=Math.max(queueDash?queueDash.transferCount||0:0,teamTransferTotal);
     const dashboardRing=queueDash&&queueDash.avgRingTime!=null?queueDash.avgRingTime:0;
     const dashboardHold=queueDash&&queueDash.avgHoldTime!=null?queueDash.avgHoldTime:0;
 
     document.getElementById('m-inbound').textContent=dashboardInbound;
     document.getElementById('m-outbound').textContent=dashboardOutbound;
     document.getElementById('m-missed').textContent=dashboardAbandoned;
-    const inboundAht=queueDash&&queueDash.ahtInbound!=null?queueDash.ahtInbound:(ahtInCnt>0?Math.round(ahtInSum/ahtInCnt):0);
-    const outboundAht=queueDash&&queueDash.ahtOutbound!=null?queueDash.ahtOutbound:(ahtOutCnt>0?Math.round(ahtOutSum/ahtOutCnt):0);
+    const inboundAht=ahtInCnt>0?Math.round(ahtInSum/ahtInCnt):0;
+    const outboundAht=ahtOutCnt>0?Math.round(ahtOutSum/ahtOutCnt):0;
     document.getElementById('m-missed-pct').textContent=queueDash&&queueDash.longestRing?('Longest '+fmt(queueDash.longestRing)):'Clean';
     document.getElementById('m-inbound-aht').textContent='AHT '+(dashboardInbound>0&&inboundAht>0?fmt(inboundAht):'--');
     document.getElementById('m-outbound-aht').textContent='AHT '+(dashboardOutbound>0&&outboundAht>0?fmt(outboundAht):'--');
@@ -1373,8 +1478,9 @@ async function loadAgentStatuses(){
     }
 
     if(currentViewMode==='agent'){
-      const agentRows=agents.map((a,idx)=>{
-        const op=agentOps.find(item=>item.agent.extension===a.extension) || agentOps.find(item=>item.agent.rc_id===a.rc_id);
+      const sortedAgentOps=sortAgentOps(agentOps,'agent');
+      const agentRows=sortedAgentOps.map((op,idx)=>{
+        const a=op.agent;
         const sum=todaySummary[a.rc_id]||{};
         const status=op?op.status:'Unknown';
         const sinceTs=op?op.sinceTs:null;
@@ -1732,6 +1838,7 @@ initParticles();
 initConfetti();
 
 window.addEventListener('load',()=>{
+  bindSortHeaders();
   loadSession();
   const dp=document.getElementById('date-picker');
   if(dp)dp.value=todayStr();
