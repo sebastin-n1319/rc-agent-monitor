@@ -140,7 +140,91 @@ function callTouchesCustomerServiceQueue(call) {
     if (leg.extension && leg.extension.name) labelCandidates.push(String(leg.extension.name));
   }
 
-  return labelCandidates.some(isCustomerServiceLabel);
+  if (labelCandidates.some(isCustomerServiceLabel)) return true;
+
+  // Fallback: RingCentral queue metadata can appear on different fields depending on leg shape.
+  const raw = JSON.stringify(call || {}).toLowerCase();
+  if (queueId && raw.includes(queueId.toLowerCase())) return true;
+  return isCustomerServiceLabel(raw);
+}
+
+function getCallSessionKey(call) {
+  return String(
+    call?.sessionId ||
+    call?.session_id ||
+    call?.telephonySessionId ||
+    call?.telephonySession_id ||
+    call?.telephonySession?.id ||
+    call?.id
+  );
+}
+
+function parseStartTimeMs(value) {
+  const ms = value ? new Date(value).getTime() : NaN;
+  return Number.isFinite(ms) ? ms : Infinity;
+}
+
+function buildSessionSummary(sessionCalls, lookups) {
+  const ordered = sessionCalls.slice().sort((a, b) => parseStartTimeMs(a.startTime) - parseStartTimeMs(b.startTime));
+  const first = ordered[0] || {};
+  const primaryDirection = normalizeCallResult(first.direction);
+
+  let owner = null;
+  let queueTouched = false;
+  let transferred = false;
+  let voicemailResult = false;
+  let abandonedResult = false;
+  let connected = false;
+  let inboundSeen = false;
+  let outboundSeen = false;
+  let ringDuration = 0;
+  let holdDuration = 0;
+  let duration = 0;
+  let startTime = first.startTime || null;
+  let result = first.result || '';
+  let callId = first.id || null;
+
+  for (const call of ordered) {
+    owner = owner || resolveCallOwner(call, lookups);
+    queueTouched = queueTouched || callTouchesCustomerServiceQueue(call);
+
+    const direction = normalizeCallResult(call.direction);
+    if (direction === 'inbound') inboundSeen = true;
+    if (direction === 'outbound') outboundSeen = true;
+
+    const parsed = parseCallDetails(call);
+    ringDuration = Math.max(ringDuration, parsed.ringDuration || call.ringDuration || call.duration || 0);
+    holdDuration = Math.max(holdDuration, parsed.holdDuration || call.holdDuration || 0);
+    duration = Math.max(duration, call.duration || 0);
+    transferred = transferred || parsed.transferred;
+    voicemailResult = voicemailResult || parsed.isVoicemail || isVoicemailResult(call.result);
+    abandonedResult = abandonedResult || isAbandonedStyleResult(call.result);
+    connected = connected || normalizeCallResult(call.result) === 'call connected';
+
+    if (!startTime || parseStartTimeMs(call.startTime) < parseStartTimeMs(startTime)) startTime = call.startTime;
+    if (!callId && call.id) callId = call.id;
+    if (!result && call.result) result = call.result;
+  }
+
+  const relevantInbound = queueTouched && (primaryDirection === 'inbound' || (inboundSeen && !outboundSeen));
+  const relevantOutbound = !!owner && !queueTouched && (primaryDirection === 'outbound' || (outboundSeen && !inboundSeen));
+
+  return {
+    owner,
+    queueTouched,
+    relevantInbound,
+    relevantOutbound,
+    voicemailResult,
+    abandonedResult,
+    connected,
+    transferred,
+    ringDuration,
+    holdDuration,
+    duration,
+    startTime,
+    result,
+    callId
+  };
 }
 
 async function listAccountCallLogRecords(params) {
@@ -331,22 +415,20 @@ async function fetchQueueDashboardSummary(dateStr, force = false) {
   let outboundTalkTotal = 0;
   let outboundTalkCount = 0;
 
+  const sessions = new Map();
   for (const call of calls) {
-    const owner = resolveCallOwner(call, lookups);
-    const queueTouched = callTouchesCustomerServiceQueue(call);
-    const direction = String(call.direction || '').toLowerCase();
-    const inbound = direction === 'inbound';
-    const outbound = direction === 'outbound';
-    const relevantInbound = inbound && (queueTouched || owner);
-    const relevantOutbound = outbound && !!owner;
+    const key = getCallSessionKey(call);
+    if (!sessions.has(key)) sessions.set(key, []);
+    sessions.get(key).push(call);
+  }
+
+  for (const sessionCalls of sessions.values()) {
+    const session = buildSessionSummary(sessionCalls, lookups);
+    const { owner, relevantInbound, relevantOutbound, voicemailResult, abandonedResult, transferred } = session;
     if (!relevantInbound && !relevantOutbound) continue;
 
-    const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
-    const result = normalizeCallResult(call.result);
-    const voicemailResult = isVoicemail || isVoicemailResult(call.result);
-    const abandonedResult = isAbandonedStyleResult(call.result);
-    const effectiveRing = ringDuration || call.ringDuration || call.duration || 0;
-    const effectiveHold = holdDuration || call.holdDuration || 0;
+    const effectiveRing = session.ringDuration || 0;
+    const effectiveHold = session.holdDuration || 0;
 
     summary.matchedCalls++;
     summary.longestRing = Math.max(summary.longestRing, effectiveRing);
@@ -363,8 +445,8 @@ async function fetchQueueDashboardSummary(dateStr, force = false) {
 
     if (relevantInbound) {
       summary.inboundCount++;
-      if (!voicemailResult && !abandonedResult && (call.duration || 0) > 0) {
-        inboundTalkTotal += call.duration || 0;
+      if (!voicemailResult && !abandonedResult && session.connected && session.duration > 0) {
+        inboundTalkTotal += session.duration;
         inboundTalkCount++;
       }
       if (voicemailResult) summary.voicemailCount++;
@@ -374,19 +456,19 @@ async function fetchQueueDashboardSummary(dateStr, force = false) {
           agentId: owner ? owner.rc_id : `queue:${customerServiceQueueId || 'customer-service'}`,
           agentName: owner ? owner.name : customerServiceQueueName,
           extension: owner ? owner.extension : null,
-          callId: call.id,
-          result: call.result,
+          callId: session.callId,
+          result: session.result,
           ringDuration: effectiveRing,
           holdDuration: effectiveHold,
-          startTime: call.startTime
+          startTime: session.startTime
         });
       }
     }
 
     if (relevantOutbound) {
       summary.outboundCount++;
-      if (result === 'call connected' && (call.duration || 0) > 0) {
-        outboundTalkTotal += call.duration || 0;
+      if (session.connected && session.duration > 0) {
+        outboundTalkTotal += session.duration;
         outboundTalkCount++;
       }
     }

@@ -173,7 +173,7 @@ th.sortable{cursor:pointer;user-select:none;transition:color 0.15s ease,backgrou
 th.sortable:hover{color:var(--text2);background:rgba(255,255,255,0.03);}
 th.sortable.active-sort{color:var(--text);}
 .sort-head{display:inline-flex;align-items:center;gap:6px;}
-.sort-indicator{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0;}
+.sort-indicator{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,0.05);font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;letter-spacing:0;line-height:1;}
 th.sortable.active-sort .sort-indicator{color:var(--orange);}
 td{padding:11px 10px;border-bottom:1px solid rgba(26,51,82,0.5);color:var(--text2);vertical-align:middle;}
 tr:last-child td{border-bottom:none;}
@@ -935,6 +935,17 @@ function calcScore(avail,unavail,inC,outC,missed,toggles){
   return{v,c:v>=75?'s-high':v>=50?'s-mid':'s-low'};
 }
 
+function mergeAbandonedCalls(...sources){
+  const seen=new Set(), merged=[];
+  sources.flat().filter(Boolean).forEach(call=>{
+    const key=[call.callId||'',call.startTime||'',call.agentId||call.extension||'',call.result||''].join('|');
+    if(seen.has(key)) return;
+    seen.add(key);
+    merged.push(call);
+  });
+  return merged.sort((a,b)=>(b.ringDuration||0)-(a.ringDuration||0)||String(b.startTime||'').localeCompare(String(a.startTime||'')));
+}
+
 function getDefaultSortDir(key){
   return ['name','status','queueStatus','sinceTs','idx'].includes(key)?'asc':'desc';
 }
@@ -1018,7 +1029,7 @@ function bindSortHeaders(){
       else { state.key=key; state.dir=getDefaultSortDir(key); }
       dashboardSortState[table]=state;
       renderSortHeaders();
-      refresh();
+      loadAgentStatuses();
     });
   });
   renderSortHeaders();
@@ -1339,7 +1350,9 @@ async function loadTodaySummary(){
     if(td.success)td.data.forEach(s=>{if(!timelineData[s.agent_id])timelineData[s.agent_id]=[];timelineData[s.agent_id].push(s);});
     liveCallData=ld.success?ld.data:{};
     queueDashboardSummary=qd.success&&qd.data?qd.data:{};
-    abandonedCalls=ad.success&&Array.isArray(ad.data)?ad.data:(queueDashboardSummary.abandonedCalls||[]);
+    const dbAbandons=ad.success&&Array.isArray(ad.data)?ad.data:[];
+    const queueAbandons=Array.isArray(queueDashboardSummary.abandonedCalls)?queueDashboardSummary.abandonedCalls:[];
+    abandonedCalls=mergeAbandonedCalls(queueAbandons,dbAbandons);
   }catch(e){todaySummary={};abandonedCalls=[];queueDashboardSummary={};}
 }
 
@@ -1401,8 +1414,8 @@ async function loadAgentStatuses(){
     const queueDash=queueDashboardSummary&&queueDashboardSummary.date===today?queueDashboardSummary:null;
     const teamVoicemailTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).voicemails||0),0);
     const teamTransferTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).transferCount||0),0);
-    const dashboardInbound=totIn;
-    const dashboardOutbound=totOut;
+    const dashboardInbound=queueDash&&queueDash.inboundCount!=null?queueDash.inboundCount:totIn;
+    const dashboardOutbound=queueDash&&queueDash.outboundCount!=null?queueDash.outboundCount:totOut;
     const dashboardAbandoned=Math.max(queueDash?queueDash.abandonedCount||0:0,abandonedCalls.length);
     const dashboardVoicemail=Math.max(queueDash?queueDash.voicemailCount||0:0,teamVoicemailTotal);
     const dashboardTransfers=Math.max(queueDash?queueDash.transferCount||0:0,teamTransferTotal);
