@@ -1,6 +1,6 @@
 const RC = require('@ringcentral/sdk').SDK;
 const { EventEmitter } = require('events');
-const { insertPresenceEvent, insertCallLog, getMonitoredAgents, updateAgentRcId } = require('./database');
+const { insertPresenceEvent, insertCallLog, deleteCallLogsRange, getMonitoredAgents, updateAgentRcId } = require('./database');
 require('dotenv').config();
 
 const rcsdk = new RC({
@@ -329,17 +329,19 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
   for (const call of (d.records || [])) {
     if (!isAbandonedStyleResult(call.result)) continue;
 
-    const owner = resolveCallOwner(call, lookups) || (
+    const resolvedOwner = resolveCallOwner(call, lookups);
+    if (resolvedOwner) continue;
+    const owner =
       isCustomerServiceLabel(call.to && call.to.name) ||
       isCustomerServiceLabel(call.from && call.from.name) ||
       isCustomerServiceLabel(call.extension && call.extension.name) ||
-      isCustomerServiceLabel(call.extensionName)
+      isCustomerServiceLabel(call.extensionName) ||
+      callTouchesCustomerServiceQueue(call)
         ? {
             rc_id: `queue:${customerServiceQueueId || 'customer-service'}`,
             name: (call.to && call.to.name) || (call.extension && call.extension.name) || call.extensionName || 'Customer Service Queue'
           }
-        : null
-    );
+        : null;
 
     if (!owner) continue;
 
@@ -920,36 +922,44 @@ async function fetchCallLogs() {
   try {
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
+    const lookups = buildAgentLookups(agents);
     // Use IST midnight as start of shift day
     const istMidnight = new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}) + 'T00:00:00+05:30');
+    const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
     console.log(`📞 Fetching calls from IST midnight: ${istMidnight.toISOString()}`);
+    await deleteCallLogsRange(istMidnight.toISOString(), istNextMidnight.toISOString());
     try {
       await fetchAccountQueueAbandonCalls(istMidnight, agents);
     } catch (e) {
       console.error('❌ Account call log abandon sync:', e.message);
     }
-    for (const agent of agents) {
-      try {
-        await sleep(3000);
-        const r = await platform.get(
-          `/restapi/v1.0/account/~/extension/${agent.rc_id}/call-log`,
-          { dateFrom: istMidnight.toISOString(), perPage: 200, view: 'Detailed' }
-        );
-        const d = await r.json();
-        for (const call of (d.records || [])) {
-          const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
-          await insertCallLog({
-            agentId: agent.rc_id, agentName: agent.name,
-            callId: call.id, direction: call.direction,
-            result: call.result, duration: call.duration || 0,
-            ringDuration, holdDuration, transferred, isVoicemail,
-            startTime: call.startTime
-          });
-        }
-        console.log(`✅ ${agent.name}: ${(d.records||[]).length} calls today`);
-      } catch(e) { console.error(`❌ Call log ${agent.name}:`, e.message); }
+    const calls = await listAccountCallLogRecords({
+      dateFrom: istMidnight.toISOString(),
+      dateTo: istNextMidnight.toISOString(),
+      perPage: 200,
+      view: 'Detailed'
+    });
+    let imported = 0;
+    for (const call of calls) {
+      const owner = resolveCallOwner(call, lookups);
+      if (!owner) continue;
+      const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+      await insertCallLog({
+        agentId: owner.rc_id,
+        agentName: owner.name,
+        callId: call.id,
+        direction: call.direction,
+        result: call.result,
+        duration: call.duration || 0,
+        ringDuration,
+        holdDuration,
+        transferred,
+        isVoicemail,
+        startTime: call.startTime
+      });
+      imported++;
     }
-    console.log('✅ Call logs synced');
+    console.log(`✅ Call logs synced: ${imported} agent-mapped calls`);
   } catch(e) { console.error('❌ fetchCallLogs:', e.message); }
 }
 

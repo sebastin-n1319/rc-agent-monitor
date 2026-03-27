@@ -1414,8 +1414,8 @@ async function loadAgentStatuses(){
     const queueDash=queueDashboardSummary&&queueDashboardSummary.date===today?queueDashboardSummary:null;
     const teamVoicemailTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).voicemails||0),0);
     const teamTransferTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).transferCount||0),0);
-    const dashboardInbound=queueDash&&queueDash.inboundCount!=null?queueDash.inboundCount:totIn;
-    const dashboardOutbound=queueDash&&queueDash.outboundCount!=null?queueDash.outboundCount:totOut;
+    const dashboardInbound=totIn;
+    const dashboardOutbound=totOut;
     const dashboardAbandoned=Math.max(queueDash?queueDash.abandonedCount||0:0,abandonedCalls.length);
     const dashboardVoicemail=Math.max(queueDash?queueDash.voicemailCount||0:0,teamVoicemailTotal);
     const dashboardTransfers=Math.max(queueDash?queueDash.transferCount||0:0,teamTransferTotal);

@@ -34,7 +34,7 @@ async function initDB() {
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE TABLE IF NOT EXISTS call_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, agent_id TEXT NOT NULL,
-    agent_name TEXT, call_id TEXT UNIQUE, direction TEXT,
+    agent_name TEXT, call_id TEXT UNIQUE, source_call_id TEXT, direction TEXT,
     result TEXT, duration INTEGER, ring_duration INTEGER DEFAULT 0,
     hold_duration INTEGER DEFAULT 0, transferred INTEGER DEFAULT 0,
     is_voicemail INTEGER DEFAULT 0, start_time DATETIME,
@@ -59,6 +59,7 @@ async function initDB() {
     `ALTER TABLE call_logs ADD COLUMN hold_duration INTEGER DEFAULT 0`,
     `ALTER TABLE call_logs ADD COLUMN transferred INTEGER DEFAULT 0`,
     `ALTER TABLE call_logs ADD COLUMN is_voicemail INTEGER DEFAULT 0`,
+    `ALTER TABLE call_logs ADD COLUMN source_call_id TEXT`,
   ]) { try { await run(sql); } catch(e) {} }
 
   for (const email of ['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com']) {
@@ -95,12 +96,22 @@ async function getPresenceEvents(date){
 
 // CALL LOGS - now with ring/hold/transfer/voicemail
 function insertCallLog(log){
+  const sourceCallId = log.callId ? String(log.callId) : null;
+  const storedCallId = [
+    String(log.agentId || 'unknown'),
+    String(log.direction || 'unknown'),
+    sourceCallId || String(log.startTime || Date.now())
+  ].join('::');
   return run(`INSERT OR IGNORE INTO call_logs
-    (agent_id,agent_name,call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-    [log.agentId,log.agentName,log.callId,log.direction,log.result,
+    (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [log.agentId,log.agentName,storedCallId,sourceCallId,log.direction,log.result,
      log.duration||0,log.ringDuration||0,log.holdDuration||0,
      log.transferred?1:0,log.isVoicemail?1:0,log.startTime]);
+}
+
+function deleteCallLogsRange(startIso,endIso){
+  return run(`DELETE FROM call_logs WHERE start_time >= ? AND start_time < ?`,[startIso,endIso]);
 }
 
 // SUMMARY with all new metrics
@@ -206,7 +217,7 @@ async function getAbandonedCalls(date){
       c.agent_id AS agentId,
       COALESCE(c.agent_name, m.name, 'Customer Service Queue') AS agentName,
       m.extension AS extension,
-      c.call_id AS callId,
+      COALESCE(c.source_call_id, c.call_id) AS callId,
       c.result,
       c.duration,
       CASE
@@ -240,7 +251,7 @@ async function getRoleForEmail(e){const row=await get(`SELECT role FROM app_role
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,getAgentSummary,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,getAgentSummary,getAbandonedCalls,
   insertLoginLog,getLoginLogs,
   getAllRoles,setRole,removeRole,getRoleForEmail
 };
