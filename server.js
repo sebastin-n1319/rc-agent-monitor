@@ -5,11 +5,11 @@ const cron = require('node-cron');
 const path = require('path');
 const {
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents,
-  getPresenceEvents, insertLoginLog, getLoginLogs,
+  getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, removeRole, getRoleForEmail
 } = require('./database');
 const {
-  authenticate, fetchPresenceForAll, fetchCallLogs, searchRCUsers, fetchLiveCallStatus,
+  authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription
 } = require('./rc-service');
 
@@ -38,6 +38,18 @@ app.get('/api/summary', async (req, res) => {
 app.get('/api/presence-events', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   try { res.json({ success: true, data: await getPresenceEvents(date) }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/abandoned-calls', async (req, res) => {
+  const date = req.query.date || new Date().toISOString().split('T')[0];
+  try { res.json({ success: true, date, data: await getAbandonedCalls(date) }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/queue-dashboard', async (req, res) => {
+  const date = req.query.date || new Date().toISOString().split('T')[0];
+  try { res.json({ success: true, date, data: await fetchQueueDashboardSummary(date) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

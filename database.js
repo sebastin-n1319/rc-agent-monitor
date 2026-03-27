@@ -12,6 +12,13 @@ function toSqliteUtc(date){
   return date.toISOString().slice(0,19).replace('T',' ');
 }
 
+function fromStoredUtc(value){
+  if(!value) return null;
+  if(value instanceof Date) return value;
+  if(String(value).includes('T')) return new Date(value);
+  return new Date(String(value).replace(' ','T') + 'Z');
+}
+
 function isQueueReady(status, queueStatus){
   return status === 'Available' && queueStatus === 'In Queue';
 }
@@ -69,7 +76,7 @@ function updateAgentRcId(ext,rcId){return run(`UPDATE monitored_agents SET rc_id
 // PRESENCE
 function insertPresenceEvent(agentId,agentName,status,queueStatus,timestamp){
   if(timestamp){
-    return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status,timestamp) VALUES (?,?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown',timestamp]);
+    return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status,timestamp) VALUES (?,?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown',toSqliteUtc(timestamp)]);
   }
   return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status) VALUES (?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown']);
 }
@@ -81,7 +88,7 @@ async function getPresenceEvents(date){
   const pStart = new Date(date + 'T00:00:00+05:30');
   const pEnd = new Date(pStart.getTime() + 86400000);
   return all(
-    `SELECT * FROM presence_events WHERE timestamp >= ? AND timestamp < ? AND agent_id IN (${rcIds.map(()=>'?').join(',')}) ORDER BY timestamp ASC`,
+    `SELECT * FROM presence_events WHERE datetime(timestamp) >= datetime(?) AND datetime(timestamp) < datetime(?) AND agent_id IN (${rcIds.map(()=>'?').join(',')}) ORDER BY datetime(timestamp) ASC`,
     [toSqliteUtc(pStart), toSqliteUtc(pEnd), ...rcIds]
   );
 }
@@ -108,11 +115,11 @@ async function getAgentSummary(date){
     const dayStartSql = toSqliteUtc(istMidnight);
     const dayEndSql = toSqliteUtc(istNextMidnight);
     const events=await all(
-      `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC`,
+      `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND datetime(timestamp) >= datetime(?) AND datetime(timestamp) < datetime(?) ORDER BY datetime(timestamp) ASC`,
       [agentId, dayStartSql, dayEndSql]
     );
     const previousEvent = await get(
-      `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND timestamp < ? ORDER BY timestamp DESC LIMIT 1`,
+      `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND datetime(timestamp) < datetime(?) ORDER BY datetime(timestamp) DESC LIMIT 1`,
       [agentId, dayStartSql]
     );
     let availTime=0,unavailTime=0,toggleCount=0;
@@ -128,8 +135,8 @@ async function getAgentSummary(date){
 
     if(segments.length){
       for(let i=0;i<segments.length-1;i++){
-        const start = new Date(segments[i].timestamp);
-        const end = new Date(segments[i+1].timestamp);
+        const start = fromStoredUtc(segments[i].timestamp);
+        const end = fromStoredUtc(segments[i+1].timestamp);
         const dur = Math.max(0, (end - start) / 1000);
         if(isQueueReady(segments[i].status, segments[i].queue_status)) availTime += dur;
         else unavailTime += dur;
@@ -138,7 +145,7 @@ async function getAgentSummary(date){
       const nowIST = new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
       const dayEnd = date===nowIST ? new Date(Math.min(Date.now(), istNextMidnight.getTime())) : istNextMidnight;
       const lastEvt = segments[segments.length-1];
-      const secSinceLast = Math.max(0, (dayEnd.getTime() - new Date(lastEvt.timestamp).getTime()) / 1000);
+      const secSinceLast = Math.max(0, (dayEnd.getTime() - fromStoredUtc(lastEvt.timestamp).getTime()) / 1000);
       if(isQueueReady(lastEvt.status, lastEvt.queue_status)) availTime += secSinceLast;
       else unavailTime += secSinceLast;
 
@@ -151,9 +158,23 @@ async function getAgentSummary(date){
     const callStart = new Date(date + 'T00:00:00+05:30').toISOString();
     const callEnd = new Date(new Date(date + 'T00:00:00+05:30').getTime() + 86400000).toISOString();
     // Inbound
-    const inb=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold,SUM(CASE WHEN result='Missed' THEN 1 ELSE 0 END) as missed,SUM(is_voicemail) as voicemails FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`,[agentId,callStart,callEnd]);
+    const inb=await get(`SELECT
+      COUNT(*) as total,
+      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
+      AVG(CASE WHEN ring_duration>0 THEN ring_duration END) as avgRing,
+      SUM(hold_duration) as totalHold,
+      SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed,
+      SUM(CASE WHEN COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail' THEN 1 ELSE 0 END) as voicemails
+      FROM call_logs
+      WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`,[agentId,callStart,callEnd]);
     // Outbound
-    const out=await get(`SELECT COUNT(*) as total,AVG(duration) as avgDur,AVG(ring_duration) as avgRing,SUM(hold_duration) as totalHold FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`,[agentId,callStart,callEnd]);
+    const out=await get(`SELECT
+      COUNT(*) as total,
+      AVG(CASE WHEN lower(COALESCE(result,''))='call connected' AND duration>0 THEN duration END) as avgDur,
+      AVG(CASE WHEN ring_duration>0 THEN ring_duration END) as avgRing,
+      SUM(hold_duration) as totalHold
+      FROM call_logs
+      WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`,[agentId,callStart,callEnd]);
     // Transfers
     const xfer=await get(`SELECT SUM(transferred) as total FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`,[agentId,callStart,callEnd]);
 

@@ -15,8 +15,10 @@ const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
 const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
 const WEBHOOK_RETRY_MS = Number(process.env.WEBHOOK_RETRY_MS || 30000);
+const DASHBOARD_SUMMARY_TTL_MS = Number(process.env.DASHBOARD_SUMMARY_TTL_MS || 45000);
 
 let customerServiceQueueId = null;
+let customerServiceQueueName = 'Customer Service';
 let lastQueueStatuses = {};
 let lastQueueStatusAt = 0;
 let lastLiveStatusSnapshot = {};
@@ -25,6 +27,8 @@ let presenceSyncPromise = null;
 let subscriptionInfo = null;
 let subscriptionRenewTimer = null;
 let subscriptionRetryTimer = null;
+let lastQueueDashboardSummary = null;
+let lastQueueDashboardAt = 0;
 
 const liveEvents = new EventEmitter();
 liveEvents.setMaxListeners(50);
@@ -89,9 +93,69 @@ function isAbandonedStyleResult(result) {
 
 function isCustomerServiceLabel(value) {
   const normalized = String(value || '').toLowerCase();
-  return normalized.includes('customer service') ||
+  return normalized.includes(String(customerServiceQueueName || '').toLowerCase()) ||
+    normalized.includes('customer service') ||
     normalized.includes('t1 cs') ||
     normalized.includes('cs stars');
+}
+
+function getIstDateWindow(dateStr) {
+  const start = new Date(`${dateStr}T00:00:00+05:30`);
+  const end = new Date(start.getTime() + 86400000);
+  return { start, end };
+}
+
+function callTouchesCustomerServiceQueue(call) {
+  const queueId = customerServiceQueueId ? String(customerServiceQueueId) : null;
+  const idCandidates = [
+    call.extension && call.extension.id,
+    call.extensionId,
+    call.to && call.to.extensionId,
+    call.from && call.from.extensionId
+  ].filter(Boolean).map(v => String(v));
+
+  for (const leg of (call.legs || [])) {
+    if (leg.extension && leg.extension.id) idCandidates.push(String(leg.extension.id));
+  }
+
+  if (queueId && idCandidates.includes(queueId)) return true;
+
+  const labelCandidates = [
+    call.extension && call.extension.name,
+    call.extensionName,
+    call.to && call.to.name,
+    call.from && call.from.name
+  ].filter(Boolean).map(v => String(v));
+
+  for (const leg of (call.legs || [])) {
+    if (leg.extension && leg.extension.name) labelCandidates.push(String(leg.extension.name));
+  }
+
+  return labelCandidates.some(isCustomerServiceLabel);
+}
+
+async function listAccountCallLogRecords(params) {
+  const records = [];
+  let page = 1;
+
+  while (page <= 10) {
+    const r = await platform.get('/restapi/v1.0/account/~/call-log', {
+      ...params,
+      page
+    });
+    const data = await r.json();
+    if (data.errorCode) {
+      const err = new Error(data.message || data.errorCode);
+      err.rcData = data;
+      throw err;
+    }
+    records.push(...(data.records || []));
+    if (!data.navigation || !data.navigation.nextPage || !(data.records || []).length) break;
+    page++;
+    await sleep(400);
+  }
+
+  return records;
 }
 
 function buildAgentLookups(agents) {
@@ -204,6 +268,128 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
   }
 
   console.log(`✅ Account call log abandon sync: ${imported} relevant inbound calls`);
+}
+
+async function fetchQueueDashboardSummary(dateStr, force = false) {
+  const now = Date.now();
+  if (
+    !force &&
+    lastQueueDashboardSummary &&
+    lastQueueDashboardSummary.date === dateStr &&
+    now - lastQueueDashboardAt < DASHBOARD_SUMMARY_TTL_MS
+  ) {
+    return lastQueueDashboardSummary;
+  }
+
+  await resolveAgentRcIds();
+  const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+  const lookups = buildAgentLookups(agents);
+  if (!customerServiceQueueId) await findQueueId();
+
+  const { start, end } = getIstDateWindow(dateStr);
+  const calls = await listAccountCallLogRecords({
+    dateFrom: start.toISOString(),
+    dateTo: end.toISOString(),
+    perPage: 200,
+    view: 'Detailed'
+  });
+
+  const summary = {
+    date: dateStr,
+    source: 'account-call-log',
+    inboundCount: 0,
+    outboundCount: 0,
+    voicemailCount: 0,
+    abandonedCount: 0,
+    transferCount: 0,
+    ahtInbound: 0,
+    ahtOutbound: 0,
+    avgRingTime: 0,
+    avgHoldTime: 0,
+    totalHoldTime: 0,
+    longestRing: 0,
+    matchedCalls: 0,
+    abandonedCalls: []
+  };
+
+  let ringTotal = 0;
+  let ringCount = 0;
+  let holdTotal = 0;
+  let holdCount = 0;
+  let inboundTalkTotal = 0;
+  let inboundTalkCount = 0;
+  let outboundTalkTotal = 0;
+  let outboundTalkCount = 0;
+
+  for (const call of calls) {
+    const owner = resolveCallOwner(call, lookups);
+    const queueTouched = callTouchesCustomerServiceQueue(call);
+    const direction = String(call.direction || '').toLowerCase();
+    const inbound = direction === 'inbound';
+    const outbound = direction === 'outbound';
+    const relevantInbound = inbound && (queueTouched || owner);
+    const relevantOutbound = outbound && !!owner;
+    if (!relevantInbound && !relevantOutbound) continue;
+
+    const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+    const result = String(call.result || '').toLowerCase();
+    const effectiveRing = ringDuration || call.ringDuration || call.duration || 0;
+    const effectiveHold = holdDuration || call.holdDuration || 0;
+
+    summary.matchedCalls++;
+    summary.longestRing = Math.max(summary.longestRing, effectiveRing);
+    if (effectiveRing > 0) {
+      ringTotal += effectiveRing;
+      ringCount++;
+    }
+    if (effectiveHold > 0) {
+      holdTotal += effectiveHold;
+      holdCount++;
+      summary.totalHoldTime += effectiveHold;
+    }
+    if (transferred) summary.transferCount++;
+
+    if (relevantInbound) {
+      summary.inboundCount++;
+      if (!isVoicemail && result !== 'missed' && result !== 'abandoned' && result !== 'voicemail' && (call.duration || 0) > 0) {
+        inboundTalkTotal += call.duration || 0;
+        inboundTalkCount++;
+      }
+      if (isVoicemail || result.includes('voicemail')) summary.voicemailCount++;
+      if (!isVoicemail && (result === 'missed' || result === 'abandoned')) {
+        summary.abandonedCount++;
+        summary.abandonedCalls.push({
+          agentId: owner ? owner.rc_id : `queue:${customerServiceQueueId || 'customer-service'}`,
+          agentName: owner ? owner.name : customerServiceQueueName,
+          extension: owner ? owner.extension : null,
+          callId: call.id,
+          result: call.result,
+          ringDuration: effectiveRing,
+          holdDuration: effectiveHold,
+          startTime: call.startTime
+        });
+      }
+    }
+
+    if (relevantOutbound) {
+      summary.outboundCount++;
+      if (result === 'call connected' && (call.duration || 0) > 0) {
+        outboundTalkTotal += call.duration || 0;
+        outboundTalkCount++;
+      }
+    }
+  }
+
+  summary.ahtInbound = inboundTalkCount ? Math.round(inboundTalkTotal / inboundTalkCount) : 0;
+  summary.ahtOutbound = outboundTalkCount ? Math.round(outboundTalkTotal / outboundTalkCount) : 0;
+  summary.avgRingTime = ringCount ? Math.round(ringTotal / ringCount) : 0;
+  summary.avgHoldTime = holdCount ? Math.round(holdTotal / holdCount) : 0;
+  summary.abandonedCalls.sort((a, b) => (b.ringDuration || 0) - (a.ringDuration || 0) || String(b.startTime || '').localeCompare(String(a.startTime || '')));
+
+  lastQueueDashboardSummary = summary;
+  lastQueueDashboardAt = now;
+  console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount}`);
+  return summary;
 }
 
 function isRateLimitError(err, data) {
@@ -461,11 +647,13 @@ async function findQueueId() {
     );
     if (csQueue) {
       customerServiceQueueId = csQueue.id;
+      customerServiceQueueName = csQueue.name || customerServiceQueueName;
       console.log(`✅ Found queue: "${csQueue.name}" (ID: ${csQueue.id})`);
     } else {
       // Use first queue as fallback
       if (queues.length > 0) {
         customerServiceQueueId = queues[0].id;
+        customerServiceQueueName = queues[0].name || customerServiceQueueName;
         console.log(`⚠️ Using first queue: "${queues[0].name}" (ID: ${queues[0].id})`);
       }
       console.log('All queues:', queues.map(q => q.name).join(', '));
@@ -748,6 +936,7 @@ module.exports = {
   ensureRealtimeSubscription,
   fetchPresenceForAll,
   fetchCallLogs,
+  fetchQueueDashboardSummary,
   searchRCUsers,
   fetchLiveCallStatus,
   handleWebhookNotification,
