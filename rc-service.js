@@ -251,6 +251,30 @@ async function listAccountCallLogRecords(params) {
   return records;
 }
 
+async function listExtensionCallLogRecords(extensionId, params) {
+  const records = [];
+  let page = 1;
+
+  while (page <= 10) {
+    const r = await platform.get(`/restapi/v1.0/account/~/extension/${extensionId}/call-log`, {
+      ...params,
+      page
+    });
+    const data = await r.json();
+    if (data.errorCode) {
+      const err = new Error(data.message || data.errorCode);
+      err.rcData = data;
+      throw err;
+    }
+    records.push(...(data.records || []));
+    if (!data.navigation || !data.navigation.nextPage || !(data.records || []).length) break;
+    page++;
+    await sleep(500);
+  }
+
+  return records;
+}
+
 function buildAgentLookups(agents) {
   const byId = {};
   const byExt = {};
@@ -922,7 +946,6 @@ async function fetchCallLogs() {
   try {
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
-    const lookups = buildAgentLookups(agents);
     // Use IST midnight as start of shift day
     const istMidnight = new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}) + 'T00:00:00+05:30');
     const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
@@ -933,33 +956,50 @@ async function fetchCallLogs() {
     } catch (e) {
       console.error('❌ Account call log abandon sync:', e.message);
     }
-    const calls = await listAccountCallLogRecords({
-      dateFrom: istMidnight.toISOString(),
-      dateTo: istNextMidnight.toISOString(),
-      perPage: 200,
-      view: 'Detailed'
-    });
     let imported = 0;
-    for (const call of calls) {
-      const owner = resolveCallOwner(call, lookups);
-      if (!owner) continue;
-      const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
-      await insertCallLog({
-        agentId: owner.rc_id,
-        agentName: owner.name,
-        callId: call.id,
-        direction: call.direction,
-        result: call.result,
-        duration: call.duration || 0,
-        ringDuration,
-        holdDuration,
-        transferred,
-        isVoicemail,
-        startTime: call.startTime
-      });
-      imported++;
+    for (const agent of agents) {
+      let attempts = 0;
+      while (attempts < 2) {
+        attempts++;
+        try {
+          await sleep(2500);
+          const calls = await listExtensionCallLogRecords(agent.rc_id, {
+            dateFrom: istMidnight.toISOString(),
+            dateTo: istNextMidnight.toISOString(),
+            perPage: 200,
+            view: 'Detailed'
+          });
+          for (const call of calls) {
+            const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+            await insertCallLog({
+              agentId: agent.rc_id,
+              agentName: agent.name,
+              callId: call.id,
+              direction: call.direction,
+              result: call.result,
+              duration: call.duration || 0,
+              ringDuration,
+              holdDuration,
+              transferred,
+              isVoicemail,
+              startTime: call.startTime
+            });
+            imported++;
+          }
+          console.log(`✅ ${agent.name}: ${calls.length} calls today`);
+          break;
+        } catch (e) {
+          if (attempts < 2 && isRateLimitError(e, e.rcData)) {
+            console.warn(`⏳ Call log retry for ${agent.name} after rate limit`);
+            await sleep(8000);
+            continue;
+          }
+          console.error(`❌ Call log ${agent.name}:`, e.message);
+          break;
+        }
+      }
     }
-    console.log(`✅ Call logs synced: ${imported} agent-mapped calls`);
+    console.log(`✅ Call logs synced: ${imported} agent-scoped calls`);
   } catch(e) { console.error('❌ fetchCallLogs:', e.message); }
 }
 
