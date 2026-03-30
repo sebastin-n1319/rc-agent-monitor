@@ -1,6 +1,6 @@
 const RC = require('@ringcentral/sdk').SDK;
 const { EventEmitter } = require('events');
-const { insertPresenceEvent, insertCallLog, deleteCallLogsRange, getMonitoredAgents, updateAgentRcId } = require('./database');
+const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents, updateAgentRcId } = require('./database');
 require('dotenv').config();
 
 const rcsdk = new RC({
@@ -15,7 +15,8 @@ const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
 const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
 const WEBHOOK_RETRY_MS = Number(process.env.WEBHOOK_RETRY_MS || 30000);
-const DASHBOARD_SUMMARY_TTL_MS = Number(process.env.DASHBOARD_SUMMARY_TTL_MS || 45000);
+const DASHBOARD_SUMMARY_TTL_MS = Number(process.env.DASHBOARD_SUMMARY_TTL_MS || 300000);
+const CALL_LOG_SYNC_MIN_INTERVAL_MS = Number(process.env.CALL_LOG_SYNC_MIN_INTERVAL_MS || 600000);
 
 let customerServiceQueueId = null;
 let customerServiceQueueName = 'Customer Service';
@@ -29,6 +30,9 @@ let subscriptionRenewTimer = null;
 let subscriptionRetryTimer = null;
 let lastQueueDashboardSummary = null;
 let lastQueueDashboardAt = 0;
+let callLogSyncPromise = null;
+let lastCallLogSyncAt = 0;
+let lastSuccessfulCallLogSyncAt = 0;
 
 const liveEvents = new EventEmitter();
 liveEvents.setMaxListeners(50);
@@ -108,10 +112,37 @@ function isCustomerServiceLabel(value) {
     normalized.includes('cs stars');
 }
 
-function getIstDateWindow(dateStr) {
-  const start = new Date(`${dateStr}T00:00:00+05:30`);
-  const end = new Date(start.getTime() + 86400000);
-  return { start, end };
+function getTimeZoneOffsetMinutes(date,timeZone){
+  const parts = new Intl.DateTimeFormat('en-US',{
+    timeZone,
+    timeZoneName:'shortOffset',
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit',
+    hour12:false
+  }).formatToParts(date);
+  const raw = parts.find(p=>p.type==='timeZoneName')?.value || 'GMT+0';
+  const match = raw.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+  if(!match) return 0;
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2] || 0);
+  const minutes = Number(match[3] || 0);
+  return sign * (hours * 60 + minutes);
+}
+
+function zonedMidnightUtc(dateStr,timeZone){
+  const guess = new Date(`${dateStr}T00:00:00Z`);
+  const firstPass = new Date(guess.getTime() - getTimeZoneOffsetMinutes(guess,timeZone) * 60000);
+  return new Date(guess.getTime() - getTimeZoneOffsetMinutes(firstPass,timeZone) * 60000);
+}
+
+function getDateWindow(dateStr, timeZone = 'America/Chicago') {
+  const [y,m,d] = String(dateStr).split('-').map(Number);
+  const nextDate = new Date(Date.UTC(y,m-1,d+1,12,0,0)).toISOString().slice(0,10);
+  return {
+    start: zonedMidnightUtc(dateStr, timeZone),
+    end: zonedMidnightUtc(nextDate, timeZone)
+  };
 }
 
 function callTouchesCustomerServiceQueue(call) {
@@ -348,7 +379,7 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
     direction: 'Inbound'
   });
   const d = await r.json();
-  let imported = 0;
+  const logs = [];
 
   for (const call of (d.records || [])) {
     if (!isAbandonedStyleResult(call.result)) continue;
@@ -371,7 +402,7 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
 
     const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
     const voicemailResult = isVoicemail || isVoicemailResult(call.result);
-    await insertCallLog({
+    logs.push({
       agentId: owner.rc_id,
       agentName: owner.name,
       callId: call.id,
@@ -384,132 +415,142 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
       isVoicemail: voicemailResult,
       startTime: call.startTime
     });
-    imported++;
   }
 
-  console.log(`✅ Account call log abandon sync: ${imported} relevant inbound calls`);
+  console.log(`✅ Account call log abandon sync: ${logs.length} relevant inbound calls`);
+  return logs;
 }
 
-async function fetchQueueDashboardSummary(dateStr, force = false) {
+async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'America/Chicago') {
   const now = Date.now();
   if (
     !force &&
     lastQueueDashboardSummary &&
     lastQueueDashboardSummary.date === dateStr &&
+    lastQueueDashboardSummary.timeZone === timeZone &&
     now - lastQueueDashboardAt < DASHBOARD_SUMMARY_TTL_MS
   ) {
     return lastQueueDashboardSummary;
   }
 
-  await resolveAgentRcIds();
-  const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
-  const lookups = buildAgentLookups(agents);
-  if (!customerServiceQueueId) await findQueueId();
+  try {
+    await resolveAgentRcIds();
+    const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+    const lookups = buildAgentLookups(agents);
+    if (!customerServiceQueueId) await findQueueId();
 
-  const { start, end } = getIstDateWindow(dateStr);
-  const calls = await listAccountCallLogRecords({
-    dateFrom: start.toISOString(),
-    dateTo: end.toISOString(),
-    perPage: 200,
-    view: 'Detailed'
-  });
+    const { start, end } = getDateWindow(dateStr, timeZone);
+    const calls = await listAccountCallLogRecords({
+      dateFrom: start.toISOString(),
+      dateTo: end.toISOString(),
+      perPage: 200,
+      view: 'Detailed'
+    });
 
-  const summary = {
-    date: dateStr,
-    source: 'account-call-log',
-    inboundCount: 0,
-    outboundCount: 0,
-    voicemailCount: 0,
-    abandonedCount: 0,
-    transferCount: 0,
-    ahtInbound: 0,
-    ahtOutbound: 0,
-    avgRingTime: 0,
-    avgHoldTime: 0,
-    totalHoldTime: 0,
-    longestRing: 0,
-    matchedCalls: 0,
-    abandonedCalls: []
-  };
+    const summary = {
+      date: dateStr,
+      timeZone,
+      source: 'account-call-log',
+      inboundCount: 0,
+      outboundCount: 0,
+      voicemailCount: 0,
+      abandonedCount: 0,
+      transferCount: 0,
+      ahtInbound: 0,
+      ahtOutbound: 0,
+      avgRingTime: 0,
+      avgHoldTime: 0,
+      totalHoldTime: 0,
+      longestRing: 0,
+      matchedCalls: 0,
+      abandonedCalls: []
+    };
 
-  let ringTotal = 0;
-  let ringCount = 0;
-  let holdTotal = 0;
-  let holdCount = 0;
-  let inboundTalkTotal = 0;
-  let inboundTalkCount = 0;
-  let outboundTalkTotal = 0;
-  let outboundTalkCount = 0;
+    let ringTotal = 0;
+    let ringCount = 0;
+    let holdTotal = 0;
+    let holdCount = 0;
+    let inboundTalkTotal = 0;
+    let inboundTalkCount = 0;
+    let outboundTalkTotal = 0;
+    let outboundTalkCount = 0;
 
-  const sessions = new Map();
-  for (const call of calls) {
-    const key = getCallSessionKey(call);
-    if (!sessions.has(key)) sessions.set(key, []);
-    sessions.get(key).push(call);
+    const sessions = new Map();
+    for (const call of calls) {
+      const key = getCallSessionKey(call);
+      if (!sessions.has(key)) sessions.set(key, []);
+      sessions.get(key).push(call);
+    }
+
+    for (const sessionCalls of sessions.values()) {
+      const session = buildSessionSummary(sessionCalls, lookups);
+      const { owner, relevantInbound, relevantOutbound, voicemailResult, abandonedResult, transferred } = session;
+      if (!relevantInbound && !relevantOutbound) continue;
+
+      const effectiveRing = session.ringDuration || 0;
+      const effectiveHold = session.holdDuration || 0;
+
+      summary.matchedCalls++;
+      summary.longestRing = Math.max(summary.longestRing, effectiveRing);
+      if (effectiveRing > 0) {
+        ringTotal += effectiveRing;
+        ringCount++;
+      }
+      if (effectiveHold > 0) {
+        holdTotal += effectiveHold;
+        holdCount++;
+        summary.totalHoldTime += effectiveHold;
+      }
+      if (transferred) summary.transferCount++;
+
+      if (relevantInbound) {
+        summary.inboundCount++;
+        if (!voicemailResult && !abandonedResult && session.connected && session.duration > 0) {
+          inboundTalkTotal += session.duration;
+          inboundTalkCount++;
+        }
+        if (voicemailResult) summary.voicemailCount++;
+        if (!voicemailResult && abandonedResult) {
+          summary.abandonedCount++;
+          summary.abandonedCalls.push({
+            agentId: owner ? owner.rc_id : `queue:${customerServiceQueueId || 'customer-service'}`,
+            agentName: owner ? owner.name : customerServiceQueueName,
+            extension: owner ? owner.extension : null,
+            callId: session.callId,
+            result: session.result,
+            ringDuration: effectiveRing,
+            holdDuration: effectiveHold,
+            startTime: session.startTime
+          });
+        }
+      }
+
+      if (relevantOutbound) {
+        summary.outboundCount++;
+        if (session.connected && session.duration > 0) {
+          outboundTalkTotal += session.duration;
+          outboundTalkCount++;
+        }
+      }
+    }
+
+    summary.ahtInbound = inboundTalkCount ? Math.round(inboundTalkTotal / inboundTalkCount) : 0;
+    summary.ahtOutbound = outboundTalkCount ? Math.round(outboundTalkTotal / outboundTalkCount) : 0;
+    summary.avgRingTime = ringCount ? Math.round(ringTotal / ringCount) : 0;
+    summary.avgHoldTime = holdCount ? Math.round(holdTotal / holdCount) : 0;
+    summary.abandonedCalls.sort((a, b) => (b.ringDuration || 0) - (a.ringDuration || 0) || String(b.startTime || '').localeCompare(String(a.startTime || '')));
+
+    lastQueueDashboardSummary = summary;
+    lastQueueDashboardAt = now;
+    console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount}`);
+    return summary;
+  } catch (e) {
+    if (lastQueueDashboardSummary && lastQueueDashboardSummary.date === dateStr && lastQueueDashboardSummary.timeZone === timeZone) {
+      console.warn(`⚠️ Using cached queue dashboard summary: ${e.message}`);
+      return { ...lastQueueDashboardSummary, stale: true };
+    }
+    throw e;
   }
-
-  for (const sessionCalls of sessions.values()) {
-    const session = buildSessionSummary(sessionCalls, lookups);
-    const { owner, relevantInbound, relevantOutbound, voicemailResult, abandonedResult, transferred } = session;
-    if (!relevantInbound && !relevantOutbound) continue;
-
-    const effectiveRing = session.ringDuration || 0;
-    const effectiveHold = session.holdDuration || 0;
-
-    summary.matchedCalls++;
-    summary.longestRing = Math.max(summary.longestRing, effectiveRing);
-    if (effectiveRing > 0) {
-      ringTotal += effectiveRing;
-      ringCount++;
-    }
-    if (effectiveHold > 0) {
-      holdTotal += effectiveHold;
-      holdCount++;
-      summary.totalHoldTime += effectiveHold;
-    }
-    if (transferred) summary.transferCount++;
-
-    if (relevantInbound) {
-      summary.inboundCount++;
-      if (!voicemailResult && !abandonedResult && session.connected && session.duration > 0) {
-        inboundTalkTotal += session.duration;
-        inboundTalkCount++;
-      }
-      if (voicemailResult) summary.voicemailCount++;
-      if (!voicemailResult && abandonedResult) {
-        summary.abandonedCount++;
-        summary.abandonedCalls.push({
-          agentId: owner ? owner.rc_id : `queue:${customerServiceQueueId || 'customer-service'}`,
-          agentName: owner ? owner.name : customerServiceQueueName,
-          extension: owner ? owner.extension : null,
-          callId: session.callId,
-          result: session.result,
-          ringDuration: effectiveRing,
-          holdDuration: effectiveHold,
-          startTime: session.startTime
-        });
-      }
-    }
-
-    if (relevantOutbound) {
-      summary.outboundCount++;
-      if (session.connected && session.duration > 0) {
-        outboundTalkTotal += session.duration;
-        outboundTalkCount++;
-      }
-    }
-  }
-
-  summary.ahtInbound = inboundTalkCount ? Math.round(inboundTalkTotal / inboundTalkCount) : 0;
-  summary.ahtOutbound = outboundTalkCount ? Math.round(outboundTalkTotal / outboundTalkCount) : 0;
-  summary.avgRingTime = ringCount ? Math.round(ringTotal / ringCount) : 0;
-  summary.avgHoldTime = holdCount ? Math.round(holdTotal / holdCount) : 0;
-  summary.abandonedCalls.sort((a, b) => (b.ringDuration || 0) - (a.ringDuration || 0) || String(b.startTime || '').localeCompare(String(a.startTime || '')));
-
-  lastQueueDashboardSummary = summary;
-  lastQueueDashboardAt = now;
-  console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount}`);
-  return summary;
 }
 
 function isRateLimitError(err, data) {
@@ -942,21 +983,33 @@ async function fetchPresenceForAll(force = false) {
   return presenceSyncPromise;
 }
 
-async function fetchCallLogs() {
-  try {
+async function fetchCallLogs(force = false) {
+  if (callLogSyncPromise) {
+    console.log('⏭️ Call log sync already running, reusing current run');
+    return callLogSyncPromise;
+  }
+
+  if (!force && lastCallLogSyncAt && Date.now() - lastCallLogSyncAt < CALL_LOG_SYNC_MIN_INTERVAL_MS) {
+    console.log('⏭️ Call log sync skipped; last snapshot is still fresh');
+    return { skipped: true };
+  }
+
+  callLogSyncPromise = (async () => {
     const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
     if (!agents.length) return;
     // Use IST midnight as start of shift day
     const istMidnight = new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}) + 'T00:00:00+05:30');
     const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
     console.log(`📞 Fetching calls from IST midnight: ${istMidnight.toISOString()}`);
-    await deleteCallLogsRange(istMidnight.toISOString(), istNextMidnight.toISOString());
+    const pendingLogs = [];
+    const failedAgents = [];
     try {
-      await fetchAccountQueueAbandonCalls(istMidnight, agents);
+      pendingLogs.push(...await fetchAccountQueueAbandonCalls(istMidnight, agents));
     } catch (e) {
       console.error('❌ Account call log abandon sync:', e.message);
     }
     let imported = 0;
+    let successfulAgents = 0;
     for (const agent of agents) {
       let attempts = 0;
       while (attempts < 2) {
@@ -971,7 +1024,7 @@ async function fetchCallLogs() {
           });
           for (const call of calls) {
             const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
-            await insertCallLog({
+            pendingLogs.push({
               agentId: agent.rc_id,
               agentName: agent.name,
               callId: call.id,
@@ -986,6 +1039,7 @@ async function fetchCallLogs() {
             });
             imported++;
           }
+          successfulAgents++;
           console.log(`✅ ${agent.name}: ${calls.length} calls today`);
           break;
         } catch (e) {
@@ -995,12 +1049,39 @@ async function fetchCallLogs() {
             continue;
           }
           console.error(`❌ Call log ${agent.name}:`, e.message);
+          failedAgents.push(agent.name);
           break;
         }
       }
     }
+    const hadGoodSnapshot = lastSuccessfulCallLogSyncAt > 0;
+    const shouldPreserveExisting = hadGoodSnapshot && failedAgents.length > 0;
+
+    if (pendingLogs.length === 0) {
+      console.warn('⚠️ No call logs gathered; keeping existing snapshot');
+      lastCallLogSyncAt = Date.now();
+      return { imported: 0, preserved: true };
+    }
+
+    if (shouldPreserveExisting) {
+      console.warn(`⚠️ Preserving previous call log snapshot; partial sync hit ${failedAgents.length} failed agents`);
+      lastCallLogSyncAt = Date.now();
+      return { imported, preserved: true, failedAgents };
+    }
+
+    await replaceCallLogsRange(istMidnight.toISOString(), istNextMidnight.toISOString(), pendingLogs);
+    lastCallLogSyncAt = Date.now();
+    lastSuccessfulCallLogSyncAt = lastCallLogSyncAt;
     console.log(`✅ Call logs synced: ${imported} agent-scoped calls`);
-  } catch(e) { console.error('❌ fetchCallLogs:', e.message); }
+    return { imported, preserved: false, failedAgents, successfulAgents };
+  })().catch(e => {
+    console.error('❌ fetchCallLogs:', e.message);
+    return { imported: 0, preserved: true, error: e.message };
+  }).finally(() => {
+    callLogSyncPromise = null;
+  });
+
+  return callLogSyncPromise;
 }
 
 async function fetchLiveCallStatus() {

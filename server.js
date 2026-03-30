@@ -31,25 +31,29 @@ liveEvents.on('update', payload => broadcastLiveEvent(payload));
 
 app.get('/api/summary', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
-  try { res.json({ success: true, date, data: await getAgentSummary(date) }); }
+  const tz = req.query.tz || 'America/Chicago';
+  try { res.json({ success: true, date, timeZone: tz, data: await getAgentSummary(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/presence-events', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
-  try { res.json({ success: true, data: await getPresenceEvents(date) }); }
+  const tz = req.query.tz || 'America/Chicago';
+  try { res.json({ success: true, date, timeZone: tz, data: await getPresenceEvents(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/abandoned-calls', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
-  try { res.json({ success: true, date, data: await getAbandonedCalls(date) }); }
+  const tz = req.query.tz || 'America/Chicago';
+  try { res.json({ success: true, date, timeZone: tz, data: await getAbandonedCalls(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/queue-dashboard', async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
-  try { res.json({ success: true, date, data: await fetchQueueDashboardSummary(date) }); }
+  const tz = req.query.tz || 'America/Chicago';
+  try { res.json({ success: true, date, timeZone: tz, data: await fetchQueueDashboardSummary(date, false, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

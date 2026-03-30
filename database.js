@@ -19,6 +19,43 @@ function fromStoredUtc(value){
   return new Date(String(value).replace(' ','T') + 'Z');
 }
 
+function getTimeZoneOffsetMinutes(date,timeZone){
+  const parts = new Intl.DateTimeFormat('en-US',{
+    timeZone,
+    timeZoneName:'shortOffset',
+    hour:'2-digit',
+    minute:'2-digit',
+    second:'2-digit',
+    hour12:false
+  }).formatToParts(date);
+  const raw = parts.find(p=>p.type==='timeZoneName')?.value || 'GMT+0';
+  const match = raw.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+  if(!match) return 0;
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2] || 0);
+  const minutes = Number(match[3] || 0);
+  return sign * (hours * 60 + minutes);
+}
+
+function zonedMidnightUtc(dateStr,timeZone){
+  const guess = new Date(`${dateStr}T00:00:00Z`);
+  const firstPass = new Date(guess.getTime() - getTimeZoneOffsetMinutes(guess,timeZone) * 60000);
+  return new Date(guess.getTime() - getTimeZoneOffsetMinutes(firstPass,timeZone) * 60000);
+}
+
+function getDateWindow(dateStr,timeZone='America/Chicago'){
+  const [y,m,d] = String(dateStr).split('-').map(Number);
+  const nextDate = new Date(Date.UTC(y,m-1,d+1,12,0,0)).toISOString().slice(0,10);
+  return {
+    start: zonedMidnightUtc(dateStr,timeZone),
+    end: zonedMidnightUtc(nextDate,timeZone)
+  };
+}
+
+function getTodayForTimeZone(timeZone='America/Chicago'){
+  return new Date().toLocaleDateString('en-CA',{timeZone});
+}
+
 function isQueueReady(status, queueStatus){
   return status === 'Available' && queueStatus === 'In Queue';
 }
@@ -81,13 +118,11 @@ function insertPresenceEvent(agentId,agentName,status,queueStatus,timestamp){
   }
   return run(`INSERT INTO presence_events (agent_id,agent_name,status,queue_status) VALUES (?,?,?,?)`,[agentId,agentName,status,queueStatus||'Unknown']);
 }
-async function getPresenceEvents(date){
+async function getPresenceEvents(date,timeZone='America/Chicago'){
   const agents=await getMonitoredAgents();
   const rcIds=agents.map(a=>a.rc_id).filter(Boolean);
   if(!rcIds.length)return[];
-  // IST date range
-  const pStart = new Date(date + 'T00:00:00+05:30');
-  const pEnd = new Date(pStart.getTime() + 86400000);
+  const { start:pStart, end:pEnd } = getDateWindow(date,timeZone);
   return all(
     `SELECT * FROM presence_events WHERE datetime(timestamp) >= datetime(?) AND datetime(timestamp) < datetime(?) AND agent_id IN (${rcIds.map(()=>'?').join(',')}) ORDER BY datetime(timestamp) ASC`,
     [toSqliteUtc(pStart), toSqliteUtc(pEnd), ...rcIds]
@@ -95,36 +130,67 @@ async function getPresenceEvents(date){
 }
 
 // CALL LOGS - now with ring/hold/transfer/voicemail
-function insertCallLog(log){
+function getStoredCallLogValues(log){
   const sourceCallId = log.callId ? String(log.callId) : null;
   const storedCallId = [
     String(log.agentId || 'unknown'),
     String(log.direction || 'unknown'),
     sourceCallId || String(log.startTime || Date.now())
   ].join('::');
+  return [
+    log.agentId,
+    log.agentName,
+    storedCallId,
+    sourceCallId,
+    log.direction,
+    log.result,
+    log.duration||0,
+    log.ringDuration||0,
+    log.holdDuration||0,
+    log.transferred?1:0,
+    log.isVoicemail?1:0,
+    log.startTime
+  ];
+}
+
+function insertCallLog(log){
   return run(`INSERT OR IGNORE INTO call_logs
     (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [log.agentId,log.agentName,storedCallId,sourceCallId,log.direction,log.result,
-     log.duration||0,log.ringDuration||0,log.holdDuration||0,
-     log.transferred?1:0,log.isVoicemail?1:0,log.startTime]);
+    getStoredCallLogValues(log));
 }
 
 function deleteCallLogsRange(startIso,endIso){
   return run(`DELETE FROM call_logs WHERE start_time >= ? AND start_time < ?`,[startIso,endIso]);
 }
 
+async function replaceCallLogsRange(startIso,endIso,logs){
+  await run('BEGIN IMMEDIATE');
+  try{
+    await run(`DELETE FROM call_logs WHERE start_time >= ? AND start_time < ?`,[startIso,endIso]);
+    for(const log of logs){
+      await run(`INSERT OR IGNORE INTO call_logs
+        (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+        getStoredCallLogValues(log));
+    }
+    await run('COMMIT');
+  }catch(e){
+    try{await run('ROLLBACK');}catch(_){}
+    throw e;
+  }
+}
+
 // SUMMARY with all new metrics
-async function getAgentSummary(date){
+async function getAgentSummary(date,timeZone='America/Chicago'){
   const agents=await getMonitoredAgents();
   if(!agents.length)return[];
   const results=[];
   for(const agent of agents){
     const agentId=agent.rc_id||agent.extension;
-    const istMidnight = new Date(date + 'T00:00:00+05:30');
-    const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
-    const dayStartSql = toSqliteUtc(istMidnight);
-    const dayEndSql = toSqliteUtc(istNextMidnight);
+    const { start:dayStartUtc, end:dayEndUtc } = getDateWindow(date,timeZone);
+    const dayStartSql = toSqliteUtc(dayStartUtc);
+    const dayEndSql = toSqliteUtc(dayEndUtc);
     const events=await all(
       `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND datetime(timestamp) >= datetime(?) AND datetime(timestamp) < datetime(?) ORDER BY datetime(timestamp) ASC`,
       [agentId, dayStartSql, dayEndSql]
@@ -145,29 +211,43 @@ async function getAgentSummary(date){
     segments.push(...events);
 
     if(segments.length){
-      for(let i=0;i<segments.length-1;i++){
+      const dayEnd = date===getTodayForTimeZone(timeZone)
+        ? new Date(Math.min(Date.now(), dayEndUtc.getTime()))
+        : dayEndUtc;
+      const timeline = [];
+      for(let i=0;i<segments.length;i++){
         const start = fromStoredUtc(segments[i].timestamp);
-        const end = fromStoredUtc(segments[i+1].timestamp);
-        const dur = Math.max(0, (end - start) / 1000);
-        if(isQueueReady(segments[i].status, segments[i].queue_status)) availTime += dur;
-        else unavailTime += dur;
+        const end = i < segments.length-1 ? fromStoredUtc(segments[i+1].timestamp) : dayEnd;
+        if(!start || !end || end <= start) continue;
+        timeline.push({
+          status: segments[i].status,
+          queue_status: segments[i].queue_status || 'Unknown',
+          start,
+          end
+        });
       }
 
-      const nowIST = new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'});
-      const dayEnd = date===nowIST ? new Date(Math.min(Date.now(), istNextMidnight.getTime())) : istNextMidnight;
-      const lastEvt = segments[segments.length-1];
-      const secSinceLast = Math.max(0, (dayEnd.getTime() - fromStoredUtc(lastEvt.timestamp).getTime()) / 1000);
-      if(isQueueReady(lastEvt.status, lastEvt.queue_status)) availTime += secSinceLast;
-      else unavailTime += secSinceLast;
+      const readySpans = timeline.filter(seg=>isQueueReady(seg.status, seg.queue_status));
+      if(readySpans.length){
+        const workStart = readySpans[0].start;
+        const workEnd = readySpans[readySpans.length-1].end;
+        for(const seg of timeline){
+          const start = new Date(Math.max(seg.start.getTime(), workStart.getTime()));
+          const end = new Date(Math.min(seg.end.getTime(), workEnd.getTime()));
+          if(end <= start) continue;
+          const dur = Math.max(0, (end - start) / 1000);
+          if(isQueueReady(seg.status, seg.queue_status)) availTime += dur;
+          else unavailTime += dur;
+        }
+      }
 
       const toggleEvents = previousEvent ? [previousEvent, ...events] : events;
       for(let i=1;i<toggleEvents.length;i++){
         if(toggleEvents[i].status!==toggleEvents[i-1].status) toggleCount++;
       }
     }
-    // IST date range for call logs
-    const callStart = new Date(date + 'T00:00:00+05:30').toISOString();
-    const callEnd = new Date(new Date(date + 'T00:00:00+05:30').getTime() + 86400000).toISOString();
+    const callStart = dayStartUtc.toISOString();
+    const callEnd = dayEndUtc.toISOString();
     // Inbound
     const inb=await get(`SELECT
       COUNT(*) as total,
@@ -209,9 +289,10 @@ async function getAgentSummary(date){
   return results;
 }
 
-async function getAbandonedCalls(date){
-  const callStart = new Date(date + 'T00:00:00+05:30').toISOString();
-  const callEnd = new Date(new Date(date + 'T00:00:00+05:30').getTime() + 86400000).toISOString();
+async function getAbandonedCalls(date,timeZone='America/Chicago'){
+  const { start, end } = getDateWindow(date,timeZone);
+  const callStart = start.toISOString();
+  const callEnd = end.toISOString();
   return all(
     `SELECT
       c.agent_id AS agentId,
@@ -251,7 +332,7 @@ async function getRoleForEmail(e){const row=await get(`SELECT role FROM app_role
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,getAgentSummary,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,getAgentSummary,getAbandonedCalls,
   insertLoginLog,getLoginLogs,
   getAllRoles,setRole,removeRole,getRoleForEmail
 };
