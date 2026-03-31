@@ -248,6 +248,33 @@ body::before{
 .status-node strong{display:block;margin-top:10px;font-size:24px;font-family:'Space Grotesk',sans-serif}
 .status-node small{display:block;margin-top:8px;font-size:11px;color:var(--muted)}
 
+.csat-shell{
+  margin-top:14px;padding:16px;border-radius:22px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);
+}
+.csat-shell h4{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.52)}
+.csat-shell p{margin-top:8px;font-size:12px;line-height:1.7;color:var(--muted)}
+.csat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.csat-control{
+  padding:14px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+}
+.csat-control span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.46)}
+.csat-control strong{display:block;margin-top:10px;font-size:30px;font-family:'Space Grotesk',sans-serif;color:var(--csat-tone)}
+.csat-control input{width:100%;margin-top:14px;accent-color:var(--csat-tone)}
+.csat-meta{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
+.csat-shell.calls{--csat-tone:var(--calls-soft)}
+.csat-shell.chat{--csat-tone:var(--chat-soft)}
+.csat-result{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;
+}
+.csat-card{
+  padding:14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+}
+.csat-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.46)}
+.csat-card strong{display:block;margin-top:10px;font-size:28px;font-family:'Space Grotesk',sans-serif}
+.csat-card small{display:block;margin-top:8px;font-size:11px;line-height:1.6;color:var(--muted)}
+.csat-card.good strong{color:var(--green)}
+.csat-card.cash strong{color:#d8cbff}
+
 .notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .note-card{
   padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
@@ -273,7 +300,7 @@ body::before{
   .hero{padding:22px 20px}
   .hero-copy h2{font-size:44px}
   .brand-copy h1{font-size:30px}
-  .bonus-tier-grid,.metric-grid,.eligibility-grid,.leave-grid,.notes-grid,.result-grid,.status-grid,.leave-control-grid{grid-template-columns:1fr}
+  .bonus-tier-grid,.metric-grid,.eligibility-grid,.leave-grid,.notes-grid,.result-grid,.status-grid,.leave-control-grid,.csat-grid,.csat-result{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -395,9 +422,9 @@ body::before{
         </div>
         <div class="status-grid">
           <div class="status-node">
-            <span>Slab 1 hits</span>
-            <strong id="slab1Hits">0</strong>
-            <small id="slab1Needed">Need stronger slab 1 coverage</small>
+            <span>Metrics at Slab 2</span>
+            <strong id="slab2Hits">0 / 0</strong>
+            <small id="slabRule">All metrics must clear Slab 2</small>
           </div>
           <div class="status-node">
             <span>Active slab</span>
@@ -405,6 +432,7 @@ body::before{
             <small id="leaveMultiplier">Leave multiplier 100%</small>
           </div>
         </div>
+        <div id="csat-shell" class="csat-shell calls"></div>
       </div>
     </div>
   </section>
@@ -470,6 +498,10 @@ const governanceNotes=[
 
 let activeTeam='calls';
 let calcValues={calls:{},chat:{}};
+let csatCalcValues={
+  calls:{score:0,count:0},
+  chat:{score:0,count:0}
+};
 
 function fmtMoney(v){
   return '₹'+Math.round(v).toLocaleString();
@@ -613,6 +645,7 @@ function renderCalc(){
     });
   });
   updateCalcTabs();
+  renderCsatCalc();
 }
 
 function updateCalcTabs(){
@@ -632,6 +665,92 @@ function leaveMultiplier(planned,unplanned){
   return 0;
 }
 
+function renderCsatCalc(){
+  const host=document.getElementById('csat-shell');
+  const data=bonusData[activeTeam];
+  const csat=csatCalcValues[activeTeam];
+  const thresholdLabel=data.csatThreshold.replace('CSAT ','');
+  const countLabel=activeTeam==='calls'?'Good CSAT count':'Happy CSAT count';
+  const perRate=activeTeam==='calls'?150:50;
+  host.className='csat-shell '+data.tone;
+  host.innerHTML=`
+    <h4>CSAT Incentive Calculator</h4>
+    <p>${data.title} pays ${data.incentive}. Threshold must clear <strong>${data.csatThreshold}</strong>, and any unplanned leave blocks this incentive.</p>
+    <div class="csat-grid">
+      <div class="csat-control">
+        <span>Current CSAT</span>
+        <strong id="csatScoreValue">${csat.score}%</strong>
+        <input type="range" min="0" max="100" step="1" value="${csat.score}" id="csatScoreInput">
+        <div class="csat-meta"><div>Threshold</div><div><strong>${thresholdLabel}</strong></div></div>
+      </div>
+      <div class="csat-control">
+        <span>${countLabel}</span>
+        <strong id="csatCountValue">${csat.count}</strong>
+        <input type="range" min="0" max="100" step="1" value="${csat.count}" id="csatCountInput">
+        <div class="csat-meta"><div>Per rating</div><div><strong>₹${perRate}</strong></div></div>
+      </div>
+    </div>
+    <div class="csat-result">
+      <div class="csat-card good">
+        <span>Threshold status</span>
+        <strong id="csatEligibility">Miss</strong>
+        <small id="csatEligibilityNote">Raise CSAT above the threshold to unlock the incentive.</small>
+      </div>
+      <div class="csat-card cash">
+        <span>Estimated CSAT bonus</span>
+        <strong id="csatBonusValue">₹0</strong>
+        <small id="csatBonusNote">No CSAT incentive unlocked yet.</small>
+      </div>
+    </div>
+  `;
+  document.getElementById('csatScoreInput').addEventListener('input',e=>{
+    csatCalcValues[activeTeam].score=Number(e.target.value);
+    renderCsatCalc();
+    computeCsatBonus();
+  });
+  document.getElementById('csatCountInput').addEventListener('input',e=>{
+    csatCalcValues[activeTeam].count=Number(e.target.value);
+    renderCsatCalc();
+    computeCsatBonus();
+  });
+  computeCsatBonus();
+}
+
+function computeCsatBonus(){
+  const data=bonusData[activeTeam];
+  const csat=csatCalcValues[activeTeam];
+  const unplanned=document.getElementById('unplannedLeave').checked;
+  const threshold=activeTeam==='calls'?92:85;
+  const perRate=activeTeam==='calls'?150:50;
+  const thresholdMet=csat.score>threshold;
+  const bonus=!unplanned&&thresholdMet?csat.count*perRate:0;
+  const elig=document.getElementById('csatEligibility');
+  const eligNote=document.getElementById('csatEligibilityNote');
+  const bonusVal=document.getElementById('csatBonusValue');
+  const bonusNote=document.getElementById('csatBonusNote');
+  if(!elig||!eligNote||!bonusVal||!bonusNote)return;
+
+  if(unplanned){
+    elig.textContent='Blocked';
+    eligNote.textContent='Unplanned leave removes CSAT incentive eligibility.';
+    bonusVal.textContent='₹0';
+    bonusNote.textContent='Attendance override is blocking the incentive.';
+    return;
+  }
+
+  if(thresholdMet){
+    elig.textContent='Unlocked';
+    eligNote.textContent='CSAT threshold cleared. Rating count now drives the incentive.';
+    bonusVal.textContent=fmtMoney(bonus);
+    bonusNote.textContent=`${csat.count} qualifying rating${csat.count===1?'':'s'} x ₹${perRate}.`;
+  }else{
+    elig.textContent='Miss';
+    eligNote.textContent=`Need above ${threshold}% to unlock this incentive.`;
+    bonusVal.textContent='₹0';
+    bonusNote.textContent='Threshold not met yet.';
+  }
+}
+
 function computeBonus(){
   const data=bonusData[activeTeam];
   const planned=Number(document.getElementById('plannedLeaves').value||0);
@@ -641,6 +760,7 @@ function computeBonus(){
   let total=0;
   let slab1Hits=0;
   let slab2Hits=0;
+  let missCount=0;
 
   data.metrics.forEach(metric=>{
     const value=values[metric.key]||0;
@@ -652,19 +772,22 @@ function computeBonus(){
     }else if(level==='slab2'){
       total+=metric.pts;
       slab2Hits++;
+    }else{
+      missCount++;
     }
   });
 
   const eligible=total>=70&&!unplanned;
   const multiplier=leaveMultiplier(planned,unplanned);
-  const slab1Needed=Math.ceil(data.metrics.length/2);
+  const allMetricsAtSlab2=slab2Hits===data.metrics.length;
+  const allMetricsAtSlab1=slab1Hits===data.metrics.length;
   let slab='Miss';
   let baseBonus=0;
   if(eligible){
-    if(slab1Hits>=slab1Needed){
+    if(allMetricsAtSlab1){
       slab='Slab 1';
       baseBonus=7500;
-    }else{
+    }else if(allMetricsAtSlab2){
       slab='Slab 2';
       baseBonus=3000;
     }
@@ -673,21 +796,31 @@ function computeBonus(){
 
   document.getElementById('totalPoints').textContent=String(total);
   document.getElementById('estimatedBonus').textContent=fmtMoney(finalBonus);
-  document.getElementById('slab1Hits').textContent=String(slab1Hits);
+  document.getElementById('slab2Hits').textContent=slab2Hits+' / '+data.metrics.length;
   document.getElementById('activeSlab').textContent=slab;
   document.getElementById('leaveMultiplier').textContent='Leave multiplier '+Math.round(multiplier*100)+'%';
-  document.getElementById('slab1Needed').textContent='Need '+slab1Needed+' slab 1 hits for top payout';
+  document.getElementById('slabRule').textContent=allMetricsAtSlab1?'All metrics cleared Slab 1':allMetricsAtSlab2?'All metrics cleared Slab 2':'All metrics must clear Slab 2';
 
   if(unplanned){
     document.getElementById('totalStatus').textContent='Unplanned leave removes eligibility';
     document.getElementById('bonusStatus').textContent='Bonus blocked by attendance override';
-  }else if(total>=70){
-    document.getElementById('totalStatus').textContent='Eligible on points';
-    document.getElementById('bonusStatus').textContent=slab==='Slab 1'?'Top slab unlocked':'Second slab unlocked';
-  }else{
+  }else if(total<70){
     document.getElementById('totalStatus').textContent='Minimum 70 points needed';
     document.getElementById('bonusStatus').textContent='No slab unlocked yet';
+  }else if(!allMetricsAtSlab2){
+    document.getElementById('totalStatus').textContent=missCount+' metric miss'+(missCount===1?'':'es')+' blocking payout';
+    document.getElementById('bonusStatus').textContent='Every metric must reach at least Slab 2';
+  }else if(slab==='Slab 1'){
+    document.getElementById('totalStatus').textContent='Eligible on points and metrics';
+    document.getElementById('bonusStatus').textContent='Top slab unlocked';
+  }else if(slab==='Slab 2'){
+    document.getElementById('totalStatus').textContent='Eligible on points and metrics';
+    document.getElementById('bonusStatus').textContent='Second slab unlocked';
+  }else{
+    document.getElementById('totalStatus').textContent='No slab unlocked yet';
+    document.getElementById('bonusStatus').textContent='No slab unlocked yet';
   }
+  computeCsatBonus();
 }
 
 function bindCalcTabs(){
@@ -726,9 +859,9 @@ renderLeaves();
 renderNotes();
 renderCalc();
 bindCalcTabs();
-wireControls();
-computeBonus();
-hydrateLogo();
+  wireControls();
+  computeBonus();
+  hydrateLogo();
 </script>
 </body>
 </html>
