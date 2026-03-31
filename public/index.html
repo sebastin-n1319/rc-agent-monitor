@@ -131,6 +131,12 @@ header{background:linear-gradient(180deg,var(--navy2),var(--navy3));border-botto
 
 .page{display:none;padding:20px 24px;animation:pageIn 0.25s cubic-bezier(0.4,0,0.2,1);}
 .page.active{display:block;}
+.agent-shell-nav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+.agent-shell-btn{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--text3);font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.agent-shell-btn:hover{color:var(--text2);border-color:rgba(255,255,255,0.14);}
+.agent-shell-btn.active{color:var(--orange);border-color:rgba(245,130,31,0.35);background:rgba(245,130,31,0.08);box-shadow:0 10px 22px rgba(0,0,0,0.18);}
+.agent-shell-page{display:none;animation:pageIn 0.25s cubic-bezier(0.4,0,0.2,1);}
+.agent-shell-page.active{display:block;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
 /* METRICS */
@@ -555,6 +561,10 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Login Logs
     </button>
+    <button class="nav-tab" onclick="switchTab('hall',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v3a5 5 0 0 1-10 0z"/><path d="M7 7H5a2 2 0 0 1-2-2V4h4"/><path d="M17 7h2a2 2 0 0 0 2-2V4h-4"/></svg>
+      Hall of Fame
+    </button>
   </div>
 
   <!-- LIVE -->
@@ -611,17 +621,6 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
           </div>
         </div>
       </div>
-    </div>
-    <div class="card hof-frame-shell">
-      <div class="hof-frame-top">
-        <span class="card-title">Hall of Fame</span>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <span class="chip">Admin</span>
-          <span class="chip">Embedded Layout</span>
-        </div>
-      </div>
-      <div class="hof-frame-note">The supplied Hall of Fame HTML is embedded here as its own section so the original design shows cleanly inside admin without changing the live dashboard layout.</div>
-      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Admin Section" loading="lazy"></iframe>
     </div>
     <div class="card">
       <div class="card-hdr">
@@ -769,38 +768,61 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       <div id="login-log-list"><div class="no-data">Loading...</div></div>
     </div>
   </div>
+
+  <!-- HALL OF FAME -->
+  <div class="page" id="tab-hall">
+    <div class="card hof-frame-shell">
+      <div class="hof-frame-top">
+        <span class="card-title">Hall of Fame</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span class="chip">Admin</span>
+          <span class="chip">Standalone Section</span>
+        </div>
+      </div>
+      <div class="hof-frame-note">This is a dedicated Hall of Fame section. The live dashboard stays unchanged, and the supplied layout is shown here on its own.</div>
+      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Admin Section" loading="lazy"></iframe>
+    </div>
+  </div>
 </div>
 
 <!-- AGENT VIEW -->
 <div id="agentView" style="display:none;padding:20px 24px;">
-  <div class="metrics">
-    <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="ag-avail">--</div></div>
-    <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="ag-unavail">--</div></div>
-    <div class="metric m-blue"><div class="metric-lbl">On Call</div><div class="metric-val" id="ag-oncall">--</div></div>
-    <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="ag-inbound">--</div></div>
-    <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="ag-outbound">--</div></div>
+  <div class="agent-shell-nav">
+    <button class="agent-shell-btn active" onclick="switchAgentSection('dashboard',this)">Dashboard</button>
+    <button class="agent-shell-btn" onclick="switchAgentSection('hall',this)">Hall of Fame</button>
   </div>
-  <div class="card hof-frame-shell">
-    <div class="hof-frame-top">
-      <span class="card-title">Hall of Fame</span>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-        <span class="chip">Agent</span>
-        <span class="chip">Embedded Layout</span>
+  <div class="agent-shell-page active" id="agent-section-dashboard">
+    <div class="metrics">
+      <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="ag-avail">--</div></div>
+      <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="ag-unavail">--</div></div>
+      <div class="metric m-blue"><div class="metric-lbl">On Call</div><div class="metric-val" id="ag-oncall">--</div></div>
+      <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="ag-inbound">--</div></div>
+      <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="ag-outbound">--</div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><span class="card-title">Team Status</span><span class="chip" id="agent-view-count">0 agents</span></div>
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th>24h</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
+        <tbody id="agent-view-table"><tr><td colspan="12" class="no-data">Loading...</td></tr></tbody>
+      </table>
       </div>
     </div>
-    <div class="hof-frame-note">The same Hall of Fame section is available in agent view as a dedicated highlight area, separate from the live team table.</div>
-    <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Agent Section" loading="lazy"></iframe>
+    <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
   </div>
-  <div class="card">
-    <div class="card-hdr"><span class="card-title">Team Status</span><span class="chip" id="agent-view-count">0 agents</span></div>
-    <div class="tbl-wrap">
-    <table>
-      <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th>24h</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
-      <tbody id="agent-view-table"><tr><td colspan="12" class="no-data">Loading...</td></tr></tbody>
-    </table>
+  <div class="agent-shell-page" id="agent-section-hall">
+    <div class="card hof-frame-shell">
+      <div class="hof-frame-top">
+        <span class="card-title">Hall of Fame</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <span class="chip">Agent</span>
+          <span class="chip">Standalone Section</span>
+        </div>
+      </div>
+      <div class="hof-frame-note">This is a separate Hall of Fame section for agents. Your main dashboard stays simple and unchanged.</div>
+      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Agent Section" loading="lazy"></iframe>
     </div>
   </div>
-  <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
 </div>
 
 <footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v">RC-MONITOR-v3.2</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
@@ -906,6 +928,7 @@ function parseJwt(token){
 }
 
 let currentViewMode = 'admin'; // 'admin' or 'agent'
+let currentAgentSection = 'dashboard';
 
 function startApp(username,role,picture){
   currentUser=username;currentRole=role;currentViewMode=role;
@@ -938,6 +961,15 @@ function toggleView(){
   if(currentRole!=='admin')return;
   applyView(currentViewMode==='admin'?'agent':'admin');
   refresh();
+}
+
+function switchAgentSection(section,el){
+  currentAgentSection=section;
+  document.querySelectorAll('.agent-shell-btn').forEach(btn=>btn.classList.remove('active'));
+  document.querySelectorAll('.agent-shell-page').forEach(page=>page.classList.remove('active'));
+  const next=document.getElementById('agent-section-'+section);
+  if(next)next.classList.add('active');
+  if(el)el.classList.add('active');
 }
 
 function doLogout(){

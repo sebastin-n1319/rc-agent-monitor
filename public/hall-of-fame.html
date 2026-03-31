@@ -19,7 +19,9 @@ radial-gradient(ellipse 35% 30% at 50% 50%, rgba(39,167,120,0.05) 0%, transparen
 .inner{position:relative;z-index:1;padding:28px 20px 24px}
 .mast{text-align:center;animation:rise .7s ease both}
 .brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
-.brand-mark{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5821f,#ffb45b);font-family:'Poppins',sans-serif;font-weight:800;color:#071625}
+.brand-mark{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5821f,#ffb45b);font-family:'Poppins',sans-serif;font-weight:800;color:#071625;position:relative;overflow:hidden;box-shadow:0 12px 24px rgba(0,0,0,.22)}
+.brand-mark span{position:relative;z-index:1}
+.brand-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:rgba(255,255,255,.96);padding:7px;border-radius:14px}
 .brand-name{font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;line-height:1}
 .brand-sub{font-size:11px;color:rgba(255,255,255,.42);margin-top:2px}
 .tag{display:inline-block;background:rgba(245,130,31,.13);color:#f5821f;font-size:11px;font-weight:600;font-family:'Poppins',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:5px 16px;border-radius:20px;border:.5px solid rgba(245,130,31,.3);margin-bottom:10px}
@@ -94,7 +96,7 @@ radial-gradient(ellipse 35% 30% at 50% 50%, rgba(39,167,120,0.05) 0%, transparen
   <div class="inner">
     <div class="mast">
       <div class="brand">
-        <div class="brand-mark">A</div>
+        <div class="brand-mark"><span id="brandFallback">A</span><img id="brandLogo" class="brand-logo" alt="Adit logo" style="display:none"></div>
         <div>
           <div class="brand-name">Adit</div>
           <div class="brand-sub">T1 CS Stars · Performance Report</div>
@@ -240,6 +242,20 @@ radial-gradient(ellipse 35% 30% at 50% 50%, rgba(39,167,120,0.05) 0%, transparen
   </div>
 </div>
 <script>
+(()=>{
+  try{
+    if(window.parent&&window.parent!==window){
+      const parentLogo=window.parent.document.querySelector('.hdr-logo-adit');
+      const src=parentLogo&&parentLogo.getAttribute('src');
+      if(src){
+        const logo=document.getElementById('brandLogo');
+        const fallback=document.getElementById('brandFallback');
+        logo.onload=()=>{logo.style.display='block';if(fallback)fallback.style.display='none';};
+        logo.src=src;
+      }
+    }
+  }catch(e){}
+})();
 document.querySelectorAll('.fill').forEach((bar,index)=>{
   setTimeout(()=>{bar.style.width=bar.dataset.w||'0%'},200+(index*90));
 });
