@@ -194,7 +194,18 @@ body::before{
 
 .calc-shell{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
 .calc-panel,.calc-side{
-  border-radius:24px;padding:22px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);
+  position:relative;overflow:hidden;border-radius:24px;padding:22px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);
+}
+.calc-panel::before,.calc-side::before{
+  content:'';position:absolute;inset:auto -12% 58% auto;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle, rgba(154,141,255,.14), transparent 66%);
+  filter:blur(18px);pointer-events:none;opacity:.8;
+}
+.calc-panel::after,.calc-side::after{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.12;
+  background:linear-gradient(120deg, transparent 18%, rgba(255,255,255,.24) 42%, transparent 70%);
+  transform:translateX(-110%);
+  animation:sheenShift 9s linear infinite;
 }
 .calc-tabs{display:flex;gap:10px;flex-wrap:wrap}
 .calc-tab{
@@ -273,14 +284,92 @@ body::before{
 
 .leave-control-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
 .control-box{
-  padding:14px 16px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+  padding:16px 18px;border-radius:20px;background:
+    linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.028)),
+    rgba(0,0,0,.16);
+  border:1px solid rgba(255,255,255,.07);
+  transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease;
 }
+.control-box:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14);box-shadow:0 18px 28px rgba(0,0,0,.18)}
 .control-box label{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
-.control-box select,
-.control-box input[type="checkbox"]{margin-top:12px}
-.checkline{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-top:12px}
+.control-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
+.field-note{margin-top:8px;font-size:12px;line-height:1.65;color:var(--muted);max-width:320px}
+.control-badge{
+  padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.68)
+}
+.control-badge.glow{color:var(--calls-soft);border-color:rgba(37,220,161,.3);background:rgba(37,220,161,.1);box-shadow:0 0 0 1px rgba(37,220,161,.06),0 0 22px rgba(37,220,161,.14)}
+.control-visual{display:flex;justify-content:space-between;gap:14px;align-items:end;flex-wrap:wrap;margin-top:16px}
+.leave-select{
+  min-width:140px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.12);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
+    rgba(4,10,20,.72);
+  color:var(--text);font-size:20px;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  outline:none;box-shadow:0 12px 22px rgba(0,0,0,.18);
+}
+.leave-select:focus{border-color:rgba(126,243,205,.42);box-shadow:0 0 0 4px rgba(126,243,205,.08)}
+.multiplier-preview{
+  flex:1;min-width:220px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.035)
+}
+.multiplier-preview span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.42)}
+.multiplier-preview strong{display:block;margin-top:10px;font-size:28px;font-family:'Space Grotesk',sans-serif;color:var(--calls-soft)}
+.multiplier-preview small{display:block;margin-top:8px;font-size:12px;line-height:1.65;color:var(--muted)}
+.attendance-shell{margin-top:16px}
+.toggle-switch{display:flex;align-items:center;gap:14px;cursor:pointer}
+.toggle-switch input{position:absolute;opacity:0;pointer-events:none}
+.toggle-track{
+  position:relative;flex:0 0 66px;height:38px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+  transition:background .22s ease,border-color .22s ease,box-shadow .22s ease;
+}
+.toggle-track i{
+  position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(145deg, rgba(255,255,255,.92), rgba(209,226,255,.86));
+  box-shadow:0 10px 16px rgba(0,0,0,.18);
+  transition:transform .22s ease,background .22s ease;
+}
+.toggle-switch input:checked + .toggle-track{
+  background:rgba(255,110,147,.16);border-color:rgba(255,110,147,.26);box-shadow:0 0 0 1px rgba(255,110,147,.04),0 0 18px rgba(255,110,147,.12);
+}
+.toggle-switch input:checked + .toggle-track i{
+  transform:translateX(28px);
+  background:linear-gradient(145deg, #ffd2dd, #ff7e9f);
+}
+.toggle-copy strong{display:block;font-size:14px}
+.toggle-copy small{display:block;margin-top:5px;font-size:12px;line-height:1.6;color:var(--muted)}
+.control-box.attendance.is-alert{border-color:rgba(255,110,147,.24);box-shadow:0 20px 30px rgba(0,0,0,.18),0 0 28px rgba(255,110,147,.08)}
+.control-box.attendance.is-alert .control-badge{color:#ffd7e2;border-color:rgba(255,110,147,.26);background:rgba(255,110,147,.12)}
+.control-box.attendance.is-alert .toggle-copy strong{color:#ffd7e2}
 
 .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.unlock-banner{
+  position:relative;margin-bottom:14px;padding:16px 18px;border-radius:20px;border:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
+  display:flex;justify-content:space-between;gap:18px;align-items:center;overflow:hidden;
+  transition:border-color .28s ease,transform .28s ease,box-shadow .28s ease;
+}
+.unlock-banner::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:0;
+  background:linear-gradient(120deg, transparent 16%, rgba(255,255,255,.24) 42%, transparent 68%);
+  transform:translateX(-120%);
+}
+.unlock-banner.live{
+  border-color:rgba(126,243,205,.28);
+  box-shadow:0 24px 40px rgba(0,0,0,.18),0 0 34px rgba(37,220,161,.12);
+  transform:translateY(-1px);
+}
+.unlock-banner.live::before{opacity:.55;animation:sheenShift 1.8s ease}
+.unlock-banner h4{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.52)}
+.unlock-banner strong{display:block;margin-top:8px;font-size:26px;font-family:'Space Grotesk',sans-serif}
+.unlock-banner p{margin-top:8px;font-size:12px;line-height:1.7;color:var(--muted);max-width:340px}
+.unlock-orb{
+  width:68px;height:68px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.3), transparent 42%), rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);font-size:28px;box-shadow:0 16px 24px rgba(0,0,0,.16)
+}
+.unlock-banner.live .unlock-orb{animation:bonusPulse 1.8s ease-in-out infinite}
 .result-card{
   padding:18px;border-radius:20px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
 }
@@ -323,6 +412,14 @@ body::before{
 .csat-card small{display:block;margin-top:8px;font-size:11px;line-height:1.6;color:var(--muted)}
 .csat-card.good strong{color:var(--green)}
 .csat-card.cash strong{color:#d8cbff}
+.celebration-layer{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit;z-index:4;
+}
+.confetti{
+  position:absolute;top:36%;left:50%;width:12px;height:24px;border-radius:999px;
+  opacity:0;transform:translate(-50%,-50%) rotate(0deg);
+  animation:burst 1s cubic-bezier(.22,.61,.36,1) forwards;
+}
 
 .notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .note-card{
@@ -340,6 +437,18 @@ body::before{
   0%,100%{transform:translate3d(0,0,0)}
   50%{transform:translate3d(-10px,8px,0)}
 }
+@keyframes sheenShift{
+  0%{transform:translateX(-120%)}
+  100%{transform:translateX(120%)}
+}
+@keyframes bonusPulse{
+  0%,100%{transform:scale(1);box-shadow:0 16px 24px rgba(0,0,0,.16)}
+  50%{transform:scale(1.08);box-shadow:0 18px 30px rgba(0,0,0,.18),0 0 26px rgba(37,220,161,.18)}
+}
+@keyframes burst{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(.5) rotate(var(--spin))}
+  100%{opacity:0;transform:translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(calc(var(--spin) + 180deg))}
+}
 @media (max-width:1240px){
   .hero-main,.split-grid,.calc-shell{grid-template-columns:1fr}
   .eligibility-grid,.leave-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -350,6 +459,7 @@ body::before{
   .hero-copy h2{font-size:44px}
   .brand-copy h1{font-size:30px}
   .bonus-tier-grid,.metric-grid,.eligibility-grid,.leave-grid,.notes-grid,.result-grid,.status-grid,.leave-control-grid,.csat-grid,.csat-result{grid-template-columns:1fr}
+  .control-visual,.unlock-banner{align-items:flex-start}
 }
 </style>
 </head>
@@ -436,30 +546,66 @@ body::before{
       <button class="calc-tab active calls" data-team="calls">Calls estimator</button>
       <button class="calc-tab chat" data-team="chat">Chat estimator</button>
     </div>
-    <div class="calc-shell">
-      <div class="calc-panel">
-        <div class="calc-list" id="calc-list"></div>
-        <div class="leave-control-grid">
-          <div class="control-box">
-            <label for="plannedLeaves">Planned leaves</label>
-            <select id="plannedLeaves">
-              <option value="0">0</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4+</option>
-            </select>
-          </div>
-          <div class="control-box">
-            <label>Attendance override</label>
-            <label class="checkline"><input type="checkbox" id="unplannedLeave"> Unplanned leave hit this month</label>
-          </div>
-        </div>
-      </div>
-      <div class="calc-side">
-        <div class="result-grid">
-          <div class="result-card good">
-            <span>Total points</span>
+	    <div class="calc-shell">
+	      <div class="calc-panel">
+	        <div class="calc-list" id="calc-list"></div>
+	        <div class="leave-control-grid">
+	          <div class="control-box">
+	            <div class="control-top">
+	              <div>
+	                <label for="plannedLeaves">Planned leaves</label>
+	                <p class="field-note">Shape the payout multiplier with a cleaner leave preview instead of guessing the slab impact.</p>
+	              </div>
+	              <span class="control-badge glow" id="leaveBandLabel">0 leaves</span>
+	            </div>
+	            <div class="control-visual">
+	              <select id="plannedLeaves" class="leave-select">
+	              <option value="0">0</option>
+	              <option value="1">1</option>
+	              <option value="2">2</option>
+	              <option value="3">3</option>
+	              <option value="4">4+</option>
+	              </select>
+	              <div class="multiplier-preview">
+	                <span>Live multiplier</span>
+	                <strong id="leavePreviewMultiplier">100%</strong>
+	                <small id="leavePreviewCopy">Full payout multiplier retained.</small>
+	              </div>
+	            </div>
+	          </div>
+	          <div class="control-box attendance" id="attendanceControl">
+	            <div class="control-top">
+	              <div>
+	                <label>Attendance override</label>
+	                <p class="field-note">Use this only when a real unplanned leave happened. It will instantly block slab and CSAT payout.</p>
+	              </div>
+	              <span class="control-badge" id="attendanceBadge">Attendance clear</span>
+	            </div>
+	            <div class="attendance-shell">
+	              <label class="toggle-switch">
+	                <input type="checkbox" id="unplannedLeave">
+	                <span class="toggle-track"><i></i></span>
+	                <span class="toggle-copy">
+	                  <strong id="attendanceStateLabel">Bonus runway is clean</strong>
+	                  <small id="attendanceStateCopy">No attendance block right now. Both slab payout and CSAT incentive stay eligible.</small>
+	                </span>
+	              </label>
+	            </div>
+	          </div>
+	        </div>
+	      </div>
+	      <div class="calc-side">
+	        <div class="unlock-banner" id="unlockBanner">
+	          <div>
+	            <h4>Live slab pulse</h4>
+	            <strong id="unlockBannerTitle">Hold the line</strong>
+	            <p id="unlockBannerCopy">Clear every active metric at Slab 2 to trigger the payout fireworks.</p>
+	          </div>
+	          <div class="unlock-orb" id="unlockOrb">+</div>
+	        </div>
+	        <div class="result-grid">
+	          <div class="result-card good">
+	            <span>Total points</span>
             <strong id="totalPoints">0</strong>
             <small id="totalStatus">Minimum 70 points needed</small>
           </div>
@@ -468,8 +614,8 @@ body::before{
             <strong id="estimatedBonus">₹0</strong>
             <small id="bonusStatus">No slab unlocked yet</small>
           </div>
-        </div>
-        <div class="status-grid">
+	        </div>
+	        <div class="status-grid">
           <div class="status-node">
             <span>Metrics at Slab 2</span>
             <strong id="slab2Hits">0 / 0</strong>
@@ -480,11 +626,12 @@ body::before{
             <strong id="activeSlab">Miss</strong>
             <small id="leaveMultiplier">Leave multiplier 100%</small>
           </div>
-        </div>
-        <div id="csat-shell" class="csat-shell calls"></div>
-      </div>
-    </div>
-  </section>
+	        </div>
+	        <div id="csat-shell" class="csat-shell calls"></div>
+	        <div class="celebration-layer" id="celebrationLayer"></div>
+	      </div>
+	    </div>
+	  </section>
 
   <section class="section section-shell" data-reveal style="--delay:.36s">
     <div class="section-head">
@@ -551,6 +698,7 @@ let csatCalcValues={
   calls:{score:0,count:0},
   chat:{score:0,count:0}
 };
+let lastCelebrationKey='miss';
 
 function fmtMoney(v){
   return '₹'+Math.round(v).toLocaleString();
@@ -845,6 +993,130 @@ function leaveMultiplier(planned,unplanned){
   return 0;
 }
 
+function leaveDescriptor(planned,unplanned){
+  if(unplanned){
+    return {
+      label:'Blocked',
+      multiplier:'0%',
+      copy:'Unplanned leave blocks both slab and CSAT payout for the month.'
+    };
+  }
+  if(planned===0){
+    return {
+      label:'0 leaves',
+      multiplier:'100%',
+      copy:'Full payout multiplier retained.'
+    };
+  }
+  if(planned<=2){
+    return {
+      label:'1-2 leaves',
+      multiplier:'75%',
+      copy:'Reduced multiplier, but the bonus run is still alive.'
+    };
+  }
+  if(planned===3){
+    return {
+      label:'3 leaves',
+      multiplier:'50%',
+      copy:'Half payout only if the slab is still achieved.'
+    };
+  }
+  return {
+    label:'4+ leaves',
+    multiplier:'0%',
+    copy:'Too many planned leaves for a payout under the current policy.'
+  };
+}
+
+function updateLeaveControls(planned,unplanned){
+  const descriptor=leaveDescriptor(planned,unplanned);
+  const leaveBand=document.getElementById('leaveBandLabel');
+  const previewMultiplier=document.getElementById('leavePreviewMultiplier');
+  const previewCopy=document.getElementById('leavePreviewCopy');
+  const attendanceCard=document.getElementById('attendanceControl');
+  const attendanceBadge=document.getElementById('attendanceBadge');
+  const attendanceStateLabel=document.getElementById('attendanceStateLabel');
+  const attendanceStateCopy=document.getElementById('attendanceStateCopy');
+  if(leaveBand){
+    leaveBand.textContent=descriptor.label;
+    leaveBand.classList.toggle('glow',!unplanned&&planned<=2);
+  }
+  if(previewMultiplier) previewMultiplier.textContent=descriptor.multiplier;
+  if(previewCopy) previewCopy.textContent=descriptor.copy;
+  if(attendanceCard) attendanceCard.classList.toggle('is-alert',unplanned);
+  if(attendanceBadge) attendanceBadge.textContent=unplanned?'Bonus blocked':'Attendance clear';
+  if(attendanceStateLabel) attendanceStateLabel.textContent=unplanned?'Bonus runway interrupted':'Bonus runway is clean';
+  if(attendanceStateCopy){
+    attendanceStateCopy.textContent=unplanned
+      ? 'Any unplanned leave removes slab and CSAT eligibility until the next cycle.'
+      : 'No attendance block right now. Both slab payout and CSAT incentive stay eligible.';
+  }
+}
+
+function triggerCelebration(kind){
+  const layer=document.getElementById('celebrationLayer');
+  if(!layer)return;
+  const palette=kind==='Slab 1'
+    ? ['#7ef3cd','#25dca1','#d4caff','#69b7ff','#ffffff']
+    : ['#ffd18f','#ff9d34','#7ef3cd','#d4caff','#ffffff'];
+  layer.innerHTML='';
+  for(let i=0;i<22;i++){
+    const piece=document.createElement('span');
+    piece.className='confetti';
+    piece.style.left=(36+Math.random()*28)+'%';
+    piece.style.top=(26+Math.random()*18)+'%';
+    piece.style.background=palette[i%palette.length];
+    piece.style.setProperty('--x',`${(Math.random()*360)-180}px`);
+    piece.style.setProperty('--y',`${-70-(Math.random()*190)}px`);
+    piece.style.setProperty('--spin',`${Math.round(Math.random()*140)-70}deg`);
+    piece.style.animationDelay=`${Math.random()*0.18}s`;
+    layer.appendChild(piece);
+  }
+  window.setTimeout(()=>{
+    if(layer) layer.innerHTML='';
+  },1350);
+}
+
+function updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned){
+  const banner=document.getElementById('unlockBanner');
+  const title=document.getElementById('unlockBannerTitle');
+  const copy=document.getElementById('unlockBannerCopy');
+  const orb=document.getElementById('unlockOrb');
+  const celebrationKey=slab==='Slab 1'||slab==='Slab 2'?`${activeTeam}-${slab}-${finalBonus}-${unplanned}`:'miss';
+  if(banner){
+    banner.classList.toggle('live',slab==='Slab 1'||slab==='Slab 2');
+  }
+  if(orb){
+    orb.textContent=slab==='Slab 1'?'*':slab==='Slab 2'?'+':unplanned?'!':'~';
+  }
+  if(unplanned){
+    title.textContent='Attendance override engaged';
+    copy.textContent='The celebration is paused because an unplanned leave blocks both slab payout and CSAT incentive.';
+  }else if(slab==='Slab 1'){
+    title.textContent='Slab 1 is live';
+    copy.textContent=`Top slab unlocked at ${fmtMoney(finalBonus)}. Every active metric is clearing Slab 1, so the full celebration is on.`;
+  }else if(slab==='Slab 2'){
+    title.textContent='Slab 2 is unlocked';
+    copy.textContent=`Current payout track is ${fmtMoney(finalBonus)}. Keep pushing every metric above Slab 1 to ignite the bigger crown moment.`;
+  }else if(eligible && !allMetricsAtSlab2){
+    title.textContent='Points are ready, metrics are not';
+    copy.textContent=`You already have ${total} points. One or more metric misses are still blocking the payout burst.`;
+  }else if(!eligible){
+    title.textContent='Build the runway';
+    copy.textContent='The payout animation will fire once the score crosses 70 points and every active metric reaches at least Slab 2.';
+  }else{
+    title.textContent='Hold the line';
+    copy.textContent=allMetricsAtSlab1
+      ? 'Everything is aligned for the top slab.'
+      : 'Clear every active metric at Slab 2 to trigger the payout fireworks.';
+  }
+  if(celebrationKey!=='miss' && celebrationKey!==lastCelebrationKey){
+    triggerCelebration(slab);
+  }
+  lastCelebrationKey=celebrationKey;
+}
+
 function renderCsatCalc(){
   const host=document.getElementById('csat-shell');
   const data=bonusData[activeTeam];
@@ -995,6 +1267,8 @@ function computeBonus(){
   document.getElementById('activeSlab').textContent=slab;
   document.getElementById('leaveMultiplier').textContent='Leave multiplier '+Math.round(multiplier*100)+'%';
   document.getElementById('slabRule').textContent=allMetricsAtSlab1?'All metrics cleared Slab 1':allMetricsAtSlab2?'All metrics cleared Slab 2':'All metrics must clear Slab 2';
+  updateLeaveControls(planned,unplanned);
+  updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned);
 
   if(unplanned){
     document.getElementById('totalStatus').textContent='Unplanned leave removes eligibility';
