@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bonus Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07111f;
+  --panel:#0d1930;
+  --panel-2:#101f39;
+  --line:rgba(255,255,255,.08);
+  --text:#f2f7ff;
+  --muted:rgba(226,236,255,.6);
+  --calls:#25dca1;
+  --calls-soft:#7ef3cd;
+  --chat:#ff9d34;
+  --chat-soft:#ffd18f;
+  --violet:#9a8dff;
+  --blue:#69b7ff;
+  --red:#ff6e93;
+  --green:#7de07f;
+}
+html,body{min-height:100%}
+body{
+  color:var(--text);
+  font-family:'Manrope',sans-serif;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(37,220,161,.14), transparent 24%),
+    radial-gradient(circle at 88% 12%, rgba(255,157,52,.16), transparent 24%),
+    radial-gradient(circle at 50% 120%, rgba(105,183,255,.14), transparent 34%),
+    linear-gradient(180deg, #091320 0%, #07111f 55%, #08111b 100%);
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+  background-size:42px 42px;
+  mask-image:linear-gradient(180deg, rgba(0,0,0,.75), transparent 96%);
+}
+.page{max-width:1480px;margin:0 auto;padding:28px 24px 44px}
+.hero{
+  position:relative;overflow:hidden;border-radius:30px;padding:30px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.015)),
+    linear-gradient(180deg, rgba(14,28,48,.96), rgba(8,16,29,.98));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 26px 64px rgba(0,0,0,.32);
+}
+.hero::before,
+.hero::after{
+  content:'';
+  position:absolute;border-radius:50%;filter:blur(10px);pointer-events:none;
+}
+.hero::before{
+  width:320px;height:320px;top:-130px;right:-120px;
+  background:radial-gradient(circle, rgba(255,157,52,.22), transparent 68%);
+  animation:floatOrb 12s ease-in-out infinite;
+}
+.hero::after{
+  width:300px;height:300px;left:-120px;bottom:-120px;
+  background:radial-gradient(circle, rgba(37,220,161,.16), transparent 68%);
+  animation:floatOrb 13s ease-in-out infinite reverse;
+}
+.hero-top{position:relative;z-index:1;display:flex;justify-content:space-between;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.brand{display:flex;gap:16px;align-items:center}
+.brand-badge{
+  width:64px;height:64px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(145deg, rgba(255,255,255,.96), rgba(236,243,255,.92));
+  box-shadow:0 18px 34px rgba(0,0,0,.24);
+  position:relative;overflow:hidden;
+}
+.brand-logo{width:100%;height:100%;object-fit:contain;padding:10px;display:none}
+.brand-fallback{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;color:#10233d}
+.brand-copy h1{font-size:38px;line-height:1;font-weight:800;letter-spacing:-.05em}
+.brand-copy p{margin-top:8px;font-size:13px;color:var(--muted)}
+.hero-pills{display:flex;gap:10px;flex-wrap:wrap}
+.pill{
+  padding:8px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.04);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+}
+.pill.calls{color:var(--calls-soft)}
+.pill.chat{color:var(--chat-soft)}
+.pill.violet{color:#d5cdff}
+.hero-main{position:relative;z-index:1;display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:end;margin-top:28px}
+.hero-copy .eyebrow{
+  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
+  border:1px solid rgba(154,141,255,.32);background:rgba(154,141,255,.12);color:#cbc3ff;
+  font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+}
+.hero-copy h2{
+  margin-top:16px;font-family:'Space Grotesk',sans-serif;font-size:62px;line-height:.95;letter-spacing:-.06em;
+}
+.hero-copy h2 span{
+  color:transparent;background:linear-gradient(90deg, var(--calls-soft), var(--chat-soft));
+  -webkit-background-clip:text;background-clip:text;
+}
+.hero-copy p{margin-top:14px;max-width:720px;font-size:15px;line-height:1.85;color:var(--muted)}
+.bonus-tier-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.bonus-tier{
+  padding:20px;border-radius:22px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);
+  transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+}
+.bonus-tier:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.16);box-shadow:0 24px 34px rgba(0,0,0,.24)}
+.bonus-tier span{display:block;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.bonus-tier strong{display:block;margin-top:12px;font-size:38px;font-family:'Space Grotesk',sans-serif;line-height:1}
+.bonus-tier small{display:block;margin-top:10px;font-size:12px;line-height:1.7;color:rgba(255,255,255,.48)}
+.bonus-tier.primary strong{color:#d4caff}
+.bonus-tier.secondary strong{color:var(--calls-soft)}
+
+.section{margin-top:22px}
+.section-shell{
+  border-radius:28px;padding:22px;
+  background:linear-gradient(180deg, rgba(13,25,43,.96), rgba(7,15,26,.98));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 24px 56px rgba(0,0,0,.28);
+}
+.section-head{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px;
+}
+.section-copy h3{font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.72)}
+.section-copy p{margin-top:7px;font-size:13px;color:var(--muted);line-height:1.75;max-width:720px}
+
+.split-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.team-panel{
+  position:relative;overflow:hidden;border-radius:24px;padding:20px;
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);
+}
+.team-panel::before{content:'';position:absolute;left:0;right:0;top:0;height:4px}
+.team-panel.calls::before{background:linear-gradient(90deg, transparent, var(--calls), transparent)}
+.team-panel.chat::before{background:linear-gradient(90deg, transparent, var(--chat), transparent)}
+.team-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.team-title{display:flex;align-items:center;gap:10px}
+.team-dot{width:10px;height:10px;border-radius:50%}
+.team-dot.calls{background:var(--calls);box-shadow:0 0 18px rgba(37,220,161,.6)}
+.team-dot.chat{background:var(--chat);box-shadow:0 0 18px rgba(255,157,52,.6)}
+.team-title h4{font-size:12px;font-weight:800;letter-spacing:.15em;text-transform:uppercase}
+.team-title p{margin-top:5px;font-size:11px;color:var(--muted)}
+.team-chip{
+  padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)
+}
+.metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.metric-card{
+  padding:16px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.07);
+  transition:transform .24s ease,border-color .24s ease;
+}
+.metric-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.15)}
+.metric-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.metric-card strong{display:block;margin-top:12px;font-size:32px;font-family:'Space Grotesk',sans-serif;line-height:1}
+.metric-card .meta{display:flex;justify-content:space-between;gap:10px;margin-top:14px;font-size:11px;color:var(--muted)}
+.metric-card .meta b{font-size:12px}
+.metric-card .bar{margin-top:14px;height:9px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.metric-card .bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--tone-main),var(--tone-soft));box-shadow:0 0 18px rgba(255,255,255,.14)}
+.team-panel.calls .metric-card{--tone-main:var(--calls);--tone-soft:var(--calls-soft)}
+.team-panel.chat .metric-card{--tone-main:var(--chat);--tone-soft:var(--chat-soft)}
+.team-panel.calls .metric-card strong{color:var(--calls-soft)}
+.team-panel.chat .metric-card strong{color:var(--chat-soft)}
+
+.eligibility-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.eligibility-card{
+  padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+}
+.eligibility-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.eligibility-card strong{display:block;margin-top:10px;font-size:30px;font-family:'Space Grotesk',sans-serif}
+.eligibility-card small{display:block;margin-top:8px;font-size:11px;line-height:1.65;color:var(--muted)}
+.eligibility-card.blue strong{color:var(--blue)}
+.eligibility-card.green strong{color:var(--calls-soft)}
+.eligibility-card.orange strong{color:var(--chat-soft)}
+.eligibility-card.violet strong{color:#d4caff}
+
+.leave-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.leave-card{
+  padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);text-align:center;
+  transition:transform .24s ease,border-color .24s ease;
+}
+.leave-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.16)}
+.leave-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.leave-card strong{display:block;margin-top:10px;font-size:34px;font-family:'Space Grotesk',sans-serif}
+.leave-card small{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
+.leave-card.ok strong{color:var(--calls-soft)}
+.leave-card.warn strong{color:var(--chat-soft)}
+.leave-card.stop strong{color:var(--red)}
+.warning-strip{
+  margin-top:14px;padding:14px 16px;border-radius:18px;border:1px solid rgba(255,110,147,.18);
+  background:rgba(255,110,147,.09);color:#ffd7e2;font-size:12px;line-height:1.7;
+}
+
+.calc-shell{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+.calc-panel,.calc-side{
+  border-radius:24px;padding:22px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);
+}
+.calc-tabs{display:flex;gap:10px;flex-wrap:wrap}
+.calc-tab{
+  padding:10px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);
+  color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .2s ease;
+}
+.calc-tab.active.calls{color:var(--calls-soft);border-color:rgba(37,220,161,.34);background:rgba(37,220,161,.1)}
+.calc-tab.active.chat{color:var(--chat-soft);border-color:rgba(255,157,52,.34);background:rgba(255,157,52,.1)}
+.calc-list{display:flex;flex-direction:column;gap:14px;margin-top:18px}
+.calc-row{
+  padding:16px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+}
+.calc-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.calc-label{font-size:13px;font-weight:700}
+.calc-status{
+  padding:6px 10px;border-radius:999px;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;border:1px solid transparent;
+}
+.calc-status.miss{background:rgba(255,255,255,.06);color:rgba(255,255,255,.52);border-color:rgba(255,255,255,.08)}
+.calc-status.slab2{background:rgba(255,157,52,.12);color:var(--chat-soft);border-color:rgba(255,157,52,.24)}
+.calc-status.slab1{background:rgba(37,220,161,.12);color:var(--calls-soft);border-color:rgba(37,220,161,.24)}
+.calc-range{margin-top:14px}
+.calc-range input{width:100%;accent-color:var(--slider-tone)}
+.calc-meta{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-size:11px;color:var(--muted)}
+.calc-meta strong{font-size:18px;font-family:'Space Grotesk',sans-serif;color:var(--slider-tone)}
+.calc-row.calls{--slider-tone:var(--calls-soft)}
+.calc-row.chat{--slider-tone:var(--chat-soft)}
+
+.leave-control-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.control-box{
+  padding:14px 16px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+}
+.control-box label{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.control-box select,
+.control-box input[type="checkbox"]{margin-top:12px}
+.checkline{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);margin-top:12px}
+
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.result-card{
+  padding:18px;border-radius:20px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+}
+.result-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.result-card strong{display:block;margin-top:10px;font-size:36px;font-family:'Space Grotesk',sans-serif}
+.result-card small{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
+.result-card.good strong{color:var(--calls-soft)}
+.result-card.cash strong{color:#d8cbff}
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.status-node{
+  padding:14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+}
+.status-node span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.46)}
+.status-node strong{display:block;margin-top:10px;font-size:24px;font-family:'Space Grotesk',sans-serif}
+.status-node small{display:block;margin-top:8px;font-size:11px;color:var(--muted)}
+
+.notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.note-card{
+  padding:18px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+}
+.note-card h4{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--chat-soft)}
+.note-card p{margin-top:10px;font-size:13px;line-height:1.75;color:var(--muted)}
+
+[data-reveal]{opacity:0;transform:translateY(20px) scale(.985);animation:reveal .68s cubic-bezier(.22,1,.36,1) forwards;animation-delay:var(--delay,0s)}
+@keyframes reveal{
+  from{opacity:0;transform:translateY(20px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes floatOrb{
+  0%,100%{transform:translate3d(0,0,0)}
+  50%{transform:translate3d(-10px,8px,0)}
+}
+@media (max-width:1240px){
+  .hero-main,.split-grid,.calc-shell{grid-template-columns:1fr}
+  .eligibility-grid,.leave-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:820px){
+  .page{padding:18px 16px 30px}
+  .hero{padding:22px 20px}
+  .hero-copy h2{font-size:44px}
+  .brand-copy h1{font-size:30px}
+  .bonus-tier-grid,.metric-grid,.eligibility-grid,.leave-grid,.notes-grid,.result-grid,.status-grid,.leave-control-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <section class="hero" data-reveal style="--delay:.02s">
+    <div class="hero-top">
+      <div class="brand">
+        <div class="brand-badge">
+          <span id="brandFallback" class="brand-fallback">A</span>
+          <img id="brandLogo" class="brand-logo" alt="Adit logo">
+        </div>
+        <div class="brand-copy">
+          <h1>Bonus Guide</h1>
+          <p>T1 CS bonus structure · effective January 1, 2026</p>
+        </div>
+      </div>
+      <div class="hero-pills">
+        <span class="pill calls">Calls blueprint</span>
+        <span class="pill chat">Chat blueprint</span>
+        <span class="pill violet">Interactive estimator</span>
+      </div>
+    </div>
+    <div class="hero-main">
+      <div class="hero-copy">
+        <span class="eyebrow">Performance system</span>
+        <h2>Bonus <span>Structure</span></h2>
+        <p>This guide translates the bonus document into a live futuristic reference board. Calls and chat stay clearly separated, slab logic is easy to scan, and the calculator helps estimate payout without leaving the dashboard environment.</p>
+      </div>
+      <div class="bonus-tier-grid">
+        <div class="bonus-tier primary">
+          <span>Slab 1 Bonus</span>
+          <strong>₹7,500</strong>
+          <small>Triggered when total points qualify and at least half of the active metrics hit slab 1.</small>
+        </div>
+        <div class="bonus-tier secondary">
+          <span>Slab 2 Bonus</span>
+          <strong>₹3,000</strong>
+          <small>Triggered when total points qualify but slab 1 coverage is not strong enough for the top slab.</small>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-shell" data-reveal style="--delay:.10s">
+    <div class="section-head">
+      <div class="section-copy">
+        <h3>Team blueprints</h3>
+        <p>Both support wings are shown separately so the scoring logic is easy to understand. Calls and chat do not share the same weight model.</p>
+      </div>
+    </div>
+    <div class="split-grid" id="team-panels"></div>
+  </section>
+
+  <section class="section section-shell" data-reveal style="--delay:.18s">
+    <div class="section-head">
+      <div class="section-copy">
+        <h3>Eligibility guardrails</h3>
+        <p>These rules control entry into the bonus slab and shape how leaves affect the final payout.</p>
+      </div>
+    </div>
+    <div class="eligibility-grid" id="eligibility-grid"></div>
+  </section>
+
+  <section class="section section-shell" data-reveal style="--delay:.24s">
+    <div class="section-head">
+      <div class="section-copy">
+        <h3>Leave impact</h3>
+        <p>Planned leave reduces the payout multiplier, while any unplanned leave removes eligibility completely.</p>
+      </div>
+    </div>
+    <div class="leave-grid" id="leave-grid"></div>
+    <div class="warning-strip">Any unplanned leave results in <strong>0% bonus eligibility</strong> for both the slab payout and the CSAT incentive path.</div>
+  </section>
+
+  <section class="section section-shell" data-reveal style="--delay:.30s">
+    <div class="section-head">
+      <div class="section-copy">
+        <h3>Interactive bonus estimator</h3>
+        <p>Use the live controls below to estimate points, slab outcome, and post-leave payout for calls or chat.</p>
+      </div>
+    </div>
+    <div class="calc-tabs">
+      <button class="calc-tab active calls" data-team="calls">Calls estimator</button>
+      <button class="calc-tab chat" data-team="chat">Chat estimator</button>
+    </div>
+    <div class="calc-shell">
+      <div class="calc-panel">
+        <div class="calc-list" id="calc-list"></div>
+        <div class="leave-control-grid">
+          <div class="control-box">
+            <label for="plannedLeaves">Planned leaves</label>
+            <select id="plannedLeaves">
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+          <div class="control-box">
+            <label>Attendance override</label>
+            <label class="checkline"><input type="checkbox" id="unplannedLeave"> Unplanned leave hit this month</label>
+          </div>
+        </div>
+      </div>
+      <div class="calc-side">
+        <div class="result-grid">
+          <div class="result-card good">
+            <span>Total points</span>
+            <strong id="totalPoints">0</strong>
+            <small id="totalStatus">Minimum 70 points needed</small>
+          </div>
+          <div class="result-card cash">
+            <span>Estimated bonus</span>
+            <strong id="estimatedBonus">₹0</strong>
+            <small id="bonusStatus">No slab unlocked yet</small>
+          </div>
+        </div>
+        <div class="status-grid">
+          <div class="status-node">
+            <span>Slab 1 hits</span>
+            <strong id="slab1Hits">0</strong>
+            <small id="slab1Needed">Need stronger slab 1 coverage</small>
+          </div>
+          <div class="status-node">
+            <span>Active slab</span>
+            <strong id="activeSlab">Miss</strong>
+            <small id="leaveMultiplier">Leave multiplier 100%</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-shell" data-reveal style="--delay:.36s">
+    <div class="section-head">
+      <div class="section-copy">
+        <h3>Governance notes</h3>
+        <p>Core policy reminders from the bonus document, rewritten into clearer operational language.</p>
+      </div>
+    </div>
+    <div class="notes-grid" id="notes-grid"></div>
+  </section>
+</main>
+
+<script>
+const bonusData={
+  calls:{
+    title:'Calls Team',
+    tone:'calls',
+    blurb:'Volume, closure quality, and QA carry the majority of the points on the calls side.',
+    chip:'4 weighted metrics',
+    metrics:[
+      {key:'inbound',label:'Inbound calls / day',pts:35,slab1:7,slab2:5,unit:'/day'},
+      {key:'tickets',label:'Tickets closed / day',pts:20,slab1:5,slab2:4,unit:'/day'},
+      {key:'fcr',label:'First call resolution',pts:25,slab1:75,slab2:70,unit:'%'},
+      {key:'qa',label:'QA score',pts:20,slab1:90,slab2:85,unit:'%'}
+    ],
+    csatThreshold:'CSAT > 92%',
+    incentive:'₹150 per good CSAT'
+  },
+  chat:{
+    title:'Chat Team',
+    tone:'chat',
+    blurb:'Chat rewards digital sentiment more heavily, while still protecting QA, ticket closure, and FCR.',
+    chip:'5 weighted metrics',
+    metrics:[
+      {key:'chats',label:'Unique chats / day',pts:15,slab1:11,slab2:9,unit:'/day'},
+      {key:'csat',label:'Chat CSAT',pts:30,slab1:90,slab2:85,unit:'%'},
+      {key:'tickets',label:'Tickets closed / day',pts:20,slab1:5,slab2:4,unit:'/day'},
+      {key:'qa',label:'QA score',pts:20,slab1:90,slab2:85,unit:'%'},
+      {key:'fcr',label:'FCR',pts:15,slab1:75,slab2:70,unit:'%'}
+    ],
+    csatThreshold:'CSAT > 85%',
+    incentive:'₹50 per happy CSAT'
+  }
+};
+
+const leaveRows=[
+  {leaves:'0',mult:'100%',tone:'ok',copy:'Full payout multiplier retained.'},
+  {leaves:'1-2',mult:'75%',tone:'warn',copy:'Reduced multiplier but still in play.'},
+  {leaves:'3',mult:'50%',tone:'warn',copy:'Half payout only if a slab is achieved.'},
+  {leaves:'4+',mult:'0%',tone:'stop',copy:'No payout once leave exceeds policy.'}
+];
+
+const governanceNotes=[
+  'Bonus slab is determined by the highest slab consistently achieved across the applicable metrics.',
+  'Only role-relevant KPIs are counted in the final calculation.',
+  'Tickets closed means self-resolved fixes under your ownership per day, not queue-picked work.',
+  'Floater leaves are excluded from the leave count for bonus impact.',
+  'The structure can be reviewed if volume mix or staffing changes materially.'
+];
+
+let activeTeam='calls';
+let calcValues={calls:{},chat:{}};
+
+function fmtMoney(v){
+  return '₹'+Math.round(v).toLocaleString();
+}
+
+function cloneDefaults(team){
+  const next={};
+  bonusData[team].metrics.forEach(m=>{next[m.key]=0;});
+  return next;
+}
+
+function levelFor(metric,value){
+  if(value>=metric.slab1) return 'slab1';
+  if(value>=metric.slab2) return 'slab2';
+  return 'miss';
+}
+
+function teamColor(team){
+  return team==='calls'?'var(--calls-soft)':'var(--chat-soft)';
+}
+
+function renderTeamPanels(){
+  const host=document.getElementById('team-panels');
+  host.innerHTML=['calls','chat'].map(team=>{
+    const data=bonusData[team];
+    return `
+      <article class="team-panel ${data.tone}">
+        <div class="team-top">
+          <div class="team-title">
+            <span class="team-dot ${data.tone}"></span>
+            <div>
+              <h4>${data.title}</h4>
+              <p>${data.blurb}</p>
+            </div>
+          </div>
+          <span class="team-chip">${data.chip}</span>
+        </div>
+        <div class="metric-grid">
+          ${data.metrics.map((metric,idx)=>`
+            <div class="metric-card" data-reveal style="--delay:${0.06*(idx+1)}s">
+              <span>${metric.label}</span>
+              <strong>${metric.pts}</strong>
+              <div class="meta">
+                <div>Slab 1 <b>${metric.slab1}${metric.unit}</b></div>
+                <div>Slab 2 <b>${metric.slab2}${metric.unit}</b></div>
+              </div>
+              <div class="bar"><i style="width:${Math.min((metric.pts/35)*100,100)}%"></i></div>
+            </div>
+          `).join('')}
+        </div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderEligibility(){
+  const host=document.getElementById('eligibility-grid');
+  host.innerHTML=`
+    <div class="eligibility-card blue">
+      <span>Min points to qualify</span>
+      <strong>70</strong>
+      <small>The baseline required before any slab becomes payable.</small>
+    </div>
+    <div class="eligibility-card green">
+      <span>Min working days</span>
+      <strong>18</strong>
+      <small>Attendance guardrail expected for payout qualification.</small>
+    </div>
+    <div class="eligibility-card orange">
+      <span>Calls CSAT incentive</span>
+      <strong>${bonusData.calls.csatThreshold}</strong>
+      <small>${bonusData.calls.incentive} after crossing the calls threshold.</small>
+    </div>
+    <div class="eligibility-card violet">
+      <span>Chat CSAT incentive</span>
+      <strong>${bonusData.chat.csatThreshold}</strong>
+      <small>${bonusData.chat.incentive} after crossing the chat threshold.</small>
+    </div>
+  `;
+}
+
+function renderLeaves(){
+  const host=document.getElementById('leave-grid');
+  host.innerHTML=leaveRows.map(item=>`
+    <div class="leave-card ${item.tone}">
+      <span>Planned leave</span>
+      <strong>${item.mult}</strong>
+      <small>${item.leaves} leave${item.leaves==='0'?'':'s'} · ${item.copy}</small>
+    </div>
+  `).join('');
+}
+
+function renderNotes(){
+  const host=document.getElementById('notes-grid');
+  host.innerHTML=governanceNotes.map((note,idx)=>`
+    <article class="note-card" data-reveal style="--delay:${0.05*idx}s">
+      <h4>Policy note ${idx+1}</h4>
+      <p>${note}</p>
+    </article>
+  `).join('');
+}
+
+function ensureState(){
+  if(!calcValues.calls||!Object.keys(calcValues.calls).length) calcValues.calls=cloneDefaults('calls');
+  if(!calcValues.chat||!Object.keys(calcValues.chat).length) calcValues.chat=cloneDefaults('chat');
+}
+
+function renderCalc(){
+  ensureState();
+  const host=document.getElementById('calc-list');
+  const data=bonusData[activeTeam];
+  host.innerHTML=data.metrics.map(metric=>{
+    const value=calcValues[activeTeam][metric.key]||0;
+    const status=levelFor(metric,value);
+    const max=Math.ceil(metric.slab1*1.3);
+    const statusLabel=status==='slab1'?'Slab 1':status==='slab2'?'Slab 2':'Miss';
+    return `
+      <div class="calc-row ${data.tone}">
+        <div class="calc-head">
+          <div class="calc-label">${metric.label}</div>
+          <span class="calc-status ${status}">${statusLabel}</span>
+        </div>
+        <div class="calc-range">
+          <input type="range" min="0" max="${max}" step="1" value="${value}" data-team="${activeTeam}" data-key="${metric.key}">
+        </div>
+        <div class="calc-meta">
+          <div>Slab 1 <strong>${metric.slab1}${metric.unit}</strong></div>
+          <div>Slab 2 <strong>${metric.slab2}${metric.unit}</strong></div>
+          <div>Current <strong>${value}${metric.unit==='%'?'%':''}</strong></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  host.querySelectorAll('input[type="range"]').forEach(input=>{
+    input.addEventListener('input',e=>{
+      const team=e.target.dataset.team;
+      const key=e.target.dataset.key;
+      calcValues[team][key]=Number(e.target.value);
+      renderCalc();
+      computeBonus();
+    });
+  });
+  updateCalcTabs();
+}
+
+function updateCalcTabs(){
+  document.querySelectorAll('.calc-tab').forEach(btn=>{
+    const match=btn.dataset.team===activeTeam;
+    btn.classList.toggle('active',match);
+    btn.classList.toggle('calls',btn.dataset.team==='calls');
+    btn.classList.toggle('chat',btn.dataset.team==='chat');
+  });
+}
+
+function leaveMultiplier(planned,unplanned){
+  if(unplanned) return 0;
+  if(planned===0) return 1;
+  if(planned<=2) return 0.75;
+  if(planned===3) return 0.5;
+  return 0;
+}
+
+function computeBonus(){
+  const data=bonusData[activeTeam];
+  const planned=Number(document.getElementById('plannedLeaves').value||0);
+  const unplanned=document.getElementById('unplannedLeave').checked;
+  const values=calcValues[activeTeam];
+
+  let total=0;
+  let slab1Hits=0;
+  let slab2Hits=0;
+
+  data.metrics.forEach(metric=>{
+    const value=values[metric.key]||0;
+    const level=levelFor(metric,value);
+    if(level==='slab1'){
+      total+=metric.pts;
+      slab1Hits++;
+      slab2Hits++;
+    }else if(level==='slab2'){
+      total+=metric.pts;
+      slab2Hits++;
+    }
+  });
+
+  const eligible=total>=70&&!unplanned;
+  const multiplier=leaveMultiplier(planned,unplanned);
+  const slab1Needed=Math.ceil(data.metrics.length/2);
+  let slab='Miss';
+  let baseBonus=0;
+  if(eligible){
+    if(slab1Hits>=slab1Needed){
+      slab='Slab 1';
+      baseBonus=7500;
+    }else{
+      slab='Slab 2';
+      baseBonus=3000;
+    }
+  }
+  const finalBonus=Math.round(baseBonus*multiplier);
+
+  document.getElementById('totalPoints').textContent=String(total);
+  document.getElementById('estimatedBonus').textContent=fmtMoney(finalBonus);
+  document.getElementById('slab1Hits').textContent=String(slab1Hits);
+  document.getElementById('activeSlab').textContent=slab;
+  document.getElementById('leaveMultiplier').textContent='Leave multiplier '+Math.round(multiplier*100)+'%';
+  document.getElementById('slab1Needed').textContent='Need '+slab1Needed+' slab 1 hits for top payout';
+
+  if(unplanned){
+    document.getElementById('totalStatus').textContent='Unplanned leave removes eligibility';
+    document.getElementById('bonusStatus').textContent='Bonus blocked by attendance override';
+  }else if(total>=70){
+    document.getElementById('totalStatus').textContent='Eligible on points';
+    document.getElementById('bonusStatus').textContent=slab==='Slab 1'?'Top slab unlocked':'Second slab unlocked';
+  }else{
+    document.getElementById('totalStatus').textContent='Minimum 70 points needed';
+    document.getElementById('bonusStatus').textContent='No slab unlocked yet';
+  }
+}
+
+function bindCalcTabs(){
+  document.querySelectorAll('.calc-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      activeTeam=btn.dataset.team;
+      renderCalc();
+      computeBonus();
+    });
+  });
+}
+
+function wireControls(){
+  document.getElementById('plannedLeaves').addEventListener('change',computeBonus);
+  document.getElementById('unplannedLeave').addEventListener('change',computeBonus);
+}
+
+function hydrateLogo(){
+  try{
+    if(window.parent&&window.parent!==window){
+      const parentLogo=window.parent.document.querySelector('.hdr-logo-adit');
+      const src=parentLogo&&parentLogo.getAttribute('src');
+      if(src){
+        const logo=document.getElementById('brandLogo');
+        const fallback=document.getElementById('brandFallback');
+        logo.onload=()=>{logo.style.display='block';fallback.style.display='none';};
+        logo.src=src;
+      }
+    }
+  }catch(e){}
+}
+
+renderTeamPanels();
+renderEligibility();
+renderLeaves();
+renderNotes();
+renderCalc();
+bindCalcTabs();
+wireControls();
+computeBonus();
+hydrateLogo();
+</script>
+</body>
+</html>
