@@ -401,10 +401,10 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 .hof-empty{padding:18px;border-radius:16px;border:1px dashed rgba(255,255,255,0.12);background:rgba(255,255,255,0.025);font-size:12px;color:var(--text3);text-align:center;}
 @keyframes hofLift{from{opacity:0;transform:translateY(14px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes hofBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(4deg);}}
-.hof-frame-shell{padding:0;overflow:hidden;}
+.hof-frame-shell{padding:0;overflow:hidden;background:transparent;border:none;box-shadow:none;}
 .hof-frame-top{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:18px 20px 0;flex-wrap:wrap;}
 .hof-frame-note{padding:0 20px 16px;font-size:11px;color:var(--text2);line-height:1.6;}
-.hof-frame{display:block;width:100%;height:1160px;border:0;background:#0d1b2e;border-top:1px solid rgba(255,255,255,0.05);}
+.hof-frame{display:block;width:100%;height:1760px;border:1px solid rgba(255,255,255,0.06);background:#07111f;border-radius:22px;box-shadow:0 26px 60px rgba(0,0,0,0.34);}
 .admin-ribbon{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin:2px 0 14px;}
 .viz-row{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px;}
 .viz-card{border-radius:18px;padding:18px;background:linear-gradient(145deg, rgba(19,36,61,0.96), rgba(8,19,35,0.96));border:1px solid rgba(255,255,255,0.06);box-shadow:0 14px 36px rgba(0,0,0,0.28);}
@@ -772,14 +772,6 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
   <!-- HALL OF FAME -->
   <div class="page" id="tab-hall">
     <div class="card hof-frame-shell">
-      <div class="hof-frame-top">
-        <span class="card-title">Hall of Fame</span>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <span class="chip">Admin</span>
-          <span class="chip">Standalone Section</span>
-        </div>
-      </div>
-      <div class="hof-frame-note">This is a dedicated Hall of Fame section. The live dashboard stays unchanged, and the supplied layout is shown here on its own.</div>
       <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Admin Section" loading="lazy"></iframe>
     </div>
   </div>
@@ -812,14 +804,6 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
   </div>
   <div class="agent-shell-page" id="agent-section-hall">
     <div class="card hof-frame-shell">
-      <div class="hof-frame-top">
-        <span class="card-title">Hall of Fame</span>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <span class="chip">Agent</span>
-          <span class="chip">Standalone Section</span>
-        </div>
-      </div>
-      <div class="hof-frame-note">This is a separate Hall of Fame section for agents. Your main dashboard stays simple and unchanged.</div>
       <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Agent Section" loading="lazy"></iframe>
     </div>
   </div>
@@ -943,6 +927,7 @@ function startApp(username,role,picture){
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.style.display=role==='admin'?'inline-flex':'none';
   applyView(role);
+  initHallFrames();
   setupLiveStream();
   refresh();
   setTimeout(firstLoadSync,2000);
@@ -970,6 +955,28 @@ function switchAgentSection(section,el){
   const next=document.getElementById('agent-section-'+section);
   if(next)next.classList.add('active');
   if(el)el.classList.add('active');
+  if(section==='hall')setTimeout(initHallFrames,50);
+}
+
+function resizeHallFrame(frame){
+  try{
+    const doc=frame.contentDocument||frame.contentWindow.document;
+    if(!doc)return;
+    const bodyHeight=doc.body?doc.body.scrollHeight:0;
+    const htmlHeight=doc.documentElement?doc.documentElement.scrollHeight:0;
+    const nextHeight=Math.max(bodyHeight,htmlHeight,1200)+8;
+    frame.style.height=nextHeight+'px';
+  }catch(e){}
+}
+
+function initHallFrames(){
+  document.querySelectorAll('.hof-frame').forEach(frame=>{
+    if(frame.dataset.resizeBound!=='yes'){
+      frame.addEventListener('load',()=>resizeHallFrame(frame));
+      frame.dataset.resizeBound='yes';
+    }
+    if(frame.contentDocument)setTimeout(()=>resizeHallFrame(frame),30);
+  });
 }
 
 function doLogout(){
@@ -1543,6 +1550,7 @@ function switchTab(tab,el){
   if(tab==='loginlogs')loadLoginLogs();
   if(tab==='agents')loadAgents();
   if(tab==='access')loadRoles();
+  if(tab==='hall')setTimeout(initHallFrames,50);
 }
 
 // Old single-agent autocomplete removed - using bulk panel
