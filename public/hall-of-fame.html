@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hall of Fame</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Ubuntu:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1b2e;color:#fff;font-family:'Ubuntu',sans-serif}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes floatCrown{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-5px) rotate(6deg)}}
+.hof-wrap{position:relative;overflow:hidden;min-height:100vh;background:
+radial-gradient(ellipse 60% 40% at 85% 10%, rgba(245,130,31,0.09) 0%, transparent 65%),
+radial-gradient(ellipse 50% 45% at 10% 85%, rgba(28,43,74,0.7) 0%, transparent 65%),
+radial-gradient(ellipse 35% 30% at 50% 50%, rgba(39,167,120,0.05) 0%, transparent 60%);}
+.hof-wrap::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:36px 36px;pointer-events:none}
+.hof-wrap::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle, rgba(245,130,31,0.12) 1px, transparent 1px);background-size:72px 72px;background-position:18px 18px;pointer-events:none}
+.inner{position:relative;z-index:1;padding:28px 20px 24px}
+.mast{text-align:center;animation:rise .7s ease both}
+.brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
+.brand-mark{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f5821f,#ffb45b);font-family:'Poppins',sans-serif;font-weight:800;color:#071625}
+.brand-name{font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;line-height:1}
+.brand-sub{font-size:11px;color:rgba(255,255,255,.42);margin-top:2px}
+.tag{display:inline-block;background:rgba(245,130,31,.13);color:#f5821f;font-size:11px;font-weight:600;font-family:'Poppins',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:5px 16px;border-radius:20px;border:.5px solid rgba(245,130,31,.3);margin-bottom:10px}
+.mast h1{font-family:'Poppins',sans-serif;font-size:30px;font-weight:700;line-height:1.2}
+.mast h1 span{color:#f5821f}
+.mast p{font-size:12px;color:rgba(255,255,255,.36);margin-top:6px}
+.stat-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:22px 0 20px}
+.stat-panel{border-radius:16px;padding:16px 18px;animation:rise .7s ease both}
+.stat-panel.calls{background:rgba(7,26,18,.95);border:1.5px solid rgba(39,167,120,.28)}
+.stat-panel.chat{background:rgba(24,14,4,.95);border:1.5px solid rgba(245,130,31,.28)}
+.stat-label{font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.stat-label.calls{color:#27a778}.stat-label.chat{color:#f5821f}
+.dot{width:7px;height:7px;border-radius:50%}.dot.calls{background:#27a778}.dot.chat{background:#f5821f}
+.stat-metrics{display:flex;gap:16px;flex-wrap:wrap}
+.stat-v{font-family:'Poppins',sans-serif;font-size:19px;font-weight:700}
+.stat-v.calls{color:#27a778}.stat-v.chat{color:#f5821f}
+.stat-k{font-size:10px;color:rgba(255,255,255,.32);margin-top:2px}
+.section{margin-top:10px}
+.section-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;animation:rise .7s ease both}
+.section-line{flex:1;height:.5px}.section-line.calls{background:rgba(39,167,120,.35)}.section-line.chat{background:rgba(245,130,31,.35)}
+.section-title{font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;white-space:nowrap}
+.section-title.calls{color:rgba(39,167,120,.75)}.section-title.chat{color:rgba(245,130,31,.75)}
+.grid-3,.grid-3b{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.card{border-radius:16px;padding:16px;position:relative;overflow:hidden;background:rgba(10,20,35,.98);border:.5px solid rgba(255,255,255,.09);animation:rise .75s ease both;transition:transform .22s,box-shadow .22s}
+.card:hover{transform:translateY(-5px) scale(1.02)}
+.card.mvp-calls{background:rgba(6,22,14,.98);border:2px solid #27a778}
+.card.mvp-chat{background:rgba(20,12,4,.98);border:2px solid #f5821f}
+.card.silver-calls{background:rgba(6,18,28,.98);border:1.5px solid #1c3a58}
+.card.silver-chat{background:rgba(18,10,3,.98);border:1.5px solid #7a4010}
+.card.bronze-calls{background:rgba(5,12,20,.98);border:1px solid #0d2d45}
+.card.bronze-chat{background:rgba(12,8,3,.98);border:1px solid #5a3008}
+.rib{position:absolute;top:0;left:0;right:0;height:3px}.rib.calls{background:#27a778}.rib.chat{background:#f5821f}.rib.navy{background:#1c2b4a}
+.crown{position:absolute;top:10px;right:12px;font-size:16px;animation:floatCrown 2.3s ease-in-out infinite}
+.badge{display:inline-block;font-family:'Poppins',sans-serif;font-size:9px;font-weight:700;padding:3px 8px;border-radius:7px;margin-bottom:8px;text-transform:uppercase;letter-spacing:.07em}
+.badge.orange{background:rgba(245,130,31,.14);color:#f5821f;border:.5px solid rgba(245,130,31,.28)}
+.badge.teal{background:rgba(39,167,120,.12);color:#27a778;border:.5px solid rgba(39,167,120,.25)}
+.badge.blue{background:rgba(28,75,130,.18);color:#85b7eb;border:.5px solid rgba(133,183,235,.2)}
+.badge.red{background:rgba(226,75,74,.1);color:#e24b4a;border:.5px solid rgba(226,75,74,.2)}
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:8px}
+.avatar.lg{width:44px;height:44px;font-size:14px}
+.avatar.sm{width:36px;height:36px;font-size:12px}
+.av-orange{background:rgba(245,130,31,.15);color:#f5821f;border:1px solid rgba(245,130,31,.2)}
+.av-green{background:rgba(39,167,120,.14);color:#27a778;border:1px solid rgba(39,167,120,.2)}
+.av-blue{background:rgba(28,58,100,.6);color:#85b7eb;border:1px solid rgba(133,183,235,.15)}
+.av-navy{background:rgba(28,43,74,.7);color:#7eb3d4;border:1px solid rgba(126,179,212,.15)}
+.av-gray{background:rgba(255,255,255,.07);color:#aaa;border:1px solid rgba(255,255,255,.1)}
+.name{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700}
+.role{font-size:10px;color:rgba(255,255,255,.32);margin-top:2px;margin-bottom:9px}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.label{font-size:11px;color:rgba(255,255,255,.38)}
+.value{font-size:11px;font-weight:600;font-family:'Poppins',sans-serif}
+.value.orange{color:#f5821f}.value.green{color:#27a778}.value.blue{color:#85b7eb}.value.white{color:#fff}.value.red{color:#e24b4a}.value.gray{color:rgba(255,255,255,.38)}
+.track{height:4px;border-radius:2px;background:rgba(255,255,255,.07);margin:3px 0 7px}
+.fill{height:4px;border-radius:2px;transition:width 1.4s cubic-bezier(.4,0,.2,1);width:0}
+.sep{height:.5px;background:rgba(255,255,255,.07);margin:7px 0}
+.focus{margin-top:7px;background:rgba(0,0,0,.25);border-radius:8px;padding:7px 9px;border-left:2.5px solid}
+.focus.orange{border-left-color:#f5821f}.focus.green{border-left-color:#27a778}.focus.red{border-left-color:#e24b4a}
+.focus-label{font-family:'Poppins',sans-serif;font-size:8px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:3px}
+.focus-text{font-size:11px;color:rgba(255,255,255,.72);line-height:1.5}
+.chat-bar{display:flex;height:5px;border-radius:3px;overflow:hidden;gap:1px;margin:4px 0}
+.chat-good{background:#27a778}.chat-ok{background:#f5821f}.chat-bad{background:#e24b4a}
+.csat-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border-radius:8px;padding:4px 9px;margin-top:5px;border:.5px solid rgba(255,255,255,.08)}
+.csat-pill span{font-size:10px;color:rgba(255,255,255,.35)}
+.csat-pill strong{font-size:13px;font-weight:700;font-family:'Poppins',sans-serif}
+.foot{padding:8px 0 0;text-align:center;font-size:11px;color:rgba(255,255,255,.2)}
+.foot span{color:rgba(245,130,31,.5)}
+@media(max-width:960px){.grid-3,.grid-3b,.stat-panels{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="hof-wrap">
+  <div class="inner">
+    <div class="mast">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div>
+          <div class="brand-name">Adit</div>
+          <div class="brand-sub">T1 CS Stars · Performance Report</div>
+        </div>
+      </div>
+      <div class="tag">March 2026</div>
+      <h1>Hall of <span>Fame</span></h1>
+      <p>Month-to-date · Mar 31, 2026 · RingCentral + Zoho SalesIQ</p>
+    </div>
+
+    <div class="stat-panels">
+      <div class="stat-panel calls">
+        <div class="stat-label calls"><div class="dot calls"></div>Calls team</div>
+        <div class="stat-metrics">
+          <div><div class="stat-v calls">97.32%</div><div class="stat-k">Ticket CSAT</div></div>
+          <div><div class="stat-v calls">62.1%</div><div class="stat-k">FCR</div></div>
+          <div><div class="stat-v calls">1,213</div><div class="stat-k">Tickets closed</div></div>
+          <div><div class="stat-v calls">2,119</div><div class="stat-k">Inbound calls</div></div>
+        </div>
+      </div>
+      <div class="stat-panel chat">
+        <div class="stat-label chat"><div class="dot chat"></div>Chat team</div>
+        <div class="stat-metrics">
+          <div><div class="stat-v chat">60.6%</div><div class="stat-k">Chat CSAT avg</div></div>
+          <div><div class="stat-v chat">52.4%</div><div class="stat-k">FCR avg</div></div>
+          <div><div class="stat-v chat">1,211</div><div class="stat-k">Chats handled</div></div>
+          <div><div class="stat-v chat">249</div><div class="stat-k">Tickets closed</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-line calls"></div><span class="section-title calls">Calls — hall of fame</span><div class="section-line calls"></div></div>
+      <div class="grid-3">
+        <div class="card mvp-calls">
+          <div class="rib calls"></div><div class="crown">👑</div><span class="badge orange">MVP · Calls</span>
+          <div class="avatar lg av-orange">LT</div><div class="name">Lincy Tabita</div><div class="role">Ext. 5208 · Calls + Tickets leader</div>
+          <div class="row"><span class="label">Inbound calls</span><span class="value orange">280</span></div>
+          <div class="row"><span class="label">Answered</span><span class="value green">256 / 280</span></div>
+          <div class="row"><span class="label">Live talk time</span><span class="value white">35:55:46</span></div>
+          <div class="row"><span class="label">Tickets closed</span><span class="value orange">182</span></div>
+          <div class="row"><span class="label">FCR</span><span class="value orange">71.4%</span></div>
+          <div class="track"><div class="fill" style="background:#f5821f" data-w="71.4%"></div></div>
+          <div class="row"><span class="label">CSAT</span><span class="value green">96.77%</span></div>
+          <div class="focus green"><div class="focus-label">Focus area</div><div class="focus-text">FCR just 3.6% from Slab 1. Encourage customers to leave a rating after every resolved call and review missed-call follow-up process.</div></div>
+        </div>
+        <div class="card silver-calls">
+          <div class="rib calls"></div><span class="badge teal">Volume king</span>
+          <div class="avatar lg av-green">GD</div><div class="name">Greg Dawson</div><div class="role">Ext. 5466 · Highest inbound</div>
+          <div class="row"><span class="label">Inbound calls</span><span class="value green">332</span></div>
+          <div class="row"><span class="label">Answered</span><span class="value green">316 / 332</span></div>
+          <div class="row"><span class="label">Live talk time</span><span class="value white">52:47:13</span></div>
+          <div class="row"><span class="label">Tickets closed</span><span class="value green">139</span></div>
+          <div class="row"><span class="label">FCR</span><span class="value white">63.3%</span></div>
+          <div class="track"><div class="fill" style="background:#27a778" data-w="63.3%"></div></div>
+          <div class="row"><span class="label">CSAT</span><span class="value green">100%</span></div>
+          <div class="focus orange"><div class="focus-label">Focus area</div><div class="focus-text">Keep volume high, reduce hold time, and turn that 100% CSAT into more customer ratings.</div></div>
+        </div>
+        <div class="card bronze-calls">
+          <div class="rib navy"></div><span class="badge blue">Most rated</span>
+          <div class="avatar lg av-blue">DH</div><div class="name">Debra Horton</div><div class="role">Ext. 5477 · Customer favourite</div>
+          <div class="row"><span class="label">Inbound calls</span><span class="value blue">213</span></div>
+          <div class="row"><span class="label">Answered</span><span class="value green">195 / 213</span></div>
+          <div class="row"><span class="label">Live talk time</span><span class="value white">32:08:13</span></div>
+          <div class="row"><span class="label">Good ratings</span><span class="value blue">37 ⭐</span></div>
+          <div class="row"><span class="label">FCR</span><span class="value white">57.3%</span></div>
+          <div class="track"><div class="fill" style="background:#85b7eb" data-w="57.3%"></div></div>
+          <div class="row"><span class="label">CSAT</span><span class="value green">100%</span></div>
+          <div class="focus green"><div class="focus-label">Focus area</div><div class="focus-text">Customers love you. Channel that rapport into complete first-call resolution instead of escalations.</div></div>
+        </div>
+      </div>
+      <div class="grid-3b">
+        <div class="card">
+          <span class="badge teal">Strong FCR</span><div class="avatar sm av-blue">HP</div><div class="name">Henry P</div><div class="role">Ext. 5348</div>
+          <div class="row"><span class="label">Inbound</span><span class="value white">264</span></div><div class="row"><span class="label">Answered</span><span class="value green">236 / 264</span></div><div class="row"><span class="label">FCR</span><span class="value green">72.4%</span></div>
+          <div class="track"><div class="fill" style="background:#27a778" data-w="72.4%"></div></div>
+          <div class="focus orange"><div class="focus-label">Focus area</div><div class="focus-text">Ask for more ratings. FCR is excellent and close to Slab 1.</div></div>
+        </div>
+        <div class="card">
+          <span class="badge teal">Near slab 1</span><div class="avatar sm av-green">SG</div><div class="name">Sky Gibson</div><div class="role">Ext. 5357</div>
+          <div class="row"><span class="label">Inbound</span><span class="value white">183</span></div><div class="row"><span class="label">Answered</span><span class="value green">151 / 183</span></div><div class="row"><span class="label">FCR</span><span class="value green">74.6%</span></div>
+          <div class="track"><div class="fill" style="background:#27a778" data-w="74.6%"></div></div>
+          <div class="focus green"><div class="focus-label">Focus area</div><div class="focus-text">Outstanding FCR. Increase call volume to maximise bonus points.</div></div>
+        </div>
+        <div class="card">
+          <span class="badge blue">High FCR</span><div class="avatar sm av-navy">CL</div><div class="name">Caroline Lock</div><div class="role">Ext. 5528</div>
+          <div class="row"><span class="label">Inbound</span><span class="value white">188</span></div><div class="row"><span class="label">Answered</span><span class="value green">165 / 188</span></div><div class="row"><span class="label">FCR</span><span class="value green">72.2%</span></div>
+          <div class="track"><div class="fill" style="background:#27a778" data-w="72.2%"></div></div>
+          <div class="focus orange"><div class="focus-label">Focus area</div><div class="focus-text">Reduce unnecessary holds and build a better CSAT baseline with more ratings.</div></div>
+        </div>
+      </div>
+      <div class="grid-3b">
+        <div class="card">
+          <span class="badge red">Watch FCR</span><div class="avatar sm av-gray">SQ</div><div class="name">Sabrina Quinn</div><div class="role">Ext. 5512</div>
+          <div class="row"><span class="label">Inbound</span><span class="value white">274</span></div><div class="row"><span class="label">Answered</span><span class="value green">247 / 274</span></div><div class="row"><span class="label">FCR</span><span class="value red">46.7%</span></div>
+          <div class="track"><div class="fill" style="background:#e24b4a" data-w="46.7%"></div></div>
+          <div class="focus red"><div class="focus-label">Focus area</div><div class="focus-text">Great CSAT, but too many customers are calling back. Needs 1:1 FCR coaching.</div></div>
+        </div>
+        <div class="card">
+          <span class="badge red">Watch CSAT</span><div class="avatar sm av-gray">MP</div><div class="name">Michelle Pinto</div><div class="role">Ext. 5555</div>
+          <div class="row"><span class="label">Inbound</span><span class="value white">341</span></div><div class="row"><span class="label">Answered</span><span class="value green">309 / 341</span></div><div class="row"><span class="label">CSAT</span><span class="value red">50% (2 surveys)</span></div>
+          <div class="track"><div class="fill" style="background:#f5821f" data-w="58.1%"></div></div>
+          <div class="focus red"><div class="focus-label">Focus area</div><div class="focus-text">Build more survey volume and push FCR upward through coaching.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div class="section-line chat"></div><span class="section-title chat">Chat — hall of fame</span><div class="section-line chat"></div></div>
+      <div class="grid-3">
+        <div class="card mvp-chat">
+          <div class="rib chat"></div><div class="crown">👑</div><span class="badge orange">MVP · Chat</span>
+          <div class="avatar lg av-orange">AF</div><div class="name">Anold Fernandes</div><div class="role">Ext. 5313 · Power agent</div>
+          <div class="row"><span class="label">Chats handled</span><span class="value orange">497</span></div><div class="row"><span class="label">Tickets closed</span><span class="value white">110</span></div><div class="row"><span class="label">FCR</span><span class="value white">56.4%</span></div>
+          <div class="track"><div class="fill" style="background:#f5821f" data-w="56.4%"></div></div>
+          <div class="sep"></div><div class="chat-bar"><div class="chat-good" style="flex:43"></div><div class="chat-ok" style="flex:9"></div><div class="chat-bad" style="flex:29"></div></div>
+          <div class="row"><span class="label">Rated chats</span><span class="value white">81</span></div>
+          <div class="csat-pill"><span>Chat CSAT</span><strong style="color:#e24b4a">53.1%</strong></div>
+          <div class="focus red"><div class="focus-label">Focus area</div><div class="focus-text">Highest chat volume, but too many bad ratings. Push complete resolutions and stronger rating follow-up.</div></div>
+        </div>
+        <div class="card silver-chat">
+          <div class="rib chat"></div><span class="badge teal">Best CSAT</span>
+          <div class="avatar lg av-gray">EC</div><div class="name">Evan Cruz</div><div class="role">Ext. 5574 · CSAT leader</div>
+          <div class="row"><span class="label">Chats handled</span><span class="value green">347</span></div><div class="row"><span class="label">Tickets closed</span><span class="value white">65</span></div><div class="row"><span class="label">FCR</span><span class="value red">29.2%</span></div>
+          <div class="track"><div class="fill" style="background:#e24b4a" data-w="29.2%"></div></div>
+          <div class="sep"></div><div class="chat-bar"><div class="chat-good" style="flex:38"></div><div class="chat-ok" style="flex:5"></div><div class="chat-bad" style="flex:10"></div></div>
+          <div class="csat-pill"><span>Chat CSAT</span><strong style="color:#27a778">71.7%</strong></div>
+          <div class="focus red"><div class="focus-label">Focus area</div><div class="focus-text">Engagement quality is strong. The next leap is converting more chats into full first-contact resolutions.</div></div>
+        </div>
+        <div class="card bronze-chat">
+          <div class="rib chat"></div><span class="badge blue">Top FCR</span>
+          <div class="avatar lg av-green">TS</div><div class="name">Tabbie Shine</div><div class="role">Ext. 5456 · FCR star</div>
+          <div class="row"><span class="label">Chats handled</span><span class="value blue">367</span></div><div class="row"><span class="label">Tickets closed</span><span class="value white">74</span></div><div class="row"><span class="label">FCR</span><span class="value green">71.6%</span></div>
+          <div class="track"><div class="fill" style="background:#85b7eb" data-w="71.6%"></div></div>
+          <div class="sep"></div><div class="chat-bar"><div class="chat-good" style="flex:22"></div><div class="chat-ok" style="flex:9"></div><div class="chat-bad" style="flex:8"></div></div>
+          <div class="csat-pill"><span>Chat CSAT</span><strong style="color:#85b7eb">56.4%</strong></div>
+          <div class="focus green"><div class="focus-label">Focus area</div><div class="focus-text">FCR is elite. Turn more of those high-quality chats into surveys and stronger CSAT.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot"><span>Adit</span> T1 CS Stars · March 2026 · Call data: RingCentral Agent Summary · Chat data: Zoho SalesIQ</div>
+  </div>
+</div>
+<script>
+document.querySelectorAll('.fill').forEach((bar,index)=>{
+  setTimeout(()=>{bar.style.width=bar.dataset.w||'0%'},200+(index*90));
+});
+</script>
+</body>
+</html>

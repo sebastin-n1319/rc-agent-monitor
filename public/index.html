@@ -395,6 +395,10 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 .hof-empty{padding:18px;border-radius:16px;border:1px dashed rgba(255,255,255,0.12);background:rgba(255,255,255,0.025);font-size:12px;color:var(--text3);text-align:center;}
 @keyframes hofLift{from{opacity:0;transform:translateY(14px) scale(0.98);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes hofBob{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-4px) rotate(4deg);}}
+.hof-frame-shell{padding:0;overflow:hidden;}
+.hof-frame-top{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:18px 20px 0;flex-wrap:wrap;}
+.hof-frame-note{padding:0 20px 16px;font-size:11px;color:var(--text2);line-height:1.6;}
+.hof-frame{display:block;width:100%;height:1160px;border:0;background:#0d1b2e;border-top:1px solid rgba(255,255,255,0.05);}
 .admin-ribbon{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin:2px 0 14px;}
 .viz-row{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px;}
 .viz-card{border-radius:18px;padding:18px;background:linear-gradient(145deg, rgba(19,36,61,0.96), rgba(8,19,35,0.96));border:1px solid rgba(255,255,255,0.06);box-shadow:0 14px 36px rgba(0,0,0,0.28);}
@@ -441,7 +445,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
 
 @media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:1200px){.viz-row{grid-template-columns:1fr;}.mix-legend{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame{height:980px;}}
 </style>
 </head>
 <body>
@@ -608,23 +612,16 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
         </div>
       </div>
     </div>
-    <div class="card hof-shell">
-      <div class="card-hdr">
+    <div class="card hof-frame-shell">
+      <div class="hof-frame-top">
         <span class="card-title">Hall of Fame</span>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <span class="chip">Live dayboard</span>
-          <span class="chip" id="hof-admin-range">Today · CST</span>
+          <span class="chip">Admin</span>
+          <span class="chip">Embedded Layout</span>
         </div>
       </div>
-      <div class="hof-subcopy">A live spotlight built from the same queue metrics below. It surfaces the shift MVP, the volume engine, the queue guardian, and the cleanest operators without turning the dashboard into another report.</div>
-      <div class="hof-stage">
-        <div id="hof-admin-hero">
-          <div class="hof-empty">Building the Hall of Fame...</div>
-        </div>
-        <div class="hof-grid" id="hof-admin-grid">
-          <div class="hof-empty">Waiting for live data...</div>
-        </div>
-      </div>
+      <div class="hof-frame-note">The supplied Hall of Fame HTML is embedded here as its own section so the original design shows cleanly inside admin without changing the live dashboard layout.</div>
+      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Admin Section" loading="lazy"></iframe>
     </div>
     <div class="card">
       <div class="card-hdr">
@@ -783,15 +780,16 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="ag-inbound">--</div></div>
     <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="ag-outbound">--</div></div>
   </div>
-  <div class="card hof-shell">
-    <div class="card-hdr">
+  <div class="card hof-frame-shell">
+    <div class="hof-frame-top">
       <span class="card-title">Hall of Fame</span>
-      <span class="chip" id="hof-agent-range">Today · CST</span>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <span class="chip">Agent</span>
+        <span class="chip">Embedded Layout</span>
+      </div>
     </div>
-    <div class="hof-subcopy">A lighter podium for the floor so agents can instantly see who is setting the pace today.</div>
-    <div class="hof-mini-grid" id="hof-agent-grid">
-      <div class="hof-empty">Loading the podium...</div>
-    </div>
+    <div class="hof-frame-note">The same Hall of Fame section is available in agent view as a dedicated highlight area, separate from the live team table.</div>
+    <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Agent Section" loading="lazy"></iframe>
   </div>
   <div class="card">
     <div class="card-hdr"><span class="card-title">Team Status</span><span class="chip" id="agent-view-count">0 agents</span></div>
