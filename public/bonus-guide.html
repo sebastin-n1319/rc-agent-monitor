@@ -217,7 +217,9 @@ body::before{
 .calc-list{display:flex;flex-direction:column;gap:14px;margin-top:18px}
 .calc-row{
   padding:16px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+  transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;
 }
+.calc-row:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14);box-shadow:0 14px 26px rgba(0,0,0,.14)}
 .calc-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .calc-label{font-size:13px;font-weight:700}
 .calc-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -284,7 +286,7 @@ body::before{
 
 .leave-control-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
 .control-box{
-  padding:16px 18px;border-radius:20px;background:
+  padding:14px 16px;border-radius:18px;background:
     linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.028)),
     rgba(0,0,0,.16);
   border:1px solid rgba(255,255,255,.07);
@@ -293,39 +295,39 @@ body::before{
 .control-box:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14);box-shadow:0 18px 28px rgba(0,0,0,.18)}
 .control-box label{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
 .control-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap}
-.field-note{margin-top:8px;font-size:12px;line-height:1.65;color:var(--muted);max-width:320px}
+.field-note{margin-top:6px;font-size:11px;line-height:1.6;color:var(--muted);max-width:270px}
 .control-badge{
-  padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
+  padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
   background:rgba(255,255,255,.04);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.68)
 }
 .control-badge.glow{color:var(--calls-soft);border-color:rgba(37,220,161,.3);background:rgba(37,220,161,.1);box-shadow:0 0 0 1px rgba(37,220,161,.06),0 0 22px rgba(37,220,161,.14)}
-.control-visual{display:flex;justify-content:space-between;gap:14px;align-items:end;flex-wrap:wrap;margin-top:16px}
+.control-visual{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
 .leave-select{
-  min-width:140px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.12);
+  min-width:110px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);
   background:
     linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)),
     rgba(4,10,20,.72);
-  color:var(--text);font-size:20px;font-family:'Space Grotesk',sans-serif;font-weight:700;
+  color:var(--text);font-size:18px;font-family:'Space Grotesk',sans-serif;font-weight:700;
   outline:none;box-shadow:0 12px 22px rgba(0,0,0,.18);
 }
 .leave-select:focus{border-color:rgba(126,243,205,.42);box-shadow:0 0 0 4px rgba(126,243,205,.08)}
 .multiplier-preview{
-  flex:1;min-width:220px;padding:14px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.08);
+  flex:1;min-width:185px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);
   background:rgba(255,255,255,.035)
 }
 .multiplier-preview span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.42)}
-.multiplier-preview strong{display:block;margin-top:10px;font-size:28px;font-family:'Space Grotesk',sans-serif;color:var(--calls-soft)}
-.multiplier-preview small{display:block;margin-top:8px;font-size:12px;line-height:1.65;color:var(--muted)}
-.attendance-shell{margin-top:16px}
+.multiplier-preview strong{display:block;margin-top:8px;font-size:24px;font-family:'Space Grotesk',sans-serif;color:var(--calls-soft)}
+.multiplier-preview small{display:block;margin-top:6px;font-size:11px;line-height:1.55;color:var(--muted)}
+.attendance-shell{margin-top:12px}
 .toggle-switch{display:flex;align-items:center;gap:14px;cursor:pointer}
 .toggle-switch input{position:absolute;opacity:0;pointer-events:none}
 .toggle-track{
-  position:relative;flex:0 0 66px;height:38px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
+  position:relative;flex:0 0 58px;height:34px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
   background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
   transition:background .22s ease,border-color .22s ease,box-shadow .22s ease;
 }
 .toggle-track i{
-  position:absolute;top:5px;left:5px;width:26px;height:26px;border-radius:50%;
+  position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;
   background:linear-gradient(145deg, rgba(255,255,255,.92), rgba(209,226,255,.86));
   box-shadow:0 10px 16px rgba(0,0,0,.18);
   transition:transform .22s ease,background .22s ease;
@@ -334,16 +336,16 @@ body::before{
   background:rgba(255,110,147,.16);border-color:rgba(255,110,147,.26);box-shadow:0 0 0 1px rgba(255,110,147,.04),0 0 18px rgba(255,110,147,.12);
 }
 .toggle-switch input:checked + .toggle-track i{
-  transform:translateX(28px);
+  transform:translateX(24px);
   background:linear-gradient(145deg, #ffd2dd, #ff7e9f);
 }
-.toggle-copy strong{display:block;font-size:14px}
-.toggle-copy small{display:block;margin-top:5px;font-size:12px;line-height:1.6;color:var(--muted)}
+.toggle-copy strong{display:block;font-size:13px}
+.toggle-copy small{display:block;margin-top:4px;font-size:11px;line-height:1.55;color:var(--muted)}
 .control-box.attendance.is-alert{border-color:rgba(255,110,147,.24);box-shadow:0 20px 30px rgba(0,0,0,.18),0 0 28px rgba(255,110,147,.08)}
 .control-box.attendance.is-alert .control-badge{color:#ffd7e2;border-color:rgba(255,110,147,.26);background:rgba(255,110,147,.12)}
 .control-box.attendance.is-alert .toggle-copy strong{color:#ffd7e2}
 
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.result-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:12px}
 .unlock-banner{
   position:relative;margin-bottom:14px;padding:16px 18px;border-radius:20px;border:1px solid rgba(255,255,255,.08);
   background:linear-gradient(135deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
@@ -372,15 +374,41 @@ body::before{
 .unlock-banner.live .unlock-orb{animation:bonusPulse 1.8s ease-in-out infinite}
 .result-card{
   padding:18px;border-radius:20px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+  transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease;
 }
+.result-card:hover,.status-node:hover,.csat-control:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14);box-shadow:0 18px 28px rgba(0,0,0,.14)}
 .result-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.48)}
 .result-card strong{display:block;margin-top:10px;font-size:36px;font-family:'Space Grotesk',sans-serif}
 .result-card small{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
 .result-card.good strong{color:var(--calls-soft)}
 .result-card.cash strong{color:#d8cbff}
+.result-card.payout{
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg, rgba(154,141,255,.1), rgba(255,255,255,.03)), rgba(0,0,0,.16);
+}
+.result-card.payout::before{
+  content:'';position:absolute;inset:0;pointer-events:none;opacity:.36;
+  background:radial-gradient(circle at 88% 18%, rgba(154,141,255,.18), transparent 28%);
+}
+.result-card.payout.live{
+  border-color:rgba(154,141,255,.24);
+  box-shadow:0 18px 30px rgba(0,0,0,.16),0 0 26px rgba(154,141,255,.08);
+}
+.payout-breakdown{
+  margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+.payout-line{
+  padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);
+}
+.payout-line span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.42)}
+.payout-line strong{display:block;margin-top:8px;font-size:22px;font-family:'Space Grotesk',sans-serif}
+.payout-line.slab strong{color:var(--chat-soft)}
+.payout-line.csat strong{color:#d8cbff}
 .status-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
 .status-node{
   padding:14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
+  transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease;
 }
 .status-node span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.46)}
 .status-node strong{display:block;margin-top:10px;font-size:24px;font-family:'Space Grotesk',sans-serif}
@@ -394,6 +422,7 @@ body::before{
 .csat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 .csat-control{
   padding:14px;border-radius:18px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
+  transition:transform .24s ease,border-color .24s ease,box-shadow .24s ease;
 }
 .csat-control span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.46)}
 .csat-control strong{display:block;margin-top:10px;font-size:30px;font-family:'Space Grotesk',sans-serif;color:var(--csat-tone)}
@@ -401,24 +430,29 @@ body::before{
 .csat-meta{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
 .csat-shell.calls{--csat-tone:var(--calls-soft)}
 .csat-shell.chat{--csat-tone:var(--chat-soft)}
-.csat-result{
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;
+.csat-inline{
+  margin-top:12px;padding:12px 14px;border-radius:16px;border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.028);display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;
 }
-.csat-card{
-  padding:14px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);
-}
-.csat-card span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.46)}
-.csat-card strong{display:block;margin-top:10px;font-size:28px;font-family:'Space Grotesk',sans-serif}
-.csat-card small{display:block;margin-top:8px;font-size:11px;line-height:1.6;color:var(--muted)}
-.csat-card.good strong{color:var(--green)}
-.csat-card.cash strong{color:#d8cbff}
+.csat-inline strong{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+.csat-inline small{font-size:11px;line-height:1.6;color:var(--muted);max-width:360px}
 .celebration-layer{
   position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit;z-index:4;
 }
-.confetti{
-  position:absolute;top:36%;left:50%;width:12px;height:24px;border-radius:999px;
-  opacity:0;transform:translate(-50%,-50%) rotate(0deg);
-  animation:burst 1s cubic-bezier(.22,.61,.36,1) forwards;
+.signal-ring{
+  position:absolute;top:50%;left:50%;width:18px;height:18px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.38);opacity:0;transform:translate(-50%,-50%) scale(.4);
+  animation:ringExpand 1.1s cubic-bezier(.22,.61,.36,1) forwards;
+}
+.signal-spark{
+  position:absolute;top:50%;left:50%;width:170px;height:2px;opacity:0;
+  transform:translate(-50%,-50%) rotate(var(--angle));
+  animation:sparkSweep 1s cubic-bezier(.22,.61,.36,1) forwards;
+}
+.signal-spark::before{
+  content:'';position:absolute;right:0;top:-4px;width:10px;height:10px;border-radius:50%;
+  background:radial-gradient(circle, var(--spark-color), rgba(255,255,255,.08) 70%, transparent 72%);
+  box-shadow:0 0 18px var(--spark-color);
 }
 
 .notes-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -445,9 +479,22 @@ body::before{
   0%,100%{transform:scale(1);box-shadow:0 16px 24px rgba(0,0,0,.16)}
   50%{transform:scale(1.08);box-shadow:0 18px 30px rgba(0,0,0,.18),0 0 26px rgba(37,220,161,.18)}
 }
-@keyframes burst{
-  0%{opacity:1;transform:translate(-50%,-50%) scale(.5) rotate(var(--spin))}
-  100%{opacity:0;transform:translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(1) rotate(calc(var(--spin) + 180deg))}
+@keyframes ringExpand{
+  0%{opacity:.55;transform:translate(-50%,-50%) scale(.28)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(13)}
+}
+@keyframes sparkSweep{
+  0%{opacity:0;transform:translate(-50%,-50%) scale(.25) rotate(var(--angle))}
+  20%{opacity:1}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.05) rotate(var(--angle))}
+}
+@keyframes valuePop{
+  0%{transform:translateY(8px);opacity:.6;filter:blur(4px)}
+  100%{transform:translateY(0);opacity:1;filter:blur(0)}
+}
+.value-pop{animation:valuePop .34s cubic-bezier(.22,1,.36,1)}
+@media (prefers-reduced-motion:reduce){
+  .calc-panel::after,.calc-side::after,.unlock-banner.live .unlock-orb,[data-reveal],.value-pop{animation:none!important}
 }
 @media (max-width:1240px){
   .hero-main,.split-grid,.calc-shell{grid-template-columns:1fr}
@@ -458,7 +505,7 @@ body::before{
   .hero{padding:22px 20px}
   .hero-copy h2{font-size:44px}
   .brand-copy h1{font-size:30px}
-  .bonus-tier-grid,.metric-grid,.eligibility-grid,.leave-grid,.notes-grid,.result-grid,.status-grid,.leave-control-grid,.csat-grid,.csat-result{grid-template-columns:1fr}
+  .bonus-tier-grid,.metric-grid,.eligibility-grid,.leave-grid,.notes-grid,.result-grid,.status-grid,.leave-control-grid,.csat-grid,.payout-breakdown{grid-template-columns:1fr}
   .control-visual,.unlock-banner{align-items:flex-start}
 }
 </style>
@@ -550,14 +597,14 @@ body::before{
 	      <div class="calc-panel">
 	        <div class="calc-list" id="calc-list"></div>
 	        <div class="leave-control-grid">
-	          <div class="control-box">
-	            <div class="control-top">
-	              <div>
-	                <label for="plannedLeaves">Planned leaves</label>
-	                <p class="field-note">Shape the payout multiplier with a cleaner leave preview instead of guessing the slab impact.</p>
-	              </div>
-	              <span class="control-badge glow" id="leaveBandLabel">0 leaves</span>
-	            </div>
+		          <div class="control-box">
+		            <div class="control-top">
+		              <div>
+		                <label for="plannedLeaves">Planned leaves</label>
+		                <p class="field-note">Set the month leave band and preview the multiplier instantly.</p>
+		              </div>
+		              <span class="control-badge glow" id="leaveBandLabel">0 leaves</span>
+		            </div>
 	            <div class="control-visual">
 	              <select id="plannedLeaves" class="leave-select">
 	              <option value="0">0</option>
@@ -573,14 +620,14 @@ body::before{
 	              </div>
 	            </div>
 	          </div>
-	          <div class="control-box attendance" id="attendanceControl">
-	            <div class="control-top">
-	              <div>
-	                <label>Attendance override</label>
-	                <p class="field-note">Use this only when a real unplanned leave happened. It will instantly block slab and CSAT payout.</p>
-	              </div>
-	              <span class="control-badge" id="attendanceBadge">Attendance clear</span>
-	            </div>
+		          <div class="control-box attendance" id="attendanceControl">
+		            <div class="control-top">
+		              <div>
+		                <label>Attendance override</label>
+		                <p class="field-note">Flip only if unplanned leave happened this month.</p>
+		              </div>
+		              <span class="control-badge" id="attendanceBadge">Attendance clear</span>
+		            </div>
 	            <div class="attendance-shell">
 	              <label class="toggle-switch">
 	                <input type="checkbox" id="unplannedLeave">
@@ -594,27 +641,37 @@ body::before{
 	          </div>
 	        </div>
 	      </div>
-	      <div class="calc-side">
-	        <div class="unlock-banner" id="unlockBanner">
-	          <div>
-	            <h4>Live slab pulse</h4>
-	            <strong id="unlockBannerTitle">Hold the line</strong>
-	            <p id="unlockBannerCopy">Clear every active metric at Slab 2 to trigger the payout fireworks.</p>
-	          </div>
-	          <div class="unlock-orb" id="unlockOrb">+</div>
-	        </div>
-	        <div class="result-grid">
-	          <div class="result-card good">
+		      <div class="calc-side">
+		        <div class="unlock-banner" id="unlockBanner">
+		          <div>
+		            <h4>Live slab pulse</h4>
+		            <strong id="unlockBannerTitle">Hold the line</strong>
+		            <p id="unlockBannerCopy">Clear every active metric at Slab 2 to ignite the payout pulse.</p>
+		          </div>
+		          <div class="unlock-orb" id="unlockOrb">+</div>
+		        </div>
+		        <div class="result-grid">
+		          <div class="result-card good">
 	            <span>Total points</span>
             <strong id="totalPoints">0</strong>
             <small id="totalStatus">Minimum 70 points needed</small>
           </div>
-          <div class="result-card cash">
-            <span>Estimated bonus</span>
-            <strong id="estimatedBonus">₹0</strong>
-            <small id="bonusStatus">No slab unlocked yet</small>
-          </div>
-	        </div>
+	          <div class="result-card payout cash" id="payoutCard">
+	            <span>Total payout</span>
+	            <strong id="totalPayout">₹0</strong>
+	            <small id="payoutStatus">No slab or CSAT payout unlocked yet</small>
+	            <div class="payout-breakdown">
+	              <div class="payout-line slab">
+	                <span>Slab bonus</span>
+	                <strong id="slabBonusLine">₹0</strong>
+	              </div>
+	              <div class="payout-line csat">
+	                <span>CSAT bonus</span>
+	                <strong id="csatBonusLine">₹0</strong>
+	              </div>
+	            </div>
+	          </div>
+		        </div>
 	        <div class="status-grid">
           <div class="status-node">
             <span>Metrics at Slab 2</span>
@@ -702,6 +759,17 @@ let lastCelebrationKey='miss';
 
 function fmtMoney(v){
   return '₹'+Math.round(v).toLocaleString();
+}
+
+function setAnimatedText(id,nextText){
+  const node=document.getElementById(id);
+  if(!node)return;
+  if(node.textContent!==nextText){
+    node.textContent=nextText;
+    node.classList.remove('value-pop');
+    void node.offsetWidth;
+    node.classList.add('value-pop');
+  }
 }
 
 function cloneDefaults(team){
@@ -1061,21 +1129,24 @@ function triggerCelebration(kind){
     ? ['#7ef3cd','#25dca1','#d4caff','#69b7ff','#ffffff']
     : ['#ffd18f','#ff9d34','#7ef3cd','#d4caff','#ffffff'];
   layer.innerHTML='';
-  for(let i=0;i<22;i++){
-    const piece=document.createElement('span');
-    piece.className='confetti';
-    piece.style.left=(36+Math.random()*28)+'%';
-    piece.style.top=(26+Math.random()*18)+'%';
-    piece.style.background=palette[i%palette.length];
-    piece.style.setProperty('--x',`${(Math.random()*360)-180}px`);
-    piece.style.setProperty('--y',`${-70-(Math.random()*190)}px`);
-    piece.style.setProperty('--spin',`${Math.round(Math.random()*140)-70}deg`);
-    piece.style.animationDelay=`${Math.random()*0.18}s`;
-    layer.appendChild(piece);
+  for(let i=0;i<3;i++){
+    const ring=document.createElement('span');
+    ring.className='signal-ring';
+    ring.style.borderColor=palette[i%palette.length];
+    ring.style.animationDelay=`${i*0.12}s`;
+    layer.appendChild(ring);
+  }
+  for(let i=0;i<12;i++){
+    const spark=document.createElement('span');
+    spark.className='signal-spark';
+    spark.style.setProperty('--angle',`${i*30}deg`);
+    spark.style.setProperty('--spark-color',palette[i%palette.length]);
+    spark.style.animationDelay=`${0.08+(i*0.02)}s`;
+    layer.appendChild(spark);
   }
   window.setTimeout(()=>{
     if(layer) layer.innerHTML='';
-  },1350);
+  },1300);
 }
 
 function updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned){
@@ -1088,33 +1159,55 @@ function updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,all
     banner.classList.toggle('live',slab==='Slab 1'||slab==='Slab 2');
   }
   if(orb){
-    orb.textContent=slab==='Slab 1'?'*':slab==='Slab 2'?'+':unplanned?'!':'~';
+    orb.textContent=slab==='Slab 1'?'S1':slab==='Slab 2'?'S2':unplanned?'OFF':'RUN';
   }
   if(unplanned){
     title.textContent='Attendance override engaged';
     copy.textContent='The celebration is paused because an unplanned leave blocks both slab payout and CSAT incentive.';
   }else if(slab==='Slab 1'){
     title.textContent='Slab 1 is live';
-    copy.textContent=`Top slab unlocked at ${fmtMoney(finalBonus)}. Every active metric is clearing Slab 1, so the full celebration is on.`;
+    copy.textContent=`Top slab unlocked at ${fmtMoney(finalBonus)}. Every active metric is clearing Slab 1 and the page has shifted into launch mode.`;
   }else if(slab==='Slab 2'){
     title.textContent='Slab 2 is unlocked';
-    copy.textContent=`Current payout track is ${fmtMoney(finalBonus)}. Keep pushing every metric above Slab 1 to ignite the bigger crown moment.`;
+    copy.textContent=`Current payout track is ${fmtMoney(finalBonus)}. Keep pushing every metric above Slab 1 to escalate this into the top tier.`;
   }else if(eligible && !allMetricsAtSlab2){
     title.textContent='Points are ready, metrics are not';
-    copy.textContent=`You already have ${total} points. One or more metric misses are still blocking the payout burst.`;
+    copy.textContent=`You already have ${total} points. One or more metric misses are still blocking the payout pulse.`;
   }else if(!eligible){
     title.textContent='Build the runway';
-    copy.textContent='The payout animation will fire once the score crosses 70 points and every active metric reaches at least Slab 2.';
+    copy.textContent='The payout animation will light up once the score crosses 70 points and every active metric reaches at least Slab 2.';
   }else{
     title.textContent='Hold the line';
     copy.textContent=allMetricsAtSlab1
       ? 'Everything is aligned for the top slab.'
-      : 'Clear every active metric at Slab 2 to trigger the payout fireworks.';
+      : 'Clear every active metric at Slab 2 to ignite the payout pulse.';
   }
   if(celebrationKey!=='miss' && celebrationKey!==lastCelebrationKey){
     triggerCelebration(slab);
   }
   lastCelebrationKey=celebrationKey;
+}
+
+function updatePayoutSummary(slabBonus,csatBonus,unplanned){
+  const totalPayout=slabBonus+csatBonus;
+  const payoutCard=document.getElementById('payoutCard');
+  if(payoutCard){
+    payoutCard.classList.toggle('live',totalPayout>0);
+  }
+  setAnimatedText('slabBonusLine',fmtMoney(slabBonus));
+  setAnimatedText('csatBonusLine',fmtMoney(csatBonus));
+  setAnimatedText('totalPayout',fmtMoney(totalPayout));
+  if(unplanned){
+    document.getElementById('payoutStatus').textContent='Attendance override blocked both slab and CSAT payout';
+  }else if(slabBonus>0 && csatBonus>0){
+    document.getElementById('payoutStatus').textContent='Slab and CSAT are both contributing to this payout';
+  }else if(slabBonus>0){
+    document.getElementById('payoutStatus').textContent='Slab payout is active while CSAT remains separate';
+  }else if(csatBonus>0){
+    document.getElementById('payoutStatus').textContent='CSAT incentive is active even though slab payout is still pending';
+  }else{
+    document.getElementById('payoutStatus').textContent='No slab or CSAT payout unlocked yet';
+  }
 }
 
 function renderCsatCalc(){
@@ -1166,19 +1259,11 @@ function renderCsatCalc(){
         <div class="csat-meta"><div>Per rating</div><div><strong>₹${perRate}</strong></div></div>
       </div>
     </div>
-    <div class="csat-result">
-      <div class="csat-card good">
-        <span>Threshold status</span>
-        <strong id="csatEligibility">Miss</strong>
-        <small id="csatEligibilityNote">Raise CSAT above the threshold to unlock the incentive.</small>
-      </div>
-      <div class="csat-card cash">
-        <span>Estimated CSAT bonus</span>
-        <strong id="csatBonusValue">₹0</strong>
-        <small id="csatBonusNote">No CSAT incentive unlocked yet.</small>
-      </div>
-    </div>
-  `;
+	    <div class="csat-inline">
+	      <strong id="csatEligibility">Miss</strong>
+	      <small id="csatEligibilityNote">Raise CSAT above the threshold to unlock the incentive.</small>
+	    </div>
+	  `;
   bindCsatControls();
   computeCsatBonus();
 }
@@ -1193,28 +1278,22 @@ function computeCsatBonus(){
   const bonus=!unplanned&&thresholdMet?csat.count*perRate:0;
   const elig=document.getElementById('csatEligibility');
   const eligNote=document.getElementById('csatEligibilityNote');
-  const bonusVal=document.getElementById('csatBonusValue');
-  const bonusNote=document.getElementById('csatBonusNote');
-  if(!elig||!eligNote||!bonusVal||!bonusNote)return;
+  if(!elig||!eligNote)return { bonus:0, thresholdMet:false, blocked:unplanned };
 
   if(unplanned){
-    elig.textContent='Blocked';
+    setAnimatedText('csatEligibility','Blocked');
     eligNote.textContent='Unplanned leave removes CSAT incentive eligibility.';
-    bonusVal.textContent='₹0';
-    bonusNote.textContent='Attendance override is blocking the incentive.';
-    return;
+    return { bonus:0, thresholdMet:false, blocked:true };
   }
 
   if(thresholdMet){
-    elig.textContent='Unlocked';
+    setAnimatedText('csatEligibility','Unlocked');
     eligNote.textContent='CSAT threshold cleared. Rating count now drives the incentive.';
-    bonusVal.textContent=fmtMoney(bonus);
-    bonusNote.textContent=`${csat.count} qualifying rating${csat.count===1?'':'s'} x ₹${perRate}.`;
+    return { bonus, thresholdMet:true, blocked:false };
   }else{
-    elig.textContent='Miss';
+    setAnimatedText('csatEligibility','Miss');
     eligNote.textContent=`Need above ${threshold}% to unlock this incentive.`;
-    bonusVal.textContent='₹0';
-    bonusNote.textContent='Threshold not met yet.';
+    return { bonus:0, thresholdMet:false, blocked:false };
   }
 }
 
@@ -1260,36 +1339,30 @@ function computeBonus(){
     }
   }
   const finalBonus=Math.round(baseBonus*multiplier);
+  const csatSummary=computeCsatBonus();
 
-  document.getElementById('totalPoints').textContent=String(total);
-  document.getElementById('estimatedBonus').textContent=fmtMoney(finalBonus);
-  document.getElementById('slab2Hits').textContent=slab2Hits+' / '+data.metrics.length;
-  document.getElementById('activeSlab').textContent=slab;
+  setAnimatedText('totalPoints',String(total));
+  setAnimatedText('slab2Hits',slab2Hits+' / '+data.metrics.length);
+  setAnimatedText('activeSlab',slab);
   document.getElementById('leaveMultiplier').textContent='Leave multiplier '+Math.round(multiplier*100)+'%';
   document.getElementById('slabRule').textContent=allMetricsAtSlab1?'All metrics cleared Slab 1':allMetricsAtSlab2?'All metrics cleared Slab 2':'All metrics must clear Slab 2';
+  updatePayoutSummary(finalBonus,csatSummary.bonus,unplanned);
   updateLeaveControls(planned,unplanned);
   updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned);
 
   if(unplanned){
     document.getElementById('totalStatus').textContent='Unplanned leave removes eligibility';
-    document.getElementById('bonusStatus').textContent='Bonus blocked by attendance override';
   }else if(total<70){
     document.getElementById('totalStatus').textContent='Minimum 70 points needed';
-    document.getElementById('bonusStatus').textContent='No slab unlocked yet';
   }else if(!allMetricsAtSlab2){
     document.getElementById('totalStatus').textContent=missCount+' metric miss'+(missCount===1?'':'es')+' blocking payout';
-    document.getElementById('bonusStatus').textContent='Every metric must reach at least Slab 2';
   }else if(slab==='Slab 1'){
     document.getElementById('totalStatus').textContent='Eligible on points and metrics';
-    document.getElementById('bonusStatus').textContent='Top slab unlocked';
   }else if(slab==='Slab 2'){
     document.getElementById('totalStatus').textContent='Eligible on points and metrics';
-    document.getElementById('bonusStatus').textContent='Second slab unlocked';
   }else{
     document.getElementById('totalStatus').textContent='No slab unlocked yet';
-    document.getElementById('bonusStatus').textContent='No slab unlocked yet';
   }
-  computeCsatBonus();
 }
 
 function bindCalcTabs(){
