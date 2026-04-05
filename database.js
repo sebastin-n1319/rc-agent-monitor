@@ -60,6 +60,41 @@ function isQueueReady(status, queueStatus){
   return status === 'Available' && queueStatus === 'In Queue';
 }
 
+const BREAK_ACTIONS = {
+  LOGGED_IN: { label: 'Logged In', status: 'Logged In', type: 'session' },
+  LOGGED_OUT: { label: 'Logged Out', status: 'Logged Out', type: 'session' },
+  BRB_IN: { label: 'BRB In', status: 'BRB', type: 'brb' },
+  BRB_OUT: { label: 'BRB Out', status: 'Logged In', type: 'brb' },
+  BREAK_IN: { label: 'Break In', status: 'Break', type: 'break' },
+  BREAK_OUT: { label: 'Break Out', status: 'Logged In', type: 'break' }
+};
+
+function normalizeBreakAction(action){
+  const key = String(action || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+  if(!BREAK_ACTIONS[key]) return null;
+  return { key, ...BREAK_ACTIONS[key] };
+}
+
+function defaultBreakName(email){
+  const local = String(email || 'Agent').split('@')[0];
+  return local
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ') || 'Agent';
+}
+
+function statusTone(status){
+  if(status === 'BRB') return 'brb';
+  if(status === 'Break') return 'break';
+  if(status === 'Logged In') return 'online';
+  if(status === 'Logged Out') return 'offline';
+  return 'neutral';
+}
+
 async function initDB() {
   await run(`CREATE TABLE IF NOT EXISTS monitored_agents (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
@@ -84,6 +119,22 @@ async function initDB() {
     id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL DEFAULT 'agent', added_by TEXT,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE TABLE IF NOT EXISTS break_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    email TEXT NOT NULL,
+    role TEXT DEFAULT 'agent',
+    action TEXT NOT NULL,
+    action_label TEXT NOT NULL,
+    current_status TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    note TEXT,
+    notified INTEGER DEFAULT 0,
+    notify_status TEXT,
+    notify_response TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_break_events_email_time ON break_events(email, created_at DESC)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_break_events_time ON break_events(created_at DESC)`);
 
   // Migrations
   for (const sql of [
@@ -97,6 +148,13 @@ async function initDB() {
     `ALTER TABLE call_logs ADD COLUMN transferred INTEGER DEFAULT 0`,
     `ALTER TABLE call_logs ADD COLUMN is_voicemail INTEGER DEFAULT 0`,
     `ALTER TABLE call_logs ADD COLUMN source_call_id TEXT`,
+    `ALTER TABLE break_events ADD COLUMN action_label TEXT DEFAULT ''`,
+    `ALTER TABLE break_events ADD COLUMN current_status TEXT DEFAULT 'Logged Out'`,
+    `ALTER TABLE break_events ADD COLUMN event_type TEXT DEFAULT 'session'`,
+    `ALTER TABLE break_events ADD COLUMN note TEXT`,
+    `ALTER TABLE break_events ADD COLUMN notified INTEGER DEFAULT 0`,
+    `ALTER TABLE break_events ADD COLUMN notify_status TEXT`,
+    `ALTER TABLE break_events ADD COLUMN notify_response TEXT`,
   ]) { try { await run(sql); } catch(e) {} }
 
   for (const email of ['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com']) {
@@ -323,6 +381,271 @@ async function getAbandonedCalls(date,timeZone='America/Chicago'){
 function insertLoginLog(u,e,r,ip,loc,sys){return run(`INSERT INTO login_logs (username,email,role,ip,location,system_info) VALUES (?,?,?,?,?,?)`,[u,e,r,ip||null,loc||null,sys||null]);}
 function getLoginLogs(){return all(`SELECT * FROM login_logs ORDER BY logged_in_at DESC LIMIT 500`);}
 
+// BREAK BOT
+async function insertBreakEvent({ username, email, role, action, note, timestamp }){
+  const meta = normalizeBreakAction(action);
+  if(!meta) throw new Error('Invalid break action');
+  if(!email) throw new Error('Email is required');
+  const createdAt = timestamp ? toSqliteUtc(timestamp) : toSqliteUtc(new Date());
+  const cleanName = (username || defaultBreakName(email)).trim();
+  const result = await run(
+    `INSERT INTO break_events
+      (username,email,role,action,action_label,current_status,event_type,note,created_at)
+      VALUES (?,?,?,?,?,?,?,?,?)`,
+    [
+      cleanName,
+      String(email).trim().toLowerCase(),
+      role || 'agent',
+      meta.key,
+      meta.label,
+      meta.status,
+      meta.type,
+      note || null,
+      createdAt
+    ]
+  );
+  return {
+    id: result.lastID,
+    username: cleanName,
+    email: String(email).trim().toLowerCase(),
+    role: role || 'agent',
+    action: meta.key,
+    actionLabel: meta.label,
+    currentStatus: meta.status,
+    eventType: meta.type,
+    note: note || null,
+    createdAt
+  };
+}
+
+function updateBreakEventNotification(id, notified, notifyStatus, notifyResponse){
+  return run(
+    `UPDATE break_events
+      SET notified=?, notify_status=?, notify_response=?
+      WHERE id=?`,
+    [notified ? 1 : 0, notifyStatus || null, notifyResponse || null, id]
+  );
+}
+
+async function getBreakEvents(date, timeZone='America/Chicago', email=null){
+  const { start, end } = getDateWindow(date, timeZone);
+  const params = [toSqliteUtc(start), toSqliteUtc(end)];
+  let sql = `SELECT * FROM break_events WHERE datetime(created_at) >= datetime(?) AND datetime(created_at) < datetime(?)`;
+  if(email){
+    sql += ` AND lower(email)=lower(?)`;
+    params.push(email);
+  }
+  sql += ` ORDER BY datetime(created_at) DESC, id DESC`;
+  return all(sql, params);
+}
+
+async function getBreakTracker(date, timeZone='America/Chicago', email=null){
+  const { start, end } = getDateWindow(date, timeZone);
+  const startSql = toSqliteUtc(start);
+  const endSql = toSqliteUtc(end);
+  const recentCutoff = new Date(Date.now() - (30 * 86400000));
+  const recentCutoffSql = toSqliteUtc(recentCutoff);
+  const [dayEvents, priorEvents, recentEvents, loginRows, roles] = await Promise.all([
+    all(
+      `SELECT * FROM break_events
+        WHERE datetime(created_at) >= datetime(?) AND datetime(created_at) < datetime(?)
+        ${email ? `AND lower(email)=lower(?)` : ''}
+        ORDER BY datetime(created_at) ASC, id ASC`,
+      email ? [startSql, endSql, email] : [startSql, endSql]
+    ),
+    all(
+      `SELECT * FROM break_events
+        WHERE datetime(created_at) < datetime(?)
+        ${email ? `AND lower(email)=lower(?)` : ''}
+        ORDER BY datetime(created_at) DESC, id DESC`,
+      email ? [startSql, email] : [startSql]
+    ),
+    all(
+      `SELECT * FROM break_events
+        WHERE datetime(created_at) >= datetime(?)
+        ${email ? `AND lower(email)=lower(?)` : ''}
+        ORDER BY datetime(created_at) DESC, id DESC`,
+      email ? [recentCutoffSql, email] : [recentCutoffSql]
+    ),
+    all(
+      `SELECT username,email,role,logged_in_at FROM login_logs
+        WHERE email IS NOT NULL AND datetime(logged_in_at) >= datetime(?)
+        ${email ? `AND lower(email)=lower(?)` : ''}
+        ORDER BY datetime(logged_in_at) DESC, id DESC`,
+      email ? [recentCutoffSql, email] : [recentCutoffSql]
+    ),
+    getAllRoles()
+  ]);
+
+  const roleMap = new Map(roles.map(row => [String(row.email || '').toLowerCase(), row.role]));
+  const dayBuckets = new Map();
+  const priorMap = new Map();
+  const latestMap = new Map();
+  const users = new Map();
+
+  function ensureUser(emailValue, usernameValue, roleValue){
+    const key = String(emailValue || '').trim().toLowerCase();
+    if(!key) return null;
+    const existing = users.get(key) || {
+      email: key,
+      username: usernameValue || defaultBreakName(key),
+      role: roleValue || roleMap.get(key) || 'agent'
+    };
+    if(usernameValue) existing.username = usernameValue;
+    if(roleValue) existing.role = roleValue;
+    if(!existing.role) existing.role = roleMap.get(key) || 'agent';
+    users.set(key, existing);
+    return existing;
+  }
+
+  loginRows.forEach(row => ensureUser(row.email, row.username, row.role));
+
+  recentEvents.forEach(event => {
+    const key = String(event.email || '').toLowerCase();
+    ensureUser(key, event.username, event.role);
+    if(!latestMap.has(key)) latestMap.set(key, event);
+  });
+
+  priorEvents.forEach(event => {
+    const key = String(event.email || '').toLowerCase();
+    ensureUser(key, event.username, event.role);
+    if(!priorMap.has(key)) priorMap.set(key, event);
+    if(!latestMap.has(key)) latestMap.set(key, event);
+  });
+
+  dayEvents.forEach(event => {
+    const key = String(event.email || '').toLowerCase();
+    ensureUser(key, event.username, event.role);
+    if(!dayBuckets.has(key)) dayBuckets.set(key, []);
+    dayBuckets.get(key).push(event);
+    latestMap.set(key, event);
+  });
+
+  const tracker = [];
+  const dayEnd = date === getTodayForTimeZone(timeZone)
+    ? new Date(Math.min(Date.now(), end.getTime()))
+    : end;
+
+  for(const [key, user] of users.entries()){
+    const events = dayBuckets.get(key) || [];
+    const previous = priorMap.get(key);
+    const latest = latestMap.get(key) || previous || null;
+    const stream = [];
+    if(previous){
+      stream.push({
+        ...previous,
+        created_at: startSql
+      });
+    }
+    stream.push(...events);
+
+    let brbSeconds = 0;
+    let breakSeconds = 0;
+    let loggedInSeconds = 0;
+    let openBrbStart = previous && previous.current_status === 'BRB' ? start : null;
+    let openBreakStart = previous && previous.current_status === 'Break' ? start : null;
+    let openSessionStart = previous && previous.current_status !== 'Logged Out' ? start : null;
+
+    for(let i = 0; i < stream.length; i++){
+      const current = stream[i];
+      const startAt = fromStoredUtc(current.created_at);
+      const endAt = i < stream.length - 1 ? fromStoredUtc(stream[i + 1].created_at) : dayEnd;
+      if(!startAt || !endAt || endAt <= startAt) continue;
+      const duration = Math.max(0, Math.round((endAt - startAt) / 1000));
+      if(current.current_status === 'BRB') brbSeconds += duration;
+      if(current.current_status === 'Break') breakSeconds += duration;
+      if(current.current_status !== 'Logged Out') loggedInSeconds += duration;
+    }
+
+    const decoratedEvents = events.map(event => {
+      const stamp = fromStoredUtc(event.created_at);
+      let linkedDurationSeconds = null;
+      if(event.action === 'LOGGED_IN'){
+        openSessionStart = stamp;
+      } else if(event.action === 'LOGGED_OUT'){
+        if(openSessionStart && stamp && stamp > openSessionStart){
+          linkedDurationSeconds = Math.round((stamp - openSessionStart) / 1000);
+        }
+        openSessionStart = null;
+        openBrbStart = null;
+        openBreakStart = null;
+      } else if(event.action === 'BRB_IN'){
+        openBrbStart = stamp;
+      } else if(event.action === 'BRB_OUT'){
+        if(openBrbStart && stamp && stamp > openBrbStart){
+          linkedDurationSeconds = Math.round((stamp - openBrbStart) / 1000);
+        }
+        openBrbStart = null;
+      } else if(event.action === 'BREAK_IN'){
+        openBreakStart = stamp;
+      } else if(event.action === 'BREAK_OUT'){
+        if(openBreakStart && stamp && stamp > openBreakStart){
+          linkedDurationSeconds = Math.round((stamp - openBreakStart) / 1000);
+        }
+        openBreakStart = null;
+      }
+      return {
+        id: event.id,
+        username: event.username || user.username,
+        email: key,
+        role: event.role || user.role,
+        action: event.action,
+        actionLabel: event.action_label,
+        currentStatus: event.current_status,
+        eventType: event.event_type,
+        note: event.note,
+        notified: !!event.notified,
+        notifyStatus: event.notify_status,
+        notifyResponse: event.notify_response,
+        createdAt: event.created_at,
+        linkedDurationSeconds
+      };
+    });
+
+    const currentStatus = latest ? latest.current_status : 'Logged Out';
+    tracker.push({
+      email: key,
+      username: user.username || defaultBreakName(key),
+      role: user.role || 'agent',
+      currentStatus,
+      statusTone: statusTone(currentStatus),
+      since: latest ? latest.created_at : null,
+      lastAction: latest ? latest.action : null,
+      lastActionLabel: latest ? latest.action_label : 'No activity',
+      lastActionAt: latest ? latest.created_at : null,
+      brbSeconds,
+      breakSeconds,
+      loggedInSeconds,
+      eventCount: decoratedEvents.length,
+      events: decoratedEvents.reverse()
+    });
+  }
+
+  tracker.sort((a, b) => {
+    const order = { BRB: 0, Break: 1, 'Logged In': 2, 'Logged Out': 3 };
+    const diff = (order[a.currentStatus] ?? 4) - (order[b.currentStatus] ?? 4);
+    if(diff !== 0) return diff;
+    return a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
+  });
+
+  const recentLog = tracker
+    .flatMap(row => row.events.map(event => ({ ...event, username: row.username, role: row.role })))
+    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+    .slice(0, 80);
+
+  const summary = {
+    teamCount: tracker.length,
+    loggedInNow: tracker.filter(row => row.currentStatus === 'Logged In').length,
+    loggedOutNow: tracker.filter(row => row.currentStatus === 'Logged Out').length,
+    brbNow: tracker.filter(row => row.currentStatus === 'BRB').length,
+    breakNow: tracker.filter(row => row.currentStatus === 'Break').length,
+    brbSeconds: tracker.reduce((sum, row) => sum + row.brbSeconds, 0),
+    breakSeconds: tracker.reduce((sum, row) => sum + row.breakSeconds, 0)
+  };
+
+  return { summary, tracker, recentLog };
+}
+
 // ROLES
 function getAllRoles(){return all(`SELECT * FROM app_roles ORDER BY role ASC,email ASC`);}
 function setRole(e,r,by){return run(`INSERT INTO app_roles (email,role,added_by) VALUES (?,?,?) ON CONFLICT(email) DO UPDATE SET role=excluded.role,added_by=excluded.added_by`,[e,r,by]);}
@@ -334,5 +657,6 @@ module.exports={
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,getAgentSummary,getAbandonedCalls,
   insertLoginLog,getLoginLogs,
+  insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,removeRole,getRoleForEmail
 };

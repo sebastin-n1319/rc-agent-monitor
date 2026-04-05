@@ -6,7 +6,8 @@ const path = require('path');
 const {
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
-  getAllRoles, setRole, removeRole, getRoleForEmail
+  getAllRoles, setRole, removeRole, getRoleForEmail,
+  insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -19,10 +20,49 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const sseClients = new Set();
+const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
+const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Google Chat';
 
 function broadcastLiveEvent(payload) {
   const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
   for (const res of sseClients) res.write(msg);
+}
+
+function formatBreakChatMessage(event){
+  const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
+  const timeCst = stamp.toLocaleTimeString('en-US', {
+    timeZone: 'America/Chicago',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+  return [
+    'RC Break Bot',
+    `${event.username} (${event.role || 'agent'}) marked ${event.actionLabel}.`,
+    `Time: ${timeCst} CST`,
+    `Status: ${event.currentStatus}`,
+    event.note ? `Note: ${event.note}` : null
+  ].filter(Boolean).join('\n');
+}
+
+async function sendBreakChatNotification(event){
+  if(!GOOGLE_CHAT_WEBHOOK_URL){
+    return { notified: false, status: 'disabled', response: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
+  }
+  const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify({
+      text: formatBreakChatMessage(event)
+    })
+  });
+  const text = await resp.text();
+  return {
+    notified: resp.ok,
+    status: resp.ok ? 'sent' : `http_${resp.status}`,
+    response: text || resp.statusText || 'ok'
+  };
 }
 
 initDB().then(() => console.log('DB ready'));
@@ -144,6 +184,75 @@ app.post('/api/login-log', async (req, res) => {
 app.get('/api/login-logs', async (req, res) => {
   try { res.json({ success: true, data: await getLoginLogs() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/break-events', async (req, res) => {
+  const date = req.query.date || new Date().toISOString().split('T')[0];
+  const tz = req.query.tz || 'America/Chicago';
+  const email = req.query.email || null;
+  try {
+    res.json({ success: true, date, timeZone: tz, data: await getBreakEvents(date, tz, email) });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.get('/api/break-tracker', async (req, res) => {
+  const date = req.query.date || new Date().toISOString().split('T')[0];
+  const tz = req.query.tz || 'America/Chicago';
+  const email = req.query.email || null;
+  try {
+    res.json({
+      success: true,
+      date,
+      timeZone: tz,
+      chat: {
+        enabled: !!GOOGLE_CHAT_WEBHOOK_URL,
+        target: GOOGLE_CHAT_SPACE_LABEL
+      },
+      data: await getBreakTracker(date, tz, email)
+    });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/break-events', async (req, res) => {
+  const { username, email, role, action, note } = req.body || {};
+  if(!username || !email || !action){
+    return res.status(400).json({ success: false, error: 'Username, email, and action are required' });
+  }
+  try {
+    const event = await insertBreakEvent({ username, email, role, action, note });
+    let notification = { notified: false, status: 'skipped', response: 'Not attempted' };
+    try {
+      notification = await sendBreakChatNotification(event);
+    } catch (notifyError) {
+      notification = { notified: false, status: 'failed', response: notifyError.message };
+    }
+    await updateBreakEventNotification(event.id, notification.notified, notification.status, notification.response);
+    const date = req.body.date || new Date().toISOString().split('T')[0];
+    const tz = req.body.tz || 'America/Chicago';
+    res.json({
+      success: true,
+      message: `${event.actionLabel} saved`,
+      notification: {
+        ...notification,
+        target: GOOGLE_CHAT_SPACE_LABEL
+      },
+      data: {
+        event: {
+          ...event,
+          notified: notification.notified,
+          notifyStatus: notification.status,
+          notifyResponse: notification.response
+        },
+        tracker: await getBreakTracker(date, tz, email)
+      }
+    });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 app.get('/api/roles', async (req, res) => {

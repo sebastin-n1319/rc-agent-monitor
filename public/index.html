@@ -139,6 +139,66 @@ header{background:linear-gradient(180deg,var(--navy2),var(--navy3));border-botto
 .agent-shell-page.active{display:block;}
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
+/* BREAK BOT */
+.break-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,0.9fr);gap:14px;align-items:start;}
+.break-stack{display:grid;gap:14px;}
+.break-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+.break-stat{border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015));border-radius:14px;padding:14px 16px;min-height:102px;position:relative;overflow:hidden;}
+.break-stat::after{content:'';position:absolute;inset:auto -10% 0 auto;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.06),transparent 65%);filter:blur(4px);}
+.break-stat .k{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:10px;}
+.break-stat .v{font-size:26px;font-weight:800;letter-spacing:-0.04em;color:var(--text);}
+.break-stat .s{margin-top:7px;font-size:11px;color:var(--text2);line-height:1.5;}
+.break-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+.break-action{position:relative;border-radius:16px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02));padding:14px 14px 16px;cursor:pointer;color:var(--text);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;font-family:'Inter',sans-serif;text-align:left;overflow:hidden;}
+.break-action::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.08),transparent 45%);opacity:0;transition:opacity .22s ease;}
+.break-action:hover{transform:translateY(-3px);border-color:var(--accent,var(--blue2));box-shadow:0 18px 36px rgba(0,0,0,0.24),0 0 0 1px rgba(255,255,255,0.03);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025));}
+.break-action:hover::before{opacity:1;}
+.break-action:disabled{cursor:not-allowed;opacity:.55;transform:none;}
+.break-action-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.break-action-icon{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:16px;color:var(--accent,var(--blue2));box-shadow:0 0 0 1px rgba(255,255,255,0.03) inset;}
+.break-action-state{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent,var(--blue2));}
+.break-action-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.break-action-copy{font-size:11px;color:var(--text2);line-height:1.5;min-height:34px;}
+.break-action.loggedin{--accent:var(--green);}
+.break-action.loggedout{--accent:var(--red);}
+.break-action.brbin,.break-action.brbout{--accent:var(--blue2);}
+.break-action.breakin,.break-action.breakout{--accent:var(--orange2);}
+.break-callout{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(6,196,212,0.08),rgba(255,255,255,0.02));}
+.break-callout-left{display:grid;gap:4px;}
+.break-callout-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
+.break-callout-copy{font-size:12px;color:var(--text2);line-height:1.5;}
+.break-callout .chip{background:rgba(0,0,0,0.18);}
+.break-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.break-user-card{position:relative;border-radius:16px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015));padding:15px 16px;overflow:hidden;}
+.break-user-card::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent,var(--border2));opacity:.95;}
+.break-user-card.online{--accent:var(--green);}
+.break-user-card.offline{--accent:var(--red);}
+.break-user-card.brb{--accent:var(--blue2);}
+.break-user-card.break{--accent:var(--orange2);}
+.break-user-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;}
+.break-user-name{font-size:14px;font-weight:700;color:var(--text);}
+.break-user-meta{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:4px;}
+.break-user-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);}
+.break-user-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent,var(--text3));box-shadow:0 0 10px var(--accent,var(--text3));}
+.break-user-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.break-user-metric{padding:10px 10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+.break-user-metric span{display:block;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+.break-user-metric strong{display:block;font-size:14px;color:var(--text);}
+.break-log-list{display:flex;flex-direction:column;gap:10px;max-height:620px;overflow:auto;padding-right:4px;}
+.break-log-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}
+.break-log-badge{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--text2);}
+.break-log-main{display:grid;gap:4px;}
+.break-log-title{font-size:12px;font-weight:700;color:var(--text);}
+.break-log-sub{font-size:11px;color:var(--text2);line-height:1.5;}
+.break-log-time{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:right;}
+.break-mini-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:var(--text2);}
+.break-mini-chip.ok{color:var(--green);border-color:rgba(0,216,126,0.18);background:rgba(0,216,126,0.08);}
+.break-mini-chip.warn{color:var(--orange2);border-color:rgba(255,160,64,0.18);background:rgba(255,160,64,0.08);}
+.break-self-shell{display:grid;gap:14px;}
+.break-self-feed{display:grid;gap:10px;}
+.break-empty{padding:18px;border-radius:14px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);font-size:12px;color:var(--text3);text-align:center;}
+.break-kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text2);}
+
 /* METRICS */
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:14px;}
 .metric{background:linear-gradient(145deg,var(--card),var(--navy3));border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);}
@@ -451,9 +511,9 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
 .toast.show{opacity:1;transform:translateY(0);}
 .toast-icon{font-size:14px;}
 
-@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:1200px){.viz-row{grid-template-columns:1fr;}.mix-legend{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:980px;}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:980px;}}
 </style>
 </head>
 <body>
@@ -562,6 +622,10 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     <button class="nav-tab" onclick="switchTab('loginlogs',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
       Login Logs
+    </button>
+    <button class="nav-tab" onclick="switchTab('breaks',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6"/><path d="M5 11h14v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M10 15h4"/></svg>
+      Break Tracker
     </button>
     <button class="nav-tab" onclick="switchTab('hall',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v3a5 5 0 0 1-10 0z"/><path d="M7 7H5a2 2 0 0 1-2-2V4h4"/><path d="M17 7h2a2 2 0 0 0 2-2V4h-4"/></svg>
@@ -775,6 +839,48 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
     </div>
   </div>
 
+  <!-- BREAK TRACKER -->
+  <div class="page" id="tab-breaks">
+    <div class="metrics">
+      <div class="metric m-green"><div class="metric-lbl">Logged In</div><div class="metric-val" id="break-admin-loggedin">--</div></div>
+      <div class="metric m-red"><div class="metric-lbl">Logged Out</div><div class="metric-val" id="break-admin-loggedout">--</div></div>
+      <div class="metric m-blue"><div class="metric-lbl">BRB Live</div><div class="metric-val" id="break-admin-brb">--</div></div>
+      <div class="metric m-orange"><div class="metric-lbl">Break Live</div><div class="metric-val" id="break-admin-break">--</div></div>
+      <div class="metric m-teal"><div class="metric-lbl">Tracker Team</div><div class="metric-val" id="break-admin-team">--</div><div class="metric-sub" id="break-admin-chat">Google Chat pending</div></div>
+    </div>
+    <div class="break-layout">
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Break Tracker Board</span>
+            <span class="chip" id="break-board-chip">0 tracked</span>
+          </div>
+          <div class="break-callout" style="margin-bottom:12px;">
+            <div class="break-callout-left">
+              <div class="break-callout-title">Break Bot Flow</div>
+              <div class="break-callout-copy">One tap saves the event, posts to Google Chat when configured, and updates the team tracker for live break coverage.</div>
+            </div>
+            <span class="chip" id="break-callout-chip">Awaiting first event</span>
+          </div>
+          <div class="break-board" id="break-board">
+            <div class="break-empty">Loading team tracker...</div>
+          </div>
+        </div>
+      </div>
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Break Feed</span>
+            <span class="chip" id="break-feed-chip">0 events</span>
+          </div>
+          <div class="break-log-list" id="break-feed">
+            <div class="break-empty">Loading break events...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- HALL OF FAME -->
   <div class="page" id="tab-hall">
     <div class="card hof-frame-shell">
@@ -794,6 +900,7 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
 <div id="agentView" style="display:none;padding:20px 24px;">
   <div class="agent-shell-nav">
     <button class="agent-shell-btn active" onclick="switchAgentSection('dashboard',this)">Dashboard</button>
+    <button class="agent-shell-btn" onclick="switchAgentSection('breakbot',this)">Break Bot</button>
     <button class="agent-shell-btn" onclick="switchAgentSection('hall',this)">Hall of Fame</button>
     <button class="agent-shell-btn" onclick="switchAgentSection('bonus',this)">Bonus Guide</button>
   </div>
@@ -815,6 +922,87 @@ footer{text-align:center;padding:14px;font-size:10px;color:var(--text3);border-t
       </div>
     </div>
     <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
+  </div>
+  <div class="agent-shell-page" id="agent-section-breakbot">
+    <div class="break-layout">
+      <div class="break-self-shell">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Break Bot</span>
+            <span class="chip" id="break-agent-chat-chip">Chat pending</span>
+          </div>
+          <div class="break-summary">
+            <div class="break-stat"><div class="k">Current Status</div><div class="v" id="break-self-status">--</div><div class="s" id="break-self-status-copy">Tap a button to start your shift log.</div></div>
+            <div class="break-stat"><div class="k">Since</div><div class="v" id="break-self-since">--</div><div class="s" id="break-self-since-copy">No break activity recorded yet.</div></div>
+            <div class="break-stat"><div class="k">BRB Today</div><div class="v" id="break-self-brb">--</div><div class="s">Auto-calculated from BRB In / Out pairs.</div></div>
+            <div class="break-stat"><div class="k">Break Today</div><div class="v" id="break-self-break">--</div><div class="s">Auto-calculated from Break In / Out pairs.</div></div>
+          </div>
+          <div class="break-actions">
+            <button class="break-action loggedin" data-break-action="LOGGED_IN" onclick="sendBreakAction('LOGGED_IN',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#9719;</div><div class="break-action-state">Shift Start</div></div>
+              <div class="break-action-title">Logged In</div>
+              <div class="break-action-copy">Marks you live on the break bot and sends a ready-for-shift note.</div>
+            </button>
+            <button class="break-action loggedout" data-break-action="LOGGED_OUT" onclick="sendBreakAction('LOGGED_OUT',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#10005;</div><div class="break-action-state">Shift Close</div></div>
+              <div class="break-action-title">Logged Out</div>
+              <div class="break-action-copy">Closes the shift log and posts a final logged-out acknowledgement.</div>
+            </button>
+            <button class="break-action brbin" data-break-action="BRB_IN" onclick="sendBreakAction('BRB_IN',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#8635;</div><div class="break-action-state">Quick Away</div></div>
+              <div class="break-action-title">BRB In</div>
+              <div class="break-action-copy">Starts a quick away timer for short off-desk moments.</div>
+            </button>
+            <button class="break-action brbout" data-break-action="BRB_OUT" onclick="sendBreakAction('BRB_OUT',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return</div></div>
+              <div class="break-action-title">BRB Out</div>
+              <div class="break-action-copy">Stops the BRB timer and marks you back as available in the log.</div>
+            </button>
+            <button class="break-action breakin" data-break-action="BREAK_IN" onclick="sendBreakAction('BREAK_IN',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#9208;</div><div class="break-action-state">Long Break</div></div>
+              <div class="break-action-title">Break In</div>
+              <div class="break-action-copy">Starts your proper break timer and alerts the team feed.</div>
+            </button>
+            <button class="break-action breakout" data-break-action="BREAK_OUT" onclick="sendBreakAction('BREAK_OUT',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#8617;</div><div class="break-action-state">Back Online</div></div>
+              <div class="break-action-title">Break Out</div>
+              <div class="break-action-copy">Stops the break timer and marks you ready to resume work.</div>
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Your Break Log</span>
+            <span class="chip" id="break-self-log-chip">0 events</span>
+          </div>
+          <div class="break-log-list" id="break-self-log">
+            <div class="break-empty">No break events yet. Your first tap will appear here.</div>
+          </div>
+        </div>
+      </div>
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Why This Helps</span>
+            <span class="chip">Break bot</span>
+          </div>
+          <div class="break-callout" style="margin-bottom:12px;">
+            <div class="break-callout-left">
+              <div class="break-callout-title">Ops Acknowledgement</div>
+              <div class="break-callout-copy">Each action can post into a Google Chat space so leads know who stepped away, who returned, and how long the pause lasted.</div>
+            </div>
+            <span class="break-kbd">1 tap</span>
+          </div>
+          <div class="break-callout">
+            <div class="break-callout-left">
+              <div class="break-callout-title">Innovative Next Step</div>
+              <div class="break-callout-copy">After this baseline works, we can add slash-like acknowledgements in Chat, auto-close stale BRB sessions, and leader alerts when too many agents are away at once.</div>
+            </div>
+            <span class="chip">Phase 2</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="agent-shell-page" id="agent-section-hall">
     <div class="card hof-frame-shell">
@@ -840,7 +1028,7 @@ const TZ={CST:'America/Chicago',IST:'Asia/Kolkata'};
 const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
-let currentTZ='CST',currentUser=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={};
+let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={},breakTrackerData={summary:{},tracker:[],recentLog:[]},breakTrackerMeta={enabled:false,target:'Google Chat'};
 let dashboardSortState={admin:{key:'idx',dir:'asc'},agent:{key:'idx',dir:'asc'}};
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
@@ -934,7 +1122,7 @@ let currentViewMode = 'admin'; // 'admin' or 'agent'
 let currentAgentSection = 'dashboard';
 
 function startApp(username,role,picture){
-  currentUser=username;currentRole=role;currentViewMode=role;
+  currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentViewMode=role;
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('mainApp').style.display='block';
   document.getElementById('userLabel').textContent=username.split(' ')[0];
@@ -975,6 +1163,7 @@ function switchAgentSection(section,el){
   if(next)next.classList.add('active');
   if(el)el.classList.add('active');
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
+  if(section==='breakbot')loadBreakTracker();
 }
 
 function resizeHallFrame(frame){
@@ -999,7 +1188,7 @@ function initEmbeddedFrames(){
 }
 
 function doLogout(){
-  sessionStorage.clear();currentUser=null;currentRole=null;
+  sessionStorage.clear();currentUser=null;currentEmail=null;currentRole=null;breakTrackerData={summary:{},tracker:[],recentLog:[]};
   google.accounts.id.disableAutoSelect();
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainApp').style.display='none';
@@ -1525,6 +1714,197 @@ function renderHallOfFame(agentOps){
   ].join('');
 }
 
+const BREAK_ACTION_META = {
+  LOGGED_IN: { label: 'Logged In', badge: 'IN', copy: 'Shift started' },
+  LOGGED_OUT: { label: 'Logged Out', badge: 'OUT', copy: 'Shift closed' },
+  BRB_IN: { label: 'BRB In', badge: 'BRB', copy: 'Quick away started' },
+  BRB_OUT: { label: 'BRB Out', badge: 'BACK', copy: 'Returned from BRB' },
+  BREAK_IN: { label: 'Break In', badge: 'BRK', copy: 'Break started' },
+  BREAK_OUT: { label: 'Break Out', badge: 'LIVE', copy: 'Returned from break' }
+};
+
+function breakStatusClass(status){
+  if(status === 'Logged In') return 'online';
+  if(status === 'Logged Out') return 'offline';
+  if(status === 'BRB') return 'brb';
+  if(status === 'Break') return 'break';
+  return 'offline';
+}
+
+function breakStatusColorClass(status){
+  if(status === 'Logged In') return 'p-avail';
+  if(status === 'Logged Out') return 'p-unavail';
+  if(status === 'BRB') return 'p-oncall';
+  if(status === 'Break') return 'p-outqueue';
+  return 'p-unknown';
+}
+
+function breakChatLabel(){
+  if(!breakTrackerMeta.enabled) return 'Local tracker only';
+  return breakTrackerMeta.target || 'Google Chat live';
+}
+
+function getSelfBreakRow(){
+  if(!currentEmail) return null;
+  return (breakTrackerData.tracker || []).find(row => String(row.email || '').toLowerCase() === String(currentEmail || '').toLowerCase()) || null;
+}
+
+function buildBreakFeedRow(event, compact=false){
+  const meta = BREAK_ACTION_META[event.action] || { label: event.actionLabel || event.action || 'Event', badge: 'LOG', copy: 'Logged event' };
+  const durationCopy = event.linkedDurationSeconds ? ' · Duration ' + fmt(event.linkedDurationSeconds) : '';
+  const notifyCls = event.notified ? 'ok' : (event.notifyStatus === 'disabled' ? 'warn' : '');
+  const notifyText = event.notified ? 'Chat posted' : (event.notifyStatus === 'disabled' ? 'Saved locally' : (event.notifyStatus ? event.notifyStatus : 'Pending'));
+  return '<div class="break-log-row">'+
+    '<div class="break-log-badge">'+meta.badge+'</div>'+
+    '<div class="break-log-main">'+
+      '<div class="break-log-title">'+(event.username || 'Agent')+' · '+meta.label+'</div>'+
+      '<div class="break-log-sub">'+meta.copy+durationCopy+(event.note ? ' · '+event.note : '')+'</div>'+
+      '<div class="break-log-sub"><span class="break-mini-chip '+notifyCls+'">'+notifyText+'</span></div>'+
+    '</div>'+
+    '<div class="break-log-time">'+toTime(event.createdAt)+'</div>'+
+  '</div>';
+}
+
+function renderBreakAdminView(){
+  const summary = breakTrackerData.summary || {};
+  const tracker = breakTrackerData.tracker || [];
+  const recentLog = breakTrackerData.recentLog || [];
+  const ids = {
+    loggedin: document.getElementById('break-admin-loggedin'),
+    loggedout: document.getElementById('break-admin-loggedout'),
+    brb: document.getElementById('break-admin-brb'),
+    breakNow: document.getElementById('break-admin-break'),
+    team: document.getElementById('break-admin-team'),
+    chat: document.getElementById('break-admin-chat'),
+    boardChip: document.getElementById('break-board-chip'),
+    board: document.getElementById('break-board'),
+    feedChip: document.getElementById('break-feed-chip'),
+    feed: document.getElementById('break-feed'),
+    callout: document.getElementById('break-callout-chip')
+  };
+  if(ids.loggedin) ids.loggedin.textContent = summary.loggedInNow ?? 0;
+  if(ids.loggedout) ids.loggedout.textContent = summary.loggedOutNow ?? 0;
+  if(ids.brb) ids.brb.textContent = summary.brbNow ?? 0;
+  if(ids.breakNow) ids.breakNow.textContent = summary.breakNow ?? 0;
+  if(ids.team) ids.team.textContent = summary.teamCount ?? 0;
+  if(ids.chat) ids.chat.textContent = breakChatLabel();
+  if(ids.boardChip) ids.boardChip.textContent = (summary.teamCount ?? 0) + ' tracked';
+  if(ids.callout) ids.callout.textContent = breakTrackerMeta.enabled ? 'Google Chat live' : 'Chat setup pending';
+
+  if(ids.board){
+    ids.board.innerHTML = tracker.length ? tracker.map(row => {
+      return '<div class="break-user-card '+breakStatusClass(row.currentStatus)+'">'+
+        '<div class="break-user-top">'+
+          '<div><div class="break-user-name">'+row.username+'</div><div class="break-user-meta">'+row.email+'</div></div>'+
+          '<span class="break-user-status">'+row.currentStatus+'</span>'+
+        '</div>'+
+        '<div class="break-user-grid">'+
+          '<div class="break-user-metric"><span>Since</span><strong>'+(row.since ? toTime(row.since) : '--')+'</strong></div>'+
+          '<div class="break-user-metric"><span>BRB Today</span><strong>'+fmt(row.brbSeconds || 0)+'</strong></div>'+
+          '<div class="break-user-metric"><span>Break Today</span><strong>'+fmt(row.breakSeconds || 0)+'</strong></div>'+
+        '</div>'+
+        '<div class="break-user-meta" style="margin-top:12px;">Last action · '+(row.lastActionLabel || 'No activity')+(row.lastActionAt ? ' · '+toTime(row.lastActionAt) : '')+'</div>'+
+      '</div>';
+    }).join('') : '<div class="break-empty">No break tracker activity yet. The first Break Bot tap will start the board.</div>';
+  }
+
+  if(ids.feedChip) ids.feedChip.textContent = recentLog.length + ' events';
+  if(ids.feed){
+    ids.feed.innerHTML = recentLog.length ? recentLog.map(event => buildBreakFeedRow(event)).join('') : '<div class="break-empty">No break events yet today.</div>';
+  }
+}
+
+function renderBreakAgentView(){
+  const self = getSelfBreakRow();
+  const chatChip = document.getElementById('break-agent-chat-chip');
+  if(chatChip) chatChip.textContent = breakChatLabel();
+  const statusEl = document.getElementById('break-self-status');
+  const statusCopyEl = document.getElementById('break-self-status-copy');
+  const sinceEl = document.getElementById('break-self-since');
+  const sinceCopyEl = document.getElementById('break-self-since-copy');
+  const brbEl = document.getElementById('break-self-brb');
+  const breakEl = document.getElementById('break-self-break');
+  const logChip = document.getElementById('break-self-log-chip');
+  const logList = document.getElementById('break-self-log');
+
+  if(!self){
+    if(statusEl) statusEl.innerHTML = '<span class="pill p-unknown"><span class="dot"></span>Not Started</span>';
+    if(statusCopyEl) statusCopyEl.textContent = 'Use Logged In once your shift starts. Every action lands in the team tracker.';
+    if(sinceEl) sinceEl.textContent = '--';
+    if(sinceCopyEl) sinceCopyEl.textContent = 'No break state recorded yet.';
+    if(brbEl) brbEl.textContent = '0s';
+    if(breakEl) breakEl.textContent = '0s';
+    if(logChip) logChip.textContent = '0 events';
+    if(logList) logList.innerHTML = '<div class="break-empty">No break events yet. Your first tap will appear here.</div>';
+    return;
+  }
+
+  if(statusEl) statusEl.innerHTML = '<span class="pill '+breakStatusColorClass(self.currentStatus)+'"><span class="dot"></span>'+self.currentStatus+'</span>';
+  if(statusCopyEl) statusCopyEl.textContent = (self.currentStatus === 'Logged In'
+    ? 'You are shown as live on the break bot.'
+    : self.currentStatus === 'Logged Out'
+      ? 'Your shift is marked closed right now.'
+      : self.currentStatus === 'BRB'
+        ? 'Short away timer is running.'
+        : 'Break timer is running.');
+  if(sinceEl) sinceEl.textContent = self.since ? toTime(self.since) : '--';
+  if(sinceCopyEl) sinceCopyEl.textContent = self.since ? 'Latest state change in '+currentTZ+'.' : 'No recent state change.';
+  if(brbEl) brbEl.textContent = fmt(self.brbSeconds || 0);
+  if(breakEl) breakEl.textContent = fmt(self.breakSeconds || 0);
+  if(logChip) logChip.textContent = (self.events || []).length + ' events';
+  if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">No break events yet. Your first tap will appear here.</div>';
+}
+
+async function loadBreakTracker(){
+  try{
+    const res = await fetch(BACKEND+'/api/break-tracker?date='+todayStr()+'&tz='+encodeURIComponent(activeTimeZone()));
+    const json = await res.json();
+    breakTrackerMeta = json.chat || { enabled: false, target: 'Google Chat' };
+    breakTrackerData = json.success && json.data ? json.data : { summary:{}, tracker:[], recentLog:[] };
+  }catch(e){
+    breakTrackerMeta = { enabled: false, target: 'Google Chat' };
+    breakTrackerData = { summary:{}, tracker:[], recentLog:[] };
+  }
+  renderBreakAdminView();
+  renderBreakAgentView();
+}
+
+async function sendBreakAction(action, btn){
+  if(!currentUser || !currentEmail){
+    showToast('Your login session is missing email details. Please log in again.','error');
+    return;
+  }
+  const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
+  buttons.forEach(button => button.disabled = true);
+  if(btn) btn.classList.add('syncing');
+  try{
+    const res = await fetch(BACKEND+'/api/break-events',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username: currentUser,
+        email: currentEmail,
+        role: currentRole || 'agent',
+        action,
+        date: todayStr(),
+        tz: activeTimeZone()
+      })
+    });
+    const json = await res.json();
+    if(!json.success) throw new Error(json.error || 'Unable to save break event');
+    const note = json.notification?.notified
+      ? ' + posted to '+(json.notification.target || 'Google Chat')
+      : (json.notification?.status === 'disabled' ? ' (saved locally)' : '');
+    showToast((json.data?.event?.actionLabel || 'Break event')+' saved'+note, json.notification?.notified ? 'success' : 'info', 3600);
+    await refresh();
+  }catch(e){
+    showToast(e.message || 'Break event failed','error');
+  }finally{
+    buttons.forEach(button => button.disabled = false);
+    if(btn) btn.classList.remove('syncing');
+  }
+}
+
 // TIMELINE
 function buildTL(agentId,date){
   const segs=timelineData[agentId]||[];
@@ -1567,6 +1947,7 @@ function switchTab(tab,el){
   el.classList.add('active');
   if(tab==='reports'){const dp=document.getElementById('date-picker');if(dp&&!dp.value)dp.value=todayStr();loadReport();}
   if(tab==='loginlogs')loadLoginLogs();
+  if(tab==='breaks')loadBreakTracker();
   if(tab==='agents')loadAgents();
   if(tab==='access')loadRoles();
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
@@ -2094,6 +2475,7 @@ async function doRefresh(){
 
 async function refresh(){
   await loadTodaySummary();
+  await loadBreakTracker();
   await loadAgentStatuses();
   if(currentRole==='admin')await loadEventLog();
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
