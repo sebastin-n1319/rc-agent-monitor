@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const sseClients = new Set();
 const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
-const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Google Chat';
+const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
 
 function broadcastLiveEvent(payload) {
   const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
@@ -38,7 +38,7 @@ function formatBreakChatMessage(event){
     hour12: true
   });
   return [
-    'RC Break Bot',
+    'Adit Break Bot',
     `${event.username} (${event.role || 'agent'}) marked ${event.actionLabel}.`,
     `Time: ${timeCst} CST`,
     `Status: ${event.currentStatus}`,
