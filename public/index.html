@@ -2060,8 +2060,17 @@ function buildBreakFeedRow(event, compact=false){
 
 function buildBreakLaneCard(title, subtitle, cls, rows){
   const names = rows.slice(0, 6).map(row => {
-    const sinceText = row.since ? 'Since ' + toTime(row.since) : 'No start time';
-    return '<span class="break-lane-chip" title="'+sinceText+'">'+row.username+'</span>';
+    let durationText = 'No start time';
+    if(row.since){
+      const sinceStamp = parseStamp(row.since);
+      if(sinceStamp){
+        durationText = fmt(Math.max(0, Math.round((Date.now() - sinceStamp.getTime()) / 1000)));
+      } else {
+        durationText = 'Since ' + toTime(row.since);
+      }
+    }
+    const titleText = row.since ? ('Since ' + toTime(row.since) + ' · Live for ' + durationText) : 'No start time';
+    return '<span class="break-lane-chip" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
   }).join('');
   const extra = rows.length > 6 ? '<span class="break-lane-chip more">+'+(rows.length - 6)+' more</span>' : '';
   return '<div class="break-lane-card '+cls+'">'+
