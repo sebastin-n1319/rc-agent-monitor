@@ -150,41 +150,52 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 @keyframes pageIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
 /* BREAK BOT */
-.break-layout{display:grid;grid-template-columns:minmax(0,1.58fr) minmax(300px,0.84fr);gap:12px;align-items:start;}
-.break-stack{display:grid;gap:14px;}
-.break-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;}
-.break-stat{border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.038),rgba(255,255,255,0.012));border-radius:16px;padding:12px 14px;min-height:86px;position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;}
+.break-layout{display:grid;grid-template-columns:minmax(0,1.46fr) minmax(280px,0.82fr);gap:10px;align-items:start;}
+.break-stack{display:grid;gap:10px;}
+.break-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.07);background:linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015));box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);}
+.break-toolbar.slim{padding:8px 10px;}
+.break-toolbar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.break-toolbar-label{font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);}
+.break-toolbar-btn{height:32px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text2);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all .2s ease;font-family:'Inter',sans-serif;}
+.break-toolbar-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.07);}
+.break-toolbar-btn.primary{color:var(--teal);border-color:rgba(6,196,212,0.24);background:rgba(6,196,212,0.08);}
+.break-date-input{height:32px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;}
+.break-history-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);font-size:10px;font-weight:700;color:var(--text2);}
+.break-history-note{margin:0 0 10px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);font-size:11px;line-height:1.45;color:var(--text2);}
+.break-history-note.history{border-color:rgba(255,160,64,0.16);background:rgba(255,160,64,0.06);color:#ffd4a0;}
+.break-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+.break-stat{border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.038),rgba(255,255,255,0.012));border-radius:14px;padding:10px 12px;min-height:74px;position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;}
 .break-stat::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.16),transparent);}
 .break-stat::after{content:'';position:absolute;inset:auto -10% 0 auto;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(91,176,255,0.12),transparent 68%);filter:blur(6px);}
 .break-stat:hover{transform:translateY(-3px);border-color:rgba(91,176,255,0.24);box-shadow:0 18px 36px rgba(0,0,0,0.26),inset 0 1px 0 rgba(255,255,255,0.06);background:linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.018));}
-.break-stat .k{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:8px;}
-.break-stat .v{font-size:22px;font-weight:800;letter-spacing:-0.04em;color:var(--text);}
-.break-stat .s{margin-top:6px;font-size:10px;color:var(--text2);line-height:1.45;}
+.break-stat .k{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:6px;}
+.break-stat .v{font-size:18px;font-weight:800;letter-spacing:-0.04em;color:var(--text);}
+.break-stat .s{margin-top:4px;font-size:9px;color:var(--text2);line-height:1.42;}
 .break-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
 .break-action{position:relative;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:
   radial-gradient(circle at 100% 0%,rgba(255,255,255,0.06),transparent 32%),
   linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02));
-  padding:13px 13px 14px;cursor:pointer;color:var(--text);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease,filter .22s ease;font-family:'Inter',sans-serif;text-align:left;overflow:hidden;min-height:108px;backdrop-filter:blur(14px);}
+  padding:11px 11px 12px;cursor:pointer;color:var(--text);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease,filter .22s ease;font-family:'Inter',sans-serif;text-align:left;overflow:hidden;min-height:92px;backdrop-filter:blur(14px);}
 .break-action::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.09),transparent 45%);opacity:0;transition:opacity .22s ease;}
 .break-action::after{content:'';position:absolute;left:16px;right:16px;bottom:0;height:2px;background:linear-gradient(90deg,var(--accent,var(--blue2)),transparent 72%);transform:scaleX(0.15);transform-origin:left center;opacity:.45;transition:transform .24s ease,opacity .24s ease;}
 .break-action:hover{transform:translateY(-4px) scale(1.01);border-color:var(--accent,var(--blue2));box-shadow:0 20px 44px rgba(0,0,0,0.28),0 0 0 1px rgba(255,255,255,0.03);background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.025));filter:saturate(1.05);}
 .break-action:hover::before{opacity:1;}
 .break-action:hover::after,.break-action.syncing::after{transform:scaleX(1);opacity:1;}
 .break-action:hover .break-action-icon{transform:translateY(-2px) scale(1.06);box-shadow:0 12px 28px rgba(0,0,0,0.22),0 0 0 1px rgba(255,255,255,0.05) inset;}
-.break-action:disabled{cursor:not-allowed;opacity:.55;transform:none;}
+.break-action:disabled{cursor:not-allowed;opacity:.5;transform:none;filter:saturate(.88);}
 .break-action.syncing{animation:breakActionPulse 1.15s ease-in-out infinite;}
-.break-action-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
-.break-action-icon{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:14px;color:var(--accent,var(--blue2));box-shadow:0 0 0 1px rgba(255,255,255,0.03) inset;transition:transform .22s ease,box-shadow .22s ease;}
+.break-action-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.break-action-icon{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:13px;color:var(--accent,var(--blue2));box-shadow:0 0 0 1px rgba(255,255,255,0.03) inset;transition:transform .22s ease,box-shadow .22s ease;}
 .break-action-state{font-size:9px;font-weight:700;letter-spacing:0.13em;text-transform:uppercase;color:var(--accent,var(--blue2));}
-.break-action-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
-.break-action-copy{font-size:10px;color:var(--text2);line-height:1.45;min-height:28px;}
+.break-action-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.break-action-copy{font-size:9px;color:var(--text2);line-height:1.4;min-height:22px;}
 .break-action.loggedin{--accent:var(--green);}
 .break-action.loggedout{--accent:var(--red);}
 .break-action.brbin,.break-action.brbout{--accent:var(--blue2);}
 .break-action.breakin,.break-action.breakout{--accent:var(--orange2);}
 .break-action.trainingin,.break-action.trainingout{--accent:#b388ff;}
 .break-action.qaauxin,.break-action.qaauxout{--accent:#ff78c8;}
-.break-hero-card{position:relative;overflow:hidden;min-height:302px;background:
+.break-hero-card{position:relative;overflow:hidden;min-height:258px;background:
   radial-gradient(circle at 14% 18%, rgba(255,123,0,0.16), transparent 26%),
   radial-gradient(circle at 78% 20%, rgba(6,196,212,0.22), transparent 28%),
   radial-gradient(circle at 82% 78%, rgba(179,136,255,0.18), transparent 32%),
@@ -196,35 +207,35 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
   mask-image:linear-gradient(180deg,rgba(255,255,255,0.7),transparent 85%);
   opacity:.4;
   animation:breakGridMove 18s linear infinite;}
-.break-hero-card::after{content:'';position:absolute;inset:-20% auto auto -30%;width:64%;height:280px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.09),transparent);transform:rotate(-12deg);filter:blur(8px);animation:breakSweep 8s ease-in-out infinite;}
-.break-hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 194px;gap:14px;align-items:center;min-height:270px;}
+.break-hero-card::after{content:'';position:absolute;inset:-20% auto auto -30%;width:64%;height:220px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.09),transparent);transform:rotate(-12deg);filter:blur(8px);animation:breakSweep 8s ease-in-out infinite;}
+.break-hero-grid{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 180px;gap:12px;align-items:center;min-height:224px;}
 .break-hero-kicker{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:999px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text2);}
 .break-hero-kicker::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 16px var(--teal);animation:livePulse 2s infinite;}
-.break-hero-title{margin-top:14px;font-size:24px;line-height:1.05;font-weight:900;letter-spacing:-0.05em;color:var(--text);}
+.break-hero-title{margin-top:10px;font-size:20px;line-height:1.05;font-weight:900;letter-spacing:-0.05em;color:var(--text);}
 .break-hero-title span{background:linear-gradient(135deg,var(--orange2),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.break-hero-copy{margin-top:10px;max-width:420px;font-size:12px;line-height:1.65;color:var(--text2);}
-.break-protocol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px;}
-.break-protocol-pill{padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);}
+.break-hero-copy{margin-top:8px;max-width:400px;font-size:11px;line-height:1.55;color:var(--text2);}
+.break-protocol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:10px;}
+.break-protocol-pill{padding:8px 10px;border-radius:13px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);}
 .break-protocol-pill span{display:block;font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;}
-.break-protocol-pill strong{display:block;font-size:12px;color:var(--text);}
+.break-protocol-pill strong{display:block;font-size:11px;color:var(--text);}
 .break-protocol-pill.out strong{color:var(--blue2);}
 .break-protocol-pill.in strong{color:var(--green);}
 .break-protocol-pill.chat strong{color:var(--orange2);}
 .break-protocol-pill.log strong{color:var(--teal);}
-.break-signal-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;}
-.break-signal-card{padding:10px 11px;border-radius:14px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.06);}
+.break-signal-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px;}
+.break-signal-card{padding:8px 10px;border-radius:13px;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.06);}
 .break-signal-card span{display:block;font-size:9px;color:var(--text3);letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:5px;}
-.break-signal-card strong{display:block;font-size:12px;line-height:1.4;color:var(--text);}
-.break-hero-visual{position:relative;display:grid;place-items:center;min-height:280px;}
+.break-signal-card strong{display:block;font-size:11px;line-height:1.35;color:var(--text);}
+.break-hero-visual{position:relative;display:grid;place-items:center;min-height:220px;}
 .break-hero-visual::before{content:'';position:absolute;inset:22% 18%;background:url('/adit-logo-dark.png') center/contain no-repeat;opacity:.08;filter:blur(2px) saturate(1.05);transform:scale(1.16);animation:breakBrandFloat 8.6s ease-in-out infinite;z-index:0;}
 .break-hero-visual::after{content:'';position:absolute;inset:16% 12%;background:url('/break-bot-avatar.png') center/cover no-repeat;opacity:.1;filter:blur(24px) saturate(1.15);mix-blend-mode:screen;transform:scale(1.06);animation:breakGhostPulse 6.8s ease-in-out infinite;z-index:0;}
 .break-hero-orbit,.break-hero-ring{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,0.08);}
-.break-hero-orbit{width:202px;height:202px;border-color:rgba(91,176,255,0.16);box-shadow:0 0 0 10px rgba(91,176,255,0.03), inset 0 0 0 1px rgba(255,255,255,0.04);animation:breakOrbitSpin 20s linear infinite;}
-.break-hero-orbit::before,.break-hero-orbit::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;top:50%;left:50%;transform-origin:-101px center;}
-.break-hero-orbit::before{background:var(--orange2);box-shadow:0 0 16px var(--orange2);transform:translate(-50%,-50%) rotate(0deg) translateX(101px);}
-.break-hero-orbit::after{background:var(--teal);box-shadow:0 0 16px var(--teal);transform:translate(-50%,-50%) rotate(180deg) translateX(101px);}
-.break-hero-ring{width:160px;height:160px;border-color:rgba(255,255,255,0.12);box-shadow:0 0 0 8px rgba(0,0,0,0.12);animation:breakAura 3.2s ease-in-out infinite;}
-.break-hero-avatar{position:relative;z-index:2;width:146px;height:146px;object-fit:cover;border-radius:30px;border:1px solid rgba(255,255,255,0.18);box-shadow:0 22px 42px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.06),0 0 30px rgba(255,123,0,0.12);animation:breakBotFloat 5.6s ease-in-out infinite;}
+.break-hero-orbit{width:176px;height:176px;border-color:rgba(91,176,255,0.16);box-shadow:0 0 0 10px rgba(91,176,255,0.03), inset 0 0 0 1px rgba(255,255,255,0.04);animation:breakOrbitSpin 20s linear infinite;}
+.break-hero-orbit::before,.break-hero-orbit::after{content:'';position:absolute;width:15px;height:15px;border-radius:50%;top:50%;left:50%;transform-origin:-88px center;}
+.break-hero-orbit::before{background:var(--orange2);box-shadow:0 0 16px var(--orange2);transform:translate(-50%,-50%) rotate(0deg) translateX(88px);}
+.break-hero-orbit::after{background:var(--teal);box-shadow:0 0 16px var(--teal);transform:translate(-50%,-50%) rotate(180deg) translateX(88px);}
+.break-hero-ring{width:140px;height:140px;border-color:rgba(255,255,255,0.12);box-shadow:0 0 0 8px rgba(0,0,0,0.12);animation:breakAura 3.2s ease-in-out infinite;}
+.break-hero-avatar{position:relative;z-index:2;width:124px;height:124px;object-fit:cover;border-radius:24px;border:1px solid rgba(255,255,255,0.18);box-shadow:0 22px 42px rgba(0,0,0,0.3),0 0 0 1px rgba(255,255,255,0.06),0 0 30px rgba(255,123,0,0.12);animation:breakBotFloat 5.6s ease-in-out infinite;}
 .break-hero-pulse{position:absolute;border-radius:50%;filter:blur(8px);opacity:.66;z-index:1;}
 .break-hero-pulse-a{width:94px;height:94px;background:radial-gradient(circle,rgba(255,123,0,0.38),transparent 68%);top:24px;right:10px;animation:breakPulseFloat 4.8s ease-in-out infinite;}
 .break-hero-pulse-b{width:108px;height:108px;background:radial-gradient(circle,rgba(6,196,212,0.34),transparent 70%);bottom:20px;left:8px;animation:breakPulseFloat 5.8s ease-in-out infinite reverse;}
@@ -241,10 +252,10 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-mode-lane.breaklane{--lane-accent:var(--orange2);}
 .break-mode-lane.training{--lane-accent:#b388ff;}
 .break-mode-lane.qa{--lane-accent:#ff78c8;}
-.break-callout{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(6,196,212,0.08),rgba(255,255,255,0.02));box-shadow:0 12px 28px rgba(0,0,0,0.14),inset 0 1px 0 rgba(255,255,255,0.05);}
+.break-callout{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border-radius:13px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(6,196,212,0.08),rgba(255,255,255,0.02));box-shadow:0 12px 28px rgba(0,0,0,0.14),inset 0 1px 0 rgba(255,255,255,0.05);}
 .break-callout-left{display:grid;gap:4px;}
-.break-callout-title{font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
-.break-callout-copy{font-size:12px;color:var(--text2);line-height:1.5;}
+.break-callout-title{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
+.break-callout-copy{font-size:11px;color:var(--text2);line-height:1.45;}
 .break-callout .chip{background:rgba(0,0,0,0.18);}
 @keyframes breakActionPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}50%{box-shadow:0 0 0 5px rgba(255,255,255,0.02);}}
 @keyframes breakGridMove{0%{background-position:0 0,0 0;}100%{background-position:36px 36px,36px 36px;}}
@@ -255,8 +266,8 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 @keyframes breakPulseFloat{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-8px) scale(1.08);}}
 @keyframes breakGhostPulse{0%,100%{opacity:.06;transform:scale(1.02);}50%{opacity:.16;transform:scale(1.1);}}
 @keyframes breakBrandFloat{0%,100%{transform:translateY(0) scale(1.14) rotate(0deg);}50%{transform:translateY(-10px) scale(1.2) rotate(-2deg);}}
-.break-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;}
-.break-user-card{position:relative;border-radius:16px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015));padding:13px 14px;overflow:hidden;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;}
+.break-board{display:grid;grid-template-columns:repeat(auto-fit,minmax(188px,1fr));gap:8px;}
+.break-user-card{position:relative;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015));padding:10px 11px;overflow:hidden;transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease;}
 .break-user-card::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--accent,var(--border2));opacity:.95;}
 .break-user-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,0.14);box-shadow:0 18px 32px rgba(0,0,0,0.22);}
 .break-user-card.online{--accent:var(--green);}
@@ -265,29 +276,29 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-user-card.break{--accent:var(--orange2);}
 .break-user-card.training{--accent:#b388ff;}
 .break-user-card.qa{--accent:#ff78c8;}
-.break-user-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;}
-.break-user-name{font-size:13px;font-weight:700;color:var(--text);}
+.break-user-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px;}
+.break-user-name{font-size:12px;font-weight:700;color:var(--text);}
 .break-user-meta{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;}
-.break-user-status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);}
+.break-user-status{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:9px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);}
 .break-user-status::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent,var(--text3));box-shadow:0 0 10px var(--accent,var(--text3));}
-.break-user-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;}
-.break-user-metric{padding:8px 9px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
+.break-user-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:7px;}
+.break-user-metric{padding:7px 8px;border-radius:11px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
 .break-user-metric span{display:block;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
-.break-user-metric strong{display:block;font-size:14px;color:var(--text);}
-.break-log-list{display:flex;flex-direction:column;gap:10px;max-height:620px;overflow:auto;padding-right:4px;}
-.break-log-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);transition:transform .18s ease,border-color .18s ease,background .18s ease;}
+.break-user-metric strong{display:block;font-size:13px;color:var(--text);}
+.break-log-list{display:flex;flex-direction:column;gap:8px;max-height:460px;overflow:auto;padding-right:4px;}
+.break-log-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);transition:transform .18s ease,border-color .18s ease,background .18s ease;}
 .break-log-row:hover{transform:translateX(4px);border-color:rgba(91,176,255,0.2);background:rgba(255,255,255,0.045);}
-.break-log-badge{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:12px;color:var(--text2);}
+.break-log-badge{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);font-size:11px;color:var(--text2);}
 .break-log-main{display:grid;gap:4px;}
-.break-log-title{font-size:12px;font-weight:700;color:var(--text);}
-.break-log-sub{font-size:11px;color:var(--text2);line-height:1.5;}
+.break-log-title{font-size:11px;font-weight:700;color:var(--text);}
+.break-log-sub{font-size:10px;color:var(--text2);line-height:1.45;}
 .break-log-time{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;text-align:right;}
 .break-mini-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);color:var(--text2);}
 .break-mini-chip.ok{color:var(--green);border-color:rgba(0,216,126,0.18);background:rgba(0,216,126,0.08);}
 .break-mini-chip.warn{color:var(--orange2);border-color:rgba(255,160,64,0.18);background:rgba(255,160,64,0.08);}
 .break-self-shell{display:grid;gap:14px;}
 .break-self-feed{display:grid;gap:10px;}
-.break-empty{padding:18px;border-radius:14px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);font-size:12px;color:var(--text3);text-align:center;}
+.break-empty{padding:14px;border-radius:12px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);font-size:11px;color:var(--text3);text-align:center;}
 .break-kbd{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text2);}
 
 /* METRICS */
@@ -559,8 +570,8 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 .hof-frame-top{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px 0;flex-wrap:wrap;}
 .hof-frame-note{padding:0 14px 10px;font-size:10px;color:var(--text2);line-height:1.55;}
 .hof-frame,.bonus-frame{display:block;width:100%;border:1px solid rgba(255,255,255,0.06);background:#07111f;border-radius:18px;box-shadow:0 18px 40px rgba(0,0,0,0.28);}
-.hof-frame{height:1410px;}
-.bonus-frame{height:1490px;}
+.hof-frame{height:1280px;}
+.bonus-frame{height:1360px;}
 .admin-ribbon{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin:2px 0 14px;}
 .viz-row{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-bottom:14px;}
 .viz-card{border-radius:18px;padding:14px;background:linear-gradient(145deg, rgba(19,36,61,0.96), rgba(8,19,35,0.96));border:1px solid rgba(255,255,255,0.06);box-shadow:0 14px 36px rgba(0,0,0,0.28);}
@@ -605,9 +616,9 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
 .toast.show{opacity:1;transform:translateY(0);}
 .toast-icon{font-size:14px;}
 
-@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout,.break-hero-grid{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid,.break-protocol,.break-signal-board,.break-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.break-actions{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout,.break-hero-grid{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid,.break-protocol,.break-signal-board,.break-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.break-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.break-toolbar{align-items:flex-start;}}
 @media(max-width:1200px){.viz-row{grid-template-columns:1fr;}.mix-legend{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid,.break-protocol,.break-signal-board{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:820px;}.break-hero-title{font-size:22px;}.page{padding:12px 14px;}.nav{padding:8px 14px;}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid,.break-protocol,.break-signal-board{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:780px;}.break-hero-title{font-size:20px;}.break-toolbar{flex-direction:column;align-items:stretch;}.break-toolbar-group{justify-content:space-between;}.page{padding:12px 14px;}.nav{padding:8px 14px;}}
 </style>
 </head>
 <body>
@@ -944,6 +955,19 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
       <div class="metric m-pink"><div class="metric-lbl">QA AUX Live</div><div class="metric-val" id="break-admin-qa">--</div></div>
       <div class="metric m-teal"><div class="metric-lbl">Tracker Team</div><div class="metric-val" id="break-admin-team">--</div><div class="metric-sub" id="break-admin-chat">Chat space pending</div></div>
     </div>
+    <div class="break-toolbar">
+      <div class="break-toolbar-group">
+        <span class="break-toolbar-label">Tracker date</span>
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">Prev</button>
+        <input type="date" id="break-admin-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next</button>
+        <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
+      </div>
+      <div class="break-toolbar-group">
+        <span class="break-history-chip" id="break-admin-history-chip">Today</span>
+        <button class="break-toolbar-btn" onclick="downloadBreakReport()">Download report</button>
+      </div>
+    </div>
     <div class="break-layout">
       <div class="break-stack">
         <div class="card">
@@ -954,7 +978,7 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
           <div class="break-callout" style="margin-bottom:12px;">
             <div class="break-callout-left">
               <div class="break-callout-title">Live Floor Signal</div>
-              <div class="break-callout-copy">Every tap updates the tracker instantly and mirrors the away lane into Chat when the webhook is linked.</div>
+              <div class="break-callout-copy">Live taps update the board instantly and mirror the away lane into Chat when the webhook is linked.</div>
             </div>
             <span class="chip" id="break-callout-chip">Awaiting first event</span>
           </div>
@@ -1020,6 +1044,19 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
     <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
   </div>
   <div class="agent-shell-page" id="agent-section-breakbot">
+    <div class="break-toolbar slim">
+      <div class="break-toolbar-group">
+        <span class="break-toolbar-label">History date</span>
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">Prev</button>
+        <input type="date" id="break-agent-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next</button>
+        <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
+      </div>
+      <div class="break-toolbar-group">
+        <span class="break-history-chip" id="break-agent-history-chip">Today</span>
+      </div>
+    </div>
+    <div class="break-history-note" id="break-history-note">Viewing today. Break actions are live and will post straight into the tracker.</div>
     <div class="break-layout">
       <div class="break-self-shell">
         <div class="card">
@@ -1039,52 +1076,52 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
             <button class="break-action loggedin" data-break-action="LOGGED_IN" onclick="sendBreakAction('LOGGED_IN',this)">
               <div class="break-action-top"><div class="break-action-icon">&#9719;</div><div class="break-action-state">Shift Start</div></div>
               <div class="break-action-title">Logged In</div>
-              <div class="break-action-copy">Starts your shift lane and marks you available on the tracker.</div>
+              <div class="break-action-copy">Open your shift lane and mark yourself live.</div>
             </button>
             <button class="break-action brbout" data-break-action="BRB_OUT" onclick="sendBreakAction('BRB_OUT',this)">
               <div class="break-action-top"><div class="break-action-icon">&#8680;</div><div class="break-action-state">Away Now</div></div>
               <div class="break-action-title">BRB Out</div>
-              <div class="break-action-copy">Marks you away and opens a quick BRB timer for short desk exits.</div>
+              <div class="break-action-copy">Go briefly away and start the quick timer.</div>
             </button>
             <button class="break-action brbin" data-break-action="BRB_IN" onclick="sendBreakAction('BRB_IN',this)">
               <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return Live</div></div>
               <div class="break-action-title">BRB In</div>
-              <div class="break-action-copy">Closes the BRB timer and returns you to your live shift lane.</div>
+              <div class="break-action-copy">Close BRB and return to your live lane.</div>
             </button>
             <button class="break-action breakout" data-break-action="BREAK_OUT" onclick="sendBreakAction('BREAK_OUT',this)">
               <div class="break-action-top"><div class="break-action-icon">&#9208;</div><div class="break-action-state">Start Break</div></div>
               <div class="break-action-title">Break Out</div>
-              <div class="break-action-copy">Marks you off-floor and starts the tracked break timer.</div>
+              <div class="break-action-copy">Go on break and start the tracked timer.</div>
             </button>
             <button class="break-action breakin" data-break-action="BREAK_IN" onclick="sendBreakAction('BREAK_IN',this)">
               <div class="break-action-top"><div class="break-action-icon">&#8617;</div><div class="break-action-state">Back From Break</div></div>
               <div class="break-action-title">Break In</div>
-              <div class="break-action-copy">Closes the break timer and restores your active work state.</div>
+              <div class="break-action-copy">Close break and restore your active work state.</div>
             </button>
             <button class="break-action trainingout" data-break-action="TRAINING_OUT" onclick="sendBreakAction('TRAINING_OUT',this)">
               <div class="break-action-top"><div class="break-action-icon">&#127891;</div><div class="break-action-state">Start Coaching</div></div>
               <div class="break-action-title">Training Out</div>
-              <div class="break-action-copy">Marks you into training or coaching AUX without using break time.</div>
+              <div class="break-action-copy">Start training or coaching AUX time.</div>
             </button>
             <button class="break-action trainingin" data-break-action="TRAINING_IN" onclick="sendBreakAction('TRAINING_IN',this)">
               <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return From Coaching</div></div>
               <div class="break-action-title">Training In</div>
-              <div class="break-action-copy">Closes the coaching timer and returns you to your shift lane.</div>
+              <div class="break-action-copy">Close coaching AUX and return to your shift lane.</div>
             </button>
             <button class="break-action qaauxout" data-break-action="QA_SESSION_OUT" onclick="sendBreakAction('QA_SESSION_OUT',this)">
               <div class="break-action-top"><div class="break-action-icon">&#128269;</div><div class="break-action-state">Start QA AUX</div></div>
               <div class="break-action-title">QA AUX Out</div>
-              <div class="break-action-copy">Marks you into QA AUX for reviews, audits, or calibration blocks.</div>
+              <div class="break-action-copy">Start QA AUX for audits or calibration work.</div>
             </button>
             <button class="break-action qaauxin" data-break-action="QA_SESSION_IN" onclick="sendBreakAction('QA_SESSION_IN',this)">
               <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return From QA</div></div>
               <div class="break-action-title">QA AUX In</div>
-              <div class="break-action-copy">Closes the QA AUX timer and brings you back into active work.</div>
+              <div class="break-action-copy">Close QA AUX and return to active work.</div>
             </button>
             <button class="break-action loggedout" data-break-action="LOGGED_OUT" onclick="sendBreakAction('LOGGED_OUT',this)">
               <div class="break-action-top"><div class="break-action-icon">&#10005;</div><div class="break-action-state">Shift Close</div></div>
               <div class="break-action-title">Logged Out</div>
-              <div class="break-action-copy">Closes your shift lane and records the final logged-out signal.</div>
+              <div class="break-action-copy">Close your shift lane and log out cleanly.</div>
             </button>
           </div>
         </div>
@@ -1106,7 +1143,7 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
                 <div>
                   <span class="break-hero-kicker">Adit Break Grid</span>
                   <div class="break-hero-title">Track every <span>away lane</span><br>with one tap.</div>
-                  <div class="break-command-copy">BRB, Break, Coaching, and QA AUX all stay visible for leads without cluttering the live dashboard.</div>
+                  <div class="break-command-copy">BRB, Break, Coaching, and QA AUX stay visible for leads without cluttering the live dashboard.</div>
                 </div>
                 <span class="chip" id="break-hero-chat-label">Chat space</span>
               </div>
@@ -1161,7 +1198,7 @@ const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 const ADIT_LOGO_DARK='/adit-logo-dark.png';
 const ADIT_LOGO_LIGHT='/adit-logo-light.png';
 
-let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={},breakTrackerData={summary:{},tracker:[],recentLog:[]},breakTrackerMeta={enabled:false,target:'Chat space'};
+let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={},breakTrackerData={summary:{},tracker:[],recentLog:[]},breakTrackerMeta={enabled:false,target:'Chat space'},breakSelectedDate='';
 let dashboardSortState={admin:{key:'idx',dir:'asc'},agent:{key:'idx',dir:'asc'}};
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
@@ -1322,7 +1359,7 @@ function initEmbeddedFrames(){
 }
 
 function doLogout(){
-  sessionStorage.clear();currentUser=null;currentEmail=null;currentRole=null;breakTrackerData={summary:{},tracker:[],recentLog:[]};
+  sessionStorage.clear();currentUser=null;currentEmail=null;currentRole=null;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   google.accounts.id.disableAutoSelect();
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainApp').style.display='none';
@@ -1361,6 +1398,56 @@ function shiftDate(dateStr, days){
   const [y,m,d] = String(dateStr).split('-').map(Number);
   const dt = new Date(Date.UTC(y,m-1,d+days,12,0,0));
   return dt.toLocaleDateString('en-CA',{timeZone:activeTimeZone()});
+}
+function getBreakTrackerDate(){
+  return breakSelectedDate || todayStr();
+}
+function formatTrackerDate(dateStr){
+  if(!dateStr)return'--';
+  const [y,m,d]=String(dateStr).split('-').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d,12,0,0));
+  return dt.toLocaleDateString('en-US',{timeZone:activeTimeZone(),month:'short',day:'2-digit',year:'numeric'});
+}
+function breakHistoryMode(){
+  return getBreakTrackerDate()!==todayStr();
+}
+function syncBreakDateInputs(){
+  const selected=getBreakTrackerDate();
+  const label=breakHistoryMode()?'History · '+formatTrackerDate(selected):'Today · '+currentTZ;
+  ['break-admin-date','break-agent-date'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value=selected;
+  });
+  const adminChip=document.getElementById('break-admin-history-chip');
+  const agentChip=document.getElementById('break-agent-history-chip');
+  if(adminChip)adminChip.textContent=label;
+  if(agentChip)agentChip.textContent=label;
+}
+function syncBreakActionState(){
+  const isHistory=breakHistoryMode();
+  document.querySelectorAll('#agent-section-breakbot [data-break-action]').forEach(button=>{
+    button.disabled=isHistory;
+    button.classList.toggle('is-locked',isHistory);
+  });
+  const note=document.getElementById('break-history-note');
+  if(note){
+    note.classList.toggle('history',isHistory);
+    note.textContent=isHistory
+      ? 'History mode for '+formatTrackerDate(getBreakTrackerDate())+'. Switch back to today to post a new signal.'
+      : 'Viewing today. Break actions are live and will post straight into the tracker.';
+  }
+}
+function setBreakTrackerDate(nextDate){
+  breakSelectedDate=nextDate||todayStr();
+  syncBreakDateInputs();
+  syncBreakActionState();
+  loadBreakTracker();
+}
+function jumpBreakTrackerToday(){
+  setBreakTrackerDate(todayStr());
+}
+function shiftBreakTrackerWindow(days){
+  setBreakTrackerDate(shiftDate(getBreakTrackerDate(),days));
 }
 function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
 function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
@@ -1936,6 +2023,7 @@ function renderBreakAdminView(){
   const summary = breakTrackerData.summary || {};
   const tracker = breakTrackerData.tracker || [];
   const recentLog = breakTrackerData.recentLog || [];
+  const selectedDate=getBreakTrackerDate();
   const ids = {
     loggedin: document.getElementById('break-admin-loggedin'),
     loggedout: document.getElementById('break-admin-loggedout'),
@@ -1949,7 +2037,8 @@ function renderBreakAdminView(){
     board: document.getElementById('break-board'),
     feedChip: document.getElementById('break-feed-chip'),
     feed: document.getElementById('break-feed'),
-    callout: document.getElementById('break-callout-chip')
+    callout: document.getElementById('break-callout-chip'),
+    historyChip: document.getElementById('break-admin-history-chip')
   };
   if(ids.loggedin) ids.loggedin.textContent = summary.loggedInNow ?? 0;
   if(ids.loggedout) ids.loggedout.textContent = summary.loggedOutNow ?? 0;
@@ -1959,8 +2048,9 @@ function renderBreakAdminView(){
   if(ids.qa) ids.qa.textContent = summary.qaNow ?? 0;
   if(ids.team) ids.team.textContent = summary.teamCount ?? 0;
   if(ids.chat) ids.chat.textContent = breakChatLabel();
+  if(ids.historyChip) ids.historyChip.textContent = breakHistoryMode() ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
   if(ids.boardChip) ids.boardChip.textContent = (summary.teamCount ?? 0) + ' tracked';
-  if(ids.callout) ids.callout.textContent = breakTrackerMeta.enabled ? 'Chat space live' : 'Chat setup pending';
+  if(ids.callout) ids.callout.textContent = breakHistoryMode() ? 'History view' : (breakTrackerMeta.enabled ? 'Chat space live' : 'Chat setup pending');
 
   if(ids.board){
     ids.board.innerHTML = tracker.length ? tracker.map(row => {
@@ -1978,21 +2068,25 @@ function renderBreakAdminView(){
         '</div>'+
         '<div class="break-user-meta" style="margin-top:12px;">Last action · '+(row.lastActionLabel || 'No activity')+(row.lastActionAt ? ' · '+toTime(row.lastActionAt) : '')+'</div>'+
       '</div>';
-    }).join('') : '<div class="break-empty">No break tracker activity yet. The first Break Bot tap will start the board.</div>';
+    }).join('') : '<div class="break-empty">No break tracker activity found for '+formatTrackerDate(selectedDate)+'.</div>';
   }
 
   if(ids.feedChip) ids.feedChip.textContent = recentLog.length + ' events';
   if(ids.feed){
-    ids.feed.innerHTML = recentLog.length ? recentLog.map(event => buildBreakFeedRow(event)).join('') : '<div class="break-empty">No break events yet today.</div>';
+    ids.feed.innerHTML = recentLog.length ? recentLog.map(event => buildBreakFeedRow(event)).join('') : '<div class="break-empty">No break events found for '+formatTrackerDate(selectedDate)+'.</div>';
   }
 }
 
 function renderBreakAgentView(){
   const self = getSelfBreakRow();
+  const selectedDate=getBreakTrackerDate();
+  const isHistory=breakHistoryMode();
   const chatChip = document.getElementById('break-agent-chat-chip');
   const heroChat = document.getElementById('break-hero-chat-label');
+  const historyChip = document.getElementById('break-agent-history-chip');
   if(chatChip) chatChip.textContent = breakChatLabel();
   if(heroChat) heroChat.textContent = breakChatLabel();
+  if(historyChip) historyChip.textContent = isHistory ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
   const statusEl = document.getElementById('break-self-status');
   const statusCopyEl = document.getElementById('break-self-status-copy');
   const sinceEl = document.getElementById('break-self-since');
@@ -2006,15 +2100,15 @@ function renderBreakAgentView(){
 
   if(!self){
     if(statusEl) statusEl.innerHTML = '<span class="pill p-unknown"><span class="dot"></span>Not Started</span>';
-    if(statusCopyEl) statusCopyEl.textContent = 'Use Logged In once your shift starts. Away and return signals will stack here.';
+    if(statusCopyEl) statusCopyEl.textContent = isHistory ? 'No personal break log was found for this date.' : 'Use Logged In once your shift starts. Away and return signals will stack here.';
     if(sinceEl) sinceEl.textContent = '--';
-    if(sinceCopyEl) sinceCopyEl.textContent = 'No signal logged yet.';
+    if(sinceCopyEl) sinceCopyEl.textContent = isHistory ? 'Viewing '+formatTrackerDate(selectedDate)+' in '+currentTZ+'.' : 'No signal logged yet.';
     if(brbEl) brbEl.textContent = '0s';
     if(breakEl) breakEl.textContent = '0s';
     if(trainingEl) trainingEl.textContent = '0s';
     if(qaEl) qaEl.textContent = '0s';
     if(logChip) logChip.textContent = '0 events';
-    if(logList) logList.innerHTML = '<div class="break-empty">No break events yet. Your first tap will appear here.</div>';
+    if(logList) logList.innerHTML = '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
     return;
   }
 
@@ -2031,18 +2125,19 @@ function renderBreakAgentView(){
             ? 'Training or coaching session is active.'
             : 'QA AUX timer is active.');
   if(sinceEl) sinceEl.textContent = self.since ? toTime(self.since) : '--';
-  if(sinceCopyEl) sinceCopyEl.textContent = self.since ? 'Latest signal update in '+currentTZ+'.' : 'No recent signal change.';
+  if(sinceCopyEl) sinceCopyEl.textContent = self.since ? (isHistory ? 'Historical snapshot in '+currentTZ+'.' : 'Latest signal update in '+currentTZ+'.') : 'No recent signal change.';
   if(brbEl) brbEl.textContent = fmt(self.brbSeconds || 0);
   if(breakEl) breakEl.textContent = fmt(self.breakSeconds || 0);
   if(trainingEl) trainingEl.textContent = fmt(self.trainingSeconds || 0);
   if(qaEl) qaEl.textContent = fmt(self.qaSeconds || 0);
   if(logChip) logChip.textContent = (self.events || []).length + ' events';
-  if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">No break events yet. Your first tap will appear here.</div>';
+  if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
 }
 
 async function loadBreakTracker(){
+  const selectedDate=getBreakTrackerDate();
   try{
-    const res = await fetch(BACKEND+'/api/break-tracker?date='+todayStr()+'&tz='+encodeURIComponent(activeTimeZone()));
+    const res = await fetch(BACKEND+'/api/break-tracker?date='+selectedDate+'&tz='+encodeURIComponent(activeTimeZone()));
     const json = await res.json();
     breakTrackerMeta = json.chat || { enabled: false, target: 'Chat space' };
     breakTrackerData = json.success && json.data ? json.data : { summary:{}, tracker:[], recentLog:[] };
@@ -2050,11 +2145,17 @@ async function loadBreakTracker(){
     breakTrackerMeta = { enabled: false, target: 'Chat space' };
     breakTrackerData = { summary:{}, tracker:[], recentLog:[] };
   }
+  syncBreakDateInputs();
+  syncBreakActionState();
   renderBreakAdminView();
   renderBreakAgentView();
 }
 
 async function sendBreakAction(action, btn){
+  if(breakHistoryMode()){
+    showToast('Switch back to today before posting a live break action.','warning');
+    return;
+  }
   if(!currentUser || !currentEmail){
     showToast('Your login session is missing email details. Please log in again.','error');
     return;
@@ -2080,6 +2181,8 @@ async function sendBreakAction(action, btn){
     const note = json.notification?.notified
       ? ' + posted to '+(json.notification.target || 'Chat space')
       : (json.notification?.status === 'disabled' ? ' (saved locally)' : '');
+    breakSelectedDate=todayStr();
+    syncBreakDateInputs();
     showToast((json.data?.event?.actionLabel || 'Break event')+' saved'+note, json.notification?.notified ? 'success' : 'info', 3600);
     await refresh();
   }catch(e){
@@ -2600,6 +2703,63 @@ function downloadCSV(){
   showToast('CSV exported','success');
 }
 
+function downloadBreakReport(){
+  const date=getBreakTrackerDate();
+  const summary=breakTrackerData.summary||{};
+  const tracker=breakTrackerData.tracker||[];
+  const recentLog=breakTrackerData.recentLog||[];
+  if(!tracker.length && !recentLog.length){
+    showToast('No break data for the selected date','warning');
+    return;
+  }
+  const rows=[
+    ['Section','Field 1','Field 2','Field 3','Field 4','Field 5','Field 6','Field 7','Field 8','Field 9','Field 10'],
+    ['Report','Break Tracker',formatTrackerDate(date),currentTZ,breakChatLabel(),'','','','','',''],
+    ['Summary','Logged In',summary.loggedInNow ?? 0,'Logged Out',summary.loggedOutNow ?? 0,'BRB',summary.brbNow ?? 0,'Break',summary.breakNow ?? 0,'Training',summary.trainingNow ?? 0],
+    ['Summary','QA AUX',summary.qaNow ?? 0,'Team',summary.teamCount ?? 0,'','','','','',''],
+    [''],
+    ['Tracker','User','Email','Status','Since','BRB Today','Break Today','Training Today','QA AUX Today','Last Action','Last Action At']
+  ];
+  tracker.forEach(row=>{
+    rows.push([
+      'Tracker',
+      row.username || '--',
+      row.email || '--',
+      row.currentStatus || '--',
+      row.since ? toDateTime(row.since) : '--',
+      fmt(row.brbSeconds || 0),
+      fmt(row.breakSeconds || 0),
+      fmt(row.trainingSeconds || 0),
+      fmt(row.qaSeconds || 0),
+      row.lastActionLabel || '--',
+      row.lastActionAt ? toDateTime(row.lastActionAt) : '--'
+    ]);
+  });
+  rows.push(['']);
+  rows.push(['Feed','Time','User','Email','Action','Status','Duration','Notification','Note','','']);
+  recentLog.forEach(event=>{
+    rows.push([
+      'Feed',
+      event.createdAt ? toDateTime(event.createdAt) : '--',
+      event.username || '--',
+      event.email || '--',
+      event.actionLabel || event.action || '--',
+      event.statusAfter || '--',
+      fmt(event.durationSeconds || 0),
+      event.notificationStatus || 'saved',
+      event.note || '',
+      '',
+      ''
+    ]);
+  });
+  const csv=rows.map(row=>row.map(col=>'"'+String(col ?? '').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv,'+encodeURIComponent(csv);
+  a.download='adit-break-tracker-'+date+'.csv';
+  a.click();
+  showToast('Break report exported','success');
+}
+
 async function downloadSnapshot(){
   const date=document.getElementById('date-picker').value||todayStr();
   if(!reportData.length){showToast('No data','warning');return;}
@@ -2679,6 +2839,8 @@ window.addEventListener('load',()=>{
   applyAditBranding();
   bindSortHeaders();
   loadSession();
+  syncBreakDateInputs();
+  syncBreakActionState();
   const dp=document.getElementById('date-picker');
   if(dp)dp.value=todayStr();
   if(window.google&&!currentUser)google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential,auto_select:false});
