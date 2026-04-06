@@ -1671,8 +1671,8 @@ function normalizeLiveStatus(live, fallbackStatus){
 
 function normalizeLiveDirection(direction){
   const dir=String(direction||'').trim().toLowerCase();
-  if(dir.startsWith('in')) return 'IN';
-  if(dir.startsWith('out')) return 'OUT';
+  if(dir.startsWith('in')) return 'IN CALL';
+  if(dir.startsWith('out')) return 'OUT CALL';
   return 'CALL';
 }
 

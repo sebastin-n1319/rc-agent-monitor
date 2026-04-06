@@ -58,6 +58,20 @@ function normalizeLiveDirection(direction, fallback = null) {
   return fallback;
 }
 
+function resolveLiveDirection(data, prevEntry = null) {
+  const activeCalls = Array.isArray(data?.activeCalls) ? data.activeCalls : [];
+  const directionalCall = activeCalls.find(call => normalizeLiveDirection(call && call.direction, null));
+  const liveDirection = normalizeLiveDirection(
+    directionalCall && directionalCall.direction,
+    normalizeLiveDirection(data && data.direction, null)
+  );
+  if (liveDirection) return liveDirection;
+  if (prevEntry && prevEntry.isOnCall) {
+    return normalizeLiveDirection(prevEntry.direction, null);
+  }
+  return null;
+}
+
 function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus) {
   const t = (telephonyStatus || '').toLowerCase();
 
@@ -643,17 +657,17 @@ function deriveQueueReadyStatus(data, queueInfo) {
   return 'Available';
 }
 
-function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
+function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo, prevEntry = null) {
   const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = data.telephonyStatus;
   const activeCalls = Array.isArray(data.activeCalls) ? data.activeCalls : [];
-  const primaryCall = activeCalls[0] || null;
+  const primaryCall = activeCalls.find(call => call && (call.startTime || call.direction)) || activeCalls[0] || null;
   const isOnCall = isActiveTelephonyState(tel) || activeCalls.length > 0;
   let direction = null, callDuration = 0, callStartTime = null;
   const displayStatus = deriveDisplayStatus(data, resolvedQueueInfo);
   const queueReadyStatus = deriveQueueReadyStatus(data, resolvedQueueInfo);
-  direction = normalizeLiveDirection(primaryCall && primaryCall.direction, normalizeLiveDirection(data.direction, null));
-  callStartTime = (primaryCall && primaryCall.startTime) || data.callStartTime || null;
+  direction = resolveLiveDirection(data, prevEntry);
+  callStartTime = (primaryCall && primaryCall.startTime) || data.callStartTime || (prevEntry && prevEntry.isOnCall ? prevEntry.callStartTime : null);
   callDuration = callStartTime ? Math.floor((Date.now() - new Date(callStartTime).getTime()) / 1000) : 0;
   return {
     agentId: agent.rc_id,
@@ -722,8 +736,8 @@ function emitLiveUpdate(reason, agentId) {
 }
 
 async function upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, reason = 'sync') {
-  const nextEntry = buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo);
   const prevEntry = lastLiveStatusSnapshot[agent.rc_id];
+  const nextEntry = buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo, prevEntry);
   const displayChanged = !prevEntry || prevEntry.displayStatus !== nextEntry.displayStatus;
   const queueReadyChanged = !prevEntry ||
     prevEntry.queueReadyStatus !== nextEntry.queueReadyStatus ||
