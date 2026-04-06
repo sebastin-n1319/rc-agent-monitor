@@ -37,12 +37,33 @@ let lastSuccessfulCallLogSyncAt = 0;
 const liveEvents = new EventEmitter();
 liveEvents.setMaxListeners(50);
 
+const ACTIVE_TELEPHONY_STATES = new Set([
+  'callconnected',
+  'oncall',
+  'talking',
+  'ringing',
+  'hold',
+  'onhold',
+  'callhold'
+]);
+
+function isActiveTelephonyState(telephonyStatus) {
+  return ACTIVE_TELEPHONY_STATES.has(String(telephonyStatus || '').toLowerCase());
+}
+
+function normalizeLiveDirection(direction, fallback = null) {
+  const d = String(direction || '').trim().toLowerCase();
+  if (d.startsWith('in')) return 'Inbound';
+  if (d.startsWith('out')) return 'Outbound';
+  return fallback;
+}
+
 function normalizeStatus(presenceStatus, telephonyStatus, userStatus, dndStatus) {
   const t = (telephonyStatus || '').toLowerCase();
 
   // 1. Active call state takes highest priority
-  if (t === 'callconnected' || t === 'oncall' || t === 'talking') return 'On Call';
   if (t === 'ringing') return 'Ringing';
+  if (isActiveTelephonyState(t)) return 'On Call';
 
   return normalizePresenceOnly(presenceStatus, userStatus, dndStatus);
 }
@@ -592,7 +613,8 @@ function deriveQueueAwareStatus(data, queueInfo) {
 function deriveDisplayStatus(data, queueInfo) {
   const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = data.telephonyStatus;
-  const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
+  const hasActiveCall = Array.isArray(data.activeCalls) && data.activeCalls.length > 0;
+  const isOnCall = isActiveTelephonyState(tel) || hasActiveCall;
   const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
 
   if (!resolvedQueueInfo) {
@@ -609,6 +631,7 @@ function deriveDisplayStatus(data, queueInfo) {
 function deriveQueueReadyStatus(data, queueInfo) {
   const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = (data.telephonyStatus || '').toLowerCase();
+  const hasActiveCall = Array.isArray(data.activeCalls) && data.activeCalls.length > 0;
   const basePresence = normalizePresenceOnly(data.presenceStatus, data.userStatus, data.dndStatus);
   const canTakeQueueCalls = resolvedQueueInfo &&
     resolvedQueueInfo.acceptQueueCalls !== false &&
@@ -616,23 +639,22 @@ function deriveQueueReadyStatus(data, queueInfo) {
 
   if (!canTakeQueueCalls) return 'Unavailable';
   if (basePresence !== 'Available') return 'Unavailable';
-  if (tel === 'ringing' || tel === 'callconnected' || tel === 'oncall' || tel === 'talking') return 'Unavailable';
+  if (isActiveTelephonyState(tel) || hasActiveCall) return 'Unavailable';
   return 'Available';
 }
 
 function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
   const resolvedQueueInfo = mergeQueueInfoWithPresence(queueInfo, data);
   const tel = data.telephonyStatus;
-  const isOnCall = tel === 'CallConnected' || tel === 'Ringing';
+  const activeCalls = Array.isArray(data.activeCalls) ? data.activeCalls : [];
+  const primaryCall = activeCalls[0] || null;
+  const isOnCall = isActiveTelephonyState(tel) || activeCalls.length > 0;
   let direction = null, callDuration = 0, callStartTime = null;
   const displayStatus = deriveDisplayStatus(data, resolvedQueueInfo);
   const queueReadyStatus = deriveQueueReadyStatus(data, resolvedQueueInfo);
-  if (isOnCall && data.activeCalls && data.activeCalls.length > 0) {
-    const ac = data.activeCalls[0];
-    direction = ac.direction;
-    callStartTime = ac.startTime || null;
-    callDuration = ac.startTime ? Math.floor((Date.now()-new Date(ac.startTime).getTime())/1000) : 0;
-  }
+  direction = normalizeLiveDirection(primaryCall && primaryCall.direction, normalizeLiveDirection(data.direction, null));
+  callStartTime = (primaryCall && primaryCall.startTime) || data.callStartTime || null;
+  callDuration = callStartTime ? Math.floor((Date.now() - new Date(callStartTime).getTime()) / 1000) : 0;
   return {
     agentId: agent.rc_id,
     agentName: agent.name,
@@ -646,7 +668,7 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo) {
     normalizedStatus: displayStatus,
     userStatus: data.userStatus || null,
     dndStatus: data.dndStatus || null,
-    activeCalls: data.activeCalls || [],
+    activeCalls,
     callStartTime,
     fetchedAt,
     queueStatus: deriveQueueStatus(resolvedQueueInfo),

@@ -1631,7 +1631,9 @@ function normalizeLiveStatus(live, fallbackStatus){
   const tel=(live.telephonyStatus||'').toLowerCase();
   const pres=(live.presenceStatus||'').toLowerCase();
 
+  if(live.isOnCall) return tel==='ringing' ? 'Ringing' : 'On Call';
   if(tel==='callconnected' || tel==='oncall' || tel==='talking') return 'On Call';
+  if(tel==='hold' || tel==='onhold' || tel==='callhold') return 'On Call';
   if(tel==='ringing') return 'Ringing';
 
   if(pres==='available') return 'Available';
@@ -1639,6 +1641,13 @@ function normalizeLiveStatus(live, fallbackStatus){
   if(pres==='offline') return 'Offline';
 
   return fallbackStatus||'Unknown';
+}
+
+function normalizeLiveDirection(direction){
+  const dir=String(direction||'').trim().toLowerCase();
+  if(dir.startsWith('in')) return 'IN';
+  if(dir.startsWith('out')) return 'OUT';
+  return 'CALL';
 }
 
 function deriveStatusInfo(agentId, fallbackStatus){
@@ -2449,7 +2458,7 @@ async function loadAgentStatuses(){
       const tLog=buildToggleLog(a.rc_id);
       let liveBadge='<span style="color:var(--text3);font-size:11px">&mdash;</span>';
       if(live.isOnCall){
-        const dir=live.direction==='Inbound'?'IN':'OUT';
+        const dir=normalizeLiveDirection(live.direction);
         const tid='lt-'+a.rc_id;
         const dur=live.callDuration||0;
         liveBadge='<div class="live-badge"><span class="live-dot2"></span>'+dir+' <span class="live-timer" id="'+tid+'">'+fmtTimer(dur)+'</span></div>';
@@ -2569,7 +2578,7 @@ async function loadAgentStatuses(){
         const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
         const tl=buildTL(a.rc_id,todayStr());
         let lb='<span style="color:var(--text3)">&mdash;</span>';
-        if(op&&op.live.isOnCall){const dir=op.live.direction==='Inbound'?'IN':'OUT';lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
+        if(op&&op.live.isOnCall){const dir=normalizeLiveDirection(op.live.direction);lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
         return'<tr><td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+a.name+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td><td class="mono">'+toTime(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td>'+tl+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
       });
       const at=document.getElementById('agent-view-table');
