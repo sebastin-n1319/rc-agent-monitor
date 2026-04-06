@@ -63,10 +63,14 @@ function isQueueReady(status, queueStatus){
 const BREAK_ACTIONS = {
   LOGGED_IN: { label: 'Logged In', status: 'Logged In', type: 'session' },
   LOGGED_OUT: { label: 'Logged Out', status: 'Logged Out', type: 'session' },
-  BRB_IN: { label: 'BRB In', status: 'BRB', type: 'brb' },
-  BRB_OUT: { label: 'BRB Out', status: 'Logged In', type: 'brb' },
-  BREAK_IN: { label: 'Break In', status: 'Break', type: 'break' },
-  BREAK_OUT: { label: 'Break Out', status: 'Logged In', type: 'break' }
+  BRB_IN: { label: 'BRB In', status: 'Logged In', type: 'brb' },
+  BRB_OUT: { label: 'BRB Out', status: 'BRB', type: 'brb' },
+  BREAK_IN: { label: 'Break In', status: 'Logged In', type: 'break' },
+  BREAK_OUT: { label: 'Break Out', status: 'Break', type: 'break' },
+  TRAINING_IN: { label: 'Training / Coaching In', status: 'Logged In', type: 'training' },
+  TRAINING_OUT: { label: 'Training / Coaching Out', status: 'Training / Coaching', type: 'training' },
+  QA_SESSION_IN: { label: 'QA Session AUX In', status: 'Logged In', type: 'qa' },
+  QA_SESSION_OUT: { label: 'QA Session AUX Out', status: 'QA Session AUX', type: 'qa' }
 };
 
 function normalizeBreakAction(action){
@@ -90,6 +94,8 @@ function defaultBreakName(email){
 function statusTone(status){
   if(status === 'BRB') return 'brb';
   if(status === 'Break') return 'break';
+  if(status === 'Training / Coaching') return 'training';
+  if(status === 'QA Session AUX') return 'qa';
   if(status === 'Logged In') return 'online';
   if(status === 'Logged Out') return 'offline';
   return 'neutral';
@@ -528,23 +534,19 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
 
   for(const [key, user] of users.entries()){
     const events = dayBuckets.get(key) || [];
-    const previous = priorMap.get(key);
-    const latest = latestMap.get(key) || previous || null;
-    const stream = [];
-    if(previous){
-      stream.push({
-        ...previous,
-        created_at: startSql
-      });
-    }
-    stream.push(...events);
+    const latestToday = events.length ? events[events.length - 1] : null;
+    const stream = [...events];
 
     let brbSeconds = 0;
     let breakSeconds = 0;
+    let trainingSeconds = 0;
+    let qaSeconds = 0;
     let loggedInSeconds = 0;
-    let openBrbStart = previous && previous.current_status === 'BRB' ? start : null;
-    let openBreakStart = previous && previous.current_status === 'Break' ? start : null;
-    let openSessionStart = previous && previous.current_status !== 'Logged Out' ? start : null;
+    let openBrbStart = null;
+    let openBreakStart = null;
+    let openTrainingStart = null;
+    let openQaStart = null;
+    let openSessionStart = null;
 
     for(let i = 0; i < stream.length; i++){
       const current = stream[i];
@@ -554,6 +556,8 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
       const duration = Math.max(0, Math.round((endAt - startAt) / 1000));
       if(current.current_status === 'BRB') brbSeconds += duration;
       if(current.current_status === 'Break') breakSeconds += duration;
+      if(current.current_status === 'Training / Coaching') trainingSeconds += duration;
+      if(current.current_status === 'QA Session AUX') qaSeconds += duration;
       if(current.current_status !== 'Logged Out') loggedInSeconds += duration;
     }
 
@@ -569,20 +573,36 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
         openSessionStart = null;
         openBrbStart = null;
         openBreakStart = null;
-      } else if(event.action === 'BRB_IN'){
-        openBrbStart = stamp;
+        openTrainingStart = null;
+        openQaStart = null;
       } else if(event.action === 'BRB_OUT'){
+        openBrbStart = stamp;
+      } else if(event.action === 'BRB_IN'){
         if(openBrbStart && stamp && stamp > openBrbStart){
           linkedDurationSeconds = Math.round((stamp - openBrbStart) / 1000);
         }
         openBrbStart = null;
-      } else if(event.action === 'BREAK_IN'){
-        openBreakStart = stamp;
       } else if(event.action === 'BREAK_OUT'){
+        openBreakStart = stamp;
+      } else if(event.action === 'BREAK_IN'){
         if(openBreakStart && stamp && stamp > openBreakStart){
           linkedDurationSeconds = Math.round((stamp - openBreakStart) / 1000);
         }
         openBreakStart = null;
+      } else if(event.action === 'TRAINING_OUT'){
+        openTrainingStart = stamp;
+      } else if(event.action === 'TRAINING_IN'){
+        if(openTrainingStart && stamp && stamp > openTrainingStart){
+          linkedDurationSeconds = Math.round((stamp - openTrainingStart) / 1000);
+        }
+        openTrainingStart = null;
+      } else if(event.action === 'QA_SESSION_OUT'){
+        openQaStart = stamp;
+      } else if(event.action === 'QA_SESSION_IN'){
+        if(openQaStart && stamp && stamp > openQaStart){
+          linkedDurationSeconds = Math.round((stamp - openQaStart) / 1000);
+        }
+        openQaStart = null;
       }
       return {
         id: event.id,
@@ -602,19 +622,21 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
       };
     });
 
-    const currentStatus = latest ? latest.current_status : 'Logged Out';
+    const currentStatus = latestToday ? latestToday.current_status : 'Logged Out';
     tracker.push({
       email: key,
       username: user.username || defaultBreakName(key),
       role: user.role || 'agent',
       currentStatus,
       statusTone: statusTone(currentStatus),
-      since: latest ? latest.created_at : null,
-      lastAction: latest ? latest.action : null,
-      lastActionLabel: latest ? latest.action_label : 'No activity',
-      lastActionAt: latest ? latest.created_at : null,
+      since: latestToday ? latestToday.created_at : null,
+      lastAction: latestToday ? latestToday.action : null,
+      lastActionLabel: latestToday ? latestToday.action_label : 'No activity',
+      lastActionAt: latestToday ? latestToday.created_at : null,
       brbSeconds,
       breakSeconds,
+      trainingSeconds,
+      qaSeconds,
       loggedInSeconds,
       eventCount: decoratedEvents.length,
       events: decoratedEvents.reverse()
@@ -622,7 +644,14 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
   }
 
   tracker.sort((a, b) => {
-    const order = { BRB: 0, Break: 1, 'Logged In': 2, 'Logged Out': 3 };
+    const order = {
+      BRB: 0,
+      Break: 1,
+      'Training / Coaching': 2,
+      'QA Session AUX': 3,
+      'Logged In': 4,
+      'Logged Out': 5
+    };
     const diff = (order[a.currentStatus] ?? 4) - (order[b.currentStatus] ?? 4);
     if(diff !== 0) return diff;
     return a.username.localeCompare(b.username, undefined, { sensitivity: 'base' });
@@ -639,8 +668,12 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
     loggedOutNow: tracker.filter(row => row.currentStatus === 'Logged Out').length,
     brbNow: tracker.filter(row => row.currentStatus === 'BRB').length,
     breakNow: tracker.filter(row => row.currentStatus === 'Break').length,
+    trainingNow: tracker.filter(row => row.currentStatus === 'Training / Coaching').length,
+    qaNow: tracker.filter(row => row.currentStatus === 'QA Session AUX').length,
     brbSeconds: tracker.reduce((sum, row) => sum + row.brbSeconds, 0),
-    breakSeconds: tracker.reduce((sum, row) => sum + row.breakSeconds, 0)
+    breakSeconds: tracker.reduce((sum, row) => sum + row.breakSeconds, 0),
+    trainingSeconds: tracker.reduce((sum, row) => sum + row.trainingSeconds, 0),
+    qaSeconds: tracker.reduce((sum, row) => sum + row.qaSeconds, 0)
   };
 
   return { summary, tracker, recentLog };
