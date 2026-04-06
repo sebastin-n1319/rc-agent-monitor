@@ -318,29 +318,32 @@ body::before{
 .multiplier-preview span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.42)}
 .multiplier-preview strong{display:block;margin-top:4px;font-size:16px;font-family:'Space Grotesk',sans-serif;color:var(--calls-soft)}
 .multiplier-preview small{display:block;margin-top:4px;font-size:9px;line-height:1.42;color:var(--muted)}
-.attendance-shell{margin-top:8px}
-.toggle-switch{display:flex;align-items:center;gap:8px;cursor:pointer}
+.control-box.attendance{padding:8px 10px}
+.attendance-shell{margin-top:8px;padding:8px 10px;border-radius:11px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.025)}
+.toggle-switch{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;cursor:pointer}
+.toggle-action{position:relative;display:inline-flex;align-items:center;justify-content:flex-end}
 .toggle-switch input{position:absolute;opacity:0;pointer-events:none}
 .toggle-track{
-  position:relative;flex:0 0 46px;height:24px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
+  position:relative;display:inline-flex;flex:0 0 42px;width:42px;height:22px;border-radius:999px;border:1px solid rgba(255,255,255,.1);
   background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
   transition:background .22s ease,border-color .22s ease,box-shadow .22s ease;
 }
 .toggle-track i{
-  position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+  position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
   background:linear-gradient(145deg, rgba(255,255,255,.92), rgba(209,226,255,.86));
-  box-shadow:0 10px 16px rgba(0,0,0,.18);
+  box-shadow:0 8px 12px rgba(0,0,0,.16);
   transition:transform .22s ease,background .22s ease;
 }
 .toggle-switch input:checked + .toggle-track{
   background:rgba(255,110,147,.16);border-color:rgba(255,110,147,.26);box-shadow:0 0 0 1px rgba(255,110,147,.04),0 0 18px rgba(255,110,147,.12);
 }
 .toggle-switch input:checked + .toggle-track i{
-  transform:translateX(22px);
+  transform:translateX(20px);
   background:linear-gradient(145deg, #ffd2dd, #ff7e9f);
 }
-.toggle-copy strong{display:block;font-size:10px}
-.toggle-copy small{display:block;margin-top:2px;font-size:8px;line-height:1.38;color:var(--muted)}
+.toggle-copy{display:grid;gap:3px}
+.toggle-copy strong{display:block;font-size:11px;letter-spacing:.04em}
+.toggle-copy small{display:block;font-size:8px;line-height:1.42;color:var(--muted);max-width:240px}
 .control-box.attendance.is-alert{border-color:rgba(255,110,147,.24);box-shadow:0 20px 30px rgba(0,0,0,.18),0 0 28px rgba(255,110,147,.08)}
 .control-box.attendance.is-alert .control-badge{color:#ffd7e2;border-color:rgba(255,110,147,.26);background:rgba(255,110,147,.12)}
 .control-box.attendance.is-alert .toggle-copy strong{color:#ffd7e2}
@@ -632,22 +635,24 @@ body::before{
 	              </div>
 	            </div>
 	          </div>
-		          <div class="control-box attendance" id="attendanceControl">
-		            <div class="control-top">
-		              <div>
-		                <label>Attendance override</label>
-		                <p class="field-note">Use only if unplanned leave happened.</p>
+	          <div class="control-box attendance" id="attendanceControl">
+	            <div class="control-top">
+	              <div>
+	                <label>Attendance override</label>
+	                <p class="field-note">Use only if unplanned leave happened.</p>
 		              </div>
 		              <span class="control-badge" id="attendanceBadge">Attendance clear</span>
-		            </div>
-	            <div class="attendance-shell">
+	            </div>
+            <div class="attendance-shell">
 	              <label class="toggle-switch">
-	                <input type="checkbox" id="unplannedLeave">
-	                <span class="toggle-track"><i></i></span>
 	                <span class="toggle-copy">
 	                  <strong id="attendanceStateLabel">Bonus runway is clean</strong>
 	                  <small id="attendanceStateCopy">No attendance block right now. Both slab payout and CSAT incentive stay eligible.</small>
 	                </span>
+                  <span class="toggle-action">
+                    <input type="checkbox" id="unplannedLeave">
+                    <span class="toggle-track"><i></i></span>
+                  </span>
 	              </label>
 	            </div>
 	          </div>
