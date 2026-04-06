@@ -1080,6 +1080,22 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
       </div>
     </div>
     <div class="break-history-note" id="break-history-note">Viewing today. Break actions are live and will post straight into the tracker.</div>
+    <div class="card" style="margin-bottom:10px;">
+      <div class="card-hdr">
+        <span class="card-title">Live Floor Signal</span>
+        <span class="chip" id="break-agent-floor-chip">0 tracked</span>
+      </div>
+      <div class="break-callout" style="margin-bottom:12px;">
+        <div class="break-callout-left">
+          <div class="break-callout-title">Floor view</div>
+          <div class="break-callout-copy">See who is live, away, or in AUX at a glance, then open the detailed board only when you need timing and feed history.</div>
+        </div>
+        <span class="chip" id="break-agent-floor-mode">Today</span>
+      </div>
+      <div class="break-lane-board" id="break-agent-lane-board">
+        <div class="break-empty">Loading live floor lanes...</div>
+      </div>
+    </div>
     <div class="break-layout">
       <div class="break-self-shell">
         <div class="card">
@@ -2059,6 +2075,19 @@ function buildBreakLaneCard(title, subtitle, cls, rows){
   '</div>';
 }
 
+function buildBreakLaneBoard(tracker){
+  const availableRows = tracker.filter(row => row.currentStatus === 'Logged In');
+  const brbRows = tracker.filter(row => row.currentStatus === 'BRB');
+  const breakRows = tracker.filter(row => row.currentStatus === 'Break');
+  const auxRows = tracker.filter(row => row.currentStatus === 'Training / Coaching' || row.currentStatus === 'QA Session AUX');
+  return [
+    buildBreakLaneCard('Available', 'Ready on desk', 'avail', availableRows),
+    buildBreakLaneCard('BRB', 'Quick-away lane', 'brb', brbRows),
+    buildBreakLaneCard('On Break', 'Away on break', 'break', breakRows),
+    buildBreakLaneCard('Training + QA AUX', 'Coaching and audit lanes', 'aux', auxRows)
+  ].join('');
+}
+
 function renderBreakAdminView(){
   const summary = breakTrackerData.summary || {};
   const tracker = breakTrackerData.tracker || [];
@@ -2093,16 +2122,7 @@ function renderBreakAdminView(){
   if(ids.boardChip) ids.boardChip.textContent = (summary.teamCount ?? 0) + ' tracked';
   if(ids.callout) ids.callout.textContent = breakHistoryMode() ? 'History view' : (breakTrackerMeta.enabled ? 'Chat space live' : 'Chat setup pending');
   if(ids.laneBoard){
-    const availableRows = tracker.filter(row => row.currentStatus === 'Logged In');
-    const brbRows = tracker.filter(row => row.currentStatus === 'BRB');
-    const breakRows = tracker.filter(row => row.currentStatus === 'Break');
-    const auxRows = tracker.filter(row => row.currentStatus === 'Training / Coaching' || row.currentStatus === 'QA Session AUX');
-    ids.laneBoard.innerHTML = [
-      buildBreakLaneCard('Available', 'Ready on desk', 'avail', availableRows),
-      buildBreakLaneCard('BRB', 'Quick-away lane', 'brb', brbRows),
-      buildBreakLaneCard('On Break', 'Away on break', 'break', breakRows),
-      buildBreakLaneCard('Training + QA AUX', 'Coaching and audit lanes', 'aux', auxRows)
-    ].join('');
+    ids.laneBoard.innerHTML = buildBreakLaneBoard(tracker);
   }
 
   if(ids.board){
@@ -2132,14 +2152,21 @@ function renderBreakAdminView(){
 
 function renderBreakAgentView(){
   const self = getSelfBreakRow();
+  const tracker = breakTrackerData.tracker || [];
   const selectedDate=getBreakTrackerDate();
   const isHistory=breakHistoryMode();
   const chatChip = document.getElementById('break-agent-chat-chip');
   const heroChat = document.getElementById('break-hero-chat-label');
   const historyChip = document.getElementById('break-agent-history-chip');
+  const floorChip = document.getElementById('break-agent-floor-chip');
+  const floorMode = document.getElementById('break-agent-floor-mode');
+  const laneBoard = document.getElementById('break-agent-lane-board');
   if(chatChip) chatChip.textContent = breakChatLabel();
   if(heroChat) heroChat.textContent = breakChatLabel();
   if(historyChip) historyChip.textContent = isHistory ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
+  if(floorChip) floorChip.textContent = (breakTrackerData.summary?.teamCount ?? tracker.length ?? 0) + ' tracked';
+  if(floorMode) floorMode.textContent = isHistory ? 'History view' : (breakTrackerMeta.enabled ? 'Chat space live' : 'Today');
+  if(laneBoard) laneBoard.innerHTML = buildBreakLaneBoard(tracker);
   const statusEl = document.getElementById('break-self-status');
   const statusCopyEl = document.getElementById('break-self-status-copy');
   const sinceEl = document.getElementById('break-self-since');

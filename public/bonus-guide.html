@@ -684,11 +684,11 @@ body::before{
 	            </div>
 	          </div>
 		        </div>
-	        <div class="status-grid">
+        <div class="status-grid">
           <div class="status-node">
-            <span>Metrics at Slab 2</span>
+            <span>Slab 1 hits</span>
             <strong id="slab2Hits">0 / 0</strong>
-            <small id="slabRule">All metrics must clear Slab 2</small>
+            <small id="slabRule">Need 0 slab 1 hits for top slab</small>
           </div>
           <div class="status-node">
             <span>Active slab</span>
@@ -756,7 +756,7 @@ const leaveRows=[
 const governanceNotes=[
   {
     title:'Slab gate',
-    copy:'Payout opens only when the active role clears the required slab across every applicable metric.'
+    copy:'Crossing 70 points opens slab payout. Hitting Slab 1 on at least half the active metrics upgrades the payout to the top slab.'
   },
   {
     title:'Role-specific KPIs',
@@ -1195,21 +1195,21 @@ function updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,all
     copy.textContent='The celebration is paused because an unplanned leave blocks both slab payout and CSAT incentive.';
   }else if(slab==='Slab 1'){
     title.textContent='Slab 1 is live';
-    copy.textContent=`Top slab unlocked at ${fmtMoney(finalBonus)}. Every active metric is clearing Slab 1 and the page has shifted into launch mode.`;
+    copy.textContent=`Top slab unlocked at ${fmtMoney(finalBonus)}. Enough active metrics are now clearing Slab 1 to move the payout into the highest tier.`;
   }else if(slab==='Slab 2'){
     title.textContent='Slab 2 is unlocked';
-    copy.textContent=`Current payout track is ${fmtMoney(finalBonus)}. Keep pushing every metric above Slab 1 to escalate this into the top tier.`;
+    copy.textContent=`Current payout track is ${fmtMoney(finalBonus)}. You are bonus-eligible on points; push more metrics into Slab 1 to upgrade the payout.`;
   }else if(eligible && !allMetricsAtSlab2){
-    title.textContent='Points are ready, metrics are not';
-    copy.textContent=`You already have ${total} points. One or more metric misses are still blocking the payout pulse.`;
+    title.textContent='Points are ready';
+    copy.textContent=`You already have ${total} points. The bonus lane is open, and more Slab 1 hits will raise the payout tier.`;
   }else if(!eligible){
     title.textContent='Build the runway';
-    copy.textContent='The payout animation will light up once the score crosses 70 points and every active metric reaches at least Slab 2.';
+    copy.textContent='The payout animation will light up once the score crosses 70 points. Slab 1 coverage then decides whether you stay on Slab 2 or upgrade.';
   }else{
     title.textContent='Hold the line';
     copy.textContent=allMetricsAtSlab1
       ? 'Everything is aligned for the top slab.'
-      : 'Clear every active metric at Slab 2 to ignite the payout pulse.';
+      : 'Hold the score above 70 and stack more Slab 1 hits to move up.';
   }
   if(celebrationKey!=='miss' && celebrationKey!==lastCelebrationKey){
     triggerCelebration(slab);
@@ -1230,6 +1230,8 @@ function updatePayoutSummary(slabBonus,csatBonus,unplanned){
     document.getElementById('payoutStatus').textContent='Attendance override blocked both slab and CSAT payout';
   }else if(slabBonus>0 && csatBonus>0){
     document.getElementById('payoutStatus').textContent='Slab and CSAT are both contributing to this payout';
+  }else if(csatBonus>0){
+    document.getElementById('payoutStatus').textContent='CSAT bonus is active independently of the slab payout';
   }else if(slabBonus>0){
     document.getElementById('payoutStatus').textContent='Slab payout is active. CSAT stays pending until the threshold clears.';
   }else{
@@ -1247,7 +1249,7 @@ function renderCsatCalc(){
   host.className='csat-shell '+data.tone;
   host.innerHTML=`
     <h4>CSAT Incentive Calculator</h4>
-    <p>${data.title} pays ${data.incentive}. Unlock a slab first, then clear <strong>${data.csatThreshold}</strong>. Any unplanned leave still blocks the incentive.</p>
+    <p>${data.title} pays ${data.incentive}. Clear <strong>${data.csatThreshold}</strong> and keep attendance clean. This incentive stays independent from the slab payout.</p>
     <div class="csat-grid">
       <div class="csat-control" data-kind="score">
         <div class="calc-head">
@@ -1295,8 +1297,7 @@ function renderCsatCalc(){
   computeCsatBonus();
 }
 
-function computeCsatBonus(options={}){
-  const { slabUnlocked=false } = options;
+function computeCsatBonus(){
   const data=bonusData[activeTeam];
   const csat=csatCalcValues[activeTeam];
   const unplanned=document.getElementById('unplannedLeave').checked;
@@ -1312,12 +1313,6 @@ function computeCsatBonus(options={}){
     setAnimatedText('csatEligibility','Blocked');
     eligNote.textContent='Unplanned leave removes CSAT incentive eligibility.';
     return { bonus:0, thresholdMet:false, blocked:true };
-  }
-
-  if(!slabUnlocked){
-    setAnimatedText('csatEligibility','Awaiting Slab');
-    eligNote.textContent='Unlock a bonus slab first, then the CSAT threshold can add the incentive.';
-    return { bonus:0, thresholdMet:false, blocked:false, waitingForSlab:true };
   }
 
   if(thresholdMet){
@@ -1361,25 +1356,27 @@ function computeBonus(){
   const multiplier=leaveMultiplier(planned,unplanned);
   const allMetricsAtSlab2=slab2Hits===data.metrics.length;
   const allMetricsAtSlab1=slab1Hits===data.metrics.length;
+  const slab1Requirement=Math.ceil(data.metrics.length/2);
+  const slab1CoverageMet=slab1Hits>=slab1Requirement;
   let slab='Miss';
   let baseBonus=0;
   if(eligible){
-    if(allMetricsAtSlab1){
+    if(slab1CoverageMet){
       slab='Slab 1';
       baseBonus=7500;
-    }else if(allMetricsAtSlab2){
+    }else{
       slab='Slab 2';
       baseBonus=3000;
     }
   }
   const finalBonus=Math.round(baseBonus*multiplier);
-  const csatSummary=computeCsatBonus({ slabUnlocked: slab !== 'Miss' });
+  const csatSummary=computeCsatBonus();
 
   setAnimatedText('totalPoints',String(total));
-  setAnimatedText('slab2Hits',slab2Hits+' / '+data.metrics.length);
+  setAnimatedText('slab2Hits',slab1Hits+' / '+slab1Requirement);
   setAnimatedText('activeSlab',slab);
   document.getElementById('leaveMultiplier').textContent='Leave multiplier '+Math.round(multiplier*100)+'%';
-  document.getElementById('slabRule').textContent=allMetricsAtSlab1?'All metrics cleared Slab 1':allMetricsAtSlab2?'All metrics cleared Slab 2':'All metrics must clear Slab 2';
+  document.getElementById('slabRule').textContent=slab1CoverageMet?'Top slab unlocked on slab 1 coverage':'Need '+slab1Requirement+' slab 1 hits for the top slab';
   updatePayoutSummary(finalBonus,csatSummary.bonus,unplanned);
   updateLeaveControls(planned,unplanned);
   updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned);
@@ -1388,12 +1385,10 @@ function computeBonus(){
     document.getElementById('totalStatus').textContent='Unplanned leave removes eligibility';
   }else if(total<70){
     document.getElementById('totalStatus').textContent='Minimum 70 points needed';
-  }else if(!allMetricsAtSlab2){
-    document.getElementById('totalStatus').textContent=missCount+' metric miss'+(missCount===1?'':'es')+' blocking payout';
   }else if(slab==='Slab 1'){
     document.getElementById('totalStatus').textContent='Eligible on points and metrics';
   }else if(slab==='Slab 2'){
-    document.getElementById('totalStatus').textContent='Eligible on points and metrics';
+    document.getElementById('totalStatus').textContent='Eligible on points. Clear more slab 1 hits to upgrade.';
   }else{
     document.getElementById('totalStatus').textContent='No slab unlocked yet';
   }
