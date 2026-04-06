@@ -33,6 +33,16 @@ function formatBreakDuration(seconds){
   return `${secs}s`;
 }
 
+function formatBreakTime(stamp, timeZone, label){
+  return `${stamp.toLocaleTimeString('en-US', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  })} ${label}`;
+}
+
 function broadcastLiveEvent(payload) {
   const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
   for (const res of sseClients) res.write(msg);
@@ -40,13 +50,8 @@ function broadcastLiveEvent(payload) {
 
 function formatBreakChatMessage(event){
   const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
-  const timeCst = stamp.toLocaleTimeString('en-US', {
-    timeZone: 'America/Chicago',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: true
-  });
+  const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
+  const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
   const actionMap = {
     LOGGED_IN: { headline: 'is now live on desk', lane: 'Logged In' },
     LOGGED_OUT: { headline: 'closed the shift', lane: 'Logged Out' },
@@ -66,9 +71,9 @@ function formatBreakChatMessage(event){
   const durationLine = event.linkedDurationSeconds ? `Tracked away time: ${formatBreakDuration(event.linkedDurationSeconds)}` : null;
   return [
     'Adit Break Bot',
-    `${event.username} (${event.role || 'agent'}) ${meta.headline}.`,
+    `${event.username} ${meta.headline}.`,
     `Current lane: ${meta.lane}`,
-    `Time: ${timeCst} CST`,
+    `Time: ${timeCst} · ${timeIst}`,
     durationLine,
     event.note ? `Note: ${event.note}` : null
   ].filter(Boolean).join('\n');
