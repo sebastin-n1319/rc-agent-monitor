@@ -284,7 +284,7 @@ app.post('/api/break-events', async (req, res) => {
       }
     });
   } catch(e) {
-    res.status(500).json({ success: false, error: e.message });
+    res.status(e.statusCode || 500).json({ success: false, error: e.message });
   }
 });
 

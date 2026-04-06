@@ -73,6 +73,15 @@ const BREAK_ACTIONS = {
   QA_SESSION_OUT: { label: 'QA Session AUX Out', status: 'QA Session AUX', type: 'qa' }
 };
 
+const BREAK_ALLOWED_ACTIONS = {
+  'Logged Out': ['LOGGED_IN'],
+  'Logged In': ['LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT'],
+  BRB: ['BRB_IN'],
+  Break: ['BREAK_IN'],
+  'Training / Coaching': ['TRAINING_IN'],
+  'QA Session AUX': ['QA_SESSION_IN']
+};
+
 function normalizeBreakAction(action){
   const key = String(action || '')
     .trim()
@@ -80,6 +89,140 @@ function normalizeBreakAction(action){
     .replace(/\s+/g, '_');
   if(!BREAK_ACTIONS[key]) return null;
   return { key, ...BREAK_ACTIONS[key] };
+}
+
+function getAllowedBreakActions(currentStatus='Logged Out'){
+  return BREAK_ALLOWED_ACTIONS[currentStatus] || BREAK_ALLOWED_ACTIONS['Logged Out'];
+}
+
+function describeBreakTransitionError(actionKey, currentStatus){
+  const attempted = BREAK_ACTIONS[actionKey]?.label || actionKey;
+  const allowed = getAllowedBreakActions(currentStatus);
+  const allowedLabels = allowed.map(key => BREAK_ACTIONS[key]?.label || key);
+  if(currentStatus === 'Logged Out'){
+    return `${attempted} is not allowed before Logged In. Start the shift first.`;
+  }
+  if(!allowedLabels.length){
+    return `${attempted} is not allowed while status is ${currentStatus}.`;
+  }
+  if(allowedLabels.length === 1){
+    return `${attempted} is not allowed while status is ${currentStatus}. Use ${allowedLabels[0]} next.`;
+  }
+  return `${attempted} is not allowed while status is ${currentStatus}. Use one of: ${allowedLabels.join(', ')}.`;
+}
+
+function resolveBreakEventStream(events, endAt){
+  const accepted = [];
+  let currentStatus = 'Logged Out';
+  for(const event of events){
+    const meta = normalizeBreakAction(event.action);
+    if(!meta) continue;
+    if(!getAllowedBreakActions(currentStatus).includes(meta.key)) continue;
+    accepted.push({
+      ...event,
+      action: meta.key,
+      action_label: event.action_label || meta.label,
+      current_status: event.current_status || meta.status,
+      event_type: event.event_type || meta.type
+    });
+    currentStatus = meta.status;
+  }
+
+  let brbSeconds = 0;
+  let breakSeconds = 0;
+  let trainingSeconds = 0;
+  let qaSeconds = 0;
+  let loggedInSeconds = 0;
+  let openBrbStart = null;
+  let openBreakStart = null;
+  let openTrainingStart = null;
+  let openQaStart = null;
+  let openSessionStart = null;
+
+  for(let i = 0; i < accepted.length; i++){
+    const current = accepted[i];
+    const startAt = fromStoredUtc(current.created_at);
+    const nextStamp = i < accepted.length - 1 ? fromStoredUtc(accepted[i + 1].created_at) : endAt;
+    if(!startAt || !nextStamp || nextStamp <= startAt) continue;
+    const duration = Math.max(0, Math.round((nextStamp - startAt) / 1000));
+    if(current.current_status === 'BRB') brbSeconds += duration;
+    if(current.current_status === 'Break') breakSeconds += duration;
+    if(current.current_status === 'Training / Coaching') trainingSeconds += duration;
+    if(current.current_status === 'QA Session AUX') qaSeconds += duration;
+    if(current.current_status !== 'Logged Out') loggedInSeconds += duration;
+  }
+
+  const decoratedEvents = accepted.map(event => {
+    const stamp = fromStoredUtc(event.created_at);
+    let linkedDurationSeconds = null;
+    if(event.action === 'LOGGED_IN'){
+      openSessionStart = stamp;
+    } else if(event.action === 'LOGGED_OUT'){
+      if(openSessionStart && stamp && stamp > openSessionStart){
+        linkedDurationSeconds = Math.round((stamp - openSessionStart) / 1000);
+      }
+      openSessionStart = null;
+      openBrbStart = null;
+      openBreakStart = null;
+      openTrainingStart = null;
+      openQaStart = null;
+    } else if(event.action === 'BRB_OUT'){
+      openBrbStart = stamp;
+    } else if(event.action === 'BRB_IN'){
+      if(openBrbStart && stamp && stamp > openBrbStart){
+        linkedDurationSeconds = Math.round((stamp - openBrbStart) / 1000);
+      }
+      openBrbStart = null;
+    } else if(event.action === 'BREAK_OUT'){
+      openBreakStart = stamp;
+    } else if(event.action === 'BREAK_IN'){
+      if(openBreakStart && stamp && stamp > openBreakStart){
+        linkedDurationSeconds = Math.round((stamp - openBreakStart) / 1000);
+      }
+      openBreakStart = null;
+    } else if(event.action === 'TRAINING_OUT'){
+      openTrainingStart = stamp;
+    } else if(event.action === 'TRAINING_IN'){
+      if(openTrainingStart && stamp && stamp > openTrainingStart){
+        linkedDurationSeconds = Math.round((stamp - openTrainingStart) / 1000);
+      }
+      openTrainingStart = null;
+    } else if(event.action === 'QA_SESSION_OUT'){
+      openQaStart = stamp;
+    } else if(event.action === 'QA_SESSION_IN'){
+      if(openQaStart && stamp && stamp > openQaStart){
+        linkedDurationSeconds = Math.round((stamp - openQaStart) / 1000);
+      }
+      openQaStart = null;
+    }
+    return {
+      id: event.id,
+      username: event.username,
+      email: event.email,
+      role: event.role,
+      action: event.action,
+      actionLabel: event.action_label,
+      currentStatus: event.current_status,
+      eventType: event.event_type,
+      note: event.note,
+      notified: !!event.notified,
+      notifyStatus: event.notify_status,
+      notifyResponse: event.notify_response,
+      createdAt: event.created_at,
+      linkedDurationSeconds
+    };
+  });
+
+  return {
+    acceptedEvents: accepted,
+    decoratedEvents,
+    currentStatus,
+    brbSeconds,
+    breakSeconds,
+    trainingSeconds,
+    qaSeconds,
+    loggedInSeconds
+  };
 }
 
 function defaultBreakName(email){
@@ -392,7 +535,26 @@ async function insertBreakEvent({ username, email, role, action, note, timestamp
   const meta = normalizeBreakAction(action);
   if(!meta) throw new Error('Invalid break action');
   if(!email) throw new Error('Email is required');
-  const createdAt = timestamp ? toSqliteUtc(timestamp) : toSqliteUtc(new Date());
+  const createdAtDate = timestamp ? new Date(timestamp) : new Date();
+  const createdAt = toSqliteUtc(createdAtDate);
+  const dayKey = createdAtDate.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const { start, end } = getDateWindow(dayKey, 'America/Chicago');
+  const priorEvents = await all(
+    `SELECT * FROM break_events
+      WHERE lower(email)=lower(?)
+      AND datetime(created_at) >= datetime(?)
+      AND datetime(created_at) < datetime(?)
+      AND datetime(created_at) < datetime(?)
+      ORDER BY datetime(created_at) ASC, id ASC`,
+    [String(email).trim().toLowerCase(), toSqliteUtc(start), toSqliteUtc(end), createdAt]
+  );
+  const resolved = resolveBreakEventStream(priorEvents, createdAtDate);
+  const currentStatus = resolved.currentStatus || 'Logged Out';
+  if(!getAllowedBreakActions(currentStatus).includes(meta.key)){
+    const error = new Error(describeBreakTransitionError(meta.key, currentStatus));
+    error.statusCode = 400;
+    throw error;
+  }
   const cleanName = (username || defaultBreakName(email)).trim();
   const result = await run(
     `INSERT INTO break_events
@@ -534,110 +696,30 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
 
   for(const [key, user] of users.entries()){
     const events = dayBuckets.get(key) || [];
-    const latestToday = events.length ? events[events.length - 1] : null;
-    const stream = [...events];
-
-    let brbSeconds = 0;
-    let breakSeconds = 0;
-    let trainingSeconds = 0;
-    let qaSeconds = 0;
-    let loggedInSeconds = 0;
-    let openBrbStart = null;
-    let openBreakStart = null;
-    let openTrainingStart = null;
-    let openQaStart = null;
-    let openSessionStart = null;
-
-    for(let i = 0; i < stream.length; i++){
-      const current = stream[i];
-      const startAt = fromStoredUtc(current.created_at);
-      const endAt = i < stream.length - 1 ? fromStoredUtc(stream[i + 1].created_at) : dayEnd;
-      if(!startAt || !endAt || endAt <= startAt) continue;
-      const duration = Math.max(0, Math.round((endAt - startAt) / 1000));
-      if(current.current_status === 'BRB') brbSeconds += duration;
-      if(current.current_status === 'Break') breakSeconds += duration;
-      if(current.current_status === 'Training / Coaching') trainingSeconds += duration;
-      if(current.current_status === 'QA Session AUX') qaSeconds += duration;
-      if(current.current_status !== 'Logged Out') loggedInSeconds += duration;
-    }
-
-    const decoratedEvents = events.map(event => {
-      const stamp = fromStoredUtc(event.created_at);
-      let linkedDurationSeconds = null;
-      if(event.action === 'LOGGED_IN'){
-        openSessionStart = stamp;
-      } else if(event.action === 'LOGGED_OUT'){
-        if(openSessionStart && stamp && stamp > openSessionStart){
-          linkedDurationSeconds = Math.round((stamp - openSessionStart) / 1000);
-        }
-        openSessionStart = null;
-        openBrbStart = null;
-        openBreakStart = null;
-        openTrainingStart = null;
-        openQaStart = null;
-      } else if(event.action === 'BRB_OUT'){
-        openBrbStart = stamp;
-      } else if(event.action === 'BRB_IN'){
-        if(openBrbStart && stamp && stamp > openBrbStart){
-          linkedDurationSeconds = Math.round((stamp - openBrbStart) / 1000);
-        }
-        openBrbStart = null;
-      } else if(event.action === 'BREAK_OUT'){
-        openBreakStart = stamp;
-      } else if(event.action === 'BREAK_IN'){
-        if(openBreakStart && stamp && stamp > openBreakStart){
-          linkedDurationSeconds = Math.round((stamp - openBreakStart) / 1000);
-        }
-        openBreakStart = null;
-      } else if(event.action === 'TRAINING_OUT'){
-        openTrainingStart = stamp;
-      } else if(event.action === 'TRAINING_IN'){
-        if(openTrainingStart && stamp && stamp > openTrainingStart){
-          linkedDurationSeconds = Math.round((stamp - openTrainingStart) / 1000);
-        }
-        openTrainingStart = null;
-      } else if(event.action === 'QA_SESSION_OUT'){
-        openQaStart = stamp;
-      } else if(event.action === 'QA_SESSION_IN'){
-        if(openQaStart && stamp && stamp > openQaStart){
-          linkedDurationSeconds = Math.round((stamp - openQaStart) / 1000);
-        }
-        openQaStart = null;
-      }
-      return {
-        id: event.id,
-        username: event.username || user.username,
-        email: key,
-        role: event.role || user.role,
-        action: event.action,
-        actionLabel: event.action_label,
-        currentStatus: event.current_status,
-        eventType: event.event_type,
-        note: event.note,
-        notified: !!event.notified,
-        notifyStatus: event.notify_status,
-        notifyResponse: event.notify_response,
-        createdAt: event.created_at,
-        linkedDurationSeconds
-      };
-    });
-
-    const currentStatus = latestToday ? latestToday.current_status : 'Logged Out';
+    const resolved = resolveBreakEventStream(events, dayEnd);
+    const latestToday = resolved.acceptedEvents.length ? resolved.acceptedEvents[resolved.acceptedEvents.length - 1] : null;
+    const resolvedCurrentStatus = latestToday ? latestToday.current_status : 'Logged Out';
+    const decoratedEvents = resolved.decoratedEvents.map(event => ({
+      ...event,
+      username: event.username || user.username,
+      email: key,
+      role: event.role || user.role
+    }));
     tracker.push({
       email: key,
       username: user.username || defaultBreakName(key),
       role: user.role || 'agent',
-      currentStatus,
-      statusTone: statusTone(currentStatus),
+      currentStatus: resolvedCurrentStatus,
+      statusTone: statusTone(resolvedCurrentStatus),
       since: latestToday ? latestToday.created_at : null,
       lastAction: latestToday ? latestToday.action : null,
       lastActionLabel: latestToday ? latestToday.action_label : 'No activity',
       lastActionAt: latestToday ? latestToday.created_at : null,
-      brbSeconds,
-      breakSeconds,
-      trainingSeconds,
-      qaSeconds,
-      loggedInSeconds,
+      brbSeconds: resolved.brbSeconds,
+      breakSeconds: resolved.breakSeconds,
+      trainingSeconds: resolved.trainingSeconds,
+      qaSeconds: resolved.qaSeconds,
+      loggedInSeconds: resolved.loggedInSeconds,
       eventCount: decoratedEvents.length,
       events: decoratedEvents.reverse()
     });

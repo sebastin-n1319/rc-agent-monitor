@@ -1464,16 +1464,26 @@ function syncBreakDateInputs(){
 }
 function syncBreakActionState(){
   const isHistory=breakHistoryMode();
+  const self=getSelfBreakRow();
+  const currentStatus=(self && self.currentStatus) ? self.currentStatus : 'Logged Out';
+  const allowed=new Set(getAllowedBreakActions(currentStatus));
   document.querySelectorAll('#agent-section-breakbot [data-break-action]').forEach(button=>{
-    button.disabled=isHistory;
-    button.classList.toggle('is-locked',isHistory);
+    const action=button.dataset.breakAction;
+    const enabled=!isHistory && allowed.has(action);
+    button.disabled=!enabled;
+    button.classList.toggle('is-locked',!enabled);
+    button.title=isHistory
+      ? 'History mode is read-only. Switch back to today to post a live signal.'
+      : enabled
+        ? 'Available now'
+        : getBreakInvalidActionCopy(action,currentStatus);
   });
   const note=document.getElementById('break-history-note');
   if(note){
     note.classList.toggle('history',isHistory);
     note.textContent=isHistory
       ? 'History mode for '+formatTrackerDate(getBreakTrackerDate())+'. Switch back to today to post a new signal.'
-      : 'Viewing today. Break actions are live and will post straight into the tracker.';
+      : 'Viewing today. '+getBreakActionGuardCopy(currentStatus);
   }
 }
 function setBreakTrackerDate(nextDate){
@@ -1987,6 +1997,41 @@ const BREAK_ACTION_META = {
   QA_SESSION_IN: { label: 'QA Session AUX In', badge: 'IN', copy: 'Returned from QA AUX session' }
 };
 
+const BREAK_ALLOWED_ACTIONS = {
+  'Logged Out': ['LOGGED_IN'],
+  'Logged In': ['BRB_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','LOGGED_OUT'],
+  BRB: ['BRB_IN'],
+  Break: ['BREAK_IN'],
+  'Training / Coaching': ['TRAINING_IN'],
+  'QA Session AUX': ['QA_SESSION_IN']
+};
+
+function getAllowedBreakActions(currentStatus){
+  return BREAK_ALLOWED_ACTIONS[currentStatus] || BREAK_ALLOWED_ACTIONS['Logged Out'];
+}
+
+function getBreakActionGuardCopy(currentStatus){
+  if(currentStatus === 'Logged Out') return 'Start with Logged In. Until then, every away lane stays locked.';
+  if(currentStatus === 'Logged In') return 'You are live. Choose one away lane at a time, or close the shift when you are done.';
+  if(currentStatus === 'BRB') return 'BRB is active. Only BRB In can bring you back live.';
+  if(currentStatus === 'Break') return 'Break is active. Only Break In can bring you back live.';
+  if(currentStatus === 'Training / Coaching') return 'Training / Coaching AUX is active. Only Training In can bring you back live.';
+  if(currentStatus === 'QA Session AUX') return 'QA AUX is active. Only QA AUX In can bring you back live.';
+  return 'Use the next valid lane action to continue.';
+}
+
+function getBreakInvalidActionCopy(action, currentStatus){
+  const label = BREAK_ACTION_META[action]?.label || action;
+  const allowed = getAllowedBreakActions(currentStatus).map(key => BREAK_ACTION_META[key]?.label || key);
+  if(currentStatus === 'Logged Out'){
+    return label + ' is not allowed before Logged In. Start the shift first.';
+  }
+  if(allowed.length === 1){
+    return label + ' is not allowed while you are in ' + currentStatus + '. Use ' + allowed[0] + ' next.';
+  }
+  return label + ' is not allowed while you are in ' + currentStatus + '. Use one of: ' + allowed.join(', ') + '.';
+}
+
 function breakStatusClass(status){
   if(status === 'Logged In') return 'online';
   if(status === 'Logged Out') return 'offline';
@@ -2249,6 +2294,13 @@ async function sendBreakAction(action, btn){
     showToast('Your login session is missing email details. Please log in again.','error');
     return;
   }
+  const self=getSelfBreakRow();
+  const currentStatus=(self && self.currentStatus) ? self.currentStatus : 'Logged Out';
+  if(!getAllowedBreakActions(currentStatus).includes(action)){
+    showToast(getBreakInvalidActionCopy(action,currentStatus),'warning');
+    syncBreakActionState();
+    return;
+  }
   const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
   buttons.forEach(button => button.disabled = true);
   if(btn) btn.classList.add('syncing');
@@ -2277,8 +2329,8 @@ async function sendBreakAction(action, btn){
   }catch(e){
     showToast(e.message || 'Break event failed','error');
   }finally{
-    buttons.forEach(button => button.disabled = false);
     if(btn) btn.classList.remove('syncing');
+    syncBreakActionState();
   }
 }
 
