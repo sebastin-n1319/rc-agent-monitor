@@ -62,7 +62,9 @@ function formatBreakChatMessage(event){
     TRAINING_OUT: { headline: 'moved into training / coaching', lane: 'Training / Coaching' },
     TRAINING_IN: { headline: 'returned from training / coaching', lane: 'Logged In' },
     QA_SESSION_OUT: { headline: 'moved into QA AUX', lane: 'QA Session AUX' },
-    QA_SESSION_IN: { headline: 'returned from QA AUX', lane: 'Logged In' }
+    QA_SESSION_IN: { headline: 'returned from QA AUX', lane: 'Logged In' },
+    INTERNAL_CALL_OUT: { headline: 'moved into internal calls', lane: 'Internal Calls' },
+    INTERNAL_CALL_IN: { headline: 'returned from internal calls', lane: 'Logged In' }
   };
   const meta = actionMap[event.action] || {
     headline: `updated ${event.actionLabel || 'status'}`,

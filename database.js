@@ -70,16 +70,27 @@ const BREAK_ACTIONS = {
   TRAINING_IN: { label: 'Training / Coaching In', status: 'Logged In', type: 'training' },
   TRAINING_OUT: { label: 'Training / Coaching Out', status: 'Training / Coaching', type: 'training' },
   QA_SESSION_IN: { label: 'QA Session AUX In', status: 'Logged In', type: 'qa' },
-  QA_SESSION_OUT: { label: 'QA Session AUX Out', status: 'QA Session AUX', type: 'qa' }
+  QA_SESSION_OUT: { label: 'QA Session AUX Out', status: 'QA Session AUX', type: 'qa' },
+  INTERNAL_CALL_IN: { label: 'Internal Calls In', status: 'Logged In', type: 'internal' },
+  INTERNAL_CALL_OUT: { label: 'Internal Calls Out', status: 'Internal Calls', type: 'internal' }
 };
 
 const BREAK_ALLOWED_ACTIONS = {
   'Logged Out': ['LOGGED_IN'],
-  'Logged In': ['LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT'],
-  BRB: ['BRB_IN'],
-  Break: ['BREAK_IN'],
-  'Training / Coaching': ['TRAINING_IN'],
-  'QA Session AUX': ['QA_SESSION_IN']
+  'Logged In': ['LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
+  BRB: ['BRB_IN', 'LOGGED_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
+  Break: ['BREAK_IN', 'LOGGED_OUT', 'BRB_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
+  'Training / Coaching': ['TRAINING_IN', 'LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
+  'QA Session AUX': ['QA_SESSION_IN', 'LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'INTERNAL_CALL_OUT'],
+  'Internal Calls': ['INTERNAL_CALL_IN', 'LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT']
+};
+
+const BREAK_RETURN_ACTIONS = {
+  BRB: 'BRB_IN',
+  Break: 'BREAK_IN',
+  'Training / Coaching': 'TRAINING_IN',
+  'QA Session AUX': 'QA_SESSION_IN',
+  'Internal Calls': 'INTERNAL_CALL_IN'
 };
 
 function normalizeBreakAction(action){
@@ -93,6 +104,10 @@ function normalizeBreakAction(action){
 
 function getAllowedBreakActions(currentStatus='Logged Out'){
   return BREAK_ALLOWED_ACTIONS[currentStatus] || BREAK_ALLOWED_ACTIONS['Logged Out'];
+}
+
+function getBreakReturnAction(currentStatus='Logged Out'){
+  return BREAK_RETURN_ACTIONS[currentStatus] || null;
 }
 
 function describeBreakTransitionError(actionKey, currentStatus){
@@ -132,11 +147,18 @@ function resolveBreakEventStream(events, endAt){
   let breakSeconds = 0;
   let trainingSeconds = 0;
   let qaSeconds = 0;
+  let internalCallSeconds = 0;
   let loggedInSeconds = 0;
+  let maxBrbInstanceSeconds = 0;
+  let maxBreakInstanceSeconds = 0;
+  let maxTrainingInstanceSeconds = 0;
+  let maxQaInstanceSeconds = 0;
+  let maxInternalInstanceSeconds = 0;
   let openBrbStart = null;
   let openBreakStart = null;
   let openTrainingStart = null;
   let openQaStart = null;
+  let openInternalStart = null;
   let openSessionStart = null;
 
   for(let i = 0; i < accepted.length; i++){
@@ -149,6 +171,7 @@ function resolveBreakEventStream(events, endAt){
     if(current.current_status === 'Break') breakSeconds += duration;
     if(current.current_status === 'Training / Coaching') trainingSeconds += duration;
     if(current.current_status === 'QA Session AUX') qaSeconds += duration;
+    if(current.current_status === 'Internal Calls') internalCallSeconds += duration;
     if(current.current_status !== 'Logged Out') loggedInSeconds += duration;
   }
 
@@ -166,11 +189,13 @@ function resolveBreakEventStream(events, endAt){
       openBreakStart = null;
       openTrainingStart = null;
       openQaStart = null;
+      openInternalStart = null;
     } else if(event.action === 'BRB_OUT'){
       openBrbStart = stamp;
     } else if(event.action === 'BRB_IN'){
       if(openBrbStart && stamp && stamp > openBrbStart){
         linkedDurationSeconds = Math.round((stamp - openBrbStart) / 1000);
+        maxBrbInstanceSeconds = Math.max(maxBrbInstanceSeconds, linkedDurationSeconds);
       }
       openBrbStart = null;
     } else if(event.action === 'BREAK_OUT'){
@@ -178,6 +203,7 @@ function resolveBreakEventStream(events, endAt){
     } else if(event.action === 'BREAK_IN'){
       if(openBreakStart && stamp && stamp > openBreakStart){
         linkedDurationSeconds = Math.round((stamp - openBreakStart) / 1000);
+        maxBreakInstanceSeconds = Math.max(maxBreakInstanceSeconds, linkedDurationSeconds);
       }
       openBreakStart = null;
     } else if(event.action === 'TRAINING_OUT'){
@@ -185,6 +211,7 @@ function resolveBreakEventStream(events, endAt){
     } else if(event.action === 'TRAINING_IN'){
       if(openTrainingStart && stamp && stamp > openTrainingStart){
         linkedDurationSeconds = Math.round((stamp - openTrainingStart) / 1000);
+        maxTrainingInstanceSeconds = Math.max(maxTrainingInstanceSeconds, linkedDurationSeconds);
       }
       openTrainingStart = null;
     } else if(event.action === 'QA_SESSION_OUT'){
@@ -192,8 +219,17 @@ function resolveBreakEventStream(events, endAt){
     } else if(event.action === 'QA_SESSION_IN'){
       if(openQaStart && stamp && stamp > openQaStart){
         linkedDurationSeconds = Math.round((stamp - openQaStart) / 1000);
+        maxQaInstanceSeconds = Math.max(maxQaInstanceSeconds, linkedDurationSeconds);
       }
       openQaStart = null;
+    } else if(event.action === 'INTERNAL_CALL_OUT'){
+      openInternalStart = stamp;
+    } else if(event.action === 'INTERNAL_CALL_IN'){
+      if(openInternalStart && stamp && stamp > openInternalStart){
+        linkedDurationSeconds = Math.round((stamp - openInternalStart) / 1000);
+        maxInternalInstanceSeconds = Math.max(maxInternalInstanceSeconds, linkedDurationSeconds);
+      }
+      openInternalStart = null;
     }
     return {
       id: event.id,
@@ -213,6 +249,24 @@ function resolveBreakEventStream(events, endAt){
     };
   });
 
+  const latestAccepted = accepted.length ? accepted[accepted.length - 1] : null;
+  const latestStamp = latestAccepted ? fromStoredUtc(latestAccepted.created_at) : null;
+  const currentLaneSeconds = latestStamp && endAt && endAt > latestStamp
+    ? Math.max(0, Math.round((endAt - latestStamp) / 1000))
+    : 0;
+  if(currentStatus === 'BRB') maxBrbInstanceSeconds = Math.max(maxBrbInstanceSeconds, currentLaneSeconds);
+  if(currentStatus === 'Break') maxBreakInstanceSeconds = Math.max(maxBreakInstanceSeconds, currentLaneSeconds);
+  if(currentStatus === 'Training / Coaching') maxTrainingInstanceSeconds = Math.max(maxTrainingInstanceSeconds, currentLaneSeconds);
+  if(currentStatus === 'QA Session AUX') maxQaInstanceSeconds = Math.max(maxQaInstanceSeconds, currentLaneSeconds);
+  if(currentStatus === 'Internal Calls') maxInternalInstanceSeconds = Math.max(maxInternalInstanceSeconds, currentLaneSeconds);
+
+  const alerts = {
+    breakDayExceeded: breakSeconds > 3600,
+    brbSingleExceeded: maxBrbInstanceSeconds > 600,
+    brbDayExceeded: brbSeconds > 1200
+  };
+  alerts.hasAlert = alerts.breakDayExceeded || alerts.brbSingleExceeded || alerts.brbDayExceeded;
+
   return {
     acceptedEvents: accepted,
     decoratedEvents,
@@ -221,7 +275,15 @@ function resolveBreakEventStream(events, endAt){
     breakSeconds,
     trainingSeconds,
     qaSeconds,
-    loggedInSeconds
+    internalCallSeconds,
+    loggedInSeconds,
+    maxBrbInstanceSeconds,
+    maxBreakInstanceSeconds,
+    maxTrainingInstanceSeconds,
+    maxQaInstanceSeconds,
+    maxInternalInstanceSeconds,
+    currentLaneSeconds,
+    alerts
   };
 }
 
@@ -239,6 +301,7 @@ function statusTone(status){
   if(status === 'Break') return 'break';
   if(status === 'Training / Coaching') return 'training';
   if(status === 'QA Session AUX') return 'qa';
+  if(status === 'Internal Calls') return 'internal';
   if(status === 'Logged In') return 'online';
   if(status === 'Logged Out') return 'offline';
   return 'neutral';
@@ -531,12 +594,52 @@ function insertLoginLog(u,e,r,ip,loc,sys){return run(`INSERT INTO login_logs (us
 function getLoginLogs(){return all(`SELECT * FROM login_logs ORDER BY logged_in_at DESC LIMIT 500`);}
 
 // BREAK BOT
+async function createBreakEventRow({ username, email, role, meta, note, createdAt, notified = 0, notifyStatus = null, notifyResponse = null }){
+  const result = await run(
+    `INSERT INTO break_events
+      (username,email,role,action,action_label,current_status,event_type,note,created_at,notified,notify_status,notify_response)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      username,
+      email,
+      role || 'agent',
+      meta.key,
+      meta.label,
+      meta.status,
+      meta.type,
+      note || null,
+      createdAt,
+      notified ? 1 : 0,
+      notifyStatus,
+      notifyResponse
+    ]
+  );
+  return {
+    id: result.lastID,
+    username,
+    email,
+    role: role || 'agent',
+    action: meta.key,
+    actionLabel: meta.label,
+    currentStatus: meta.status,
+    eventType: meta.type,
+    note: note || null,
+    createdAt
+  };
+}
+
 async function insertBreakEvent({ username, email, role, action, note, timestamp }){
   const meta = normalizeBreakAction(action);
   if(!meta) throw new Error('Invalid break action');
   if(!email) throw new Error('Email is required');
+  if(meta.key === 'INTERNAL_CALL_OUT' && !String(note || '').trim()){
+    const error = new Error('Internal Calls Out requires a short reason or comment.');
+    error.statusCode = 400;
+    throw error;
+  }
   const createdAtDate = timestamp ? new Date(timestamp) : new Date();
   const createdAt = toSqliteUtc(createdAtDate);
+  const normalizedEmail = String(email).trim().toLowerCase();
   const dayKey = createdAtDate.toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
   const { start, end } = getDateWindow(dayKey, 'America/Chicago');
   const priorEvents = await all(
@@ -546,7 +649,7 @@ async function insertBreakEvent({ username, email, role, action, note, timestamp
       AND datetime(created_at) < datetime(?)
       AND datetime(created_at) < datetime(?)
       ORDER BY datetime(created_at) ASC, id ASC`,
-    [String(email).trim().toLowerCase(), toSqliteUtc(start), toSqliteUtc(end), createdAt]
+    [normalizedEmail, toSqliteUtc(start), toSqliteUtc(end), createdAt]
   );
   const resolved = resolveBreakEventStream(priorEvents, createdAtDate);
   const currentStatus = resolved.currentStatus || 'Logged Out';
@@ -556,34 +659,31 @@ async function insertBreakEvent({ username, email, role, action, note, timestamp
     throw error;
   }
   const cleanName = (username || defaultBreakName(email)).trim();
-  const result = await run(
-    `INSERT INTO break_events
-      (username,email,role,action,action_label,current_status,event_type,note,created_at)
-      VALUES (?,?,?,?,?,?,?,?,?)`,
-    [
-      cleanName,
-      String(email).trim().toLowerCase(),
-      role || 'agent',
-      meta.key,
-      meta.label,
-      meta.status,
-      meta.type,
-      note || null,
-      createdAt
-    ]
-  );
-  return {
-    id: result.lastID,
+  const returnActionKey = getBreakReturnAction(currentStatus);
+  const switchingAway = currentStatus !== 'Logged In' && currentStatus !== 'Logged Out' && meta.status !== 'Logged In';
+  const closingShiftFromAway = currentStatus !== 'Logged In' && currentStatus !== 'Logged Out' && meta.key === 'LOGGED_OUT';
+  if(returnActionKey && (switchingAway || closingShiftFromAway)){
+    const returnMeta = normalizeBreakAction(returnActionKey);
+    await createBreakEventRow({
+      username: cleanName,
+      email: normalizedEmail,
+      role,
+      meta: returnMeta,
+      note: `Auto-return before ${meta.label}`,
+      createdAt,
+      notified: 0,
+      notifyStatus: 'system',
+      notifyResponse: 'auto_transition'
+    });
+  }
+  return createBreakEventRow({
     username: cleanName,
-    email: String(email).trim().toLowerCase(),
-    role: role || 'agent',
-    action: meta.key,
-    actionLabel: meta.label,
-    currentStatus: meta.status,
-    eventType: meta.type,
-    note: note || null,
+    email: normalizedEmail,
+    role,
+    meta,
+    note,
     createdAt
-  };
+  });
 }
 
 function updateBreakEventNotification(id, notified, notifyStatus, notifyResponse){
@@ -698,7 +798,7 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
     const events = dayBuckets.get(key) || [];
     const resolved = resolveBreakEventStream(events, dayEnd);
     const latestToday = resolved.acceptedEvents.length ? resolved.acceptedEvents[resolved.acceptedEvents.length - 1] : null;
-    const resolvedCurrentStatus = latestToday ? latestToday.current_status : 'Logged Out';
+    const resolvedCurrentStatus = resolved.currentStatus || 'Logged Out';
     const decoratedEvents = resolved.decoratedEvents.map(event => ({
       ...event,
       username: event.username || user.username,
@@ -719,7 +819,15 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
       breakSeconds: resolved.breakSeconds,
       trainingSeconds: resolved.trainingSeconds,
       qaSeconds: resolved.qaSeconds,
+      internalCallSeconds: resolved.internalCallSeconds,
       loggedInSeconds: resolved.loggedInSeconds,
+      currentLaneSeconds: resolved.currentLaneSeconds,
+      maxBrbInstanceSeconds: resolved.maxBrbInstanceSeconds,
+      maxBreakInstanceSeconds: resolved.maxBreakInstanceSeconds,
+      maxTrainingInstanceSeconds: resolved.maxTrainingInstanceSeconds,
+      maxQaInstanceSeconds: resolved.maxQaInstanceSeconds,
+      maxInternalInstanceSeconds: resolved.maxInternalInstanceSeconds,
+      alerts: resolved.alerts,
       eventCount: decoratedEvents.length,
       events: decoratedEvents.reverse()
     });
@@ -729,10 +837,11 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
     const order = {
       BRB: 0,
       Break: 1,
-      'Training / Coaching': 2,
-      'QA Session AUX': 3,
-      'Logged In': 4,
-      'Logged Out': 5
+      'Internal Calls': 2,
+      'Training / Coaching': 3,
+      'QA Session AUX': 4,
+      'Logged In': 5,
+      'Logged Out': 6
     };
     const diff = (order[a.currentStatus] ?? 4) - (order[b.currentStatus] ?? 4);
     if(diff !== 0) return diff;
@@ -750,12 +859,15 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
     loggedOutNow: tracker.filter(row => row.currentStatus === 'Logged Out').length,
     brbNow: tracker.filter(row => row.currentStatus === 'BRB').length,
     breakNow: tracker.filter(row => row.currentStatus === 'Break').length,
+    internalNow: tracker.filter(row => row.currentStatus === 'Internal Calls').length,
     trainingNow: tracker.filter(row => row.currentStatus === 'Training / Coaching').length,
     qaNow: tracker.filter(row => row.currentStatus === 'QA Session AUX').length,
     brbSeconds: tracker.reduce((sum, row) => sum + row.brbSeconds, 0),
     breakSeconds: tracker.reduce((sum, row) => sum + row.breakSeconds, 0),
+    internalCallSeconds: tracker.reduce((sum, row) => sum + row.internalCallSeconds, 0),
     trainingSeconds: tracker.reduce((sum, row) => sum + row.trainingSeconds, 0),
-    qaSeconds: tracker.reduce((sum, row) => sum + row.qaSeconds, 0)
+    qaSeconds: tracker.reduce((sum, row) => sum + row.qaSeconds, 0),
+    alertCount: tracker.filter(row => row.alerts?.hasAlert).length
   };
 
   return { summary, tracker, recentLog };

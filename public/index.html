@@ -163,7 +163,7 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-history-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);font-size:10px;font-weight:700;color:var(--text2);}
 .break-history-note{margin:0 0 10px;padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);font-size:11px;line-height:1.45;color:var(--text2);}
 .break-history-note.history{border-color:rgba(255,160,64,0.16);background:rgba(255,160,64,0.06);color:#ffd4a0;}
-.break-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+.break-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px;}
 .break-stat{border:1px solid rgba(255,255,255,0.08);background:linear-gradient(180deg,rgba(255,255,255,0.038),rgba(255,255,255,0.012));border-radius:14px;padding:10px 12px;min-height:74px;position:relative;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease,background .22s ease;}
 .break-stat::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.16),transparent);}
 .break-stat::after{content:'';position:absolute;inset:auto -10% 0 auto;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,rgba(91,176,255,0.12),transparent 68%);filter:blur(6px);}
@@ -171,7 +171,9 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-stat .k{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.14em;margin-bottom:6px;}
 .break-stat .v{font-size:18px;font-weight:800;letter-spacing:-0.04em;color:var(--text);}
 .break-stat .s{margin-top:4px;font-size:9px;color:var(--text2);line-height:1.42;}
-.break-actions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+.break-stat.alert{border-color:rgba(255,117,143,0.32);background:linear-gradient(180deg,rgba(255,117,143,0.1),rgba(255,255,255,0.02));box-shadow:0 18px 34px rgba(0,0,0,0.22),inset 0 0 0 1px rgba(255,117,143,0.08);}
+.break-stat.alert::after{background:radial-gradient(circle,rgba(255,117,143,0.18),transparent 70%);}
+.break-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;}
 .break-action{position:relative;border-radius:18px;border:1px solid rgba(255,255,255,0.08);background:
   radial-gradient(circle at 100% 0%,rgba(255,255,255,0.06),transparent 32%),
   linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02));
@@ -195,6 +197,7 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-action.breakin,.break-action.breakout{--accent:var(--orange2);}
 .break-action.trainingin,.break-action.trainingout{--accent:#b388ff;}
 .break-action.qaauxin,.break-action.qaauxout{--accent:#ff78c8;}
+.break-action.internalcallin,.break-action.internalcallout{--accent:#64f2ff;}
 .break-hero-card{position:relative;overflow:hidden;min-height:258px;background:
   radial-gradient(circle at 14% 18%, rgba(255,123,0,0.16), transparent 26%),
   radial-gradient(circle at 78% 20%, rgba(6,196,212,0.22), transparent 28%),
@@ -257,7 +260,7 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-callout-title{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
 .break-callout-copy{font-size:11px;color:var(--text2);line-height:1.45;}
 .break-callout .chip{background:rgba(0,0,0,0.18);}
-.break-lane-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 12px;}
+.break-lane-board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0 0 12px;}
 .break-lane-card{position:relative;overflow:hidden;padding:10px 11px 11px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(255,255,255,0.04),rgba(255,255,255,0.018));box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;}
 .break-lane-card::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--lane-accent,var(--teal));opacity:.95;}
 .break-lane-card::after{content:'';position:absolute;inset:auto -20% -22% auto;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.12),transparent 68%);filter:blur(8px);opacity:.35;}
@@ -266,6 +269,8 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-lane-card.brb{--lane-accent:var(--blue2);}
 .break-lane-card.break{--lane-accent:var(--orange2);}
 .break-lane-card.aux{--lane-accent:#b388ff;}
+.break-lane-card.internal{--lane-accent:#64f2ff;}
+.break-lane-card.has-alert{border-color:rgba(255,117,143,0.26);box-shadow:0 18px 30px rgba(0,0,0,0.22),0 0 0 1px rgba(255,117,143,0.08);}
 .break-lane-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
 .break-lane-kicker{font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);}
 .break-lane-title{margin-top:5px;font-size:15px;font-weight:800;letter-spacing:-0.03em;color:var(--text);}
@@ -274,8 +279,11 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-lane-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
 .break-lane-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.04);font-size:10px;font-weight:600;color:var(--text2);}
 .break-lane-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--lane-accent,currentColor);box-shadow:0 0 10px var(--lane-accent,currentColor);}
+.break-lane-chip.alert{border-color:rgba(255,117,143,0.28);background:rgba(255,117,143,0.08);color:#ffd0da;}
 .break-lane-chip.more{font-weight:700;color:var(--text3);}
 .break-lane-chip.more::before{display:none;}
+.break-alert-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;border:1px solid rgba(255,117,143,0.2);background:rgba(255,117,143,0.1);font-size:9px;font-weight:700;color:#ffd0da;}
+.break-alert-tag::before{content:'!';display:inline-grid;place-items:center;width:12px;height:12px;border-radius:50%;background:rgba(255,117,143,0.2);color:#ffe4ea;font-size:9px;line-height:1;}
 .break-lane-empty{margin-top:10px;padding:8px 9px;border-radius:10px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.025);font-size:10px;color:var(--text3);text-align:center;}
 @keyframes breakActionPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}50%{box-shadow:0 0 0 5px rgba(255,255,255,0.02);}}
 @keyframes breakGridMove{0%{background-position:0 0,0 0;}100%{background-position:36px 36px,36px 36px;}}
@@ -296,6 +304,8 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-user-card.break{--accent:var(--orange2);}
 .break-user-card.training{--accent:#b388ff;}
 .break-user-card.qa{--accent:#ff78c8;}
+.break-user-card.internal{--accent:#64f2ff;}
+.break-user-card.has-alert{border-color:rgba(255,117,143,0.26);box-shadow:0 18px 32px rgba(0,0,0,0.22),0 0 0 1px rgba(255,117,143,0.08);}
 .break-user-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:9px;}
 .break-user-name{font-size:12px;font-weight:700;color:var(--text);}
 .break-user-meta{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;}
@@ -305,6 +315,7 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-user-metric{padding:7px 8px;border-radius:11px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);}
 .break-user-metric span{display:block;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
 .break-user-metric strong{display:block;font-size:13px;color:var(--text);}
+.break-user-alert{margin-top:10px;padding:8px 9px;border-radius:11px;border:1px solid rgba(255,117,143,0.2);background:rgba(255,117,143,0.08);font-size:10px;line-height:1.45;color:#ffd0da;}
 .break-log-list{display:flex;flex-direction:column;gap:8px;max-height:460px;overflow:auto;padding-right:4px;}
 .break-log-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);transition:transform .18s ease,border-color .18s ease,background .18s ease;}
 .break-log-row:hover{transform:translateX(4px);border-color:rgba(91,176,255,0.2);background:rgba(255,255,255,0.045);}
@@ -385,6 +396,7 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 .p-outqueue{background:rgba(240,120,32,0.1);color:var(--orange2);border:1px solid rgba(240,120,32,0.2);}
 .p-training{background:rgba(179,136,255,0.12);color:#c9a6ff;border:1px solid rgba(179,136,255,0.22);}
 .p-qaaux{background:rgba(255,120,200,0.12);color:#ff78c8;border:1px solid rgba(255,120,200,0.22);}
+.p-internal{background:rgba(100,242,255,0.12);color:#64f2ff;border:1px solid rgba(100,242,255,0.22);}
 .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
 .p-avail .dot{animation:pulse 2s infinite;}
 .p-oncall .dot{animation:pulse 0.8s infinite;box-shadow:0 0 4px currentColor;}
@@ -971,8 +983,10 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
       <div class="metric m-red"><div class="metric-lbl">Logged Out</div><div class="metric-val" id="break-admin-loggedout">--</div></div>
       <div class="metric m-blue"><div class="metric-lbl">BRB Live</div><div class="metric-val" id="break-admin-brb">--</div></div>
       <div class="metric m-orange"><div class="metric-lbl">Break Live</div><div class="metric-val" id="break-admin-break">--</div></div>
+      <div class="metric m-teal"><div class="metric-lbl">Internal Live</div><div class="metric-val" id="break-admin-internal">--</div></div>
       <div class="metric m-purple"><div class="metric-lbl">Training Live</div><div class="metric-val" id="break-admin-training">--</div></div>
       <div class="metric m-pink"><div class="metric-lbl">QA AUX Live</div><div class="metric-val" id="break-admin-qa">--</div></div>
+      <div class="metric m-red"><div class="metric-lbl">Alerts</div><div class="metric-val" id="break-admin-alerts">--</div></div>
       <div class="metric m-teal"><div class="metric-lbl">Tracker Team</div><div class="metric-val" id="break-admin-team">--</div><div class="metric-sub" id="break-admin-chat">Chat space pending</div></div>
     </div>
     <div class="break-toolbar">
@@ -1108,8 +1122,10 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
             <div class="break-stat"><div class="k">Since</div><div class="v" id="break-self-since">--</div><div class="s" id="break-self-since-copy">No break activity recorded yet.</div></div>
             <div class="break-stat"><div class="k">BRB Today</div><div class="v" id="break-self-brb">--</div><div class="s">Paired from BRB Out to BRB In.</div></div>
             <div class="break-stat"><div class="k">Break Today</div><div class="v" id="break-self-break">--</div><div class="s">Paired from Break Out to Break In.</div></div>
+            <div class="break-stat"><div class="k">Internal Calls</div><div class="v" id="break-self-internal">--</div><div class="s">Paired from Internal Calls Out to Internal Calls In.</div></div>
             <div class="break-stat"><div class="k">Training Today</div><div class="v" id="break-self-training">--</div><div class="s">Paired from Training Out to Training In.</div></div>
             <div class="break-stat"><div class="k">QA AUX Today</div><div class="v" id="break-self-qa">--</div><div class="s">Paired from QA AUX Out to QA AUX In.</div></div>
+            <div class="break-stat"><div class="k">Watch</div><div class="v" id="break-self-watch">Clear</div><div class="s" id="break-self-watch-copy">No BRB or break limit is active right now.</div></div>
           </div>
           <div class="break-actions">
             <button class="break-action loggedin" data-break-action="LOGGED_IN" onclick="sendBreakAction('LOGGED_IN',this)">
@@ -1157,6 +1173,16 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
               <div class="break-action-title">QA AUX In</div>
               <div class="break-action-copy">Close QA AUX and return to active work.</div>
             </button>
+            <button class="break-action internalcallout" data-break-action="INTERNAL_CALL_OUT" onclick="sendBreakAction('INTERNAL_CALL_OUT',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#128222;</div><div class="break-action-state">Short Huddle</div></div>
+              <div class="break-action-title">Internal Calls Out</div>
+              <div class="break-action-copy">Use this for internal calls or a quick inter-team huddle. Reason required.</div>
+            </button>
+            <button class="break-action internalcallin" data-break-action="INTERNAL_CALL_IN" onclick="sendBreakAction('INTERNAL_CALL_IN',this)">
+              <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return From Call</div></div>
+              <div class="break-action-title">Internal Calls In</div>
+              <div class="break-action-copy">Close internal call AUX and move back to your live lane.</div>
+            </button>
             <button class="break-action loggedout" data-break-action="LOGGED_OUT" onclick="sendBreakAction('LOGGED_OUT',this)">
               <div class="break-action-top"><div class="break-action-icon">&#10005;</div><div class="break-action-state">Shift Close</div></div>
               <div class="break-action-title">Logged Out</div>
@@ -1182,12 +1208,12 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
                 <div>
                   <span class="break-hero-kicker">Adit Break Grid</span>
                   <div class="break-hero-title">Track every <span>away lane</span><br>with one tap.</div>
-                  <div class="break-command-copy">BRB, Break, Coaching, and QA AUX stay visible for leads without cluttering the live dashboard.</div>
+                  <div class="break-command-copy">BRB, Break, Internal Calls, Coaching, and QA AUX stay visible for leads without cluttering the live dashboard.</div>
                 </div>
                 <span class="chip" id="break-hero-chat-label">Chat space</span>
               </div>
               <div class="break-protocol">
-                <div class="break-protocol-pill out"><span>Out Means Away</span><strong>BRB / Break / Training / QA AUX</strong></div>
+                <div class="break-protocol-pill out"><span>Out Means Away</span><strong>BRB / Break / Internal / Training / QA AUX</strong></div>
                 <div class="break-protocol-pill in"><span>In Means Return</span><strong>Back to your active lane</strong></div>
                 <div class="break-protocol-pill chat"><span>Chat Pulse</span><strong>Posts a live acknowledgment when linked</strong></div>
                 <div class="break-protocol-pill log"><span>Tracker Memory</span><strong>Every transition is logged for leads</strong></div>
@@ -1195,7 +1221,7 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
               <div class="break-signal-board">
                 <div class="break-signal-card"><span>BRB Flow</span><strong>BRB Out starts the timer. BRB In closes it.</strong></div>
                 <div class="break-signal-card"><span>Break Flow</span><strong>Break Out marks you away. Break In returns you.</strong></div>
-                <div class="break-signal-card"><span>Coaching + QA</span><strong>Training Out / QA AUX Out open dedicated AUX lanes with their own return actions.</strong></div>
+                <div class="break-signal-card"><span>Internal + AUX</span><strong>Internal Calls Out, Training Out, and QA AUX Out each open dedicated lanes with return actions.</strong></div>
               </div>
             </div>
             <div class="break-hero-visual">
@@ -2003,16 +2029,19 @@ const BREAK_ACTION_META = {
   TRAINING_OUT: { label: 'Training / Coaching Out', badge: 'OUT', copy: 'Training or coaching started' },
   TRAINING_IN: { label: 'Training / Coaching In', badge: 'IN', copy: 'Returned from training or coaching' },
   QA_SESSION_OUT: { label: 'QA Session AUX Out', badge: 'OUT', copy: 'QA AUX session started' },
-  QA_SESSION_IN: { label: 'QA Session AUX In', badge: 'IN', copy: 'Returned from QA AUX session' }
+  QA_SESSION_IN: { label: 'QA Session AUX In', badge: 'IN', copy: 'Returned from QA AUX session' },
+  INTERNAL_CALL_OUT: { label: 'Internal Calls Out', badge: 'OUT', copy: 'Internal call or huddle started' },
+  INTERNAL_CALL_IN: { label: 'Internal Calls In', badge: 'IN', copy: 'Returned from internal calls' }
 };
 
 const BREAK_ALLOWED_ACTIONS = {
   'Logged Out': ['LOGGED_IN'],
-  'Logged In': ['BRB_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','LOGGED_OUT'],
-  BRB: ['BRB_IN'],
-  Break: ['BREAK_IN'],
-  'Training / Coaching': ['TRAINING_IN'],
-  'QA Session AUX': ['QA_SESSION_IN']
+  'Logged In': ['LOGGED_OUT','BRB_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
+  BRB: ['BRB_IN','LOGGED_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
+  Break: ['BREAK_IN','LOGGED_OUT','BRB_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
+  'Training / Coaching': ['TRAINING_IN','LOGGED_OUT','BRB_OUT','BREAK_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
+  'QA Session AUX': ['QA_SESSION_IN','LOGGED_OUT','BRB_OUT','BREAK_OUT','TRAINING_OUT','INTERNAL_CALL_OUT'],
+  'Internal Calls': ['INTERNAL_CALL_IN','LOGGED_OUT','BRB_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT']
 };
 
 function getAllowedBreakActions(currentStatus){
@@ -2021,11 +2050,12 @@ function getAllowedBreakActions(currentStatus){
 
 function getBreakActionGuardCopy(currentStatus){
   if(currentStatus === 'Logged Out') return 'Start with Logged In. Until then, every away lane stays locked.';
-  if(currentStatus === 'Logged In') return 'You are live. Choose one away lane at a time, or close the shift when you are done.';
-  if(currentStatus === 'BRB') return 'BRB is active. Only BRB In can bring you back live.';
-  if(currentStatus === 'Break') return 'Break is active. Only Break In can bring you back live.';
-  if(currentStatus === 'Training / Coaching') return 'Training / Coaching AUX is active. Only Training In can bring you back live.';
-  if(currentStatus === 'QA Session AUX') return 'QA AUX is active. Only QA AUX In can bring you back live.';
+  if(currentStatus === 'Logged In') return 'You are live. Start any away lane, or close your shift when needed.';
+  if(currentStatus === 'BRB') return 'BRB is active. Return with BRB In, close shift, or move into another away lane.';
+  if(currentStatus === 'Break') return 'Break is active. Return with Break In, close shift, or move into another away lane.';
+  if(currentStatus === 'Training / Coaching') return 'Training / Coaching AUX is active. Return, close shift, or move into another away lane.';
+  if(currentStatus === 'QA Session AUX') return 'QA AUX is active. Return, close shift, or move into another away lane.';
+  if(currentStatus === 'Internal Calls') return 'Internal call AUX is active. Return, close shift, or move into another away lane.';
   return 'Use the next valid lane action to continue.';
 }
 
@@ -2048,6 +2078,7 @@ function breakStatusClass(status){
   if(status === 'Break') return 'break';
   if(status === 'Training / Coaching') return 'training';
   if(status === 'QA Session AUX') return 'qa';
+  if(status === 'Internal Calls') return 'internal';
   return 'offline';
 }
 
@@ -2058,7 +2089,22 @@ function breakStatusColorClass(status){
   if(status === 'Break') return 'p-outqueue';
   if(status === 'Training / Coaching') return 'p-training';
   if(status === 'QA Session AUX') return 'p-qaaux';
+  if(status === 'Internal Calls') return 'p-internal';
   return 'p-unknown';
+}
+
+function breakAlertMessages(row){
+  const alerts=row?.alerts||{};
+  const lines=[];
+  if(alerts.breakDayExceeded) lines.push('Break total crossed 1h today');
+  if(alerts.brbSingleExceeded) lines.push('One BRB crossed 10m');
+  if(alerts.brbDayExceeded) lines.push('BRB total crossed 20m today');
+  return lines;
+}
+
+function breakAlertSummary(row){
+  const lines=breakAlertMessages(row);
+  return lines.length ? lines.join(' · ') : 'No active break or BRB threshold.';
 }
 
 function breakChatLabel(){
@@ -2114,24 +2160,20 @@ function buildBreakFeedRow(event, compact=false){
 
 function buildBreakLaneCard(title, subtitle, cls, rows){
   const names = rows.slice(0, 6).map(row => {
-    let durationText = 'No start time';
-    if(row.since){
-      const sinceStamp = parseStamp(row.since);
-      if(sinceStamp){
-        durationText = fmt(Math.max(0, Math.round((Date.now() - sinceStamp.getTime()) / 1000)));
-      } else {
-        durationText = 'Since ' + toTime(row.since);
-      }
-    }
-    const titleText = row.since ? ('Since ' + toTime(row.since) + ' · Live for ' + durationText) : 'No start time';
-    return '<span class="break-lane-chip" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
+    const durationText = fmt(row.currentLaneSeconds || 0);
+    const titleText = row.since
+      ? ('Since ' + toTime(row.since) + ' · Live for ' + durationText + ' · ' + breakAlertSummary(row))
+      : breakAlertSummary(row);
+    return '<span class="break-lane-chip '+(row.alerts?.hasAlert?'alert':'')+'" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
   }).join('');
   const extra = rows.length > 6 ? '<span class="break-lane-chip more">+'+(rows.length - 6)+' more</span>' : '';
-  return '<div class="break-lane-card '+cls+'">'+
+  const alertCount = rows.filter(row => row.alerts?.hasAlert).length;
+  return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'">'+
     '<div class="break-lane-head">'+
-      '<div><div class="break-lane-kicker">Floor lane</div><div class="break-lane-title">'+title+'</div><div class="break-lane-sub">'+subtitle+'</div></div>'+
+      '<div><div class="break-lane-kicker">Floor lane</div><div class="break-lane-title">'+title+'</div><div class="break-lane-sub">'+subtitle+(alertCount?' · '+alertCount+' alerts':'')+'</div></div>'+
       '<div class="break-lane-count">'+rows.length+'</div>'+
     '</div>'+
+    (alertCount?'<div class="break-alert-tag" style="margin-top:10px;">'+alertCount+' threshold '+(alertCount===1?'alert':'alerts')+'</div>':'')+
     (rows.length
       ? '<div class="break-lane-list">'+names+extra+'</div>'
       : '<div class="break-lane-empty">No agents in this lane right now.</div>')+
@@ -2143,11 +2185,13 @@ function buildBreakLaneBoard(tracker){
   const brbRows = tracker.filter(row => row.currentStatus === 'BRB');
   const breakRows = tracker.filter(row => row.currentStatus === 'Break');
   const auxRows = tracker.filter(row => row.currentStatus === 'Training / Coaching' || row.currentStatus === 'QA Session AUX');
+  const internalRows = tracker.filter(row => row.currentStatus === 'Internal Calls');
   return [
     buildBreakLaneCard('Available', 'Ready on desk', 'avail', availableRows),
     buildBreakLaneCard('BRB', 'Quick-away lane', 'brb', brbRows),
     buildBreakLaneCard('On Break', 'Away on break', 'break', breakRows),
-    buildBreakLaneCard('Training + QA AUX', 'Coaching and audit lanes', 'aux', auxRows)
+    buildBreakLaneCard('Training + QA AUX', 'Coaching and audit lanes', 'aux', auxRows),
+    buildBreakLaneCard('Internal Calls', 'Huddle and inter-team calls', 'internal', internalRows)
   ].join('');
 }
 
@@ -2161,8 +2205,10 @@ function renderBreakAdminView(){
     loggedout: document.getElementById('break-admin-loggedout'),
     brb: document.getElementById('break-admin-brb'),
     breakNow: document.getElementById('break-admin-break'),
+    internal: document.getElementById('break-admin-internal'),
     training: document.getElementById('break-admin-training'),
     qa: document.getElementById('break-admin-qa'),
+    alerts: document.getElementById('break-admin-alerts'),
     team: document.getElementById('break-admin-team'),
     chat: document.getElementById('break-admin-chat'),
     boardChip: document.getElementById('break-board-chip'),
@@ -2177,8 +2223,10 @@ function renderBreakAdminView(){
   if(ids.loggedout) ids.loggedout.textContent = summary.loggedOutNow ?? 0;
   if(ids.brb) ids.brb.textContent = summary.brbNow ?? 0;
   if(ids.breakNow) ids.breakNow.textContent = summary.breakNow ?? 0;
+  if(ids.internal) ids.internal.textContent = summary.internalNow ?? 0;
   if(ids.training) ids.training.textContent = summary.trainingNow ?? 0;
   if(ids.qa) ids.qa.textContent = summary.qaNow ?? 0;
+  if(ids.alerts) ids.alerts.textContent = summary.alertCount ?? 0;
   if(ids.team) ids.team.textContent = summary.teamCount ?? 0;
   if(ids.chat) ids.chat.textContent = breakChatLabel();
   if(ids.historyChip) ids.historyChip.textContent = breakHistoryMode() ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
@@ -2190,19 +2238,23 @@ function renderBreakAdminView(){
 
   if(ids.board){
     ids.board.innerHTML = tracker.length ? tracker.map(row => {
-      return '<div class="break-user-card '+breakStatusClass(row.currentStatus)+'">'+
+      const alertLines = breakAlertMessages(row);
+      return '<div class="break-user-card '+breakStatusClass(row.currentStatus)+' '+(row.alerts?.hasAlert?'has-alert':'')+'">'+
         '<div class="break-user-top">'+
           '<div><div class="break-user-name">'+row.username+'</div><div class="break-user-meta">'+row.email+'</div></div>'+
           '<span class="break-user-status">'+row.currentStatus+'</span>'+
         '</div>'+
         '<div class="break-user-grid">'+
           '<div class="break-user-metric"><span>Since</span><strong>'+(row.since ? toTime(row.since) : '--')+'</strong></div>'+
+          '<div class="break-user-metric"><span>Lane Time</span><strong>'+fmt(row.currentLaneSeconds || 0)+'</strong></div>'+
           '<div class="break-user-metric"><span>BRB Today</span><strong>'+fmt(row.brbSeconds || 0)+'</strong></div>'+
           '<div class="break-user-metric"><span>Break Today</span><strong>'+fmt(row.breakSeconds || 0)+'</strong></div>'+
+          '<div class="break-user-metric"><span>Internal</span><strong>'+fmt(row.internalCallSeconds || 0)+'</strong></div>'+
           '<div class="break-user-metric"><span>Training</span><strong>'+fmt(row.trainingSeconds || 0)+'</strong></div>'+
           '<div class="break-user-metric"><span>QA AUX</span><strong>'+fmt(row.qaSeconds || 0)+'</strong></div>'+
         '</div>'+
         '<div class="break-user-meta" style="margin-top:12px;">Last action · '+(row.lastActionLabel || 'No activity')+(row.lastActionAt ? ' · '+toTime(row.lastActionAt) : '')+'</div>'+
+        (alertLines.length?'<div class="break-user-alert">'+alertLines.join('<br>')+'</div>':'')+
       '</div>';
     }).join('') : '<div class="break-empty">No break tracker activity found for '+formatTrackerDate(selectedDate)+'.</div>';
   }
@@ -2238,6 +2290,9 @@ function renderBreakAgentView(){
   const breakEl = document.getElementById('break-self-break');
   const trainingEl = document.getElementById('break-self-training');
   const qaEl = document.getElementById('break-self-qa');
+  const internalEl = document.getElementById('break-self-internal');
+  const watchEl = document.getElementById('break-self-watch');
+  const watchCopyEl = document.getElementById('break-self-watch-copy');
   const logChip = document.getElementById('break-self-log-chip');
   const logList = document.getElementById('break-self-log');
 
@@ -2250,6 +2305,9 @@ function renderBreakAgentView(){
     if(breakEl) breakEl.textContent = '0s';
     if(trainingEl) trainingEl.textContent = '0s';
     if(qaEl) qaEl.textContent = '0s';
+    if(internalEl) internalEl.textContent = '0s';
+    if(watchEl) watchEl.textContent = 'Clear';
+    if(watchCopyEl) watchCopyEl.textContent = 'No BRB or break limit is active right now.';
     if(logChip) logChip.textContent = '0 events';
     if(logList) logList.innerHTML = '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
     return;
@@ -2266,13 +2324,23 @@ function renderBreakAgentView(){
           ? 'Break timer is active.'
           : self.currentStatus === 'Training / Coaching'
             ? 'Training or coaching session is active.'
-            : 'QA AUX timer is active.');
+            : self.currentStatus === 'Internal Calls'
+              ? 'Internal call AUX is active.'
+              : 'QA AUX timer is active.');
   if(sinceEl) sinceEl.textContent = self.since ? toTime(self.since) : '--';
   if(sinceCopyEl) sinceCopyEl.textContent = self.since ? (isHistory ? 'Historical snapshot in '+currentTZ+'.' : 'Latest signal update in '+currentTZ+'.') : 'No recent signal change.';
   if(brbEl) brbEl.textContent = fmt(self.brbSeconds || 0);
   if(breakEl) breakEl.textContent = fmt(self.breakSeconds || 0);
   if(trainingEl) trainingEl.textContent = fmt(self.trainingSeconds || 0);
   if(qaEl) qaEl.textContent = fmt(self.qaSeconds || 0);
+  if(internalEl) internalEl.textContent = fmt(self.internalCallSeconds || 0);
+  const watchLines = breakAlertMessages(self);
+  if(watchEl) watchEl.textContent = watchLines.length ? 'Alert' : 'Clear';
+  if(watchCopyEl) watchCopyEl.textContent = watchLines.length ? watchLines.join(' · ') : 'No BRB or break limit is active right now.';
+  document.querySelectorAll('#agent-section-breakbot .break-stat').forEach(card => card.classList.remove('alert'));
+  if((self.alerts?.breakDayExceeded || (self.currentStatus === 'Break' && (self.currentLaneSeconds || 0) > 3600)) && breakEl) breakEl.closest('.break-stat')?.classList.add('alert');
+  if((self.alerts?.brbDayExceeded || self.alerts?.brbSingleExceeded || (self.currentStatus === 'BRB' && (self.currentLaneSeconds || 0) > 600)) && brbEl) brbEl.closest('.break-stat')?.classList.add('alert');
+  if(watchLines.length && watchEl) watchEl.closest('.break-stat')?.classList.add('alert');
   if(logChip) logChip.textContent = (self.events || []).length + ' events';
   if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
 }
@@ -2310,6 +2378,15 @@ async function sendBreakAction(action, btn){
     syncBreakActionState();
     return;
   }
+  let note='';
+  if(action==='INTERNAL_CALL_OUT'){
+    note = prompt('Why are you moving into Internal Calls AUX?\nExample: Short huddle with QA / Inter-department call / Team sync') || '';
+    if(!note.trim()){
+      showToast('Internal Calls Out needs a short reason.','warning');
+      syncBreakActionState();
+      return;
+    }
+  }
   const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
   buttons.forEach(button => button.disabled = true);
   if(btn) btn.classList.add('syncing');
@@ -2322,6 +2399,7 @@ async function sendBreakAction(action, btn){
         email: currentEmail,
         role: currentRole || 'agent',
         action,
+        note,
         date: todayStr(),
         tz: activeTimeZone()
       })
@@ -2866,9 +2944,9 @@ function downloadBreakReport(){
     ['Section','Field 1','Field 2','Field 3','Field 4','Field 5','Field 6','Field 7','Field 8','Field 9','Field 10'],
     ['Report','Break Tracker',formatTrackerDate(date),currentTZ,breakChatLabel(),'','','','','',''],
     ['Summary','Logged In',summary.loggedInNow ?? 0,'Logged Out',summary.loggedOutNow ?? 0,'BRB',summary.brbNow ?? 0,'Break',summary.breakNow ?? 0,'Training',summary.trainingNow ?? 0],
-    ['Summary','QA AUX',summary.qaNow ?? 0,'Team',summary.teamCount ?? 0,'','','','','',''],
+    ['Summary','Internal',summary.internalNow ?? 0,'QA AUX',summary.qaNow ?? 0,'Alerts',summary.alertCount ?? 0,'Team',summary.teamCount ?? 0,''],
     [''],
-    ['Tracker','User','Email','Status','Since','BRB Today','Break Today','Training Today','QA AUX Today','Last Action','Last Action At']
+    ['Tracker','User','Email','Status','Since','Lane Time','BRB Today','Break Today','Internal Today','Training Today','QA AUX Today']
   ];
   tracker.forEach(row=>{
     rows.push([
@@ -2877,13 +2955,16 @@ function downloadBreakReport(){
       row.email || '--',
       row.currentStatus || '--',
       row.since ? toDateTime(row.since) : '--',
+      fmt(row.currentLaneSeconds || 0),
       fmt(row.brbSeconds || 0),
       fmt(row.breakSeconds || 0),
+      fmt(row.internalCallSeconds || 0),
       fmt(row.trainingSeconds || 0),
-      fmt(row.qaSeconds || 0),
-      row.lastActionLabel || '--',
-      row.lastActionAt ? toDateTime(row.lastActionAt) : '--'
+      fmt(row.qaSeconds || 0)
     ]);
+    if(row.alerts?.hasAlert){
+      rows.push(['Alert',row.username || '--',breakAlertMessages(row).join(' | '),'','','','','','','','']);
+    }
   });
   rows.push(['']);
   rows.push(['Feed','Time','User','Email','Action','Status','Duration','Notification','Note','','']);
