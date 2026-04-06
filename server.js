@@ -23,6 +23,16 @@ const sseClients = new Set();
 const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
 
+function formatBreakDuration(seconds){
+  const total = Math.max(0, Number(seconds || 0));
+  const hrs = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hrs) return `${hrs}h ${mins}m`;
+  if (mins) return `${mins}m ${secs}s`;
+  return `${secs}s`;
+}
+
 function broadcastLiveEvent(payload) {
   const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
   for (const res of sseClients) res.write(msg);
@@ -37,11 +47,29 @@ function formatBreakChatMessage(event){
     second: '2-digit',
     hour12: true
   });
+  const actionMap = {
+    LOGGED_IN: { headline: 'is now live on desk', lane: 'Logged In' },
+    LOGGED_OUT: { headline: 'closed the shift', lane: 'Logged Out' },
+    BRB_OUT: { headline: 'stepped away on BRB', lane: 'BRB' },
+    BRB_IN: { headline: 'returned from BRB', lane: 'Logged In' },
+    BREAK_OUT: { headline: 'went on break', lane: 'Break' },
+    BREAK_IN: { headline: 'returned from break', lane: 'Logged In' },
+    TRAINING_OUT: { headline: 'moved into training / coaching', lane: 'Training / Coaching' },
+    TRAINING_IN: { headline: 'returned from training / coaching', lane: 'Logged In' },
+    QA_SESSION_OUT: { headline: 'moved into QA AUX', lane: 'QA Session AUX' },
+    QA_SESSION_IN: { headline: 'returned from QA AUX', lane: 'Logged In' }
+  };
+  const meta = actionMap[event.action] || {
+    headline: `updated ${event.actionLabel || 'status'}`,
+    lane: event.currentStatus || 'Updated'
+  };
+  const durationLine = event.linkedDurationSeconds ? `Tracked away time: ${formatBreakDuration(event.linkedDurationSeconds)}` : null;
   return [
     'Adit Break Bot',
-    `${event.username} (${event.role || 'agent'}) marked ${event.actionLabel}.`,
+    `${event.username} (${event.role || 'agent'}) ${meta.headline}.`,
+    `Current lane: ${meta.lane}`,
     `Time: ${timeCst} CST`,
-    `Status: ${event.currentStatus}`,
+    durationLine,
     event.note ? `Note: ${event.note}` : null
   ].filter(Boolean).join('\n');
 }

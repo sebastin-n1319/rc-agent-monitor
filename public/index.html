@@ -257,6 +257,26 @@ header{background:linear-gradient(180deg,rgba(8,17,31,0.95),rgba(9,20,36,0.92));
 .break-callout-title{font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text3);}
 .break-callout-copy{font-size:11px;color:var(--text2);line-height:1.45;}
 .break-callout .chip{background:rgba(0,0,0,0.18);}
+.break-lane-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 12px;}
+.break-lane-card{position:relative;overflow:hidden;padding:10px 11px 11px;border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:linear-gradient(160deg,rgba(255,255,255,0.04),rgba(255,255,255,0.018));box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;}
+.break-lane-card::before{content:'';position:absolute;inset:0 auto 0 0;width:3px;background:var(--lane-accent,var(--teal));opacity:.95;}
+.break-lane-card::after{content:'';position:absolute;inset:auto -20% -22% auto;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.12),transparent 68%);filter:blur(8px);opacity:.35;}
+.break-lane-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.14);box-shadow:0 16px 30px rgba(0,0,0,0.2);}
+.break-lane-card.avail{--lane-accent:var(--green);}
+.break-lane-card.brb{--lane-accent:var(--blue2);}
+.break-lane-card.break{--lane-accent:var(--orange2);}
+.break-lane-card.aux{--lane-accent:#b388ff;}
+.break-lane-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.break-lane-kicker{font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);}
+.break-lane-title{margin-top:5px;font-size:15px;font-weight:800;letter-spacing:-0.03em;color:var(--text);}
+.break-lane-sub{margin-top:2px;font-size:10px;color:var(--text2);}
+.break-lane-count{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 8px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.05);font-size:12px;font-weight:800;color:var(--text);}
+.break-lane-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.break-lane-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.04);font-size:10px;font-weight:600;color:var(--text2);}
+.break-lane-chip::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--lane-accent,currentColor);box-shadow:0 0 10px var(--lane-accent,currentColor);}
+.break-lane-chip.more{font-weight:700;color:var(--text3);}
+.break-lane-chip.more::before{display:none;}
+.break-lane-empty{margin-top:10px;padding:8px 9px;border-radius:10px;border:1px dashed rgba(255,255,255,0.08);background:rgba(255,255,255,0.025);font-size:10px;color:var(--text3);text-align:center;}
 @keyframes breakActionPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0);}50%{box-shadow:0 0 0 5px rgba(255,255,255,0.02);}}
 @keyframes breakGridMove{0%{background-position:0 0,0 0;}100%{background-position:36px 36px,36px 36px;}}
 @keyframes breakSweep{0%,100%{transform:translateX(-18%) rotate(-12deg);opacity:0;}45%{opacity:.55;}60%{transform:translateX(165%) rotate(-12deg);opacity:.18;}}
@@ -616,9 +636,9 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
 .toast.show{opacity:1;transform:translateY(0);}
 .toast-icon{font-size:14px;}
 
-@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout,.break-hero-grid{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid,.break-protocol,.break-signal-board,.break-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.break-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.break-toolbar{align-items:flex-start;}}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout,.break-hero-grid,.break-lane-board{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid,.break-protocol,.break-signal-board,.break-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.break-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.break-toolbar{align-items:flex-start;}}
 @media(max-width:1200px){.viz-row{grid-template-columns:1fr;}.mix-legend{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid,.break-protocol,.break-signal-board{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:780px;}.break-hero-title{font-size:20px;}.break-toolbar{flex-direction:column;align-items:stretch;}.break-toolbar-group{justify-content:space-between;}.page{padding:12px 14px;}.nav{padding:8px 14px;}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid,.break-protocol,.break-signal-board,.break-lane-board{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:780px;}.break-hero-title{font-size:20px;}.break-toolbar{flex-direction:column;align-items:stretch;}.break-toolbar-group{justify-content:space-between;}.page{padding:12px 14px;}.nav{padding:8px 14px;}}
 </style>
 </head>
 <body>
@@ -978,9 +998,12 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
           <div class="break-callout" style="margin-bottom:12px;">
             <div class="break-callout-left">
               <div class="break-callout-title">Live Floor Signal</div>
-              <div class="break-callout-copy">Live taps update the board instantly and mirror the away lane into Chat when the webhook is linked.</div>
+              <div class="break-callout-copy">See who is live, away, or in AUX at a glance, then open the detailed board only when you need timing and feed history.</div>
             </div>
             <span class="chip" id="break-callout-chip">Awaiting first event</span>
+          </div>
+          <div class="break-lane-board" id="break-lane-board">
+            <div class="break-empty">Loading live floor lanes...</div>
           </div>
           <div class="break-board" id="break-board">
             <div class="break-empty">Loading team tracker...</div>
@@ -2019,6 +2042,23 @@ function buildBreakFeedRow(event, compact=false){
   '</div>';
 }
 
+function buildBreakLaneCard(title, subtitle, cls, rows){
+  const names = rows.slice(0, 6).map(row => {
+    const sinceText = row.since ? 'Since ' + toTime(row.since) : 'No start time';
+    return '<span class="break-lane-chip" title="'+sinceText+'">'+row.username+'</span>';
+  }).join('');
+  const extra = rows.length > 6 ? '<span class="break-lane-chip more">+'+(rows.length - 6)+' more</span>' : '';
+  return '<div class="break-lane-card '+cls+'">'+
+    '<div class="break-lane-head">'+
+      '<div><div class="break-lane-kicker">Floor lane</div><div class="break-lane-title">'+title+'</div><div class="break-lane-sub">'+subtitle+'</div></div>'+
+      '<div class="break-lane-count">'+rows.length+'</div>'+
+    '</div>'+
+    (rows.length
+      ? '<div class="break-lane-list">'+names+extra+'</div>'
+      : '<div class="break-lane-empty">No agents in this lane right now.</div>')+
+  '</div>';
+}
+
 function renderBreakAdminView(){
   const summary = breakTrackerData.summary || {};
   const tracker = breakTrackerData.tracker || [];
@@ -2034,6 +2074,7 @@ function renderBreakAdminView(){
     team: document.getElementById('break-admin-team'),
     chat: document.getElementById('break-admin-chat'),
     boardChip: document.getElementById('break-board-chip'),
+    laneBoard: document.getElementById('break-lane-board'),
     board: document.getElementById('break-board'),
     feedChip: document.getElementById('break-feed-chip'),
     feed: document.getElementById('break-feed'),
@@ -2051,6 +2092,18 @@ function renderBreakAdminView(){
   if(ids.historyChip) ids.historyChip.textContent = breakHistoryMode() ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
   if(ids.boardChip) ids.boardChip.textContent = (summary.teamCount ?? 0) + ' tracked';
   if(ids.callout) ids.callout.textContent = breakHistoryMode() ? 'History view' : (breakTrackerMeta.enabled ? 'Chat space live' : 'Chat setup pending');
+  if(ids.laneBoard){
+    const availableRows = tracker.filter(row => row.currentStatus === 'Logged In');
+    const brbRows = tracker.filter(row => row.currentStatus === 'BRB');
+    const breakRows = tracker.filter(row => row.currentStatus === 'Break');
+    const auxRows = tracker.filter(row => row.currentStatus === 'Training / Coaching' || row.currentStatus === 'QA Session AUX');
+    ids.laneBoard.innerHTML = [
+      buildBreakLaneCard('Available', 'Ready on desk', 'avail', availableRows),
+      buildBreakLaneCard('BRB', 'Quick-away lane', 'brb', brbRows),
+      buildBreakLaneCard('On Break', 'Away on break', 'break', breakRows),
+      buildBreakLaneCard('Training + QA AUX', 'Coaching and audit lanes', 'aux', auxRows)
+    ].join('');
+  }
 
   if(ids.board){
     ids.board.innerHTML = tracker.length ? tracker.map(row => {
