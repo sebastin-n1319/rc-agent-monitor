@@ -135,7 +135,6 @@ function buildBreakChatPayload(event){
   }
 
   return {
-    text: formatBreakChatMessage(event),
     cardsV2: [
       {
         cardId: 'break-bot-status',
