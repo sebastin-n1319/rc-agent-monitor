@@ -58,16 +58,92 @@ function normalizeLiveDirection(direction, fallback = null) {
   return fallback;
 }
 
-function resolveLiveDirection(data, prevEntry = null) {
-  const activeCalls = Array.isArray(data?.activeCalls) ? data.activeCalls : [];
-  const directionalCall = activeCalls.find(call => normalizeLiveDirection(call && call.direction, null));
-  const liveDirection = normalizeLiveDirection(
-    directionalCall && directionalCall.direction,
-    normalizeLiveDirection(data && data.direction, null)
+function normalizeLiveIdentityValue(value) {
+  if (value === undefined || value === null) return null;
+  const text = String(value).trim().toLowerCase();
+  return text || null;
+}
+
+function collectLivePartyCandidates(party = null) {
+  if (!party) return [];
+  const values = [
+    party.extensionId,
+    party.id,
+    party.extensionNumber,
+    party.phoneNumber,
+    party.name,
+    party.email,
+    party.extension && party.extension.id,
+    party.extension && party.extension.extensionNumber,
+    party.extension && party.extension.name
+  ];
+  return values.map(normalizeLiveIdentityValue).filter(Boolean);
+}
+
+function collectAgentLiveCandidates(agent = null) {
+  if (!agent) return new Set();
+  return new Set([
+    agent.rc_id,
+    agent.extension,
+    agent.name,
+    agent.email
+  ].map(normalizeLiveIdentityValue).filter(Boolean));
+}
+
+function callPartyMatchesAgent(party, agentCandidates) {
+  if (!agentCandidates || !agentCandidates.size) return false;
+  return collectLivePartyCandidates(party).some(value => agentCandidates.has(value));
+}
+
+function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
+  const explicit = normalizeLiveDirection(
+    call && call.direction,
+    normalizeLiveDirection(call && call.partyDirection, null)
   );
-  if (liveDirection) return liveDirection;
+  if (explicit) return explicit;
+
+  const agentCandidates = collectAgentLiveCandidates(agent);
+  const fromMatches = callPartyMatchesAgent(call && call.from, agentCandidates);
+  const toMatches = callPartyMatchesAgent(call && call.to, agentCandidates);
+
+  if (fromMatches && !toMatches) return 'Outbound';
+  if (toMatches && !fromMatches) return 'Inbound';
+
+  const currentKey = getCallSessionKey(call);
+  if (currentKey && prevEntry && prevEntry.isOnCall) {
+    const previousCalls = Array.isArray(prevEntry.activeCalls) ? prevEntry.activeCalls : [];
+    const matchedPrevCall = previousCalls.find(prevCall => getCallSessionKey(prevCall) === currentKey);
+    if (matchedPrevCall) {
+      const previousDirection = normalizeLiveDirection(
+        matchedPrevCall.direction,
+        normalizeLiveDirection(prevEntry.direction, null)
+      );
+      if (previousDirection) return previousDirection;
+    }
+  }
+
+  return null;
+}
+
+function resolveLiveDirection(agent, data, prevEntry = null) {
+  const activeCalls = Array.isArray(data?.activeCalls) ? data.activeCalls : [];
+
+  const topLevelDirection = normalizeLiveDirection(data && data.direction, null);
+  if (topLevelDirection) return topLevelDirection;
+
+  const sortedCalls = activeCalls.slice().sort((a, b) => parseStartTimeMs(a && a.startTime) - parseStartTimeMs(b && b.startTime));
+  for (const call of sortedCalls) {
+    const inferred = inferDirectionFromActiveCall(agent, call, prevEntry);
+    if (inferred) return inferred;
+  }
+
   if (prevEntry && prevEntry.isOnCall) {
-    return normalizeLiveDirection(prevEntry.direction, null);
+    const currentKeys = new Set(activeCalls.map(getCallSessionKey).filter(Boolean));
+    const previousCalls = Array.isArray(prevEntry.activeCalls) ? prevEntry.activeCalls : [];
+    const previousKeys = new Set(previousCalls.map(getCallSessionKey).filter(Boolean));
+    if (!currentKeys.size || [...currentKeys].some(key => previousKeys.has(key))) {
+      return normalizeLiveDirection(prevEntry.direction, null);
+    }
   }
   return null;
 }
@@ -666,7 +742,7 @@ function buildQueueAwareLiveStatusEntry(agent, data, fetchedAt, queueInfo, prevE
   let direction = null, callDuration = 0, callStartTime = null;
   const displayStatus = deriveDisplayStatus(data, resolvedQueueInfo);
   const queueReadyStatus = deriveQueueReadyStatus(data, resolvedQueueInfo);
-  direction = resolveLiveDirection(data, prevEntry);
+  direction = resolveLiveDirection(agent, data, prevEntry);
   callStartTime = (primaryCall && primaryCall.startTime) || data.callStartTime || (prevEntry && prevEntry.isOnCall ? prevEntry.callStartTime : null);
   callDuration = callStartTime ? Math.floor((Date.now() - new Date(callStartTime).getTime()) / 1000) : 0;
   return {
