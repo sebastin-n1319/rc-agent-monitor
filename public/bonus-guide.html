@@ -1057,7 +1057,7 @@ function setCsatValue(kind,nextValue){
   const value=kind==='score'?Math.round(raw*10)/10:Math.round(raw);
   csatCalcValues[activeTeam][kind]=Math.max(0,Math.min(csatMax(kind),value));
   syncCsatControl(kind);
-  computeCsatBonus();
+  computeBonus();
 }
 
 function bindCsatControls(){
