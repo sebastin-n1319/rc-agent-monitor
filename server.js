@@ -6,7 +6,7 @@ const path = require('path');
 const {
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
-  getAllRoles, setRole, removeRole, getRoleForEmail,
+  getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker
 } = require('./database');
 const {
@@ -296,10 +296,22 @@ app.get('/api/roles', async (req, res) => {
 });
 
 app.post('/api/roles', async (req, res) => {
-  const { email, role, addedBy } = req.body;
+  const { email, role, addedBy, breakbotEnabled } = req.body;
   if (!email || !role) return res.status(400).json({ success: false, error: 'Email and role required' });
-  try { await setRole(email.trim(), role, addedBy); res.json({ success: true }); }
+  try { await setRole(email.trim(), role, addedBy, breakbotEnabled); res.json({ success: true }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.patch('/api/roles/:email/breakbot', async (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  const { enabled, updatedBy } = req.body || {};
+  if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+  try {
+    await setBreakbotEnabled(email, enabled, updatedBy || 'system');
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 app.delete('/api/roles/:email', async (req, res) => {
@@ -313,7 +325,14 @@ app.delete('/api/roles/:email', async (req, res) => {
 app.get('/api/role-check', async (req, res) => {
   const email = req.query.email;
   if (!email) return res.status(400).json({ success: false });
-  try { res.json({ success: true, role: (await getRoleForEmail(email)) || 'agent' }); }
+  try {
+    const settings = await getRoleSettingsForEmail(email);
+    res.json({
+      success: true,
+      role: settings?.role || 'agent',
+      breakbotEnabled: settings ? settings.breakbotEnabled : true
+    });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

@@ -330,6 +330,7 @@ async function initDB() {
   await run(`CREATE TABLE IF NOT EXISTS app_roles (
     id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL DEFAULT 'agent', added_by TEXT,
+    breakbot_enabled INTEGER NOT NULL DEFAULT 1,
     added_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE TABLE IF NOT EXISTS break_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -367,6 +368,7 @@ async function initDB() {
     `ALTER TABLE break_events ADD COLUMN notified INTEGER DEFAULT 0`,
     `ALTER TABLE break_events ADD COLUMN notify_status TEXT`,
     `ALTER TABLE break_events ADD COLUMN notify_response TEXT`,
+    `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
   ]) { try { await run(sql); } catch(e) {} }
 
   for (const email of ['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com']) {
@@ -874,10 +876,43 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
 }
 
 // ROLES
-function getAllRoles(){return all(`SELECT * FROM app_roles ORDER BY role ASC,email ASC`);}
-function setRole(e,r,by){return run(`INSERT INTO app_roles (email,role,added_by) VALUES (?,?,?) ON CONFLICT(email) DO UPDATE SET role=excluded.role,added_by=excluded.added_by`,[e,r,by]);}
+function normalizeBreakbotEnabled(value){
+  return value === false || value === 0 || value === '0' ? 0 : 1;
+}
+
+function getAllRoles(){
+  return all(`SELECT id,email,role,added_by,added_at,COALESCE(breakbot_enabled,1) AS breakbot_enabled FROM app_roles ORDER BY role ASC,email ASC`);
+}
+
+function setRole(e,r,by,breakbotEnabled=1){
+  return run(
+    `INSERT INTO app_roles (email,role,added_by,breakbot_enabled)
+     VALUES (?,?,?,?)
+     ON CONFLICT(email) DO UPDATE SET
+       role=excluded.role,
+       added_by=excluded.added_by,
+       breakbot_enabled=excluded.breakbot_enabled`,
+    [e,r,by,normalizeBreakbotEnabled(breakbotEnabled)]
+  );
+}
+
+function setBreakbotEnabled(e,enabled,by){
+  return run(
+    `INSERT INTO app_roles (email,role,added_by,breakbot_enabled)
+     VALUES (?,'agent',?,?)
+     ON CONFLICT(email) DO UPDATE SET
+       breakbot_enabled=excluded.breakbot_enabled,
+       added_by=excluded.added_by`,
+    [e,by || 'system',normalizeBreakbotEnabled(enabled)]
+  );
+}
+
 function removeRole(e){return run(`DELETE FROM app_roles WHERE email=?`,[e]);}
 async function getRoleForEmail(e){const row=await get(`SELECT role FROM app_roles WHERE email=?`,[e]);return row?row.role:null;}
+async function getRoleSettingsForEmail(e){
+  const row=await get(`SELECT role,COALESCE(breakbot_enabled,1) AS breakbot_enabled FROM app_roles WHERE email=?`,[e]);
+  return row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled}:null;
+}
 
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
@@ -885,5 +920,5 @@ module.exports={
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,getAgentSummary,getAbandonedCalls,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
-  getAllRoles,setRole,removeRole,getRoleForEmail
+  getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail
 };
