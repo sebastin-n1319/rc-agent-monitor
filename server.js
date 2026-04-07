@@ -43,6 +43,30 @@ function formatBreakTime(stamp, timeZone, label){
   })} ${label}`;
 }
 
+function getBreakChatMeta(event){
+  const actionMap = {
+    LOGGED_IN: { lane: 'Logged In', detail: 'Shift started', flow: 'in', emoji: '✅', accent: '🟢' },
+    LOGGED_OUT: { lane: 'Logged Out', detail: 'Shift closed', flow: 'out', emoji: '⏹️', accent: '🔴' },
+    BRB_OUT: { lane: 'BRB', detail: 'Quick away started', flow: 'out', emoji: '🟠', accent: '🔴' },
+    BRB_IN: { lane: 'Logged In', detail: 'Back from BRB', flow: 'in', emoji: '🟢', accent: '🟢' },
+    BREAK_OUT: { lane: 'Break', detail: 'Break started', flow: 'out', emoji: '🍵', accent: '🔴' },
+    BREAK_IN: { lane: 'Logged In', detail: 'Back from break', flow: 'in', emoji: '🟢', accent: '🟢' },
+    TRAINING_OUT: { lane: 'Training / Coaching', detail: 'Coaching started', flow: 'out', emoji: '🎯', accent: '🔴' },
+    TRAINING_IN: { lane: 'Logged In', detail: 'Back from coaching', flow: 'in', emoji: '🟢', accent: '🟢' },
+    QA_SESSION_OUT: { lane: 'QA Session AUX', detail: 'QA AUX started', flow: 'out', emoji: '🧪', accent: '🔴' },
+    QA_SESSION_IN: { lane: 'Logged In', detail: 'Back from QA AUX', flow: 'in', emoji: '🟢', accent: '🟢' },
+    INTERNAL_CALL_OUT: { lane: 'Internal Calls', detail: 'Internal call started', flow: 'out', emoji: '📞', accent: '🔴' },
+    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call', flow: 'in', emoji: '🟢', accent: '🟢' }
+  };
+  return actionMap[event.action] || {
+    lane: event.currentStatus || 'Updated',
+    detail: event.actionLabel || 'Status updated',
+    flow: 'out',
+    emoji: '📣',
+    accent: '🔴'
+  };
+}
+
 function broadcastLiveEvent(payload) {
   const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
   for (const res of sseClients) res.write(msg);
@@ -52,49 +76,94 @@ function formatBreakChatMessage(event){
   const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
   const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
   const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
-  const actionMap = {
-    LOGGED_IN: { lane: 'Logged In', detail: 'Shift started', flow: 'in', emoji: '✅' },
-    LOGGED_OUT: { lane: 'Logged Out', detail: 'Shift closed', flow: 'out', emoji: '⏹️' },
-    BRB_OUT: { lane: 'BRB', detail: 'Quick away started', flow: 'out', emoji: '🟠' },
-    BRB_IN: { lane: 'Logged In', detail: 'Back from BRB', flow: 'in', emoji: '🟢' },
-    BREAK_OUT: { lane: 'Break', detail: 'Break started', flow: 'out', emoji: '🍵' },
-    BREAK_IN: { lane: 'Logged In', detail: 'Back from break', flow: 'in', emoji: '🟢' },
-    TRAINING_OUT: { lane: 'Training / Coaching', detail: 'Coaching started', flow: 'out', emoji: '🎯' },
-    TRAINING_IN: { lane: 'Logged In', detail: 'Back from coaching', flow: 'in', emoji: '🟢' },
-    QA_SESSION_OUT: { lane: 'QA Session AUX', detail: 'QA AUX started', flow: 'out', emoji: '🧪' },
-    QA_SESSION_IN: { lane: 'Logged In', detail: 'Back from QA AUX', flow: 'in', emoji: '🟢' },
-    INTERNAL_CALL_OUT: { lane: 'Internal Calls', detail: 'Internal call started', flow: 'out', emoji: '📞' },
-    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call', flow: 'in', emoji: '🟢' }
-  };
-  const meta = actionMap[event.action] || {
-    lane: event.currentStatus || 'Updated',
-    detail: event.actionLabel || 'Status updated',
-    flow: 'out',
-    emoji: '📣'
-  };
+  const meta = getBreakChatMeta(event);
   const detailLine = event.linkedDurationSeconds
     ? `${meta.detail} · ${formatBreakDuration(event.linkedDurationSeconds)}`
     : meta.detail;
-  const flowLabel = meta.flow === 'in' ? '🟢 <b>IN</b>' : '🔴 <b>OUT</b>';
   return [
-    `${meta.emoji} <b>${event.username}</b>  ${flowLabel}`,
-    `<b>Status:</b> ${meta.lane}`,
+    `${meta.emoji} ${event.username} · ${meta.flow === 'in' ? 'IN' : 'OUT'}`,
+    `Status: ${meta.lane}`,
     detailLine,
-    `🕒 <b>IST:</b> ${timeIst}  ·  CST: ${timeCst}`,
-    event.note ? `📝 <b>Reason:</b> ${event.note}` : null
+    `IST: ${timeIst} · CST: ${timeCst}`,
+    event.note ? `Reason: ${event.note}` : null
   ].filter(Boolean).join('\n');
+}
+
+function buildBreakChatPayload(event){
+  const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
+  const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
+  const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
+  const meta = getBreakChatMeta(event);
+  const directionLabel = meta.flow === 'in' ? 'IN' : 'OUT';
+  const detailLine = event.linkedDurationSeconds
+    ? `${meta.detail} · ${formatBreakDuration(event.linkedDurationSeconds)}`
+    : meta.detail;
+  const widgets = [
+    {
+      decoratedText: {
+        topLabel: `${meta.accent} ${directionLabel} · ${meta.lane}`,
+        text: event.username
+      }
+    },
+    {
+      decoratedText: {
+        topLabel: 'Update',
+        text: `${meta.emoji} ${detailLine}`
+      }
+    },
+    {
+      decoratedText: {
+        topLabel: 'Primary time',
+        text: `🕒 IST ${timeIst}`
+      }
+    },
+    {
+      decoratedText: {
+        topLabel: 'Reference time',
+        text: `CST ${timeCst}`
+      }
+    }
+  ];
+
+  if (event.note) {
+    widgets.push({
+      decoratedText: {
+        topLabel: 'Reason',
+        text: event.note
+      }
+    });
+  }
+
+  return {
+    text: formatBreakChatMessage(event),
+    cardsV2: [
+      {
+        cardId: 'break-bot-status',
+        card: {
+          header: {
+            title: `${event.username}`,
+            subtitle: `${meta.accent} ${directionLabel} · ${meta.lane}`
+          },
+          sections: [
+            {
+              widgets
+            }
+          ]
+        }
+      }
+    ]
+  };
 }
 
 async function sendBreakChatNotification(event){
   if(!GOOGLE_CHAT_WEBHOOK_URL){
     return { notified: false, status: 'disabled', response: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
   }
+  const payload = buildBreakChatPayload(event);
   const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    body: JSON.stringify({
-      text: formatBreakChatMessage(event)
-    })
+    body: JSON.stringify(payload)
   });
   const text = await resp.text();
   return {
