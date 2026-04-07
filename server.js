@@ -101,12 +101,6 @@ function buildBreakChatPayload(event){
   const widgets = [
     {
       decoratedText: {
-        topLabel: `${meta.accent} ${directionLabel} · ${meta.lane}`,
-        text: event.username
-      }
-    },
-    {
-      decoratedText: {
         topLabel: 'Update',
         text: `${meta.emoji} ${detailLine}`
       }
