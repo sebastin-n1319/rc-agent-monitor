@@ -96,18 +96,21 @@ function callPartyMatchesAgent(party, agentCandidates) {
 }
 
 function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
+  const agentCandidates = collectAgentLiveCandidates(agent);
+  const fromMatches = callPartyMatchesAgent(call && call.from, agentCandidates);
+  const toMatches = callPartyMatchesAgent(call && call.to, agentCandidates);
+
+  // Party matching is the most reliable signal for agent-relative direction,
+  // especially on internal extension-to-extension calls where top-level direction
+  // can be account-relative rather than agent-relative.
+  if (fromMatches && !toMatches) return 'Outbound';
+  if (toMatches && !fromMatches) return 'Inbound';
+
   const explicit = normalizeLiveDirection(
     call && call.direction,
     normalizeLiveDirection(call && call.partyDirection, null)
   );
   if (explicit) return explicit;
-
-  const agentCandidates = collectAgentLiveCandidates(agent);
-  const fromMatches = callPartyMatchesAgent(call && call.from, agentCandidates);
-  const toMatches = callPartyMatchesAgent(call && call.to, agentCandidates);
-
-  if (fromMatches && !toMatches) return 'Outbound';
-  if (toMatches && !fromMatches) return 'Inbound';
 
   const currentKey = getCallSessionKey(call);
   if (currentKey && prevEntry && prevEntry.isOnCall) {
@@ -128,14 +131,14 @@ function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
 function resolveLiveDirection(agent, data, prevEntry = null) {
   const activeCalls = Array.isArray(data?.activeCalls) ? data.activeCalls : [];
 
-  const topLevelDirection = normalizeLiveDirection(data && data.direction, null);
-  if (topLevelDirection) return topLevelDirection;
-
   const sortedCalls = activeCalls.slice().sort((a, b) => parseStartTimeMs(a && a.startTime) - parseStartTimeMs(b && b.startTime));
   for (const call of sortedCalls) {
     const inferred = inferDirectionFromActiveCall(agent, call, prevEntry);
     if (inferred) return inferred;
   }
+
+  const topLevelDirection = normalizeLiveDirection(data && data.direction, null);
+  if (topLevelDirection) return topLevelDirection;
 
   if (prevEntry && prevEntry.isOnCall) {
     const currentKeys = new Set(activeCalls.map(getCallSessionKey).filter(Boolean));
