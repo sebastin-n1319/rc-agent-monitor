@@ -468,27 +468,68 @@ tr:hover td{background:rgba(30,143,255,0.04);}
 @keyframes syncPulse{0%{box-shadow:0 0 0 0 rgba(255,123,0,0.5);}100%{box-shadow:0 0 0 10px rgba(255,123,0,0);}}
 .btn-primary.syncing{animation:syncPulse 1s ease-out infinite;}
 
-/* AGENT/ROLE GRIDS */
-.agent-grid,.role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
-.agent-card,.role-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:12px 13px;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s;}
-.agent-card:hover,.role-card:hover{border-color:var(--orange);background:rgba(255,123,0,0.02);transform:translateY(-1px);}
-.role-card{align-items:flex-start;gap:10px;}
-.role-card-main{display:grid;gap:4px;min-width:0;flex:1;}
-.role-card-controls{display:grid;gap:8px;justify-items:end;min-width:190px;}
-.role-meta-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
-.role-breakbot-chip{padding:5px 9px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
-.role-breakbot-chip.on{background:rgba(0,216,126,0.1);border-color:rgba(0,216,126,0.22);color:var(--green);}
-.role-breakbot-chip.off{background:rgba(240,64,96,0.08);border-color:rgba(240,64,96,0.2);color:#ff9bb0;}
-.role-toggle-btn{padding:6px 10px;border-radius:999px;border:1px solid rgba(91,176,255,0.22);background:rgba(91,176,255,0.08);color:#cde7ff;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
-.role-toggle-btn:hover{background:rgba(91,176,255,0.14);border-color:rgba(91,176,255,0.32);}
-.role-toggle-btn.off{border-color:rgba(240,64,96,0.2);background:rgba(240,64,96,0.08);color:#ffb7c4;}
-.role-toggle-btn.off:hover{background:rgba(240,64,96,0.12);}
-.role-toggle-btn:disabled{opacity:0.6;cursor:progress;}
+/* AGENT GRID */
+.agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;}
+.agent-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:14px;padding:12px 13px;display:flex;justify-content:space-between;align-items:center;transition:all 0.2s;}
+.agent-card:hover{border-color:var(--orange);background:rgba(255,123,0,0.02);transform:translateY(-1px);}
 .field.inline-toggle{min-width:180px;}
 .inline-flag{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text2);font-size:11px;font-weight:600;}
 .inline-flag input{accent-color:var(--green);}
 .agent-card-name,.role-email{font-size:12px;font-weight:600;color:var(--text);}
 .agent-card-meta,.role-by{font-size:9px;color:var(--text3);font-family:'JetBrains Mono',monospace;margin-top:3px;}
+
+/* ACCESS CONTROL */
+.role-shell{display:grid;gap:12px;}
+.role-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
+.role-stat{position:relative;overflow:hidden;border-radius:15px;border:1px solid rgba(255,255,255,0.07);background:linear-gradient(150deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015));padding:13px 14px;box-shadow:var(--shadow-md);}
+.role-stat::after{content:'';position:absolute;inset:auto 0 0 0;height:2px;background:linear-gradient(90deg,transparent,var(--stat-color,var(--orange)),transparent);opacity:.75;}
+.role-stat-label{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;}
+.role-stat-value{font-size:24px;font-weight:800;line-height:1;color:var(--stat-color,var(--text));font-family:'JetBrains Mono',monospace;}
+.role-stat-sub{margin-top:6px;font-size:10px;color:var(--text3);}
+.role-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.95fr);gap:12px;align-items:start;}
+.role-setup-card .form-row{margin-bottom:0;}
+.role-form-footer{display:flex;justify-content:flex-end;margin-top:12px;}
+.role-policy-card{display:grid;gap:10px;}
+.role-policy-list{display:grid;gap:8px;}
+.role-policy-item{padding:11px 12px;border-radius:13px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.025);}
+.role-policy-item strong{display:block;font-size:11px;color:var(--text);margin-bottom:4px;}
+.role-policy-item span{display:block;font-size:10px;line-height:1.5;color:var(--text2);}
+.role-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.role-search{position:relative;flex:1;min-width:220px;}
+.role-search input{width:100%;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);padding:0 12px 0 38px;color:var(--text);font-size:11px;outline:none;transition:border-color .2s,box-shadow .2s;}
+.role-search input:focus{border-color:rgba(91,176,255,0.32);box-shadow:0 0 0 3px rgba(91,176,255,0.08);}
+.role-search::before{content:'⌕';position:absolute;left:13px;top:50%;transform:translateY(-52%);font-size:13px;color:var(--text3);}
+.role-filter-strip{display:flex;flex-wrap:wrap;gap:6px;}
+.role-filter-btn{height:32px;padding:0 11px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);cursor:pointer;transition:all .18s ease;font-family:'Inter',sans-serif;}
+.role-filter-btn:hover{border-color:rgba(255,123,0,0.24);color:var(--orange);}
+.role-filter-btn.active{background:rgba(255,123,0,0.09);border-color:rgba(255,123,0,0.28);color:var(--orange);}
+.role-board{border-radius:16px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.02);overflow:hidden;box-shadow:var(--shadow-md);}
+.role-board-head,.role-row{display:grid;grid-template-columns:minmax(260px,2.2fr) 110px 140px minmax(150px,1fr) minmax(210px,1.15fr);gap:10px;align-items:center;padding:11px 14px;}
+.role-board-head{font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);background:rgba(255,255,255,0.025);border-bottom:1px solid rgba(255,255,255,0.06);}
+.role-row{border-top:1px solid rgba(26,51,82,0.6);transition:background .18s ease,transform .18s ease;}
+.role-row:first-child{border-top:none;}
+.role-row:hover{background:rgba(255,255,255,0.03);}
+.role-cell{min-width:0;}
+.role-identity{display:grid;gap:4px;min-width:0;}
+.role-name-line{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap;}
+.role-name-label{font-size:12px;font-weight:700;color:var(--text);}
+.role-inline-pill{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);}
+.role-inline-pill.self{color:var(--blue2);border-color:rgba(91,176,255,0.2);background:rgba(91,176,255,0.08);}
+.role-inline-pill.preview{color:#ffbd70;border-color:rgba(255,160,64,0.2);background:rgba(255,160,64,0.08);}
+.role-email{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);}
+.role-owner{font-size:10px;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+.role-pill{display:inline-flex;align-items:center;justify-content:center;min-width:66px;}
+.role-breakbot-chip{display:inline-flex;align-items:center;justify-content:center;min-width:110px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.role-breakbot-chip.on{background:rgba(0,216,126,0.1);border-color:rgba(0,216,126,0.22);color:var(--green);}
+.role-breakbot-chip.off{background:rgba(240,64,96,0.08);border-color:rgba(240,64,96,0.2);color:#ff9bb0;}
+.role-added-by{font-size:10px;color:var(--text2);}
+.role-core-note{font-size:10px;color:var(--text3);margin-top:4px;}
+.role-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;}
+.role-toggle-btn{padding:6px 10px;border-radius:999px;border:1px solid rgba(91,176,255,0.22);background:rgba(91,176,255,0.08);color:#cde7ff;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.role-toggle-btn:hover{background:rgba(91,176,255,0.14);border-color:rgba(91,176,255,0.32);}
+.role-toggle-btn.off{border-color:rgba(240,64,96,0.2);background:rgba(240,64,96,0.08);color:#ffb7c4;}
+.role-toggle-btn.off:hover{background:rgba(240,64,96,0.12);}
+.role-toggle-btn:disabled{opacity:0.6;cursor:progress;}
 .verified{color:var(--green)!important;}
 .pending{color:var(--orange)!important;}
 
@@ -666,9 +707,9 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
 .toast.show{opacity:1;transform:translateY(0);}
 .toast-icon{font-size:14px;}
 
-@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout,.break-hero-grid,.break-lane-board{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid,.break-protocol,.break-signal-board,.break-summary{grid-template-columns:repeat(2,minmax(0,1fr));}.break-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.break-toolbar{align-items:flex-start;}}
+@media(max-width:1200px){.metrics{grid-template-columns:repeat(3,1fr);}.ops-metrics{grid-template-columns:repeat(3,1fr);}.ops-grid,.hof-stage,.break-layout,.break-hero-grid,.break-lane-board,.role-layout{grid-template-columns:1fr;}.danger-grid,.ops-pulse,.hof-grid,.break-protocol,.break-signal-board,.break-summary,.role-overview{grid-template-columns:repeat(2,minmax(0,1fr));}.break-actions{grid-template-columns:repeat(3,minmax(0,1fr));}.break-toolbar{align-items:flex-start;}.role-board-head,.role-row{grid-template-columns:minmax(220px,2fr) 96px 120px minmax(130px,.9fr) minmax(180px,1fr);}}
 @media(max-width:1200px){.viz-row{grid-template-columns:1fr;}.mix-legend{grid-template-columns:repeat(2,minmax(0,1fr));}}
-@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid,.break-protocol,.break-signal-board,.break-lane-board{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:780px;}.break-hero-title{font-size:20px;}.break-toolbar{flex-direction:column;align-items:stretch;}.break-toolbar-group{justify-content:space-between;}.page{padding:12px 14px;}.nav{padding:8px 14px;}}
+@media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.ops-metrics,.ops-metrics-4{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.login-left{display:none;}.login-right{flex:1;}.ll-grid{grid-template-columns:1fr 1fr;}.ops-hero{flex-direction:column;align-items:flex-start;}.abandon-summary,.danger-grid,.ops-pulse,.hof-grid,.hof-mini-grid,.hof-stats,.break-summary,.break-actions,.break-user-grid,.break-protocol,.break-signal-board,.break-lane-board,.role-overview{grid-template-columns:1fr;}.health-panel{grid-template-columns:1fr;}.health-gauge{margin:0 auto;}.mix-legend{grid-template-columns:1fr 1fr;}.hof-hero-main{grid-template-columns:auto 1fr;}.hof-score-badge{grid-column:1 / -1;max-width:120px;}.hof-copy{max-width:none;}.hof-frame,.bonus-frame{height:780px;}.break-hero-title{font-size:20px;}.break-toolbar{flex-direction:column;align-items:stretch;}.break-toolbar-group{justify-content:space-between;}.page{padding:12px 14px;}.nav{padding:8px 14px;}.role-toolbar{align-items:stretch;}.role-board-head{display:none;}.role-row{grid-template-columns:1fr;gap:8px;}.role-actions{justify-content:flex-start;}.role-search{min-width:0;}}
 </style>
 </head>
 <body>
@@ -971,18 +1012,85 @@ footer{text-align:center;padding:10px 14px;font-size:9px;color:var(--text3);bord
 
   <!-- ACCESS -->
   <div class="page" id="tab-access">
-    <div class="card">
-      <div class="card-hdr"><span class="card-title">Manage User Roles</span></div>
-      <div class="form-row">
-        <div class="field" style="flex:2"><label>Email Address</label><input type="text" id="roleEmail" placeholder="user@adit.com"></div>
-        <div class="field"><label>Role</label><select id="roleSelect"><option value="agent">Agent (read-only)</option><option value="admin">Admin (full access)</option></select></div>
-        <div class="field inline-toggle"><label>Break Bot in Agent View</label><label class="inline-flag"><input type="checkbox" id="roleBreakbotEnabled" checked> Show Break Bot tab</label></div>
-        <div style="padding-top:20px"><button class="btn btn-primary" onclick="addRole()">Save Role</button></div>
+    <div class="role-shell">
+      <div class="role-overview">
+        <div class="role-stat" style="--stat-color:var(--teal)">
+          <div class="role-stat-label">Tracked Users</div>
+          <div class="role-stat-value" id="role-stat-total">0</div>
+          <div class="role-stat-sub">People with explicit access rows</div>
+        </div>
+        <div class="role-stat" style="--stat-color:var(--orange)">
+          <div class="role-stat-label">Admins</div>
+          <div class="role-stat-value" id="role-stat-admin">0</div>
+          <div class="role-stat-sub">Leads with full control and preview access</div>
+        </div>
+        <div class="role-stat" style="--stat-color:var(--green)">
+          <div class="role-stat-label">Agents</div>
+          <div class="role-stat-value" id="role-stat-agent">0</div>
+          <div class="role-stat-sub">Read-only users in the live floor</div>
+        </div>
+        <div class="role-stat" style="--stat-color:var(--blue2)">
+          <div class="role-stat-label">Break Bot Enabled</div>
+          <div class="role-stat-value" id="role-stat-breakbot">0</div>
+          <div class="role-stat-sub">Users who see Break Bot in agent view</div>
+        </div>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-hdr"><span class="card-title">Access List</span><span class="chip" id="roleCount">0 users</span></div>
-      <div id="roleGrid" class="role-grid"><div class="no-data">Loading...</div></div>
+
+      <div class="role-layout">
+        <div class="card role-setup-card">
+          <div class="card-hdr"><span class="card-title">Assign Or Update Access</span><span class="chip">Live policy editor</span></div>
+          <div class="form-row">
+            <div class="field" style="flex:2"><label>Email Address</label><input type="text" id="roleEmail" placeholder="user@adit.com"></div>
+            <div class="field"><label>Role</label><select id="roleSelect"><option value="agent">Agent (read-only)</option><option value="admin">Admin (full access)</option></select></div>
+            <div class="field inline-toggle"><label>Break Bot in Agent View</label><label class="inline-flag"><input type="checkbox" id="roleBreakbotEnabled" checked> Show Break Bot tab</label></div>
+          </div>
+          <div class="role-form-footer"><button class="btn btn-primary" onclick="addRole()">Save Role</button></div>
+        </div>
+
+        <div class="card role-policy-card">
+          <div class="card-hdr"><span class="card-title">Access Signal</span><span class="chip">Compact governance</span></div>
+          <div class="role-policy-list">
+            <div class="role-policy-item">
+              <strong>Hide Break Bot for selected users</strong>
+              <span>Keep their agent access intact while removing the Break Bot tab from the live agent shell.</span>
+            </div>
+            <div class="role-policy-item">
+              <strong>Admin preview stays available</strong>
+              <span>If you hide Break Bot on your own account, you can still open a read-only preview from Agent View for testing.</span>
+            </div>
+            <div class="role-policy-item">
+              <strong>Fast audit board</strong>
+              <span>Search by email, filter by role or Break Bot state, and manage every user from one dense control board.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Access Board</span><span class="chip" id="roleCount">0 users</span></div>
+        <div class="role-toolbar">
+          <label class="role-search">
+            <input type="text" id="roleSearchInput" placeholder="Search by email or owner..." oninput="handleRoleSearchInput(this.value)">
+          </label>
+          <div class="role-filter-strip">
+            <button class="role-filter-btn active" data-filter="all" onclick="setRoleFilter('all', this)">All</button>
+            <button class="role-filter-btn" data-filter="admin" onclick="setRoleFilter('admin', this)">Admins</button>
+            <button class="role-filter-btn" data-filter="agent" onclick="setRoleFilter('agent', this)">Agents</button>
+            <button class="role-filter-btn" data-filter="breakbot-on" onclick="setRoleFilter('breakbot-on', this)">Break Bot On</button>
+            <button class="role-filter-btn" data-filter="breakbot-off" onclick="setRoleFilter('breakbot-off', this)">Break Bot Off</button>
+          </div>
+        </div>
+        <div class="role-board">
+          <div class="role-board-head">
+            <div>User</div>
+            <div>Role</div>
+            <div>Break Bot</div>
+            <div>Managed By</div>
+            <div style="text-align:right">Actions</div>
+          </div>
+          <div id="roleGrid" class="role-board-body"><div class="no-data">Loading...</div></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1284,7 +1392,7 @@ const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 const ADIT_LOGO_DARK='/adit-logo-dark.png';
 const ADIT_LOGO_LIGHT='/adit-logo-light.png';
 
-let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,currentBreakbotEnabled=true,currentBreakbotPreviewMode=false,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={},breakTrackerData={summary:{},tracker:[],recentLog:[]},breakTrackerMeta={enabled:false,target:'Chat space'},breakSelectedDate='';
+let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,currentBreakbotEnabled=true,currentBreakbotPreviewMode=false,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={},breakTrackerData={summary:{},tracker:[],recentLog:[]},breakTrackerMeta={enabled:false,target:'Chat space'},breakSelectedDate='',roleDirectory=[],roleFilterMode='all',roleSearchTerm='';
 let dashboardSortState={admin:{key:'idx',dir:'asc'},agent:{key:'idx',dir:'asc'}};
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
@@ -2928,25 +3036,93 @@ function removeAgentBtn(btn){
 }
 
 // ROLES
+function deriveRoleName(email=''){
+  const raw=String(email||'').split('@')[0]||'User';
+  return raw
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map(part=>part.charAt(0).toUpperCase()+part.slice(1))
+    .join(' ');
+}
+
+function renderRoleOverview(roles){
+  const total=roles.length;
+  const adminCount=roles.filter(r=>r.role==='admin').length;
+  const agentCount=roles.filter(r=>r.role!=='admin').length;
+  const breakbotCount=roles.filter(r=>r.breakbot_enabled!==0).length;
+  const totalEl=document.getElementById('role-stat-total');
+  const adminEl=document.getElementById('role-stat-admin');
+  const agentEl=document.getElementById('role-stat-agent');
+  const breakbotEl=document.getElementById('role-stat-breakbot');
+  if(totalEl) totalEl.textContent=String(total);
+  if(adminEl) adminEl.textContent=String(adminCount);
+  if(agentEl) agentEl.textContent=String(agentCount);
+  if(breakbotEl) breakbotEl.textContent=String(breakbotCount);
+}
+
+function getFilteredRoles(){
+  let rows=[...roleDirectory];
+  if(roleFilterMode==='admin') rows=rows.filter(r=>r.role==='admin');
+  if(roleFilterMode==='agent') rows=rows.filter(r=>r.role!=='admin');
+  if(roleFilterMode==='breakbot-on') rows=rows.filter(r=>r.breakbot_enabled!==0);
+  if(roleFilterMode==='breakbot-off') rows=rows.filter(r=>r.breakbot_enabled===0);
+  if(roleSearchTerm){
+    const needle=roleSearchTerm.toLowerCase();
+    rows=rows.filter(r=>String(r.email||'').toLowerCase().includes(needle)||String(r.added_by||'').toLowerCase().includes(needle)||deriveRoleName(r.email).toLowerCase().includes(needle));
+  }
+  return rows;
+}
+
+function renderRoleRows(){
+  const roleGrid=document.getElementById('roleGrid');
+  const roleCount=document.getElementById('roleCount');
+  const rows=getFilteredRoles();
+  const total=roleDirectory.length;
+  if(roleCount) roleCount.textContent=rows.length===total?total+' users':rows.length+' / '+total+' users';
+  if(!rows.length){
+    roleGrid.innerHTML='<div class="no-data">No users match this view.</div>';
+    return;
+  }
+  roleGrid.innerHTML=rows.map(r=>{
+    const isCore=CORE_ADMINS.includes(r.email);
+    const breakbotEnabled=r.breakbot_enabled!==0;
+    const isSelf=currentEmail && String(r.email||'').toLowerCase()===String(currentEmail||'').toLowerCase();
+    const roleBadge='<span class="role-pill '+(r.role==='admin'?'role-admin':'role-agent')+'">'+r.role.toUpperCase()+'</span>';
+    const breakbotChip='<span class="role-breakbot-chip '+(breakbotEnabled?'on':'off')+'">'+(breakbotEnabled?'Visible':'Hidden')+'</span>';
+    const toggleBtn='<button class="role-toggle-btn '+(breakbotEnabled?'':'off')+'" data-email="'+r.email+'" data-enabled="'+(breakbotEnabled?'1':'0')+'" onclick="toggleRoleBreakbotBtn(this)">'+(breakbotEnabled?'Hide Break Bot':'Show Break Bot')+'</button>';
+    const removeBtn=isCore?'<span class="role-core-note">Core admin</span>':'<button class="btn btn-danger btn-sm" data-email="'+r.email+'" onclick="deleteRoleBtn(this)">Remove</button>';
+    const previewTag=isSelf && currentRole==='admin' && !breakbotEnabled?'<span class="role-inline-pill preview">Preview Ready</span>':'';
+    return '<div class="role-row">'+
+      '<div class="role-cell role-identity">'+
+        '<div class="role-name-line"><span class="role-name-label">'+deriveRoleName(r.email)+'</span>'+(isSelf?'<span class="role-inline-pill self">You</span>':'')+previewTag+'</div>'+
+        '<div class="role-email" title="'+r.email+'">'+r.email+'</div>'+
+      '</div>'+
+      '<div class="role-cell">'+roleBadge+'</div>'+
+      '<div class="role-cell">'+breakbotChip+'</div>'+
+      '<div class="role-cell"><div class="role-added-by">'+(r.added_by||'system')+'</div><div class="role-core-note">Access source</div></div>'+
+      '<div class="role-cell role-actions">'+toggleBtn+removeBtn+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function handleRoleSearchInput(value){
+  roleSearchTerm=String(value||'').trim().toLowerCase();
+  renderRoleRows();
+}
+
+function setRoleFilter(mode, btn){
+  roleFilterMode=mode;
+  document.querySelectorAll('.role-filter-btn').forEach(el=>el.classList.toggle('active',el===btn));
+  renderRoleRows();
+}
+
 async function loadRoles(){
   try{
     const res=await fetch(BACKEND+'/api/roles');const json=await res.json();const roles=json.data||[];
-    document.getElementById('roleCount').textContent=roles.length+' users';
-    if(!roles.length){document.getElementById('roleGrid').innerHTML='<div class="no-data">No roles.</div>';return;}
-    document.getElementById('roleGrid').innerHTML=roles.map(r=>{
-      const isCore=CORE_ADMINS.includes(r.email);
-      const removeBtn=isCore?'<span style="font-size:10px;color:var(--text3)">Core Admin</span>':'<button class="btn btn-danger btn-sm" data-email="'+r.email+'" onclick="deleteRoleBtn(this)">Remove</button>';
-      const breakbotEnabled=r.breakbot_enabled!==0;
-      const breakbotChip='<span class="role-breakbot-chip '+(breakbotEnabled?'on':'off')+'">'+(breakbotEnabled?'Break Bot On':'Break Bot Off')+'</span>';
-      const toggleBtn='<button class="role-toggle-btn '+(breakbotEnabled?'':'off')+'" data-email="'+r.email+'" data-enabled="'+(breakbotEnabled?'1':'0')+'" onclick="toggleRoleBreakbotBtn(this)">'+(breakbotEnabled?'Hide Break Bot':'Show Break Bot')+'</button>';
-      return '<div class="role-card">'+
-        '<div class="role-card-main"><div class="role-email">'+r.email+'</div><div class="role-by">by '+(r.added_by||'system')+'</div></div>'+
-        '<div class="role-card-controls">'+
-          '<div class="role-meta-row"><span class="role-pill '+(r.role==='admin'?'role-admin':'role-agent')+'">'+r.role.toUpperCase()+'</span>'+breakbotChip+'</div>'+
-          '<div class="role-meta-row">'+toggleBtn+removeBtn+'</div>'+
-        '</div>'+
-      '</div>';
-    }).join('');
+    roleDirectory=roles;
+    renderRoleOverview(roleDirectory);
+    if(!roleDirectory.length){document.getElementById('roleCount').textContent='0 users';document.getElementById('roleGrid').innerHTML='<div class="no-data">No roles.</div>';return;}
+    renderRoleRows();
   }catch(e){showToast('Error','error');}
 }
 
