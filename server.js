@@ -53,30 +53,30 @@ function formatBreakChatMessage(event){
   const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
   const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
   const actionMap = {
-    LOGGED_IN: { headline: 'is now live on desk', lane: 'Logged In' },
-    LOGGED_OUT: { headline: 'closed the shift', lane: 'Logged Out' },
-    BRB_OUT: { headline: 'stepped away on BRB', lane: 'BRB' },
-    BRB_IN: { headline: 'returned from BRB', lane: 'Logged In' },
-    BREAK_OUT: { headline: 'went on break', lane: 'Break' },
-    BREAK_IN: { headline: 'returned from break', lane: 'Logged In' },
-    TRAINING_OUT: { headline: 'moved into training / coaching', lane: 'Training / Coaching' },
-    TRAINING_IN: { headline: 'returned from training / coaching', lane: 'Logged In' },
-    QA_SESSION_OUT: { headline: 'moved into QA AUX', lane: 'QA Session AUX' },
-    QA_SESSION_IN: { headline: 'returned from QA AUX', lane: 'Logged In' },
-    INTERNAL_CALL_OUT: { headline: 'moved into internal calls', lane: 'Internal Calls' },
-    INTERNAL_CALL_IN: { headline: 'returned from internal calls', lane: 'Logged In' }
+    LOGGED_IN: { lane: 'Logged In', detail: 'Shift started' },
+    LOGGED_OUT: { lane: 'Logged Out', detail: 'Shift closed' },
+    BRB_OUT: { lane: 'BRB', detail: 'Quick away started' },
+    BRB_IN: { lane: 'Logged In', detail: 'Back from BRB' },
+    BREAK_OUT: { lane: 'Break', detail: 'Break started' },
+    BREAK_IN: { lane: 'Logged In', detail: 'Back from break' },
+    TRAINING_OUT: { lane: 'Training / Coaching', detail: 'Coaching started' },
+    TRAINING_IN: { lane: 'Logged In', detail: 'Back from coaching' },
+    QA_SESSION_OUT: { lane: 'QA Session AUX', detail: 'QA AUX started' },
+    QA_SESSION_IN: { lane: 'Logged In', detail: 'Back from QA AUX' },
+    INTERNAL_CALL_OUT: { lane: 'Internal Calls', detail: 'Internal call started' },
+    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call' }
   };
   const meta = actionMap[event.action] || {
-    headline: `updated ${event.actionLabel || 'status'}`,
-    lane: event.currentStatus || 'Updated'
+    lane: event.currentStatus || 'Updated',
+    detail: event.actionLabel || 'Status updated'
   };
-  const durationLine = event.linkedDurationSeconds ? `Tracked away time: ${formatBreakDuration(event.linkedDurationSeconds)}` : null;
+  const detailLine = event.linkedDurationSeconds
+    ? `${meta.detail} · ${formatBreakDuration(event.linkedDurationSeconds)}`
+    : meta.detail;
   return [
-    'Adit Break Bot',
-    `${event.username} ${meta.headline}.`,
-    `Current lane: ${meta.lane}`,
+    `${event.username} → ${meta.lane}`,
+    detailLine,
     `Time: ${timeCst} · ${timeIst}`,
-    durationLine,
     event.note ? `Note: ${event.note}` : null
   ].filter(Boolean).join('\n');
 }
