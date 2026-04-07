@@ -53,31 +53,35 @@ function formatBreakChatMessage(event){
   const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
   const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
   const actionMap = {
-    LOGGED_IN: { lane: 'Logged In', detail: 'Shift started' },
-    LOGGED_OUT: { lane: 'Logged Out', detail: 'Shift closed' },
-    BRB_OUT: { lane: 'BRB', detail: 'Quick away started' },
-    BRB_IN: { lane: 'Logged In', detail: 'Back from BRB' },
-    BREAK_OUT: { lane: 'Break', detail: 'Break started' },
-    BREAK_IN: { lane: 'Logged In', detail: 'Back from break' },
-    TRAINING_OUT: { lane: 'Training / Coaching', detail: 'Coaching started' },
-    TRAINING_IN: { lane: 'Logged In', detail: 'Back from coaching' },
-    QA_SESSION_OUT: { lane: 'QA Session AUX', detail: 'QA AUX started' },
-    QA_SESSION_IN: { lane: 'Logged In', detail: 'Back from QA AUX' },
-    INTERNAL_CALL_OUT: { lane: 'Internal Calls', detail: 'Internal call started' },
-    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call' }
+    LOGGED_IN: { lane: 'Logged In', detail: 'Shift started', flow: 'in', emoji: '✅' },
+    LOGGED_OUT: { lane: 'Logged Out', detail: 'Shift closed', flow: 'out', emoji: '⏹️' },
+    BRB_OUT: { lane: 'BRB', detail: 'Quick away started', flow: 'out', emoji: '🟠' },
+    BRB_IN: { lane: 'Logged In', detail: 'Back from BRB', flow: 'in', emoji: '🟢' },
+    BREAK_OUT: { lane: 'Break', detail: 'Break started', flow: 'out', emoji: '🍵' },
+    BREAK_IN: { lane: 'Logged In', detail: 'Back from break', flow: 'in', emoji: '🟢' },
+    TRAINING_OUT: { lane: 'Training / Coaching', detail: 'Coaching started', flow: 'out', emoji: '🎯' },
+    TRAINING_IN: { lane: 'Logged In', detail: 'Back from coaching', flow: 'in', emoji: '🟢' },
+    QA_SESSION_OUT: { lane: 'QA Session AUX', detail: 'QA AUX started', flow: 'out', emoji: '🧪' },
+    QA_SESSION_IN: { lane: 'Logged In', detail: 'Back from QA AUX', flow: 'in', emoji: '🟢' },
+    INTERNAL_CALL_OUT: { lane: 'Internal Calls', detail: 'Internal call started', flow: 'out', emoji: '📞' },
+    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call', flow: 'in', emoji: '🟢' }
   };
   const meta = actionMap[event.action] || {
     lane: event.currentStatus || 'Updated',
-    detail: event.actionLabel || 'Status updated'
+    detail: event.actionLabel || 'Status updated',
+    flow: 'out',
+    emoji: '📣'
   };
   const detailLine = event.linkedDurationSeconds
     ? `${meta.detail} · ${formatBreakDuration(event.linkedDurationSeconds)}`
     : meta.detail;
+  const flowLabel = meta.flow === 'in' ? '🟢 <b>IN</b>' : '🔴 <b>OUT</b>';
   return [
-    `${event.username} → ${meta.lane}`,
+    `${meta.emoji} <b>${event.username}</b>  ${flowLabel}`,
+    `<b>Status:</b> ${meta.lane}`,
     detailLine,
-    `Time: ${timeCst} · ${timeIst}`,
-    event.note ? `Note: ${event.note}` : null
+    `🕒 <b>IST:</b> ${timeIst}  ·  CST: ${timeCst}`,
+    event.note ? `📝 <b>Reason:</b> ${event.note}` : null
   ].filter(Boolean).join('\n');
 }
 
