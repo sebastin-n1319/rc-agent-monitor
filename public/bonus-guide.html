@@ -1298,6 +1298,20 @@ bindCalcTabs();
   wireControls();
   computeBonus();
   hydrateLogo();
+
+  /* ── Reveal observer ── */
+  const revealIO = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('visible');
+        revealIO.unobserve(e.target);
+      }
+    });
+  },{threshold:0.08});
+  document.querySelectorAll('[data-reveal]').forEach(el=>{
+    // honour custom delay from inline style
+    revealIO.observe(el);
+  });
 </script>
 </body>
 </html>
