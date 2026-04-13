@@ -95,7 +95,13 @@ function callPartyMatchesAgent(party, agentCandidates) {
   return collectLivePartyCandidates(party).some(value => agentCandidates.has(value));
 }
 
-function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
+function normalizeRecordedDirection(direction, fallback = null) {
+  const explicit = normalizeLiveDirection(direction, null);
+  if (explicit) return explicit;
+  return fallback;
+}
+
+function inferAgentScopedDirection(agent, call, fallback = null, prevEntry = null) {
   const agentCandidates = collectAgentLiveCandidates(agent);
   const fromMatches = callPartyMatchesAgent(call && call.from, agentCandidates);
   const toMatches = callPartyMatchesAgent(call && call.to, agentCandidates);
@@ -106,9 +112,9 @@ function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
   if (fromMatches && !toMatches) return 'Outbound';
   if (toMatches && !fromMatches) return 'Inbound';
 
-  const explicit = normalizeLiveDirection(
+  const explicit = normalizeRecordedDirection(
     call && call.direction,
-    normalizeLiveDirection(call && call.partyDirection, null)
+    normalizeRecordedDirection(call && call.partyDirection, null)
   );
   if (explicit) return explicit;
 
@@ -117,15 +123,19 @@ function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
     const previousCalls = Array.isArray(prevEntry.activeCalls) ? prevEntry.activeCalls : [];
     const matchedPrevCall = previousCalls.find(prevCall => getCallSessionKey(prevCall) === currentKey);
     if (matchedPrevCall) {
-      const previousDirection = normalizeLiveDirection(
+      const previousDirection = normalizeRecordedDirection(
         matchedPrevCall.direction,
-        normalizeLiveDirection(prevEntry.direction, null)
+        normalizeRecordedDirection(prevEntry.direction, null)
       );
       if (previousDirection) return previousDirection;
     }
   }
 
-  return null;
+  return fallback;
+}
+
+function inferDirectionFromActiveCall(agent, call, prevEntry = null) {
+  return inferAgentScopedDirection(agent, call, null, prevEntry);
 }
 
 function resolveLiveDirection(agent, data, prevEntry = null) {
@@ -294,14 +304,16 @@ function callTouchesCustomerServiceQueue(call) {
 }
 
 function getCallSessionKey(call) {
-  return String(
-    call?.sessionId ||
-    call?.session_id ||
-    call?.telephonySessionId ||
-    call?.telephonySession_id ||
-    call?.telephonySession?.id ||
-    call?.id
-  );
+  const raw =
+    call?.sessionId ??
+    call?.session_id ??
+    call?.telephonySessionId ??
+    call?.telephonySession_id ??
+    call?.telephonySession?.id ??
+    call?.id ??
+    null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  return String(raw);
 }
 
 function parseStartTimeMs(value) {
@@ -312,7 +324,9 @@ function parseStartTimeMs(value) {
 function buildSessionSummary(sessionCalls, lookups) {
   const ordered = sessionCalls.slice().sort((a, b) => parseStartTimeMs(a.startTime) - parseStartTimeMs(b.startTime));
   const first = ordered[0] || {};
-  const primaryDirection = normalizeCallResult(first.direction);
+  const primaryDirection = normalizeCallResult(
+    normalizeRecordedDirection(first.direction, normalizeRecordedDirection(first.partyDirection, null))
+  );
 
   let owner = null;
   let queueTouched = false;
@@ -333,7 +347,9 @@ function buildSessionSummary(sessionCalls, lookups) {
     owner = owner || resolveCallOwner(call, lookups);
     queueTouched = queueTouched || callTouchesCustomerServiceQueue(call);
 
-    const direction = normalizeCallResult(call.direction);
+    const direction = normalizeCallResult(
+      normalizeRecordedDirection(call.direction, normalizeRecordedDirection(call.partyDirection, null))
+    );
     if (direction === 'inbound') inboundSeen = true;
     if (direction === 'outbound') outboundSeen = true;
 
@@ -344,15 +360,23 @@ function buildSessionSummary(sessionCalls, lookups) {
     transferred = transferred || parsed.transferred;
     voicemailResult = voicemailResult || parsed.isVoicemail || isVoicemailResult(call.result);
     abandonedResult = abandonedResult || isAbandonedStyleResult(call.result);
-    connected = connected || normalizeCallResult(call.result) === 'call connected';
+    const resultNorm = normalizeCallResult(call.result);
+    connected = connected ||
+      resultNorm === 'call connected' ||
+      resultNorm === 'connected' ||
+      resultNorm === 'accepted' ||
+      resultNorm === 'completed' ||
+      (Number(call.duration || 0) > 0);
 
     if (!startTime || parseStartTimeMs(call.startTime) < parseStartTimeMs(startTime)) startTime = call.startTime;
     if (!callId && call.id) callId = call.id;
     if (!result && call.result) result = call.result;
   }
 
-  const relevantInbound = queueTouched && (primaryDirection === 'inbound' || (inboundSeen && !outboundSeen));
-  const relevantOutbound = !!owner && !queueTouched && (primaryDirection === 'outbound' || (outboundSeen && !inboundSeen));
+  // Queue-touched sessions are the queue inbound workload we want to mirror in the
+  // live RC dashboard, even when later transfer legs introduce mixed directions.
+  const relevantInbound = queueTouched;
+  const relevantOutbound = !!owner && !queueTouched && (primaryDirection === 'outbound' || outboundSeen);
 
   return {
     owner,
@@ -590,8 +614,9 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
     let outboundTalkCount = 0;
 
     const sessions = new Map();
-    for (const call of calls) {
-      const key = getCallSessionKey(call);
+    for (let idx = 0; idx < calls.length; idx++) {
+      const call = calls[idx];
+      const key = getCallSessionKey(call) || `single:${call?.id || call?.startTime || idx}`;
       if (!sessions.has(key)) sessions.set(key, []);
       sessions.get(key).push(call);
     }
@@ -1143,7 +1168,7 @@ async function fetchCallLogs(force = false) {
               agentId: agent.rc_id,
               agentName: agent.name,
               callId: call.id,
-              direction: call.direction,
+              direction: inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null)),
               result: call.result,
               duration: call.duration || 0,
               ringDuration,
