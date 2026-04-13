@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>T1 CS Stars — Q1 2026</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;0,14..32,900;1,14..32,400&family=JetBrains+Mono:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 /* ══════════════════════════════════════════════════════════
    RESET + ROOT
@@ -29,8 +29,8 @@
   --t3:#4d5566;
   --t4:#272f3e;
   /* Brand colors */
-  --teal:#00e5a0;    --teal-lo:rgba(0,229,160,.06);  --teal-mid:rgba(0,229,160,.15);
-  --amber:#ff9a3c;   --amber-lo:rgba(255,154,60,.06); --amber-mid:rgba(255,154,60,.15);
+  --teal:#0687be;    --teal-lo:rgba(6,135,190,.06);  --teal-mid:rgba(6,135,190,.15);
+  --amber:#f28820;   --amber-lo:rgba(242,136,32,.06); --amber-mid:rgba(242,136,32,.15);
   --violet:#a78bfa;  --violet-lo:rgba(167,139,250,.06);
   --blue:#60a5fa;    --blue-lo:rgba(96,165,250,.06);
   --gold:#fbbf24;    --gold-lo:rgba(251,191,36,.06);  --gold-mid:rgba(251,191,36,.14);
@@ -141,7 +141,7 @@ body::after{
   content:'';
   position:absolute;
   inset:0;
-  background:linear-gradient(105deg, rgba(0,229,160,.04) 0%, transparent 40%, rgba(167,139,250,.04) 100%);
+  background:linear-gradient(105deg, rgba(6,135,190,.04) 0%, transparent 40%, rgba(167,139,250,.04) 100%);
   pointer-events:none;
 }
 .hdr-brand{display:flex;align-items:center;gap:12px;position:relative}
@@ -154,7 +154,7 @@ body::after{
 }
 .hdr-logo img{width:24px;height:24px;object-fit:contain}
 .hdr-logo-fb{font-size:14px;font-weight:800;color:#1a1a3e}
-.hdr-title{font-size:14px;font-weight:700;letter-spacing:-.025em;color:var(--t1)}
+.hdr-title{font-family:'Poppins','Inter',sans-serif;font-size:14px;font-weight:700;letter-spacing:-.025em;color:var(--t1)}
 .hdr-sub{font-size:11px;color:var(--t3);margin-top:1px;letter-spacing:.01em}
 .hdr-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap;position:relative}
 
@@ -351,8 +351,8 @@ body::after{
   font-size:11px;font-weight:700;letter-spacing:-.01em;
   flex-shrink:0;
 }
-.avi-t{background:rgba(0,229,160,.12);color:var(--teal);border:1px solid rgba(0,229,160,.2)}
-.avi-ch{background:rgba(255,154,60,.12);color:var(--amber);border:1px solid rgba(255,154,60,.2)}
+.avi-t{background:rgba(6,135,190,.12);color:var(--teal);border:1px solid rgba(6,135,190,.2)}
+.avi-ch{background:rgba(242,136,32,.13);color:var(--amber);border:1px solid rgba(255,154,60,.2)}
 .acard-name{font-size:13.5px;font-weight:700;letter-spacing:-.02em}
 .acard-ext{font-size:10.5px;color:var(--t3);margin-top:1px}
 
@@ -418,7 +418,7 @@ body::after{
   display:flex;align-items:center;gap:7px;
 }
 .hof-tagline::before{content:'';width:20px;height:1px;background:currentColor;opacity:.5}
-.hof-h1{font-size:24px;font-weight:800;letter-spacing:-.05em;color:var(--t1);margin-bottom:6px;line-height:1.15;position:relative}
+.hof-h1{font-family:'Poppins','Inter',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.05em;color:var(--t1);margin-bottom:6px;line-height:1.15;position:relative}
 .hof-h1 em{font-style:normal;color:var(--gold)}
 .hof-caption{font-size:12.5px;color:var(--t2);line-height:1.7;max-width:460px;position:relative}
 .hof-qs{display:flex;gap:20px;flex-wrap:wrap;position:relative}
@@ -621,7 +621,7 @@ body::after{
   color:var(--amber);
   background:rgba(255,154,60,.07);
   border:1px solid rgba(255,154,60,.18);
-  box-shadow:0 0 60px rgba(255,154,60,.1);
+  box-shadow:0 0 60px rgba(242,136,32,.11);
   margin-bottom:22px;
   animation:lockGlow 3s ease-in-out infinite;
   position:relative;
@@ -630,7 +630,7 @@ body::after{
   0%,100%{box-shadow:0 0 50px rgba(255,154,60,.08);border-color:rgba(255,154,60,.16)}
   50%{box-shadow:0 0 80px rgba(255,154,60,.22);border-color:rgba(255,154,60,.3)}
 }
-.lock-title{font-size:22px;font-weight:800;letter-spacing:-.04em;margin-bottom:8px}
+.lock-title{font-family:'Poppins','Inter',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.04em;margin-bottom:8px}
 .lock-sub{font-size:13px;color:var(--t2);max-width:380px;line-height:1.7;margin-bottom:22px}
 .lock-date{
   display:inline-flex;align-items:center;gap:8px;
@@ -675,7 +675,7 @@ body::after{
 
 /* Bonus open */
 .bonus-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
-.bonus-hdr-title{font-size:17px;font-weight:800;letter-spacing:-.03em}
+.bonus-hdr-title{font-family:'Poppins','Inter',sans-serif;font-size:17px;font-weight:800;letter-spacing:-.03em}
 .bonus-hdr-sub{font-size:11.5px;color:var(--t2);margin-top:2px}
 .bonus-totals{display:flex;gap:8px;flex-wrap:wrap}
 .btot{
@@ -1368,14 +1368,14 @@ function buildHoF(){
   const consistent=maxBy(allAgents,slabMonths);
 
   const awards=[
-    {ico:'phone',name:'Call Volume Leader',winner:callVol,metric:`${sumInbound(callVol).toLocaleString()} inbound calls`,sub:'Highest inbound call count in Q1',color:'var(--teal)',colorLo:'rgba(0,229,160,.06)',colorMid:'rgba(0,229,160,.15)',tb:'var(--teal)'},
-    {ico:'msg',name:'Chat Volume Leader',winner:chatVol,metric:`${sumChats(chatVol).toLocaleString()} chats handled`,sub:'Highest chat volume in Q1',color:'var(--amber)',colorLo:'rgba(255,154,60,.06)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
+    {ico:'phone',name:'Call Volume Leader',winner:callVol,metric:`${sumInbound(callVol).toLocaleString()} inbound calls`,sub:'Highest inbound call count in Q1',color:'var(--teal)',colorLo:'rgba(6,135,190,.06)',colorMid:'rgba(6,135,190,.15)',tb:'var(--teal)'},
+    {ico:'msg',name:'Chat Volume Leader',winner:chatVol,metric:`${sumChats(chatVol).toLocaleString()} chats handled`,sub:'Highest chat volume in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
     {ico:'ticket',name:'Ticket Titan',winner:ticketTitan,metric:`${sumTickets(ticketTitan).toLocaleString()} tickets closed`,sub:'Most tickets resolved across all channels',color:'var(--violet)',colorLo:'rgba(167,139,250,.06)',colorMid:'rgba(167,139,250,.15)',tb:'var(--violet)'},
     {ico:'target',name:'FCR Master',winner:fcrMaster,metric:`${avgFcr(fcrMaster).toFixed(1)}% avg FCR`,sub:'Highest first-contact resolution rate',color:'var(--blue)',colorLo:'rgba(96,165,250,.06)',colorMid:'rgba(96,165,250,.15)',tb:'var(--blue)'},
     {ico:'shield',name:'Quality Champion',winner:qualityChamp,metric:`${avgQa(qualityChamp).toFixed(1)}% avg QA`,sub:'Highest quality assurance score',color:'var(--green)',colorLo:'rgba(52,211,153,.06)',colorMid:'rgba(52,211,153,.15)',tb:'var(--green)'},
     {ico:'smile',name:'Customer Favourite',winner:custFav,metric:`${avgCsat(custFav).toFixed(1)}% avg CSAT`,sub:'Highest customer satisfaction rating',color:'var(--gold)',colorLo:'rgba(251,191,36,.06)',colorMid:'rgba(251,191,36,.15)',tb:'var(--gold)'},
     {ico:'trend',name:'Rising Star',winner:riser,metric:`+${ptsByMonth(riser).mar-ptsByMonth(riser).jan} pts Jan\u2192Mar`,sub:'Biggest improvement in performance points',color:'var(--rose)',colorLo:'rgba(251,113,133,.06)',colorMid:'rgba(251,113,133,.15)',tb:'var(--rose)'},
-    {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${slabMonths(consistent)}/3 Slab 1 months`,sub:'Highest slab-qualifying months in Q1',color:'var(--amber)',colorLo:'rgba(255,154,60,.06)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
+    {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${slabMonths(consistent)}/3 Slab 1 months`,sub:'Highest slab-qualifying months in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
   ];
 
   const awardGrid=document.getElementById('awardGrid');
