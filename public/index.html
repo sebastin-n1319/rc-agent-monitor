@@ -254,7 +254,7 @@ body::before{
 .login-glow{width:760px;height:760px;background:radial-gradient(circle,rgba(88,214,255,.13) 0%,transparent 60%);}
 .login-wrap{width:min(460px,100%);}
 .login-logo{margin-bottom:24px;}
-.login-logo img{width:136px;filter:drop-shadow(0 18px 44px rgba(88,214,255,.18));}
+.login-logo img{width:116px;filter:drop-shadow(0 18px 44px rgba(88,214,255,.18));}
 .login-card{
   padding:26px;border-radius:30px;
   background:linear-gradient(180deg,rgba(14,22,37,.94),rgba(9,15,28,.96));
@@ -264,8 +264,13 @@ body::before{
 .login-card-title{font-size:22px;font-weight:700;letter-spacing:-.03em;}
 .login-card-sub{font-size:12px;color:var(--text3);margin-bottom:22px;}
 .google-btn{height:48px;border-radius:16px;font-size:13px;font-weight:600;box-shadow:0 16px 30px rgba(0,0,0,.18);}
+.google-render{min-height:48px;display:flex;align-items:center;justify-content:center;}
+.google-render>div{width:100%!important;display:flex;justify-content:center;}
+.google-render iframe{margin:0 auto!important;}
+.google-btn-fallback{margin-top:10px;}
 .login-restrict{font-size:11px;color:var(--text3);}
 .login-bottom{margin-top:18px;}
+.login-logos{display:none;}
 
 /* App shell */
 .sig-bar,header,.nav,.page,#agentView,footer{max-width:1600px;margin:0 auto;}
@@ -282,6 +287,8 @@ header{
   border-radius:24px;backdrop-filter:blur(20px);box-shadow:0 24px 60px rgba(0,0,0,.34);
 }
 .hdr-left{gap:12px;}
+.hdr-logo-rc{display:none;}
+.hdr-logo-adit{height:22px;width:auto;}
 .hdr-title{font-size:14px;font-weight:700;letter-spacing:-.02em;}
 .hdr-sub{font-size:11px;color:var(--text3);}
 .hdr-chip,.hdr-user,.logout-btn{
@@ -467,9 +474,10 @@ footer{
     </div>
     <div class="login-card">
       <div class="login-card-title">Sign in to continue</div>
-      <div class="login-card-sub">RC Agent Monitor &mdash; T1 CS Stars</div>
+      <div class="login-card-sub">Adit Agent Monitor &mdash; T1 CS Stars</div>
       <div id="loginMsg"></div>
-      <button class="google-btn" onclick="signInWithGoogle()">
+      <div id="googleBtn" class="google-render"></div>
+      <button id="googleFallbackBtn" class="google-btn google-btn-fallback" type="button" onclick="signInWithGoogle()" style="display:none">
         <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Continue with Google
       </button>
@@ -498,7 +506,7 @@ footer{
     <img class="hdr-logo-adit" src="data:image/png;base64,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" alt="Adit">
     <div class="hdr-sep"></div>
     <div>
-      <div class="hdr-title">RC Agent Monitor</div>
+      <div class="hdr-title">Adit Agent Monitor</div>
       <div class="hdr-sub">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
     </div>
   </div>
@@ -722,20 +730,63 @@ const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
 let currentTZ='CST',currentUser=null,currentRole=null,reportData=[],todaySummary={},timelineData={},liveCallData={},toggleData={};
-let acTimeout=null,liveTimers={};
+let acTimeout=null,liveTimers={},googleAuthReady=false;
 
 function showToast(msg,dur=3000){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),dur);}
 
 // ── AUTH ──────────────────────────────────────────────────────
-function signInWithGoogle(){
-  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential,auto_select:false});
-  google.accounts.id.prompt(n=>{
-    if(n.isNotDisplayed()||n.isSkippedMoment()){
-      const d=document.createElement('div');document.body.appendChild(d);
-      google.accounts.id.renderButton(d,{theme:'outline',size:'large'});
-      d.querySelector('[role=button]')?.click();setTimeout(()=>d.remove(),500);
-    }
+function applyBranding(){
+  const loginLogo=document.querySelector('.login-logo img');
+  if(loginLogo) loginLogo.src='/adit-logo-dark.png';
+  const hdrLogo=document.querySelector('.hdr-logo-adit');
+  if(hdrLogo) hdrLogo.src='/adit-logo-dark.png';
+}
+
+function renderGoogleButton(){
+  const host=document.getElementById('googleBtn');
+  if(!host || !window.google?.accounts?.id) return false;
+  if(host.dataset.rendered==='1') return true;
+  host.innerHTML='';
+  google.accounts.id.renderButton(host,{
+    theme:'outline',
+    size:'large',
+    text:'continue_with',
+    shape:'pill',
+    logo_alignment:'left',
+    width:Math.min(host.clientWidth||360,360)
   });
+  host.dataset.rendered='1';
+  const fallback=document.getElementById('googleFallbackBtn');
+  if(fallback) fallback.style.display='none';
+  return true;
+}
+
+function initGoogleAuth(){
+  if(!window.google?.accounts?.id) return false;
+  if(!googleAuthReady){
+    google.accounts.id.initialize({
+      client_id:GOOGLE_CLIENT_ID,
+      callback:handleGoogleCredential,
+      auto_select:false,
+      cancel_on_tap_outside:true
+    });
+    googleAuthReady=true;
+  }
+  return renderGoogleButton();
+}
+
+function signInWithGoogle(){
+  if(!initGoogleAuth()){
+    showLoginMsg('Google sign-in is still loading. Please wait a moment and try again.','error');
+    return;
+  }
+  const trigger=document.querySelector('#googleBtn [role="button"]');
+  if(trigger){
+    trigger.click();
+    return;
+  }
+  google.accounts.id.prompt();
+  showLoginMsg('If the sign-in popup did not open, refresh once and try again.','error');
 }
 
 async function handleGoogleCredential(response){
@@ -781,13 +832,17 @@ function startApp(username,role,picture){
 
 function doLogout(){
   sessionStorage.clear();currentUser=null;currentRole=null;
-  google.accounts.id.disableAutoSelect();
+  if(window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainApp').style.display='none';
   document.getElementById('loginMsg').innerHTML='';
 }
 function showLoginMsg(msg,type){document.getElementById('loginMsg').innerHTML='<div class="login-msg-'+type+'">'+msg+'</div>';}
-function loadSession(){const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');if(u&&r)startApp(u,r,p);else if(window.google)google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential});}
+function loadSession(){
+  const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');
+  if(u&&r)startApp(u,r,p);
+  else initGoogleAuth();
+}
 
 // ── TIMEZONE ──────────────────────────────────────────────────
 function toggleTZ(){currentTZ=currentTZ==='CST'?'IST':'CST';document.getElementById('tzLabel').textContent=currentTZ;document.getElementById('tzOther').textContent=currentTZ==='CST'?'IST':'CST';['tz-display','agent-tz-display'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=currentTZ+' ('+TZ[currentTZ]+')';}); refresh();}
@@ -1133,9 +1188,26 @@ updateClock();
 setInterval(updateClock,1000);
 setInterval(()=>{if(currentUser)refresh();},15000);
 window.addEventListener('load',()=>{
+  applyBranding();
   loadSession();
   const dp=document.getElementById('date-picker');if(dp)dp.value=todayStr();
-  if(window.google&&!currentUser)google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential,auto_select:false});
+  if(!currentUser){
+    initGoogleAuth();
+    setTimeout(()=>{
+      if(!googleAuthReady){
+        const fallback=document.getElementById('googleFallbackBtn');
+        if(fallback) fallback.style.display='flex';
+        showLoginMsg('Google sign-in is taking longer than expected. You can still use the fallback button below.','error');
+      }
+    },2200);
+  }
+});
+window.addEventListener('resize',()=>{
+  const host=document.getElementById('googleBtn');
+  if(host && host.dataset.rendered==='1' && !currentUser){
+    host.dataset.rendered='0';
+    renderGoogleButton();
+  }
 });
 </script>
 </body>
