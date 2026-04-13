@@ -3,711 +3,578 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hall of Fame</title>
+<title>Hall of Fame — T1 CS Stars · Q1 2026</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#050d18;
-  --panel:#0b1628;
-  --panel-strong:#101c30;
-  --line:rgba(255,255,255,.08);
-  --text:#f2f7ff;
-  --muted:rgba(226,236,255,.58);
-  --calls:#1fe0a1;
-  --calls-soft:#7cf2ce;
-  --chat:#ff9b2f;
-  --chat-soft:#ffcf87;
-  --blue:#67b8ff;
-  --red:#ff6a8d;
-  --violet:#9f8cff;
+  --bg:#09090f;
+  --surface:#111118;
+  --surface2:#16161f;
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.12);
+  --text:#f1f5f9;
+  --muted:#64748b;
+  --muted2:#94a3b8;
+  --calls:#00e5a0;
+  --calls-dim:rgba(0,229,160,.12);
+  --calls-mid:rgba(0,229,160,.25);
+  --chat:#ff8c42;
+  --chat-dim:rgba(255,140,66,.12);
+  --chat-mid:rgba(255,140,66,.25);
+  --green:#10b981;
+  --green-dim:rgba(16,185,129,.15);
+  --amber:#f59e0b;
+  --amber-dim:rgba(245,158,11,.15);
+  --red:#ef4444;
+  --red-dim:rgba(239,68,68,.12);
+  --blue:#3b82f6;
+  --violet:#8b5cf6;
 }
-html,body{min-height:100%}
-body{
-  background:
-    radial-gradient(circle at 15% 18%, rgba(31,224,161,.16), transparent 28%),
-    radial-gradient(circle at 82% 14%, rgba(255,155,47,.18), transparent 30%),
-    radial-gradient(circle at 50% 110%, rgba(103,184,255,.14), transparent 34%),
-    linear-gradient(180deg, #08111d 0%, #06101b 55%, #050c16 100%);
-  color:var(--text);
-  font-family:'Manrope',sans-serif;
-  overflow-x:hidden;
-}
-body::before,
-body::after{
-  content:'';
-  position:fixed;
-  inset:-20%;
-  pointer-events:none;
-  opacity:.6;
-}
-body::before{
-  background:
-    radial-gradient(circle, rgba(31,224,161,.08) 0, transparent 55%) 10% 15%/34% 34% no-repeat,
-    radial-gradient(circle, rgba(255,155,47,.08) 0, transparent 55%) 88% 18%/34% 34% no-repeat,
-    radial-gradient(circle, rgba(103,184,255,.06) 0, transparent 60%) 50% 78%/46% 46% no-repeat;
-  animation:driftCloud 18s linear infinite;
-}
-body::after{
-  background-image:
-    linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px);
-  background-size:32px 32px;
-  mask-image:linear-gradient(180deg, rgba(0,0,0,.72), transparent 92%);
-}
-.stage{position:relative;max-width:1390px;margin:0 auto;padding:16px 16px 26px}
-.hero{
-  position:relative;
-  overflow:hidden;
-  border-radius:24px;
-  padding:20px 20px 18px;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,.01)),
-    linear-gradient(180deg, rgba(15,29,49,.96), rgba(8,17,31,.96));
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 28px 70px rgba(0,0,0,.34);
-}
-.hero::before,
-.hero::after{
-  content:'';
-  position:absolute;
-  border-radius:999px;
-  filter:blur(10px);
-}
-.hero::before{
-  width:340px;height:340px;right:-120px;top:-120px;
-  background:radial-gradient(circle, rgba(255,155,47,.24), transparent 65%);
-  animation:floatAura 10s ease-in-out infinite;
-}
-.hero::after{
-  width:320px;height:320px;left:-120px;bottom:-120px;
-  background:radial-gradient(circle, rgba(31,224,161,.18), transparent 68%);
-  animation:floatAura 12s ease-in-out infinite reverse;
-}
-.hero-top{
-  position:relative;z-index:1;
-  display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;
-}
-.brand{
-  display:flex;align-items:center;gap:14px;
-}
-.brand-badge{
-  width:52px;height:52px;border-radius:16px;
-  background:linear-gradient(145deg, rgba(255,255,255,.96), rgba(236,243,255,.9));
-  box-shadow:0 18px 34px rgba(0,0,0,.26);
-  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;
-}
-.brand-badge::after{
-  content:'';
-  position:absolute;inset:0;
-  background:linear-gradient(135deg, rgba(255,255,255,.44), transparent 55%);
-  pointer-events:none;
-}
-.brand-logo{width:100%;height:100%;object-fit:contain;padding:10px;display:none}
-.brand-fallback{
-  font-family:'Space Grotesk',sans-serif;
-  font-size:26px;font-weight:700;color:#11233c;
-}
-.brand-copy h2{
-  font-size:26px;line-height:1;font-weight:800;letter-spacing:-.05em;
-}
-.brand-copy p{
-  margin-top:5px;font-size:11px;color:var(--muted);line-height:1.5;
-}
-.hero-pills{
-  display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;
-}
-.hero-pill{
-  padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.04);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-}
-.hero-pill.calls{color:var(--calls-soft)}
-.hero-pill.chat{color:var(--chat-soft)}
-.hero-pill.live{color:var(--blue)}
-.hero-main{
-  position:relative;z-index:1;
-  display:grid;grid-template-columns:1.12fr .88fr;gap:14px;align-items:end;margin-top:18px;
-}
-.hero-copy .eyebrow{
-  display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;
-  background:rgba(255,155,47,.12);color:var(--chat);border:1px solid rgba(255,155,47,.28);
-  font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
-}
-.hero-copy h1{
-  margin-top:12px;font-family:'Space Grotesk',sans-serif;font-size:46px;line-height:.94;letter-spacing:-.06em;
-}
-.hero-copy h1 span{
-  color:transparent;
-  background:linear-gradient(90deg, var(--calls-soft), var(--chat-soft));
-  -webkit-background-clip:text;background-clip:text;
-}
-.hero-copy p{
-  margin-top:8px;max-width:600px;font-size:12px;line-height:1.62;color:var(--muted);
-}
-.hero-stats{
-  display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:8px;
-}
-.hero-stat{
-  border-radius:16px;padding:12px 12px 11px;
-  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(10px);
-  transition:transform .28s ease, border-color .28s ease, box-shadow .28s ease;
-}
-.hero-stat:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.16);box-shadow:0 22px 34px rgba(0,0,0,.22)}
-.hero-stat span{display:block;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.hero-stat strong{display:block;margin-top:8px;font-size:22px;font-family:'Space Grotesk',sans-serif;line-height:1}
-.hero-stat small{display:block;margin-top:6px;font-size:10px;color:rgba(255,255,255,.46);line-height:1.5}
-.hero-stat.calls strong{color:var(--calls-soft)}
-.hero-stat.chat strong{color:var(--chat-soft)}
-.hero-stat.violet strong{color:#c7bbff}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden}
 
-.summary-split{
-  margin-top:12px;
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+/* ---- LAYOUT ---- */
+.wrap{max-width:1360px;margin:0 auto;padding:24px 20px 60px}
+
+/* ---- HEADER ---- */
+.hdr{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 24px;border-radius:18px;margin-bottom:24px;
+  background:linear-gradient(135deg,#13131e,#0f0f1a);
+  border:1px solid var(--border2);flex-wrap:wrap;
 }
-.wing-summary{
+.hdr-brand{display:flex;align-items:center;gap:14px}
+.hdr-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(145deg,#fff,#e8f0ff);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.hdr-logo img{width:32px;height:32px;object-fit:contain}
+.hdr-logo-fallback{font-size:18px;font-weight:800;color:#1e1e3a}
+.hdr-title{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.hdr-sub{font-size:11px;color:var(--muted2);margin-top:2px}
+.hdr-pills{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid}
+.pill-calls{background:var(--calls-dim);color:var(--calls);border-color:rgba(0,229,160,.25)}
+.pill-chat{background:var(--chat-dim);color:var(--chat);border-color:rgba(255,140,66,.25)}
+.pill-q{background:rgba(139,92,246,.12);color:#a78bfa;border-color:rgba(139,92,246,.25)}
+.pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ---- HERO STATS ---- */
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}}
+.stat-card{
+  padding:18px 20px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--border);
   position:relative;overflow:hidden;
-  border-radius:18px;padding:15px 15px 13px;
-  background:linear-gradient(180deg, rgba(8,16,28,.96), rgba(7,15,25,.94));
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 18px 44px rgba(0,0,0,.25);
 }
-.wing-summary::before{
-  content:'';
-  position:absolute;left:0;right:0;top:0;height:4px;
-}
-.wing-summary.calls::before{background:linear-gradient(90deg, transparent, var(--calls), transparent)}
-.wing-summary.chat::before{background:linear-gradient(90deg, transparent, var(--chat), transparent)}
-.wing-head{
-  display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;
-}
-.wing-title{
-  display:flex;align-items:center;gap:10px;
-}
-.wing-dot{width:10px;height:10px;border-radius:50%}
-.wing-dot.calls{background:var(--calls);box-shadow:0 0 18px rgba(31,224,161,.6)}
-.wing-dot.chat{background:var(--chat);box-shadow:0 0 18px rgba(255,155,47,.6)}
-.wing-title h3{font-size:13px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
-.wing-title p{font-size:11px;color:var(--muted);margin-top:4px}
-.wing-chip{
-  padding:7px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.03);font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
-}
-.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
-.summary-node{
-  padding:10px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.06);
-  transition:transform .22s ease, border-color .22s ease;
-}
-.summary-node:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.14)}
-.summary-node span{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.46)}
-.summary-node strong{display:block;margin-top:7px;font-size:24px;font-family:'Space Grotesk',sans-serif;line-height:1}
-.summary-node small{display:block;margin-top:6px;font-size:10px;color:var(--muted)}
-.wing-summary.calls .summary-node strong{color:var(--calls-soft)}
-.wing-summary.chat .summary-node strong{color:var(--chat-soft)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.calls::before{background:linear-gradient(90deg,transparent,var(--calls),transparent)}
+.stat-card.chat::before{background:linear-gradient(90deg,transparent,var(--chat),transparent)}
+.stat-card.violet::before{background:linear-gradient(90deg,transparent,#8b5cf6,transparent)}
+.stat-card.blue::before{background:linear-gradient(90deg,transparent,#3b82f6,transparent)}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:800;letter-spacing:-.04em;font-family:'JetBrains Mono',monospace}
+.stat-card.calls .stat-val{color:var(--calls)}
+.stat-card.chat .stat-val{color:var(--chat)}
+.stat-card.violet .stat-val{color:#a78bfa}
+.stat-card.blue .stat-val{color:#60a5fa}
+.stat-desc{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
 
-.lanes{
-  margin-top:12px;
-  display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;
+/* ---- WING TABS ---- */
+.wing-tabs{display:flex;gap:10px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0}
+.wing-tab{
+  padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600;
+  border-radius:10px 10px 0 0;border:1px solid transparent;border-bottom:none;
+  color:var(--muted2);transition:all .2s;position:relative;top:1px;
 }
-.lane{
-  position:relative;
-  border-radius:18px;padding:15px;
-  background:
-    linear-gradient(180deg, rgba(13,25,43,.96), rgba(7,16,28,.98));
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 24px 56px rgba(0,0,0,.28);
-  overflow:hidden;
+.wing-tab:hover{color:var(--text);background:var(--surface)}
+.wing-tab.active-calls{color:var(--calls);background:var(--calls-dim);border-color:rgba(0,229,160,.2);border-bottom-color:var(--bg)}
+.wing-tab.active-chat{color:var(--chat);background:var(--chat-dim);border-color:rgba(255,140,66,.2);border-bottom-color:var(--bg)}
+.wing-tab .tab-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:6px;font-size:10px;font-weight:700;
+  margin-left:6px;background:rgba(255,255,255,.08);color:var(--muted2);
 }
-.lane::before{
-  content:'';
-  position:absolute;inset:0;pointer-events:none;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(255,255,255,.06), transparent 36%),
-    linear-gradient(135deg, rgba(255,255,255,.03), transparent 28%);
-}
-.lane.calls::after,
-.lane.chat::after{
-  content:'';
-  position:absolute;inset:auto -60px -60px auto;width:220px;height:220px;border-radius:50%;
-  filter:blur(6px);opacity:.38;pointer-events:none;
-}
-.lane.calls::after{background:radial-gradient(circle, rgba(31,224,161,.12), transparent 65%)}
-.lane.chat::after{background:radial-gradient(circle, rgba(255,155,47,.14), transparent 65%)}
-.lane-head{
-  position:relative;z-index:1;
-  display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:12px;
-}
-.lane-copy h3{
-  font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
-}
-.lane.calls .lane-copy h3{color:var(--calls-soft)}
-.lane.chat .lane-copy h3{color:var(--chat-soft)}
-.lane-copy p{margin-top:6px;font-size:11px;line-height:1.58;color:var(--muted);max-width:460px}
-.lane-track{
-  width:144px;height:10px;border-radius:999px;background:rgba(255,255,255,.05);overflow:hidden;
-}
-.lane-track i{
-  display:block;height:100%;width:68%;
-  background:linear-gradient(90deg, var(--lane-main), var(--lane-soft));
-  border-radius:999px;box-shadow:0 0 18px rgba(255,255,255,.16);
-  animation:loadTrack 1.2s ease both;
-}
-.lane.calls{--lane-main:var(--calls);--lane-soft:var(--calls-soft)}
-.lane.chat{--lane-main:var(--chat);--lane-soft:var(--chat-soft)}
+.wing-content{display:none}
+.wing-content.active{display:block}
 
-.spotlight{
-  position:relative;z-index:1;
-  padding:15px;border-radius:18px;overflow:hidden;
-  border:1px solid rgba(255,255,255,.08);
-  background:linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02));
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
-  transition:transform .28s ease, border-color .28s ease, box-shadow .28s ease;
+/* ---- WING SUMMARY ---- */
+.wing-summary{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  margin-bottom:24px;padding:18px 20px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--border);
 }
-.spotlight:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.16);box-shadow:0 24px 40px rgba(0,0,0,.26)}
-.spotlight::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:4px;
-  background:linear-gradient(90deg, transparent, var(--lane-main), transparent);
+@media(max-width:768px){.wing-summary{grid-template-columns:repeat(2,1fr)}}
+.ws-item{text-align:center}
+.ws-item .ws-val{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em}
+.ws-item .ws-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.wing-calls .ws-item .ws-val{color:var(--calls)}
+.wing-chat .ws-item .ws-val{color:var(--chat)}
+
+/* ---- AGENT GRID ---- */
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(580px,1fr));gap:16px}
+@media(max-width:640px){.agents-grid{grid-template-columns:1fr}}
+
+/* ---- AGENT CARD ---- */
+.agent-card{
+  border-radius:16px;border:1px solid var(--border);
+  background:var(--surface);overflow:hidden;
+  transition:border-color .2s,box-shadow .2s;
 }
-.spot-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.spot-tag{
-  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
-  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+.agent-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+
+.card-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px 14px;gap:12px;flex-wrap:wrap;
+  border-bottom:1px solid var(--border);
 }
-.spot-title{font-family:'Space Grotesk',sans-serif;font-size:24px;line-height:1;letter-spacing:-.05em;margin-top:10px}
-.spot-sub{margin-top:5px;font-size:11px;color:var(--muted)}
-.spot-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
-.metric-stack{display:flex;flex-direction:column;gap:10px}
-.metric-row{display:flex;justify-content:space-between;gap:10px;font-size:11px}
-.metric-row span{color:rgba(255,255,255,.52)}
-.metric-row strong{font-weight:800}
-.metric-row strong.calls{color:var(--calls-soft)}
-.metric-row strong.chat{color:var(--chat-soft)}
-.progress{
-  height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:10px;
-}
-.progress i{
-  display:block;height:100%;width:0;border-radius:999px;
-  background:linear-gradient(90deg, var(--lane-main), var(--lane-soft));
-  box-shadow:0 0 18px rgba(255,255,255,.16);
-}
-.focus{
-  margin-top:12px;padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.07);
-}
-.focus span{display:block;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.44)}
-.focus p{margin-top:6px;font-size:10px;line-height:1.56;color:rgba(240,245,255,.82)}
-.support-grid{
-  position:relative;z-index:1;
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;
-}
-.mini{
-  padding:12px;border-radius:16px;
-  background:rgba(255,255,255,.03);
-  border:1px solid rgba(255,255,255,.07);
-  transition:transform .24s ease, border-color .24s ease, box-shadow .24s ease;
-}
-.mini:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.14);box-shadow:0 22px 36px rgba(0,0,0,.22)}
-.mini-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.agent-info{display:flex;align-items:center;gap:12px}
 .avatar{
-  width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;
-  font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:#04111d;
-  background:linear-gradient(145deg, var(--lane-soft), var(--lane-main));
-  box-shadow:0 16px 28px rgba(0,0,0,.18);
+  width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;flex-shrink:0;
+  letter-spacing:.02em;
 }
-.mini-badge{
-  padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.035);font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
-}
-.mini h4{margin-top:10px;font-size:18px;font-family:'Space Grotesk',sans-serif;letter-spacing:-.04em}
-.mini .role{margin-top:4px;font-size:10px;color:var(--muted)}
-.mini-list{display:flex;flex-direction:column;gap:7px;margin-top:12px}
-.mini-list .metric-row{font-size:12px}
-.mini .focus{margin-top:12px;padding:10px 12px;border-radius:14px}
+.avatar-calls{background:var(--calls-mid);color:var(--calls)}
+.avatar-chat{background:var(--chat-mid);color:var(--chat)}
+.agent-name{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.agent-ext{font-size:11px;color:var(--muted);margin-top:1px}
+.card-earnings{text-align:right}
+.earnings-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.earnings-val{font-size:17px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em;color:#f1f5f9;margin-top:2px}
+.earnings-val.has-earnings{color:var(--green)}
 
-.insight-band{
-  position:relative;z-index:1;
-  margin-top:12px;padding:12px 14px;border-radius:16px;
-  background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.018));
-  border:1px solid rgba(255,255,255,.07);
+/* ---- MONTHLY TABLE ---- */
+.card-table{width:100%;border-collapse:collapse}
+.card-table th{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);padding:10px 14px;text-align:left;
+  border-bottom:1px solid var(--border);background:var(--surface2);
 }
-.insight-band h5{
-  font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.48);
-}
-.insight-grid{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;
-}
-.insight-node{
-  padding:10px;border-radius:14px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.06);
-}
-.insight-node span{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.42)}
-.insight-node strong{display:block;margin-top:7px;font-size:18px;font-family:'Space Grotesk',sans-serif}
-.insight-node p{margin-top:6px;font-size:9px;line-height:1.5;color:var(--muted)}
-.lane.calls .insight-node strong{color:var(--calls-soft)}
-.lane.chat .insight-node strong{color:var(--chat-soft)}
+.card-table th.month-hdr{text-align:center;min-width:110px}
+.card-table td{padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.card-table tr:last-child td{border-bottom:none}
+.card-table tr:hover td{background:rgba(255,255,255,.02)}
 
-.foot{
-  margin-top:16px;text-align:center;font-size:11px;color:rgba(255,255,255,.34);line-height:1.6;
-}
-.foot span{color:rgba(255,155,47,.66)}
+.metric-label{font-size:11px;font-weight:600;color:var(--muted2);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.metric-icon{font-size:12px;opacity:.7}
 
-[data-reveal]{opacity:0;transform:translateY(24px) scale(.985);animation:riseIn .72s cubic-bezier(.22,1,.36,1) forwards;animation-delay:var(--delay,0s)}
-[data-meter]{--w:0%}
+.cell{text-align:center}
+.cell-val{font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:4px}
+.cell-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.cell-na{color:var(--muted);font-size:11px;opacity:.5}
 
-@keyframes riseIn{
-  from{opacity:0;transform:translateY(24px) scale(.985)}
-  to{opacity:1;transform:translateY(0) scale(1)}
-}
-@keyframes loadTrack{
-  from{width:0}
-  to{width:68%}
-}
-@keyframes floatAura{
-  0%,100%{transform:translateY(0) translateX(0) scale(1)}
-  50%{transform:translateY(8px) translateX(-6px) scale(1.04)}
-}
-@keyframes driftCloud{
-  0%{transform:translate3d(0,0,0)}
-  50%{transform:translate3d(12px,-10px,0)}
-  100%{transform:translate3d(0,0,0)}
-}
+/* Slab colors */
+.s1{color:var(--green)}
+.s2{color:var(--amber)}
+.s0{color:var(--red)}
+.sna{color:var(--muted);opacity:.4}
+.s1-bg{background:var(--green-dim)}
+.s2-bg{background:var(--amber-dim)}
+.s0-bg{background:var(--red-dim)}
 
-@media (max-width:1240px){
-  .hero-main,
-  .summary-split,
-  .lanes{grid-template-columns:1fr}
-  .hero-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+/* ---- BONUS ROW ---- */
+.bonus-section{padding:12px 18px 14px;background:var(--surface2);border-top:1px solid var(--border)}
+.bonus-months{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.bonus-cell{
+  border-radius:10px;padding:10px 12px;border:1px solid var(--border);
+  background:var(--surface);text-align:center;
 }
-@media (max-width:900px){
-  .stage{padding:18px 16px 30px}
-  .hero{padding:20px 18px 20px}
-  .brand-copy h2{font-size:26px}
-  .hero-copy h1{font-size:40px}
-  .summary-grid,
-  .insight-grid,
-  .support-grid,
-  .hero-stats{grid-template-columns:1fr 1fr}
-  .spot-grid{grid-template-columns:1fr}
+.bonus-month-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.bonus-slab-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;
+  letter-spacing:.02em;margin-bottom:4px;
 }
-@media (max-width:640px){
-  .hero-stats,
-  .summary-grid,
-  .support-grid,
-  .insight-grid{grid-template-columns:1fr}
-  .brand{align-items:flex-start}
-  .hero-pills{justify-content:flex-start}
-  .hero-copy h1{font-size:34px}
-  .spot-title{font-size:24px}
+.badge-s1{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.badge-s2{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
+.badge-no{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.2);font-size:10px}
+.badge-na{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border);font-size:10px}
+.bonus-pts{font-size:11px;color:var(--muted2);margin-top:2px}
+.bonus-amt{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:3px;color:var(--text)}
+.bonus-amt.positive{color:var(--green)}
+.bonus-reason{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
+
+/* ---- ATTEND ROW ---- */
+.attend-row{
+  display:flex;gap:0;border-top:1px solid var(--border);
 }
+.attend-cell{
+  flex:1;padding:8px 12px;text-align:center;
+  border-right:1px solid var(--border);
+}
+.attend-cell:last-child{border-right:none}
+.attend-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.attend-val{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:3px}
+.attend-val.ok{color:var(--green)}
+.attend-val.warn{color:var(--amber)}
+.attend-val.bad{color:var(--red)}
+
+/* ---- POINTS BAR ---- */
+.pts-bar-wrap{height:3px;background:rgba(255,255,255,.06);border-radius:999px;margin-top:6px;overflow:hidden}
+.pts-bar{height:100%;border-radius:999px;transition:width .6s ease}
+.pts-bar.s1{background:var(--green)}
+.pts-bar.s2{background:var(--amber)}
+.pts-bar.s0{background:var(--red)}
+
+/* ---- SECTION LABEL ---- */
+.section-label{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--muted);margin:0 0 14px;display:flex;align-items:center;gap:8px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ---- FOOTER ---- */
+.foot{margin-top:40px;text-align:center;font-size:11px;color:var(--muted);line-height:1.8}
+
+/* ---- THRESHOLD LEGEND ---- */
+.legend{
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+  padding:12px 18px;border-radius:12px;background:var(--surface);
+  border:1px solid var(--border);margin-bottom:20px;font-size:11px;
+}
+.legend-item{display:flex;align-items:center;gap:6px;color:var(--muted2)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.legend-title{font-size:11px;font-weight:600;color:var(--muted);margin-right:4px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:999px}
+
+/* Responsive table scroll */
+.table-scroll{overflow-x:auto}
 </style>
 </head>
 <body>
-<main class="stage">
-  <section class="hero" data-reveal style="--delay:.02s">
-    <div class="hero-top">
-      <div class="brand">
-        <div class="brand-badge">
-          <span id="brandFallback" class="brand-fallback" style="display:none;">A</span>
-          <img id="brandLogo" class="brand-logo" src="/adit-logo-dark.png" alt="Adit logo" style="display:block;">
-        </div>
-        <div class="brand-copy">
-          <h2>Adit</h2>
-          <p>T1 CS Stars · Hall of Fame Showcase</p>
-        </div>
+<main class="wrap">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-logo">
+        <img id="brandLogo" src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none';document.getElementById('brandFB').style.display='flex'">
+        <div id="brandFB" class="hdr-logo-fallback" style="display:none">A</div>
       </div>
-      <div class="hero-pills">
-        <span class="hero-pill calls">Calls Wing</span>
-        <span class="hero-pill chat">Chat Wing</span>
-        <span class="hero-pill live">Q1 2026</span>
+      <div>
+        <div class="hdr-title">T1 CS Stars — Hall of Fame</div>
+        <div class="hdr-sub">Agent · Month · Bonus Breakdown · Q1 2026</div>
       </div>
     </div>
-    <div class="hero-main">
-      <div class="hero-copy">
-        <span class="eyebrow">Performance constellation</span>
-        <h1>Hall of <span>Fame</span></h1>
-        <p>Quarter spotlight board for the T1 CS Stars. Calls and chat are split into two separate wings so the biggest Q1 wins, strongest quality signals, and coaching opportunities are easy to absorb at a glance.</p>
-      </div>
-      <div class="hero-stats">
-        <div class="hero-stat calls">
-          <span>Calls Handled</span>
-          <strong>11,064</strong>
-          <small>Total inbound and outbound calls handled in Q1.</small>
-        </div>
-        <div class="hero-stat chat">
-          <span>Chats Handled</span>
-          <strong>3,062</strong>
-          <small>Digital conversations owned by the chat wing in Q1.</small>
-        </div>
-        <div class="hero-stat violet">
-          <span>Combined Reach</span>
-          <strong>14,126</strong>
-          <small>Total customer conversations recognized across Q1.</small>
-        </div>
-      </div>
+    <div class="hdr-pills">
+      <span class="pill pill-calls"><span class="pill-dot"></span>Calls Wing</span>
+      <span class="pill pill-chat"><span class="pill-dot"></span>Chat Wing</span>
+      <span class="pill pill-q">Q1 2026</span>
     </div>
-  </section>
+  </header>
 
-  <section class="summary-split">
-    <article class="wing-summary calls" data-reveal style="--delay:.10s">
-      <div class="wing-head">
-        <div class="wing-title">
-          <span class="wing-dot calls"></span>
-          <div>
-            <h3>Calls Team</h3>
-            <p>Resolution, volume, and service stability leaders.</p>
-          </div>
-        </div>
-        <span class="wing-chip">Top 5 spotlights</span>
-      </div>
-      <div class="summary-grid">
-        <div class="summary-node"><span>Ticket CSAT</span><strong>97.26%</strong><small>Customer trust stayed elite through the quarter.</small></div>
-        <div class="summary-node"><span>FCR</span><strong>78.92%</strong><small>Stronger one-touch resolution across the calls wing.</small></div>
-        <div class="summary-node"><span>Tickets Closed</span><strong>2,849</strong><small>Resolved work delivered by the calls team in Q1.</small></div>
-        <div class="summary-node"><span>Inbound Calls</span><strong>5,936</strong><small>Queue demand carried across the quarter.</small></div>
-      </div>
-    </article>
+  <!-- HERO STATS -->
+  <div class="hero-stats">
+    <div class="stat-card calls">
+      <div class="stat-label">Calls Handled</div>
+      <div class="stat-val">11,064</div>
+      <div class="stat-desc">Total inbound + outbound calls across Q1</div>
+    </div>
+    <div class="stat-card chat">
+      <div class="stat-label">Chats Handled</div>
+      <div class="stat-val">3,062</div>
+      <div class="stat-desc">Digital conversations owned by chat wing</div>
+    </div>
+    <div class="stat-card violet">
+      <div class="stat-label">Tickets Closed</div>
+      <div class="stat-val">3,529</div>
+      <div class="stat-desc">Tickets resolved across all team members</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">Combined Reach</div>
+      <div class="stat-val">14,126</div>
+      <div class="stat-desc">Total customer conversations in Q1</div>
+    </div>
+  </div>
 
-    <article class="wing-summary chat" data-reveal style="--delay:.16s">
-      <div class="wing-head">
-        <div class="wing-title">
-          <span class="wing-dot chat"></span>
-          <div>
-            <h3>Chat Team</h3>
-            <p>Experience, responsiveness, and conversion highlights.</p>
-          </div>
-        </div>
-        <span class="wing-chip">Top 3 spotlights</span>
-      </div>
-      <div class="summary-grid">
-        <div class="summary-node"><span>Chat CSAT</span><strong>64.41%</strong><small>Quarter sentiment improved with a strong final stretch.</small></div>
-        <div class="summary-node"><span>Rated Chats</span><strong>444</strong><small>Customer feedback signals captured through Q1.</small></div>
-        <div class="summary-node"><span>Chats Handled</span><strong>3,062</strong><small>Digital support volume owned by the chat team.</small></div>
-        <div class="summary-node"><span>Good Ratings</span><strong>286</strong><small>Positive chat experiences turned into quarter wins.</small></div>
-      </div>
-    </article>
-  </section>
+  <!-- TABS -->
+  <div class="wing-tabs">
+    <div class="wing-tab active-calls" onclick="showWing('calls',this)">
+      📞 Calls Wing <span class="tab-count">9</span>
+    </div>
+    <div class="wing-tab" onclick="showWing('chat',this)">
+      💬 Chat Wing <span class="tab-count">3</span>
+    </div>
+  </div>
 
-  <section class="lanes">
-    <section class="lane calls" data-reveal style="--delay:.22s">
-      <div class="lane-head">
-        <div class="lane-copy">
-          <h3>Calls Command Deck</h3>
-          <p>The calls wing highlights the agents carrying inbound volume, strongest first-contact resolution, and the names customers keep rewarding with ratings.</p>
-        </div>
-        <div class="lane-track"><i></i></div>
-      </div>
+  <!-- CALLS WING -->
+  <div class="wing-content active" id="wing-calls">
+    <div class="wing-summary wing-calls">
+      <div class="ws-item"><div class="ws-val">97.26%</div><div class="ws-label">Ticket CSAT</div></div>
+      <div class="ws-item"><div class="ws-val">78.92%</div><div class="ws-label">Avg FCR</div></div>
+      <div class="ws-item"><div class="ws-val">2,849</div><div class="ws-label">Tickets Closed</div></div>
+      <div class="ws-item"><div class="ws-val">5,936</div><div class="ws-label">Inbound Calls</div></div>
+    </div>
 
-      <article class="spotlight">
-        <div class="spot-top">
-          <span class="spot-tag">MVP · Calls</span>
-          <span class="spot-tag">Crown Holder</span>
-        </div>
-        <div class="spot-title">Lincy Tabita</div>
-        <div class="spot-sub">Ext. 5208 · Best all-round Q1 mix of queue volume, ticket ownership, and customer sentiment.</div>
-        <div class="spot-grid">
-          <div class="metric-stack">
-            <div class="metric-row"><span>Total calls</span><strong class="calls">1,125</strong></div>
-            <div class="metric-row"><span>Inbound calls</span><strong class="calls">776</strong></div>
-            <div class="metric-row"><span>Tickets closed</span><strong>436</strong></div>
-          </div>
-          <div class="metric-stack">
-            <div class="metric-row"><span>Ratings</span><strong class="calls">73</strong></div>
-            <div class="metric-row"><span>FCR</span><strong class="calls">75.23%</strong></div>
-            <div class="metric-row"><span>CSAT</span><strong class="calls">97.26%</strong></div>
-          </div>
-        </div>
-        <div class="progress"><i data-meter data-width="75.23%"></i></div>
-        <div class="focus">
-          <span>Focus area</span>
-          <p>Keep survey asks strong and tighten first-contact closure on repeat issue types to push the wing closer to an 80% FCR pace.</p>
-        </div>
-      </article>
+    <div class="legend">
+      <span class="legend-title">Thresholds:</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Slab 1 (top target)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Slab 2 (base target)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Below target</span>
+      <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,.15)"></span>N/A this month</span>
+      <span style="margin-left:auto;color:var(--muted);font-size:10px">Inbound: ≥7/day S1, ≥5/day S2 · Tickets: ≥5/day S1, ≥4/day S2 · FCR: ≥75% S1, ≥70% S2 · QA: ≥90% S1, ≥85% S2</span>
+    </div>
 
-      <div class="support-grid">
-        <article class="mini">
-          <div class="mini-top">
-            <div class="avatar">GD</div>
-            <span class="mini-badge">Volume King</span>
-          </div>
-          <h4>Greg Dawson</h4>
-          <div class="role">Ext. 5466 · Quarter volume leader</div>
-          <div class="mini-list">
-            <div class="metric-row"><span>Total calls</span><strong class="calls">1,581</strong></div>
-            <div class="metric-row"><span>Inbound</span><strong class="calls">970</strong></div>
-            <div class="metric-row"><span>Outbound</span><strong>611</strong></div>
-            <div class="metric-row"><span>Tickets closed</span><strong class="calls">419</strong></div>
-            <div class="metric-row"><span>CSAT</span><strong class="calls">91.67%</strong></div>
-          </div>
-          <div class="progress"><i data-meter data-width="66.35%"></i></div>
-          <div class="focus"><span>Focus area</span><p>Massive scale is already there. The next unlock is converting that reach into cleaner one-touch closes and more rated calls.</p></div>
-        </article>
+    <div class="agents-grid" id="calls-grid"></div>
+  </div>
 
-        <article class="mini">
-          <div class="mini-top">
-            <div class="avatar" style="background:linear-gradient(145deg,#9fcbff,#5f9dff)">DH</div>
-            <span class="mini-badge">Most Rated</span>
-          </div>
-          <h4>Debra Horton</h4>
-          <div class="role">Ext. 5477 · Quarter customer favourite</div>
-          <div class="mini-list">
-            <div class="metric-row"><span>Total calls</span><strong class="calls">1,099</strong></div>
-            <div class="metric-row"><span>Inbound</span><strong class="calls">625</strong></div>
-            <div class="metric-row"><span>Tickets closed</span><strong>347</strong></div>
-            <div class="metric-row"><span>Ratings</span><strong class="calls">124</strong></div>
-            <div class="metric-row"><span>CSAT</span><strong class="calls">98.39%</strong></div>
-          </div>
-          <div class="progress"><i data-meter data-width="85.59%"></i></div>
-          <div class="focus"><span>Focus area</span><p>Customer trust is already elite. Turning that confidence into reusable call-control coaching can lift the whole floor.</p></div>
-        </article>
-      </div>
+  <!-- CHAT WING -->
+  <div class="wing-content" id="wing-chat">
+    <div class="wing-summary wing-chat">
+      <div class="ws-item"><div class="ws-val">64.41%</div><div class="ws-label">Chat CSAT</div></div>
+      <div class="ws-item"><div class="ws-val">444</div><div class="ws-label">Rated Chats</div></div>
+      <div class="ws-item"><div class="ws-val">3,062</div><div class="ws-label">Chats Handled</div></div>
+      <div class="ws-item"><div class="ws-val">286</div><div class="ws-label">Good Ratings</div></div>
+    </div>
 
-      <div class="insight-band">
-        <h5>Calls Wing Insights</h5>
-        <div class="insight-grid">
-          <div class="insight-node">
-            <span>High FCR</span>
-            <strong>Caroline Lock</strong>
-            <p>89.90% FCR over 1,287 total calls. One of the cleanest first-contact closure signals in the whole quarter.</p>
-          </div>
-          <div class="insight-node">
-            <span>Ticket Leader</span>
-            <strong>Sabrina Quinn</strong>
-            <p>361 tickets closed on top of 1,079 calls. Straddling both teams across the quarter, she finished as the third-highest ticket closer on the calls floor.</p>
-          </div>
-          <div class="insight-node">
-            <span>Coaching Focus</span>
-            <strong>Michelle Pinto</strong>
-            <p>1,577 total calls with 42 abandoned. The fastest win is reducing spillover while protecting the strong 82.13% FCR base.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div class="legend">
+      <span class="legend-title">Thresholds:</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Slab 1 (top target)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Slab 2 (base target)</span>
+      <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Below target</span>
+      <span class="legend-item"><span class="legend-dot" style="background:rgba(255,255,255,.15)"></span>N/A this month</span>
+      <span style="margin-left:auto;color:var(--muted);font-size:10px">Chats: ≥11/day S1, ≥9/day S2 · Chat CSAT: ≥90% S1, ≥85% S2 · Tickets: ≥5/day S1, ≥4/day S2 · QA: ≥90% S1, ≥85% S2 · FCR: ≥75% S1, ≥70% S2</span>
+    </div>
 
-    <section class="lane chat" data-reveal style="--delay:.28s">
-      <div class="lane-head">
-        <div class="lane-copy">
-          <h3>Chat Experience Deck</h3>
-          <p>The chat wing separates digital support performance into customer sentiment, first-contact resolution, and digital handling power.</p>
-        </div>
-        <div class="lane-track"><i style="width:58%"></i></div>
-      </div>
-
-      <article class="spotlight">
-        <div class="spot-top">
-          <span class="spot-tag">MVP · Chat</span>
-          <span class="spot-tag">Power Agent</span>
-        </div>
-        <div class="spot-title">Evan Cruz</div>
-        <div class="spot-sub">Ext. 5574 · Best Q1 balance of scale, customer sentiment, and low-friction digital handling.</div>
-        <div class="spot-grid">
-          <div class="metric-stack">
-            <div class="metric-row"><span>Chats handled</span><strong class="chat">691</strong></div>
-            <div class="metric-row"><span>Rated chats</span><strong>83</strong></div>
-            <div class="metric-row"><span>Transfers</span><strong>4</strong></div>
-          </div>
-          <div class="metric-stack">
-            <div class="metric-row"><span>Busy hours</span><strong>159.25h</strong></div>
-            <div class="metric-row"><span>Chat CSAT</span><strong class="chat">69.88%</strong></div>
-            <div class="metric-row"><span>Avg response</span><strong>241.51s</strong></div>
-          </div>
-        </div>
-        <div class="progress"><i data-meter data-width="69.88%"></i></div>
-        <div class="focus">
-          <span>Focus area</span>
-          <p>The quality mix is already strong. The next unlock is even more rated chats so this performance gets the visibility it deserves.</p>
-        </div>
-      </article>
-
-      <div class="support-grid">
-        <article class="mini">
-          <div class="mini-top">
-            <div class="avatar">AF</div>
-            <span class="mini-badge">Volume King</span>
-          </div>
-          <h4>Anold Fernandes</h4>
-          <div class="role">Ext. 5313 · Biggest digital reach</div>
-          <div class="mini-list">
-            <div class="metric-row"><span>Chats handled</span><strong class="chat">1,119</strong></div>
-            <div class="metric-row"><span>Rated chats</span><strong>185</strong></div>
-            <div class="metric-row"><span>Transfers</span><strong>75</strong></div>
-            <div class="metric-row"><span>Busy hours</span><strong>201.77h</strong></div>
-            <div class="metric-row"><span>Chat CSAT</span><strong class="chat">56.76%</strong></div>
-          </div>
-          <div class="progress"><i data-meter data-width="56.76%"></i></div>
-          <div class="focus"><span>Focus area</span><p>No one touched more chats in Q1. The biggest lift now is reducing response drag and turning reach into better sentiment.</p></div>
-        </article>
-
-        <article class="mini">
-          <div class="mini-top">
-            <div class="avatar">SQ</div>
-            <span class="mini-badge">Best CSAT</span>
-          </div>
-          <h4>Sabrina Quinn</h4>
-          <div class="role">Ext. 5512 · Sentiment leader</div>
-          <div class="mini-list">
-            <div class="metric-row"><span>Chats handled</span><strong class="chat">341</strong></div>
-            <div class="metric-row"><span>Rated chats</span><strong>63</strong></div>
-            <div class="metric-row"><span>Transfers</span><strong>59</strong></div>
-            <div class="metric-row"><span>Busy hours</span><strong>55.34h</strong></div>
-            <div class="metric-row"><span>Chat CSAT</span><strong class="chat">85.71%</strong></div>
-          </div>
-          <div class="progress"><i data-meter data-width="85.71%"></i></div>
-          <div class="focus"><span>Focus area</span><p>The empathy lane is already winning. The next move is scaling that playbook so more of the wing can mirror the same sentiment level.</p></div>
-        </article>
-      </div>
-
-      <div class="insight-band">
-        <h5>Chat Wing Insights</h5>
-        <div class="insight-grid">
-          <div class="insight-node">
-            <span>Reach</span>
-            <strong>1,119</strong>
-            <p>Anold carried the heaviest digital load in Q1, so even small sentiment gains here move the whole wing.</p>
-          </div>
-          <div class="insight-node">
-            <span>Sentiment</span>
-            <strong>85.71%</strong>
-            <p>Sabrina set the chat CSAT bar for the quarter and gives the team a strong coaching pattern for tone and reassurance.</p>
-          </div>
-          <div class="insight-node">
-            <span>Speed</span>
-            <strong>174.62s</strong>
-            <p>Tabbie Shine kept the fastest response pace across 911 chats, making her a strong reference point for digital tempo.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  </section>
+    <div class="agents-grid" id="chat-grid"></div>
+  </div>
 
   <div class="foot">
-    <span>Adit</span> · T1 CS Stars · Q1 2026 calls and chat performance showcase board
+    Adit &middot; T1 CS Stars &middot; Q1 2026 &middot; Performance &amp; Bonus Breakdown<br>
+    <span style="font-size:10px;opacity:.5">Bonus calculations based on the T1 CS Bonus Structure 2026. CSAT incentive: ₹150/Good rating if CSAT &gt; 92% (Calls) · ₹50/Happy rating if CSAT &gt; 85% &amp; ≥5 Happy ratings (Chat)</span>
   </div>
 </main>
 
 <script>
-(()=>{
-  try{
-    if(window.parent&&window.parent!==window){
-      const parentLogo=window.parent.document.querySelector('.hdr-logo-adit');
-      const src=parentLogo&&parentLogo.getAttribute('src');
-      if(src){
-        const logo=document.getElementById('brandLogo');
-        const fallback=document.getElementById('brandFallback');
-        logo.onload=()=>{logo.style.display='block';if(fallback)fallback.style.display='none';};
-        logo.src=src;
-      }
+const MONTHS = ["Jan'26","Feb'26","Mar'26"];
+const MONTH_SHORT = {"Jan'26":"Jan","Feb'26":"Feb","Mar'26":"Mar"};
+
+const DATA = {
+  calls: [
+    {name:"Greg Dawson",ext:"5466",initials:"GD",months:{"Jan'26":{inbound:313,tickets:135,fcr:60.0,qa:81.1,csat:100.0,csat_good:4,csat_total:4,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:15.7,pts:35},tickets:{slab:1,val:6.8,pts:20},fcr:{slab:0,val:60.0,pts:0},qa:{slab:0,val:81.1,pts:0}}}},"Feb'26":{inbound:319,tickets:145,fcr:68.3,qa:81.5,csat:80.0,csat_good:4,csat_total:5,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:16.0,pts:35},tickets:{slab:1,val:7.3,pts:20},fcr:{slab:0,val:68.3,pts:0},qa:{slab:0,val:81.5,pts:0}}}},"Mar'26":{inbound:338,tickets:139,fcr:66.3,qa:82.2,csat:100.0,csat_good:3,csat_total:3,present:22,leaves:0,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:450,total_bonus:7950,metrics:{inbound:{slab:1,val:15.4,pts:35},tickets:{slab:1,val:6.3,pts:20},fcr:{slab:0,val:66.3,pts:0},qa:{slab:0,val:82.2,pts:0}}}}}},
+    {name:"Michelle Pinto",ext:"5555",initials:"MP",months:{"Jan'26":{inbound:292,tickets:97,fcr:82.5,qa:65.1,csat:100.0,csat_good:3,csat_total:3,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA below target (65.1%)",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:14.6,pts:35},tickets:{slab:1,val:4.9,pts:0},fcr:{slab:1,val:82.5,pts:25},qa:{slab:0,val:65.1,pts:0}}}},"Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,csat_good:2,csat_total:2,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:15.6,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:68.5,pts:0},qa:{slab:0,val:76.0,pts:0}}}},"Mar'26":{inbound:350,tickets:98,fcr:77.6,qa:70.3,csat:50.0,csat_good:2,csat_total:4,present:22,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA below target (70.3%)",points:80,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:15.9,pts:35},tickets:{slab:1,val:4.5,pts:0},fcr:{slab:1,val:77.6,pts:25},qa:{slab:0,val:70.3,pts:0}}}}}},
+    {name:"Lincy Tabita",ext:"5208",initials:"LT",months:{"Jan'26":{inbound:237,tickets:115,fcr:53.9,qa:80.3,csat:94.7,csat_good:18,csat_total:19,present:19,leaves:2,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:12.5,pts:35},tickets:{slab:1,val:6.1,pts:20},fcr:{slab:0,val:53.9,pts:0},qa:{slab:0,val:80.3,pts:0}}}},"Feb'26":{inbound:250,tickets:131,fcr:47.3,qa:83.1,csat:95.8,csat_good:23,csat_total:24,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR below target (47.3%)",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:12.5,pts:35},tickets:{slab:1,val:6.6,pts:20},fcr:{slab:0,val:47.3,pts:0},qa:{slab:0,val:83.1,pts:0}}}},"Mar'26":{inbound:289,tickets:190,fcr:63.7,qa:86.8,csat:100.0,csat_good:30,csat_total:30,present:21,leaves:1,unplanned:0,bonus:{eligible:true,points:100,slab:1,base_bonus:5625,csat_incentive:4500,total_bonus:10125,metrics:{inbound:{slab:1,val:13.8,pts:35},tickets:{slab:1,val:9.0,pts:20},fcr:{slab:0,val:63.7,pts:0},qa:{slab:2,val:86.8,pts:20}}}}}},
+    {name:"Debra Horton",ext:"5477",initials:"DH",months:{"Jan'26":{inbound:225,tickets:155,fcr:69.7,qa:87.0,csat:96.3,csat_good:52,csat_total:54,present:21,leaves:0,unplanned:0,bonus:{eligible:true,points:100,slab:1,base_bonus:7500,csat_incentive:7800,total_bonus:15300,metrics:{inbound:{slab:1,val:10.7,pts:35},tickets:{slab:1,val:7.4,pts:20},fcr:{slab:0,val:69.7,pts:0},qa:{slab:2,val:87.0,pts:20}}}},"Feb'26":{inbound:187,tickets:90,fcr:81.1,qa:88.4,csat:100.0,csat_good:34,csat_total:34,present:16,leaves:3,unplanned:0,bonus:{eligible:false,reason:"50% bonus (3 leaves)",points:95,slab:1,base_bonus:3750,csat_incentive:5100,total_bonus:8850,metrics:{inbound:{slab:1,val:11.7,pts:35},tickets:{slab:1,val:5.6,pts:20},fcr:{slab:1,val:81.1,pts:25},qa:{slab:2,val:88.4,pts:20}}}},"Mar'26":{inbound:213,tickets:102,fcr:77.5,qa:90.2,csat:100.0,csat_good:36,csat_total:36,present:19,leaves:2,unplanned:0,bonus:{eligible:true,points:100,slab:1,base_bonus:5625,csat_incentive:5400,total_bonus:11025,metrics:{inbound:{slab:1,val:11.2,pts:35},tickets:{slab:1,val:5.4,pts:20},fcr:{slab:1,val:77.5,pts:25},qa:{slab:1,val:90.2,pts:20}}}}}},
+    {name:"Caroline Lock",ext:"5528",initials:"CL",months:{"Jan'26":{inbound:167,tickets:79,fcr:83.5,qa:70.8,csat:100.0,csat_good:1,csat_total:1,present:12,leaves:8,unplanned:0,bonus:{eligible:false,reason:"Only 12 days present (need 18)",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:13.9,pts:35},tickets:{slab:1,val:6.6,pts:20},fcr:{slab:1,val:83.5,pts:25},qa:{slab:0,val:70.8,pts:0}}}},"Feb'26":{inbound:213,tickets:122,fcr:79.5,qa:76.9,csat:100.0,csat_good:5,csat_total:5,present:18,leaves:1,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:750,total_bonus:6375,metrics:{inbound:{slab:1,val:11.8,pts:35},tickets:{slab:1,val:6.8,pts:20},fcr:{slab:1,val:79.5,pts:25},qa:{slab:0,val:76.9,pts:0}}}},"Mar'26":{inbound:191,tickets:96,fcr:88.5,qa:81.6,csat:null,csat_good:0,csat_total:0,present:18,leaves:0,unplanned:2,bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:10.6,pts:35},tickets:{slab:1,val:5.3,pts:20},fcr:{slab:1,val:88.5,pts:25},qa:{slab:0,val:81.6,pts:0}}}}}},
+    {name:"Henry P",ext:"5348",initials:"HP",months:{"Jan'26":{inbound:189,tickets:123,fcr:69.9,qa:77.0,csat:88.9,csat_good:8,csat_total:9,present:20,leaves:0,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:0,total_bonus:7500,metrics:{inbound:{slab:1,val:9.5,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:69.9,pts:0},qa:{slab:0,val:77.0,pts:0}}}},"Feb'26":{inbound:211,tickets:106,fcr:66.0,qa:77.6,csat:100.0,csat_good:12,csat_total:12,present:15,leaves:4,unplanned:0,bonus:{eligible:false,reason:"Leave impact: 0% (>3 leaves)",points:80,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:14.1,pts:35},tickets:{slab:1,val:7.1,pts:20},fcr:{slab:0,val:66.0,pts:0},qa:{slab:0,val:77.6,pts:0}}}},"Mar'26":{inbound:273,tickets:123,fcr:83.7,qa:81.5,csat:100.0,csat_good:8,csat_total:8,present:20,leaves:2,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1200,total_bonus:6825,metrics:{inbound:{slab:1,val:13.7,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:1,val:83.7,pts:25},qa:{slab:0,val:81.5,pts:0}}}}}},
+    {name:"Sabrina Quinn",ext:"5512",initials:"SQ",months:{"Jan'26":{inbound:null,tickets:108,fcr:null,qa:81.4,csat:100.0,csat_good:3,csat_total:3,present:20,leaves:1,unplanned:0,bonus:{eligible:false,reason:"Chat team in Jan",points:null,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:null}},"Feb'26":{inbound:216,tickets:129,fcr:75.9,qa:80.1,csat:100.0,csat_good:10,csat_total:10,present:18,leaves:2,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1500,total_bonus:7125,metrics:{inbound:{slab:1,val:12.0,pts:35},tickets:{slab:1,val:7.2,pts:20},fcr:{slab:1,val:75.9,pts:25},qa:{slab:0,val:80.1,pts:0}}}},"Mar'26":{inbound:278,tickets:124,fcr:69.4,qa:79.4,csat:100.0,csat_good:17,csat_total:17,present:20,leaves:2,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:2550,total_bonus:8175,metrics:{inbound:{slab:1,val:13.9,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:69.4,pts:0},qa:{slab:0,val:79.4,pts:0}}}}}},
+    {name:"Sky Gibson",ext:"5357",initials:"SG",months:{"Jan'26":{inbound:154,tickets:74,fcr:75.7,qa:75.6,csat:100.0,csat_good:2,csat_total:2,present:19,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA below target (75.6%)",points:60,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:8.1,pts:35},tickets:{slab:2,val:3.9,pts:0},fcr:{slab:1,val:75.7,pts:25},qa:{slab:0,val:75.6,pts:0}}}},"Feb'26":{inbound:139,tickets:61,fcr:59.0,qa:77.5,csat:100.0,csat_good:1,csat_total:1,present:17,leaves:3,unplanned:0,bonus:{eligible:false,reason:"FCR below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:8.2,pts:35},tickets:{slab:2,val:3.6,pts:0},fcr:{slab:0,val:59.0,pts:0},qa:{slab:0,val:77.5,pts:0}}}},"Mar'26":{inbound:187,tickets:65,fcr:75.4,qa:75.5,csat:null,csat_good:0,csat_total:0,present:18,leaves:2,unplanned:0,bonus:{eligible:false,reason:"QA below target (75.5%)",points:60,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:10.4,pts:35},tickets:{slab:2,val:3.6,pts:0},fcr:{slab:1,val:75.4,pts:25},qa:{slab:0,val:75.5,pts:0}}}}}},
+    {name:"Ronnie G",ext:"5219",initials:"RG",months:{"Jan'26":{inbound:74,tickets:31,fcr:61.3,qa:53.3,csat:100.0,csat_good:1,csat_total:1,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA well below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:2,val:3.5,pts:0},tickets:{slab:2,val:1.5,pts:0},fcr:{slab:0,val:61.3,pts:0},qa:{slab:0,val:53.3,pts:0}}}},"Feb'26":{inbound:53,tickets:30,fcr:50.0,qa:91.3,csat:100.0,csat_good:3,csat_total:3,present:17,leaves:3,unplanned:0,bonus:{eligible:false,reason:"Inbound & Tickets below threshold",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:2,val:3.1,pts:0},tickets:{slab:2,val:1.8,pts:0},fcr:{slab:0,val:50.0,pts:0},qa:{slab:1,val:91.3,pts:20}}}},"Mar'26":{inbound:39,tickets:49,fcr:67.3,qa:64.5,csat:100.0,csat_good:1,csat_total:1,present:22,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Volume & QA below target",points:25,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:2,val:1.8,pts:0},tickets:{slab:2,val:2.2,pts:0},fcr:{slab:0,val:67.3,pts:0},qa:{slab:0,val:64.5,pts:25}}}}}}
+  ],
+  chat: [
+    {name:"Anold Fernandes",ext:"5313",initials:"AF",months:{"Jan'26":{chats:295,csat:60.0,happy:27,tickets:102,fcr:49.0,qa:81.0,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:14.0,pts:15},csat:{slab:0,val:60.0,pts:0},tickets:{slab:2,val:4.9,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:49.0,pts:0}}}},"Feb'26":{chats:353,csat:56.4,happy:31,tickets:79,fcr:50.6,qa:79.0,present:15,leaves:5,unplanned:0,bonus:{eligible:false,reason:"Only 15 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:23.5,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:2,val:5.3,pts:20},qa:{slab:0,val:79.0,pts:0},fcr:{slab:0,val:50.6,pts:0}}}},"Mar'26":{chats:471,csat:55.3,happy:47,tickets:112,fcr:49.1,qa:80.0,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:22.4,pts:15},csat:{slab:0,val:55.3,pts:0},tickets:{slab:1,val:5.3,pts:20},qa:{slab:0,val:80.0,pts:0},fcr:{slab:0,val:49.1,pts:0}}}}}},
+    {name:"Tabbie Shine",ext:"5456",initials:"TS",months:{"Jan'26":{chats:238,csat:52.9,happy:18,tickets:67,fcr:47.8,qa:76.0,present:18,leaves:2,unplanned:0,bonus:{eligible:false,reason:"CSAT & FCR below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:13.2,pts:15},csat:{slab:0,val:52.9,pts:0},tickets:{slab:2,val:3.7,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:47.8,pts:0}}}},"Feb'26":{chats:332,csat:72.5,happy:29,tickets:57,fcr:38.6,qa:81.0,present:14,leaves:2,unplanned:0,bonus:{eligible:false,reason:"Only 14 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:23.7,pts:15},csat:{slab:0,val:72.5,pts:0},tickets:{slab:2,val:4.1,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:38.6,pts:0}}}},"Mar'26":{chats:341,csat:56.4,happy:22,tickets:76,fcr:46.1,qa:76.0,present:17,leaves:1,unplanned:1,bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:20.1,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:1,val:4.5,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:46.1,pts:0}}}}}},
+    {name:"Evan Cruz",ext:"5574",initials:"EC",months:{"Jan'26":{chats:null,csat:null,happy:0,tickets:5,fcr:100.0,qa:56.5,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Calls team in Jan",points:null,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:null}},"Feb'26":{chats:305,csat:67.9,happy:19,tickets:67,fcr:58.2,qa:64.8,present:19,leaves:0,unplanned:0,bonus:{eligible:false,reason:"CSAT, FCR & QA below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:16.1,pts:15},csat:{slab:0,val:67.9,pts:0},tickets:{slab:2,val:3.5,pts:0},qa:{slab:0,val:64.8,pts:0},fcr:{slab:0,val:58.2,pts:0}}}},"Mar'26":{chats:386,csat:70.9,happy:39,tickets:65,fcr:43.1,qa:null,present:19,leaves:1,unplanned:2,bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:20.3,pts:15},csat:{slab:0,val:70.9,pts:0},tickets:{slab:2,val:3.4,pts:0},qa:{slab:0,val:0,pts:0},fcr:{slab:0,val:43.1,pts:0}}}}}}
+  ]
+};
+
+function slabClass(s){
+  if(s===1) return 's1';
+  if(s===2) return 's2';
+  if(s===0) return 's0';
+  return 'sna';
+}
+function slabBg(s){
+  if(s===1) return 's1-bg';
+  if(s===2) return 's2-bg';
+  if(s===0) return 's0-bg';
+  return '';
+}
+function fmt(v, suffix='', decimals=1){
+  if(v===null||v===undefined) return '<span class="cell-na">—</span>';
+  return `<span>${typeof v==='number'?v.toFixed(decimals):''}${suffix}</span>`;
+}
+function fmtPct(v){
+  if(v===null||v===undefined) return '<span class="cell-na">—</span>';
+  return v.toFixed(1)+'%';
+}
+
+function renderCallsMetricRow(label, icon, key, subFn, agents_months){
+  let html = `<tr><td class="metric-label"><span class="metric-icon">${icon}</span>${label}</td>`;
+  for(const m of MONTHS){
+    const md = agents_months[m];
+    if(!md || md[key]===null || md[key]===undefined){
+      html += `<td class="cell"><span class="cell-na">—</span></td>`; continue;
     }
-  }catch(e){}
-})();
-
-document.querySelectorAll('[data-meter]').forEach((bar,index)=>{
-  const width=bar.getAttribute('data-width')||'0%';
-  setTimeout(()=>{bar.style.width=width;},260+(index*90));
-});
-
-document.querySelectorAll('[data-reveal]').forEach((node,index)=>{
-  if(!node.style.getPropertyValue('--delay')){
-    node.style.setProperty('--delay',(0.06*index)+'s');
+    const mtr = md.bonus && md.bonus.metrics && md.bonus.metrics[key];
+    const slab = mtr ? mtr.slab : null;
+    const sc = slabClass(slab);
+    let valStr = '';
+    if(key==='inbound'||key==='tickets'){
+      const perDay = md.present > 0 ? (md[key]/md.present).toFixed(1) : '—';
+      valStr = `<div class="cell-val ${sc}">${md[key]}</div><div class="cell-sub">${perDay}/day</div>`;
+    } else if(key==='fcr'||key==='qa'||key==='csat'){
+      valStr = `<div class="cell-val ${sc}">${md[key]!==null?md[key].toFixed(1)+'%':'—'}</div>`;
+      if(key==='csat' && md.csat_total > 0) valStr += `<div class="cell-sub">${md.csat_good}/${md.csat_total} surveys</div>`;
+    }
+    html += `<td class="cell">${valStr}</td>`;
   }
-});
+  return html + '</tr>';
+}
+
+function renderChatMetricRow(label, icon, key, agent_months){
+  let html = `<tr><td class="metric-label"><span class="metric-icon">${icon}</span>${label}</td>`;
+  for(const m of MONTHS){
+    const md = agent_months[m];
+    if(!md || md[key]===null || md[key]===undefined || md[key]===''){
+      html += `<td class="cell"><span class="cell-na">—</span></td>`; continue;
+    }
+    const mtr = md.bonus && md.bonus.metrics && md.bonus.metrics[key];
+    const slab = mtr ? mtr.slab : null;
+    const sc = slabClass(slab);
+    let valStr = '';
+    if(key==='chats'){
+      const perDay = md.present > 0 ? (md.chats/md.present).toFixed(1) : '—';
+      valStr = `<div class="cell-val ${sc}">${md.chats}</div><div class="cell-sub">${perDay}/day</div>`;
+    } else if(key==='tickets'){
+      const perDay = md.present > 0 ? (md.tickets/md.present).toFixed(1) : '—';
+      valStr = `<div class="cell-val ${sc}">${md.tickets}</div><div class="cell-sub">${perDay}/day</div>`;
+    } else if(key==='csat'){
+      valStr = `<div class="cell-val ${sc}">${md.csat!==null?md.csat.toFixed(1)+'%':'—'}</div>`;
+      if(md.happy) valStr += `<div class="cell-sub">${md.happy} happy</div>`;
+    } else if(key==='fcr'||key==='qa'){
+      valStr = `<div class="cell-val ${sc}">${md[key]!==null&&md[key]>0?md[key].toFixed(1)+'%':'—'}</div>`;
+    }
+    html += `<td class="cell">${valStr}</td>`;
+  }
+  return html + '</tr>';
+}
+
+function renderCard(agent, type){
+  const totalBonus = MONTHS.reduce((sum,m) => sum + (agent.months[m]?.bonus?.total_bonus||0), 0);
+  const hasEarnings = totalBonus > 0;
+  const isCallsType = type === 'calls';
+  const accentClass = isCallsType ? 'avatar-calls' : 'avatar-chat';
+  
+  let html = `<div class="agent-card">
+    <div class="card-top">
+      <div class="agent-info">
+        <div class="avatar ${accentClass}">${agent.initials}</div>
+        <div>
+          <div class="agent-name">${agent.name}</div>
+          <div class="agent-ext">Ext. ${agent.ext}</div>
+        </div>
+      </div>
+      <div class="card-earnings">
+        <div class="earnings-label">Q1 Total Earned</div>
+        <div class="earnings-val ${hasEarnings?'has-earnings':''}">₹${totalBonus.toLocaleString('en-IN')}</div>
+      </div>
+    </div>
+    <div class="table-scroll">
+    <table class="card-table">
+      <thead><tr>
+        <th style="width:130px">Metric</th>
+        ${MONTHS.map(m=>`<th class="month-hdr">${MONTH_SHORT[m]} '26</th>`).join('')}
+      </tr></thead>
+      <tbody>`;
+
+  if(isCallsType){
+    html += renderCallsMetricRow('Inbound Calls','📞','inbound',null,agent.months);
+    html += renderCallsMetricRow('Tickets Closed','🎫','tickets',null,agent.months);
+    html += renderCallsMetricRow('FCR','🔄','fcr',null,agent.months);
+    html += renderCallsMetricRow('QA Score','⭐','qa',null,agent.months);
+    html += renderCallsMetricRow('Ticket CSAT','😊','csat',null,agent.months);
+  } else {
+    html += renderChatMetricRow('Chats Handled','💬','chats',agent.months);
+    html += renderChatMetricRow('Chat CSAT','😊','csat',agent.months);
+    html += renderChatMetricRow('Tickets Closed','🎫','tickets',agent.months);
+    html += renderChatMetricRow('QA Score','⭐','qa',agent.months);
+    html += renderChatMetricRow('FCR','🔄','fcr',agent.months);
+  }
+
+  // Attendance rows
+  html += `<tr style="background:rgba(255,255,255,.015)">
+    <td class="metric-label"><span class="metric-icon">📅</span>Present Days</td>`;
+  for(const m of MONTHS){
+    const md = agent.months[m];
+    const present = md?.present||0;
+    const cls = present >= 18 ? 'ok' : 'bad';
+    html += `<td class="cell"><div class="cell-val ${cls}">${present}d</div></td>`;
+  }
+  html += `</tr><tr style="background:rgba(255,255,255,.015)">
+    <td class="metric-label"><span class="metric-icon">🏖</span>Leaves</td>`;
+  for(const m of MONTHS){
+    const md = agent.months[m];
+    const leaves = md?.leaves||0;
+    const unplanned = md?.unplanned||0;
+    let cls = 'ok';
+    if(unplanned > 0) cls = 'bad';
+    else if(leaves > 3) cls = 'bad';
+    else if(leaves > 0) cls = 'warn';
+    const txt = unplanned > 0 ? `${leaves}PL ${unplanned}UPL` : `${leaves} PL`;
+    html += `<td class="cell"><div class="cell-val ${cls}">${txt}</div></td>`;
+  }
+  html += `</tr></tbody></table></div>`;
+
+  // Bonus section
+  html += `<div class="bonus-section">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px">Monthly Bonus Breakdown</div>
+    <div class="bonus-months">`;
+  
+  for(const m of MONTHS){
+    const md = agent.months[m];
+    const b = md?.bonus;
+    html += `<div class="bonus-cell">
+      <div class="bonus-month-label">${MONTH_SHORT[m]} '26</div>`;
+    
+    if(!b || b.points===null){
+      html += `<div><span class="bonus-slab-badge badge-na">N/A</span></div>
+        <div class="bonus-reason">${isCallsType&&m==="Jan'26"&&agent.name==="Sabrina Quinn"?'Chat team this month':!isCallsType&&m==="Jan'26"&&agent.name==="Evan Cruz"?'Calls team this month':'—'}</div>`;
+    } else if(b.eligible===false && !b.slab){
+      // Not eligible
+      const pts = b.points||0;
+      const pct = Math.min(100,(pts/100)*100);
+      html += `<div><span class="bonus-slab-badge badge-no">Not Eligible</span></div>
+        <div class="bonus-pts">${pts}/100 pts</div>
+        <div class="pts-bar-wrap"><div class="pts-bar s0" style="width:${pct}%"></div></div>
+        <div class="bonus-reason" style="margin-top:4px">${b.reason||''}</div>
+        <div class="bonus-amt">₹0</div>`;
+    } else if(b.eligible===false && b.slab){
+      // Has slab but leave impact reduced
+      const slabLabel = b.slab===1?'Slab 1':'Slab 2';
+      const badgeClass = b.slab===1?'badge-s1':'badge-s2';
+      const pts = b.points||0;
+      html += `<div><span class="bonus-slab-badge ${badgeClass}">${slabLabel}</span></div>
+        <div class="bonus-pts">${pts}/100 pts</div>
+        <div class="pts-bar-wrap"><div class="pts-bar ${b.slab===1?'s1':'s2'}" style="width:${pts}%"></div></div>
+        <div class="bonus-reason">${b.reason}</div>
+        <div class="bonus-amt positive">₹${(b.total_bonus||0).toLocaleString('en-IN')}</div>`;
+    } else {
+      // Eligible
+      const slabLabel = b.slab===1?'Slab 1':'Slab 2';
+      const badgeClass = b.slab===1?'badge-s1':'badge-s2';
+      const pts = b.points||0;
+      html += `<div><span class="bonus-slab-badge ${badgeClass}">${slabLabel} ✓</span></div>
+        <div class="bonus-pts">${pts}/100 pts</div>
+        <div class="pts-bar-wrap"><div class="pts-bar ${b.slab===1?'s1':'s2'}" style="width:${pts}%"></div></div>`;
+      if(b.csat_incentive > 0){
+        html += `<div class="bonus-reason">Base ₹${b.base_bonus.toLocaleString('en-IN')} + CSAT ₹${b.csat_incentive.toLocaleString('en-IN')}</div>`;
+      }
+      html += `<div class="bonus-amt positive">₹${b.total_bonus.toLocaleString('en-IN')}</div>`;
+    }
+    html += `</div>`;
+  }
+  html += `</div></div></div>`;
+  return html;
+}
+
+function buildGrid(containerId, agents, type){
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = agents.map(a => renderCard(a, type)).join('');
+}
+
+function showWing(wing, el){
+  document.querySelectorAll('.wing-content').forEach(w => w.classList.remove('active'));
+  document.querySelectorAll('.wing-tab').forEach(t => {t.classList.remove('active-calls','active-chat')});
+  document.getElementById('wing-'+wing).classList.add('active');
+  el.classList.add('active-'+wing);
+}
+
+// Initialize
+buildGrid('calls-grid', DATA.calls, 'calls');
+buildGrid('chat-grid', DATA.chat, 'chat');
 </script>
 </body>
 </html>
