@@ -1,1023 +1,810 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>T1 CS Stars — Hall of Fame · Q1 2026</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>T1 CS Stars — Q1 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
-*{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#09090f;
-  --surface:#111118;
-  --surface2:#16161f;
-  --border:rgba(255,255,255,.07);
-  --border2:rgba(255,255,255,.12);
-  --text:#f1f5f9;
-  --muted:#64748b;
-  --muted2:#94a3b8;
-  --calls:#00e5a0;
-  --calls-dim:rgba(0,229,160,.12);
-  --calls-mid:rgba(0,229,160,.25);
-  --chat:#ff8c42;
-  --chat-dim:rgba(255,140,66,.12);
-  --chat-mid:rgba(255,140,66,.25);
-  --green:#10b981;
-  --green-dim:rgba(16,185,129,.15);
-  --amber:#f59e0b;
-  --amber-dim:rgba(245,158,11,.15);
-  --red:#ef4444;
-  --red-dim:rgba(239,68,68,.12);
-  --blue:#3b82f6;
-  --violet:#8b5cf6;
-  --gold:#fbbf24;
-  --gold-dim:rgba(251,191,36,.12);
+  --bg:#06060e;--s1:#0c0c17;--s2:#111120;--s3:#17172a;--s4:#1e1e32;
+  --b1:rgba(255,255,255,.055);--b2:rgba(255,255,255,.1);--b3:rgba(255,255,255,.16);
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#4e5a6e;--t4:#2d3548;
+  --calls:#00e5a0;--calls-d:rgba(0,229,160,.1);--calls-m:rgba(0,229,160,.2);
+  --chat:#ff8c42;--chat-d:rgba(255,140,66,.1);--chat-m:rgba(255,140,66,.2);
+  --green:#10b981;--green-d:rgba(16,185,129,.12);
+  --amber:#f59e0b;--amber-d:rgba(245,158,11,.12);
+  --red:#ef4444;--red-d:rgba(239,68,68,.1);
+  --blue:#3b82f6;--violet:#8b5cf6;
+  --gold:#fbbf24;--gold-d:rgba(251,191,36,.1);--gold-m:rgba(251,191,36,.2);
 }
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.5;overflow-x:hidden}
-.wrap{max-width:1360px;margin:0 auto;padding:24px 20px 60px}
+html,body{min-height:100%;background:var(--bg);color:var(--t1);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:1320px;margin:0 auto;padding:22px 18px 80px}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:9px}
 
-/* HEADER */
-.hdr{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:18px 24px;border-radius:18px;margin-bottom:20px;
-  background:linear-gradient(135deg,#13131e,#0f0f1a);
-  border:1px solid var(--border2);flex-wrap:wrap;
-}
-.hdr-brand{display:flex;align-items:center;gap:14px}
-.hdr-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(145deg,#fff,#e8f0ff);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.hdr-logo img{width:32px;height:32px;object-fit:contain}
-.hdr-logo-fallback{font-size:18px;font-weight:800;color:#1e1e3a}
-.hdr-title{font-size:18px;font-weight:700;letter-spacing:-.02em}
-.hdr-sub{font-size:11px;color:var(--muted2);margin-top:2px}
-.hdr-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid}
-.pill-calls{background:var(--calls-dim);color:var(--calls);border-color:rgba(0,229,160,.25)}
-.pill-chat{background:var(--chat-dim);color:var(--chat);border-color:rgba(255,140,66,.25)}
-.pill-q{background:rgba(139,92,246,.12);color:#a78bfa;border-color:rgba(139,92,246,.25)}
-.pill-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.admin-badge{
-  display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
-  border-radius:999px;font-size:11px;font-weight:700;
-  background:rgba(251,191,36,.15);color:var(--gold);border:1px solid rgba(251,191,36,.3);
-}
+/* ── ICONS ── */
+.ico{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle}
+.ico svg{display:block}
 
-/* PAGE TABS */
-.page-tabs{
-  display:flex;gap:4px;margin-bottom:24px;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:14px;padding:5px;width:fit-content;
-}
-.page-tab{
-  padding:9px 22px;border-radius:10px;cursor:pointer;
-  font-size:13px;font-weight:600;color:var(--muted2);
-  background:transparent;border:none;transition:all .2s;
-  display:flex;align-items:center;gap:7px;
-}
-.page-tab:hover{color:var(--text);background:rgba(255,255,255,.04)}
-.page-tab.active-hof{background:linear-gradient(135deg,rgba(251,191,36,.18),rgba(251,191,36,.08));color:var(--gold);box-shadow:0 0 0 1px rgba(251,191,36,.2)}
-.page-tab.active-perf{background:var(--calls-dim);color:var(--calls);box-shadow:0 0 0 1px rgba(0,229,160,.2)}
-.page-tab.active-bonus{background:var(--chat-dim);color:var(--chat);box-shadow:0 0 0 1px rgba(255,140,66,.2)}
-.tab-lock{font-size:12px;opacity:.7}
-.page{display:none}
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-radius:16px;margin-bottom:18px;background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--b2);gap:14px;flex-wrap:wrap;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 4px 24px rgba(0,0,0,.4)}
+.hdr-brand{display:flex;align-items:center;gap:11px}
+.hdr-logo{width:38px;height:38px;border-radius:10px;background:linear-gradient(145deg,#fff,#dce8ff);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.hdr-logo img{width:26px;height:26px;object-fit:contain}
+.hdr-logo-fb{font-size:15px;font-weight:800;color:#1e1e3a}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:-.025em}
+.hdr-sub{font-size:11px;color:var(--t2);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border:1px solid}
+.chip-calls{background:var(--calls-d);color:var(--calls);border-color:var(--calls-m)}
+.chip-chat{background:var(--chat-d);color:var(--chat);border-color:var(--chat-m)}
+.chip-q{background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)}
+.chip-admin{background:var(--gold-d);color:var(--gold);border-color:var(--gold-m);display:none}
+.chip-dot{width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* ── PAGE TABS ── */
+.page-tabs{display:inline-flex;position:relative;background:var(--s1);border:1px solid var(--b1);border-radius:13px;padding:4px;margin-bottom:22px;gap:1px}
+.tab-slide{position:absolute;top:4px;height:calc(100% - 8px);border-radius:9px;background:var(--s4);transition:left .25s cubic-bezier(.4,0,.2,1),width .25s cubic-bezier(.4,0,.2,1);pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.06) inset}
+.ptab{position:relative;z-index:1;padding:7px 18px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--t3);background:transparent;border:none;transition:color .2s;display:flex;align-items:center;gap:7px;white-space:nowrap;user-select:none;outline:none}
+.ptab:hover:not([data-active]){color:var(--t2)}
+.ptab[data-active=hof]{color:var(--gold)}
+.ptab[data-active=perf]{color:var(--calls)}
+.ptab[data-active=bonus]{color:var(--chat)}
+.ptab-lock{font-size:11px;opacity:.55;transition:opacity .2s}
+
+/* ── PAGE ── */
+.page{display:none;animation:pgIn .22s ease both}
 .page.active{display:block}
+@keyframes pgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 
-/* HERO STATS */
-.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
-@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}}
-.stat-card{padding:18px 20px;border-radius:14px;background:var(--surface);border:1px solid var(--border);position:relative;overflow:hidden;}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.stat-card.calls::before{background:linear-gradient(90deg,transparent,var(--calls),transparent)}
-.stat-card.chat::before{background:linear-gradient(90deg,transparent,var(--chat),transparent)}
-.stat-card.violet::before{background:linear-gradient(90deg,transparent,#8b5cf6,transparent)}
-.stat-card.blue::before{background:linear-gradient(90deg,transparent,#3b82f6,transparent)}
-.stat-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
-.stat-val{font-size:28px;font-weight:800;letter-spacing:-.04em;font-family:'JetBrains Mono',monospace}
-.stat-card.calls .stat-val{color:var(--calls)}
-.stat-card.chat .stat-val{color:var(--chat)}
-.stat-card.violet .stat-val{color:#a78bfa}
-.stat-card.blue .stat-val{color:#60a5fa}
-.stat-desc{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:680px){.stats-row{grid-template-columns:repeat(2,1fr)}}
+.sc{padding:16px 18px;border-radius:14px;background:var(--s1);border:1px solid var(--b1);position:relative;overflow:hidden;transition:border-color .2s}
+.sc:hover{border-color:var(--b2)}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent,var(--t4)),transparent)}
+.sc.c-calls{--accent:var(--calls)}.sc.c-chat{--accent:var(--chat)}.sc.c-violet{--accent:var(--violet)}.sc.c-blue{--accent:var(--blue)}
+.sc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.sc-val{font-size:25px;font-weight:800;letter-spacing:-.04em;font-family:'JetBrains Mono',monospace}
+.sc.c-calls .sc-val{color:var(--calls)}.sc.c-chat .sc-val{color:var(--chat)}.sc.c-violet .sc-val{color:var(--violet)}.sc.c-blue .sc-val{color:#60a5fa}
+.sc-desc{font-size:11px;color:var(--t3);margin-top:5px;line-height:1.5}
 
-/* WING TABS */
-.wing-tabs{display:flex;gap:10px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0}
-.wing-tab{
-  padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600;
-  border-radius:10px 10px 0 0;border:1px solid transparent;border-bottom:none;
-  color:var(--muted2);transition:all .2s;position:relative;top:1px;
-}
-.wing-tab:hover{color:var(--text);background:var(--surface)}
-.wing-tab.active-calls{color:var(--calls);background:var(--calls-dim);border-color:rgba(0,229,160,.2);border-bottom-color:var(--bg)}
-.wing-tab.active-chat{color:var(--chat);background:var(--chat-dim);border-color:rgba(255,140,66,.2);border-bottom-color:var(--bg)}
-.wing-tab .tab-count{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;font-size:10px;font-weight:700;margin-left:6px;background:rgba(255,255,255,.08);color:var(--muted2);}
-.wing-content{display:none}
-.wing-content.active{display:block}
-.wing-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;padding:18px 20px;border-radius:14px;background:var(--surface);border:1px solid var(--border);}
-@media(max-width:768px){.wing-summary{grid-template-columns:repeat(2,1fr)}}
-.ws-item{text-align:center}
-.ws-item .ws-val{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em}
-.ws-item .ws-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
-.wing-calls .ws-item .ws-val{color:var(--calls)}
-.wing-chat .ws-item .ws-val{color:var(--chat)}
+/* ── WING TABS ── */
+.wing-tabs{display:flex;gap:6px;margin-bottom:18px;border-bottom:1px solid var(--b1);padding-bottom:0}
+.wtab{padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;border-radius:10px 10px 0 0;border:1px solid transparent;border-bottom:none;color:var(--t3);transition:all .18s;position:relative;top:1px;display:flex;align-items:center;gap:7px}
+.wtab:hover:not(.wt-c):not(.wt-ch){color:var(--t1);background:var(--s2)}
+.wtab.wt-c{color:var(--calls);background:var(--calls-d);border-color:var(--calls-m);border-bottom-color:var(--bg)}
+.wtab.wt-ch{color:var(--chat);background:var(--chat-d);border-color:var(--chat-m);border-bottom-color:var(--bg)}
+.wtab-ct{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;border-radius:5px;font-size:10px;font-weight:700;background:rgba(255,255,255,.07);color:var(--t3)}
+.wc{display:none}.wc.active{display:block}
 
-/* AGENT GRID */
-.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(580px,1fr));gap:16px}
-@media(max-width:640px){.agents-grid{grid-template-columns:1fr}}
+/* ── WING SUMMARY ── */
+.wing-sum{display:grid;grid-template-columns:repeat(4,1fr);margin-bottom:18px;border-radius:13px;background:var(--s1);border:1px solid var(--b1);overflow:hidden}
+@media(max-width:640px){.wing-sum{grid-template-columns:repeat(2,1fr)}}
+.wsm{padding:14px 16px;text-align:center;border-right:1px solid var(--b1)}.wsm:last-child{border-right:none}
+.wsm-v{font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em}
+.wing-calls .wsm-v{color:var(--calls)}.wing-chat .wsm-v{color:var(--chat)}
+.wsm-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-top:3px}
 
-/* AGENT CARD */
-.agent-card{border-radius:16px;border:1px solid var(--border);background:var(--surface);overflow:hidden;transition:border-color .2s,box-shadow .2s;}
-.agent-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,.3)}
-.card-top{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
-.agent-info{display:flex;align-items:center;gap:12px}
-.avatar{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;letter-spacing:.02em;}
-.avatar-calls{background:var(--calls-mid);color:var(--calls)}
-.avatar-chat{background:var(--chat-mid);color:var(--chat)}
-.agent-name{font-size:15px;font-weight:700;letter-spacing:-.02em}
-.agent-ext{font-size:11px;color:var(--muted);margin-top:1px}
+/* ── LEGEND ── */
+.legend{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:9px 14px;border-radius:10px;background:var(--s1);border:1px solid var(--b1);margin-bottom:16px;font-size:11px}
+.ld-i{display:flex;align-items:center;gap:5px;color:var(--t2)}
+.ld-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0}
+.ld-t{font-size:11px;font-weight:600;color:var(--t3);margin-right:3px}
+.ld-note{margin-left:auto;font-size:10px;color:var(--t3)}
 
-/* MONTHLY TABLE */
-.card-table{width:100%;border-collapse:collapse}
-.card-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);}
-.card-table th.month-hdr{text-align:center;min-width:110px}
-.card-table td{padding:7px 14px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
-.card-table tr:last-child td{border-bottom:none}
-.card-table tr:hover td{background:rgba(255,255,255,.02)}
-.metric-label{font-size:11px;font-weight:600;color:var(--muted2);white-space:nowrap;display:flex;align-items:center;gap:6px}
-.metric-icon{font-size:12px;opacity:.7}
-.cell{text-align:center}
-.cell-val{font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:4px}
-.cell-sub{font-size:10px;color:var(--muted);margin-top:1px}
-.cell-na{color:var(--muted);font-size:11px;opacity:.5}
-.s1{color:var(--green)}
-.s2{color:var(--amber)}
-.s0{color:var(--red)}
-.sna{color:var(--muted);opacity:.4}
-.s1-bg{background:var(--green-dim)}
-.s2-bg{background:var(--amber-dim)}
-.s0-bg{background:var(--red-dim)}
-.attend-val{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:3px}
-.attend-val.ok{color:var(--green)}
-.attend-val.warn{color:var(--amber)}
-.attend-val.bad{color:var(--red)}
-.legend{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:12px 18px;border-radius:12px;background:var(--surface);border:1px solid var(--border);margin-bottom:20px;font-size:11px;}
-.legend-item{display:flex;align-items:center;gap:6px;color:var(--muted2)}
-.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.legend-title{font-size:11px;font-weight:600;color:var(--muted);margin-right:4px}
-.table-scroll{overflow-x:auto}
+/* ── AGENTS GRID ── */
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(540px,1fr));gap:13px}
+@media(max-width:580px){.agents-grid{grid-template-columns:1fr}}
 
-/* BONUS SECTION (inside bonus tab cards) */
-.bonus-section{padding:12px 18px 14px;background:var(--surface2);border-top:1px solid var(--border)}
-.bonus-months{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.bonus-cell{border-radius:10px;padding:10px 12px;border:1px solid var(--border);background:var(--surface);text-align:center;}
-.bonus-month-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
-.bonus-slab-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.02em;margin-bottom:4px;}
-.badge-s1{background:var(--green-dim);color:var(--green);border:1px solid rgba(16,185,129,.25)}
-.badge-s2{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(245,158,11,.25)}
-.badge-no{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.2);font-size:10px}
-.badge-na{background:rgba(255,255,255,.04);color:var(--muted);border:1px solid var(--border);font-size:10px}
-.bonus-pts{font-size:11px;color:var(--muted2);margin-top:2px}
-.bonus-amt{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:3px;color:var(--text)}
-.bonus-amt.positive{color:var(--green)}
-.bonus-reason{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3}
-.pts-bar-wrap{height:3px;background:rgba(255,255,255,.06);border-radius:999px;margin-top:6px;overflow:hidden}
-.pts-bar{height:100%;border-radius:999px;transition:width .6s ease}
-.pts-bar.s1{background:var(--green)}
-.pts-bar.s2{background:var(--amber)}
-.pts-bar.s0{background:var(--red)}
-.bonus-card-total{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 18px;border-top:1px solid var(--border);
-  background:rgba(255,255,255,.02);
-}
-.bct-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
-.bct-val{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--green)}
-.bct-val.zero{color:var(--muted)}
+/* ── AGENT CARD ── */
+.ac{border-radius:14px;border:1px solid var(--b1);background:var(--s1);overflow:hidden;transition:border-color .2s,box-shadow .2s,transform .2s;animation:cardIn .35s ease both}
+.ac:hover{border-color:var(--b2);box-shadow:0 6px 30px rgba(0,0,0,.35);transform:translateY(-1px)}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ac-head{display:flex;align-items:center;padding:13px 15px 11px;border-bottom:1px solid var(--b1);gap:10px}
+.av{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.av-c{background:rgba(0,229,160,.14);color:var(--calls)}
+.av-ch{background:rgba(255,140,66,.14);color:var(--chat)}
+.ac-n{font-size:14px;font-weight:700;letter-spacing:-.015em}
+.ac-e{font-size:11px;color:var(--t3);margin-top:1px}
 
-/* HALL OF FAME */
-.hof-intro{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:20px;
-  padding:22px 28px;border-radius:18px;margin-bottom:28px;
-  background:linear-gradient(135deg,rgba(251,191,36,.07),rgba(139,92,246,.05),transparent);
-  border:1px solid rgba(251,191,36,.15);flex-wrap:wrap;
-}
-.hof-title{font-size:22px;font-weight:800;letter-spacing:-.03em;color:var(--gold);margin-bottom:4px}
-.hof-sub{font-size:13px;color:var(--muted2);max-width:500px;line-height:1.6}
-.hof-stats{display:flex;gap:24px;flex-wrap:wrap}
-.hof-stat{text-align:center}
-.hof-stat-val{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text)}
-.hof-stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+/* ── METRIC TABLE ── */
+.mt-wrap{overflow-x:auto}
+.mt{width:100%;border-collapse:collapse}
+.mt th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);padding:9px 12px;text-align:left;border-bottom:1px solid var(--b1);background:var(--s2);white-space:nowrap}
+.mt th.thc{text-align:center;min-width:100px}
+.mt td{padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
+.mt tr:last-child td{border-bottom:none}
+.mt tr:hover td{background:rgba(255,255,255,.012)}
+.ml{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.ml .ico{color:var(--t3)}
+.mcc{text-align:center}
+.mv{font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.ms{font-size:10px;color:var(--t3);margin-top:1px}
+.mna{color:var(--t3);font-size:11px;opacity:.35}
+.s1c{color:var(--green)}.s2c{color:var(--amber)}.s0c{color:var(--red)}.snac{color:var(--t3);opacity:.35}
 
-.section-hdr{
-  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--muted);margin:0 0 16px;display:flex;align-items:center;gap:8px;
-}
-.section-hdr::after{content:'';flex:1;height:1px;background:var(--border)}
+/* ── BAR ── */
+.pb-wrap{height:2px;background:rgba(255,255,255,.05);border-radius:9px;overflow:hidden;margin-top:3px}
+.pb{height:100%;border-radius:9px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.pb.s1{background:var(--green)}.pb.s2{background:var(--amber)}.pb.s0{background:var(--red)}
 
-/* Spotlight: Top 3 earners podium */
-.podium{display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:12px;margin-bottom:28px;align-items:end}
-@media(max-width:680px){.podium{grid-template-columns:1fr;align-items:start}}
-.podium-card{
-  border-radius:16px;padding:20px 18px;text-align:center;
-  border:1px solid var(--border);background:var(--surface);
-  position:relative;overflow:hidden;
-}
-.podium-card.rank-1{
-  border-color:rgba(251,191,36,.35);
-  background:linear-gradient(180deg,rgba(251,191,36,.08) 0%,var(--surface) 60%);
-}
-.podium-card.rank-2{
-  border-color:rgba(148,163,184,.25);
-  background:linear-gradient(180deg,rgba(148,163,184,.06) 0%,var(--surface) 60%);
-}
-.podium-card.rank-3{
-  border-color:rgba(205,127,50,.25);
-  background:linear-gradient(180deg,rgba(205,127,50,.06) 0%,var(--surface) 60%);
-}
-.podium-rank{font-size:28px;margin-bottom:10px;line-height:1}
-.podium-avatar{
-  width:52px;height:52px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:15px;font-weight:700;margin:0 auto 10px;
-}
-.podium-name{font-size:14px;font-weight:700;letter-spacing:-.01em;margin-bottom:3px}
-.podium-team{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px}
-.podium-months{display:flex;justify-content:center;gap:5px;margin-bottom:8px}
-.pdot{width:10px;height:10px;border-radius:3px}
-.podium-milestone{
-  font-size:11px;color:var(--muted2);line-height:1.5;
-  background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;margin-top:4px;
-}
+/* ── HOF PAGE ── */
+.hof-hero{display:flex;align-items:flex-start;justify-content:space-between;padding:22px 26px;border-radius:18px;margin-bottom:26px;background:linear-gradient(135deg,rgba(251,191,36,.07) 0%,rgba(139,92,246,.04) 60%,transparent 100%);border:1px solid rgba(251,191,36,.14);gap:18px;flex-wrap:wrap;position:relative;overflow:hidden}
+.hof-hero::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;background:radial-gradient(circle,rgba(251,191,36,.07) 0%,transparent 70%);pointer-events:none}
+.hof-title{font-size:21px;font-weight:800;letter-spacing:-.04em;color:var(--gold);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.hof-sub{font-size:13px;color:var(--t2);max-width:440px;line-height:1.65}
+.hof-qs{display:flex;gap:18px;flex-wrap:wrap}
+.hq{text-align:center}
+.hq-v{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1)}
+.hq-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-top:2px}
 
-/* Award grid */
-.award-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:32px}
-.award-card{
-  border-radius:14px;padding:18px 18px 16px;
-  border:1px solid var(--border);background:var(--surface);
-  position:relative;overflow:hidden;
-  transition:border-color .2s,transform .15s;
-}
-.award-card:hover{border-color:var(--border2);transform:translateY(-2px)}
-.award-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
-.award-icon{font-size:22px;margin-bottom:10px;line-height:1}
-.award-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:8px}
-.award-winner{font-size:16px;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
-.award-team{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
-.award-metric{
-  font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;
-  padding:5px 10px;border-radius:7px;display:inline-block;margin-bottom:4px;
-}
-.award-desc{font-size:11px;color:var(--muted);line-height:1.5}
+/* ── SECTION HEADER ── */
+.sh{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:var(--t3);margin:0 0 13px;display:flex;align-items:center;gap:8px}
+.sh::after{content:'';flex:1;height:1px;background:var(--b1)}
 
-/* Multi-winner award */
-.award-winners-list{display:flex;flex-direction:column;gap:5px;margin-bottom:4px}
-.award-winner-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.award-winner-row .aw-name{font-size:13px;font-weight:700}
-.award-winner-row .aw-val{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--muted2)}
+/* ── PODIUM ── */
+.podium{display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:11px;margin-bottom:26px;align-items:end}
+@media(max-width:600px){.podium{grid-template-columns:1fr}}
+.pod{border-radius:14px;padding:20px 16px 16px;border:1px solid var(--b1);background:var(--s1);text-align:center;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.pod:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
+.pod.p1{border-color:rgba(251,191,36,.28);background:linear-gradient(175deg,rgba(251,191,36,.08) 0%,var(--s1) 50%);box-shadow:0 0 40px rgba(251,191,36,.06)}
+.pod.p2{border-color:rgba(203,213,225,.15);background:linear-gradient(175deg,rgba(203,213,225,.04) 0%,var(--s1) 50%)}
+.pod.p3{border-color:rgba(180,120,60,.18);background:linear-gradient(175deg,rgba(180,120,60,.05) 0%,var(--s1) 50%)}
+.pod-medal{font-size:22px;line-height:1;margin-bottom:10px;display:block}
+.pod-av{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;margin:0 auto 9px}
+.pod-n{font-size:14px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
+.pod-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:10px}
+.pod-dots{display:flex;justify-content:center;gap:4px;margin-bottom:8px}
+.pdot{width:8px;height:8px;border-radius:2px}
+.pod-info{font-size:11px;color:var(--t2);background:rgba(255,255,255,.04);border-radius:8px;padding:6px 10px;line-height:1.6}
 
-/* BONUS LOCK */
-.bonus-lock-screen{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:80px 20px;text-align:center;min-height:400px;
-}
-.lock-icon{font-size:56px;margin-bottom:20px;filter:drop-shadow(0 0 20px rgba(255,140,66,.3))}
-.lock-title{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
-.lock-sub{font-size:14px;color:var(--muted2);margin-bottom:28px;max-width:400px;line-height:1.7}
-.lock-date{
-  display:inline-flex;align-items:center;gap:8px;
-  padding:10px 20px;border-radius:12px;
-  background:var(--chat-dim);color:var(--chat);
-  font-size:13px;font-weight:700;border:1px solid rgba(255,140,66,.2);
-  margin-bottom:28px;
-}
-.countdown{
-  display:flex;gap:16px;justify-content:center;margin-bottom:24px;
-}
-.cdown-unit{text-align:center}
-.cdown-val{
-  font-size:36px;font-weight:800;font-family:'JetBrains Mono',monospace;
-  color:var(--text);min-width:60px;display:block;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:10px 8px;line-height:1.1;
-}
-.cdown-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:5px}
-.cdown-sep{font-size:28px;font-weight:700;color:var(--muted);align-self:center;padding-bottom:20px}
-.lock-note{font-size:11px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 16px;max-width:380px;line-height:1.6}
+/* ── AWARD GRID ── */
+.award-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:11px;margin-bottom:26px}
+.aw{border-radius:14px;padding:17px;border:1px solid var(--b1);background:var(--s1);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
+.aw:hover{transform:translateY(-2px);border-color:var(--b2);box-shadow:0 8px 30px rgba(0,0,0,.3)}
+.aw-bar{position:absolute;top:0;left:0;right:0;height:1.5px}
+.aw-ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:11px}
+.aw-cat{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:6px}
+.aw-name{font-size:15px;font-weight:700;letter-spacing:-.02em;margin-bottom:2px}
+.aw-team{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px}
+.aw-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:6px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;margin-bottom:7px}
+.aw-desc{font-size:11px;color:var(--t2);line-height:1.55}
 
-/* BONUS TAB */
-.bonus-agents-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:16px}
-@media(max-width:640px){.bonus-agents-grid{grid-template-columns:1fr}}
-.bonus-agent-card{border-radius:16px;border:1px solid var(--border);background:var(--surface);overflow:hidden;transition:border-color .2s;}
-.bonus-agent-card:hover{border-color:var(--border2)}
-.bac-top{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px 12px;border-bottom:1px solid var(--border);
-}
-.bac-info{display:flex;align-items:center;gap:12px}
-.bac-name{font-size:14px;font-weight:700;letter-spacing:-.01em}
-.bac-ext{font-size:11px;color:var(--muted);margin-top:1px}
+/* ── PERFECT SCORE CLUB ── */
+.ps-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
+.ps-card{display:flex;align-items:center;gap:11px;padding:12px 15px;border-radius:13px;background:linear-gradient(135deg,rgba(251,191,36,.07),var(--s1));border:1px solid rgba(251,191,36,.16);min-width:195px;transition:transform .2s}
+.ps-card:hover{transform:translateY(-2px)}
+.ps-n{font-size:13px;font-weight:700}
+.ps-m{font-size:11px;color:var(--t2);margin-top:2px}
 
-/* FOOTER */
-.foot{margin-top:40px;text-align:center;font-size:11px;color:var(--muted);line-height:1.8}
+/* ── BONUS LOCK ── */
+.bl{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 20px;min-height:440px;text-align:center}
+.bl-icon{width:68px;height:68px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:18px;color:var(--chat);background:linear-gradient(135deg,rgba(255,140,66,.15),rgba(255,140,66,.04));border:1px solid rgba(255,140,66,.2);box-shadow:0 0 50px rgba(255,140,66,.08);animation:blPulse 3s ease-in-out infinite}
+@keyframes blPulse{0%,100%{box-shadow:0 0 50px rgba(255,140,66,.08)}50%{box-shadow:0 0 70px rgba(255,140,66,.18)}}
+.bl-title{font-size:20px;font-weight:800;letter-spacing:-.03em;margin-bottom:7px}
+.bl-sub{font-size:13px;color:var(--t2);margin-bottom:20px;max-width:360px;line-height:1.7}
+.bl-date{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:9px;background:var(--chat-d);color:var(--chat);font-size:13px;font-weight:700;border:1px solid var(--chat-m);margin-bottom:22px}
+.bl-cd{display:flex;gap:10px;align-items:center;margin-bottom:22px}
+.bl-unit{text-align:center}
+.bl-val{font-size:32px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);min-width:56px;display:block;background:var(--s2);border:1px solid var(--b2);border-radius:10px;padding:9px 6px 7px;line-height:1}
+.bl-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--t3);margin-top:5px}
+.bl-sep{font-size:22px;font-weight:700;color:var(--t4);padding-bottom:20px}
+.bl-note{font-size:11px;color:var(--t3);max-width:340px;line-height:1.65;background:var(--s2);border:1px solid var(--b1);border-radius:9px;padding:9px 15px;margin-bottom:14px}
+.bl-admin{display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--t3);background:transparent;border:1px solid var(--b2);transition:all .18s;margin-top:2px}
+.bl-admin:hover{color:var(--t1);background:var(--s3);border-color:var(--b2)}
 
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:var(--bg)}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:999px}
+/* ── BONUS UNLOCKED ── */
+.bu-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:11px}
+.bu-hdr-left .bu-title{font-size:17px;font-weight:800;letter-spacing:-.02em}
+.bu-hdr-left .bu-sub{font-size:12px;color:var(--t2);margin-top:2px}
+.bu-totals{display:flex;gap:9px;flex-wrap:wrap}
+.bt{padding:9px 14px;border-radius:9px;border:1px solid}
+.bt-c{background:var(--calls-d);border-color:var(--calls-m)}.bt-ch{background:var(--chat-d);border-color:var(--chat-m)}
+.bt-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.bt-c .bt-lbl{color:var(--calls)}.bt-ch .bt-lbl{color:var(--chat)}
+.bt-val{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1)}
+
+/* ── BONUS AGENT GRID ── */
+.bonus-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));gap:13px}
+@media(max-width:480px){.bonus-grid{grid-template-columns:1fr}}
+.bac{border-radius:14px;border:1px solid var(--b1);background:var(--s1);overflow:hidden;transition:border-color .2s,transform .2s}
+.bac:hover{border-color:var(--b2);transform:translateY(-1px)}
+.bac-head{display:flex;align-items:center;justify-content:space-between;padding:12px 15px 10px;border-bottom:1px solid var(--b1)}
+.bac-n{font-size:13px;font-weight:700;letter-spacing:-.015em}
+.bac-e{font-size:11px;color:var(--t3);margin-top:1px}
+.bac-months{display:grid;grid-template-columns:1fr 1fr 1fr}
+.bm{padding:11px 11px 9px;border-right:1px solid var(--b1);text-align:center}.bm:last-child{border-right:none}
+.bm-l{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:6px}
+.bmb{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.02em;margin-bottom:4px}
+.bmb-s1{background:var(--green-d);color:var(--green);border:1px solid rgba(16,185,129,.18)}
+.bmb-s2{background:var(--amber-d);color:var(--amber);border:1px solid rgba(245,158,11,.18)}
+.bmb-no{background:var(--red-d);color:var(--red);border:1px solid rgba(239,68,68,.15)}
+.bmb-na{background:rgba(255,255,255,.03);color:var(--t3);border:1px solid var(--b1)}
+.bm-pts{font-size:10px;color:var(--t2);margin-bottom:2px}
+.bm-rsn{font-size:10px;color:var(--t3);line-height:1.35;margin-bottom:2px}
+.bm-csat{font-size:10px;color:var(--green);margin-bottom:2px}
+.bm-pb{height:2px;background:rgba(255,255,255,.05);border-radius:9px;overflow:hidden;margin:3px 0}
+.bm-pb-fill{height:100%;border-radius:9px}
+.bm-amt{font-size:13px;font-weight:800;font-family:'JetBrains Mono',monospace;margin-top:2px}
+.bm-amt.pos{color:var(--green)}.bm-amt.zer{color:var(--t3)}
+.bac-foot{display:flex;align-items:center;justify-content:space-between;padding:9px 15px;background:rgba(255,255,255,.02);border-top:1px solid var(--b1)}
+.bac-foot-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3)}
+.bac-foot-val{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--green)}
+.bac-foot-val.zer{color:var(--t3)}
+
+/* ── FOOTER ── */
+.foot{margin-top:40px;text-align:center;font-size:11px;color:var(--t3);line-height:1.8}
 </style>
 </head>
 <body>
-<main class="wrap">
+<div class="wrap">
 
-  <!-- HEADER -->
-  <header class="hdr">
-    <div class="hdr-brand">
-      <div class="hdr-logo">
-        <img id="brandLogo" src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none';document.getElementById('brandFB').style.display='flex'">
-        <div id="brandFB" class="hdr-logo-fallback" style="display:none">A</div>
-      </div>
-      <div>
-        <div class="hdr-title">T1 CS Stars — Q1 2026</div>
-        <div class="hdr-sub" id="hdrSub">Hall of Fame · Performance · Bonus</div>
-      </div>
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-logo">
+      <img id="bLogo" src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none';document.getElementById('bFB').style.display='flex'">
+      <div id="bFB" class="hdr-logo-fb" style="display:none">A</div>
     </div>
-    <div class="hdr-right">
-      <span class="pill pill-calls"><span class="pill-dot"></span>Calls Wing</span>
-      <span class="pill pill-chat"><span class="pill-dot"></span>Chat Wing</span>
-      <span class="pill pill-q">Q1 2026</span>
-      <span class="admin-badge" id="adminBadge" style="display:none">👑 Admin</span>
+    <div>
+      <div class="hdr-title">T1 CS Stars &mdash; Q1 2026</div>
+      <div class="hdr-sub" id="hdrSub">Hall of Fame &middot; Performance &middot; Bonus</div>
     </div>
-  </header>
-
-  <!-- PAGE TABS -->
-  <div class="page-tabs">
-    <button class="page-tab active-hof" id="tab-hof" onclick="showPage('hof',this)">🏆 Hall of Fame</button>
-    <button class="page-tab" id="tab-perf" onclick="showPage('perf',this)">📊 Performance</button>
-    <button class="page-tab" id="tab-bonus" onclick="showPage('bonus',this)">
-      💰 Bonus <span class="tab-lock" id="tabBonusLock">🔒</span>
-    </button>
   </div>
-
-  <!-- ═══════════════════════════════════ HALL OF FAME ═══════════════════════════════════ -->
-  <div class="page active" id="page-hof">
-
-    <div class="hof-intro">
-      <div>
-        <div class="hof-title">🏆 Q1 2026 — Hall of Fame</div>
-        <div class="hof-sub">Celebrating the stars of T1 CS for January · February · March 2026. Each award recognises outstanding performance across volume, quality, customer experience, and consistency.</div>
-      </div>
-      <div class="hof-stats" id="hofQuickStats"></div>
-    </div>
-
-    <div class="section-hdr">🥇 Quarter Standouts</div>
-    <div class="podium" id="hofPodium"></div>
-
-    <div class="section-hdr">🎖 Individual Awards</div>
-    <div class="award-grid" id="awardsGrid"></div>
-
-    <div class="section-hdr">💯 Perfect Score Club</div>
-    <div id="perfectScoreSection"></div>
-
+  <div class="hdr-right">
+    <span class="chip chip-calls"><span class="chip-dot"></span>Calls Wing</span>
+    <span class="chip chip-chat"><span class="chip-dot"></span>Chat Wing</span>
+    <span class="chip chip-q">Q1 2026</span>
+    <span class="chip chip-admin" id="adminChip">&#128081; Admin</span>
   </div>
+</header>
 
-  <!-- ═══════════════════════════════════ PERFORMANCE ═══════════════════════════════════ -->
-  <div class="page" id="page-perf">
+<!-- PAGE TABS -->
+<div class="page-tabs" id="pageTabs">
+  <div class="tab-slide" id="tabSlide"></div>
+  <button class="ptab" id="tab-hof" onclick="switchPage('hof',this)">
+    <span id="ico-tab-hof"></span> Hall of Fame
+  </button>
+  <button class="ptab" id="tab-perf" onclick="switchPage('perf',this)">
+    <span id="ico-tab-perf"></span> Performance
+  </button>
+  <button class="ptab" id="tab-bonus" onclick="switchPage('bonus',this)">
+    <span id="ico-tab-bonus"></span> Bonus
+    <span class="ptab-lock" id="bonusLockIcon"></span>
+  </button>
+</div>
 
-    <div class="hero-stats">
-      <div class="stat-card calls">
-        <div class="stat-label">Calls Handled</div>
-        <div class="stat-val">11,064</div>
-        <div class="stat-desc">Total inbound + outbound calls across Q1</div>
-      </div>
-      <div class="stat-card chat">
-        <div class="stat-label">Chats Handled</div>
-        <div class="stat-val">3,062</div>
-        <div class="stat-desc">Digital conversations owned by chat wing</div>
-      </div>
-      <div class="stat-card violet">
-        <div class="stat-label">Tickets Closed</div>
-        <div class="stat-val">3,529</div>
-        <div class="stat-desc">Tickets resolved across all team members</div>
-      </div>
-      <div class="stat-card blue">
-        <div class="stat-label">Combined Reach</div>
-        <div class="stat-val">14,126</div>
-        <div class="stat-desc">Total customer conversations in Q1</div>
-      </div>
+<!-- ═══ HALL OF FAME ═══ -->
+<div class="page" id="page-hof">
+  <div class="hof-hero">
+    <div>
+      <div class="hof-title"><span id="ico-trophy"></span>Q1 2026 &mdash; Hall of Fame</div>
+      <div class="hof-sub">Celebrating the best of T1 CS for January &middot; February &middot; March 2026. Awards are computed from live performance data.</div>
     </div>
+    <div class="hof-qs" id="hofQS"></div>
+  </div>
+  <div class="sh">Quarter Standouts</div>
+  <div class="podium" id="hofPodium"></div>
+  <div class="sh">Individual Awards</div>
+  <div class="award-grid" id="awardGrid"></div>
+  <div class="sh">Perfect Score Club &mdash; 100 / 100 pts</div>
+  <div class="ps-row" id="psRow"></div>
+</div>
 
+<!-- ═══ PERFORMANCE ═══ -->
+<div class="page" id="page-perf">
+  <div class="stats-row">
+    <div class="sc c-calls"><div class="sc-lbl"><span id="ico-sc-calls"></span>Calls Handled</div><div class="sc-val">11,064</div><div class="sc-desc">Inbound + outbound across Q1</div></div>
+    <div class="sc c-chat"><div class="sc-lbl"><span id="ico-sc-chat"></span>Chats Handled</div><div class="sc-val">3,062</div><div class="sc-desc">Digital conversations, chat wing</div></div>
+    <div class="sc c-violet"><div class="sc-lbl"><span id="ico-sc-tick"></span>Tickets Closed</div><div class="sc-val">3,529</div><div class="sc-desc">Resolved across all agents</div></div>
+    <div class="sc c-blue"><div class="sc-lbl"><span id="ico-sc-reach"></span>Combined Reach</div><div class="sc-val">14,126</div><div class="sc-desc">Total customer touchpoints</div></div>
+  </div>
+  <div class="wing-tabs">
+    <div class="wtab wt-c" onclick="switchWing('perf','calls',this)"><span id="ico-w-calls"></span>Calls Wing<span class="wtab-ct">9</span></div>
+    <div class="wtab" onclick="switchWing('perf','chat',this)"><span id="ico-w-chat"></span>Chat Wing<span class="wtab-ct">3</span></div>
+  </div>
+  <div class="wc active" id="perf-wing-calls">
+    <div class="wing-sum wing-calls">
+      <div class="wsm"><div class="wsm-v">97.26%</div><div class="wsm-l">Ticket CSAT</div></div>
+      <div class="wsm"><div class="wsm-v">78.92%</div><div class="wsm-l">Avg FCR</div></div>
+      <div class="wsm"><div class="wsm-v">2,849</div><div class="wsm-l">Tickets Closed</div></div>
+      <div class="wsm"><div class="wsm-v">5,936</div><div class="wsm-l">Inbound Calls</div></div>
+    </div>
+    <div class="legend">
+      <span class="ld-t">Thresholds:</span>
+      <span class="ld-i"><span class="ld-dot" style="background:var(--green)"></span>Slab 1 target</span>
+      <span class="ld-i"><span class="ld-dot" style="background:var(--amber)"></span>Slab 2 target</span>
+      <span class="ld-i"><span class="ld-dot" style="background:var(--red)"></span>Below target</span>
+      <span class="ld-note">Inbound ≥7/day S1, ≥5 S2 &middot; Tickets ≥5/day S1, ≥4 S2 &middot; FCR ≥75% S1, ≥70% S2 &middot; QA ≥90% S1, ≥85% S2</span>
+    </div>
+    <div class="agents-grid" id="perf-calls-grid"></div>
+  </div>
+  <div class="wc" id="perf-wing-chat">
+    <div class="wing-sum wing-chat">
+      <div class="wsm"><div class="wsm-v">64.41%</div><div class="wsm-l">Chat CSAT</div></div>
+      <div class="wsm"><div class="wsm-v">444</div><div class="wsm-l">Rated Chats</div></div>
+      <div class="wsm"><div class="wsm-v">3,062</div><div class="wsm-l">Chats Handled</div></div>
+      <div class="wsm"><div class="wsm-v">286</div><div class="wsm-l">Good Ratings</div></div>
+    </div>
+    <div class="legend">
+      <span class="ld-t">Thresholds:</span>
+      <span class="ld-i"><span class="ld-dot" style="background:var(--green)"></span>Slab 1 target</span>
+      <span class="ld-i"><span class="ld-dot" style="background:var(--amber)"></span>Slab 2 target</span>
+      <span class="ld-i"><span class="ld-dot" style="background:var(--red)"></span>Below target</span>
+      <span class="ld-note">Chats ≥11/day S1, ≥9 S2 &middot; Chat CSAT ≥90% S1, ≥85% S2 &middot; Tickets ≥5/day S1, ≥4 S2 &middot; QA ≥90% S1, ≥85% S2 &middot; FCR ≥75% S1, ≥70% S2</span>
+    </div>
+    <div class="agents-grid" id="perf-chat-grid"></div>
+  </div>
+</div>
+
+<!-- ═══ BONUS ═══ -->
+<div class="page" id="page-bonus">
+  <div id="bonus-locked" style="display:none">
+    <div class="bl">
+      <div class="bl-icon"><span id="ico-lock"></span></div>
+      <div class="bl-title">Bonus Results &mdash; Coming Soon</div>
+      <div class="bl-sub">Q1 2026 bonus calculations are finalised. Results will be published to the team on:</div>
+      <div class="bl-date"><span id="ico-cal"></span>&nbsp;April 30, 2026 &middot; 6:00 PM IST</div>
+      <div class="bl-cd">
+        <div class="bl-unit"><span class="bl-val" id="cd-d">--</span><div class="bl-label">Days</div></div>
+        <div class="bl-sep">:</div>
+        <div class="bl-unit"><span class="bl-val" id="cd-h">--</span><div class="bl-label">Hours</div></div>
+        <div class="bl-sep">:</div>
+        <div class="bl-unit"><span class="bl-val" id="cd-m">--</span><div class="bl-label">Mins</div></div>
+        <div class="bl-sep">:</div>
+        <div class="bl-unit"><span class="bl-val" id="cd-s">--</span><div class="bl-label">Secs</div></div>
+      </div>
+      <div class="bl-note">Results are being reviewed before release. Managers and admins can access early.</div>
+      <button class="bl-admin" onclick="adminUnlock()"><span id="ico-key"></span>&nbsp;Admin &mdash; Unlock Early</button>
+    </div>
+  </div>
+  <div id="bonus-open" style="display:none">
+    <div class="bu-hdr">
+      <div class="bu-hdr-left">
+        <div class="bu-title">Q1 2026 Bonus Breakdown</div>
+        <div class="bu-sub">Slab bonus + CSAT incentive per agent &middot; per month</div>
+      </div>
+      <div class="bu-totals" id="buTotals"></div>
+    </div>
     <div class="wing-tabs">
-      <div class="wing-tab active-calls" onclick="showPerfWing('calls',this)">
-        📞 Calls Wing <span class="tab-count">9</span>
-      </div>
-      <div class="wing-tab" onclick="showPerfWing('chat',this)">
-        💬 Chat Wing <span class="tab-count">3</span>
-      </div>
+      <div class="wtab wt-c" onclick="switchWing('bonus','calls',this)"><span id="ico-bw-calls"></span>Calls Wing<span class="wtab-ct">9</span></div>
+      <div class="wtab" onclick="switchWing('bonus','chat',this)"><span id="ico-bw-chat"></span>Chat Wing<span class="wtab-ct">3</span></div>
     </div>
-
-    <div class="wing-content active" id="perf-wing-calls">
-      <div class="wing-summary wing-calls">
-        <div class="ws-item"><div class="ws-val">97.26%</div><div class="ws-label">Ticket CSAT</div></div>
-        <div class="ws-item"><div class="ws-val">78.92%</div><div class="ws-label">Avg FCR</div></div>
-        <div class="ws-item"><div class="ws-val">2,849</div><div class="ws-label">Tickets Closed</div></div>
-        <div class="ws-item"><div class="ws-val">5,936</div><div class="ws-label">Inbound Calls</div></div>
-      </div>
-      <div class="legend">
-        <span class="legend-title">Thresholds:</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Slab 1 (top target)</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Slab 2 (base target)</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Below target</span>
-        <span style="margin-left:auto;color:var(--muted);font-size:10px">Inbound: ≥7/day S1, ≥5/day S2 · Tickets: ≥5/day S1, ≥4/day S2 · FCR: ≥75% S1, ≥70% S2 · QA: ≥90% S1, ≥85% S2</span>
-      </div>
-      <div class="agents-grid" id="perf-calls-grid"></div>
-    </div>
-
-    <div class="wing-content" id="perf-wing-chat">
-      <div class="wing-summary wing-chat">
-        <div class="ws-item"><div class="ws-val">64.41%</div><div class="ws-label">Chat CSAT</div></div>
-        <div class="ws-item"><div class="ws-val">444</div><div class="ws-label">Rated Chats</div></div>
-        <div class="ws-item"><div class="ws-val">3,062</div><div class="ws-label">Chats Handled</div></div>
-        <div class="ws-item"><div class="ws-val">286</div><div class="ws-label">Good Ratings</div></div>
-      </div>
-      <div class="legend">
-        <span class="legend-title">Thresholds:</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--green)"></span>Slab 1 (top target)</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--amber)"></span>Slab 2 (base target)</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--red)"></span>Below target</span>
-        <span style="margin-left:auto;color:var(--muted);font-size:10px">Chats: ≥11/day S1, ≥9/day S2 · Chat CSAT: ≥90% S1, ≥85% S2 · Tickets: ≥5/day S1, ≥4/day S2 · QA: ≥90% S1, ≥85% S2 · FCR: ≥75% S1, ≥70% S2</span>
-      </div>
-      <div class="agents-grid" id="perf-chat-grid"></div>
-    </div>
-
+    <div class="wc active" id="bonus-wing-calls"><div class="bonus-grid" id="bonus-calls-grid"></div></div>
+    <div class="wc" id="bonus-wing-chat"><div class="bonus-grid" id="bonus-chat-grid"></div></div>
   </div>
+</div>
 
-  <!-- ═══════════════════════════════════ BONUS ═══════════════════════════════════ -->
-  <div class="page" id="page-bonus">
+<div class="foot">Adit &middot; T1 CS Stars &middot; Q1 2026<br><span style="opacity:.45">Bonus structure: T1 CS Bonus Structure 2026 &middot; CSAT incentive: &#8377;150/good rating if CSAT &gt;92% (Calls) &middot; &#8377;50/happy rating if CSAT &gt;85% &amp; &ge;5 ratings (Chat)</span></div>
 
-    <!-- Locked state -->
-    <div id="bonus-locked" style="display:none">
-      <div class="bonus-lock-screen">
-        <div class="lock-icon">🔒</div>
-        <div class="lock-title">Bonus Results — Coming Soon</div>
-        <div class="lock-sub">Q1 2026 bonus calculations are finalised. Results will be made available to the team on:</div>
-        <div class="lock-date">📅 April 30, 2026 · 6:00 PM IST</div>
-        <div class="countdown" id="countdown">
-          <div class="cdown-unit"><span class="cdown-val" id="cd-days">--</span><div class="cdown-label">Days</div></div>
-          <div class="cdown-sep">:</div>
-          <div class="cdown-unit"><span class="cdown-val" id="cd-hrs">--</span><div class="cdown-label">Hours</div></div>
-          <div class="cdown-sep">:</div>
-          <div class="cdown-unit"><span class="cdown-val" id="cd-min">--</span><div class="cdown-label">Mins</div></div>
-          <div class="cdown-sep">:</div>
-          <div class="cdown-unit"><span class="cdown-val" id="cd-sec">--</span><div class="cdown-label">Secs</div></div>
-        </div>
-        <div class="lock-note">Hang tight — your hard work is being tallied. Managers and admins can access results early via the admin portal.</div>
-      </div>
-    </div>
-
-    <!-- Unlocked state -->
-    <div id="bonus-unlocked" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
-        <div>
-          <div style="font-size:18px;font-weight:800;letter-spacing:-.02em">💰 Q1 2026 Bonus Breakdown</div>
-          <div style="font-size:12px;color:var(--muted2);margin-top:3px">Slab bonus + CSAT incentive per agent per month</div>
-        </div>
-        <div id="bonusTotalsRow" style="display:flex;gap:12px;flex-wrap:wrap"></div>
-      </div>
-
-      <div class="wing-tabs">
-        <div class="wing-tab active-calls" onclick="showBonusWing('calls',this)">
-          📞 Calls Wing <span class="tab-count">9</span>
-        </div>
-        <div class="wing-tab" onclick="showBonusWing('chat',this)">
-          💬 Chat Wing <span class="tab-count">3</span>
-        </div>
-      </div>
-
-      <div class="wing-content active" id="bonus-wing-calls">
-        <div class="bonus-agents-grid" id="bonus-calls-grid"></div>
-      </div>
-      <div class="wing-content" id="bonus-wing-chat">
-        <div class="bonus-agents-grid" id="bonus-chat-grid"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="foot">
-    Adit &middot; T1 CS Stars &middot; Q1 2026<br>
-    <span style="font-size:10px;opacity:.5">Bonus: T1 CS Bonus Structure 2026 · CSAT incentive ₹150/Good rating if CSAT&gt;92% (Calls) · ₹50/Happy rating if CSAT&gt;85% &amp; ≥5 Happy ratings (Chat)</span>
-  </div>
-
-</main>
+</div>
 <script>
-const MONTHS = ["Jan'26","Feb'26","Mar'26"];
-const MONTH_SHORT = {"Jan'26":"Jan","Feb'26":"Feb","Mar'26":"Mar"};
-const STD_DAYS = {"Jan'26":21,"Feb'26":20,"Mar'26":22};
+// ─── SVG Icon helpers ─────────────────────────────────────────────────────────
+const P={
+  phone:`<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.58 11a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.52 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>`,
+  msg:`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+  ticket:`<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2m0 4v2m0 4v2"/>`,
+  rotate:`<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.44"/>`,
+  star:`<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>`,
+  smile:`<circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/>`,
+  trend:`<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>`,
+  trophy:`<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>`,
+  award:`<circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>`,
+  lock:`<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
+  key:`<path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"/>`,
+  cal:`<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>`,
+  users:`<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+  zap:`<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
+  flame:`<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>`,
+  target:`<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>`,
+  shield:`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>`,
+  chk:`<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,
+  xcl:`<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>`,
+  spark:`<path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4m14 14v4M3 5h4m14 14h4"/>`,
+  chart:`<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>`,
+  rupee:`<path d="M6 3h12m-12 5h12m-10 5 8.5 8M6 13h3m0 0c6.667 0 6.667-10 0-10"/>`,
+  check:`<polyline points="20 6 9 17 4 12"/>`,
+  medal:`<path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5"/><path d="M12 18v-2h-.5"/>`,
+};
+function ic(n,s=14){return `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${P[n]||''}</svg>`}
+function injectIco(id,name,size){const el=document.getElementById(id);if(el)el.innerHTML=ic(name,size)}
 
-// ─── Admin + time-lock ───────────────────────────────────────────────────────
-const isAdmin = new URLSearchParams(location.search).has('admin');
-const BONUS_UNLOCK = new Date('2026-04-30T18:00:00+05:30'); // April 30 6PM IST
+// ─── Constants ────────────────────────────────────────────────────────────────
+const MONTHS=["Jan'26","Feb'26","Mar'26"];
+const MS={"Jan'26":"Jan","Feb'26":"Feb","Mar'26":"Mar"};
+const STD={"Jan'26":21,"Feb'26":20,"Mar'26":22};
+const BONUS_UNLOCK=new Date('2026-04-30T18:00:00+05:30');
+const isAdmin=(()=>{
+  if(new URLSearchParams(location.search).has('admin'))return true;
+  if(sessionStorage.getItem('hof_admin')==='1')return true;
+  return false;
+})();
 
-// ─── DATA ────────────────────────────────────────────────────────────────────
-const DATA = {
-  calls: [
-    {name:"Greg Dawson",ext:"5466",initials:"GD",months:{
-      "Jan'26":{inbound:313,tickets:135,fcr:60.0,qa:81.1,csat:100.0,csat_good:4,csat_total:4,present:20,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:600,total_bonus:600,
-          metrics:{inbound:{slab:1,val:14.9,pts:35},tickets:{slab:1,val:6.4,pts:20},fcr:{slab:0,val:60.0,pts:0},qa:{slab:0,val:81.1,pts:0}}}},
-      "Feb'26":{inbound:319,tickets:145,fcr:68.3,qa:81.5,csat:80.0,csat_good:4,csat_total:5,present:20,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{inbound:{slab:1,val:16.0,pts:35},tickets:{slab:1,val:7.3,pts:20},fcr:{slab:0,val:68.3,pts:0},qa:{slab:0,val:81.5,pts:0}}}},
-      "Mar'26":{inbound:338,tickets:139,fcr:66.3,qa:82.2,csat:100.0,csat_good:3,csat_total:3,present:22,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:450,total_bonus:450,
-          metrics:{inbound:{slab:1,val:15.4,pts:35},tickets:{slab:1,val:6.3,pts:20},fcr:{slab:0,val:66.3,pts:0},qa:{slab:0,val:82.2,pts:0}}}}}},
-    {name:"Michelle Pinto",ext:"5555",initials:"MP",months:{
-      "Jan'26":{inbound:292,tickets:97,fcr:82.5,qa:65.1,csat:100.0,csat_good:3,csat_total:3,present:21,leaves:0,unplanned:0,
-        bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:450,total_bonus:7950,
-          metrics:{inbound:{slab:1,val:13.9,pts:35},tickets:{slab:2,val:4.6,pts:20},fcr:{slab:1,val:82.5,pts:25},qa:{slab:0,val:65.1,pts:0}}}},
-      "Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,csat_good:2,csat_total:2,present:20,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:300,total_bonus:300,
-          metrics:{inbound:{slab:1,val:15.6,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:68.5,pts:0},qa:{slab:0,val:76.0,pts:0}}}},
-      "Mar'26":{inbound:350,tickets:98,fcr:77.6,qa:70.3,csat:50.0,csat_good:2,csat_total:4,present:22,leaves:0,unplanned:0,
-        bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:0,total_bonus:7500,
-          metrics:{inbound:{slab:1,val:15.9,pts:35},tickets:{slab:2,val:4.5,pts:20},fcr:{slab:1,val:77.6,pts:25},qa:{slab:0,val:70.3,pts:0}}}}}},
-    {name:"Lincy Tabita",ext:"5208",initials:"LT",months:{
-      "Jan'26":{inbound:237,tickets:115,fcr:53.9,qa:80.3,csat:94.7,csat_good:18,csat_total:19,present:19,leaves:2,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:2700,total_bonus:2700,
-          metrics:{inbound:{slab:1,val:11.3,pts:35},tickets:{slab:1,val:5.5,pts:20},fcr:{slab:0,val:53.9,pts:0},qa:{slab:0,val:80.3,pts:0}}}},
-      "Feb'26":{inbound:250,tickets:131,fcr:47.3,qa:83.1,csat:95.8,csat_good:23,csat_total:24,present:20,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"FCR below target",points:55,slab:null,base_bonus:0,csat_incentive:3450,total_bonus:3450,
-          metrics:{inbound:{slab:1,val:12.5,pts:35},tickets:{slab:1,val:6.6,pts:20},fcr:{slab:0,val:47.3,pts:0},qa:{slab:0,val:83.1,pts:0}}}},
-      "Mar'26":{inbound:289,tickets:190,fcr:63.7,qa:86.8,csat:100.0,csat_good:30,csat_total:30,present:21,leaves:1,unplanned:0,
-        bonus:{eligible:true,points:75,slab:1,base_bonus:5625,csat_incentive:4500,total_bonus:10125,
-          metrics:{inbound:{slab:1,val:13.1,pts:35},tickets:{slab:1,val:8.6,pts:20},fcr:{slab:0,val:63.7,pts:0},qa:{slab:2,val:86.8,pts:20}}}}}},
-    {name:"Debra Horton",ext:"5477",initials:"DH",months:{
-      "Jan'26":{inbound:225,tickets:155,fcr:69.7,qa:87.0,csat:96.3,csat_good:52,csat_total:54,present:21,leaves:0,unplanned:0,
-        bonus:{eligible:true,points:75,slab:1,base_bonus:7500,csat_incentive:7800,total_bonus:15300,
-          metrics:{inbound:{slab:1,val:10.7,pts:35},tickets:{slab:1,val:7.4,pts:20},fcr:{slab:0,val:69.7,pts:0},qa:{slab:2,val:87.0,pts:20}}}},
-      "Feb'26":{inbound:187,tickets:90,fcr:81.1,qa:88.4,csat:100.0,csat_good:34,csat_total:34,present:16,leaves:3,unplanned:0,
-        bonus:{eligible:false,reason:"50% slab · 3 planned leaves",points:100,slab:1,base_bonus:3750,csat_incentive:5100,total_bonus:8850,
-          metrics:{inbound:{slab:1,val:9.4,pts:35},tickets:{slab:2,val:4.5,pts:20},fcr:{slab:1,val:81.1,pts:25},qa:{slab:2,val:88.4,pts:20}}}},
-      "Mar'26":{inbound:213,tickets:102,fcr:77.5,qa:90.2,csat:100.0,csat_good:36,csat_total:36,present:19,leaves:2,unplanned:0,
-        bonus:{eligible:true,points:100,slab:1,base_bonus:5625,csat_incentive:5400,total_bonus:11025,
-          metrics:{inbound:{slab:1,val:9.7,pts:35},tickets:{slab:2,val:4.6,pts:20},fcr:{slab:1,val:77.5,pts:25},qa:{slab:1,val:90.2,pts:20}}}}}},
-    {name:"Caroline Lock",ext:"5528",initials:"CL",months:{
-      "Jan'26":{inbound:167,tickets:79,fcr:83.5,qa:70.8,csat:100.0,csat_good:1,csat_total:1,present:12,leaves:8,unplanned:0,
-        bonus:{eligible:false,reason:"< 18 days present",points:60,slab:null,base_bonus:0,csat_incentive:150,total_bonus:150,
-          metrics:{inbound:{slab:1,val:7.95,pts:35},tickets:{slab:0,val:3.76,pts:0},fcr:{slab:1,val:83.5,pts:25},qa:{slab:0,val:70.8,pts:0}}}},
-      "Feb'26":{inbound:213,tickets:122,fcr:79.5,qa:76.9,csat:100.0,csat_good:5,csat_total:5,present:18,leaves:1,unplanned:0,
-        bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:750,total_bonus:6375,
-          metrics:{inbound:{slab:1,val:10.65,pts:35},tickets:{slab:1,val:6.1,pts:20},fcr:{slab:1,val:79.5,pts:25},qa:{slab:0,val:76.9,pts:0}}}},
-      "Mar'26":{inbound:191,tickets:96,fcr:88.5,qa:81.6,csat:null,csat_good:0,csat_total:0,present:18,leaves:0,unplanned:2,
-        bonus:{eligible:false,reason:"Unplanned leave",points:80,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{inbound:{slab:1,val:8.7,pts:35},tickets:{slab:2,val:4.4,pts:20},fcr:{slab:1,val:88.5,pts:25},qa:{slab:0,val:81.6,pts:0}}}}}},
-    {name:"Henry P",ext:"5348",initials:"HP",months:{
-      "Jan'26":{inbound:189,tickets:123,fcr:69.9,qa:77.0,csat:88.9,csat_good:8,csat_total:9,present:20,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{inbound:{slab:1,val:9.0,pts:35},tickets:{slab:1,val:5.86,pts:20},fcr:{slab:0,val:69.9,pts:0},qa:{slab:0,val:77.0,pts:0}}}},
-      "Feb'26":{inbound:211,tickets:106,fcr:66.0,qa:77.6,csat:100.0,csat_good:12,csat_total:12,present:15,leaves:4,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:1800,total_bonus:1800,
-          metrics:{inbound:{slab:1,val:10.55,pts:35},tickets:{slab:1,val:5.3,pts:20},fcr:{slab:0,val:66.0,pts:0},qa:{slab:0,val:77.6,pts:0}}}},
-      "Mar'26":{inbound:273,tickets:123,fcr:83.7,qa:81.5,csat:100.0,csat_good:8,csat_total:8,present:20,leaves:2,unplanned:0,
-        bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1200,total_bonus:6825,
-          metrics:{inbound:{slab:1,val:12.4,pts:35},tickets:{slab:1,val:5.6,pts:20},fcr:{slab:1,val:83.7,pts:25},qa:{slab:0,val:81.5,pts:0}}}}}},
-    {name:"Sabrina Quinn",ext:"5512",initials:"SQ",months:{
-      "Jan'26":{inbound:null,tickets:108,fcr:null,qa:81.4,csat:100.0,csat_good:3,csat_total:3,present:20,leaves:1,unplanned:0,
-        bonus:{eligible:true,reason:"Chat team \u00b7 Slab 1 \u00b7 1 PL \u2192 75%",points:100,slab:1,base_bonus:5625,csat_incentive:2700,total_bonus:8325,metrics:null}},
-      "Feb'26":{inbound:216,tickets:129,fcr:75.9,qa:80.1,csat:100.0,csat_good:10,csat_total:10,present:18,leaves:2,unplanned:0,
-        bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1500,total_bonus:7125,
-          metrics:{inbound:{slab:1,val:10.8,pts:35},tickets:{slab:1,val:6.45,pts:20},fcr:{slab:1,val:75.9,pts:25},qa:{slab:0,val:80.1,pts:0}}}},
-      "Mar'26":{inbound:278,tickets:124,fcr:69.4,qa:79.4,csat:100.0,csat_good:17,csat_total:17,present:20,leaves:2,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:2550,total_bonus:2550,
-          metrics:{inbound:{slab:1,val:12.6,pts:35},tickets:{slab:1,val:5.6,pts:20},fcr:{slab:0,val:69.4,pts:0},qa:{slab:0,val:79.4,pts:0}}}}}},
-    {name:"Sky Gibson",ext:"5357",initials:"SG",months:{
-      "Jan'26":{inbound:154,tickets:74,fcr:75.7,qa:75.6,csat:100.0,csat_good:2,csat_total:2,present:19,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"QA below target",points:60,slab:null,base_bonus:0,csat_incentive:300,total_bonus:300,
-          metrics:{inbound:{slab:1,val:7.3,pts:35},tickets:{slab:0,val:3.5,pts:0},fcr:{slab:1,val:75.7,pts:25},qa:{slab:0,val:75.6,pts:0}}}},
-      "Feb'26":{inbound:139,tickets:61,fcr:59.0,qa:77.5,csat:100.0,csat_good:1,csat_total:1,present:17,leaves:3,unplanned:0,
-        bonus:{eligible:false,reason:"FCR & QA below target",points:35,slab:null,base_bonus:0,csat_incentive:150,total_bonus:150,
-          metrics:{inbound:{slab:2,val:7.0,pts:35},tickets:{slab:0,val:3.1,pts:0},fcr:{slab:0,val:59.0,pts:0},qa:{slab:0,val:77.5,pts:0}}}},
-      "Mar'26":{inbound:187,tickets:65,fcr:75.4,qa:75.5,csat:100.0,csat_good:1,csat_total:1,present:18,leaves:2,unplanned:0,
-        bonus:{eligible:false,reason:"QA below target",points:60,slab:null,base_bonus:0,csat_incentive:150,total_bonus:150,
-          metrics:{inbound:{slab:1,val:8.5,pts:35},tickets:{slab:0,val:3.0,pts:0},fcr:{slab:1,val:75.4,pts:25},qa:{slab:0,val:75.5,pts:0}}}}}},
-    {name:"Ronnie G",ext:"5219",initials:"RG",months:{
-      "Jan'26":{inbound:74,tickets:31,fcr:61.3,qa:53.3,csat:100.0,csat_good:1,csat_total:1,present:21,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"Volume & QA well below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{inbound:{slab:0,val:3.5,pts:0},tickets:{slab:0,val:1.5,pts:0},fcr:{slab:0,val:61.3,pts:0},qa:{slab:0,val:53.3,pts:0}}}},
-      "Feb'26":{inbound:53,tickets:30,fcr:50.0,qa:91.3,csat:100.0,csat_good:3,csat_total:3,present:17,leaves:3,unplanned:0,
-        bonus:{eligible:false,reason:"Inbound & Tickets below threshold",points:20,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{inbound:{slab:0,val:2.65,pts:0},tickets:{slab:0,val:1.5,pts:0},fcr:{slab:0,val:50.0,pts:0},qa:{slab:1,val:91.3,pts:20}}}},
-      "Mar'26":{inbound:39,tickets:49,fcr:67.3,qa:64.5,csat:100.0,csat_good:1,csat_total:1,present:22,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"Volume & QA below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{inbound:{slab:0,val:1.77,pts:0},tickets:{slab:0,val:2.2,pts:0},fcr:{slab:0,val:67.3,pts:0},qa:{slab:0,val:64.5,pts:0}}}}}}
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const DATA={
+  calls:[
+    {name:"Greg Dawson",ext:"5466",ini:"GD",months:{
+      "Jan'26":{inbound:313,tickets:135,fcr:60.0,qa:81.1,csat:100.0,cg:4,ct:4,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:600,total:600,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Feb'26":{inbound:319,tickets:145,fcr:68.3,qa:81.5,csat:80.0,cg:4,ct:5,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Mar'26":{inbound:338,tickets:139,fcr:66.3,qa:82.2,csat:100.0,cg:3,ct:3,present:22,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:450,total:450,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}}}},
+    {name:"Michelle Pinto",ext:"5555",ini:"MP",months:{
+      "Jan'26":{inbound:292,tickets:97,fcr:82.5,qa:65.1,csat:100.0,cg:3,ct:3,present:21,leaves:0,upl:0,bonus:{eligible:true,pts:80,slab:1,base:7500,csat_inc:450,total:7950,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:0}}}},
+      "Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,cg:2,ct:2,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:300,total:300,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Mar'26":{inbound:350,tickets:98,fcr:77.6,qa:70.3,csat:50.0,cg:2,ct:4,present:22,leaves:0,upl:0,bonus:{eligible:true,pts:80,slab:1,base:7500,csat_inc:0,total:7500,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:0}}}}}},
+    {name:"Lincy Tabita",ext:"5208",ini:"LT",months:{
+      "Jan'26":{inbound:237,tickets:115,fcr:53.9,qa:80.3,csat:94.7,cg:18,ct:19,present:19,leaves:2,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:2700,total:2700,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Feb'26":{inbound:250,tickets:131,fcr:47.3,qa:83.1,csat:95.8,cg:23,ct:24,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR below target",pts:55,slab:null,base:0,csat_inc:3450,total:3450,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Mar'26":{inbound:289,tickets:190,fcr:63.7,qa:86.8,csat:100.0,cg:30,ct:30,present:21,leaves:1,upl:0,bonus:{eligible:true,pts:75,slab:1,base:5625,csat_inc:4500,total:10125,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:2}}}}}},
+    {name:"Debra Horton",ext:"5477",ini:"DH",months:{
+      "Jan'26":{inbound:225,tickets:155,fcr:69.7,qa:87.0,csat:96.3,cg:52,ct:54,present:21,leaves:0,upl:0,bonus:{eligible:true,pts:75,slab:1,base:7500,csat_inc:7800,total:15300,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:2}}}},
+      "Feb'26":{inbound:187,tickets:90,fcr:81.1,qa:88.4,csat:100.0,cg:34,ct:34,present:16,leaves:3,upl:0,bonus:{eligible:false,reason:"50% slab \u00b7 3 planned leaves",pts:100,slab:1,base:3750,csat_inc:5100,total:8850,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:2}}}},
+      "Mar'26":{inbound:213,tickets:102,fcr:77.5,qa:90.2,csat:100.0,cg:36,ct:36,present:19,leaves:2,upl:0,bonus:{eligible:true,pts:100,slab:1,base:5625,csat_inc:5400,total:11025,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:1}}}}}},
+    {name:"Caroline Lock",ext:"5528",ini:"CL",months:{
+      "Jan'26":{inbound:167,tickets:79,fcr:83.5,qa:70.8,csat:100.0,cg:1,ct:1,present:12,leaves:8,upl:0,bonus:{eligible:false,reason:"< 18 days present",pts:60,slab:null,base:0,csat_inc:150,total:150,mx:{inbound:{s:1},tickets:{s:0},fcr:{s:1},qa:{s:0}}}},
+      "Feb'26":{inbound:213,tickets:122,fcr:79.5,qa:76.9,csat:100.0,cg:5,ct:5,present:18,leaves:1,upl:0,bonus:{eligible:true,pts:80,slab:1,base:5625,csat_inc:750,total:6375,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:1},qa:{s:0}}}},
+      "Mar'26":{inbound:191,tickets:96,fcr:88.5,qa:81.6,csat:null,cg:0,ct:0,present:18,leaves:0,upl:2,bonus:{eligible:false,reason:"Unplanned leave",pts:80,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:0}}}}}},
+    {name:"Henry P",ext:"5348",ini:"HP",months:{
+      "Jan'26":{inbound:189,tickets:123,fcr:69.9,qa:77.0,csat:88.9,cg:8,ct:9,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Feb'26":{inbound:211,tickets:106,fcr:66.0,qa:77.6,csat:100.0,cg:12,ct:12,present:15,leaves:4,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:1800,total:1800,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
+      "Mar'26":{inbound:273,tickets:123,fcr:83.7,qa:81.5,csat:100.0,cg:8,ct:8,present:20,leaves:2,upl:0,bonus:{eligible:true,pts:80,slab:1,base:5625,csat_inc:1200,total:6825,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:1},qa:{s:0}}}}}},
+    {name:"Sabrina Quinn",ext:"5512",ini:"SQ",months:{
+      "Jan'26":{inbound:null,tickets:108,fcr:null,qa:81.4,csat:100.0,cg:3,ct:3,present:20,leaves:1,upl:0,bonus:{eligible:true,reason:"Chat team \u00b7 Slab 1 \u00b7 1 PL \u2192 75%",pts:100,slab:1,base:5625,csat_inc:2700,total:8325,mx:null}},
+      "Feb'26":{inbound:216,tickets:129,fcr:75.9,qa:80.1,csat:100.0,cg:10,ct:10,present:18,leaves:2,upl:0,bonus:{eligible:true,pts:80,slab:1,base:5625,csat_inc:1500,total:7125,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:1},qa:{s:0}}}},
+      "Mar'26":{inbound:278,tickets:124,fcr:69.4,qa:79.4,csat:100.0,cg:17,ct:17,present:20,leaves:2,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:2550,total:2550,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}}}},
+    {name:"Sky Gibson",ext:"5357",ini:"SG",months:{
+      "Jan'26":{inbound:154,tickets:74,fcr:75.7,qa:75.6,csat:100.0,cg:2,ct:2,present:19,leaves:0,upl:0,bonus:{eligible:false,reason:"QA below target",pts:60,slab:null,base:0,csat_inc:300,total:300,mx:{inbound:{s:1},tickets:{s:0},fcr:{s:1},qa:{s:0}}}},
+      "Feb'26":{inbound:139,tickets:61,fcr:59.0,qa:77.5,csat:100.0,cg:1,ct:1,present:17,leaves:3,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:35,slab:null,base:0,csat_inc:150,total:150,mx:{inbound:{s:2},tickets:{s:0},fcr:{s:0},qa:{s:0}}}},
+      "Mar'26":{inbound:187,tickets:65,fcr:75.4,qa:75.5,csat:100.0,cg:1,ct:1,present:18,leaves:2,upl:0,bonus:{eligible:false,reason:"QA below target",pts:60,slab:null,base:0,csat_inc:150,total:150,mx:{inbound:{s:1},tickets:{s:0},fcr:{s:1},qa:{s:0}}}}}},
+    {name:"Ronnie G",ext:"5219",ini:"RG",months:{
+      "Jan'26":{inbound:74,tickets:31,fcr:61.3,qa:53.3,csat:100.0,cg:1,ct:1,present:21,leaves:0,upl:0,bonus:{eligible:false,reason:"Volume & QA well below target",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:0},tickets:{s:0},fcr:{s:0},qa:{s:0}}}},
+      "Feb'26":{inbound:53,tickets:30,fcr:50.0,qa:91.3,csat:100.0,cg:3,ct:3,present:17,leaves:3,upl:0,bonus:{eligible:false,reason:"Inbound & Tickets below threshold",pts:20,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:0},tickets:{s:0},fcr:{s:0},qa:{s:1}}}},
+      "Mar'26":{inbound:39,tickets:49,fcr:67.3,qa:64.5,csat:100.0,cg:1,ct:1,present:22,leaves:0,upl:0,bonus:{eligible:false,reason:"Volume & QA below target",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:0},tickets:{s:0},fcr:{s:0},qa:{s:0}}}}}}
   ],
-  chat: [
-    {name:"Anold Fernandes",ext:"5313",initials:"AF",months:{
-      "Jan'26":{chats:295,csat:60.0,happy:27,tickets:102,fcr:49.0,qa:81.0,present:21,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:14.0,pts:15},csat:{slab:0,val:60.0,pts:0},tickets:{slab:2,val:4.9,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:49.0,pts:0}}}},
-      "Feb'26":{chats:353,csat:56.4,happy:31,tickets:79,fcr:50.6,qa:79.0,present:15,leaves:5,unplanned:0,
-        bonus:{eligible:false,reason:"Only 15 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:23.5,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:2,val:5.3,pts:20},qa:{slab:0,val:79.0,pts:0},fcr:{slab:0,val:50.6,pts:0}}}},
-      "Mar'26":{chats:471,csat:55.3,happy:47,tickets:112,fcr:49.1,qa:80.0,present:21,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:22.4,pts:15},csat:{slab:0,val:55.3,pts:0},tickets:{slab:1,val:5.3,pts:20},qa:{slab:0,val:80.0,pts:0},fcr:{slab:0,val:49.1,pts:0}}}}}},
-    {name:"Tabbie Shine",ext:"5456",initials:"TS",months:{
-      "Jan'26":{chats:238,csat:52.9,happy:18,tickets:67,fcr:47.8,qa:76.0,present:18,leaves:2,unplanned:0,
-        bonus:{eligible:false,reason:"CSAT & FCR below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:13.2,pts:15},csat:{slab:0,val:52.9,pts:0},tickets:{slab:2,val:3.7,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:47.8,pts:0}}}},
-      "Feb'26":{chats:332,csat:72.5,happy:29,tickets:57,fcr:38.6,qa:81.0,present:14,leaves:2,unplanned:0,
-        bonus:{eligible:false,reason:"Only 14 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:23.7,pts:15},csat:{slab:0,val:72.5,pts:0},tickets:{slab:2,val:4.1,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:38.6,pts:0}}}},
-      "Mar'26":{chats:341,csat:56.4,happy:22,tickets:76,fcr:46.1,qa:76.0,present:17,leaves:1,unplanned:1,
-        bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:20.1,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:1,val:4.5,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:46.1,pts:0}}}}}},
-    {name:"Evan Cruz",ext:"5574",initials:"EC",months:{
-      "Jan'26":{chats:null,csat:null,happy:0,tickets:5,fcr:100.0,qa:56.5,present:21,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"Calls team in Jan",points:null,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:null}},
-      "Feb'26":{chats:305,csat:67.9,happy:19,tickets:67,fcr:58.2,qa:64.8,present:19,leaves:0,unplanned:0,
-        bonus:{eligible:false,reason:"CSAT, FCR & QA below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:16.1,pts:15},csat:{slab:0,val:67.9,pts:0},tickets:{slab:2,val:3.5,pts:0},qa:{slab:0,val:64.8,pts:0},fcr:{slab:0,val:58.2,pts:0}}}},
-      "Mar'26":{chats:386,csat:70.9,happy:39,tickets:65,fcr:43.1,qa:null,present:19,leaves:1,unplanned:2,
-        bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
-          metrics:{chats:{slab:1,val:20.3,pts:15},csat:{slab:0,val:70.9,pts:0},tickets:{slab:2,val:3.4,pts:0},qa:{slab:0,val:0,pts:0},fcr:{slab:0,val:43.1,pts:0}}}}}}
+  chat:[
+    {name:"Anold Fernandes",ext:"5313",ini:"AF",months:{
+      "Jan'26":{chats:295,csat:60.0,happy:27,tickets:102,fcr:49.0,qa:81.0,present:21,leaves:0,upl:0,bonus:{eligible:false,reason:"Chat CSAT & FCR below target",pts:35,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:2},qa:{s:0},fcr:{s:0}}}},
+      "Feb'26":{chats:353,csat:56.4,happy:31,tickets:79,fcr:50.6,qa:79.0,present:15,leaves:5,upl:0,bonus:{eligible:false,reason:"Only 15 days present",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:2},qa:{s:0},fcr:{s:0}}}},
+      "Mar'26":{chats:471,csat:55.3,happy:47,tickets:112,fcr:49.1,qa:80.0,present:21,leaves:0,upl:0,bonus:{eligible:false,reason:"Chat CSAT & FCR below target",pts:35,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:1},qa:{s:0},fcr:{s:0}}}}}},
+    {name:"Tabbie Shine",ext:"5456",ini:"TS",months:{
+      "Jan'26":{chats:238,csat:52.9,happy:18,tickets:67,fcr:47.8,qa:76.0,present:18,leaves:2,upl:0,bonus:{eligible:false,reason:"CSAT & FCR below target",pts:15,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:2},qa:{s:0},fcr:{s:0}}}},
+      "Feb'26":{chats:332,csat:72.5,happy:29,tickets:57,fcr:38.6,qa:81.0,present:14,leaves:2,upl:0,bonus:{eligible:false,reason:"Only 14 days present",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:2},qa:{s:0},fcr:{s:0}}}},
+      "Mar'26":{chats:341,csat:56.4,happy:22,tickets:76,fcr:46.1,qa:76.0,present:17,leaves:1,upl:1,bonus:{eligible:false,reason:"Unplanned leave",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:1},qa:{s:0},fcr:{s:0}}}}}},
+    {name:"Evan Cruz",ext:"5574",ini:"EC",months:{
+      "Jan'26":{chats:null,csat:null,happy:0,tickets:5,fcr:100.0,qa:56.5,present:21,leaves:0,upl:0,bonus:{eligible:false,reason:"Calls team in Jan",pts:null,slab:null,base:0,csat_inc:0,total:0,mx:null}},
+      "Feb'26":{chats:305,csat:67.9,happy:19,tickets:67,fcr:58.2,qa:64.8,present:19,leaves:0,upl:0,bonus:{eligible:false,reason:"CSAT, FCR & QA below target",pts:15,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:2},qa:{s:0},fcr:{s:0}}}},
+      "Mar'26":{chats:386,csat:70.9,happy:39,tickets:65,fcr:43.1,qa:null,present:19,leaves:1,upl:2,bonus:{eligible:false,reason:"Unplanned leave",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{chats:{s:1},csat:{s:0},tickets:{s:2},qa:{s:0},fcr:{s:0}}}}}}
   ]
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function slabClass(s){return s===1?'s1':s===2?'s2':s===0?'s0':'sna'}
-function totalBonus(a){return MONTHS.reduce((s,m)=>s+(a.months[m]?.bonus?.total_bonus||0),0)}
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function tb(a){return MONTHS.reduce((s,m)=>s+(a.months[m]?.bonus?.total||0),0)}
+function sc(s){return s===1?'s1c':s===2?'s2c':s===0?'s0c':'snac'}
+function avg(arr){const v=arr.filter(x=>x!=null&&x>0);return v.length?v.reduce((a,b)=>a+b)/v.length:0}
+function sum(arr){return arr.filter(x=>x!=null).reduce((a,b)=>a+b,0)}
+function rupee(n){return '\u20b9'+n.toLocaleString('en-IN')}
 
-// ─── PERFORMANCE CARD RENDER ──────────────────────────────────────────────────
-function renderCallsMetricRow(label,icon,key,agent_months){
-  let html=`<tr><td class="metric-label"><span class="metric-icon">${icon}</span>${label}</td>`;
+// ─── PERFORMANCE CARD ─────────────────────────────────────────────────────────
+function rowCalls(lbl,ico_name,key,months){
+  let h=`<tr><td><div class="ml">${ic(ico_name,13)} ${lbl}</div></td>`;
   for(const m of MONTHS){
-    const md=agent_months[m];
-    if(!md||md[key]===null||md[key]===undefined){html+=`<td class="cell"><span class="cell-na">\u2014</span></td>`;continue}
-    const mtr=md.bonus&&md.bonus.metrics&&md.bonus.metrics[key];
-    const sc=slabClass(mtr?mtr.slab:null);
+    const md=months[m];
+    if(!md||md[key]===null||md[key]===undefined){h+=`<td class="mcc"><span class="mna">—</span></td>`;continue}
+    const s=md.bonus?.mx?.[key]?.s??null;const c=sc(s);
     let v='';
     if(key==='inbound'||key==='tickets'){
-      const pd=(md[key]/STD_DAYS[m]).toFixed(1);
-      v=`<div class="cell-val ${sc}">${md[key]}</div><div class="cell-sub">${pd}/day</div>`;
-    }else if(key==='fcr'||key==='qa'||key==='csat'){
-      v=`<div class="cell-val ${sc}">${md[key]!==null?md[key].toFixed(1)+'%':'\u2014'}</div>`;
-      if(key==='csat'&&md.csat_total>0)v+=`<div class="cell-sub">${md.csat_good}/${md.csat_total}</div>`;
+      const pd=(md[key]/STD[m]).toFixed(1);
+      v=`<div class="mv ${c}">${md[key]}</div><div class="ms">${pd}/day</div>`;
+    }else{
+      v=`<div class="mv ${c}">${md[key].toFixed(1)}%</div>`;
+      if(key==='csat'&&md.ct>0)v+=`<div class="ms">${md.cg}/${md.ct}</div>`;
     }
-    html+=`<td class="cell">${v}</td>`;
+    h+=`<td class="mcc">${v}</td>`;
   }
-  return html+'</tr>';
+  return h+'</tr>';
 }
-function renderChatMetricRow(label,icon,key,agent_months){
-  let html=`<tr><td class="metric-label"><span class="metric-icon">${icon}</span>${label}</td>`;
+function rowChat(lbl,ico_name,key,months){
+  let h=`<tr><td><div class="ml">${ic(ico_name,13)} ${lbl}</div></td>`;
   for(const m of MONTHS){
-    const md=agent_months[m];
-    if(!md||md[key]===null||md[key]===undefined||md[key]===''){html+=`<td class="cell"><span class="cell-na">\u2014</span></td>`;continue}
-    const mtr=md.bonus&&md.bonus.metrics&&md.bonus.metrics[key];
-    const sc=slabClass(mtr?mtr.slab:null);
+    const md=months[m];
+    if(!md||md[key]===null||md[key]===undefined){h+=`<td class="mcc"><span class="mna">—</span></td>`;continue}
+    const s=md.bonus?.mx?.[key]?.s??null;const c=sc(s);
     let v='';
-    if(key==='chats'){const pd=(md.chats/STD_DAYS[m]).toFixed(1);v=`<div class="cell-val ${sc}">${md.chats}</div><div class="cell-sub">${pd}/day</div>`;}
-    else if(key==='tickets'){const pd=(md.tickets/STD_DAYS[m]).toFixed(1);v=`<div class="cell-val ${sc}">${md.tickets}</div><div class="cell-sub">${pd}/day</div>`;}
-    else if(key==='csat'){v=`<div class="cell-val ${sc}">${md.csat!==null?md.csat.toFixed(1)+'%':'\u2014'}</div>`;if(md.happy)v+=`<div class="cell-sub">${md.happy} happy</div>`;}
-    else if(key==='fcr'||key==='qa'){v=`<div class="cell-val ${sc}">${md[key]!==null&&md[key]>0?md[key].toFixed(1)+'%':'\u2014'}</div>`;}
-    html+=`<td class="cell">${v}</td>`;
+    if(key==='chats'){const pd=(md.chats/STD[m]).toFixed(1);v=`<div class="mv ${c}">${md.chats}</div><div class="ms">${pd}/day</div>`;}
+    else if(key==='tickets'){const pd=(md.tickets/STD[m]).toFixed(1);v=`<div class="mv ${c}">${md.tickets}</div><div class="ms">${pd}/day</div>`;}
+    else if(key==='csat'){v=`<div class="mv ${c}">${md.csat!==null?md.csat.toFixed(1)+'%':'—'}</div>`;if(md.happy)v+=`<div class="ms">${md.happy} happy</div>`;}
+    else{v=`<div class="mv ${c}">${md[key]!=null&&md[key]>0?md[key].toFixed(1)+'%':'—'}</div>`;}
+    h+=`<td class="mcc">${v}</td>`;
   }
-  return html+'</tr>';
+  return h+'</tr>';
 }
-
-function renderPerfCard(agent,type){
-  const isC=type==='calls';
-  const ac=isC?'avatar-calls':'avatar-chat';
-  let html=`<div class="agent-card">
-    <div class="card-top">
-      <div class="agent-info">
-        <div class="avatar ${ac}">${agent.initials}</div>
-        <div><div class="agent-name">${agent.name}</div><div class="agent-ext">Ext. ${agent.ext}</div></div>
-      </div>
+function perfCard(agent,type){
+  const iC=type==='calls';const avc=iC?'av-c':'av-ch';
+  let h=`<div class="ac" style="animation-delay:var(--d,0ms)">
+    <div class="ac-head">
+      <div class="av ${avc}">${agent.ini}</div>
+      <div><div class="ac-n">${agent.name}</div><div class="ac-e">Ext.&nbsp;${agent.ext}</div></div>
     </div>
-    <div class="table-scroll"><table class="card-table">
-      <thead><tr>
-        <th style="width:130px">Metric</th>
-        ${MONTHS.map(m=>`<th class="month-hdr">${MONTH_SHORT[m]} '26</th>`).join('')}
-      </tr></thead><tbody>`;
-  if(isC){
-    html+=renderCallsMetricRow('Inbound Calls','📞','inbound',agent.months);
-    html+=renderCallsMetricRow('Tickets Closed','🎫','tickets',agent.months);
-    html+=renderCallsMetricRow('FCR','🔄','fcr',agent.months);
-    html+=renderCallsMetricRow('QA Score','⭐','qa',agent.months);
-    html+=renderCallsMetricRow('Ticket CSAT','😊','csat',agent.months);
+    <div class="mt-wrap"><table class="mt">
+      <thead><tr><th style="width:120px">Metric</th>${MONTHS.map(m=>`<th class="thc">${MS[m]} '26</th>`).join('')}</tr></thead>
+      <tbody>`;
+  if(iC){
+    h+=rowCalls('Inbound Calls','phone','inbound',agent.months);
+    h+=rowCalls('Tickets Closed','ticket','tickets',agent.months);
+    h+=rowCalls('FCR','rotate','fcr',agent.months);
+    h+=rowCalls('QA Score','star','qa',agent.months);
+    h+=rowCalls('Ticket CSAT','smile','csat',agent.months);
   }else{
-    html+=renderChatMetricRow('Chats Handled','💬','chats',agent.months);
-    html+=renderChatMetricRow('Chat CSAT','😊','csat',agent.months);
-    html+=renderChatMetricRow('Tickets Closed','🎫','tickets',agent.months);
-    html+=renderChatMetricRow('QA Score','⭐','qa',agent.months);
-    html+=renderChatMetricRow('FCR','🔄','fcr',agent.months);
+    h+=rowChat('Chats Handled','msg','chats',agent.months);
+    h+=rowChat('Chat CSAT','smile','csat',agent.months);
+    h+=rowChat('Tickets Closed','ticket','tickets',agent.months);
+    h+=rowChat('QA Score','star','qa',agent.months);
+    h+=rowChat('FCR','rotate','fcr',agent.months);
   }
-  html+=`<tr style="background:rgba(255,255,255,.015)">
-    <td class="metric-label"><span class="metric-icon">📅</span>Present Days</td>`;
+  h+=`<tr style="background:rgba(255,255,255,.012)"><td><div class="ml">${ic('cal',13)} Present</div></td>`;
   for(const m of MONTHS){
-    const md=agent.months[m];const p=md?.present||0;
-    html+=`<td class="cell"><div class="cell-val ${p>=18?'s1':'s0'}">${p}d</div></td>`;
+    const p=agent.months[m]?.present||0;
+    h+=`<td class="mcc"><div class="mv ${p>=18?'s1c':'s0c'}">${p}d</div></td>`;
   }
-  html+=`</tr><tr style="background:rgba(255,255,255,.015)">
-    <td class="metric-label"><span class="metric-icon">🏖</span>Leaves</td>`;
+  h+=`</tr><tr style="background:rgba(255,255,255,.012)"><td><div class="ml">${ic('cal',13)} Leaves</div></td>`;
   for(const m of MONTHS){
-    const md=agent.months[m];const l=md?.leaves||0,u=md?.unplanned||0;
-    const cls=u>0?'bad':l>3?'bad':l>0?'warn':'ok';
-    html+=`<td class="cell"><div class="cell-val ${cls}">${u>0?l+'PL '+u+'UPL':l+' PL'}</div></td>`;
+    const md=agent.months[m];const l=md?.leaves||0,u=md?.upl||0;
+    const cls=u>0?'s0c':l>3?'s0c':l>0?'s2c':'s1c';
+    h+=`<td class="mcc"><div class="mv ${cls}">${u>0?l+'PL '+u+'UPL':l+' PL'}</div></td>`;
   }
-  html+=`</tr></tbody></table></div></div>`;
-  return html;
+  h+=`</tr></tbody></table></div></div>`;
+  return h;
 }
 
-// ─── BONUS CARD RENDER ────────────────────────────────────────────────────────
-function renderBonusCell(b,m,isCallsAgent,agentName){
-  let html='';
-  if(!b||b.points===null){
-    const note=isCallsAgent&&m==="Jan'26"&&agentName==="Sabrina Quinn"?'Chat team this month':!isCallsAgent&&m==="Jan'26"&&agentName==="Evan Cruz"?'Calls team this month':'N/A';
-    return `<div class="bonus-cell"><div class="bonus-month-label">${MONTH_SHORT[m]} '26</div>
-      <div><span class="bonus-slab-badge badge-na">N/A</span></div>
-      <div class="bonus-reason">${note}</div><div class="bonus-amt">\u2014</div></div>`;
+// ─── BONUS CARD ───────────────────────────────────────────────────────────────
+function bonusCell(b,m,isCalls,name){
+  let h=`<div class="bm"><div class="bm-l">${MS[m]} '26</div>`;
+  if(!b||b.pts===null){
+    const note=isCalls&&m==="Jan'26"&&name==="Sabrina Quinn"?'Chat team':'—';
+    return h+`<div class="bmb bmb-na">N/A</div><div class="bm-rsn">${note}</div><div class="bm-amt zer">—</div></div>`;
   }
-  html=`<div class="bonus-cell"><div class="bonus-month-label">${MONTH_SHORT[m]} '26</div>`;
+  const pct=Math.min(100,b.pts||0);
   if(b.eligible===false&&!b.slab){
-    const pts=b.points||0,pct=Math.min(100,pts);
-    html+=`<div><span class="bonus-slab-badge badge-no">Not Eligible</span></div>
-      <div class="bonus-pts">${pts}/100 pts</div>
-      <div class="pts-bar-wrap"><div class="pts-bar s0" style="width:${pct}%"></div></div>
-      <div class="bonus-reason" style="margin-top:4px">${b.reason||''}</div>`;
-    if(b.csat_incentive>0){
-      html+=`<div class="bonus-reason" style="color:var(--green);margin-top:3px">CSAT: \u20b9${b.csat_incentive.toLocaleString('en-IN')}</div>
-        <div class="bonus-amt positive">\u20b9${b.csat_incentive.toLocaleString('en-IN')}</div>`;
-    }else{html+=`<div class="bonus-amt">\u20b90</div>`;}
+    h+=`<div class="bmb bmb-no">${ic('xcl',9)} Not Eligible</div>`;
+    h+=`<div class="bm-pts">${b.pts}/100 pts</div>`;
+    h+=`<div class="bm-pb"><div class="bm-pb-fill" style="width:${pct}%;background:var(--red)"></div></div>`;
+    h+=`<div class="bm-rsn">${b.reason||''}</div>`;
+    if(b.csat_inc>0){h+=`<div class="bm-csat">+CSAT ${rupee(b.csat_inc)}</div><div class="bm-amt pos">${rupee(b.csat_inc)}</div>`;}
+    else{h+=`<div class="bm-amt zer">\u20b90</div>`;}
   }else if(b.eligible===false&&b.slab){
-    const slL=b.slab===1?'Slab 1':'Slab 2',bC=b.slab===1?'badge-s1':'badge-s2',pts=b.points||0;
-    html+=`<div><span class="bonus-slab-badge ${bC}">${slL}</span></div>
-      <div class="bonus-pts">${pts}/100 pts</div>
-      <div class="pts-bar-wrap"><div class="pts-bar ${b.slab===1?'s1':'s2'}" style="width:${pts}%"></div></div>
-      <div class="bonus-reason">${b.reason}</div>
-      <div class="bonus-amt positive">\u20b9${(b.total_bonus||0).toLocaleString('en-IN')}</div>`;
+    const bc=b.slab===1?'bmb-s1':'bmb-s2';
+    h+=`<div class="bmb ${bc}">Slab ${b.slab}</div>`;
+    h+=`<div class="bm-pts">${b.pts}/100 pts</div>`;
+    h+=`<div class="bm-pb"><div class="bm-pb-fill" style="width:${pct}%;background:${b.slab===1?'var(--green)':'var(--amber)'}"></div></div>`;
+    h+=`<div class="bm-rsn">${b.reason}</div><div class="bm-amt pos">${rupee(b.total)}</div>`;
   }else{
-    const slL=b.slab===1?'Slab 1':'Slab 2',bC=b.slab===1?'badge-s1':'badge-s2',pts=b.points||0;
-    html+=`<div><span class="bonus-slab-badge ${bC}">${slL} \u2713</span></div>
-      <div class="bonus-pts">${pts}/100 pts</div>
-      <div class="pts-bar-wrap"><div class="pts-bar ${b.slab===1?'s1':'s2'}" style="width:${pts}%"></div></div>`;
-    if(b.reason)html+=`<div class="bonus-reason" style="color:var(--muted2)">${b.reason}</div>`;
-    if(b.csat_incentive>0)html+=`<div class="bonus-reason">Base \u20b9${b.base_bonus.toLocaleString('en-IN')} + CSAT \u20b9${b.csat_incentive.toLocaleString('en-IN')}</div>`;
-    html+=`<div class="bonus-amt positive">\u20b9${b.total_bonus.toLocaleString('en-IN')}</div>`;
+    const bc=b.slab===1?'bmb-s1':'bmb-s2';
+    h+=`<div class="bmb ${bc}">${ic('check',9)} Slab ${b.slab}</div>`;
+    h+=`<div class="bm-pts">${b.pts}/100 pts</div>`;
+    h+=`<div class="bm-pb"><div class="bm-pb-fill" style="width:${pct}%;background:${b.slab===1?'var(--green)':'var(--amber)'}"></div></div>`;
+    if(b.reason)h+=`<div class="bm-rsn" style="color:var(--t2)">${b.reason}</div>`;
+    if(b.csat_inc>0)h+=`<div class="bm-csat">${rupee(b.base)}+${rupee(b.csat_inc)}</div>`;
+    h+=`<div class="bm-amt pos">${rupee(b.total)}</div>`;
   }
-  return html+'</div>';
+  return h+'</div>';
 }
-
-function renderBonusAgentCard(agent,type){
-  const isC=type==='calls';
-  const ac=isC?'avatar-calls':'avatar-chat';
-  const tb=totalBonus(agent);
-  let html=`<div class="bonus-agent-card">
-    <div class="bac-top">
-      <div class="bac-info">
-        <div class="avatar ${ac}">${agent.initials}</div>
-        <div><div class="bac-name">${agent.name}</div><div class="bac-ext">Ext. ${agent.ext} &middot; ${isC?'Calls':'Chat'} Wing</div></div>
+function bonusCard(agent,type){
+  const iC=type==='calls';const avc=iC?'av-c':'av-ch';const total=tb(agent);
+  let h=`<div class="bac">
+    <div class="bac-head">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="av ${avc}" style="width:32px;height:32px;font-size:11px">${agent.ini}</div>
+        <div><div class="bac-n">${agent.name}</div><div class="bac-e">Ext. ${agent.ext} &middot; ${iC?'Calls':'Chat'}</div></div>
       </div>
     </div>
-    <div class="bonus-section" style="padding-top:14px">
-      <div class="bonus-months">`;
-  for(const m of MONTHS){
-    const md=agent.months[m];
-    html+=renderBonusCell(md?.bonus,m,isC,agent.name);
-  }
-  html+=`</div></div>
-    <div class="bonus-card-total">
-      <div class="bct-label">Q1 Total Earned</div>
-      <div class="bct-val ${tb===0?'zero':''}">\u20b9${tb.toLocaleString('en-IN')}</div>
-    </div>
-  </div>`;
-  return html;
+    <div class="bac-months">`;
+  for(const m of MONTHS) h+=bonusCell(agent.months[m]?.bonus,m,iC,agent.name);
+  h+=`</div><div class="bac-foot">
+    <div class="bac-foot-lbl">Q1 Total Earned</div>
+    <div class="bac-foot-val ${total===0?'zer':''}">${rupee(total)}</div>
+  </div></div>`;
+  return h;
 }
 
 // ─── HALL OF FAME ─────────────────────────────────────────────────────────────
-function computeHoF(){
+function buildHoF(){
   const allC=DATA.calls.map(a=>({...a,type:'calls'}));
   const allCh=DATA.chat.map(a=>({...a,type:'chat'}));
   const all=[...allC,...allCh];
-
-  function avg(vals){const v=vals.filter(x=>x!=null&&x>0);return v.length?v.reduce((a,b)=>a+b,0)/v.length:0}
-  function sum(vals){return vals.filter(x=>x!=null).reduce((a,b)=>a+b,0)}
-
   const stats=all.map(a=>{
     const ms=MONTHS.map(m=>a.months[m]);
-    const isC=a.type==='calls';
-    return{
-      ...a,
-      totalBonus:totalBonus(a),
+    const iC=a.type==='calls';
+    return{...a,
+      totalBonus:tb(a),
       totalTickets:sum(ms.map(m=>m?.tickets)),
-      totalInbound:isC?sum(ms.map(m=>m?.inbound)):0,
-      totalChats:!isC?sum(ms.map(m=>m?.chats)):0,
+      totalInbound:iC?sum(ms.map(m=>m?.inbound)):0,
+      totalChats:!iC?sum(ms.map(m=>m?.chats)):0,
       avgQA:avg(ms.map(m=>m?.qa)),
-      avgFCR:avg(ms.filter(m=>m?.fcr!=null&&m.fcr>0).map(m=>m?.fcr)),
-      avgCSAT:avg(ms.map(m=>m?.csat)),
-      csatGoodTotal:sum(ms.map(m=>m?.csat_good||m?.happy||0)),
-      csatSurveyTotal:sum(ms.map(m=>m?.csat_total||0)),
-      janPts:ms[0]?.bonus?.points||0,
-      marPts:ms[2]?.bonus?.points||0,
-      monthsWithSlab1Bonus:ms.filter(m=>m?.bonus?.slab===1&&m.bonus.base_bonus>0).length,
-      hasPerfect:ms.some(m=>m?.bonus?.points===100&&m.bonus.points!=null),
-      perfectMonths:ms.filter(m=>m?.bonus?.points===100&&m.bonus.points!=null).map((m,i)=>MONTHS[i]).filter(Boolean),
+      avgFCR:avg(ms.filter(m=>m?.fcr>0).map(m=>m?.fcr)),
+      csatGood:sum(ms.map(m=>m?.cg||m?.happy||0)),
+      csatTotal:sum(ms.map(m=>m?.ct||0)),
+      slabMonths:ms.filter(m=>m?.bonus?.slab===1&&m.bonus.base>0).length,
+      janPts:ms[0]?.bonus?.pts||0,marPts:ms[2]?.bonus?.pts||0,
+      perfectMonths:MONTHS.filter(m=>a.months[m]?.bonus?.pts===100&&a.months[m]?.bonus?.pts!=null),
     };
   });
-  // Fix perfectMonths mapping
-  stats.forEach(s=>{
-    s.perfectMonths=MONTHS.filter(m=>s.months[m]?.bonus?.points===100&&s.months[m]?.bonus?.points!=null);
-  });
-  return stats;
-}
-
-function renderHoF(){
-  const stats=computeHoF();
   const calls=stats.filter(s=>s.type==='calls');
-  const chat=stats.filter(s=>s.type==='chat');
 
   // Quick stats
-  const totalEarned=stats.reduce((s,a)=>s+a.totalBonus,0);
-  const topEarner=stats.reduce((a,b)=>a.totalBonus>b.totalBonus?a:b);
-  const slab1Hits=stats.reduce((s,a)=>s+a.monthsWithSlab1Bonus,0);
-  document.getElementById('hofQuickStats').innerHTML=`
-    <div class="hof-stat"><div class="hof-stat-val">${stats.length}</div><div class="hof-stat-label">Total Agents</div></div>
-    <div class="hof-stat"><div class="hof-stat-val">${slab1Hits}</div><div class="hof-stat-label">Slab 1 Hits</div></div>
-    <div class="hof-stat"><div class="hof-stat-val">Q1 '26</div><div class="hof-stat-label">Quarter</div></div>
-  `;
+  const totalSlabs=stats.reduce((s,a)=>s+a.slabMonths,0);
+  document.getElementById('hofQS').innerHTML=`
+    <div class="hq"><div class="hq-v">${stats.length}</div><div class="hq-l">Agents</div></div>
+    <div class="hq"><div class="hq-v">${totalSlabs}</div><div class="hq-l">Slab 1 Hits</div></div>
+    <div class="hq"><div class="hq-v">Q1 '26</div><div class="hq-l">Quarter</div></div>`;
 
-  // Podium — top 3 by total bonus
-  const sorted=[...stats].sort((a,b)=>b.totalBonus-a.totalBonus).slice(0,3);
-  const ranks=['1st','2nd','3rd'];
-  const medals=['🥇','🥈','🥉'];
-  const podiumOrder=[sorted[1],sorted[0],sorted[2]]; // 2nd | 1st | 3rd
-  const podiumRank=[2,1,3];
-  let podHtml='';
-  for(let i=0;i<3;i++){
-    const a=podiumOrder[i];if(!a)continue;
-    const r=podiumRank[i];
-    const ac=a.type==='calls'?'avatar-calls':'avatar-chat';
-    const msColor=MONTHS.map(m=>{const b=a.months[m]?.bonus;return b?.slab===1&&b.base_bonus>0?'var(--green)':b?.slab===1?'var(--amber)':'var(--muted)'});
-    const msDots=MONTHS.map((m,mi)=>`<div class="pdot" style="background:${msColor[mi]}" title="${MONTH_SHORT[m]}"></div>`).join('');
-    const milestone=a.type==='calls'?`${a.totalTickets} tickets · ${a.totalInbound} calls`:`${a.totalTickets} tickets · ${a.totalChats} chats`;
-    podHtml+=`<div class="podium-card rank-${r}">
-      <div class="podium-rank">${medals[r-1]}</div>
-      <div class="avatar ${ac} podium-avatar">${a.initials}</div>
-      <div class="podium-name">${a.name}</div>
-      <div class="podium-team">${a.type==='calls'?'Calls Wing':'Chat Wing'} · ${a.monthsWithSlab1Bonus}/3 Slab 1</div>
-      <div class="podium-months">${msDots}</div>
-      <div class="podium-milestone">${milestone}</div>
+  // Podium — top 3 by slabMonths desc, then totalBonus
+  const sorted=[...stats].sort((a,b)=>b.slabMonths-a.slabMonths||b.totalBonus-a.totalBonus).slice(0,3);
+  const layout=[sorted[1],sorted[0],sorted[2]];const ranks=[2,1,3];const medals=['🥈','🥇','🥉'];
+  let podH='';
+  layout.forEach((a,i)=>{
+    if(!a)return;
+    const r=ranks[i];const avc=a.type==='calls'?'av-c':'av-ch';
+    const dotColors=MONTHS.map(m=>a.months[m]?.bonus?.slab===1&&a.months[m]?.bonus?.base>0?'var(--green)':a.months[m]?.bonus?.slab===1?'var(--amber)':'var(--t4)');
+    const stat=a.type==='calls'?`${a.totalInbound.toLocaleString()} calls · ${a.totalTickets} tickets`:`${a.totalChats.toLocaleString()} chats · ${a.totalTickets} tickets`;
+    podH+=`<div class="pod p${r}">
+      <span class="pod-medal">${medals[i]}</span>
+      <div class="av ${avc} pod-av">${a.ini}</div>
+      <div class="pod-n">${a.name}</div>
+      <div class="pod-t">${a.type==='calls'?'Calls Wing':'Chat Wing'} &middot; ${a.slabMonths}/3 Slab 1</div>
+      <div class="pod-dots">${dotColors.map(c=>`<div class="pdot" style="background:${c}"></div>`).join('')}</div>
+      <div class="pod-info">${stat}</div>
     </div>`;
-  }
-  document.getElementById('hofPodium').innerHTML=podHtml;
+  });
+  document.getElementById('hofPodium').innerHTML=podH;
 
-  // Individual awards
-  const awards=[];
-  // Call volume leader
+  // Awards
   const callVol=calls.reduce((a,b)=>a.totalInbound>b.totalInbound?a:b);
-  awards.push({icon:'📞',title:'Call Volume Leader',winner:callVol,metric:`${callVol.totalInbound.toLocaleString()} inbound calls`,desc:'Most total inbound calls handled across all 3 months of Q1.',color:'var(--calls)'});
-  // Chat volume
-  const chatVol=chat.reduce((a,b)=>a.totalChats>b.totalChats?a:b);
-  awards.push({icon:'💬',title:'Chat Volume Leader',winner:chatVol,metric:`${chatVol.totalChats.toLocaleString()} chats`,desc:'Most total chat conversations handled across all 3 months of Q1.',color:'var(--chat)'});
-  // Ticket titan (all)
+  const chatVol=stats.filter(s=>s.type==='chat').reduce((a,b)=>a.totalChats>b.totalChats?a:b);
   const tickMvp=stats.reduce((a,b)=>a.totalTickets>b.totalTickets?a:b);
-  awards.push({icon:'🎫',title:'Ticket Titan',winner:tickMvp,metric:`${tickMvp.totalTickets} tickets closed`,desc:'Most total tickets resolved across the full quarter — across both teams.',color:'var(--violet)'});
-  // FCR hero (calls only — chat FCR is inherently different)
   const fcrMvp=calls.reduce((a,b)=>a.avgFCR>b.avgFCR?a:b);
-  awards.push({icon:'🔄',title:'FCR Master',winner:fcrMvp,metric:`${fcrMvp.avgFCR.toFixed(1)}% avg FCR`,desc:'Best average First Call Resolution rate across all valid months in Q1.',color:'var(--blue)'});
-  // Quality star
   const qaMvp=stats.reduce((a,b)=>a.avgQA>b.avgQA?a:b);
-  awards.push({icon:'⭐',title:'Quality Champion',winner:qaMvp,metric:`${qaMvp.avgQA.toFixed(1)}% avg QA`,desc:'Highest average QA score across Q1 — setting the gold standard for quality.',color:'var(--amber)'});
-  // CSAT champion — by good/happy count with meaningful volume (>5 surveys total)
-  const csatMvp=stats.filter(s=>s.csatSurveyTotal>5).reduce((a,b)=>a.csatGoodTotal>b.csatGoodTotal?a:b);
-  awards.push({icon:'😊',title:'Customer Favorite',winner:csatMvp,metric:`${csatMvp.csatGoodTotal} happy ratings`,desc:'Most positive CSAT ratings received (with meaningful survey volume) in Q1.',color:'var(--green)'});
-  // Rising star — most pts improvement Jan→Mar
-  const risers=stats.filter(s=>s.months["Jan'26"]?.bonus?.points!=null&&s.months["Mar'26"]?.bonus?.points!=null);
+  const csatMvp=stats.filter(s=>s.csatTotal>5).reduce((a,b)=>a.csatGood>b.csatGood?a:b);
+  const risers=stats.filter(s=>s.months["Jan'26"]?.bonus?.pts!=null&&s.months["Mar'26"]?.bonus?.pts!=null);
   const riser=risers.reduce((a,b)=>(b.marPts-b.janPts)>(a.marPts-a.janPts)?b:a);
-  const riserGain=riser.marPts-riser.janPts;
-  awards.push({icon:'📈',title:'Rising Star',winner:riser,metric:`+${riserGain} pts Jan→Mar`,desc:'Biggest improvement in performance score from January to March — true growth mindset.',color:'#c084fc'});
-  // Consistency — most months on Slab 1 (base_bonus > 0)
-  const consistent=stats.reduce((a,b)=>a.monthsWithSlab1Bonus>b.monthsWithSlab1Bonus?a:b);
-  awards.push({icon:'🏆',title:'Most Consistent',winner:consistent,metric:`${consistent.monthsWithSlab1Bonus}/3 Slab 1 months`,desc:'Hit Slab 1 target (and earned bonus) in the most months across Q1.',color:'var(--gold)'});
+  const consistent=stats.reduce((a,b)=>a.slabMonths>b.slabMonths?a:b);
 
-  let awHtml='';
-  for(const aw of awards){
-    const a=aw.winner;
-    const teamLabel=a.type==='calls'?'Calls Wing':'Chat Wing';
-    const teamColor=a.type==='calls'?'var(--calls)':'var(--chat)';
-    awHtml+=`<div class="award-card" style="--aw-color:${aw.color}">
-      <div class="award-card" style="border:none;padding:0">
-        <style>.award-grid .award-card::before{background:var(--aw-color,var(--muted))}</style>
-      </div>
-      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${aw.color};border-radius:14px 14px 0 0"></div>
-      <div class="award-icon">${aw.icon}</div>
-      <div class="award-title">${aw.title}</div>
-      <div class="award-winner">${a.name}</div>
-      <div class="award-team" style="color:${teamColor}">${teamLabel}</div>
-      <div class="award-metric" style="background:rgba(255,255,255,.05);color:${aw.color}">${aw.metric}</div>
-      <div class="award-desc">${aw.desc}</div>
+  const awards=[
+    {ico:'phone',name:'Call Volume Leader',winner:callVol,metric:`${callVol.totalInbound.toLocaleString()} calls`,desc:'Most inbound calls handled across all 3 months.',color:'var(--calls)',ibg:'rgba(0,229,160,.1)',tc:'var(--calls)'},
+    {ico:'msg',name:'Chat Volume Leader',winner:chatVol,metric:`${chatVol.totalChats.toLocaleString()} chats`,desc:'Most chats handled across all 3 months.',color:'var(--chat)',ibg:'rgba(255,140,66,.1)',tc:'var(--chat)'},
+    {ico:'ticket',name:'Ticket Titan',winner:tickMvp,metric:`${tickMvp.totalTickets} tickets`,desc:'Most total tickets resolved in Q1.',color:'var(--violet)',ibg:'rgba(139,92,246,.1)',tc:'var(--violet)'},
+    {ico:'target',name:'FCR Master',winner:fcrMvp,metric:`${fcrMvp.avgFCR.toFixed(1)}% avg FCR`,desc:'Best average first-call resolution rate.',color:'var(--blue)',ibg:'rgba(59,130,246,.1)',tc:'var(--blue)'},
+    {ico:'shield',name:'Quality Champion',winner:qaMvp,metric:`${qaMvp.avgQA.toFixed(1)}% avg QA`,desc:'Highest average QA score across Q1.',color:'var(--amber)',ibg:'rgba(245,158,11,.1)',tc:'var(--amber)'},
+    {ico:'smile',name:'Customer Favorite',winner:csatMvp,metric:`${csatMvp.csatGood} positive ratings`,desc:'Most positive CSAT ratings with meaningful volume.',color:'var(--green)',ibg:'rgba(16,185,129,.1)',tc:'var(--green)'},
+    {ico:'trend',name:'Rising Star',winner:riser,metric:`+${riser.marPts-riser.janPts} pts Jan→Mar`,desc:'Biggest point score improvement across the quarter.',color:'#c084fc',ibg:'rgba(192,132,252,.1)',tc:'#c084fc'},
+    {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${consistent.slabMonths}/3 Slab 1 months`,desc:'Hit Slab 1 target and earned bonus the most months.',color:'var(--gold)',ibg:'rgba(251,191,36,.1)',tc:'var(--gold)'},
+  ];
+
+  let awH='';
+  awards.forEach(aw=>{
+    const a=aw.winner;const tc=a.type==='calls'?'var(--calls)':'var(--chat)';
+    awH+=`<div class="aw">
+      <div class="aw-bar" style="background:${aw.color}"></div>
+      <div class="aw-ic" style="background:${aw.ibg};color:${aw.color}">${ic(aw.ico,16)}</div>
+      <div class="aw-cat">${aw.name}</div>
+      <div class="aw-name">${a.name}</div>
+      <div class="aw-team" style="color:${tc}">${a.type==='calls'?'Calls Wing':'Chat Wing'}</div>
+      <div class="aw-chip" style="background:${aw.ibg};color:${aw.tc}">${aw.metric}</div>
+      <div class="aw-desc">${aw.desc}</div>
     </div>`;
-  }
-  document.getElementById('awardsGrid').innerHTML=awHtml;
+  });
+  document.getElementById('awardGrid').innerHTML=awH;
 
-  // Perfect score club
-  const perfScorers=stats.filter(s=>s.hasPerfect);
-  let psHtml='';
-  if(perfScorers.length===0){
-    psHtml='<div style="color:var(--muted);font-size:12px;padding:12px 0">No agents achieved 100/100 pts in any month this quarter.</div>';
+  // Perfect Score Club
+  const ps=stats.filter(s=>s.perfectMonths.length>0);
+  if(ps.length===0){
+    document.getElementById('psRow').innerHTML=`<div style="color:var(--t3);font-size:12px;padding:4px 0">No agents achieved 100/100 pts in any month this quarter.</div>`;
   }else{
-    psHtml=`<div style="display:flex;flex-wrap:wrap;gap:12px">`;
-    for(const a of perfScorers){
-      const ac=a.type==='calls'?'avatar-calls':'avatar-chat';
-      const months=a.perfectMonths.map(m=>MONTH_SHORT[m]+' \'26').join(', ');
-      psHtml+=`<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(251,191,36,.08),var(--surface));border:1px solid rgba(251,191,36,.2);min-width:220px">
-        <div class="avatar ${ac}" style="width:44px;height:44px;font-size:14px">${a.initials}</div>
-        <div>
-          <div style="font-size:14px;font-weight:700">${a.name}</div>
-          <div style="font-size:11px;color:var(--muted2)">💯 100/100 pts in ${months}</div>
-        </div>
+    document.getElementById('psRow').innerHTML=ps.map(a=>{
+      const avc=a.type==='calls'?'av-c':'av-ch';
+      const months=a.perfectMonths.map(m=>MS[m]).join(', ');
+      return `<div class="ps-card">
+        <div class="av ${avc}" style="width:38px;height:38px;font-size:12px">${a.ini}</div>
+        <div><div class="ps-n">${a.name}</div><div class="ps-m">${ic('spark',12)} 100/100 pts &middot; ${months}</div></div>
       </div>`;
-    }
-    psHtml+='</div>';
+    }).join('');
   }
-  document.getElementById('perfectScoreSection').innerHTML=psHtml;
 }
 
 // ─── BONUS TIMING ─────────────────────────────────────────────────────────────
-function checkBonusAccess(){
-  const unlocked=isAdmin||(new Date()>=BONUS_UNLOCK);
-  document.getElementById('bonus-locked').style.display=unlocked?'none':'block';
-  document.getElementById('bonus-unlocked').style.display=unlocked?'block':'none';
-  document.getElementById('tabBonusLock').textContent=unlocked?'':'🔒';
-  if(isAdmin){
-    document.getElementById('adminBadge').style.display='inline-flex';
-  }
-  return unlocked;
+let cdTimer=null;
+function bonusUnlocked(){return isAdmin||(new Date()>=BONUS_UNLOCK)}
+function adminUnlock(){sessionStorage.setItem('hof_admin','1');showBonus()}
+
+function showBonus(){
+  document.getElementById('bonus-locked').style.display='none';
+  document.getElementById('bonus-open').style.display='block';
+  document.getElementById('bonusLockIcon').textContent='';
+  document.getElementById('adminChip').style.display='inline-flex';
+  const callsTot=DATA.calls.reduce((s,a)=>s+tb(a),0);
+  const chatTot=DATA.chat.reduce((s,a)=>s+tb(a),0);
+  document.getElementById('buTotals').innerHTML=`
+    <div class="bt bt-c"><div class="bt-lbl">Calls Wing Q1</div><div class="bt-val">${rupee(callsTot)}</div></div>
+    <div class="bt bt-ch"><div class="bt-lbl">Chat Wing Q1</div><div class="bt-val">${rupee(chatTot)}</div></div>`;
+  document.getElementById('bonus-calls-grid').innerHTML=DATA.calls.map((a,i)=>{const el=bonusCard(a,'calls');return el.replace('<div class="bac"',`<div class="bac" style="animation-delay:${i*50}ms"`)}).join('');
+  document.getElementById('bonus-chat-grid').innerHTML=DATA.chat.map((a,i)=>{const el=bonusCard(a,'chat');return el.replace('<div class="bac"',`<div class="bac" style="animation-delay:${i*50}ms"`)}).join('');
 }
 
-function updateCountdown(){
-  const now=new Date();
-  const diff=BONUS_UNLOCK-now;
-  if(diff<=0){checkBonusAccess();clearInterval(cdTimer);return;}
-  const d=Math.floor(diff/86400000);
-  const h=Math.floor((diff%86400000)/3600000);
-  const min=Math.floor((diff%3600000)/60000);
-  const sec=Math.floor((diff%60000)/1000);
-  const pad=n=>String(n).padStart(2,'0');
-  document.getElementById('cd-days').textContent=d;
-  document.getElementById('cd-hrs').textContent=pad(h);
-  document.getElementById('cd-min').textContent=pad(min);
-  document.getElementById('cd-sec').textContent=pad(sec);
+function showLock(){
+  document.getElementById('bonus-locked').style.display='block';
+  document.getElementById('bonusLockIcon').textContent='🔒';
+  updateCd();cdTimer=setInterval(updateCd,1000);
 }
 
-// ─── NAV ─────────────────────────────────────────────────────────────────────
-function showPage(page,btn){
+function updateCd(){
+  const diff=BONUS_UNLOCK-new Date();
+  if(diff<=0){clearInterval(cdTimer);showBonus();return}
+  const d=Math.floor(diff/86400000),h=Math.floor((diff%86400000)/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
+  const p=n=>String(n).padStart(2,'0');
+  document.getElementById('cd-d').textContent=d;
+  document.getElementById('cd-h').textContent=p(h);
+  document.getElementById('cd-m').textContent=p(m);
+  document.getElementById('cd-s').textContent=p(s);
+}
+
+// ─── PAGE / WING NAV ──────────────────────────────────────────────────────────
+function switchPage(page,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.page-tab').forEach(t=>t.classList.remove('active-hof','active-perf','active-bonus'));
+  document.querySelectorAll('.ptab').forEach(t=>t.removeAttribute('data-active'));
   document.getElementById('page-'+page).classList.add('active');
-  if(btn)btn.classList.add('active-'+page);
-  else document.getElementById('tab-'+page).classList.add('active-'+page);
+  const b=btn||document.getElementById('tab-'+page);
+  b.setAttribute('data-active',page);
+  // slide indicator
+  const slide=document.getElementById('tabSlide');
+  const tabs=document.getElementById('pageTabs');
+  const br=b.getBoundingClientRect(),tr=tabs.getBoundingClientRect();
+  slide.style.left=(br.left-tr.left)+'px';
+  slide.style.width=br.width+'px';
 }
-function showPerfWing(wing,el){
-  document.querySelectorAll('#page-perf .wing-content').forEach(w=>w.classList.remove('active'));
-  document.querySelectorAll('#page-perf .wing-tab').forEach(t=>t.classList.remove('active-calls','active-chat'));
-  document.getElementById('perf-wing-'+wing).classList.add('active');
-  el.classList.add('active-'+wing);
-}
-function showBonusWing(wing,el){
-  document.querySelectorAll('#page-bonus .wing-content').forEach(w=>w.classList.remove('active'));
-  document.querySelectorAll('#bonus-unlocked .wing-tab').forEach(t=>t.classList.remove('active-calls','active-chat'));
-  document.getElementById('bonus-wing-'+wing).classList.add('active');
-  el.classList.add('active-'+wing);
+function switchWing(scope,wing,el){
+  const prefix=scope+'-wing-';
+  document.querySelectorAll(`[id^="${prefix}"]`).forEach(w=>w.classList.remove('active'));
+  document.getElementById(prefix+wing).classList.add('active');
+  const parent=el.closest('.wing-tabs');
+  parent.querySelectorAll('.wtab').forEach(t=>t.classList.remove('wt-c','wt-ch'));
+  el.classList.add(wing==='calls'?'wt-c':'wt-ch');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-renderHoF();
+// Inject icons into static placeholders
+injectIco('ico-trophy','trophy',20);
+injectIco('ico-tab-hof','trophy',14);
+injectIco('ico-tab-perf','chart',14);
+injectIco('ico-tab-bonus','rupee',14);
+injectIco('ico-sc-calls','phone',12);
+injectIco('ico-sc-chat','msg',12);
+injectIco('ico-sc-tick','ticket',12);
+injectIco('ico-sc-reach','users',12);
+injectIco('ico-w-calls','phone',13);
+injectIco('ico-w-chat','msg',13);
+injectIco('ico-bw-calls','phone',13);
+injectIco('ico-bw-chat','msg',13);
+injectIco('ico-lock','lock',28);
+injectIco('ico-cal','cal',14);
+injectIco('ico-key','key',13);
 
-document.getElementById('perf-calls-grid').innerHTML=DATA.calls.map(a=>renderPerfCard(a,'calls')).join('');
-document.getElementById('perf-chat-grid').innerHTML=DATA.chat.map(a=>renderPerfCard(a,'chat')).join('');
+// Performance grids
+const perfCallsHTML=DATA.calls.map((a,i)=>perfCard(a,'calls').replace('var(--d,0ms)',i*55+'ms')).join('');
+const perfChatHTML=DATA.chat.map((a,i)=>perfCard(a,'chat').replace('var(--d,0ms)',i*55+'ms')).join('');
+document.getElementById('perf-calls-grid').innerHTML=perfCallsHTML;
+document.getElementById('perf-chat-grid').innerHTML=perfChatHTML;
 
-const bonusReady=checkBonusAccess();
-if(bonusReady){
-  document.getElementById('bonus-calls-grid').innerHTML=DATA.calls.map(a=>renderBonusAgentCard(a,'calls')).join('');
-  document.getElementById('bonus-chat-grid').innerHTML=DATA.chat.map(a=>renderBonusAgentCard(a,'chat')).join('');
-  // Bonus totals row
-  const callsTotal=DATA.calls.reduce((s,a)=>s+totalBonus(a),0);
-  const chatTotal=DATA.chat.reduce((s,a)=>s+totalBonus(a),0);
-  document.getElementById('bonusTotalsRow').innerHTML=`
-    <div style="padding:8px 16px;border-radius:10px;background:var(--calls-dim);border:1px solid rgba(0,229,160,.2)">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--calls)">Calls Wing Q1</div>
-      <div style="font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--calls)">\u20b9${callsTotal.toLocaleString('en-IN')}</div>
-    </div>
-    <div style="padding:8px 16px;border-radius:10px;background:var(--chat-dim);border:1px solid rgba(255,140,66,.2)">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--chat)">Chat Wing Q1</div>
-      <div style="font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--chat)">\u20b9${chatTotal.toLocaleString('en-IN')}</div>
-    </div>`;
-}
+// HOF
+buildHoF();
 
-let cdTimer=null;
-if(!bonusReady){
-  updateCountdown();
-  cdTimer=setInterval(updateCountdown,1000);
-}
+// Admin badge
+if(isAdmin)document.getElementById('adminChip').style.display='inline-flex';
+
+// Bonus
+if(bonusUnlocked()){showBonus();}else{showLock();}
+
+// Initial tab — HOF
+switchPage('hof',document.getElementById('tab-hof'));
 </script>
 </body>
 </html>
