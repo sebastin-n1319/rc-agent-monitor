@@ -533,7 +533,12 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
     // Outbound
     const out=await get(`SELECT
       COUNT(*) as total,
-      AVG(CASE WHEN lower(COALESCE(result,''))='call connected' AND duration>0 THEN duration END) as avgDur,
+      AVG(CASE
+        WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+          AND COALESCE(is_voicemail,0)=0
+          AND duration>0
+        THEN duration
+      END) as avgDur,
       AVG(CASE WHEN ring_duration>0 THEN ring_duration END) as avgRing,
       SUM(hold_duration) as totalHold
       FROM call_logs

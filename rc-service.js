@@ -95,6 +95,24 @@ function callPartyMatchesAgent(party, agentCandidates) {
   return collectLivePartyCandidates(party).some(value => agentCandidates.has(value));
 }
 
+function callOwnerMatchesAgent(call, agentCandidates) {
+  if (!call || !agentCandidates || !agentCandidates.size) return false;
+  const ownerCandidates = [
+    call.extensionId,
+    call.extensionNumber,
+    call.extensionName,
+    call.extension && call.extension.id,
+    call.extension && call.extension.extensionNumber,
+    call.extension && call.extension.name
+  ].map(normalizeLiveIdentityValue).filter(Boolean);
+  return ownerCandidates.some(value => agentCandidates.has(value));
+}
+
+function callHasDistinctParty(party, agentCandidates) {
+  if (!party || !agentCandidates || !agentCandidates.size) return false;
+  return collectLivePartyCandidates(party).some(value => !agentCandidates.has(value));
+}
+
 function normalizeRecordedDirection(direction, fallback = null) {
   const explicit = normalizeLiveDirection(direction, null);
   if (explicit) return explicit;
@@ -105,12 +123,24 @@ function inferAgentScopedDirection(agent, call, fallback = null, prevEntry = nul
   const agentCandidates = collectAgentLiveCandidates(agent);
   const fromMatches = callPartyMatchesAgent(call && call.from, agentCandidates);
   const toMatches = callPartyMatchesAgent(call && call.to, agentCandidates);
+  const ownerMatches = callOwnerMatchesAgent(call, agentCandidates);
+  const hasDistinctFrom = callHasDistinctParty(call && call.from, agentCandidates);
+  const hasDistinctTo = callHasDistinctParty(call && call.to, agentCandidates);
 
   // Party matching is the most reliable signal for agent-relative direction,
   // especially on internal extension-to-extension calls where top-level direction
   // can be account-relative rather than agent-relative.
   if (fromMatches && !toMatches) return 'Outbound';
   if (toMatches && !fromMatches) return 'Inbound';
+
+  // Some live presence payloads identify the current agent only on the owning leg
+  // while the remote participant appears on just one side. In that shape, a remote
+  // "to" party means the agent initiated the call; a remote "from" party means the
+  // call came to the agent.
+  if (ownerMatches) {
+    if (hasDistinctTo && !toMatches) return 'Outbound';
+    if (hasDistinctFrom && !fromMatches) return 'Inbound';
+  }
 
   const explicit = normalizeRecordedDirection(
     call && call.direction,
@@ -324,9 +354,7 @@ function parseStartTimeMs(value) {
 function buildSessionSummary(sessionCalls, lookups) {
   const ordered = sessionCalls.slice().sort((a, b) => parseStartTimeMs(a.startTime) - parseStartTimeMs(b.startTime));
   const first = ordered[0] || {};
-  const primaryDirection = normalizeCallResult(
-    normalizeRecordedDirection(first.direction, normalizeRecordedDirection(first.partyDirection, null))
-  );
+  let primaryDirection = null;
 
   let owner = null;
   let queueTouched = false;
@@ -347,12 +375,6 @@ function buildSessionSummary(sessionCalls, lookups) {
     owner = owner || resolveCallOwner(call, lookups);
     queueTouched = queueTouched || callTouchesCustomerServiceQueue(call);
 
-    const direction = normalizeCallResult(
-      normalizeRecordedDirection(call.direction, normalizeRecordedDirection(call.partyDirection, null))
-    );
-    if (direction === 'inbound') inboundSeen = true;
-    if (direction === 'outbound') outboundSeen = true;
-
     const parsed = parseCallDetails(call);
     ringDuration = Math.max(ringDuration, parsed.ringDuration || call.ringDuration || call.duration || 0);
     holdDuration = Math.max(holdDuration, parsed.holdDuration || call.holdDuration || 0);
@@ -371,6 +393,21 @@ function buildSessionSummary(sessionCalls, lookups) {
     if (!startTime || parseStartTimeMs(call.startTime) < parseStartTimeMs(startTime)) startTime = call.startTime;
     if (!callId && call.id) callId = call.id;
     if (!result && call.result) result = call.result;
+  }
+
+  for (const call of ordered) {
+    const normalizedDirection = normalizeCallResult(
+      owner
+        ? inferAgentScopedDirection(
+            owner,
+            call,
+            normalizeRecordedDirection(call.direction, normalizeRecordedDirection(call.partyDirection, null))
+          )
+        : normalizeRecordedDirection(call.direction, normalizeRecordedDirection(call.partyDirection, null))
+    );
+    if (!primaryDirection && normalizedDirection) primaryDirection = normalizedDirection;
+    if (normalizedDirection === 'inbound') inboundSeen = true;
+    if (normalizedDirection === 'outbound') outboundSeen = true;
   }
 
   // Queue-touched sessions are the queue inbound workload we want to mirror in the
