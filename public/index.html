@@ -218,6 +218,47 @@ footer{text-align:center;padding:12px;font-size:10px;color:var(--text3);border-t
 .f-name{color:var(--text2);font-weight:500;}
 .f-v{font-family:'JetBrains Mono',monospace;background:var(--card);border:1px solid var(--border);padding:1px 6px;border-radius:4px;font-size:9px;}
 @media(max-width:900px){.metrics{grid-template-columns:repeat(2,1fr);}.rpt-grid{grid-template-columns:repeat(2,1fr);}.ll-grid{grid-template-columns:1fr 1fr;}}
+
+/* ── BREAK TRACKER + IFRAME PANELS ── */
+.agent-shell-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.agent-shell-btn{padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--text3);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;}
+.agent-shell-btn:hover{color:var(--text2);border-color:rgba(255,255,255,0.14);}
+.agent-shell-btn.active{color:var(--accent);border-color:rgba(91,108,249,0.35);background:rgba(91,108,249,0.08);}
+.agent-shell-page{display:none;}
+.agent-shell-page.active{display:block;}
+.break-layout{display:grid;grid-template-columns:minmax(0,1.46fr) minmax(280px,0.82fr);gap:10px;align-items:start;}
+.break-stack{display:grid;gap:10px;}
+.break-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;padding:10px 12px;border-radius:14px;border:1px solid var(--border);background:var(--card);}
+.break-toolbar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.break-toolbar-label{font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--text3);}
+.break-toolbar-btn{height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text2);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.break-toolbar-btn:hover{color:var(--text);border-color:rgba(255,255,255,0.18);}
+.break-toolbar-btn.primary{color:var(--teal);border-color:rgba(6,182,212,0.3);background:rgba(6,182,212,0.07);}
+.break-date-input{height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;}
+.break-history-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,0.03);font-size:10px;font-weight:700;color:var(--text2);}
+.break-board{display:grid;gap:8px;}
+.break-empty{padding:24px;text-align:center;color:var(--text3);font-size:12px;}
+.break-log-list{display:grid;gap:6px;max-height:640px;overflow-y:auto;}
+.break-log-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--card);}
+.break-log-icon{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:13px;flex-shrink:0;}
+.break-log-body{flex:1;min-width:0;}
+.break-log-name{font-size:12px;font-weight:600;color:var(--text);}
+.break-log-detail{font-size:10px;color:var(--text2);margin-top:1px;}
+.break-log-time{font-size:10px;color:var(--text3);white-space:nowrap;}
+.break-agent-row{display:grid;grid-template-columns:minmax(140px,1fr) repeat(6,minmax(60px,1fr));gap:0;border-bottom:1px solid var(--border);}
+.break-agent-row:last-child{border-bottom:none;}
+.break-agent-row > div{padding:10px 12px;font-size:11px;color:var(--text);}
+.break-agent-name{font-weight:600;}
+.break-status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;}
+.break-callout{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--card);}
+.break-callout-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px;}
+.break-callout-copy{font-size:10px;color:var(--text2);line-height:1.5;}
+.hof-frame-shell,.bonus-frame-shell{padding:0;overflow:hidden;background:transparent;border:none;box-shadow:none;}
+.hof-frame,.bonus-frame{display:block;width:100%;border:1px solid var(--border);background:var(--card);border-radius:16px;}
+.hof-frame{height:1280px;}
+.bonus-frame{height:1360px;}
+@media(max-width:900px){.break-layout{grid-template-columns:1fr;}.hof-frame,.bonus-frame{height:780px;}}
+
 </style>
 <style id="ui-rebuild-index">
 :root{
@@ -537,6 +578,9 @@ footer{
     <button class="nav-tab" onclick="switchTab('agents',this)">Manage Agents</button>
     <button class="nav-tab" onclick="switchTab('access',this)">Access Control</button>
     <button class="nav-tab" onclick="switchTab('loginlogs',this)">Login Logs</button>
+    <button class="nav-tab" onclick="switchTab('breaks',this)">Break Tracker</button>
+    <button class="nav-tab" onclick="switchTab('hall',this)">Hall of Fame</button>
+    <button class="nav-tab" onclick="switchTab('bonus',this)">Bonus Guide</button>
   </div>
 
   <!-- LIVE TAB -->
@@ -687,30 +731,147 @@ footer{
       <div id="login-log-list"><div class="no-data">Loading...</div></div>
     </div>
   </div>
+
+  <!-- BREAK TRACKER -->
+  <div class="page" id="tab-breaks">
+    <div class="metrics">
+      <div class="metric m-green"><div class="metric-lbl">Logged In</div><div class="metric-val" id="break-admin-loggedin">--</div></div>
+      <div class="metric m-red"><div class="metric-lbl">Logged Out</div><div class="metric-val" id="break-admin-loggedout">--</div></div>
+      <div class="metric m-blue"><div class="metric-lbl">BRB Live</div><div class="metric-val" id="break-admin-brb">--</div></div>
+      <div class="metric m-orange"><div class="metric-lbl">Break Live</div><div class="metric-val" id="break-admin-break">--</div></div>
+      <div class="metric m-purple"><div class="metric-lbl">Training Live</div><div class="metric-val" id="break-admin-training">--</div></div>
+      <div class="metric m-teal"><div class="metric-lbl">Tracker Team</div><div class="metric-val" id="break-admin-team">--</div><div class="metric-sub" id="break-admin-chat">Chat space pending</div></div>
+    </div>
+    <div class="break-toolbar">
+      <div class="break-toolbar-group">
+        <span class="break-toolbar-label">Tracker Date</span>
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">Prev</button>
+        <input type="date" id="break-admin-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next</button>
+        <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
+      </div>
+      <div class="break-toolbar-group">
+        <span class="break-history-chip" id="break-admin-history-chip">Today</span>
+        <button class="break-toolbar-btn" onclick="downloadBreakReport()">Download report</button>
+      </div>
+    </div>
+    <div class="break-layout">
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Break Tracker Board</span>
+            <span class="chip" id="break-board-chip">0 tracked</span>
+          </div>
+          <div class="break-callout" style="margin-bottom:12px;">
+            <div class="break-callout-left">
+              <div class="break-callout-title">Live Floor Signal</div>
+              <div class="break-callout-copy">Live taps update the board instantly and mirror the away lane into Chat when the webhook is linked.</div>
+            </div>
+            <span class="chip" id="break-callout-chip">Awaiting first event</span>
+          </div>
+          <div class="break-board" id="break-board">
+            <div class="break-empty">Loading team tracker...</div>
+          </div>
+        </div>
+      </div>
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Break Feed</span>
+            <span class="chip" id="break-feed-chip">0 events</span>
+          </div>
+          <div class="break-log-list" id="break-feed">
+            <div class="break-empty">Loading break events...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HALL OF FAME -->
+  <div class="page" id="tab-hall">
+    <div class="card hof-frame-shell">
+      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- BONUS GUIDE -->
+  <div class="page" id="tab-bonus">
+    <div class="card bonus-frame-shell">
+      <iframe class="bonus-frame" src="/bonus-guide.html" title="Bonus Guide" loading="lazy"></iframe>
+    </div>
+  </div>
+
 </div><!-- /adminView -->
 
 <!-- AGENT VIEW -->
 <div id="agentView" style="display:none;padding:16px 20px;">
-  <div class="metrics">
-    <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="am-avail">--</div></div>
-    <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="am-unavail">--</div></div>
-    <div class="metric m-blue"><div class="metric-lbl">On Call</div><div class="metric-val" id="am-oncall">--</div></div>
-    <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="am-inbound">--</div></div>
-    <div class="metric m-purple"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="am-outbound">--</div></div>
+  <div class="agent-shell-nav">
+    <button class="agent-shell-btn active" onclick="switchAgentSection('dashboard',this)">Dashboard</button>
+    <button class="agent-shell-btn" onclick="switchAgentSection('breakbot',this)">Break Bot</button>
+    <button class="agent-shell-btn" onclick="switchAgentSection('hall',this)">Hall of Fame</button>
+    <button class="agent-shell-btn" onclick="switchAgentSection('bonus',this)">Bonus Guide</button>
   </div>
-  <div class="card">
-    <div class="card-hdr">
-      <span class="card-title">Team Status</span>
-      <span class="chip" id="agent-view-count">0 agents</span>
+  <div class="agent-shell-page active" id="agent-section-dashboard">
+    <div class="metrics">
+      <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="am-avail">--</div></div>
+      <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="am-unavail">--</div></div>
+      <div class="metric m-blue"><div class="metric-lbl">On Call</div><div class="metric-val" id="am-oncall">--</div></div>
+      <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="am-inbound">--</div></div>
+      <div class="metric m-purple"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="am-outbound">--</div></div>
     </div>
-    <div class="tbl-wrap">
-    <table>
-      <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>24h</th><th>In</th><th>Out</th><th>Score</th></tr></thead>
-      <tbody id="agent-view-table"><tr><td colspan="11" class="no-data">Loading...</td></tr></tbody>
-    </table>
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Team Status</span>
+        <span class="chip" id="agent-view-count">0 agents</span>
+      </div>
+      <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Agent</th><th>Live</th><th>Status</th><th>Since</th><th>Avail Today</th><th>Unavail Today</th><th>24h</th><th>In</th><th>Out</th><th>Score</th></tr></thead>
+        <tbody id="agent-view-table"><tr><td colspan="11" class="no-data">Loading...</td></tr></tbody>
+      </table>
+      </div>
+    </div>
+    <div class="refresh-info">Auto-refresh every 15s &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
+  </div>
+  <div class="agent-shell-page" id="agent-section-breakbot">
+    <div class="break-toolbar">
+      <div class="break-toolbar-group">
+        <span class="break-toolbar-label">Tracker Date</span>
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">Prev</button>
+        <input type="date" id="break-agent-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
+        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next</button>
+        <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
+      </div>
+      <div class="break-toolbar-group">
+        <span class="break-history-chip" id="break-agent-history-chip">Today</span>
+      </div>
+    </div>
+    <div class="break-layout">
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Break Board</span><span class="chip" id="break-board-agent-chip">0 tracked</span></div>
+          <div class="break-board" id="break-board-agent"><div class="break-empty">Loading...</div></div>
+        </div>
+      </div>
+      <div class="break-stack">
+        <div class="card">
+          <div class="card-hdr"><span class="card-title">Break Feed</span><span class="chip" id="break-feed-agent-chip">0 events</span></div>
+          <div class="break-log-list" id="break-feed-agent"><div class="break-empty">Loading...</div></div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="refresh-info">Auto-refresh every 15s &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
+  <div class="agent-shell-page" id="agent-section-hall">
+    <div class="card hof-frame-shell">
+      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame" loading="lazy"></iframe>
+    </div>
+  </div>
+  <div class="agent-shell-page" id="agent-section-bonus">
+    <div class="card bonus-frame-shell">
+      <iframe class="bonus-frame" src="/bonus-guide.html" title="Bonus Guide" loading="lazy"></iframe>
+    </div>
+  </div>
 </div>
 
 <footer>
@@ -1216,6 +1377,1413 @@ window.addEventListener('resize',()=>{
     renderGoogleButton();
   }
 });
+
+/* ── BREAK TRACKER JS ─────────────────────────────── */
+let currentAgentSection = 'dashboard';
+let breakTrackerDateOverride = null;
+function switchAgentSection(section,el){
+  currentAgentSection=section;
+  document.querySelectorAll('.agent-shell-btn').forEach(btn=>btn.classList.remove('active'));
+  document.querySelectorAll('.agent-shell-page').forEach(page=>page.classList.remove('active'));
+  const next=document.getElementById('agent-section-'+section);
+  if(next)next.classList.add('active');
+  if(el)el.classList.add('active');
+  if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
+  if(section==='breakbot')loadBreakTracker();
+}
+
+function resizeHallFrame(frame){
+  try{
+    const doc=frame.contentDocument||frame.contentWindow.document;
+    if(!doc)return;
+    const bodyHeight=doc.body?doc.body.scrollHeight:0;
+    const htmlHeight=doc.documentElement?doc.documentElement.scrollHeight:0;
+    const nextHeight=Math.max(bodyHeight,htmlHeight,1200)+8;
+    frame.style.height=nextHeight+'px';
+  }catch(e){}
+}
+
+function initEmbeddedFrames(){
+  document.querySelectorAll('.hof-frame,.bonus-frame').forEach(frame=>{
+    if(frame.dataset.resizeBound!=='yes'){
+      frame.addEventListener('load',()=>resizeHallFrame(frame));
+      frame.dataset.resizeBound='yes';
+    }
+    if(frame.contentDocument)setTimeout(()=>resizeHallFrame(frame),30);
+  });
+}
+
+function doLogout(){
+  sessionStorage.clear();currentUser=null;currentEmail=null;currentRole=null;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
+  google.accounts.id.disableAutoSelect();
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginMsg').innerHTML='';
+}
+function showLoginMsg(msg){document.getElementById('loginMsg').innerHTML='<div class="login-msg-error">'+msg+'</div>';}
+function loadSession(){
+  const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');
+  if(u&&r)startApp(u,r,p);
+  else if(window.google)google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:handleGoogleCredential});
+}
+
+// TZ
+function toggleTZ(){
+  currentTZ=currentTZ==='CST'?'IST':'CST';
+  document.getElementById('tzLabel').textContent=currentTZ;
+  document.getElementById('tzOther').textContent=currentTZ==='CST'?'IST':'CST';
+  const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
+  refresh();
+}
+function activeTimeZone(){return TZ[currentTZ]||TZ.CST;}
+function parseStamp(iso){
+  if(!iso)return null;
+  if(iso instanceof Date) return iso;
+  const raw=String(iso);
+  if(raw.includes('T')) return new Date(raw);
+  return new Date(raw.replace(' ','T')+'Z');
+}
+function toTime(iso){const dt=parseStamp(iso);if(!dt||Number.isNaN(dt.getTime()))return'--';return dt.toLocaleTimeString('en-US',{timeZone:TZ[currentTZ],hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function toDateTime(iso){const dt=parseStamp(iso);if(!dt||Number.isNaN(dt.getTime()))return'--';return dt.toLocaleString('en-US',{timeZone:TZ[currentTZ],month:'2-digit',day:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function nowTZ(){return new Date().toLocaleTimeString('en-US',{timeZone:TZ[currentTZ],hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});}
+function todayStr(){
+  return new Date().toLocaleDateString('en-CA',{timeZone:activeTimeZone()});
+}
+function shiftDate(dateStr, days){
+  const [y,m,d] = String(dateStr).split('-').map(Number);
+  const dt = new Date(Date.UTC(y,m-1,d+days,12,0,0));
+  return dt.toLocaleDateString('en-CA',{timeZone:activeTimeZone()});
+}
+function getBreakTrackerDate(){
+  return breakSelectedDate || todayStr();
+}
+function formatTrackerDate(dateStr){
+  if(!dateStr)return'--';
+  const [y,m,d]=String(dateStr).split('-').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d,12,0,0));
+  return dt.toLocaleDateString('en-US',{timeZone:activeTimeZone(),month:'short',day:'2-digit',year:'numeric'});
+}
+function breakHistoryMode(){
+  return getBreakTrackerDate()!==todayStr();
+}
+function syncBreakDateInputs(){
+  const selected=getBreakTrackerDate();
+  const label=breakHistoryMode()?'History · '+formatTrackerDate(selected):'Today · '+currentTZ;
+  ['break-admin-date','break-agent-date'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value=selected;
+  });
+  const adminChip=document.getElementById('break-admin-history-chip');
+  const agentChip=document.getElementById('break-agent-history-chip');
+  if(adminChip)adminChip.textContent=label;
+  if(agentChip)agentChip.textContent=label;
+}
+function syncBreakActionState(){
+  const isHistory=breakHistoryMode();
+  document.querySelectorAll('#agent-section-breakbot [data-break-action]').forEach(button=>{
+    button.disabled=isHistory;
+    button.classList.toggle('is-locked',isHistory);
+  });
+  const note=document.getElementById('break-history-note');
+  if(note){
+    note.classList.toggle('history',isHistory);
+    note.textContent=isHistory
+      ? 'History mode for '+formatTrackerDate(getBreakTrackerDate())+'. Switch back to today to post a new signal.'
+      : 'Viewing today. Break actions are live and will post straight into the tracker.';
+  }
+}
+function setBreakTrackerDate(nextDate){
+  breakSelectedDate=nextDate||todayStr();
+  syncBreakDateInputs();
+  syncBreakActionState();
+  loadBreakTracker();
+}
+function jumpBreakTrackerToday(){
+  setBreakTrackerDate(todayStr());
+}
+function shiftBreakTrackerWindow(days){
+  setBreakTrackerDate(shiftDate(getBreakTrackerDate(),days));
+}
+function updateClock(){const el=document.getElementById('clock');if(el)el.textContent=nowTZ();}
+function fmt(s){s=Math.round(s||0);if(s<60)return s+'s';const m=Math.floor(s/60),r=s%60;if(m<60)return m+'m'+(r?' '+r+'s':'');return Math.floor(m/60)+'h'+((m%60)?' '+(m%60)+'m':'');}
+function fmtTimer(s){s=Math.round(s||0);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+function queuePillCls(qs){
+  if(!qs||qs==='Unknown')return'p-unknown';
+  if(qs==='In Queue')return'p-inqueue';
+  if(qs==='Out of Queue'||qs==='This Queue Off'||qs==='All Queues Off')return'p-outqueue';
+  return'p-unknown';
+}
+function pillCls(st){
+  if(!st)return'p-unknown';
+  const s=st.toLowerCase();
+  if(s==='available')return'p-avail';
+  if(s==='unavailable'||s==='busy'||s==='dnd'||s==='away')return'p-unavail';
+  if(s==='on call'||s==='talking'||s==='oncall'||s==='callconnected')return'p-oncall';
+  if(s==='ringing')return'p-ringing';
+  if(s==='offline')return'p-unknown';
+  return'p-unknown';
+}
+function calcScore(avail,unavail,inC,outC,missed,toggles){
+  const t=avail+unavail;if(!t)return{v:0,c:'s-low'};
+  const calls=inC+outC;
+  const v=Math.round((avail/t)*60+(calls>0?(1-missed/calls)*25:25)+(1-Math.min(1,toggles/20))*15);
+  return{v,c:v>=75?'s-high':v>=50?'s-mid':'s-low'};
+}
+
+function mergeAbandonedCalls(...sources){
+  const seen=new Set(), merged=[];
+  sources.flat().filter(Boolean).forEach(call=>{
+    const key=[call.callId||'',call.startTime||'',call.agentId||call.extension||'',call.result||''].join('|');
+    if(seen.has(key)) return;
+    seen.add(key);
+    merged.push(call);
+  });
+  return merged.sort((a,b)=>(b.ringDuration||0)-(a.ringDuration||0)||String(b.startTime||'').localeCompare(String(a.startTime||'')));
+}
+
+function getDefaultSortDir(key){
+  return ['name','status','queueStatus','sinceTs','idx'].includes(key)?'asc':'desc';
+}
+
+function getStatusRank(status){
+  const s=String(status||'').toLowerCase();
+  if(s==='on call'||s==='talking'||s==='callconnected') return 0;
+  if(s==='ringing') return 1;
+  if(s==='available') return 2;
+  if(s==='unavailable'||s==='busy'||s==='dnd'||s==='away') return 3;
+  return 4;
+}
+
+function getQueueRank(queueStatus){
+  const s=String(queueStatus||'').toLowerCase();
+  if(s==='in queue') return 0;
+  if(s==='this queue off') return 1;
+  if(s==='all queues off' || s==='out of queue') return 2;
+  return 3;
+}
+
+function getSortValue(op, key){
+  switch(key){
+    case 'idx': return op.idx ?? 0;
+    case 'name': return String(op.agent?.name||'');
+    case 'status': return getStatusRank(op.status);
+    case 'queueStatus': return getQueueRank(op.queueStatus);
+    case 'sinceTs': return parseStamp(op.sinceTs)?.getTime() || 0;
+    case 'availableSeconds': return op.availableSeconds || 0;
+    case 'unavailableSeconds': return op.unavailableSeconds || 0;
+    case 'toggleCount': return op.toggleCount || 0;
+    case 'inboundCalls': return op.inboundCalls || 0;
+    case 'outboundCalls': return op.outboundCalls || 0;
+    case 'missedCalls': return op.missedCalls || 0;
+    case 'ahtInbound': return op.sum?.ahtInbound || 0;
+    case 'ahtOutbound': return op.sum?.ahtOutbound || 0;
+    case 'score': return op.performanceScore?.v || 0;
+    default: return 0;
+  }
+}
+
+function sortAgentOps(agentOps, table){
+  const state=dashboardSortState[table]||{key:'idx',dir:'asc'};
+  const dir=state.dir==='asc'?1:-1;
+  return agentOps.slice().sort((a,b)=>{
+    const av=getSortValue(a,state.key);
+    const bv=getSortValue(b,state.key);
+    let cmp=0;
+    if(typeof av==='string' || typeof bv==='string'){
+      cmp=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});
+    }else{
+      cmp=(Number(av)||0)-(Number(bv)||0);
+    }
+    if(cmp===0) cmp=String(a.agent?.name||'').localeCompare(String(b.agent?.name||''),undefined,{numeric:true,sensitivity:'base'});
+    if(cmp===0) cmp=(a.idx||0)-(b.idx||0);
+    return cmp*dir;
+  });
+}
+
+function renderSortHeaders(){
+  document.querySelectorAll('th.sortable').forEach(th=>{
+    const table=th.dataset.table;
+    const key=th.dataset.sortKey;
+    const label=th.dataset.label||th.textContent.trim();
+    const state=dashboardSortState[table]||{key:'idx',dir:'asc'};
+    const active=state.key===key;
+    th.classList.toggle('active-sort',active);
+    th.innerHTML='<span class="sort-head">'+label+'<span class="sort-indicator">'+(active?(state.dir==='asc'?'▲':'▼'):'↕')+'</span></span>';
+  });
+}
+
+function bindSortHeaders(){
+  document.querySelectorAll('th.sortable').forEach(th=>{
+    if(th.dataset.bound==='1') return;
+    th.dataset.bound='1';
+    th.addEventListener('click',()=>{
+      const table=th.dataset.table;
+      const key=th.dataset.sortKey;
+      const state=dashboardSortState[table]||{key:'idx',dir:'asc'};
+      if(state.key===key) state.dir=state.dir==='asc'?'desc':'asc';
+      else { state.key=key; state.dir=getDefaultSortDir(key); }
+      dashboardSortState[table]=state;
+      renderSortHeaders();
+      loadAgentStatuses();
+    });
+  });
+  renderSortHeaders();
+}
+
+function normalizeLiveStatus(live, fallbackStatus){
+  if(!live) return fallbackStatus||'Unknown';
+  if(live.displayStatus) return live.displayStatus;
+  if(live.normalizedStatus) return live.normalizedStatus;
+  const tel=(live.telephonyStatus||'').toLowerCase();
+  const pres=(live.presenceStatus||'').toLowerCase();
+
+  if(tel==='callconnected' || tel==='oncall' || tel==='talking') return 'On Call';
+  if(tel==='ringing') return 'Ringing';
+
+  if(pres==='available') return 'Available';
+  if(pres==='busy' || pres==='unavailable' || pres==='dnd' || pres==='away') return 'Unavailable';
+  if(pres==='offline') return 'Offline';
+
+  return fallbackStatus||'Unknown';
+}
+
+function deriveStatusInfo(agentId, fallbackStatus){
+  const evts=timelineData[agentId]||[];
+  const lastEvent=evts[evts.length-1];
+  const live=liveCallData[agentId]||{};
+  const status=normalizeLiveStatus(live, live.normalizedStatus||lastEvent?.status||fallbackStatus);
+  let sinceTs=null;
+
+  if(live.stateSince) sinceTs=live.stateSince;
+  if(!sinceTs && (status==='On Call' || status==='Ringing')) sinceTs=live.callStartTime||null;
+
+  if(!sinceTs){
+    for(let ei=evts.length-1;ei>=0;ei--){
+      if(evts[ei].status===status && (ei===0 || evts[ei-1].status!==evts[ei].status)){
+        sinceTs=evts[ei].timestamp;
+        break;
+      }
+    }
+  }
+
+  if(!sinceTs && lastEvent && lastEvent.status===status) sinceTs=lastEvent.timestamp;
+  if(!sinceTs && live.fetchedAt) sinceTs=live.fetchedAt;
+
+  return { evts, lastEvent, live, status, sinceTs };
+}
+
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+
+function normalizeQueueStatus(live, lastEvent){
+  if(live && live.queueStatus) return live.queueStatus;
+  if(lastEvent && lastEvent.queue_status) return lastEvent.queue_status;
+  return 'Unknown';
+}
+
+function isQueueReadyLive(status, queueStatus){
+  return status==='Available' && queueStatus==='In Queue';
+}
+
+function isQueueOff(queueStatus){
+  return queueStatus==='All Queues Off' || queueStatus==='This Queue Off' || queueStatus==='Out of Queue';
+}
+
+function getAbandonBand(ringSeconds){
+  const ring=Math.round(ringSeconds||0);
+  if(ring>=25) return { cls:'abandon-long', label:'Critical Ring' };
+  if(ring>=12) return { cls:'abandon-medium', label:'Slow Pick' };
+  return { cls:'abandon-short', label:'Short Ring' };
+}
+
+function buildAbandonIndex(calls){
+  return (calls||[]).reduce((acc,call)=>{
+    const keys=[call.agentId, call.extension].filter(Boolean);
+    keys.forEach(key=>{
+      if(!acc[key]) acc[key]=[];
+      acc[key].push(call);
+    });
+    return acc;
+  },{});
+}
+
+function computeAgentRisk(agentOp){
+  const totalSeconds=(agentOp.availableSeconds||0)+(agentOp.unavailableSeconds||0);
+  const unavailableShare=totalSeconds>0?(agentOp.unavailableSeconds||0)/totalSeconds:1;
+  let score=8;
+
+  if(agentOp.status==='Unavailable') score+=30;
+  else if(agentOp.status==='On Call') score+=18;
+  else if(agentOp.status==='Ringing') score+=22;
+
+  if(agentOp.queueStatus==='All Queues Off') score+=28;
+  else if(agentOp.queueStatus==='This Queue Off' || agentOp.queueStatus==='Out of Queue') score+=18;
+  else if(agentOp.queueStatus==='Unknown') score+=10;
+
+  score+=Math.round(unavailableShare*18);
+  score+=Math.min(18,(agentOp.missedCalls||0)*6);
+  score+=Math.min(18,(agentOp.abandonedCount||0)*6);
+
+  if((agentOp.longestAbandonRing||0)>=25) score+=16;
+  else if((agentOp.longestAbandonRing||0)>=12) score+=8;
+
+  if((agentOp.toggleCount||0)>=6) score+=10;
+  else if((agentOp.toggleCount||0)>=3) score+=5;
+
+  if(agentOp.queueReady) score-=18;
+  if(agentOp.queueReady && (agentOp.missedCalls||0)===0 && (agentOp.abandonedCount||0)===0) score-=8;
+
+  score=clamp(Math.round(score),0,100);
+  const reasons=[];
+  if(agentOp.queueStatus==='All Queues Off') reasons.push('all queues off');
+  else if(agentOp.queueStatus==='This Queue Off' || agentOp.queueStatus==='Out of Queue') reasons.push('queue off');
+  if(agentOp.status==='Unavailable') reasons.push('currently unavailable');
+  if((agentOp.abandonedCount||0)>0) reasons.push(`${agentOp.abandonedCount} abandoned`);
+  if((agentOp.missedCalls||0)>0) reasons.push(`${agentOp.missedCalls} missed`);
+  if((agentOp.longestAbandonRing||0)>=12) reasons.push(`ring ${fmt(agentOp.longestAbandonRing)}`);
+
+  return {
+    riskScore:score,
+    riskCopy:reasons.length?reasons.join(' · '):'healthy coverage'
+  };
+}
+
+function buildAgentOpsDataset(agents, today){
+  const abandonIndex=buildAbandonIndex(abandonedCalls);
+  return agents.map((a,idx)=>{
+    const sum=todaySummary[a.rc_id]||{};
+    const info=deriveStatusInfo(a.rc_id, a.rc_id?'Offline':'Unknown');
+    const queueStatus=normalizeQueueStatus(info.live, info.lastEvent);
+    const agentAbandons=abandonIndex[a.rc_id]||abandonIndex[a.extension]||[];
+    const longestAbandonRing=agentAbandons.reduce((mx,call)=>Math.max(mx,call.ringDuration||0),0);
+    const inboundCalls=sum.inboundCalls||0;
+    const outboundCalls=sum.outboundCalls||0;
+    const totalCalls=inboundCalls+outboundCalls;
+    const blendedAht=totalCalls>0?Math.round((((sum.ahtInbound||0)*inboundCalls)+((sum.ahtOutbound||0)*outboundCalls))/totalCalls):0;
+    const op={
+      idx,
+      agent:a,
+      sum,
+      evts:info.evts,
+      live:info.live,
+      status:info.status,
+      sinceTs:info.sinceTs,
+      queueStatus,
+      queueReady:isQueueReadyLive(info.status, queueStatus),
+      queueOff:isQueueOff(queueStatus),
+      availableSeconds:sum.availableSeconds||0,
+      unavailableSeconds:sum.unavailableSeconds||0,
+      inboundCalls,
+      outboundCalls,
+      totalCalls,
+      blendedAht,
+      missedCalls:sum.missedCalls||0,
+      toggleCount:sum.toggleCount||info.evts.filter((e,i)=>i>0&&info.evts[i-1].status!==e.status).length,
+      abandonedCount:agentAbandons.length,
+      longestAbandonRing,
+      abandons:agentAbandons,
+      timelineHtml:buildTL(a.rc_id,today),
+      performanceScore:calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,sum.inboundCalls||0,sum.outboundCalls||0,sum.missedCalls||0,sum.toggleCount||0)
+    };
+    return {...op,...computeAgentRisk(op)};
+  });
+}
+
+function buildDangerCards(agentOps){
+  if(!agentOps.length)return'<div class="no-data">No monitored agents yet.</div>';
+
+  const coverageGap=agentOps.filter(op=>!op.queueReady).sort((a,b)=>b.riskScore-a.riskScore);
+  const abandonedHot=agentOps.filter(op=>op.abandonedCount>0).sort((a,b)=>b.abandonedCount-a.abandonedCount||b.longestAbandonRing-a.longestAbandonRing);
+  const volatile=agentOps.filter(op=>op.toggleCount>0).sort((a,b)=>b.toggleCount-a.toggleCount);
+  const missHeavy=agentOps.filter(op=>op.missedCalls>0).sort((a,b)=>b.missedCalls-a.missedCalls||b.riskScore-a.riskScore);
+
+  const cards=[
+    coverageGap.length ? {
+      cls:'danger-critical',
+      title:`${coverageGap.length} agents are not queue-ready`,
+      body:`${coverageGap[0].agent.name} is the highest-risk coverage gap right now with ${coverageGap[0].status.toLowerCase()} / ${coverageGap[0].queueStatus.toLowerCase()}.`,
+      meta:[`Worst: ${coverageGap[0].agent.name}`, `Since ${toTime(coverageGap[0].sinceTs)}`, coverageGap[0].riskCopy]
+    } : {
+      cls:'danger-watch',
+      title:'Coverage is holding',
+      body:'Everyone currently shown as queue-ready can still take calls, so there is no immediate floor coverage gap.',
+      meta:['No immediate gap', 'Queue-ready now']
+    },
+    abandonedHot.length ? {
+      cls:'danger-warning',
+      title:`${abandonedCalls.length} abandoned calls need review`,
+      body:`${abandonedHot[0].agent.name} owns the heaviest abandon exposure with ${abandonedHot[0].abandonedCount} dropped calls and a top ring of ${fmt(abandonedHot[0].longestAbandonRing)}.`,
+      meta:[`Owner: ${abandonedHot[0].agent.name}`, `Longest ${fmt(abandonedHot[0].longestAbandonRing)}`, `${abandonedHot.length} affected agents`]
+    } : {
+      cls:'danger-watch',
+      title:'No abandoned pressure detected',
+      body:'Inbound misses are not currently turning into abandoned-call pressure for the monitored team.',
+      meta:['0 abandoned', 'Clean abandon board']
+    },
+    missHeavy.length ? {
+      cls:'danger-warning',
+      title:`Missed-call hotspot around ${missHeavy[0].agent.name}`,
+      body:`${missHeavy[0].agent.name} has ${missHeavy[0].missedCalls} missed calls today, which makes them the first place to inspect before the queue slips further.`,
+      meta:[`Missed ${missHeavy[0].missedCalls}`, `Queue ${missHeavy[0].queueStatus}`, `Risk ${missHeavy[0].riskScore}`]
+    } : {
+      cls:'danger-watch',
+      title:'Missed-call pressure is quiet',
+      body:'No agent is showing meaningful missed-call buildup right now, which lowers immediate callback risk.',
+      meta:['Low miss pressure', 'Keep watching live']
+    },
+    volatile.length ? {
+      cls:'danger-watch',
+      title:`${volatile[0].agent.name} is the most volatile shift signal`,
+      body:`${volatile[0].agent.name} has toggled ${volatile[0].toggleCount} times today, which usually points to instability, call bursts, or queue-switch behavior.`,
+      meta:[`Toggles ${volatile[0].toggleCount}`, `Status ${volatile[0].status}`, `Queue ${volatile[0].queueStatus}`]
+    } : {
+      cls:'danger-watch',
+      title:'Status volatility is calm',
+      body:'The roster is not bouncing between states much, so the current shift looks operationally stable.',
+      meta:['Low toggle count', 'Stable floor']
+    }
+  ];
+
+  return cards.map(card=>'<div class="danger-card '+card.cls+'"><h4>'+card.title+'</h4><p>'+card.body+'</p><div class="danger-meta">'+card.meta.map(item=>'<span class="danger-pill">'+item+'</span>').join('')+'</div></div>').join('');
+}
+
+function buildAbandonBoard(agentOps){
+  if(!abandonedCalls.length){
+    return '<div class="no-data">No abandoned calls yet today.</div>';
+  }
+  return abandonedCalls.slice(0,10).map((call,idx)=>{
+    const band=getAbandonBand(call.ringDuration||0);
+    return '<div class="abandon-row">'+
+      '<div class="abandon-rank">'+String(idx+1).padStart(2,'0')+'</div>'+
+      '<div class="abandon-main">'+
+        '<div class="abandon-title">'+(call.agentName||'Unknown Agent')+' <span class="pill p-unavail"><span class="dot"></span>Abandoned</span></div>'+
+        '<div class="abandon-meta">'+
+          '<span>'+(call.extension?('Ext '+call.extension):'Queue level')+'</span>'+
+          '<span>'+String(call.result||'Unknown')+'</span>'+
+          '<span>At '+toTime(call.startTime)+'</span>'+
+          '<span>Hold '+fmt(call.holdDuration||0)+'</span>'+
+          '<span>Call '+String(call.callId||'').slice(-6)+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="abandon-time">'+
+        '<div class="abandon-ring">'+fmt(call.ringDuration||0)+'</div>'+
+        '<span class="abandon-band '+band.cls+'">'+band.label+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function initials(name){
+  const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
+  if(!parts.length)return'--';
+  return parts.slice(0,2).map(part=>part.charAt(0).toUpperCase()).join('');
+}
+
+function chooseUnique(sorted, used){
+  const hit=sorted.find(op=>!used.has(op.agent.rc_id||op.agent.extension||op.agent.name))||sorted[0]||null;
+  if(hit)used.add(hit.agent.rc_id||hit.agent.extension||hit.agent.name);
+  return hit;
+}
+
+function hofWidth(value,max,floor=14){
+  if(!max||max<=0)return floor+'%';
+  return Math.max(floor,Math.min(100,Math.round((value/max)*100)))+'%';
+}
+
+function hofSignal(op,label,value){
+  return '<div class="hof-stat"><span>'+label+'</span><strong>'+value+'</strong></div>';
+}
+
+function buildHallCard(kind,op,maxima){
+  if(!op)return'';
+  const cfg={
+    hero:{label:'Hall of Fame', title:'MVP Crown', icon:'&#9818;', tone:'var(--orange)', soft:'#ffd056', copy:`${op.agent.name} is setting the pace with ${op.totalCalls} calls, ${fmt(op.availableSeconds)} queue-ready time, and ${op.missedCalls} missed.`, stats:[hofSignal(op,'Score',op.performanceScore.v),hofSignal(op,'Calls',op.totalCalls),hofSignal(op,'Queue Ready',fmt(op.availableSeconds))]},
+    volume:{label:'Calls Leader', title:'Volume Ace', icon:'&#9889;', tone:'var(--blue2)', soft:'#7ad1ff', copy:`${op.totalCalls} total calls moved today with ${op.inboundCalls} inbound and ${op.outboundCalls} outbound.`, stats:[`Calls ${op.totalCalls}`,`IN ${op.inboundCalls}`,`OUT ${op.outboundCalls}`], meter:hofWidth(op.totalCalls,maxima.calls)},
+    guardian:{label:'Queue Ready', title:'Queue Guardian', icon:'&#128737;', tone:'var(--green)', soft:'#58f0b1', copy:`${fmt(op.availableSeconds)} queue-ready time keeps this agent at the front of the floor.`, stats:[`Ready ${fmt(op.availableSeconds)}`,`Queue ${op.queueStatus}`,`Missed ${op.missedCalls}`], meter:hofWidth(op.availableSeconds,maxima.ready)},
+    speed:{label:'Fastest Pace', title:'Fast Hands', icon:'&#9201;', tone:'var(--purple)', soft:'#b49cff', copy:`A blended AHT of ${fmt(op.blendedAht)} across ${op.totalCalls} calls keeps this lane moving.`, stats:[`AHT ${fmt(op.blendedAht)}`,`Calls ${op.totalCalls}`,`Score ${op.performanceScore.v}`], meter:hofWidth(Math.max(1,maxima.speed-op.blendedAht+1),maxima.speed)},
+    clean:{label:'Quality Signal', title:'Clean Sweep', icon:'&#10003;', tone:'var(--teal)', soft:'#64f2ff', copy:`${op.totalCalls} calls with ${op.missedCalls} missed and ${op.abandonedCount} abandons linked makes this the cleanest dayboard.`, stats:[`Missed ${op.missedCalls}`,`Abd ${op.abandonedCount}`,`Calls ${op.totalCalls}`], meter:hofWidth(Math.max(1,op.totalCalls-(op.missedCalls||0)-(op.abandonedCount||0)),Math.max(1,maxima.calls))}
+  }[kind];
+  if(!cfg)return'';
+
+  if(kind==='hero'){
+    return '<div class="hof-hero-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
+      '<div class="hof-hero-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
+      '<div class="hof-hero-main">'+
+        '<div class="hof-avatar hero">'+initials(op.agent.name)+'</div>'+
+        '<div><div class="hof-overline">'+cfg.title+'</div><div class="hof-name">'+op.agent.name+'</div><div class="hof-ext">Ext. '+(op.agent.extension||'--')+' &middot; '+op.status+'</div></div>'+
+        '<div class="hof-score-badge"><span>Score</span><strong>'+op.performanceScore.v+'</strong></div>'+
+      '</div>'+
+      '<div class="hof-copy">'+cfg.copy+'</div>'+
+      '<div class="hof-stats">'+cfg.stats.join('')+'</div>'+
+    '</div>';
+  }
+
+  return '<div class="hof-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
+    '<div class="hof-card-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
+    '<div class="hof-card-body">'+
+      '<div class="hof-avatar mini">'+initials(op.agent.name)+'</div>'+
+      '<div><div class="hof-overline">'+cfg.title+'</div><h4>'+op.agent.name+'</h4><p>'+cfg.copy+'</p></div>'+
+    '</div>'+
+    '<div class="hof-stack">'+cfg.stats.map(item=>'<span>'+item+'</span>').join('')+'</div>'+
+    '<div class="hof-meter" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+';--hof-width:'+cfg.meter+'"><i></i></div>'+
+  '</div>';
+}
+
+function buildHallMiniCard(kind,op,maxima){
+  if(!op)return'';
+  const cfg={
+    hero:{label:'MVP', title:'Crown Holder', icon:'&#9818;', tone:'var(--orange)', soft:'#ffd056', copy:`${op.totalCalls} calls &middot; ${fmt(op.availableSeconds)} ready`, score:'Score '+op.performanceScore.v, meter:hofWidth(op.performanceScore.v,100)},
+    volume:{label:'Volume', title:'Most Calls', icon:'&#9889;', tone:'var(--blue2)', soft:'#7ad1ff', copy:`${op.inboundCalls} IN &middot; ${op.outboundCalls} OUT`, score:'Calls '+op.totalCalls, meter:hofWidth(op.totalCalls,maxima.calls)},
+    guardian:{label:'Queue', title:'Longest Ready', icon:'&#128737;', tone:'var(--green)', soft:'#58f0b1', copy:`${fmt(op.availableSeconds)} ready &middot; ${op.queueStatus}`, score:'Missed '+op.missedCalls, meter:hofWidth(op.availableSeconds,maxima.ready)}
+  }[kind];
+  if(!cfg)return'';
+  return '<div class="hof-mini-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
+    '<div class="hof-mini-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
+    '<div class="hof-mini-body">'+
+      '<div class="hof-avatar mini">'+initials(op.agent.name)+'</div>'+
+      '<div><div class="hof-overline">'+cfg.title+'</div><h4>'+op.agent.name+'</h4><p>'+cfg.copy+'</p></div>'+
+    '</div>'+
+    '<div class="hof-mini-score">'+cfg.score+'</div>'+
+    '<div class="hof-meter" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+';--hof-width:'+cfg.meter+'"><i></i></div>'+
+  '</div>';
+}
+
+function renderHallOfFame(agentOps){
+  const ops=agentOps.filter(Boolean);
+  const adminHero=document.getElementById('hof-admin-hero');
+  const adminGrid=document.getElementById('hof-admin-grid');
+  const agentGrid=document.getElementById('hof-agent-grid');
+  const adminRange=document.getElementById('hof-admin-range');
+  const agentRange=document.getElementById('hof-agent-range');
+  if(adminRange)adminRange.textContent='Today · '+currentTZ;
+  if(agentRange)agentRange.textContent='Today · '+currentTZ;
+  if(!ops.length){
+    if(adminHero)adminHero.innerHTML='<div class="hof-empty">No monitored agents yet.</div>';
+    if(adminGrid)adminGrid.innerHTML='<div class="hof-empty">Add agents to start spotlighting the floor.</div>';
+    if(agentGrid)agentGrid.innerHTML='<div class="hof-empty">No podium until agents are being monitored.</div>';
+    return;
+  }
+
+  const maxima={
+    calls:Math.max(1,...ops.map(op=>op.totalCalls||0)),
+    ready:Math.max(1,...ops.map(op=>op.availableSeconds||0)),
+    speed:Math.max(1,...ops.map(op=>op.blendedAht||0))
+  };
+  const used=new Set();
+  const scoreSorted=ops.slice().sort((a,b)=>b.performanceScore.v-a.performanceScore.v||b.totalCalls-a.totalCalls||b.availableSeconds-a.availableSeconds);
+  const hero=chooseUnique(scoreSorted,used)||ops[0];
+  const volume=chooseUnique(ops.filter(op=>op.totalCalls>0).sort((a,b)=>b.totalCalls-a.totalCalls||b.performanceScore.v-a.performanceScore.v),used)||hero;
+  const guardian=chooseUnique(ops.filter(op=>op.availableSeconds>0).sort((a,b)=>b.availableSeconds-a.availableSeconds||b.totalCalls-a.totalCalls),used)||volume||hero;
+  const speed=chooseUnique(ops.filter(op=>op.blendedAht>0&&op.totalCalls>=3).sort((a,b)=>a.blendedAht-b.blendedAht||b.totalCalls-a.totalCalls),used)||guardian||hero;
+  const clean=chooseUnique(ops.filter(op=>op.totalCalls>=3).sort((a,b)=>(a.missedCalls+a.abandonedCount)-(b.missedCalls+b.abandonedCount)||b.totalCalls-a.totalCalls||b.performanceScore.v-a.performanceScore.v),used)||speed||hero;
+
+  if(adminHero)adminHero.innerHTML=buildHallCard('hero',hero,maxima);
+  if(adminGrid)adminGrid.innerHTML=[
+    buildHallCard('volume',volume,maxima),
+    buildHallCard('guardian',guardian,maxima),
+    buildHallCard('speed',speed,maxima),
+    buildHallCard('clean',clean,maxima)
+  ].join('');
+  if(agentGrid)agentGrid.innerHTML=[
+    buildHallMiniCard('hero',hero,maxima),
+    buildHallMiniCard('volume',volume,maxima),
+    buildHallMiniCard('guardian',guardian,maxima)
+  ].join('');
+}
+
+const BREAK_ACTION_META = {
+  LOGGED_IN: { label: 'Logged In', badge: 'IN', copy: 'Shift started' },
+  LOGGED_OUT: { label: 'Logged Out', badge: 'OUT', copy: 'Shift closed' },
+  BRB_OUT: { label: 'BRB Out', badge: 'OUT', copy: 'Quick away started' },
+  BRB_IN: { label: 'BRB In', badge: 'IN', copy: 'Returned from BRB' },
+  BREAK_OUT: { label: 'Break Out', badge: 'OUT', copy: 'Break started' },
+  BREAK_IN: { label: 'Break In', badge: 'IN', copy: 'Returned from break' },
+  TRAINING_OUT: { label: 'Training / Coaching Out', badge: 'OUT', copy: 'Training or coaching started' },
+  TRAINING_IN: { label: 'Training / Coaching In', badge: 'IN', copy: 'Returned from training or coaching' },
+  QA_SESSION_OUT: { label: 'QA Session AUX Out', badge: 'OUT', copy: 'QA AUX session started' },
+  QA_SESSION_IN: { label: 'QA Session AUX In', badge: 'IN', copy: 'Returned from QA AUX session' }
+};
+
+function breakStatusClass(status){
+  if(status === 'Logged In') return 'online';
+  if(status === 'Logged Out') return 'offline';
+  if(status === 'BRB') return 'brb';
+  if(status === 'Break') return 'break';
+  if(status === 'Training / Coaching') return 'training';
+  if(status === 'QA Session AUX') return 'qa';
+  return 'offline';
+}
+
+function breakStatusColorClass(status){
+  if(status === 'Logged In') return 'p-avail';
+  if(status === 'Logged Out') return 'p-unavail';
+  if(status === 'BRB') return 'p-oncall';
+  if(status === 'Break') return 'p-outqueue';
+  if(status === 'Training / Coaching') return 'p-training';
+  if(status === 'QA Session AUX') return 'p-qaaux';
+  return 'p-unknown';
+}
+
+function breakChatLabel(){
+  if(!breakTrackerMeta.enabled) return 'Local tracker only';
+  return breakTrackerMeta.target || 'Chat space live';
+}
+
+function applyAditBranding(){
+  document.title='Adit Agent Monitor';
+  document.querySelectorAll('.main-logo').forEach(node => {
+    node.src = ADIT_LOGO_DARK;
+    node.alt = 'Adit';
+  });
+  document.querySelectorAll('.login-brand-logo').forEach(node => {
+    node.src = ADIT_LOGO_DARK;
+    node.alt = 'Adit';
+  });
+  document.querySelectorAll('.hdr-logo-adit').forEach(node => {
+    node.src = ADIT_LOGO_DARK;
+    node.alt = 'Adit';
+  });
+  document.querySelectorAll('.hdr-logo-rc').forEach(node => {
+    const sep = node.nextElementSibling;
+    if(sep && sep.classList.contains('hdr-sep')) sep.remove();
+    node.remove();
+  });
+  const loginSub = document.querySelector('.login-left .login-sub');
+  if(loginSub){
+    loginSub.innerHTML='Adit operations visibility for T1 CS Stars<br>Live &middot; Break Bot &middot; Performance';
+  }
+}
+
+function getSelfBreakRow(){
+  if(!currentEmail) return null;
+  return (breakTrackerData.tracker || []).find(row => String(row.email || '').toLowerCase() === String(currentEmail || '').toLowerCase()) || null;
+}
+
+function buildBreakFeedRow(event, compact=false){
+  const meta = BREAK_ACTION_META[event.action] || { label: event.actionLabel || event.action || 'Event', badge: 'LOG', copy: 'Logged event' };
+  const durationCopy = event.linkedDurationSeconds ? ' · Duration ' + fmt(event.linkedDurationSeconds) : '';
+  const notifyCls = event.notified ? 'ok' : (event.notifyStatus === 'disabled' ? 'warn' : '');
+  const notifyText = event.notified ? 'Chat posted' : (event.notifyStatus === 'disabled' ? 'Saved locally' : (event.notifyStatus ? event.notifyStatus : 'Pending'));
+  return '<div class="break-log-row">'+
+    '<div class="break-log-badge">'+meta.badge+'</div>'+
+    '<div class="break-log-main">'+
+      '<div class="break-log-title">'+(event.username || 'Agent')+' · '+meta.label+'</div>'+
+      '<div class="break-log-sub">'+meta.copy+durationCopy+(event.note ? ' · '+event.note : '')+'</div>'+
+      '<div class="break-log-sub"><span class="break-mini-chip '+notifyCls+'">'+notifyText+'</span></div>'+
+    '</div>'+
+    '<div class="break-log-time">'+toTime(event.createdAt)+'</div>'+
+  '</div>';
+}
+
+function renderBreakAdminView(){
+  const summary = breakTrackerData.summary || {};
+  const tracker = breakTrackerData.tracker || [];
+  const recentLog = breakTrackerData.recentLog || [];
+  const selectedDate=getBreakTrackerDate();
+  const ids = {
+    loggedin: document.getElementById('break-admin-loggedin'),
+    loggedout: document.getElementById('break-admin-loggedout'),
+    brb: document.getElementById('break-admin-brb'),
+    breakNow: document.getElementById('break-admin-break'),
+    training: document.getElementById('break-admin-training'),
+    qa: document.getElementById('break-admin-qa'),
+    team: document.getElementById('break-admin-team'),
+    chat: document.getElementById('break-admin-chat'),
+    boardChip: document.getElementById('break-board-chip'),
+    board: document.getElementById('break-board'),
+    feedChip: document.getElementById('break-feed-chip'),
+    feed: document.getElementById('break-feed'),
+    callout: document.getElementById('break-callout-chip'),
+    historyChip: document.getElementById('break-admin-history-chip')
+  };
+  if(ids.loggedin) ids.loggedin.textContent = summary.loggedInNow ?? 0;
+  if(ids.loggedout) ids.loggedout.textContent = summary.loggedOutNow ?? 0;
+  if(ids.brb) ids.brb.textContent = summary.brbNow ?? 0;
+  if(ids.breakNow) ids.breakNow.textContent = summary.breakNow ?? 0;
+  if(ids.training) ids.training.textContent = summary.trainingNow ?? 0;
+  if(ids.qa) ids.qa.textContent = summary.qaNow ?? 0;
+  if(ids.team) ids.team.textContent = summary.teamCount ?? 0;
+  if(ids.chat) ids.chat.textContent = breakChatLabel();
+  if(ids.historyChip) ids.historyChip.textContent = breakHistoryMode() ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
+  if(ids.boardChip) ids.boardChip.textContent = (summary.teamCount ?? 0) + ' tracked';
+  if(ids.callout) ids.callout.textContent = breakHistoryMode() ? 'History view' : (breakTrackerMeta.enabled ? 'Chat space live' : 'Chat setup pending');
+
+  if(ids.board){
+    ids.board.innerHTML = tracker.length ? tracker.map(row => {
+      return '<div class="break-user-card '+breakStatusClass(row.currentStatus)+'">'+
+        '<div class="break-user-top">'+
+          '<div><div class="break-user-name">'+row.username+'</div><div class="break-user-meta">'+row.email+'</div></div>'+
+          '<span class="break-user-status">'+row.currentStatus+'</span>'+
+        '</div>'+
+        '<div class="break-user-grid">'+
+          '<div class="break-user-metric"><span>Since</span><strong>'+(row.since ? toTime(row.since) : '--')+'</strong></div>'+
+          '<div class="break-user-metric"><span>BRB Today</span><strong>'+fmt(row.brbSeconds || 0)+'</strong></div>'+
+          '<div class="break-user-metric"><span>Break Today</span><strong>'+fmt(row.breakSeconds || 0)+'</strong></div>'+
+          '<div class="break-user-metric"><span>Training</span><strong>'+fmt(row.trainingSeconds || 0)+'</strong></div>'+
+          '<div class="break-user-metric"><span>QA AUX</span><strong>'+fmt(row.qaSeconds || 0)+'</strong></div>'+
+        '</div>'+
+        '<div class="break-user-meta" style="margin-top:12px;">Last action · '+(row.lastActionLabel || 'No activity')+(row.lastActionAt ? ' · '+toTime(row.lastActionAt) : '')+'</div>'+
+      '</div>';
+    }).join('') : '<div class="break-empty">No break tracker activity found for '+formatTrackerDate(selectedDate)+'.</div>';
+  }
+
+  if(ids.feedChip) ids.feedChip.textContent = recentLog.length + ' events';
+  if(ids.feed){
+    ids.feed.innerHTML = recentLog.length ? recentLog.map(event => buildBreakFeedRow(event)).join('') : '<div class="break-empty">No break events found for '+formatTrackerDate(selectedDate)+'.</div>';
+  }
+}
+
+function renderBreakAgentView(){
+  const self = getSelfBreakRow();
+  const selectedDate=getBreakTrackerDate();
+  const isHistory=breakHistoryMode();
+  const chatChip = document.getElementById('break-agent-chat-chip');
+  const heroChat = document.getElementById('break-hero-chat-label');
+  const historyChip = document.getElementById('break-agent-history-chip');
+  if(chatChip) chatChip.textContent = breakChatLabel();
+  if(heroChat) heroChat.textContent = breakChatLabel();
+  if(historyChip) historyChip.textContent = isHistory ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
+  const statusEl = document.getElementById('break-self-status');
+  const statusCopyEl = document.getElementById('break-self-status-copy');
+  const sinceEl = document.getElementById('break-self-since');
+  const sinceCopyEl = document.getElementById('break-self-since-copy');
+  const brbEl = document.getElementById('break-self-brb');
+  const breakEl = document.getElementById('break-self-break');
+  const trainingEl = document.getElementById('break-self-training');
+  const qaEl = document.getElementById('break-self-qa');
+  const logChip = document.getElementById('break-self-log-chip');
+  const logList = document.getElementById('break-self-log');
+
+  if(!self){
+    if(statusEl) statusEl.innerHTML = '<span class="pill p-unknown"><span class="dot"></span>Not Started</span>';
+    if(statusCopyEl) statusCopyEl.textContent = isHistory ? 'No personal break log was found for this date.' : 'Use Logged In once your shift starts. Away and return signals will stack here.';
+    if(sinceEl) sinceEl.textContent = '--';
+    if(sinceCopyEl) sinceCopyEl.textContent = isHistory ? 'Viewing '+formatTrackerDate(selectedDate)+' in '+currentTZ+'.' : 'No signal logged yet.';
+    if(brbEl) brbEl.textContent = '0s';
+    if(breakEl) breakEl.textContent = '0s';
+    if(trainingEl) trainingEl.textContent = '0s';
+    if(qaEl) qaEl.textContent = '0s';
+    if(logChip) logChip.textContent = '0 events';
+    if(logList) logList.innerHTML = '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
+    return;
+  }
+
+  if(statusEl) statusEl.innerHTML = '<span class="pill '+breakStatusColorClass(self.currentStatus)+'"><span class="dot"></span>'+self.currentStatus+'</span>';
+  if(statusCopyEl) statusCopyEl.textContent = (self.currentStatus === 'Logged In'
+    ? 'Desk signal is green. You are live in tracker.'
+    : self.currentStatus === 'Logged Out'
+      ? 'Shift closed. No away timer is running.'
+      : self.currentStatus === 'BRB'
+        ? 'Quick-away timer is active.'
+        : self.currentStatus === 'Break'
+          ? 'Break timer is active.'
+          : self.currentStatus === 'Training / Coaching'
+            ? 'Training or coaching session is active.'
+            : 'QA AUX timer is active.');
+  if(sinceEl) sinceEl.textContent = self.since ? toTime(self.since) : '--';
+  if(sinceCopyEl) sinceCopyEl.textContent = self.since ? (isHistory ? 'Historical snapshot in '+currentTZ+'.' : 'Latest signal update in '+currentTZ+'.') : 'No recent signal change.';
+  if(brbEl) brbEl.textContent = fmt(self.brbSeconds || 0);
+  if(breakEl) breakEl.textContent = fmt(self.breakSeconds || 0);
+  if(trainingEl) trainingEl.textContent = fmt(self.trainingSeconds || 0);
+  if(qaEl) qaEl.textContent = fmt(self.qaSeconds || 0);
+  if(logChip) logChip.textContent = (self.events || []).length + ' events';
+  if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
+}
+
+async function loadBreakTracker(){
+  const selectedDate=getBreakTrackerDate();
+  try{
+    const res = await fetch(BACKEND+'/api/break-tracker?date='+selectedDate+'&tz='+encodeURIComponent(activeTimeZone()));
+    const json = await res.json();
+    breakTrackerMeta = json.chat || { enabled: false, target: 'Chat space' };
+    breakTrackerData = json.success && json.data ? json.data : { summary:{}, tracker:[], recentLog:[] };
+  }catch(e){
+    breakTrackerMeta = { enabled: false, target: 'Chat space' };
+    breakTrackerData = { summary:{}, tracker:[], recentLog:[] };
+  }
+  syncBreakDateInputs();
+  syncBreakActionState();
+  renderBreakAdminView();
+  renderBreakAgentView();
+}
+
+async function sendBreakAction(action, btn){
+  if(breakHistoryMode()){
+    showToast('Switch back to today before posting a live break action.','warning');
+    return;
+  }
+  if(!currentUser || !currentEmail){
+    showToast('Your login session is missing email details. Please log in again.','error');
+    return;
+  }
+  const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
+  buttons.forEach(button => button.disabled = true);
+  if(btn) btn.classList.add('syncing');
+  try{
+    const res = await fetch(BACKEND+'/api/break-events',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        username: currentUser,
+        email: currentEmail,
+        role: currentRole || 'agent',
+        action,
+        date: todayStr(),
+        tz: activeTimeZone()
+      })
+    });
+    const json = await res.json();
+    if(!json.success) throw new Error(json.error || 'Unable to save break event');
+    const note = json.notification?.notified
+      ? ' + posted to '+(json.notification.target || 'Chat space')
+      : (json.notification?.status === 'disabled' ? ' (saved locally)' : '');
+    breakSelectedDate=todayStr();
+    syncBreakDateInputs();
+    showToast((json.data?.event?.actionLabel || 'Break event')+' saved'+note, json.notification?.notified ? 'success' : 'info', 3600);
+    await refresh();
+  }catch(e){
+    showToast(e.message || 'Break event failed','error');
+  }finally{
+    buttons.forEach(button => button.disabled = false);
+    if(btn) btn.classList.remove('syncing');
+  }
+}
+
+// TIMELINE
+function buildTL(agentId,date){
+  const segs=timelineData[agentId]||[];
+  if(!segs.length)return'<div class="tl-bar"><div class="tl-seg tl-gap" style="width:100%"></div></div>';
+  const dayStart=new Date(date+'T00:00:00+05:30').getTime();
+  const now=Math.min(Date.now(),dayStart+86400000);
+  const total=now-dayStart;
+  let html='',pos=dayStart;
+  segs.forEach(seg=>{
+    const stamp=parseStamp(seg.timestamp);
+    const s=stamp?stamp.getTime():dayStart;
+    if(s>pos&&s>dayStart)html+='<div class="tl-seg tl-gap" style="width:'+Math.max(0,(s-pos)/total*100).toFixed(2)+'%"></div>';
+    const pct=Math.max(0.3,((now-Math.max(s,dayStart))/total*100)).toFixed(2);
+    const cls=seg.status==='Available'?'tl-avail':seg.status==='Unavailable'?'tl-unavail':'tl-oncall';
+    html+='<div class="tl-seg '+cls+'" style="width:'+pct+'%" title="'+seg.status+': '+toTime(seg.timestamp)+'"></div>';
+    pos=s;
+  });
+  return'<div class="tl-bar">'+html+'</div>';
+}
+
+function buildToggleLog(agentId){
+  const evts=timelineData[agentId]||[];
+  const changes=[];
+  for(let i=1;i<evts.length;i++){
+    if(evts[i-1].status!==evts[i].status){
+      const isAU=evts[i-1].status==='Available';
+      changes.push('<div class="toggle-entry"><span class="'+(isAU?'t-au':'t-ua')+'">'+(isAU?'A→U':'U→A')+'</span><span style="color:var(--text3);font-size:9px;font-family:JetBrains Mono,monospace"> '+toTime(evts[i].timestamp)+'</span></div>');
+    }
+  }
+  if(!changes.length)return'<span style="color:var(--text3);font-size:10px">--</span>';
+  return'<div class="toggle-log">'+changes.slice(-3).join('')+(changes.length>3?'<div style="color:var(--text3);font-size:9px">+' +(changes.length-3)+' more</div>':'')+'</div>';
+}
+
+function evtToggle(el){el.parentElement.classList.toggle('open');}
+
+function switchTab(tab,el){
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  el.classList.add('active');
+  if(tab==='reports'){const dp=document.getElementById('date-picker');if(dp&&!dp.value)dp.value=todayStr();loadReport();}
+  if(tab==='loginlogs')loadLoginLogs();
+  if(tab==='breaks')loadBreakTracker();
+  if(tab==='agents')loadAgents();
+  if(tab==='access')loadRoles();
+  if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
+}
+
+// Old single-agent autocomplete removed - using bulk panel
+document.addEventListener('click',e=>{if(!e.target.closest('#tab-agents')){}});
+
+// DATA
+async function loadTodaySummary(){
+  const today=todayStr();
+  const yesterday=shiftDate(today,-1);
+  const tz=encodeURIComponent(activeTimeZone());
+  try{
+    const[sr,tr,lr,yr,qr,ar]=await Promise.all([
+      fetch(BACKEND+'/api/summary?date='+today+'&tz='+tz),
+      fetch(BACKEND+'/api/presence-events?date='+today+'&tz='+tz),
+      fetch(BACKEND+'/api/live-status'),
+      fetch(BACKEND+'/api/summary?date='+yesterday+'&tz='+tz),
+      fetch(BACKEND+'/api/queue-dashboard?date='+today+'&tz='+tz),
+      fetch(BACKEND+'/api/abandoned-calls?date='+today+'&tz='+tz)
+    ]);
+    const sd=await sr.json(),td=await tr.json(),ld=await lr.json(),yd=await yr.json();
+    let qd={success:false,data:null};
+    let ad={success:false,data:null};
+    try{
+      const ct=qr.headers.get('content-type')||'';
+      if(qr.ok&&ct.includes('application/json')) qd=await qr.json();
+    }catch(e){}
+    try{
+      const ct=ar.headers.get('content-type')||'';
+      if(ar.ok&&ct.includes('application/json')) ad=await ar.json();
+    }catch(e){}
+    todaySummary={};if(sd.success)sd.data.forEach(r=>{todaySummary[r.agentId]=r;});
+    yesterdaySummary={};if(yd.success)yd.data.forEach(r=>{yesterdaySummary[r.agentId]=r;});
+    timelineData={};
+    if(td.success)td.data.forEach(s=>{if(!timelineData[s.agent_id])timelineData[s.agent_id]=[];timelineData[s.agent_id].push(s);});
+    liveCallData=ld.success?ld.data:{};
+    queueDashboardSummary=qd.success&&qd.data?qd.data:{};
+    const dbAbandons=ad.success&&Array.isArray(ad.data)?ad.data:[];
+    const queueAbandons=Array.isArray(queueDashboardSummary.abandonedCalls)?queueDashboardSummary.abandonedCalls:[];
+    abandonedCalls=mergeAbandonedCalls(queueAbandons,dbAbandons);
+  }catch(e){todaySummary={};abandonedCalls=[];queueDashboardSummary={};}
+}
+
+async function loadAgentStatuses(){
+  try{
+    const res=await fetch(BACKEND+'/api/agents');
+    const json=await res.json();
+    if(!json.success)return;
+    const agents=json.data,today=todayStr();
+    const agentOps=buildAgentOpsDataset(agents,today);
+    let totAvail=0,totUnavail=0,totOncall=0,totIn=0,totOut=0,totMissed=0;
+    let ahtInSum=0,ahtOutSum=0,ahtInCnt=0,ahtOutCnt=0;
+
+    const sortedAdminOps=sortAgentOps(agentOps,'admin');
+    const rows=sortedAdminOps.map((op,idx)=>{
+      const { agent:a, sum, evts, live, status, sinceTs, queueStatus }=op;
+      const sl=(status||'').toLowerCase();
+      if(sl==='available')totAvail++;
+      else if(sl==='unavailable')totUnavail++;
+      else if(sl==='on call'||sl==='talking'||sl==='callconnected')totOncall++;
+      const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
+      const ahtIn=sum.ahtInbound||0,ahtOut=sum.ahtOutbound||0;
+      totIn+=inC;totOut+=outC;totMissed+=missed;
+      if(inC>0){ahtInSum+=ahtIn*inC;ahtInCnt+=inC;}
+      if(outC>0){ahtOutSum+=ahtOut*outC;ahtOutCnt+=outC;}
+      const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;
+      const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
+      const tLog=buildToggleLog(a.rc_id);
+      let liveBadge='<span style="color:var(--text3);font-size:11px">&mdash;</span>';
+      if(live.isOnCall){
+        const dir=live.direction==='Inbound'?'IN':'OUT';
+        const tid='lt-'+a.rc_id;
+        const dur=live.callDuration||0;
+        liveBadge='<div class="live-badge"><span class="live-dot2"></span>'+dir+' <span class="live-timer" id="'+tid+'">'+fmtTimer(dur)+'</span></div>';
+        if(!liveTimers[a.rc_id]){liveTimers[a.rc_id]={start:Date.now()-dur*1000,el:tid};}
+      }else{if(liveTimers[a.rc_id]){clearInterval(liveTimers[a.rc_id].interval);delete liveTimers[a.rc_id];}}
+      const missedBadge='<span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span>';
+      return'<tr><td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
+        '<td><div class="agent-name">'+a.name+'</div><div class="agent-ext">'+a.extension+'</div></td>'+
+        '<td>'+liveBadge+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td>'+
+        '<td><span class="pill '+queuePillCls(queueStatus)+'"><span class="dot"></span>'+queueStatus+'</span></td>'+
+        '<td class="mono">'+toTime(sinceTs)+'</td>'+
+        '<td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td>'+
+        '<td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td>'+
+        '<td>'+tLog+'</td><td>'+op.timelineHtml+'</td>'+
+        '<td class="mono" style="color:var(--teal)">'+inC+'</td>'+
+        '<td class="mono" style="color:var(--orange2)">'+outC+'</td>'+
+        '<td>'+missedBadge+'</td>'+
+        '<td class="mono">'+fmt(ahtIn)+'</td><td class="mono">'+fmt(ahtOut)+'</td>'+
+        '<td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
+    });
+
+    const tbody=document.getElementById('agent-table');
+    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="16" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
+
+    document.getElementById('m-avail').textContent=totAvail;
+    document.getElementById('m-unavail').textContent=totUnavail;
+    document.getElementById('m-oncall').textContent=totOncall;
+    const queueDash=queueDashboardSummary&&queueDashboardSummary.date===today?queueDashboardSummary:null;
+    const teamVoicemailTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).voicemails||0),0);
+    const teamTransferTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).transferCount||0),0);
+    const dashboardInbound=Math.max(queueDash?queueDash.inboundCount||0:0,totIn);
+    const dashboardOutbound=Math.max(queueDash?queueDash.outboundCount||0:0,totOut);
+    const dashboardAbandoned=Math.max(queueDash?queueDash.abandonedCount||0:0,abandonedCalls.length);
+    const dashboardVoicemail=Math.max(queueDash?queueDash.voicemailCount||0:0,teamVoicemailTotal);
+    const dashboardTransfers=Math.max(queueDash?queueDash.transferCount||0:0,teamTransferTotal);
+    const dashboardRing=queueDash&&queueDash.avgRingTime!=null?queueDash.avgRingTime:0;
+    const dashboardHold=queueDash&&queueDash.avgHoldTime!=null?queueDash.avgHoldTime:0;
+
+    document.getElementById('m-inbound').textContent=dashboardInbound;
+    document.getElementById('m-outbound').textContent=dashboardOutbound;
+    document.getElementById('m-missed').textContent=dashboardAbandoned;
+    const inboundAht=queueDash&&queueDash.ahtInbound!=null?queueDash.ahtInbound:(ahtInCnt>0?Math.round(ahtInSum/ahtInCnt):0);
+    const outboundAht=queueDash&&queueDash.ahtOutbound!=null?queueDash.ahtOutbound:(ahtOutCnt>0?Math.round(ahtOutSum/ahtOutCnt):0);
+    document.getElementById('m-missed-pct').textContent=queueDash&&queueDash.longestRing?('Longest '+fmt(queueDash.longestRing)):'Clean';
+    document.getElementById('m-inbound-aht').textContent='AHT '+(dashboardInbound>0&&inboundAht>0?fmt(inboundAht):'--');
+    document.getElementById('m-outbound-aht').textContent='AHT '+(dashboardOutbound>0&&outboundAht>0?fmt(outboundAht):'--');
+    document.getElementById('agent-count').textContent=agents.length+' agents';
+
+    const rings=agents.map(a=>(todaySummary[a.rc_id]||{}).avgRingTime||0).filter(v=>v>0);
+    const avgRing=rings.length?Math.round(rings.reduce((a,b)=>a+b)/rings.length):0;
+    const totHold=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).totalHoldTime||0),0);
+    const vmEl=document.getElementById('m-voicemail');if(vmEl)vmEl.textContent=dashboardVoicemail;
+    const xfEl=document.getElementById('m-transfers');if(xfEl)xfEl.textContent=dashboardTransfers;
+    const rtEl=document.getElementById('m-ringtime');if(rtEl)rtEl.textContent=(queueDash?dashboardRing:avgRing)>0?fmt(queueDash?dashboardRing:avgRing):'--';
+    const htEl=document.getElementById('m-holdtime');if(htEl)htEl.textContent=(queueDash?dashboardHold:totHold)>0?fmt(queueDash?dashboardHold:totHold):'--';
+
+    Object.keys(liveTimers).forEach(rcId=>{
+      const t=liveTimers[rcId];
+      if(!t.interval){t.interval=setInterval(()=>{const el=document.getElementById(t.el);if(el)el.textContent=fmtTimer(Math.floor((Date.now()-t.start)/1000));else{clearInterval(t.interval);delete liveTimers[rcId];}},1000);}
+    });
+
+    const sortedOps=agentOps.slice().sort((a,b)=>b.riskScore-a.riskScore||b.abandonedCount-a.abandonedCount||a.agent.name.localeCompare(b.agent.name));
+    const queueReadyNow=agentOps.filter(op=>op.queueReady).length;
+    const coverageGap=agentOps.filter(op=>!op.queueReady).length;
+    const queueOffNow=agentOps.filter(op=>op.queueOff).length;
+    const longestRing=queueDash&&queueDash.longestRing!=null?queueDash.longestRing:abandonedCalls.reduce((mx,call)=>Math.max(mx,call.ringDuration||0),0);
+    const affectedAgentCount=new Set(abandonedCalls.map(call=>call.agentId||call.extension).filter(Boolean)).size;
+    const topAbandonOwner=sortedOps.slice().sort((a,b)=>b.abandonedCount-a.abandonedCount||b.longestAbandonRing-a.longestAbandonRing)[0];
+    renderHallOfFame(agentOps);
+
+    if(currentViewMode==='admin'){
+      document.getElementById('ops-team-size').textContent=agents.length;
+      document.getElementById('ops-queue-ready').textContent=queueReadyNow;
+      document.getElementById('ops-abandon-count').textContent=dashboardAbandoned;
+      document.getElementById('ops-longest-ring').textContent=longestRing?fmt(longestRing):'--';
+      const mixTotal=Math.max(1,dashboardInbound+dashboardOutbound+dashboardVoicemail+dashboardAbandoned);
+      document.getElementById('mix-inbound-bar').style.width=((dashboardInbound/mixTotal)*100).toFixed(2)+'%';
+      document.getElementById('mix-outbound-bar').style.width=((dashboardOutbound/mixTotal)*100).toFixed(2)+'%';
+      document.getElementById('mix-voicemail-bar').style.width=((dashboardVoicemail/mixTotal)*100).toFixed(2)+'%';
+      document.getElementById('mix-abandon-bar').style.width=((dashboardAbandoned/mixTotal)*100).toFixed(2)+'%';
+      document.getElementById('mix-inbound-val').textContent=dashboardInbound;
+      document.getElementById('mix-outbound-val').textContent=dashboardOutbound;
+      document.getElementById('mix-voicemail-val').textContent=dashboardVoicemail;
+      document.getElementById('mix-abandon-val').textContent=dashboardAbandoned;
+      const healthScore=Math.max(0,Math.min(100,Math.round(100-(dashboardAbandoned*8)-(dashboardVoicemail*3)-(queueOffNow*5)-(coverageGap*2))));
+      const healthLabel=healthScore>=75?'Calm':healthScore>=45?'Watch':'Risk';
+      const gauge=document.getElementById('health-gauge');
+      if(gauge)gauge.style.setProperty('--gauge',(healthScore*3.6).toFixed(1)+'deg');
+      document.getElementById('health-score').textContent=healthScore;
+      document.getElementById('health-label').textContent=healthLabel;
+      const teamBase=Math.max(1,agents.length);
+      document.getElementById('health-ready-bar').style.width=((queueReadyNow/teamBase)*100).toFixed(1)+'%';
+      document.getElementById('health-live-bar').style.width=((totOncall/teamBase)*100).toFixed(1)+'%';
+      document.getElementById('health-off-bar').style.width=((queueOffNow/teamBase)*100).toFixed(1)+'%';
+      document.getElementById('health-ready-val').textContent=queueReadyNow;
+      document.getElementById('health-live-val').textContent=totOncall;
+      document.getElementById('health-off-val').textContent=queueOffNow;
+      document.getElementById('abandon-radar-count').textContent=dashboardAbandoned+' calls';
+      document.getElementById('abandon-total').textContent=dashboardAbandoned;
+      document.getElementById('abandon-total-sub').textContent=dashboardAbandoned?(affectedAgentCount+' owners affected'):'Clean';
+      document.getElementById('abandon-longest').textContent=longestRing?fmt(longestRing):'--';
+      document.getElementById('abandon-longest-sub').textContent=longestRing?toTime(abandonedCalls[0]?.startTime||null):'--';
+      document.getElementById('abandon-owner').textContent=topAbandonOwner&&topAbandonOwner.abandonedCount?topAbandonOwner.agent.name.split(' ')[0]:'--';
+      document.getElementById('abandon-owner-sub').textContent=topAbandonOwner&&topAbandonOwner.abandonedCount?(topAbandonOwner.abandonedCount+' calls · '+fmt(topAbandonOwner.longestAbandonRing)):'--';
+      document.getElementById('abandon-board').innerHTML=buildAbandonBoard(agentOps);
+    }
+
+    if(currentViewMode==='agent'){
+      const sortedAgentOps=sortAgentOps(agentOps,'agent');
+      const agentRows=sortedAgentOps.map((op,idx)=>{
+        const a=op.agent;
+        const sum=todaySummary[a.rc_id]||{};
+        const status=op?op.status:'Unknown';
+        const sinceTs=op?op.sinceTs:null;
+        const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
+        const toggles=(op&&op.toggleCount)||0;
+        const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
+        const tl=buildTL(a.rc_id,todayStr());
+        let lb='<span style="color:var(--text3)">&mdash;</span>';
+        if(op&&op.live.isOnCall){const dir=op.live.direction==='Inbound'?'IN':'OUT';lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
+        return'<tr><td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+a.name+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td><td class="mono">'+toTime(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td>'+tl+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
+      });
+      const at=document.getElementById('agent-view-table');
+      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="12" class="no-data">No agents</td></tr>';
+      document.getElementById('ag-avail').textContent=totAvail;
+      document.getElementById('ag-unavail').textContent=totUnavail;
+      document.getElementById('ag-oncall').textContent=totOncall;
+      document.getElementById('ag-inbound').textContent=totIn;
+      document.getElementById('ag-outbound').textContent=totOut;
+      document.getElementById('agent-view-count').textContent=agents.length+' agents';
+      document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
+    }
+  }catch(e){console.error('loadAgentStatuses',e);}
+}
+
+async function loadEventLog(){
+  try{
+    const res=await fetch(BACKEND+'/api/presence-events?date='+todayStr()+'&tz='+encodeURIComponent(activeTimeZone()));
+    const json=await res.json();
+    if(!json.success)return;
+    const events=json.data;
+    document.getElementById('event-count').textContent=events.length+' events';
+    const container=document.getElementById('event-log');
+    if(!events.length){container.innerHTML='<div class="no-data">No status changes today</div>';return;}
+    const grouped={};
+    events.forEach(e=>{if(!grouped[e.agent_name])grouped[e.agent_name]=[];grouped[e.agent_name].push(e);});
+    container.innerHTML=Object.entries(grouped).map(([agent,evts])=>{
+      const last=evts[evts.length-1];
+      const changes=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status);
+      const rows=evts.slice().reverse().map(e=>'<div class="evt-row"><div class="evt-time">'+toDateTime(e.timestamp)+'</div><div><span class="pill '+pillCls(e.status)+'">'+e.status+'</span></div></div>').join('');
+      return'<div class="evt-group"><div class="evt-hdr" onclick="evtToggle(this)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>'+changes.length+' toggles</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body">'+rows+'</div></div>';
+    }).join('');
+  }catch(e){console.error('loadEventLog',e);}
+}
+
+// AGENTS - BULK ADD
+let searchResultsData = [];
+let selectedAgents = new Set();
+let panelTimeout = null;
+
+async function searchAgentsPanel(q){
+  const resultsWrap = document.getElementById('agentSearchResults');
+  const resultsList = document.getElementById('searchResultsList');
+  const label = document.getElementById('searchResultsLabel');
+  if(!resultsWrap || !resultsList) return;
+  if(q.length < 2){ resultsWrap.style.display='none'; return; }
+  clearTimeout(panelTimeout);
+  panelTimeout = setTimeout(async()=>{
+    resultsList.innerHTML = '<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center;">Searching...</div>';
+    resultsWrap.style.display = 'block';
+    try{
+      const r = await fetch(BACKEND+'/api/rc-search?q='+encodeURIComponent(q));
+      const j = await r.json();
+      if(!j.success || !j.data.length){
+        resultsList.innerHTML='<div style="padding:14px;color:var(--text3);font-size:12px;text-align:center;">No results found</div>';
+        return;
+      }
+      const monitored = await fetch(BACKEND+'/api/agents').then(r=>r.json()).catch(()=>({data:[]}));
+      const monitoredExts = new Set((monitored.data||[]).map(a=>a.extension));
+      searchResultsData = j.data;
+      label.textContent = j.data.length + ' result(s) — select to add';
+      resultsList.innerHTML = j.data.map((u,i) => {
+        const isAdded = monitoredExts.has(u.extension);
+        const isSelected = selectedAgents.has(u.extension);
+        const chk = isAdded ? 'disabled checked' : (isSelected ? 'checked' : '');
+        const opacity = isAdded ? 'opacity:0.5;' : '';
+        const addedBadge = isAdded ? ' <span style="color:var(--green);font-size:10px;">&#10003; Already monitored</span>' : '';
+        return '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--border);'+opacity+'transition:background 0.15s;">'+
+          '<input type="checkbox" '+chk+' id="srcb-'+i+'" onchange="toggleAgentCb(this)" style="width:15px;height:15px;cursor:'+(isAdded?'not-allowed':'pointer')+';" data-ext="'+u.extension+'" data-name="'+u.name+'" data-email="'+(u.email||'')+'">'+
+          '<label for="srcb-'+i+'" style="flex:1;cursor:'+(isAdded?'not-allowed':'pointer')+';">'+
+          '<div style="font-size:12px;font-weight:600;color:'+(isAdded?'var(--text3)':'var(--text)')+'">'+u.name+addedBadge+'</div>'+
+          '<div style="font-size:10px;color:var(--text3);font-family:JetBrains Mono,monospace;margin-top:2px;">Ext: '+u.extension+(u.email?' &middot; '+u.email:'')+'</div>'+
+          '</label></div>';
+      }).join('');
+      resultsWrap.style.display = 'block';
+      updateAddBtn();
+    }catch(e){
+      resultsList.innerHTML='<div style="padding:14px;color:var(--red);font-size:12px;">Search error: '+e.message+'</div>';
+    }
+  }, 400);
+}
+
+function toggleAgentCb(cb){
+  const ext = cb.dataset.ext;
+  if(cb.checked) selectedAgents.add(ext);
+  else selectedAgents.delete(ext);
+  updateAddBtn();
+}
+
+function toggleAllResults(checked){
+  document.querySelectorAll('#searchResultsList input[type=checkbox]:not([disabled])').forEach(cb=>{
+    cb.checked = checked;
+    if(checked) selectedAgents.add(cb.dataset.ext);
+    else selectedAgents.delete(cb.dataset.ext);
+  });
+  updateAddBtn();
+}
+
+function selectAllSearchResults(){
+  document.getElementById('checkAllResults').checked = true;
+  toggleAllResults(true);
+}
+
+function updateAddBtn(){
+  const btn = document.getElementById('addSelectedBtn');
+  const cnt = document.getElementById('selectedCount');
+  if(!btn) return;
+  if(selectedAgents.size > 0){
+    btn.style.display = 'inline-flex';
+    if(cnt) cnt.textContent = selectedAgents.size;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function addSelectedAgents(){
+  if(!selectedAgents.size){ showToast('Select at least one agent','warning'); return; }
+  const toAdd = searchResultsData.filter(u => selectedAgents.has(u.extension));
+  showToast('Adding '+toAdd.length+' agent(s)...','info');
+  let added=0, failed=0;
+  for(const agent of toAdd){
+    try{
+      const res = await fetch(BACKEND+'/api/agents',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:agent.name, extension:agent.extension, email:agent.email||''})
+      });
+      const json = await res.json();
+      if(json.success) added++;
+      else { console.error('Failed:', agent.name, json.error); failed++; }
+    }catch(e){ console.error('Error:', agent.name, e); failed++; }
+  }
+  // Reset state
+  selectedAgents.clear();
+  document.getElementById('agentSearchInput').value = '';
+  document.getElementById('agentSearchResults').style.display = 'none';
+  const chkAll = document.getElementById('checkAllResults');
+  if(chkAll) chkAll.checked = false;
+  updateAddBtn();
+  if(added > 0){ showToast(added+' agent(s) added!','success'); }
+  if(failed > 0){ showToast(failed+' failed to add','error'); }
+  loadAgents();
+  // Trigger RC sync for newly added agents
+  if(added > 0) setTimeout(()=>fetch(BACKEND+'/api/refresh',{method:'POST'}),1000);
+}
+
+async function loadAgents(){
+  try{
+    const res=await fetch(BACKEND+'/api/agents');
+    const json=await res.json();
+    const agents=json.data||[];
+    document.getElementById('agentCount').textContent=agents.length;
+    if(!agents.length){
+      document.getElementById('agentGrid').innerHTML='<div class="no-data">No agents yet. Search above to add agents.</div>';
+      return;
+    }
+    document.getElementById('agentGrid').innerHTML=agents.map(a=>{
+      const vCls=a.rc_id?'verified':'pending';
+      const vTxt=a.rc_id?'&#10003; Synced':'&#8987; Pending sync';
+      return '<div class="agent-card">'+
+        '<div>'+
+          '<div class="agent-card-name">'+a.name+'</div>'+
+          '<div class="agent-card-meta">Ext '+a.extension+(a.email?' &middot; '+a.email:'')+
+          ' &middot; <span class="'+vCls+'">'+vTxt+'</span></div>'+
+        '</div>'+
+        '<button class="btn btn-danger btn-sm" data-ext="'+a.extension+'" data-name="'+a.name+'" onclick="removeAgentBtn(this)">&#10005; Remove</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){showToast('Error loading agents','error');}
+}
+
+// addAgent replaced by addSelectedAgents
+
+function removeAgentBtn(btn){
+  const name=btn.dataset.name, ext=btn.dataset.ext;
+  if(!confirm('Remove '+name+' from monitoring?\nThis will stop tracking their status and calls.'))return;
+  btn.disabled=true;btn.textContent='Removing...';
+  fetch(BACKEND+'/api/agents/'+ext,{method:'DELETE'})
+    .then(r=>r.json())
+    .then(j=>{
+      if(j.success){showToast(name+' removed from monitoring','success');loadAgents();}
+      else{showToast('Error: '+j.error,'error');btn.disabled=false;btn.textContent='&#10005; Remove';}
+    })
+    .catch(()=>{showToast('Network error','error');btn.disabled=false;btn.textContent='&#10005; Remove';});
+}
+
+// ROLES
+async function loadRoles(){
+  try{
+    const res=await fetch(BACKEND+'/api/roles');const json=await res.json();const roles=json.data||[];
+    document.getElementById('roleCount').textContent=roles.length+' users';
+    if(!roles.length){document.getElementById('roleGrid').innerHTML='<div class="no-data">No roles.</div>';return;}
+    document.getElementById('roleGrid').innerHTML=roles.map(r=>{
+      const isCore=CORE_ADMINS.includes(r.email);
+      const removeBtn=isCore?'<span style="font-size:10px;color:var(--text3)">Core Admin</span>':'<button class="btn btn-danger btn-sm" data-email="'+r.email+'" onclick="deleteRoleBtn(this)">Remove</button>';
+      return'<div class="role-card"><div><div class="role-email">'+r.email+'</div><div class="role-by">by '+(r.added_by||'system')+'</div></div><div style="display:flex;align-items:center;gap:8px;"><span class="role-pill '+(r.role==='admin'?'role-admin':'role-agent')+'">'+r.role.toUpperCase()+'</span>'+removeBtn+'</div></div>';
+    }).join('');
+  }catch(e){showToast('Error','error');}
+}
+
+async function addRole(){
+  const email=document.getElementById('roleEmail').value.trim();
+  const role=document.getElementById('roleSelect').value;
+  if(!email){showToast('Email required','warning');return;}
+  try{
+    const res=await fetch(BACKEND+'/api/roles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser})});
+    const json=await res.json();
+    if(json.success){showToast('Saved','success');document.getElementById('roleEmail').value='';loadRoles();}else showToast('Error: '+json.error,'error');
+  }catch(e){showToast('Error','error');}
+}
+
+function deleteRoleBtn(btn){
+  if(!confirm('Remove '+btn.dataset.email+'?'))return;
+  fetch(BACKEND+'/api/roles/'+encodeURIComponent(btn.dataset.email),{method:'DELETE'}).then(r=>r.json()).then(j=>{if(j.success){showToast('Removed','success');loadRoles();}else showToast(j.error,'error');}).catch(()=>showToast('Error','error'));
+}
+
+// REPORTS
+async function loadReport(){
+  const date=document.getElementById('date-picker').value;
+  if(!date)return;
+  document.getElementById('report-date-label').textContent=date;
+  try{
+    const res=await fetch(BACKEND+'/api/summary?date='+date+'&tz='+encodeURIComponent(activeTimeZone()));
+    const json=await res.json();
+    reportData=json.success?json.data:[];
+    const tbody=document.getElementById('report-table');
+    if(!reportData.length){tbody.innerHTML='<tr><td colspan="14" class="no-data">No data for this date</td></tr>';['rs-agents','rs-avail','rs-unavail','rs-missed'].forEach(id=>document.getElementById(id).textContent='--');return;}
+    document.getElementById('rs-agents').textContent=reportData.length;
+    document.getElementById('rs-avail').textContent=fmt(reportData.reduce((s,r)=>s+(r.availableSeconds||0),0));
+    document.getElementById('rs-unavail').textContent=fmt(reportData.reduce((s,r)=>s+(r.unavailableSeconds||0),0));
+    document.getElementById('rs-missed').textContent=reportData.reduce((s,r)=>s+(r.missedCalls||0),0);
+    tbody.innerHTML=reportData.map((r,i)=>{
+      const total=(r.availableSeconds||0)+(r.unavailableSeconds||0);
+      const pct=total>0?Math.round((r.availableSeconds||0)/total*100):0;
+      const pc=pct>=70?'var(--green)':pct>=40?'var(--yellow)':'var(--red)';
+      const inC=r.inboundCalls||0,outC=r.outboundCalls||0,missed=r.missedCalls||0;
+      const totalCalls=inC+outC;
+      const missPct=totalCalls>0?Math.round(missed/totalCalls*100):0;
+      const sc=calcScore(r.availableSeconds||0,r.unavailableSeconds||0,inC,outC,missed,r.toggleCount||0);
+      return'<tr><td style="color:var(--text3)">'+(i+1)+'</td>'+
+        '<td><div class="agent-name">'+r.agentName+'</div></td>'+
+        '<td class="mono">'+r.extension+'</td>'+
+        '<td class="mono" style="color:var(--green)">'+fmt(r.availableSeconds)+'</td>'+
+        '<td class="mono" style="color:var(--red)">'+fmt(r.unavailableSeconds)+'</td>'+
+        '<td><div style="display:flex;align-items:center;gap:5px"><div style="width:44px;height:4px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+pc+';border-radius:2px;transition:width 0.6s ease"></div></div><span class="mono" style="color:'+pc+'">'+pct+'%</span></div></td>'+
+        '<td class="mono">'+(r.toggleCount||0)+'</td>'+
+        '<td class="mono" style="color:var(--teal)">'+inC+'</td>'+
+        '<td class="mono" style="color:var(--orange2)">'+outC+'</td>'+
+        '<td><span class="missed-badge '+(missed===0?'missed-zero':'missed-red')+'">'+missed+'</span></td>'+
+        '<td class="mono" style="color:'+(missPct>20?'var(--red)':missPct>10?'var(--yellow)':'var(--green)')+'">'+missPct+'%</td>'+
+        '<td class="mono">'+fmt(r.ahtInbound||0)+'</td>'+
+        '<td class="mono">'+fmt(r.ahtOutbound||0)+'</td>'+
+        '<td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
+    }).join('');
+  }catch(e){showToast('Error loading report','error');}
+}
+
+function downloadCSV(){
+  const date=document.getElementById('date-picker').value||todayStr();
+  if(!reportData.length){showToast('No data','warning');return;}
+  const rows=[['#','Agent','Ext','Available','Unavailable','Avail%','Toggles','Inbound','Outbound','Missed','Miss%','AHT In','AHT Out','Score']];
+  reportData.forEach((r,i)=>{
+    const t=(r.availableSeconds||0)+(r.unavailableSeconds||0);
+    const pct=t>0?Math.round((r.availableSeconds||0)/t*100):0;
+    const inC=r.inboundCalls||0,outC=r.outboundCalls||0,missed=r.missedCalls||0;
+    const missPct=(inC+outC)>0?Math.round(missed/(inC+outC)*100):0;
+    const sc=calcScore(r.availableSeconds||0,r.unavailableSeconds||0,inC,outC,missed,r.toggleCount||0);
+    rows.push([i+1,r.agentName,r.extension,fmt(r.availableSeconds),fmt(r.unavailableSeconds),pct+'%',r.toggleCount||0,inC,outC,missed,missPct+'%',fmt(r.ahtInbound||0),fmt(r.ahtOutbound||0),sc.v]);
+  });
+  const csv=rows.map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv,'+encodeURIComponent(csv);a.download='adit-report-'+date+'.csv';a.click();
+  showToast('CSV exported','success');
+}
+
+function downloadBreakReport(){
+  const date=getBreakTrackerDate();
+  const summary=breakTrackerData.summary||{};
+  const tracker=breakTrackerData.tracker||[];
+  const recentLog=breakTrackerData.recentLog||[];
+  if(!tracker.length && !recentLog.length){
+    showToast('No break data for the selected date','warning');
+    return;
+  }
+  const rows=[
+    ['Section','Field 1','Field 2','Field 3','Field 4','Field 5','Field 6','Field 7','Field 8','Field 9','Field 10'],
+    ['Report','Break Tracker',formatTrackerDate(date),currentTZ,breakChatLabel(),'','','','','',''],
+    ['Summary','Logged In',summary.loggedInNow ?? 0,'Logged Out',summary.loggedOutNow ?? 0,'BRB',summary.brbNow ?? 0,'Break',summary.breakNow ?? 0,'Training',summary.trainingNow ?? 0],
+    ['Summary','QA AUX',summary.qaNow ?? 0,'Team',summary.teamCount ?? 0,'','','','','',''],
+    [''],
+    ['Tracker','User','Email','Status','Since','BRB Today','Break Today','Training Today','QA AUX Today','Last Action','Last Action At']
+  ];
+  tracker.forEach(row=>{
+    rows.push([
+      'Tracker',
+      row.username || '--',
+      row.email || '--',
+      row.currentStatus || '--',
+      row.since ? toDateTime(row.since) : '--',
+      fmt(row.brbSeconds || 0),
+
 </script>
 </body>
 </html>
