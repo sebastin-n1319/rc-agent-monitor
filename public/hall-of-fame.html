@@ -350,23 +350,130 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'In
 <script>
 const MONTHS = ["Jan'26","Feb'26","Mar'26"];
 const MONTH_SHORT = {"Jan'26":"Jan","Feb'26":"Feb","Mar'26":"Mar"};
+const STD_DAYS = {"Jan'26":21,"Feb'26":20,"Mar'26":22};
 
 const DATA = {
   calls: [
-    {name:"Greg Dawson",ext:"5466",initials:"GD",months:{"Jan'26":{inbound:313,tickets:135,fcr:60.0,qa:81.1,csat:100.0,csat_good:4,csat_total:4,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:15.7,pts:35},tickets:{slab:1,val:6.8,pts:20},fcr:{slab:0,val:60.0,pts:0},qa:{slab:0,val:81.1,pts:0}}}},"Feb'26":{inbound:319,tickets:145,fcr:68.3,qa:81.5,csat:80.0,csat_good:4,csat_total:5,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:16.0,pts:35},tickets:{slab:1,val:7.3,pts:20},fcr:{slab:0,val:68.3,pts:0},qa:{slab:0,val:81.5,pts:0}}}},"Mar'26":{inbound:338,tickets:139,fcr:66.3,qa:82.2,csat:100.0,csat_good:3,csat_total:3,present:22,leaves:0,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:450,total_bonus:7950,metrics:{inbound:{slab:1,val:15.4,pts:35},tickets:{slab:1,val:6.3,pts:20},fcr:{slab:0,val:66.3,pts:0},qa:{slab:0,val:82.2,pts:0}}}}}},
-    {name:"Michelle Pinto",ext:"5555",initials:"MP",months:{"Jan'26":{inbound:292,tickets:97,fcr:82.5,qa:65.1,csat:100.0,csat_good:3,csat_total:3,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA below target (65.1%)",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:14.6,pts:35},tickets:{slab:1,val:4.9,pts:0},fcr:{slab:1,val:82.5,pts:25},qa:{slab:0,val:65.1,pts:0}}}},"Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,csat_good:2,csat_total:2,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:15.6,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:68.5,pts:0},qa:{slab:0,val:76.0,pts:0}}}},"Mar'26":{inbound:350,tickets:98,fcr:77.6,qa:70.3,csat:50.0,csat_good:2,csat_total:4,present:22,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA below target (70.3%)",points:80,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:15.9,pts:35},tickets:{slab:1,val:4.5,pts:0},fcr:{slab:1,val:77.6,pts:25},qa:{slab:0,val:70.3,pts:0}}}}}},
-    {name:"Lincy Tabita",ext:"5208",initials:"LT",months:{"Jan'26":{inbound:237,tickets:115,fcr:53.9,qa:80.3,csat:94.7,csat_good:18,csat_total:19,present:19,leaves:2,unplanned:0,bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:12.5,pts:35},tickets:{slab:1,val:6.1,pts:20},fcr:{slab:0,val:53.9,pts:0},qa:{slab:0,val:80.3,pts:0}}}},"Feb'26":{inbound:250,tickets:131,fcr:47.3,qa:83.1,csat:95.8,csat_good:23,csat_total:24,present:20,leaves:0,unplanned:0,bonus:{eligible:false,reason:"FCR below target (47.3%)",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:12.5,pts:35},tickets:{slab:1,val:6.6,pts:20},fcr:{slab:0,val:47.3,pts:0},qa:{slab:0,val:83.1,pts:0}}}},"Mar'26":{inbound:289,tickets:190,fcr:63.7,qa:86.8,csat:100.0,csat_good:30,csat_total:30,present:21,leaves:1,unplanned:0,bonus:{eligible:true,points:100,slab:1,base_bonus:5625,csat_incentive:4500,total_bonus:10125,metrics:{inbound:{slab:1,val:13.8,pts:35},tickets:{slab:1,val:9.0,pts:20},fcr:{slab:0,val:63.7,pts:0},qa:{slab:2,val:86.8,pts:20}}}}}},
-    {name:"Debra Horton",ext:"5477",initials:"DH",months:{"Jan'26":{inbound:225,tickets:155,fcr:69.7,qa:87.0,csat:96.3,csat_good:52,csat_total:54,present:21,leaves:0,unplanned:0,bonus:{eligible:true,points:100,slab:1,base_bonus:7500,csat_incentive:7800,total_bonus:15300,metrics:{inbound:{slab:1,val:10.7,pts:35},tickets:{slab:1,val:7.4,pts:20},fcr:{slab:0,val:69.7,pts:0},qa:{slab:2,val:87.0,pts:20}}}},"Feb'26":{inbound:187,tickets:90,fcr:81.1,qa:88.4,csat:100.0,csat_good:34,csat_total:34,present:16,leaves:3,unplanned:0,bonus:{eligible:false,reason:"50% bonus (3 leaves)",points:95,slab:1,base_bonus:3750,csat_incentive:5100,total_bonus:8850,metrics:{inbound:{slab:1,val:11.7,pts:35},tickets:{slab:1,val:5.6,pts:20},fcr:{slab:1,val:81.1,pts:25},qa:{slab:2,val:88.4,pts:20}}}},"Mar'26":{inbound:213,tickets:102,fcr:77.5,qa:90.2,csat:100.0,csat_good:36,csat_total:36,present:19,leaves:2,unplanned:0,bonus:{eligible:true,points:100,slab:1,base_bonus:5625,csat_incentive:5400,total_bonus:11025,metrics:{inbound:{slab:1,val:11.2,pts:35},tickets:{slab:1,val:5.4,pts:20},fcr:{slab:1,val:77.5,pts:25},qa:{slab:1,val:90.2,pts:20}}}}}},
-    {name:"Caroline Lock",ext:"5528",initials:"CL",months:{"Jan'26":{inbound:167,tickets:79,fcr:83.5,qa:70.8,csat:100.0,csat_good:1,csat_total:1,present:12,leaves:8,unplanned:0,bonus:{eligible:false,reason:"Only 12 days present (need 18)",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:13.9,pts:35},tickets:{slab:1,val:6.6,pts:20},fcr:{slab:1,val:83.5,pts:25},qa:{slab:0,val:70.8,pts:0}}}},"Feb'26":{inbound:213,tickets:122,fcr:79.5,qa:76.9,csat:100.0,csat_good:5,csat_total:5,present:18,leaves:1,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:750,total_bonus:6375,metrics:{inbound:{slab:1,val:11.8,pts:35},tickets:{slab:1,val:6.8,pts:20},fcr:{slab:1,val:79.5,pts:25},qa:{slab:0,val:76.9,pts:0}}}},"Mar'26":{inbound:191,tickets:96,fcr:88.5,qa:81.6,csat:null,csat_good:0,csat_total:0,present:18,leaves:0,unplanned:2,bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:10.6,pts:35},tickets:{slab:1,val:5.3,pts:20},fcr:{slab:1,val:88.5,pts:25},qa:{slab:0,val:81.6,pts:0}}}}}},
-    {name:"Henry P",ext:"5348",initials:"HP",months:{"Jan'26":{inbound:189,tickets:123,fcr:69.9,qa:77.0,csat:88.9,csat_good:8,csat_total:9,present:20,leaves:0,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:0,total_bonus:7500,metrics:{inbound:{slab:1,val:9.5,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:69.9,pts:0},qa:{slab:0,val:77.0,pts:0}}}},"Feb'26":{inbound:211,tickets:106,fcr:66.0,qa:77.6,csat:100.0,csat_good:12,csat_total:12,present:15,leaves:4,unplanned:0,bonus:{eligible:false,reason:"Leave impact: 0% (>3 leaves)",points:80,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:14.1,pts:35},tickets:{slab:1,val:7.1,pts:20},fcr:{slab:0,val:66.0,pts:0},qa:{slab:0,val:77.6,pts:0}}}},"Mar'26":{inbound:273,tickets:123,fcr:83.7,qa:81.5,csat:100.0,csat_good:8,csat_total:8,present:20,leaves:2,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1200,total_bonus:6825,metrics:{inbound:{slab:1,val:13.7,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:1,val:83.7,pts:25},qa:{slab:0,val:81.5,pts:0}}}}}},
-    {name:"Sabrina Quinn",ext:"5512",initials:"SQ",months:{"Jan'26":{inbound:null,tickets:108,fcr:null,qa:81.4,csat:100.0,csat_good:3,csat_total:3,present:20,leaves:1,unplanned:0,bonus:{eligible:false,reason:"Chat team in Jan",points:null,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:null}},"Feb'26":{inbound:216,tickets:129,fcr:75.9,qa:80.1,csat:100.0,csat_good:10,csat_total:10,present:18,leaves:2,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1500,total_bonus:7125,metrics:{inbound:{slab:1,val:12.0,pts:35},tickets:{slab:1,val:7.2,pts:20},fcr:{slab:1,val:75.9,pts:25},qa:{slab:0,val:80.1,pts:0}}}},"Mar'26":{inbound:278,tickets:124,fcr:69.4,qa:79.4,csat:100.0,csat_good:17,csat_total:17,present:20,leaves:2,unplanned:0,bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:2550,total_bonus:8175,metrics:{inbound:{slab:1,val:13.9,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:69.4,pts:0},qa:{slab:0,val:79.4,pts:0}}}}}},
-    {name:"Sky Gibson",ext:"5357",initials:"SG",months:{"Jan'26":{inbound:154,tickets:74,fcr:75.7,qa:75.6,csat:100.0,csat_good:2,csat_total:2,present:19,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA below target (75.6%)",points:60,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:8.1,pts:35},tickets:{slab:2,val:3.9,pts:0},fcr:{slab:1,val:75.7,pts:25},qa:{slab:0,val:75.6,pts:0}}}},"Feb'26":{inbound:139,tickets:61,fcr:59.0,qa:77.5,csat:100.0,csat_good:1,csat_total:1,present:17,leaves:3,unplanned:0,bonus:{eligible:false,reason:"FCR below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:8.2,pts:35},tickets:{slab:2,val:3.6,pts:0},fcr:{slab:0,val:59.0,pts:0},qa:{slab:0,val:77.5,pts:0}}}},"Mar'26":{inbound:187,tickets:65,fcr:75.4,qa:75.5,csat:null,csat_good:0,csat_total:0,present:18,leaves:2,unplanned:0,bonus:{eligible:false,reason:"QA below target (75.5%)",points:60,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:1,val:10.4,pts:35},tickets:{slab:2,val:3.6,pts:0},fcr:{slab:1,val:75.4,pts:25},qa:{slab:0,val:75.5,pts:0}}}}}},
-    {name:"Ronnie G",ext:"5219",initials:"RG",months:{"Jan'26":{inbound:74,tickets:31,fcr:61.3,qa:53.3,csat:100.0,csat_good:1,csat_total:1,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"QA well below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:2,val:3.5,pts:0},tickets:{slab:2,val:1.5,pts:0},fcr:{slab:0,val:61.3,pts:0},qa:{slab:0,val:53.3,pts:0}}}},"Feb'26":{inbound:53,tickets:30,fcr:50.0,qa:91.3,csat:100.0,csat_good:3,csat_total:3,present:17,leaves:3,unplanned:0,bonus:{eligible:false,reason:"Inbound & Tickets below threshold",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:2,val:3.1,pts:0},tickets:{slab:2,val:1.8,pts:0},fcr:{slab:0,val:50.0,pts:0},qa:{slab:1,val:91.3,pts:20}}}},"Mar'26":{inbound:39,tickets:49,fcr:67.3,qa:64.5,csat:100.0,csat_good:1,csat_total:1,present:22,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Volume & QA below target",points:25,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{inbound:{slab:2,val:1.8,pts:0},tickets:{slab:2,val:2.2,pts:0},fcr:{slab:0,val:67.3,pts:0},qa:{slab:0,val:64.5,pts:25}}}}}}
+    {name:"Greg Dawson",ext:"5466",initials:"GD",months:{
+      "Jan'26":{inbound:313,tickets:135,fcr:60.0,qa:81.1,csat:100.0,csat_good:4,csat_total:4,present:20,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:600,total_bonus:600,
+          metrics:{inbound:{slab:1,val:14.9,pts:35},tickets:{slab:1,val:6.4,pts:20},fcr:{slab:0,val:60.0,pts:0},qa:{slab:0,val:81.1,pts:0}}}},
+      "Feb'26":{inbound:319,tickets:145,fcr:68.3,qa:81.5,csat:80.0,csat_good:4,csat_total:5,present:20,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{inbound:{slab:1,val:16.0,pts:35},tickets:{slab:1,val:7.3,pts:20},fcr:{slab:0,val:68.3,pts:0},qa:{slab:0,val:81.5,pts:0}}}},
+      "Mar'26":{inbound:338,tickets:139,fcr:66.3,qa:82.2,csat:100.0,csat_good:3,csat_total:3,present:22,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:450,total_bonus:450,
+          metrics:{inbound:{slab:1,val:15.4,pts:35},tickets:{slab:1,val:6.3,pts:20},fcr:{slab:0,val:66.3,pts:0},qa:{slab:0,val:82.2,pts:0}}}}}},
+    {name:"Michelle Pinto",ext:"5555",initials:"MP",months:{
+      "Jan'26":{inbound:292,tickets:97,fcr:82.5,qa:65.1,csat:100.0,csat_good:3,csat_total:3,present:21,leaves:0,unplanned:0,
+        bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:450,total_bonus:7950,
+          metrics:{inbound:{slab:1,val:13.9,pts:35},tickets:{slab:2,val:4.6,pts:20},fcr:{slab:1,val:82.5,pts:25},qa:{slab:0,val:65.1,pts:0}}}},
+      "Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,csat_good:2,csat_total:2,present:20,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:300,total_bonus:300,
+          metrics:{inbound:{slab:1,val:15.6,pts:35},tickets:{slab:1,val:6.2,pts:20},fcr:{slab:0,val:68.5,pts:0},qa:{slab:0,val:76.0,pts:0}}}},
+      "Mar'26":{inbound:350,tickets:98,fcr:77.6,qa:70.3,csat:50.0,csat_good:2,csat_total:4,present:22,leaves:0,unplanned:0,
+        bonus:{eligible:true,points:80,slab:1,base_bonus:7500,csat_incentive:0,total_bonus:7500,
+          metrics:{inbound:{slab:1,val:15.9,pts:35},tickets:{slab:2,val:4.5,pts:20},fcr:{slab:1,val:77.6,pts:25},qa:{slab:0,val:70.3,pts:0}}}}}},
+    {name:"Lincy Tabita",ext:"5208",initials:"LT",months:{
+      "Jan'26":{inbound:237,tickets:115,fcr:53.9,qa:80.3,csat:94.7,csat_good:18,csat_total:19,present:19,leaves:2,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:2700,total_bonus:2700,
+          metrics:{inbound:{slab:1,val:11.3,pts:35},tickets:{slab:1,val:5.5,pts:20},fcr:{slab:0,val:53.9,pts:0},qa:{slab:0,val:80.3,pts:0}}}},
+      "Feb'26":{inbound:250,tickets:131,fcr:47.3,qa:83.1,csat:95.8,csat_good:23,csat_total:24,present:20,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"FCR below target",points:55,slab:null,base_bonus:0,csat_incentive:3450,total_bonus:3450,
+          metrics:{inbound:{slab:1,val:12.5,pts:35},tickets:{slab:1,val:6.6,pts:20},fcr:{slab:0,val:47.3,pts:0},qa:{slab:0,val:83.1,pts:0}}}},
+      "Mar'26":{inbound:289,tickets:190,fcr:63.7,qa:86.8,csat:100.0,csat_good:30,csat_total:30,present:21,leaves:1,unplanned:0,
+        bonus:{eligible:true,points:75,slab:1,base_bonus:5625,csat_incentive:4500,total_bonus:10125,
+          metrics:{inbound:{slab:1,val:13.1,pts:35},tickets:{slab:1,val:8.6,pts:20},fcr:{slab:0,val:63.7,pts:0},qa:{slab:2,val:86.8,pts:20}}}}}},
+    {name:"Debra Horton",ext:"5477",initials:"DH",months:{
+      "Jan'26":{inbound:225,tickets:155,fcr:69.7,qa:87.0,csat:96.3,csat_good:52,csat_total:54,present:21,leaves:0,unplanned:0,
+        bonus:{eligible:true,points:75,slab:1,base_bonus:7500,csat_incentive:7800,total_bonus:15300,
+          metrics:{inbound:{slab:1,val:10.7,pts:35},tickets:{slab:1,val:7.4,pts:20},fcr:{slab:0,val:69.7,pts:0},qa:{slab:2,val:87.0,pts:20}}}},
+      "Feb'26":{inbound:187,tickets:90,fcr:81.1,qa:88.4,csat:100.0,csat_good:34,csat_total:34,present:16,leaves:3,unplanned:0,
+        bonus:{eligible:false,reason:"50% slab · 3 planned leaves",points:100,slab:1,base_bonus:3750,csat_incentive:5100,total_bonus:8850,
+          metrics:{inbound:{slab:1,val:9.4,pts:35},tickets:{slab:2,val:4.5,pts:20},fcr:{slab:1,val:81.1,pts:25},qa:{slab:2,val:88.4,pts:20}}}},
+      "Mar'26":{inbound:213,tickets:102,fcr:77.5,qa:90.2,csat:100.0,csat_good:36,csat_total:36,present:19,leaves:2,unplanned:0,
+        bonus:{eligible:true,points:100,slab:1,base_bonus:5625,csat_incentive:5400,total_bonus:11025,
+          metrics:{inbound:{slab:1,val:9.7,pts:35},tickets:{slab:2,val:4.6,pts:20},fcr:{slab:1,val:77.5,pts:25},qa:{slab:1,val:90.2,pts:20}}}}}},
+    {name:"Caroline Lock",ext:"5528",initials:"CL",months:{
+      "Jan'26":{inbound:167,tickets:79,fcr:83.5,qa:70.8,csat:100.0,csat_good:1,csat_total:1,present:12,leaves:8,unplanned:0,
+        bonus:{eligible:false,reason:"< 18 days present",points:60,slab:null,base_bonus:0,csat_incentive:150,total_bonus:150,
+          metrics:{inbound:{slab:1,val:7.95,pts:35},tickets:{slab:0,val:3.76,pts:0},fcr:{slab:1,val:83.5,pts:25},qa:{slab:0,val:70.8,pts:0}}}},
+      "Feb'26":{inbound:213,tickets:122,fcr:79.5,qa:76.9,csat:100.0,csat_good:5,csat_total:5,present:18,leaves:1,unplanned:0,
+        bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:750,total_bonus:6375,
+          metrics:{inbound:{slab:1,val:10.65,pts:35},tickets:{slab:1,val:6.1,pts:20},fcr:{slab:1,val:79.5,pts:25},qa:{slab:0,val:76.9,pts:0}}}},
+      "Mar'26":{inbound:191,tickets:96,fcr:88.5,qa:81.6,csat:null,csat_good:0,csat_total:0,present:18,leaves:0,unplanned:2,
+        bonus:{eligible:false,reason:"Unplanned leave",points:80,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{inbound:{slab:1,val:8.7,pts:35},tickets:{slab:2,val:4.4,pts:20},fcr:{slab:1,val:88.5,pts:25},qa:{slab:0,val:81.6,pts:0}}}}}},
+    {name:"Henry P",ext:"5348",initials:"HP",months:{
+      "Jan'26":{inbound:189,tickets:123,fcr:69.9,qa:77.0,csat:88.9,csat_good:8,csat_total:9,present:20,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{inbound:{slab:1,val:9.0,pts:35},tickets:{slab:1,val:5.86,pts:20},fcr:{slab:0,val:69.9,pts:0},qa:{slab:0,val:77.0,pts:0}}}},
+      "Feb'26":{inbound:211,tickets:106,fcr:66.0,qa:77.6,csat:100.0,csat_good:12,csat_total:12,present:15,leaves:4,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:1800,total_bonus:1800,
+          metrics:{inbound:{slab:1,val:10.55,pts:35},tickets:{slab:1,val:5.3,pts:20},fcr:{slab:0,val:66.0,pts:0},qa:{slab:0,val:77.6,pts:0}}}},
+      "Mar'26":{inbound:273,tickets:123,fcr:83.7,qa:81.5,csat:100.0,csat_good:8,csat_total:8,present:20,leaves:2,unplanned:0,
+        bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1200,total_bonus:6825,
+          metrics:{inbound:{slab:1,val:12.4,pts:35},tickets:{slab:1,val:5.6,pts:20},fcr:{slab:1,val:83.7,pts:25},qa:{slab:0,val:81.5,pts:0}}}}}},
+    {name:"Sabrina Quinn",ext:"5512",initials:"SQ",months:{
+      "Jan'26":{inbound:null,tickets:108,fcr:null,qa:81.4,csat:100.0,csat_good:3,csat_total:3,present:20,leaves:1,unplanned:0,
+        bonus:{eligible:true,reason:"Chat team · Slab 1 · 1 PL → 75%",points:100,slab:1,base_bonus:5625,csat_incentive:2700,total_bonus:8325,metrics:null}},
+      "Feb'26":{inbound:216,tickets:129,fcr:75.9,qa:80.1,csat:100.0,csat_good:10,csat_total:10,present:18,leaves:2,unplanned:0,
+        bonus:{eligible:true,points:80,slab:1,base_bonus:5625,csat_incentive:1500,total_bonus:7125,
+          metrics:{inbound:{slab:1,val:10.8,pts:35},tickets:{slab:1,val:6.45,pts:20},fcr:{slab:1,val:75.9,pts:25},qa:{slab:0,val:80.1,pts:0}}}},
+      "Mar'26":{inbound:278,tickets:124,fcr:69.4,qa:79.4,csat:100.0,csat_good:17,csat_total:17,present:20,leaves:2,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:55,slab:null,base_bonus:0,csat_incentive:2550,total_bonus:2550,
+          metrics:{inbound:{slab:1,val:12.6,pts:35},tickets:{slab:1,val:5.6,pts:20},fcr:{slab:0,val:69.4,pts:0},qa:{slab:0,val:79.4,pts:0}}}}}},
+    {name:"Sky Gibson",ext:"5357",initials:"SG",months:{
+      "Jan'26":{inbound:154,tickets:74,fcr:75.7,qa:75.6,csat:100.0,csat_good:2,csat_total:2,present:19,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"QA below target",points:60,slab:null,base_bonus:0,csat_incentive:300,total_bonus:300,
+          metrics:{inbound:{slab:1,val:7.3,pts:35},tickets:{slab:0,val:3.5,pts:0},fcr:{slab:1,val:75.7,pts:25},qa:{slab:0,val:75.6,pts:0}}}},
+      "Feb'26":{inbound:139,tickets:61,fcr:59.0,qa:77.5,csat:100.0,csat_good:1,csat_total:1,present:17,leaves:3,unplanned:0,
+        bonus:{eligible:false,reason:"FCR & QA below target",points:35,slab:null,base_bonus:0,csat_incentive:150,total_bonus:150,
+          metrics:{inbound:{slab:2,val:7.0,pts:35},tickets:{slab:0,val:3.1,pts:0},fcr:{slab:0,val:59.0,pts:0},qa:{slab:0,val:77.5,pts:0}}}},
+      "Mar'26":{inbound:187,tickets:65,fcr:75.4,qa:75.5,csat:100.0,csat_good:1,csat_total:1,present:18,leaves:2,unplanned:0,
+        bonus:{eligible:false,reason:"QA below target",points:60,slab:null,base_bonus:0,csat_incentive:150,total_bonus:150,
+          metrics:{inbound:{slab:1,val:8.5,pts:35},tickets:{slab:0,val:3.0,pts:0},fcr:{slab:1,val:75.4,pts:25},qa:{slab:0,val:75.5,pts:0}}}}}},
+    {name:"Ronnie G",ext:"5219",initials:"RG",months:{
+      "Jan'26":{inbound:74,tickets:31,fcr:61.3,qa:53.3,csat:100.0,csat_good:1,csat_total:1,present:21,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"Volume & QA well below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{inbound:{slab:0,val:3.5,pts:0},tickets:{slab:0,val:1.5,pts:0},fcr:{slab:0,val:61.3,pts:0},qa:{slab:0,val:53.3,pts:0}}}},
+      "Feb'26":{inbound:53,tickets:30,fcr:50.0,qa:91.3,csat:100.0,csat_good:3,csat_total:3,present:17,leaves:3,unplanned:0,
+        bonus:{eligible:false,reason:"Inbound & Tickets below threshold",points:20,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{inbound:{slab:0,val:2.65,pts:0},tickets:{slab:0,val:1.5,pts:0},fcr:{slab:0,val:50.0,pts:0},qa:{slab:1,val:91.3,pts:20}}}},
+      "Mar'26":{inbound:39,tickets:49,fcr:67.3,qa:64.5,csat:100.0,csat_good:1,csat_total:1,present:22,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"Volume & QA below target",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{inbound:{slab:0,val:1.77,pts:0},tickets:{slab:0,val:2.2,pts:0},fcr:{slab:0,val:67.3,pts:0},qa:{slab:0,val:64.5,pts:0}}}}}}
   ],
   chat: [
-    {name:"Anold Fernandes",ext:"5313",initials:"AF",months:{"Jan'26":{chats:295,csat:60.0,happy:27,tickets:102,fcr:49.0,qa:81.0,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:14.0,pts:15},csat:{slab:0,val:60.0,pts:0},tickets:{slab:2,val:4.9,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:49.0,pts:0}}}},"Feb'26":{chats:353,csat:56.4,happy:31,tickets:79,fcr:50.6,qa:79.0,present:15,leaves:5,unplanned:0,bonus:{eligible:false,reason:"Only 15 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:23.5,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:2,val:5.3,pts:20},qa:{slab:0,val:79.0,pts:0},fcr:{slab:0,val:50.6,pts:0}}}},"Mar'26":{chats:471,csat:55.3,happy:47,tickets:112,fcr:49.1,qa:80.0,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:22.4,pts:15},csat:{slab:0,val:55.3,pts:0},tickets:{slab:1,val:5.3,pts:20},qa:{slab:0,val:80.0,pts:0},fcr:{slab:0,val:49.1,pts:0}}}}}},
-    {name:"Tabbie Shine",ext:"5456",initials:"TS",months:{"Jan'26":{chats:238,csat:52.9,happy:18,tickets:67,fcr:47.8,qa:76.0,present:18,leaves:2,unplanned:0,bonus:{eligible:false,reason:"CSAT & FCR below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:13.2,pts:15},csat:{slab:0,val:52.9,pts:0},tickets:{slab:2,val:3.7,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:47.8,pts:0}}}},"Feb'26":{chats:332,csat:72.5,happy:29,tickets:57,fcr:38.6,qa:81.0,present:14,leaves:2,unplanned:0,bonus:{eligible:false,reason:"Only 14 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:23.7,pts:15},csat:{slab:0,val:72.5,pts:0},tickets:{slab:2,val:4.1,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:38.6,pts:0}}}},"Mar'26":{chats:341,csat:56.4,happy:22,tickets:76,fcr:46.1,qa:76.0,present:17,leaves:1,unplanned:1,bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:20.1,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:1,val:4.5,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:46.1,pts:0}}}}}},
-    {name:"Evan Cruz",ext:"5574",initials:"EC",months:{"Jan'26":{chats:null,csat:null,happy:0,tickets:5,fcr:100.0,qa:56.5,present:21,leaves:0,unplanned:0,bonus:{eligible:false,reason:"Calls team in Jan",points:null,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:null}},"Feb'26":{chats:305,csat:67.9,happy:19,tickets:67,fcr:58.2,qa:64.8,present:19,leaves:0,unplanned:0,bonus:{eligible:false,reason:"CSAT, FCR & QA below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:16.1,pts:15},csat:{slab:0,val:67.9,pts:0},tickets:{slab:2,val:3.5,pts:0},qa:{slab:0,val:64.8,pts:0},fcr:{slab:0,val:58.2,pts:0}}}},"Mar'26":{chats:386,csat:70.9,happy:39,tickets:65,fcr:43.1,qa:null,present:19,leaves:1,unplanned:2,bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:{chats:{slab:1,val:20.3,pts:15},csat:{slab:0,val:70.9,pts:0},tickets:{slab:2,val:3.4,pts:0},qa:{slab:0,val:0,pts:0},fcr:{slab:0,val:43.1,pts:0}}}}}}
+    {name:"Anold Fernandes",ext:"5313",initials:"AF",months:{
+      "Jan'26":{chats:295,csat:60.0,happy:27,tickets:102,fcr:49.0,qa:81.0,present:21,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:14.0,pts:15},csat:{slab:0,val:60.0,pts:0},tickets:{slab:2,val:4.9,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:49.0,pts:0}}}},
+      "Feb'26":{chats:353,csat:56.4,happy:31,tickets:79,fcr:50.6,qa:79.0,present:15,leaves:5,unplanned:0,
+        bonus:{eligible:false,reason:"Only 15 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:23.5,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:2,val:5.3,pts:20},qa:{slab:0,val:79.0,pts:0},fcr:{slab:0,val:50.6,pts:0}}}},
+      "Mar'26":{chats:471,csat:55.3,happy:47,tickets:112,fcr:49.1,qa:80.0,present:21,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"Chat CSAT & FCR below target",points:35,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:22.4,pts:15},csat:{slab:0,val:55.3,pts:0},tickets:{slab:1,val:5.3,pts:20},qa:{slab:0,val:80.0,pts:0},fcr:{slab:0,val:49.1,pts:0}}}}}},
+    {name:"Tabbie Shine",ext:"5456",initials:"TS",months:{
+      "Jan'26":{chats:238,csat:52.9,happy:18,tickets:67,fcr:47.8,qa:76.0,present:18,leaves:2,unplanned:0,
+        bonus:{eligible:false,reason:"CSAT & FCR below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:13.2,pts:15},csat:{slab:0,val:52.9,pts:0},tickets:{slab:2,val:3.7,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:47.8,pts:0}}}},
+      "Feb'26":{chats:332,csat:72.5,happy:29,tickets:57,fcr:38.6,qa:81.0,present:14,leaves:2,unplanned:0,
+        bonus:{eligible:false,reason:"Only 14 days present",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:23.7,pts:15},csat:{slab:0,val:72.5,pts:0},tickets:{slab:2,val:4.1,pts:0},qa:{slab:0,val:81.0,pts:0},fcr:{slab:0,val:38.6,pts:0}}}},
+      "Mar'26":{chats:341,csat:56.4,happy:22,tickets:76,fcr:46.1,qa:76.0,present:17,leaves:1,unplanned:1,
+        bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:20.1,pts:15},csat:{slab:0,val:56.4,pts:0},tickets:{slab:1,val:4.5,pts:0},qa:{slab:0,val:76.0,pts:0},fcr:{slab:0,val:46.1,pts:0}}}}}},
+    {name:"Evan Cruz",ext:"5574",initials:"EC",months:{
+      "Jan'26":{chats:null,csat:null,happy:0,tickets:5,fcr:100.0,qa:56.5,present:21,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"Calls team in Jan",points:null,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,metrics:null}},
+      "Feb'26":{chats:305,csat:67.9,happy:19,tickets:67,fcr:58.2,qa:64.8,present:19,leaves:0,unplanned:0,
+        bonus:{eligible:false,reason:"CSAT, FCR & QA below target",points:15,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:16.1,pts:15},csat:{slab:0,val:67.9,pts:0},tickets:{slab:2,val:3.5,pts:0},qa:{slab:0,val:64.8,pts:0},fcr:{slab:0,val:58.2,pts:0}}}},
+      "Mar'26":{chats:386,csat:70.9,happy:39,tickets:65,fcr:43.1,qa:null,present:19,leaves:1,unplanned:2,
+        bonus:{eligible:false,reason:"Unplanned leave",points:0,slab:null,base_bonus:0,csat_incentive:0,total_bonus:0,
+          metrics:{chats:{slab:1,val:20.3,pts:15},csat:{slab:0,val:70.9,pts:0},tickets:{slab:2,val:3.4,pts:0},qa:{slab:0,val:0,pts:0},fcr:{slab:0,val:43.1,pts:0}}}}}}
   ]
 };
 
@@ -403,7 +510,7 @@ function renderCallsMetricRow(label, icon, key, subFn, agents_months){
     const sc = slabClass(slab);
     let valStr = '';
     if(key==='inbound'||key==='tickets'){
-      const perDay = md.present > 0 ? (md[key]/md.present).toFixed(1) : '—';
+      const perDay = (md[key]/STD_DAYS[m]).toFixed(1);
       valStr = `<div class="cell-val ${sc}">${md[key]}</div><div class="cell-sub">${perDay}/day</div>`;
     } else if(key==='fcr'||key==='qa'||key==='csat'){
       valStr = `<div class="cell-val ${sc}">${md[key]!==null?md[key].toFixed(1)+'%':'—'}</div>`;
@@ -426,10 +533,10 @@ function renderChatMetricRow(label, icon, key, agent_months){
     const sc = slabClass(slab);
     let valStr = '';
     if(key==='chats'){
-      const perDay = md.present > 0 ? (md.chats/md.present).toFixed(1) : '—';
+      const perDay = (md.chats/STD_DAYS[m]).toFixed(1);
       valStr = `<div class="cell-val ${sc}">${md.chats}</div><div class="cell-sub">${perDay}/day</div>`;
     } else if(key==='tickets'){
-      const perDay = md.present > 0 ? (md.tickets/md.present).toFixed(1) : '—';
+      const perDay = (md.tickets/STD_DAYS[m]).toFixed(1);
       valStr = `<div class="cell-val ${sc}">${md.tickets}</div><div class="cell-sub">${perDay}/day</div>`;
     } else if(key==='csat'){
       valStr = `<div class="cell-val ${sc}">${md.csat!==null?md.csat.toFixed(1)+'%':'—'}</div>`;
@@ -523,14 +630,19 @@ function renderCard(agent, type){
       html += `<div><span class="bonus-slab-badge badge-na">N/A</span></div>
         <div class="bonus-reason">${isCallsType&&m==="Jan'26"&&agent.name==="Sabrina Quinn"?'Chat team this month':!isCallsType&&m==="Jan'26"&&agent.name==="Evan Cruz"?'Calls team this month':'—'}</div>`;
     } else if(b.eligible===false && !b.slab){
-      // Not eligible
+      // Not eligible for slab bonus
       const pts = b.points||0;
       const pct = Math.min(100,(pts/100)*100);
       html += `<div><span class="bonus-slab-badge badge-no">Not Eligible</span></div>
         <div class="bonus-pts">${pts}/100 pts</div>
         <div class="pts-bar-wrap"><div class="pts-bar s0" style="width:${pct}%"></div></div>
-        <div class="bonus-reason" style="margin-top:4px">${b.reason||''}</div>
-        <div class="bonus-amt">₹0</div>`;
+        <div class="bonus-reason" style="margin-top:4px">${b.reason||''}</div>`;
+      if(b.csat_incentive > 0){
+        html += `<div class="bonus-reason" style="color:var(--green);margin-top:3px">CSAT incentive: ₹${b.csat_incentive.toLocaleString('en-IN')}</div>
+          <div class="bonus-amt positive">₹${b.csat_incentive.toLocaleString('en-IN')}</div>`;
+      } else {
+        html += `<div class="bonus-amt">₹0</div>`;
+      }
     } else if(b.eligible===false && b.slab){
       // Has slab but leave impact reduced
       const slabLabel = b.slab===1?'Slab 1':'Slab 2';
@@ -549,6 +661,9 @@ function renderCard(agent, type){
       html += `<div><span class="bonus-slab-badge ${badgeClass}">${slabLabel} ✓</span></div>
         <div class="bonus-pts">${pts}/100 pts</div>
         <div class="pts-bar-wrap"><div class="pts-bar ${b.slab===1?'s1':'s2'}" style="width:${pts}%"></div></div>`;
+      if(b.reason){
+        html += `<div class="bonus-reason" style="color:var(--muted2)">${b.reason}</div>`;
+      }
       if(b.csat_incentive > 0){
         html += `<div class="bonus-reason">Base ₹${b.base_bonus.toLocaleString('en-IN')} + CSAT ₹${b.csat_incentive.toLocaleString('en-IN')}</div>`;
       }
