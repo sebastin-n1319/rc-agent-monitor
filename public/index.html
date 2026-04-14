@@ -5378,37 +5378,27 @@ footer{
 
 /* ══════════════════════════════════════════════════════════════════════════
    LOGIN → APP TRANSITION
+   loginScreen is position:fixed so it floats above mainApp independently.
+   We use CSS transitions (not keyframe animations) to avoid stacking-context
+   issues that occur when transform is applied to a parent of position:fixed.
 ══════════════════════════════════════════════════════════════════════════ */
-/* loginScreen floats above mainApp so we can animate it independently */
 #loginScreen{
   position:fixed !important;
   inset:0 !important;
   z-index:100 !important;
-}
-@keyframes loginExitUp{
-  0%  { opacity:1; transform:translateY(0) scale(1); filter:blur(0px); }
-  30% { opacity:1; }
-  100%{ opacity:0; transform:translateY(-72px) scale(.96); filter:blur(4px); }
-}
-@keyframes appReveal{
-  0%  { opacity:0; transform:translateY(32px); }
-  100%{ opacity:1; transform:translateY(0); }
-}
-@keyframes headerEntrance{
-  0%  { opacity:0; transform:translateY(-100%); }
-  100%{ opacity:1; transform:translateY(0); }
+  /* transition fires when .login-exiting class is added */
+  transition: opacity .5s ease, transform .5s cubic-bezier(0.4,0,0.2,1), filter .5s ease !important;
 }
 #loginScreen.login-exiting{
-  animation: loginExitUp 0.52s cubic-bezier(0.4,0,0.2,1) forwards !important;
+  opacity:0 !important;
+  transform: translateY(-64px) scale(0.96) !important;
+  filter: blur(6px) !important;
   pointer-events: none !important;
 }
-#mainApp.app-revealing header{
-  animation: headerEntrance 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
-  animation-delay: 0.12s;
-  opacity: 0;
-}
+/* App reveal: only transition opacity — no transform on #mainApp so the
+   position:fixed header keeps its correct viewport-relative stacking context */
 #mainApp.app-revealing{
-  animation: appReveal 0.5s cubic-bezier(0.4,0,0.2,1) forwards;
+  transition: opacity .52s ease !important;
 }
 </style>
 </head>
@@ -6542,27 +6532,46 @@ function startApp(username,role,picture,breakbotEnabled=true){
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
 
-  // Show mainApp invisibly underneath so it's ready
+  // Show mainApp invisible so it's fully laid out before the transition starts
   appEl.style.display='flex';
   appEl.style.opacity='0';
 
-  // Kick off the login exit animation (loginScreen is position:fixed, floats on top)
+  // loginScreen is position:fixed and has a CSS transition already declared.
+  // Double-rAF ensures browser commits one layout frame before toggling class,
+  // which is required to reliably trigger the CSS transition.
   requestAnimationFrame(()=>{
-    loginEl.classList.add('login-exiting');
+    requestAnimationFrame(()=>{
+      loginEl.classList.add('login-exiting');
+    });
   });
 
-  // After login exit animation completes → hide it, reveal the app
+  // After login transition completes (500ms), hide it and fade the app in.
   setTimeout(()=>{
     loginEl.style.display='none';
-    loginEl.classList.remove('login-exiting');
-    appEl.style.opacity='';
+    loginEl.classList.remove('login-exiting'); // clean up class for future use
+
+    // Add transition class to #mainApp BEFORE changing opacity, then
+    // use double-rAF so the browser processes the class (adding 'transition')
+    // before seeing the opacity change — this guarantees the transition fires.
     appEl.classList.add('app-revealing');
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        appEl.style.opacity='1';
+      });
+    });
+
     window.scrollTo({top:0,behavior:'instant'});
-    setTimeout(()=>{ appEl.classList.remove('app-revealing'); }, 560);
+
+    // Clean up after transition completes
+    setTimeout(()=>{
+      appEl.classList.remove('app-revealing');
+      appEl.style.opacity=''; // let CSS take over; app is fully visible
+    }, 600);
+
     setupLiveStream();
     refresh();
     setTimeout(firstLoadSync,2000);
-  }, 500);
+  }, 520);
 }
 
 function dismissAgentTicker(){
