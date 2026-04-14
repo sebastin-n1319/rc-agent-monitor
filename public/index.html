@@ -5620,6 +5620,505 @@ footer{
   top: var(--sticky-top, 100px) !important;
   z-index: 12 !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UI RESCUE — FINAL AUTHORITATIVE SHELL
+══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --app-max: 1720px;
+  --panel-bg: rgba(9,15,28,.92);
+  --panel-bg-soft: rgba(12,19,34,.86);
+  --panel-line: rgba(148,163,184,.10);
+  --panel-line-strong: rgba(148,163,184,.16);
+  --panel-shadow: 0 22px 54px rgba(2,8,23,.34);
+}
+
+body{
+  background:
+    radial-gradient(circle at 16% 12%, rgba(15,127,163,.16), transparent 28%),
+    radial-gradient(circle at 82% 14%, rgba(242,136,32,.10), transparent 24%),
+    linear-gradient(180deg, #07111c 0%, #09131f 42%, #07101a 100%) !important;
+}
+body::before{
+  background:
+    radial-gradient(ellipse 68% 54% at 0% 0%, rgba(22,101,134,.12) 0%, transparent 58%),
+    radial-gradient(ellipse 46% 40% at 100% 10%, rgba(242,136,32,.06) 0%, transparent 46%),
+    radial-gradient(ellipse 48% 48% at 50% 100%, rgba(8,135,190,.08) 0%, transparent 50%) !important;
+}
+body::after{
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px) !important;
+  background-size: 40px 40px !important;
+  opacity: .45 !important;
+}
+
+#mainApp{
+  background: transparent !important;
+}
+
+.page,
+.agent-shell-page{
+  width: min(100%, var(--app-max)) !important;
+  margin: 0 auto !important;
+  padding: 18px 22px 26px !important;
+}
+
+header{
+  height: 62px !important;
+  padding: 0 22px !important;
+  background: rgba(7,13,28,.84) !important;
+  border-bottom: 1px solid var(--panel-line) !important;
+  box-shadow: 0 10px 30px rgba(2,8,23,.16) !important;
+}
+#mainApp{padding-top:62px !important;}
+.nav,
+.agent-shell-nav{
+  top: 62px !important;
+  padding: 10px 22px 0 !important;
+  gap: 8px !important;
+  background: rgba(7,13,28,.72) !important;
+  border-bottom: 1px solid var(--panel-line) !important;
+  backdrop-filter: blur(18px) !important;
+  -webkit-backdrop-filter: blur(18px) !important;
+}
+.nav-tab,
+.agent-shell-btn{
+  border-radius: 14px 14px 0 0 !important;
+  padding: 11px 15px !important;
+  font-size: 12px !important;
+  color: rgba(165,177,199,.78) !important;
+  border-bottom-width: 2px !important;
+}
+.nav-tab:hover,
+.agent-shell-btn:hover{
+  color: #e6eef8 !important;
+  background: rgba(255,255,255,.035) !important;
+}
+.nav-tab.active,
+.agent-shell-btn.active{
+  color: #f8fafc !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02)) !important;
+  border-bottom-color: var(--orange) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+
+.card,
+.panel,
+.radar-card,
+.role-stat,
+.role-setup-card,
+.role-policy-card,
+.agent-card,
+.evt-group,
+.break-stat,
+.viz-card,
+.btk-health-card,
+.btk-grid-panel,
+.btk-feed-panel,
+.btk-agent-card{
+  background: linear-gradient(180deg, rgba(13,21,37,.94), rgba(9,15,28,.96)) !important;
+  border: 1px solid var(--panel-line) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--panel-shadow) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+.card{padding: 18px !important;}
+.card-hdr{
+  margin-bottom: 14px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid rgba(148,163,184,.09) !important;
+}
+.card-title{
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #eef4fb !important;
+  letter-spacing: -.015em !important;
+}
+.chip{
+  background: rgba(255,255,255,.045) !important;
+  border: 1px solid rgba(148,163,184,.14) !important;
+  color: rgba(194,205,222,.88) !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 5px 10px !important;
+}
+
+.tbl-wrap{
+  border: 1px solid rgba(148,163,184,.08) !important;
+  border-radius: 16px !important;
+  overflow: auto !important;
+  background: rgba(5,10,19,.34) !important;
+}
+table{
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+thead th{
+  background: rgba(9,15,28,.95) !important;
+  border-bottom: 1px solid rgba(148,163,184,.10) !important;
+  color: rgba(148,163,184,.82) !important;
+  font-size: 10px !important;
+  letter-spacing: .11em !important;
+  font-weight: 700 !important;
+  padding: 12px 14px !important;
+}
+tbody td{
+  padding: 14px 14px !important;
+  font-size: 12px !important;
+  color: rgba(226,232,240,.88) !important;
+  border-bottom: 1px solid rgba(148,163,184,.07) !important;
+  background: transparent !important;
+}
+tbody tr:hover td{
+  background: rgba(255,255,255,.028) !important;
+}
+.agent-name{font-size: 14px !important;font-weight: 700 !important;color:#f8fafc !important;}
+.agent-ext{font-size: 11px !important;color: rgba(148,163,184,.72) !important;}
+
+/* Login — match the cleaner Adit product split screen */
+#loginScreen{
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255,255,255,.12), transparent 18%),
+    radial-gradient(circle at 84% 72%, rgba(255,255,255,.06), transparent 20%),
+    linear-gradient(135deg, #0b627a 0%, #0d5a73 36%, #0b4865 64%, #08263a 100%) !important;
+}
+#loginScreen .login-bg{
+  background: transparent !important;
+}
+#loginScreen .login-grid{
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) !important;
+  background-size: 72px 72px !important;
+  opacity: .32 !important;
+}
+#loginScreen .login-beam,
+#loginScreen .orb,
+#loginScreen .particles,
+#loginScreen .confetti-wrap{
+  opacity: .55 !important;
+}
+#loginScreen .login-left,
+#loginScreen .login-right{
+  padding: 42px 36px !important;
+  border: none !important;
+}
+#loginScreen .login-left{justify-content:flex-end !important;}
+#loginScreen .login-right{justify-content:flex-start !important;}
+#loginScreen .login-card-left{
+  max-width: 560px !important;
+  min-height: 560px !important;
+  border-radius: 34px !important;
+  background: linear-gradient(180deg, rgba(239,248,252,.96), rgba(220,239,247,.96)) !important;
+  border: 1px solid rgba(255,255,255,.55) !important;
+  box-shadow: 0 32px 100px rgba(3,22,33,.22) !important;
+  color: #0f2a3c !important;
+  padding: 34px 34px 30px !important;
+}
+#loginScreen .lp-wordmark{
+  color: rgba(15,42,60,.72) !important;
+  background: rgba(255,255,255,.55) !important;
+  border-color: rgba(9,83,107,.12) !important;
+}
+#loginScreen .lp-headline{
+  font-size: 42px !important;
+  line-height: 1.05 !important;
+  color: #10263a !important;
+}
+#loginScreen .lp-headline span{color: var(--orange) !important;}
+#loginScreen .lp-sub{
+  color: rgba(15,42,60,.72) !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+  max-width: 430px !important;
+}
+#loginScreen .lp-hero-card{
+  background: linear-gradient(180deg, #15263a 0%, #0f1b2a 100%) !important;
+  border: 1px solid rgba(15,42,60,.08) !important;
+  box-shadow: 0 18px 36px rgba(7,20,33,.18) !important;
+}
+#loginScreen .lp-ap{
+  background: rgba(255,255,255,.84) !important;
+  color: #17384f !important;
+  border-color: rgba(8,64,86,.08) !important;
+  box-shadow: 0 16px 34px rgba(7,20,33,.12) !important;
+}
+#loginScreen .login-form-wrap{
+  max-width: 500px !important;
+  min-height: 560px !important;
+  justify-content: center !important;
+  border-radius: 34px !important;
+  background: rgba(8,26,40,.22) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  box-shadow: 0 28px 80px rgba(3,18,28,.26) !important;
+  backdrop-filter: blur(24px) !important;
+}
+#loginScreen .login-brand-logo{
+  width: auto !important;
+  height: 54px !important;
+  margin: 0 auto 24px !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+#loginScreen .login-welcome{
+  font-size: 58px !important;
+  line-height: .95 !important;
+  letter-spacing: -.045em !important;
+  color: #f8fcff !important;
+  margin-bottom: 12px !important;
+  text-align: left !important;
+}
+#loginScreen .login-sub{
+  font-size: 16px !important;
+  color: rgba(222,236,246,.82) !important;
+  margin-bottom: 32px !important;
+  text-align: left !important;
+}
+#loginScreen .gfb-wrapper{display:flex !important;flex-direction:column !important;gap:12px !important;}
+#loginScreen .google-btn-host,
+#loginScreen .google-fallback-btn{
+  width: 100% !important;
+}
+#loginScreen .google-fallback-btn{
+  background: rgba(255,255,255,.96) !important;
+  color: #10263a !important;
+  border: 1px solid rgba(255,255,255,.72) !important;
+  box-shadow: 0 12px 28px rgba(2,8,23,.18) !important;
+  min-height: 58px !important;
+}
+#loginScreen .google-fallback-btn:hover{
+  transform: translateY(-1px) !important;
+  border-color: rgba(255,255,255,.92) !important;
+  box-shadow: 0 16px 32px rgba(2,8,23,.22) !important;
+}
+#loginScreen .google-btn-host iframe{
+  min-width: 100% !important;
+  max-width: 100% !important;
+}
+#loginScreen .login-restrict{
+  color: rgba(214,230,241,.70) !important;
+  margin-top: 20px !important;
+}
+#loginScreen .login-restrict strong{
+  color: #ffffff !important;
+}
+
+/* Live dashboard shell */
+#tab-live .card:first-of-type{
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+#tab-live .ld-strip{
+  padding: 16px 20px 14px !important;
+  border-bottom: 1px solid rgba(148,163,184,.08) !important;
+}
+#tab-live .ld-strip-kicker{font-size: 11px !important;color: rgba(148,163,184,.72) !important;}
+#tab-live .ld-strip-title{font-size: 32px !important;line-height: 1.1 !important;}
+#tab-live .ld-strip-sub{font-size: 13px !important;color: rgba(148,163,184,.74) !important;}
+#tab-live .ld-kpis{
+  gap: 14px !important;
+  margin-bottom: 16px !important;
+}
+#tab-live .ld-kpi{
+  min-height: 112px !important;
+  border-radius: 18px !important;
+  background: linear-gradient(180deg, rgba(14,22,40,.92), rgba(9,15,28,.96)) !important;
+}
+#tab-live .ld-kpi-val{font-size: 34px !important;}
+
+/* Abandon radar */
+#abandon-board-card{
+  display: block !important;
+}
+.abandon-board{
+  gap: 10px !important;
+}
+.abandon-row{
+  display: grid !important;
+  grid-template-columns: 48px minmax(0,1fr) auto !important;
+  gap: 14px !important;
+  align-items: center !important;
+  padding: 14px 16px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(180deg, rgba(17,24,39,.66), rgba(12,18,30,.82)) !important;
+  border: 1px solid rgba(148,163,184,.10) !important;
+}
+.abandon-rank{
+  width: 34px;height: 34px;border-radius: 12px;
+  display:flex;align-items:center;justify-content:center;
+  background: rgba(255,255,255,.04);
+  border:1px solid rgba(148,163,184,.12);
+  color:#e5edf6;font-weight:700;font-size:11px;
+}
+.abandon-main{display:flex !important;flex-direction:column !important;gap:8px !important;min-width:0 !important;}
+.abandon-title{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  flex-wrap:wrap !important;
+  margin:0 !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:#f8fafc !important;
+}
+.abandon-meta{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+  margin-top:0 !important;
+}
+.abandon-meta span{
+  display:inline-flex !important;
+  align-items:center !important;
+  min-height:28px !important;
+  padding:5px 10px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.035) !important;
+  border:1px solid rgba(148,163,184,.08) !important;
+  color:rgba(194,205,222,.84) !important;
+  font-size:11px !important;
+}
+.abandon-time{
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:flex-end !important;
+  gap:8px !important;
+}
+.abandon-time .abandon-ring{
+  font-size: 20px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important;
+  color: #fda4af !important;
+}
+.abandon-time .abandon-band{
+  border-radius: 999px !important;
+  padding: 6px 10px !important;
+  min-width: 120px !important;
+  text-align: center !important;
+  font-size: 10px !important;
+}
+
+/* Status change log */
+#event-log{
+  max-height: none !important;
+  overflow: visible !important;
+  gap: 10px !important;
+}
+.evt-group{
+  margin-bottom: 0 !important;
+  border-radius: 18px !important;
+}
+.evt-hdr{
+  min-height: 66px !important;
+  padding: 14px 18px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,.016)) !important;
+}
+.evt-agent{
+  flex: 0 0 220px !important;
+  font-size: 15px !important;
+  letter-spacing: -.015em !important;
+}
+.evt-meta{
+  gap: 8px !important;
+  font-size: 11px !important;
+  color: rgba(194,205,222,.82) !important;
+}
+.evt-meta > span:not(.pill){
+  display:inline-flex !important;
+  align-items:center !important;
+  min-height: 28px !important;
+  padding: 5px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(148,163,184,.08) !important;
+}
+.evt-body{
+  padding: 12px 16px 16px !important;
+  gap: 8px !important;
+  border-top: 1px solid rgba(148,163,184,.08) !important;
+}
+.evt-row{
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(148,163,184,.08) !important;
+  gap: 12px !important;
+}
+.evt-time{
+  flex: 0 0 176px !important;
+  font-size: 11px !important;
+  color: rgba(148,163,184,.76) !important;
+}
+
+/* Manage agents */
+#tab-agents .agent-grid{
+  grid-template-columns: repeat(auto-fill,minmax(250px,1fr)) !important;
+  gap: 14px !important;
+}
+#tab-agents .agent-card{
+  min-height: 168px !important;
+  padding: 18px !important;
+}
+#tab-agents .agent-card-ext{
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+}
+#tab-agents .agent-card-actions button{
+  min-height: 38px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+}
+
+/* Access board */
+.role-overview{
+  grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+}
+.role-layout{gap: 16px !important;}
+.role-board{
+  border: 1px solid rgba(148,163,184,.09) !important;
+  border-radius: 18px !important;
+  background: rgba(5,10,19,.30) !important;
+}
+.role-board-head{
+  background: rgba(255,255,255,.028) !important;
+}
+.role-board-head>div,.role-cell{
+  padding: 12px 14px !important;
+}
+
+/* Responsive cleanup */
+@media (max-width: 1100px){
+  .page,.agent-shell-page{padding:16px 16px 22px !important;}
+  .role-overview{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+  .evt-agent{flex-basis:160px !important;}
+  #loginScreen .login-left,
+  #loginScreen .login-right{padding:24px 18px !important;}
+  #loginScreen .login-welcome{font-size:44px !important;}
+}
+@media (max-width: 860px){
+  #loginScreen{display:flex !important;flex-direction:column !important;}
+  #loginScreen .login-left,
+  #loginScreen .login-right{
+    width:100% !important;
+    justify-content:center !important;
+    padding:18px 14px !important;
+  }
+  #loginScreen .login-card-left,
+  #loginScreen .login-form-wrap{
+    max-width: none !important;
+    min-height: auto !important;
+  }
+  #loginScreen .login-welcome{font-size:38px !important;}
+  .evt-hdr{flex-wrap:wrap !important;}
+  .evt-agent{flex:1 1 100% !important;}
+  .evt-time{flex-basis:120px !important;}
+  .abandon-row{grid-template-columns:1fr !important;}
+  .abandon-time{align-items:flex-start !important;}
+}
 </style>
 <script>
 /* ── Sticky header runtime calibration (for non-admin tables) ─────────────── */
@@ -7453,16 +7952,20 @@ function buildAbandonBoard(agentOps){
   }
   return abandonedCalls.slice(0,10).map((call,idx)=>{
     const band=getAbandonBand(call.ringDuration||0);
+    const owner=call.agentName||call.queueName||'Queue level';
+    const result=String(call.result||'Unknown').replace(/([a-z])([A-Z])/g,'$1 $2');
+    const hold=(call.holdDuration||0)>0?('Hold '+fmt(call.holdDuration||0)):'No hold';
+    const callTag=String(call.callId||'').slice(-6);
     return '<div class="abandon-row">'+
       '<div class="abandon-rank">'+String(idx+1).padStart(2,'0')+'</div>'+
       '<div class="abandon-main">'+
-        '<div class="abandon-title">'+(call.agentName||'Unknown Agent')+' <span class="pill p-unavail"><span class="dot"></span>Abandoned</span></div>'+
+        '<div class="abandon-title">'+owner+' <span class="pill p-unavail"><span class="dot"></span>Abandoned</span></div>'+
         '<div class="abandon-meta">'+
           '<span>'+(call.extension?('Ext '+call.extension):'Queue level')+'</span>'+
-          '<span>'+String(call.result||'Unknown')+'</span>'+
-          '<span>At '+toTime(call.startTime)+'</span>'+
-          '<span>Hold '+fmt(call.holdDuration||0)+'</span>'+
-          '<span>Call '+String(call.callId||'').slice(-6)+'</span>'+
+          '<span>'+result+'</span>'+
+          '<span>'+toTime(call.startTime)+'</span>'+
+          '<span>'+hold+'</span>'+
+          '<span>'+(callTag?('Call '+callTag):'No ID')+'</span>'+
         '</div>'+
       '</div>'+
       '<div class="abandon-time">'+
@@ -8152,8 +8655,10 @@ function buildToggleLog(agentId){
 
 function evtToggle(el){
   const body = el.nextElementSibling;
+  const arr  = el.querySelector('span:last-child');
   const isOpen = body.style.display !== 'none';
   body.style.display = isOpen ? 'none' : 'flex';
+  if(arr) arr.style.transform = isOpen ? '' : 'rotate(180deg)';
   el.parentElement.classList.toggle('open', !isOpen);
 }
 
@@ -8392,11 +8897,26 @@ async function loadEventLog(){
     if(!events.length){container.innerHTML='<div class="no-data">No status changes today</div>';return;}
     const grouped={};
     events.forEach(e=>{if(!grouped[e.agent_name])grouped[e.agent_name]=[];grouped[e.agent_name].push(e);});
-    container.innerHTML=Object.entries(grouped).map(([agent,evts])=>{
+    const chipSty='display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(148,163,184,.08);font-size:10.5px;';
+    container.innerHTML=Object.entries(grouped).map(([agent,evts],groupIndex)=>{
       const last=evts[evts.length-1];
       const changes=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status);
-      const rows=evts.slice().reverse().map(e=>'<div class="evt-row"><div class="evt-time">'+toDateTime(e.timestamp)+'</div><div><span class="pill '+pillCls(e.status)+'">'+e.status+'</span></div></div>').join('');
-      return'<div class="evt-group open"><div class="evt-hdr" onclick="evtToggle(this)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>'+changes.length+' toggles</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body" style="display:flex;flex-direction:column;gap:6px;padding:10px 18px 16px;min-height:20px;">'+rows+'</div></div>';
+      const rows=evts.slice().reverse().map(e=>'<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(148,163,184,.08);font-size:11px;"><span style="font-family:monospace;font-size:10px;color:rgba(176,207,229,.55);flex:0 0 140px;">'+toDateTime(e.timestamp)+'</span><span class="pill '+pillCls(e.status)+'">'+e.status+'</span></div>').join('');
+      const isOpen=groupIndex===0;
+      const arrRot=isOpen?'transform:rotate(180deg);':'';
+      return'<div class="evt-group'+(isOpen?' open':'')+'" style="border:1px solid rgba(176,207,229,.085);border-radius:18px;overflow:hidden;background:rgba(11,22,35,.78);margin-bottom:10px;">'
+        +'<div class="evt-hdr" onclick="evtToggle(this)" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;min-height:70px;cursor:pointer;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.016));user-select:none;">'
+        +'<span style="font-size:15px;font-weight:600;color:#edf5fc;flex:0 0 200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+agent+'</span>'
+        +'<div style="display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap;">'
+        +'<span class="pill '+pillCls(last.status)+'">'+last.status+'</span>'
+        +'<span style="'+chipSty+'">'+evts.length+' events</span>'
+        +'<span style="'+chipSty+'">'+changes.length+' toggles</span>'
+        +'<span style="'+chipSty+'">Last '+toTime(last.timestamp)+'</span>'
+        +'</div>'
+        +'<span style="font-size:11px;color:rgba(176,207,229,.6);transition:transform .2s;'+arrRot+'">&#9660;</span>'
+        +'</div>'
+        +'<div style="display:'+(isOpen?'flex':'none')+';flex-direction:column;gap:8px;padding:12px 16px 16px;border-top:1px solid rgba(148,163,184,.08);">'+rows+'</div>'
+        +'</div>';
     }).join('');
   }catch(e){console.error('loadEventLog',e);}
 }
