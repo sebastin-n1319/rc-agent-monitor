@@ -1017,8 +1017,8 @@ async function fetchQueueStatuses() {
     for (const rec of (data.records || [])) {
       if (rec.member && rec.member.id) {
         statusMap[String(rec.member.id)] = {
-          acceptQueueCalls: rec.acceptQueueCalls !== false,
-          acceptCurrentQueueCalls: rec.acceptCurrentQueueCalls !== false
+          acceptQueueCalls: rec.acceptQueueCalls === true,
+          acceptCurrentQueueCalls: rec.acceptCurrentQueueCalls === true
         };
       }
     }
@@ -1289,8 +1289,8 @@ async function handleWebhookNotification(payload) {
         if (!agentId || !agentMap[agentId]) continue;
         lastQueueStatuses[agentId] = {
           ...(lastQueueStatuses[agentId] || {}),
-          acceptQueueCalls: rec.acceptQueueCalls !== false,
-          acceptCurrentQueueCalls: rec.acceptCurrentQueueCalls !== false
+          acceptQueueCalls: rec.acceptQueueCalls === true,
+          acceptCurrentQueueCalls: rec.acceptCurrentQueueCalls === true
         };
         lastQueueStatusAt = Date.now();
         const existing = lastLiveStatusSnapshot[agentId];
