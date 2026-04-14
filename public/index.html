@@ -667,9 +667,22 @@ select option{background:#0c1424;color:var(--t1);}
 
 @keyframes ldAlertPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}50%{box-shadow:0 0 0 4px rgba(244,63,94,.2);}}
 
-/* ── Admin table: sticky header — offset applied via --sticky-top CSS var ── */
-#admin-agent-tbl-wrap{overflow-x:auto;}
-#admin-agent-tbl-wrap thead th{position:sticky;top:var(--sticky-top,130px);z-index:10;background:rgba(7,13,28,.97);}
+/* ── Admin table: self-contained scroll so thead sticky top:0 works ─────── */
+/* overflow-x:auto on any ancestor implicitly sets overflow-y to auto too,
+   which creates a new BFC/scroll-context and breaks page-level sticky.
+   Fix: give the wrapper an explicit height so the table scrolls INSIDE it.
+   thead th top:0 is then relative to the container, always correct. */
+#admin-agent-tbl-wrap{
+  overflow-x:auto;
+  overflow-y:auto;
+  max-height:680px; /* fits ~13 rows; grows to show all if fewer */
+}
+#admin-agent-tbl-wrap thead th{
+  position:sticky !important;
+  top:0 !important;
+  z-index:12 !important;
+  background:rgba(7,13,28,.97);
+}
 
 /* ══════════════════════════════════════════════════════════════════════════
    VIZ ROW
@@ -5587,37 +5600,47 @@ footer{
   padding: 0 !important;
 }
 
-/* ── Definitive sticky table header ─────────────────────────────────────── */
-/* Top offset is computed at runtime by syncStickyHeader() and stored in
-   --sticky-top. This rule is LAST so it wins over every !important above. */
-#admin-agent-tbl-wrap thead th,
-#agent-section-dashboard thead th,
-thead th {
+/* ── Admin agent table: container-scroll sticky (top:0 relative to wrapper) */
+/* This MUST be last — earlier blocks set top:Xpx !important on thead th.
+   For #admin-agent-tbl-wrap specifically, the wrapper has overflow-y:auto
+   so the table scrolls inside it; top:0 always works correctly here. */
+#admin-agent-tbl-wrap thead th {
   position: sticky !important;
-  top: var(--sticky-top, 130px) !important;
+  top: 0 !important;
+  z-index: 14 !important;
+  background: rgba(7,13,28,.97) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* ── Other tables: page-level sticky via JS-computed offset ─────────────── */
+/* getComputedStyle(nav).top + nav.offsetHeight = exact sticky threshold.    */
+#agent-section-dashboard thead th,
+.tbl-wrap:not(#admin-agent-tbl-wrap) thead th {
+  position: sticky !important;
+  top: var(--sticky-top, 100px) !important;
   z-index: 12 !important;
 }
 </style>
 <script>
-/* ── Sticky header runtime calibration ───────────────────────────────────── */
+/* ── Sticky header runtime calibration (for non-admin tables) ─────────────── */
 (function(){
   function syncStickyHeader(){
     var nav = document.querySelector('.nav');
     if(!nav) return;
-    var b = nav.getBoundingClientRect().bottom;
-    if(b > 10) document.documentElement.style.setProperty('--sticky-top', Math.ceil(b) + 'px');
+    // Use computed top (sticky threshold) + rendered height — reliable at any scroll position
+    var navTop = parseFloat(window.getComputedStyle(nav).top) || 0;
+    var navH   = nav.offsetHeight || 0;
+    var off    = Math.ceil(navTop + navH);
+    if(off > 20) document.documentElement.style.setProperty('--sticky-top', off + 'px');
   }
-  // Run immediately, after fonts/layout settle, and on resize
-  syncStickyHeader();
-  setTimeout(syncStickyHeader, 100);
-  setTimeout(syncStickyHeader, 600);
+  // Run after DOM ready and after layout settles
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', syncStickyHeader);
+  } else {
+    syncStickyHeader();
+  }
+  setTimeout(syncStickyHeader, 300);
   window.addEventListener('resize', syncStickyHeader);
-  // Re-calibrate whenever a nav tab is clicked (tab switch can shift layout)
-  document.addEventListener('click', function(e){
-    if(e.target && (e.target.closest('.nav-tab') || e.target.closest('.agent-shell-btn'))){
-      setTimeout(syncStickyHeader, 80);
-    }
-  });
 })();
 </script>
 </head>
