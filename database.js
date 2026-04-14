@@ -471,7 +471,7 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
       `SELECT status,timestamp,queue_status FROM presence_events WHERE agent_id=? AND datetime(timestamp) < datetime(?) ORDER BY datetime(timestamp) DESC LIMIT 1`,
       [agentId, dayStartSql]
     );
-    let availTime=0,unavailTime=0,toggleCount=0;
+    let availTime=0,unavailTime=0,onCallTime=0,ringingTime=0,toggleCount=0;
     const segments = [];
     if(previousEvent){
       segments.push({
@@ -509,6 +509,8 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
           if(end <= start) continue;
           const dur = Math.max(0, (end - start) / 1000);
           if(isQueueReady(seg.status, seg.queue_status)) availTime += dur;
+          else if(seg.status === 'On Call') onCallTime += dur;
+          else if(seg.status === 'Ringing') ringingTime += dur;
           else unavailTime += dur;
         }
       }
@@ -550,6 +552,8 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
       agentId, agentName:agent.name, extension:agent.extension,
       availableSeconds:Math.round(availTime),
       unavailableSeconds:Math.round(unavailTime),
+      onCallSeconds:Math.round(onCallTime),
+      ringingSeconds:Math.round(ringingTime),
       toggleCount,
       inboundCalls:inb.total||0,
       outboundCalls:out.total||0,

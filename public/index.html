@@ -690,6 +690,10 @@ select option{background:#0c1424;color:var(--t1);}
 .rpt-val{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);}
 .tl-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden;display:flex;margin-bottom:6px;}
 .tl-seg{display:block;height:100%;transition:width .6s cubic-bezier(.22,1,.36,1);}
+.tl-avail{background:var(--green);}
+.tl-unavail{background:var(--red);}
+.tl-oncall{background:var(--blue2);}
+.tl-ringing{background:var(--yellow);}
 .tl-gap{display:block;height:100%;background:transparent;}
 .toggle-log{display:flex;flex-direction:column;gap:3px;max-height:300px;overflow-y:auto;}
 .toggle-log::-webkit-scrollbar{width:3px;}
@@ -944,6 +948,81 @@ select option{background:#0c1424;color:var(--t1);}
 
 /* ── Break callout + alerts */
 .break-alert-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:50px;font-size:9.5px;font-weight:700;background:var(--red-lo);color:var(--red);border:1px solid rgba(244,63,94,.2);}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BREAK TRACKER COMMAND CENTER (Admin Redesign)
+══════════════════════════════════════════════════════════════════════════ */
+/* Command header */
+.btk-command{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+.btk-command-left{flex:1;min-width:200px;}
+.btk-command-title{font-size:19px;font-weight:800;letter-spacing:-.04em;color:var(--t1);margin-bottom:6px;}
+.btk-stats-strip{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--t2);}
+.btk-stat strong{font-weight:700;}
+.btk-stat-sep{color:var(--b2);}
+.btk-stat-alert{color:var(--red)!important;}
+.btk-stat-alert strong{color:var(--red)!important;}
+.btk-stat-mode{color:var(--t3);font-size:10.5px;}
+.btk-command-right .break-toolbar-group{gap:8px;}
+/* Health card */
+.btk-health-card{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px 20px;margin-bottom:14px;}
+.btk-health-label{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--t3);text-transform:uppercase;margin-bottom:10px;}
+.btk-bar-wrap{display:flex;height:12px;border-radius:6px;overflow:hidden;margin-bottom:12px;background:rgba(255,255,255,.05);gap:1px;}
+.btk-bar-seg{height:100%;transition:width .6s cubic-bezier(.22,1,.36,1);min-width:2px;}
+.btk-legend{display:flex;flex-wrap:wrap;gap:8px 18px;}
+.btk-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);}
+.btk-legend-item strong{color:var(--t1);font-weight:700;}
+.btk-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.btk-health-empty{font-size:11px;color:var(--t3);font-style:italic;}
+/* Alert zone */
+.btk-alert-zone{margin-bottom:14px;background:rgba(244,63,94,.05);border:1px solid rgba(244,63,94,.22);border-radius:var(--r);overflow:hidden;}
+.btk-alert-zone:empty{display:none;}
+.btk-alert-zone-hdr{display:flex;align-items:center;gap:14px;padding:11px 18px;background:rgba(244,63,94,.08);border-bottom:1px solid rgba(244,63,94,.15);}
+.btk-alert-zone-title{font-size:12px;font-weight:800;color:var(--red);letter-spacing:-.01em;}
+.btk-alert-zone-copy{font-size:10.5px;color:rgba(244,63,94,.6);}
+.btk-alert-row{display:flex;align-items:center;gap:10px;padding:9px 18px;border-bottom:1px solid rgba(244,63,94,.07);font-size:11.5px;transition:background .12s;}
+.btk-alert-row:last-child{border-bottom:none;}
+.btk-alert-row:hover{background:rgba(244,63,94,.05);}
+.btk-alert-icon{color:var(--red);font-size:11px;flex-shrink:0;}
+.btk-alert-agent{font-weight:700;color:var(--t1);flex:0 0 130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.btk-alert-msg{color:var(--red);flex:1;font-size:11px;}
+.btk-alert-status{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);flex:0 0 130px;text-align:right;}
+.btk-alert-since{font-size:10px;color:var(--t3);flex:0 0 72px;text-align:right;font-family:'JetBrains Mono',monospace;}
+/* Body layout */
+.btk-body{display:grid;grid-template-columns:1fr 310px;gap:14px;align-items:start;}
+@media(max-width:1060px){.btk-body{grid-template-columns:1fr;}}
+.btk-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.btk-panel-title{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:-.02em;}
+/* Grid panel */
+.btk-grid-panel{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:18px 20px;}
+.btk-agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
+/* Agent tile */
+.btk-agent-tile{background:rgba(255,255,255,.025);border:1px solid var(--b1);border-left:3px solid var(--tile-accent,var(--b2));border-radius:12px;padding:13px 14px;transition:transform .15s,box-shadow .15s;position:relative;}
+.btk-agent-tile:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.btk-tile-alert{border-color:rgba(244,63,94,.28)!important;background:rgba(244,63,94,.04)!important;}
+.btk-tile-top{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;}
+.btk-tile-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;letter-spacing:-.01em;}
+.btk-tile-info{flex:1;min-width:0;}
+.btk-tile-name{font-size:12.5px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.btk-tile-email{font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;margin-top:1px;}
+.btk-tile-alert-badge{flex-shrink:0;padding:2px 5px;background:var(--red-lo);color:var(--red);border:1px solid rgba(244,63,94,.22);border-radius:4px;font-size:8px;font-weight:800;letter-spacing:.06em;}
+.btk-tile-status{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.btk-tile-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.btk-tile-status-label{font-size:11px;font-weight:700;flex:1;}
+.btk-tile-duration{font-family:'JetBrains Mono',monospace;font-size:10.5px;opacity:.85;}
+.btk-tile-since{font-size:9.5px;color:var(--t3);margin-bottom:10px;font-family:'JetBrains Mono',monospace;}
+.btk-tile-bars{display:flex;flex-direction:column;gap:4px;padding-top:9px;border-top:1px solid var(--b1);margin-bottom:7px;}
+.btk-bar-row{display:flex;align-items:center;gap:6px;}
+.btk-bar-lbl{font-size:9px;color:var(--t3);flex:0 0 42px;text-align:right;white-space:nowrap;}
+.btk-mini-bar-track{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
+.btk-mini-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.btk-bar-val{font-size:9px;color:var(--t2);font-family:'JetBrains Mono',monospace;flex:0 0 34px;text-align:right;}
+.btk-over{color:var(--red)!important;font-weight:700;}
+.btk-tile-last{font-size:9.5px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Feed panel */
+.btk-feed-panel{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px 18px;position:sticky;top:68px;}
+.btk-feed-list{display:flex;flex-direction:column;gap:3px;max-height:calc(100vh - 200px);overflow-y:auto;}
+.btk-feed-list::-webkit-scrollbar{width:3px;}
+.btk-feed-list::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px;}
 
 /* ══════════════════════════════════════════════════════════════════════════
    HOF & BONUS IFRAMES
@@ -5938,66 +6017,60 @@ footer{
     </div>
   </div>
 
-  <!-- BREAK TRACKER -->
+  <!-- BREAK TRACKER — Command Center Redesign -->
   <div class="page" id="tab-breaks">
-    <div class="metrics">
-      <div class="metric m-green"><div class="metric-lbl">Logged In</div><div class="metric-val" id="break-admin-loggedin">--</div></div>
-      <div class="metric m-red"><div class="metric-lbl">Logged Out</div><div class="metric-val" id="break-admin-loggedout">--</div></div>
-      <div class="metric m-blue"><div class="metric-lbl">BRB Live</div><div class="metric-val" id="break-admin-brb">--</div></div>
-      <div class="metric m-orange"><div class="metric-lbl">Break Live</div><div class="metric-val" id="break-admin-break">--</div></div>
-      <div class="metric m-teal"><div class="metric-lbl">Internal Live</div><div class="metric-val" id="break-admin-internal">--</div></div>
-      <div class="metric m-purple"><div class="metric-lbl">Training Live</div><div class="metric-val" id="break-admin-training">--</div></div>
-      <div class="metric m-pink"><div class="metric-lbl">QA AUX Live</div><div class="metric-val" id="break-admin-qa">--</div></div>
-      <div class="metric m-red"><div class="metric-lbl">Alerts</div><div class="metric-val" id="break-admin-alerts">--</div></div>
-      <div class="metric m-teal"><div class="metric-lbl">Tracker Team</div><div class="metric-val" id="break-admin-team">--</div><div class="metric-sub" id="break-admin-chat">Chat space pending</div></div>
-    </div>
-    <div class="break-toolbar">
-      <div class="break-toolbar-group">
-        <span class="break-toolbar-label">Tracker date</span>
-        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">Prev</button>
-        <input type="date" id="break-admin-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
-        <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next</button>
-        <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
-      </div>
-      <div class="break-toolbar-group">
-        <span class="break-history-chip" id="break-admin-history-chip">Today</span>
-        <button class="break-toolbar-btn" onclick="downloadBreakReport()">Download report</button>
-      </div>
-    </div>
-    <div class="break-layout">
-      <div class="break-stack">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Break Tracker Board</span>
-            <span class="chip" id="break-board-chip">0 tracked</span>
-          </div>
-          <div class="break-callout" style="margin-bottom:12px;">
-            <div class="break-callout-left">
-              <div class="break-callout-title">Live Floor Signal</div>
-              <div class="break-callout-copy">See who is live, away, or in AUX at a glance, then open the detailed board only when you need timing and feed history.</div>
-            </div>
-            <span class="chip" id="break-callout-chip">Awaiting first event</span>
-          </div>
-          <div class="break-lane-board" id="break-lane-board">
-            <div class="break-empty">Loading live floor lanes...</div>
-          </div>
-          <div class="break-board" id="break-board">
-            <div class="break-empty">Loading team tracker...</div>
-          </div>
+
+    <!-- Command header -->
+    <div class="btk-command">
+      <div class="btk-command-left">
+        <div class="btk-command-title">Break Tracker</div>
+        <div id="btk-stats-strip" class="btk-stats-strip">
+          <span class="btk-stat"><strong>--</strong> tracked</span>
         </div>
       </div>
-      <div class="break-stack">
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Break Feed</span>
-            <span class="chip" id="break-feed-chip">0 events</span>
-          </div>
-          <div class="break-log-list" id="break-feed">
-            <div class="break-empty">Loading break events...</div>
-          </div>
+      <div class="btk-command-right">
+        <div class="break-toolbar-group">
+          <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">← Prev</button>
+          <input type="date" id="break-admin-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
+          <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next →</button>
+          <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
+          <span class="break-history-chip" id="break-admin-history-chip">Today</span>
+          <button class="break-toolbar-btn" onclick="downloadBreakReport()">⬇ Report</button>
         </div>
       </div>
     </div>
+
+    <!-- Floor Health Bar -->
+    <div class="btk-health-card">
+      <div class="btk-health-label">Floor Health — Live Staffing Split</div>
+      <div id="btk-health"><div class="btk-health-empty">Loading floor health...</div></div>
+    </div>
+
+    <!-- Alert Zone (auto-hides when empty via CSS :empty) -->
+    <div id="btk-alert-zone"></div>
+
+    <!-- Body: Agent Grid + Feed -->
+    <div class="btk-body">
+      <div class="btk-grid-panel">
+        <div class="btk-panel-hdr">
+          <span class="btk-panel-title">Agent Status Grid</span>
+          <span class="chip" id="break-board-chip">0 agents</span>
+        </div>
+        <div class="btk-agent-grid" id="btk-agent-grid">
+          <div class="break-empty">Loading agent data...</div>
+        </div>
+      </div>
+      <div class="btk-feed-panel">
+        <div class="btk-panel-hdr">
+          <span class="btk-panel-title">Break Feed</span>
+          <span class="chip" id="btk-feed-chip">0 events</span>
+        </div>
+        <div class="btk-feed-list" id="btk-feed-list">
+          <div class="break-empty">Loading events...</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- HALL OF FAME -->
@@ -6838,10 +6911,12 @@ function pillCls(st){
   if(s==='offline')return'p-unknown';
   return'p-unknown';
 }
-function calcScore(avail,unavail,inC,outC,missed,toggles){
-  const t=avail+unavail;if(!t)return{v:0,c:'s-low'};
+function calcScore(avail,unavail,inC,outC,missed,toggles,onCall=0,ringing=0){
+  // On-call and ringing time is productive — count it in the "working" denominator
+  const t=avail+unavail+onCall+ringing;if(!t)return{v:0,c:'s-low'};
   const calls=inC+outC;
-  const v=Math.round((avail/t)*60+(calls>0?(1-missed/calls)*25:25)+(1-Math.min(1,toggles/20))*15);
+  // avail share treats on-call as productive (not penalised in score)
+  const v=Math.round(((avail+onCall+ringing)/t)*60+(calls>0?(1-missed/calls)*25:25)+(1-Math.min(1,toggles/20))*15);
   return{v,c:v>=75?'s-high':v>=50?'s-mid':'s-low'};
 }
 
@@ -7031,7 +7106,8 @@ function buildAbandonIndex(calls){
 }
 
 function computeAgentRisk(agentOp){
-  const totalSeconds=(agentOp.availableSeconds||0)+(agentOp.unavailableSeconds||0);
+  // Include on-call and ringing time in total — these are productive, not wasted
+  const totalSeconds=(agentOp.availableSeconds||0)+(agentOp.unavailableSeconds||0)+(agentOp.onCallSeconds||0)+(agentOp.ringingSeconds||0);
   const unavailableShare=totalSeconds>0?(agentOp.unavailableSeconds||0)/totalSeconds:1;
   let score=8;
 
@@ -7096,6 +7172,8 @@ function buildAgentOpsDataset(agents, today){
       queueOff:isQueueOff(queueStatus),
       availableSeconds:sum.availableSeconds||0,
       unavailableSeconds:sum.unavailableSeconds||0,
+      onCallSeconds:sum.onCallSeconds||0,
+      ringingSeconds:sum.ringingSeconds||0,
       inboundCalls,
       outboundCalls,
       totalCalls,
@@ -7106,7 +7184,7 @@ function buildAgentOpsDataset(agents, today){
       longestAbandonRing,
       abandons:agentAbandons,
       timelineHtml:buildTL(a.rc_id,today),
-      performanceScore:calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,sum.inboundCalls||0,sum.outboundCalls||0,sum.missedCalls||0,sum.toggleCount||0)
+      performanceScore:calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,sum.inboundCalls||0,sum.outboundCalls||0,sum.missedCalls||0,sum.toggleCount||0,sum.onCallSeconds||0,sum.ringingSeconds||0)
     };
     return {...op,...computeAgentRisk(op)};
   });
@@ -7506,74 +7584,172 @@ function buildBreakLaneBoard(tracker){
   ].join('');
 }
 
+// ── BTK helpers ─────────────────────────────────────────────────────────────
+const BTK_STATUS_COLORS = {
+  'Logged In':          { border:'#22c55e', bg:'rgba(34,197,94,.10)',  dot:'#22c55e', text:'#22c55e' },
+  'BRB':                { border:'#f59e0b', bg:'rgba(245,158,11,.10)', dot:'#f59e0b', text:'#f59e0b' },
+  'Break':              { border:'#f43f5e', bg:'rgba(244,63,94,.10)',  dot:'#f43f5e', text:'#f43f5e' },
+  'Training / Coaching':{ border:'#a855f7', bg:'rgba(168,85,247,.10)', dot:'#a855f7', text:'#a855f7' },
+  'QA Session AUX':     { border:'#14b8a6', bg:'rgba(20,184,166,.10)', dot:'#14b8a6', text:'#14b8a6' },
+  'Internal Calls':     { border:'#3b82f6', bg:'rgba(59,130,246,.10)', dot:'#3b82f6', text:'#3b82f6' },
+  'Logged Out':         { border:'#475569', bg:'rgba(71,85,105,.06)',  dot:'#6b7280', text:'#94a3b8' },
+};
+
+function btkStatusColor(status){ return BTK_STATUS_COLORS[status] || BTK_STATUS_COLORS['Logged Out']; }
+
+function buildBtkHealthBar(summary, tracker){
+  const loggedIn  = summary.loggedInNow  || 0;
+  const loggedOut = summary.loggedOutNow || 0;
+  const brb       = summary.brbNow       || 0;
+  const onBreak   = summary.breakNow     || 0;
+  const internal  = summary.internalNow  || 0;
+  const training  = summary.trainingNow  || 0;
+  const qa        = summary.qaNow        || 0;
+  const total = loggedIn + loggedOut + brb + onBreak + internal + training + qa;
+  if(!total) return '<div class="btk-health-empty">No agents have checked in yet today.</div>';
+  const pct = n => total > 0 ? Math.max(1, (n/total*100)).toFixed(1) : 0;
+  const segs = [
+    { label:'Available', count:loggedIn,  color:'#22c55e' },
+    { label:'BRB',       count:brb,       color:'#f59e0b' },
+    { label:'Break',     count:onBreak,   color:'#f43f5e' },
+    { label:'Internal',  count:internal,  color:'#3b82f6' },
+    { label:'Training',  count:training,  color:'#a855f7' },
+    { label:'QA AUX',    count:qa,        color:'#14b8a6' },
+    { label:'Logged Out',count:loggedOut, color:'#475569' },
+  ].filter(s => s.count > 0);
+  const bar = segs.map(s =>
+    `<div class="btk-bar-seg" style="width:${pct(s.count)}%;background:${s.color}" title="${s.label}: ${s.count}"></div>`
+  ).join('');
+  const legend = segs.map(s =>
+    `<span class="btk-legend-item"><span class="btk-legend-dot" style="background:${s.color}"></span>${s.label} <strong>${s.count}</strong></span>`
+  ).join('');
+  return `<div class="btk-bar-wrap">${bar}</div><div class="btk-legend">${legend}</div>`;
+}
+
+function buildBtkAlertZone(tracker){
+  const alerts = [];
+  for(const row of tracker){
+    for(const msg of breakAlertMessages(row)){
+      alerts.push({ name:row.username, msg, status:row.currentStatus, duration:fmt(row.currentLaneSeconds||0), since:row.since });
+    }
+  }
+  if(!alerts.length) return '';
+  const rows = alerts.map(a =>
+    `<div class="btk-alert-row">
+      <span class="btk-alert-icon">⚠</span>
+      <span class="btk-alert-agent">${a.name}</span>
+      <span class="btk-alert-msg">${a.msg}</span>
+      <span class="btk-alert-status">${a.status} · ${a.duration}</span>
+      <span class="btk-alert-since">${a.since ? toTime(a.since) : '--'}</span>
+    </div>`
+  ).join('');
+  return `<div class="btk-alert-zone-hdr">
+    <span class="btk-alert-zone-title">🚨 ${alerts.length} Active Alert${alerts.length!==1?'s':''}</span>
+    <span class="btk-alert-zone-copy">Agents exceeding BRB or break limits — action needed</span>
+  </div>${rows}`;
+}
+
+function buildBtkAgentTile(row){
+  const status = row.currentStatus || 'Logged Out';
+  const alertLines = breakAlertMessages(row);
+  const hasAlert = alertLines.length > 0;
+  const initials = (row.username||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+  const c = btkStatusColor(status);
+  const BRB_LIMIT = 600, BREAK_LIMIT = 3600;
+  const maxToday = Math.max(row.brbSeconds||0, row.breakSeconds||0, row.trainingSeconds||0, row.qaSeconds||0, row.internalCallSeconds||0, 300);
+  function miniBar(val, color){
+    const w = Math.min(100, ((val||0) / Math.max(maxToday, 1)) * 100);
+    return `<div class="btk-mini-bar-track"><div class="btk-mini-bar-fill" style="width:${w}%;background:${color}"></div></div>`;
+  }
+  const isOvertime = hasAlert && (status==='Break'||status==='BRB');
+  const durationText = fmt(row.currentLaneSeconds||0) + (isOvertime ? ' ▲' : '');
+  const alertBadge = hasAlert ? `<span class="btk-tile-alert-badge" title="${alertLines.join(' · ')}">⚠ ALERT</span>` : '';
+  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':''}" style="--tile-accent:${c.border}">
+  <div class="btk-tile-top">
+    <div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>
+    <div class="btk-tile-info">
+      <div class="btk-tile-name">${row.username||'--'}</div>
+      <div class="btk-tile-email">${row.email||''}</div>
+    </div>
+    ${alertBadge}
+  </div>
+  <div class="btk-tile-status" style="color:${c.text}">
+    <span class="btk-tile-dot" style="background:${c.dot};box-shadow:0 0 5px ${c.dot}88"></span>
+    <span class="btk-tile-status-label">${status}</span>
+    <span class="btk-tile-duration">${durationText}</span>
+  </div>
+  <div class="btk-tile-since">${row.since?'Since '+toTime(row.since):'No signal yet'}</div>
+  <div class="btk-tile-bars">
+    <div class="btk-bar-row"><span class="btk-bar-lbl">BRB</span>${miniBar(row.brbSeconds,'#f59e0b')}<span class="btk-bar-val${(row.brbSeconds||0)>BRB_LIMIT?' btk-over':''}">${fmt(row.brbSeconds||0)}</span></div>
+    <div class="btk-bar-row"><span class="btk-bar-lbl">Break</span>${miniBar(row.breakSeconds,'#f43f5e')}<span class="btk-bar-val${(row.breakSeconds||0)>BREAK_LIMIT?' btk-over':''}">${fmt(row.breakSeconds||0)}</span></div>
+    <div class="btk-bar-row"><span class="btk-bar-lbl">Training</span>${miniBar(row.trainingSeconds,'#a855f7')}<span class="btk-bar-val">${fmt(row.trainingSeconds||0)}</span></div>
+    <div class="btk-bar-row"><span class="btk-bar-lbl">Internal</span>${miniBar(row.internalCallSeconds,'#3b82f6')}<span class="btk-bar-val">${fmt(row.internalCallSeconds||0)}</span></div>
+  </div>
+  <div class="btk-tile-last">${row.lastActionLabel?row.lastActionLabel+(row.lastActionAt?' · '+toTime(row.lastActionAt):''):'No activity yet'}</div>
+</div>`;
+}
+
 function renderBreakAdminView(){
   const summary = breakTrackerData.summary || {};
   const tracker = breakTrackerData.tracker || [];
   const recentLog = breakTrackerData.recentLog || [];
-  const selectedDate=getBreakTrackerDate();
-  const ids = {
-    loggedin: document.getElementById('break-admin-loggedin'),
-    loggedout: document.getElementById('break-admin-loggedout'),
-    brb: document.getElementById('break-admin-brb'),
-    breakNow: document.getElementById('break-admin-break'),
-    internal: document.getElementById('break-admin-internal'),
-    training: document.getElementById('break-admin-training'),
-    qa: document.getElementById('break-admin-qa'),
-    alerts: document.getElementById('break-admin-alerts'),
-    team: document.getElementById('break-admin-team'),
-    chat: document.getElementById('break-admin-chat'),
-    boardChip: document.getElementById('break-board-chip'),
-    laneBoard: document.getElementById('break-lane-board'),
-    board: document.getElementById('break-board'),
-    feedChip: document.getElementById('break-feed-chip'),
-    feed: document.getElementById('break-feed'),
-    callout: document.getElementById('break-callout-chip'),
-    historyChip: document.getElementById('break-admin-history-chip')
-  };
-  if(ids.loggedin) ids.loggedin.textContent = summary.loggedInNow ?? 0;
-  if(ids.loggedout) ids.loggedout.textContent = summary.loggedOutNow ?? 0;
-  if(ids.brb) ids.brb.textContent = summary.brbNow ?? 0;
-  if(ids.breakNow) ids.breakNow.textContent = summary.breakNow ?? 0;
-  if(ids.internal) ids.internal.textContent = summary.internalNow ?? 0;
-  if(ids.training) ids.training.textContent = summary.trainingNow ?? 0;
-  if(ids.qa) ids.qa.textContent = summary.qaNow ?? 0;
-  if(ids.alerts) ids.alerts.textContent = summary.alertCount ?? 0;
-  if(ids.team) ids.team.textContent = summary.teamCount ?? 0;
-  if(ids.chat) ids.chat.textContent = breakChatLabel();
-  if(ids.historyChip) ids.historyChip.textContent = breakHistoryMode() ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
-  if(ids.boardChip) ids.boardChip.textContent = (summary.teamCount ?? 0) + ' tracked';
-  if(ids.callout) ids.callout.textContent = breakHistoryMode() ? 'History view' : (breakTrackerMeta.enabled ? 'Chat space live' : 'Chat setup pending');
-  if(ids.laneBoard){
-    ids.laneBoard.innerHTML = buildBreakLaneBoard(tracker);
+  const selectedDate = getBreakTrackerDate();
+  const isHistory = breakHistoryMode();
+
+  // — History chip
+  const historyChip = document.getElementById('break-admin-history-chip');
+  if(historyChip) historyChip.textContent = isHistory ? 'History · '+formatTrackerDate(selectedDate) : 'Today · '+currentTZ;
+
+  // — Stats strip
+  const staffed = summary.loggedInNow || 0;
+  const away = (summary.brbNow||0)+(summary.breakNow||0)+(summary.internalNow||0)+(summary.trainingNow||0)+(summary.qaNow||0);
+  const loggedOut = summary.loggedOutNow || 0;
+  const alerts = summary.alertCount || 0;
+  const team = summary.teamCount || tracker.length || 0;
+  const statsEl = document.getElementById('btk-stats-strip');
+  if(statsEl) statsEl.innerHTML =
+    `<span class="btk-stat"><strong>${team}</strong> tracked</span>`+
+    `<span class="btk-stat-sep">·</span>`+
+    `<span class="btk-stat" style="color:#22c55e"><strong>${staffed}</strong> available</span>`+
+    `<span class="btk-stat-sep">·</span>`+
+    `<span class="btk-stat" style="color:#f59e0b"><strong>${away}</strong> away</span>`+
+    (loggedOut?`<span class="btk-stat-sep">·</span><span class="btk-stat" style="color:#94a3b8"><strong>${loggedOut}</strong> logged out</span>`:'')+
+    (alerts>0?`<span class="btk-stat-sep">·</span><span class="btk-stat btk-stat-alert"><strong>${alerts}</strong> alert${alerts!==1?'s':''}</span>`:'')+
+    `<span class="btk-stat-sep">·</span>`+
+    `<span class="btk-stat btk-stat-mode">${isHistory?'📅 History · '+formatTrackerDate(selectedDate):'🔴 Live · '+currentTZ+' · '+breakChatLabel()}</span>`;
+
+  // — Health bar
+  const healthEl = document.getElementById('btk-health');
+  if(healthEl) healthEl.innerHTML = buildBtkHealthBar(summary, tracker);
+
+  // — Alert zone
+  const alertZoneEl = document.getElementById('btk-alert-zone');
+  if(alertZoneEl) alertZoneEl.innerHTML = buildBtkAlertZone(tracker);
+
+  // — Agent grid: sort alerts first, then by status urgency
+  const chipEl = document.getElementById('break-board-chip');
+  if(chipEl) chipEl.textContent = team+' agent'+(team!==1?'s':'');
+  const gridEl = document.getElementById('btk-agent-grid');
+  if(gridEl){
+    const statusOrder = {'Break':0,'BRB':1,'Training / Coaching':2,'QA Session AUX':3,'Internal Calls':4,'Logged In':5,'Logged Out':6};
+    const sorted = [...tracker].sort((a,b)=>{
+      const aA = breakAlertMessages(a).length>0?0:1;
+      const bA = breakAlertMessages(b).length>0?0:1;
+      if(aA!==bA) return aA-bA;
+      return (statusOrder[a.currentStatus]??5)-(statusOrder[b.currentStatus]??5);
+    });
+    gridEl.innerHTML = sorted.length
+      ? sorted.map(buildBtkAgentTile).join('')
+      : '<div class="break-empty">No break tracker activity for '+formatTrackerDate(selectedDate)+'.</div>';
   }
 
-  if(ids.board){
-    ids.board.innerHTML = tracker.length ? tracker.map(row => {
-      const alertLines = breakAlertMessages(row);
-      return '<div class="break-user-card '+breakStatusClass(row.currentStatus)+' '+(row.alerts?.hasAlert?'has-alert':'')+'">'+
-        '<div class="break-user-top">'+
-          '<div><div class="break-user-name">'+row.username+'</div><div class="break-user-meta">'+row.email+'</div></div>'+
-          '<span class="break-user-status">'+row.currentStatus+'</span>'+
-        '</div>'+
-        '<div class="break-user-grid">'+
-          '<div class="break-user-metric"><span>Since</span><strong>'+(row.since ? toTime(row.since) : '--')+'</strong></div>'+
-          '<div class="break-user-metric"><span>Lane Time</span><strong>'+fmt(row.currentLaneSeconds || 0)+'</strong></div>'+
-          '<div class="break-user-metric"><span>BRB Today</span><strong>'+fmt(row.brbSeconds || 0)+'</strong></div>'+
-          '<div class="break-user-metric"><span>Break Today</span><strong>'+fmt(row.breakSeconds || 0)+'</strong></div>'+
-          '<div class="break-user-metric"><span>Internal</span><strong>'+fmt(row.internalCallSeconds || 0)+'</strong></div>'+
-          '<div class="break-user-metric"><span>Training</span><strong>'+fmt(row.trainingSeconds || 0)+'</strong></div>'+
-          '<div class="break-user-metric"><span>QA AUX</span><strong>'+fmt(row.qaSeconds || 0)+'</strong></div>'+
-        '</div>'+
-        '<div class="break-user-meta" style="margin-top:12px;">Last action · '+(row.lastActionLabel || 'No activity')+(row.lastActionAt ? ' · '+toTime(row.lastActionAt) : '')+'</div>'+
-        (alertLines.length?'<div class="break-user-alert">'+alertLines.join('<br>')+'</div>':'')+
-      '</div>';
-    }).join('') : '<div class="break-empty">No break tracker activity found for '+formatTrackerDate(selectedDate)+'.</div>';
-  }
-
-  if(ids.feedChip) ids.feedChip.textContent = recentLog.length + ' events';
-  if(ids.feed){
-    ids.feed.innerHTML = recentLog.length ? recentLog.map(event => buildBreakFeedRow(event)).join('') : '<div class="break-empty">No break events found for '+formatTrackerDate(selectedDate)+'.</div>';
-  }
+  // — Feed
+  const feedChip = document.getElementById('btk-feed-chip');
+  const feedEl = document.getElementById('btk-feed-list');
+  if(feedChip) feedChip.textContent = recentLog.length+' event'+(recentLog.length!==1?'s':'');
+  if(feedEl) feedEl.innerHTML = recentLog.length
+    ? recentLog.map(e=>buildBreakFeedRow(e)).join('')
+    : '<div class="break-empty">No break events for '+formatTrackerDate(selectedDate)+'.</div>';
 }
 
 function renderBreakAgentView(){
@@ -7749,7 +7925,7 @@ function buildTL(agentId,date){
     const s=stamp?stamp.getTime():dayStart;
     if(s>pos&&s>dayStart)html+='<div class="tl-seg tl-gap" style="width:'+Math.max(0,(s-pos)/total*100).toFixed(2)+'%"></div>';
     const pct=Math.max(0.3,((now-Math.max(s,dayStart))/total*100)).toFixed(2);
-    const cls=seg.status==='Available'?'tl-avail':seg.status==='Unavailable'?'tl-unavail':'tl-oncall';
+    const cls=seg.status==='Available'?'tl-avail':seg.status==='Unavailable'?'tl-unavail':seg.status==='Ringing'?'tl-ringing':'tl-oncall';
     html+='<div class="tl-seg '+cls+'" style="width:'+pct+'%" title="'+seg.status+': '+toTime(seg.timestamp)+'"></div>';
     pos=s;
   });
@@ -7847,7 +8023,7 @@ async function loadAgentStatuses(){
       if(inC>0){ahtInSum+=ahtIn*inC;ahtInCnt+=inC;}
       if(outC>0){ahtOutSum+=ahtOut*outC;ahtOutCnt+=outC;}
       const toggles=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status).length;
-      const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
+      const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles,sum.onCallSeconds||0,sum.ringingSeconds||0);
       const tLog=buildToggleLog(a.rc_id);
       let liveBadge='<span style="color:var(--text3);font-size:11px">&mdash;</span>';
       if(live.isOnCall){
@@ -7968,7 +8144,7 @@ async function loadAgentStatuses(){
         const sinceTs=op?op.sinceTs:null;
         const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
         const toggles=(op&&op.toggleCount)||0;
-        const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles);
+        const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles,sum.onCallSeconds||0,sum.ringingSeconds||0);
         const tl=buildTL(a.rc_id,todayStr());
         let lb='<span style="color:var(--text3)">&mdash;</span>';
         if(op&&op.live.isOnCall){const dir=normalizeLiveDirection(op.live.direction);lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
@@ -8322,13 +8498,13 @@ async function loadReport(){
     document.getElementById('rs-unavail').textContent=fmt(reportData.reduce((s,r)=>s+(r.unavailableSeconds||0),0));
     document.getElementById('rs-missed').textContent=reportData.reduce((s,r)=>s+(r.missedCalls||0),0);
     tbody.innerHTML=reportData.map((r,i)=>{
-      const total=(r.availableSeconds||0)+(r.unavailableSeconds||0);
+      const total=(r.availableSeconds||0)+(r.unavailableSeconds||0)+(r.onCallSeconds||0)+(r.ringingSeconds||0);
       const pct=total>0?Math.round((r.availableSeconds||0)/total*100):0;
       const pc=pct>=70?'var(--green)':pct>=40?'var(--yellow)':'var(--red)';
       const inC=r.inboundCalls||0,outC=r.outboundCalls||0,missed=r.missedCalls||0;
       const totalCalls=inC+outC;
       const missPct=totalCalls>0?Math.round(missed/totalCalls*100):0;
-      const sc=calcScore(r.availableSeconds||0,r.unavailableSeconds||0,inC,outC,missed,r.toggleCount||0);
+      const sc=calcScore(r.availableSeconds||0,r.unavailableSeconds||0,inC,outC,missed,r.toggleCount||0,r.onCallSeconds||0,r.ringingSeconds||0);
       return'<tr><td style="color:var(--text3)">'+(i+1)+'</td>'+
         '<td><div class="agent-name">'+r.agentName+'</div></td>'+
         '<td class="mono">'+r.extension+'</td>'+
@@ -8352,11 +8528,11 @@ function downloadCSV(){
   if(!reportData.length){showToast('No data','warning');return;}
   const rows=[['#','Agent','Ext','Available','Unavailable','Avail%','Toggles','Inbound','Outbound','Missed','Miss%','AHT In','AHT Out','Score']];
   reportData.forEach((r,i)=>{
-    const t=(r.availableSeconds||0)+(r.unavailableSeconds||0);
+    const t=(r.availableSeconds||0)+(r.unavailableSeconds||0)+(r.onCallSeconds||0)+(r.ringingSeconds||0);
     const pct=t>0?Math.round((r.availableSeconds||0)/t*100):0;
     const inC=r.inboundCalls||0,outC=r.outboundCalls||0,missed=r.missedCalls||0;
     const missPct=(inC+outC)>0?Math.round(missed/(inC+outC)*100):0;
-    const sc=calcScore(r.availableSeconds||0,r.unavailableSeconds||0,inC,outC,missed,r.toggleCount||0);
+    const sc=calcScore(r.availableSeconds||0,r.unavailableSeconds||0,inC,outC,missed,r.toggleCount||0,r.onCallSeconds||0,r.ringingSeconds||0);
     rows.push([i+1,r.agentName,r.extension,fmt(r.availableSeconds),fmt(r.unavailableSeconds),pct+'%',r.toggleCount||0,inC,outC,missed,missPct+'%',fmt(r.ahtInbound||0),fmt(r.ahtOutbound||0),sc.v]);
   });
   const csv=rows.map(r=>r.map(c=>'"'+c+'"').join(',')).join('\n');

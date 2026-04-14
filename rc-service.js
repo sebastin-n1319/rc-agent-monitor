@@ -891,8 +891,12 @@ async function upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, reason = '
   lastLiveStatusSnapshot[agent.rc_id] = nextEntry;
   lastLiveStatusAt = Date.now();
 
-  if (queueReadyChanged) {
-    await insertPresenceEvent(agent.rc_id, agent.name, nextEntry.queueReadyStatus, nextEntry.queueStatus, fetchedAt);
+  // Store an event whenever the displayed status OR queue readiness changes.
+  // We store displayStatus (e.g. "On Call", "Ringing", "Available", "Unavailable")
+  // so historical timelines and event logs reflect what the agent was actually doing,
+  // not just a binary Available/Unavailable queue-readiness flag.
+  if (displayChanged || queueReadyChanged) {
+    await insertPresenceEvent(agent.rc_id, agent.name, nextEntry.displayStatus, nextEntry.queueStatus, fetchedAt);
   }
 
   if (displayChanged || queueReadyChanged) {
