@@ -4392,6 +4392,23 @@ footer{
   padding: 20px 22px 32px !important;
 }
 
+/* ══ HOF TAB GLOW (active during announcement window) ══ */
+@keyframes hofTabPulse {
+  0%,100%{box-shadow:none;border-color:rgba(255,255,255,.06);}
+  50%{box-shadow:0 0 12px rgba(251,191,36,.45),0 0 4px rgba(251,191,36,.3);border-color:rgba(251,191,36,.45);color:#fbbf24;}
+}
+#agent-tab-hall.hof-glow{
+  animation:hofTabPulse 2.2s ease-in-out infinite !important;
+  position:relative;
+}
+#agent-tab-hall.hof-glow::after{
+  content:'NEW';
+  position:absolute;top:-5px;right:-4px;
+  background:var(--orange);color:#fff;
+  font-size:7px;font-weight:800;letter-spacing:.04em;
+  padding:1px 4px;border-radius:4px;line-height:1.5;
+}
+
 /* ══ KPI METRIC TILES ══ */
 #agent-section-dashboard .metrics {
   display: grid !important;
@@ -5622,6 +5639,22 @@ function applyView(view){
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.textContent=isAdmin?'Switch to Agent View':'Switch to Admin View';
   configureAgentBreakbotAccess();
+  // Default agent landing: Break Bot if available, else Dashboard
+  if(!isAdmin){
+    requestAnimationFrame(()=>{
+      const bbBtn=document.getElementById('agent-breakbot-tab');
+      const dbBtn=document.getElementById('agent-tab-dashboard');
+      if(bbBtn && breakbotVisibleInAgentView()) switchAgentSection('breakbot',bbBtn);
+      else if(dbBtn) switchAgentSection('dashboard',dbBtn);
+    });
+  }
+  // HoF tab glow during announcement window (Apr 14–16 IST)
+  const hofGlowExpiry=new Date('2026-04-17T00:00:00+05:30');
+  const hofTab=document.getElementById('agent-tab-hall');
+  if(hofTab){
+    if(new Date()<hofGlowExpiry) hofTab.classList.add('hof-glow');
+    else hofTab.classList.remove('hof-glow');
+  }
 }
 
 function toggleView(){

@@ -39,6 +39,39 @@ body::after{
   mask-image:linear-gradient(180deg,rgba(0,0,0,.45) 0%,transparent 85%);
 }
 
+/* ── ANNOUNCEMENT TICKER ─────────────────────────────────────────────────── */
+.hof-ticker{
+  display:none;position:fixed;top:0;left:0;right:0;z-index:300;
+  height:30px;overflow:hidden;
+  background:linear-gradient(90deg,#1a1200,rgba(251,146,36,.14) 30%,rgba(251,191,36,.1) 70%,#1a1200);
+  border-bottom:1px solid rgba(251,191,36,.35);
+  align-items:center;
+}
+.hof-ticker.visible{display:flex;}
+.hof-ticker-track{
+  display:flex;align-items:center;white-space:nowrap;
+  animation:hofTicker 28s linear infinite;
+  will-change:transform;
+}
+.hof-ticker-track:hover{animation-play-state:paused;}
+@keyframes hofTicker{
+  0%{transform:translateX(0);}
+  100%{transform:translateX(-50%);}
+}
+.hof-ticker-item{
+  font-size:12px;color:rgba(232,238,255,.85);
+  padding:0 64px 0 0;letter-spacing:.01em;
+}
+.hof-ticker-item strong{color:var(--gold);font-weight:600;}
+.hof-ticker-item .ti-sep{color:rgba(251,191,36,.4);margin:0 18px;font-size:14px;}
+.hof-ticker-close{
+  position:absolute;right:0;top:0;bottom:0;
+  background:rgba(3,7,18,.8);border:none;border-left:1px solid rgba(251,191,36,.2);
+  color:rgba(232,238,255,.4);cursor:pointer;padding:0 10px;font-size:14px;z-index:1;
+  transition:color .15s;
+}
+.hof-ticker-close:hover{color:var(--t1);}
+body.ticker-visible{padding-top:30px;}
 /* ── WRAP ────────────────────────────────────────────────────────────────── */
 .wrap{max-width:1440px;margin:0 auto;padding:0 16px 48px;position:relative;z-index:1;}
 
@@ -81,23 +114,6 @@ body::after{
 }
 
 /* ── PAGE TABS ───────────────────────────────────────────────────────────── */
-.hof-banner{
-  display:none;
-  align-items:center;gap:10px;
-  background:linear-gradient(90deg,rgba(251,191,36,.12),rgba(251,146,60,.08));
-  border:1px solid rgba(251,191,36,.3);
-  border-radius:10px;margin:12px 0 0;padding:10px 16px;
-  font-size:13px;color:var(--t1);line-height:1.4;
-}
-.hof-banner.visible{display:flex;}
-.hof-banner-ico{font-size:16px;flex-shrink:0;}
-.hof-banner-txt{flex:1;}
-.hof-banner-txt strong{color:var(--gold);}
-.hof-banner-close{
-  background:none;border:none;color:var(--t3);cursor:pointer;
-  font-size:16px;line-height:1;padding:0 2px;flex-shrink:0;
-}
-.hof-banner-close:hover{color:var(--t1);}
 .pg-tabs-wrap{
   position:sticky;top:0;z-index:50;
   background:rgba(3,7,18,.85);backdrop-filter:blur(16px);
@@ -1992,6 +2008,17 @@ body::after {
 </style>
 </head>
 <body>
+
+<!-- ════════════════════════════════════════════════════════
+     ANNOUNCEMENT TICKER (fixed, full-width, above everything)
+════════════════════════════════════════════════════════ -->
+<div class="hof-ticker" id="hofTicker">
+  <div class="hof-ticker-track" id="hofTickerTrack">
+    <!-- Content is duplicated for seamless loop -->
+  </div>
+  <button class="hof-ticker-close" onclick="dismissTicker()" title="Dismiss">&#x2715;</button>
+</div>
+
 <div class="wrap">
 
 <!-- ════════════════════════════════════════════════════════
@@ -2034,18 +2061,6 @@ body::after {
       <span class="ptab-lk" id="bonusLockIco"></span>
     </button>
   </nav>
-</div>
-
-<!-- ════════════════════════════════════════════════════════
-     ANNOUNCEMENT BANNER
-════════════════════════════════════════════════════════ -->
-<div class="hof-banner" id="hofBanner">
-  <div class="hof-banner-ico">🏆</div>
-  <div class="hof-banner-txt">
-    <strong>Q1 2026 Hall of Fame is live!</strong> &nbsp;Check out the standouts &amp; awards.
-    Performance &amp; Bonus results will be unlocked on <strong>April 30, 2026</strong>.
-  </div>
-  <button class="hof-banner-close" onclick="document.getElementById('hofBanner').classList.remove('visible')" title="Dismiss">&times;</button>
 </div>
 
 <!-- ════════════════════════════════════════════════════════
@@ -2512,17 +2527,6 @@ function buildBonusCard(agent, type){
 function buildHoF(){
   const allAgents=[...DATA.calls,...DATA.chat];
 
-  /* Quick stats */
-  const hofQS=document.getElementById('hofQS');
-  if(hofQS){
-    const totalCallsBonus=DATA.calls.reduce((s,a)=>s+totalBonus(a),0);
-    const totalChatBonus=DATA.chat.reduce((s,a)=>s+totalBonus(a),0);
-    const q1Total=totalCallsBonus+totalChatBonus;
-    const slab1Agents=allAgents.filter(a=>slabMonths(a)>=1).length;
-    hofQS.innerHTML=`
-      <div class="hq"><div class="hq-n">${allAgents.length}</div><div class="hq-l">Agents</div></div>
-    `;
-  }
 
   /* Podium — ranked by slabMonths desc, then totalBonus desc */
   const ranked=[...allAgents].sort((a,b)=>{
@@ -2723,12 +2727,22 @@ function injectIcons(){
 /* ════════════════════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════════════════════ */
+function dismissTicker(){
+  const t=document.getElementById('hofTicker');
+  if(t)t.classList.remove('visible');
+  document.body.classList.remove('ticker-visible');
+  try{sessionStorage.setItem('hof_ticker_dismissed','1');}catch(e){}
+}
 window.addEventListener('DOMContentLoaded',()=>{
-  // Show announcement banner for 3 days (Apr 14–16 IST)
-  const bannerExpiry=new Date('2026-04-17T00:00:00+05:30');
-  const bannerEl=document.getElementById('hofBanner');
-  if(bannerEl&&new Date()<bannerExpiry){
-    bannerEl.classList.add('visible');
+  // Scrolling ticker — visible Apr 14–16 IST, unless dismissed this session
+  const tickerExpiry=new Date('2026-04-17T00:00:00+05:30');
+  let dismissed=false;try{dismissed=!!sessionStorage.getItem('hof_ticker_dismissed');}catch(e){}
+  if(!dismissed && new Date()<tickerExpiry){
+    const msg=`<span class="hof-ticker-item">🏆&nbsp;&nbsp;<strong>Q1 2026 Hall of Fame is live!</strong>&nbsp;— Check out the Quarter Standouts &amp; Individual Awards<span class="ti-sep">|</span>📅&nbsp;&nbsp;Performance &amp; Bonus results unlock on&nbsp;<strong>April 30, 2026</strong><span class="ti-sep">|</span>✨&nbsp;&nbsp;See where your team stands this quarter!&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`;
+    const track=document.getElementById('hofTickerTrack');
+    if(track) track.innerHTML=msg+msg; // duplicate for seamless loop
+    const ticker=document.getElementById('hofTicker');
+    if(ticker){ticker.classList.add('visible');document.body.classList.add('ticker-visible');}
   }
   injectIcons();
   buildHoF();
