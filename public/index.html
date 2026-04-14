@@ -6262,15 +6262,25 @@ function startGoogleSignIn(){
   let hint = '';
   try{ const s = localStorage.getItem('rcLastUser'); if(s) hint = JSON.parse(s).email || ''; }catch(e){}
 
-  tokenClient.requestAccessToken({
-    hint: hint || undefined,
-    prompt: hint ? '' : 'select_account'
-  });
+  const opts = {};
+  if(hint) opts.hint = hint;
+  else opts.prompt = 'select_account';
+  tokenClient.requestAccessToken(opts);
 }
 
 async function handleTokenResponse(response){
+  if(!response){
+    showLoginMsg('Sign-in: no response received from Google.');
+    resetLoginBtn();
+    return;
+  }
   if(response.error){
-    showLoginMsg('Sign-in failed: ' + response.error);
+    showLoginMsg('Sign-in failed: ' + response.error + (response.error_description ? ' — ' + response.error_description : ''));
+    resetLoginBtn();
+    return;
+  }
+  if(!response.access_token){
+    showLoginMsg('Sign-in: no access token in response.');
     resetLoginBtn();
     return;
   }
