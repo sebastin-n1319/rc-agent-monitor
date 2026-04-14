@@ -5497,7 +5497,7 @@ footer{
       <div id="loginMsg"></div>
 
       <div class="gfb-wrapper" style="position:relative;width:100%;">
-        <button id="googleFallbackBtn" class="google-fallback-btn">
+        <button id="googleFallbackBtn" class="google-fallback-btn" onclick="handleLoginClick(this)">
 
         <div class="gfb-spinner"></div>
         <svg class="gfb-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
@@ -6254,16 +6254,74 @@ function signInWithGoogle(){
 }
 
 function handleLoginClick(btn){
-  // Button clicks are now handled by the invisible GIS overlay on top.
-  // This fires only as a safety fallback if the overlay isn't rendered yet.
   if(btn.dataset.loading === 'true') return;
-  signInWithGoogle();
+
+  // Tier 1: click the invisible GIS iframe overlay directly (most reliable)
+  const gisIframe = document.querySelector('#googleBtn iframe');
+  if(gisIframe){ gisIframe.click(); return; }
+
+  // Tier 2: GIS prompt()
+  if(!window.google?.accounts?.id){
+    showLoginMsg('Google sign-in is still loading — please wait a moment and try again.', 'info');
+    return;
+  }
+  initGoogleAuth();
+  btn.dataset.loading = 'true'; btn.disabled = true;
+  const resetBtn = () => { btn.dataset.loading='false'; btn.disabled=false; };
+  setTimeout(resetBtn, 12000);
+
+  // clear dismissed state so prompt shows
+  try{ google.accounts.id.disableAutoSelect(); }catch(e){}
+
+  google.accounts.id.prompt(n => {
+    if(n.isNotDisplayed?.() || n.isSkippedMoment?.()){
+      resetBtn();
+      // Tier 3: OAuth popup/redirect fallback
+      openGoogleOAuthFallback();
+    }
+  });
+}
+
+function openGoogleOAuthFallback(){
+  const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  sessionStorage.setItem('gNonce', nonce);
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: window.location.origin + window.location.pathname.replace(/\/+$/,'') + '/',
+    response_type: 'id_token',
+    scope: 'openid email profile',
+    nonce,
+    prompt: 'select_account',
+  });
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+  const W=500,H=640,left=Math.round((screen.width-W)/2),top=Math.round((screen.height-H)/2);
+  const popup = window.open(authUrl,'gSignIn',`width=${W},height=${H},left=${left},top=${top},scrollbars=yes`);
+  if(!popup || popup.closed){
+    // popup blocked — do a full redirect
+    localStorage.setItem('gOAuthRedirect','1');
+    window.location.href = authUrl;
+    return;
+  }
+  const poll = setInterval(() => {
+    try{
+      if(popup.closed){ clearInterval(poll); return; }
+      const h = popup.location.href;
+      if(h && h.startsWith(window.location.origin)){
+        clearInterval(poll);
+        const frag = new URLSearchParams(popup.location.hash.replace('#',''));
+        const tok = frag.get('id_token');
+        popup.close();
+        if(tok) handleGoogleCredential({credential:tok});
+        else showLoginMsg('Sign-in cancelled. Please try again.','info');
+      }
+    }catch(e){ /* cross-origin — still waiting */ }
+  }, 350);
 }
 
 function switchGoogleAccount(){
   localStorage.removeItem('rcLastUser');
   updateLoginButton();
-  google.accounts.id.disableAutoSelect && google.accounts.id.disableAutoSelect();
+  try{ google.accounts.id.disableAutoSelect(); }catch(e){}
   signInWithGoogle();
 }
 
@@ -8322,6 +8380,17 @@ window.addEventListener('load',()=>{
   syncBreakActionState();
   const dp=document.getElementById('date-picker');
   if(dp)dp.value=todayStr();
+  // Handle redirect-back from Google OAuth fallback
+  (function(){
+    if(window.location.hash.includes('id_token') && localStorage.getItem('gOAuthRedirect')){
+      localStorage.removeItem('gOAuthRedirect');
+      const frag = new URLSearchParams(window.location.hash.replace('#',''));
+      const tok = frag.get('id_token');
+      history.replaceState(null,'',window.location.pathname);
+      if(tok){ handleGoogleCredential({credential:tok}); return; }
+    }
+  })();
+
   if(!currentUser){
     updateLoginButton(); // show remembered user immediately
     initGoogleAuth();
