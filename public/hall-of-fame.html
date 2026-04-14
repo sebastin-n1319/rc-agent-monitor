@@ -2329,6 +2329,7 @@ const DATA={
 ════════════════════════════════════════════════════════════ */
 const rupee=n=>'\u20b9'+n.toLocaleString('en-IN');
 const totalBonus=a=>MONTHS.reduce((s,m)=>s+(a.months[m]?.bonus?.total||0),0);
+const totalPts=a=>MONTHS.reduce((s,m)=>s+(a.months[m]?.bonus?.pts||0),0);
 const slabMonths=a=>MONTHS.filter(m=>a.months[m]?.bonus?.slab===1).length;
 const slabColor=s=>s===1?'s1c':s===2?'s2c':s===0?'s0c':'snac';
 
@@ -2528,11 +2529,8 @@ function buildHoF(){
   const allAgents=[...DATA.calls,...DATA.chat];
 
 
-  /* Podium — ranked by slabMonths desc, then totalBonus desc */
-  const ranked=[...allAgents].sort((a,b)=>{
-    const sd=slabMonths(b)-slabMonths(a);
-    return sd!==0?sd:totalBonus(b)-totalBonus(a);
-  });
+  /* Podium — ranked by total performance pts desc */
+  const ranked=[...allAgents].sort((a,b)=>totalPts(b)-totalPts(a));
   const top3=ranked.slice(0,3);
   // display order: 2nd | 1st | 3rd
   const displayOrder=[top3[1],top3[0],top3[2]];
@@ -2548,8 +2546,7 @@ function buildHoF(){
       const pos=podiumPos[idx];
       const cls=podiumClasses[idx];
       const badge=podiumBadges[idx];
-      const sm=slabMonths(agent);
-      const tb2=totalBonus(agent);
+      const tp=totalPts(agent);
       const isCallsAgent=DATA.calls.includes(agent);
       const aviCls=isCallsAgent?'avi-t avi-ch':'avi-ch';
       return `<div class="pod ${cls}" style="--bd:${podiumDelays[idx]}">
@@ -2557,7 +2554,7 @@ function buildHoF(){
         <div class="pod-avi">${agent.ini}</div>
         <div class="pod-name">${agent.name}</div>
         <div class="pod-role">${isCallsAgent?'Calls Wing':'Chat Wing'}</div>
-        <div class="pod-stat"><span class="ico">${ic('trophy',12)}</span>${sm} Eligible Month${sm!==1?'s':''}</div>
+        <div class="pod-stat"><span class="ico">${ic('trophy',12)}</span>${tp}/300 pts</div>
         <div class="pod-bar"></div>
       </div>`;
     }).join('');

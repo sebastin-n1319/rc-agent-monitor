@@ -4392,6 +4392,36 @@ footer{
   padding: 20px 22px 32px !important;
 }
 
+/* ══ AGENT ANNOUNCEMENT TICKER ══ */
+#agentTicker{
+  display:none;width:100%;overflow:hidden;
+  background:linear-gradient(90deg,#1a1200,rgba(251,146,36,.13) 30%,rgba(251,191,36,.09) 70%,#1a1200);
+  border-bottom:1px solid rgba(251,191,36,.3);
+  height:28px;position:relative;
+  align-items:center;
+  flex-shrink:0;
+}
+#agentTicker.visible{display:flex;}
+#agentTicker .at-track{
+  display:flex;align-items:center;white-space:nowrap;
+  animation:agentTicker 28s linear infinite;
+  will-change:transform;
+}
+#agentTicker .at-track:hover{animation-play-state:paused;}
+@keyframes agentTicker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+#agentTicker .at-item{
+  font-size:11.5px;color:rgba(232,238,255,.82);padding:0 64px 0 0;letter-spacing:.01em;
+}
+#agentTicker .at-item strong{color:#fbbf24;font-weight:600;}
+#agentTicker .at-item .sep{color:rgba(251,191,36,.4);margin:0 16px;font-size:13px;}
+#agentTicker .at-close{
+  position:absolute;right:0;top:0;bottom:0;
+  background:rgba(3,7,18,.8);border:none;border-left:1px solid rgba(251,191,36,.2);
+  color:rgba(232,238,255,.4);cursor:pointer;padding:0 10px;font-size:13px;z-index:1;
+  transition:color .15s;
+}
+#agentTicker .at-close:hover{color:#f1f5ff;}
+
 /* ══ HOF TAB GLOW (active during announcement window) ══ */
 @keyframes hofTabPulse {
   0%,100%{box-shadow:none;border-color:rgba(255,255,255,.06);}
@@ -5228,6 +5258,12 @@ footer{
   </div>
 </div>
 
+<!-- AGENT ANNOUNCEMENT TICKER -->
+<div id="agentTicker">
+  <div class="at-track" id="agentTickerTrack"></div>
+  <button class="at-close" onclick="dismissAgentTicker()" title="Dismiss">&#x2715;</button>
+</div>
+
 <!-- AGENT VIEW -->
 <div id="agentView" style="display:none;padding:20px 24px;">
   <div class="agent-shell-nav">
@@ -5631,6 +5667,11 @@ function startApp(username,role,picture,breakbotEnabled=true){
   setTimeout(firstLoadSync,2000);
 }
 
+function dismissAgentTicker(){
+  const t=document.getElementById('agentTicker');
+  if(t)t.classList.remove('visible');
+  try{sessionStorage.setItem('agent_ticker_dismissed','1');}catch(e){}
+}
 function applyView(view){
   currentViewMode=view;
   const isAdmin=view==='admin';
@@ -5648,11 +5689,22 @@ function applyView(view){
       else if(dbBtn) switchAgentSection('dashboard',dbBtn);
     });
   }
-  // HoF tab glow during announcement window (Apr 14–16 IST)
-  const hofGlowExpiry=new Date('2026-04-17T00:00:00+05:30');
+  // Announcement ticker + HoF glow (Apr 14–16 IST)
+  const announcementExpiry=new Date('2026-04-17T00:00:00+05:30');
+  const isLive=new Date()<announcementExpiry;
+  // Ticker
+  const ticker=document.getElementById('agentTicker');
+  const track=document.getElementById('agentTickerTrack');
+  if(ticker && track && !track.innerHTML.trim()){
+    const msg=`<span class="at-item">🏆&nbsp;&nbsp;<strong>Q1 2026 Hall of Fame is live!</strong>&nbsp;— Check out the Quarter Standouts &amp; Individual Awards<span class="sep">|</span>📅&nbsp;&nbsp;Performance &amp; Bonus results unlock on&nbsp;<strong>April 30, 2026</strong><span class="sep">|</span>✨&nbsp;&nbsp;Head to the Hall of Fame tab to see where you stand!&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`;
+    track.innerHTML=msg+msg;
+  }
+  let dismissed=false;try{dismissed=!!sessionStorage.getItem('agent_ticker_dismissed');}catch(e){}
+  if(ticker) ticker.classList.toggle('visible',!isAdmin && isLive && !dismissed);
+  // HoF tab glow
   const hofTab=document.getElementById('agent-tab-hall');
   if(hofTab){
-    if(new Date()<hofGlowExpiry) hofTab.classList.add('hof-glow');
+    if(isLive) hofTab.classList.add('hof-glow');
     else hofTab.classList.remove('hof-glow');
   }
 }
