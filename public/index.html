@@ -4107,6 +4107,7 @@ footer{
 #loginScreen .gfb-switch:hover{color:rgba(180,210,240,.75) !important;}
 
 /* ── Solid orange CTA button ─────────────────────────────────────────── */
+#loginScreen .google-fallback-btn.gfb-hidden{ display:none !important; }
 #loginScreen .google-fallback-btn{
   display:flex !important;
   width:100% !important;
@@ -5540,8 +5541,8 @@ footer{
       </div>
 
       <div class="gfb-wrapper" style="width:100%;">
-        <!-- Orange button: shown while GIS initialises (fallback) -->
-        <button id="googleFallbackBtn" class="google-fallback-btn" onclick="openGoogleOAuthFallback()">
+        <!-- Orange button: shown while GIS initialises (replaced by native GIS button once ready) -->
+        <button id="googleFallbackBtn" class="google-fallback-btn" onclick="handleFallbackClick()">
           <div class="gfb-spinner"></div>
           <svg class="gfb-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -6271,7 +6272,7 @@ function renderGoogleButton(){
   // Show the native GIS button; hide the orange loading button
   host.classList.add('gis-ready');
   const fallbackBtn = document.getElementById('googleFallbackBtn');
-  if(fallbackBtn) fallbackBtn.style.display = 'none';
+  if(fallbackBtn) fallbackBtn.classList.add('gfb-hidden'); // class beats !important inline style
   return true;
 }
 
@@ -6306,6 +6307,24 @@ function signInWithGoogle(){
   google.accounts.id.prompt(notification => {
     // prompt handles One Tap; our overlay button also triggers GIS directly
   });
+}
+
+function handleFallbackClick(){
+  // Orange button is shown only while GIS script is loading.
+  // If GIS has already rendered (gis-ready), the orange button should be hidden —
+  // if user somehow reaches here, scroll to / highlight the native button.
+  const gisHost = document.getElementById('googleBtn');
+  if(gisHost && gisHost.classList.contains('gis-ready')){
+    gisHost.style.outline = '2px solid #f28820';
+    setTimeout(()=>{ gisHost.style.outline=''; }, 1500);
+    return;
+  }
+  // GIS not ready yet — try prompt() or show message
+  if(window.google?.accounts?.id){
+    try{ google.accounts.id.prompt(); }catch(e){}
+  } else {
+    showLoginMsg('Google sign-in is loading — please wait a moment and try again.','info');
+  }
 }
 
 function handleLoginClick(btn){
