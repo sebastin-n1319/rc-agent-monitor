@@ -2271,6 +2271,299 @@ tbody tr:hover td{background:rgba(255,255,255,.018) !important;}
   .metric-val{font-size:20px !important;}
   .login-left,.login-right{padding:16px 12px !important;}
 }
+
+/* ADIT ALIGNMENT — login plus shell */
+body::before{
+  background:
+    radial-gradient(circle at 18% 12%, rgba(0,179,213,.08) 0%, transparent 30%),
+    radial-gradient(circle at 82% 22%, rgba(242,136,32,.06) 0%, transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(0,179,213,.06) 0%, transparent 26%) !important;
+}
+body::after{display:none !important;}
+#mainApp{
+  background:
+    radial-gradient(circle at 76% 14%, rgba(0,179,213,.10), transparent 18%),
+    linear-gradient(180deg,#081420 0%,#0a1623 44%,#08111b 100%) !important;
+}
+header{
+  height:72px !important;
+  padding:0 22px !important;
+  background:rgba(8,20,33,.82) !important;
+  border-bottom:1px solid rgba(174,208,230,.10) !important;
+  backdrop-filter:blur(18px) saturate(150%) !important;
+  -webkit-backdrop-filter:blur(18px) saturate(150%) !important;
+}
+.hdr-logo-adit{
+  background:rgba(255,255,255,.05) !important;
+  border-color:rgba(174,208,230,.14) !important;
+}
+.hdr-title{font-size:16px !important;}
+.hdr-sub{color:#87a3bb !important;}
+.nav{
+  top:72px !important;
+  padding:12px 22px 10px !important;
+  background:linear-gradient(180deg, rgba(8,20,33,.74), rgba(8,20,33,.42) 70%, transparent) !important;
+}
+.nav-tab.active,.agent-shell-btn.active{
+  background:rgba(255,255,255,.05) !important;
+  border-color:rgba(242,136,32,.22) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+.card,.panel,.radar-card,.role-stat,.role-setup-card,.role-policy-card,.agent-card,.evt-group,.metric,.tbl-wrap{
+  border-color:rgba(174,208,230,.09) !important;
+}
+.metric{
+  background:linear-gradient(180deg, rgba(12,24,39,.92), rgba(10,18,30,.94)) !important;
+}
+.card,.panel,.radar-card,.role-stat,.role-setup-card,.role-policy-card,.agent-card,.evt-group{
+  background:linear-gradient(180deg, rgba(12,22,36,.90), rgba(9,17,28,.94)) !important;
+}
+.tbl-wrap{
+  background:rgba(9,17,28,.86) !important;
+}
+thead th{
+  background:rgba(12,22,36,.98) !important;
+  color:#7f94aa !important;
+}
+.card-title,.section-title{color:#f4f8fd !important;}
+.page,.agent-shell-page,#adminView,#agentView{
+  width:min(100%, 1900px) !important;
+}
+#loginScreen{
+  justify-content:center;
+  align-items:center;
+  padding:28px;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(0,177,212,.22), transparent 28%),
+    linear-gradient(180deg, #0d546f 0%, #0b3c55 18%, #092b41 36%, #081521 100%) !important;
+}
+.login-grid{display:none !important;}
+.orb{display:block !important;filter:blur(90px) !important;opacity:.45;}
+.orb1{background:rgba(255,255,255,.05) !important;top:8%;left:2%;width:260px;height:260px;}
+.orb2{background:rgba(0,177,212,.08) !important;bottom:6%;left:44%;width:320px;height:320px;}
+.orb3{background:rgba(255,255,255,.04) !important;top:14%;right:8%;width:240px;height:240px;}
+.login-left,.login-right{
+  flex:0 0 50%;
+  max-width:640px;
+  padding:24px !important;
+  background:transparent !important;
+  border-right:none !important;
+}
+.login-card-left{
+  max-width:630px !important;
+  min-height:540px;
+  padding:38px !important;
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(180deg,#d9edf9 0%, #bddcf1 100%) !important;
+  border:1px solid rgba(255,255,255,.46) !important;
+  border-radius:34px !important;
+  box-shadow:0 32px 60px rgba(4,23,39,.20) !important;
+}
+.login-card-left::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(255,255,255,.65) 0 3px, transparent 4px),
+    radial-gradient(circle at 34% 26%, rgba(111,196,229,.8) 0 3px, transparent 4px),
+    radial-gradient(circle at 57% 16%, rgba(78,193,147,.85) 0 3px, transparent 4px),
+    radial-gradient(circle at 82% 18%, rgba(242,136,32,.8) 0 3px, transparent 4px),
+    radial-gradient(circle at 90% 8%, rgba(168,85,247,.75) 0 4px, transparent 5px);
+  pointer-events:none;
+}
+.login-card-left::after{
+  content:'';
+  position:absolute;
+  top:92px;
+  right:-30px;
+  width:220px;
+  height:132px;
+  background:linear-gradient(180deg, #efb27d 0%, #e59b5f 100%);
+  border-radius:42px;
+  transform:rotate(-14deg);
+  opacity:.96;
+}
+.fi{
+  opacity:.9 !important;
+  color:#1b5a86;
+  font-size:18px !important;
+}
+.fi1{top:22%;left:9%;}
+.fi2{top:72%;left:9%;}
+.fi3{top:23%;right:11%;}
+.fi4{top:74%;right:12%;}
+.main-logo{display:none !important;}
+.login-hero-shell{
+  position:relative;
+  z-index:2;
+  min-height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.login-hero-bubble{
+  position:relative;
+  max-width:430px;
+  background:#fff;
+  color:#102c46;
+  border-radius:28px;
+  padding:28px 32px;
+  box-shadow:0 22px 48px rgba(17,60,96,.12);
+  margin-bottom:30px;
+}
+.login-hero-bubble::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  bottom:-18px;
+  width:34px;
+  height:34px;
+  background:#fff;
+  transform:translateX(-50%) rotate(45deg);
+  border-radius:0 0 8px 0;
+}
+.login-left-title{
+  font-family:'Poppins','Inter',sans-serif !important;
+  font-size:26px !important;
+  line-height:1.28 !important;
+  color:#15314c !important;
+  margin-bottom:10px !important;
+}
+.login-left-title span{color:var(--orange) !important;}
+.login-left-sub{
+  font-size:15px !important;
+  line-height:1.6 !important;
+  color:#5a7490 !important;
+  margin-bottom:0 !important;
+}
+.login-cta-note{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:24px;
+  font-family:'Poppins','Inter',sans-serif;
+  font-size:18px;
+  font-weight:700;
+  color:#17344f;
+}
+.login-cta-note span{
+  color:#17344f;
+  font-size:28px;
+  line-height:1;
+}
+.feature-pills{
+  max-width:540px;
+  justify-content:center;
+  gap:12px !important;
+}
+.f-pill{
+  padding:11px 18px !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.84) !important;
+  color:#17344f !important;
+  border:none !important;
+  font-size:14px !important;
+  font-weight:700 !important;
+  box-shadow:0 12px 22px rgba(19,62,96,.10) !important;
+}
+.f-pill-dot{
+  background:var(--teal) !important;
+}
+.login-form-wrap{
+  max-width:520px !important;
+  padding:18px 12px !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+.login-brand-logo{
+  display:block;
+  width:auto;
+  height:74px;
+  margin:0 auto 18px;
+  object-fit:contain;
+  filter:drop-shadow(0 8px 20px rgba(4,22,37,.18));
+}
+.login-welcome{
+  text-align:center;
+  font-family:'Poppins','Inter',sans-serif !important;
+  font-size:50px !important;
+  line-height:1.02 !important;
+  color:#ffffff !important;
+  margin-bottom:10px !important;
+}
+.login-sub{
+  text-align:center;
+  font-size:18px !important;
+  color:rgba(234,245,252,.78) !important;
+  margin-bottom:40px !important;
+}
+.google-btn-host,.google-fallback-btn{
+  max-width:420px;
+  margin-left:auto;
+  margin-right:auto;
+}
+.google-fallback-btn{
+  min-height:68px !important;
+  background:#ffffff !important;
+  color:#1a2d43 !important;
+  border:none !important;
+  border-radius:18px !important;
+  font-size:20px !important;
+  font-weight:700 !important;
+  box-shadow:0 24px 44px rgba(2,10,20,.18) !important;
+}
+.google-fallback-btn svg{
+  width:28px;
+  height:28px;
+}
+.login-restrict{
+  margin-top:24px !important;
+  text-align:center !important;
+  color:rgba(232,244,252,.68) !important;
+  font-size:13px !important;
+}
+@media (max-width: 1180px){
+  #loginScreen{
+    flex-direction:column;
+    padding:24px 18px;
+  }
+  .login-left,.login-right{
+    flex:0 0 auto;
+    max-width:760px;
+    width:100%;
+    padding:16px !important;
+  }
+  .login-card-left{
+    min-height:440px;
+  }
+  .login-welcome{font-size:42px !important;}
+}
+@media (max-width: 760px){
+  #loginScreen{padding:16px 12px;}
+  .login-left,.login-right{padding:10px !important;}
+  .login-card-left{
+    min-height:360px;
+    padding:24px !important;
+    border-radius:24px !important;
+  }
+  .login-hero-bubble{
+    padding:22px 20px;
+    border-radius:22px;
+  }
+  .login-left-title{font-size:22px !important;}
+  .login-left-sub{font-size:14px !important;}
+  .login-cta-note{font-size:16px;}
+  .feature-pills{gap:10px !important;}
+  .f-pill{font-size:12px !important;padding:10px 14px !important;}
+  .login-brand-logo{height:60px;}
+  .login-welcome{font-size:36px !important;}
+  .login-sub{font-size:16px !important;margin-bottom:28px !important;}
+  .google-fallback-btn{min-height:58px !important;font-size:18px !important;}
+}
 </style>
 </head>
 <body>
@@ -2291,22 +2584,27 @@ tbody tr:hover td{background:rgba(255,255,255,.018) !important;}
       <div class="fi fi2">&#128202;</div>
       <div class="fi fi3">&#9989;</div>
       <div class="fi fi4">&#128368;</div>
-      <img class="main-logo" src="/adit-logo-dark.png" alt="Adit">
-      <div class="login-left-title">Welcome to <span>Adit Operations</span></div>
-      <div class="login-left-sub">Live visibility for T1 CS Stars<br>Calls &middot; Break Bot &middot; Performance</div>
-      <div class="feature-pills">
-        <div class="f-pill"><span class="f-pill-dot"></span>Live Status</div>
-        <div class="f-pill"><span class="f-pill-dot"></span>Call Analytics</div>
-        <div class="f-pill"><span class="f-pill-dot"></span>Reports</div>
-        <div class="f-pill"><span class="f-pill-dot"></span>Score Tracking</div>
+      <div class="login-hero-shell">
+        <div class="login-hero-bubble">
+          <div class="login-left-title">Welcome to the <span>Adit Agent Monitor</span></div>
+          <div class="login-left-sub">Live visibility for T1 CS Stars with one calm command center for calls, breaks, reports, and performance.</div>
+        </div>
+        <div class="login-cta-note">Here&apos;s what to expect <span>&rarr;</span></div>
+        <div class="feature-pills">
+          <div class="f-pill"><span class="f-pill-dot"></span>Live Status</div>
+          <div class="f-pill"><span class="f-pill-dot"></span>Queue View</div>
+          <div class="f-pill"><span class="f-pill-dot"></span>Break Bot</div>
+          <div class="f-pill"><span class="f-pill-dot"></span>Reports &amp; Scores</div>
+        </div>
       </div>
     </div>
   </div>
 
   <div class="login-right">
     <div class="login-form-wrap">
-      <div class="login-welcome">Sign in to continue</div>
-      <div class="login-sub">Access your Adit Agent Monitor workspace</div>
+      <img class="login-brand-logo" src="/adit-logo-dark.png" alt="Adit">
+      <div class="login-welcome">Welcome!</div>
+      <div class="login-sub">Log in to your Adit Agent Monitor</div>
       <div id="loginMsg"></div>
       <div id="googleBtn" class="google-btn-host"></div>
       <button id="googleFallbackBtn" class="google-fallback-btn" onclick="signInWithGoogle()">
@@ -3930,15 +4228,23 @@ function applyAditBranding(){
   });
   const loginLeftTitle = document.querySelector('.login-left-title');
   if(loginLeftTitle){
-    loginLeftTitle.innerHTML='Welcome to <span>Adit Operations</span>';
+    loginLeftTitle.innerHTML='Welcome to the <span>Adit Agent Monitor</span>';
   }
   const loginLeftSub = document.querySelector('.login-left-sub');
   if(loginLeftSub){
-    loginLeftSub.innerHTML='Live visibility for T1 CS Stars<br>Calls &middot; Break Bot &middot; Performance';
+    loginLeftSub.innerHTML='Live visibility for T1 CS Stars with one calm command center for calls, breaks, reports, and performance.';
+  }
+  const loginCta = document.querySelector('.login-cta-note');
+  if(loginCta){
+    loginCta.innerHTML="Here's what to expect <span>&rarr;</span>";
+  }
+  const loginWelcome = document.querySelector('.login-welcome');
+  if(loginWelcome){
+    loginWelcome.textContent='Welcome!';
   }
   const loginRightSub = document.querySelector('.login-right .login-sub');
   if(loginRightSub){
-    loginRightSub.innerHTML='Sign in to your Adit Agent Monitor';
+    loginRightSub.innerHTML='Log in to your Adit Agent Monitor';
   }
 }
 
