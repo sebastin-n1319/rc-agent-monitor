@@ -3918,82 +3918,42 @@ footer{
   text-transform:uppercase !important;
 }
 
-/* Agent table */
-.lp-hc-table{padding:4px 0 !important;}
-.lp-hc-thead{
-  display:grid !important;
-  grid-template-columns:1fr 90px 40px !important;
-  align-items:center !important;
-  padding:5px 14px !important;
-  font-size:9px !important;
-  font-weight:700 !important;
-  color:rgba(110,148,185,.38) !important;
-  letter-spacing:.1em !important;
-  text-transform:uppercase !important;
+/* Feature list */
+.lp-hc-features{
+  padding:6px 8px 8px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:2px !important;
 }
-.lp-hc-tr{
-  display:grid !important;
-  grid-template-columns:1fr 90px 40px !important;
+.lp-hc-feat{
+  display:flex !important;
   align-items:center !important;
-  padding:6px 14px !important;
-  border-radius:6px !important;
-  margin:0 4px !important;
+  gap:10px !important;
+  padding:8px 6px !important;
+  border-radius:8px !important;
   transition:background .15s !important;
 }
-.lp-hc-tr:hover{background:rgba(255,255,255,.027) !important;}
-.lp-hc-agent-cell{
-  display:flex !important;
-  align-items:center !important;
-  gap:7px !important;
-  font-size:12px !important;
-  font-weight:500 !important;
-  color:#c8dff0 !important;
+.lp-hc-feat:hover{background:rgba(255,255,255,.025) !important;}
+.lp-hc-feat-icon{
+  width:28px !important;height:28px !important;
+  border-radius:8px !important;
+  display:flex !important;align-items:center !important;justify-content:center !important;
+  flex-shrink:0 !important;
 }
-.lp-dot{width:7px !important;height:7px !important;border-radius:50% !important;flex-shrink:0 !important;}
-.lp-dot.avail{background:#22c55e !important;}
-.lp-dot.brk{background:#f59e0b !important;}
-.lp-dot.queue{background:#60a5fa !important;}
-.lp-spill{
-  font-size:10px !important;
+.lp-hc-feat-green{background:rgba(34,197,94,.1) !important;border:1px solid rgba(34,197,94,.18) !important;}
+.lp-hc-feat-orange{background:rgba(242,136,32,.1) !important;border:1px solid rgba(242,136,32,.18) !important;}
+.lp-hc-feat-blue{background:rgba(96,165,250,.1) !important;border:1px solid rgba(96,165,250,.18) !important;}
+.lp-hc-feat-amber{background:rgba(251,191,36,.08) !important;border:1px solid rgba(251,191,36,.18) !important;}
+.lp-hc-feat-text{}
+.lp-hc-feat-title{
+  font-size:12px !important;
   font-weight:600 !important;
-  padding:2px 7px !important;
-  border-radius:99px !important;
-  display:inline-block !important;
+  color:#d0e6f8 !important;
+  margin-bottom:1px !important;
 }
-.lp-spill.avail{background:rgba(34,197,94,.1) !important;color:#4ade80 !important;border:1px solid rgba(34,197,94,.2) !important;}
-.lp-spill.brk{background:rgba(245,158,11,.1) !important;color:#fbbf24 !important;border:1px solid rgba(245,158,11,.2) !important;}
-.lp-spill.queue{background:rgba(96,165,250,.1) !important;color:#93c5fd !important;border:1px solid rgba(96,165,250,.2) !important;}
-.lp-hc-score{
-  font-family:'JetBrains Mono','Courier New',monospace !important;
-  font-size:12px !important;
-  font-weight:700 !important;
-  color:#ddeefa !important;
-  text-align:right !important;
-}
-
-/* Footer bar */
-.lp-hc-footer{
-  display:flex !important;
-  align-items:center !important;
-  justify-content:space-between !important;
-  padding:9px 14px !important;
-  background:rgba(255,255,255,.02) !important;
-  border-top:1px solid rgba(255,255,255,.06) !important;
-}
-.lp-hc-hof{display:flex !important;align-items:center !important;gap:5px !important;}
-.lp-hc-star{font-size:11px !important;}
-.lp-hc-hof-name{font-size:11px !important;font-weight:600 !important;color:#e2eefc !important;}
-.lp-hc-hof-tag{
-  font-size:9px !important;font-weight:700 !important;color:#f28820 !important;
-  background:rgba(242,136,32,.1) !important;border:1px solid rgba(242,136,32,.22) !important;
-  border-radius:99px !important;padding:1px 6px !important;letter-spacing:.03em !important;
-}
-.lp-hc-brk{
-  display:flex !important;
-  align-items:center !important;
-  gap:5px !important;
+.lp-hc-feat-sub{
   font-size:10.5px !important;
-  color:rgba(128,168,210,.55) !important;
+  color:rgba(120,160,200,.52) !important;
 }
 
 /* Floating accent pills */
@@ -5428,43 +5388,43 @@ footer{
             </div>
           </div>
 
-          <!-- Agent table -->
-          <div class="lp-hc-table">
-            <div class="lp-hc-thead">
-              <span>Agent</span><span>Status</span><span>Score</span>
+          <!-- Feature highlights -->
+          <div class="lp-hc-features">
+            <div class="lp-hc-feat">
+              <div class="lp-hc-feat-icon lp-hc-feat-green">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2v12" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/></svg>
+              </div>
+              <div class="lp-hc-feat-text">
+                <div class="lp-hc-feat-title">Live Status Tracking</div>
+                <div class="lp-hc-feat-sub">Real-time availability &amp; queue visibility</div>
+              </div>
             </div>
-            <div class="lp-hc-tr">
-              <div class="lp-hc-agent-cell"><span class="lp-dot avail"></span>Debra H.</div>
-              <span class="lp-spill avail">Available</span>
-              <span class="lp-hc-score">98</span>
+            <div class="lp-hc-feat">
+              <div class="lp-hc-feat-icon lp-hc-feat-orange">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#f28820" stroke-width="1.5"/><path d="M8 4.5v3.5l2 2" stroke="#f28820" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <div class="lp-hc-feat-text">
+                <div class="lp-hc-feat-title">Smart Break Management</div>
+                <div class="lp-hc-feat-sub">Automated timers with team alerts</div>
+              </div>
             </div>
-            <div class="lp-hc-tr">
-              <div class="lp-hc-agent-cell"><span class="lp-dot brk"></span>Sarah K.</div>
-              <span class="lp-spill brk">On Break</span>
-              <span class="lp-hc-score">91</span>
+            <div class="lp-hc-feat">
+              <div class="lp-hc-feat-icon lp-hc-feat-blue">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 3 5-7" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="lp-hc-feat-text">
+                <div class="lp-hc-feat-title">QA &amp; CSAT Scoring</div>
+                <div class="lp-hc-feat-sub">Performance trends at a glance</div>
+              </div>
             </div>
-            <div class="lp-hc-tr">
-              <div class="lp-hc-agent-cell"><span class="lp-dot avail"></span>James M.</div>
-              <span class="lp-spill avail">Available</span>
-              <span class="lp-hc-score">87</span>
-            </div>
-            <div class="lp-hc-tr">
-              <div class="lp-hc-agent-cell"><span class="lp-dot queue"></span>Priya R.</div>
-              <span class="lp-spill queue">In Queue</span>
-              <span class="lp-hc-score">94</span>
-            </div>
-          </div>
-
-          <!-- Footer bar -->
-          <div class="lp-hc-footer">
-            <div class="lp-hc-hof">
-              <span class="lp-hc-star">&#11088;</span>
-              <span class="lp-hc-hof-name">Debra H.</span>
-              <span class="lp-hc-hof-tag">Q1 Champion</span>
-            </div>
-            <div class="lp-hc-brk">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#f28820" stroke-width="1.5"/><path d="M8 4.5v3.5l2 2" stroke="#f28820" stroke-width="1.5" stroke-linecap="round"/></svg>
-              <span>12:45 · Sarah K.</span>
+            <div class="lp-hc-feat">
+              <div class="lp-hc-feat-icon lp-hc-feat-amber">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z" stroke="#fbbf24" stroke-width="1.4" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="lp-hc-feat-text">
+                <div class="lp-hc-feat-title">Hall of Fame</div>
+                <div class="lp-hc-feat-sub">Celebrate top performers each quarter</div>
+              </div>
             </div>
           </div>
 
@@ -5472,11 +5432,12 @@ footer{
 
         <!-- Floating accent pills -->
         <div class="lp-ap lp-ap-1">
-          <span class="lp-dot avail" style="width:6px;height:6px;flex-shrink:0"></span>+2 agents joined today
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 12V4M4 8l4-4 4 4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Team CSAT up 12% this quarter
         </div>
         <div class="lp-ap lp-ap-2">
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 12V4M4 8l4-4 4 4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          12% CSAT vs last week
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="#f28820"/><circle cx="8" cy="8" r="6.5" stroke="#f28820" stroke-width="1.3" stroke-dasharray="2 2"/></svg>
+          Real-time · Always in sync
         </div>
 
       </div><!-- /.lp-hero-wrap -->
