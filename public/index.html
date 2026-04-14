@@ -1762,8 +1762,17 @@ tbody tr:last-child td{border-bottom:none;}
 .hof-frame-shell,
 .bonus-frame-shell{
   padding:0;
-  border-radius:22px;
+  border-radius:0;
   overflow:hidden;
+  margin-bottom:0;
+}
+/* HOF and Bonus pages: zero outer padding — the iframe handles its own spacing */
+#tab-hall,
+#tab-bonus,
+#agent-section-hall,
+#agent-section-bonus {
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .hof-frame,
