@@ -6224,21 +6224,56 @@ function setupLiveStream(){
 // and returns an access_token we exchange for user info.
 let googleAuthReady = false;
 let tokenClient = null;
+let gisRendered = false;
 
 function initGoogleAuth(){
-  if(tokenClient) return true; // already initialised
-  if(!window.google?.accounts?.oauth2) return false;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: 'openid email profile',
-    callback: handleTokenResponse,
-    error_callback: function(err){
-      showLoginMsg('Sign-in error: ' + (err.message || err.type || 'Unknown'));
-      resetLoginBtn();
+  let ready = false;
+  if(window.google?.accounts?.oauth2 && !tokenClient){
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'openid email profile',
+      callback: handleTokenResponse,
+      error_callback: function(err){
+        showLoginMsg('Sign-in error: ' + (err.message || err.type || 'Unknown'));
+        resetLoginBtn();
+      }
+    });
+    googleAuthReady = true;
+  }
+
+  if(window.google?.accounts?.id && !gisRendered){
+    try{
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        cancel_on_tap_outside: false,
+        itp_support: true
+      });
+      const host = document.getElementById('googleBtn');
+      if(host){
+        host.innerHTML = '';
+        google.accounts.id.renderButton(host, {
+          theme: 'outline',
+          size: 'large',
+          type: 'standard',
+          text: 'continue_with',
+          shape: 'pill',
+          logo_alignment: 'left',
+          width: 420
+        });
+        host.classList.add('gis-ready');
+        const fallback = document.getElementById('googleFallbackBtn');
+        if(fallback) fallback.classList.add('gfb-hidden');
+      }
+      gisRendered = true;
+      ready = true;
+    }catch(e){
+      console.warn('GIS render failed', e);
     }
-  });
-  googleAuthReady = true;
-  return true;
+  }
+
+  return !!tokenClient || gisRendered || ready;
 }
 
 function resetLoginBtn(){
@@ -6263,8 +6298,8 @@ function startGoogleSignIn(){
   try{ const s = localStorage.getItem('rcLastUser'); if(s) hint = JSON.parse(s).email || ''; }catch(e){}
 
   const opts = {};
-  if(hint) opts.hint = hint;
-  else opts.prompt = 'select_account';
+  if(hint) opts.login_hint = hint;
+  opts.prompt = 'select_account';
   tokenClient.requestAccessToken(opts);
 }
 
