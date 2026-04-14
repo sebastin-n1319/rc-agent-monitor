@@ -339,20 +339,20 @@ body::after{
 /* ══════════════════════════════════════════════════════════════════════════
    MAIN APP WRAPPER
 ══════════════════════════════════════════════════════════════════════════ */
-#mainApp{display:none;flex-direction:column;min-height:100vh;position:relative;z-index:5;}
+#mainApp{display:none;flex-direction:column;min-height:100vh;position:relative;z-index:5;padding-top:54px;}
 
 /* ══════════════════════════════════════════════════════════════════════════
    HEADER
 ══════════════════════════════════════════════════════════════════════════ */
 header{
-  position:sticky;top:0;z-index:200;
+  position:fixed;top:0;left:0;right:0;z-index:200;
   display:flex;align-items:center;justify-content:space-between;
   padding:0 20px;height:54px;
-  background:rgba(3,7,18,.90);
-  backdrop-filter:blur(24px) saturate(160%);
-  -webkit-backdrop-filter:blur(24px) saturate(160%);
+  background:rgba(3,7,18,.93);
+  backdrop-filter:blur(28px) saturate(180%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
   border-bottom:1px solid var(--b1);
-  box-shadow:0 1px 0 rgba(255,255,255,.04);
+  box-shadow:0 1px 0 rgba(255,255,255,.04),0 4px 24px rgba(0,0,0,.28);
 }
 .hdr-left{display:flex;align-items:center;gap:12px;}
 .hdr-logo-rc,.hdr-logo-adit{height:28px;width:auto;border-radius:6px;flex-shrink:0;}
@@ -5375,6 +5375,41 @@ footer{
 #agent-section-dashboard tbody tr:nth-child(10) { animation-delay: .57s !important; }
 #agent-section-dashboard tbody tr:nth-child(11) { animation-delay: .59s !important; }
 #agent-section-dashboard tbody tr:nth-child(12) { animation-delay: .61s !important; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LOGIN → APP TRANSITION
+══════════════════════════════════════════════════════════════════════════ */
+/* loginScreen floats above mainApp so we can animate it independently */
+#loginScreen{
+  position:fixed !important;
+  inset:0 !important;
+  z-index:100 !important;
+}
+@keyframes loginExitUp{
+  0%  { opacity:1; transform:translateY(0) scale(1); filter:blur(0px); }
+  30% { opacity:1; }
+  100%{ opacity:0; transform:translateY(-72px) scale(.96); filter:blur(4px); }
+}
+@keyframes appReveal{
+  0%  { opacity:0; transform:translateY(32px); }
+  100%{ opacity:1; transform:translateY(0); }
+}
+@keyframes headerEntrance{
+  0%  { opacity:0; transform:translateY(-100%); }
+  100%{ opacity:1; transform:translateY(0); }
+}
+#loginScreen.login-exiting{
+  animation: loginExitUp 0.52s cubic-bezier(0.4,0,0.2,1) forwards !important;
+  pointer-events: none !important;
+}
+#mainApp.app-revealing header{
+  animation: headerEntrance 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+  animation-delay: 0.12s;
+  opacity: 0;
+}
+#mainApp.app-revealing{
+  animation: appReveal 0.5s cubic-bezier(0.4,0,0.2,1) forwards;
+}
 </style>
 </head>
 <body>
@@ -6491,22 +6526,43 @@ function configureAgentBreakbotAccess(){
 function startApp(username,role,picture,breakbotEnabled=true){
   currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
   applyAditBranding();
-  document.getElementById('loginScreen').style.display='none';
-  document.getElementById('mainApp').style.display='block';
+
+  // Pre-populate header & views before animation starts
   document.getElementById('userLabel').textContent=username.split(' ')[0];
   document.getElementById('roleLabel').textContent=role==='admin'?'Admin':'Agent';
   document.getElementById('userRoleTag').textContent=role.toUpperCase();
   document.getElementById('userRoleTag').className='role-pill '+(role==='admin'?'role-admin':'role-agent');
   if(picture){const av=document.getElementById('userAvatar');av.src=picture;av.style.display='block';}
-  // Show toggle button only for admins
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.style.display=role==='admin'?'inline-flex':'none';
   applyView(role);
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
-  setupLiveStream();
-  refresh();
-  setTimeout(firstLoadSync,2000);
+
+  const loginEl=document.getElementById('loginScreen');
+  const appEl=document.getElementById('mainApp');
+
+  // Show mainApp invisibly underneath so it's ready
+  appEl.style.display='flex';
+  appEl.style.opacity='0';
+
+  // Kick off the login exit animation (loginScreen is position:fixed, floats on top)
+  requestAnimationFrame(()=>{
+    loginEl.classList.add('login-exiting');
+  });
+
+  // After login exit animation completes → hide it, reveal the app
+  setTimeout(()=>{
+    loginEl.style.display='none';
+    loginEl.classList.remove('login-exiting');
+    appEl.style.opacity='';
+    appEl.classList.add('app-revealing');
+    window.scrollTo({top:0,behavior:'instant'});
+    setTimeout(()=>{ appEl.classList.remove('app-revealing'); }, 560);
+    setupLiveStream();
+    refresh();
+    setTimeout(firstLoadSync,2000);
+  }, 500);
 }
 
 function dismissAgentTicker(){
