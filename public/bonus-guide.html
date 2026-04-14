@@ -258,292 +258,278 @@ body{
 .leave-alert::before{content:'⚠';font-size:16px;flex-shrink:0;}
 .leave-alert strong{color:var(--red);}
 
-/* ── CALCULATOR ─────────────────────────────────────── */
-/* Team toggle — segmented pill */
-.calc-team-tabs{
-  display:inline-flex;gap:0;margin-bottom:18px;
-  padding:4px;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.04);border:1px solid var(--border);
+/* ── CALCULATOR v2 ─────────────────────────────────── */
+/* Team selector hero cards */
+.calc-team-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+@media(max-width:640px){.calc-team-cards{grid-template-columns:1fr;}}
+.calc-tc{
+  display:flex;align-items:center;gap:14px;padding:14px 18px;
+  border-radius:var(--r-sm);border:1px solid var(--border);
+  background:rgba(255,255,255,.03);cursor:pointer;text-align:left;
+  transition:all .28s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;
+  font-family:'Inter',sans-serif;
 }
-.calc-team-tab{
-  display:flex;align-items:center;gap:8px;padding:8px 20px;border-radius:9px;
-  border:none;background:transparent;color:var(--muted);font-size:12px;font-weight:700;
-  cursor:pointer;transition:all .22s cubic-bezier(.4,0,.2,1);font-family:'Inter',sans-serif;
+.calc-tc::before{
+  content:'';position:absolute;inset:0;opacity:0;
+  transition:opacity .28s;pointer-events:none;
 }
-.calc-team-tab .dot{
-  width:7px;height:7px;border-radius:50%;flex-shrink:0;
-  transition:box-shadow .3s,transform .3s;
+.calc-tc.calls::before{background:radial-gradient(ellipse at 0% 50%,rgba(6,135,190,.15),transparent 65%);}
+.calc-tc.chat::before{background:radial-gradient(ellipse at 0% 50%,rgba(242,136,32,.15),transparent 65%);}
+.calc-tc.active::before{opacity:1;}
+.calc-tc.calls.active{border-color:rgba(6,135,190,.45);box-shadow:0 0 28px rgba(6,135,190,.14),inset 0 0 0 1px rgba(6,135,190,.1);}
+.calc-tc.chat.active{border-color:rgba(242,136,32,.45);box-shadow:0 0 28px rgba(242,136,32,.14),inset 0 0 0 1px rgba(242,136,32,.1);}
+.calc-tc:hover:not(.active){border-color:var(--border2);background:rgba(255,255,255,.05);}
+.tc-icon{font-size:26px;flex-shrink:0;line-height:1;}
+.tc-meta{flex:1;min-width:0;}
+.tc-meta strong{font-size:13px;font-weight:700;color:var(--text);display:block;margin-bottom:3px;font-family:'Poppins',sans-serif;transition:color .25s;}
+.calc-tc.calls.active .tc-meta strong{color:var(--teal2);}
+.calc-tc.chat.active .tc-meta strong{color:var(--orange2);}
+.tc-meta span{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tc-tag{
+  padding:3px 10px;border-radius:50px;font-size:9px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;border:1px solid;
+  margin-left:auto;flex-shrink:0;transition:all .28s;
 }
-.calc-team-tab.calls.active{
-  background:rgba(6,135,190,.18);color:var(--teal2);
-  box-shadow:0 2px 12px rgba(6,135,190,.2);
-}
-.calc-team-tab.calls.active .dot{
-  background:var(--teal2);box-shadow:0 0 10px var(--teal);transform:scale(1.3);
-}
-.calc-team-tab.chat.active{
-  background:rgba(242,136,32,.18);color:var(--orange2);
-  box-shadow:0 2px 12px rgba(242,136,32,.2);
-}
-.calc-team-tab.chat.active .dot{
-  background:var(--orange2);box-shadow:0 0 10px var(--orange);transform:scale(1.3);
-}
+.calc-tc.calls.active .tc-tag{color:var(--teal2);border-color:rgba(6,135,190,.4);background:rgba(6,135,190,.12);}
+.calc-tc.chat.active .tc-tag{color:var(--orange2);border-color:rgba(242,136,32,.4);background:rgba(242,136,32,.12);}
+.calc-tc:not(.active) .tc-tag{color:var(--dim);border-color:var(--border);background:transparent;}
+
 /* Layout */
-.calc-layout{display:grid;grid-template-columns:1fr 310px;gap:16px;align-items:start;}
+.calc-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;}
 @media(max-width:900px){.calc-layout{grid-template-columns:1fr;}}
-/* Metric rows — compact horizontal card */
-.calc-metrics{display:flex;flex-direction:column;gap:6px;}
-.calc-metric{
-  padding:12px 14px;border-radius:var(--r-sm);
+
+/* ── METRIC GAUGE CARDS GRID ── */
+.calc-mg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+@media(max-width:580px){.calc-mg-grid{grid-template-columns:1fr;}}
+
+.cgc{
+  padding:13px 14px;border-radius:var(--r-sm);
   background:rgba(255,255,255,.03);
   border:1px solid var(--border);
-  border-left:3px solid transparent;
-  transition:border-color .25s,border-left-color .25s,background .25s,transform .2s,box-shadow .25s;
+  border-top:2px solid transparent;
+  transition:border-color .25s,background .25s,box-shadow .25s,border-top-color .25s;
   position:relative;overflow:hidden;
 }
-.calc-metric::before{
+.cgc::after{
   content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.03));
-  opacity:0;transition:opacity .3s;pointer-events:none;
+  background:linear-gradient(135deg,rgba(255,255,255,.025),transparent 55%);
+  pointer-events:none;
 }
-.calc-metric:hover{
-  background:rgba(255,255,255,.05);border-color:var(--border2);
-  transform:translateX(3px);box-shadow:-3px 0 12px rgba(0,0,0,.2);
+.cgc:hover{background:rgba(255,255,255,.055);box-shadow:0 8px 28px rgba(0,0,0,.22);}
+.cgc.slab1{border-top-color:var(--green);border-color:rgba(34,211,160,.22);}
+.cgc.slab2{border-top-color:var(--orange2);border-color:rgba(242,136,32,.22);}
+.cgc.miss{border-top-color:rgba(248,113,113,.45);border-color:rgba(248,113,113,.14);}
+
+.cgc-header{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;}
+.cgc-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;line-height:1.3;flex:1;}
+.cgc-pts{
+  font-size:9.5px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  color:var(--dim);background:rgba(255,255,255,.05);padding:2px 7px;
+  border-radius:5px;border:1px solid var(--border);flex-shrink:0;
 }
-.calc-metric:hover::before{opacity:1;}
-.calc-metric.slab1{border-left-color:var(--green);}
-.calc-metric.slab2{border-left-color:var(--orange2);}
-.calc-metric.miss{border-left-color:rgba(248,113,113,.4);}
-.calc-metric-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.calc-metric-name{font-size:11.5px;font-weight:600;flex:1;color:var(--text);}
-.calc-metric-input{
-  width:66px;background:rgba(255,255,255,.06);border:1px solid var(--border2);
-  border-radius:var(--r-xs);padding:4px 6px;font-size:12px;font-weight:700;
-  color:var(--text);font-family:'JetBrains Mono',monospace;
-  outline:none;text-align:center;
-  transition:border-color .2s,box-shadow .2s,background .2s;
+
+/* Big value display */
+.cgc-value-display{text-align:center;padding:6px 0 10px;position:relative;}
+.cgc-val{
+  font-size:30px;font-weight:800;font-family:'JetBrains Mono',monospace;
+  color:var(--text);display:block;line-height:1;letter-spacing:-.03em;
+  transition:color .3s;
 }
-.calc-metric-input:focus{
-  border-color:rgba(242,136,32,.6);background:rgba(242,136,32,.06);
-  box-shadow:0 0 0 2px rgba(242,136,32,.12);
+.cgc.slab1 .cgc-val{color:var(--green);text-shadow:0 0 20px rgba(34,211,160,.3);}
+.cgc.slab2 .cgc-val{color:var(--orange2);text-shadow:0 0 20px rgba(242,136,32,.25);}
+.cgc.miss .cgc-val{color:rgba(232,238,255,.4);}
+
+/* Bar with threshold ticks */
+.cgc-bar-area{position:relative;padding-bottom:24px;margin-bottom:8px;}
+.cgc-track{
+  height:8px;border-radius:4px;
+  background:rgba(255,255,255,.06);
+  position:relative;overflow:visible;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.3);
 }
-/* Status pill with animated transition */
-.calc-status-pill{
-  padding:3px 10px;border-radius:50px;font-size:9.5px;font-weight:700;
-  letter-spacing:.06em;white-space:nowrap;border:1px solid transparent;
-  transition:all .28s cubic-bezier(.4,0,.2,1);
-  text-transform:uppercase;
+.cgc-fill{
+  height:100%;border-radius:4px;position:absolute;left:0;top:0;
+  transition:width .18s ease;
 }
-.calc-status-pill.slab1{
-  background:rgba(34,211,160,.12);border-color:rgba(34,211,160,.3);color:var(--green);
-  box-shadow:0 0 8px rgba(34,211,160,.15);
+.cgc-fill.calls{background:linear-gradient(90deg,var(--teal),var(--teal2));box-shadow:0 0 10px rgba(6,135,190,.45);}
+.cgc-fill.chat{background:linear-gradient(90deg,var(--orange),var(--orange2));box-shadow:0 0 10px rgba(242,136,32,.45);}
+/* Threshold tick marks */
+.cgc-tick{
+  position:absolute;width:2px;border-radius:1px;transform:translateX(-1px);
+  pointer-events:none;transition:left .18s ease;
+  top:-5px;height:18px;
 }
-.calc-status-pill.slab2{
-  background:rgba(242,136,32,.12);border-color:rgba(242,136,32,.3);color:var(--orange2);
-}
-.calc-status-pill.miss{
-  background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.15);color:var(--red);
-}
-/* Slider track */
-.calc-range-wrap{position:relative;padding-bottom:6px;}
-.calc-rail{
-  height:5px;border-radius:3px;background:rgba(255,255,255,.08);
-  position:relative;overflow:hidden;
-  box-shadow:inset 0 1px 2px rgba(0,0,0,.3);
-}
-.calc-fill{
-  position:absolute;left:0;top:0;height:100%;border-radius:3px;
-  transition:width .15s ease;
-}
-.calc-fill.calls{
-  background:linear-gradient(90deg,var(--teal),var(--teal2));
-  box-shadow:0 0 8px rgba(6,135,190,.4);
-}
-.calc-fill.chat{
-  background:linear-gradient(90deg,var(--orange),var(--orange2));
-  box-shadow:0 0 8px rgba(242,136,32,.4);
-}
-.calc-range-input{
-  width:100%;position:absolute;top:-9px;left:0;
+.cgc-tick.s1{background:var(--green);box-shadow:0 0 6px rgba(34,211,160,.6);}
+.cgc-tick.s2{background:var(--yellow);box-shadow:0 0 5px rgba(251,191,36,.45);}
+/* Range slider invisible overlay */
+.cgc-range{
+  width:100%;position:absolute;top:-8px;left:0;
   -webkit-appearance:none;appearance:none;
-  background:transparent;outline:none;cursor:pointer;
+  background:transparent;outline:none;cursor:pointer;height:24px;
 }
-.calc-range-input::-webkit-slider-thumb{
-  -webkit-appearance:none;width:20px;height:20px;border-radius:50%;
-  background:var(--orange);border:3px solid rgba(255,255,255,.25);
-  box-shadow:0 0 12px rgba(242,136,32,.6),0 2px 4px rgba(0,0,0,.4);
-  cursor:pointer;transition:transform .15s,box-shadow .15s;
+.cgc-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.3);cursor:pointer;
+  transition:transform .15s,box-shadow .15s;
 }
-.calc-range-input::-webkit-slider-thumb:hover{transform:scale(1.15);}
-.calc-range-input.calls::-webkit-slider-thumb{
-  background:var(--teal);
-  box-shadow:0 0 12px rgba(6,135,190,.6),0 2px 4px rgba(0,0,0,.4);
-}
-/* Floating value bubble */
-.calc-bubble{
-  position:absolute;top:-30px;transform:translateX(-50%);
-  color:#fff;font-size:10px;font-weight:700;
-  padding:3px 8px;border-radius:6px;font-family:'JetBrains Mono',monospace;
-  pointer-events:none;white-space:nowrap;
-  transition:left .1s ease;
-}
-.calc-bubble.chat{background:var(--orange);box-shadow:0 2px 8px rgba(242,136,32,.4);}
-.calc-bubble.chat::after{border-top-color:var(--orange);}
-.calc-bubble.calls{background:var(--teal);box-shadow:0 2px 8px rgba(6,135,190,.4);}
-.calc-bubble::after{
-  content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
-  border:4px solid transparent;
-}
-.calc-bubble.calls::after{border-top-color:var(--teal);}
-.calc-bubble.chat::after{border-top-color:var(--orange);}
+.cgc-range.calls::-webkit-slider-thumb{background:var(--teal2);box-shadow:0 0 10px rgba(6,135,190,.6);}
+.cgc-range.chat::-webkit-slider-thumb{background:var(--orange2);box-shadow:0 0 10px rgba(242,136,32,.6);}
+.cgc-range::-webkit-slider-thumb:hover{transform:scale(1.2);}
 
-/* Leave & Attendance controls — compact row */
-.calc-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
-@media(max-width:640px){.calc-controls{grid-template-columns:1fr;}}
-.ctrl-box{
-  padding:12px 14px;border-radius:var(--r-sm);
+/* Threshold labels on tick */
+.cgc-tick-label{
+  position:absolute;top:16px;transform:translateX(-50%);
+  font-size:8.5px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  white-space:nowrap;pointer-events:none;
+}
+.cgc-tick-label.s1{color:var(--green);}
+.cgc-tick-label.s2{color:var(--yellow);}
+
+/* Footer row */
+.cgc-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.cgc-right{display:flex;align-items:center;gap:6px;}
+.cgc-input{
+  width:54px;background:rgba(255,255,255,.06);border:1px solid var(--border2);
+  border-radius:var(--r-xs);padding:3px 5px;font-size:11px;font-weight:700;
+  color:var(--text);font-family:'JetBrains Mono',monospace;
+  outline:none;text-align:center;transition:border-color .2s,box-shadow .2s;
+}
+.cgc-input:focus{border-color:rgba(242,136,32,.55);box-shadow:0 0 0 2px rgba(242,136,32,.12);}
+.cgc-status{
+  padding:3px 9px;border-radius:50px;font-size:9px;font-weight:700;
+  letter-spacing:.06em;white-space:nowrap;border:1px solid transparent;
+  text-transform:uppercase;transition:all .25s cubic-bezier(.4,0,.2,1);
+}
+.cgc-status.slab1{background:rgba(34,211,160,.12);border-color:rgba(34,211,160,.32);color:var(--green);}
+.cgc-status.slab2{background:rgba(242,136,32,.1);border-color:rgba(242,136,32,.26);color:var(--orange2);}
+.cgc-status.miss{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.18);color:var(--red);}
+
+/* ── MODIFIERS STRIP ── */
+.calc-mods{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media(max-width:580px){.calc-mods{grid-template-columns:1fr;}}
+.calc-mod{
+  padding:12px 13px;border-radius:var(--r-sm);
   background:rgba(255,255,255,.03);border:1px solid var(--border);
-  transition:border-color .22s,background .22s;
+  transition:border-color .2s,background .2s;
 }
-.ctrl-box:hover{border-color:var(--border2);background:rgba(255,255,255,.05);}
-.ctrl-label{font-size:10.5px;font-weight:700;color:var(--text);display:block;margin-bottom:2px;}
-.ctrl-note{font-size:9.5px;color:var(--dim);line-height:1.4;}
-.ctrl-badge{
-  display:inline-flex;padding:2px 8px;border-radius:50px;font-size:9.5px;font-weight:700;
-  background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--muted);
-  margin-top:6px;transition:all .22s;
-}
-.ctrl-badge.glow{color:var(--orange2);border-color:rgba(242,136,32,.35);background:rgba(242,136,32,.08);}
-.leave-select{
-  width:100%;margin-top:8px;
-  background:rgba(255,255,255,.04);border:1px solid var(--border2);
-  border-radius:var(--r-xs);padding:7px 10px;font-size:12px;
-  color:var(--text);outline:none;font-family:'Inter',sans-serif;
-  transition:border-color .2s,box-shadow .2s;
-  cursor:pointer;
-}
-.leave-select:focus{border-color:rgba(242,136,32,.4);box-shadow:0 0 0 2px rgba(242,136,32,.1);}
-.leave-select option{background:#0a0f1e;}
-.mult-preview{
-  margin-top:8px;padding:8px 10px;border-radius:var(--r-xs);
-  background:rgba(255,255,255,.04);border:1px solid var(--border);
-  transition:border-color .3s,background .3s;
-}
-.mult-preview strong{
-  font-size:16px;font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;
-  display:block;transition:color .3s;
-}
-.mult-preview small{font-size:9.5px;color:var(--dim);margin-top:2px;display:block;}
-/* Toggle */
-.toggle-switch{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-.toggle-copy strong{font-size:11px;font-weight:700;color:var(--text);display:block;transition:color .25s;}
-.toggle-copy small{font-size:9.5px;color:var(--dim);display:block;margin-top:2px;line-height:1.45;}
-.toggle-action{display:flex;align-items:center;gap:10px;margin-top:8px;}
-.toggle-action input[type=checkbox]{display:none;}
-.toggle-track{
-  width:40px;height:22px;background:rgba(255,255,255,.1);border:1px solid var(--border2);
-  border-radius:11px;position:relative;cursor:pointer;
-  transition:background .25s,border-color .25s,box-shadow .25s;flex-shrink:0;
-}
-.toggle-track i{
-  position:absolute;top:3px;left:3px;width:14px;height:14px;
-  background:var(--dim);border-radius:50%;transition:transform .25s,background .25s;
-}
-input[type=checkbox]:checked ~ .toggle-track{
-  background:rgba(248,113,113,.25);border-color:rgba(248,113,113,.5);
-  box-shadow:0 0 12px rgba(248,113,113,.2);
-}
-input[type=checkbox]:checked ~ .toggle-track i{transform:translateX(18px);background:var(--red);}
+.calc-mod:hover{border-color:var(--border2);background:rgba(255,255,255,.045);}
+.mod-label{font-size:9.5px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;display:block;margin-bottom:7px;}
+.mod-row{display:flex;align-items:center;gap:8px;}
+/* reuse ctrl-badge, toggle-switch, mult-preview, leave-select from above */
 
-/* ── RESULT PANEL ───────────────────────────────────── */
+/* ── RESULT PANEL v2 ── */
 .result-panel{display:flex;flex-direction:column;gap:8px;position:sticky;top:20px;}
-/* Slab pulse banner */
-.result-pulse{
-  padding:14px 16px;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.03);border:1px solid var(--border);
-  display:flex;align-items:center;gap:12px;
+
+/* Status banner */
+.result-status-banner{
+  padding:12px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:rgba(255,255,255,.03);
+  display:flex;align-items:center;gap:10px;
   transition:all .35s cubic-bezier(.4,0,.2,1);
 }
-.result-pulse.active{
-  border-color:rgba(242,136,32,.4);background:rgba(242,136,32,.07);
-  box-shadow:0 0 24px rgba(242,136,32,.12);
+.result-status-banner.active{
+  border-color:rgba(34,211,160,.38);background:rgba(34,211,160,.05);
+  box-shadow:0 0 28px rgba(34,211,160,.1);
 }
-.result-pulse-orb{
-  width:40px;height:40px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:18px;
+.rsb-orb{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
   background:rgba(255,255,255,.05);border:1px solid var(--border2);
   transition:all .35s cubic-bezier(.4,0,.2,1);
 }
-.result-pulse.active .result-pulse-orb{
-  background:rgba(242,136,32,.18);border-color:rgba(242,136,32,.45);
-  box-shadow:0 0 0 4px rgba(242,136,32,.08),0 0 24px rgba(242,136,32,.25);
+.result-status-banner.active .rsb-orb{
+  background:rgba(34,211,160,.16);border-color:rgba(34,211,160,.45);
+  box-shadow:0 0 0 3px rgba(34,211,160,.08),0 0 20px rgba(34,211,160,.22);
   animation:orbPulse 2.4s ease-in-out infinite;
 }
-@keyframes orbPulse{0%,100%{box-shadow:0 0 0 4px rgba(242,136,32,.08),0 0 20px rgba(242,136,32,.2);}
-  50%{box-shadow:0 0 0 8px rgba(242,136,32,.04),0 0 32px rgba(242,136,32,.35);}}
-.result-pulse-copy strong{font-size:12.5px;font-weight:700;color:var(--text);display:block;}
-.result-pulse-copy p{font-size:10.5px;color:var(--muted);margin-top:2px;line-height:1.45;}
-/* Payout card — the hero result */
-.result-card{
-  padding:18px;border-radius:var(--r-sm);
-  background:rgba(255,255,255,.03);border:1px solid var(--border);
+.rsb-copy strong{font-size:12px;font-weight:700;color:var(--text);display:block;}
+.rsb-copy p{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.45;}
+
+/* Payout card */
+.r-payout{
+  padding:16px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:rgba(255,255,255,.03);position:relative;overflow:hidden;
   transition:all .35s cubic-bezier(.4,0,.2,1);
-  position:relative;overflow:hidden;
 }
-.result-card::after{
-  content:'';position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(135deg,rgba(255,255,255,.03),transparent 60%);
-  opacity:0;transition:opacity .3s;
+.r-payout::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.04),transparent 55%);
+  pointer-events:none;z-index:0;
 }
-.result-card:hover::after{opacity:1;}
-.result-card.active-green{
-  border-color:rgba(34,211,160,.35);
+.r-payout.lit{
+  border-color:rgba(34,211,160,.38);
   background:linear-gradient(135deg,rgba(34,211,160,.07),rgba(34,211,160,.02));
-  box-shadow:0 0 32px rgba(34,211,160,.1),inset 0 1px 0 rgba(34,211,160,.1);
+  box-shadow:0 0 36px rgba(34,211,160,.1),inset 0 1px 0 rgba(34,211,160,.12);
 }
-.result-card.active-green .result-big{color:var(--green);}
-.result-card-label{
-  font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--dim);display:block;margin-bottom:8px;
+.r-payout.lit::after{
+  content:'';position:absolute;left:0;right:0;height:1px;z-index:1;
+  background:linear-gradient(90deg,transparent,rgba(34,211,160,.5),transparent);
+  animation:scanLine 2.5s ease-in-out infinite;pointer-events:none;
 }
-.result-big{
-  font-size:40px;font-weight:800;font-family:'JetBrains Mono',monospace;
-  color:var(--text);display:block;transition:color .35s;line-height:1;
-  letter-spacing:-.03em;
+.rp-label{
+  font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--dim);display:block;margin-bottom:6px;position:relative;z-index:1;
 }
-.result-note{font-size:10px;color:var(--dim);margin-top:6px;display:block;}
-.result-breakdown{
-  margin-top:12px;padding-top:10px;border-top:1px solid var(--border);
-  display:flex;flex-direction:column;gap:5px;
+.rp-big{
+  font-size:38px;font-weight:800;font-family:'JetBrains Mono',monospace;
+  color:var(--text);display:block;line-height:1;
+  transition:color .35s;letter-spacing:-.03em;position:relative;z-index:1;
 }
-.result-line{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
-.result-line span{color:var(--dim);}
-.result-line strong{
-  font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);
-  transition:color .3s;
+.r-payout.lit .rp-big{color:var(--green);text-shadow:0 0 30px rgba(34,211,160,.3);}
+.rp-sub{font-size:10px;color:var(--dim);margin-top:5px;display:block;position:relative;z-index:1;}
+.rp-breakdown{
+  margin-top:10px;padding-top:8px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:4px;position:relative;z-index:1;
 }
+.rp-line{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+.rp-line span{color:var(--dim);}
+.rp-line strong{font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);transition:color .3s;}
+
+/* Points card with progress bar */
+.r-points{
+  padding:13px 14px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:rgba(255,255,255,.03);transition:border-color .3s;
+}
+.r-points.pts-ok{border-color:rgba(34,211,160,.22);}
+.rp2-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;}
+.rp2-label{font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--dim);}
+.rp2-val{
+  font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;
+  color:var(--text);transition:color .3s;line-height:1;
+}
+.r-points.pts-ok .rp2-val{color:var(--green);}
+.rp2-track{
+  height:6px;border-radius:3px;background:rgba(255,255,255,.07);
+  overflow:hidden;margin-bottom:4px;position:relative;
+}
+.rp2-fill{
+  height:100%;border-radius:3px;
+  background:linear-gradient(90deg,var(--teal),var(--green));
+  transition:width .3s ease;box-shadow:0 0 8px rgba(34,211,160,.3);
+}
+.rp2-targets{display:flex;justify-content:space-between;font-size:9px;color:var(--dim);}
+
 /* Slab hit stats */
-.slab-hits-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.slab-stat{
-  padding:10px;border-radius:var(--r-xs);text-align:center;
+.r-slabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.r-slab-item{
+  padding:9px 10px;border-radius:var(--r-xs);text-align:center;
   background:rgba(255,255,255,.03);border:1px solid var(--border);
   transition:border-color .25s,background .25s;
 }
-.slab-stat:hover{border-color:var(--border2);background:rgba(255,255,255,.05);}
-.slab-stat label{
-  font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--dim);display:block;margin-bottom:5px;
+.r-slab-item:hover{border-color:var(--border2);background:rgba(255,255,255,.05);}
+.r-slab-item label{
+  font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--dim);display:block;margin-bottom:4px;
 }
-.slab-stat strong{
-  font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;
+.r-slab-item strong{
+  font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;
   color:var(--text);display:block;transition:color .25s;
 }
-.slab-stat small{font-size:9px;color:var(--dim);margin-top:2px;display:block;}
+.r-slab-item small{font-size:9px;color:var(--dim);margin-top:2px;display:block;}
 /* CSAT compact card */
 .csat-section{
   padding:12px 14px;border-radius:var(--r-sm);border:1px solid var(--border);
-  background:rgba(255,255,255,.03);
-  transition:border-color .25s;
+  background:rgba(255,255,255,.03);transition:border-color .25s;
 }
 .csat-section.calls{border-color:rgba(6,135,190,.18);}
 .csat-section.chat{border-color:rgba(242,136,32,.18);}
@@ -555,10 +541,7 @@ input[type=checkbox]:checked ~ .toggle-track i{transform:translateX(18px);backgr
 .csat-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .csat-field{padding:10px 12px;border-radius:var(--r-xs);background:rgba(255,255,255,.04);border:1px solid var(--border);}
 .csat-field label{font-size:9.5px;font-weight:700;color:var(--dim);display:block;margin-bottom:5px;}
-.csat-big{
-  font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;
-  color:var(--teal2);display:block;margin-bottom:4px;transition:color .25s;
-}
+.csat-big{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--teal2);display:block;margin-bottom:4px;transition:color .25s;}
 .csat-big.chat{color:var(--orange2);}
 .csat-slider{width:100%;accent-color:var(--teal);cursor:pointer;}
 .csat-slider.chat{accent-color:var(--orange);}
@@ -778,82 +761,104 @@ input[type=checkbox]:checked ~ .toggle-track i{transform:translateX(18px);backgr
       </div>
     </div>
     <div class="section-body">
-      <div class="calc-team-tabs">
-        <button class="calc-team-tab calls active" data-team="calls" onclick="switchCalcTeam('calls',this)">
-          <span class="dot" style="background:var(--teal2);box-shadow:0 0 8px var(--teal);"></span>
-          Calls Estimator
+      <!-- Team selector cards -->
+      <div class="calc-team-cards">
+        <button class="calc-tc calls active" data-team="calls" onclick="switchCalcTeam('calls',this)">
+          <div class="tc-icon">📞</div>
+          <div class="tc-meta">
+            <strong>Calls Team</strong>
+            <span>Volume · FCR · QA · Tickets</span>
+          </div>
+          <span class="tc-tag">Active</span>
         </button>
-        <button class="calc-team-tab chat" data-team="chat" onclick="switchCalcTeam('chat',this)">
-          <span class="dot" style="background:var(--orange2);box-shadow:0 0 8px var(--orange);"></span>
-          Chat Estimator
+        <button class="calc-tc chat" data-team="chat" onclick="switchCalcTeam('chat',this)">
+          <div class="tc-icon">💬</div>
+          <div class="tc-meta">
+            <strong>Chat Team</strong>
+            <span>CSAT · Chats · Tickets · QA · FCR</span>
+          </div>
+          <span class="tc-tag">Switch</span>
         </button>
       </div>
+      <!-- Main layout -->
       <div class="calc-layout">
         <div>
-          <div class="calc-metrics" id="calc-list"></div>
-          <div class="calc-controls">
-            <div class="ctrl-box">
-              <label class="ctrl-label" for="plannedLeaves">Planned leaves</label>
-              <p class="ctrl-note">Select your leave band for this month.</p>
-              <span class="ctrl-badge glow" id="leaveBandLabel">0 leaves</span>
-              <select id="plannedLeaves" class="leave-select" onchange="onLeaveChange()">
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4+</option>
-              </select>
-              <div class="mult-preview">
+          <!-- Metric gauge cards -->
+          <div class="calc-mg-grid" id="calc-list"></div>
+          <!-- Modifiers strip -->
+          <div class="calc-mods">
+            <div class="calc-mod">
+              <span class="mod-label">Planned leaves</span>
+              <div class="mod-row">
+                <select id="plannedLeaves" class="leave-select" style="flex:1;margin-top:0;padding:6px 10px;" onchange="onLeaveChange()">
+                  <option value="0">0 leaves</option>
+                  <option value="1">1 leave</option>
+                  <option value="2">2 leaves</option>
+                  <option value="3">3 leaves</option>
+                  <option value="4">4+ leaves</option>
+                </select>
+              </div>
+              <div class="mult-preview" style="margin-top:8px;">
                 <strong id="leavePreviewMultiplier">100%</strong>
                 <small id="leavePreviewCopy">Full payout multiplier retained.</small>
               </div>
+              <span class="ctrl-badge glow" id="leaveBandLabel" style="display:none;">0 leaves</span>
             </div>
-            <div class="ctrl-box" id="attendanceControl">
-              <label class="ctrl-label">Attendance override</label>
-              <p class="ctrl-note">Toggle only if unplanned leave occurred.</p>
-              <span class="ctrl-badge" id="attendanceBadge">Attendance clear</span>
-              <div class="toggle-switch">
-                <div class="toggle-copy">
-                  <strong id="attendanceStateLabel">Bonus runway is clean</strong>
-                  <small id="attendanceStateCopy">No attendance block. Both slab payout and CSAT incentive stay eligible.</small>
-                </div>
-                <span class="toggle-action">
+            <div class="calc-mod" id="attendanceControl">
+              <span class="mod-label">Unplanned leave</span>
+              <div class="mod-row">
+                <span class="ctrl-badge" id="attendanceBadge">Clear</span>
+                <span class="toggle-action" style="margin-left:auto;">
                   <input type="checkbox" id="unplannedLeave" onchange="recalc()">
                   <span class="toggle-track" onclick="document.getElementById('unplannedLeave').click()"><i></i></span>
                 </span>
               </div>
+              <div style="margin-top:8px;">
+                <strong id="attendanceStateLabel" style="font-size:11px;color:var(--text);display:block;transition:color .25s;">Bonus runway is clean</strong>
+                <small id="attendanceStateCopy" style="font-size:9.5px;color:var(--dim);margin-top:2px;display:block;line-height:1.45;">No attendance block. Both slab payout and CSAT incentive stay eligible.</small>
+              </div>
             </div>
           </div>
         </div>
+        <!-- Result panel -->
         <div class="result-panel">
-          <div class="result-pulse" id="unlockBanner">
-            <div class="result-pulse-orb" id="unlockOrb">🎯</div>
-            <div class="result-pulse-copy">
+          <div class="result-status-banner" id="unlockBanner">
+            <div class="rsb-orb" id="unlockOrb">🎯</div>
+            <div class="rsb-copy">
               <strong id="unlockBannerTitle">Hold the line</strong>
-              <p id="unlockBannerCopy">Clear every active metric at Slab 2 to ignite the payout pulse.</p>
+              <p id="unlockBannerCopy">Clear every metric at Slab 2 to ignite the payout pulse.</p>
             </div>
           </div>
-          <div class="result-card" id="payoutCard">
-            <span class="result-card-label">Total payout</span>
-            <strong class="result-big" id="totalPayout">₹0</strong>
-            <span class="result-note" id="payoutStatus">No slab or CSAT payout unlocked yet</span>
-            <div class="result-breakdown">
-              <div class="result-line"><span>Slab bonus</span><strong id="slabBonusLine">₹0</strong></div>
-              <div class="result-line"><span>CSAT bonus</span><strong id="csatBonusLine">₹0</strong></div>
+          <div class="r-payout" id="payoutCard">
+            <span class="rp-label">Total payout</span>
+            <strong class="rp-big" id="totalPayout">₹0</strong>
+            <span class="rp-sub" id="payoutStatus">No slab or CSAT payout unlocked yet</span>
+            <div class="rp-breakdown">
+              <div class="rp-line"><span>Slab bonus</span><strong id="slabBonusLine">₹0</strong></div>
+              <div class="rp-line"><span>CSAT bonus</span><strong id="csatBonusLine">₹0</strong></div>
             </div>
           </div>
-          <div class="result-card" id="pointsCard">
-            <span class="result-card-label">Total points</span>
-            <strong class="result-big" id="totalPoints">0</strong>
-            <span class="result-note" id="totalStatus">Minimum 70 points needed</span>
+          <div class="r-points" id="pointsCard">
+            <div class="rp2-header">
+              <span class="rp2-label">Total points</span>
+              <span class="rp2-val" id="totalPoints">0</span>
+            </div>
+            <div class="rp2-track">
+              <div class="rp2-fill" id="pointsFill" style="width:0%"></div>
+            </div>
+            <div class="rp2-targets">
+              <span>0</span>
+              <span id="totalStatus">Min 70 needed</span>
+              <span>100</span>
+            </div>
           </div>
-          <div class="slab-hits-grid">
-            <div class="slab-stat">
+          <div class="r-slabs">
+            <div class="r-slab-item">
               <label>Slab 1 hits</label>
               <strong id="slab2Hits">0 / 0</strong>
               <small id="slabRule">Need 0 for top slab</small>
             </div>
-            <div class="slab-stat">
+            <div class="r-slab-item">
               <label>Active slab</label>
               <strong id="activeSlab">Miss</strong>
               <small id="leaveMultiplier">100% multiplier</small>
@@ -1062,34 +1067,38 @@ function renderCalc(){
   ensureState();
   const host=document.getElementById('calc-list');
   const d=bonusData[activeTeam];
+  const teamCls=activeTeam;
   host.innerHTML=d.metrics.map(m=>{
     const v=calcValues[activeTeam][m.key]||0;
     const status=levelFor(m,v);
     const max=metricMax(m);
     const pct=max>0?(v/max)*100:0;
+    const s1Pct=max>0?(m.slab1/max)*100:0;
+    const s2Pct=max>0?(m.slab2/max)*100:0;
     const statusLabel=status==='slab1'?'Slab 1':status==='slab2'?'Slab 2':'Miss';
-    const teamCls=activeTeam;
-    return `<div class="calc-metric" data-key="${m.key}">
-      <div class="calc-metric-top">
-        <span class="calc-metric-name">${m.label}</span>
-        <input class="calc-metric-input" type="number" min="0" max="${max}" step="${metricStep(m)}"
-          value="${v}" data-key="${m.key}"
-          oninput="onDirectInput(this,'${m.key}')">
-        <span class="calc-status-pill ${status}">${statusLabel}</span>
+    return `<div class="cgc ${status}" data-key="${m.key}">
+      <div class="cgc-header">
+        <span class="cgc-name">${m.label}</span>
+        <span class="cgc-pts">${m.pts} pts</span>
       </div>
-      <div class="calc-range-wrap" style="padding-bottom:18px;">
-        <div class="calc-rail">
-          <div class="calc-fill ${teamCls}" id="fill_${m.key}" style="width:${pct}%"></div>
+      <div class="cgc-value-display">
+        <strong class="cgc-val" id="cgc_val_${m.key}">${fmtVal(m,v)}</strong>
+      </div>
+      <div class="cgc-bar-area">
+        <div class="cgc-track">
+          <div class="cgc-fill ${teamCls}" id="cgc_fill_${m.key}" style="width:${pct}%"></div>
+          <div class="cgc-tick s2" style="left:${s2Pct}%"><span class="cgc-tick-label s2">${m.slab2}${m.unit}</span></div>
+          <div class="cgc-tick s1" style="left:${s1Pct}%"><span class="cgc-tick-label s1">${m.slab1}${m.unit}</span></div>
         </div>
-        <span class="calc-bubble ${teamCls}" id="bubble_${m.key}" style="left:${pct}%">${fmtVal(m,v)}</span>
-        <input class="calc-range-input ${teamCls}" type="range" min="0" max="${max}" step="${metricStep(m)}"
-          value="${v}" data-key="${m.key}"
-          oninput="onSlider(this,'${m.key}')">
+        <input class="cgc-range ${teamCls}" type="range" min="0" max="${max}" step="${metricStep(m)}"
+          value="${v}" data-key="${m.key}" oninput="onSlider(this,'${m.key}')">
       </div>
-      <div style="display:flex;gap:8px;">
-        <span class="slab-tag s1">S1 &ge; ${m.slab1}${m.unit}</span>
-        <span class="slab-tag s2">S2 &ge; ${m.slab2}${m.unit}</span>
-        <span style="margin-left:auto;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;">${m.pts} pts</span>
+      <div class="cgc-footer">
+        <div class="cgc-right">
+          <input class="cgc-input" type="number" min="0" max="${max}" step="${metricStep(m)}"
+            value="${v}" data-key="${m.key}" oninput="onDirectInput(this,'${m.key}')">
+          <span class="cgc-status ${status}" id="cgc_status_${m.key}">${statusLabel}</span>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -1157,19 +1166,21 @@ function onDirectInput(el,key){
 function updateSliderVisuals(m,v,key){
   const max=metricMax(m);
   const pct=max>0?(v/max)*100:0;
-  const fill=document.getElementById('fill_'+key);
-  const bubble=document.getElementById('bubble_'+key);
+  const fill=document.getElementById('cgc_fill_'+key);
+  const valEl=document.getElementById('cgc_val_'+key);
   if(fill)fill.style.width=pct+'%';
-  if(bubble){bubble.style.left=pct+'%';bubble.textContent=fmtVal(m,v);}
+  if(valEl){valEl.textContent=fmtVal(m,v);valEl.classList.remove('value-pop');void valEl.offsetWidth;valEl.classList.add('value-pop');}
+  // sync range slider
+  const rng=document.querySelector(`.cgc-range[data-key="${key}"]`);
+  if(rng)rng.value=v;
 }
 
 function updateMetricStatus(m,v,key){
   const status=levelFor(m,v);
   const label=status==='slab1'?'Slab 1':status==='slab2'?'Slab 2':'Miss';
-  const pill=document.querySelector(`.calc-metric[data-key="${key}"] .calc-status-pill`);
-  if(pill){pill.className='calc-status-pill '+status;pill.textContent=label;}
-  // Also update the metric card's left border class
-  const card=document.querySelector(`.calc-metric[data-key="${key}"]`);
+  const statusEl=document.getElementById('cgc_status_'+key);
+  if(statusEl){statusEl.className='cgc-status '+status;statusEl.textContent=label;}
+  const card=document.querySelector(`.cgc[data-key="${key}"]`);
   if(card){card.classList.remove('slab1','slab2','miss');card.classList.add(status);}
 }
 
@@ -1190,8 +1201,12 @@ function onLeaveChange(){recalc();}
 /* ── SWITCH TEAM TAB ─────────────────────────────────── */
 function switchCalcTeam(team,el){
   activeTeam=team;
-  document.querySelectorAll('.calc-team-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.calc-tc').forEach(b=>{
+    b.classList.remove('active');
+    const tag=b.querySelector('.tc-tag');if(tag)tag.textContent='Switch';
+  });
   el.classList.add('active');
+  const tag=el.querySelector('.tc-tag');if(tag)tag.textContent='Active';
   renderCalc();
 }
 
@@ -1265,7 +1280,7 @@ function recalc(){
 
   // Update DOM
   setAnimatedText('totalPoints',String(totalPts));
-  setAnimatedText('totalStatus',totalPts>=70?'Points gate cleared — checking slabs…':'Minimum 70 points needed');
+  setAnimatedText('totalStatus',totalPts>=70?'Gate cleared ✓':'Min 70 pts needed');
   setAnimatedText('totalPayout',fmtMoney(totalPayout));
   setAnimatedText('payoutStatus',totalPayout>0?`${activeSlab} × ${multPct} multiplier`:'No slab or CSAT payout unlocked yet');
   setAnimatedText('slabBonusLine',fmtMoney(slabBonus));
@@ -1277,9 +1292,12 @@ function recalc(){
 
   // Payout card
   const payoutCard=document.getElementById('payoutCard');
-  if(payoutCard){
-    payoutCard.classList.toggle('active-green',totalPayout>0);
-  }
+  if(payoutCard){payoutCard.classList.toggle('lit',totalPayout>0);}
+  // Points fill bar
+  const pFill=document.getElementById('pointsFill');
+  if(pFill)pFill.style.width=Math.min(totalPts,100)+'%';
+  const pCard=document.getElementById('pointsCard');
+  if(pCard)pCard.classList.toggle('pts-ok',totalPts>=70);
 
   // Pulse banner
   const banner=document.getElementById('unlockBanner');
