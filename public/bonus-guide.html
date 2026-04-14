@@ -660,6 +660,181 @@ body{
   animation:scanLine 2.5s ease-in-out infinite;
   pointer-events:none;
 }
+
+/* ════════════════════════════════════════════════════════
+   FULL-PAGE POLISH — v4
+════════════════════════════════════════════════════════ */
+
+/* ── HERO ── */
+.hero { padding: 36px 36px 36px 36px; }
+.hero-headline { font-size: 52px; margin-top: 16px; line-height:.94; }
+.hero-sub { font-size: 13px; line-height: 1.7; margin-top: 12px; color: rgba(232,238,255,.6); }
+.hero-brand-text h1 { font-size: 26px; }
+.hero-logo-wrap { width: 52px; height: 52px; border-radius: 13px; }
+.pill { padding: 5px 13px; font-size: 10px; }
+.slab-cards { gap: 12px; min-width: 232px; }
+.slab-card { padding: 20px 22px; border-radius: var(--r-sm); }
+.slab-card label { font-size: 10px; letter-spacing: .14em; }
+.slab-card .amount { font-size: 38px; letter-spacing: -.04em; }
+.slab-card .note { font-size: 10.5px; line-height: 1.55; margin-top: 8px; }
+
+/* ── SECTION SKELETON ── */
+.section { margin-bottom: 16px; }
+.section-hdr {
+  padding: 22px 24px 18px;
+  background: linear-gradient(180deg,rgba(255,255,255,.022) 0%,transparent 100%);
+  position: relative;
+}
+.section-hdr::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,transparent 0%,rgba(255,255,255,.09) 30%,rgba(255,255,255,.09) 70%,transparent 100%);
+}
+.section-body { padding: 22px 24px; }
+
+/* Section tag — gradient-border pill */
+.section-tag {
+  font-size: 10px; font-weight: 700;
+  padding: 5px 13px; gap: 8px;
+  margin-bottom: 10px;
+  color: rgba(232,238,255,.5);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 50px;
+  letter-spacing: .1em;
+}
+.section-tag::before { display:none; } /* remove old dot */
+
+/* Section title with gradient shimmer */
+.section-title {
+  font-size: 21px; letter-spacing: -.035em;
+  background: linear-gradient(120deg, #e8eeff 0%, rgba(232,238,255,.75) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  display: inline-block;
+}
+.section-sub { font-size: 12.5px; margin-top: 6px; line-height: 1.65; max-width: 620px; }
+
+/* ── TEAM PANELS ── */
+.team-panel { overflow: hidden; position: relative; }
+.team-panel.calls { border-color: rgba(6,135,190,.18) !important; }
+.team-panel.chat  { border-color: rgba(242,136,32,.18) !important; }
+/* Colored top bar */
+.team-panel.calls::before,
+.team-panel.chat::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px; z-index: 2;
+}
+.team-panel.calls::before { background: linear-gradient(90deg,var(--teal),var(--teal2)); }
+.team-panel.chat::before  { background: linear-gradient(90deg,var(--orange),var(--orange2)); }
+
+.team-head { padding: 16px 18px; gap: 14px; }
+.team-icon {
+  width: 42px; height: 42px; border-radius: 11px; font-size: 20px;
+  transition: box-shadow .3s;
+}
+.team-icon.calls { box-shadow: 0 0 18px rgba(6,135,190,.2); }
+.team-icon.chat  { box-shadow: 0 0 18px rgba(242,136,32,.18); }
+.team-name { font-size: 15px; font-weight: 800; font-family:'Poppins',sans-serif; letter-spacing:-.02em; }
+.team-badge {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .08em;
+  padding: 3px 10px; border-radius: 50px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(232,238,255,.4);
+}
+.team-blurb { font-size: 11.5px; line-height: 1.6; padding: 10px 18px; color: rgba(232,238,255,.55); }
+
+/* Metric list items */
+.metric-list { padding: 14px 18px; gap: 8px; }
+.metric-item {
+  padding: 13px 15px; border-radius: var(--r-xs);
+  border-left: 2px solid transparent;
+  transition: border-color .22s, background .22s, transform .18s, box-shadow .22s;
+}
+.team-panel.calls .metric-item:hover { border-left-color: rgba(6,135,190,.5); transform: translateX(2px); }
+.team-panel.chat  .metric-item:hover { border-left-color: rgba(242,136,32,.5); transform: translateX(2px); }
+.metric-item-name { font-size: 12.5px; font-weight: 600; }
+.metric-pts-badge { font-size: 11.5px; padding: 3px 10px; border-radius: 6px; }
+.slab-tag { font-size: 10.5px; padding: 3px 9px; }
+.metric-bar-wrap { height: 5px; border-radius: 3px; background: rgba(255,255,255,.06); }
+.metric-bar-fill.calls { box-shadow: 0 0 8px rgba(6,135,190,.45); }
+.metric-bar-fill.chat  { box-shadow: 0 0 8px rgba(242,136,32,.4); }
+
+.csat-note {
+  margin: 0 18px 14px; padding: 11px 14px; border-radius: var(--r-xs);
+  background: rgba(255,255,255,.025); border: 1px solid var(--border);
+  font-size: 11.5px; line-height: 1.55; color: rgba(232,238,255,.55);
+}
+
+/* ── ELIGIBILITY CARDS ── */
+.elig-grid { gap: 14px; }
+.elig-card { padding: 22px; border-radius: var(--r-sm); }
+.elig-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; border-radius: 12px;
+  font-size: 22px; margin-bottom: 12px;
+}
+.elig-card.blue   .elig-icon { background: rgba(6,135,190,.14);   border: 1px solid rgba(6,135,190,.22); }
+.elig-card.green  .elig-icon { background: rgba(34,211,160,.14);  border: 1px solid rgba(34,211,160,.22); }
+.elig-card.orange .elig-icon { background: rgba(242,136,32,.14);  border: 1px solid rgba(242,136,32,.22); }
+.elig-card.purple .elig-icon { background: rgba(167,139,250,.14); border: 1px solid rgba(167,139,250,.2); }
+.elig-label { font-size: 10px; letter-spacing: .1em; margin-bottom: 8px; }
+.elig-value { font-size: 36px; line-height: 1.05; letter-spacing: -.04em; margin-bottom: 4px; }
+.elig-card.blue   .elig-value { text-shadow: 0 0 28px rgba(6,135,190,.35); }
+.elig-card.green  .elig-value { text-shadow: 0 0 28px rgba(34,211,160,.35); }
+.elig-card.orange .elig-value { text-shadow: 0 0 28px rgba(242,136,32,.28); }
+.elig-card.purple .elig-value { text-shadow: 0 0 28px rgba(167,139,250,.28); }
+.elig-copy { font-size: 11.5px; line-height: 1.6; color: rgba(232,238,255,.55); }
+
+/* ── LEAVE NODES ── */
+.leave-track { gap: 12px; margin-bottom: 16px; }
+.leave-node { padding: 20px 16px; border-radius: var(--r-sm); }
+.leave-node.ok   { background: rgba(34,211,160,.035); }
+.leave-node.warn { background: rgba(251,191,36,.03); }
+.leave-node.bad  { background: rgba(242,136,32,.03); }
+.leave-node.stop { background: rgba(248,113,113,.04); }
+.leave-node-days { font-size: 10.5px; font-weight: 700; letter-spacing:.06em; text-transform:uppercase; margin-bottom: 8px; color: rgba(232,238,255,.45); }
+.leave-node-mult { font-size: 36px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.leave-node-note { font-size: 10.5px; margin-top: 10px; line-height: 1.6; color: rgba(232,238,255,.5); }
+.leave-node-bar  { height: 4px; border-radius: 2px; }
+
+/* ── GOVERNANCE ── */
+.gov-item { border-radius: var(--r-sm); padding: 14px 16px; }
+.gov-num  {
+  width: 28px; height: 28px; border-radius: 8px; font-size: 12px;
+  font-weight: 800; transition: box-shadow .22s, background .22s;
+}
+.gov-body strong { font-size: 12.5px; }
+.gov-body p      { font-size: 11px; line-height: 1.6; color: rgba(232,238,255,.55); }
+.gov-callout { padding: 11px 15px; font-size: 11.5px; }
+
+/* ── AMBIENT BACKGROUND — stronger orbs ── */
+.bg-layer::before {
+  background:
+    radial-gradient(ellipse 65% 50% at 10% -8%, rgba(242,136,32,.12) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 92% 4%,  rgba(6,135,190,.11) 0%, transparent 50%),
+    radial-gradient(ellipse 35% 55% at 50% 108%,rgba(167,139,250,.07) 0%,transparent 50%);
+}
+
+/* ── GLASS CARD DEPTH ── */
+.glass {
+  background: rgba(8,13,28,.84);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,.05) inset, 0 24px 64px rgba(0,0,0,.5);
+}
+.glass:hover {
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 1px 0 0 rgba(255,255,255,.07) inset, 0 32px 80px rgba(0,0,0,.55);
+}
+.glass2 {
+  background: rgba(12,20,40,.72);
+  border: 1px solid rgba(255,255,255,.07);
+}
+
+/* ── PAGE RHYTHM ── */
+.page { padding: 24px 24px 80px; }
+.hero { margin-bottom: 16px; }
+
 </style>
 </head>
 <body>
@@ -966,7 +1141,7 @@ function renderTeamPanels(){
   const host=document.getElementById('team-panels');
   host.innerHTML=['calls','chat'].map(team=>{
     const d=bonusData[team];
-    return `<div class="glass2 team-panel">
+    return `<div class="glass2 team-panel ${d.tone}">
       <div class="team-head">
         <div class="team-icon ${d.tone}">${d.icon}</div>
         <div>
