@@ -410,10 +410,12 @@ function buildSessionSummary(sessionCalls, lookups) {
     if (normalizedDirection === 'outbound') outboundSeen = true;
   }
 
-  // Queue-touched sessions are the queue inbound workload we want to mirror in the
-  // live RC dashboard, even when later transfer legs introduce mixed directions.
-  const relevantInbound = queueTouched;
-  const relevantOutbound = !!owner && !queueTouched && (primaryDirection === 'outbound' || outboundSeen);
+  // Queue-touched sessions are ideal, but RC call log often doesn't surface the queue
+  // extension ID in individual leg records. Broaden: also count any inbound call that
+  // landed on a monitored agent (owner) with no outbound leg, as these are overwhelmingly
+  // queue-routed in a contact-center context.
+  const relevantInbound = queueTouched || (!!owner && inboundSeen && !outboundSeen);
+  const relevantOutbound = !!owner && !relevantInbound && (primaryDirection === 'outbound' || outboundSeen);
 
   return {
     owner,

@@ -616,62 +616,60 @@ select option{background:#0c1424;color:var(--t1);}
 .ld-sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
 
 /* KPI Row */
-.ld-kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;}
+.ld-kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:14px;}
 @media(max-width:1100px){.ld-kpi-row{grid-template-columns:repeat(3,1fr);}}
 @media(max-width:600px){.ld-kpi-row{grid-template-columns:repeat(2,1fr);}}
-.ld-kpi{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;}
-.ld-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-accent,var(--orange));border-radius:2px 2px 0 0;opacity:.9;}
-.ld-kpi::after{content:'';position:absolute;inset:0;background:var(--kpi-glow,transparent);pointer-events:none;}
-.ld-kpi:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.5);}
-.ld-kpi.ld-kpi-alert{border-color:rgba(244,63,94,.25);}
-.ld-kpi-icon{width:28px;height:28px;flex-shrink:0;color:var(--kpi-accent,var(--orange));opacity:.85;}
+.ld-kpi{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-sm);position:relative;overflow:hidden;transition:transform .18s,border-color .18s;}
+.ld-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-accent,var(--orange));opacity:.9;}
+.ld-kpi:hover{transform:translateY(-1px);border-color:var(--b2);}
+.ld-kpi.ld-kpi-alert{border-color:rgba(244,63,94,.3);}
+.ld-kpi-icon{width:22px;height:22px;flex-shrink:0;color:var(--kpi-accent,var(--orange));opacity:.8;}
 .ld-kpi-body{min-width:0;}
-.ld-kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:4px;}
-.ld-kpi-val{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em;color:var(--t1);line-height:1;}
-.ld-kpi-sub{font-size:9px;color:var(--t3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+.ld-kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:3px;}
+.ld-kpi-val{font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em;color:var(--t1);line-height:1;}
+.ld-kpi-sub{font-size:9px;color:var(--t3);margin-top:3px;font-family:'JetBrains Mono',monospace;}
 
-/* Panels Row */
-.ld-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-@media(max-width:860px){.ld-panels{grid-template-columns:1fr;}}
+/* Activity Row */
+.ld-activity-row{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;}
+@media(max-width:860px){.ld-activity-row{flex-direction:column;}}
 .ld-panel{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px;backdrop-filter:blur(12px);}
+.ld-panel-grow{flex:1;min-width:0;}
 .ld-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .ld-panel-title{font-size:12px;font-weight:700;color:var(--t1);}
 .ld-panel-sub{font-size:10px;color:var(--t3);}
 
-/* Team Pulse — Health Badge */
-.ld-health-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:50px;border:1px solid var(--b1);background:var(--card2);font-size:10px;color:var(--t2);}
-.ld-health-score{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);}
-
-/* Team Pulse — Gauge + Bars */
-.ld-gauge-wrap{display:flex;gap:16px;align-items:center;margin-bottom:14px;}
-.ld-pulse-bars{flex:1;display:flex;flex-direction:column;gap:9px;}
+/* Occupancy mini panel */
+.ld-occ-panel{flex:0 0 220px;}
+@media(max-width:860px){.ld-occ-panel{flex:1;}}
+.ld-occ-bars{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
 .ld-pbar-row{display:flex;align-items:center;gap:8px;font-size:11px;}
-.ld-pbar-label{display:flex;align-items:center;gap:5px;color:var(--t2);flex:0 0 64px;}
+.ld-pbar-label{display:flex;align-items:center;gap:5px;color:var(--t2);flex:0 0 68px;}
 .ld-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
-.ld-pbar-row b{margin-left:auto;font-size:12px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;flex:0 0 20px;text-align:right;}
+.ld-pbar-row b{margin-left:4px;font-size:12px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;flex:0 0 18px;text-align:right;}
+.ld-occ-extras{display:flex;gap:6px;}
+.ld-oe{flex:1;background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:7px 10px;text-align:center;}
+.ld-oe span{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:3px;}
+.ld-oe strong{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);}
 
-/* Team Pulse — Secondary Grid */
-.ld-secondary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-.ld-sg-item{background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:8px 10px;text-align:center;}
-.ld-sg-item span{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:4px;}
-.ld-sg-item strong{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);}
+/* Health Badge */
+.ld-health-badge{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:50px;border:1px solid var(--b1);background:var(--card2);font-size:10px;color:var(--t2);}
+.ld-health-score{font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);}
 
 /* Call Activity Grid */
-.ld-act-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
+.ld-act-grid{display:grid;gap:6px;margin-bottom:0;}
+.ld-act-grid-6{grid-template-columns:repeat(6,1fr);}
+@media(max-width:1100px){.ld-act-grid-6{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.ld-act-grid-6{grid-template-columns:repeat(2,1fr);}}
 .ld-act-item{background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:10px 10px 8px;text-align:center;position:relative;overflow:hidden;}
 .ld-act-accent{position:absolute;top:0;left:0;right:0;height:2px;}
 .ld-act-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:5px;margin-top:4px;}
 .ld-act-val{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);}
 
-/* Abandon Strip (inside Call Activity panel) */
-.ld-abandon-strip{border-top:1px solid var(--b1);padding-top:12px;}
-.ld-ab-title{font-size:10px;font-weight:600;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.ld-ab-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
-.ld-ab-stat{background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:8px 10px;text-align:center;}
-.ld-ab-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:3px;}
-.ld-ab-val{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);}
-.ld-ab-sub{font-size:9px;color:var(--t3);margin-top:2px;}
 @keyframes ldAlertPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}50%{box-shadow:0 0 0 4px rgba(244,63,94,.2);}}
+
+/* ── Admin table: give it a max-height scrollable container so sticky header works ── */
+#admin-agent-tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:480px;border-radius:var(--r-sm);}
+#admin-agent-tbl-wrap thead th{position:sticky;top:0;z-index:3;background:rgba(7,13,28,.97);}
 
 /* ══════════════════════════════════════════════════════════════════════════
    VIZ ROW
@@ -5882,76 +5880,71 @@ footer{
       </div>
     </div>
 
-    <!-- ── Insight Panels ──────────────────────────────────────────────── -->
-    <div class="ld-panels">
+    <!-- ── Call Activity + Occupancy Row ──────────────────────────────── -->
+    <div class="ld-activity-row">
 
-      <!-- Team Pulse -->
-      <div class="ld-panel">
-        <div class="ld-panel-hdr">
-          <span class="ld-panel-title">Team Pulse</span>
-          <div class="ld-health-badge" id="health-badge-wrap">
-            <span id="health-label">Calm</span>
-            <span class="ld-health-score" id="health-score">100</span>
-          </div>
-        </div>
-        <div class="ld-gauge-wrap">
-          <div class="health-gauge" id="health-gauge" style="--gauge:0deg;">
-            <div class="health-core">
-              <div class="health-score" id="health-score-gauge">0</div>
-              <div class="health-label" style="display:none">x</div>
-            </div>
-          </div>
-          <div class="ld-pulse-bars">
-            <div class="ld-pbar-row">
-              <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--green)"></span>Ready</div>
-              <div class="health-track"><i class="health-ready" id="health-ready-bar" style="width:0%"></i></div>
-              <b id="health-ready-val">0</b>
-            </div>
-            <div class="ld-pbar-row">
-              <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--blue)"></span>On Call</div>
-              <div class="health-track"><i class="health-live" id="health-live-bar" style="width:0%"></i></div>
-              <b id="health-live-val">0</b>
-            </div>
-            <div class="ld-pbar-row">
-              <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--red)"></span>Queue Off</div>
-              <div class="health-track"><i class="health-off" id="health-off-bar" style="width:0%"></i></div>
-              <b id="health-off-val">0</b>
-            </div>
-          </div>
-        </div>
-        <div class="ld-secondary-grid">
-          <div class="ld-sg-item"><span>Voicemails</span><strong id="m-voicemail">--</strong></div>
-          <div class="ld-sg-item"><span>Transfers</span><strong id="m-transfers">--</strong></div>
-          <div class="ld-sg-item"><span>Avg Ring</span><strong id="m-ringtime">--</strong></div>
-          <div class="ld-sg-item"><span>Avg Hold</span><strong id="m-holdtime">--</strong></div>
-        </div>
-      </div>
-
-      <!-- Call Activity -->
-      <div class="ld-panel">
+      <!-- Call Volume Panel -->
+      <div class="ld-panel ld-panel-grow">
         <div class="ld-panel-hdr">
           <span class="ld-panel-title">Call Activity</span>
           <span class="ld-panel-sub">Today's volume</span>
         </div>
-        <div class="mix-bar" style="height:10px;border-radius:6px;margin-bottom:18px;">
+        <div class="mix-bar" style="height:8px;border-radius:4px;margin-bottom:16px;">
           <span class="mix-seg mix-in" id="mix-inbound-bar" style="width:0%"></span>
           <span class="mix-seg mix-out" id="mix-outbound-bar" style="width:0%"></span>
           <span class="mix-seg mix-vm" id="mix-voicemail-bar" style="width:0%"></span>
           <span class="mix-seg mix-abd" id="mix-abandon-bar" style="width:0%"></span>
         </div>
-        <div class="ld-act-grid">
+        <div class="ld-act-grid ld-act-grid-6">
           <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--blue)"></div><div class="ld-act-lbl">Inbound</div><div class="ld-act-val" id="mix-inbound-val">0</div></div>
           <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--orange)"></div><div class="ld-act-lbl">Outbound</div><div class="ld-act-val" id="mix-outbound-val">0</div></div>
           <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--purple)"></div><div class="ld-act-lbl">Voicemail</div><div class="ld-act-val" id="mix-voicemail-val">0</div></div>
           <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--red)"></div><div class="ld-act-lbl">Abandoned</div><div class="ld-act-val" id="mix-abandon-val">0</div></div>
+          <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--teal)"></div><div class="ld-act-lbl">Avg Ring</div><div class="ld-act-val" id="m-ringtime" style="font-size:16px">--</div></div>
+          <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--blue2)"></div><div class="ld-act-lbl">Avg Hold</div><div class="ld-act-val" id="m-holdtime" style="font-size:16px">--</div></div>
         </div>
-        <div class="ld-abandon-strip" id="ld-abandon-strip">
-          <div class="ld-ab-title"><span class="chip" id="abandon-radar-count" style="font-size:9px">0 calls</span> Abandon Detail</div>
-          <div class="ld-ab-stats">
-            <div class="ld-ab-stat"><div class="ld-ab-lbl">Total</div><div class="ld-ab-val" id="abandon-total">--</div><div class="ld-ab-sub" id="abandon-total-sub">Clean</div></div>
-            <div class="ld-ab-stat"><div class="ld-ab-lbl">Longest Ring</div><div class="ld-ab-val" id="abandon-longest">--</div><div class="ld-ab-sub" id="abandon-longest-sub">--</div></div>
-            <div class="ld-ab-stat"><div class="ld-ab-lbl">Most Exposed</div><div class="ld-ab-val" id="abandon-owner">--</div><div class="ld-ab-sub" id="abandon-owner-sub">--</div></div>
+      </div>
+
+      <!-- Team Occupancy (mini) -->
+      <div class="ld-panel ld-occ-panel">
+        <div class="ld-panel-hdr">
+          <span class="ld-panel-title">Occupancy</span>
+          <div class="ld-health-badge" id="health-badge-wrap">
+            <span id="health-label" style="color:var(--green)">Calm</span>
+            <span class="ld-health-score" id="health-score">100</span>
           </div>
+        </div>
+        <div class="ld-occ-bars">
+          <div class="ld-pbar-row">
+            <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--green)"></span>Ready</div>
+            <div class="health-track"><i class="health-ready" id="health-ready-bar" style="width:0%"></i></div>
+            <b id="health-ready-val">0</b>
+          </div>
+          <div class="ld-pbar-row">
+            <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--blue)"></span>On Call</div>
+            <div class="health-track"><i class="health-live" id="health-live-bar" style="width:0%"></i></div>
+            <b id="health-live-val">0</b>
+          </div>
+          <div class="ld-pbar-row">
+            <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--red)"></span>Off Queue</div>
+            <div class="health-track"><i class="health-off" id="health-off-bar" style="width:0%"></i></div>
+            <b id="health-off-val">0</b>
+          </div>
+        </div>
+        <div class="ld-occ-extras">
+          <div class="ld-oe"><span>VM</span><strong id="m-voicemail">--</strong></div>
+          <div class="ld-oe"><span>Xfer</span><strong id="m-transfers">--</strong></div>
+        </div>
+        <!-- hidden gauge elements to keep JS happy -->
+        <div style="display:none">
+          <div id="health-gauge" style="--gauge:0deg;"><div class="health-core"><div id="health-score-gauge">0</div></div></div>
+        </div>
+        <!-- hidden abandon detail to keep JS happy -->
+        <div style="display:none">
+          <div id="abandon-total">--</div><div id="abandon-total-sub">Clean</div>
+          <div id="abandon-longest">--</div><div id="abandon-longest-sub">--</div>
+          <div id="abandon-owner">--</div><div id="abandon-owner-sub">--</div>
+          <span id="abandon-radar-count">0 calls</span>
         </div>
       </div>
     </div>
@@ -5962,7 +5955,7 @@ footer{
         <span class="card-title">Live Agent View</span>
         <span class="chip" id="agent-count">0 agents</span>
       </div>
-      <div class="tbl-wrap">
+      <div class="tbl-wrap" id="admin-agent-tbl-wrap">
       <table>
         <thead>
           <tr>
@@ -8342,7 +8335,7 @@ async function loadEventLog(){
       const last=evts[evts.length-1];
       const changes=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status);
       const rows=evts.slice().reverse().map(e=>'<div class="evt-row"><div class="evt-time">'+toDateTime(e.timestamp)+'</div><div><span class="pill '+pillCls(e.status)+'">'+e.status+'</span></div></div>').join('');
-      return'<div class="evt-group"><div class="evt-hdr" onclick="evtToggle(this)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>'+changes.length+' toggles</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body">'+rows+'</div></div>';
+      return'<div class="evt-group open"><div class="evt-hdr" onclick="evtToggle(this)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>'+changes.length+' toggles</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body">'+rows+'</div></div>';
     }).join('');
   }catch(e){console.error('loadEventLog',e);}
 }
