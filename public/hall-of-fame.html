@@ -1510,6 +1510,469 @@ body::after{
     }
   }
 </style>
+
+<style id="hof-celebration-v1">
+/* ════════════════════════════════════════════════════════
+   HALL OF FAME — Celebration Redesign
+   Full override: vibrant, awards-night feel
+════════════════════════════════════════════════════════ */
+
+/* ── AMBIENT BACKGROUND ── */
+body {
+  background:
+    radial-gradient(circle at 10% 0%,  rgba(251,191,36,.14), transparent 26%),
+    radial-gradient(circle at 90% 6%,  rgba(6,135,190,.11),  transparent 26%),
+    radial-gradient(circle at 55% 96%, rgba(167,139,250,.07), transparent 30%),
+    linear-gradient(180deg,#040914 0%,#07101d 48%,#040914 100%) !important;
+}
+body::before {
+  background:
+    radial-gradient(ellipse 65% 45% at 0% -2%,  rgba(251,191,36,.10) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 38% at 102% 8%,  rgba(6,135,190,.09)  0%, transparent 52%),
+    radial-gradient(ellipse 42% 46% at 50% 102%, rgba(167,139,250,.06) 0%, transparent 50%) !important;
+}
+body::after {
+  background-image:
+    linear-gradient(rgba(255,255,255,.03)  1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px) !important;
+  background-size: 38px 38px !important;
+  opacity: .16 !important;
+}
+
+/* ── WRAP ── */
+.wrap { max-width: 1440px !important; padding: 0 20px 60px !important; }
+
+/* ── HEADER ── */
+.hdr {
+  position: sticky !important; top: 0 !important; z-index: 90 !important;
+  margin-top: 0 !important;
+  padding: 13px 0 11px !important;
+  background: rgba(4,9,20,.82) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  border: none !important; border-radius: 0 !important; box-shadow: none !important;
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+}
+.hdr-logo { width: 40px !important; height: 40px !important; border-radius: 11px !important; background: rgba(255,255,255,.9) !important; }
+.hdr-title { font-size: 14px !important; color: #eef4ff !important; letter-spacing: -.02em !important; }
+.hdr-sub { color: rgba(232,238,255,.38) !important; font-size: 10.5px !important; }
+
+/* ── PAGE TABS ── */
+.pg-tabs-wrap {
+  position: sticky !important; top: 66px !important; z-index: 80 !important;
+  padding: 8px 0 10px !important;
+  background: rgba(4,9,20,.76) !important;
+  backdrop-filter: blur(18px) !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+}
+.pg-tabs {
+  display: inline-flex !important; padding: 4px !important; gap: 2px !important;
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 14px !important; box-shadow: none !important;
+}
+.tab-pill {
+  border-radius: 10px !important;
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.11) !important;
+}
+.ptab {
+  min-height: 34px !important; padding: 0 14px !important;
+  border-radius: 10px !important; font-size: 12px !important;
+  font-weight: 600 !important; letter-spacing: 0 !important;
+  text-transform: none !important;
+  color: rgba(232,238,255,.45) !important;
+}
+.ptab.active, .ptab:hover { color: #eef4ff !important; }
+
+/* ── SECTION LABELS ── */
+.sdiv {
+  display: flex !important; align-items: center !important; gap: 10px !important;
+  font-size: 9.5px !important; font-weight: 700 !important; letter-spacing: .18em !important;
+  text-transform: uppercase !important; color: rgba(232,238,255,.32) !important;
+  padding: 14px 0 10px !important; margin-bottom: 12px !important;
+  border: none !important; border-bottom: none !important;
+}
+.sdiv::after {
+  content: "" !important; flex: 1 !important; height: 1px !important;
+  background: linear-gradient(90deg, rgba(255,255,255,.1), transparent) !important;
+  display: block !important;
+}
+
+/* ════ HOF PAGE ════ */
+
+/* ── HERO ── */
+.hof-hero {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 24px !important; align-items: center !important;
+  padding: 32px !important; border-radius: 20px !important;
+  background: rgba(7,12,26,.86) !important;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.07) inset, 0 24px 72px rgba(0,0,0,.55) !important;
+  backdrop-filter: blur(18px) !important;
+  position: relative !important; overflow: hidden !important;
+  margin-bottom: 18px !important;
+}
+/* Top accent bar */
+.hof-hero::before {
+  height: 3px !important;
+  background: linear-gradient(90deg, #fbbf24 0%, #f28820 25%, #0687be 65%, transparent 90%) !important;
+}
+/* Ambient glow orb */
+.hof-hero::after {
+  top: -90px !important; right: -70px !important;
+  width: 300px !important; height: 300px !important;
+  background: radial-gradient(circle, rgba(251,191,36,.10), transparent 65%) !important;
+}
+/* Remove the white inner card from old CSS */
+.hof-hero > div:first-child {
+  background: transparent !important;
+  border-radius: 0 !important; box-shadow: none !important;
+  padding: 0 !important; overflow: visible !important;
+}
+.hof-hero > div:first-child::before { display: none !important; }
+
+.hof-tagline {
+  display: inline-flex !important; align-items: center !important; gap: 7px !important;
+  font-size: 9.5px !important; font-weight: 800 !important; letter-spacing: .18em !important;
+  text-transform: uppercase !important; color: #fbbf24 !important;
+  margin-bottom: 10px !important;
+}
+.hof-tagline::before {
+  content: "★" !important; font-size: 10px !important;
+}
+.hof-h1 {
+  font-size: 40px !important; font-weight: 900 !important;
+  letter-spacing: -.055em !important; line-height: .94 !important;
+  font-family: 'Poppins','Inter',sans-serif !important;
+  color: #eef4ff !important;
+}
+.hof-h1 em {
+  font-style: normal !important;
+  background: linear-gradient(110deg, #fbbf24 0%, #f97316 28%, #ec4899 52%, #8b5cf6 75%, #38b6e0 100%) !important;
+  -webkit-background-clip: text !important; background-clip: text !important;
+  color: transparent !important;
+}
+.hof-caption {
+  margin-top: 12px !important; font-size: 12px !important;
+  line-height: 1.65 !important; color: rgba(232,238,255,.52) !important;
+  max-width: 560px !important;
+}
+
+/* Hero stat blocks */
+.hof-qs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(100px, 1fr)) !important;
+  gap: 10px !important; flex-shrink: 0 !important;
+}
+.hq {
+  padding: 16px 16px !important; border-radius: 14px !important;
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  text-align: left !important;
+}
+.hq-n {
+  font-size: 20px !important; font-weight: 800 !important;
+  font-family: 'JetBrains Mono',monospace !important;
+  color: #f0f8ff !important; display: block !important;
+  letter-spacing: -.03em !important;
+}
+.hq-l {
+  font-size: 9px !important; font-weight: 700 !important;
+  letter-spacing: .12em !important; text-transform: uppercase !important;
+  color: rgba(232,238,255,.38) !important; margin-top: 4px !important;
+}
+
+/* ── PODIUM ── */
+.podium {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-end !important;
+  gap: 12px !important; margin-bottom: 28px !important;
+  flex-wrap: nowrap !important;
+}
+.pod {
+  flex: 1 !important; min-width: 0 !important; max-width: 280px !important;
+  border-radius: 18px !important; padding: 18px 16px 16px !important;
+  background: rgba(8,14,30,.84) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,.3) !important;
+  opacity: 1 !important; animation: none !important;
+  transform: none !important;
+  transition: transform .25s, box-shadow .25s, border-color .25s !important;
+  position: relative !important; overflow: hidden !important;
+  display: flex !important; flex-direction: column !important; align-items: center !important;
+}
+.pod:hover { box-shadow: 0 24px 60px rgba(0,0,0,.4) !important; }
+
+/* 1st place — gold, elevated */
+.pod.p1 {
+  transform: translateY(-22px) !important;
+  padding-top: 26px !important;
+  border-color: rgba(251,191,36,.35) !important;
+  background: linear-gradient(160deg, rgba(251,191,36,.08) 0%, rgba(8,14,30,.90) 55%) !important;
+  box-shadow: 0 0 50px rgba(251,191,36,.12), 0 28px 64px rgba(0,0,0,.4) !important;
+}
+.pod.p1:hover { transform: translateY(-26px) !important; }
+/* 2nd place — silver */
+.pod.p2 {
+  transform: translateY(-10px) !important;
+  border-color: rgba(180,192,214,.2) !important;
+}
+.pod.p2:hover { transform: translateY(-13px) !important; }
+/* 3rd place — bronze */
+.pod.p3 { border-color: rgba(205,127,50,.2) !important; }
+
+/* Podium top accent bars */
+.pod::before { height: 3px !important; }
+.pod.p1::before { background: linear-gradient(90deg, #fbbf24, #f9d76a) !important; box-shadow: 0 0 12px rgba(251,191,36,.5) !important; }
+.pod.p2::before { background: linear-gradient(90deg, #9aa5bc, #c4cdd9) !important; }
+.pod.p3::before { background: linear-gradient(90deg, #cd7f32, #e8a35a) !important; }
+
+/* Position badge */
+.pod-badge {
+  position: absolute !important; top: 12px !important; right: 12px !important;
+  width: 24px !important; height: 24px !important; border-radius: 50% !important;
+  font-size: 10px !important; font-weight: 800 !important;
+}
+.pod.p1 .pod-badge { background: rgba(251,191,36,.2) !important; color: #fbbf24 !important; border: 1px solid rgba(251,191,36,.4) !important; }
+.pod.p2 .pod-badge { background: rgba(180,192,214,.12) !important; color: #9aa5bc !important; border: 1px solid rgba(180,192,214,.25) !important; }
+.pod.p3 .pod-badge { background: rgba(205,127,50,.12) !important; color: #cd7f32 !important; border: 1px solid rgba(205,127,50,.28) !important; }
+
+/* Avatars */
+.pod-avi {
+  margin-bottom: 10px !important; font-size: 15px !important;
+  font-family: 'JetBrains Mono',monospace !important;
+}
+.pod.p1 .pod-avi {
+  width: 58px !important; height: 58px !important;
+  background: rgba(251,191,36,.14) !important;
+  border-color: rgba(251,191,36,.5) !important; border-width: 2px !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 0 4px rgba(251,191,36,.08), 0 0 24px rgba(251,191,36,.25) !important;
+}
+.pod.p2 .pod-avi {
+  width: 48px !important; height: 48px !important;
+  background: rgba(180,192,214,.10) !important;
+  border-color: rgba(180,192,214,.35) !important; color: #c4cdd9 !important;
+}
+.pod.p3 .pod-avi {
+  width: 46px !important; height: 46px !important;
+  background: rgba(205,127,50,.10) !important;
+  border-color: rgba(205,127,50,.32) !important; color: #cd7f32 !important;
+}
+
+/* Name & role */
+.pod-name { font-size: 13px !important; font-weight: 800 !important; letter-spacing: -.025em !important; color: #eef4ff !important; }
+.pod.p1 .pod-name { font-size: 15px !important; }
+.pod-role { font-size: 9.5px !important; color: rgba(232,238,255,.42) !important; margin-top: 3px !important; }
+.pod-months { margin: 10px 0 7px !important; }
+.pdot { width: 11px !important; height: 11px !important; border-radius: 3px !important; }
+.pod-stat { font-size: 10px !important; color: rgba(232,238,255,.55) !important; }
+.pod-bar { height: 2px !important; opacity: .4 !important; }
+
+/* ── INDIVIDUAL AWARDS ── */
+.award-grid {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)) !important;
+  gap: 14px !important; margin-bottom: 18px !important;
+}
+.aw {
+  padding: 18px !important; border-radius: 16px !important;
+  background: rgba(8,14,30,.84) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: none !important; overflow: hidden !important;
+  opacity: 1 !important; animation: none !important; transform: none !important;
+  transition: transform .22s, box-shadow .22s, border-color .22s !important;
+  position: relative !important;
+}
+.aw:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 20px 48px rgba(0,0,0,.35) !important;
+  border-color: rgba(255,255,255,.15) !important;
+}
+.aw:hover .aw-topbar { opacity: 1 !important; }
+.aw-topbar { opacity: .65 !important; height: 2px !important; }
+.aw-glow { opacity: .6 !important; }
+.aw-ico {
+  width: 42px !important; height: 42px !important; border-radius: 11px !important;
+  margin-bottom: 12px !important;
+}
+.aw-cat { font-size: 9px !important; letter-spacing: .13em !important; color: rgba(232,238,255,.35) !important; margin-bottom: 5px !important; }
+.aw-name { font-size: 16px !important; font-weight: 800 !important; letter-spacing: -.025em !important; color: #eef4ff !important; margin-bottom: 1px !important; }
+.aw-team { font-size: 9.5px !important; font-weight: 700 !important; margin-bottom: 10px !important; }
+.aw-metric { font-size: 10px !important; padding: 3px 9px !important; border-radius: 6px !important; margin-bottom: 7px !important; }
+.aw-desc { font-size: 10.5px !important; color: rgba(232,238,255,.48) !important; line-height: 1.55 !important; }
+
+/* ── PERFECT SCORE CLUB ── */
+.ps-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 10px !important; margin-bottom: 18px !important;
+}
+.ps-card {
+  padding: 14px 16px !important; border-radius: 14px !important;
+  background: rgba(8,14,30,.84) !important;
+  border: 1px solid rgba(251,191,36,.24) !important;
+  box-shadow: 0 0 20px rgba(251,191,36,.05) !important;
+  transition: border-color .2s, box-shadow .2s !important;
+}
+.ps-card:hover { border-color: rgba(251,191,36,.42) !important; box-shadow: 0 0 30px rgba(251,191,36,.1) !important; }
+.ps-ico { width: 34px !important; height: 34px !important; border-radius: 10px !important; background: rgba(251,191,36,.1) !important; border: 1px solid rgba(251,191,36,.28) !important; color: #fbbf24 !important; }
+.ps-name { font-size: 13px !important; font-weight: 700 !important; color: #eef4ff !important; }
+.ps-months { font-size: 10.5px !important; color: rgba(232,238,255,.5) !important; }
+
+/* ════ PERFORMANCE PAGE ════ */
+
+/* ── STATS STRIP ── */
+.stats-strip { gap: 12px !important; margin-bottom: 14px !important; }
+.sv {
+  padding: 16px 18px !important; border-radius: 16px !important;
+  background: rgba(8,14,30,.82) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: none !important; animation: none !important;
+  transition: transform .2s, border-color .2s !important;
+}
+.sv:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,.13) !important; }
+.sv::before { height: 2px !important; box-shadow: none !important; }
+.sv-lbl { font-size: 9.5px !important; color: rgba(232,238,255,.38) !important; }
+.sv-val { font-size: 22px !important; font-weight: 800 !important; letter-spacing: -.04em !important; color: #eef4ff !important; }
+.sv-desc { font-size: 9.5px !important; color: rgba(232,238,255,.35) !important; }
+
+/* ── WING TABS ── */
+.wt-bar {
+  display: inline-flex !important; padding: 4px !important; gap: 4px !important;
+  background: rgba(255,255,255,.028) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 14px !important; margin-bottom: 14px !important;
+}
+.wt {
+  padding: 8px 14px !important; border-radius: 10px !important;
+  font-size: 11px !important; font-weight: 600 !important;
+  letter-spacing: 0 !important; text-transform: none !important;
+  color: rgba(232,238,255,.42) !important;
+}
+.wt:hover { color: #eef4ff !important; }
+.wt.wt-on-t { background: rgba(6,135,190,.13) !important; border: 1px solid rgba(6,135,190,.26) !important; color: #38b6e0 !important; }
+.wt.wt-on-ch { background: rgba(242,136,32,.11) !important; border: 1px solid rgba(242,136,32,.26) !important; color: #f9a84d !important; }
+.wt-ct { border-radius: 50px !important; padding: 1px 6px !important; background: rgba(255,255,255,.07) !important; color: rgba(232,238,255,.4) !important; }
+
+/* ── WING SUMMARY ── */
+.wsum { gap: 10px !important; margin-bottom: 12px !important; }
+.wsm {
+  padding: 14px 16px !important; border-radius: 14px !important;
+  background: rgba(8,14,30,.72) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+}
+.wsum-t .wsm { border-color: rgba(6,135,190,.14) !important; }
+.wsum-ch .wsm { border-color: rgba(242,136,32,.14) !important; }
+.wsm-v { font-size: 18px !important; font-weight: 800 !important; letter-spacing: -.03em !important; color: #eef4ff !important; }
+.wsm-l { font-size: 9px !important; color: rgba(232,238,255,.38) !important; letter-spacing: .08em !important; }
+
+/* ── LEGEND ── */
+.legend {
+  padding: 10px 14px !important; border-radius: 12px !important;
+  background: rgba(255,255,255,.024) !important;
+  border: 1px solid rgba(255,255,255,.07) !important; margin-bottom: 12px !important;
+}
+.ld-ttl { font-size: 10px !important; font-weight: 700 !important; color: rgba(232,238,255,.5) !important; }
+.ld-item { font-size: 10px !important; color: rgba(232,238,255,.42) !important; }
+.ld-note { font-size: 9px !important; color: rgba(232,238,255,.32) !important; }
+
+/* ── AGENT PERFORMANCE CARDS ── */
+.agents-grid { gap: 14px !important; }
+.acard {
+  border-radius: 16px !important; overflow: hidden !important;
+  background: rgba(8,14,30,.82) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: none !important; animation: none !important; padding: 0 !important;
+  transition: transform .2s, border-color .2s, box-shadow .2s !important;
+}
+.acard:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,.14) !important; box-shadow: 0 16px 40px rgba(0,0,0,.28) !important; }
+.acard-hd {
+  display: flex !important; align-items: center !important; gap: 11px !important;
+  padding: 13px 15px !important;
+  border-bottom: 1px solid rgba(255,255,255,.07) !important;
+}
+.avi { border-radius: 50% !important; width: 36px !important; height: 36px !important; font-size: 12px !important; flex-shrink: 0 !important; }
+.avi-t { background: rgba(6,135,190,.16) !important; color: #38b6e0 !important; border-color: rgba(6,135,190,.28) !important; }
+.avi-ch { background: rgba(242,136,32,.16) !important; color: #f9a84d !important; border-color: rgba(242,136,32,.28) !important; }
+.acard-name { font-size: 13px !important; font-weight: 700 !important; color: #eef4ff !important; letter-spacing: -.015em !important; }
+.acard-sub { font-size: 9.5px !important; color: rgba(232,238,255,.38) !important; margin-top: 2px !important; }
+.acard-ext { font-size: 9px !important; padding: 2px 7px !important; border-radius: 5px !important; color: rgba(232,238,255,.35) !important; }
+
+/* Table within agent card */
+.acard table { width: 100% !important; }
+.thc { font-size: 8.5px !important; padding: 6px 8px !important; background: rgba(255,255,255,.025) !important; color: rgba(232,238,255,.38) !important; letter-spacing: .1em !important; }
+.mcc { padding: 5px 8px !important; border-bottom: 1px solid rgba(255,255,255,.05) !important; }
+.ml { font-size: 10px !important; padding: 5px 8px !important; gap: 6px !important; color: rgba(232,238,255,.6) !important; }
+.mna { font-size: 9px !important; font-weight: 700 !important; }
+.mv { font-size: 10.5px !important; padding: 3px 7px !important; border-radius: 6px !important; font-weight: 700 !important; }
+.ms { font-size: 8px !important; padding: 2px 5px !important; border-radius: 3px !important; }
+
+/* ════ BONUS PAGE ════ */
+.bonus-hdr-title { font-size: 18px !important; letter-spacing: -.03em !important; }
+.bonus-hdr-sub { font-size: 11px !important; color: rgba(232,238,255,.5) !important; }
+.bonus-grid { gap: 14px !important; }
+.bcard {
+  border-radius: 16px !important; overflow: hidden !important;
+  background: rgba(8,14,30,.82) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: none !important; animation: none !important;
+}
+.bcard:hover { border-color: rgba(255,255,255,.14) !important; }
+.bcard-hd, .bcard-ft { padding: 13px 15px !important; }
+.bcard-hd { border-bottom: 1px solid rgba(255,255,255,.07) !important; }
+.bcard-nm { font-size: 13px !important; font-weight: 700 !important; color: #eef4ff !important; }
+.bcard-sub { font-size: 9.5px !important; color: rgba(232,238,255,.38) !important; }
+.bmo { padding: 10px 15px !important; border-bottom: 1px solid rgba(255,255,255,.05) !important; background: rgba(255,255,255,.012) !important; }
+.bmo-amt { font-size: 13px !important; font-weight: 800 !important; }
+.bmo-l { font-size: 9.5px !important; }
+.bmo-pts { font-size: 9px !important; }
+.bcard-ft { background: rgba(255,255,255,.018) !important; border-top: 1px solid rgba(255,255,255,.07) !important; }
+.bcard-ft-lbl { font-size: 9.5px !important; }
+.bcard-ft-val { font-size: 15px !important; font-weight: 800 !important; }
+.badge { border-radius: 50px !important; font-size: 8.5px !important; padding: 3px 7px !important; }
+.btot { border-radius: 12px !important; padding: 9px 12px !important; background: rgba(255,255,255,.03) !important; }
+.btot-lbl { font-size: 9px !important; }
+.btot-val { font-size: 14px !important; font-weight: 800 !important; }
+
+/* ── LOCK SCREEN ── */
+.lock-screen {
+  border-radius: 20px !important;
+  background: rgba(8,14,30,.84) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 24px 64px rgba(0,0,0,.45) !important;
+}
+.lock-title { font-size: 24px !important; letter-spacing: -.03em !important; }
+.lock-sub, .lock-note { font-size: 12px !important; color: rgba(232,238,255,.5) !important; }
+.lock-date { border-radius: 12px !important; }
+
+/* ── FOOTER ── */
+.foot { border-top: 1px solid rgba(255,255,255,.07) !important; color: rgba(232,238,255,.28) !important; font-size: 10.5px !important; }
+
+/* ── IO HIDDEN (disable stagger animations) ── */
+.io-hidden { opacity: 1 !important; transform: none !important; }
+
+/* ── PILLS ── */
+.pill { font-size: 9px !important; min-height: 28px !important; padding: 0 11px !important; letter-spacing: .12em !important; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:1100px) {
+  .hof-hero { grid-template-columns: 1fr !important; }
+  .hof-qs { grid-template-columns: repeat(3,1fr) !important; }
+  .stats-strip, .wsum { grid-template-columns: repeat(2,1fr) !important; }
+}
+@media(max-width:720px) {
+  .podium { flex-direction: column !important; align-items: center !important; }
+  .pod { max-width: 100% !important; }
+  .pod.p1, .pod.p2 { transform: none !important; }
+  .stats-strip, .wsum { grid-template-columns: 1fr !important; }
+  .hof-hero { padding: 22px 18px !important; }
+}
+</style>
 </head>
 <body>
 <div class="wrap">
