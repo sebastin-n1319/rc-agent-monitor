@@ -12,7 +12,7 @@ const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 60000);
 const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
-const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
+const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 120000); // 2-min default; webhooks handle real-time updates
 const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
 const WEBHOOK_RETRY_MS = Number(process.env.WEBHOOK_RETRY_MS || 30000);
 const DASHBOARD_SUMMARY_TTL_MS = Number(process.env.DASHBOARD_SUMMARY_TTL_MS || 90000);
@@ -1063,6 +1063,26 @@ async function fetchAccountPresenceMap() {
   return presenceMap;
 }
 
+// Wraps fetchAccountPresenceMap with exponential backoff on rate-limit errors.
+// RC's Heavy API allows 40 req/min; if we get a 429/CMN-301 we wait and retry
+// rather than failing the whole sync cycle.
+async function fetchAccountPresenceMapWithRetry(maxRetries = 3) {
+  const BACKOFF_MS = [20000, 60000, 120000]; // 20s → 60s → 120s
+  let lastErr;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fetchAccountPresenceMap();
+    } catch (e) {
+      lastErr = e;
+      if (!isRateLimitError(e, e.rcData)) throw e; // Non-rate-limit error → bail immediately
+      const waitMs = BACKOFF_MS[attempt - 1] || 120000;
+      console.warn(`⏳ RC rate limit on presence fetch (attempt ${attempt}/${maxRetries}), waiting ${waitMs / 1000}s before retry…`);
+      await sleep(waitMs);
+    }
+  }
+  throw lastErr;
+}
+
 async function searchRCUsers(query) {
   try {
     let allRecords = [], page = 1;
@@ -1123,7 +1143,7 @@ async function fetchPresenceForAll(force = false) {
     console.log(`📡 Presence fetch: ${agents.length} agents via account presence snapshot`);
     const fetchedAt = new Date().toISOString();
     const queueStatuses = await fetchQueueStatuses().catch(() => lastQueueStatuses || {});
-    const presenceMap = await fetchAccountPresenceMap();
+    const presenceMap = await fetchAccountPresenceMapWithRetry();
     const snapshot = { ...lastLiveStatusSnapshot };
 
     for (const agent of agents) {
