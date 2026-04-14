@@ -3781,32 +3781,17 @@ footer{
 #loginScreen .login-cta-note{display:none !important;}
 #loginScreen .feature-pills{display:none !important;}
 
-/* Logo row */
-.lp-logo-row{
+/* Product wordmark */
+.lp-wordmark{
   display:flex !important;
   align-items:center !important;
-  gap:10px !important;
-  margin-bottom:32px !important;
-}
-.lp-rc-logo,.lp-adit-logo{
-  height:32px !important;
-  width:32px !important;
-  border-radius:8px !important;
-  object-fit:contain !important;
-  opacity:1 !important;
-  filter:none !important;
-}
-.lp-logo-divider{
-  width:1px !important;
-  height:20px !important;
-  background:rgba(255,255,255,.15) !important;
-  flex-shrink:0 !important;
-}
-.lp-product-name{
-  font-size:13px !important;
-  font-weight:700 !important;
-  color:rgba(180,205,225,.85) !important;
-  letter-spacing:-.01em !important;
+  gap:8px !important;
+  margin-bottom:28px !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  color:rgba(155,185,210,.7) !important;
+  letter-spacing:.04em !important;
+  text-transform:uppercase !important;
 }
 
 /* Live badge */
@@ -3881,14 +3866,14 @@ footer{
   border-color:rgba(242,136,32,.25) !important;
 }
 .lp-feat-icon{
-  font-size:20px !important;
-  width:38px !important;
-  height:38px !important;
+  width:36px !important;
+  height:36px !important;
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
-  background:rgba(242,136,32,.1) !important;
-  border-radius:10px !important;
+  background:rgba(242,136,32,.08) !important;
+  border:1px solid rgba(242,136,32,.15) !important;
+  border-radius:9px !important;
   flex-shrink:0 !important;
 }
 .lp-feat-title{
@@ -5254,12 +5239,10 @@ footer{
     <div class="login-card-left">
       <div class="confetti-wrap" id="confettiWrap"></div>
 
-      <!-- Logo row -->
-      <div class="lp-logo-row">
-        <img class="lp-rc-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHuSURBVHgB7Zi9TsJQFIDPLQ0YE0lkoiF2cTGMbKYuDgw+h+Ij8BIuOvgCdXIkJkaJiQkDGpIGF2UwJRE0hP5xr9fSQoFya3vbQk7S5LT3nPN9t/dHAYIgCIIgCIIgCIIgxPEwBGMU27aF67qhOI4DoigCsiyDLMuQJAmEYQjbtm2nlFKmaZqS53kpIQQ0TdM0TdNUSimlhJBS8jzP8zwv6boOlFIaRdEWQqCUUlJKIYTQ7/e7AICmaYC1Fo/HAxOGYQjGGGut0Vo7Ho83tNbQWmu01noppVBKCSEEAIDf7wci8jPHOY85xzFCCJxzJISQGEJIWWvtOOd5XiGEkOM4ZoxzZVmW5TiOleM4lFKqVFXVlFKqOI5jyBgDBEEQBEHwP/M8j0xmZjIzk5mZzMxkZiYzM5mZyczMZGYmMzOZmRXjOGY2M5mZyczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZjIzk5mZzMxkZiYzM5mZycxMZmYyM5OZmczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZjIzk5mZzMxkZiYzM5mZyczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZjIzk5mZzMxkZiYzM5mZyczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZv8B7AF/1AEAAAAldFJOUwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABCQkJXAAAAB10RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXGBZXcAAAHpSURBVHja7NjLSgJRHMfxM5czXkZHMzUvlFqalqJFEbToRdpFEBT0FkH0GoVQkC/QqkVBtAiCaB8tWkWrXqBFRdCiXReFFi26nP/NwYMHRMZxZs7AHPhyHOb8fjPMnEHHcRzHcRzHcRzHcRzHcRzHcRzHcRzHcVz5Ky8vLwAAAAAAAAAAAAAAAAAAAAAAAAAAAABQMIqiKIpimqZpCCEghBBCSAghIYT8OCGEhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQ8gO1d0AAAAAASUVORK5CYII=" alt="RC" onerror="this.style.display='none'">
-        <div class="lp-logo-divider"></div>
-        <img class="lp-adit-logo" src="/adit-logo-dark.png" alt="Adit">
-        <span class="lp-product-name">Agent Monitor</span>
+      <!-- Product label -->
+      <div class="lp-wordmark">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="8" fill="rgba(242,136,32,.18)"/><circle cx="8" cy="8" r="3" fill="var(--orange)"/></svg>
+        T1 CS &nbsp;·&nbsp; Agent Monitor
       </div>
 
       <!-- Live badge -->
@@ -5269,34 +5252,54 @@ footer{
       </div>
 
       <!-- Headline -->
-      <div class="lp-headline">Your team's <span>command centre</span></div>
+      <div class="lp-headline">Your team's <span>performance hub</span></div>
       <div class="lp-sub">One calm dashboard for live agent status, break tracking, performance scores, and the Q1 Hall of Fame.</div>
 
       <!-- Feature rows -->
       <div class="lp-features">
         <div class="lp-feat">
-          <div class="lp-feat-icon">&#128101;</div>
+          <div class="lp-feat-icon">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+              <circle cx="10" cy="7" r="3" stroke="#f28820" stroke-width="1.6"/>
+              <path d="M4 16c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#f28820" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="lp-feat-body">
             <div class="lp-feat-title">Live Agent Status</div>
             <div class="lp-feat-desc">See who's available, on break, or in queue</div>
           </div>
         </div>
         <div class="lp-feat">
-          <div class="lp-feat-icon">&#9749;</div>
+          <div class="lp-feat-icon">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+              <circle cx="10" cy="10" r="7" stroke="#f28820" stroke-width="1.6"/>
+              <path d="M10 6v4l2.5 2.5" stroke="#f28820" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="lp-feat-body">
             <div class="lp-feat-title">Break Bot</div>
             <div class="lp-feat-desc">Smart break tracking with real-time alerts</div>
           </div>
         </div>
         <div class="lp-feat">
-          <div class="lp-feat-icon">&#128202;</div>
+          <div class="lp-feat-icon">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+              <rect x="3" y="12" width="3" height="5" rx="1" fill="#f28820"/>
+              <rect x="8.5" y="8" width="3" height="9" rx="1" fill="#f28820" opacity=".7"/>
+              <rect x="14" y="4" width="3" height="13" rx="1" fill="#f28820" opacity=".5"/>
+            </svg>
+          </div>
           <div class="lp-feat-body">
             <div class="lp-feat-title">Reports &amp; Scores</div>
             <div class="lp-feat-desc">QA scores, CSAT, and monthly performance</div>
           </div>
         </div>
         <div class="lp-feat">
-          <div class="lp-feat-icon">&#127942;</div>
+          <div class="lp-feat-icon">
+            <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+              <path d="M10 2l2.09 4.26L17 7.27l-3.5 3.41.83 4.82L10 13.27l-4.33 2.23.83-4.82L3 7.27l4.91-.71L10 2z" stroke="#f28820" stroke-width="1.6" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div class="lp-feat-body">
             <div class="lp-feat-title">Q1 Hall of Fame</div>
             <div class="lp-feat-desc">Top performers recognised for their excellence</div>
