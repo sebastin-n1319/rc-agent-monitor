@@ -275,52 +275,33 @@ body::after{
 }
 .aw-desc{font-size:10.5px;color:var(--t2);line-height:1.55;}
 
-/* ── AWARD TOOLTIP ───────────────────────────────────────────────────────── */
-.aw{overflow:visible;}
-.aw-tip{
-  pointer-events:none;
-  position:absolute;bottom:calc(100% + 10px);left:50%;
-  transform:translateX(-50%) translateY(6px);
-  width:220px;
-  background:rgba(10,16,32,.97);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:10px;
-  padding:12px 14px;
-  box-shadow:0 8px 32px rgba(0,0,0,.55);
-  opacity:0;
-  transition:opacity .18s ease,transform .18s ease;
-  z-index:200;
+/* ── AWARD TOOLTIP (fixed, JS-positioned) ────────────────────────────────── */
+#awTooltip{
+  position:fixed;z-index:9999;pointer-events:none;
+  width:230px;
+  background:rgba(8,13,28,.97);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:11px;
+  padding:13px 15px 12px;
+  box-shadow:0 10px 36px rgba(0,0,0,.6);
+  opacity:0;transition:opacity .15s ease;
+  display:none;
 }
-.aw:hover .aw-tip{
-  opacity:1;
-  transform:translateX(-50%) translateY(0);
-}
-.aw-tip::after{
-  content:'';
-  position:absolute;top:100%;left:50%;
+#awTooltip.visible{opacity:1;}
+#awTooltip::after{
+  content:'';position:absolute;top:100%;left:var(--arr,50%);
   transform:translateX(-50%);
   border:6px solid transparent;
-  border-top-color:rgba(10,16,32,.97);
+  border-top-color:rgba(8,13,28,.97);
 }
-.aw-tip-title{
-  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--_tb,var(--orange));margin-bottom:6px;
+.awt-title{
+  font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  margin-bottom:5px;
 }
-.aw-tip-winner{
-  font-size:13px;font-weight:800;color:#eef4ff;margin-bottom:3px;
-  letter-spacing:-.02em;
-}
-.aw-tip-metric{
-  font-size:11px;font-weight:700;color:var(--gold);
-  font-family:'JetBrains Mono',monospace;margin-bottom:7px;
-}
-.aw-tip-divider{height:1px;background:rgba(255,255,255,.08);margin:7px 0;}
-.aw-tip-reason{font-size:11px;color:rgba(232,238,255,.65);line-height:1.5;}
-/* edge-aware: first card nudge right, last card nudge left */
-.award-grid .aw:first-child .aw-tip{left:10%;transform:translateX(-10%) translateY(6px);}
-.award-grid .aw:first-child:hover .aw-tip{transform:translateX(-10%) translateY(0);}
-.award-grid .aw:last-child .aw-tip{left:90%;transform:translateX(-90%) translateY(6px);}
-.award-grid .aw:last-child:hover .aw-tip{transform:translateX(-90%) translateY(0);}
+.awt-winner{font-size:13.5px;font-weight:800;color:#eef4ff;margin-bottom:2px;letter-spacing:-.02em;}
+.awt-metric{font-size:11px;font-weight:700;color:var(--gold);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+.awt-divider{height:1px;background:rgba(255,255,255,.08);margin:0 0 8px;}
+.awt-reason{font-size:11px;color:rgba(232,238,255,.62);line-height:1.55;}
 
 /* ── PERFECT SCORE CLUB ──────────────────────────────────────────────────── */
 .ps-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
@@ -2639,7 +2620,7 @@ function buildHoF(){
     awardGrid.innerHTML=awards.map((aw,i)=>{
       const isCallsW=DATA.calls.includes(aw.winner);
       const teamLabel=isCallsW?'Calls Wing':'Chat Wing';
-      return `<div class="aw io-hidden" style="animation-delay:${i*40}ms;--_tb:${aw.tb};--_gc:${aw.colorLo}">
+      return `<div class="aw io-hidden" data-aw="${i}" style="animation-delay:${i*40}ms;--_tb:${aw.tb};--_gc:${aw.colorLo}">
         <div class="aw-topbar"></div>
         <div class="aw-glow"></div>
         <div class="aw-ico" style="background:${aw.colorLo};border-color:${aw.colorMid};color:${aw.color}">
@@ -2652,15 +2633,48 @@ function buildHoF(){
           ${ic('zap',10,2)} ${aw.metric}
         </div>
         <div class="aw-desc">${aw.sub}</div>
-        <div class="aw-tip" style="--_tb:${aw.tb}">
-          <div class="aw-tip-title">${aw.name}</div>
-          <div class="aw-tip-winner">${aw.winner.name}</div>
-          <div class="aw-tip-metric">${aw.metric}</div>
-          <div class="aw-tip-divider"></div>
-          <div class="aw-tip-reason">${aw.tip}</div>
-        </div>
       </div>`;
     }).join('');
+
+    // Wire up JS tooltips (avoids overflow:hidden clipping)
+    const tip=document.getElementById('awTooltip');
+    if(tip){
+      let hideTimer=null;
+      awardGrid.querySelectorAll('.aw[data-aw]').forEach(card=>{
+        const idx=parseInt(card.dataset.aw,10);
+        const aw=awards[idx];
+        card.addEventListener('mouseenter',()=>{
+          clearTimeout(hideTimer);
+          tip.querySelector('.awt-title').textContent=aw.name;
+          tip.querySelector('.awt-title').style.color=aw.tb||aw.color;
+          tip.querySelector('.awt-winner').textContent=aw.winner.name;
+          tip.querySelector('.awt-metric').textContent=aw.metric;
+          tip.querySelector('.awt-reason').innerHTML=aw.tip;
+          tip.style.display='block';
+          // force reflow so offsetWidth/Height are correct
+          tip.getBoundingClientRect();
+          positionAwTip(card);
+          requestAnimationFrame(()=>tip.classList.add('visible'));
+        });
+        card.addEventListener('mouseleave',()=>{
+          tip.classList.remove('visible');
+          hideTimer=setTimeout(()=>{tip.style.display='none';},160);
+        });
+      });
+      function positionAwTip(card){
+        const r=card.getBoundingClientRect();
+        const tw=tip.offsetWidth, th=tip.offsetHeight;
+        let left=r.left+(r.width-tw)/2;
+        left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
+        // Arrow relative position inside tooltip
+        const arrPct=Math.round(((r.left+r.width/2)-left)/tw*100);
+        tip.style.setProperty('--arr',arrPct+'%');
+        let top=r.top-th-10;
+        if(top<8) top=r.bottom+10; // flip below if not enough space above
+        tip.style.left=left+'px';
+        tip.style.top=top+'px';
+      }
+    }
   }
 
   /* Perfect Score Club */
@@ -2785,5 +2799,14 @@ window.addEventListener('DOMContentLoaded',()=>{
   });
 });
 </script>
+
+<!-- Shared award tooltip -->
+<div id="awTooltip">
+  <div class="awt-title"></div>
+  <div class="awt-winner"></div>
+  <div class="awt-metric"></div>
+  <div class="awt-divider"></div>
+  <div class="awt-reason"></div>
+</div>
 </body>
 </html>
