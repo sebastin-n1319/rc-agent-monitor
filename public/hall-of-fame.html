@@ -275,6 +275,53 @@ body::after{
 }
 .aw-desc{font-size:10.5px;color:var(--t2);line-height:1.55;}
 
+/* ── AWARD TOOLTIP ───────────────────────────────────────────────────────── */
+.aw{overflow:visible;}
+.aw-tip{
+  pointer-events:none;
+  position:absolute;bottom:calc(100% + 10px);left:50%;
+  transform:translateX(-50%) translateY(6px);
+  width:220px;
+  background:rgba(10,16,32,.97);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  padding:12px 14px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55);
+  opacity:0;
+  transition:opacity .18s ease,transform .18s ease;
+  z-index:200;
+}
+.aw:hover .aw-tip{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+.aw-tip::after{
+  content:'';
+  position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);
+  border:6px solid transparent;
+  border-top-color:rgba(10,16,32,.97);
+}
+.aw-tip-title{
+  font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--_tb,var(--orange));margin-bottom:6px;
+}
+.aw-tip-winner{
+  font-size:13px;font-weight:800;color:#eef4ff;margin-bottom:3px;
+  letter-spacing:-.02em;
+}
+.aw-tip-metric{
+  font-size:11px;font-weight:700;color:var(--gold);
+  font-family:'JetBrains Mono',monospace;margin-bottom:7px;
+}
+.aw-tip-divider{height:1px;background:rgba(255,255,255,.08);margin:7px 0;}
+.aw-tip-reason{font-size:11px;color:rgba(232,238,255,.65);line-height:1.5;}
+/* edge-aware: first card nudge right, last card nudge left */
+.award-grid .aw:first-child .aw-tip{left:10%;transform:translateX(-10%) translateY(6px);}
+.award-grid .aw:first-child:hover .aw-tip{transform:translateX(-10%) translateY(0);}
+.award-grid .aw:last-child .aw-tip{left:90%;transform:translateX(-90%) translateY(6px);}
+.award-grid .aw:last-child:hover .aw-tip{transform:translateX(-90%) translateY(0);}
+
 /* ── PERFECT SCORE CLUB ──────────────────────────────────────────────────── */
 .ps-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
 .ps-card{
@@ -2543,15 +2590,48 @@ function buildHoF(){
   });
   const consistent=maxBy(allAgents,slabMonths);
 
+  const riserDelta=ptsByMonth(riser).mar-ptsByMonth(riser).jan;
   const awards=[
-    {ico:'phone',name:'Call Volume Leader',winner:callVol,metric:`${sumInbound(callVol).toLocaleString()} inbound calls`,sub:'Highest inbound call count in Q1',color:'var(--teal)',colorLo:'rgba(6,135,190,.06)',colorMid:'rgba(6,135,190,.15)',tb:'var(--teal)'},
-    {ico:'msg',name:'Chat Volume Leader',winner:chatVol,metric:`${sumChats(chatVol).toLocaleString()} chats handled`,sub:'Highest chat volume in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
-    {ico:'ticket',name:'Ticket Titan',winner:ticketTitan,metric:`${sumTickets(ticketTitan).toLocaleString()} tickets closed`,sub:'Most tickets resolved across all channels',color:'var(--violet)',colorLo:'rgba(167,139,250,.06)',colorMid:'rgba(167,139,250,.15)',tb:'var(--violet)'},
-    {ico:'target',name:'FCR Master',winner:fcrMaster,metric:`${avgFcr(fcrMaster).toFixed(1)}% avg FCR`,sub:'Highest first-contact resolution rate',color:'var(--blue)',colorLo:'rgba(96,165,250,.06)',colorMid:'rgba(96,165,250,.15)',tb:'var(--blue)'},
-    {ico:'shield',name:'Quality Champion',winner:qualityChamp,metric:`${avgQa(qualityChamp).toFixed(1)}% avg QA`,sub:'Highest quality assurance score',color:'var(--green)',colorLo:'rgba(52,211,153,.06)',colorMid:'rgba(52,211,153,.15)',tb:'var(--green)'},
-    {ico:'smile',name:'Customer Favourite',winner:custFav,metric:`${sumCsatGood(custFav)} positive CSAT ratings`,sub:'Most positive customer satisfaction ratings in Q1',color:'var(--gold)',colorLo:'rgba(251,191,36,.06)',colorMid:'rgba(251,191,36,.15)',tb:'var(--gold)'},
-    {ico:'trend',name:'Rising Star',winner:riser,metric:`+${ptsByMonth(riser).mar-ptsByMonth(riser).jan} pts Jan\u2192Mar`,sub:'Biggest improvement in performance points',color:'var(--rose)',colorLo:'rgba(251,113,133,.06)',colorMid:'rgba(251,113,133,.15)',tb:'var(--rose)'},
-    {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${slabMonths(consistent)}/3 eligible months`,sub:'Most bonus-eligible months in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
+    {ico:'phone',name:'Call Volume Leader',winner:callVol,
+      metric:`${sumInbound(callVol).toLocaleString()} inbound calls`,
+      sub:'Highest inbound call count in Q1',
+      tip:`Handled the most inbound calls across Q1 — ${sumInbound(callVol).toLocaleString()} total across Jan, Feb &amp; Mar, consistently leading the Calls Wing every month.`,
+      color:'var(--teal)',colorLo:'rgba(6,135,190,.06)',colorMid:'rgba(6,135,190,.15)',tb:'var(--teal)'},
+    {ico:'msg',name:'Chat Volume Leader',winner:chatVol,
+      metric:`${sumChats(chatVol).toLocaleString()} chats handled`,
+      sub:'Highest chat volume in Q1',
+      tip:`Managed the highest chat volume in Q1 — ${sumChats(chatVol).toLocaleString()} chats handled, outperforming all Chat Wing agents across the quarter.`,
+      color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
+    {ico:'ticket',name:'Ticket Titan',winner:ticketTitan,
+      metric:`${sumTickets(ticketTitan).toLocaleString()} tickets closed`,
+      sub:'Most tickets resolved across all channels',
+      tip:`Resolved the most customer tickets across all channels — ${sumTickets(ticketTitan).toLocaleString()} total in Q1, demonstrating exceptional throughput and follow-through.`,
+      color:'var(--violet)',colorLo:'rgba(167,139,250,.06)',colorMid:'rgba(167,139,250,.15)',tb:'var(--violet)'},
+    {ico:'target',name:'FCR Master',winner:fcrMaster,
+      metric:`${avgFcr(fcrMaster).toFixed(1)}% avg FCR`,
+      sub:'Highest first-contact resolution rate',
+      tip:`Achieved the highest first-contact resolution rate in Q1 — averaging ${avgFcr(fcrMaster).toFixed(1)}%, resolving customer issues without repeat contacts more consistently than anyone else.`,
+      color:'var(--blue)',colorLo:'rgba(96,165,250,.06)',colorMid:'rgba(96,165,250,.15)',tb:'var(--blue)'},
+    {ico:'shield',name:'Quality Champion',winner:qualityChamp,
+      metric:`${avgQa(qualityChamp).toFixed(1)}% avg QA`,
+      sub:'Highest quality assurance score',
+      tip:`Maintained the highest QA scores across Q1 — averaging ${avgQa(qualityChamp).toFixed(1)}%, with consistent quality and attention to process compliance throughout the quarter.`,
+      color:'var(--green)',colorLo:'rgba(52,211,153,.06)',colorMid:'rgba(52,211,153,.15)',tb:'var(--green)'},
+    {ico:'smile',name:'Customer Favourite',winner:custFav,
+      metric:`${sumCsatGood(custFav)} positive CSAT ratings`,
+      sub:'Most positive customer satisfaction ratings in Q1',
+      tip:`Earned the most positive CSAT ratings across Q1 — ${sumCsatGood(custFav)} out of ${MONTHS.reduce((s,m)=>s+(custFav.months[m]?.ct||0),0)} total ratings, reflecting outstanding customer satisfaction at high volume.`,
+      color:'var(--gold)',colorLo:'rgba(251,191,36,.06)',colorMid:'rgba(251,191,36,.15)',tb:'var(--gold)'},
+    {ico:'trend',name:'Rising Star',winner:riser,
+      metric:`+${riserDelta} pts Jan\u2192Mar`,
+      sub:'Biggest improvement in performance points',
+      tip:`Showed the biggest performance improvement across Q1 — scores climbed from ${ptsByMonth(riser).jan} pts in January to ${ptsByMonth(riser).mar} pts in March, a +${riserDelta} point jump.`,
+      color:'var(--rose)',colorLo:'rgba(251,113,133,.06)',colorMid:'rgba(251,113,133,.15)',tb:'var(--rose)'},
+    {ico:'flame',name:'Most Consistent',winner:consistent,
+      metric:`${slabMonths(consistent)}/3 eligible months`,
+      sub:'Most bonus-eligible months in Q1',
+      tip:`Achieved qualifying performance scores in ${slabMonths(consistent)} out of 3 months — the most consistent performer across the full quarter.`,
+      color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
   ];
 
   const awardGrid=document.getElementById('awardGrid');
@@ -2572,6 +2652,13 @@ function buildHoF(){
           ${ic('zap',10,2)} ${aw.metric}
         </div>
         <div class="aw-desc">${aw.sub}</div>
+        <div class="aw-tip" style="--_tb:${aw.tb}">
+          <div class="aw-tip-title">${aw.name}</div>
+          <div class="aw-tip-winner">${aw.winner.name}</div>
+          <div class="aw-tip-metric">${aw.metric}</div>
+          <div class="aw-tip-divider"></div>
+          <div class="aw-tip-reason">${aw.tip}</div>
+        </div>
       </div>`;
     }).join('');
   }
