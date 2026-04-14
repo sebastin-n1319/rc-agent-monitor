@@ -3,485 +3,306 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bonus Guide</title>
+<title>Bonus Guide — T1 CS Stars</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#03030a;--bg2:#07080f;--bg3:#0d0f1c;
-  --card:rgba(255,255,255,.026);--card2:rgba(255,255,255,.044);--card3:rgba(255,255,255,.065);
-  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);--border3:rgba(255,255,255,.22);
-  --text:#f0f4ff;--muted:rgba(240,244,255,.6);--text2:#8892a4;--text3:#4d5566;
-  --orange:#f28820;--orange2:#f9a84d;
-  --blue:#3b82f6;--blue2:#60a5fa;
-  --green:#34d399;--red:#f87171;--purple:#a78bfa;
-  --teal:#0687be;--yellow:#fbbf24;--pink:#f472b6;
-  /* Tone aliases (used by JS) */
-  --calls:var(--teal);--calls-soft:#7ef3cd;
-  --chat:var(--orange);--chat-soft:var(--orange2);
-  --violet:var(--purple);
-  --shadow-lg:0 22px 56px rgba(0,0,0,.55);--shadow-md:0 8px 24px rgba(0,0,0,.36);
-  --r:14px;--r-sm:10px;--r-xs:7px;
+  --bg:#030712;
+  --glass:rgba(8,13,28,.82);
+  --glass2:rgba(12,20,40,.7);
+  --glass3:rgba(18,28,55,.6);
+  --border:rgba(255,255,255,.07);
+  --border2:rgba(255,255,255,.13);
+  --border3:rgba(255,255,255,.22);
+  --text:#e8eeff;--muted:rgba(232,238,255,.65);--dim:rgba(232,238,255,.35);
+  --orange:#f28820;--orange2:#f9a84d;--orange-s:rgba(242,136,32,.15);
+  --teal:#0687be;--teal2:#38b6e0;--teal-s:rgba(6,135,190,.15);
+  --green:#22d3a0;--red:#f87171;--purple:#a78bfa;--yellow:#fbbf24;--pink:#f472b6;
+  --shadow:0 24px 64px rgba(0,0,0,.6);--shadow-sm:0 8px 24px rgba(0,0,0,.4);
+  --r:16px;--r-sm:12px;--r-xs:8px;
 }
 html,body{min-height:100%}
 body{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-family:'Inter',-apple-system,sans-serif;
   color:var(--text);background:var(--bg);
-  overflow-x:hidden;-webkit-font-smoothing:antialiased;position:relative;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
 }
-/* Ambient orbs */
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+
+/* ── AMBIENT BACKGROUND ─────────────────────────────── */
+.bg-layer{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.bg-layer::before{
+  content:'';position:absolute;inset:0;
   background:
-    radial-gradient(ellipse 60% 50% at 10% 0%,   rgba(242,136,32,.08)  0%,transparent 60%),
-    radial-gradient(ellipse 50% 40% at 92% 8%,   rgba(6,135,190,.07)  0%,transparent 60%),
-    radial-gradient(ellipse 40% 50% at 50% 100%,  rgba(59,130,246,.05)  0%,transparent 55%);
+    radial-gradient(ellipse 70% 55% at 15% -5%, rgba(242,136,32,.1) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 88% 5%,  rgba(6,135,190,.09) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 60% at 50% 110%,rgba(167,139,250,.06) 0%,transparent 50%);
 }
-/* Dot-grid */
-body::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(rgba(255,255,255,.08) 1px,transparent 1px);
-  background-size:28px 28px;
-  mask-image:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 88%);
+.bg-layer::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.5) 0%,transparent 70%);
 }
 
-/* ── PAGE LAYOUT ─────────────────────────────────────────────────────────── */
-.page{max-width:1380px;margin:0 auto;padding:16px 16px 40px;position:relative;z-index:1;}
+/* ── PAGE ───────────────────────────────────────────── */
+.page{max-width:1360px;margin:0 auto;padding:20px 20px 60px;position:relative;z-index:1;}
 
-/* ── HERO ────────────────────────────────────────────────────────────────── */
+/* ── GLASS CARD ─────────────────────────────────────── */
+.glass{
+  background:var(--glass);
+  border:1px solid var(--border);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-radius:var(--r);
+}
+.glass2{background:var(--glass2);border:1px solid var(--border);border-radius:var(--r-sm);}
+
+/* ── HERO ───────────────────────────────────────────── */
 .hero{
-  position:relative;overflow:hidden;border-radius:20px;padding:24px;
-  background:var(--card);border:1px solid var(--border);
-  box-shadow:var(--shadow-lg);
+  position:relative;overflow:hidden;padding:32px;margin-bottom:14px;
 }
-.hero::before{
-  content:'';position:absolute;top:-100px;right:-100px;
-  width:360px;height:360px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,rgba(242,136,32,.11),transparent 65%);
-  animation:floatOrb 14s ease-in-out infinite;
+.hero-orb-a{
+  position:absolute;top:-120px;right:-80px;width:420px;height:420px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(242,136,32,.13),transparent 65%);
+  animation:floatOrb 18s ease-in-out infinite;
 }
-.hero::after{
-  content:'';position:absolute;left:-100px;bottom:-100px;
-  width:300px;height:300px;border-radius:50%;pointer-events:none;
-  background:radial-gradient(circle,rgba(6,135,190,.09),transparent 65%);
-  animation:floatOrb 16s ease-in-out infinite reverse;
+.hero-orb-b{
+  position:absolute;left:-80px;bottom:-120px;width:360px;height:360px;
+  border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle,rgba(6,135,190,.1),transparent 65%);
+  animation:floatOrb 22s ease-in-out infinite reverse;
 }
-@keyframes floatOrb{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
-.hero-top{
-  position:relative;z-index:1;display:flex;justify-content:space-between;
-  gap:18px;align-items:flex-start;flex-wrap:wrap;
+@keyframes floatOrb{0%,100%{transform:translate(0,0)}50%{transform:translate(24px,-24px)}}
+.hero-inner{position:relative;z-index:1;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;}
+@media(max-width:820px){.hero-inner{grid-template-columns:1fr;}}
+.hero-brand{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+.hero-logo-wrap{
+  width:56px;height:56px;border-radius:14px;overflow:hidden;flex-shrink:0;
+  background:rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.15),var(--shadow-sm);
 }
-.brand{display:flex;gap:14px;align-items:center;}
-.brand-badge{
-  width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.9);box-shadow:var(--shadow-md);
-  position:relative;overflow:hidden;flex-shrink:0;
-}
-.brand-logo{width:100%;height:100%;object-fit:contain;padding:6px;}
-.brand-fallback{font-size:22px;font-weight:800;color:#10233d;}
-.brand-copy h1{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1.15;font-family:'Poppins','Inter',sans-serif;}
-.brand-copy p{margin-top:4px;font-size:11px;color:var(--text2);}
-.hero-pills{display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.hero-logo-wrap img{width:100%;height:100%;object-fit:contain;padding:6px;}
+.hero-brand-text h1{font-size:28px;font-weight:800;letter-spacing:-.04em;font-family:'Poppins',sans-serif;}
+.hero-brand-text p{font-size:11px;color:var(--muted);margin-top:3px;}
+.hero-pills{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px;}
 .pill{
-  padding:5px 11px;border-radius:50px;border:1px solid var(--border);
-  background:var(--card2);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 12px;border-radius:50px;border:1px solid var(--border2);
+  background:rgba(255,255,255,.04);font-size:9.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;
 }
-.pill.calls{color:var(--calls-soft);}
-.pill.chat{color:var(--chat-soft);}
-.pill.violet{color:#d5cdff;}
-.hero-main{
-  position:relative;z-index:1;
-  display:grid;grid-template-columns:1.06fr .94fr;gap:14px;align-items:end;margin-top:18px;
+.pill.orange{color:var(--orange2);border-color:rgba(242,136,32,.3);background:rgba(242,136,32,.07);}
+.pill.teal{color:var(--teal2);border-color:rgba(6,135,190,.3);background:rgba(6,135,190,.07);}
+.pill.purple{color:#cbc3ff;border-color:rgba(167,139,250,.3);background:rgba(167,139,250,.07);}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.8;}
+.hero-headline{font-size:48px;line-height:.96;letter-spacing:-.05em;font-weight:900;font-family:'Poppins',sans-serif;margin-top:14px;}
+.hero-headline .grad{
+  background:linear-gradient(135deg,var(--orange2),var(--teal2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-@media(max-width:760px){.hero-main{grid-template-columns:1fr;}}
-.hero-copy .eyebrow{
-  display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:50px;
-  border:1px solid rgba(167,139,250,.3);background:rgba(167,139,250,.1);
-  color:#cbc3ff;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+.hero-sub{font-size:12.5px;line-height:1.65;color:var(--muted);margin-top:10px;max-width:540px;}
+.slab-cards{display:flex;flex-direction:column;gap:10px;min-width:220px;}
+.slab-card{
+  position:relative;overflow:hidden;padding:18px 20px;border-radius:var(--r-sm);
+  border:1px solid var(--border2);
+  background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  transition:transform .2s,border-color .2s;
 }
-.hero-copy h2{margin-top:12px;font-size:44px;line-height:.96;letter-spacing:-.05em;font-weight:800;font-family:'Poppins','Inter',sans-serif;}
-.hero-copy h2 span{
-  color:transparent;background:linear-gradient(90deg,var(--calls-soft),var(--chat-soft));
-  -webkit-background-clip:text;background-clip:text;
-}
-.hero-copy p{margin-top:10px;max-width:600px;font-size:12px;line-height:1.65;color:var(--text2);}
-.bonus-tier-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-.bonus-tier{
-  padding:16px;border-radius:14px;
-  background:var(--card2);border:1px solid var(--border);
-  transition:transform .22s,border-color .22s,box-shadow .22s;
-}
-.bonus-tier:hover{transform:translateY(-3px);border-color:var(--border2);box-shadow:var(--shadow-md);}
-.bonus-tier span{display:block;font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;}
-.bonus-tier strong{display:block;font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;}
-.bonus-tier small{display:block;margin-top:7px;font-size:10.5px;line-height:1.55;color:var(--text3);}
-.bonus-tier.primary strong{color:var(--purple);}
-.bonus-tier.secondary strong{color:var(--teal);}
-
-/* ── SECTIONS ────────────────────────────────────────────────────────────── */
-.section{margin-top:12px;}
-.section-shell{
-  border-radius:16px;padding:16px;
-  background:var(--card);border:1px solid var(--border);
-}
-.section-head{
-  display:flex;justify-content:space-between;align-items:flex-end;
-  margin-bottom:14px;flex-wrap:wrap;gap:8px;
-}
-.section-copy h3{font-size:17px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px;font-family:'Poppins','Inter',sans-serif;}
-.section-copy p{font-size:11.5px;color:var(--text2);line-height:1.55;}
-
-/* ── SPLIT GRID (team panels) ────────────────────────────────────────────── */
-.split-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
-@media(max-width:700px){.split-grid{grid-template-columns:1fr;}}
-.team-panel{
-  border-radius:14px;padding:16px;
-  background:var(--card2);border:1px solid var(--border);
-  transition:transform .2s,box-shadow .2s;
-}
-.team-panel:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
-.team-panel.calls{--tone-c:var(--teal);}
-.team-panel.chat{--tone-c:var(--orange);}
-.team-panel-head{
-  display:flex;align-items:center;gap:10px;margin-bottom:14px;
-  padding-bottom:12px;border-bottom:1px solid var(--border);
-}
-.team-panel-icon{
-  width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.06);border:1px solid var(--border);flex-shrink:0;
-}
-.team-panel-icon svg{width:18px;height:18px;stroke:var(--tone-c,var(--orange));}
-.team-panel-title{font-size:13px;font-weight:700;}
-.team-panel-chip{
-  margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-  padding:3px 8px;border-radius:50px;border:1px solid var(--border);color:var(--text3);
-}
-.metric-row{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 0;border-bottom:1px solid var(--border);font-size:11.5px;
-}
-.metric-row:last-child{border-bottom:none;}
-.metric-row-name{flex:1;color:var(--text2);}
-.metric-row-pts{
-  font-size:11px;font-weight:700;color:var(--tone-c,var(--orange));
-  padding:2px 7px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;
-  font-family:'JetBrains Mono',monospace;
-}
-.metric-row-slabs{
-  display:flex;gap:5px;font-size:10px;font-family:'JetBrains Mono',monospace;
-}
-.slab-tag{padding:2px 7px;border-radius:5px;font-weight:600;}
-.slab-tag.s1{background:rgba(52,211,153,.1);color:var(--green);}
-.slab-tag.s2{background:rgba(255,154,60,.08);color:var(--orange);}
-.csat-note{
-  margin-top:10px;padding:10px 12px;
-  background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--r-xs);
-  font-size:11px;color:var(--text2);line-height:1.55;
-}
-.csat-note strong{color:var(--text);}
-
-/* ── ELIGIBILITY GRID ────────────────────────────────────────────────────── */
-.eligibility-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;}
-.elig-card{
-  padding:14px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-  transition:border-color .2s;
-}
-.elig-card:hover{border-color:var(--border2);}
-.elig-card-icon{font-size:20px;margin-bottom:8px;}
-.elig-card-title{font-size:12px;font-weight:700;margin-bottom:4px;}
-.elig-card-copy{font-size:11px;color:var(--text2);line-height:1.55;}
-
-/* ── LEAVE GRID ──────────────────────────────────────────────────────────── */
-.leave-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;}
-.leave-card{
-  padding:12px 14px;border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
-  text-align:center;
-}
-.leave-card-days{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);}
-.leave-card-label{font-size:10px;color:var(--text3);margin-top:3px;}
-.leave-card-multi{font-size:13px;font-weight:700;margin-top:4px;}
-.leave-card-multi.full{color:var(--green);}
-.leave-card-multi.partial{color:var(--yellow);}
-.leave-card-multi.zero{color:var(--red);}
-.warning-strip{
-  margin-top:8px;padding:10px 14px;border-radius:var(--r-xs);
-  background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.15);
-  font-size:11.5px;color:var(--text2);line-height:1.55;
-}
-.warning-strip strong{color:var(--red);}
-
-/* ── CALC TABS ───────────────────────────────────────────────────────────── */
-.calc-tabs{display:flex;gap:6px;margin-bottom:10px;}
-.calc-tab{
-  padding:7px 18px;border-radius:var(--r-xs);font-size:12px;font-weight:600;
-  background:var(--card2);border:1px solid var(--border);color:var(--text2);
-  cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;
-}
-.calc-tab:hover{background:var(--card3);color:var(--text);}
-.calc-tab.active.calls{background:rgba(45,212,191,.1);border-color:rgba(45,212,191,.3);color:var(--teal);}
-.calc-tab.active.chat{background:rgba(242,136,32,.11);border-color:rgba(255,154,60,.3);color:var(--orange);}
-.calc-shell{display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:start;}
-@media(max-width:820px){.calc-shell{grid-template-columns:1fr;}}
-.calc-panel{display:flex;flex-direction:column;gap:10px;}
-.calc-list{display:flex;flex-direction:column;gap:6px;}
-.calc-row{
-  display:grid;grid-template-columns:1fr 160px 56px;gap:8px;align-items:center;
-  padding:10px 12px;border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
-  transition:border-color .15s;
-}
-.calc-row:hover{border-color:var(--border2);}
-.calc-row-name{font-size:11.5px;color:var(--text);}
-.calc-row-pts{font-size:10px;font-weight:700;color:var(--text3);font-family:'JetBrains Mono',monospace;}
-.calc-slider{width:100%;accent-color:var(--orange);}
-.calc-row-val{
-  font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;
-  text-align:right;color:var(--text);
-}
-/* Leave control */
-.leave-control-grid{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;
-}
-@media(max-width:640px){.leave-control-grid{grid-template-columns:1fr;}}
-.control-box{
-  padding:12px;border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
-}
-.control-top{margin-bottom:10px;}
-.control-top label{font-size:11px;font-weight:700;color:var(--text);margin-bottom:3px;display:block;}
-.field-note{font-size:10px;color:var(--text3);line-height:1.5;}
-.control-badge{
-  display:inline-flex;padding:3px 8px;border-radius:50px;font-size:10px;font-weight:700;
-  background:var(--card3);border:1px solid var(--border);color:var(--text2);
-  margin-top:6px;
-}
-.control-badge.glow{color:var(--orange);border-color:rgba(255,154,60,.3);background:rgba(242,136,32,.06);}
-.control-visual{margin-top:8px;}
-.leave-select{
-  width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);
-  border-radius:var(--r-xs);padding:7px 10px;font-size:12px;
-  color:var(--text);outline:none;font-family:'Inter',sans-serif;
-  transition:border-color .2s;
-}
-.leave-select:focus{border-color:rgba(255,154,60,.4);}
-.leave-select option{background:#15161e;}
-.multiplier-preview{
-  margin-top:8px;padding:8px 10px;
-  background:var(--card3);border:1px solid var(--border);border-radius:var(--r-xs);
-  font-size:11px;
-}
-.multiplier-preview strong{font-size:16px;font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;display:block;}
-.multiplier-preview small{font-size:10px;color:var(--text3);margin-top:2px;display:block;}
-/* Attendance toggle */
-.attendance-shell{margin-top:8px;}
-.toggle-switch{display:flex;flex-direction:column;gap:8px;}
-.toggle-copy strong{font-size:11.5px;font-weight:700;color:var(--text);display:block;}
-.toggle-copy small{font-size:10px;color:var(--text3);line-height:1.5;display:block;margin-top:2px;}
-.toggle-action{display:flex;align-items:center;gap:8px;margin-top:8px;}
-.toggle-action input[type=checkbox]{display:none;}
-.toggle-track{
-  width:40px;height:22px;background:rgba(255,255,255,.1);border:1px solid var(--border);
-  border-radius:11px;position:relative;cursor:pointer;transition:background .2s,border-color .2s;
-}
-.toggle-track i{
-  position:absolute;top:3px;left:3px;width:14px;height:14px;
-  background:var(--text3);border-radius:50%;transition:transform .2s,background .2s;
-}
-input[type=checkbox]:checked ~ .toggle-track{
-  background:rgba(248,113,113,.2);border-color:rgba(248,113,113,.4);
-}
-input[type=checkbox]:checked ~ .toggle-track i{transform:translateX(18px);background:var(--red);}
-
-/* ── CALC SIDE ───────────────────────────────────────────────────────────── */
-.calc-side{display:flex;flex-direction:column;gap:10px;}
-.unlock-banner{
-  padding:14px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-  display:flex;align-items:flex-start;gap:12px;
-  transition:border-color .3s;
-}
-.unlock-banner.active{border-color:rgba(255,154,60,.4);background:rgba(255,154,60,.05);}
-.unlock-banner-copy strong{font-size:12px;font-weight:700;color:var(--text);display:block;}
-.unlock-banner-copy p{font-size:10.5px;color:var(--text2);margin-top:2px;line-height:1.5;}
-.unlock-orb{
-  width:40px;height:40px;border-radius:50%;
-  background:rgba(255,255,255,.06);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;font-weight:800;color:var(--text3);flex-shrink:0;
-  transition:background .3s,color .3s,border-color .3s;
-}
-.unlock-orb.active{
-  background:rgba(255,154,60,.15);border-color:rgba(255,154,60,.4);color:var(--orange);
-}
-.result-grid{display:flex;flex-direction:column;gap:8px;}
-.result-card{
-  padding:14px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-  transition:border-color .3s;
-}
-.result-card span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);display:block;margin-bottom:4px;}
-.result-card strong{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);display:block;}
-.result-card small{font-size:10.5px;color:var(--text3);margin-top:3px;display:block;}
-.result-card.payout.cash.active{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.04);}
-.result-card.payout.cash.active strong{color:var(--green);}
-.payout-breakdown{margin-top:10px;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:5px;}
-.payout-line{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;}
-.payout-line span{color:var(--text3);}
-.payout-line strong{font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);}
-
-/* ── STATUS GRID ─────────────────────────────────────────────────────────── */
-.status-grid{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
-.status-node{
-  flex:1;min-width:120px;padding:10px 12px;
-  border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
-  text-align:center;
-}
-.status-node span{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:block;margin-bottom:5px;}
-.status-node strong{font-size:16px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);display:block;}
-.status-node small{font-size:9.5px;color:var(--text3);margin-top:3px;display:block;}
-
-/* ── CSAT SHELL ──────────────────────────────────────────────────────────── */
-.csat-shell{
-  padding:12px;border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
-  margin-top:10px;
-}
-.csat-shell.calls{border-color:rgba(45,212,191,.15);}
-.csat-shell.chat{border-color:rgba(255,154,60,.15);}
-
-/* ── CELEBRATION ─────────────────────────────────────────────────────────── */
-.celebration-layer{
-  position:fixed;inset:0;pointer-events:none;z-index:999;overflow:hidden;
-}
-
-/* ── GOVERNANCE ──────────────────────────────────────────────────────────── */
-.governance-box{
-  padding:16px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-}
-.governance-row{
-  display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:11.5px;
-}
-.governance-row:last-child{border-bottom:none;}
-.governance-row-icon{
-  width:28px;height:28px;border-radius:7px;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,.05);font-size:14px;
-}
-.governance-row-copy strong{font-size:12px;color:var(--text);display:block;margin-bottom:2px;}
-.governance-row-copy span{color:var(--text2);line-height:1.55;}
-
-/* ── REVEAL ANIMATION ────────────────────────────────────────────────────── */
-[data-reveal]{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s ease;}
-[data-reveal].visible{opacity:1;transform:none;}
-
-/* ── SCROLLBAR ───────────────────────────────────────────────────────────── */
-::-webkit-scrollbar{width:5px;height:5px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px;}
-
-
-/* ── MISSING COMPONENT STYLES ───────────────────────────────────────────── */
-
-/* color helpers */
-.green{color:var(--green)!important;}
-.orange{color:var(--orange)!important;}
-.blue{color:var(--teal)!important;}
-.good strong{color:var(--green)!important;}
-
-/* attendance control (extends .control-box) */
-.attendance{}
-
-/* result-card good = green glow */
-.result-card.good{border-color:rgba(52,211,153,.3);background:rgba(52,211,153,.04);}
-.result-card.good strong{color:var(--green);}
-
-/* slab tag inline */
-.slab{padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;
-  background:rgba(255,255,255,.06);border:1px solid var(--border);
-  color:var(--text2);font-family:'JetBrains Mono',monospace;}
-
-/* meta (inside metric-card) */
-.meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px;}
-
-/* bar progress */
-.bar{height:4px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin-top:6px;}
-.bar i{display:block;height:100%;border-radius:2px;
-  background:linear-gradient(90deg,var(--orange),var(--teal));
-  transition:width .5s ease;}
-
-/* metric grid & card */
-.metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px;}
-.metric-card{
-  padding:14px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-  position:relative;overflow:hidden;
-  transition:border-color .2s,transform .2s;
-}
-.metric-card:hover{border-color:var(--border2);transform:translateY(-2px);}
-.metric-card::before{
+.slab-card:hover{transform:translateY(-2px);}
+.slab-card::before{
   content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,var(--orange),var(--teal));
 }
+.slab-card.s1::before{background:linear-gradient(90deg,var(--orange),var(--orange2));}
+.slab-card.s2::before{background:linear-gradient(90deg,var(--teal),var(--teal2));}
+.slab-card.s1{border-color:rgba(242,136,32,.22);}
+.slab-card.s2{border-color:rgba(6,135,190,.22);}
+.slab-card label{font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px;}
+.slab-card .amount{font-size:32px;font-weight:800;letter-spacing:-.03em;font-family:'JetBrains Mono',monospace;}
+.slab-card.s1 .amount{color:var(--orange2);}
+.slab-card.s2 .amount{color:var(--teal2);}
+.slab-card .note{font-size:10px;color:var(--muted);line-height:1.5;margin-top:6px;}
+.slab-card-glow{position:absolute;inset:0;pointer-events:none;border-radius:inherit;opacity:.4;}
+.slab-card.s1 .slab-card-glow{background:radial-gradient(ellipse at 80% 0%,rgba(242,136,32,.2),transparent 60%);}
+.slab-card.s2 .slab-card-glow{background:radial-gradient(ellipse at 80% 0%,rgba(6,135,190,.2),transparent 60%);}
 
-/* team top / title / chip / dot */
-.team-top{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.team-title{font-size:13px;font-weight:700;color:var(--text);}
-.team-chip{
+/* ── SECTION ────────────────────────────────────────── */
+.section{margin-bottom:14px;}
+.section-hdr{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;padding:18px 20px 14px;
+  border-bottom:1px solid var(--border);
+}
+.section-tag{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:4px 10px;border-radius:50px;
+  border:1px solid var(--border2);background:rgba(255,255,255,.04);
+  font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+  margin-bottom:8px;
+}
+.section-title{font-size:18px;font-weight:800;letter-spacing:-.03em;font-family:'Poppins',sans-serif;}
+.section-sub{font-size:12px;color:var(--muted);line-height:1.6;margin-top:4px;max-width:600px;}
+.section-body{padding:20px;}
+
+/* ── TEAM BLUEPRINTS ────────────────────────────────── */
+.team-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:780px){.team-grid{grid-template-columns:1fr;}}
+.team-panel{border-radius:var(--r-sm);overflow:hidden;}
+.team-head{
+  display:flex;align-items:center;gap:12px;padding:14px 16px;
+  border-bottom:1px solid var(--border);
+}
+.team-icon{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.team-icon.calls{background:rgba(6,135,190,.15);border:1px solid rgba(6,135,190,.25);}
+.team-icon.chat{background:rgba(242,136,32,.15);border:1px solid rgba(242,136,32,.25);}
+.team-name{font-size:14px;font-weight:700;}
+.team-badge{
   margin-left:auto;padding:3px 9px;border-radius:50px;
   font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-  background:var(--card3);border:1px solid var(--border);color:var(--text3);
+  border:1px solid var(--border);color:var(--dim);background:rgba(255,255,255,.03);
 }
-.team-dot{
-  width:9px;height:9px;border-radius:50%;flex-shrink:0;
-  background:var(--text3);
+.team-blurb{font-size:11px;color:var(--muted);padding:10px 16px;border-bottom:1px solid var(--border);}
+.metric-list{padding:12px 16px;display:flex;flex-direction:column;gap:8px;}
+.metric-item{
+  padding:12px 14px;border-radius:var(--r-xs);
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  transition:border-color .2s,background .2s;
 }
-.team-dot.calls{background:var(--teal);box-shadow:0 0 6px var(--teal);}
-.team-dot.chat{background:var(--orange);box-shadow:0 0 6px var(--orange);}
+.metric-item:hover{border-color:var(--border2);background:rgba(255,255,255,.05);}
+.metric-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.metric-item-name{font-size:12px;font-weight:600;color:var(--text);}
+.metric-pts-badge{
+  font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  padding:2px 8px;border-radius:5px;
+  background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);
+}
+.metric-slabs{display:flex;gap:6px;margin-bottom:8px;}
+.slab-tag{
+  padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+}
+.slab-tag.s1{background:rgba(34,211,160,.1);border:1px solid rgba(34,211,160,.2);color:var(--green);}
+.slab-tag.s2{background:rgba(242,136,32,.1);border:1px solid rgba(242,136,32,.2);color:var(--orange2);}
+.metric-bar-wrap{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
+.metric-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.metric-bar-fill.calls{background:linear-gradient(90deg,var(--teal),var(--teal2));}
+.metric-bar-fill.chat{background:linear-gradient(90deg,var(--orange),var(--orange2));}
+.csat-note{
+  margin:0 16px 14px;padding:10px 13px;border-radius:var(--r-xs);
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  font-size:11px;color:var(--muted);line-height:1.55;
+}
 
-/* eligibility card */
-.eligibility-card{
-  padding:16px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-  position:relative;overflow:hidden;
-  transition:border-color .2s,transform .2s;
+/* ── ELIGIBILITY ────────────────────────────────────── */
+.elig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.elig-card{
+  position:relative;overflow:hidden;padding:18px;border-radius:var(--r-sm);
+  border:1px solid var(--border);
+  background:rgba(255,255,255,.03);
+  transition:transform .2s,border-color .2s;
 }
-.eligibility-card:hover{transform:translateY(-2px);}
-.eligibility-card.blue{border-color:rgba(6,135,190,.2);}
-.eligibility-card.blue::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--teal);}
-.eligibility-card.green{border-color:rgba(52,211,153,.2);}
-.eligibility-card.green::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);}
-.eligibility-card.orange{border-color:rgba(242,136,32,.2);}
-.eligibility-card.orange::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--orange);}
+.elig-card:hover{transform:translateY(-3px);border-color:var(--border2);}
+.elig-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.elig-card.blue::before{background:linear-gradient(90deg,var(--teal),var(--teal2));}
+.elig-card.green::before{background:linear-gradient(90deg,var(--green),#6ee7b7);}
+.elig-card.orange::before{background:linear-gradient(90deg,var(--orange),var(--orange2));}
+.elig-card.purple::before{background:linear-gradient(90deg,var(--purple),#c4b5fd);}
+.elig-card.blue{border-color:rgba(6,135,190,.2);}
+.elig-card.green{border-color:rgba(34,211,160,.2);}
+.elig-card.orange{border-color:rgba(242,136,32,.2);}
+.elig-card.purple{border-color:rgba(167,139,250,.2);}
+.elig-icon{font-size:22px;margin-bottom:10px;}
+.elig-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.elig-value{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.elig-card.blue .elig-value{color:var(--teal2);}
+.elig-card.green .elig-value{color:var(--green);}
+.elig-card.orange .elig-value{color:var(--orange2);}
+.elig-card.purple .elig-value{color:#c4b5fd;}
+.elig-copy{font-size:11px;color:var(--muted);line-height:1.55;margin-top:8px;}
 
-/* calc head + actions + label */
-.calc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px;}
-.calc-label{font-size:12px;font-weight:700;color:var(--text);flex:1;}
-.calc-head-actions{display:flex;align-items:center;gap:6px;}
-.calc-direct{display:flex;flex-direction:column;gap:2px;}
-.calc-direct-input{
-  width:70px;background:rgba(255,255,255,.05);border:1px solid var(--border);
-  border-radius:var(--r-xs);padding:4px 8px;font-size:11px;font-weight:700;
-  color:var(--text);font-family:'JetBrains Mono',monospace;outline:none;
-  text-align:center;transition:border-color .2s;
+/* ── LEAVE IMPACT ───────────────────────────────────── */
+.leave-track{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:640px){.leave-track{grid-template-columns:repeat(2,1fr);}}
+.leave-node{
+  position:relative;overflow:hidden;padding:16px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:rgba(255,255,255,.03);
+  text-align:center;transition:transform .2s,border-color .2s;
 }
-.calc-direct-input:focus{border-color:rgba(255,154,60,.4);}
-.calc-status{
-  padding:3px 9px;border-radius:50px;font-size:10px;font-weight:700;
-  background:var(--card3);border:1px solid var(--border);color:var(--text3);
+.leave-node:hover{transform:translateY(-2px);}
+.leave-node.ok{border-color:rgba(34,211,160,.2);}
+.leave-node.warn{border-color:rgba(251,191,36,.2);}
+.leave-node.bad{border-color:rgba(248,113,113,.2);}
+.leave-node.stop{border-color:rgba(248,113,113,.35);}
+.leave-node-days{font-size:13px;font-weight:700;color:var(--dim);margin-bottom:6px;}
+.leave-node-mult{font-size:30px;font-weight:800;font-family:'JetBrains Mono',monospace;line-height:1;}
+.leave-node.ok .leave-node-mult{color:var(--green);}
+.leave-node.warn .leave-node-mult{color:var(--yellow);}
+.leave-node.bad .leave-node-mult{color:var(--orange2);}
+.leave-node.stop .leave-node-mult{color:var(--red);}
+.leave-node-note{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.5;}
+.leave-node-bar{position:absolute;bottom:0;left:0;right:0;height:3px;}
+.leave-node.ok .leave-node-bar{background:var(--green);}
+.leave-node.warn .leave-node-bar{background:var(--yellow);}
+.leave-node.bad .leave-node-bar{background:var(--orange2);}
+.leave-node.stop .leave-node-bar{background:var(--red);}
+.leave-alert{
+  padding:12px 16px;border-radius:var(--r-xs);
+  background:rgba(248,113,113,.06);border:1px solid rgba(248,113,113,.2);
+  font-size:12px;color:var(--muted);line-height:1.55;display:flex;align-items:center;gap:10px;
 }
-.calc-status.good{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25);color:var(--green);}
-.calc-status.warn{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.2);color:var(--yellow);}
-.calc-status.bad{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.2);color:var(--red);}
+.leave-alert::before{content:'⚠';font-size:16px;flex-shrink:0;}
+.leave-alert strong{color:var(--red);}
 
-/* range wrapper */
-.calc-range{position:relative;margin:4px 0;}
-.calc-rail{height:4px;border-radius:2px;background:rgba(255,255,255,.08);position:relative;overflow:hidden;}
-.calc-fill{position:absolute;left:0;top:0;height:100%;border-radius:2px;
-  background:linear-gradient(90deg,var(--orange),var(--teal));transition:width .2s;}
+/* ── CALCULATOR ─────────────────────────────────────── */
+.calc-team-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.calc-team-tab{
+  display:flex;align-items:center;gap:8px;padding:8px 18px;border-radius:var(--r-xs);
+  border:1px solid var(--border);background:rgba(255,255,255,.03);
+  color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;
+  transition:all .18s;font-family:'Inter',sans-serif;
+}
+.calc-team-tab:hover{background:rgba(255,255,255,.06);color:var(--text);}
+.calc-team-tab .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:box-shadow .18s;}
+.calc-team-tab.calls.active{background:rgba(6,135,190,.1);border-color:rgba(6,135,190,.3);color:var(--teal2);}
+.calc-team-tab.calls.active .dot{background:var(--teal2);box-shadow:0 0 8px var(--teal);}
+.calc-team-tab.chat.active{background:rgba(242,136,32,.1);border-color:rgba(242,136,32,.3);color:var(--orange2);}
+.calc-team-tab.chat.active .dot{background:var(--orange2);box-shadow:0 0 8px var(--orange);}
+.calc-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start;}
+@media(max-width:900px){.calc-layout{grid-template-columns:1fr;}}
+.calc-metrics{display:flex;flex-direction:column;gap:8px;}
+.calc-metric{
+  padding:14px 16px;border-radius:var(--r-sm);
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  transition:border-color .18s;
+}
+.calc-metric:hover{border-color:var(--border2);}
+.calc-metric-top{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.calc-metric-name{font-size:12px;font-weight:600;flex:1;}
+.calc-metric-input{
+  width:72px;background:rgba(255,255,255,.05);border:1px solid var(--border2);
+  border-radius:var(--r-xs);padding:5px 8px;font-size:12px;font-weight:700;
+  color:var(--text);font-family:'JetBrains Mono',monospace;
+  outline:none;text-align:center;transition:border-color .18s;
+}
+.calc-metric-input:focus{border-color:rgba(242,136,32,.5);}
+.calc-status-pill{
+  padding:4px 10px;border-radius:50px;font-size:10px;font-weight:700;
+  letter-spacing:.05em;white-space:nowrap;border:1px solid transparent;
+  transition:all .2s;
+}
+.calc-status-pill.slab1{background:rgba(34,211,160,.1);border-color:rgba(34,211,160,.25);color:var(--green);}
+.calc-status-pill.slab2{background:rgba(242,136,32,.1);border-color:rgba(242,136,32,.25);color:var(--orange2);}
+.calc-status-pill.miss{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.18);color:var(--red);}
+.calc-range-wrap{position:relative;padding-bottom:4px;}
+.calc-rail{height:4px;border-radius:2px;background:rgba(255,255,255,.07);position:relative;overflow:hidden;}
+.calc-fill{position:absolute;left:0;top:0;height:100%;border-radius:2px;transition:width .2s;}
+.calc-fill.calls{background:linear-gradient(90deg,var(--teal),var(--teal2));}
+.calc-fill.chat{background:linear-gradient(90deg,var(--orange),var(--orange2));}
 .calc-range-input{
   width:100%;position:absolute;top:-8px;left:0;
   -webkit-appearance:none;appearance:none;
@@ -490,304 +311,403 @@ input[type=checkbox]:checked ~ .toggle-track i{transform:translateX(18px);backgr
 .calc-range-input::-webkit-slider-thumb{
   -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
   background:var(--orange);border:2px solid rgba(255,255,255,.2);
-  box-shadow:0 0 8px rgba(242,136,32,.5);cursor:pointer;
+  box-shadow:0 0 10px rgba(242,136,32,.5);cursor:pointer;
 }
+.calc-range-input.calls::-webkit-slider-thumb{background:var(--teal);box-shadow:0 0 10px rgba(6,135,190,.5);}
 .calc-bubble{
-  position:absolute;top:-28px;transform:translateX(-50%);
-  background:var(--orange);color:#fff;
-  font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;
-  font-family:'JetBrains Mono',monospace;pointer-events:none;white-space:nowrap;
+  position:absolute;top:-26px;transform:translateX(-50%);
+  background:var(--orange);color:#fff;font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:5px;font-family:'JetBrains Mono',monospace;
+  pointer-events:none;white-space:nowrap;
 }
+.calc-bubble.calls{background:var(--teal);}
 .calc-bubble::after{
-  content:'';position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);
+  content:'';position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
   border:3px solid transparent;border-top-color:var(--orange);
 }
-.calc-current{
-  font-size:10px;color:var(--text3);margin-top:18px;
-  font-family:'JetBrains Mono',monospace;
-}
-.calc-meta{
-  display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;
-}
+.calc-bubble.calls::after{border-top-color:var(--teal);}
 
-/* csat */
-.csat{color:var(--teal)!important;}
-.csat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
-.csat-control{
-  padding:10px 12px;border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
+/* Leave & Attendance controls */
+.calc-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+@media(max-width:640px){.calc-controls{grid-template-columns:1fr;}}
+.ctrl-box{padding:14px;border-radius:var(--r-sm);background:rgba(255,255,255,.03);border:1px solid var(--border);}
+.ctrl-label{font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:3px;}
+.ctrl-note{font-size:10px;color:var(--dim);line-height:1.5;}
+.ctrl-badge{
+  display:inline-flex;padding:3px 9px;border-radius:50px;font-size:10px;font-weight:700;
+  background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--muted);
+  margin-top:8px;
 }
-.csat-meta{
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:10px;color:var(--text3);margin-top:6px;
+.ctrl-badge.glow{color:var(--orange2);border-color:rgba(242,136,32,.3);background:rgba(242,136,32,.07);}
+.leave-select{
+  width:100%;margin-top:10px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border2);
+  border-radius:var(--r-xs);padding:8px 10px;font-size:12px;
+  color:var(--text);outline:none;font-family:'Inter',sans-serif;
+  transition:border-color .18s;
 }
-.csat-meta strong{font-weight:700;color:var(--text2);}
-.csat-live-value{
-  font-size:18px;font-weight:800;font-family:'JetBrains Mono',monospace;
-  color:var(--teal);display:block;margin-bottom:4px;
+.leave-select:focus{border-color:rgba(242,136,32,.4);}
+.leave-select option{background:#0a0f1e;}
+.mult-preview{
+  margin-top:10px;padding:10px 12px;border-radius:var(--r-xs);
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
 }
+.mult-preview strong{font-size:18px;font-weight:800;color:var(--text);font-family:'JetBrains Mono',monospace;display:block;}
+.mult-preview small{font-size:10px;color:var(--dim);margin-top:2px;display:block;}
+.toggle-switch{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+.toggle-copy strong{font-size:12px;font-weight:700;color:var(--text);display:block;}
+.toggle-copy small{font-size:10px;color:var(--dim);display:block;margin-top:2px;line-height:1.5;}
+.toggle-action{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.toggle-action input[type=checkbox]{display:none;}
+.toggle-track{
+  width:42px;height:24px;background:rgba(255,255,255,.1);border:1px solid var(--border2);
+  border-radius:12px;position:relative;cursor:pointer;transition:all .2s;flex-shrink:0;
+}
+.toggle-track i{
+  position:absolute;top:4px;left:4px;width:14px;height:14px;
+  background:var(--dim);border-radius:50%;transition:all .2s;
+}
+input[type=checkbox]:checked ~ .toggle-track{background:rgba(248,113,113,.2);border-color:rgba(248,113,113,.4);}
+input[type=checkbox]:checked ~ .toggle-track i{transform:translateX(18px);background:var(--red);}
+
+/* ── RESULT PANEL ───────────────────────────────────── */
+.result-panel{display:flex;flex-direction:column;gap:10px;}
+.result-pulse{
+  padding:16px;border-radius:var(--r-sm);
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;
+  transition:all .3s;
+}
+.result-pulse.active{border-color:rgba(242,136,32,.35);background:rgba(242,136,32,.06);}
+.result-pulse-orb{
+  width:44px;height:44px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border2);
+  transition:all .3s;
+}
+.result-pulse.active .result-pulse-orb{
+  background:rgba(242,136,32,.15);border-color:rgba(242,136,32,.4);
+  box-shadow:0 0 20px rgba(242,136,32,.2);
+}
+.result-pulse-copy strong{font-size:13px;font-weight:700;color:var(--text);display:block;}
+.result-pulse-copy p{font-size:11px;color:var(--muted);margin-top:2px;}
+.result-card{
+  padding:16px;border-radius:var(--r-sm);
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  transition:all .3s;position:relative;overflow:hidden;
+}
+.result-card.active-green{border-color:rgba(34,211,160,.3);background:rgba(34,211,160,.05);}
+.result-card.active-green .result-big{color:var(--green);}
+.result-card-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px;}
+.result-big{font-size:36px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);display:block;transition:color .3s;}
+.result-note{font-size:10px;color:var(--dim);margin-top:4px;display:block;}
+.result-breakdown{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px;}
+.result-line{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+.result-line span{color:var(--dim);}
+.result-line strong{font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text);}
+.slab-hits-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.slab-stat{
+  padding:12px;border-radius:var(--r-xs);text-align:center;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+}
+.slab-stat label{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);display:block;margin-bottom:6px;}
+.slab-stat strong{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--text);display:block;}
+.slab-stat small{font-size:9.5px;color:var(--dim);margin-top:3px;display:block;}
+
+/* CSAT section in calc */
+.csat-section{padding:14px;border-radius:var(--r-sm);border:1px solid var(--border);background:rgba(255,255,255,.03);}
+.csat-section.calls{border-color:rgba(6,135,190,.18);}
+.csat-section.chat{border-color:rgba(242,136,32,.18);}
+.csat-title{font-size:11px;font-weight:700;color:var(--text);margin-bottom:10px;}
+.csat-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.csat-field{padding:10px 12px;border-radius:var(--r-xs);background:rgba(255,255,255,.04);border:1px solid var(--border);}
+.csat-field label{font-size:10px;font-weight:700;color:var(--dim);display:block;margin-bottom:5px;}
+.csat-big{font-size:22px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--teal2);display:block;margin-bottom:4px;}
+.csat-big.chat{color:var(--orange2);}
+.csat-slider{width:100%;accent-color:var(--teal);cursor:pointer;}
+.csat-slider.chat{accent-color:var(--orange);}
 .csat-direct-input{
-  width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);
+  width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border2);
   border-radius:var(--r-xs);padding:5px 8px;font-size:12px;
   color:var(--text);font-family:'JetBrains Mono',monospace;
-  outline:none;transition:border-color .2s;
+  outline:none;transition:border-color .18s;
 }
 .csat-direct-input:focus{border-color:rgba(6,135,190,.4);}
-.csat-range-input{
-  width:100%;margin-top:4px;accent-color:var(--teal);cursor:pointer;
-}
-.csat-inline{
-  display:flex;align-items:center;gap:10px;margin-top:8px;
-  padding:8px 12px;border-radius:var(--r-xs);
-  background:var(--card2);border:1px solid var(--border);
-  font-size:11px;
-}
+.csat-result-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.csat-result-row span{color:var(--dim);}
+.csat-result-row strong{font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green);}
 
-/* governance pointers */
-.governance-pointer{
-  display:flex;gap:12px;align-items:flex-start;
-  padding:12px;border-radius:var(--r-sm);
-  background:var(--card2);border:1px solid var(--border);
-  margin-bottom:8px;
+/* ── GOVERNANCE ─────────────────────────────────────── */
+.gov-list{display:flex;flex-direction:column;gap:8px;}
+.gov-item{
+  display:flex;align-items:flex-start;gap:14px;padding:14px 16px;
+  border-radius:var(--r-sm);background:rgba(255,255,255,.03);border:1px solid var(--border);
+  transition:border-color .18s,background .18s;
 }
-.governance-marker{
-  width:28px;height:28px;border-radius:50%;flex-shrink:0;
+.gov-item:hover{border-color:var(--border2);background:rgba(255,255,255,.05);}
+.gov-num{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;
   background:rgba(242,136,32,.12);border:1px solid rgba(242,136,32,.25);
-  color:var(--orange);font-size:12px;font-weight:800;
-  font-family:'JetBrains Mono',monospace;
+  color:var(--orange2);font-size:12px;font-weight:800;font-family:'JetBrains Mono',monospace;
 }
-.governance-copy{flex:1;}
-.governance-copy strong{font-size:12px;font-weight:700;color:var(--text);display:block;margin-bottom:3px;}
-.governance-copy span,.governance-copy p{font-size:11px;color:var(--text2);line-height:1.6;}
-.governance-callout{
-  margin-top:10px;padding:10px 12px;border-radius:var(--r-xs);
-  background:rgba(242,136,32,.05);border:1px solid rgba(242,136,32,.15);
-  font-size:10.5px;color:var(--text2);line-height:1.55;
+.gov-body{flex:1;}
+.gov-body strong{font-size:13px;font-weight:700;color:var(--text);display:block;margin-bottom:4px;}
+.gov-body p{font-size:11.5px;color:var(--muted);line-height:1.6;}
+.gov-callout{
+  margin-top:12px;padding:12px 16px;border-radius:var(--r-xs);
+  background:rgba(242,136,32,.05);border:1px solid rgba(242,136,32,.18);
+  font-size:11.5px;color:var(--muted);line-height:1.55;display:flex;align-items:center;gap:8px;
 }
+.gov-callout::before{content:'💡';font-size:14px;flex-shrink:0;}
 
+/* ── CONFETTI LAYER ─────────────────────────────────── */
+.celebration-layer{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden;}
+
+/* ── REVEAL ─────────────────────────────────────────── */
+[data-reveal]{opacity:0;transform:translateY(16px);transition:opacity .45s ease,transform .45s ease;}
+[data-reveal].visible{opacity:1;transform:none;}
+
+/* ── SCROLLBAR ──────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px;}
+
+/* ── VALUE POP ──────────────────────────────────────── */
+@keyframes valuePop{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+.value-pop{animation:valuePop .25s ease;}
 </style>
 </head>
 <body>
+<div class="bg-layer"></div>
+
 <main class="page">
-  <section class="hero" data-reveal style="--delay:.02s">
-    <div class="hero-top">
-      <div class="brand">
-        <div class="brand-badge">
-          <span id="brandFallback" class="brand-fallback" style="display:none;">A</span>
-          <img id="brandLogo" class="brand-logo" src="/adit-logo-dark.png" alt="Adit logo" style="display:block;">
-        </div>
-        <div class="brand-copy">
-          <h1>Bonus Guide</h1>
-          <p>T1 CS bonus structure · effective January 1, 2026</p>
-        </div>
-      </div>
-      <div class="hero-pills">
-        <span class="pill calls">Calls blueprint</span>
-        <span class="pill chat">Chat blueprint</span>
-        <span class="pill violet">Interactive estimator</span>
-      </div>
-    </div>
-    <div class="hero-main">
-      <div class="hero-copy">
-        <span class="eyebrow">Performance system</span>
-        <h2>Bonus <span>Structure</span></h2>
-        <p>This guide translates the bonus document into a live futuristic reference board. Calls and chat stay clearly separated, slab logic is easy to scan, and the calculator helps estimate payout without leaving the dashboard environment.</p>
-      </div>
-      <div class="bonus-tier-grid">
-        <div class="bonus-tier primary">
-          <span>Slab 1 Bonus</span>
-          <strong>₹7,500</strong>
-          <small>Triggered when total points qualify and at least half of the active metrics hit slab 1.</small>
-        </div>
-        <div class="bonus-tier secondary">
-          <span>Slab 2 Bonus</span>
-          <strong>₹3,000</strong>
-          <small>Triggered when total points qualify but slab 1 coverage is not strong enough for the top slab.</small>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  <section class="section section-shell" data-reveal style="--delay:.10s">
-    <div class="section-head">
-      <div class="section-copy">
-        <h3>Team blueprints</h3>
-        <p>Both support wings are shown separately so the scoring logic is easy to understand. Calls and chat do not share the same weight model.</p>
-      </div>
-    </div>
-    <div class="split-grid" id="team-panels"></div>
-  </section>
-
-  <section class="section section-shell" data-reveal style="--delay:.18s">
-    <div class="section-head">
-      <div class="section-copy">
-        <h3>Eligibility guardrails</h3>
-        <p>These rules control entry into the bonus slab and shape how leaves affect the final payout.</p>
-      </div>
-    </div>
-    <div class="eligibility-grid" id="eligibility-grid"></div>
-  </section>
-
-  <section class="section section-shell" data-reveal style="--delay:.24s">
-    <div class="section-head">
-      <div class="section-copy">
-        <h3>Leave impact</h3>
-        <p>Planned leave reduces the payout multiplier, while any unplanned leave removes eligibility completely.</p>
-      </div>
-    </div>
-    <div class="leave-grid" id="leave-grid"></div>
-    <div class="warning-strip">Any unplanned leave results in <strong>0% bonus eligibility</strong> for both the slab payout and the CSAT incentive path.</div>
-  </section>
-
-  <section class="section section-shell" data-reveal style="--delay:.30s">
-    <div class="section-head">
-      <div class="section-copy">
-        <h3>Interactive bonus estimator</h3>
-        <p>Use the live controls below to estimate points, slab outcome, and post-leave payout for calls or chat.</p>
-      </div>
-    </div>
-    <div class="calc-tabs">
-      <button class="calc-tab active calls" data-team="calls">Calls estimator</button>
-      <button class="calc-tab chat" data-team="chat">Chat estimator</button>
-    </div>
-	    <div class="calc-shell">
-	      <div class="calc-panel">
-	        <div class="calc-list" id="calc-list"></div>
-	        <div class="leave-control-grid">
-		          <div class="control-box">
-		            <div class="control-top">
-		              <div>
-		                <label for="plannedLeaves">Planned leaves</label>
-		                <p class="field-note">Pick the monthly leave band.</p>
-		              </div>
-		              <span class="control-badge glow" id="leaveBandLabel">0 leaves</span>
-		            </div>
-	            <div class="control-visual">
-	              <select id="plannedLeaves" class="leave-select">
-	              <option value="0">0</option>
-	              <option value="1">1</option>
-	              <option value="2">2</option>
-	              <option value="3">3</option>
-	              <option value="4">4+</option>
-	              </select>
-	              <div class="multiplier-preview">
-	                <span>Live multiplier</span>
-	                <strong id="leavePreviewMultiplier">100%</strong>
-	                <small id="leavePreviewCopy">Full payout multiplier retained.</small>
-	              </div>
-	            </div>
-	          </div>
-	          <div class="control-box attendance" id="attendanceControl">
-	            <div class="control-top">
-	              <div>
-	                <label>Attendance override</label>
-	                <p class="field-note">Use only if unplanned leave happened.</p>
-		              </div>
-		              <span class="control-badge" id="attendanceBadge">Attendance clear</span>
-	            </div>
-            <div class="attendance-shell">
-	              <label class="toggle-switch">
-	                <span class="toggle-copy">
-	                  <strong id="attendanceStateLabel">Bonus runway is clean</strong>
-	                  <small id="attendanceStateCopy">No attendance block right now. Both slab payout and CSAT incentive stay eligible.</small>
-	                </span>
-                  <span class="toggle-action">
-                    <input type="checkbox" id="unplannedLeave">
-                    <span class="toggle-track"><i></i></span>
-                  </span>
-	              </label>
-	            </div>
-	          </div>
-	        </div>
-	      </div>
-		      <div class="calc-side">
-		        <div class="unlock-banner" id="unlockBanner">
-		          <div>
-		            <h4>Live slab pulse</h4>
-		            <strong id="unlockBannerTitle">Hold the line</strong>
-		            <p id="unlockBannerCopy">Clear every active metric at Slab 2 to ignite the payout pulse.</p>
-		          </div>
-		          <div class="unlock-orb" id="unlockOrb">+</div>
-		        </div>
-		        <div class="result-grid">
-		          <div class="result-card good">
-	            <span>Total points</span>
-            <strong id="totalPoints">0</strong>
-            <small id="totalStatus">Minimum 70 points needed</small>
+  <!-- ── HERO ───────────────────────────────────────── -->
+  <section class="glass hero" data-reveal>
+    <div class="hero-orb-a"></div>
+    <div class="hero-orb-b"></div>
+    <div class="hero-inner">
+      <div>
+        <div class="hero-brand">
+          <div class="hero-logo-wrap">
+            <img src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span style="display:none;font-size:20px;font-weight:800;color:#10233d;">A</span>
           </div>
-	          <div class="result-card payout cash" id="payoutCard">
-	            <span>Total payout</span>
-	            <strong id="totalPayout">₹0</strong>
-	            <small id="payoutStatus">No slab or CSAT payout unlocked yet</small>
-	            <div class="payout-breakdown">
-	              <div class="payout-line slab">
-	                <span>Slab bonus</span>
-	                <strong id="slabBonusLine">₹0</strong>
-	              </div>
-	              <div class="payout-line csat">
-	                <span>CSAT bonus</span>
-	                <strong id="csatBonusLine">₹0</strong>
-	              </div>
-	            </div>
-	          </div>
-		        </div>
-        <div class="status-grid">
-          <div class="status-node">
-            <span>Slab 1 hits</span>
-            <strong id="slab2Hits">0 / 0</strong>
-            <small id="slabRule">Need 0 slab 1 hits for top slab</small>
+          <div class="hero-brand-text">
+            <h1>Bonus Guide</h1>
+            <p>T1 CS bonus structure · effective January 1, 2026</p>
           </div>
-          <div class="status-node">
-            <span>Active slab</span>
-            <strong id="activeSlab">Miss</strong>
-            <small id="leaveMultiplier">Leave multiplier 100%</small>
-          </div>
-	        </div>
-	        <div id="csat-shell" class="csat-shell calls"></div>
-	        <div class="celebration-layer" id="celebrationLayer"></div>
-	      </div>
-	    </div>
-	  </section>
-
-  <section class="section section-shell" data-reveal style="--delay:.36s">
-    <div class="section-head">
-      <div class="section-copy">
-        <h3>Governance Pointers</h3>
-        <p>One compact policy lane so the non-negotiables stay visible without taking over the page.</p>
+        </div>
+        <div class="hero-pills">
+          <span class="pill teal">Calls blueprint</span>
+          <span class="pill orange">Chat blueprint</span>
+          <span class="pill purple">Live estimator</span>
+        </div>
+        <div class="hero-headline">Earn More,<br><span class="grad">Score Higher</span></div>
+        <p class="hero-sub">A futuristic live reference board for the T1 CS bonus structure. Calls and chat scoring stay cleanly separated — use the interactive estimator to see your slab and payout in real time.</p>
+      </div>
+      <div class="slab-cards">
+        <div class="slab-card s1">
+          <div class="slab-card-glow"></div>
+          <label>Slab 1 Bonus</label>
+          <div class="amount">₹7,500</div>
+          <p class="note">Triggered when you hit 70+ total points and at least half of active metrics are at Slab 1.</p>
+        </div>
+        <div class="slab-card s2">
+          <div class="slab-card-glow"></div>
+          <label>Slab 2 Bonus</label>
+          <div class="amount">₹3,000</div>
+          <p class="note">Triggered when total points qualify but Slab 1 coverage is below the halfway mark.</p>
+        </div>
       </div>
     </div>
-    <div class="governance-box" id="notes-grid"></div>
   </section>
+
+  <!-- ── TEAM BLUEPRINTS ─────────────────────────────── -->
+  <section class="section glass" data-reveal>
+    <div class="section-hdr">
+      <div>
+        <div class="section-tag">01 &mdash; Scoring System</div>
+        <h2 class="section-title">Team blueprints</h2>
+        <p class="section-sub">Both support wings are scored separately. Calls and chat do not share the same weight model — only your team's metrics count toward your bonus.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="team-grid" id="team-panels"></div>
+    </div>
+  </section>
+
+  <!-- ── ELIGIBILITY ─────────────────────────────────── -->
+  <section class="section glass" data-reveal>
+    <div class="section-hdr">
+      <div>
+        <div class="section-tag">02 &mdash; Entry Rules</div>
+        <h2 class="section-title">Eligibility guardrails</h2>
+        <p class="section-sub">These rules control entry into the bonus slab. All guardrails must be met before any payout is calculated.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="elig-grid" id="eligibility-grid"></div>
+    </div>
+  </section>
+
+  <!-- ── LEAVE IMPACT ────────────────────────────────── -->
+  <section class="section glass" data-reveal>
+    <div class="section-hdr">
+      <div>
+        <div class="section-tag">03 &mdash; Attendance</div>
+        <h2 class="section-title">Leave impact</h2>
+        <p class="section-sub">Planned leave reduces the payout multiplier. Unplanned leave removes eligibility entirely.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="leave-track" id="leave-grid"></div>
+      <div class="leave-alert">Any <strong>unplanned leave</strong> results in 0% bonus eligibility — both slab payout and CSAT incentive are blocked.</div>
+    </div>
+  </section>
+
+  <!-- ── CALCULATOR ──────────────────────────────────── -->
+  <section class="section glass" data-reveal>
+    <div class="section-hdr">
+      <div>
+        <div class="section-tag">04 &mdash; Live Estimator</div>
+        <h2 class="section-title">Interactive bonus estimator</h2>
+        <p class="section-sub">Adjust the sliders or type values directly. The slab result, payout, and CSAT incentive all update instantly.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="calc-team-tabs">
+        <button class="calc-team-tab calls active" data-team="calls" onclick="switchCalcTeam('calls',this)">
+          <span class="dot" style="background:var(--teal2);box-shadow:0 0 8px var(--teal);"></span>
+          Calls Estimator
+        </button>
+        <button class="calc-team-tab chat" data-team="chat" onclick="switchCalcTeam('chat',this)">
+          <span class="dot" style="background:var(--orange2);box-shadow:0 0 8px var(--orange);"></span>
+          Chat Estimator
+        </button>
+      </div>
+      <div class="calc-layout">
+        <div>
+          <div class="calc-metrics" id="calc-list"></div>
+          <div class="calc-controls">
+            <div class="ctrl-box">
+              <label class="ctrl-label" for="plannedLeaves">Planned leaves</label>
+              <p class="ctrl-note">Select your leave band for this month.</p>
+              <span class="ctrl-badge glow" id="leaveBandLabel">0 leaves</span>
+              <select id="plannedLeaves" class="leave-select" onchange="onLeaveChange()">
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4+</option>
+              </select>
+              <div class="mult-preview">
+                <strong id="leavePreviewMultiplier">100%</strong>
+                <small id="leavePreviewCopy">Full payout multiplier retained.</small>
+              </div>
+            </div>
+            <div class="ctrl-box" id="attendanceControl">
+              <label class="ctrl-label">Attendance override</label>
+              <p class="ctrl-note">Toggle only if unplanned leave occurred.</p>
+              <span class="ctrl-badge" id="attendanceBadge">Attendance clear</span>
+              <div class="toggle-switch">
+                <div class="toggle-copy">
+                  <strong id="attendanceStateLabel">Bonus runway is clean</strong>
+                  <small id="attendanceStateCopy">No attendance block. Both slab payout and CSAT incentive stay eligible.</small>
+                </div>
+                <span class="toggle-action">
+                  <input type="checkbox" id="unplannedLeave" onchange="recalc()">
+                  <span class="toggle-track" onclick="document.getElementById('unplannedLeave').click()"><i></i></span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="result-panel">
+          <div class="result-pulse" id="unlockBanner">
+            <div class="result-pulse-orb" id="unlockOrb">🎯</div>
+            <div class="result-pulse-copy">
+              <strong id="unlockBannerTitle">Hold the line</strong>
+              <p id="unlockBannerCopy">Clear every active metric at Slab 2 to ignite the payout pulse.</p>
+            </div>
+          </div>
+          <div class="result-card" id="payoutCard">
+            <span class="result-card-label">Total payout</span>
+            <strong class="result-big" id="totalPayout">₹0</strong>
+            <span class="result-note" id="payoutStatus">No slab or CSAT payout unlocked yet</span>
+            <div class="result-breakdown">
+              <div class="result-line"><span>Slab bonus</span><strong id="slabBonusLine">₹0</strong></div>
+              <div class="result-line"><span>CSAT bonus</span><strong id="csatBonusLine">₹0</strong></div>
+            </div>
+          </div>
+          <div class="result-card" id="pointsCard">
+            <span class="result-card-label">Total points</span>
+            <strong class="result-big" id="totalPoints">0</strong>
+            <span class="result-note" id="totalStatus">Minimum 70 points needed</span>
+          </div>
+          <div class="slab-hits-grid">
+            <div class="slab-stat">
+              <label>Slab 1 hits</label>
+              <strong id="slab2Hits">0 / 0</strong>
+              <small id="slabRule">Need 0 for top slab</small>
+            </div>
+            <div class="slab-stat">
+              <label>Active slab</label>
+              <strong id="activeSlab">Miss</strong>
+              <small id="leaveMultiplier">100% multiplier</small>
+            </div>
+          </div>
+          <div id="csat-shell"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── GOVERNANCE ──────────────────────────────────── -->
+  <section class="section glass" data-reveal>
+    <div class="section-hdr">
+      <div>
+        <div class="section-tag">05 &mdash; Policy</div>
+        <h2 class="section-title">Governance pointers</h2>
+        <p class="section-sub">The non-negotiables, kept compact so the calculator stays front and center.</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="gov-list" id="notes-grid"></div>
+    </div>
+  </section>
+
 </main>
 
+<div class="celebration-layer" id="celebrationLayer"></div>
+
 <script>
+/* ── DATA ────────────────────────────────────────────── */
 const bonusData={
   calls:{
-    title:'Calls Team',
-    tone:'calls',
+    title:'Calls Team',tone:'calls',icon:'📞',
     blurb:'Volume, closure quality, and QA carry the majority of the points on the calls side.',
-    chip:'4 weighted metrics',
+    chip:'4 metrics',
     metrics:[
-      {key:'inbound',label:'Inbound calls / day',pts:35,slab1:7,slab2:5,unit:'/day'},
-      {key:'tickets',label:'Tickets closed / day',pts:20,slab1:5,slab2:4,unit:'/day'},
-      {key:'fcr',label:'First call resolution',pts:25,slab1:75,slab2:70,unit:'%'},
-      {key:'qa',label:'QA score',pts:20,slab1:90,slab2:85,unit:'%'}
+      {key:'inbound', label:'Inbound calls / day',  pts:35, slab1:7,  slab2:5,  unit:'/day'},
+      {key:'tickets', label:'Tickets closed / day', pts:20, slab1:5,  slab2:4,  unit:'/day'},
+      {key:'fcr',     label:'First call resolution',pts:25, slab1:75, slab2:70, unit:'%'},
+      {key:'qa',      label:'QA score',             pts:20, slab1:90, slab2:85, unit:'%'}
     ],
     csatThreshold:'CSAT > 92%',
     incentive:'₹150 per good CSAT'
   },
   chat:{
-    title:'Chat Team',
-    tone:'chat',
-    blurb:'Chat rewards digital sentiment more heavily, while still protecting QA, ticket closure, and FCR.',
-    chip:'5 weighted metrics',
+    title:'Chat Team',tone:'chat',icon:'💬',
+    blurb:'Chat rewards digital sentiment more heavily while still protecting QA, ticket closure, and FCR.',
+    chip:'5 metrics',
     metrics:[
-      {key:'chats',label:'Unique chats / day',pts:15,slab1:11,slab2:9,unit:'/day'},
-      {key:'csat',label:'Chat CSAT',pts:30,slab1:90,slab2:85,unit:'%'},
-      {key:'tickets',label:'Tickets closed / day',pts:20,slab1:5,slab2:4,unit:'/day'},
-      {key:'qa',label:'QA score',pts:20,slab1:90,slab2:85,unit:'%'},
-      {key:'fcr',label:'FCR',pts:15,slab1:75,slab2:70,unit:'%'}
+      {key:'chats',   label:'Unique chats / day',   pts:15, slab1:11, slab2:9,  unit:'/day'},
+      {key:'csat',    label:'Chat CSAT',             pts:30, slab1:90, slab2:85, unit:'%'},
+      {key:'tickets', label:'Tickets closed / day',  pts:20, slab1:5,  slab2:4,  unit:'/day'},
+      {key:'qa',      label:'QA score',              pts:20, slab1:90, slab2:85, unit:'%'},
+      {key:'fcr',     label:'FCR',                   pts:15, slab1:75, slab2:70, unit:'%'}
     ],
     csatThreshold:'CSAT > 85%',
     incentive:'₹50 per happy CSAT'
@@ -795,706 +715,438 @@ const bonusData={
 };
 
 const leaveRows=[
-  {leaves:'0',mult:'100%',tone:'ok',copy:'Full payout multiplier retained.'},
-  {leaves:'1-2',mult:'75%',tone:'warn',copy:'Reduced multiplier but still in play.'},
-  {leaves:'3',mult:'50%',tone:'warn',copy:'Half payout only if a slab is achieved.'},
-  {leaves:'4+',mult:'0%',tone:'stop',copy:'No payout once leave exceeds policy.'}
+  {leaves:'0 leaves',    mult:'100%', tone:'ok',   copy:'Full payout multiplier retained.'},
+  {leaves:'1 – 2 leaves',mult:'75%',  tone:'warn', copy:'Reduced multiplier but still in play.'},
+  {leaves:'3 leaves',    mult:'50%',  tone:'bad',  copy:'Half payout only if a slab is achieved.'},
+  {leaves:'4+ leaves',   mult:'0%',   tone:'stop', copy:'No payout once leave exceeds policy.'}
 ];
 
 const governanceNotes=[
-  {
-    title:'Slab gate',
-    copy:'Crossing 70 points opens slab payout. Hitting Slab 1 on at least half the active metrics upgrades the payout to the top slab.'
-  },
-  {
-    title:'Role-specific KPIs',
-    copy:'Only the metrics assigned to calls or chat are counted. The opposite wing does not affect the payout.'
-  },
-  {
-    title:'Ticket rule',
-    copy:'Tickets closed should reflect self-resolved work under the agent, not queue-picked assists.'
-  },
-  {
-    title:'Leave impact',
-    copy:'Planned leave reduces the multiplier, while any unplanned leave blocks both slab and CSAT bonus.'
-  }
+  {title:'Slab gate',           copy:'Crossing 70 points opens slab payout. Hitting Slab 1 on at least half the active metrics upgrades the payout to the top slab.'},
+  {title:'Role-specific KPIs',  copy:'Only the metrics assigned to your team (calls or chat) are counted. The opposite wing does not affect your payout.'},
+  {title:'Ticket rule',         copy:'Tickets closed should reflect self-resolved work under the agent — not queue-picked assists from another agent.'},
+  {title:'Leave impact',        copy:'Planned leave reduces the multiplier tier by tier, while any unplanned leave completely blocks both slab and CSAT bonus.'}
 ];
 
+/* ── STATE ───────────────────────────────────────────── */
 let activeTeam='calls';
 let calcValues={calls:{},chat:{}};
-let csatCalcValues={
-  calls:{score:0,count:0},
-  chat:{score:0,count:0}
-};
+let csatCalcValues={calls:{score:0,count:0},chat:{score:0,count:0}};
 let lastCelebrationKey='miss';
 
-function fmtMoney(v){
-  return '₹'+Math.round(v).toLocaleString();
+/* ── HELPERS ─────────────────────────────────────────── */
+function fmtMoney(v){return '₹'+Math.round(v).toLocaleString();}
+function setAnimatedText(id,txt){
+  const n=document.getElementById(id);
+  if(!n)return;
+  if(n.textContent!==txt){n.textContent=txt;n.classList.remove('value-pop');void n.offsetWidth;n.classList.add('value-pop');}
 }
-
-function setAnimatedText(id,nextText){
-  const node=document.getElementById(id);
-  if(!node)return;
-  if(node.textContent!==nextText){
-    node.textContent=nextText;
-    node.classList.remove('value-pop');
-    void node.offsetWidth;
-    node.classList.add('value-pop');
-  }
+function cloneDefaults(team){const o={};bonusData[team].metrics.forEach(m=>{o[m.key]=0;});return o;}
+function levelFor(m,v){if(v>=m.slab1)return 'slab1';if(v>=m.slab2)return 'slab2';return 'miss';}
+function metricStep(m){return m.unit==='%'?0.1:1;}
+function metricMax(m){return Math.ceil(m.slab1*1.3);}
+function fmtVal(m,v){
+  const s=metricStep(m);const r=s===1?Math.round(v):Math.round(v*10)/10;
+  return (Number.isInteger(r)?String(r):r.toFixed(1).replace(/\.0$/,''))+(m.unit==='%'?'%':'');
 }
-
-function cloneDefaults(team){
-  const next={};
-  bonusData[team].metrics.forEach(m=>{next[m.key]=0;});
-  return next;
+function clampVal(m,v){
+  const max=metricMax(m),s=metricStep(m),n=Number.isFinite(Number(v))?Number(v):0;
+  const r=s===1?Math.round(n):Math.round(n*10)/10;return Math.max(0,Math.min(max,r));
 }
+function teamColor(team){return team==='calls'?'var(--teal)':'var(--orange)';}
 
-function levelFor(metric,value){
-  if(value>=metric.slab1) return 'slab1';
-  if(value>=metric.slab2) return 'slab2';
-  return 'miss';
-}
-
-function metricStep(metric){
-  return metric.unit==='%'?0.1:1;
-}
-
-function metricMax(metric){
-  return Math.ceil(metric.slab1*1.3);
-}
-
-function formatMetricValue(metric,value){
-  const step=metricStep(metric);
-  const rounded=step===1?Math.round(value):Math.round(value*10)/10;
-  const clean=Number.isInteger(rounded)?String(rounded):rounded.toFixed(1).replace(/\.0$/,'');
-  return clean+(metric.unit==='%'?'%':'');
-}
-
-function clampMetricValue(metric,value){
-  const max=metricMax(metric);
-  const step=metricStep(metric);
-  const num=Number.isFinite(Number(value))?Number(value):0;
-  const rounded=step===1?Math.round(num):Math.round(num*10)/10;
-  return Math.max(0,Math.min(max,rounded));
-}
-
-function teamColor(team){
-  return team==='calls'?'var(--calls-soft)':'var(--chat-soft)';
-}
-
+/* ── RENDER: TEAM PANELS ─────────────────────────────── */
 function renderTeamPanels(){
   const host=document.getElementById('team-panels');
   host.innerHTML=['calls','chat'].map(team=>{
-    const data=bonusData[team];
-    return `
-      <article class="team-panel ${data.tone}">
-        <div class="team-top">
-          <div class="team-title">
-            <span class="team-dot ${data.tone}"></span>
-            <div>
-              <h4>${data.title}</h4>
-              <p>${data.blurb}</p>
+    const d=bonusData[team];
+    return `<div class="glass2 team-panel">
+      <div class="team-head">
+        <div class="team-icon ${d.tone}">${d.icon}</div>
+        <div>
+          <div class="team-name">${d.title}</div>
+        </div>
+        <span class="team-badge">${d.chip}</span>
+      </div>
+      <p class="team-blurb">${d.blurb}</p>
+      <div class="metric-list">
+        ${d.metrics.map(m=>`
+          <div class="metric-item">
+            <div class="metric-item-top">
+              <span class="metric-item-name">${m.label}</span>
+              <span class="metric-pts-badge">${m.pts} pts</span>
+            </div>
+            <div class="metric-slabs">
+              <span class="slab-tag s1">S1 &ge; ${m.slab1}${m.unit}</span>
+              <span class="slab-tag s2">S2 &ge; ${m.slab2}${m.unit}</span>
+            </div>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar-fill ${d.tone}" style="width:${Math.min((m.pts/35)*100,100)}%"></div>
             </div>
           </div>
-          <span class="team-chip">${data.chip}</span>
-        </div>
-        <div class="metric-grid">
-          ${data.metrics.map((metric,idx)=>`
-            <div class="metric-card" data-reveal style="--delay:${0.06*(idx+1)}s">
-              <span>${metric.label}</span>
-              <strong>${metric.pts}</strong>
-              <div class="meta">
-                <div>Slab 1 <b>${metric.slab1}${metric.unit}</b></div>
-                <div>Slab 2 <b>${metric.slab2}${metric.unit}</b></div>
-              </div>
-              <div class="bar"><i style="width:${Math.min((metric.pts/35)*100,100)}%"></i></div>
-            </div>
-          `).join('')}
-        </div>
-      </article>
-    `;
+        `).join('')}
+      </div>
+      <div class="csat-note">
+        <strong>CSAT incentive:</strong> ${d.csatThreshold} → ${d.incentive}
+      </div>
+    </div>`;
   }).join('');
 }
 
+/* ── RENDER: ELIGIBILITY ─────────────────────────────── */
 function renderEligibility(){
   const host=document.getElementById('eligibility-grid');
   host.innerHTML=`
-    <div class="eligibility-card blue">
-      <span>Min points to qualify</span>
-      <strong>70</strong>
-      <small>The baseline required before any slab becomes payable.</small>
+    <div class="elig-card blue">
+      <div class="elig-icon">🎯</div>
+      <div class="elig-label">Min points to qualify</div>
+      <div class="elig-value">70</div>
+      <p class="elig-copy">The baseline required before any slab becomes payable.</p>
     </div>
-    <div class="eligibility-card green">
-      <span>Min working days</span>
-      <strong>18</strong>
-      <small>Attendance guardrail expected for payout qualification.</small>
+    <div class="elig-card green">
+      <div class="elig-icon">📅</div>
+      <div class="elig-label">Min working days</div>
+      <div class="elig-value">18</div>
+      <p class="elig-copy">Attendance guardrail expected for payout qualification.</p>
     </div>
-    <div class="eligibility-card orange">
-      <span>Calls CSAT incentive</span>
-      <strong>${bonusData.calls.csatThreshold}</strong>
-      <small>${bonusData.calls.incentive} after crossing the calls threshold.</small>
+    <div class="elig-card orange">
+      <div class="elig-icon">📞</div>
+      <div class="elig-label">Calls CSAT incentive</div>
+      <div class="elig-value" style="font-size:18px">${bonusData.calls.csatThreshold}</div>
+      <p class="elig-copy">${bonusData.calls.incentive} for every qualifying CSAT on the calls team.</p>
     </div>
-    <div class="eligibility-card violet">
-      <span>Chat CSAT incentive</span>
-      <strong>${bonusData.chat.csatThreshold}</strong>
-      <small>${bonusData.chat.incentive} after crossing the chat threshold.</small>
+    <div class="elig-card purple">
+      <div class="elig-icon">💬</div>
+      <div class="elig-label">Chat CSAT incentive</div>
+      <div class="elig-value" style="font-size:18px">${bonusData.chat.csatThreshold}</div>
+      <p class="elig-copy">${bonusData.chat.incentive} for every qualifying CSAT on the chat team.</p>
     </div>
   `;
 }
 
+/* ── RENDER: LEAVE GRID ──────────────────────────────── */
 function renderLeaves(){
   const host=document.getElementById('leave-grid');
   host.innerHTML=leaveRows.map(item=>`
-    <div class="leave-card ${item.tone}">
-      <span>Planned leave</span>
-      <strong>${item.mult}</strong>
-      <small>${item.leaves} leave${item.leaves==='0'?'':'s'} · ${item.copy}</small>
+    <div class="leave-node ${item.tone}">
+      <div class="leave-node-days">${item.leaves}</div>
+      <div class="leave-node-mult">${item.mult}</div>
+      <div class="leave-node-note">${item.copy}</div>
+      <div class="leave-node-bar"></div>
     </div>
   `).join('');
 }
 
+/* ── RENDER: GOVERNANCE ──────────────────────────────── */
 function renderNotes(){
   const host=document.getElementById('notes-grid');
-  host.innerHTML=`
-    ${governanceNotes.map((note,idx)=>`
-      <article class="governance-pointer" data-reveal style="--delay:${0.04*idx}s">
-        <div class="governance-marker">${idx+1}</div>
-        <div class="governance-copy">
-          <strong>${note.title}</strong>
-          <p>${note.copy}</p>
-        </div>
-      </article>
-    `).join('')}
-    <div class="governance-callout">Keep this lane as the quick reference. The slab rules stay compact here so the calculator remains the main focus.</div>
-  `;
+  host.innerHTML=governanceNotes.map((n,i)=>`
+    <div class="gov-item">
+      <div class="gov-num">${i+1}</div>
+      <div class="gov-body">
+        <strong>${n.title}</strong>
+        <p>${n.copy}</p>
+      </div>
+    </div>
+  `).join('')+`<div class="gov-callout">Keep this lane as the quick reference. The slab rules stay compact here so the calculator remains the main focus.</div>`;
 }
 
+/* ── RENDER: CALCULATOR ──────────────────────────────── */
 function ensureState(){
-  if(!calcValues.calls||!Object.keys(calcValues.calls).length) calcValues.calls=cloneDefaults('calls');
-  if(!calcValues.chat||!Object.keys(calcValues.chat).length) calcValues.chat=cloneDefaults('chat');
+  if(!calcValues.calls||!Object.keys(calcValues.calls).length)calcValues.calls=cloneDefaults('calls');
+  if(!calcValues.chat||!Object.keys(calcValues.chat).length)calcValues.chat=cloneDefaults('chat');
 }
 
 function renderCalc(){
   ensureState();
   const host=document.getElementById('calc-list');
-  const data=bonusData[activeTeam];
-  host.innerHTML=data.metrics.map(metric=>{
-    const value=calcValues[activeTeam][metric.key]||0;
-    const status=levelFor(metric,value);
-    const max=metricMax(metric);
+  const d=bonusData[activeTeam];
+  host.innerHTML=d.metrics.map(m=>{
+    const v=calcValues[activeTeam][m.key]||0;
+    const status=levelFor(m,v);
+    const max=metricMax(m);
+    const pct=max>0?(v/max)*100:0;
     const statusLabel=status==='slab1'?'Slab 1':status==='slab2'?'Slab 2':'Miss';
-    return `
-      <div class="calc-row ${data.tone}" data-key="${metric.key}">
-        <div class="calc-head">
-          <div class="calc-label">${metric.label}</div>
-          <div class="calc-head-actions">
-            <label class="calc-direct">
-              <span>Value</span>
-              <input class="calc-direct-input" type="number" min="0" max="${max}" step="${metricStep(metric)}" value="${value}" data-key="${metric.key}">
-              <em>${metric.unit==='%'?'%':''}</em>
-            </label>
-            <span class="calc-status ${status}">${statusLabel}</span>
-          </div>
-        </div>
-        <div class="calc-range">
-          <div class="calc-bubble">${formatMetricValue(metric,value)}</div>
-          <div class="calc-rail"></div>
-          <div class="calc-fill"></div>
-          <input class="calc-range-input" type="range" min="0" max="${max}" step="${metricStep(metric)}" value="${value}" data-team="${activeTeam}" data-key="${metric.key}">
-        </div>
-        <div class="calc-meta">
-          <div>Slab 1 <strong>${metric.slab1}${metric.unit}</strong></div>
-          <div>Slab 2 <strong>${metric.slab2}${metric.unit}</strong></div>
-          <div class="calc-current">Current <strong>${formatMetricValue(metric,value)}</strong></div>
-        </div>
+    const teamCls=activeTeam;
+    return `<div class="calc-metric" data-key="${m.key}">
+      <div class="calc-metric-top">
+        <span class="calc-metric-name">${m.label}</span>
+        <input class="calc-metric-input" type="number" min="0" max="${max}" step="${metricStep(m)}"
+          value="${v}" data-key="${m.key}"
+          oninput="onDirectInput(this,'${m.key}')">
+        <span class="calc-status-pill ${status}">${statusLabel}</span>
       </div>
-    `;
+      <div class="calc-range-wrap" style="padding-bottom:18px;">
+        <div class="calc-rail">
+          <div class="calc-fill ${teamCls}" id="fill_${m.key}" style="width:${pct}%"></div>
+        </div>
+        <span class="calc-bubble ${teamCls}" id="bubble_${m.key}" style="left:${pct}%">${fmtVal(m,v)}</span>
+        <input class="calc-range-input ${teamCls}" type="range" min="0" max="${max}" step="${metricStep(m)}"
+          value="${v}" data-key="${m.key}"
+          oninput="onSlider(this,'${m.key}')">
+      </div>
+      <div style="display:flex;gap:8px;">
+        <span class="slab-tag s1">S1 &ge; ${m.slab1}${m.unit}</span>
+        <span class="slab-tag s2">S2 &ge; ${m.slab2}${m.unit}</span>
+        <span style="margin-left:auto;font-size:10px;color:var(--dim);font-family:'JetBrains Mono',monospace;">${m.pts} pts</span>
+      </div>
+    </div>`;
   }).join('');
-  host.querySelectorAll('.calc-range-input').forEach(input=>{
-    input.addEventListener('input',e=>{
-      const key=e.target.dataset.key;
-      setMetricValue(key,e.target.value);
-    });
-  });
-  host.querySelectorAll('.calc-direct-input').forEach(input=>{
-    input.addEventListener('input',e=>{
-      const key=e.target.dataset.key;
-      setMetricValue(key,e.target.value);
-    });
-    input.addEventListener('change',e=>{
-      const key=e.target.dataset.key;
-      setMetricValue(key,e.target.value);
-    });
-  });
-  data.metrics.forEach(metric=>syncMetricRow(metric));
-  updateCalcTabs();
-  renderCsatCalc();
+  renderCsatSection();
+  recalc();
 }
 
-function syncMetricRow(metric){
-  const row=document.querySelector(`.calc-row[data-key="${metric.key}"]`);
-  if(!row)return;
-  const value=calcValues[activeTeam][metric.key]||0;
-  const status=levelFor(metric,value);
-  const statusLabel=status==='slab1'?'Slab 1':status==='slab2'?'Slab 2':'Miss';
-  const pct=Math.max(0,Math.min(100,(value/metricMax(metric))*100));
-  const bubbleLeft=Math.max(4,Math.min(96,pct));
-  const display=formatMetricValue(metric,value);
-  const range=row.querySelector('.calc-range-input');
-  const number=row.querySelector('.calc-direct-input');
-  const fill=row.querySelector('.calc-fill');
-  const bubble=row.querySelector('.calc-bubble');
-  const current=row.querySelector('.calc-current strong');
-  const badge=row.querySelector('.calc-status');
-  if(range&&String(range.value)!==String(value))range.value=value;
-  if(number&&String(number.value)!==String(value))number.value=value;
-  if(fill)fill.style.width=pct+'%';
-  if(bubble){bubble.textContent=display;bubble.style.left=bubbleLeft+'%';}
-  if(current)current.textContent=display;
-  if(badge){
-    badge.className='calc-status '+status;
-    badge.textContent=statusLabel;
-  }
-}
-
-function setMetricValue(key,nextValue){
-  const metric=bonusData[activeTeam].metrics.find(m=>m.key===key);
-  if(!metric)return;
-  calcValues[activeTeam][key]=clampMetricValue(metric,nextValue);
-  syncMetricRow(metric);
-  computeBonus();
-}
-
-function formatCsatValue(kind,value){
-  const num=kind==='score'?Math.round(value*10)/10:Math.round(value);
-  const clean=Number.isInteger(num)?String(num):num.toFixed(1).replace(/\.0$/,'');
-  return kind==='score'?clean+'%':clean;
-}
-
-function csatMax(kind){
-  return kind==='score'?100:250;
-}
-
-function syncCsatControl(kind){
-  const control=document.querySelector(`.csat-control[data-kind="${kind}"]`);
-  if(!control)return;
-  const value=csatCalcValues[activeTeam][kind]||0;
-  const max=csatMax(kind);
-  const pct=Math.max(0,Math.min(100,(value/max)*100));
-  const bubbleLeft=Math.max(4,Math.min(96,pct));
-  const display=formatCsatValue(kind,value);
-  const range=control.querySelector('.csat-range-input');
-  const number=control.querySelector('.csat-direct-input');
-  const fill=control.querySelector('.calc-fill');
-  const bubble=control.querySelector('.calc-bubble');
-  const current=control.querySelector('.csat-live-value');
-  if(range&&String(range.value)!==String(value))range.value=value;
-  if(number&&String(number.value)!==String(value))number.value=value;
-  if(fill)fill.style.width=pct+'%';
-  if(bubble){bubble.textContent=display;bubble.style.left=bubbleLeft+'%';}
-  if(current)current.textContent=display;
-}
-
-function setCsatValue(kind,nextValue){
-  const raw=Number.isFinite(Number(nextValue))?Number(nextValue):0;
-  const value=kind==='score'?Math.round(raw*10)/10:Math.round(raw);
-  csatCalcValues[activeTeam][kind]=Math.max(0,Math.min(csatMax(kind),value));
-  syncCsatControl(kind);
-  computeBonus();
-}
-
-function bindCsatControls(){
-  document.querySelectorAll('.csat-range-input').forEach(input=>{
-    input.addEventListener('input',e=>{
-      setCsatValue(e.target.dataset.kind,e.target.value);
-    });
-  });
-  document.querySelectorAll('.csat-direct-input').forEach(input=>{
-    input.addEventListener('input',e=>{
-      setCsatValue(e.target.dataset.kind,e.target.value);
-    });
-    input.addEventListener('change',e=>{
-      setCsatValue(e.target.dataset.kind,e.target.value);
-    });
-  });
-  syncCsatControl('score');
-  syncCsatControl('count');
-}
-
-function updateCalcTabs(){
-  document.querySelectorAll('.calc-tab').forEach(btn=>{
-    const match=btn.dataset.team===activeTeam;
-    btn.classList.toggle('active',match);
-    btn.classList.toggle('calls',btn.dataset.team==='calls');
-    btn.classList.toggle('chat',btn.dataset.team==='chat');
-  });
-}
-
-function leaveMultiplier(planned,unplanned){
-  if(unplanned) return 0;
-  if(planned===0) return 1;
-  if(planned<=2) return 0.75;
-  if(planned===3) return 0.5;
-  return 0;
-}
-
-function leaveDescriptor(planned,unplanned){
-  if(unplanned){
-    return {
-      label:'Blocked',
-      multiplier:'0%',
-      copy:'Unplanned leave blocks both slab and CSAT payout for the month.'
-    };
-  }
-  if(planned===0){
-    return {
-      label:'0 leaves',
-      multiplier:'100%',
-      copy:'Full payout multiplier retained.'
-    };
-  }
-  if(planned<=2){
-    return {
-      label:'1-2 leaves',
-      multiplier:'75%',
-      copy:'Reduced multiplier, but the bonus run is still alive.'
-    };
-  }
-  if(planned===3){
-    return {
-      label:'3 leaves',
-      multiplier:'50%',
-      copy:'Half payout only if the slab is still achieved.'
-    };
-  }
-  return {
-    label:'4+ leaves',
-    multiplier:'0%',
-    copy:'Too many planned leaves for a payout under the current policy.'
-  };
-}
-
-function updateLeaveControls(planned,unplanned){
-  const descriptor=leaveDescriptor(planned,unplanned);
-  const leaveBand=document.getElementById('leaveBandLabel');
-  const previewMultiplier=document.getElementById('leavePreviewMultiplier');
-  const previewCopy=document.getElementById('leavePreviewCopy');
-  const attendanceCard=document.getElementById('attendanceControl');
-  const attendanceBadge=document.getElementById('attendanceBadge');
-  const attendanceStateLabel=document.getElementById('attendanceStateLabel');
-  const attendanceStateCopy=document.getElementById('attendanceStateCopy');
-  if(leaveBand){
-    leaveBand.textContent=descriptor.label;
-    leaveBand.classList.toggle('glow',!unplanned&&planned<=2);
-  }
-  if(previewMultiplier) previewMultiplier.textContent=descriptor.multiplier;
-  if(previewCopy) previewCopy.textContent=descriptor.copy;
-  if(attendanceCard) attendanceCard.classList.toggle('is-alert',unplanned);
-  if(attendanceBadge) attendanceBadge.textContent=unplanned?'Bonus blocked':'Attendance clear';
-  if(attendanceStateLabel) attendanceStateLabel.textContent=unplanned?'Bonus runway interrupted':'Bonus runway is clean';
-  if(attendanceStateCopy){
-    attendanceStateCopy.textContent=unplanned
-      ? 'Any unplanned leave removes slab and CSAT eligibility until the next cycle.'
-      : 'No attendance block right now. Both slab payout and CSAT incentive stay eligible.';
-  }
-}
-
-function triggerCelebration(kind){
-  const layer=document.getElementById('celebrationLayer');
-  if(!layer)return;
-  const palette=kind==='Slab 1'
-    ? ['#7ef3cd','#25dca1','#d4caff','#69b7ff','#ffffff']
-    : ['#ffd18f','#ff9d34','#7ef3cd','#d4caff','#ffffff'];
-  layer.innerHTML='';
-  for(let i=0;i<3;i++){
-    const ring=document.createElement('span');
-    ring.className='signal-ring';
-    ring.style.borderColor=palette[i%palette.length];
-    ring.style.animationDelay=`${i*0.12}s`;
-    layer.appendChild(ring);
-  }
-  for(let i=0;i<12;i++){
-    const spark=document.createElement('span');
-    spark.className='signal-spark';
-    spark.style.setProperty('--angle',`${i*30}deg`);
-    spark.style.setProperty('--spark-color',palette[i%palette.length]);
-    spark.style.animationDelay=`${0.08+(i*0.02)}s`;
-    layer.appendChild(spark);
-  }
-  window.setTimeout(()=>{
-    if(layer) layer.innerHTML='';
-  },1300);
-}
-
-function updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned){
-  const banner=document.getElementById('unlockBanner');
-  const title=document.getElementById('unlockBannerTitle');
-  const copy=document.getElementById('unlockBannerCopy');
-  const orb=document.getElementById('unlockOrb');
-  const celebrationKey=slab==='Slab 1'||slab==='Slab 2'?`${activeTeam}-${slab}-${finalBonus}-${unplanned}`:'miss';
-  if(banner){
-    banner.classList.toggle('live',slab==='Slab 1'||slab==='Slab 2');
-  }
-  if(orb){
-    orb.textContent=slab==='Slab 1'?'S1':slab==='Slab 2'?'S2':unplanned?'OFF':'RUN';
-  }
-  if(unplanned){
-    title.textContent='Attendance override engaged';
-    copy.textContent='The celebration is paused because an unplanned leave blocks both slab payout and CSAT incentive.';
-  }else if(slab==='Slab 1'){
-    title.textContent='Slab 1 is live';
-    copy.textContent=`Top slab unlocked at ${fmtMoney(finalBonus)}. Enough active metrics are now clearing Slab 1 to move the payout into the highest tier.`;
-  }else if(slab==='Slab 2'){
-    title.textContent='Slab 2 is unlocked';
-    copy.textContent=`Current payout track is ${fmtMoney(finalBonus)}. You are bonus-eligible on points; push more metrics into Slab 1 to upgrade the payout.`;
-  }else if(eligible && !allMetricsAtSlab2){
-    title.textContent='Points are ready';
-    copy.textContent=`You already have ${total} points. The bonus lane is open, and more Slab 1 hits will raise the payout tier.`;
-  }else if(!eligible){
-    title.textContent='Build the runway';
-    copy.textContent='The payout animation will light up once the score crosses 70 points. Slab 1 coverage then decides whether you stay on Slab 2 or upgrade.';
-  }else{
-    title.textContent='Hold the line';
-    copy.textContent=allMetricsAtSlab1
-      ? 'Everything is aligned for the top slab.'
-      : 'Hold the score above 70 and stack more Slab 1 hits to move up.';
-  }
-  if(celebrationKey!=='miss' && celebrationKey!==lastCelebrationKey){
-    triggerCelebration(slab);
-  }
-  lastCelebrationKey=celebrationKey;
-}
-
-function updatePayoutSummary(slabBonus,csatBonus,unplanned){
-  const totalPayout=slabBonus+csatBonus;
-  const payoutCard=document.getElementById('payoutCard');
-  if(payoutCard){
-    payoutCard.classList.toggle('live',totalPayout>0);
-  }
-  setAnimatedText('slabBonusLine',fmtMoney(slabBonus));
-  setAnimatedText('csatBonusLine',fmtMoney(csatBonus));
-  setAnimatedText('totalPayout',fmtMoney(totalPayout));
-  if(unplanned){
-    document.getElementById('payoutStatus').textContent='Attendance override blocked both slab and CSAT payout';
-  }else if(slabBonus>0 && csatBonus>0){
-    document.getElementById('payoutStatus').textContent='Slab and CSAT are both contributing to this payout';
-  }else if(csatBonus>0){
-    document.getElementById('payoutStatus').textContent='CSAT bonus is active independently of the slab payout';
-  }else if(slabBonus>0){
-    document.getElementById('payoutStatus').textContent='Slab payout is active. CSAT stays pending until the threshold clears.';
-  }else{
-    document.getElementById('payoutStatus').textContent='No slab or CSAT payout unlocked yet';
-  }
-}
-
-function renderCsatCalc(){
+function renderCsatSection(){
   const host=document.getElementById('csat-shell');
-  const data=bonusData[activeTeam];
-  const csat=csatCalcValues[activeTeam];
-  const thresholdLabel=data.csatThreshold.replace('CSAT ','');
-  const countLabel=activeTeam==='calls'?'Good CSAT count':'Happy CSAT count';
-  const perRate=activeTeam==='calls'?150:50;
-  host.className='csat-shell '+data.tone;
-  host.innerHTML=`
-    <h4>CSAT Incentive Calculator</h4>
-    <p>${data.title} pays ${data.incentive}. Clear <strong>${data.csatThreshold}</strong> and keep attendance clean. This incentive stays independent from the slab payout.</p>
-    <div class="csat-grid">
-      <div class="csat-control" data-kind="score">
-        <div class="calc-head">
-          <span>Current CSAT</span>
-          <label class="calc-direct">
-            <span>Value</span>
-            <input class="csat-direct-input" type="number" min="0" max="100" step="0.1" value="${csat.score}" data-kind="score">
-            <em>%</em>
-          </label>
-        </div>
-        <strong class="csat-live-value">${formatCsatValue('score',csat.score)}</strong>
-        <div class="calc-range">
-          <div class="calc-bubble">${formatCsatValue('score',csat.score)}</div>
-          <div class="calc-rail"></div>
-          <div class="calc-fill"></div>
-          <input class="csat-range-input" type="range" min="0" max="100" step="0.1" value="${csat.score}" data-kind="score">
-        </div>
-        <div class="csat-meta"><div>Threshold</div><div><strong>${thresholdLabel}</strong></div></div>
+  const d=bonusData[activeTeam];
+  const cv=csatCalcValues[activeTeam];
+  const teamCls=activeTeam;
+  const accentBig=activeTeam==='calls'?'':'chat';
+  host.innerHTML=`<div class="csat-section ${teamCls}">
+    <div class="csat-title">CSAT Incentive — ${d.csatThreshold}</div>
+    <div class="csat-inputs">
+      <div class="csat-field">
+        <label>CSAT score %</label>
+        <span class="csat-big ${accentBig}" id="csatScoreDisplay">${cv.score||0}%</span>
+        <input class="csat-slider ${teamCls}" type="range" min="0" max="100" step="0.1"
+          value="${cv.score||0}" oninput="onCsatSlider(this,'score')">
       </div>
-      <div class="csat-control" data-kind="count">
-        <div class="calc-head">
-          <span>${countLabel}</span>
-          <label class="calc-direct">
-            <span>Value</span>
-            <input class="csat-direct-input" type="number" min="0" max="250" step="1" value="${csat.count}" data-kind="count">
-            <em></em>
-          </label>
-        </div>
-        <strong class="csat-live-value">${formatCsatValue('count',csat.count)}</strong>
-        <div class="calc-range">
-          <div class="calc-bubble">${formatCsatValue('count',csat.count)}</div>
-          <div class="calc-rail"></div>
-          <div class="calc-fill"></div>
-          <input class="csat-range-input" type="range" min="0" max="250" step="1" value="${csat.count}" data-kind="count">
-        </div>
-        <div class="csat-meta"><div>Per rating</div><div><strong>₹${perRate}</strong></div></div>
+      <div class="csat-field">
+        <label>Happy CSAT count</label>
+        <span class="csat-big ${accentBig}" id="csatCountDisplay">${cv.count||0}</span>
+        <input class="csat-direct-input" type="number" min="0" step="1"
+          value="${cv.count||0}" oninput="onCsatCount(this)"
+          placeholder="0">
       </div>
     </div>
-	    <div class="csat-inline">
-	      <strong id="csatEligibility">Miss</strong>
-	      <small id="csatEligibilityNote">Raise CSAT above the threshold to unlock the incentive.</small>
-	    </div>
-	  `;
-  bindCsatControls();
-  computeCsatBonus();
+    <div class="csat-result-row">
+      <span>Estimated CSAT bonus</span>
+      <strong id="csatBonusPreview">₹0</strong>
+    </div>
+  </div>`;
 }
 
-function computeCsatBonus(){
-  const data=bonusData[activeTeam];
-  const csat=csatCalcValues[activeTeam];
-  const unplanned=document.getElementById('unplannedLeave').checked;
-  const threshold=activeTeam==='calls'?92:85;
-  const perRate=activeTeam==='calls'?150:50;
-  const thresholdMet=csat.score>threshold;
-  const bonus=!unplanned&&thresholdMet?csat.count*perRate:0;
-  const elig=document.getElementById('csatEligibility');
-  const eligNote=document.getElementById('csatEligibilityNote');
-  if(!elig||!eligNote)return { bonus:0, thresholdMet:false, blocked:unplanned };
+/* ── SLIDER / INPUT EVENTS ───────────────────────────── */
+function onSlider(el,key){
+  const m=bonusData[activeTeam].metrics.find(x=>x.key===key);
+  if(!m)return;
+  const v=clampVal(m,el.value);
+  calcValues[activeTeam][key]=v;
+  // sync number input
+  const ni=document.querySelector(`.calc-metric-input[data-key="${key}"]`);
+  if(ni)ni.value=v;
+  updateSliderVisuals(m,v,key);
+  updateMetricStatus(m,v,key);
+  recalc();
+}
 
+function onDirectInput(el,key){
+  const m=bonusData[activeTeam].metrics.find(x=>x.key===key);
+  if(!m)return;
+  const v=clampVal(m,el.value);
+  calcValues[activeTeam][key]=v;
+  // sync range
+  const ri=document.querySelector(`.calc-range-input[data-key="${key}"]`);
+  if(ri)ri.value=v;
+  updateSliderVisuals(m,v,key);
+  updateMetricStatus(m,v,key);
+  recalc();
+}
+
+function updateSliderVisuals(m,v,key){
+  const max=metricMax(m);
+  const pct=max>0?(v/max)*100:0;
+  const fill=document.getElementById('fill_'+key);
+  const bubble=document.getElementById('bubble_'+key);
+  if(fill)fill.style.width=pct+'%';
+  if(bubble){bubble.style.left=pct+'%';bubble.textContent=fmtVal(m,v);}
+}
+
+function updateMetricStatus(m,v,key){
+  const status=levelFor(m,v);
+  const label=status==='slab1'?'Slab 1':status==='slab2'?'Slab 2':'Miss';
+  const pill=document.querySelector(`.calc-metric[data-key="${key}"] .calc-status-pill`);
+  if(pill){pill.className='calc-status-pill '+status;pill.textContent=label;}
+}
+
+function onCsatSlider(el,field){
+  csatCalcValues[activeTeam][field]=Number(el.value);
+  const disp=document.getElementById('csatScoreDisplay');
+  if(disp)disp.textContent=Number(el.value).toFixed(1)+'%';
+  recalc();
+}
+
+function onCsatCount(el){
+  csatCalcValues[activeTeam].count=Math.max(0,Math.round(Number(el.value)||0));
+  recalc();
+}
+
+function onLeaveChange(){recalc();}
+
+/* ── SWITCH TEAM TAB ─────────────────────────────────── */
+function switchCalcTeam(team,el){
+  activeTeam=team;
+  document.querySelectorAll('.calc-team-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderCalc();
+}
+
+/* ── RECALC ──────────────────────────────────────────── */
+function recalc(){
+  ensureState();
+  const d=bonusData[activeTeam];
+  const vals=calcValues[activeTeam];
+  const leaveVal=document.getElementById('plannedLeaves')?.value||'0';
+  const unplanned=document.getElementById('unplannedLeave')?.checked||false;
+
+  // multiplier
+  let mult=1;
+  if(unplanned){mult=0;}
+  else if(leaveVal==='1'){mult=0.75;}
+  else if(leaveVal==='2'){mult=0.75;}
+  else if(leaveVal==='3'){mult=0.5;}
+  else if(leaveVal==='4'){mult=0;}
+
+  // update leave UI
+  const multPct=Math.round(mult*100)+'%';
+  const multCopy=mult===1?'Full payout multiplier retained.':mult===0?'No payout — blocked by leave policy.':'Reduced multiplier — payout is proportional.';
+  const leaveLabel=leaveVal==='0'?'0 leaves':leaveVal==='1'?'1 leave':leaveVal==='2'?'2 leaves':leaveVal==='3'?'3 leaves':'4+ leaves';
+  setAnimatedText('leavePreviewMultiplier',multPct);
+  const copy=document.getElementById('leavePreviewCopy');if(copy)copy.textContent=multCopy;
+  const bandLabel=document.getElementById('leaveBandLabel');if(bandLabel)bandLabel.textContent=leaveLabel;
+
+  // attendance UI
+  const attBadge=document.getElementById('attendanceBadge');
+  const attLabel=document.getElementById('attendanceStateLabel');
+  const attCopy=document.getElementById('attendanceStateCopy');
   if(unplanned){
-    setAnimatedText('csatEligibility','Blocked');
-    eligNote.textContent='Unplanned leave removes CSAT incentive eligibility.';
-    return { bonus:0, thresholdMet:false, blocked:true };
-  }
-
-  if(thresholdMet){
-    setAnimatedText('csatEligibility','Unlocked');
-    eligNote.textContent='CSAT threshold cleared. Rating count now drives the incentive.';
-    return { bonus, thresholdMet:true, blocked:false };
+    if(attBadge){attBadge.textContent='Blocked';attBadge.style.color='var(--red)';}
+    if(attLabel)attLabel.textContent='Bonus eligibility is blocked';
+    if(attCopy)attCopy.textContent='Unplanned leave removes both slab payout and CSAT incentive for this period.';
   }else{
-    setAnimatedText('csatEligibility','Miss');
-    eligNote.textContent=`Need above ${threshold}% to unlock this incentive.`;
-    return { bonus:0, thresholdMet:false, blocked:false };
+    if(attBadge){attBadge.textContent='Attendance clear';attBadge.style.color='';}
+    if(attLabel)attLabel.textContent='Bonus runway is clean';
+    if(attCopy)attCopy.textContent='No attendance block. Both slab payout and CSAT incentive stay eligible.';
   }
-}
 
-function computeBonus(){
-  const data=bonusData[activeTeam];
-  const planned=Number(document.getElementById('plannedLeaves').value||0);
-  const unplanned=document.getElementById('unplannedLeave').checked;
-  const values=calcValues[activeTeam];
-
-  let total=0;
-  let slab1Hits=0;
-  let slab2Hits=0;
-  let missCount=0;
-
-  data.metrics.forEach(metric=>{
-    const value=values[metric.key]||0;
-    const level=levelFor(metric,value);
-    if(level==='slab1'){
-      total+=metric.pts;
-      slab1Hits++;
-      slab2Hits++;
-    }else if(level==='slab2'){
-      total+=metric.pts;
-      slab2Hits++;
-    }else{
-      missCount++;
-    }
+  // points
+  let totalPts=0;let slab1Hits=0;let slab2Hits=0;
+  d.metrics.forEach(m=>{
+    const v=vals[m.key]||0;
+    const lvl=levelFor(m,v);
+    if(lvl==='slab1'){totalPts+=m.pts;slab1Hits++;slab2Hits++;}
+    else if(lvl==='slab2'){totalPts+=m.pts;slab2Hits++;}
   });
 
-  const eligible=total>=70&&!unplanned;
-  const multiplier=leaveMultiplier(planned,unplanned);
-  const allMetricsAtSlab2=slab2Hits===data.metrics.length;
-  const allMetricsAtSlab1=slab1Hits===data.metrics.length;
-  const slab1Requirement=Math.ceil(data.metrics.length/2);
-  const slab1CoverageMet=slab1Hits>=slab1Requirement;
-  let slab='Miss';
-  let baseBonus=0;
-  if(eligible){
-    if(slab1CoverageMet){
-      slab='Slab 1';
-      baseBonus=7500;
-    }else{
-      slab='Slab 2';
-      baseBonus=3000;
-    }
+  const minSlab1=Math.ceil(d.metrics.length/2);
+  const qualifies=totalPts>=70&&mult>0;
+  let slabBonus=0;let activeSlab='Miss';
+  if(qualifies){
+    if(slab1Hits>=minSlab1){slabBonus=7500*mult;activeSlab='Slab 1';}
+    else if(slab2Hits>=d.metrics.length){slabBonus=3000*mult;activeSlab='Slab 2';}
+    else if(slab2Hits>0){slabBonus=3000*mult;activeSlab='Slab 2';}
   }
-  const finalBonus=Math.round(baseBonus*multiplier);
-  const csatSummary=computeCsatBonus();
 
-  setAnimatedText('totalPoints',String(total));
-  setAnimatedText('slab2Hits',slab1Hits+' / '+slab1Requirement);
-  setAnimatedText('activeSlab',slab);
-  document.getElementById('leaveMultiplier').textContent='Leave multiplier '+Math.round(multiplier*100)+'%';
-  document.getElementById('slabRule').textContent=slab1CoverageMet?'Top slab unlocked on slab 1 coverage':'Need '+slab1Requirement+' slab 1 hits for the top slab';
-  updatePayoutSummary(finalBonus,csatSummary.bonus,unplanned);
-  updateLeaveControls(planned,unplanned);
-  updateUnlockBanner(slab,finalBonus,total,eligible,allMetricsAtSlab2,allMetricsAtSlab1,unplanned);
+  // CSAT
+  const cv=csatCalcValues[activeTeam];
+  const csatThresh=activeTeam==='calls'?92:85;
+  const csatPerUnit=activeTeam==='calls'?150:50;
+  let csatBonus=0;
+  if(!unplanned&&cv.score>=csatThresh&&cv.count>0){
+    csatBonus=cv.count*csatPerUnit*mult;
+  }
 
-  if(unplanned){
-    document.getElementById('totalStatus').textContent='Unplanned leave removes eligibility';
-  }else if(total<70){
-    document.getElementById('totalStatus').textContent='Minimum 70 points needed';
-  }else if(slab==='Slab 1'){
-    document.getElementById('totalStatus').textContent='Eligible on points and metrics';
-  }else if(slab==='Slab 2'){
-    document.getElementById('totalStatus').textContent='Eligible on points. Clear more slab 1 hits to upgrade.';
+  const totalPayout=slabBonus+csatBonus;
+  const celebKey=qualifies?activeSlab.toLowerCase().replace(' ',''):'miss';
+
+  // Update DOM
+  setAnimatedText('totalPoints',String(totalPts));
+  setAnimatedText('totalStatus',totalPts>=70?'Points gate cleared — checking slabs…':'Minimum 70 points needed');
+  setAnimatedText('totalPayout',fmtMoney(totalPayout));
+  setAnimatedText('payoutStatus',totalPayout>0?`${activeSlab} × ${multPct} multiplier`:'No slab or CSAT payout unlocked yet');
+  setAnimatedText('slabBonusLine',fmtMoney(slabBonus));
+  setAnimatedText('csatBonusLine',fmtMoney(csatBonus));
+  setAnimatedText('slab2Hits',`${slab1Hits} / ${d.metrics.length}`);
+  setAnimatedText('slabRule',`Need ${minSlab1}+ Slab 1 hits for top slab`);
+  setAnimatedText('activeSlab',activeSlab);
+  setAnimatedText('leaveMultiplier',`Leave multiplier ${multPct}`);
+
+  // Payout card
+  const payoutCard=document.getElementById('payoutCard');
+  if(payoutCard){
+    payoutCard.classList.toggle('active-green',totalPayout>0);
+  }
+
+  // Pulse banner
+  const banner=document.getElementById('unlockBanner');
+  const orb=document.getElementById('unlockOrb');
+  const bannerTitle=document.getElementById('unlockBannerTitle');
+  const bannerCopy=document.getElementById('unlockBannerCopy');
+  if(activeSlab==='Slab 1'){
+    if(banner)banner.classList.add('active');
+    if(orb)orb.textContent='🔥';
+    if(bannerTitle)bannerTitle.textContent='Slab 1 unlocked!';
+    if(bannerCopy)bannerCopy.textContent=`You're earning the top bonus. Keep every metric above Slab 1.`;
+  }else if(activeSlab==='Slab 2'){
+    if(banner)banner.classList.add('active');
+    if(orb)orb.textContent='⚡';
+    if(bannerTitle)bannerTitle.textContent='Slab 2 active';
+    if(bannerCopy)bannerCopy.textContent='Push more metrics to Slab 1 to unlock the top payout.';
   }else{
-    document.getElementById('totalStatus').textContent='No slab unlocked yet';
+    if(banner)banner.classList.remove('active');
+    if(orb)orb.textContent='🎯';
+    if(bannerTitle)bannerTitle.textContent='Hold the line';
+    if(bannerCopy)bannerCopy.textContent='Clear every active metric at Slab 2 to ignite the payout pulse.';
   }
+
+  // CSAT preview
+  const csatPreview=document.getElementById('csatBonusPreview');
+  if(csatPreview)csatPreview.textContent=fmtMoney(csatBonus);
+
+  // Celebration
+  if(celebKey!==lastCelebrationKey&&(celebKey==='slab1'||celebKey==='slab2')){
+    celebrate();lastCelebrationKey=celebKey;
+  }else if(celebKey==='miss'){lastCelebrationKey='miss';}
 }
 
-function bindCalcTabs(){
-  document.querySelectorAll('.calc-tab').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      activeTeam=btn.dataset.team;
-      renderCalc();
-      computeBonus();
-    });
-  });
+/* ── CONFETTI ─────────────────────────────────────────── */
+function celebrate(){
+  const layer=document.getElementById('celebrationLayer');
+  if(!layer)return;
+  const colors=['#f28820','#0687be','#22d3a0','#a78bfa','#f9a84d','#38b6e0'];
+  for(let i=0;i<60;i++){
+    const el=document.createElement('div');
+    el.style.cssText=`position:absolute;width:8px;height:8px;border-radius:${Math.random()>0.5?'50%':'2px'};
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      left:${Math.random()*100}vw;top:-10px;
+      animation:confettiFall ${1.5+Math.random()*2}s ease-in ${Math.random()*0.8}s forwards;
+      opacity:0;`;
+    layer.appendChild(el);
+  }
+  if(!document.getElementById('confettiKF')){
+    const s=document.createElement('style');s.id='confettiKF';
+    s.textContent=`@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(100vh) rotate(${360+Math.random()*360}deg);}}`;
+    document.head.appendChild(s);
+  }
+  setTimeout(()=>{layer.innerHTML='';},4000);
 }
 
-function wireControls(){
-  document.getElementById('plannedLeaves').addEventListener('change',computeBonus);
-  document.getElementById('unplannedLeave').addEventListener('change',computeBonus);
+/* ── INIT ─────────────────────────────────────────────── */
+function init(){
+  renderTeamPanels();
+  renderEligibility();
+  renderLeaves();
+  renderCalc();
+  renderNotes();
+
+  // Reveal observer
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+  },{threshold:.08});
+  document.querySelectorAll('[data-reveal]').forEach(el=>obs.observe(el));
 }
 
-function hydrateLogo(){
-  try{
-    if(window.parent&&window.parent!==window){
-      const parentLogo=window.parent.document.querySelector('.hdr-logo-adit');
-      const src=parentLogo&&parentLogo.getAttribute('src');
-      if(src){
-        const logo=document.getElementById('brandLogo');
-        const fallback=document.getElementById('brandFallback');
-        logo.onload=()=>{logo.style.display='block';fallback.style.display='none';};
-        logo.src=src;
-      }
-    }
-  }catch(e){}
-}
-
-renderTeamPanels();
-renderEligibility();
-renderLeaves();
-renderNotes();
-renderCalc();
-bindCalcTabs();
-  wireControls();
-  computeBonus();
-  hydrateLogo();
-
-  /* ── Reveal observer ── */
-  const revealIO = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        e.target.classList.add('visible');
-        revealIO.unobserve(e.target);
-      }
-    });
-  },{threshold:0.08});
-  document.querySelectorAll('[data-reveal]').forEach(el=>{
-    // honour custom delay from inline style
-    revealIO.observe(el);
-  });
+document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
 </html>
