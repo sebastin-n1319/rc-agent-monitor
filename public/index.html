@@ -4046,6 +4046,7 @@ footer{
 }
 #loginScreen .google-btn-host.gis-ready{
   display:flex !important;
+  box-shadow:0 0 0 1px rgba(66,133,244,.35), 0 4px 20px rgba(66,133,244,.18), 0 1px 4px rgba(0,0,0,.45) !important;
 }
 #loginScreen .google-btn-host > div{
   width:100% !important;
@@ -4056,30 +4057,6 @@ footer{
   min-height:52px !important;
   pointer-events:auto !important;
 }
-/* Remembered user pill — shown above GIS button when user was here before */
-#loginScreen .gfb-pill{
-  display:none;
-  align-items:center;
-  gap:10px;
-  background:rgba(255,255,255,.06) !important;
-  border:1px solid rgba(255,255,255,.1) !important;
-  border-radius:10px !important;
-  padding:10px 14px !important;
-  margin-bottom:14px !important;
-  color:#d4dff0 !important;
-  font-size:13px !important;
-  line-height:1.35 !important;
-}
-#loginScreen .gfb-pill.visible{ display:flex !important; }
-#loginScreen .gfb-pill-avatar{
-  width:32px !important;height:32px !important;
-  border-radius:50% !important;flex-shrink:0 !important;
-  border:1.5px solid rgba(255,255,255,.25) !important;
-  object-fit:cover !important;
-}
-#loginScreen .gfb-pill-text{ flex:1; min-width:0; overflow:hidden; }
-#loginScreen .gfb-pill-name{ font-weight:600; color:#e8edf8 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#loginScreen .gfb-pill-hint{ font-size:11px; opacity:.55; white-space:nowrap; }
 
 /* Remembered user avatar in button */
 #loginScreen .gfb-user-avatar{
@@ -5530,18 +5507,8 @@ footer{
 
       <div id="loginMsg"></div>
 
-      <!-- Remembered user pill — shows when user previously signed in -->
-      <div id="gfbPill" class="gfb-pill">
-        <img id="gfbPillAvatar" class="gfb-pill-avatar" src="" alt="" onerror="this.style.display='none'">
-        <div class="gfb-pill-text">
-          <div class="gfb-pill-name" id="gfbPillName"></div>
-          <div class="gfb-pill-hint">Signed in previously</div>
-        </div>
-        <button class="gfb-switch" onclick="switchGoogleAccount()" style="display:block;margin:0;padding:0;">Switch</button>
-      </div>
-
       <div class="gfb-wrapper" style="width:100%;">
-        <!-- Orange button: shown while GIS initialises (replaced by native GIS button once ready) -->
+        <!-- Orange button: loading state while GIS script initialises -->
         <button id="googleFallbackBtn" class="google-fallback-btn" onclick="handleFallbackClick()">
           <div class="gfb-spinner"></div>
           <svg class="gfb-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
@@ -6285,7 +6252,9 @@ function initGoogleAuth(){
       callback: handleGoogleCredential,
       auto_select: false,
       ux_mode: 'popup',            /* open full Google popup, not One Tap */
-      cancel_on_tap_outside: true
+      cancel_on_tap_outside: true,
+      hosted_domain: DOMAIN,       /* pre-filter to @adit.com accounts */
+      itp_support: true            /* ITP/Safari cookie-restriction support */
     });
     googleAuthReady = true;
   }
@@ -6394,25 +6363,11 @@ function switchGoogleAccount(){
 }
 
 function updateLoginButton(){
+  // The GIS native button already shows "Continue as [Name] / email"
+  // We only need to show/hide the "Use a different account" switch link
   const stored = localStorage.getItem('rcLastUser');
-  const pill = document.getElementById('gfbPill');
-  const pillName = document.getElementById('gfbPillName');
-  const pillAvatar = document.getElementById('gfbPillAvatar');
-  if(!pill) return;
-  if(stored){
-    try{
-      const {name, email, picture} = JSON.parse(stored);
-      const firstName = (name||'').split(' ')[0] || email || 'You';
-      if(pillName) pillName.textContent = firstName;
-      if(pillAvatar){
-        if(picture){ pillAvatar.src = picture; pillAvatar.style.display = 'block'; }
-        else { pillAvatar.style.display = 'none'; }
-      }
-      pill.classList.add('visible');
-    }catch(e){}
-  } else {
-    pill.classList.remove('visible');
-  }
+  const switchBtn = document.getElementById('gfbSwitch');
+  if(switchBtn) switchBtn.style.display = stored ? 'block' : 'none';
 }
 
 /* ── Login page live metrics animation ─────────────────────────────────── */
