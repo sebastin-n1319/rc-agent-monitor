@@ -3716,6 +3716,321 @@ footer{
     width:min(calc(100% - 18px), 1820px);
   }
 }
+
+/* ══ LOGIN V3 — final override (wins everything above) ══════════════════ */
+#loginScreen{
+  min-height:100vh !important;
+  display:flex !important;
+  align-items:stretch !important;
+  flex-direction:row !important;
+  padding:0 !important;
+  justify-content:stretch !important;
+  background:#07111d !important;
+}
+#loginScreen::before{display:none !important;}
+#loginScreen .login-bg{display:block !important;background:#07111d !important;}
+#loginScreen .login-grid{
+  display:block !important;
+  opacity:.55 !important;
+  animation:gridDrift 40s linear infinite !important;
+}
+#loginScreen .orb{display:block !important;}
+#loginScreen .orb1{width:500px !important;height:500px !important;background:rgba(242,136,32,.07) !important;top:-120px !important;left:-140px !important;filter:blur(110px) !important;}
+#loginScreen .orb2{width:420px !important;height:420px !important;background:rgba(6,135,190,.06) !important;bottom:-100px !important;left:35% !important;filter:blur(120px) !important;}
+#loginScreen .orb3{width:380px !important;height:380px !important;background:rgba(59,130,246,.05) !important;top:20% !important;right:-100px !important;filter:blur(110px) !important;}
+#loginScreen .particles{display:block !important;}
+#loginScreen .confetti-wrap{display:none !important;}
+#loginScreen .fi{display:none !important;}
+
+/* ── Panels ─────────────────────────────────────────────────────────── */
+#loginScreen .login-left,
+#loginScreen .login-right{
+  flex:1 !important;
+  width:50% !important;
+  max-width:none !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:48px 40px !important;
+  background:transparent !important;
+  border:none !important;
+  position:relative !important;
+  z-index:2 !important;
+}
+#loginScreen .login-left{
+  background:linear-gradient(135deg,rgba(242,136,32,.055) 0%,rgba(6,135,190,.04) 100%) !important;
+  border-right:1px solid rgba(255,255,255,.055) !important;
+}
+
+/* ── Left panel card ─────────────────────────────────────────────────── */
+#loginScreen .login-card-left{
+  width:100% !important;
+  max-width:460px !important;
+  min-height:auto !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  border-radius:0 !important;
+  overflow:visible !important;
+}
+#loginScreen .login-card-left::before,
+#loginScreen .login-card-left::after{display:none !important;}
+#loginScreen .login-hero-shell{display:none !important;}
+#loginScreen .login-hero-bubble{display:none !important;}
+#loginScreen .login-cta-note{display:none !important;}
+#loginScreen .feature-pills{display:none !important;}
+
+/* Logo row */
+.lp-logo-row{
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  margin-bottom:32px !important;
+}
+.lp-rc-logo,.lp-adit-logo{
+  height:32px !important;
+  width:32px !important;
+  border-radius:8px !important;
+  object-fit:contain !important;
+  opacity:1 !important;
+  filter:none !important;
+}
+.lp-logo-divider{
+  width:1px !important;
+  height:20px !important;
+  background:rgba(255,255,255,.15) !important;
+  flex-shrink:0 !important;
+}
+.lp-product-name{
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:rgba(180,205,225,.85) !important;
+  letter-spacing:-.01em !important;
+}
+
+/* Live badge */
+.lp-live-badge{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:7px !important;
+  background:rgba(34,197,94,.1) !important;
+  border:1px solid rgba(34,197,94,.22) !important;
+  border-radius:50px !important;
+  padding:5px 14px !important;
+  font-size:11px !important;
+  font-weight:600 !important;
+  color:#4ade80 !important;
+  letter-spacing:.05em !important;
+  text-transform:uppercase !important;
+  margin-bottom:24px !important;
+}
+.lp-live-dot{
+  width:7px !important;
+  height:7px !important;
+  border-radius:50% !important;
+  background:#22c55e !important;
+  animation:dotBlink 1.4s ease-in-out infinite !important;
+  flex-shrink:0 !important;
+}
+
+/* Headline & subtext */
+.lp-headline{
+  font-family:'Poppins','Inter',sans-serif !important;
+  font-size:38px !important;
+  font-weight:800 !important;
+  letter-spacing:-.04em !important;
+  line-height:1.12 !important;
+  color:#f0f5ff !important;
+  margin-bottom:14px !important;
+}
+.lp-headline span{color:var(--orange) !important;}
+.lp-sub{
+  font-size:14px !important;
+  line-height:1.72 !important;
+  color:rgba(168,195,220,.75) !important;
+  margin-bottom:36px !important;
+  max-width:400px !important;
+}
+
+/* Feature rows */
+.lp-features{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+}
+.lp-feat{
+  display:flex !important;
+  align-items:center !important;
+  gap:14px !important;
+  padding:13px 16px !important;
+  background:rgba(255,255,255,.035) !important;
+  border:1px solid rgba(255,255,255,.07) !important;
+  border-radius:12px !important;
+  transition:background .2s,border-color .2s !important;
+  cursor:default !important;
+  animation:lp-feat-in .5s ease both !important;
+}
+.lp-feat:nth-child(1){animation-delay:.1s !important;}
+.lp-feat:nth-child(2){animation-delay:.2s !important;}
+.lp-feat:nth-child(3){animation-delay:.3s !important;}
+.lp-feat:nth-child(4){animation-delay:.4s !important;}
+@keyframes lp-feat-in{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.lp-feat:hover{
+  background:rgba(242,136,32,.07) !important;
+  border-color:rgba(242,136,32,.25) !important;
+}
+.lp-feat-icon{
+  font-size:20px !important;
+  width:38px !important;
+  height:38px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  background:rgba(242,136,32,.1) !important;
+  border-radius:10px !important;
+  flex-shrink:0 !important;
+}
+.lp-feat-title{
+  font-size:13px !important;
+  font-weight:600 !important;
+  color:#e8f1fa !important;
+  line-height:1.2 !important;
+  margin-bottom:2px !important;
+}
+.lp-feat-desc{
+  font-size:11.5px !important;
+  color:rgba(140,170,200,.75) !important;
+  line-height:1.4 !important;
+}
+
+/* ── Right panel — auth card ─────────────────────────────────────────── */
+#loginScreen .login-form-wrap{
+  width:100% !important;
+  max-width:380px !important;
+  padding:36px 32px !important;
+  background:rgba(255,255,255,.04) !important;
+  border:1px solid rgba(255,255,255,.09) !important;
+  border-radius:22px !important;
+  box-shadow:0 28px 70px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06) !important;
+  backdrop-filter:blur(20px) !important;
+  -webkit-backdrop-filter:blur(20px) !important;
+  text-align:left !important;
+  animation:cardSlideIn .65s cubic-bezier(.22,1,.36,1) both !important;
+}
+@keyframes cardSlideIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+
+#loginScreen .login-brand-logo{
+  height:52px !important;
+  width:52px !important;
+  border-radius:13px !important;
+  margin:0 0 22px !important;
+  display:block !important;
+  box-shadow:0 8px 22px rgba(0,0,0,.35) !important;
+  filter:none !important;
+}
+#loginScreen .login-welcome{
+  font-family:'Poppins','Inter',sans-serif !important;
+  font-size:24px !important;
+  font-weight:800 !important;
+  letter-spacing:-.03em !important;
+  line-height:1.2 !important;
+  color:#f0f5ff !important;
+  margin-bottom:6px !important;
+  text-align:left !important;
+}
+#loginScreen .login-sub{
+  font-size:13px !important;
+  color:rgba(165,195,220,.8) !important;
+  margin-bottom:5px !important;
+  line-height:1.5 !important;
+  text-align:left !important;
+}
+#loginScreen .login-signin-hint{
+  font-size:12px !important;
+  color:rgba(130,165,195,.7) !important;
+  margin-bottom:24px !important;
+  line-height:1.5 !important;
+  text-align:left !important;
+}
+#loginScreen .login-signin-hint strong{color:var(--orange) !important;}
+#loginScreen #loginMsg{
+  max-width:none !important;
+  margin:0 0 12px !important;
+  font-size:12px !important;
+}
+
+/* Hide the native GIS rendered button — use only fallback */
+#loginScreen .google-btn-host{display:none !important;}
+
+/* Custom Google sign-in button */
+#loginScreen .google-fallback-btn{
+  display:flex !important;
+  width:100% !important;
+  max-width:none !important;
+  min-height:48px !important;
+  margin:0 !important;
+  padding:12px 18px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:11px !important;
+  background:rgba(255,255,255,.07) !important;
+  border:1px solid rgba(255,255,255,.13) !important;
+  border-radius:13px !important;
+  color:#f0f5ff !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  box-shadow:none !important;
+  cursor:pointer !important;
+  transition:background .2s,border-color .22s,transform .18s,box-shadow .22s !important;
+  position:relative !important;
+  overflow:hidden !important;
+}
+#loginScreen .google-fallback-btn::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg,rgba(242,136,32,.1) 0%,transparent 55%);
+  opacity:0;
+  transition:opacity .22s;
+  pointer-events:none;
+}
+#loginScreen .google-fallback-btn:hover::before{opacity:1 !important;}
+#loginScreen .google-fallback-btn:hover{
+  background:rgba(255,255,255,.1) !important;
+  border-color:rgba(242,136,32,.5) !important;
+  transform:translateY(-2px) !important;
+  box-shadow:0 8px 24px rgba(242,136,32,.16) !important;
+}
+#loginScreen .google-fallback-btn:active{transform:translateY(0) !important;box-shadow:none !important;}
+#loginScreen .google-fallback-btn[data-loading="true"]{opacity:.75 !important;cursor:not-allowed !important;transform:none !important;}
+#loginScreen .gfb-google-icon{width:19px !important;height:19px !important;flex-shrink:0 !important;position:relative;z-index:1;}
+#loginScreen .google-btn-label{position:relative;z-index:1;font-size:14px !important;}
+#loginScreen .gfb-spinner{width:18px !important;height:18px !important;position:relative;z-index:1;}
+
+#loginScreen .login-restrict{
+  margin-top:20px !important;
+  font-size:11px !important;
+  color:rgba(120,155,185,.7) !important;
+  line-height:1.7 !important;
+  text-align:center !important;
+}
+#loginScreen .login-restrict strong{color:var(--orange) !important;}
+#loginScreen .login-divider{display:none !important;}
+#loginScreen .partner-row{display:none !important;}
+
+/* ── Mobile responsive ───────────────────────────────────────────────── */
+@media(max-width:760px){
+  #loginScreen{flex-direction:column !important;overflow-y:auto !important;}
+  #loginScreen .login-left,
+  #loginScreen .login-right{width:100% !important;flex:none !important;padding:28px 20px !important;border:none !important;}
+  #loginScreen .login-left{background:transparent !important;}
+  #loginScreen .login-card-left{max-width:none !important;}
+  .lp-headline{font-size:28px !important;}
+  .lp-features{gap:8px !important;}
+  .lp-feat{padding:10px 12px !important;}
+  #loginScreen .login-form-wrap{max-width:none !important;padding:28px 20px !important;}
+}
 </style>
 
 <style id="breakbot-v2">
@@ -4929,109 +5244,77 @@ footer{
 <div id="loginScreen">
   <div class="login-bg"></div>
   <div class="login-grid"></div>
-  <div class="login-beam"></div>
   <div class="orb orb1"></div>
   <div class="orb orb2"></div>
   <div class="orb orb3"></div>
-  <div class="orb orb4"></div>
   <div class="particles" id="particles"></div>
 
   <!-- LEFT PANEL -->
   <div class="login-left">
     <div class="login-card-left">
       <div class="confetti-wrap" id="confettiWrap"></div>
-      <div class="fi fi1">&#128222;</div>
-      <div class="fi fi2">&#128202;</div>
-      <div class="fi fi3">&#9989;</div>
-      <div class="fi fi4">&#128368;</div>
-      <div class="fi fi5">&#127942;</div>
-      <div class="fi fi6">&#128200;</div>
 
-      <!-- badge -->
-      <div class="login-badge">
-        <span class="login-badge-dot"></span>
+      <!-- Logo row -->
+      <div class="lp-logo-row">
+        <img class="lp-rc-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAHuSURBVHgB7Zi9TsJQFIDPLQ0YE0lkoiF2cTGMbKYuDgw+h+Ij8BIuOvgCdXIkJkaJiQkDGpIGF2UwJRE0hP5xr9fSQoFya3vbQk7S5LT3nPN9t/dHAYIgCIIgCIIgCIIgxPEwBGMU27aF67qhOI4DoigCsiyDLMuQJAmEYQjbtm2nlFKmaZqS53kpIQQ0TdM0TdNUSimlhJBS8jzP8zwv6boOlFIaRdEWQqCUUlJKIYTQ7/e7AICmaYC1Fo/HAxOGYQjGGGut0Vo7Ho83tNbQWmu01noppVBKCSEEAIDf7wci8jPHOY85xzFCCJxzJISQGEJIWWvtOOd5XiGEkOM4ZoxzZVmW5TiOleM4lFKqVFXVlFKqOI5jyBgDBEEQBEHwP/M8j0xmZjIzk5mZzMxkZiYzM5mZyczMZGYmMzOZmRXjOGY2M5mZyczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZjIzk5mZzMxkZiYzM5mZycxMZmYyM5OZmczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZjIzk5mZzMxkZiYzM5mZyczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZjIzk5mZzMxkZiYzM5mZyczMZGYmMzOZmcnMTGZmMjOTmZnMzGRmJjMzmZnJzExmZv8B7AF/1AEAAAAldFJOUwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABCQkJXAAAAB10RVh0U29mdHdhcmUAQWRvYmUgSW1hZ2VSZWFkeXGBZXcAAAHpSURBVHja7NjLSgJRHMfxM5czXkZHMzUvlFqalqJFEbToRdpFEBT0FkH0GoVQkC/QqkVBtAiCaB8tWkWrXqBFRdCiXReFFi26nP/NwYMHRMZxZs7AHPhyHOb8fjPMnEHHcRzHcRzHcRzHcRzHcRzHcRzHcRzHcVz5Ky8vLwAAAAAAAAAAAAAAAAAAAAAAAAAAAABQMIqiKIpimqZpCCEghBBCSAghIYT8OCGEhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQ8gO1d0AAAAAASUVORK5CYII=" alt="RC" onerror="this.style.display='none'">
+        <div class="lp-logo-divider"></div>
+        <img class="lp-adit-logo" src="/adit-logo-dark.png" alt="Adit">
+        <span class="lp-product-name">Agent Monitor</span>
+      </div>
+
+      <!-- Live badge -->
+      <div class="lp-live-badge">
+        <span class="lp-live-dot"></span>
         Live &amp; Operational
       </div>
 
-      <div class="login-left-title">Your team's<br><span>command centre</span></div>
-      <div class="login-left-sub">Live visibility for T1 CS Stars — calls, breaks, queue, performance scores and more, all in one calm dashboard.</div>
+      <!-- Headline -->
+      <div class="lp-headline">Your team's <span>command centre</span></div>
+      <div class="lp-sub">One calm dashboard for live agent status, break tracking, performance scores, and the Q1 Hall of Fame.</div>
 
-      <!-- live metric cards -->
-      <div class="lm-grid" id="lmGrid">
-        <div class="lm-card">
-          <div class="lm-label">Agents Online</div>
-          <div class="lm-value"><span id="lmAgents">—</span></div>
-          <div class="lm-trend up" id="lmAgentsTrend">&#x25B2; Live</div>
-          <div class="lm-icon">&#128101;</div>
-        </div>
-        <div class="lm-card">
-          <div class="lm-label">On Break</div>
-          <div class="lm-value"><span id="lmBreak">—</span></div>
-          <div class="lm-trend" id="lmBreakTrend" style="color:var(--t3)">Real-time</div>
-          <div class="lm-icon">&#9749;</div>
-        </div>
-        <div class="lm-card">
-          <div class="lm-label">Team CSAT</div>
-          <div class="lm-value"><span id="lmCsat">—</span><span> %</span></div>
-          <div class="lm-trend up">&#x25B2; Q1 avg</div>
-          <div class="lm-icon">&#11088;</div>
-        </div>
-        <div class="lm-card">
-          <div class="lm-label">Hall of Fame</div>
-          <div class="lm-value" style="font-size:18px;padding-top:4px">&#127942; Q1</div>
-          <div class="lm-trend" style="color:var(--orange)">Updated!</div>
-          <div class="lm-icon">&#127881;</div>
-        </div>
-      </div>
-
-      <!-- feature list -->
-      <div class="feature-list" id="featureList">
-        <div class="f-item">
-          <div class="f-item-icon">&#128101;</div>
-          <div class="f-item-text">
-            <div class="f-item-label">Live Agent Status</div>
-            <div class="f-item-desc">See who's available, on break, or in queue right now</div>
+      <!-- Feature rows -->
+      <div class="lp-features">
+        <div class="lp-feat">
+          <div class="lp-feat-icon">&#128101;</div>
+          <div class="lp-feat-body">
+            <div class="lp-feat-title">Live Agent Status</div>
+            <div class="lp-feat-desc">See who's available, on break, or in queue</div>
           </div>
-          <div class="f-item-arrow">›</div>
         </div>
-        <div class="f-item">
-          <div class="f-item-icon">&#9749;</div>
-          <div class="f-item-text">
-            <div class="f-item-label">Break Bot</div>
-            <div class="f-item-desc">Smart break tracking with real-time remaining time</div>
+        <div class="lp-feat">
+          <div class="lp-feat-icon">&#9749;</div>
+          <div class="lp-feat-body">
+            <div class="lp-feat-title">Break Bot</div>
+            <div class="lp-feat-desc">Smart break tracking with real-time alerts</div>
           </div>
-          <div class="f-item-arrow">›</div>
         </div>
-        <div class="f-item">
-          <div class="f-item-icon">&#128202;</div>
-          <div class="f-item-text">
-            <div class="f-item-label">Reports &amp; Scores</div>
-            <div class="f-item-desc">Monthly performance, QA scores, and bonus tracking</div>
+        <div class="lp-feat">
+          <div class="lp-feat-icon">&#128202;</div>
+          <div class="lp-feat-body">
+            <div class="lp-feat-title">Reports &amp; Scores</div>
+            <div class="lp-feat-desc">QA scores, CSAT, and monthly performance</div>
           </div>
-          <div class="f-item-arrow">›</div>
+        </div>
+        <div class="lp-feat">
+          <div class="lp-feat-icon">&#127942;</div>
+          <div class="lp-feat-body">
+            <div class="lp-feat-title">Q1 Hall of Fame</div>
+            <div class="lp-feat-desc">Top performers recognised for their excellence</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- RIGHT PANEL -->
+  <!-- RIGHT PANEL (auth) -->
   <div class="login-right">
     <div class="login-form-wrap">
       <img class="login-brand-logo" src="/adit-logo-dark.png" alt="Adit">
-
-      <div class="login-status-chip">
-        <span class="login-status-dot"></span>
-        System Online
-      </div>
-
       <div class="login-welcome">Welcome back &#128075;</div>
-      <div class="login-sub">Sign in to access your Adit Agent Monitor</div>
-      <div class="login-signin-hint">Use your <strong>@adit.com</strong> Google account to continue</div>
-
+      <div class="login-sub">Sign in to Adit Agent Monitor</div>
+      <div class="login-signin-hint">Use your <strong>@adit.com</strong> Google account</div>
       <div id="loginMsg"></div>
-
       <div id="googleBtn" class="google-btn-host"></div>
-
       <button id="googleFallbackBtn" class="google-fallback-btn" onclick="handleLoginClick(this)">
         <div class="gfb-spinner"></div>
         <svg class="gfb-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -5042,20 +5325,7 @@ footer{
         </svg>
         <span class="google-btn-label">Continue with Google</span>
       </button>
-
-      <div class="login-divider">or</div>
-
-      <div class="login-restrict">
-        Access restricted to <strong>@adit.com</strong> accounts only.<br>
-        Contact Sebastin if you need access.
-      </div>
-
-      <div class="partner-row">
-        <span class="partner-label">Powered by</span>
-        <div class="partner-logos">
-          <div class="partner-logo-wrap"><img src="/adit-logo-dark.png" alt="Adit"></div>
-        </div>
-      </div>
+      <div class="login-restrict">Access restricted to <strong>@adit.com</strong> accounts only.<br>Contact Sebastin if you need access.</div>
     </div>
   </div>
 </div>
