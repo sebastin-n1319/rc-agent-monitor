@@ -2275,23 +2275,24 @@ tbody tr:hover td{background:rgba(255,255,255,.018) !important;}
 /* ADIT ALIGNMENT — login plus shell */
 body::before{
   background:
-    radial-gradient(circle at 18% 12%, rgba(0,179,213,.08) 0%, transparent 30%),
-    radial-gradient(circle at 82% 22%, rgba(242,136,32,.06) 0%, transparent 24%),
-    radial-gradient(circle at 50% 100%, rgba(0,179,213,.06) 0%, transparent 26%) !important;
+    radial-gradient(circle at 14% 10%, rgba(0,179,213,.07) 0%, transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(242,136,32,.05) 0%, transparent 20%),
+    radial-gradient(circle at 52% 100%, rgba(0,179,213,.05) 0%, transparent 25%) !important;
 }
 body::after{display:none !important;}
 #mainApp{
   background:
-    radial-gradient(circle at 76% 14%, rgba(0,179,213,.10), transparent 18%),
-    linear-gradient(180deg,#081420 0%,#0a1623 44%,#08111b 100%) !important;
+    radial-gradient(circle at 78% 12%, rgba(0,179,213,.06), transparent 18%),
+    linear-gradient(180deg,#09131e 0%,#0b1521 44%,#08101a 100%) !important;
 }
 header{
   height:72px !important;
   padding:0 22px !important;
-  background:rgba(8,20,33,.82) !important;
+  background:rgba(8,20,33,.74) !important;
   border-bottom:1px solid rgba(174,208,230,.10) !important;
   backdrop-filter:blur(18px) saturate(150%) !important;
   -webkit-backdrop-filter:blur(18px) saturate(150%) !important;
+  box-shadow:0 10px 28px rgba(2,8,18,.18) !important;
 }
 .hdr-logo-adit{
   background:rgba(255,255,255,.05) !important;
@@ -2302,21 +2303,21 @@ header{
 .nav{
   top:72px !important;
   padding:12px 22px 10px !important;
-  background:linear-gradient(180deg, rgba(8,20,33,.74), rgba(8,20,33,.42) 70%, transparent) !important;
+  background:linear-gradient(180deg, rgba(8,20,33,.68), rgba(8,20,33,.32) 74%, transparent) !important;
 }
 .nav-tab.active,.agent-shell-btn.active{
-  background:rgba(255,255,255,.05) !important;
-  border-color:rgba(242,136,32,.22) !important;
+  background:rgba(255,255,255,.04) !important;
+  border-color:rgba(174,208,230,.18) !important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.04) !important;
 }
 .card,.panel,.radar-card,.role-stat,.role-setup-card,.role-policy-card,.agent-card,.evt-group,.metric,.tbl-wrap{
   border-color:rgba(174,208,230,.09) !important;
 }
 .metric{
-  background:linear-gradient(180deg, rgba(12,24,39,.92), rgba(10,18,30,.94)) !important;
+  background:linear-gradient(180deg, rgba(13,24,38,.90), rgba(10,18,29,.93)) !important;
 }
 .card,.panel,.radar-card,.role-stat,.role-setup-card,.role-policy-card,.agent-card,.evt-group{
-  background:linear-gradient(180deg, rgba(12,22,36,.90), rgba(9,17,28,.94)) !important;
+  background:linear-gradient(180deg, rgba(13,22,35,.90), rgba(10,17,28,.94)) !important;
 }
 .tbl-wrap{
   background:rgba(9,17,28,.86) !important;
@@ -2326,6 +2327,21 @@ thead th{
   color:#7f94aa !important;
 }
 .card-title,.section-title{color:#f4f8fd !important;}
+.evt-group,
+.agent-card,
+.role-stat,
+.metric,
+.card{
+  transition:border-color .18s ease, background .18s ease, transform .18s ease !important;
+}
+.evt-group:hover,
+.agent-card:hover,
+.role-stat:hover,
+.metric:hover,
+.card:hover{
+  transform:translateY(-1px);
+  border-color:rgba(174,208,230,.14) !important;
+}
 .page,.agent-shell-page,#adminView,#agentView{
   width:min(100%, 1900px) !important;
 }
@@ -2334,11 +2350,11 @@ thead th{
   align-items:center;
   padding:28px;
   background:
-    radial-gradient(circle at 50% 52%, rgba(0,177,212,.22), transparent 28%),
-    linear-gradient(180deg, #0d546f 0%, #0b3c55 18%, #092b41 36%, #081521 100%) !important;
+    radial-gradient(circle at 50% 52%, rgba(0,177,212,.20), transparent 28%),
+    linear-gradient(180deg, #0d556f 0%, #0c4761 16%, #0b3850 34%, #081521 100%) !important;
 }
 .login-grid{display:none !important;}
-.orb{display:block !important;filter:blur(90px) !important;opacity:.45;}
+.orb{display:block !important;filter:blur(90px) !important;opacity:.28;}
 .orb1{background:rgba(255,255,255,.05) !important;top:8%;left:2%;width:260px;height:260px;}
 .orb2{background:rgba(0,177,212,.08) !important;bottom:6%;left:44%;width:320px;height:320px;}
 .orb3{background:rgba(255,255,255,.04) !important;top:14%;right:8%;width:240px;height:240px;}
@@ -2384,15 +2400,7 @@ thead th{
   transform:rotate(-14deg);
   opacity:.96;
 }
-.fi{
-  opacity:.9 !important;
-  color:#1b5a86;
-  font-size:18px !important;
-}
-.fi1{top:22%;left:9%;}
-.fi2{top:72%;left:9%;}
-.fi3{top:23%;right:11%;}
-.fi4{top:74%;right:12%;}
+.fi{display:none !important;}
 .main-logo{display:none !important;}
 .login-hero-shell{
   position:relative;
@@ -2478,6 +2486,7 @@ thead th{
   background:transparent !important;
   border:none !important;
   box-shadow:none !important;
+  text-align:center;
 }
 .login-brand-logo{
   display:block;
@@ -2499,12 +2508,35 @@ thead th{
   text-align:center;
   font-size:18px !important;
   color:rgba(234,245,252,.78) !important;
-  margin-bottom:40px !important;
+  margin-bottom:18px !important;
+}
+.login-signin-hint{
+  margin:0 auto 24px;
+  max-width:480px;
+  font-size:14px;
+  color:rgba(232,244,252,.70);
 }
 .google-btn-host,.google-fallback-btn{
   max-width:420px;
   margin-left:auto;
   margin-right:auto;
+}
+.google-btn-host{
+  min-height:68px !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.google-btn-host > div{
+  width:100% !important;
+  display:flex !important;
+  justify-content:center !important;
+}
+.google-btn-host iframe{
+  width:100% !important;
+  max-width:420px !important;
+  min-height:68px !important;
+  border-radius:18px !important;
 }
 .google-fallback-btn{
   min-height:68px !important;
@@ -2516,6 +2548,9 @@ thead th{
   font-weight:700 !important;
   box-shadow:0 24px 44px rgba(2,10,20,.18) !important;
 }
+.google-fallback-btn:hover{
+  background:#f8fbff !important;
+}
 .google-fallback-btn svg{
   width:28px;
   height:28px;
@@ -2526,6 +2561,7 @@ thead th{
   color:rgba(232,244,252,.68) !important;
   font-size:13px !important;
 }
+.login-restrict strong{color:#ffffff !important;}
 @media (max-width: 1180px){
   #loginScreen{
     flex-direction:column;
@@ -2605,6 +2641,7 @@ thead th{
       <img class="login-brand-logo" src="/adit-logo-dark.png" alt="Adit">
       <div class="login-welcome">Welcome!</div>
       <div class="login-sub">Log in to your Adit Agent Monitor</div>
+      <div class="login-signin-hint">Sign in with your <strong>@adit.com</strong> Google account</div>
       <div id="loginMsg"></div>
       <div id="googleBtn" class="google-btn-host"></div>
       <button id="googleFallbackBtn" class="google-fallback-btn" onclick="signInWithGoogle()">
