@@ -81,6 +81,23 @@ body::after{
 }
 
 /* ── PAGE TABS ───────────────────────────────────────────────────────────── */
+.hof-banner{
+  display:none;
+  align-items:center;gap:10px;
+  background:linear-gradient(90deg,rgba(251,191,36,.12),rgba(251,146,60,.08));
+  border:1px solid rgba(251,191,36,.3);
+  border-radius:10px;margin:12px 0 0;padding:10px 16px;
+  font-size:13px;color:var(--t1);line-height:1.4;
+}
+.hof-banner.visible{display:flex;}
+.hof-banner-ico{font-size:16px;flex-shrink:0;}
+.hof-banner-txt{flex:1;}
+.hof-banner-txt strong{color:var(--gold);}
+.hof-banner-close{
+  background:none;border:none;color:var(--t3);cursor:pointer;
+  font-size:16px;line-height:1;padding:0 2px;flex-shrink:0;
+}
+.hof-banner-close:hover{color:var(--t1);}
 .pg-tabs-wrap{
   position:sticky;top:0;z-index:50;
   background:rgba(3,7,18,.85);backdrop-filter:blur(16px);
@@ -2020,6 +2037,18 @@ body::after {
 </div>
 
 <!-- ════════════════════════════════════════════════════════
+     ANNOUNCEMENT BANNER
+════════════════════════════════════════════════════════ -->
+<div class="hof-banner" id="hofBanner">
+  <div class="hof-banner-ico">🏆</div>
+  <div class="hof-banner-txt">
+    <strong>Q1 2026 Hall of Fame is live!</strong> &nbsp;Check out the standouts &amp; awards.
+    Performance &amp; Bonus results will be unlocked on <strong>April 30, 2026</strong>.
+  </div>
+  <button class="hof-banner-close" onclick="document.getElementById('hofBanner').classList.remove('visible')" title="Dismiss">&times;</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
      HALL OF FAME
 ════════════════════════════════════════════════════════ -->
 <div class="page" id="page-hof">
@@ -2075,7 +2104,7 @@ body::after {
   <!-- Wing tabs -->
   <div class="wt-bar">
     <div class="wt wt-on-t" id="perf-wt-calls" onclick="switchWing('perf','calls',this)">
-      <span id="ico-wt-calls"></span>Calls Wing<span class="wt-ct">9</span>
+      <span id="ico-wt-calls"></span>Calls Wing<span class="wt-ct">8</span>
     </div>
     <div class="wt" id="perf-wt-chat" onclick="switchWing('perf','chat',this)">
       <span id="ico-wt-chat"></span>Chat Wing<span class="wt-ct">3</span>
@@ -2154,7 +2183,7 @@ body::after {
     </div>
     <div class="wt-bar">
       <div class="wt wt-on-t" id="bonus-wt-calls" onclick="switchWing('bonus','calls',this)">
-        <span id="ico-bwt-calls"></span>Calls Wing<span class="wt-ct">9</span>
+        <span id="ico-bwt-calls"></span>Calls Wing<span class="wt-ct">8</span>
       </div>
       <div class="wt" id="bonus-wt-chat" onclick="switchWing('bonus','chat',this)">
         <span id="ico-bwt-chat"></span>Chat Wing<span class="wt-ct">3</span>
@@ -2263,10 +2292,6 @@ const DATA={
       "Jan'26":{inbound:154,tickets:74,fcr:75.7,qa:75.6,csat:100.0,cg:2,ct:2,present:19,leaves:0,upl:0,bonus:{eligible:false,reason:"QA below target",pts:60,slab:null,base:0,csat_inc:300,total:300,mx:{inbound:{s:1},tickets:{s:0},fcr:{s:1},qa:{s:0}}}},
       "Feb'26":{inbound:139,tickets:61,fcr:59.0,qa:77.5,csat:100.0,cg:1,ct:1,present:17,leaves:3,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:35,slab:null,base:0,csat_inc:150,total:150,mx:{inbound:{s:2},tickets:{s:0},fcr:{s:0},qa:{s:0}}}},
       "Mar'26":{inbound:187,tickets:65,fcr:75.4,qa:75.5,csat:100.0,cg:1,ct:1,present:18,leaves:2,upl:0,bonus:{eligible:false,reason:"QA below target",pts:60,slab:null,base:0,csat_inc:150,total:150,mx:{inbound:{s:1},tickets:{s:0},fcr:{s:1},qa:{s:0}}}}}},
-    {name:"Ronnie G",ext:"5219",ini:"RG",months:{
-      "Jan'26":{inbound:74,tickets:31,fcr:61.3,qa:53.3,csat:100.0,cg:1,ct:1,present:21,leaves:0,upl:0,bonus:{eligible:false,reason:"Volume & QA well below target",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:0},tickets:{s:0},fcr:{s:0},qa:{s:0}}}},
-      "Feb'26":{inbound:53,tickets:30,fcr:50.0,qa:91.3,csat:100.0,cg:3,ct:3,present:17,leaves:3,upl:0,bonus:{eligible:false,reason:"Inbound & Tickets below threshold",pts:20,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:0},tickets:{s:0},fcr:{s:0},qa:{s:1}}}},
-      "Mar'26":{inbound:39,tickets:49,fcr:67.3,qa:64.5,csat:100.0,cg:1,ct:1,present:22,leaves:0,upl:0,bonus:{eligible:false,reason:"Volume & QA below target",pts:0,slab:null,base:0,csat_inc:0,total:0,mx:{inbound:{s:0},tickets:{s:0},fcr:{s:0},qa:{s:0}}}}}}
   ],
   chat:[
     {name:"Anold Fernandes",ext:"5313",ini:"AF",months:{
@@ -2496,7 +2521,6 @@ function buildHoF(){
     const slab1Agents=allAgents.filter(a=>slabMonths(a)>=1).length;
     hofQS.innerHTML=`
       <div class="hq"><div class="hq-n">${allAgents.length}</div><div class="hq-l">Agents</div></div>
-      <div class="hq"><div class="hq-n">${slab1Agents}</div><div class="hq-l">Earned Bonus</div></div>
     `;
   }
 
@@ -2700,6 +2724,12 @@ function injectIcons(){
    INIT
 ════════════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded',()=>{
+  // Show announcement banner for 3 days (Apr 14–16 IST)
+  const bannerExpiry=new Date('2026-04-17T00:00:00+05:30');
+  const bannerEl=document.getElementById('hofBanner');
+  if(bannerEl&&new Date()<bannerExpiry){
+    bannerEl.classList.add('visible');
+  }
   injectIcons();
   buildHoF();
   renderGrid('perf-calls-grid',DATA.calls,'calls',buildPerfCard);
