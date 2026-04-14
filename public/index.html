@@ -605,6 +605,75 @@ select option{background:#0c1424;color:var(--t1);}
 .ops-chip strong{color:var(--t1);}
 
 /* ══════════════════════════════════════════════════════════════════════════
+   LIVE DASHBOARD — NEW DESIGN (ld- prefix)
+══════════════════════════════════════════════════════════════════════════ */
+
+/* Command Strip */
+.ld-strip{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 14px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r-sm);margin-bottom:14px;flex-wrap:wrap;}
+.ld-strip-stats{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.ld-strip-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--t2);padding:3px 10px;background:var(--card2);border:1px solid var(--b1);border-radius:50px;}
+.ld-strip-chip strong{color:var(--t1);font-weight:700;}
+.ld-sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* KPI Row */
+.ld-kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:1100px){.ld-kpi-row{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:600px){.ld-kpi-row{grid-template-columns:repeat(2,1fr);}}
+.ld-kpi{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;}
+.ld-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--kpi-accent,var(--orange));border-radius:2px 2px 0 0;opacity:.9;}
+.ld-kpi::after{content:'';position:absolute;inset:0;background:var(--kpi-glow,transparent);pointer-events:none;}
+.ld-kpi:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.5);}
+.ld-kpi.ld-kpi-alert{border-color:rgba(244,63,94,.25);}
+.ld-kpi-icon{width:28px;height:28px;flex-shrink:0;color:var(--kpi-accent,var(--orange));opacity:.85;}
+.ld-kpi-body{min-width:0;}
+.ld-kpi-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);margin-bottom:4px;}
+.ld-kpi-val{font-size:28px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-.03em;color:var(--t1);line-height:1;}
+.ld-kpi-sub{font-size:9px;color:var(--t3);margin-top:4px;font-family:'JetBrains Mono',monospace;}
+
+/* Panels Row */
+.ld-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+@media(max-width:860px){.ld-panels{grid-template-columns:1fr;}}
+.ld-panel{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px;backdrop-filter:blur(12px);}
+.ld-panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.ld-panel-title{font-size:12px;font-weight:700;color:var(--t1);}
+.ld-panel-sub{font-size:10px;color:var(--t3);}
+
+/* Team Pulse — Health Badge */
+.ld-health-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:50px;border:1px solid var(--b1);background:var(--card2);font-size:10px;color:var(--t2);}
+.ld-health-score{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);}
+
+/* Team Pulse — Gauge + Bars */
+.ld-gauge-wrap{display:flex;gap:16px;align-items:center;margin-bottom:14px;}
+.ld-pulse-bars{flex:1;display:flex;flex-direction:column;gap:9px;}
+.ld-pbar-row{display:flex;align-items:center;gap:8px;font-size:11px;}
+.ld-pbar-label{display:flex;align-items:center;gap:5px;color:var(--t2);flex:0 0 64px;}
+.ld-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ld-pbar-row b{margin-left:auto;font-size:12px;font-weight:700;color:var(--t1);font-family:'JetBrains Mono',monospace;flex:0 0 20px;text-align:right;}
+
+/* Team Pulse — Secondary Grid */
+.ld-secondary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.ld-sg-item{background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:8px 10px;text-align:center;}
+.ld-sg-item span{display:block;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:4px;}
+.ld-sg-item strong{font-size:14px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1);}
+
+/* Call Activity Grid */
+.ld-act-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;}
+.ld-act-item{background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:10px 10px 8px;text-align:center;position:relative;overflow:hidden;}
+.ld-act-accent{position:absolute;top:0;left:0;right:0;height:2px;}
+.ld-act-lbl{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:5px;margin-top:4px;}
+.ld-act-val{font-size:20px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);}
+
+/* Abandon Strip (inside Call Activity panel) */
+.ld-abandon-strip{border-top:1px solid var(--b1);padding-top:12px;}
+.ld-ab-title{font-size:10px;font-weight:600;color:var(--t3);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ld-ab-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.ld-ab-stat{background:var(--card2);border:1px solid var(--b1);border-radius:var(--r-xs);padding:8px 10px;text-align:center;}
+.ld-ab-lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);margin-bottom:3px;}
+.ld-ab-val{font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--t1);}
+.ld-ab-sub{font-size:9px;color:var(--t3);margin-top:2px;}
+@keyframes ldAlertPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}50%{box-shadow:0 0 0 4px rgba(244,63,94,.2);}}
+
+/* ══════════════════════════════════════════════════════════════════════════
    VIZ ROW
 ══════════════════════════════════════════════════════════════════════════ */
 .viz-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
@@ -5748,104 +5817,185 @@ footer{
 
   <!-- LIVE -->
   <div class="page active" id="tab-live">
-    <div class="metrics">
-      <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="m-avail">--</div></div>
-      <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="m-unavail">--</div></div>
-      <div class="metric m-blue"><div class="metric-lbl">On Call</div><div class="metric-val" id="m-oncall">--</div></div>
-      <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="m-inbound">--</div><div class="metric-sub" id="m-inbound-aht">AHT --</div></div>
-      <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="m-outbound">--</div><div class="metric-sub" id="m-outbound-aht">AHT --</div></div>
+
+    <!-- ── Command Strip ───────────────────────────────────────────────── -->
+    <div class="ld-strip">
+      <div class="ld-strip-stats">
+        <span class="ld-strip-chip"><span class="ld-sdot" style="background:var(--t2)"></span>Team <strong id="ops-team-size">0</strong></span>
+        <span class="ld-strip-chip"><span class="ld-sdot" style="background:var(--green)"></span>Ready <strong id="ops-queue-ready">0</strong></span>
+        <span class="ld-strip-chip"><span class="ld-sdot" style="background:var(--red)"></span>Queue Off <strong id="ops-queue-off">0</strong></span>
+        <span class="ld-strip-chip"><span class="ld-sdot" style="background:var(--yellow)"></span>Abandoned <strong id="ops-abandon-count">0</strong></span>
+        <span class="ld-strip-chip">Longest Ring <strong id="ops-longest-ring">--</strong></span>
+      </div>
+      <button class="btn btn-primary btn-sm" id="syncBtn" onclick="doRefresh()">&#8635; Sync</button>
     </div>
-    <div class="metrics" style="margin-top:-4px;">
-      <div class="metric m-red"><div class="metric-lbl">Abandoned</div><div class="metric-val" id="m-missed">--</div><div class="metric-sub" id="m-missed-pct">Longest --</div></div>
-      <div class="metric m-purple"><div class="metric-lbl">Voicemails</div><div class="metric-val" id="m-voicemail">--</div></div>
-      <div class="metric m-orange"><div class="metric-lbl">Transfers</div><div class="metric-val" id="m-transfers">--</div></div>
-      <div class="metric m-teal"><div class="metric-lbl">Avg Ring Time</div><div class="metric-val" id="m-ringtime" style="font-size:20px">--</div></div>
-      <div class="metric m-blue"><div class="metric-lbl">Avg Hold Time</div><div class="metric-val" id="m-holdtime" style="font-size:20px">--</div></div>
+
+    <!-- ── KPI Row ─────────────────────────────────────────────────────── -->
+    <div class="ld-kpi-row">
+      <div class="ld-kpi" style="--kpi-accent:var(--green);--kpi-glow:rgba(34,197,94,.12)">
+        <svg class="ld-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        <div class="ld-kpi-body">
+          <div class="ld-kpi-lbl">Available</div>
+          <div class="ld-kpi-val" id="m-avail">--</div>
+          <div class="ld-kpi-sub">Queue Ready</div>
+        </div>
+      </div>
+      <div class="ld-kpi" style="--kpi-accent:var(--blue);--kpi-glow:rgba(59,130,246,.12)">
+        <svg class="ld-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/></svg>
+        <div class="ld-kpi-body">
+          <div class="ld-kpi-lbl">On Call</div>
+          <div class="ld-kpi-val" id="m-oncall">--</div>
+          <div class="ld-kpi-sub">Active Now</div>
+        </div>
+      </div>
+      <div class="ld-kpi" style="--kpi-accent:var(--red);--kpi-glow:rgba(244,63,94,.12)">
+        <svg class="ld-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <div class="ld-kpi-body">
+          <div class="ld-kpi-lbl">Unavailable</div>
+          <div class="ld-kpi-val" id="m-unavail">--</div>
+          <div class="ld-kpi-sub">Off Queue</div>
+        </div>
+      </div>
+      <div class="ld-kpi" style="--kpi-accent:var(--teal);--kpi-glow:rgba(6,135,190,.12)">
+        <svg class="ld-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <div class="ld-kpi-body">
+          <div class="ld-kpi-lbl">Inbound</div>
+          <div class="ld-kpi-val" id="m-inbound">--</div>
+          <div class="ld-kpi-sub" id="m-inbound-aht">AHT --</div>
+        </div>
+      </div>
+      <div class="ld-kpi" style="--kpi-accent:var(--orange);--kpi-glow:rgba(242,136,32,.12)">
+        <svg class="ld-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+        <div class="ld-kpi-body">
+          <div class="ld-kpi-lbl">Outbound</div>
+          <div class="ld-kpi-val" id="m-outbound">--</div>
+          <div class="ld-kpi-sub" id="m-outbound-aht">AHT --</div>
+        </div>
+      </div>
+      <div class="ld-kpi ld-kpi-alert" style="--kpi-accent:var(--red);--kpi-glow:rgba(244,63,94,.15)" id="ld-abandon-kpi">
+        <svg class="ld-kpi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="ld-kpi-body">
+          <div class="ld-kpi-lbl">Abandoned</div>
+          <div class="ld-kpi-val" id="m-missed">--</div>
+          <div class="ld-kpi-sub" id="m-missed-pct">Longest --</div>
+        </div>
+      </div>
     </div>
-    <div class="admin-ribbon">
-      <span class="ops-chip">Team <strong id="ops-team-size">0</strong></span>
-      <span class="ops-chip">Ready <strong id="ops-queue-ready">0</strong></span>
-      <span class="ops-chip">Abandoned <strong id="ops-abandon-count">0</strong></span>
-      <span class="ops-chip">Longest Ring <strong id="ops-longest-ring">--</strong></span>
-    </div>
-    <div class="viz-row">
-      <div class="viz-card">
-        <div class="viz-title">Call Mix</div>
-        <div class="mix-bar">
+
+    <!-- ── Insight Panels ──────────────────────────────────────────────── -->
+    <div class="ld-panels">
+
+      <!-- Team Pulse -->
+      <div class="ld-panel">
+        <div class="ld-panel-hdr">
+          <span class="ld-panel-title">Team Pulse</span>
+          <div class="ld-health-badge" id="health-badge-wrap">
+            <span id="health-label">Calm</span>
+            <span class="ld-health-score" id="health-score">100</span>
+          </div>
+        </div>
+        <div class="ld-gauge-wrap">
+          <div class="health-gauge" id="health-gauge" style="--gauge:0deg;">
+            <div class="health-core">
+              <div class="health-score" id="health-score-gauge">0</div>
+              <div class="health-label" style="display:none">x</div>
+            </div>
+          </div>
+          <div class="ld-pulse-bars">
+            <div class="ld-pbar-row">
+              <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--green)"></span>Ready</div>
+              <div class="health-track"><i class="health-ready" id="health-ready-bar" style="width:0%"></i></div>
+              <b id="health-ready-val">0</b>
+            </div>
+            <div class="ld-pbar-row">
+              <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--blue)"></span>On Call</div>
+              <div class="health-track"><i class="health-live" id="health-live-bar" style="width:0%"></i></div>
+              <b id="health-live-val">0</b>
+            </div>
+            <div class="ld-pbar-row">
+              <div class="ld-pbar-label"><span class="ld-dot" style="background:var(--red)"></span>Queue Off</div>
+              <div class="health-track"><i class="health-off" id="health-off-bar" style="width:0%"></i></div>
+              <b id="health-off-val">0</b>
+            </div>
+          </div>
+        </div>
+        <div class="ld-secondary-grid">
+          <div class="ld-sg-item"><span>Voicemails</span><strong id="m-voicemail">--</strong></div>
+          <div class="ld-sg-item"><span>Transfers</span><strong id="m-transfers">--</strong></div>
+          <div class="ld-sg-item"><span>Avg Ring</span><strong id="m-ringtime">--</strong></div>
+          <div class="ld-sg-item"><span>Avg Hold</span><strong id="m-holdtime">--</strong></div>
+        </div>
+      </div>
+
+      <!-- Call Activity -->
+      <div class="ld-panel">
+        <div class="ld-panel-hdr">
+          <span class="ld-panel-title">Call Activity</span>
+          <span class="ld-panel-sub">Today's volume</span>
+        </div>
+        <div class="mix-bar" style="height:10px;border-radius:6px;margin-bottom:18px;">
           <span class="mix-seg mix-in" id="mix-inbound-bar" style="width:0%"></span>
           <span class="mix-seg mix-out" id="mix-outbound-bar" style="width:0%"></span>
           <span class="mix-seg mix-vm" id="mix-voicemail-bar" style="width:0%"></span>
           <span class="mix-seg mix-abd" id="mix-abandon-bar" style="width:0%"></span>
         </div>
-        <div class="mix-legend">
-          <div class="mix-item"><div class="mix-item-top"><span class="mix-dot mix-in"></span>Inbound</div><strong id="mix-inbound-val">0</strong></div>
-          <div class="mix-item"><div class="mix-item-top"><span class="mix-dot mix-out"></span>Outbound</div><strong id="mix-outbound-val">0</strong></div>
-          <div class="mix-item"><div class="mix-item-top"><span class="mix-dot mix-vm"></span>Voicemail</div><strong id="mix-voicemail-val">0</strong></div>
-          <div class="mix-item"><div class="mix-item-top"><span class="mix-dot mix-abd"></span>Abandoned</div><strong id="mix-abandon-val">0</strong></div>
+        <div class="ld-act-grid">
+          <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--blue)"></div><div class="ld-act-lbl">Inbound</div><div class="ld-act-val" id="mix-inbound-val">0</div></div>
+          <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--orange)"></div><div class="ld-act-lbl">Outbound</div><div class="ld-act-val" id="mix-outbound-val">0</div></div>
+          <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--purple)"></div><div class="ld-act-lbl">Voicemail</div><div class="ld-act-val" id="mix-voicemail-val">0</div></div>
+          <div class="ld-act-item"><div class="ld-act-accent" style="background:var(--red)"></div><div class="ld-act-lbl">Abandoned</div><div class="ld-act-val" id="mix-abandon-val">0</div></div>
         </div>
-      </div>
-      <div class="viz-card">
-        <div class="viz-title">Queue Health</div>
-        <div class="health-panel">
-          <div class="health-gauge" id="health-gauge" style="--gauge:0deg;">
-            <div class="health-core">
-              <div class="health-score" id="health-score">0</div>
-              <div class="health-label" id="health-label">Calm</div>
-            </div>
-          </div>
-          <div class="health-rows">
-            <div class="health-row"><span>Ready</span><div class="health-track"><i class="health-ready" id="health-ready-bar"></i></div><b id="health-ready-val">0</b></div>
-            <div class="health-row"><span>On Call</span><div class="health-track"><i class="health-live" id="health-live-bar"></i></div><b id="health-live-val">0</b></div>
-            <div class="health-row"><span>Queue Off</span><div class="health-track"><i class="health-off" id="health-off-bar"></i></div><b id="health-off-val">0</b></div>
+        <div class="ld-abandon-strip" id="ld-abandon-strip">
+          <div class="ld-ab-title"><span class="chip" id="abandon-radar-count" style="font-size:9px">0 calls</span> Abandon Detail</div>
+          <div class="ld-ab-stats">
+            <div class="ld-ab-stat"><div class="ld-ab-lbl">Total</div><div class="ld-ab-val" id="abandon-total">--</div><div class="ld-ab-sub" id="abandon-total-sub">Clean</div></div>
+            <div class="ld-ab-stat"><div class="ld-ab-lbl">Longest Ring</div><div class="ld-ab-val" id="abandon-longest">--</div><div class="ld-ab-sub" id="abandon-longest-sub">--</div></div>
+            <div class="ld-ab-stat"><div class="ld-ab-lbl">Most Exposed</div><div class="ld-ab-val" id="abandon-owner">--</div><div class="ld-ab-sub" id="abandon-owner-sub">--</div></div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- ── Live Agent Table ────────────────────────────────────────────── -->
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Abandon Radar</span>
-        <span class="chip" id="abandon-radar-count">0 calls</span>
-      </div>
-      <div class="abandon-summary">
-        <div class="abandon-stat">
-          <div class="label">Abandoned</div>
-          <div class="value" id="abandon-total">--</div>
-          <div class="sub" id="abandon-total-sub">Clean</div>
-        </div>
-        <div class="abandon-stat">
-          <div class="label">Longest Ring</div>
-          <div class="value" id="abandon-longest">--</div>
-          <div class="sub" id="abandon-longest-sub">--</div>
-        </div>
-        <div class="abandon-stat">
-          <div class="label">Most Exposed</div>
-          <div class="value" id="abandon-owner">--</div>
-          <div class="sub" id="abandon-owner-sub">--</div>
-        </div>
-      </div>
-      <div class="abandon-board" id="abandon-board">
-        <div class="no-data">Loading...</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Live Presence &amp; Queue View</span>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-          <span style="font-size:10px;color:var(--text3)"><span style="color:var(--green)">&bull;</span> Avail &nbsp;<span style="color:var(--red)">&bull;</span> Unavail &nbsp;<span style="color:var(--blue2)">&bull;</span> On Call</span>
-          <span class="chip" id="agent-count">0 agents</span>
-          <button class="btn btn-primary btn-sm" id="syncBtn" onclick="doRefresh()">&#8635; Sync</button>
-        </div>
-      </div>
-      <div style="padding:0 16px 12px;color:var(--text3);font-size:10px;line-height:1.5;">
-        Live = current status &nbsp;&middot;&nbsp; Queue = ready for queue calls
+        <span class="card-title">Live Agent View</span>
+        <span class="chip" id="agent-count">0 agents</span>
       </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th class="sortable" data-table="admin" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="admin" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="admin" data-sort-key="status" data-label="Live Presence">Live Presence</th><th class="sortable" data-table="admin" data-sort-key="queueStatus" data-label="Queue Membership">Queue Membership</th><th class="sortable" data-table="admin" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="admin" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="admin" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th class="sortable" data-table="admin" data-sort-key="toggleCount" data-label="Toggles">Toggles</th><th>24h</th><th class="sortable" data-table="admin" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="admin" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="admin" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="admin" data-sort-key="ahtInbound" data-label="AHT In">AHT In</th><th class="sortable" data-table="admin" data-sort-key="ahtOutbound" data-label="AHT Out">AHT Out</th><th class="sortable" data-table="admin" data-sort-key="score" data-label="Score">Score</th></tr></thead>
-        <tbody id="agent-table"><tr><td colspan="16" class="no-data">Loading...</td></tr></tbody>
+        <thead>
+          <tr>
+            <th class="sortable" data-table="admin" data-sort-key="idx" data-label="#">#</th>
+            <th class="sortable" data-table="admin" data-sort-key="name" data-label="Agent">Agent</th>
+            <th class="sortable" data-table="admin" data-sort-key="status" data-label="Status">Status</th>
+            <th class="sortable" data-table="admin" data-sort-key="sinceTs" data-label="Since">Since</th>
+            <th>Live Call</th>
+            <th class="sortable" data-table="admin" data-sort-key="availableSeconds" data-label="Avail">Avail</th>
+            <th class="sortable" data-table="admin" data-sort-key="unavailableSeconds" data-label="Unavail">Unavail</th>
+            <th class="sortable" data-table="admin" data-sort-key="inboundCalls" data-label="IN">IN</th>
+            <th class="sortable" data-table="admin" data-sort-key="outboundCalls" data-label="OUT">OUT</th>
+            <th class="sortable" data-table="admin" data-sort-key="missedCalls" data-label="Miss">Miss</th>
+            <th>24h</th>
+            <th class="sortable" data-table="admin" data-sort-key="score" data-label="Score">Score</th>
+          </tr>
+        </thead>
+        <tbody id="agent-table"><tr><td colspan="12" class="no-data">Loading...</td></tr></tbody>
       </table>
       </div>
     </div>
+
+    <!-- ── Abandon Board (only shown when there are abandoned calls) ──── -->
+    <div class="card" id="abandon-board-card" style="display:none">
+      <div class="card-hdr">
+        <span class="card-title">&#9888; Abandon Radar</span>
+      </div>
+      <div class="abandon-board" id="abandon-board">
+        <div class="no-data">No abandoned calls</div>
+      </div>
+    </div>
+
+    <!-- ── Status Log ──────────────────────────────────────────────────── -->
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">Status Change Log</span>
@@ -5853,6 +6003,7 @@ footer{
       </div>
       <div id="event-log"><div class="no-data">Loading...</div></div>
     </div>
+
     <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="last-update">Never</span> &nbsp;&middot;&nbsp; <span id="tz-display">CST</span></div>
   </div>
 
@@ -8039,23 +8190,23 @@ async function loadAgentStatuses(){
         if(!liveTimers[a.rc_id]){liveTimers[a.rc_id]={start:Date.now()-dur*1000,el:tid};}
       }else{if(liveTimers[a.rc_id]){clearInterval(liveTimers[a.rc_id].interval);delete liveTimers[a.rc_id];}}
       const missedBadge='<span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span>';
-      return'<tr><td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
+      return'<tr>'+
+        '<td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
         '<td><div class="agent-name">'+a.name+'</div><div class="agent-ext">'+a.extension+'</div></td>'+
-        '<td>'+liveBadge+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td>'+
-        '<td><span class="pill '+queuePillCls(queueStatus)+'"><span class="dot"></span>'+queueStatus+'</span></td>'+
-        '<td class="mono">'+toTime(sinceTs)+'</td>'+
+        '<td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span>'+(queueStatus==='Unavailable'?'<div style="font-size:9px;color:var(--t3);margin-top:2px">Queue Off</div>':'')+'</td>'+
+        '<td class="mono" style="font-size:11px">'+toTime(sinceTs)+'</td>'+
+        '<td>'+liveBadge+'</td>'+
         '<td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td>'+
         '<td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td>'+
-        '<td>'+tLog+'</td><td>'+op.timelineHtml+'</td>'+
-        '<td class="mono" style="color:var(--teal)">'+inC+'</td>'+
+        '<td class="mono" style="color:var(--teal)">'+inC+(ahtIn>0?'<div style="font-size:9px;color:var(--t3)">'+fmt(ahtIn)+'</div>':'')+'</td>'+
         '<td class="mono" style="color:var(--orange2)">'+outC+'</td>'+
         '<td>'+missedBadge+'</td>'+
-        '<td class="mono">'+fmt(ahtIn)+'</td><td class="mono">'+fmt(ahtOut)+'</td>'+
+        '<td>'+op.timelineHtml+'</td>'+
         '<td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
     });
 
     const tbody=document.getElementById('agent-table');
-    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="16" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
+    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="12" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
 
     document.getElementById('m-avail').textContent=totAvail;
     document.getElementById('m-unavail').textContent=totUnavail;
@@ -8106,8 +8257,13 @@ async function loadAgentStatuses(){
     if(currentViewMode==='admin'){
       document.getElementById('ops-team-size').textContent=agents.length;
       document.getElementById('ops-queue-ready').textContent=queueReadyNow;
+      const qOffEl=document.getElementById('ops-queue-off');if(qOffEl)qOffEl.textContent=queueOffNow;
       document.getElementById('ops-abandon-count').textContent=dashboardAbandoned;
       document.getElementById('ops-longest-ring').textContent=longestRing?fmt(longestRing):'--';
+      // Show abandon board card only when there are abandoned calls
+      const abCard=document.getElementById('abandon-board-card');if(abCard)abCard.style.display=dashboardAbandoned>0?'':'none';
+      // KPI alert pulse on abandon tile
+      const abKpi=document.getElementById('ld-abandon-kpi');if(abKpi)abKpi.style.animation=dashboardAbandoned>0?'ldAlertPulse 2s ease-in-out infinite':'none';
       const mixTotal=Math.max(1,dashboardInbound+dashboardOutbound+dashboardVoicemail+dashboardAbandoned);
       document.getElementById('mix-inbound-bar').style.width=((dashboardInbound/mixTotal)*100).toFixed(2)+'%';
       document.getElementById('mix-outbound-bar').style.width=((dashboardOutbound/mixTotal)*100).toFixed(2)+'%';
@@ -8119,10 +8275,13 @@ async function loadAgentStatuses(){
       document.getElementById('mix-abandon-val').textContent=dashboardAbandoned;
       const healthScore=Math.max(0,Math.min(100,Math.round(100-(dashboardAbandoned*8)-(dashboardVoicemail*3)-(queueOffNow*5)-(coverageGap*2))));
       const healthLabel=healthScore>=75?'Calm':healthScore>=45?'Watch':'Risk';
+      const healthColor=healthScore>=75?'var(--green)':healthScore>=45?'var(--yellow)':'var(--red)';
       const gauge=document.getElementById('health-gauge');
       if(gauge)gauge.style.setProperty('--gauge',(healthScore*3.6).toFixed(1)+'deg');
-      document.getElementById('health-score').textContent=healthScore;
-      document.getElementById('health-label').textContent=healthLabel;
+      const hScoreEl=document.getElementById('health-score');if(hScoreEl)hScoreEl.textContent=healthScore;
+      const hScoreGaugeEl=document.getElementById('health-score-gauge');if(hScoreGaugeEl)hScoreGaugeEl.textContent=healthScore;
+      const hLabelEl=document.getElementById('health-label');if(hLabelEl){hLabelEl.textContent=healthLabel;hLabelEl.style.color=healthColor;}
+      const hBadgeWrap=document.getElementById('health-badge-wrap');if(hBadgeWrap)hBadgeWrap.style.borderColor=healthColor+'55';
       const teamBase=Math.max(1,agents.length);
       document.getElementById('health-ready-bar').style.width=((queueReadyNow/teamBase)*100).toFixed(1)+'%';
       document.getElementById('health-live-bar').style.width=((totOncall/teamBase)*100).toFixed(1)+'%';
