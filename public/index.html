@@ -4094,13 +4094,16 @@ footer{
 }
 #loginScreen .login-restrict{
   display:flex !important;
-  align-items:flex-start !important;
-  gap:6px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:5px !important;
   margin-top:20px !important;
   font-size:11px !important;
   color:rgba(95,135,172,.58) !important;
-  line-height:1.6 !important;
-  text-align:left !important;
+  line-height:1.5 !important;
+  text-align:center !important;
+  white-space:nowrap !important;
+  flex-wrap:nowrap !important;
 }
 #loginScreen .login-restrict strong{color:rgba(185,212,238,.72) !important;font-weight:600 !important;}
 #loginScreen .login-divider,
@@ -5470,7 +5473,7 @@ footer{
 
       <div class="login-restrict">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.45;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        Access restricted to <strong>@adit.com</strong> &nbsp;·&nbsp; Contact Sebastin for access
+        <strong>@adit.com</strong> only &nbsp;·&nbsp; Contact Sebastin for access
       </div>
 
     </div><!-- /.login-form-wrap -->
