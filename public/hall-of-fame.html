@@ -2514,6 +2514,37 @@ function buildBonusCard(agent, type){
 function buildHoF(){
   const allAgents=[...DATA.calls,...DATA.chat];
 
+  /* Shared tooltip helpers */
+  const sharedTip=document.getElementById('awTooltip');
+  let tipHideTimer=null;
+  function positionTip(card){
+    const r=card.getBoundingClientRect();
+    const tw=sharedTip.offsetWidth, th=sharedTip.offsetHeight;
+    let left=r.left+(r.width-tw)/2;
+    left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
+    const arrPct=Math.round(((r.left+r.width/2)-left)/tw*100);
+    sharedTip.style.setProperty('--arr',arrPct+'%');
+    let top=r.top-th-10;
+    if(top<8) top=r.bottom+10;
+    sharedTip.style.left=left+'px';
+    sharedTip.style.top=top+'px';
+  }
+  function showTip(card,title,titleColor,winner,metric,reason){
+    clearTimeout(tipHideTimer);
+    sharedTip.querySelector('.awt-title').textContent=title;
+    sharedTip.querySelector('.awt-title').style.color=titleColor;
+    sharedTip.querySelector('.awt-winner').textContent=winner;
+    sharedTip.querySelector('.awt-metric').textContent=metric;
+    sharedTip.querySelector('.awt-reason').innerHTML=reason;
+    sharedTip.style.display='block';
+    sharedTip.getBoundingClientRect();
+    positionTip(card);
+    requestAnimationFrame(()=>sharedTip.classList.add('visible'));
+  }
+  function hideTip(){
+    sharedTip.classList.remove('visible');
+    tipHideTimer=setTimeout(()=>{sharedTip.style.display='none';},160);
+  }
 
   /* Podium — ranked by avg performance score desc */
   const ranked=[...allAgents].sort((a,b)=>avgPts(b)-avgPts(a));
@@ -2535,7 +2566,7 @@ function buildHoF(){
       const ap=avgPts(agent);
       const isCallsAgent=DATA.calls.includes(agent);
       const aviCls=isCallsAgent?'avi-t avi-ch':'avi-ch';
-      return `<div class="pod ${cls}" style="--bd:${podiumDelays[idx]}">
+      return `<div class="pod ${cls}" data-pod="${idx}" style="--bd:${podiumDelays[idx]}">
         <div class="pod-badge">${badge}</div>
         <div class="pod-avi">${agent.ini}</div>
         <div class="pod-name">${agent.name}</div>
@@ -2544,6 +2575,33 @@ function buildHoF(){
         <div class="pod-bar"></div>
       </div>`;
     }).join('');
+
+    // Podium hover tooltips
+    if(sharedTip){
+      podEl.querySelectorAll('.pod[data-pod]').forEach(card=>{
+        const idx=parseInt(card.dataset.pod,10);
+        const agent=displayOrder[idx];
+        if(!agent)return;
+        const pos=podiumPos[idx];
+        const isCallsAgent=DATA.calls.includes(agent);
+        const ap=avgPts(agent);
+        const monthBreakdown=MONTHS.map(m=>{
+          const pts=agent.months[m]?.bonus?.pts;
+          return `${MS[m]}: <strong style="color:#eef4ff">${pts!=null?pts+'/100':'N/A'}</strong>`;
+        }).join(' &nbsp;·&nbsp; ');
+        const podColors=['var(--gold)','var(--orange)','var(--violet)'];
+        const podColor=podColors[pos-1]||'var(--orange)';
+        card.addEventListener('mouseenter',()=>showTip(
+          card,
+          `#${pos} Quarter Standout`, podColor,
+          agent.name,
+          `Avg score ${ap}/100`,
+          `${isCallsAgent?'Calls Wing':'Chat Wing'} &nbsp;&middot;&nbsp; Q1 2026`+
+          `<div style="margin-top:7px;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:rgba(232,238,255,.55);line-height:1.8">${monthBreakdown}</div>`
+        ));
+        card.addEventListener('mouseleave',hideTip);
+      });
+    }
   }
 
   /* Award grid */
@@ -2637,43 +2695,16 @@ function buildHoF(){
     }).join('');
 
     // Wire up JS tooltips (avoids overflow:hidden clipping)
-    const tip=document.getElementById('awTooltip');
-    if(tip){
-      let hideTimer=null;
+    if(sharedTip){
       awardGrid.querySelectorAll('.aw[data-aw]').forEach(card=>{
         const idx=parseInt(card.dataset.aw,10);
         const aw=awards[idx];
-        card.addEventListener('mouseenter',()=>{
-          clearTimeout(hideTimer);
-          tip.querySelector('.awt-title').textContent=aw.name;
-          tip.querySelector('.awt-title').style.color=aw.tb||aw.color;
-          tip.querySelector('.awt-winner').textContent=aw.winner.name;
-          tip.querySelector('.awt-metric').textContent=aw.metric;
-          tip.querySelector('.awt-reason').innerHTML=aw.tip;
-          tip.style.display='block';
-          // force reflow so offsetWidth/Height are correct
-          tip.getBoundingClientRect();
-          positionAwTip(card);
-          requestAnimationFrame(()=>tip.classList.add('visible'));
-        });
-        card.addEventListener('mouseleave',()=>{
-          tip.classList.remove('visible');
-          hideTimer=setTimeout(()=>{tip.style.display='none';},160);
-        });
+        card.addEventListener('mouseenter',()=>showTip(
+          card, aw.name, aw.tb||aw.color,
+          aw.winner.name, aw.metric, aw.tip
+        ));
+        card.addEventListener('mouseleave',hideTip);
       });
-      function positionAwTip(card){
-        const r=card.getBoundingClientRect();
-        const tw=tip.offsetWidth, th=tip.offsetHeight;
-        let left=r.left+(r.width-tw)/2;
-        left=Math.max(8,Math.min(left,window.innerWidth-tw-8));
-        // Arrow relative position inside tooltip
-        const arrPct=Math.round(((r.left+r.width/2)-left)/tw*100);
-        tip.style.setProperty('--arr',arrPct+'%');
-        let top=r.top-th-10;
-        if(top<8) top=r.bottom+10; // flip below if not enough space above
-        tip.style.left=left+'px';
-        tip.style.top=top+'px';
-      }
     }
   }
 
