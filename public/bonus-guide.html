@@ -711,7 +711,7 @@ body{
   font-size: 21px; letter-spacing: -.035em;
   background: linear-gradient(120deg, #e8eeff 0%, rgba(232,238,255,.75) 100%);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  display: inline-block;
+  display: block;
 }
 .section-sub { font-size: 12.5px; margin-top: 6px; line-height: 1.65; max-width: 620px; }
 
@@ -834,6 +834,102 @@ body{
 /* ── PAGE RHYTHM ── */
 .page { padding: 24px 24px 80px; }
 .hero { margin-bottom: 16px; }
+
+
+/* ════ POLISH PASS 2 ════ */
+
+/* Section tag on its own line, clear block */
+.section-tag { display: block; width: fit-content; margin-bottom: 10px; }
+
+/* Section title — block with extra breathing room */
+.section-title { margin-top: 0; margin-bottom: 4px; }
+
+/* Section header better padding rhythm */
+.section-hdr > div { display: flex; flex-direction: column; }
+
+/* ── HERO number glow ── */
+.slab-card.s1 .amount { text-shadow: 0 0 30px rgba(242,136,32,.35); }
+.slab-card.s2 .amount { text-shadow: 0 0 30px rgba(6,135,190,.3); }
+
+/* ── TEAM panels — stronger color presence ── */
+.team-panel.calls { background: linear-gradient(160deg, rgba(6,135,190,.04) 0%, rgba(12,20,40,.72) 100%) !important; }
+.team-panel.chat  { background: linear-gradient(160deg, rgba(242,136,32,.04) 0%, rgba(12,20,40,.72) 100%) !important; }
+
+/* ── METRIC item left-border on hover ── */
+.metric-item { border-left: 2px solid transparent; }
+
+/* ── ELIGIBILITY — number glow and bigger icon ── */
+.elig-value { display: block; font-weight: 900; }
+
+/* Elig cards — inner glow on hover */
+.elig-card.blue:hover   { background: rgba(6,135,190,.06)   !important; }
+.elig-card.green:hover  { background: rgba(34,211,160,.06)  !important; }
+.elig-card.orange:hover { background: rgba(242,136,32,.06)  !important; }
+.elig-card.purple:hover { background: rgba(167,139,250,.06) !important; }
+
+/* ── LEAVE nodes — tighter horizontal strip ── */
+@media(max-width:900px){.leave-track{grid-template-columns:1fr 1fr;}}
+.leave-node { cursor: default; }
+
+/* ── CALCULATOR ── */
+/* cgc-val color when card has no status yet */
+.cgc:not(.slab1):not(.slab2):not(.miss) .cgc-val { color: rgba(232,238,255,.5); }
+
+/* Team cards more padding */
+.calc-tc { padding: 16px 20px; }
+
+/* Result panel payout label */
+.rp-label { letter-spacing: .18em; }
+
+/* ── GOVERNANCE — list numbers with accent gradient ── */
+.gov-num {
+  background: linear-gradient(135deg, rgba(242,136,32,.14), rgba(6,135,190,.08)) !important;
+  border: 1px solid rgba(242,136,32,.22) !important;
+}
+
+/* ── HERO pills — brighter dots ── */
+.pill::before { width: 5px; height: 5px; opacity: 1; }
+
+/* ── SCROLLBAR better ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
+
+/* ── SECTION number decoration — large faint numeral ── */
+.section-hdr { overflow: hidden; }
+.section-tag::after {
+  display: none;
+}
+
+/* ── HERO inner grid better vertical center ── */
+.hero-inner { align-items: center; }
+
+/* ── Remove the ::after dot from old section-tag style ── */
+.section-tag::before { display:none !important; }
+
+/* ── CSAT note card slightly warmer ── */
+.csat-note { border-color: rgba(255,255,255,.08) !important; }
+
+/* ── LEAVE alert more visible ── */
+.leave-alert {
+  background: rgba(248,113,113,.07) !important;
+  border-color: rgba(248,113,113,.22) !important;
+  border-radius: var(--r-sm) !important;
+  font-size: 12px !important;
+}
+
+/* ── GLASS section card — inset top highlight ── */
+.section.glass {
+  box-shadow: 0 1px 0 0 rgba(255,255,255,.06) inset, 0 24px 64px rgba(0,0,0,.5) !important;
+}
+
+/* ── Metric bar fill thicker and breathing ── */
+.metric-bar-wrap { height: 5px !important; }
+
+/* ── Slab tags bigger touch ── */
+.slab-tag { font-size: 10.5px; padding: 3px 10px; }
+
+/* ── ELIGIBILITY grid even spacing ── */
+.elig-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 
 </style>
 </head>
