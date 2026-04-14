@@ -996,28 +996,27 @@ select option{background:#0c1424;color:var(--t1);}
 .btk-grid-panel{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:18px 20px;}
 .btk-agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;}
 /* Agent tile */
-.btk-agent-tile{background:rgba(255,255,255,.025);border:1px solid var(--b1);border-left:3px solid var(--tile-accent,var(--b2));border-radius:12px;padding:13px 14px;transition:transform .15s,box-shadow .15s;position:relative;}
-.btk-agent-tile:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.btk-agent-tile{background:rgba(255,255,255,.025);border:1px solid var(--b1);border-left:3px solid var(--tile-accent,var(--b2));border-radius:12px;padding:12px 14px;transition:transform .15s,box-shadow .15s;}
+.btk-agent-tile:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.14);}
 .btk-tile-alert{border-color:rgba(244,63,94,.28)!important;background:rgba(244,63,94,.04)!important;}
-.btk-tile-top{display:flex;align-items:flex-start;gap:9px;margin-bottom:8px;}
-.btk-tile-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;letter-spacing:-.01em;}
+.btk-tile-top{display:flex;align-items:center;gap:9px;}
+.btk-tile-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;letter-spacing:-.01em;}
 .btk-tile-info{flex:1;min-width:0;}
-.btk-tile-name{font-size:12.5px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.btk-tile-email{font-size:9px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'JetBrains Mono',monospace;margin-top:1px;}
-.btk-tile-alert-badge{flex-shrink:0;padding:2px 5px;background:var(--red-lo);color:var(--red);border:1px solid rgba(244,63,94,.22);border-radius:4px;font-size:8px;font-weight:800;letter-spacing:.06em;}
-.btk-tile-status{display:flex;align-items:center;gap:6px;margin-bottom:2px;}
-.btk-tile-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.btk-tile-name{font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.btk-tile-alert-badge{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--red-lo);color:var(--red);border:1px solid rgba(244,63,94,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.btk-tile-status{display:flex;align-items:center;gap:5px;margin-top:3px;}
+.btk-tile-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .btk-tile-status-label{font-size:11px;font-weight:700;flex:1;}
-.btk-tile-duration{font-family:'JetBrains Mono',monospace;font-size:10.5px;opacity:.85;}
-.btk-tile-since{font-size:9.5px;color:var(--t3);margin-bottom:10px;font-family:'JetBrains Mono',monospace;}
-.btk-tile-bars{display:flex;flex-direction:column;gap:4px;padding-top:9px;border-top:1px solid var(--b1);margin-bottom:7px;}
-.btk-bar-row{display:flex;align-items:center;gap:6px;}
-.btk-bar-lbl{font-size:9px;color:var(--t3);flex:0 0 42px;text-align:right;white-space:nowrap;}
-.btk-mini-bar-track{flex:1;height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
-.btk-mini-bar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
-.btk-bar-val{font-size:9px;color:var(--t2);font-family:'JetBrains Mono',monospace;flex:0 0 34px;text-align:right;}
+.btk-tile-duration{font-family:'JetBrains Mono',monospace;font-size:10px;opacity:.8;}
+.btk-tile-since{font-size:9px;color:var(--t3);margin-top:6px;font-family:'JetBrains Mono',monospace;}
+/* Compact metric chips */
+.btk-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:9px;padding-top:9px;border-top:1px solid var(--b1);}
+.btk-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:9.5px;color:var(--t2);background:rgba(255,255,255,.04);border:1px solid var(--b1);}
+.btk-chip strong{color:var(--t1);font-weight:700;}
+.btk-chip-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.btk-chip-over{background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.22);color:var(--red);}
+.btk-chip-over strong{color:var(--red);}
 .btk-over{color:var(--red)!important;font-weight:700;}
-.btk-tile-last{font-size:9.5px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Feed panel */
 .btk-feed-panel{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px 18px;position:sticky;top:68px;}
 .btk-feed-list{display:flex;flex-direction:column;gap:3px;max-height:calc(100vh - 200px);overflow-y:auto;}
@@ -7656,36 +7655,41 @@ function buildBtkAgentTile(row){
   const initials = (row.username||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const c = btkStatusColor(status);
   const BRB_LIMIT = 600, BREAK_LIMIT = 3600;
-  const maxToday = Math.max(row.brbSeconds||0, row.breakSeconds||0, row.trainingSeconds||0, row.qaSeconds||0, row.internalCallSeconds||0, 300);
-  function miniBar(val, color){
-    const w = Math.min(100, ((val||0) / Math.max(maxToday, 1)) * 100);
-    return `<div class="btk-mini-bar-track"><div class="btk-mini-bar-fill" style="width:${w}%;background:${color}"></div></div>`;
-  }
   const isOvertime = hasAlert && (status==='Break'||status==='BRB');
-  const durationText = fmt(row.currentLaneSeconds||0) + (isOvertime ? ' ▲' : '');
-  const alertBadge = hasAlert ? `<span class="btk-tile-alert-badge" title="${alertLines.join(' · ')}">⚠ ALERT</span>` : '';
+  const durationText = fmt(row.currentLaneSeconds||0)+(isOvertime?' ▲':'');
+
+  // Compact metric chips — only show non-zero AUX types
+  const brbOver = (row.brbSeconds||0) > BRB_LIMIT;
+  const breakOver = (row.breakSeconds||0) > BREAK_LIMIT;
+  const auxChips = [
+    { label:'BRB', val:row.brbSeconds||0, over:brbOver, color:'#f59e0b' },
+    { label:'Break', val:row.breakSeconds||0, over:breakOver, color:'#f43f5e' },
+    { label:'Training', val:row.trainingSeconds||0, over:false, color:'#a855f7' },
+    { label:'Internal', val:row.internalCallSeconds||0, over:false, color:'#3b82f6' },
+    { label:'QA', val:row.qaSeconds||0, over:false, color:'#14b8a6' },
+  ].filter(m => m.val > 0);
+
+  const chips = auxChips.map(m =>
+    `<span class="btk-chip${m.over?' btk-chip-over':''}" style="${!m.over?'--chip-color:'+m.color:''}">`+
+    `<span class="btk-chip-dot" style="background:${m.color}"></span>`+
+    `${m.label} <strong>${fmt(m.val)}</strong></span>`
+  ).join('');
+
   return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':''}" style="--tile-accent:${c.border}">
   <div class="btk-tile-top">
     <div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>
     <div class="btk-tile-info">
       <div class="btk-tile-name">${row.username||'--'}</div>
-      <div class="btk-tile-email">${row.email||''}</div>
+      <div class="btk-tile-status" style="color:${c.text}">
+        <span class="btk-tile-dot" style="background:${c.dot};box-shadow:0 0 4px ${c.dot}99"></span>
+        <span class="btk-tile-status-label">${status}</span>
+        <span class="btk-tile-duration">${durationText}</span>
+      </div>
     </div>
-    ${alertBadge}
-  </div>
-  <div class="btk-tile-status" style="color:${c.text}">
-    <span class="btk-tile-dot" style="background:${c.dot};box-shadow:0 0 5px ${c.dot}88"></span>
-    <span class="btk-tile-status-label">${status}</span>
-    <span class="btk-tile-duration">${durationText}</span>
+    ${hasAlert?`<span class="btk-tile-alert-badge" title="${alertLines.join(' · ')}">⚠</span>`:''}
   </div>
   <div class="btk-tile-since">${row.since?'Since '+toTime(row.since):'No signal yet'}</div>
-  <div class="btk-tile-bars">
-    <div class="btk-bar-row"><span class="btk-bar-lbl">BRB</span>${miniBar(row.brbSeconds,'#f59e0b')}<span class="btk-bar-val${(row.brbSeconds||0)>BRB_LIMIT?' btk-over':''}">${fmt(row.brbSeconds||0)}</span></div>
-    <div class="btk-bar-row"><span class="btk-bar-lbl">Break</span>${miniBar(row.breakSeconds,'#f43f5e')}<span class="btk-bar-val${(row.breakSeconds||0)>BREAK_LIMIT?' btk-over':''}">${fmt(row.breakSeconds||0)}</span></div>
-    <div class="btk-bar-row"><span class="btk-bar-lbl">Training</span>${miniBar(row.trainingSeconds,'#a855f7')}<span class="btk-bar-val">${fmt(row.trainingSeconds||0)}</span></div>
-    <div class="btk-bar-row"><span class="btk-bar-lbl">Internal</span>${miniBar(row.internalCallSeconds,'#3b82f6')}<span class="btk-bar-val">${fmt(row.internalCallSeconds||0)}</span></div>
-  </div>
-  <div class="btk-tile-last">${row.lastActionLabel?row.lastActionLabel+(row.lastActionAt?' · '+toTime(row.lastActionAt):''):'No activity yet'}</div>
+  ${chips?`<div class="btk-chips">${chips}</div>`:''}
 </div>`;
 }
 
@@ -7726,13 +7730,14 @@ function renderBreakAdminView(){
   const alertZoneEl = document.getElementById('btk-alert-zone');
   if(alertZoneEl) alertZoneEl.innerHTML = buildBtkAlertZone(tracker);
 
-  // — Agent grid: sort alerts first, then by status urgency
+  // — Agent grid: active agents only (exclude Logged Out), alerts first, then by urgency
+  const active = tracker.filter(r => r.currentStatus !== 'Logged Out');
   const chipEl = document.getElementById('break-board-chip');
-  if(chipEl) chipEl.textContent = team+' agent'+(team!==1?'s':'');
+  if(chipEl) chipEl.textContent = active.length+' active'+(active.length!==1?'s':'');
   const gridEl = document.getElementById('btk-agent-grid');
   if(gridEl){
-    const statusOrder = {'Break':0,'BRB':1,'Training / Coaching':2,'QA Session AUX':3,'Internal Calls':4,'Logged In':5,'Logged Out':6};
-    const sorted = [...tracker].sort((a,b)=>{
+    const statusOrder = {'Break':0,'BRB':1,'Training / Coaching':2,'QA Session AUX':3,'Internal Calls':4,'Logged In':5};
+    const sorted = [...active].sort((a,b)=>{
       const aA = breakAlertMessages(a).length>0?0:1;
       const bA = breakAlertMessages(b).length>0?0:1;
       if(aA!==bA) return aA-bA;
@@ -7740,7 +7745,7 @@ function renderBreakAdminView(){
     });
     gridEl.innerHTML = sorted.length
       ? sorted.map(buildBtkAgentTile).join('')
-      : '<div class="break-empty">No break tracker activity for '+formatTrackerDate(selectedDate)+'.</div>';
+      : '<div class="break-empty">No active agents on the floor for '+formatTrackerDate(selectedDate)+'.</div>';
   }
 
   // — Feed
