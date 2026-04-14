@@ -667,9 +667,9 @@ select option{background:#0c1424;color:var(--t1);}
 
 @keyframes ldAlertPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0)}50%{box-shadow:0 0 0 4px rgba(244,63,94,.2);}}
 
-/* ── Admin table: sticky header pinned below fixed header+nav (68+44=112px) ── */
+/* ── Admin table: sticky header — offset applied via --sticky-top CSS var ── */
 #admin-agent-tbl-wrap{overflow-x:auto;}
-#admin-agent-tbl-wrap thead th{position:sticky;top:112px;z-index:10;background:rgba(7,13,28,.97);}
+#admin-agent-tbl-wrap thead th{position:sticky;top:var(--sticky-top,130px);z-index:10;background:rgba(7,13,28,.97);}
 
 /* ══════════════════════════════════════════════════════════════════════════
    VIZ ROW
@@ -1681,7 +1681,7 @@ table{
 
 thead th{
   position:sticky;
-  top:112px;
+  top:var(--sticky-top,130px);
   z-index:2;
   padding:12px 14px;
   background:rgba(10,15,31,.96);
@@ -2413,7 +2413,7 @@ header{
   border:1px solid rgba(122,136,168,.10) !important;
 }
 thead th{
-  top:118px !important;
+  top:var(--sticky-top,130px) !important;
   padding:12px 10px !important;
   background:rgba(11,17,29,.95) !important;
   font-size:9px !important;
@@ -5586,7 +5586,40 @@ footer{
 #agentView {
   padding: 0 !important;
 }
+
+/* ── Definitive sticky table header ─────────────────────────────────────── */
+/* Top offset is computed at runtime by syncStickyHeader() and stored in
+   --sticky-top. This rule is LAST so it wins over every !important above. */
+#admin-agent-tbl-wrap thead th,
+#agent-section-dashboard thead th,
+thead th {
+  position: sticky !important;
+  top: var(--sticky-top, 130px) !important;
+  z-index: 12 !important;
+}
 </style>
+<script>
+/* ── Sticky header runtime calibration ───────────────────────────────────── */
+(function(){
+  function syncStickyHeader(){
+    var nav = document.querySelector('.nav');
+    if(!nav) return;
+    var b = nav.getBoundingClientRect().bottom;
+    if(b > 10) document.documentElement.style.setProperty('--sticky-top', Math.ceil(b) + 'px');
+  }
+  // Run immediately, after fonts/layout settle, and on resize
+  syncStickyHeader();
+  setTimeout(syncStickyHeader, 100);
+  setTimeout(syncStickyHeader, 600);
+  window.addEventListener('resize', syncStickyHeader);
+  // Re-calibrate whenever a nav tab is clicked (tab switch can shift layout)
+  document.addEventListener('click', function(e){
+    if(e.target && (e.target.closest('.nav-tab') || e.target.closest('.agent-shell-btn'))){
+      setTimeout(syncStickyHeader, 80);
+    }
+  });
+})();
+</script>
 </head>
 <body>
 

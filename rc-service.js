@@ -15,7 +15,7 @@ const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 60000);
 const SUBSCRIPTION_RENEW_BEFORE_MS = 5 * 60 * 1000;
 const WEBHOOK_RETRY_MS = Number(process.env.WEBHOOK_RETRY_MS || 30000);
-const DASHBOARD_SUMMARY_TTL_MS = Number(process.env.DASHBOARD_SUMMARY_TTL_MS || 300000);
+const DASHBOARD_SUMMARY_TTL_MS = Number(process.env.DASHBOARD_SUMMARY_TTL_MS || 90000);
 const CALL_LOG_SYNC_MIN_INTERVAL_MS = Number(process.env.CALL_LOG_SYNC_MIN_INTERVAL_MS || 600000);
 
 let customerServiceQueueId = null;
@@ -412,9 +412,11 @@ function buildSessionSummary(sessionCalls, lookups) {
 
   // Queue-touched sessions are ideal, but RC call log often doesn't surface the queue
   // extension ID in individual leg records. Broaden: also count any inbound call that
-  // landed on a monitored agent (owner) with no outbound leg, as these are overwhelmingly
-  // queue-routed in a contact-center context.
-  const relevantInbound = queueTouched || (!!owner && inboundSeen && !outboundSeen);
+  // landed on a monitored agent (owner) whose *first* leg direction was inbound.
+  // Using primaryDirection (first leg) rather than !outboundSeen avoids incorrectly
+  // dropping transferred calls — a transfer creates an outbound leg in the same session
+  // even though the original call came from a customer through the queue.
+  const relevantInbound = queueTouched || (!!owner && inboundSeen && primaryDirection !== 'outbound');
   const relevantOutbound = !!owner && !relevantInbound && (primaryDirection === 'outbound' || outboundSeen);
 
   return {
