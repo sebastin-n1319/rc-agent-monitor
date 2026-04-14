@@ -4940,7 +4940,7 @@ footer{
   backdrop-filter: blur(20px) !important;
   border-bottom: 1px solid rgba(255,255,255,.06) !important;
   position: sticky !important;
-  top: 0 !important;
+  top: 54px !important;
   z-index: 20 !important;
   box-shadow: 0 8px 24px rgba(0,0,0,.3) !important;
 }
@@ -5408,6 +5408,29 @@ footer{
    position:fixed changes its stacking context, causing the header to jump) */
 #mainApp.app-revealing{
   transition: opacity .52s ease;
+}
+
+/* ── Layout tightening ──────────────────────────────────────────────── */
+/* Both nav bars must stick at 54px = right below the fixed header.
+   The .nav (admin) was at 58px; the .agent-shell-nav was at 0px (broken). */
+.nav { top: 54px !important; }
+.agent-shell-nav { top: 54px !important; }
+
+/* Remove the hard max-width that creates side gutters on wide monitors.
+   Cards and pages keep their internal padding for readability. */
+#adminView,
+#agentView,
+.page,
+.agent-shell-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Remove the 20px top / 24px side padding that was on the agentView inline
+   style — this created a dead zone above the nav tabs and extra side gaps. */
+#agentView {
+  padding: 0 !important;
 }
 </style>
 </head>
@@ -5990,7 +6013,7 @@ footer{
 </div>
 
 <!-- AGENT VIEW -->
-<div id="agentView" style="display:none;padding:20px 24px;">
+<div id="agentView" style="display:none;">
   <div class="agent-shell-nav">
     <button class="agent-shell-btn active" id="agent-tab-dashboard" onclick="switchAgentSection('dashboard',this)">Dashboard</button>
     <button class="agent-shell-btn" id="agent-breakbot-tab" onclick="switchAgentSection('breakbot',this)">Break Bot</button>
