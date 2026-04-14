@@ -4327,6 +4327,417 @@ footer{
   animation:bbFadeUp .4s cubic-bezier(.22,1,.36,1) both !important;
 }
 </style>
+
+<style id="agent-dash-v2">
+/* ═══════════════════════════════════════════════════════════════════════════
+   AGENT DASHBOARD V2 — Premium redesign
+   Glowing KPI tiles · Deep-glass card · Premium table · Animated nav
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Agent view wrapper ── */
+#agentView {
+  padding: 0 !important;
+}
+
+/* ══ TAB NAVIGATION ══ */
+.agent-shell-nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 10px 20px !important;
+  background: rgba(5,9,22,.88) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3) !important;
+}
+.agent-shell-btn {
+  padding: 8px 16px !important;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: rgba(127,139,168,.75) !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  cursor: pointer !important;
+  transition:
+    color .2s ease,
+    background .2s ease,
+    border-color .2s ease,
+    transform .2s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .2s ease !important;
+  white-space: nowrap !important;
+}
+.agent-shell-btn:hover {
+  color: rgba(238,247,255,.9) !important;
+  background: rgba(255,255,255,.05) !important;
+  border-color: rgba(255,255,255,.08) !important;
+  transform: translateY(-1px) !important;
+}
+.agent-shell-btn.active {
+  color: #f9a84d !important;
+  background: linear-gradient(160deg, rgba(242,136,32,.18), rgba(242,136,32,.08)) !important;
+  border-color: rgba(242,136,32,.32) !important;
+  box-shadow: 0 0 18px rgba(242,136,32,.12), inset 0 1px 0 rgba(255,255,255,.07) !important;
+  transform: none !important;
+}
+.agent-shell-btn.active:hover {
+  box-shadow: 0 0 24px rgba(242,136,32,.18), inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+
+/* ══ DASHBOARD PAGE PADDING ══ */
+#agent-section-dashboard {
+  padding: 20px 22px 32px !important;
+}
+
+/* ══ KPI METRIC TILES ══ */
+#agent-section-dashboard .metrics {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 12px !important;
+  margin-bottom: 16px !important;
+}
+#agent-section-dashboard .metric {
+  min-height: 128px !important;
+  border-radius: 20px !important;
+  padding: 18px 18px 16px !important;
+  background: linear-gradient(150deg, rgba(14,22,42,.94) 0%, rgba(8,13,28,.97) 100%) !important;
+  border: 1px solid rgba(136,146,176,.12) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.05),
+    0 16px 40px rgba(0,4,20,.38) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition:
+    transform .28s cubic-bezier(.34,1.56,.64,1),
+    box-shadow .28s ease,
+    border-color .22s ease !important;
+  cursor: default !important;
+}
+/* Colored top accent bar */
+#agent-section-dashboard .metric::before {
+  height: 2px !important;
+  opacity: 1 !important;
+  box-shadow: 0 0 16px var(--bar-c, var(--orange)), 0 0 32px var(--bar-c, var(--orange)) !important;
+  transition: box-shadow .3s !important;
+}
+/* Ambient glow orb in corner */
+#agent-section-dashboard .metric::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -30px !important; right: -30px !important;
+  width: 110px !important; height: 110px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, var(--bar-c, var(--orange)) 0%, transparent 70%) !important;
+  opacity: .07 !important;
+  pointer-events: none !important;
+  transition: opacity .3s !important;
+}
+#agent-section-dashboard .metric:hover {
+  transform: translateY(-6px) scale(1.01) !important;
+  border-color: rgba(var(--bar-c-raw, 255,255,255), .2) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    0 22px 50px rgba(0,4,20,.52),
+    0 0 0 1px rgba(var(--bar-c-raw,255,255,255),.04) !important;
+}
+#agent-section-dashboard .metric:hover::after {
+  opacity: .13 !important;
+}
+#agent-section-dashboard .metric:hover::before {
+  box-shadow: 0 0 24px var(--bar-c, var(--orange)), 0 0 48px var(--bar-c, var(--orange)) !important;
+}
+
+/* Metric label */
+#agent-section-dashboard .metric-lbl {
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: .14em !important;
+  text-transform: uppercase !important;
+  color: rgba(127,139,168,.65) !important;
+  margin-bottom: 14px !important;
+}
+/* Metric value — colored by type */
+#agent-section-dashboard .metric-val {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  letter-spacing: -.05em !important;
+  line-height: 1 !important;
+  color: var(--bar-c, #eef7ff) !important;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--bar-c, #eef7ff) 30%, transparent) !important;
+}
+#agent-section-dashboard .metric-sub {
+  font-size: 10.5px !important;
+  color: rgba(115,128,156,.6) !important;
+  margin-top: 8px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+/* Per-color hover ring */
+#agent-section-dashboard .m-green:hover { border-color: rgba(34,197,94,.22) !important; }
+#agent-section-dashboard .m-red:hover   { border-color: rgba(244,63,94,.22) !important; }
+#agent-section-dashboard .m-blue:hover  { border-color: rgba(59,130,246,.22) !important; }
+#agent-section-dashboard .m-teal:hover  { border-color: rgba(6,135,190,.22) !important; }
+#agent-section-dashboard .m-orange:hover{ border-color: rgba(242,136,32,.22) !important; }
+
+/* ══ TEAM STATUS CARD ══ */
+#agent-section-dashboard .card {
+  background: linear-gradient(160deg, rgba(12,20,38,.92) 0%, rgba(7,13,26,.96) 100%) !important;
+  border: 1px solid rgba(136,146,176,.12) !important;
+  border-radius: 22px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.045),
+    0 20px 52px rgba(0,4,20,.4) !important;
+  backdrop-filter: blur(24px) !important;
+}
+#agent-section-dashboard .card-hdr {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 18px 20px 16px !important;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.05) !important;
+}
+#agent-section-dashboard .card-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: -.02em !important;
+  color: rgba(238,247,255,.9) !important;
+}
+#agent-section-dashboard .chip {
+  background: rgba(242,136,32,.1) !important;
+  border: 1px solid rgba(242,136,32,.22) !important;
+  color: #f9a84d !important;
+  border-radius: 10px !important;
+  padding: 4px 12px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em !important;
+}
+
+/* ══ TABLE WRAPPER ══ */
+#agent-section-dashboard .tbl-wrap {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow-x: auto !important;
+}
+#agent-section-dashboard table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+/* ── Table header ── */
+#agent-section-dashboard thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 3 !important;
+  padding: 12px 14px !important;
+  background: rgba(8,14,30,.96) !important;
+  backdrop-filter: blur(16px) !important;
+  border-bottom: 1px solid rgba(255,255,255,.06) !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  color: rgba(115,128,156,.65) !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+  transition: color .18s !important;
+}
+#agent-section-dashboard thead th.sortable:hover {
+  color: rgba(238,247,255,.85) !important;
+}
+#agent-section-dashboard thead th.sort-asc,
+#agent-section-dashboard thead th.sort-desc {
+  color: #f9a84d !important;
+}
+
+/* ── Table rows ── */
+#agent-section-dashboard tbody tr {
+  transition: background .18s ease !important;
+  position: relative !important;
+}
+#agent-section-dashboard tbody td {
+  padding: 13px 14px !important;
+  border-bottom: 1px solid rgba(255,255,255,.038) !important;
+  font-size: 12px !important;
+  color: rgba(147,160,189,.88) !important;
+  vertical-align: middle !important;
+  white-space: nowrap !important;
+}
+#agent-section-dashboard tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,.012) !important;
+}
+#agent-section-dashboard tbody tr:hover td {
+  background: rgba(255,255,255,.038) !important;
+}
+#agent-section-dashboard tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ── Agent name cell ── */
+#agent-section-dashboard .agent-name {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: rgba(238,247,255,.92) !important;
+  letter-spacing: -.01em !important;
+}
+#agent-section-dashboard .agent-ext {
+  font-size: 10px !important;
+  color: rgba(115,128,156,.65) !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  margin-top: 2px !important;
+}
+
+/* ── Live timer ── */
+#agent-section-dashboard .live-timer {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #4ade80 !important;
+  text-shadow: 0 0 10px rgba(74,222,128,.35) !important;
+}
+
+/* ── Status pills ── */
+#agent-section-dashboard .pill {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 4px 11px !important;
+  border-radius: 999px !important;
+}
+#agent-section-dashboard .p-avail {
+  background: rgba(34,197,94,.1) !important;
+  color: #4ade80 !important;
+  border-color: rgba(34,197,94,.25) !important;
+  box-shadow: 0 0 12px rgba(34,197,94,.1) !important;
+}
+#agent-section-dashboard .p-unavail {
+  background: rgba(244,63,94,.1) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244,63,94,.25) !important;
+}
+#agent-section-dashboard .p-oncall {
+  background: rgba(59,130,246,.1) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59,130,246,.25) !important;
+  box-shadow: 0 0 12px rgba(59,130,246,.1) !important;
+}
+#agent-section-dashboard .p-ringing {
+  background: rgba(245,158,11,.1) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245,158,11,.25) !important;
+  box-shadow: 0 0 12px rgba(245,158,11,.12) !important;
+}
+
+/* ── Score badges ── */
+#agent-section-dashboard .score {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  padding: 3px 10px !important;
+  border-radius: 8px !important;
+  min-width: 38px !important;
+}
+#agent-section-dashboard .s-high {
+  background: rgba(34,197,94,.12) !important;
+  color: #4ade80 !important;
+  border-color: rgba(34,197,94,.28) !important;
+  box-shadow: 0 0 10px rgba(34,197,94,.1) !important;
+}
+#agent-section-dashboard .s-mid {
+  background: rgba(245,158,11,.12) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245,158,11,.28) !important;
+}
+#agent-section-dashboard .s-low {
+  background: rgba(244,63,94,.12) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244,63,94,.28) !important;
+}
+
+/* ── Missed badge ── */
+#agent-section-dashboard .missed-badge {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border-radius: 7px !important;
+  padding: 2px 8px !important;
+}
+#agent-section-dashboard .missed-red {
+  background: rgba(244,63,94,.12) !important;
+  color: #fb7185 !important;
+  border-color: rgba(244,63,94,.28) !important;
+}
+#agent-section-dashboard .missed-zero {
+  background: rgba(34,197,94,.08) !important;
+  color: #4ade80 !important;
+  border-color: rgba(34,197,94,.18) !important;
+}
+
+/* ── Live dot ── */
+#agent-section-dashboard .live-badge {
+  background: rgba(34,197,94,.1) !important;
+  border-color: rgba(34,197,94,.22) !important;
+  color: #4ade80 !important;
+  padding: 3px 9px !important;
+  font-size: 9.5px !important;
+  box-shadow: 0 0 10px rgba(34,197,94,.1) !important;
+}
+
+/* ── Mono numbers ── */
+#agent-section-dashboard .mono {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: -.02em !important;
+}
+
+/* ── Refresh info bar ── */
+#agent-section-dashboard .refresh-info {
+  font-size: 10.5px !important;
+  color: rgba(115,128,156,.5) !important;
+  text-align: right !important;
+  padding: 10px 2px 0 !important;
+  letter-spacing: .02em !important;
+}
+
+/* ══ STAGGERED ENTRY ANIMATIONS ══ */
+@keyframes adFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#agent-section-dashboard .metric {
+  animation: adFadeUp .5s cubic-bezier(.22,1,.36,1) both !important;
+}
+#agent-section-dashboard .metric:nth-child(1) { animation-delay: .04s !important; }
+#agent-section-dashboard .metric:nth-child(2) { animation-delay: .09s !important; }
+#agent-section-dashboard .metric:nth-child(3) { animation-delay: .14s !important; }
+#agent-section-dashboard .metric:nth-child(4) { animation-delay: .19s !important; }
+#agent-section-dashboard .metric:nth-child(5) { animation-delay: .24s !important; }
+
+#agent-section-dashboard .card {
+  animation: adFadeUp .5s cubic-bezier(.22,1,.36,1) .28s both !important;
+}
+
+/* Table row stagger — applied via CSS nth-child */
+#agent-section-dashboard tbody tr {
+  animation: adFadeUp .4s cubic-bezier(.22,1,.36,1) both !important;
+}
+#agent-section-dashboard tbody tr:nth-child(1)  { animation-delay: .30s !important; }
+#agent-section-dashboard tbody tr:nth-child(2)  { animation-delay: .34s !important; }
+#agent-section-dashboard tbody tr:nth-child(3)  { animation-delay: .37s !important; }
+#agent-section-dashboard tbody tr:nth-child(4)  { animation-delay: .40s !important; }
+#agent-section-dashboard tbody tr:nth-child(5)  { animation-delay: .43s !important; }
+#agent-section-dashboard tbody tr:nth-child(6)  { animation-delay: .46s !important; }
+#agent-section-dashboard tbody tr:nth-child(7)  { animation-delay: .49s !important; }
+#agent-section-dashboard tbody tr:nth-child(8)  { animation-delay: .52s !important; }
+#agent-section-dashboard tbody tr:nth-child(9)  { animation-delay: .55s !important; }
+#agent-section-dashboard tbody tr:nth-child(10) { animation-delay: .57s !important; }
+#agent-section-dashboard tbody tr:nth-child(11) { animation-delay: .59s !important; }
+#agent-section-dashboard tbody tr:nth-child(12) { animation-delay: .61s !important; }
+</style>
 </head>
 <body>
 
