@@ -4077,9 +4077,9 @@ footer{
   border:1.5px solid rgba(255,255,255,.25) !important;
   object-fit:cover !important;
 }
-#loginScreen .gfb-pill-text{ flex:1; min-width:0; }
-#loginScreen .gfb-pill-name{ font-weight:600; color:#e8edf8 !important; }
-#loginScreen .gfb-pill-hint{ font-size:11px; opacity:.55; margin-top:1px; }
+#loginScreen .gfb-pill-text{ flex:1; min-width:0; overflow:hidden; }
+#loginScreen .gfb-pill-name{ font-weight:600; color:#e8edf8 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#loginScreen .gfb-pill-hint{ font-size:11px; opacity:.55; white-space:nowrap; }
 
 /* Remembered user avatar in button */
 #loginScreen .gfb-user-avatar{
@@ -5535,7 +5535,7 @@ footer{
         <img id="gfbPillAvatar" class="gfb-pill-avatar" src="" alt="" onerror="this.style.display='none'">
         <div class="gfb-pill-text">
           <div class="gfb-pill-name" id="gfbPillName"></div>
-          <div class="gfb-pill-hint">Sign in to continue</div>
+          <div class="gfb-pill-hint">Signed in previously</div>
         </div>
         <button class="gfb-switch" onclick="switchGoogleAccount()" style="display:block;margin:0;padding:0;">Switch</button>
       </div>
@@ -6402,8 +6402,12 @@ function updateLoginButton(){
   if(stored){
     try{
       const {name, email, picture} = JSON.parse(stored);
-      if(pillName) pillName.textContent = name || email || 'You';
-      if(picture && pillAvatar){ pillAvatar.src = picture; pillAvatar.style.display='block'; }
+      const firstName = (name||'').split(' ')[0] || email || 'You';
+      if(pillName) pillName.textContent = firstName;
+      if(pillAvatar){
+        if(picture){ pillAvatar.src = picture; pillAvatar.style.display = 'block'; }
+        else { pillAvatar.style.display = 'none'; }
+      }
       pill.classList.add('visible');
     }catch(e){}
   } else {
@@ -6438,9 +6442,13 @@ function initLoginAnimations(){
 }
 
 async function handleGoogleCredential(response){
-  const p=parseJwt(response.credential);
+  if(!response?.credential){ showLoginMsg('Sign-in failed — no credential received. Please try again.'); return; }
+  let p;
+  try{ p=parseJwt(response.credential); }
+  catch(e){ showLoginMsg('Sign-in failed — could not read credential. Please try again.'); return; }
   const{email,name,picture}=p;
-  if(!email.endsWith('@'+DOMAIN)){showLoginMsg('Access denied. Only @'+DOMAIN+' accounts allowed.','error');return;}
+  if(!email||!email.endsWith('@'+DOMAIN)){showLoginMsg('Access denied. Only @'+DOMAIN+' accounts are allowed.');return;}
+  showLoginMsg('');
   let role='agent';
   let breakbotEnabled=true;
   try{
@@ -6450,7 +6458,7 @@ async function handleGoogleCredential(response){
       role=j.role;
       breakbotEnabled=j.breakbotEnabled!==false;
     }
-  }catch(e){}
+  }catch(e){ /* use defaults — agent with breakbot on */ }
   const systemInfo=navigator.userAgent;
   let location='Unknown';
   try{
@@ -6635,12 +6643,13 @@ function loadSession(){
   if(u&&r)startApp(u,r,p,breakbotEnabled);
   else{
     initGoogleAuth();
+    // After 3 s if GIS still hasn't rendered, keep the orange button visible (it already is by default CSS)
     setTimeout(()=>{
-      if(!googleAuthReady){
-        const fallbackBtn = document.getElementById('googleFallbackBtn');
-        if(fallbackBtn) fallbackBtn.style.display = 'flex';
+      if(!gisButtonRendered){
+        const host = document.getElementById('googleBtn');
+        if(host) host.style.display = 'none'; // keep GIS host hidden if it failed to render
       }
-    }, 1500);
+    }, 3000);
   }
 }
 
