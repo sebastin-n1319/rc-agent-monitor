@@ -8150,7 +8150,12 @@ function buildToggleLog(agentId){
   return'<div class="toggle-log">'+changes.slice(-3).join('')+(changes.length>3?'<div style="color:var(--text3);font-size:9px">+' +(changes.length-3)+' more</div>':'')+'</div>';
 }
 
-function evtToggle(el){el.parentElement.classList.toggle('open');}
+function evtToggle(el){
+  const body = el.nextElementSibling;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'flex';
+  el.parentElement.classList.toggle('open', !isOpen);
+}
 
 function switchTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
@@ -8391,7 +8396,7 @@ async function loadEventLog(){
       const last=evts[evts.length-1];
       const changes=evts.filter((e,i)=>i>0&&evts[i-1].status!==e.status);
       const rows=evts.slice().reverse().map(e=>'<div class="evt-row"><div class="evt-time">'+toDateTime(e.timestamp)+'</div><div><span class="pill '+pillCls(e.status)+'">'+e.status+'</span></div></div>').join('');
-      return'<div class="evt-group open"><div class="evt-hdr" onclick="evtToggle(this)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>'+changes.length+' toggles</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body">'+rows+'</div></div>';
+      return'<div class="evt-group open"><div class="evt-hdr" onclick="evtToggle(this)"><span class="evt-agent">'+agent+'</span><div class="evt-meta"><span class="pill '+pillCls(last.status)+'">'+last.status+'</span><span>'+evts.length+' events</span><span>'+changes.length+' toggles</span><span>Last: '+toTime(last.timestamp)+'</span></div><span class="evt-arr">&#9660;</span></div><div class="evt-body" style="display:flex;flex-direction:column;gap:6px;">'+rows+'</div></div>';
     }).join('');
   }catch(e){console.error('loadEventLog',e);}
 }
