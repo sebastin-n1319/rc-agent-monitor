@@ -2526,7 +2526,7 @@ function buildHoF(){
   const sumTickets=a=>MONTHS.reduce((s,m)=>s+(a.months[m]?.tickets||0),0);
   const avgFcr=a=>{const vs=MONTHS.map(m=>a.months[m]?.fcr).filter(v=>v!=null&&v>0);return vs.length?vs.reduce((a,b)=>a+b)/vs.length:0};
   const avgQa=a=>{const vs=MONTHS.map(m=>a.months[m]?.qa).filter(v=>v!=null&&v>0);return vs.length?vs.reduce((a,b)=>a+b)/vs.length:0};
-  const avgCsat=a=>{const vs=MONTHS.map(m=>a.months[m]?.csat).filter(v=>v!=null&&v>0);return vs.length?vs.reduce((a,b)=>a+b)/vs.length:0};
+  const sumCsatGood=a=>MONTHS.reduce((s,m)=>s+(a.months[m]?.cg||0),0);
   const ptsByMonth=a=>({jan:a.months["Jan'26"]?.bonus?.pts||0,mar:a.months["Mar'26"]?.bonus?.pts||0});
 
   const maxBy=(arr,fn)=>arr.reduce((best,a)=>fn(a)>fn(best)?a:best);
@@ -2536,7 +2536,7 @@ function buildHoF(){
   const ticketTitan=maxBy(allAgents,sumTickets);
   const fcrMaster=maxBy(allAgents,avgFcr);
   const qualityChamp=maxBy(allAgents,avgQa);
-  const custFav=maxBy(allAgents,avgCsat);
+  const custFav=maxBy(allAgents,sumCsatGood);
   const riser=DATA.calls.reduce((best,a)=>{
     const bPts=ptsByMonth(best);const aPts=ptsByMonth(a);
     return(aPts.mar-aPts.jan)>(bPts.mar-bPts.jan)?a:best;
@@ -2549,7 +2549,7 @@ function buildHoF(){
     {ico:'ticket',name:'Ticket Titan',winner:ticketTitan,metric:`${sumTickets(ticketTitan).toLocaleString()} tickets closed`,sub:'Most tickets resolved across all channels',color:'var(--violet)',colorLo:'rgba(167,139,250,.06)',colorMid:'rgba(167,139,250,.15)',tb:'var(--violet)'},
     {ico:'target',name:'FCR Master',winner:fcrMaster,metric:`${avgFcr(fcrMaster).toFixed(1)}% avg FCR`,sub:'Highest first-contact resolution rate',color:'var(--blue)',colorLo:'rgba(96,165,250,.06)',colorMid:'rgba(96,165,250,.15)',tb:'var(--blue)'},
     {ico:'shield',name:'Quality Champion',winner:qualityChamp,metric:`${avgQa(qualityChamp).toFixed(1)}% avg QA`,sub:'Highest quality assurance score',color:'var(--green)',colorLo:'rgba(52,211,153,.06)',colorMid:'rgba(52,211,153,.15)',tb:'var(--green)'},
-    {ico:'smile',name:'Customer Favourite',winner:custFav,metric:`${avgCsat(custFav).toFixed(1)}% avg CSAT`,sub:'Highest customer satisfaction rating',color:'var(--gold)',colorLo:'rgba(251,191,36,.06)',colorMid:'rgba(251,191,36,.15)',tb:'var(--gold)'},
+    {ico:'smile',name:'Customer Favourite',winner:custFav,metric:`${sumCsatGood(custFav)} positive CSAT ratings`,sub:'Most positive customer satisfaction ratings in Q1',color:'var(--gold)',colorLo:'rgba(251,191,36,.06)',colorMid:'rgba(251,191,36,.15)',tb:'var(--gold)'},
     {ico:'trend',name:'Rising Star',winner:riser,metric:`+${ptsByMonth(riser).mar-ptsByMonth(riser).jan} pts Jan\u2192Mar`,sub:'Biggest improvement in performance points',color:'var(--rose)',colorLo:'rgba(251,113,133,.06)',colorMid:'rgba(251,113,133,.15)',tb:'var(--rose)'},
     {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${slabMonths(consistent)}/3 eligible months`,sub:'Most bonus-eligible months in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
   ];
