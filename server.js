@@ -399,6 +399,41 @@ app.delete('/api/roles/:email', async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Admin announcement — sends a free-form card to the Google Chat space
+app.post('/api/announce', async (req, res) => {
+  const { title, body, emoji, requester } = req.body || {};
+  if(!title || !body) return res.status(400).json({ success: false, error: 'title and body required' });
+  if(!GOOGLE_CHAT_WEBHOOK_URL) return res.status(503).json({ success: false, error: 'Webhook not configured' });
+  try {
+    const now = new Date();
+    const cst = now.toLocaleTimeString('en-US',{timeZone:'America/Chicago',hour:'2-digit',minute:'2-digit',hour12:true});
+    const ist = now.toLocaleTimeString('en-US',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',hour12:true});
+    const payload = {
+      cardsV2: [{
+        cardId: 'admin-announce',
+        card: {
+          header: {
+            title: `${emoji||'📢'} ${title}`,
+            subtitle: `Posted by ${requester||'Admin'} · ${ist} IST / ${cst} CST`
+          },
+          sections: [{
+            widgets: [{
+              decoratedText: { topLabel: 'Message', text: body, wrapText: true }
+            }]
+          }]
+        }
+      }]
+    };
+    const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+      body: JSON.stringify(payload)
+    });
+    const text = await resp.text();
+    res.json({ success: resp.ok, status: resp.status, response: text });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.get('/api/role-check', async (req, res) => {
   const email = req.query.email;
   if (!email) return res.status(400).json({ success: false });
