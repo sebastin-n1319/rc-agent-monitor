@@ -5508,8 +5508,8 @@ footer{
       <div id="loginMsg"></div>
 
       <div class="gfb-wrapper" style="width:100%;">
-        <!-- Orange button: loading state while GIS script initialises -->
-        <button id="googleFallbackBtn" class="google-fallback-btn" onclick="handleFallbackClick()">
+        <!-- Orange button: primary sign-in via OAuth popup (redirect URIs registered) -->
+        <button id="googleFallbackBtn" class="google-fallback-btn" onclick="openGoogleOAuthFallback()">
           <div class="gfb-spinner"></div>
           <svg class="gfb-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -6222,24 +6222,23 @@ function setupLiveStream(){
 let googleAuthReady = false;
 
 function renderGoogleButton(){
+  // GIS is initialized for its callback mechanism, but we no longer show the
+  // GIS-rendered iframe button (it silently fails to deliver credentials in
+  // modern browsers when opened from a cross-origin iframe).
+  // The orange button + openGoogleOAuthFallback() is the reliable sign-in path.
   const host = document.getElementById('googleBtn');
   if(!host || !window.google?.accounts?.id) return false;
+  // Render into DOM (activates GIS internals) but keep the host hidden
   host.innerHTML = '';
-  // Measure the wrapper so the GIS button fills the exact same width
   const wrapper = host.closest('.gfb-wrapper') || host.parentElement;
   const btnWidth = wrapper ? Math.floor(wrapper.getBoundingClientRect().width) : 360;
   google.accounts.id.renderButton(host, {
-    theme: 'outline',
-    size: 'large',
-    shape: 'rectangular',
-    text: 'continue_with',
-    logo_alignment: 'left',
+    theme: 'outline', size: 'large', shape: 'rectangular',
+    text: 'continue_with', logo_alignment: 'left',
     width: Math.max(280, btnWidth)
   });
-  // Show the native GIS button; hide the orange loading button
-  host.classList.add('gis-ready');
-  const fallbackBtn = document.getElementById('googleFallbackBtn');
-  if(fallbackBtn) fallbackBtn.classList.add('gfb-hidden'); // class beats !important inline style
+  // Do NOT show the GIS host; do NOT hide the orange button.
+  // Orange button is always the primary UI.
   return true;
 }
 
@@ -6320,39 +6319,54 @@ function handleLoginClick(btn){
 }
 
 function openGoogleOAuthFallback(){
+  const btn = document.getElementById('googleFallbackBtn');
+  if(btn){ btn.disabled = true; btn.dataset.loading = 'true'; }
+  const resetBtn = () => { if(btn){ btn.disabled=false; btn.dataset.loading='false'; } };
+
   const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
   sessionStorage.setItem('gNonce', nonce);
-  const params = new URLSearchParams({
+
+  // Use login_hint for returning users — skips account picker, goes straight in
+  let loginHint = '';
+  try{ const s = localStorage.getItem('rcLastUser'); if(s){ loginHint = JSON.parse(s).email || ''; } }catch(e){}
+
+  const paramObj = {
     client_id: GOOGLE_CLIENT_ID,
-    redirect_uri: window.location.origin + window.location.pathname.replace(/\/+$/,'') + '/',
+    redirect_uri: window.location.origin + '/',
     response_type: 'id_token',
     scope: 'openid email profile',
     nonce,
-    prompt: 'select_account',
-  });
-  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+    hd: DOMAIN,                    // restrict to @adit.com accounts
+  };
+  if(loginHint) paramObj.login_hint = loginHint;  // skip picker for returning users
+  else paramObj.prompt = 'select_account';
+
+  const authUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams(paramObj);
   const W=500,H=640,left=Math.round((screen.width-W)/2),top=Math.round((screen.height-H)/2);
   const popup = window.open(authUrl,'gSignIn',`width=${W},height=${H},left=${left},top=${top},scrollbars=yes`);
   if(!popup || popup.closed){
-    // popup blocked — do a full redirect
+    // popup blocked — fall back to full page redirect
     localStorage.setItem('gOAuthRedirect','1');
     window.location.href = authUrl;
     return;
   }
   const poll = setInterval(() => {
     try{
-      if(popup.closed){ clearInterval(poll); return; }
+      if(popup.closed){ clearInterval(poll); resetBtn(); return; }
       const h = popup.location.href;
       if(h && h.startsWith(window.location.origin)){
         clearInterval(poll);
         const frag = new URLSearchParams(popup.location.hash.replace('#',''));
         const tok = frag.get('id_token');
         popup.close();
+        resetBtn();
         if(tok) handleGoogleCredential({credential:tok});
-        else showLoginMsg('Sign-in cancelled. Please try again.','info');
+        else showLoginMsg('Sign-in was cancelled — please try again.');
       }
-    }catch(e){ /* cross-origin — still waiting */ }
+    }catch(e){ /* cross-origin — popup still on Google's side, keep polling */ }
   }, 350);
+  // Safety timeout — if no response in 3 min, re-enable button
+  setTimeout(()=>{ clearInterval(poll); resetBtn(); }, 180000);
 }
 
 function switchGoogleAccount(){
@@ -6363,11 +6377,21 @@ function switchGoogleAccount(){
 }
 
 function updateLoginButton(){
-  // The GIS native button already shows "Continue as [Name] / email"
-  // We only need to show/hide the "Use a different account" switch link
   const stored = localStorage.getItem('rcLastUser');
+  const btn = document.getElementById('googleFallbackBtn');
+  const label = btn?.querySelector('.google-btn-label');
   const switchBtn = document.getElementById('gfbSwitch');
-  if(switchBtn) switchBtn.style.display = stored ? 'block' : 'none';
+  if(stored){
+    try{
+      const {name} = JSON.parse(stored);
+      const firstName = (name||'').split(' ')[0] || 'you';
+      if(label) label.textContent = 'Continue as ' + firstName;
+      if(switchBtn) switchBtn.style.display = 'block';
+    }catch(e){}
+  } else {
+    if(label) label.textContent = 'Continue with Google';
+    if(switchBtn) switchBtn.style.display = 'none';
+  }
 }
 
 /* ── Login page live metrics animation ─────────────────────────────────── */
