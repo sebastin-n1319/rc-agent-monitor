@@ -2091,8 +2091,7 @@ body::after {
     </div>
     <div class="legend">
       <span class="ld-ttl">Thresholds</span>
-      <span class="ld-item"><span class="ld-sq" style="background:var(--green)"></span>Slab 1 target</span>
-      <span class="ld-item"><span class="ld-sq" style="background:var(--gold)"></span>Slab 2 target</span>
+      <span class="ld-item"><span class="ld-sq" style="background:var(--green)"></span>Above target</span>
       <span class="ld-item"><span class="ld-sq" style="background:var(--red)"></span>Below target</span>
       <span class="ld-note">Inbound &ge;7/day S1, &ge;5 S2 &middot; Tickets &ge;5/day S1, &ge;4 S2 &middot; FCR &ge;75% S1, &ge;70% S2 &middot; QA &ge;90% S1, &ge;85% S2</span>
     </div>
@@ -2108,8 +2107,7 @@ body::after {
     </div>
     <div class="legend">
       <span class="ld-ttl">Thresholds</span>
-      <span class="ld-item"><span class="ld-sq" style="background:var(--green)"></span>Slab 1 target</span>
-      <span class="ld-item"><span class="ld-sq" style="background:var(--gold)"></span>Slab 2 target</span>
+      <span class="ld-item"><span class="ld-sq" style="background:var(--green)"></span>Above target</span>
       <span class="ld-item"><span class="ld-sq" style="background:var(--red)"></span>Below target</span>
       <span class="ld-note">Chats &ge;11/day S1, &ge;9 S2 &middot; Chat CSAT &ge;90% S1, &ge;85% S2 &middot; Tickets &ge;5/day S1, &ge;4 S2 &middot; QA &ge;90% S1, &ge;85% S2</span>
     </div>
@@ -2150,7 +2148,7 @@ body::after {
     <div class="bonus-hdr">
       <div>
         <div class="bonus-hdr-title">Q1 2026 Bonus Breakdown</div>
-        <div class="bonus-hdr-sub">Slab bonus + CSAT incentive per agent, per month</div>
+        <div class="bonus-hdr-sub">Performance bonus per agent, per month</div>
       </div>
       <div class="bonus-totals" id="bonusTotals"></div>
     </div>
@@ -2441,7 +2439,7 @@ function buildBonusMonth(b,m,isCalls,name){
   let h=`<div class="bmo"><div class="bmo-l">${MS[m]} '26</div>`;
   if(!b||b.pts===null){
     const note=(name==="Sabrina Quinn"&&m==="Jan'26")?'Chat team':'&mdash;';
-    return h+`<div class="badge badge-na">N/A</div><div class="bmo-rsn">${note}</div><div class="bmo-amt zer">&mdash;</div></div>`;
+    return h+`<div class="badge badge-na">N/A</div><div class="bmo-rsn">${note}</div></div>`;
   }
   const pct=Math.min(100,b.pts||0);
   const fillColor=b.slab===1?'var(--green)':b.slab===2?'var(--gold)':'var(--red)';
@@ -2450,27 +2448,16 @@ function buildBonusMonth(b,m,isCalls,name){
     h+=`<div class="bmo-pts">${b.pts}/100 pts</div>`;
     h+=`<div class="bmo-bar"><div class="bmo-fill" style="width:${pct}%;background:var(--red)"></div></div>`;
     h+=`<div class="bmo-rsn">${b.reason||''}</div>`;
-    if(b.csat_inc>0){
-      h+=`<div class="bmo-csat">+CSAT ${rupee(b.csat_inc)}</div>`;
-      h+=`<div class="bmo-amt pos">${rupee(b.csat_inc)}</div>`;
-    } else {
-      h+=`<div class="bmo-amt zer">\u20b90</div>`;
-    }
   } else if(b.eligible===false&&b.slab){
-    const bc=b.slab===1?'badge-s1':'badge-s2';
-    h+=`<div class="badge ${bc}">Slab ${b.slab}</div>`;
+    h+=`<div class="badge badge-s1">Eligible</div>`;
     h+=`<div class="bmo-pts">${b.pts}/100 pts</div>`;
     h+=`<div class="bmo-bar"><div class="bmo-fill" style="width:${pct}%;background:${fillColor}"></div></div>`;
     h+=`<div class="bmo-rsn">${b.reason}</div>`;
-    h+=`<div class="bmo-amt pos">${rupee(b.total)}</div>`;
   } else {
-    const bc=b.slab===1?'badge-s1':'badge-s2';
-    h+=`<div class="badge ${bc}"><span>${ic('check',8)}</span>Slab ${b.slab}</div>`;
+    h+=`<div class="badge badge-s1"><span>${ic('check',8)}</span>Eligible</div>`;
     h+=`<div class="bmo-pts">${b.pts}/100 pts</div>`;
     h+=`<div class="bmo-bar"><div class="bmo-fill" style="width:${pct}%;background:${fillColor}"></div></div>`;
     if(b.reason)h+=`<div class="bmo-rsn" style="color:var(--t2)">${b.reason}</div>`;
-    if(b.csat_inc>0)h+=`<div class="bmo-csat">${rupee(b.base)} + ${rupee(b.csat_inc)}</div>`;
-    h+=`<div class="bmo-amt pos">${rupee(b.total)}</div>`;
   }
   return h+'</div>';
 }
@@ -2490,11 +2477,7 @@ function buildBonusCard(agent, type){
   for(const m of MONTHS){
     h+=buildBonusMonth(agent.months[m]?.bonus,m,iC,agent.name);
   }
-  h+=`</div>
-    <div class="bcard-ft">
-      <span class="bcard-ft-lbl">Q1 Total</span>
-      <span class="bcard-ft-val ${totCls}">${total>0?rupee(total):'\u20b90'}</span>
-    </div></div>`;
+  h+=`</div></div>`;
   return h;
 }
 
@@ -2514,7 +2497,6 @@ function buildHoF(){
     hofQS.innerHTML=`
       <div class="hq"><div class="hq-n">${allAgents.length}</div><div class="hq-l">Agents</div></div>
       <div class="hq"><div class="hq-n">${slab1Agents}</div><div class="hq-l">Earned Bonus</div></div>
-      <div class="hq"><div class="hq-n">${rupee(q1Total)}</div><div class="hq-l">Q1 Bonus Pool</div></div>
     `;
   }
 
@@ -2542,19 +2524,12 @@ function buildHoF(){
       const tb2=totalBonus(agent);
       const isCallsAgent=DATA.calls.includes(agent);
       const aviCls=isCallsAgent?'avi-t avi-ch':'avi-ch';
-      // Dots for slab months
-      const dots=MONTHS.map(m=>{
-        const s=agent.months[m]?.bonus?.slab;
-        const dc=s===1?'pdot-s1':s===2?'pdot-s2':'pdot-off';
-        return `<div class="pdot ${dc}" title="${MS[m]}: ${s?'Slab '+s:'No slab'}"></div>`;
-      }).join('');
       return `<div class="pod ${cls}" style="--bd:${podiumDelays[idx]}">
         <div class="pod-badge">${badge}</div>
         <div class="pod-avi">${agent.ini}</div>
         <div class="pod-name">${agent.name}</div>
         <div class="pod-role">${isCallsAgent?'Calls Wing':'Chat Wing'}</div>
-        <div class="pod-months">${dots}</div>
-        <div class="pod-stat"><span class="ico">${ic('trophy',12)}</span>${sm} Slab Month${sm!==1?'s':''} &middot; ${rupee(tb2)}</div>
+        <div class="pod-stat"><span class="ico">${ic('trophy',12)}</span>${sm} Eligible Month${sm!==1?'s':''}</div>
         <div class="pod-bar"></div>
       </div>`;
     }).join('');
@@ -2593,7 +2568,7 @@ function buildHoF(){
     {ico:'shield',name:'Quality Champion',winner:qualityChamp,metric:`${avgQa(qualityChamp).toFixed(1)}% avg QA`,sub:'Highest quality assurance score',color:'var(--green)',colorLo:'rgba(52,211,153,.06)',colorMid:'rgba(52,211,153,.15)',tb:'var(--green)'},
     {ico:'smile',name:'Customer Favourite',winner:custFav,metric:`${avgCsat(custFav).toFixed(1)}% avg CSAT`,sub:'Highest customer satisfaction rating',color:'var(--gold)',colorLo:'rgba(251,191,36,.06)',colorMid:'rgba(251,191,36,.15)',tb:'var(--gold)'},
     {ico:'trend',name:'Rising Star',winner:riser,metric:`+${ptsByMonth(riser).mar-ptsByMonth(riser).jan} pts Jan\u2192Mar`,sub:'Biggest improvement in performance points',color:'var(--rose)',colorLo:'rgba(251,113,133,.06)',colorMid:'rgba(251,113,133,.15)',tb:'var(--rose)'},
-    {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${slabMonths(consistent)}/3 Slab 1 months`,sub:'Highest slab-qualifying months in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
+    {ico:'flame',name:'Most Consistent',winner:consistent,metric:`${slabMonths(consistent)}/3 eligible months`,sub:'Most bonus-eligible months in Q1',color:'var(--amber)',colorLo:'rgba(242,136,32,.07)',colorMid:'rgba(255,154,60,.15)',tb:'var(--amber)'},
   ];
 
   const awardGrid=document.getElementById('awardGrid');
