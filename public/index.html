@@ -1980,6 +1980,297 @@ tbody tr:hover td{background:rgba(255,255,255,.024);}
   .login-left,.login-right{padding:18px 16px;}
   .login-card-left,.login-form-wrap{border-radius:24px;}
 }
+
+/* UI RESET — restrained premium */
+#mainApp{
+  background:
+    linear-gradient(180deg,#070b14 0%,#09101b 38%,#060a12 100%) !important;
+}
+header{
+  height:70px !important;
+  padding:0 20px !important;
+  background:rgba(7,11,20,.94) !important;
+  border-bottom:1px solid rgba(122,136,168,.10) !important;
+  box-shadow:0 8px 22px rgba(1,4,12,.18) !important;
+}
+.hdr-logo-adit{
+  width:34px !important;
+  height:34px !important;
+  padding:5px !important;
+  border-radius:10px !important;
+  background:rgba(255,255,255,.03) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  box-shadow:none !important;
+}
+.hdr-title{
+  font-size:15px !important;
+  letter-spacing:-.02em !important;
+}
+.hdr-sub{
+  font-size:11px !important;
+}
+.hdr-chip,.hdr-user{
+  background:rgba(255,255,255,.03) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  box-shadow:none !important;
+}
+.nav{
+  top:70px !important;
+  padding:10px 20px 8px !important;
+  gap:6px !important;
+  background:rgba(7,11,20,.86) !important;
+  backdrop-filter:blur(12px) !important;
+  -webkit-backdrop-filter:blur(12px) !important;
+}
+.nav::after{display:none !important;}
+.nav-tab,.agent-shell-btn{
+  min-height:38px !important;
+  padding:0 12px !important;
+  border-radius:11px !important;
+  font-size:12px !important;
+  background:transparent !important;
+  border:1px solid transparent !important;
+  color:#8a97b1 !important;
+  box-shadow:none !important;
+}
+.nav-tab:hover,.agent-shell-btn:hover{
+  background:rgba(255,255,255,.03) !important;
+  border-color:rgba(122,136,168,.12) !important;
+  color:#d7deec !important;
+}
+.nav-tab.active,.agent-shell-btn.active{
+  background:rgba(255,255,255,.045) !important;
+  border-color:rgba(242,136,32,.18) !important;
+  color:#f3f6fb !important;
+  box-shadow:none !important;
+}
+.page,.agent-shell-page{
+  width:min(100%,1820px) !important;
+  padding:16px 20px 28px !important;
+}
+#adminView,#agentView{
+  width:min(100%,1820px) !important;
+}
+.metrics{
+  gap:10px !important;
+  margin-bottom:16px !important;
+}
+.metric{
+  min-height:98px !important;
+  padding:14px 16px !important;
+  border-radius:18px !important;
+  background:rgba(11,17,29,.88) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  box-shadow:none !important;
+}
+.metric::before,.metric::after{display:none !important;}
+.metric-lbl{
+  font-size:10px !important;
+  letter-spacing:.09em !important;
+}
+.metric-val{
+  font-size:22px !important;
+  letter-spacing:-.03em !important;
+}
+.metric-sub{
+  font-size:10px !important;
+}
+.card,.panel,.radar-card,.role-stat,.role-setup-card,.role-policy-card,.agent-card,.evt-group{
+  background:rgba(10,16,28,.84) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  border-radius:18px !important;
+  box-shadow:none !important;
+}
+.card{
+  padding:16px !important;
+  margin-bottom:14px !important;
+}
+.card-hdr{
+  margin-bottom:12px !important;
+}
+.card-title{
+  font-size:13px !important;
+  font-weight:700 !important;
+}
+.chip{
+  padding:3px 8px !important;
+  border-radius:999px !important;
+  font-size:10px !important;
+  background:rgba(255,255,255,.03) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+}
+.btn{
+  min-height:34px !important;
+  padding:6px 12px !important;
+  border-radius:10px !important;
+  font-size:11px !important;
+  background:rgba(255,255,255,.03) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  box-shadow:none !important;
+}
+.btn:hover{
+  background:rgba(255,255,255,.05) !important;
+  transform:none !important;
+}
+.btn.primary{
+  background:rgba(242,136,32,.12) !important;
+  border-color:rgba(242,136,32,.16) !important;
+}
+.tbl-wrap{
+  border-radius:16px !important;
+  background:rgba(8,13,24,.74) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+}
+thead th{
+  top:118px !important;
+  padding:12px 10px !important;
+  background:rgba(11,17,29,.95) !important;
+  font-size:9px !important;
+  letter-spacing:.1em !important;
+}
+tbody td{
+  padding:13px 10px !important;
+  font-size:12px !important;
+}
+tbody tr:nth-child(even) td{background:rgba(255,255,255,.008) !important;}
+tbody tr:hover td{background:rgba(255,255,255,.018) !important;}
+#event-log{
+  gap:8px !important;
+  max-height:520px !important;
+}
+.evt-hdr{
+  min-height:56px !important;
+  padding:12px 14px !important;
+}
+.evt-agent{font-size:12px !important;}
+.evt-meta{font-size:10px !important;}
+.evt-body{padding:0 14px 14px !important;}
+.evt-row{
+  padding:9px 10px !important;
+  border-radius:10px !important;
+  background:rgba(255,255,255,.018) !important;
+}
+#tab-agents .form-row{
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:10px !important;
+}
+.agent-grid{
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr)) !important;
+  gap:12px !important;
+}
+.agent-card{
+  min-height:132px !important;
+  padding:14px !important;
+}
+.agent-card::before{
+  left:14px !important;
+  right:14px !important;
+  height:1px !important;
+  opacity:.5 !important;
+  box-shadow:none !important;
+}
+.agent-card-name{
+  font-size:15px !important;
+}
+.agent-card-meta{
+  font-size:11px !important;
+  line-height:1.55 !important;
+}
+.role-overview{gap:10px !important;}
+.role-stat{
+  min-height:112px !important;
+  padding:14px !important;
+}
+.role-stat-value{
+  font-size:24px !important;
+}
+.role-layout{gap:12px !important;}
+.role-search input{min-width:240px !important;}
+.role-board{
+  border-radius:16px !important;
+}
+.role-board-head>div,.role-cell{
+  padding:8px 10px !important;
+}
+.role-cell-name{font-size:12px !important;}
+.login-bg,.login-grid,.orb,.particles,.fi,.confetti-wrap{
+  display:none !important;
+}
+#loginScreen{
+  background:
+    linear-gradient(180deg,#08101b 0%,#060b14 100%) !important;
+}
+.login-left,.login-right{
+  padding:24px 18px !important;
+}
+.login-card-left,.login-form-wrap{
+  background:rgba(10,16,28,.86) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  border-radius:22px !important;
+  box-shadow:none !important;
+}
+.login-card-left{
+  padding:28px !important;
+}
+.login-form-wrap{
+  padding:24px !important;
+}
+.main-logo{
+  width:84px !important;
+  height:84px !important;
+  border-radius:18px !important;
+  box-shadow:none !important;
+}
+.login-left-title{
+  font-size:32px !important;
+  line-height:1.05 !important;
+}
+.login-left-sub,.login-sub,.login-restrict{
+  font-size:13px !important;
+  color:#8a97b1 !important;
+}
+.login-welcome{
+  font-size:28px !important;
+}
+.feature-pills{
+  gap:8px !important;
+}
+.f-pill{
+  padding:8px 10px !important;
+  font-size:11px !important;
+  background:rgba(255,255,255,.03) !important;
+  border:1px solid rgba(122,136,168,.10) !important;
+  box-shadow:none !important;
+}
+.google-fallback-btn{
+  min-height:48px !important;
+  border-radius:14px !important;
+}
+.break-action-tile,.break-action{
+  border-radius:16px !important;
+  min-height:118px !important;
+  padding:14px !important;
+  box-shadow:none !important;
+}
+.break-action-tile::before,.break-action::before{
+  height:1px !important;
+  box-shadow:none !important;
+}
+.break-lane,.break-row,.break-callout,.break-hero-card{
+  border-radius:16px !important;
+  box-shadow:none !important;
+}
+.call-badge{animation:none !important;}
+.live-dot,.live-dot2{animation:none !important;}
+@media (max-width: 760px){
+  header{padding:10px 12px !important;}
+  .nav{top:82px !important;padding:10px 12px 8px !important;}
+  .page,.agent-shell-page{padding:14px 12px 22px !important;}
+  .metrics{gap:8px !important;}
+  .metric{min-height:88px !important;}
+  .metric-val{font-size:20px !important;}
+  .login-left,.login-right{padding:16px 12px !important;}
+}
 </style>
 </head>
 <body>
