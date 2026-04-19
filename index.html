@@ -4212,8 +4212,7 @@ footer{
   overflow:hidden !important;
 }
 #loginScreen .google-btn-host.gis-ready{
-  display:flex !important;
-  box-shadow:0 0 0 1px rgba(66,133,244,.35), 0 4px 20px rgba(66,133,244,.18), 0 1px 4px rgba(0,0,0,.45) !important;
+  display:none !important;
 }
 #loginScreen .google-btn-host > div{
   width:100% !important;
@@ -7228,8 +7227,7 @@ function initGoogleAuth(){
           width: 420
         });
         host.classList.add('gis-ready');
-        const fallback = document.getElementById('googleFallbackBtn');
-        if(fallback) fallback.classList.add('gfb-hidden');
+        // Custom styled button always shown — native GIS pill suppressed
       }
       gisRendered = true;
       ready = true;
