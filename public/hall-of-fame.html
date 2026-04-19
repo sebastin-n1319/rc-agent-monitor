@@ -2249,11 +2249,12 @@ const MS={"Jan'26":"Jan","Feb'26":"Feb","Mar'26":"Mar"};
 const STD={"Jan'26":21,"Feb'26":20,"Mar'26":22};
 const BONUS_UNLOCK=new Date('2026-04-30T18:00:00+05:30');
 
+// Admin access is granted ONLY when the iframe is loaded with ?admin in the URL.
+// The sessionStorage fallback was removed because iframes share sessionStorage
+// with the parent tab — meaning an admin's sessionStorage key would bleed into
+// the agent-view iframe and expose bonus data to agents.
 const isAdmin=(()=>{
-  try{
-    if(new URLSearchParams(location.search).has('admin'))return true;
-    if(sessionStorage.getItem('hof_admin')==='1')return true;
-  }catch(e){}
+  try{ return new URLSearchParams(location.search).has('admin'); }catch(e){}
   return false;
 })();
 
@@ -2351,7 +2352,6 @@ function switchWing(page, wing, btn){
 ════════════════════════════════════════════════════════════ */
 function bonusUnlocked(){ return isAdmin || (new Date()>=BONUS_UNLOCK); }
 function adminUnlock(){
-  try{sessionStorage.setItem('hof_admin','1');}catch(e){}
   showBonus();
 }
 function showBonus(){
