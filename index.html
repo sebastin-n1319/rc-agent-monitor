@@ -7466,8 +7466,11 @@ function openBreakbotPreview(el){
 }
 
 function isBonusLockedForAgent(){
-  // Bonus results are locked for agents (non-admins) until April 30 2026
-  if(currentRole==='admin') return false;
+  // Bonus results are locked for agents (non-admins) until April 30 2026.
+  // currentViewMode reflects admin preview mode — if an admin switches to
+  // Agent View they also see the lock, so they can verify the experience.
+  const effectiveRole = currentViewMode || currentRole;
+  if(effectiveRole === 'admin') return false;
   const today=new Date(); today.setHours(0,0,0,0);
   return today < new Date('2026-04-30');
 }
