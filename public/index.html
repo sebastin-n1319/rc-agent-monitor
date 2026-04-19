@@ -6127,204 +6127,200 @@ tbody tr:hover td{
 ══════════════════════════════════════════════════════════ -->
 <style id="login-redesign">
 /* ═══════════════════════════════════════════════════════════════════
-   LOGIN PAGE v5 — Full-bleed aurora, centered premium card
+   LOGIN PAGE v6 — Vivid mesh split, big type, premium card
 ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Kill every old element ── */
 .login-left,.login-right,
 .ls-tile,.ls-center,.ls-brand-pill,
 .ls-bg-glow-a,.ls-bg-glow-b,.ls-bg-glow-c,.ls-bg-mesh,
-.ls-left,.ls-right,.ls-aurora,.ls-mesh,
-.ls-wm,.ls-hl,.ls-hl-sub,.ls-preview,.ls-tags{display:none !important;}
+.ls-wm,.ls-hl,.ls-hl-sub,.ls-preview,.ls-tags,
+.ls-b1,.ls-b2,.ls-b3,.ls-grid,.ls-wmark,
+.ls-chip,.ls-pill,.ls-footer{display:none !important;}
 
 /* ── Root screen ── */
 #loginScreen{
   position:fixed !important;inset:0 !important;z-index:9999 !important;
-  display:flex !important;align-items:center !important;justify-content:center !important;
-  background:#020810 !important;overflow:hidden !important;min-height:unset !important;
+  display:flex !important;align-items:stretch !important;
+  background:#06101e !important;overflow:hidden !important;min-height:unset !important;
+  font-family:'Inter','Poppins',sans-serif !important;
 }
 
-/* ── Aurora blobs — actually visible ── */
-.ls-b1,.ls-b2,.ls-b3{position:absolute;border-radius:50%;pointer-events:none;z-index:0;}
-.ls-b1{
-  width:860px;height:860px;
-  background:radial-gradient(circle,rgba(242,136,32,.18) 0%,transparent 62%);
-  top:-280px;left:50%;margin-left:-420px;
-  filter:blur(55px);
-  animation:b1d 18s ease-in-out infinite;
-}
-.ls-b2{
-  width:680px;height:680px;
-  background:radial-gradient(circle,rgba(6,135,190,.14) 0%,transparent 62%);
-  bottom:-120px;right:-80px;
-  filter:blur(75px);
-  animation:b2d 22s ease-in-out infinite;
-}
-.ls-b3{
-  width:560px;height:560px;
-  background:radial-gradient(circle,rgba(139,92,246,.12) 0%,transparent 62%);
-  bottom:-80px;left:-100px;
-  filter:blur(70px);
-  animation:b3d 15s ease-in-out infinite 2s;
-}
-@keyframes b1d{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-36px) scale(1.04);}}
-@keyframes b2d{0%,100%{transform:scale(1);}50%{transform:scale(1.07) translate(-22px,-22px);}}
-@keyframes b3d{0%,100%{transform:scale(1);}50%{transform:scale(1.09) translate(18px,-20px);}}
 
-/* Dot grid */
-.ls-grid{
-  position:absolute;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(circle,rgba(255,255,255,.09) 1px,transparent 1px);
-  background-size:30px 30px;
-  -webkit-mask-image:radial-gradient(ellipse 85% 85% at 50% 50%,black 0%,transparent 100%);
-  mask-image:radial-gradient(ellipse 85% 85% at 50% 50%,black 0%,transparent 100%);
+/* ══════════════════════════════════════════════════════
+   LEFT PANEL — vivid mesh gradient, big brand typography
+══════════════════════════════════════════════════════ */
+.lv-left{
+  position:relative;z-index:1;
+  flex:1.1;display:flex !important;flex-direction:column !important;
+  justify-content:space-between;
+  padding:52px 56px;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 22% 28%, rgba(242,136,32,.42) 0%, transparent 48%),
+    radial-gradient(ellipse at 78% 70%, rgba(6,135,190,.32) 0%, transparent 48%),
+    radial-gradient(ellipse at 12% 88%, rgba(99,102,241,.26) 0%, transparent 45%),
+    radial-gradient(ellipse at 88% 12%, rgba(242,136,32,.18) 0%, transparent 40%),
+    #07111f;
+}
+/* Fine line grid overlay */
+.lv-left::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+}
+/* Right-edge fade into auth panel */
+.lv-left::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:120px;
+  background:linear-gradient(to right,transparent,#06101e);
+  pointer-events:none;
 }
 
-/* Background watermark */
-.ls-wmark{
-  position:absolute;
+/* Top logo row */
+.lv-logo-row{
+  display:flex;align-items:center;gap:12px;
+  position:relative;z-index:2;
+}
+.lv-logo{width:40px;height:40px;border-radius:10px;display:block;flex-shrink:0;}
+.lv-brand{font-family:'Poppins','Inter',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.01em;}
+.lv-brand span{color:rgba(242,136,32,.85);}
+
+/* Giant headline block */
+.lv-hero{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:center;}
+.lv-eyebrow{
+  font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(242,136,32,.75);margin-bottom:16px;
+  display:flex;align-items:center;gap:8px;
+}
+.lv-eyebrow::before{content:'';display:block;width:28px;height:2px;background:#f28820;border-radius:2px;}
+.lv-h1{
   font-family:'Poppins','Inter',sans-serif;
-  font-size:22vw;font-weight:900;letter-spacing:-.04em;
-  color:rgba(255,255,255,.02);
-  white-space:nowrap;pointer-events:none;z-index:0;user-select:none;
-  top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:clamp(38px,4.2vw,58px);font-weight:900;letter-spacing:-.045em;
+  line-height:1.0;color:#f0f8ff;
+  margin:0 0 20px;
+}
+.lv-h1 em{
+  font-style:normal;display:block;
+  background:linear-gradient(110deg,#f28820 0%,#fbbf60 45%,#f28820 100%);
+  background-size:220%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:lhShim 4s linear infinite;
+}
+@keyframes lhShim{0%{background-position:220% 0}100%{background-position:-220% 0}}
+.lv-sub{font-size:14px;color:rgba(176,207,229,.52);line-height:1.7;max-width:380px;margin:0 0 36px;}
+
+/* Stat grid */
+.lv-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  max-width:380px;position:relative;z-index:2;
+}
+.lv-stat{
+  padding:14px 16px;border-radius:14px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.09);
+  backdrop-filter:blur(12px);
+}
+.lv-stat-val{
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-size:26px;font-weight:700;line-height:1;margin-bottom:5px;
+}
+.lv-stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(176,207,229,.45);}
+.lv-stat-delta{display:flex;align-items:center;gap:4px;margin-top:5px;font-size:10px;font-weight:600;color:#4ade80;}
+.lv-stat:nth-child(1) .lv-stat-val{color:#f28820;}
+.lv-stat:nth-child(2) .lv-stat-val{color:#60a5fa;}
+.lv-stat:nth-child(3) .lv-stat-val{color:#a78bfa;}
+.lv-stat:nth-child(4) .lv-stat-val{color:#fbbf24;}
+
+/* Bottom tagline */
+.lv-foot{
+  position:relative;z-index:2;
+  font-size:11px;font-weight:500;color:rgba(176,207,229,.3);
+  display:flex;align-items:center;gap:8px;
+}
+.lv-live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0;animation:ldot 1.8s ease-in-out infinite;}
+@keyframes ldot{0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{opacity:1;box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+
+/* ══════════════════════════════════════════════════════
+   RIGHT PANEL — clean auth card
+══════════════════════════════════════════════════════ */
+.lv-right{
+  position:relative;z-index:2;
+  flex:.82;display:flex !important;align-items:center !important;justify-content:center !important;
+  padding:40px 52px;
+  background:linear-gradient(180deg,#080f1e 0%,#06101e 100%);
 }
 
-/* ── Floating stat chips (4 corners) ── */
-.ls-chip{
-  position:absolute;z-index:2;pointer-events:none;
-  padding:14px 20px;min-width:130px;
-  background:rgba(8,15,30,.84);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:18px;
-  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  box-shadow:0 12px 40px rgba(0,0,0,.52),inset 0 1px 0 rgba(255,255,255,.06);
-}
-.ls-chip-icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;}
-.ls-chip-val{font-family:'JetBrains Mono','Courier New',monospace;font-size:24px;font-weight:700;line-height:1;margin-bottom:4px;}
-.ls-chip-lbl{font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(150,185,215,.42);}
-
-.ls-chip-1{top:12%;left:6%;animation:cf1 11s ease-in-out infinite, chipIn .7s .2s both;}
-.ls-chip-2{top:10%;right:6%;animation:cf2 13s ease-in-out infinite, chipIn .7s .35s both;}
-.ls-chip-3{bottom:15%;left:5%;animation:cf3 10s ease-in-out infinite 1s, chipIn .7s .5s both;}
-.ls-chip-4{bottom:12%;right:5%;animation:cf4 14s ease-in-out infinite 1.5s, chipIn .7s .65s both;}
-
-@keyframes chipIn{from{opacity:0;transform:translateY(22px) scale(.9);}to{opacity:1;transform:none;}}
-@keyframes cf1{0%,100%{transform:translateY(0) rotate(-2.5deg);}50%{transform:translateY(-14px) rotate(-2.5deg);}}
-@keyframes cf2{0%,100%{transform:translateY(0) rotate(2.5deg);}50%{transform:translateY(-11px) rotate(2.5deg);}}
-@keyframes cf3{0%,100%{transform:translateY(0) rotate(3deg);}50%{transform:translateY(-16px) rotate(3deg);}}
-@keyframes cf4{0%,100%{transform:translateY(0) rotate(-3.5deg);}50%{transform:translateY(-9px) rotate(-3.5deg);}}
-
-.ls-chip-1 .ls-chip-icon{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.22);}
-.ls-chip-1 .ls-chip-val{color:#4ade80;}
-.ls-chip-2 .ls-chip-icon{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.22);}
-.ls-chip-2 .ls-chip-val{color:#60a5fa;}
-.ls-chip-3 .ls-chip-icon{background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.22);}
-.ls-chip-3 .ls-chip-val{color:#a78bfa;}
-.ls-chip-4 .ls-chip-icon{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.22);}
-.ls-chip-4 .ls-chip-val{color:#fbbf24;}
-
-/* ── Center wrapper ── */
-.ls-center{
-  position:relative;z-index:3;
-  display:flex !important;flex-direction:column !important;align-items:center !important;
-  gap:20px;width:100%;max-width:460px;padding:20px 16px;
-}
-
-/* ── Brand pill ── */
-.ls-pill{
-  display:inline-flex;align-items:center;gap:8px;
-  background:rgba(242,136,32,.1);
-  border:1px solid rgba(242,136,32,.26);
-  border-radius:99px;padding:7px 18px;
-  font-size:11.5px;font-weight:600;letter-spacing:.05em;
-  color:rgba(242,136,32,.92);
-  animation:pillGlow 3.5s ease-in-out infinite;
-}
-.ls-pill-dot{
-  width:6px;height:6px;border-radius:50%;background:#f28820;
-  box-shadow:0 0 0 3px rgba(242,136,32,.24);
-  animation:pdot 1.6s ease-in-out infinite;flex-shrink:0;
-}
-@keyframes pillGlow{0%,100%{box-shadow:0 0 14px rgba(242,136,32,.08);}50%{box-shadow:0 0 28px rgba(242,136,32,.22);}}
-@keyframes pdot{0%,100%{opacity:.5;}50%{opacity:1;}}
-
-/* ── Auth card ── */
 .ls-card{
-  width:100%;
-  background:rgba(7,13,27,.84);
+  width:100%;max-width:390px;
+  background:rgba(12,22,42,.7);
   border:1px solid rgba(255,255,255,.1);
-  border-radius:32px;
-  padding:52px 48px 44px;
+  border-radius:28px;
+  padding:48px 44px 42px;
   box-shadow:
-    0 0 0 1px rgba(242,136,32,.11),
-    0 64px 128px rgba(0,0,0,.88),
-    0 0 70px rgba(242,136,32,.045),
+    0 0 0 1px rgba(242,136,32,.1),
+    0 40px 100px rgba(0,0,0,.75),
+    0 0 60px rgba(242,136,32,.04),
     inset 0 1px 0 rgba(255,255,255,.09);
-  backdrop-filter:blur(44px);-webkit-backdrop-filter:blur(44px);
+  backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
   position:relative;overflow:hidden;
-  animation:cardIn .82s cubic-bezier(.22,1,.36,1) .1s both;
+  animation:cIn .8s cubic-bezier(.22,1,.36,1) .08s both;
 }
 .ls-card::after{
-  content:'';position:absolute;top:0;left:-100%;width:55%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.026),transparent);
-  animation:shimmer 9s ease-in-out infinite 3.5s;pointer-events:none;
+  content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.025),transparent);
+  animation:cShim 10s ease-in-out infinite 4s;pointer-events:none;
 }
-@keyframes cardIn{from{opacity:0;transform:translateY(38px) scale(.94);}to{opacity:1;transform:none;}}
-@keyframes shimmer{0%{left:-100%;}40%,100%{left:160%;}}
+@keyframes cIn{from{opacity:0;transform:translateY(30px) scale(.95);}to{opacity:1;transform:none;}}
+@keyframes cShim{0%{left:-100%;}35%,100%{left:155%;}}
 
-.ls-logo-wrap{display:flex;align-items:center;gap:16px;margin-bottom:34px;}
+.ls-logo-wrap{display:flex;align-items:center;gap:14px;margin-bottom:30px;}
 .ls-logo{
-  width:62px;height:62px;border-radius:17px;display:block;flex-shrink:0;
-  box-shadow:0 0 0 1px rgba(242,136,32,.38),0 10px 36px rgba(0,0,0,.58),0 0 55px rgba(242,136,32,.16);
-  animation:lFloat 5s ease-in-out infinite;
+  width:56px;height:56px;border-radius:15px;display:block;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(242,136,32,.35),0 8px 28px rgba(0,0,0,.55),0 0 45px rgba(242,136,32,.14);
+  animation:lf 5s ease-in-out infinite;
 }
-@keyframes lFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
-.ls-logo-name{font-family:'Poppins','Inter',sans-serif;font-size:16px;font-weight:800;letter-spacing:-.025em;color:#edf5fc;line-height:1.15;}
-.ls-logo-sub{font-size:10.5px;font-weight:500;color:rgba(176,207,229,.34);margin-top:3px;letter-spacing:.03em;}
+@keyframes lf{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+.ls-logo-name{font-family:'Poppins','Inter',sans-serif;font-size:15.5px;font-weight:800;letter-spacing:-.025em;color:#edf5fc;line-height:1.15;}
+.ls-logo-sub{font-size:10px;font-weight:500;color:rgba(176,207,229,.34);margin-top:3px;letter-spacing:.03em;}
 
 .ls-headline{
   font-family:'Poppins','Inter',sans-serif;
-  font-size:44px;font-weight:900;letter-spacing:-.055em;
+  font-size:38px;font-weight:900;letter-spacing:-.05em;
   color:#f0f8ff;margin:0 0 10px;line-height:1.0;
 }
-.ls-sub-text{font-size:13.5px;color:rgba(176,207,229,.5);line-height:1.65;margin:0 0 30px;}
-.ls-sub-text strong{color:rgba(242,136,32,.92);}
+.ls-sub-text{font-size:13px;color:rgba(176,207,229,.5);line-height:1.65;margin:0 0 28px;}
+.ls-sub-text strong{color:rgba(242,136,32,.9);}
 
-/* ── Orange brand button ── */
+/* ── Orange button ── */
 #loginScreen .google-fallback-btn{
   background:linear-gradient(135deg,#f28820 0%,#d86410 100%) !important;
   color:#fff !important;border:none !important;
-  box-shadow:0 4px 26px rgba(242,136,32,.48),0 1px 4px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.24) !important;
-  min-height:58px !important;backdrop-filter:none !important;
-  font-size:15px !important;font-weight:700 !important;letter-spacing:.01em !important;
-  border-radius:14px !important;
+  box-shadow:0 4px 24px rgba(242,136,32,.46),inset 0 1px 0 rgba(255,255,255,.22) !important;
+  min-height:56px !important;backdrop-filter:none !important;
+  font-size:15px !important;font-weight:700 !important;
+  border-radius:13px !important;
 }
 #loginScreen .google-fallback-btn:hover{
   background:linear-gradient(135deg,#f59428 0%,#e0751c 100%) !important;
-  box-shadow:0 14px 44px rgba(242,136,32,.65),0 2px 8px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.24) !important;
+  box-shadow:0 12px 40px rgba(242,136,32,.62),inset 0 1px 0 rgba(255,255,255,.22) !important;
   transform:translateY(-2px) !important;
 }
 #loginScreen .gfb-google-icon{filter:brightness(0) invert(1) opacity(.92) !important;}
 
-.ls-divider{height:1px;margin:24px 0 20px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);}
-.ls-restrict-row{display:flex;align-items:center;gap:7px;font-size:11.5px;color:rgba(176,207,229,.3);}
-.ls-restrict-row strong{color:rgba(255,255,255,.55);}
-
-.ls-footer{
-  display:flex;align-items:center;gap:9px;
-  font-size:10.5px;color:rgba(255,255,255,.18);font-weight:500;
-}
-.ls-footer-sep{color:rgba(255,255,255,.08);}
-.ls-footer-live{display:flex;align-items:center;gap:5px;color:rgba(74,222,128,.5);}
-.ls-footer-live span{width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;animation:pdot 1.4s ease-in-out infinite;}
+.ls-divider{height:1px;margin:22px 0 18px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);}
+.ls-restrict-row{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(176,207,229,.28);}
+.ls-restrict-row strong{color:rgba(255,255,255,.5);}
 
 /* ── Responsive ── */
-@media(max-width:960px){.ls-chip{display:none !important;}.ls-wmark{display:none !important;}}
+@media(max-width:900px){
+  .lv-left{display:none !important;}
+  .lv-right{flex:1 !important;padding:24px 20px !important;}
+  .ls-card{max-width:none !important;padding:38px 28px 34px !important;}
+}
 @media(max-width:480px){
-  .ls-headline{font-size:36px !important;}
-  .ls-card{padding:38px 26px 34px !important;border-radius:26px !important;}
-  .ls-center{padding:20px 12px !important;}
+  .ls-headline{font-size:30px !important;}
+  .ls-card{border-radius:22px !important;padding:32px 22px 28px !important;}
 }
 </style>
 
@@ -6353,57 +6349,67 @@ tbody tr:hover td{
 </head>
 <body>
 
-<!-- LOGIN v5 — Full aurora, centered premium card -->
+<!-- LOGIN v6 — Vivid mesh split -->
 <div id="loginScreen">
 
-  <!-- BG layers -->
-  <div class="ls-b1"></div>
-  <div class="ls-b2"></div>
-  <div class="ls-b3"></div>
-  <div class="ls-grid"></div>
-  <div class="ls-wmark">ADIT</div>
+  <!-- LEFT: vivid mesh brand panel -->
+  <div class="lv-left">
 
-  <!-- Floating stat chips -->
-  <div class="ls-chip ls-chip-1">
-    <div class="ls-chip-icon">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3.2" fill="#22c55e"/><circle cx="8" cy="8" r="6.5" stroke="#22c55e" stroke-width="1.3" opacity=".45"/></svg>
-    </div>
-    <div class="ls-chip-val">12</div>
-    <div class="ls-chip-lbl">Agents Online</div>
-  </div>
-
-  <div class="ls-chip ls-chip-2">
-    <div class="ls-chip-icon">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 11l3-3 3 3 6-7" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <div class="ls-chip-val">96%</div>
-    <div class="ls-chip-lbl">CSAT Score</div>
-  </div>
-
-  <div class="ls-chip ls-chip-3">
-    <div class="ls-chip-icon">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z" stroke="#a78bfa" stroke-width="1.4" stroke-linejoin="round"/></svg>
-    </div>
-    <div class="ls-chip-val">88%</div>
-    <div class="ls-chip-lbl">QA Score</div>
-  </div>
-
-  <div class="ls-chip ls-chip-4">
-    <div class="ls-chip-icon">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#fbbf24" stroke-width="1.4"/><path d="M8 4.5v3.5l2 2" stroke="#fbbf24" stroke-width="1.4" stroke-linecap="round"/></svg>
-    </div>
-    <div class="ls-chip-val">4:02</div>
-    <div class="ls-chip-lbl">Avg Handle Time</div>
-  </div>
-
-  <!-- Centered content -->
-  <div class="ls-center">
-
-    <div class="ls-pill">
-      <span class="ls-pill-dot"></span>
-      T1 CS Stars &nbsp;·&nbsp; Adit Agent Monitor
+    <div class="lv-logo-row">
+      <img class="lv-logo" src="/adit-logo-dark.png" alt="Adit">
+      <span class="lv-brand"><span>Adit</span> Agent Monitor</span>
     </div>
 
+    <div class="lv-hero">
+      <div class="lv-eyebrow">T1 CS Stars · Operations Hub</div>
+      <h2 class="lv-h1">Your CS team,<br><em>live &amp; accountable.</em></h2>
+      <p class="lv-sub">Real-time agent presence, break tracking, QA scoring, and performance recognition — all in one place.</p>
+
+      <div class="lv-stats">
+        <div class="lv-stat">
+          <div class="lv-stat-val">12</div>
+          <div class="lv-stat-lbl">Agents Online</div>
+          <div class="lv-stat-delta">
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 8V2M2 5l3-3 3 3" stroke="#4ade80" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            All systems live
+          </div>
+        </div>
+        <div class="lv-stat">
+          <div class="lv-stat-val">96%</div>
+          <div class="lv-stat-lbl">CSAT Score</div>
+          <div class="lv-stat-delta" style="color:#60a5fa;">
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 8V2M2 5l3-3 3 3" stroke="#60a5fa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Up this quarter
+          </div>
+        </div>
+        <div class="lv-stat">
+          <div class="lv-stat-val">88%</div>
+          <div class="lv-stat-lbl">QA Score</div>
+          <div class="lv-stat-delta" style="color:#a78bfa;">
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M8 2l-1.8 3.6L2 6.2l3 2.9-.7 4.1L8 11.2l3.7 1.9-.7-4.1 3-2.9-4.2-.6z" stroke="#a78bfa" stroke-width="1.2" stroke-linejoin="round"/></svg>
+            Q1 2026
+          </div>
+        </div>
+        <div class="lv-stat">
+          <div class="lv-stat-val">4:02</div>
+          <div class="lv-stat-lbl">Avg AHT</div>
+          <div class="lv-stat-delta" style="color:#fbbf24;">
+            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#fbbf24" stroke-width="1.2"/><path d="M5 3v2.2l1.3 1.3" stroke="#fbbf24" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Today
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lv-foot">
+      <span class="lv-live-dot"></span>
+      Live data · Updated in real-time
+    </div>
+
+  </div><!-- /.lv-left -->
+
+  <!-- RIGHT: auth card -->
+  <div class="lv-right">
     <div class="ls-card">
 
       <div class="ls-logo-wrap">
@@ -6415,7 +6421,7 @@ tbody tr:hover td{
       </div>
 
       <h1 class="ls-headline">Welcome back</h1>
-      <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account to continue.</p>
+      <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account.</p>
 
       <div id="loginMsg"></div>
 
@@ -6436,23 +6442,12 @@ tbody tr:hover td{
 
       <div class="ls-divider"></div>
       <div class="ls-restrict-row">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.38;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.36;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         <strong>@adit.com</strong> only &nbsp;·&nbsp; Contact Sebastin for access
       </div>
 
     </div><!-- /.ls-card -->
-
-    <div class="ls-footer">
-      <div class="ls-footer-live"><span></span>Live</div>
-      <span class="ls-footer-sep">·</span>
-      <span>Break Tracking</span>
-      <span class="ls-footer-sep">·</span>
-      <span>QA &amp; CSAT</span>
-      <span class="ls-footer-sep">·</span>
-      <span>Hall of Fame</span>
-    </div>
-
-  </div><!-- /.ls-center -->
+  </div><!-- /.lv-right -->
 
 </div><!-- /#loginScreen -->
 <!-- APP -->
