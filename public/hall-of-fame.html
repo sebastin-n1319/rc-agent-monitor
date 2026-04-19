@@ -2165,8 +2165,8 @@ body::after {
         <div class="cd-sep">:</div>
         <div class="cd-blk"><span class="cd-num" id="cd-s">--</span><div class="cd-lbl">Secs</div></div>
       </div>
-      <div class="lock-note">Results are under final review before release. Managers and admins can access early using the button below.</div>
-      <button class="lock-admin" onclick="adminUnlock()">
+      <div class="lock-note" id="lock-note-admin" style="display:none">Results are under final review before release. Managers and admins can access early using the button below.</div>
+      <button class="lock-admin" id="btn-admin-unlock" onclick="adminUnlock()" style="display:none">
         <span id="ico-key"></span>&nbsp;Admin &mdash; Unlock Early
       </button>
     </div>
@@ -2382,6 +2382,13 @@ function initBonus(){
   if(bonusUnlocked()){showBonus();}
   else{
     document.getElementById('bonus-locked').style.display='block';
+    // Only show the admin early-unlock button to actual admins
+    const adminBtn=document.getElementById('btn-admin-unlock');
+    const adminNote=document.getElementById('lock-note-admin');
+    if(isAdmin){
+      if(adminBtn) adminBtn.style.display='inline-flex';
+      if(adminNote) adminNote.style.display='block';
+    }
     startCountdown();
   }
 }
