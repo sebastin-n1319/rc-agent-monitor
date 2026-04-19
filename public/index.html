@@ -5882,16 +5882,18 @@ tbody tr:hover td{
   width: 100% !important;
 }
 #loginScreen .google-fallback-btn{
-  background: rgba(255,255,255,.96) !important;
-  color: #10263a !important;
-  border: 1px solid rgba(255,255,255,.72) !important;
-  box-shadow: 0 12px 28px rgba(2,8,23,.18) !important;
+  background: rgba(255,255,255,.07) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.28) !important;
   min-height: 58px !important;
+  backdrop-filter: blur(8px) !important;
 }
 #loginScreen .google-fallback-btn:hover{
   transform: translateY(-1px) !important;
-  border-color: rgba(255,255,255,.92) !important;
-  box-shadow: 0 16px 32px rgba(2,8,23,.22) !important;
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.32) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,.35) !important;
 }
 #loginScreen .google-btn-host iframe{
   min-width: 100% !important;
@@ -7205,38 +7207,11 @@ function initGoogleAuth(){
     googleAuthReady = true;
   }
 
-  if(window.google?.accounts?.id && !gisRendered){
-    try{
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredential,
-        auto_select: false,
-        cancel_on_tap_outside: false,
-        itp_support: true
-      });
-      const host = document.getElementById('googleBtn');
-      if(host){
-        host.innerHTML = '';
-        google.accounts.id.renderButton(host, {
-          theme: 'outline',
-          size: 'large',
-          type: 'standard',
-          text: 'continue_with',
-          shape: 'pill',
-          logo_alignment: 'left',
-          width: 420
-        });
-        host.classList.add('gis-ready');
-        // Custom styled button always shown — native GIS pill suppressed
-      }
-      gisRendered = true;
-      ready = true;
-    }catch(e){
-      console.warn('GIS render failed', e);
-    }
-  }
+  // google.accounts.id (One Tap / FedCM) intentionally NOT used —
+  // it injects a native "Continue as …" pill we can't style.
+  // We use tokenClient.requestAccessToken() exclusively (OAuth2 token flow).
 
-  return !!tokenClient || gisRendered || ready;
+  return !!tokenClient;
 }
 
 function resetLoginBtn(){
