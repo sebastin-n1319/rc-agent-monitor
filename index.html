@@ -6120,6 +6120,183 @@ tbody tr:hover td{
   .abandon-time{align-items:flex-start !important;}
 }
 </style>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOGIN PAGE REDESIGN  (ls- prefix to avoid cascade conflicts)
+══════════════════════════════════════════════════════════ -->
+<style id="login-redesign">
+/* ── Full-screen centered layout ── */
+#loginScreen{
+  min-height:100vh !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  position:relative;z-index:10;overflow:hidden;
+  background:linear-gradient(160deg,#03080f 0%,#060c17 45%,#040911 100%) !important;
+}
+
+/* ── Background layers ── */
+.ls-bg-glow-a{
+  position:absolute;width:900px;height:900px;border-radius:50%;
+  background:radial-gradient(circle,rgba(242,136,32,.07) 0%,transparent 62%);
+  top:50%;left:50%;transform:translate(-50%,-54%);pointer-events:none;
+  animation:lsGlowBreathe 7s ease-in-out infinite;
+}
+.ls-bg-glow-b{
+  position:absolute;width:560px;height:560px;border-radius:50%;
+  background:radial-gradient(circle,rgba(6,135,190,.07) 0%,transparent 65%);
+  top:-60px;right:-100px;pointer-events:none;
+}
+.ls-bg-glow-c{
+  position:absolute;width:480px;height:480px;border-radius:50%;
+  background:radial-gradient(circle,rgba(139,92,246,.05) 0%,transparent 65%);
+  bottom:-60px;left:-80px;pointer-events:none;
+}
+.ls-bg-mesh{
+  position:absolute;inset:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:64px 64px;
+  -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 0%,transparent 100%);
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 0%,transparent 100%);
+}
+@keyframes lsGlowBreathe{0%,100%{transform:translate(-50%,-54%) scale(1);}50%{transform:translate(-50%,-54%) scale(1.1);}}
+
+/* ── Floating decorative stat tiles ── */
+.ls-tile{
+  position:absolute;pointer-events:none;
+  padding:14px 18px;border-radius:18px;
+  background:rgba(255,255,255,.028);
+  border:1px solid rgba(255,255,255,.07);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+.ls-tile-val{
+  font-family:'JetBrains Mono','Courier New',monospace;
+  font-size:22px;font-weight:700;color:rgba(255,255,255,.75);line-height:1;
+}
+.ls-tile-lbl{
+  font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:rgba(255,255,255,.28);margin-top:5px;
+}
+.ls-tile-badge{
+  display:inline-flex;align-items:center;gap:4px;margin-top:7px;
+  font-size:9px;font-weight:600;color:#4ade80;letter-spacing:.03em;
+}
+.ls-tile-badge span{width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;}
+/* individual positions + float animations */
+.ls-tile-1{top:11%;left:5%;animation:lsT1 10s ease-in-out infinite;}
+.ls-tile-2{top:13%;right:5%;animation:lsT2 12s ease-in-out infinite;}
+.ls-tile-3{bottom:17%;left:4%;animation:lsT3 9s ease-in-out infinite 1s;}
+.ls-tile-4{bottom:15%;right:4%;animation:lsT4 13s ease-in-out infinite 2s;}
+@keyframes lsT1{0%,100%{opacity:.45;transform:translateY(0) rotate(-5deg);}50%{opacity:.6;transform:translateY(-14px) rotate(-5deg);}}
+@keyframes lsT2{0%,100%{opacity:.45;transform:translateY(0) rotate(4deg);}50%{opacity:.6;transform:translateY(-10px) rotate(4deg);}}
+@keyframes lsT3{0%,100%{opacity:.45;transform:translateY(0) rotate(3deg);}50%{opacity:.6;transform:translateY(-12px) rotate(3deg);}}
+@keyframes lsT4{0%,100%{opacity:.45;transform:translateY(0) rotate(-4deg);}50%{opacity:.6;transform:translateY(-16px) rotate(-4deg);}}
+
+/* ── Central layout wrapper ── */
+.ls-center{
+  position:relative;z-index:3;
+  display:flex;flex-direction:column;align-items:center;
+  gap:18px;width:100%;max-width:420px;padding:20px 16px;
+}
+
+/* ── Live brand pill ── */
+.ls-brand-pill{
+  display:inline-flex;align-items:center;gap:7px;
+  background:rgba(242,136,32,.1);
+  border:1px solid rgba(242,136,32,.22);
+  border-radius:50px;padding:6px 16px;
+  font-size:11.5px;font-weight:600;letter-spacing:.05em;
+  color:rgba(242,136,32,.9);
+  animation:lsPillGlow 3s ease-in-out infinite;
+}
+.ls-pill-dot{
+  width:6px;height:6px;border-radius:50%;background:#f28820;
+  animation:dotBlink 1.2s ease-in-out infinite;flex-shrink:0;
+}
+@keyframes lsPillGlow{0%,100%{box-shadow:0 0 0 0 rgba(242,136,32,.2);}50%{box-shadow:0 0 0 7px rgba(242,136,32,0);}}
+
+/* ── Auth card ── */
+.ls-card{
+  width:100%;
+  background:rgba(10,18,32,.72);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:28px;
+  padding:42px 38px 36px;
+  box-shadow:
+    0 0 0 1px rgba(242,136,32,.06),
+    0 48px 96px rgba(0,0,0,.65),
+    0 0 60px rgba(242,136,32,.04),
+    inset 0 1px 0 rgba(255,255,255,.07);
+  backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  animation:lsCardIn .75s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes lsCardIn{from{opacity:0;transform:translateY(32px) scale(.95);}to{opacity:1;transform:none;}}
+
+.ls-logo-wrap{
+  display:flex;align-items:center;gap:14px;margin-bottom:28px;
+}
+.ls-logo{
+  width:52px;height:52px;border-radius:14px;display:block;flex-shrink:0;
+  box-shadow:0 0 0 1px rgba(242,136,32,.25),0 6px 24px rgba(0,0,0,.4),0 0 36px rgba(242,136,32,.14);
+  animation:logoFloat 4.5s ease-in-out infinite;
+}
+.ls-logo-text{}
+.ls-logo-name{
+  font-family:'Poppins','Inter',sans-serif;
+  font-size:15px;font-weight:800;letter-spacing:-.02em;color:#edf5fc;line-height:1.1;
+}
+.ls-logo-sub{
+  font-size:10.5px;font-weight:500;color:rgba(176,207,229,.4);margin-top:2px;letter-spacing:.02em;
+}
+
+.ls-headline{
+  font-family:'Poppins','Inter',sans-serif;
+  font-size:30px;font-weight:800;letter-spacing:-.04em;
+  color:#edf5fc;margin:0 0 8px;
+  line-height:1.1;
+}
+.ls-sub-text{
+  font-size:13px;color:rgba(176,207,229,.52);
+  line-height:1.6;margin:0 0 30px;
+}
+.ls-sub-text strong{color:rgba(242,136,32,.85);}
+
+.ls-divider{
+  height:1px;margin:22px 0 18px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+}
+.ls-restrict-row{
+  display:flex;align-items:center;gap:7px;
+  font-size:11.5px;color:rgba(176,207,229,.35);
+}
+.ls-restrict-row strong{color:rgba(255,255,255,.65);}
+
+/* ── Footer tag strip ── */
+.ls-footer{
+  display:flex;align-items:center;gap:9px;
+  font-size:11px;color:rgba(255,255,255,.22);font-weight:500;
+  animation:lsCardIn 1s cubic-bezier(.22,1,.36,1) .15s both;
+}
+.ls-footer-sep{color:rgba(255,255,255,.1);}
+.ls-footer-live{
+  display:flex;align-items:center;gap:5px;color:rgba(74,222,128,.6);
+}
+.ls-footer-live span{width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;animation:dotBlink 1.4s ease-in-out infinite;}
+
+/* ── Hide old login-left / login-right panels in this redesign ── */
+.login-left,.login-right{display:none !important;}
+
+/* ── Responsive ── */
+@media(max-width:960px){.ls-tile{display:none;}}
+@media(max-width:480px){
+  .ls-card{padding:32px 22px 28px;border-radius:22px;}
+  .ls-headline{font-size:26px;}
+}
+</style>
+
 <script>
 /* ── Sticky header runtime calibration (for non-admin tables) ─────────────── */
 (function(){
@@ -6145,136 +6322,75 @@ tbody tr:hover td{
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN — redesigned -->
 <div id="loginScreen">
-  <div class="login-bg"></div>
-  <div class="login-grid"></div>
-  <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+
+  <!-- Background layers -->
+  <div class="ls-bg-glow-a"></div>
+  <div class="ls-bg-glow-b"></div>
+  <div class="ls-bg-glow-c"></div>
+  <div class="ls-bg-mesh"></div>
   <div class="particles" id="particles"></div>
   <div class="confetti-wrap" id="confettiWrap"></div>
 
-  <!-- ═══ LEFT — product showcase ═══ -->
-  <div class="login-left">
-    <div class="login-card-left">
+  <!-- Floating decorative stat tiles (desktop only) -->
+  <div class="ls-tile ls-tile-1">
+    <div class="ls-tile-val">12</div>
+    <div class="ls-tile-lbl">Agents Online</div>
+    <div class="ls-tile-badge"><span></span>All systems live</div>
+  </div>
+  <div class="ls-tile ls-tile-2">
+    <div class="ls-tile-val">96%</div>
+    <div class="ls-tile-lbl">CSAT Score</div>
+    <div class="ls-tile-badge" style="color:rgba(96,165,250,.8);">
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M2 11l3-3 3 3 6-7" stroke="#60a5fa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Up this quarter
+    </div>
+  </div>
+  <div class="ls-tile ls-tile-3">
+    <div class="ls-tile-val">88%</div>
+    <div class="ls-tile-lbl">QA Score</div>
+    <div class="ls-tile-badge" style="color:rgba(168,85,247,.7);">
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z" stroke="#a855f7" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Q1 2026
+    </div>
+  </div>
+  <div class="ls-tile ls-tile-4">
+    <div class="ls-tile-val">4m 2s</div>
+    <div class="ls-tile-lbl">Avg Handle Time</div>
+    <div class="ls-tile-badge" style="color:rgba(251,191,36,.7);">
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#fbbf24" stroke-width="1.5"/><path d="M8 4.5v3.5l2 2" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Today
+    </div>
+  </div>
 
-      <!-- Wordmark -->
-      <div class="lp-wordmark">
-        <span class="lp-wm-dot"></span>T1 CS &nbsp;·&nbsp; Adit Agent Monitor
+  <!-- Central auth panel -->
+  <div class="ls-center">
+
+    <!-- Live brand pill -->
+    <div class="ls-brand-pill">
+      <span class="ls-pill-dot"></span>
+      T1 CS Stars &nbsp;·&nbsp; Adit Agent Monitor
+    </div>
+
+    <!-- Auth card -->
+    <div class="ls-card">
+
+      <!-- Logo + wordmark -->
+      <div class="ls-logo-wrap">
+        <img class="ls-logo" src="/adit-logo-dark.png" alt="Adit">
+        <div class="ls-logo-text">
+          <div class="ls-logo-name">Adit Agent Monitor</div>
+          <div class="ls-logo-sub">T1 CS Stars &nbsp;·&nbsp; Operations Hub</div>
+        </div>
       </div>
 
-      <!-- Headline -->
-      <h1 class="lp-headline">Built for<br><span>high-performing</span><br>CS teams.</h1>
-
-      <p class="lp-sub">Real-time ops visibility, smart break tracking, QA scoring, and Hall of Fame — unified in one place.</p>
-
-      <!-- ── Hero dashboard preview card ── -->
-      <div class="lp-hero-wrap">
-
-        <div class="lp-hero-card">
-
-          <!-- Browser chrome bar -->
-          <div class="lp-hc-bar">
-            <div class="lp-hc-dots">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="lp-hc-title-row">
-              <span class="lp-hc-title">Live Ops Dashboard</span>
-            </div>
-            <div class="lp-hc-live">
-              <span class="lp-live-pulse"></span>Live
-            </div>
-          </div>
-
-          <!-- Metric chips -->
-          <div class="lp-hc-metrics">
-            <div class="lp-hc-m">
-              <div class="lp-hc-mval">8</div>
-              <div class="lp-hc-mlabel">Online</div>
-            </div>
-            <div class="lp-hc-m lp-hc-m-orange">
-              <div class="lp-hc-mval">96%</div>
-              <div class="lp-hc-mlabel">CSAT</div>
-            </div>
-            <div class="lp-hc-m lp-hc-m-amber">
-              <div class="lp-hc-mval">2</div>
-              <div class="lp-hc-mlabel">On Break</div>
-            </div>
-            <div class="lp-hc-m lp-hc-m-blue">
-              <div class="lp-hc-mval">88%</div>
-              <div class="lp-hc-mlabel">QA Score</div>
-            </div>
-          </div>
-
-          <!-- Feature highlights -->
-          <div class="lp-hc-features">
-            <div class="lp-hc-feat">
-              <div class="lp-hc-feat-icon lp-hc-feat-green">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2v12" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/></svg>
-              </div>
-              <div class="lp-hc-feat-text">
-                <div class="lp-hc-feat-title">Live Status Tracking</div>
-                <div class="lp-hc-feat-sub">Real-time availability &amp; queue visibility</div>
-              </div>
-            </div>
-            <div class="lp-hc-feat">
-              <div class="lp-hc-feat-icon lp-hc-feat-orange">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="#f28820" stroke-width="1.5"/><path d="M8 4.5v3.5l2 2" stroke="#f28820" stroke-width="1.5" stroke-linecap="round"/></svg>
-              </div>
-              <div class="lp-hc-feat-text">
-                <div class="lp-hc-feat-title">Smart Break Management</div>
-                <div class="lp-hc-feat-sub">Automated timers with team alerts</div>
-              </div>
-            </div>
-            <div class="lp-hc-feat">
-              <div class="lp-hc-feat-icon lp-hc-feat-blue">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 12l4-4 3 3 5-7" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </div>
-              <div class="lp-hc-feat-text">
-                <div class="lp-hc-feat-title">QA &amp; CSAT Scoring</div>
-                <div class="lp-hc-feat-sub">Performance trends at a glance</div>
-              </div>
-            </div>
-            <div class="lp-hc-feat">
-              <div class="lp-hc-feat-icon lp-hc-feat-amber">
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 2l1.8 3.6L14 6.2l-3 2.9.7 4.1L8 11.2l-3.7 1.9.7-4.1-3-2.9 4.2-.6z" stroke="#fbbf24" stroke-width="1.4" stroke-linejoin="round"/></svg>
-              </div>
-              <div class="lp-hc-feat-text">
-                <div class="lp-hc-feat-title">Hall of Fame</div>
-                <div class="lp-hc-feat-sub">Celebrate top performers each quarter</div>
-              </div>
-            </div>
-          </div>
-
-        </div><!-- /.lp-hero-card -->
-
-        <!-- Floating accent pills -->
-        <div class="lp-ap lp-ap-1">
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 12V4M4 8l4-4 4 4" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Team CSAT up 12% this quarter
-        </div>
-        <div class="lp-ap lp-ap-2">
-          <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="#f28820"/><circle cx="8" cy="8" r="6.5" stroke="#f28820" stroke-width="1.3" stroke-dasharray="2 2"/></svg>
-          Real-time · Always in sync
-        </div>
-
-      </div><!-- /.lp-hero-wrap -->
-
-    </div><!-- /.login-card-left -->
-  </div><!-- /.login-left -->
-
-  <!-- ═══ RIGHT — auth form ═══ -->
-  <div class="login-right">
-    <div class="login-form-wrap">
-
-      <img class="login-brand-logo" src="/adit-logo-dark.png" alt="Adit">
-
-      <div class="login-welcome">Welcome back</div>
-      <div class="login-sub">Sign in with your <strong>@adit.com</strong> Google Workspace account.</div>
+      <h1 class="ls-headline">Welcome back</h1>
+      <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account to continue.</p>
 
       <div id="loginMsg"></div>
 
       <div class="gfb-wrapper" style="width:100%;">
-        <!-- Orange button: primary sign-in via GIS token client popup -->
         <button id="googleFallbackBtn" class="google-fallback-btn" onclick="startGoogleSignIn()">
           <div class="gfb-spinner"></div>
           <svg class="gfb-google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
@@ -6285,18 +6401,30 @@ tbody tr:hover td{
           </svg>
           <span class="google-btn-label">Continue with Google</span>
         </button>
-        <!-- Native GIS button renders here; JS adds class 'gis-ready' to show it -->
         <div id="googleBtn" class="google-btn-host"></div>
-      </div><!-- /.gfb-wrapper -->
+      </div>
       <button id="gfbSwitch" class="gfb-switch" style="display:none" onclick="switchGoogleAccount()">Use a different account</button>
 
-      <div class="login-restrict">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.45;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      <div class="ls-divider"></div>
+      <div class="ls-restrict-row">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.4;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         <strong>@adit.com</strong> only &nbsp;·&nbsp; Contact Sebastin for access
       </div>
 
-    </div><!-- /.login-form-wrap -->
-  </div><!-- /.login-right -->
+    </div><!-- /.ls-card -->
+
+    <!-- Footer tag strip -->
+    <div class="ls-footer">
+      <div class="ls-footer-live"><span></span>Live Status</div>
+      <span class="ls-footer-sep">·</span>
+      <span>Break Tracking</span>
+      <span class="ls-footer-sep">·</span>
+      <span>QA &amp; CSAT</span>
+      <span class="ls-footer-sep">·</span>
+      <span>Hall of Fame</span>
+    </div>
+
+  </div><!-- /.ls-center -->
 
 </div><!-- /#loginScreen -->
 <!-- APP -->
