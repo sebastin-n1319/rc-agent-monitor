@@ -12662,3 +12662,104 @@ window.addEventListener('load',()=>{
   transform-style: flat !important;
 }
 </style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style id="bb-header-v5">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Command Header v5
+   Space Grotesk font · compact size · refined palette
+══════════════════════════════════════════════════════════════ */
+
+/* ── Compact card ───────────────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header {
+  padding: 10px 16px !important;
+  min-height: 52px !important;
+  gap: 12px !important;
+  background:
+    linear-gradient(135deg,
+      rgba(10,8,30,.96) 0%,
+      rgba(14,22,48,.96) 50%,
+      rgba(28,10,50,.96) 100%) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(99,102,241,.25) !important;
+  border-top: 1.5px solid rgba(99,102,241,.5) !important;
+  box-shadow:
+    0 2px 16px rgba(99,102,241,.15),
+    inset 0 1px 0 rgba(255,255,255,.05) !important;
+  animation: bbHdrFloat5 5s ease-in-out infinite !important;
+}
+@keyframes bbHdrFloat5 {
+  0%,100% { box-shadow: 0 2px 16px rgba(99,102,241,.15), inset 0 1px 0 rgba(255,255,255,.05); transform: translateY(0); }
+  50%     { box-shadow: 0 6px 28px rgba(99,102,241,.28), inset 0 1px 0 rgba(255,255,255,.08); transform: translateY(-2px); }
+}
+
+/* ── Bot icon — smaller ─────────────────────────────────────── */
+#agent-section-breakbot .bb-bot-icon {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #4338ca 0%, #0e7490 100%) !important;
+  box-shadow: 0 0 14px rgba(67,56,202,.5), 0 2px 6px rgba(0,0,0,.4) !important;
+  flex-shrink: 0 !important;
+}
+
+/* ── Title — Space Grotesk, compact ────────────────────────── */
+#agent-section-breakbot .bb-cmd-title {
+  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: .03em !important;
+  background: linear-gradient(90deg, #e0e7ff 0%, #a5b4fc 40%, #67e8f9 75%, #e0e7ff 100%) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: bbTitleV5 5s linear infinite !important;
+  filter: drop-shadow(0 0 5px rgba(99,102,241,.4)) !important;
+}
+@keyframes bbTitleV5 {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+#agent-section-breakbot .bb-cmd-title::before {
+  content: none !important;
+}
+
+/* ── Subtitle — Space Grotesk, muted ──────────────────────── */
+#agent-section-breakbot .bb-cmd-sub {
+  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-size: 10.5px !important;
+  font-weight: 400 !important;
+  letter-spacing: .025em !important;
+  color: rgba(148,163,184,.75) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: rgba(148,163,184,.75) !important;
+  animation: none !important;
+  margin-top: 1px !important;
+}
+
+/* ── Deco bars — shorter ───────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-deco {
+  gap: 3px !important;
+}
+#agent-section-breakbot .bb-deco-bar {
+  width: 3px !important;
+  border-radius: 2px !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(1) { height: 10px !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(2) { height: 16px !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(3) { height: 12px !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(4) { height: 20px !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(5) { height: 14px !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(6) { height: 18px !important; }
+
+/* ── Live dot ──────────────────────────────────────────────── */
+#agent-section-breakbot .bb-live-dot {
+  width: 8px !important;
+  height: 8px !important;
+}
+</style>
