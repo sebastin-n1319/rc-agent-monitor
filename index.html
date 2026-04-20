@@ -3635,19 +3635,21 @@ body::after{
 header,
 .nav,
 .page{
-  width:min(calc(100% - 32px), 1820px);
-  margin-left:auto;
-  margin-right:auto;
+  width:100%;
+  margin-left:0;
+  margin-right:0;
 }
 header{
-  margin-top:14px;
-  height:58px !important;
-  padding:0 18px !important;
-  background:rgba(8,17,29,.88) !important;
-  border:1px solid rgba(170,204,226,.1) !important;
-  border-radius:24px 24px 0 0 !important;
-  border-bottom:none !important;
-  box-shadow:0 16px 36px rgba(3,10,18,.18) !important;
+  margin-top:0;
+  height:54px !important;
+  padding:0 20px !important;
+  background:rgba(6,12,26,.95) !important;
+  border:none !important;
+  border-bottom:1px solid rgba(170,204,226,.09) !important;
+  border-radius:0 !important;
+  box-shadow:0 2px 20px rgba(0,0,0,.35) !important;
+  left:0 !important;
+  right:0 !important;
 }
 .hdr-logo-rc,
 .hdr-sep{display:none !important;}
@@ -3673,12 +3675,14 @@ header{
   font-size:11px !important;
 }
 .nav{
-  top:58px !important;
-  padding:8px 14px 0 !important;
-  background:rgba(8,17,29,.88) !important;
-  border:1px solid rgba(170,204,226,.1) !important;
-  border-top:1px solid rgba(255,255,255,.04) !important;
-  border-bottom:none !important;
+  top:54px !important;
+  padding:8px 16px 0 !important;
+  background:rgba(5,10,22,.96) !important;
+  border:none !important;
+  border-bottom:1px solid rgba(170,204,226,.07) !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
 }
 .nav-tab{
   padding:10px 14px !important;
@@ -3695,12 +3699,12 @@ header{
   background:rgba(255,255,255,.02) !important;
 }
 .page{
-  padding:18px 18px 22px !important;
-  background:rgba(8,17,29,.88) !important;
-  border:1px solid rgba(170,204,226,.1) !important;
-  border-top:none !important;
-  border-radius:0 0 28px 28px !important;
-  box-shadow:0 28px 60px rgba(4,12,22,.16) !important;
+  padding:20px 22px 28px !important;
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+  min-height:calc(100vh - 100px);
 }
 .card,
 .panel,
