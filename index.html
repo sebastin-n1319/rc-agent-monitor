@@ -10121,7 +10121,8 @@ function buildBreakLaneCard(title, subtitle, cls, rows){
     return '<span class="break-lane-chip '+(row.alerts?.hasAlert?'alert':'')+'" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
   }).join('');
   const alertCount = rows.filter(row => row.alerts?.hasAlert).length;
-  return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'">'+
+  const flexGrow = Math.max(1, rows.length);
+  return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'" style="flex:'+flexGrow+' 1 0">'+
     '<div class="break-lane-head">'+
       '<div><div class="break-lane-kicker">Floor lane</div><div class="break-lane-title">'+title+'</div><div class="break-lane-sub">'+subtitle+(alertCount?' · '+alertCount+' alerts':'')+'</div></div>'+
       '<div class="break-lane-count">'+rows.length+'</div>'+
@@ -13107,6 +13108,39 @@ window.addEventListener('load',()=>{
 #agent-section-breakbot .break-lane-chip {
   white-space: normal !important;
   word-break: break-word !important;
+  font-size: 10.5px !important;
+}
+</style>
+
+<style id="bb-lane-width">
+/* ── Width-based dynamic lanes ──────────────────────────────── */
+#agent-section-breakbot .break-lane-board {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+#agent-section-breakbot .break-lane-card {
+  /* flex-grow set dynamically via JS (agent count) */
+  flex-shrink: 1 !important;
+  flex-basis: 0 !important;
+  min-width: 120px !important;
+  height: auto !important;
+  width: auto !important;
+}
+
+/* Chips wrap within the wider card */
+#agent-section-breakbot .break-lane-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 8px !important;
+}
+
+#agent-section-breakbot .break-lane-chip {
+  white-space: nowrap !important;
   font-size: 10.5px !important;
 }
 </style>
