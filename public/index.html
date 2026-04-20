@@ -7586,7 +7586,102 @@ header{
 @media (max-width: 960px) {
   #agent-section-breakbot .break-layout { grid-template-columns: 1fr !important; }
 }
-</style></style>
+</style>
+<style id="bb-fix-v3">
+/* ══ BREAK BOT v3 — Fix pass ══════════════════════════════════
+   1. Kill blank rectangle (hero ring/orbit overflow)
+   2. Larger buttons — more visual weight
+   3. Better mobile layout
+══════════════════════════════════════════════════════════════ */
+
+/* ── Fix: hero visual overflow causing blank rectangle ─────── */
+#agent-section-breakbot .break-hero-card {
+  overflow: hidden !important;
+}
+#agent-section-breakbot .break-hero-visual {
+  overflow: hidden !important;
+}
+/* Contain ring/orbit so they don't bleed outside card */
+#agent-section-breakbot .break-hero-ring {
+  width: 140px !important;
+  height: 140px !important;
+}
+#agent-section-breakbot .break-hero-orbit {
+  width: 120px !important;
+  height: 120px !important;
+}
+#agent-section-breakbot .break-hero-pulse-a {
+  width: 100px !important;
+  height: 100px !important;
+}
+#agent-section-breakbot .break-hero-pulse-b {
+  width: 116px !important;
+  height: 116px !important;
+}
+
+/* ── Bigger, bolder action buttons ─────────────────────────── */
+#agent-section-breakbot .bb-act {
+  min-height: 72px !important;
+  padding: 14px 16px !important;
+}
+#agent-section-breakbot .bb-act-ico {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+}
+#agent-section-breakbot .bb-act-name {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+#agent-section-breakbot .bb-act-desc {
+  font-size: 10px !important;
+  color: rgba(148,163,184,.6) !important;
+}
+
+/* ── Bigger category label ──────────────────────────────────── */
+#agent-section-breakbot .bb-cat-lbl {
+  font-size: 9px !important;
+  min-height: 72px !important;
+}
+
+/* ── Stats strip improvements ───────────────────────────────── */
+#agent-section-breakbot .break-stat {
+  padding: 7px 14px 7px 12px !important;
+}
+#agent-section-breakbot .break-stat .v {
+  font-size: 14px !important;
+}
+
+/* ── Mobile: full-width layout ───────────────────────────────── */
+@media (max-width: 700px) {
+  #agent-section-breakbot .break-layout {
+    grid-template-columns: 1fr !important;
+  }
+  #agent-section-breakbot .bb-pad-row {
+    grid-template-columns: 52px 1fr 1fr !important;
+  }
+  #agent-section-breakbot .bb-act {
+    min-height: 66px !important;
+    padding: 12px 10px !important;
+  }
+  #agent-section-breakbot .bb-act-ico {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  #agent-section-breakbot .bb-act-name {
+    font-size: 11.5px !important;
+  }
+  #agent-section-breakbot .bb-act-desc {
+    padding-left: 0 !important;
+    display: none !important;
+  }
+  #agent-section-breakbot .break-hero-visual {
+    width: 100px !important;
+    height: 100px !important;
+  }
+}
+</style>
+
 
 <script>
 /* ── Breakbot Futuristic v2 — JS effects ──────────────────────────────── */
