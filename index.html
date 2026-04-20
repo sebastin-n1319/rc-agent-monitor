@@ -7574,8 +7574,8 @@ header{
 /* ── Layout ─────────────────────────────────────────────────── */
 #agent-section-breakbot .break-layout {
   display: grid !important;
-  grid-template-columns: 1fr 320px !important;
-  gap: 12px !important;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) !important;
+  gap: 14px !important;
   align-items: start !important;
 }
 #agent-section-breakbot .break-self-shell,
@@ -7628,10 +7628,11 @@ header{
   }
 }
 
-/* ── Hero grid: stack on mobile ─────────────────────────────── */
+/* ── Hero grid: text left, avatar right ─────────────────────── */
 #agent-section-breakbot .break-hero-grid {
-  grid-template-columns: 1fr !important;
+  grid-template-columns: 1fr auto !important;
   gap: 14px !important;
+  align-items: start !important;
 }
 #agent-section-breakbot .break-hero-visual {
   width: 120px !important;
