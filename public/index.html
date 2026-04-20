@@ -6612,7 +6612,301 @@ header{
 @media(max-width:480px){
   :root{--lyt-h-pad:10px;}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BREAKBOT ANIMATIONS v1 — entrance stagger, ambient bg, pulse rings,
+   ripple on click, scan line, lane card glow, stat counter tick
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Ambient background for the whole breakbot section ── */
+#agent-section-breakbot {
+  position: relative !important;
+  overflow: hidden !important;
+}
+#agent-section-breakbot::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background:
+    radial-gradient(ellipse 55% 40% at 10% 20%, rgba(34,197,94,.06) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 50% at 90% 80%, rgba(6,135,190,.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 50%, rgba(242,136,32,.04) 0%, transparent 65%) !important;
+  animation: bbAmbient 12s ease-in-out infinite alternate !important;
+}
+@keyframes bbAmbient {
+  0%   { opacity: .5; transform: scale(1) translate(0,0); }
+  50%  { opacity: 1;  transform: scale(1.04) translate(10px,-10px); }
+  100% { opacity: .7; transform: scale(.97) translate(-8px, 8px); }
+}
+
+/* Drifting dot grid inside breakbot */
+#agent-section-breakbot::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background-image: radial-gradient(rgba(255,255,255,.038) 1px, transparent 1px) !important;
+  background-size: 32px 32px !important;
+  animation: bbGridDrift 25s linear infinite !important;
+  opacity: .5 !important;
+}
+@keyframes bbGridDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 32px 32px; }
+}
+
+/* All content in breakbot needs z-index above the bg layers */
+#agent-section-breakbot > * { position: relative !important; z-index: 1 !important; }
+
+/* ── Entrance animations — stat tiles stagger in ── */
+#agent-section-breakbot .break-summary { overflow: visible !important; }
+#agent-section-breakbot .break-stat {
+  animation: bbStatIn .5s cubic-bezier(.22,1,.36,1) both !important;
+}
+#agent-section-breakbot .break-stat:nth-child(1) { animation-delay: .05s !important; }
+#agent-section-breakbot .break-stat:nth-child(2) { animation-delay: .10s !important; }
+#agent-section-breakbot .break-stat:nth-child(3) { animation-delay: .15s !important; }
+#agent-section-breakbot .break-stat:nth-child(4) { animation-delay: .20s !important; }
+#agent-section-breakbot .break-stat:nth-child(5) { animation-delay: .25s !important; }
+#agent-section-breakbot .break-stat:nth-child(6) { animation-delay: .30s !important; }
+#agent-section-breakbot .break-stat:nth-child(7) { animation-delay: .35s !important; }
+#agent-section-breakbot .break-stat:nth-child(8) { animation-delay: .40s !important; }
+@keyframes bbStatIn {
+  from { opacity: 0; transform: translateY(18px) scale(.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Entrance animations — action buttons stagger in ── */
+#agent-section-breakbot .break-action {
+  animation: bbBtnIn .55s cubic-bezier(.22,1,.36,1) both !important;
+}
+#agent-section-breakbot .break-action:nth-child(1) { animation-delay: .10s !important; }
+#agent-section-breakbot .break-action:nth-child(2) { animation-delay: .16s !important; }
+#agent-section-breakbot .break-action:nth-child(3) { animation-delay: .22s !important; }
+#agent-section-breakbot .break-action:nth-child(4) { animation-delay: .28s !important; }
+#agent-section-breakbot .break-action:nth-child(5) { animation-delay: .34s !important; }
+#agent-section-breakbot .break-action:nth-child(6) { animation-delay: .40s !important; }
+#agent-section-breakbot .break-action:nth-child(7) { animation-delay: .46s !important; }
+#agent-section-breakbot .break-action:nth-child(8) { animation-delay: .52s !important; }
+@keyframes bbBtnIn {
+  from { opacity: 0; transform: translateY(24px) scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Live pulse ring on ACTIVE (logged-in) status tile ── */
+#agent-section-breakbot .break-stat:nth-child(1) {
+  position: relative !important;
+}
+#agent-section-breakbot .break-stat:nth-child(1)::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: inherit !important;
+  border: 1.5px solid rgba(74,222,128,.45) !important;
+  pointer-events: none !important;
+  animation: bbStatusRing 2.4s ease-out infinite !important;
+}
+@keyframes bbStatusRing {
+  0%  { opacity: .8; transform: scale(1); }
+  70% { opacity: 0;  transform: scale(1.04); }
+  100%{ opacity: 0;  transform: scale(1.04); }
+}
+
+/* ── Stat value tick — subtle pulse when value changes ── */
+@keyframes bbValTick {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(1.08); color: #86efac; }
+  100% { transform: scale(1); }
+}
+.bb-val-tick { animation: bbValTick .4s cubic-bezier(.34,1.56,.64,1) !important; }
+
+/* ── Lane card entrance stagger ── */
+#agent-section-breakbot .break-lane-card {
+  animation: bbLaneIn .45s cubic-bezier(.22,1,.36,1) both !important;
+}
+#agent-section-breakbot .break-lane-card:nth-child(1) { animation-delay: .05s !important; }
+#agent-section-breakbot .break-lane-card:nth-child(2) { animation-delay: .10s !important; }
+#agent-section-breakbot .break-lane-card:nth-child(3) { animation-delay: .15s !important; }
+#agent-section-breakbot .break-lane-card:nth-child(4) { animation-delay: .20s !important; }
+#agent-section-breakbot .break-lane-card:nth-child(5) { animation-delay: .25s !important; }
+#agent-section-breakbot .break-lane-card:nth-child(6) { animation-delay: .30s !important; }
+@keyframes bbLaneIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Lane card ambient glow by status ── */
+#agent-section-breakbot .break-lane-card.avail {
+  animation: bbLaneIn .45s cubic-bezier(.22,1,.36,1) both,
+             bbAvailPulse 3.5s ease-in-out infinite !important;
+}
+#agent-section-breakbot .break-lane-card.brb {
+  animation: bbLaneIn .45s cubic-bezier(.22,1,.36,1) both,
+             bbBrbPulse 3.5s ease-in-out infinite !important;
+}
+#agent-section-breakbot .break-lane-card.break {
+  animation: bbLaneIn .45s cubic-bezier(.22,1,.36,1) both,
+             bbBreakPulse 3.5s ease-in-out infinite !important;
+}
+@keyframes bbAvailPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(63,215,162,0); }
+  50%     { box-shadow: 0 0 14px 3px rgba(63,215,162,.14); }
+}
+@keyframes bbBrbPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,190,92,0); }
+  50%     { box-shadow: 0 0 14px 3px rgba(255,190,92,.14); }
+}
+@keyframes bbBreakPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,102,127,0); }
+  50%     { box-shadow: 0 0 14px 3px rgba(255,102,127,.14); }
+}
+
+/* ── Scan line that sweeps across the floor view ── */
+#agent-section-breakbot .break-lane-board {
+  position: relative !important;
+  overflow: hidden !important;
+}
+#agent-section-breakbot .break-lane-board::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(6,135,190,.55), rgba(255,255,255,.2), rgba(6,135,190,.55), transparent) !important;
+  filter: blur(.5px) !important;
+  z-index: 10 !important;
+  animation: bbScan 5s linear infinite !important;
+  pointer-events: none !important;
+}
+@keyframes bbScan {
+  0%   { top: -1px; opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: .6; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Ripple on action button click ── */
+#agent-section-breakbot .break-action .bb-ripple {
+  position: absolute !important;
+  border-radius: 50% !important;
+  transform: scale(0) !important;
+  background: rgba(255,255,255,.18) !important;
+  pointer-events: none !important;
+  animation: bbRipple .55s linear !important;
+}
+@keyframes bbRipple {
+  to { transform: scale(3.5); opacity: 0; }
+}
+
+/* ── Success flash when action sent ── */
+@keyframes bbSuccessFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,0); border-color: rgba(74,222,128,.8); }
+  40%  { box-shadow: 0 0 32px 8px rgba(74,222,128,.35); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,0); border-color: rgba(174,208,230,.07); }
+}
+#agent-section-breakbot .break-action.bb-sent {
+  animation: bbSuccessFlash .7s ease-out forwards !important;
+}
+
+/* ── Callout card shimmer ── */
+#agent-section-breakbot .break-callout {
+  position: relative !important;
+  overflow: hidden !important;
+}
+#agent-section-breakbot .break-callout::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: -100% !important;
+  width: 60% !important; height: 100% !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.045), transparent) !important;
+  animation: bbCalloutShim 7s ease-in-out infinite 2s !important;
+  pointer-events: none !important;
+}
+@keyframes bbCalloutShim {
+  0%   { left: -100%; }
+  40%, 100% { left: 160%; }
+}
+
+/* ── Hero card top accent pulse ── */
+#agent-section-breakbot .break-hero-card {
+  --_hc-glow: rgba(242,136,32,.18) !important;
+}
+#agent-section-breakbot .break-hero-card:not(.no-pulse) {
+  animation: bbHeroPulse 6s ease-in-out infinite !important;
+}
+@keyframes bbHeroPulse {
+  0%,100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px rgba(242,136,32,.06), 0 28px 72px rgba(0,4,20,.6); }
+  50%     { box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 0 0 1px rgba(242,136,32,.14), 0 28px 72px rgba(0,4,20,.6), 0 0 48px rgba(242,136,32,.1); }
+}
+
+/* ── Break history note entrance ── */
+#agent-section-breakbot .break-history-note {
+  animation: bbNoteIn .4s cubic-bezier(.22,1,.36,1) both !important;
+}
+@keyframes bbNoteIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── Toolbar entrance ── */
+#agent-section-breakbot .break-toolbar.slim {
+  animation: bbToolbarIn .4s cubic-bezier(.22,1,.36,1) both !important;
+}
+@keyframes bbToolbarIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: none; }
+}
 </style>
+
+<script>
+/* ── Breakbot animation helpers ─────────────────────────────────────────── */
+(function(){
+  /* Ripple on action buttons */
+  document.addEventListener('mousedown', function(e){
+    var btn = e.target.closest('#agent-section-breakbot .break-action:not(:disabled)');
+    if(!btn) return;
+    var r = document.createElement('span');
+    r.className = 'bb-ripple';
+    var rect = btn.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height) * 1.4;
+    r.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+(e.clientX-rect.left-size/2)+'px;top:'+(e.clientY-rect.top-size/2)+'px';
+    btn.appendChild(r);
+    r.addEventListener('animationend', function(){ r.remove(); });
+  });
+
+  /* Success flash after action sent */
+  var _origSend = window.sendBreakAction;
+  if(typeof _origSend === 'function'){
+    window.sendBreakAction = function(action, btn){
+      if(btn){ btn.classList.add('bb-sent'); setTimeout(function(){ btn.classList.remove('bb-sent'); }, 750); }
+      return _origSend.apply(this, arguments);
+    };
+  }
+
+  /* Tick animation on stat .v elements when their text changes */
+  function observeStatValues(){
+    var stats = document.querySelectorAll('#agent-section-breakbot .break-stat .v');
+    stats.forEach(function(el){
+      var obs = new MutationObserver(function(){
+        el.classList.remove('bb-val-tick');
+        void el.offsetWidth; /* reflow */
+        el.classList.add('bb-val-tick');
+      });
+      obs.observe(el, { childList:true, characterData:true, subtree:true });
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', observeStatValues);
+  } else {
+    observeStatValues();
+  }
+  /* Re-run after agent view mounts */
+  setTimeout(observeStatValues, 1200);
+})();
+</script>
 
 <script>
 /* ── Sticky header runtime calibration (for non-admin tables) ─────────────── */
