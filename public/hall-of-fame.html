@@ -2001,6 +2001,197 @@ body::after {
   .hof-hero { padding: 22px 18px !important; }
 }
 </style>
+
+<!-- ══ HOF HEADER REDESIGN — final override ══════════════════════════ -->
+<style id="hof-header-v2">
+
+/* ── Wrap: no side padding on header (it's sticky full-width) ── */
+.wrap { padding-left: 0 !important; padding-right: 0 !important; }
+
+/* ── Inner content max-width wrapper ── */
+.hof-inner {
+  max-width: 100%;
+  padding: 0 24px;
+}
+
+/* ══════════════════════════════════════════════════════
+   REDESIGNED HEADER BANNER
+══════════════════════════════════════════════════════ */
+.hdr {
+  position: sticky !important;
+  top: 0 !important; z-index: 90 !important;
+  padding: 0 24px !important;
+  height: 68px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+
+  /* Rich layered background */
+  background:
+    radial-gradient(ellipse 60% 120% at 0% 50%, rgba(242,136,32,.13) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 100% at 100% 50%, rgba(6,135,190,.08) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(8,14,30,.98) 0%, rgba(5,10,22,.98) 100%) !important;
+
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  border-bottom: 1px solid rgba(148,163,184,.1) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.05),
+    0 6px 32px rgba(0,0,0,.45),
+    inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+
+/* Accent gradient line at top of header */
+.hdr::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg,
+    #f28820 0%, #fbbf24 20%, transparent 48%,
+    rgba(6,135,190,.6) 80%, transparent 100%) !important;
+  pointer-events: none !important;
+}
+
+/* ── Logo: dark bg, glowing ring ── */
+.hdr-logo {
+  width: 42px !important; height: 42px !important;
+  border-radius: 12px !important;
+  background: rgba(12,22,42,.9) !important;
+  border: 1px solid rgba(242,136,32,.35) !important;
+  box-shadow:
+    0 0 0 3px rgba(242,136,32,.08),
+    0 4px 16px rgba(0,0,0,.5),
+    0 0 28px rgba(242,136,32,.15) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+.hdr-logo img {
+  width: 26px !important; height: 26px !important;
+  object-fit: contain !important;
+  padding: 0 !important;
+}
+
+/* ── Title ── */
+.hdr-brand { gap: 14px !important; }
+.hdr-title {
+  font-family: 'Poppins','Inter',sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  letter-spacing: -.03em !important;
+  color: #eef4ff !important;
+  line-height: 1.2 !important;
+}
+.hdr-sub {
+  font-size: 10.5px !important;
+  color: rgba(148,163,184,.55) !important;
+  margin-top: 2px !important;
+  letter-spacing: .01em !important;
+}
+
+/* ── Right pills ── */
+.hdr-right { gap: 8px !important; }
+.pill {
+  height: 28px !important;
+  padding: 0 11px !important;
+  font-size: 9.5px !important;
+  letter-spacing: .11em !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+.pill-teal {
+  background: rgba(6,135,190,.12) !important;
+  border-color: rgba(6,135,190,.3) !important;
+  color: #38bdf8 !important;
+}
+.pill-teal .pill-dot { background: #38bdf8 !important; box-shadow: 0 0 6px #38bdf8 !important; }
+.pill-amber {
+  background: rgba(242,136,32,.12) !important;
+  border-color: rgba(242,136,32,.3) !important;
+  color: #f28820 !important;
+}
+.pill-amber .pill-dot { background: #f28820 !important; box-shadow: 0 0 6px #f28820 !important; }
+.pill-violet {
+  background: rgba(139,92,246,.12) !important;
+  border-color: rgba(139,92,246,.28) !important;
+  color: #c4b5fd !important;
+}
+
+/* ══ PAGE TABS: aligned to .hof-inner padding ══ */
+.pg-tabs-wrap {
+  position: sticky !important;
+  top: 68px !important; z-index: 80 !important;
+  padding: 0 24px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  background: rgba(4,9,20,.96) !important;
+  backdrop-filter: blur(20px) !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(148,163,184,.08) !important;
+  box-sizing: border-box !important;
+}
+.pg-tabs {
+  display: flex !important;
+  gap: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  height: 100% !important;
+  align-items: flex-end !important;
+}
+.tab-pill { display: none !important; }
+.ptab {
+  height: 100% !important;
+  padding: 0 16px !important;
+  border-radius: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: rgba(148,163,184,.6) !important;
+  background: transparent !important;
+  border-bottom: 2px solid transparent !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  transition: color .15s, border-color .15s !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+.ptab:hover { color: rgba(226,232,240,.88) !important; background: rgba(255,255,255,.025) !important; }
+.ptab.active {
+  color: #f8fafc !important;
+  border-bottom-color: #f28820 !important;
+  background: rgba(242,136,32,.05) !important;
+}
+
+/* ══ Page content: restore padding inside wrap ══ */
+.page { padding: 22px 24px 40px !important; }
+
+/* Ensure hof-hero stays inside the padded zone */
+.hof-hero, .sdiv, .podium, .award-grid, .ps-list,
+.stats-strip, .wsum, .perf-grid, .bonus-wrap {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+@media(max-width:600px){
+  .hdr { padding: 0 14px !important; height: 60px !important; }
+  .pg-tabs-wrap { top: 60px !important; padding: 0 14px !important; }
+  .page { padding: 16px 14px 32px !important; }
+  .hdr-title { font-size: 13px !important; }
+}
+</style>
 </head>
 <body>
 
