@@ -10121,8 +10121,7 @@ function buildBreakLaneCard(title, subtitle, cls, rows){
     return '<span class="break-lane-chip '+(row.alerts?.hasAlert?'alert':'')+'" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
   }).join('');
   const alertCount = rows.filter(row => row.alerts?.hasAlert).length;
-  const flexGrow = Math.max(1, rows.length);
-  return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'" style="flex:'+flexGrow+' 1 0">'+
+  return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'">'+
     '<div class="break-lane-head">'+
       '<div><div class="break-lane-kicker">Floor lane</div><div class="break-lane-title">'+title+'</div><div class="break-lane-sub">'+subtitle+(alertCount?' · '+alertCount+' alerts':'')+'</div></div>'+
       '<div class="break-lane-count">'+rows.length+'</div>'+
@@ -13220,5 +13219,80 @@ window.addEventListener('load',()=>{
   font-size: 10px !important;
   margin-top: 4px !important;
   margin-bottom: 2px !important;
+}
+</style>
+
+<style id="bb-lane-equal">
+/* ── Equal-width 5-col lanes, fixed height, horizontal chip scroll ── */
+#agent-section-breakbot .break-lane-board {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+#agent-section-breakbot .break-lane-card {
+  flex: unset !important;
+  flex-grow: unset !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: 164px !important;
+  max-height: 164px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Header tight */
+#agent-section-breakbot .break-lane-kicker {
+  font-size: 9px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+#agent-section-breakbot .break-lane-title {
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+#agent-section-breakbot .break-lane-sub {
+  font-size: 10px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+#agent-section-breakbot .break-lane-head {
+  flex-shrink: 0 !important;
+}
+
+/* Agent chips — horizontal scroll, single row */
+#agent-section-breakbot .break-lane-list {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-content: flex-start !important;
+  gap: 4px !important;
+  margin-top: 6px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(99,102,241,.3) transparent !important;
+}
+
+#agent-section-breakbot .break-lane-chip {
+  white-space: nowrap !important;
+  font-size: 10px !important;
+}
+
+#agent-section-breakbot .break-alert-tag {
+  flex-shrink: 0 !important;
+  font-size: 10px !important;
+  margin-top: 4px !important;
+  margin-bottom: 2px !important;
+  padding: 2px 7px !important;
 }
 </style>
