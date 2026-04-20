@@ -7500,36 +7500,45 @@ header{
   to   { opacity:1; transform:none; }
 }
 
-/* ── Toolbar ──────────────────────────────────────────────── */
+/* ── Toolbar — single compact row ────────────────────────────── */
 #agent-section-breakbot .break-toolbar {
   display: flex !important;
   align-items: center !important;
-  gap: 10px !important;
-  padding: 8px 0 10px !important;
-  flex-wrap: wrap !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 6px 0 8px !important;
+  flex-wrap: nowrap !important;
+  margin-bottom: 0 !important;
 }
-#agent-section-breakbot .break-toolbar-group { gap: 6px !important; }
+#agent-section-breakbot .break-toolbar-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  flex-wrap: nowrap !important;
+}
 #agent-section-breakbot .break-toolbar-label {
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: .1em !important;
-  color: rgba(148,163,184,.5) !important;
+  color: rgba(148,163,184,.45) !important;
+  white-space: nowrap !important;
 }
 #agent-section-breakbot .break-toolbar-btn {
   font-size: 10px !important;
   font-weight: 600 !important;
-  padding: 5px 12px !important;
+  padding: 4px 11px !important;
+  min-height: 28px !important;
   border-radius: 7px !important;
   background: rgba(255,255,255,.06) !important;
   border: 1px solid rgba(255,255,255,.1) !important;
   color: rgba(226,232,240,.7) !important;
   cursor: pointer !important;
-  transition: background .15s, transform .12s !important;
+  transition: background .15s !important;
+  white-space: nowrap !important;
 }
 #agent-section-breakbot .break-toolbar-btn:hover {
   background: rgba(255,255,255,.1) !important;
-  transform: translateY(-1px) !important;
 }
 #agent-section-breakbot .break-toolbar-btn.primary {
   background: rgba(99,102,241,.25) !important;
@@ -7537,21 +7546,24 @@ header{
   color: #a5b4fc !important;
 }
 #agent-section-breakbot .break-history-chip {
-  font-size: 9.5px !important;
+  font-size: 9px !important;
   font-weight: 700 !important;
-  color: rgba(226,232,240,.55) !important;
-  background: rgba(255,255,255,.06) !important;
+  color: rgba(226,232,240,.5) !important;
+  background: rgba(255,255,255,.05) !important;
   border-radius: 20px !important;
-  padding: 4px 11px !important;
-  border: 1px solid rgba(255,255,255,.08) !important;
+  padding: 3px 10px !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  white-space: nowrap !important;
 }
 #agent-section-breakbot .break-date-input {
   font-size: 10px !important;
-  padding: 4px 8px !important;
+  padding: 3px 7px !important;
+  min-height: 28px !important;
   background: rgba(255,255,255,.05) !important;
   border: 1px solid rgba(255,255,255,.1) !important;
   color: rgba(226,232,240,.8) !important;
   border-radius: 7px !important;
+  width: 120px !important;
 }
 
 /* ── Break log shell ───────────────────────────────────────── */
