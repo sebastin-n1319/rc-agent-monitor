@@ -12227,5 +12227,396 @@ window.addEventListener('load',()=>{
 }
 </style>
 
+
+<style id="bb-header-v2">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Command Header v2
+   Vivid text · 3D depth · perspective card · neon title
+══════════════════════════════════════════════════════════════ */
+
+/* ── 3D perspective wrapper ────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header {
+  perspective: 900px !important;
+  transform-style: preserve-3d !important;
+  animation: bbHdr3D 6s ease-in-out infinite !important;
+  padding: 14px 20px !important;
+  min-height: 64px !important;
+  border: none !important;
+  background:
+    linear-gradient(135deg,
+      rgba(79,70,229,.25) 0%,
+      rgba(6,182,212,.18) 40%,
+      rgba(168,85,247,.2) 80%,
+      rgba(79,70,229,.25) 100%) !important;
+  border-radius: 16px !important;
+  box-shadow:
+    0 4px 24px rgba(79,70,229,.25),
+    0 1px 0 rgba(255,255,255,.08) inset,
+    0 -1px 0 rgba(0,0,0,.3) inset !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+@keyframes bbHdr3D {
+  0%,100% { transform: perspective(900px) rotateX(0deg) translateZ(0); box-shadow: 0 4px 24px rgba(79,70,229,.25), 0 1px 0 rgba(255,255,255,.08) inset; }
+  25%     { transform: perspective(900px) rotateX(2.5deg) translateZ(4px); box-shadow: 0 8px 36px rgba(79,70,229,.4), 0 1px 0 rgba(255,255,255,.12) inset; }
+  50%     { transform: perspective(900px) rotateX(0deg) translateZ(2px); box-shadow: 0 6px 30px rgba(6,182,212,.3), 0 1px 0 rgba(255,255,255,.1) inset; }
+  75%     { transform: perspective(900px) rotateX(-2deg) translateZ(4px); box-shadow: 0 8px 36px rgba(168,85,247,.35), 0 1px 0 rgba(255,255,255,.1) inset; }
+}
+
+/* ── Animated shimmer layer ────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.12) 50%, transparent 70%) !important;
+  animation: bbHdrShimmer 3s ease-in-out infinite !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+@keyframes bbHdrShimmer {
+  0%,40%  { transform: translateX(-100%); }
+  70%,100%{ transform: translateX(120%); }
+}
+
+/* ── Gradient animated top-border line ─────────────────────── */
+#agent-section-breakbot .bb-cmd-header::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg, #4f46e5, #06b6d4, #a855f7, #22c55e, #06b6d4, #4f46e5) !important;
+  background-size: 300% 100% !important;
+  animation: bbTopLine 3s linear infinite !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+@keyframes bbTopLine {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+/* ── Bot icon — 3D flip ─────────────────────────────────────── */
+#agent-section-breakbot .bb-bot-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%) !important;
+  box-shadow:
+    0 6px 20px rgba(79,70,229,.5),
+    0 0 0 2px rgba(255,255,255,.15),
+    4px 4px 0 rgba(0,0,0,.25) !important;
+  animation: bbIconFlip 5s ease-in-out infinite !important;
+  transform-style: preserve-3d !important;
+  position: relative !important;
+  z-index: 2 !important;
+  flex-shrink: 0 !important;
+}
+@keyframes bbIconFlip {
+  0%,100% { transform: perspective(400px) rotateY(0deg) scale(1); }
+  20%     { transform: perspective(400px) rotateY(15deg) scale(1.08); }
+  40%     { transform: perspective(400px) rotateY(-8deg) scale(1.04); }
+  60%     { transform: perspective(400px) rotateY(0deg) scale(1.06); }
+  80%     { transform: perspective(400px) rotateY(-12deg) scale(1.02); }
+}
+
+/* ── TITLE — bright gradient text ──────────────────────────── */
+#agent-section-breakbot .bb-cmd-title {
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  letter-spacing: -.02em !important;
+  background: linear-gradient(90deg, #ffffff 0%, #93c5fd 35%, #06b6d4 60%, #a78bfa 85%, #ffffff 100%) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  animation: bbTitleGrad 4s linear infinite !important;
+  position: relative !important;
+  z-index: 2 !important;
+  text-shadow: none !important;
+}
+@keyframes bbTitleGrad {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ── Subtitle — readable with animated color ───────────────── */
+#agent-section-breakbot .bb-cmd-sub {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: rgba(186,230,253,.85) !important;
+  margin-top: 2px !important;
+  position: relative !important;
+  z-index: 2 !important;
+  letter-spacing: .01em !important;
+}
+#agent-section-breakbot .bb-cmd-sub::after {
+  color: rgba(125,211,252,.8) !important;
+}
+
+/* ── Live dot — bigger and brighter ────────────────────────── */
+#agent-section-breakbot .bb-live-dot {
+  width: 10px !important;
+  height: 10px !important;
+  background: #4ade80 !important;
+  box-shadow: 0 0 0 0 rgba(74,222,128,.6), 0 0 12px rgba(74,222,128,.8) !important;
+  animation: bbLiveBig 1.6s ease-out infinite !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+@keyframes bbLiveBig {
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,.7), 0 0 12px rgba(74,222,128,.8); }
+  70%  { box-shadow: 0 0 0 9px rgba(74,222,128,.0), 0 0 18px rgba(74,222,128,.6); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,.0), 0 0 8px rgba(74,222,128,.5); }
+}
+
+/* ── Deco bars — taller, more colorful ─────────────────────── */
+#agent-section-breakbot .bb-deco-bar {
+  border-radius: 3px !important;
+  background: linear-gradient(180deg, #4f46e5, #06b6d4) !important;
+  box-shadow: 0 0 6px rgba(6,182,212,.5) !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(1) { height: 20px !important; background: linear-gradient(180deg,#4f46e5,#818cf8) !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(2) { height: 32px !important; background: linear-gradient(180deg,#06b6d4,#67e8f9) !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(3) { height: 24px !important; background: linear-gradient(180deg,#a855f7,#d8b4fe) !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(4) { height: 38px !important; background: linear-gradient(180deg,#22c55e,#86efac) !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(5) { height: 22px !important; background: linear-gradient(180deg,#f59e0b,#fcd34d) !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(6) { height: 30px !important; background: linear-gradient(180deg,#ef4444,#fca5a5) !important; }
+
+/* ── Text block z-index fix ─────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header > div:not(.bb-cmd-deco) {
+  position: relative !important;
+  z-index: 2 !important;
+}
+#agent-section-breakbot .bb-cmd-deco {
+  position: relative !important;
+  z-index: 2 !important;
+}
+</style>
+
 </body>
 </html>
+
+<style id="bb-header-v3">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Command Header v3
+   Deeper 3D · Neon glow title · Equalizer bars · Spark particles
+══════════════════════════════════════════════════════════════ */
+
+/* ── Enhanced 3D card with stronger depth + scan line ───────── */
+#agent-section-breakbot .bb-cmd-header {
+  perspective: 1200px !important;
+  animation: bbHdr3Dv3 7s ease-in-out infinite !important;
+  background:
+    linear-gradient(105deg,
+      rgba(15,10,40,.92) 0%,
+      rgba(30,20,70,.9) 30%,
+      rgba(6,50,80,.9) 65%,
+      rgba(60,10,90,.9) 100%) !important;
+  border-top: 2px solid transparent !important;
+  border-image: linear-gradient(90deg,#4f46e5,#06b6d4,#a855f7,#22c55e,#06b6d4,#4f46e5) 1 !important;
+  overflow: hidden !important;
+}
+@keyframes bbHdr3Dv3 {
+  0%,100% { transform: perspective(1200px) rotateX(0deg) rotateY(0deg) translateZ(0px); }
+  15%     { transform: perspective(1200px) rotateX(3deg) rotateY(1deg) translateZ(6px); }
+  35%     { transform: perspective(1200px) rotateX(1deg) rotateY(-2deg) translateZ(4px); }
+  55%     { transform: perspective(1200px) rotateX(-2.5deg) rotateY(1.5deg) translateZ(8px); }
+  75%     { transform: perspective(1200px) rotateX(1.5deg) rotateY(-1deg) translateZ(5px); }
+}
+
+/* ── Cyber grid background ─────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background-image:
+    linear-gradient(rgba(6,182,212,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6,182,212,.06) 1px, transparent 1px) !important;
+  background-size: 24px 24px !important;
+  animation: bbGridShift 8s linear infinite !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+@keyframes bbGridShift {
+  0%   { background-position: 0px 0px, 0px 0px; }
+  100% { background-position: 24px 24px, 24px 24px; }
+}
+
+/* ── Scan line sweep ───────────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important; right: 0 !important;
+  height: 2px !important;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(6,182,212,.0) 20%,
+    rgba(6,182,212,.9) 50%,
+    rgba(168,85,247,.7) 60%,
+    transparent 80%) !important;
+  box-shadow: 0 0 8px rgba(6,182,212,.8), 0 0 20px rgba(6,182,212,.4) !important;
+  animation: bbHdrScan 3.5s ease-in-out infinite !important;
+  border-radius: 0 !important;
+  z-index: 1 !important;
+}
+@keyframes bbHdrScan {
+  0%   { top: -2px; opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Title — neon glow layer via ::before ─────────────────── */
+#agent-section-breakbot .bb-cmd-title {
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: .02em !important;
+  position: relative !important;
+  z-index: 3 !important;
+  display: inline-block !important;
+  background: linear-gradient(90deg,
+    #fff 0%, #bae6fd 20%, #67e8f9 40%,
+    #c4b5fd 65%, #f9a8d4 80%, #fff 100%) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  animation: bbTitleGradV3 3s linear infinite !important;
+  filter: drop-shadow(0 0 6px rgba(6,182,212,.5)) drop-shadow(0 0 14px rgba(168,85,247,.35)) !important;
+}
+@keyframes bbTitleGradV3 {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Neon glow clone behind title */
+#agent-section-breakbot .bb-cmd-title::before {
+  content: attr(data-text) !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  text-shadow:
+    0 0 8px rgba(6,182,212,.8),
+    0 0 20px rgba(6,182,212,.5),
+    0 0 40px rgba(168,85,247,.4) !important;
+  z-index: -1 !important;
+  pointer-events: none !important;
+  animation: bbTitleGlow 2.5s ease-in-out infinite alternate !important;
+  filter: none !important;
+}
+@keyframes bbTitleGlow {
+  0%   { text-shadow: 0 0 6px rgba(6,182,212,.6), 0 0 16px rgba(6,182,212,.4); }
+  50%  { text-shadow: 0 0 10px rgba(168,85,247,.8), 0 0 24px rgba(168,85,247,.5), 0 0 40px rgba(6,182,212,.3); }
+  100% { text-shadow: 0 0 8px rgba(249,168,212,.7), 0 0 20px rgba(6,182,212,.5); }
+}
+
+/* ── Subtitle — bright with color shift ───────────────────── */
+#agent-section-breakbot .bb-cmd-sub {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: .04em !important;
+  position: relative !important;
+  z-index: 3 !important;
+  -webkit-text-fill-color: unset !important;
+  color: transparent !important;
+  background: linear-gradient(90deg, #93c5fd, #67e8f9, #c4b5fd, #93c5fd) !important;
+  background-size: 200% 100% !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  animation: bbSubGrad 5s linear infinite !important;
+  opacity: 1 !important;
+}
+@keyframes bbSubGrad {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* ── Bot icon — more dramatic flip + glow ─────────────────── */
+#agent-section-breakbot .bb-bot-icon {
+  background: linear-gradient(135deg, #312e81, #164e63, #4c1d95) !important;
+  box-shadow:
+    0 0 0 1px rgba(6,182,212,.4),
+    0 0 20px rgba(6,182,212,.35),
+    0 0 40px rgba(168,85,247,.2),
+    4px 4px 0 rgba(0,0,0,.4) !important;
+  animation: bbIconFlipV3 4s ease-in-out infinite !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+@keyframes bbIconFlipV3 {
+  0%,100% { transform: perspective(500px) rotateY(0deg) rotateX(0deg) scale(1); box-shadow: 0 0 0 1px rgba(6,182,212,.4), 0 0 20px rgba(6,182,212,.35), 4px 4px 0 rgba(0,0,0,.4); }
+  20%     { transform: perspective(500px) rotateY(20deg) rotateX(-5deg) scale(1.12); box-shadow: 0 0 0 2px rgba(6,182,212,.7), 0 0 30px rgba(6,182,212,.6), 8px 8px 0 rgba(0,0,0,.3); }
+  45%     { transform: perspective(500px) rotateY(-10deg) rotateX(4deg) scale(1.06); box-shadow: 0 0 0 1px rgba(168,85,247,.5), 0 0 24px rgba(168,85,247,.5), 4px 4px 0 rgba(0,0,0,.4); }
+  70%     { transform: perspective(500px) rotateY(8deg) rotateX(-2deg) scale(1.04); box-shadow: 0 0 0 2px rgba(249,168,212,.4), 0 0 20px rgba(249,168,212,.4), 6px 6px 0 rgba(0,0,0,.35); }
+}
+
+/* ── Deco bars — equalizer animation ─────────────────────── */
+#agent-section-breakbot .bb-deco-bar:nth-child(1) {
+  animation: bbEq1 0.7s ease-in-out infinite alternate !important;
+  background: linear-gradient(180deg,#818cf8,#4f46e5) !important;
+  box-shadow: 0 0 8px rgba(79,70,229,.8) !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(2) {
+  animation: bbEq2 0.5s ease-in-out infinite alternate !important;
+  background: linear-gradient(180deg,#67e8f9,#06b6d4) !important;
+  box-shadow: 0 0 8px rgba(6,182,212,.8) !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(3) {
+  animation: bbEq3 0.9s ease-in-out infinite alternate !important;
+  background: linear-gradient(180deg,#d8b4fe,#a855f7) !important;
+  box-shadow: 0 0 8px rgba(168,85,247,.8) !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(4) {
+  animation: bbEq4 0.6s ease-in-out infinite alternate !important;
+  background: linear-gradient(180deg,#86efac,#22c55e) !important;
+  box-shadow: 0 0 8px rgba(34,197,94,.8) !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(5) {
+  animation: bbEq5 0.8s ease-in-out infinite alternate !important;
+  background: linear-gradient(180deg,#fcd34d,#f59e0b) !important;
+  box-shadow: 0 0 8px rgba(245,158,11,.8) !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(6) {
+  animation: bbEq6 0.55s ease-in-out infinite alternate !important;
+  background: linear-gradient(180deg,#fca5a5,#ef4444) !important;
+  box-shadow: 0 0 8px rgba(239,68,68,.8) !important;
+}
+@keyframes bbEq1 { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+@keyframes bbEq2 { from { transform: scaleY(0.6); } to { transform: scaleY(1.4); } }
+@keyframes bbEq3 { from { transform: scaleY(0.2); } to { transform: scaleY(1.1); } }
+@keyframes bbEq4 { from { transform: scaleY(0.8); } to { transform: scaleY(1.6); } }
+@keyframes bbEq5 { from { transform: scaleY(0.4); } to { transform: scaleY(1.2); } }
+@keyframes bbEq6 { from { transform: scaleY(0.5); } to { transform: scaleY(0.9); } }
+
+#agent-section-breakbot .bb-cmd-deco {
+  transform-origin: bottom center !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+
+/* ── Live dot — bigger pulse ──────────────────────────────── */
+#agent-section-breakbot .bb-live-dot {
+  width: 12px !important;
+  height: 12px !important;
+  background: radial-gradient(circle, #86efac 30%, #4ade80 70%) !important;
+  box-shadow: 0 0 0 0 rgba(74,222,128,.8), 0 0 16px rgba(74,222,128,.9) !important;
+  animation: bbLiveV3 1.4s ease-out infinite !important;
+  position: relative !important;
+  z-index: 3 !important;
+}
+@keyframes bbLiveV3 {
+  0%   { box-shadow: 0 0 0 0 rgba(74,222,128,.8), 0 0 16px rgba(74,222,128,.9); }
+  70%  { box-shadow: 0 0 0 11px rgba(74,222,128,.0), 0 0 24px rgba(74,222,128,.5); }
+  100% { box-shadow: 0 0 0 0 rgba(74,222,128,.0), 0 0 8px rgba(74,222,128,.6); }
+}
+
+/* Ensure all direct children are above overlays */
+#agent-section-breakbot .bb-cmd-header > * {
+  position: relative !important;
+  z-index: 3 !important;
+}
+</style>
