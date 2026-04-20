@@ -7170,100 +7170,44 @@ header{
   100% { transform: scale(1.05) translate(12px,  -10px); opacity: .90; }
 }
 
-/* 2 ── SVG icon masks — suppress HTML entities, show icons ─ */
+/* 2 ── Icon container — clean flex box for inline SVG ── */
 #agent-section-breakbot .break-action-icon {
-  font-size: 0 !important;
-  color: transparent !important;
-  overflow: visible !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-}
-#agent-section-breakbot .break-action-icon::before {
-  content: '' !important;
-  display: block !important;
-  width: 20px !important;
-  height: 20px !important;
   flex-shrink: 0 !important;
-  -webkit-mask-size: contain !important;
-  mask-size: contain !important;
-  -webkit-mask-repeat: no-repeat !important;
-  mask-repeat: no-repeat !important;
-  -webkit-mask-position: center !important;
-  mask-position: center !important;
-  background-color: currentColor !important;
+  width: 34px !important;
+  height: 34px !important;
+  overflow: hidden !important;
+  font-size: 0 !important; /* hide any stray text */
+}
+#agent-section-breakbot .break-action-icon svg {
+  display: block !important;
+  flex-shrink: 0 !important;
+  transition: transform .2s ease, opacity .2s ease !important;
 }
 
-/* loggedin — play-in-circle (shift start) */
-#agent-section-breakbot .break-action.loggedin .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 8l6 4-6 4V8zm2-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 8l6 4-6 4V8zm2-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z' fill='white'/%3E%3C/svg%3E") !important;
+/* 3 ── Refined hover — no bounce, no rotation ─── */
+#agent-section-breakbot .break-action:hover:not(:disabled) {
+  transform: translateY(-4px) !important;
+  background: rgba(6,14,32,.88) !important;
+  border-color: transparent !important;
+  box-shadow:
+    0 0 0 1px rgba(0,212,255,.3),
+    0 16px 40px rgba(0,0,0,.55),
+    0 0 30px rgba(0,212,255,.08) !important;
 }
-
-/* brbout — arrow right (away) */
-#agent-section-breakbot .break-action.brbout .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z' fill='white'/%3E%3C/svg%3E") !important;
+#agent-section-breakbot .break-action:active:not(:disabled) {
+  transform: translateY(0) !important;
+  transition: transform .08s !important;
 }
-
-/* brbin — arrow left (return) */
-#agent-section-breakbot .break-action.brbin .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z' fill='white'/%3E%3C/svg%3E") !important;
+#agent-section-breakbot .break-action:hover .break-action-icon {
+  transform: none !important;
+  filter: none !important;
 }
-
-/* breakout — pause bars */
-#agent-section-breakbot .break-action.breakout .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 19h4V5H6v14zm8-14v14h4V5h-4z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 19h4V5H6v14zm8-14v14h4V5h-4z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* breakin — play triangle */
-#agent-section-breakbot .break-action.breakin .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* trainingout — open book */
-#agent-section-breakbot .break-action.trainingout .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* trainingin — checkmark circle */
-#agent-section-breakbot .break-action.trainingin .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4.5-4.5 1.41-1.41L10 13.67l7.09-7.09 1.41 1.41L10 16.5z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4.5-4.5 1.41-1.41L10 13.67l7.09-7.09 1.41 1.41L10 16.5z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* qaauxout — magnifier */
-#agent-section-breakbot .break-action.qaauxout .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* qaauxin — checkmark */
-#agent-section-breakbot .break-action.qaauxin .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* internalcallout — phone handset */
-#agent-section-breakbot .break-action.internalcallout .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* internalcallin — checkmark */
-#agent-section-breakbot .break-action.internalcallin .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z' fill='white'/%3E%3C/svg%3E") !important;
-}
-
-/* loggedout — power-off ring + stem */
-#agent-section-breakbot .break-action.loggedout .break-action-icon::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z' fill='white'/%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z' fill='white'/%3E%3C/svg%3E") !important;
+#agent-section-breakbot .break-action:hover .break-action-icon svg {
+  transform: scale(1.1) !important;
+  opacity: 1 !important;
 }
 </style>
 
@@ -8177,62 +8121,62 @@ header{
           </div>
           <div class="break-actions">
             <button class="break-action loggedin" data-break-action="LOGGED_IN" onclick="sendBreakAction('LOGGED_IN',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#9719;</div><div class="break-action-state">Shift Start</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M10 8l6 4-6 4V8zm2-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg></div><div class="break-action-state">Shift Start</div></div>
               <div class="break-action-title">Logged In</div>
               <div class="break-action-copy">Open your shift lane and mark yourself live.</div>
             </button>
             <button class="break-action brbout" data-break-action="BRB_OUT" onclick="sendBreakAction('BRB_OUT',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#8680;</div><div class="break-action-state">Away Now</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></div><div class="break-action-state">Away Now</div></div>
               <div class="break-action-title">BRB Out</div>
               <div class="break-action-copy">Go briefly away and start the quick timer.</div>
             </button>
             <button class="break-action brbin" data-break-action="BRB_IN" onclick="sendBreakAction('BRB_IN',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return Live</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></div><div class="break-action-state">Return Live</div></div>
               <div class="break-action-title">BRB In</div>
               <div class="break-action-copy">Close BRB and return to your live lane.</div>
             </button>
             <button class="break-action breakout" data-break-action="BREAK_OUT" onclick="sendBreakAction('BREAK_OUT',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#9208;</div><div class="break-action-state">Start Break</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></div><div class="break-action-state">Start Break</div></div>
               <div class="break-action-title">Break Out</div>
               <div class="break-action-copy">Go on break and start the tracked timer.</div>
             </button>
             <button class="break-action breakin" data-break-action="BREAK_IN" onclick="sendBreakAction('BREAK_IN',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#8617;</div><div class="break-action-state">Back From Break</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div><div class="break-action-state">Back From Break</div></div>
               <div class="break-action-title">Break In</div>
               <div class="break-action-copy">Close break and restore your active work state.</div>
             </button>
             <button class="break-action trainingout" data-break-action="TRAINING_OUT" onclick="sendBreakAction('TRAINING_OUT',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#127891;</div><div class="break-action-state">Start Coaching</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg></div><div class="break-action-state">Start Coaching</div></div>
               <div class="break-action-title">Training Out</div>
               <div class="break-action-copy">Start training or coaching AUX time.</div>
             </button>
             <button class="break-action trainingin" data-break-action="TRAINING_IN" onclick="sendBreakAction('TRAINING_IN',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return From Coaching</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4.5-4.5 1.41-1.41L10 13.67l7.09-7.09 1.41 1.41L10 16.5z"/></svg></div><div class="break-action-state">Return From Coaching</div></div>
               <div class="break-action-title">Training In</div>
               <div class="break-action-copy">Close coaching AUX and return to your shift lane.</div>
             </button>
             <button class="break-action qaauxout" data-break-action="QA_SESSION_OUT" onclick="sendBreakAction('QA_SESSION_OUT',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#128269;</div><div class="break-action-state">Start QA AUX</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div><div class="break-action-state">Start QA AUX</div></div>
               <div class="break-action-title">QA AUX Out</div>
               <div class="break-action-copy">Start QA AUX for audits or calibration work.</div>
             </button>
             <button class="break-action qaauxin" data-break-action="QA_SESSION_IN" onclick="sendBreakAction('QA_SESSION_IN',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return From QA</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><div class="break-action-state">Return From QA</div></div>
               <div class="break-action-title">QA AUX In</div>
               <div class="break-action-copy">Close QA AUX and return to active work.</div>
             </button>
             <button class="break-action internalcallout" data-break-action="INTERNAL_CALL_OUT" onclick="sendBreakAction('INTERNAL_CALL_OUT',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#128222;</div><div class="break-action-state">Short Huddle</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div><div class="break-action-state">Short Huddle</div></div>
               <div class="break-action-title">Internal Calls Out</div>
               <div class="break-action-copy">Use this for internal calls or a quick inter-team huddle. Reason required.</div>
             </button>
             <button class="break-action internalcallin" data-break-action="INTERNAL_CALL_IN" onclick="sendBreakAction('INTERNAL_CALL_IN',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#10003;</div><div class="break-action-state">Return From Call</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><div class="break-action-state">Return From Call</div></div>
               <div class="break-action-title">Internal Calls In</div>
               <div class="break-action-copy">Close internal call AUX and move back to your live lane.</div>
             </button>
             <button class="break-action loggedout" data-break-action="LOGGED_OUT" onclick="sendBreakAction('LOGGED_OUT',this)">
-              <div class="break-action-top"><div class="break-action-icon">&#10005;</div><div class="break-action-state">Shift Close</div></div>
+              <div class="break-action-top"><div class="break-action-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg></div><div class="break-action-state">Shift Close</div></div>
               <div class="break-action-title">Logged Out</div>
               <div class="break-action-copy">Close your shift lane and log out cleanly.</div>
             </button>
