@@ -8835,12 +8835,33 @@ header{
                 <div class="break-signal-card"><span>Internal + AUX</span><strong>Internal Calls Out, Training Out, and QA AUX Out each open dedicated lanes with return actions.</strong></div>
               </div>
             </div>
-            <div class="break-hero-visual">
-              <div class="break-hero-orbit"></div>
-              <div class="break-hero-ring"></div>
-              <img class="break-hero-avatar" src="/break-bot-avatar.png" alt="Break Bot avatar">
-              <div class="break-hero-pulse break-hero-pulse-a"></div>
-              <div class="break-hero-pulse break-hero-pulse-b"></div>
+            <div class="break-hero-visual bha-upgraded">
+              <!-- Radar sweep -->
+              <div class="bha-radar"></div>
+              <!-- Concentric rings -->
+              <div class="bha-ring bha-ring-1"></div>
+              <div class="bha-ring bha-ring-2"></div>
+              <div class="bha-ring bha-ring-3"></div>
+              <!-- Orbiting dots -->
+              <div class="bha-orbit bha-orbit-1">
+                <div class="bha-dot" style="--dc:#22c55e"></div>
+              </div>
+              <div class="bha-orbit bha-orbit-2">
+                <div class="bha-dot" style="--dc:#06b6d4"></div>
+              </div>
+              <div class="bha-orbit bha-orbit-3">
+                <div class="bha-dot" style="--dc:#a855f7"></div>
+              </div>
+              <!-- Glow halo -->
+              <div class="bha-halo"></div>
+              <!-- Avatar -->
+              <img class="break-hero-avatar bha-avatar" src="/break-bot-avatar.png" alt="Break Bot avatar">
+              <!-- Lens flares -->
+              <div class="bha-flare bha-flare-1"></div>
+              <div class="bha-flare bha-flare-2"></div>
+              <!-- Energy arcs -->
+              <div class="bha-arc bha-arc-1"></div>
+              <div class="bha-arc bha-arc-2"></div>
             </div>
           </div>
         </div>
@@ -12033,6 +12054,178 @@ window.addEventListener('load',()=>{
 
 })();
 </script>
+
+
+<style id="bb-avatar-v2">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Avatar Upgrade v2
+   Bigger · radar sweep · orbiting dots · energy arcs · lens flares
+══════════════════════════════════════════════════════════════ */
+
+#agent-section-breakbot .bha-upgraded {
+  width: 200px !important;
+  height: 200px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at 40% 35%, rgba(242,136,32,.18) 0%, rgba(99,102,241,.1) 45%, transparent 75%) !important;
+  border: none !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: visible !important;
+  margin: 20px auto !important;
+}
+
+#agent-section-breakbot .bha-avatar {
+  width: 140px !important; height: 140px !important;
+  border-radius: 50% !important; object-fit: cover !important;
+  position: relative !important; z-index: 10 !important;
+  box-shadow:
+    0 0 0 3px rgba(242,136,32,.35),
+    0 0 0 6px rgba(242,136,32,.12),
+    0 0 40px rgba(242,136,32,.5),
+    0 0 80px rgba(242,136,32,.2),
+    0 12px 40px rgba(0,0,0,.7) !important;
+  animation: bhaFloat 3.2s ease-in-out infinite !important;
+  filter: drop-shadow(0 0 22px rgba(242,136,32,.6)) !important;
+}
+@keyframes bhaFloat {
+  0%,100% { transform: translateY(0) scale(1); }
+  33%     { transform: translateY(-10px) scale(1.03); }
+  66%     { transform: translateY(4px) scale(.98); }
+}
+
+#agent-section-breakbot .bha-halo {
+  position: absolute !important;
+  width: 160px !important; height: 160px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(242,136,32,.3) 0%, rgba(242,136,32,.1) 40%, transparent 70%) !important;
+  animation: bhaHaloPulse 2.2s ease-in-out infinite !important;
+  z-index: 5 !important; pointer-events: none !important;
+}
+@keyframes bhaHaloPulse {
+  0%,100% { transform: scale(1); opacity: .7; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+#agent-section-breakbot .bha-ring {
+  position: absolute !important; border-radius: 50% !important;
+  pointer-events: none !important; z-index: 3 !important; background: none !important;
+}
+#agent-section-breakbot .bha-ring-1 {
+  width: 170px !important; height: 170px !important;
+  border: 1.5px solid rgba(242,136,32,.35) !important;
+  animation: bhaR1 8s linear infinite !important;
+}
+#agent-section-breakbot .bha-ring-2 {
+  width: 215px !important; height: 215px !important;
+  border: 1px dashed rgba(99,102,241,.45) !important;
+  animation: bhaR2 14s linear infinite !important;
+}
+#agent-section-breakbot .bha-ring-3 {
+  width: 260px !important; height: 260px !important;
+  border: 1px solid rgba(6,182,212,.18) !important;
+  border-top-color: rgba(6,182,212,.65) !important;
+  animation: bhaR3 20s linear infinite !important;
+}
+@keyframes bhaR1 { to { transform: rotate(360deg); } }
+@keyframes bhaR2 { to { transform: rotate(-360deg); } }
+@keyframes bhaR3 { to { transform: rotate(360deg); } }
+
+#agent-section-breakbot .bha-radar {
+  position: absolute !important;
+  width: 170px !important; height: 170px !important;
+  border-radius: 50% !important;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(34,197,94,.2) 35deg, rgba(34,197,94,.07) 70deg, transparent 100deg, transparent 360deg) !important;
+  animation: bhaRadar 3s linear infinite !important;
+  z-index: 4 !important; pointer-events: none !important;
+}
+@keyframes bhaRadar { to { transform: rotate(360deg); } }
+
+#agent-section-breakbot .bha-orbit {
+  position: absolute !important; border-radius: 50% !important;
+  pointer-events: none !important; z-index: 8 !important;
+}
+#agent-section-breakbot .bha-orbit-1 { width: 170px !important; height: 170px !important; animation: bhaO1 5s linear infinite !important; }
+#agent-section-breakbot .bha-orbit-2 { width: 215px !important; height: 215px !important; animation: bhaO2 8s linear infinite !important; }
+#agent-section-breakbot .bha-orbit-3 { width: 260px !important; height: 260px !important; animation: bhaO3 12s linear infinite reverse !important; }
+@keyframes bhaO1 { to { transform: rotate(360deg); } }
+@keyframes bhaO2 { to { transform: rotate(360deg); } }
+@keyframes bhaO3 { to { transform: rotate(360deg); } }
+
+#agent-section-breakbot .bha-dot {
+  position: absolute !important; top: -5px !important; left: 50% !important;
+  width: 10px !important; height: 10px !important; margin-left: -5px !important;
+  border-radius: 50% !important;
+  background: var(--dc,#fff) !important;
+  box-shadow: 0 0 8px 2px var(--dc,#fff), 0 0 18px var(--dc,#fff) !important;
+}
+
+#agent-section-breakbot .bha-arc {
+  position: absolute !important; border-radius: 50% !important;
+  pointer-events: none !important; z-index: 6 !important; border: 2px solid transparent !important;
+}
+#agent-section-breakbot .bha-arc-1 {
+  width: 190px !important; height: 190px !important;
+  border-top-color: rgba(99,102,241,.75) !important;
+  border-right-color: rgba(99,102,241,.2) !important;
+  animation: bhaArc1 2.5s ease-in-out infinite !important;
+}
+#agent-section-breakbot .bha-arc-2 {
+  width: 235px !important; height: 235px !important;
+  border-bottom-color: rgba(6,182,212,.65) !important;
+  border-left-color: rgba(6,182,212,.15) !important;
+  animation: bhaArc2 3.5s ease-in-out infinite reverse !important;
+}
+@keyframes bhaArc1 {
+  0%,100% { transform: rotate(0deg) scale(1); opacity: .8; }
+  50% { transform: rotate(180deg) scale(1.04); opacity: 1; }
+}
+@keyframes bhaArc2 {
+  0%,100% { transform: rotate(0deg); opacity: .6; }
+  50% { transform: rotate(-200deg); opacity: 1; }
+}
+
+#agent-section-breakbot .bha-flare {
+  position: absolute !important; border-radius: 50% !important;
+  pointer-events: none !important; z-index: 12 !important;
+}
+#agent-section-breakbot .bha-flare-1 {
+  width: 12px !important; height: 12px !important;
+  background: radial-gradient(circle,#fff 0%,rgba(242,136,32,.8) 40%,transparent 70%) !important;
+  top: 20px !important; right: 35px !important;
+  animation: bhaFlare1 4s ease-in-out infinite !important;
+}
+#agent-section-breakbot .bha-flare-2 {
+  width: 8px !important; height: 8px !important;
+  background: radial-gradient(circle,#06b6d4 0%,transparent 70%) !important;
+  bottom: 26px !important; left: 30px !important;
+  animation: bhaFlare2 5.5s ease-in-out infinite !important;
+}
+@keyframes bhaFlare1 {
+  0%,100% { opacity:0; transform:scale(.4); }
+  30%,70% { opacity:1; transform:scale(1.5); }
+  50% { opacity:.5; transform:scale(.8); }
+}
+@keyframes bhaFlare2 {
+  0%,100% { opacity:0; transform:scale(.3); }
+  40%,60% { opacity:.9; transform:scale(1.3); }
+}
+
+#agent-section-breakbot .break-hero-grid {
+  grid-template-columns: 1fr auto !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+#agent-section-breakbot .bha-upgraded .break-hero-orbit,
+#agent-section-breakbot .bha-upgraded .break-hero-ring,
+#agent-section-breakbot .bha-upgraded .break-hero-pulse,
+#agent-section-breakbot .bha-upgraded .break-hero-pulse-a,
+#agent-section-breakbot .bha-upgraded .break-hero-pulse-b {
+  display: none !important;
+}
+</style>
 
 </body>
 </html>
