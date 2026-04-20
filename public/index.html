@@ -12903,3 +12903,106 @@ window.addEventListener('load',()=>{
   height: 8px !important;
 }
 </style>
+
+<style id="bb-lane-anim-v2">
+/* ══════════════════════════════════════════════════════════════
+   FLOOR LANE — Replace beam sweep with particle rain + card glow
+══════════════════════════════════════════════════════════════ */
+
+/* ── Kill the beam sweep ─────────────────────────────────────── */
+#agent-section-breakbot .break-lane-board::before {
+  display: none !important;
+  animation: none !important;
+}
+
+/* ── Floating particles via box-shadow on a tiny element ───── */
+#agent-section-breakbot .break-lane-board {
+  position: relative !important;
+  overflow: visible !important;
+}
+#agent-section-breakbot .break-lane-board::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background:
+    radial-gradient(1.5px 1.5px at 8% 30%,  rgba(6,182,212,.55) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 15% 70%,  rgba(99,102,241,.5) 50%, transparent 51%),
+    radial-gradient(1px   1px   at 22% 15%,  rgba(6,182,212,.4)  50%, transparent 51%),
+    radial-gradient(2px   2px   at 32% 85%,  rgba(168,85,247,.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 42% 40%,  rgba(6,182,212,.5)  50%, transparent 51%),
+    radial-gradient(1px   1px   at 55% 60%,  rgba(99,102,241,.4)  50%, transparent 51%),
+    radial-gradient(2px   2px   at 62% 20%,  rgba(34,197,94,.45)  50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 72% 75%,  rgba(6,182,212,.55)  50%, transparent 51%),
+    radial-gradient(1px   1px   at 81% 45%,  rgba(168,85,247,.4)  50%, transparent 51%),
+    radial-gradient(2px   2px   at 91% 25%,  rgba(99,102,241,.5)  50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 96% 65%,  rgba(6,182,212,.45)  50%, transparent 51%) !important;
+  background-size: 100% 100% !important;
+  animation: bbDustFloat 6s ease-in-out infinite alternate !important;
+  opacity: .8 !important;
+}
+@keyframes bbDustFloat {
+  0%   { transform: translateY(0px);  opacity: .6; }
+  50%  { transform: translateY(-6px); opacity: 1; }
+  100% { transform: translateY(-12px); opacity: .4; }
+}
+
+/* ── Animated color-accent top border per lane card ─────────── */
+#agent-section-breakbot .break-lane-card {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Corner bracket top-left */
+#agent-section-breakbot .break-lane-card::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important;
+  width: 20px !important; height: 20px !important;
+  border-top: 2px solid currentColor !important;
+  border-left: 2px solid currentColor !important;
+  border-radius: 4px 0 0 0 !important;
+  opacity: 0 !important;
+  animation: bbBracketIn .4s ease forwards, bbBracketPulse 3s ease-in-out 0.4s infinite !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+/* Corner bracket bottom-right */
+#agent-section-breakbot .break-lane-card::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0 !important; right: 0 !important;
+  width: 20px !important; height: 20px !important;
+  border-bottom: 2px solid currentColor !important;
+  border-right: 2px solid currentColor !important;
+  border-radius: 0 0 4px 0 !important;
+  opacity: 0 !important;
+  animation: bbBracketIn .4s ease .1s forwards, bbBracketPulse 3s ease-in-out 0.5s infinite !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+@keyframes bbBracketIn {
+  from { opacity: 0; transform: scale(.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes bbBracketPulse {
+  0%,100% { opacity: .25; }
+  50%     { opacity: .75; }
+}
+
+/* Per-lane bracket colors */
+#agent-section-breakbot .break-lane-card.avail { color: #22c55e !important; }
+#agent-section-breakbot .break-lane-card.brb   { color: #f59e0b !important; }
+#agent-section-breakbot .break-lane-card.break { color: #f43f5e !important; }
+#agent-section-breakbot .break-lane-card.aux   { color: #a855f7 !important; }
+#agent-section-breakbot .break-lane-card.internal { color: #3b82f6 !important; }
+
+/* ── Subtle data-stream lines inside each card ───────────────── */
+#agent-section-breakbot .break-lane-head {
+  position: relative !important;
+  z-index: 1 !important;
+}
+</style>
