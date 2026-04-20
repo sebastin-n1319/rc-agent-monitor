@@ -7588,35 +7588,79 @@ header{
 }
 </style>
 <style id="bb-fix-v3">
-/* ══ BREAK BOT v3 — Fix pass ══════════════════════════════════
-   1. Kill blank rectangle (hero ring/orbit overflow)
-   2. Larger buttons — more visual weight
-   3. Better mobile layout
+/* ══ BREAK BOT v3 — Fix pass B ═══════════════════════════════
+   1. Fix 3-col signal board → single column
+   2. Fix hero grid mobile stacking
+   3. Contain hero ring overflow (blank rectangle fix)
+   4. Bigger buttons
 ══════════════════════════════════════════════════════════════ */
 
-/* ── Fix: hero visual overflow causing blank rectangle ─────── */
-#agent-section-breakbot .break-hero-card {
+/* ── Signal board: always single column in agent card ──────── */
+#agent-section-breakbot .break-signal-board {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  gap: 6px !important;
+  margin-top: 10px !important;
+}
+#agent-section-breakbot .break-signal-card {
+  min-height: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
   overflow: hidden !important;
+}
+#agent-section-breakbot .break-signal-card span,
+#agent-section-breakbot .break-signal-card strong {
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+/* ── Protocol pills: single column ─────────────────────────── */
+#agent-section-breakbot .break-protocol {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 6px !important;
+}
+@media (max-width: 480px) {
+  #agent-section-breakbot .break-protocol {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Hero grid: stack on mobile ─────────────────────────────── */
+#agent-section-breakbot .break-hero-grid {
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
 }
 #agent-section-breakbot .break-hero-visual {
-  overflow: hidden !important;
-}
-/* Contain ring/orbit so they don't bleed outside card */
-#agent-section-breakbot .break-hero-ring {
-  width: 140px !important;
-  height: 140px !important;
-}
-#agent-section-breakbot .break-hero-orbit {
   width: 120px !important;
   height: 120px !important;
+  overflow: hidden !important;
+  margin: 0 auto !important;
+}
+/* Contain ALL orbit/ring/pulse within visual bounds */
+#agent-section-breakbot .break-hero-orbit {
+  width: 110px !important;
+  height: 110px !important;
+}
+#agent-section-breakbot .break-hero-ring {
+  width: 118px !important;
+  height: 118px !important;
 }
 #agent-section-breakbot .break-hero-pulse-a {
-  width: 100px !important;
-  height: 100px !important;
+  width: 88px !important;
+  height: 88px !important;
 }
 #agent-section-breakbot .break-hero-pulse-b {
-  width: 116px !important;
-  height: 116px !important;
+  width: 104px !important;
+  height: 104px !important;
+}
+#agent-section-breakbot .break-hero-avatar {
+  width: 72px !important;
+  height: 72px !important;
+}
+#agent-section-breakbot .break-hero-card {
+  overflow: hidden !important;
 }
 
 /* ── Bigger, bolder action buttons ─────────────────────────── */
@@ -7638,13 +7682,13 @@ header{
   color: rgba(148,163,184,.6) !important;
 }
 
-/* ── Bigger category label ──────────────────────────────────── */
+/* ── Category label sizing ──────────────────────────────────── */
 #agent-section-breakbot .bb-cat-lbl {
   font-size: 9px !important;
   min-height: 72px !important;
 }
 
-/* ── Stats strip improvements ───────────────────────────────── */
+/* ── Stats strip ────────────────────────────────────────────── */
 #agent-section-breakbot .break-stat {
   padding: 7px 14px 7px 12px !important;
 }
@@ -7652,7 +7696,7 @@ header{
   font-size: 14px !important;
 }
 
-/* ── Mobile: full-width layout ───────────────────────────────── */
+/* ── Mobile full-width layout ───────────────────────────────── */
 @media (max-width: 700px) {
   #agent-section-breakbot .break-layout {
     grid-template-columns: 1fr !important;
@@ -7662,7 +7706,7 @@ header{
   }
   #agent-section-breakbot .bb-act {
     min-height: 66px !important;
-    padding: 12px 10px !important;
+    padding: 11px 10px !important;
   }
   #agent-section-breakbot .bb-act-ico {
     width: 28px !important;
@@ -7674,10 +7718,6 @@ header{
   #agent-section-breakbot .bb-act-desc {
     padding-left: 0 !important;
     display: none !important;
-  }
-  #agent-section-breakbot .break-hero-visual {
-    width: 100px !important;
-    height: 100px !important;
   }
 }
 </style>
