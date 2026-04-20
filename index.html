@@ -3631,81 +3631,7 @@ body::after{
 .login-restrict strong{color:#ffffff !important;}
 .partner-row{display:none !important;}
 
-#mainApp{background:transparent !important;}
-header,
-.nav,
-.page{
-  width:100%;
-  margin-left:0;
-  margin-right:0;
-}
-header{
-  margin-top:0;
-  height:54px !important;
-  padding:0 20px !important;
-  background:rgba(6,12,26,.95) !important;
-  border:none !important;
-  border-bottom:1px solid rgba(170,204,226,.09) !important;
-  border-radius:0 !important;
-  box-shadow:0 2px 20px rgba(0,0,0,.35) !important;
-  left:0 !important;
-  right:0 !important;
-}
-.hdr-logo-rc,
-.hdr-sep{display:none !important;}
-.hdr-logo-adit{
-  height:30px !important;
-  width:30px !important;
-  object-fit:contain;
-  border-radius:9px !important;
-}
-.hdr-title{
-  font-size:13px !important;
-  font-weight:700 !important;
-  letter-spacing:-.02em !important;
-}
-.hdr-sub{
-  font-size:11px !important;
-  color:var(--t3) !important;
-}
-.hdr-chip,
-.logout-btn{
-  min-height:38px;
-  border-radius:14px !important;
-  font-size:11px !important;
-}
-.nav{
-  top:54px !important;
-  padding:8px 16px 0 !important;
-  background:rgba(5,10,22,.96) !important;
-  border:none !important;
-  border-bottom:1px solid rgba(170,204,226,.07) !important;
-  left:0 !important;
-  right:0 !important;
-  width:100% !important;
-}
-.nav-tab{
-  padding:10px 14px !important;
-  font-size:12px !important;
-  color:#7588a1 !important;
-}
-.nav-tab.active{
-  background:rgba(255,255,255,.03) !important;
-  color:#f5f8fc !important;
-  border-bottom-color:#f28820 !important;
-}
-.nav-tab:hover{
-  color:#dbe8f4 !important;
-  background:rgba(255,255,255,.02) !important;
-}
-.page{
-  padding:20px 22px 28px !important;
-  background:transparent !important;
-  border:none !important;
-  border-radius:0 !important;
-  box-shadow:none !important;
-  min-height:calc(100vh - 100px);
-}
+/* layout-v1 block (appended after login-redesign) handles all of this */
 .card,
 .panel,
 .radar-card,
@@ -6532,6 +6458,159 @@ tbody tr:hover td{
 @media(max-width:480px){
   .ls-headline{font-size:29px !important;}
   .ls-card{border-radius:22px !important;padding:32px 22px 28px !important;}
+}
+</style>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     LAYOUT ALIGNMENT — final override, always wins (loaded last)
+══════════════════════════════════════════════════════════════════════════ -->
+<style id="layout-v1">
+
+/* ── Design tokens ── */
+:root{
+  --lyt-h-pad: 24px;    /* horizontal padding used everywhere */
+  --lyt-hdr-h: 56px;   /* header height */
+  --lyt-nav-h: 42px;   /* nav bar height */
+}
+
+/* ─────────────────────────────────────────────
+   HEADER — full width, flush to top
+───────────────────────────────────────────── */
+header{
+  position:fixed !important;
+  top:0 !important;left:0 !important;right:0 !important;
+  width:100% !important;
+  height:var(--lyt-hdr-h) !important;
+  padding:0 var(--lyt-h-pad) !important;
+  margin:0 !important;
+  border-radius:0 !important;
+  background:rgba(5,10,22,.97) !important;
+  border-top:none !important;
+  border-left:none !important;
+  border-right:none !important;
+  border-bottom:1px solid rgba(148,163,184,.1) !important;
+  box-shadow:0 1px 0 rgba(255,255,255,.04),0 4px 28px rgba(0,0,0,.4) !important;
+  backdrop-filter:blur(24px) saturate(180%) !important;
+  -webkit-backdrop-filter:blur(24px) saturate(180%) !important;
+  z-index:300 !important;
+  box-sizing:border-box !important;
+}
+
+/* ─────────────────────────────────────────────
+   NAV BAR — full width, sits right under header
+───────────────────────────────────────────── */
+.nav,
+.agent-shell-nav{
+  position:sticky !important;
+  top:var(--lyt-hdr-h) !important;
+  left:0 !important;
+  right:0 !important;
+  width:100% !important;
+  margin:0 !important;
+  padding:0 var(--lyt-h-pad) !important;
+  height:var(--lyt-nav-h) !important;
+  display:flex !important;
+  align-items:flex-end !important;
+  gap:2px !important;
+  background:rgba(4,9,20,.97) !important;
+  border-top:none !important;
+  border-left:none !important;
+  border-right:none !important;
+  border-bottom:1px solid rgba(148,163,184,.08) !important;
+  backdrop-filter:blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter:blur(20px) saturate(160%) !important;
+  z-index:200 !important;
+  box-sizing:border-box !important;
+  overflow-x:auto !important;
+  scrollbar-width:none !important;
+}
+.nav::-webkit-scrollbar,
+.agent-shell-nav::-webkit-scrollbar{display:none !important;}
+
+/* Nav tabs */
+.nav-tab,
+.agent-shell-btn{
+  height:100% !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  padding:0 14px !important;
+  font-size:12px !important;
+  font-weight:600 !important;
+  color:rgba(148,163,184,.75) !important;
+  border-bottom:2px solid transparent !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  white-space:nowrap !important;
+  transition:color .15s,border-color .15s,background .15s !important;
+}
+.nav-tab:hover,
+.agent-shell-btn:hover{
+  color:rgba(226,232,240,.9) !important;
+  background:rgba(255,255,255,.03) !important;
+}
+.nav-tab.active,
+.agent-shell-btn.active{
+  color:#f8fafc !important;
+  border-bottom-color:#f28820 !important;
+  background:rgba(242,136,32,.05) !important;
+}
+
+/* ─────────────────────────────────────────────
+   MAIN APP — push content below fixed header
+───────────────────────────────────────────── */
+#mainApp{
+  padding-top:var(--lyt-hdr-h) !important;
+  background:transparent !important;
+  min-height:100vh !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+
+/* ─────────────────────────────────────────────
+   PAGE CONTENT — full width, consistent padding
+───────────────────────────────────────────── */
+.page,
+.agent-shell-page{
+  width:100% !important;
+  max-width:100% !important;
+  margin:0 !important;
+  padding:22px var(--lyt-h-pad) 32px !important;
+  box-sizing:border-box !important;
+  background:transparent !important;
+  border:none !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
+/* ─────────────────────────────────────────────
+   CARDS — consistent padding, rounded corners
+───────────────────────────────────────────── */
+.card{
+  border-radius:16px !important;
+  padding:18px 20px !important;
+  margin-bottom:14px !important;
+}
+.card-hdr{
+  margin-bottom:14px !important;
+  padding-bottom:12px !important;
+  border-bottom:1px solid rgba(148,163,184,.08) !important;
+}
+.card-title{
+  font-size:14px !important;
+  font-weight:700 !important;
+  letter-spacing:-.015em !important;
+}
+
+/* ─────────────────────────────────────────────
+   RESPONSIVE
+───────────────────────────────────────────── */
+@media(max-width:768px){
+  :root{--lyt-h-pad:14px;}
+  .nav-tab,.agent-shell-btn{padding:0 10px !important;font-size:11px !important;}
+}
+@media(max-width:480px){
+  :root{--lyt-h-pad:10px;}
 }
 </style>
 
