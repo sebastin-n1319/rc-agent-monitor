@@ -13076,3 +13076,37 @@ window.addEventListener('load',()=>{
   font-size: 10.5px !important;
 }
 </style>
+
+<style id="bb-lane-fix">
+/* ── Fix broken lane layout ─────────────────────────────────── */
+#agent-section-breakbot .break-lane-board {
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  align-items: start !important;
+  flex-wrap: unset !important;
+  gap: 8px !important;
+  overflow: visible !important;
+}
+
+#agent-section-breakbot .break-lane-card {
+  flex: unset !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  align-self: auto !important;
+  overflow: hidden !important;
+}
+
+#agent-section-breakbot .break-lane-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 8px !important;
+}
+
+#agent-section-breakbot .break-lane-chip {
+  white-space: normal !important;
+  word-break: break-word !important;
+  font-size: 10.5px !important;
+}
+</style>
