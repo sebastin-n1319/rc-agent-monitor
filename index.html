@@ -13144,3 +13144,81 @@ window.addEventListener('load',()=>{
   font-size: 10.5px !important;
 }
 </style>
+
+<style id="bb-lane-final">
+/* ── Fixed-height lane cards, width scales with agents ──────── */
+#agent-section-breakbot .break-lane-board {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+}
+
+#agent-section-breakbot .break-lane-card {
+  flex-shrink: 1 !important;
+  flex-basis: 0 !important;
+  min-width: 110px !important;
+  max-height: 180px !important;
+  height: 180px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* Header — single compact line, no wrap */
+#agent-section-breakbot .break-lane-kicker {
+  font-size: 9px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+#agent-section-breakbot .break-lane-title {
+  font-size: 13px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.2 !important;
+}
+#agent-section-breakbot .break-lane-sub {
+  font-size: 10px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+#agent-section-breakbot .break-lane-head {
+  flex-shrink: 0 !important;
+}
+
+/* Chip list — scrollable, wraps within fixed height */
+#agent-section-breakbot .break-lane-list {
+  flex: 1 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-content: flex-start !important;
+  gap: 4px !important;
+  margin-top: 6px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding-right: 2px !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(99,102,241,.3) transparent !important;
+}
+
+#agent-section-breakbot .break-lane-chip {
+  white-space: nowrap !important;
+  font-size: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+#agent-section-breakbot .break-lane-empty {
+  font-size: 10.5px !important;
+  white-space: normal !important;
+}
+
+#agent-section-breakbot .break-alert-tag {
+  flex-shrink: 0 !important;
+  font-size: 10px !important;
+  margin-top: 4px !important;
+  margin-bottom: 2px !important;
+}
+</style>
