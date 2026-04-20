@@ -8629,7 +8629,7 @@ header{
         </svg>
       </div>
       <div>
-        <div class="bb-cmd-title">Break Bot Command Pad</div>
+        <div class="bb-cmd-title" data-text="Break Bot Command Pad">Break Bot Command Pad</div>
         <div class="bb-cmd-sub">Tap once to log — BRB · Break · Training · QA AUX · Internal</div>
       </div>
       <div class="bb-live-dot"></div>
@@ -11544,6 +11544,495 @@ window.addEventListener('load',()=>{
   100% { transform: translateY(-40px) scale(0); opacity: 0; }
 }
 </style>
+
+
+<style id="bb-anim-v2">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Animations + Interactivity v2
+   Mouse glow · 3D tilt · circuit bg · holographic · glitch
+══════════════════════════════════════════════════════════════ */
+
+/* ── Mouse-tracking spotlight on action card ───────────────── */
+#agent-section-breakbot .bb-scan-host {
+  --mx: 50%; --my: 50%;
+}
+#agent-section-breakbot .bb-scan-host::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: radial-gradient(
+    circle 180px at var(--mx) var(--my),
+    rgba(99,102,241,.08) 0%,
+    transparent 70%
+  ) !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  transition: background .05s !important;
+  border-radius: inherit !important;
+}
+
+/* ── Circuit board background on breakbot section ─────────── */
+#agent-section-breakbot .bb-circuit {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  opacity: .06 !important;
+  overflow: hidden !important;
+}
+
+/* ── 3D tilt wrapper ───────────────────────────────────────── */
+#agent-section-breakbot .bb-tilt {
+  transform-style: preserve-3d !important;
+  perspective: 600px !important;
+}
+#agent-section-breakbot .bb-act {
+  transform-style: preserve-3d !important;
+  will-change: transform !important;
+}
+
+/* ── Holographic shimmer on category labels ────────────────── */
+#agent-section-breakbot .bb-cat-lbl {
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,.04) 0%,
+    rgba(255,255,255,.07) 40%,
+    rgba(255,255,255,.03) 60%,
+    rgba(255,255,255,.06) 100%
+  ) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+#agent-section-breakbot .bb-cat-lbl::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(
+    115deg,
+    transparent 20%,
+    rgba(255,255,255,.12) 50%,
+    transparent 80%
+  ) !important;
+  transform: translateX(-100%) !important;
+  animation: bbHoloSweep 3.5s ease-in-out infinite !important;
+  animation-delay: var(--holo-delay, 0s) !important;
+}
+#agent-section-breakbot .bb-pad-row:nth-child(1) .bb-cat-lbl { --holo-delay: 0s; }
+#agent-section-breakbot .bb-pad-row:nth-child(2) .bb-cat-lbl { --holo-delay: .5s; }
+#agent-section-breakbot .bb-pad-row:nth-child(3) .bb-cat-lbl { --holo-delay: 1s; }
+#agent-section-breakbot .bb-pad-row:nth-child(4) .bb-cat-lbl { --holo-delay: 1.5s; }
+#agent-section-breakbot .bb-pad-row:nth-child(5) .bb-cat-lbl { --holo-delay: 2s; }
+#agent-section-breakbot .bb-pad-row:nth-child(6) .bb-cat-lbl { --holo-delay: 2.5s; }
+@keyframes bbHoloSweep {
+  0%,60% { transform: translateX(-100%); }
+  80%    { transform: translateX(100%); }
+  100%   { transform: translateX(100%); }
+}
+
+/* ── Glitch effect on command title ────────────────────────── */
+#agent-section-breakbot .bb-cmd-title {
+  position: relative !important;
+}
+#agent-section-breakbot .bb-cmd-title::before,
+#agent-section-breakbot .bb-cmd-title::after {
+  content: attr(data-text) !important;
+  position: absolute !important;
+  top: 0 !important; left: 0 !important;
+  width: 100% !important;
+  opacity: 0 !important;
+}
+#agent-section-breakbot .bb-cmd-title::before {
+  color: #06b6d4 !important;
+  animation: bbGlitch1 7s infinite !important;
+  clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%) !important;
+}
+#agent-section-breakbot .bb-cmd-title::after {
+  color: #a855f7 !important;
+  animation: bbGlitch2 7s infinite !important;
+  clip-path: polygon(0 55%, 100% 55%, 100% 70%, 0 70%) !important;
+}
+@keyframes bbGlitch1 {
+  0%,88%,100% { opacity:0; transform:none; }
+  89% { opacity:.9; transform:translate(-2px,1px) skewX(-2deg); }
+  90% { opacity:0; }
+  91% { opacity:.7; transform:translate(2px,-1px); }
+  92% { opacity:0; }
+}
+@keyframes bbGlitch2 {
+  0%,88%,100% { opacity:0; transform:none; }
+  89.5% { opacity:.8; transform:translate(2px,1px) skewX(1deg); }
+  90.5% { opacity:0; }
+}
+
+/* ── Breathing border on action card ───────────────────────── */
+#agent-section-breakbot .bb-scan-host {
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.08),
+    0 4px 24px rgba(0,0,0,.3) !important;
+  animation: bbCardBreathe 4s ease-in-out infinite !important;
+}
+@keyframes bbCardBreathe {
+  0%,100% { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 4px 24px rgba(0,0,0,.3); }
+  50%     { box-shadow: 0 0 0 1px rgba(99,102,241,.2),  0 8px 40px rgba(99,102,241,.12); }
+}
+
+/* ── Enhanced particle burst ───────────────────────────────── */
+#agent-section-breakbot .bb-px {
+  position: absolute !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;
+  animation: bbPx var(--px-dur,.6s) ease-out forwards !important;
+}
+@keyframes bbPx {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--px-x,0), var(--py-y,0)) scale(0); opacity: 0; }
+}
+
+/* ── Typewriter cursor ─────────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-sub::after {
+  content: '|' !important;
+  display: inline-block !important;
+  animation: bbCursor .8s step-end infinite !important;
+  color: rgba(6,182,212,.7) !important;
+  margin-left: 1px !important;
+}
+@keyframes bbCursor {
+  0%,100% { opacity: 1; }
+  50%     { opacity: 0; }
+}
+
+/* ── Status dot color syncs with current state ─────────────── */
+#agent-section-breakbot .break-stat:first-child {
+  border-left: 3px solid rgba(99,102,241,.4) !important;
+  animation: bbStatusBorder 3s ease-in-out infinite !important;
+}
+@keyframes bbStatusBorder {
+  0%,100% { border-left-color: rgba(99,102,241,.4); }
+  50%     { border-left-color: rgba(6,182,212,.6); }
+}
+
+/* ── Data stream lines on hero card ────────────────────────── */
+#agent-section-breakbot .bb-data-stream {
+  position: absolute !important;
+  right: 0 !important; top: 0 !important; bottom: 0 !important;
+  width: 60px !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  opacity: .35 !important;
+}
+#agent-section-breakbot .bb-ds-line {
+  position: absolute !important;
+  right: var(--ds-x, 10px) !important;
+  top: -20px !important;
+  width: 1px !important;
+  height: 40px !important;
+  background: linear-gradient(180deg, transparent, var(--ds-col, #06b6d4), transparent) !important;
+  animation: bbDsFlow var(--ds-dur, 2s) ease-in-out infinite !important;
+  animation-delay: var(--ds-delay, 0s) !important;
+}
+@keyframes bbDsFlow {
+  0%   { top: -40px; opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: .8; }
+  100% { top: 110%; opacity: 0; }
+}
+
+/* ── Bot icon orbit ring ───────────────────────────────────── */
+#agent-section-breakbot .bb-bot-icon {
+  position: relative !important;
+}
+#agent-section-breakbot .bb-bot-icon::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: -6px !important;
+  border-radius: 18px !important;
+  background: conic-gradient(from 0deg, #4f46e5, #06b6d4, #a855f7, #4f46e5) !important;
+  animation: bbBotSpin 3s linear infinite !important;
+  z-index: -1 !important;
+  opacity: .6 !important;
+}
+#agent-section-breakbot .bb-bot-icon::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: -3px !important;
+  border-radius: 15px !important;
+  background: #08111f !important;
+  z-index: -1 !important;
+}
+@keyframes bbBotSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Floating mini icons around the orbs ───────────────────── */
+#agent-section-breakbot .bb-float-icon {
+  position: absolute !important;
+  pointer-events: none !important;
+  animation: bbIconFloat var(--fi-dur,8s) ease-in-out infinite !important;
+  animation-delay: var(--fi-delay,0s) !important;
+  opacity: .15 !important;
+  font-size: 18px !important;
+  z-index: 0 !important;
+  filter: blur(.5px) !important;
+}
+@keyframes bbIconFloat {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  33%     { transform: translateY(-18px) rotate(8deg); }
+  66%     { transform: translateY(10px) rotate(-5deg); }
+}
+
+/* ── Active button ping ring ───────────────────────────────── */
+#agent-section-breakbot .bb-act:not(:disabled)::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  border: 1.5px solid var(--ca, rgba(255,255,255,.1)) !important;
+  opacity: 0 !important;
+  animation: bbPingRing 3s ease-out infinite !important;
+  pointer-events: none !important;
+}
+#agent-section-breakbot .bb-act.bb-act-in:not(:disabled)::after {
+  border-color: var(--cb, rgba(255,255,255,.1)) !important;
+}
+@keyframes bbPingRing {
+  0%   { opacity: .5; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+/* ── Stagger entrance for pad rows ────────────────────────── */
+#agent-section-breakbot .bb-pad-row {
+  animation: bbRowIn .5s cubic-bezier(.22,1,.36,1) both !important;
+}
+
+/* ── Command header animated gradient line ─────────────────── */
+#agent-section-breakbot .bb-cmd-header {
+  border-bottom: 1px solid transparent !important;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03), rgba(255,255,255,.03)),
+    linear-gradient(90deg, #4f46e5, #06b6d4, #a855f7, #4f46e5) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  animation: bbHeaderGradient 4s linear infinite !important;
+}
+@keyframes bbHeaderGradient {
+  0%   { background-position: 0% 50%, 0% 50%; }
+  100% { background-position: 0% 50%, 200% 50%; }
+}
+</style>
+
+<script>
+/* ── Break Bot Animations v2 — Interactive JS ─────────────── */
+(function(){
+  'use strict';
+
+  /* ── 1. Mouse spotlight on action card ── */
+  function initSpotlight(){
+    var host = document.querySelector('#agent-section-breakbot .bb-scan-host');
+    if(!host) return;
+    host.addEventListener('mousemove', function(e){
+      var r = host.getBoundingClientRect();
+      var x = ((e.clientX - r.left) / r.width  * 100).toFixed(1) + '%';
+      var y = ((e.clientY - r.top)  / r.height * 100).toFixed(1) + '%';
+      host.style.setProperty('--mx', x);
+      host.style.setProperty('--my', y);
+    });
+  }
+
+  /* ── 2. 3D tilt on buttons ── */
+  function initTilt(){
+    document.querySelectorAll('#agent-section-breakbot .bb-act').forEach(function(btn){
+      btn.addEventListener('mousemove', function(e){
+        if(btn.disabled) return;
+        var r = btn.getBoundingClientRect();
+        var cx = r.left + r.width/2, cy = r.top + r.height/2;
+        var dx = (e.clientX - cx) / (r.width/2);
+        var dy = (e.clientY - cy) / (r.height/2);
+        btn.style.transform = 'translateY(-3px) rotateX('+(-dy*5)+'deg) rotateY('+(dx*6)+'deg) scale(1.01)';
+      });
+      btn.addEventListener('mouseleave', function(){
+        btn.style.transform = '';
+      });
+    });
+  }
+
+  /* ── 3. Enhanced particle burst (uses button accent color) ── */
+  var _rippleHandler = document.querySelector('#agent-section-breakbot') && null;
+  document.addEventListener('mousedown', function(e){
+    var btn = e.target.closest('#agent-section-breakbot .bb-act:not(:disabled)');
+    if(!btn) return;
+    var rect  = btn.getBoundingClientRect();
+    var cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    var style = getComputedStyle(btn);
+    var accent = style.getPropertyValue('--ca').trim() || '#06b6d4';
+
+    /* ripple */
+    var r = document.createElement('span');
+    r.className = 'bb-ripple';
+    r.style.left = cx+'px'; r.style.top = cy+'px';
+    r.style.background = accent;
+    btn.appendChild(r);
+    r.addEventListener('animationend', function(){ r.remove(); });
+
+    /* particles */
+    var row = btn.closest('.bb-pad-row');
+    var colors = [accent];
+    if(row){
+      var s = getComputedStyle(row);
+      colors = [
+        s.getPropertyValue('--ca').trim() || accent,
+        s.getPropertyValue('--cb').trim() || accent,
+        s.getPropertyValue('--cat').trim() || accent,
+        '#ffffff'
+      ];
+    }
+    for(var i=0;i<18;i++){
+      (function(idx){
+        var p = document.createElement('span');
+        p.className = 'bb-px';
+        var sz = 3 + Math.random()*5;
+        var angle = (idx/18)*Math.PI*2 + (Math.random()-.5)*.5;
+        var dist  = 28 + Math.random()*50;
+        var col = colors[idx % colors.length];
+        p.style.cssText =
+          'width:'+sz+'px;height:'+sz+'px;'+
+          'left:'+(cx-sz/2)+'px;top:'+(cy-sz/2)+'px;'+
+          'background:'+col+';'+
+          'box-shadow:0 0 4px '+col+';'+
+          '--px-x:'+(Math.cos(angle)*dist)+'px;'+
+          '--py-y:'+(Math.sin(angle)*dist - 15)+'px;'+
+          '--px-dur:'+(0.45+Math.random()*.35)+'s;'+
+          'animation-delay:'+(idx*.018)+'s;';
+        btn.appendChild(p);
+        p.addEventListener('animationend', function(){ p.remove(); });
+      })(i);
+    }
+  });
+
+  /* ── 4. Typewriter effect on subtitle ── */
+  function initTypewriter(){
+    var el = document.querySelector('#agent-section-breakbot .bb-cmd-sub');
+    if(!el || el._typed) return;
+    el._typed = true;
+    var full = el.textContent.trim();
+    el.textContent = '';
+    var i = 0;
+    function tick(){
+      if(i <= full.length){
+        el.textContent = full.slice(0, i++);
+        setTimeout(tick, 28 + Math.random()*22);
+      }
+    }
+    setTimeout(tick, 600);
+  }
+
+  /* ── 5. Count-up for stats ── */
+  function countUp(el, target){
+    if(el._counted) return;
+    if(!target || target === '--') return;
+    var num = parseFloat(target);
+    if(isNaN(num)) return;
+    el._counted = true;
+    var suffix = target.replace(/[\d.]/g,'');
+    var start = 0, dur = 800, step = 16;
+    var t = 0;
+    var iv = setInterval(function(){
+      t += step;
+      var prog = Math.min(t/dur, 1);
+      var ease = 1 - Math.pow(1-prog, 3);
+      el.textContent = (num < 100 ? (num*ease).toFixed(num%1?1:0) : Math.round(num*ease)) + suffix;
+      if(prog >= 1){ el.textContent = target; clearInterval(iv); }
+    }, step);
+  }
+  function initCountUp(){
+    document.querySelectorAll('#agent-section-breakbot .break-stat .v').forEach(function(el){
+      countUp(el, el.textContent.trim());
+    });
+  }
+
+  /* ── 6. Data stream lines on hero card ── */
+  function initDataStream(){
+    var hero = document.querySelector('#agent-section-breakbot .break-hero-card');
+    if(!hero || hero._stream) return;
+    hero._stream = true;
+    var wrap = document.createElement('div');
+    wrap.className = 'bb-data-stream';
+    var cols = ['#06b6d4','#4f46e5','#a855f7','#22c55e','#f59e0b'];
+    var xs = [8,18,28,38,48,56];
+    xs.forEach(function(x, i){
+      var line = document.createElement('div');
+      line.className = 'bb-ds-line';
+      line.style.cssText =
+        '--ds-x:'+x+'px;'+
+        '--ds-col:'+cols[i%cols.length]+';'+
+        '--ds-dur:'+(1.8+Math.random()*1.4)+'s;'+
+        '--ds-delay:'+(-Math.random()*2)+'s;';
+      wrap.appendChild(line);
+    });
+    hero.style.position = 'relative';
+    hero.style.overflow = 'hidden';
+    hero.appendChild(wrap);
+  }
+
+  /* ── 7. Floating SVG mini-icons in BG ── */
+  function initFloatIcons(){
+    var section = document.getElementById('agent-section-breakbot');
+    if(!section || section._ficons) return;
+    section._ficons = true;
+    var icons = ['⚡','🔄','📊','⏱','🎯','💡','🔔','📡'];
+    var positions = [
+      {top:'12%',left:'8%',dur:'9s',delay:'0s'},
+      {top:'25%',left:'85%',dur:'11s',delay:'-3s'},
+      {top:'55%',left:'5%',dur:'13s',delay:'-6s'},
+      {top:'70%',left:'90%',dur:'8s',delay:'-1s'},
+      {top:'40%',left:'92%',dur:'14s',delay:'-9s'},
+      {top:'80%',left:'15%',dur:'10s',delay:'-4s'},
+    ];
+    positions.forEach(function(pos, i){
+      var el = document.createElement('span');
+      el.className = 'bb-float-icon';
+      el.textContent = icons[i % icons.length];
+      el.style.cssText =
+        'top:'+pos.top+';left:'+pos.left+';'+
+        '--fi-dur:'+pos.dur+';--fi-delay:'+pos.delay+';';
+      section.appendChild(el);
+    });
+  }
+
+  /* ── 8. Success ripple on send ── */
+  var _orig = window.sendBreakAction;
+  if(typeof _orig === 'function'){
+    window.sendBreakAction = function(action, btn){
+      if(btn){
+        btn.classList.add('bb-sent');
+        /* big flash */
+        btn.style.transition = 'background .1s';
+        btn.style.background = 'rgba(255,255,255,.14)';
+        setTimeout(function(){
+          btn.style.background = '';
+          btn.classList.remove('bb-sent');
+        }, 700);
+      }
+      return _orig.apply(this, arguments);
+    };
+  }
+
+  /* ── Init all ── */
+  function init(){
+    initSpotlight();
+    initTilt();
+    initTypewriter();
+    initCountUp();
+    initDataStream();
+    initFloatIcons();
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+  setTimeout(init, 1500);
+
+})();
+</script>
 
 </body>
 </html>
