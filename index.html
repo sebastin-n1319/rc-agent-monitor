@@ -6127,10 +6127,11 @@ tbody tr:hover td{
 ══════════════════════════════════════════════════════════ -->
 <style id="login-redesign">
 /* ═══════════════════════════════════════════════════════════════════
-   LOGIN PAGE v6 — Vivid mesh split, big type, premium card
+   LOGIN PAGE v7 — Full animation suite: blobs, particles, scanline,
+   counters, progress bars, live feed, rotating border, stagger
 ═══════════════════════════════════════════════════════════════════ */
 
-/* ── Kill every old element ── */
+/* ── Kill legacy elements ── */
 .login-left,.login-right,
 .ls-tile,.ls-center,.ls-brand-pill,
 .ls-bg-glow-a,.ls-bg-glow-b,.ls-bg-glow-c,.ls-bg-mesh,
@@ -6142,184 +6143,390 @@ tbody tr:hover td{
 #loginScreen{
   position:fixed !important;inset:0 !important;z-index:9999 !important;
   display:flex !important;align-items:stretch !important;
-  background:#06101e !important;overflow:hidden !important;min-height:unset !important;
+  background:#050d1a !important;overflow:hidden !important;min-height:unset !important;
   font-family:'Inter','Poppins',sans-serif !important;
 }
 
-
 /* ══════════════════════════════════════════════════════
-   LEFT PANEL — vivid mesh gradient, big brand typography
+   LEFT PANEL
 ══════════════════════════════════════════════════════ */
 .lv-left{
   position:relative;z-index:1;
-  flex:1.1;display:flex !important;flex-direction:column !important;
+  flex:1.15;display:flex !important;flex-direction:column !important;
   justify-content:space-between;
   padding:52px 56px;overflow:hidden;
-  background:
-    radial-gradient(ellipse at 22% 28%, rgba(242,136,32,.42) 0%, transparent 48%),
-    radial-gradient(ellipse at 78% 70%, rgba(6,135,190,.32) 0%, transparent 48%),
-    radial-gradient(ellipse at 12% 88%, rgba(99,102,241,.26) 0%, transparent 45%),
-    radial-gradient(ellipse at 88% 12%, rgba(242,136,32,.18) 0%, transparent 40%),
-    #07111f;
+  background:#050d1a;
 }
-/* Fine line grid overlay */
-.lv-left::before{
-  content:'';position:absolute;inset:0;pointer-events:none;
+
+/* ── Animated blobs ── */
+.lv-blob{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;}
+.lv-blob-1{
+  width:520px;height:520px;
+  top:-140px;left:-140px;
+  background:radial-gradient(circle,rgba(242,136,32,.65) 0%,transparent 70%);
+  animation:blobDrift1 14s ease-in-out infinite;
+}
+.lv-blob-2{
+  width:460px;height:460px;
+  bottom:-100px;right:60px;
+  background:radial-gradient(circle,rgba(6,135,190,.58) 0%,transparent 70%);
+  animation:blobDrift2 18s ease-in-out infinite;
+}
+.lv-blob-3{
+  width:380px;height:380px;
+  top:38%;left:35%;
+  background:radial-gradient(circle,rgba(139,92,246,.52) 0%,transparent 70%);
+  animation:blobDrift3 22s ease-in-out infinite;
+}
+.lv-blob-4{
+  width:280px;height:280px;
+  top:12%;right:10%;
+  background:radial-gradient(circle,rgba(34,197,94,.38) 0%,transparent 70%);
+  animation:blobDrift4 16s ease-in-out infinite;
+}
+@keyframes blobDrift1{
+  0%,100%{transform:translate(0,0) scale(1);}
+  33%{transform:translate(60px,80px) scale(1.12);}
+  66%{transform:translate(-40px,50px) scale(.92);}
+}
+@keyframes blobDrift2{
+  0%,100%{transform:translate(0,0) scale(1);}
+  33%{transform:translate(-70px,-60px) scale(1.1);}
+  66%{transform:translate(50px,-80px) scale(.94);}
+}
+@keyframes blobDrift3{
+  0%,100%{transform:translate(0,0) scale(1);}
+  40%{transform:translate(-50px,70px) scale(1.15);}
+  70%{transform:translate(80px,-40px) scale(.88);}
+}
+@keyframes blobDrift4{
+  0%,100%{transform:translate(0,0) scale(1);}
+  50%{transform:translate(-60px,50px) scale(1.18);}
+}
+
+/* ── Drifting grid ── */
+.lv-grid{
+  position:absolute;inset:0;pointer-events:none;z-index:0;
   background-image:
-    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
-  background-size:44px 44px;
+    linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);
+  background-size:48px 48px;
+  animation:gridDrift 30s linear infinite;
 }
-/* Right-edge fade into auth panel */
+@keyframes gridDrift{
+  0%{background-position:0 0;}
+  100%{background-position:48px 48px;}
+}
+
+/* ── Particles ── */
+.lv-particles{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
+.lv-particle{
+  position:absolute;border-radius:50%;
+  animation:partFloat linear infinite;
+}
+@keyframes partFloat{
+  0%{transform:translateY(0) translateX(0);opacity:0;}
+  10%{opacity:1;}
+  90%{opacity:.7;}
+  100%{transform:translateY(-110vh) translateX(var(--dx,0px));opacity:0;}
+}
+
+/* ── Scanline sweep ── */
+.lv-scanline{
+  position:absolute;left:0;right:0;height:2px;z-index:2;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(242,136,32,.55),rgba(255,255,255,.2),rgba(242,136,32,.55),transparent);
+  filter:blur(1px);
+  animation:scanSweep 6s linear infinite;
+  top:0;
+}
+@keyframes scanSweep{
+  0%{top:-2px;opacity:0;}
+  5%{opacity:1;}
+  95%{opacity:.7;}
+  100%{top:100%;opacity:0;}
+}
+
+/* Right-edge fade */
 .lv-left::after{
-  content:'';position:absolute;top:0;right:0;bottom:0;width:120px;
-  background:linear-gradient(to right,transparent,#06101e);
-  pointer-events:none;
+  content:'';position:absolute;top:0;right:0;bottom:0;width:100px;
+  background:linear-gradient(to right,transparent,#050d1a);
+  pointer-events:none;z-index:10;
+}
+
+/* ── Content layer ── */
+.lv-content{
+  position:relative;z-index:5;
+  display:flex;flex-direction:column;
+  justify-content:space-between;
+  height:100%;
 }
 
 /* Top logo row */
 .lv-logo-row{
   display:flex;align-items:center;gap:12px;
-  position:relative;z-index:2;
+  animation:fadeSlideDown .7s cubic-bezier(.22,1,.36,1) both;
 }
 .lv-logo{width:40px;height:40px;border-radius:10px;display:block;flex-shrink:0;}
 .lv-brand{font-family:'Poppins','Inter',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.01em;}
-.lv-brand span{color:rgba(242,136,32,.85);}
+.lv-brand span{color:rgba(242,136,32,.9);}
+.lv-live-pill{
+  margin-left:auto;display:flex;align-items:center;gap:5px;
+  background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.3);
+  border-radius:20px;padding:3px 10px 3px 7px;
+  font-size:10px;font-weight:700;letter-spacing:.08em;color:#4ade80;text-transform:uppercase;
+}
 
 /* Giant headline block */
-.lv-hero{position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:center;}
+.lv-hero{
+  position:relative;z-index:2;flex:1;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:36px 0;
+}
 .lv-eyebrow{
   font-size:10.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(242,136,32,.75);margin-bottom:16px;
+  color:rgba(242,136,32,.8);margin-bottom:18px;
   display:flex;align-items:center;gap:8px;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .1s both;
 }
 .lv-eyebrow::before{content:'';display:block;width:28px;height:2px;background:#f28820;border-radius:2px;}
 .lv-h1{
   font-family:'Poppins','Inter',sans-serif;
-  font-size:clamp(38px,4.2vw,58px);font-weight:900;letter-spacing:-.045em;
+  font-size:clamp(36px,4vw,56px);font-weight:900;letter-spacing:-.045em;
   line-height:1.0;color:#f0f8ff;
   margin:0 0 20px;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .18s both;
 }
 .lv-h1 em{
   font-style:normal;display:block;
-  background:linear-gradient(110deg,#f28820 0%,#fbbf60 45%,#f28820 100%);
-  background-size:220%;
+  background:linear-gradient(110deg,#f28820 0%,#fbbf60 30%,#f9a825 60%,#f28820 100%);
+  background-size:300%;
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:lhShim 4s linear infinite;
+  animation:lhShim 3.5s linear infinite;
 }
-@keyframes lhShim{0%{background-position:220% 0}100%{background-position:-220% 0}}
-.lv-sub{font-size:14px;color:rgba(176,207,229,.52);line-height:1.7;max-width:380px;margin:0 0 36px;}
+@keyframes lhShim{0%{background-position:300% 0}100%{background-position:-300% 0}}
+.lv-sub{
+  font-size:14px;color:rgba(176,207,229,.55);line-height:1.75;max-width:380px;margin:0 0 32px;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .26s both;
+}
 
-/* Stat grid */
+/* Stat grid with progress bars */
 .lv-stats{
-  display:grid;grid-template-columns:1fr 1fr;gap:10px;
-  max-width:380px;position:relative;z-index:2;
+  display:grid;grid-template-columns:1fr 1fr;gap:12px;
+  max-width:400px;position:relative;z-index:2;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .34s both;
 }
 .lv-stat{
-  padding:14px 16px;border-radius:14px;
-  background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,255,255,.09);
-  backdrop-filter:blur(12px);
+  padding:16px 18px;border-radius:16px;
+  background:rgba(255,255,255,.048);
+  border:1px solid rgba(255,255,255,.1);
+  backdrop-filter:blur(16px);
+  transition:transform .2s,border-color .2s;
+  overflow:hidden;position:relative;
 }
+.lv-stat::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);
+}
+.lv-stat:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18);}
 .lv-stat-val{
   font-family:'JetBrains Mono','Courier New',monospace;
-  font-size:26px;font-weight:700;line-height:1;margin-bottom:5px;
+  font-size:28px;font-weight:700;line-height:1;margin-bottom:4px;
 }
-.lv-stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(176,207,229,.45);}
-.lv-stat-delta{display:flex;align-items:center;gap:4px;margin-top:5px;font-size:10px;font-weight:600;color:#4ade80;}
+.lv-stat-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:rgba(176,207,229,.42);}
+.lv-stat-bar{height:3px;border-radius:3px;margin-top:10px;background:rgba(255,255,255,.07);overflow:hidden;}
+.lv-stat-bar-fill{height:100%;border-radius:3px;transform:scaleX(0);transform-origin:left;transition:transform 1.6s cubic-bezier(.22,1,.36,1);}
+.lv-stat-bar-fill.lv-animate{transform:scaleX(1);}
 .lv-stat:nth-child(1) .lv-stat-val{color:#f28820;}
+.lv-stat:nth-child(1) .lv-stat-bar-fill{background:linear-gradient(90deg,#f28820,#fbbf24);}
 .lv-stat:nth-child(2) .lv-stat-val{color:#60a5fa;}
+.lv-stat:nth-child(2) .lv-stat-bar-fill{background:linear-gradient(90deg,#60a5fa,#38bdf8);}
 .lv-stat:nth-child(3) .lv-stat-val{color:#a78bfa;}
-.lv-stat:nth-child(4) .lv-stat-val{color:#fbbf24;}
+.lv-stat:nth-child(3) .lv-stat-bar-fill{background:linear-gradient(90deg,#a78bfa,#e879f9);}
+.lv-stat:nth-child(4) .lv-stat-val{color:#34d399;}
+.lv-stat:nth-child(4) .lv-stat-bar-fill{background:linear-gradient(90deg,#34d399,#4ade80);}
+/* bar widths — set via style on element */
+.lv-stat:nth-child(1) .lv-stat-bar-fill{--w:.75;}
+.lv-stat:nth-child(2) .lv-stat-bar-fill{--w:.96;}
+.lv-stat:nth-child(3) .lv-stat-bar-fill{--w:.88;}
+.lv-stat:nth-child(4) .lv-stat-bar-fill{--w:.82;}
 
-/* Bottom tagline */
-.lv-foot{
-  position:relative;z-index:2;
-  font-size:11px;font-weight:500;color:rgba(176,207,229,.3);
+/* Live activity feed */
+.lv-feed{
+  max-width:400px;position:relative;z-index:2;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .42s both;
+}
+.lv-feed-title{
+  font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:rgba(176,207,229,.36);margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.lv-feed-title::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.lv-feed-list{display:flex;flex-direction:column;gap:5px;max-height:110px;overflow:hidden;position:relative;}
+.lv-feed-list::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:36px;
+  background:linear-gradient(to top,#050d1a,transparent);pointer-events:none;
+}
+.lv-feed-item{
   display:flex;align-items:center;gap:8px;
+  font-size:11px;color:rgba(176,207,229,.5);
+  animation:feedSlide .4s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes feedSlide{from{opacity:0;transform:translateX(-14px);}to{opacity:1;transform:none;}}
+.lv-feed-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.lv-feed-agent{font-weight:600;color:rgba(255,255,255,.68);margin-right:2px;}
+.lv-feed-time{margin-left:auto;font-size:10px;color:rgba(176,207,229,.28);flex-shrink:0;}
+
+/* Bottom row */
+.lv-foot{
+  position:relative;z-index:5;
+  font-size:11px;font-weight:500;color:rgba(176,207,229,.28);
+  display:flex;align-items:center;gap:8px;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .5s both;
 }
 .lv-live-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;flex-shrink:0;animation:ldot 1.8s ease-in-out infinite;}
-@keyframes ldot{0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{opacity:1;box-shadow:0 0 0 4px rgba(34,197,94,0);}}
+@keyframes ldot{0%,100%{opacity:.5;box-shadow:0 0 0 0 rgba(34,197,94,.4);}50%{opacity:1;box-shadow:0 0 0 5px rgba(34,197,94,0);}}
+
+/* ═══════════════ SHARED KEYFRAMES ═══════════════ */
+@keyframes fadeSlideDown{from{opacity:0;transform:translateY(-18px);}to{opacity:1;transform:none;}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(22px);}to{opacity:1;transform:none;}}
 
 /* ══════════════════════════════════════════════════════
-   RIGHT PANEL — clean auth card
+   RIGHT PANEL — rotating border card
 ══════════════════════════════════════════════════════ */
 .lv-right{
   position:relative;z-index:2;
   flex:.82;display:flex !important;align-items:center !important;justify-content:center !important;
   padding:40px 52px;
-  background:linear-gradient(180deg,#080f1e 0%,#06101e 100%);
+  background:linear-gradient(160deg,#080f20 0%,#05101e 60%,#06101e 100%);
+}
+/* subtle glow behind card */
+.lv-right::before{
+  content:'';position:absolute;width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(242,136,32,.12) 0%,transparent 70%);
+  pointer-events:none;
+  animation:rgGlow 8s ease-in-out infinite alternate;
+}
+@keyframes rgGlow{0%{transform:scale(.9);opacity:.6;}100%{transform:scale(1.15);opacity:1;}}
+
+/* Rotating border wrapper */
+.lv-card-wrap{
+  position:relative;border-radius:30px;padding:2px;
+  background:conic-gradient(from var(--lv-angle,0deg),rgba(242,136,32,.9),rgba(139,92,246,.8),rgba(6,135,190,.8),rgba(242,136,32,.9));
+  animation:coneRotate 4s linear infinite;
+  box-shadow:0 0 50px rgba(242,136,32,.18),0 0 100px rgba(139,92,246,.12);
+}
+@property --lv-angle{syntax:'<angle>';initial-value:0deg;inherits:false;}
+@keyframes coneRotate{to{--lv-angle:360deg;}}
+
+/* fallback for browsers without @property */
+@supports not (background:conic-gradient(from 0deg,red,red)){
+  .lv-card-wrap{background:linear-gradient(135deg,rgba(242,136,32,.8),rgba(139,92,246,.8),rgba(6,135,190,.8));}
 }
 
+/* Card */
 .ls-card{
   width:100%;max-width:390px;
-  background:rgba(12,22,42,.7);
-  border:1px solid rgba(255,255,255,.1);
+  background:rgba(8,14,28,.96);
   border-radius:28px;
   padding:48px 44px 42px;
   box-shadow:
-    0 0 0 1px rgba(242,136,32,.1),
-    0 40px 100px rgba(0,0,0,.75),
-    0 0 60px rgba(242,136,32,.04),
-    inset 0 1px 0 rgba(255,255,255,.09);
+    0 40px 100px rgba(0,0,0,.8),
+    inset 0 1px 0 rgba(255,255,255,.08);
   backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
   position:relative;overflow:hidden;
-  animation:cIn .8s cubic-bezier(.22,1,.36,1) .08s both;
+  animation:cIn .9s cubic-bezier(.22,1,.36,1) .12s both;
 }
+/* shimmer sweep */
 .ls-card::after{
   content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.025),transparent);
-  animation:cShim 10s ease-in-out infinite 4s;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.03),transparent);
+  animation:cShim 9s ease-in-out infinite 3s;pointer-events:none;
 }
-@keyframes cIn{from{opacity:0;transform:translateY(30px) scale(.95);}to{opacity:1;transform:none;}}
-@keyframes cShim{0%{left:-100%;}35%,100%{left:155%;}}
+@keyframes cIn{from{opacity:0;transform:translateY(28px) scale(.96);}to{opacity:1;transform:none;}}
+@keyframes cShim{0%{left:-100%;}40%,100%{left:155%;}}
 
-.ls-logo-wrap{display:flex;align-items:center;gap:14px;margin-bottom:30px;}
+/* Logo wrap — staggered entrance */
+.ls-logo-wrap{
+  display:flex;align-items:center;gap:14px;margin-bottom:30px;
+  animation:fadeSlideDown .7s cubic-bezier(.22,1,.36,1) .28s both;
+}
 .ls-logo{
   width:56px;height:56px;border-radius:15px;display:block;flex-shrink:0;
-  box-shadow:0 0 0 1px rgba(242,136,32,.35),0 8px 28px rgba(0,0,0,.55),0 0 45px rgba(242,136,32,.14);
+  box-shadow:0 0 0 1px rgba(242,136,32,.4),0 8px 28px rgba(0,0,0,.55),0 0 50px rgba(242,136,32,.22);
   animation:lf 5s ease-in-out infinite;
 }
-@keyframes lf{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+@keyframes lf{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
 .ls-logo-name{font-family:'Poppins','Inter',sans-serif;font-size:15.5px;font-weight:800;letter-spacing:-.025em;color:#edf5fc;line-height:1.15;}
-.ls-logo-sub{font-size:10px;font-weight:500;color:rgba(176,207,229,.34);margin-top:3px;letter-spacing:.03em;}
+.ls-logo-sub{font-size:10px;font-weight:500;color:rgba(176,207,229,.32);margin-top:3px;letter-spacing:.03em;}
 
 .ls-headline{
   font-family:'Poppins','Inter',sans-serif;
-  font-size:38px;font-weight:900;letter-spacing:-.05em;
+  font-size:36px;font-weight:900;letter-spacing:-.05em;
   color:#f0f8ff;margin:0 0 10px;line-height:1.0;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .36s both;
 }
-.ls-sub-text{font-size:13px;color:rgba(176,207,229,.5);line-height:1.65;margin:0 0 28px;}
-.ls-sub-text strong{color:rgba(242,136,32,.9);}
+.ls-sub-text{
+  font-size:13px;color:rgba(176,207,229,.48);line-height:1.65;margin:0 0 28px;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .44s both;
+}
+.ls-sub-text strong{color:rgba(242,136,32,.92);}
+
+/* ── Google sign-in button area ── */
+.ls-btn-wrap{
+  position:relative;
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .52s both;
+}
+/* Pulse ring on button */
+.ls-btn-wrap::before{
+  content:'';position:absolute;inset:-4px;border-radius:17px;
+  border:2px solid rgba(242,136,32,.5);
+  animation:btnPulse 2.4s ease-out infinite;
+  pointer-events:none;
+}
+@keyframes btnPulse{
+  0%{opacity:.7;transform:scale(1);}
+  70%{opacity:0;transform:scale(1.06);}
+  100%{opacity:0;transform:scale(1.06);}
+}
 
 /* ── Orange button ── */
 #loginScreen .google-fallback-btn{
   background:linear-gradient(135deg,#f28820 0%,#d86410 100%) !important;
   color:#fff !important;border:none !important;
-  box-shadow:0 4px 24px rgba(242,136,32,.46),inset 0 1px 0 rgba(255,255,255,.22) !important;
+  box-shadow:0 4px 28px rgba(242,136,32,.52),0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.25) !important;
   min-height:56px !important;backdrop-filter:none !important;
   font-size:15px !important;font-weight:700 !important;
   border-radius:13px !important;
+  transition:transform .18s,box-shadow .18s !important;
 }
 #loginScreen .google-fallback-btn:hover{
-  background:linear-gradient(135deg,#f59428 0%,#e0751c 100%) !important;
-  box-shadow:0 12px 40px rgba(242,136,32,.62),inset 0 1px 0 rgba(255,255,255,.22) !important;
+  background:linear-gradient(135deg,#f59e3a 0%,#e0751c 100%) !important;
+  box-shadow:0 12px 44px rgba(242,136,32,.68),0 4px 12px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.25) !important;
   transform:translateY(-2px) !important;
 }
+#loginScreen .google-fallback-btn:active{transform:translateY(0) !important;}
 #loginScreen .gfb-google-icon{filter:brightness(0) invert(1) opacity(.92) !important;}
 
-.ls-divider{height:1px;margin:22px 0 18px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);}
-.ls-restrict-row{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(176,207,229,.28);}
-.ls-restrict-row strong{color:rgba(255,255,255,.5);}
+.ls-divider{
+  height:1px;margin:22px 0 18px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .60s both;
+}
+.ls-restrict-row{
+  display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(176,207,229,.26);
+  animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .68s both;
+}
+.ls-restrict-row strong{color:rgba(255,255,255,.46);}
 
 /* ── Responsive ── */
 @media(max-width:900px){
   .lv-left{display:none !important;}
   .lv-right{flex:1 !important;padding:24px 20px !important;}
+  .lv-card-wrap{width:100%;max-width:420px;}
   .ls-card{max-width:none !important;padding:38px 28px 34px !important;}
 }
 @media(max-width:480px){
-  .ls-headline{font-size:30px !important;}
+  .ls-headline{font-size:29px !important;}
   .ls-card{border-radius:22px !important;padding:32px 22px 28px !important;}
 }
 </style>
@@ -6349,107 +6556,254 @@ tbody tr:hover td{
 </head>
 <body>
 
-<!-- LOGIN v6 — Vivid mesh split -->
+<!-- LOGIN v7 — Full animation suite -->
 <div id="loginScreen">
 
-  <!-- LEFT: vivid mesh brand panel -->
+  <!-- LEFT: animated brand panel -->
   <div class="lv-left">
+    <!-- Animated blobs -->
+    <div class="lv-blob lv-blob-1"></div>
+    <div class="lv-blob lv-blob-2"></div>
+    <div class="lv-blob lv-blob-3"></div>
+    <div class="lv-blob lv-blob-4"></div>
+    <!-- Drifting grid -->
+    <div class="lv-grid"></div>
+    <!-- Particle container (filled by JS) -->
+    <div class="lv-particles" id="lvParticles"></div>
+    <!-- Scanline -->
+    <div class="lv-scanline"></div>
 
-    <div class="lv-logo-row">
-      <img class="lv-logo" src="/adit-logo-dark.png" alt="Adit">
-      <span class="lv-brand"><span>Adit</span> Agent Monitor</span>
-    </div>
+    <!-- All content sits above layers -->
+    <div class="lv-content">
 
-    <div class="lv-hero">
-      <div class="lv-eyebrow">T1 CS Stars · Operations Hub</div>
-      <h2 class="lv-h1">Your CS team,<br><em>live &amp; accountable.</em></h2>
-      <p class="lv-sub">Real-time agent presence, break tracking, QA scoring, and performance recognition — all in one place.</p>
+      <div class="lv-logo-row">
+        <img class="lv-logo" src="/adit-logo-dark.png" alt="Adit">
+        <span class="lv-brand"><span>Adit</span> Agent Monitor</span>
+        <div class="lv-live-pill">
+          <span class="lv-live-dot"></span>
+          Live
+        </div>
+      </div>
 
-      <div class="lv-stats">
-        <div class="lv-stat">
-          <div class="lv-stat-val">12</div>
-          <div class="lv-stat-lbl">Agents Online</div>
-          <div class="lv-stat-delta">
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 8V2M2 5l3-3 3 3" stroke="#4ade80" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            All systems live
+      <div class="lv-hero">
+        <div class="lv-eyebrow">T1 CS Stars &nbsp;·&nbsp; Operations Hub</div>
+        <h2 class="lv-h1">Your CS team,<br><em>live &amp; accountable.</em></h2>
+        <p class="lv-sub">Real-time agent presence, break tracking, QA scoring, and performance recognition — all in one place.</p>
+
+        <div class="lv-stats">
+          <div class="lv-stat">
+            <div class="lv-stat-val" data-count="12" data-suffix="">0</div>
+            <div class="lv-stat-lbl">Agents Online</div>
+            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.75"></div></div>
           </div>
-        </div>
-        <div class="lv-stat">
-          <div class="lv-stat-val">96%</div>
-          <div class="lv-stat-lbl">CSAT Score</div>
-          <div class="lv-stat-delta" style="color:#60a5fa;">
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M5 8V2M2 5l3-3 3 3" stroke="#60a5fa" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Up this quarter
+          <div class="lv-stat">
+            <div class="lv-stat-val" data-count="96" data-suffix="%">0%</div>
+            <div class="lv-stat-lbl">CSAT Score</div>
+            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.96"></div></div>
           </div>
-        </div>
-        <div class="lv-stat">
-          <div class="lv-stat-val">88%</div>
-          <div class="lv-stat-lbl">QA Score</div>
-          <div class="lv-stat-delta" style="color:#a78bfa;">
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M8 2l-1.8 3.6L2 6.2l3 2.9-.7 4.1L8 11.2l3.7 1.9-.7-4.1 3-2.9-4.2-.6z" stroke="#a78bfa" stroke-width="1.2" stroke-linejoin="round"/></svg>
-            Q1 2026
+          <div class="lv-stat">
+            <div class="lv-stat-val" data-count="88" data-suffix="%">0%</div>
+            <div class="lv-stat-lbl">QA Score</div>
+            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.88"></div></div>
           </div>
-        </div>
-        <div class="lv-stat">
-          <div class="lv-stat-val">4:02</div>
-          <div class="lv-stat-lbl">Avg AHT</div>
-          <div class="lv-stat-delta" style="color:#fbbf24;">
-            <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="#fbbf24" stroke-width="1.2"/><path d="M5 3v2.2l1.3 1.3" stroke="#fbbf24" stroke-width="1.2" stroke-linecap="round"/></svg>
-            Today
+          <div class="lv-stat">
+            <div class="lv-stat-val" data-count="247" data-suffix="">0</div>
+            <div class="lv-stat-lbl">Tickets Today</div>
+            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.82"></div></div>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="lv-foot">
-      <span class="lv-live-dot"></span>
-      Live data · Updated in real-time
-    </div>
+      <!-- Live activity feed -->
+      <div class="lv-feed">
+        <div class="lv-feed-title">Live Activity</div>
+        <div class="lv-feed-list" id="lvFeed"></div>
+      </div>
 
+      <div class="lv-foot">
+        <span class="lv-live-dot"></span>
+        Live data &nbsp;·&nbsp; Updated in real-time
+      </div>
+
+    </div><!-- /.lv-content -->
   </div><!-- /.lv-left -->
 
-  <!-- RIGHT: auth card -->
+  <!-- RIGHT: rotating-border auth card -->
   <div class="lv-right">
-    <div class="ls-card">
+    <div class="lv-card-wrap">
+      <div class="ls-card">
 
-      <div class="ls-logo-wrap">
-        <img class="ls-logo" src="/adit-logo-dark.png" alt="Adit">
-        <div>
-          <div class="ls-logo-name">Adit Agent Monitor</div>
-          <div class="ls-logo-sub">T1 CS Stars &nbsp;·&nbsp; Operations Hub</div>
+        <div class="ls-logo-wrap">
+          <img class="ls-logo" src="/adit-logo-dark.png" alt="Adit">
+          <div>
+            <div class="ls-logo-name">Adit Agent Monitor</div>
+            <div class="ls-logo-sub">T1 CS Stars &nbsp;·&nbsp; Operations Hub</div>
+          </div>
         </div>
-      </div>
 
-      <h1 class="ls-headline">Welcome back</h1>
-      <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account.</p>
+        <h1 class="ls-headline">Welcome back</h1>
+        <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account.</p>
 
-      <div id="loginMsg"></div>
+        <div id="loginMsg"></div>
 
-      <div class="gfb-wrapper" style="width:100%;">
-        <button id="googleFallbackBtn" class="google-fallback-btn" onclick="startGoogleSignIn()">
-          <div class="gfb-spinner"></div>
-          <svg class="gfb-google-icon" viewBox="0 0 24 24" width="18" height="18">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          <span class="google-btn-label">Continue with Google</span>
-        </button>
-        <div id="googleBtn" class="google-btn-host"></div>
-      </div>
-      <button id="gfbSwitch" class="gfb-switch" style="display:none" onclick="switchGoogleAccount()">Use a different account</button>
+        <div class="ls-btn-wrap">
+          <div class="gfb-wrapper" style="width:100%;">
+            <button id="googleFallbackBtn" class="google-fallback-btn" onclick="startGoogleSignIn()">
+              <div class="gfb-spinner"></div>
+              <svg class="gfb-google-icon" viewBox="0 0 24 24" width="18" height="18">
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+              </svg>
+              <span class="google-btn-label">Continue with Google</span>
+            </button>
+            <div id="googleBtn" class="google-btn-host"></div>
+          </div>
+        </div>
+        <button id="gfbSwitch" class="gfb-switch" style="display:none" onclick="switchGoogleAccount()">Use a different account</button>
 
-      <div class="ls-divider"></div>
-      <div class="ls-restrict-row">
-        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.36;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        <strong>@adit.com</strong> only &nbsp;·&nbsp; Contact Sebastin for access
-      </div>
+        <div class="ls-divider"></div>
+        <div class="ls-restrict-row">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.32;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <strong>@adit.com</strong> only &nbsp;·&nbsp; Contact Sebastin for access
+        </div>
 
-    </div><!-- /.ls-card -->
+      </div><!-- /.ls-card -->
+    </div><!-- /.lv-card-wrap -->
   </div><!-- /.lv-right -->
 
 </div><!-- /#loginScreen -->
+
+<script>
+/* ── Login Page v7 Animations ─────────────────────────────────── */
+(function(){
+  /* Only run when login screen is visible */
+  function lvInit(){
+    var screen = document.getElementById('loginScreen');
+    if(!screen || screen.style.display==='none') return;
+
+    /* ── 1. Particle system ── */
+    var container = document.getElementById('lvParticles');
+    if(container && !container._lv_done){
+      container._lv_done = true;
+      var colors = ['#f28820','#60a5fa','#a78bfa','#34d399','#fbbf24','#fb7185'];
+      for(var i=0;i<32;i++){
+        (function(idx){
+          var p = document.createElement('div');
+          p.className = 'lv-particle';
+          var size = 2 + Math.random()*4;
+          var left = Math.random()*100;
+          var dur  = 8 + Math.random()*14;
+          var del  = Math.random()*12;
+          var dx   = (Math.random()-0.5)*120;
+          var col  = colors[idx % colors.length];
+          p.style.cssText = [
+            'width:'+size+'px','height:'+size+'px',
+            'left:'+left+'%','bottom:0',
+            'background:'+col,
+            'opacity:'+(0.4+Math.random()*0.5),
+            'animation-duration:'+dur+'s',
+            'animation-delay:'+del+'s',
+            '--dx:'+dx+'px'
+          ].join(';');
+          container.appendChild(p);
+        })(i);
+      }
+    }
+
+    /* ── 2. Counter animations ── */
+    var vals = document.querySelectorAll('.lv-stat-val[data-count]');
+    setTimeout(function(){
+      vals.forEach(function(el){
+        var target = parseInt(el.getAttribute('data-count'),10);
+        var suffix = el.getAttribute('data-suffix')||'';
+        var start  = 0;
+        var dur    = 1400;
+        var startT = null;
+        function step(ts){
+          if(!startT) startT=ts;
+          var prog = Math.min((ts-startT)/dur,1);
+          var ease = 1-Math.pow(1-prog,3);
+          el.textContent = Math.round(start + (target-start)*ease) + suffix;
+          if(prog<1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    },600);
+
+    /* ── 3. Progress bar fills ── */
+    setTimeout(function(){
+      document.querySelectorAll('.lv-stat-bar-fill').forEach(function(el){
+        var w = parseFloat(el.style.getPropertyValue('--bar-w')||el.getAttribute('style').match(/--bar-w:([\d.]+)/)?.[1]||'0.8');
+        el.style.transform = 'scaleX('+w+')';
+        el.style.transition = 'transform 1.6s cubic-bezier(.22,1,.36,1)';
+      });
+    },700);
+
+    /* ── 4. Live activity feed ── */
+    var feedEl = document.getElementById('lvFeed');
+    if(feedEl && !feedEl._lv_done){
+      feedEl._lv_done = true;
+      var events = [
+        {agent:'Sarah K.',action:'started break',color:'#fbbf24'},
+        {agent:'Marcus T.',action:'resolved ticket #4821',color:'#34d399'},
+        {agent:'Priya R.',action:'came online',color:'#60a5fa'},
+        {agent:'Jordan L.',action:'escalated #4819',color:'#fb7185'},
+        {agent:'Aisha M.',action:'QA score: 97%',color:'#a78bfa'},
+        {agent:'Dev P.',action:'finished break',color:'#34d399'},
+        {agent:'Nina C.',action:'closed 3 tickets',color:'#f28820'},
+        {agent:'Tom W.',action:'back online',color:'#60a5fa'},
+        {agent:'Kemal A.',action:'ticket #4830 opened',color:'#fbbf24'},
+        {agent:'Lena S.',action:'CSAT: ★★★★★',color:'#34d399'},
+      ];
+
+      function timeAgo(sec){
+        if(sec<60) return sec+'s ago';
+        return Math.floor(sec/60)+'m ago';
+      }
+
+      var shown = [];
+      var pool  = events.slice();
+      var t0    = Date.now();
+
+      function addItem(ev, secAgo){
+        if(feedEl.children.length>=6){
+          var oldest = feedEl.lastElementChild;
+          if(oldest) oldest.remove();
+        }
+        var item = document.createElement('div');
+        item.className = 'lv-feed-item';
+        item.innerHTML =
+          '<span class="lv-feed-dot" style="background:'+ev.color+'"></span>'+
+          '<span><span class="lv-feed-agent">'+ev.agent+'</span>'+ev.action+'</span>'+
+          '<span class="lv-feed-time">'+timeAgo(secAgo)+'</span>';
+        feedEl.insertBefore(item, feedEl.firstChild);
+      }
+
+      /* Pre-fill 4 items */
+      var pre = pool.splice(0,4);
+      pre.forEach(function(ev,i){ addItem(ev, (i+1)*18); });
+
+      /* Auto-add every 4.5 s */
+      setInterval(function(){
+        if(pool.length===0) pool = events.slice();
+        var ev = pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+        addItem(ev, 1);
+      }, 4500);
+    }
+  }
+
+  /* Run on DOMContentLoaded or immediately if already loaded */
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', lvInit);
+  } else {
+    lvInit();
+  }
+  /* Also retry after 800 ms (in case login screen toggles in late) */
+  setTimeout(lvInit, 800);
+})();
+</script>
 <!-- APP -->
 <div id="mainApp">
 <header>
