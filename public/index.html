@@ -8583,6 +8583,10 @@ header{
     <div class="refresh-info">Live stream + 30s fallback &nbsp;&middot;&nbsp; <span id="agent-last-update">Never</span></div>
   </div>
   <div class="agent-shell-page" id="agent-section-breakbot">
+    <!-- Ambient background orbs -->
+    <div class="bb-orb bb-orb-1"></div>
+    <div class="bb-orb bb-orb-2"></div>
+    <div class="bb-orb bb-orb-3"></div>
     <div class="break-history-note preview" id="break-preview-note" style="display:none;">Preview mode is active. Break Bot is hidden for your account, so actions stay read-only here for testing.</div>
     <div class="break-toolbar slim">
       <div class="break-toolbar-group">
@@ -8613,9 +8617,34 @@ header{
         <div class="break-empty">Loading live floor lanes...</div>
       </div>
     </div>
+    <!-- Command Header -->
+    <div class="bb-cmd-header">
+      <div class="bb-bot-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="8" width="18" height="12" rx="3"/>
+          <path d="M8 8V6a4 4 0 0 1 8 0v2"/>
+          <circle cx="9" cy="14" r="1.5" fill="white" stroke="none"/>
+          <circle cx="15" cy="14" r="1.5" fill="white" stroke="none"/>
+          <path d="M9 18h6" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bb-cmd-title">Break Bot Command Pad</div>
+        <div class="bb-cmd-sub">Tap once to log — BRB · Break · Training · QA AUX · Internal</div>
+      </div>
+      <div class="bb-live-dot"></div>
+      <div class="bb-cmd-deco">
+        <div class="bb-deco-bar"></div>
+        <div class="bb-deco-bar"></div>
+        <div class="bb-deco-bar"></div>
+        <div class="bb-deco-bar"></div>
+        <div class="bb-deco-bar"></div>
+        <div class="bb-deco-bar"></div>
+      </div>
+    </div>
     <div class="break-layout">
       <div class="break-self-shell">
-        <div class="card">
+        <div class="card bb-scan-host">
           <div class="card-hdr">
             <span class="card-title">Break Bot</span>
             <span class="chip" id="break-agent-chat-chip">Chat space pending</span>
@@ -8634,7 +8663,9 @@ header{
 
             <!-- SHIFT -->
             <div class="bb-pad-row r-shift">
-              <div class="bb-cat-lbl">Shift</div>
+              <div class="bb-cat-lbl">Shift
+        <svg class="bb-cat-art" width="28" height="28" viewBox="0 0 24 24" fill="rgba(74,222,128,.6)"><path d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.81 6-4.72 7.28L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.95-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5V2.05z"/></svg>
+      </div>
               <button class="break-action bb-act bb-act-out" data-break-action="LOGGED_IN" onclick="sendBreakAction('LOGGED_IN',this)">
                 <div class="bb-act-top">
                   <div class="bb-act-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 8l6 4-6 4V8zm2-6C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg></div>
@@ -8655,7 +8686,9 @@ header{
 
             <!-- BRB -->
             <div class="bb-pad-row r-brb">
-              <div class="bb-cat-lbl">BRB</div>
+              <div class="bb-cat-lbl">BRB
+        <svg class="bb-cat-art" width="28" height="28" viewBox="0 0 24 24" fill="rgba(251,191,36,.6)"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      </div>
               <button class="break-action bb-act bb-act-out" data-break-action="BRB_OUT" onclick="sendBreakAction('BRB_OUT',this)">
                 <div class="bb-act-top">
                   <div class="bb-act-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg></div>
@@ -8676,7 +8709,9 @@ header{
 
             <!-- BREAK -->
             <div class="bb-pad-row r-break">
-              <div class="bb-cat-lbl">Break</div>
+              <div class="bb-cat-lbl">Break
+        <svg class="bb-cat-art" width="28" height="28" viewBox="0 0 24 24" fill="rgba(248,113,113,.6)"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+      </div>
               <button class="break-action bb-act bb-act-out" data-break-action="BREAK_OUT" onclick="sendBreakAction('BREAK_OUT',this)">
                 <div class="bb-act-top">
                   <div class="bb-act-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></div>
@@ -8697,7 +8732,9 @@ header{
 
             <!-- TRAINING -->
             <div class="bb-pad-row r-train">
-              <div class="bb-cat-lbl">Training</div>
+              <div class="bb-cat-lbl">Train
+        <svg class="bb-cat-art" width="28" height="28" viewBox="0 0 24 24" fill="rgba(167,139,250,.6)"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+      </div>
               <button class="break-action bb-act bb-act-out" data-break-action="TRAINING_OUT" onclick="sendBreakAction('TRAINING_OUT',this)">
                 <div class="bb-act-top">
                   <div class="bb-act-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg></div>
@@ -8718,7 +8755,9 @@ header{
 
             <!-- QA AUX -->
             <div class="bb-pad-row r-qa">
-              <div class="bb-cat-lbl">QA AUX</div>
+              <div class="bb-cat-lbl">QA
+        <svg class="bb-cat-art" width="28" height="28" viewBox="0 0 24 24" fill="rgba(34,211,238,.6)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+      </div>
               <button class="break-action bb-act bb-act-out" data-break-action="QA_SESSION_OUT" onclick="sendBreakAction('QA_SESSION_OUT',this)">
                 <div class="bb-act-top">
                   <div class="bb-act-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
@@ -8739,7 +8778,9 @@ header{
 
             <!-- INTERNAL CALLS -->
             <div class="bb-pad-row r-calls">
-              <div class="bb-cat-lbl">Internal</div>
+              <div class="bb-cat-lbl">Calls
+        <svg class="bb-cat-art" width="28" height="28" viewBox="0 0 24 24" fill="rgba(251,146,60,.6)"><path d="M20 15.5c-1.25 0-2.45-.2-3.57-.57-.35-.11-.74-.03-1.02.24l-2.2 2.2c-2.83-1.44-5.15-3.75-6.59-6.59l2.2-2.21c.28-.26.36-.65.25-1C8.7 6.45 8.5 5.25 8.5 4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1 0 9.39 7.61 17 17 17 .55 0 1-.45 1-1v-3.5c0-.55-.45-1-1-1z"/></svg>
+      </div>
               <button class="break-action bb-act bb-act-out" data-break-action="INTERNAL_CALL_OUT" onclick="sendBreakAction('INTERNAL_CALL_OUT',this)">
                 <div class="bb-act-top">
                   <div class="bb-act-ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></div>
@@ -11245,5 +11286,264 @@ window.addEventListener('load',()=>{
   }
 });
 </script>
+
+<style id="bb-anim-v1">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Animations + Visuals v1
+   Floating orbs · neon ring · scan line · glow labels · SVG art
+══════════════════════════════════════════════════════════════ */
+
+/* ── Floating ambient orbs in page bg ──────────────────────── */
+#agent-section-breakbot .bb-orb {
+  position: absolute !important;
+  border-radius: 50% !important;
+  pointer-events: none !important;
+  filter: blur(70px) !important;
+  z-index: 0 !important;
+  animation: bbOrbFloat var(--orb-dur, 18s) ease-in-out infinite !important;
+  opacity: 0 !important;
+  animation-fill-mode: forwards !important;
+  animation-delay: var(--orb-delay, 0s) !important;
+}
+#agent-section-breakbot .bb-orb-1 {
+  width: 320px !important; height: 320px !important;
+  background: radial-gradient(circle, rgba(99,102,241,.22) 0%, transparent 70%) !important;
+  top: -80px !important; left: -60px !important;
+  --orb-dur: 20s !important;
+}
+#agent-section-breakbot .bb-orb-2 {
+  width: 260px !important; height: 260px !important;
+  background: radial-gradient(circle, rgba(6,182,212,.18) 0%, transparent 70%) !important;
+  bottom: 40px !important; right: 30px !important;
+  --orb-dur: 24s !important; --orb-delay: -8s !important;
+}
+#agent-section-breakbot .bb-orb-3 {
+  width: 200px !important; height: 200px !important;
+  background: radial-gradient(circle, rgba(168,85,247,.14) 0%, transparent 70%) !important;
+  top: 40% !important; left: 40% !important;
+  --orb-dur: 30s !important; --orb-delay: -14s !important;
+}
+@keyframes bbOrbFloat {
+  0%   { opacity: .6; transform: translate(0, 0) scale(1); }
+  25%  { transform: translate(40px, -30px) scale(1.08); }
+  50%  { opacity: 1; transform: translate(-20px, 40px) scale(.92); }
+  75%  { transform: translate(30px, 20px) scale(1.04); }
+  100% { opacity: .6; transform: translate(0, 0) scale(1); }
+}
+
+/* ── All content sits above orbs ───────────────────────────── */
+#agent-section-breakbot .card,
+#agent-section-breakbot .break-toolbar,
+#agent-section-breakbot .break-history-note,
+#agent-section-breakbot .break-layout {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* ── Neon animated border on enabled buttons ──────────────── */
+#agent-section-breakbot .bb-act:not(:disabled) {
+  animation: bbBtnIn .5s cubic-bezier(.22,1,.36,1) both, bbNeonIdle 4s ease-in-out infinite !important;
+}
+@keyframes bbNeonIdle {
+  0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+  50%      { box-shadow: 0 2px 16px rgba(0,0,0,.4), 0 0 12px -4px var(--bbt-accent, rgba(255,255,255,.15)); }
+}
+
+/* ── Active-category label glow pulse ───────────────────────── */
+#agent-section-breakbot .bb-cat-lbl {
+  animation: bbCatGlow 3s ease-in-out infinite !important;
+}
+@keyframes bbCatGlow {
+  0%,100% { opacity: .75; text-shadow: none; }
+  50%      { opacity: 1; text-shadow: 0 0 10px var(--cat, rgba(255,255,255,.3)); }
+}
+
+/* ── Scan line across the action panel ──────────────────────── */
+#agent-section-breakbot .bb-scan-host {
+  position: relative !important;
+  overflow: hidden !important;
+}
+#agent-section-breakbot .bb-scan-host::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important; right: 0 !important;
+  height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(99,102,241,.4), rgba(6,182,212,.4), transparent) !important;
+  top: 0 !important;
+  animation: bbScanLine 7s linear infinite !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+}
+@keyframes bbScanLine {
+  0%   { top: -2px; opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: .6; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* ── Stats pill glow on "alert" state ───────────────────────── */
+#agent-section-breakbot .break-stat.alert {
+  animation: bbStatAlert 2s ease-in-out infinite !important;
+}
+@keyframes bbStatAlert {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248,113,113,.0); }
+  50%      { box-shadow: 0 0 0 4px rgba(248,113,113,.2); }
+}
+
+/* ── BB command header ──────────────────────────────────────── */
+#agent-section-breakbot .bb-cmd-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 12px 18px 10px !important;
+  margin-bottom: 10px !important;
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 14px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+#agent-section-breakbot .bb-cmd-header::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(90deg,
+    rgba(99,102,241,.06) 0%,
+    rgba(6,182,212,.04) 50%,
+    rgba(168,85,247,.05) 100%) !important;
+  animation: bbHeaderShimmer 6s ease-in-out infinite !important;
+}
+@keyframes bbHeaderShimmer {
+  0%,100% { opacity: .5; }
+  50%      { opacity: 1; }
+}
+
+/* Bot icon circle */
+#agent-section-breakbot .bb-bot-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  box-shadow: 0 0 0 2px rgba(99,102,241,.3), 0 0 20px rgba(99,102,241,.25) !important;
+  animation: bbBotPulse 2.5s ease-in-out infinite !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+@keyframes bbBotPulse {
+  0%,100% { box-shadow: 0 0 0 2px rgba(99,102,241,.3), 0 0 20px rgba(99,102,241,.25); }
+  50%      { box-shadow: 0 0 0 4px rgba(99,102,241,.15), 0 0 32px rgba(6,182,212,.4); }
+}
+
+/* Header text */
+#agent-section-breakbot .bb-cmd-title {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #e8edf5 !important;
+  letter-spacing: -.01em !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+#agent-section-breakbot .bb-cmd-sub {
+  font-size: 10px !important;
+  color: rgba(148,163,184,.55) !important;
+  margin-top: 1px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Live dot */
+#agent-section-breakbot .bb-live-dot {
+  width: 8px !important; height: 8px !important;
+  border-radius: 50% !important;
+  background: #22c55e !important;
+  box-shadow: 0 0 0 0 rgba(34,197,94,.5) !important;
+  animation: bbLivePing 1.8s ease-out infinite !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+@keyframes bbLivePing {
+  0%   { box-shadow: 0 0 0 0 rgba(34,197,94,.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(34,197,94,.0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,.0); }
+}
+
+/* Decorative right side of header */
+#agent-section-breakbot .bb-cmd-deco {
+  margin-left: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+#agent-section-breakbot .bb-deco-bar {
+  width: 3px !important;
+  border-radius: 2px !important;
+  background: linear-gradient(180deg, #4f46e5, #06b6d4) !important;
+  animation: bbDecoBar 1.5s ease-in-out infinite alternate !important;
+}
+#agent-section-breakbot .bb-deco-bar:nth-child(1) { height: 18px !important; animation-delay: 0s !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(2) { height: 28px !important; animation-delay: .15s !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(3) { height: 22px !important; animation-delay: .3s !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(4) { height: 32px !important; animation-delay: .45s !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(5) { height: 20px !important; animation-delay: .6s !important; }
+#agent-section-breakbot .bb-deco-bar:nth-child(6) { height: 26px !important; animation-delay: .75s !important; }
+@keyframes bbDecoBar {
+  from { opacity: .35; transform: scaleY(.7); }
+  to   { opacity: 1; transform: scaleY(1); }
+}
+
+/* Category decorative mini-art */
+#agent-section-breakbot .bb-cat-art {
+  position: absolute !important;
+  right: 4px !important;
+  bottom: 4px !important;
+  opacity: .18 !important;
+  pointer-events: none !important;
+}
+
+/* ── Hero card additions ─────────────────────────────────────── */
+#agent-section-breakbot .bb-hero-stat-row {
+  display: flex !important;
+  gap: 6px !important;
+  margin-top: 12px !important;
+}
+#agent-section-breakbot .bb-hero-stat {
+  flex: 1 !important;
+  background: rgba(255,255,255,.04) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 10px !important;
+  padding: 8px 10px !important;
+  text-align: center !important;
+  animation: bbStatIn .5s cubic-bezier(.22,1,.36,1) both !important;
+}
+#agent-section-breakbot .bb-hero-stat .bhs-n {
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  color: #e8edf5 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  line-height: 1 !important;
+}
+#agent-section-breakbot .bb-hero-stat .bhs-l {
+  font-size: 8.5px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+  color: rgba(148,163,184,.5) !important;
+  margin-top: 3px !important;
+}
+
+/* ── Particle CSS for category labels ───────────────────────── */
+@keyframes bbParticleUp {
+  0%   { transform: translateY(0) scale(1); opacity: .8; }
+  100% { transform: translateY(-40px) scale(0); opacity: 0; }
+}
+</style>
+
 </body>
 </html>
