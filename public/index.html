@@ -10113,14 +10113,13 @@ function buildBreakFeedRow(event, compact=false){
 }
 
 function buildBreakLaneCard(title, subtitle, cls, rows){
-  const names = rows.slice(0, 6).map(row => {
+  const names = rows.map(row => {
     const durationText = fmt(row.currentLaneSeconds || 0);
     const titleText = row.since
       ? ('Since ' + toTime(row.since) + ' · Live for ' + durationText + ' · ' + breakAlertSummary(row))
       : breakAlertSummary(row);
     return '<span class="break-lane-chip '+(row.alerts?.hasAlert?'alert':'')+'" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
   }).join('');
-  const extra = rows.length > 6 ? '<span class="break-lane-chip more">+'+(rows.length - 6)+' more</span>' : '';
   const alertCount = rows.filter(row => row.alerts?.hasAlert).length;
   return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'">'+
     '<div class="break-lane-head">'+
@@ -10129,7 +10128,7 @@ function buildBreakLaneCard(title, subtitle, cls, rows){
     '</div>'+
     (alertCount?'<div class="break-alert-tag" style="margin-top:10px;">'+alertCount+' threshold '+(alertCount===1?'alert':'alerts')+'</div>':'')+
     (rows.length
-      ? '<div class="break-lane-list">'+names+extra+'</div>'
+      ? '<div class="break-lane-list">'+names+'</div>'
       : '<div class="break-lane-empty">No agents in this lane right now.</div>')+
   '</div>';
 }
@@ -13044,5 +13043,36 @@ window.addEventListener('load',()=>{
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+}
+</style>
+
+<style id="bb-lane-dynamic">
+/* ── Dynamic self-sizing lane cards ─────────────────────────── */
+#agent-section-breakbot .break-lane-board {
+  align-items: flex-start !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+}
+
+/* Each card takes equal width but grows vertically with content */
+#agent-section-breakbot .break-lane-card {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  height: auto !important;
+  align-self: flex-start !important;
+}
+
+/* Agent chips wrap naturally */
+#agent-section-breakbot .break-lane-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 8px !important;
+}
+
+#agent-section-breakbot .break-lane-chip {
+  white-space: nowrap !important;
+  font-size: 10.5px !important;
 }
 </style>
