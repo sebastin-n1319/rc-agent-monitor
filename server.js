@@ -10,7 +10,8 @@ const {
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
-  getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote
+  getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote,
+  createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -18,13 +19,12 @@ const {
 } = require('./rc-service');
 
 const app = express();
-const COOKIE_SECRET = process.env.COOKIE_SECRET || crypto.randomBytes(32).toString('hex');
 const SESSION_COOKIE = 'rcAuthSession';
-const SESSION_MAX_AGE = 12 * 60 * 60; // 12 hours in seconds
+const SESSION_MAX_AGE_S = 12 * 60 * 60; // 12 hours in seconds
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
-app.use(cookieParser(COOKIE_SECRET));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: true,
@@ -556,55 +556,64 @@ app.get('/api/role-check', async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ── Server-side session via signed HTTP cookie ───────────────────────────────
-// POST /api/session  — called after Google sign-in; stores email+role in a cookie
+// ── Server-side sessions via DB token + plain cookie ─────────────────────────
+// Token is a 32-byte random hex string stored in app_sessions table.
+// The cookie holds only the token — no secrets, survives server restarts.
+
+function setCookieToken(res, token) {
+  res.cookie(SESSION_COOKIE, token, {
+    maxAge: SESSION_MAX_AGE_S * 1000,
+    httpOnly: false,   // JS must read it to pass back on same-origin fetches
+    secure: false,     // works on both HTTP and HTTPS (Railway = HTTPS)
+    sameSite: 'lax',
+    path: '/'
+  });
+}
+
+// POST /api/session — called after Google sign-in; creates DB session + sets cookie
 app.post('/api/session', async (req, res) => {
   const { email, name, picture } = req.body || {};
   if (!email) return res.status(400).json({ success: false, error: 'email required' });
   try {
     const settings = await getRoleSettingsForEmail(email);
-    const role = settings?.role || 'agent';
-    const breakbotEnabled = settings ? settings.breakbotEnabled : true;
-    const payload = JSON.stringify({ email, name: name || '', picture: picture || '', role, breakbotEnabled: breakbotEnabled ? '1' : '0' });
-    res.cookie(SESSION_COOKIE, payload, {
-      maxAge: SESSION_MAX_AGE * 1000,
-      httpOnly: false,   // must be readable by client JS to restore the session
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'lax',
-      signed: true,
-      path: '/'
-    });
-    res.json({ success: true, role, breakbotEnabled });
+    if (!settings) return res.status(403).json({ success: false, error: 'Not authorised' });
+    const token = crypto.randomBytes(32).toString('hex');
+    await createAppSession(token, email, name || '', picture || '');
+    setCookieToken(res, token);
+    res.json({ success: true, role: settings.role, breakbotEnabled: settings.breakbotEnabled !== false });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/session  — on page load, check if a valid session cookie exists
+// GET /api/session — on page load, check cookie token in DB
 app.get('/api/session', async (req, res) => {
   try {
-    const raw = req.signedCookies[SESSION_COOKIE];
-    if (!raw) return res.json({ success: false });
-    const s = JSON.parse(raw);
-    // Re-validate role from DB in case it changed
-    const settings = await getRoleSettingsForEmail(s.email);
-    if (!settings) return res.json({ success: false }); // user removed
-    const role = settings.role || 'agent';
-    const breakbotEnabled = settings.breakbotEnabled !== false;
-    // Refresh cookie expiry (rolling session)
-    const payload = JSON.stringify({ email: s.email, name: s.name || '', picture: s.picture || '', role, breakbotEnabled: breakbotEnabled ? '1' : '0' });
-    res.cookie(SESSION_COOKIE, payload, {
-      maxAge: SESSION_MAX_AGE * 1000,
-      httpOnly: false,
-      secure: process.env.NODE_ENV !== 'development',
-      sameSite: 'lax',
-      signed: true,
-      path: '/'
+    const token = req.cookies[SESSION_COOKIE];
+    if (!token) return res.json({ success: false });
+    const session = await getAppSession(token); // also rolls expiry
+    if (!session) return res.json({ success: false });
+    // Re-validate role from DB
+    const settings = await getRoleSettingsForEmail(session.email);
+    if (!settings) {
+      await deleteAppSession(token);
+      res.clearCookie(SESSION_COOKIE, { path: '/' });
+      return res.json({ success: false });
+    }
+    setCookieToken(res, token); // refresh cookie max-age
+    res.json({
+      success: true,
+      email: session.email,
+      name: session.name,
+      picture: session.picture,
+      role: settings.role,
+      breakbotEnabled: settings.breakbotEnabled !== false
     });
-    res.json({ success: true, email: s.email, name: s.name, picture: s.picture, role, breakbotEnabled });
   } catch(e) { res.json({ success: false }); }
 });
 
-// DELETE /api/session  — called on logout
-app.delete('/api/session', (req, res) => {
+// DELETE /api/session — called on logout
+app.delete('/api/session', async (req, res) => {
+  const token = req.cookies[SESSION_COOKIE];
+  if (token) await deleteAppSession(token).catch(() => {});
   res.clearCookie(SESSION_COOKIE, { path: '/' });
   res.json({ success: true });
 });
@@ -614,6 +623,8 @@ async function startScheduler() {
   cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });
   // Prune call logs older than 7 days at 1am IST daily
   cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
+  // Prune expired sessions daily
+  cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 

@@ -357,6 +357,14 @@ async function initDB() {
     added_by TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_agent_notes_agent ON agent_notes(agent_id, created_at DESC)`);
+  await run(`CREATE TABLE IF NOT EXISTS app_sessions (
+    token TEXT PRIMARY KEY,
+    email TEXT NOT NULL,
+    name TEXT,
+    picture TEXT,
+    expires_at INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_app_sessions_email ON app_sessions(email)`);
 
   // Migrations
   for (const sql of [
@@ -1029,12 +1037,44 @@ async function deleteAgentNote(id) {
   return run(`DELETE FROM agent_notes WHERE id=?`, [id]);
 }
 
+// APP SESSIONS — DB-backed tokens (no shared secret; survives server restarts)
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+
+function createAppSession(token, email, name, picture){
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  return run(
+    `INSERT OR REPLACE INTO app_sessions (token, email, name, picture, expires_at) VALUES (?,?,?,?,?)`,
+    [token, email, name || '', picture || '', expiresAt]
+  );
+}
+
+async function getAppSession(token){
+  const row = await get(`SELECT * FROM app_sessions WHERE token=?`, [token]);
+  if(!row) return null;
+  if(row.expires_at < Date.now()){
+    run(`DELETE FROM app_sessions WHERE token=?`, [token]).catch(()=>{});
+    return null;
+  }
+  // Rolling expiry — extend on each use
+  run(`UPDATE app_sessions SET expires_at=? WHERE token=?`, [Date.now() + SESSION_TTL_MS, token]).catch(()=>{});
+  return row;
+}
+
+function deleteAppSession(token){
+  return run(`DELETE FROM app_sessions WHERE token=?`, [token]);
+}
+
+function pruneExpiredSessions(){
+  return run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
+}
+
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
+  createAppSession,getAppSession,deleteAppSession,pruneExpiredSessions,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail
