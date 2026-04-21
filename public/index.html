@@ -14292,3 +14292,274 @@ header::before {
   100% { transform: translate(-50%,-50%) scale(2);  opacity: 0; }
 }
 </style>
+
+<style id="bb-hero-redesign">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT HERO CARD — Full Redesign v2
+   Immersive dark · animated particles · interactive cards
+══════════════════════════════════════════════════════════════ */
+
+/* ── Hero card container ─────────────────────────────────────── */
+#agent-section-breakbot .break-hero-card {
+  background: linear-gradient(145deg, rgba(6,8,20,.98) 0%, rgba(10,12,28,.98) 60%, rgba(14,8,30,.98) 100%) !important;
+  border: 1px solid rgba(99,102,241,.2) !important;
+  border-radius: 20px !important;
+  padding: 28px !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Animated background glow blobs */
+#agent-section-breakbot .break-hero-card::before {
+  content: '' !important;
+  position: absolute !important;
+  width: 400px !important; height: 400px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(99,102,241,.08) 0%, transparent 70%) !important;
+  top: -100px !important; left: -100px !important;
+  animation: heroBlob1 8s ease-in-out infinite alternate !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+#agent-section-breakbot .break-hero-card::after {
+  content: '' !important;
+  position: absolute !important;
+  width: 300px !important; height: 300px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(242,136,32,.07) 0%, transparent 70%) !important;
+  bottom: -80px !important; right: 200px !important;
+  animation: heroBlob2 6s ease-in-out infinite alternate !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+@keyframes heroBlob1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.2); } }
+@keyframes heroBlob2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-30px,-20px) scale(1.15); } }
+
+/* ── Grid layout ─────────────────────────────────────────────── */
+#agent-section-breakbot .break-hero-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 300px !important;
+  gap: 24px !important;
+  align-items: center !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* ── Kicker ──────────────────────────────────────────────────── */
+#agent-section-breakbot .break-hero-kicker {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: .15em !important;
+  text-transform: uppercase !important;
+  color: rgba(242,136,32,.9) !important;
+  background: rgba(242,136,32,.08) !important;
+  border: 1px solid rgba(242,136,32,.2) !important;
+  border-radius: 20px !important;
+  padding: 3px 10px !important;
+  margin-bottom: 12px !important;
+}
+#agent-section-breakbot .break-hero-kicker::before {
+  content: '' !important;
+  width: 6px !important; height: 6px !important;
+  border-radius: 50% !important;
+  background: #f28820 !important;
+  box-shadow: 0 0 6px #f28820 !important;
+  animation: kickerPing 1.5s ease-out infinite !important;
+}
+@keyframes kickerPing {
+  0%  { box-shadow: 0 0 0 0 rgba(242,136,32,.8); }
+  70% { box-shadow: 0 0 0 6px rgba(242,136,32,.0); }
+  100%{ box-shadow: 0 0 0 0 rgba(242,136,32,.0); }
+}
+
+/* ── Headline ────────────────────────────────────────────────── */
+#agent-section-breakbot .break-hero-title {
+  font-size: 30px !important;
+  font-weight: 900 !important;
+  line-height: 1.1 !important;
+  letter-spacing: -.03em !important;
+  color: #f8fafc !important;
+  margin-bottom: 10px !important;
+}
+#agent-section-breakbot .break-hero-title span {
+  background: linear-gradient(90deg, #f28820, #fbbf24) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* ── Copy ────────────────────────────────────────────────────── */
+#agent-section-breakbot .break-command-copy {
+  font-size: 12px !important;
+  color: rgba(148,163,184,.65) !important;
+  line-height: 1.7 !important;
+  margin-bottom: 20px !important;
+  max-width: 380px !important;
+}
+
+/* ── Command top ─────────────────────────────────────────────── */
+#agent-section-breakbot .break-command-top {
+  margin-bottom: 0 !important;
+  align-items: flex-start !important;
+}
+
+/* ── Protocol pills — 2x2 interactive grid ───────────────────── */
+#agent-section-breakbot .break-protocol {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+}
+#agent-section-breakbot .break-protocol-pill {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 5px !important;
+  padding: 12px 14px !important;
+  border-radius: 12px !important;
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-left: 3px solid !important;
+  position: relative !important;
+  overflow: hidden !important;
+  cursor: default !important;
+  transition: background .2s, transform .2s, box-shadow .2s !important;
+}
+#agent-section-breakbot .break-protocol-pill:hover {
+  background: rgba(255,255,255,.06) !important;
+  transform: translateY(-2px) !important;
+}
+/* Shimmer on hover */
+#agent-section-breakbot .break-protocol-pill::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.07) 50%, transparent 70%) !important;
+  transform: translateX(-100%) !important;
+  transition: transform .4s !important;
+}
+#agent-section-breakbot .break-protocol-pill:hover::after {
+  transform: translateX(100%) !important;
+}
+#agent-section-breakbot .break-protocol-pill.out  { border-left-color: #f43f5e !important; }
+#agent-section-breakbot .break-protocol-pill.in   { border-left-color: #22c55e !important; }
+#agent-section-breakbot .break-protocol-pill.chat { border-left-color: #06b6d4 !important; }
+#agent-section-breakbot .break-protocol-pill.log  { border-left-color: #a855f7 !important; }
+#agent-section-breakbot .break-protocol-pill.out:hover  { box-shadow: 0 4px 20px rgba(244,63,94,.15) !important; }
+#agent-section-breakbot .break-protocol-pill.in:hover   { box-shadow: 0 4px 20px rgba(34,197,94,.15) !important; }
+#agent-section-breakbot .break-protocol-pill.chat:hover { box-shadow: 0 4px 20px rgba(6,182,212,.15) !important; }
+#agent-section-breakbot .break-protocol-pill.log:hover  { box-shadow: 0 4px 20px rgba(168,85,247,.15) !important; }
+
+#agent-section-breakbot .break-protocol-pill span {
+  font-size: 8.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  flex: none !important;
+  width: auto !important;
+}
+#agent-section-breakbot .break-protocol-pill.out  span { color: #f43f5e !important; }
+#agent-section-breakbot .break-protocol-pill.in   span { color: #22c55e !important; }
+#agent-section-breakbot .break-protocol-pill.chat span { color: #06b6d4 !important; }
+#agent-section-breakbot .break-protocol-pill.log  span { color: #a855f7 !important; }
+#agent-section-breakbot .break-protocol-pill strong {
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: rgba(226,232,240,.85) !important;
+  line-height: 1.4 !important;
+}
+
+/* ── Signal board — horizontal row of flow cards ─────────────── */
+#agent-section-breakbot .break-signal-board {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+#agent-section-breakbot .break-signal-card {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  background: rgba(255,255,255,.02) !important;
+  border: 1px solid rgba(255,255,255,.06) !important;
+  border-left: 3px solid rgba(99,102,241,.5) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: background .2s, transform .15s !important;
+}
+#agent-section-breakbot .break-signal-card:hover {
+  background: rgba(99,102,241,.06) !important;
+  transform: translateX(3px) !important;
+  border-left-color: rgba(99,102,241,.9) !important;
+}
+#agent-section-breakbot .break-signal-card:nth-child(2) {
+  border-left-color: rgba(6,182,212,.5) !important;
+}
+#agent-section-breakbot .break-signal-card:nth-child(2):hover {
+  background: rgba(6,182,212,.06) !important;
+  border-left-color: rgba(6,182,212,.9) !important;
+}
+#agent-section-breakbot .break-signal-card:nth-child(3) {
+  border-left-color: rgba(242,136,32,.5) !important;
+}
+#agent-section-breakbot .break-signal-card:nth-child(3):hover {
+  background: rgba(242,136,32,.06) !important;
+  border-left-color: rgba(242,136,32,.9) !important;
+}
+#agent-section-breakbot .break-signal-card span {
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+  color: rgba(148,163,184,.6) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  width: 90px !important;
+  display: block !important;
+  margin-bottom: 0 !important;
+}
+#agent-section-breakbot .break-signal-card strong {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: rgba(226,232,240,.8) !important;
+  line-height: 1.4 !important;
+}
+
+/* ── Chat chip ───────────────────────────────────────────────── */
+#agent-section-breakbot #break-hero-chat-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  background: rgba(6,182,212,.1) !important;
+  border: 1px solid rgba(6,182,212,.3) !important;
+  color: #67e8f9 !important;
+  white-space: nowrap !important;
+  animation: chatChipPulse 3s ease-in-out infinite !important;
+}
+@keyframes chatChipPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(6,182,212,.3); }
+  50%     { box-shadow: 0 0 0 5px rgba(6,182,212,.0); }
+}
+
+/* Stagger protocol pill entrance */
+#agent-section-breakbot .break-protocol-pill:nth-child(1) { animation: pillIn .4s ease .1s both !important; }
+#agent-section-breakbot .break-protocol-pill:nth-child(2) { animation: pillIn .4s ease .2s both !important; }
+#agent-section-breakbot .break-protocol-pill:nth-child(3) { animation: pillIn .4s ease .3s both !important; }
+#agent-section-breakbot .break-protocol-pill:nth-child(4) { animation: pillIn .4s ease .4s both !important; }
+@keyframes pillIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+#agent-section-breakbot .break-signal-card:nth-child(1) { animation: signalIn .4s ease .5s both !important; }
+#agent-section-breakbot .break-signal-card:nth-child(2) { animation: signalIn .4s ease .6s both !important; }
+#agent-section-breakbot .break-signal-card:nth-child(3) { animation: signalIn .4s ease .7s both !important; }
+@keyframes signalIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: none; }
+}
+</style>
