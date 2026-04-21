@@ -13933,3 +13933,203 @@ header::before {
   padding-top: 56px !important;
 }
 </style>
+
+<style id="bb-floor-rail">
+/* ══════════════════════════════════════════════════════════════
+   LIVE FLOOR SIGNAL — Status Rail redesign
+   Unified panel · horizontal swimlanes · no wasted space
+══════════════════════════════════════════════════════════════ */
+
+/* ── Outer card: slim header ─────────────────────────────────── */
+#agent-section-breakbot .card:has(.break-lane-board) {
+  padding: 0 !important;
+  background: rgba(255,255,255,.025) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+/* ── Card header bar ─────────────────────────────────────────── */
+#agent-section-breakbot .card:has(.break-lane-board) .card-hdr {
+  padding: 10px 16px !important;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(255,255,255,.05) !important;
+  background: rgba(255,255,255,.02) !important;
+}
+
+/* ── Hide the Floor view callout — redundant ─────────────────── */
+#agent-section-breakbot .break-callout {
+  display: none !important;
+}
+
+/* ── Lane board: vertical stack of rows ─────────────────────── */
+#agent-section-breakbot .break-lane-board {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* ── Each lane: one horizontal row ─────────────────────────── */
+#agent-section-breakbot .break-lane-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 10px 16px !important;
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  width: 100% !important;
+  flex: none !important;
+  flex-basis: auto !important;
+  min-width: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255,255,255,.04) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  animation: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  transition: background .15s !important;
+}
+#agent-section-breakbot .break-lane-card:last-child {
+  border-bottom: none !important;
+}
+#agent-section-breakbot .break-lane-card:hover {
+  background: rgba(255,255,255,.03) !important;
+  transform: none !important;
+}
+
+/* ── Colored left accent strip ──────────────────────────────── */
+#agent-section-breakbot .break-lane-card::before {
+  content: '' !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  width: 3px !important;
+  height: 28px !important;
+  border-radius: 3px !important;
+  background: currentColor !important;
+  box-shadow: 0 0 8px currentColor !important;
+  opacity: .9 !important;
+  top: auto !important; left: auto !important;
+  bottom: auto !important;
+  animation: none !important;
+}
+#agent-section-breakbot .break-lane-card::after {
+  display: none !important;
+}
+
+/* ── Lane head: name block, fixed width ─────────────────────── */
+#agent-section-breakbot .break-lane-head {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+  width: 200px !important;
+}
+#agent-section-breakbot .break-lane-kicker {
+  display: none !important;
+}
+#agent-section-breakbot .break-lane-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  margin-top: 0 !important;
+}
+#agent-section-breakbot .break-lane-sub {
+  font-size: 10px !important;
+  white-space: nowrap !important;
+  opacity: .55 !important;
+  margin-top: 2px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* ── Count pill ─────────────────────────────────────────────── */
+#agent-section-breakbot .break-lane-count {
+  flex-shrink: 0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  min-width: 26px !important;
+  height: 26px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 7px !important;
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.09) !important;
+  padding: 0 6px !important;
+  color: inherit !important;
+}
+
+/* ── Alert tag ──────────────────────────────────────────────── */
+#agent-section-breakbot .break-alert-tag {
+  flex-shrink: 0 !important;
+  font-size: 9.5px !important;
+  padding: 2px 7px !important;
+  margin: 0 !important;
+  border-radius: 20px !important;
+  white-space: nowrap !important;
+}
+
+/* ── Agent chip list: fills remaining space ─────────────────── */
+#agent-section-breakbot .break-lane-list {
+  flex: 1 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  align-items: center !important;
+}
+#agent-section-breakbot .break-lane-chip {
+  font-size: 10.5px !important;
+  white-space: nowrap !important;
+  padding: 3px 9px !important;
+  border-radius: 5px !important;
+}
+#agent-section-breakbot .break-lane-empty {
+  font-size: 10.5px !important;
+  opacity: .35 !important;
+  margin: 0 !important;
+  flex: 1 !important;
+}
+
+/* ── Per-lane accent colors ─────────────────────────────────── */
+#agent-section-breakbot .break-lane-card.avail  { color: #22c55e !important; }
+#agent-section-breakbot .break-lane-card.brb    { color: #f59e0b !important; }
+#agent-section-breakbot .break-lane-card.break  { color: #f43f5e !important; }
+#agent-section-breakbot .break-lane-card.aux    { color: #a855f7 !important; }
+#agent-section-breakbot .break-lane-card.internal { color: #3b82f6 !important; }
+
+/* Reset text color for content inside */
+#agent-section-breakbot .break-lane-card .break-lane-title,
+#agent-section-breakbot .break-lane-card .break-lane-sub,
+#agent-section-breakbot .break-lane-card .break-lane-chip,
+#agent-section-breakbot .break-lane-card .break-lane-empty {
+  color: inherit !important;
+  filter: brightness(2.5) saturate(.4) !important;
+}
+#agent-section-breakbot .break-lane-card .break-lane-chip {
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  filter: none !important;
+  color: #cbd5e1 !important;
+}
+#agent-section-breakbot .break-lane-card .break-lane-title {
+  filter: brightness(3) saturate(.3) !important;
+  color: #f1f5f9 !important;
+}
+#agent-section-breakbot .break-lane-card .break-lane-sub {
+  filter: none !important;
+  color: rgba(148,163,184,.55) !important;
+}
+#agent-section-breakbot .break-lane-card .break-lane-empty {
+  filter: none !important;
+  color: rgba(100,116,139,.5) !important;
+}
+</style>
