@@ -9231,8 +9231,8 @@ async function handleTokenResponse(response){
 }
 
 function switchGoogleAccount(){
+  fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
   localStorage.removeItem('rcLastUser');
-  clearPersistedSession();
   sessionStorage.clear();
   updateLoginButton();
   try{ google.accounts.id.disableAutoSelect(); }catch(e){}
@@ -9513,65 +9513,28 @@ function initEmbeddedFrames(){
   });
 }
 
-// ── Persistent session helpers ────────────────────────────────────────────
-const RC_SESSION_KEY = 'rcPersistSession';
-const RC_SESSION_TTL = 12 * 60 * 60 * 1000; // 12 hours — covers a full shift
+// ── Server-side session helpers ───────────────────────────────────────────
+// Session is stored as a signed HTTP cookie on the server.
+// This survives browser restarts, tab closes, and browser storage clears.
+// localStorage is kept as a fast-restore hint only (no security dependency).
 
 function savePersistedSession(name, role, email, picture, breakbotEnabled){
-  try{
-    localStorage.setItem(RC_SESSION_KEY, JSON.stringify({
-      name, role, email,
-      picture: picture || '',
-      breakbotEnabled: breakbotEnabled ? '1' : '0',
-      expiry: Date.now() + RC_SESSION_TTL
-    }));
-  }catch(e){}
-}
-
-function loadPersistedSession(){
-  try{
-    const s = JSON.parse(localStorage.getItem(RC_SESSION_KEY) || 'null');
-    if(s && s.expiry > Date.now() && s.name && s.role && s.email) return s;
-  }catch(e){}
-  return null;
-}
-
-function clearPersistedSession(){
-  try{ localStorage.removeItem(RC_SESSION_KEY); }catch(e){}
-}
-
-function touchPersistedSession(updates){
-  // Extend expiry and optionally update fields on each successful page load
-  try{
-    const s = JSON.parse(localStorage.getItem(RC_SESSION_KEY) || 'null');
-    if(!s) return;
-    localStorage.setItem(RC_SESSION_KEY, JSON.stringify({...s, ...updates, expiry: Date.now() + RC_SESSION_TTL}));
-  }catch(e){}
-}
-
-// Silently re-check role from server after restoring a cached session.
-// Logs the user out only if their access was revoked; otherwise just refreshes breakbot setting.
-async function silentRoleRefresh(email){
-  try{
-    const r = await fetch(BACKEND + '/api/role-check?email=' + encodeURIComponent(email));
-    const j = await r.json();
-    if(!j.success) return; // server error — stay logged in with cached role
-    if(j.role !== currentRole){
-      // Role changed — require fresh sign-in
-      doLogout();
-      showLoginMsg('Your access level was updated. Please sign in again.');
-      return;
-    }
-    const be = j.breakbotEnabled !== false;
-    currentBreakbotEnabled = be;
-    sessionStorage.setItem('rcBreakbotEnabled', be ? '1' : '0');
-    touchPersistedSession({ breakbotEnabled: be ? '1' : '0' });
-  }catch(e){ /* network down — keep cached session */ }
+  // Tell the server to create a signed session cookie
+  fetch(BACKEND + '/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ email, name, picture: picture || '' })
+  }).catch(() => {});
+  // Also save to localStorage as a fast UI hint (not relied on for auth)
+  try{ localStorage.setItem('rcLastUser', JSON.stringify({ name, email, picture: picture||'' })); }catch(e){}
 }
 
 function doLogout(){
-  clearPersistedSession();
-  sessionStorage.clear();currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
+  fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  try{ localStorage.removeItem('rcLastUser'); }catch(e){}
+  sessionStorage.clear();
+  currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   if(window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainApp').style.display='none';
@@ -9580,27 +9543,28 @@ function doLogout(){
 function showLoginMsg(msg){
   document.getElementById('loginMsg').innerHTML = msg ? ('<div class="login-msg-error">'+msg+'</div>') : '';
 }
-function loadSession(){
-  // 1. Active tab — sessionStorage still alive
+async function loadSession(){
+  // 1. Active tab — sessionStorage still alive (fastest)
   const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');
   const be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
   if(u&&r){ startApp(u,r,p,be); return; }
 
-  // 2. Returning user — restore from localStorage (persists across tab close / refresh)
-  const s = loadPersistedSession();
-  if(s){
-    sessionStorage.setItem('rcUser', s.name);
-    sessionStorage.setItem('rcRole', s.role);
-    sessionStorage.setItem('rcEmail', s.email);
-    sessionStorage.setItem('rcPicture', s.picture);
-    sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled);
-    startApp(s.name, s.role, s.picture, s.breakbotEnabled !== '0');
-    // Re-check role in background — update expiry, catch any access changes
-    silentRoleRefresh(s.email);
-    return;
-  }
+  // 2. Ask the server if there is a valid session cookie (survives browser restart)
+  try{
+    const resp = await fetch(BACKEND + '/api/session', { credentials: 'include' });
+    const s = await resp.json();
+    if(s.success && s.email && s.name && s.role){
+      sessionStorage.setItem('rcUser', s.name);
+      sessionStorage.setItem('rcRole', s.role);
+      sessionStorage.setItem('rcEmail', s.email);
+      sessionStorage.setItem('rcPicture', s.picture || '');
+      sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled ? '1' : '0');
+      startApp(s.name, s.role, s.picture, s.breakbotEnabled !== false && s.breakbotEnabled !== '0');
+      return;
+    }
+  }catch(e){ /* server unreachable — fall through to login */ }
 
-  // 3. No session — show Google sign-in
+  // 3. No valid session — show Google sign-in
   initGoogleAuth();
 }
 
@@ -11813,10 +11777,9 @@ loadColPrefs();
 initConfetti();
 initLoginAnimations();
 
-window.addEventListener('load',()=>{
+window.addEventListener('load', async () => {
   applyAditBranding();
   bindSortHeaders();
-  loadSession();
   syncBreakDateInputs();
   syncBreakActionState();
   const dp=document.getElementById('date-picker');
@@ -11831,6 +11794,9 @@ window.addEventListener('load',()=>{
       if(tok){ handleGoogleCredential({credential:tok}); return; }
     }
   })();
+
+  // loadSession is async — it checks the server cookie before showing login
+  await loadSession();
 
   if(!currentUser){
     updateLoginButton(); // show remembered user immediately

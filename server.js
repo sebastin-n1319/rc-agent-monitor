@@ -1,6 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
 const cron = require('node-cron');
 const path = require('path');
 const {
@@ -16,8 +18,13 @@ const {
 } = require('./rc-service');
 
 const app = express();
-app.use(cors());
+const COOKIE_SECRET = process.env.COOKIE_SECRET || crypto.randomBytes(32).toString('hex');
+const SESSION_COOKIE = 'rcAuthSession';
+const SESSION_MAX_AGE = 12 * 60 * 60; // 12 hours in seconds
+
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser(COOKIE_SECRET));
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: true,
@@ -547,6 +554,59 @@ app.get('/api/role-check', async (req, res) => {
     });
   }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ── Server-side session via signed HTTP cookie ───────────────────────────────
+// POST /api/session  — called after Google sign-in; stores email+role in a cookie
+app.post('/api/session', async (req, res) => {
+  const { email, name, picture } = req.body || {};
+  if (!email) return res.status(400).json({ success: false, error: 'email required' });
+  try {
+    const settings = await getRoleSettingsForEmail(email);
+    const role = settings?.role || 'agent';
+    const breakbotEnabled = settings ? settings.breakbotEnabled : true;
+    const payload = JSON.stringify({ email, name: name || '', picture: picture || '', role, breakbotEnabled: breakbotEnabled ? '1' : '0' });
+    res.cookie(SESSION_COOKIE, payload, {
+      maxAge: SESSION_MAX_AGE * 1000,
+      httpOnly: false,   // must be readable by client JS to restore the session
+      secure: process.env.NODE_ENV !== 'development',
+      sameSite: 'lax',
+      signed: true,
+      path: '/'
+    });
+    res.json({ success: true, role, breakbotEnabled });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// GET /api/session  — on page load, check if a valid session cookie exists
+app.get('/api/session', async (req, res) => {
+  try {
+    const raw = req.signedCookies[SESSION_COOKIE];
+    if (!raw) return res.json({ success: false });
+    const s = JSON.parse(raw);
+    // Re-validate role from DB in case it changed
+    const settings = await getRoleSettingsForEmail(s.email);
+    if (!settings) return res.json({ success: false }); // user removed
+    const role = settings.role || 'agent';
+    const breakbotEnabled = settings.breakbotEnabled !== false;
+    // Refresh cookie expiry (rolling session)
+    const payload = JSON.stringify({ email: s.email, name: s.name || '', picture: s.picture || '', role, breakbotEnabled: breakbotEnabled ? '1' : '0' });
+    res.cookie(SESSION_COOKIE, payload, {
+      maxAge: SESSION_MAX_AGE * 1000,
+      httpOnly: false,
+      secure: process.env.NODE_ENV !== 'development',
+      sameSite: 'lax',
+      signed: true,
+      path: '/'
+    });
+    res.json({ success: true, email: s.email, name: s.name, picture: s.picture, role, breakbotEnabled });
+  } catch(e) { res.json({ success: false }); }
+});
+
+// DELETE /api/session  — called on logout
+app.delete('/api/session', (req, res) => {
+  res.clearCookie(SESSION_COOKIE, { path: '/' });
+  res.json({ success: true });
 });
 
 async function startScheduler() {
