@@ -334,10 +334,14 @@ app.post('/api/break-events', async (req, res) => {
   if(!username || !email || !action){
     return res.status(400).json({ success: false, error: 'Username, email, and action are required' });
   }
+
+  // Emails that should never receive GChat notifications
+  const NOTIFICATION_BLOCKLIST = ['sebastin.n@adit.com'];
+
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
     let notification = { notified: false, status: 'skipped', response: 'Not attempted' };
-    if(skipNotify) {
+    if(skipNotify || NOTIFICATION_BLOCKLIST.includes((email || '').toLowerCase().trim())) {
       notification = { notified: false, status: 'disabled', response: 'Notifications disabled for this user' };
     } else {
       try {
