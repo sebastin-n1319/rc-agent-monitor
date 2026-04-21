@@ -9221,6 +9221,7 @@ async function handleTokenResponse(response){
     fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo:navigator.userAgent})}).catch(()=>{});
     sessionStorage.setItem('rcUser',name); sessionStorage.setItem('rcRole',role); sessionStorage.setItem('rcEmail',email); sessionStorage.setItem('rcPicture',picture||''); sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
     localStorage.setItem('rcLastUser', JSON.stringify({name, email, picture: picture||''}));
+    savePersistedSession(name, role, email, picture, breakbotEnabled);
     resetLoginBtn();
     startApp(name, role, picture, breakbotEnabled);
   }catch(e){
@@ -9231,6 +9232,8 @@ async function handleTokenResponse(response){
 
 function switchGoogleAccount(){
   localStorage.removeItem('rcLastUser');
+  clearPersistedSession();
+  sessionStorage.clear();
   updateLoginButton();
   try{ google.accounts.id.disableAutoSelect(); }catch(e){}
   try{ google.accounts.oauth2.revoke(sessionStorage.getItem('rcEmail')||''); }catch(e){}
@@ -9313,6 +9316,7 @@ async function handleGoogleCredential(response){
   fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
   localStorage.setItem('rcLastUser',JSON.stringify({name,email,picture:picture||''}));
+  savePersistedSession(name, role, email, picture, breakbotEnabled);
   startApp(name,role,picture,breakbotEnabled);
 }
 
@@ -9509,7 +9513,64 @@ function initEmbeddedFrames(){
   });
 }
 
+// ── Persistent session helpers ────────────────────────────────────────────
+const RC_SESSION_KEY = 'rcPersistSession';
+const RC_SESSION_TTL = 12 * 60 * 60 * 1000; // 12 hours — covers a full shift
+
+function savePersistedSession(name, role, email, picture, breakbotEnabled){
+  try{
+    localStorage.setItem(RC_SESSION_KEY, JSON.stringify({
+      name, role, email,
+      picture: picture || '',
+      breakbotEnabled: breakbotEnabled ? '1' : '0',
+      expiry: Date.now() + RC_SESSION_TTL
+    }));
+  }catch(e){}
+}
+
+function loadPersistedSession(){
+  try{
+    const s = JSON.parse(localStorage.getItem(RC_SESSION_KEY) || 'null');
+    if(s && s.expiry > Date.now() && s.name && s.role && s.email) return s;
+  }catch(e){}
+  return null;
+}
+
+function clearPersistedSession(){
+  try{ localStorage.removeItem(RC_SESSION_KEY); }catch(e){}
+}
+
+function touchPersistedSession(updates){
+  // Extend expiry and optionally update fields on each successful page load
+  try{
+    const s = JSON.parse(localStorage.getItem(RC_SESSION_KEY) || 'null');
+    if(!s) return;
+    localStorage.setItem(RC_SESSION_KEY, JSON.stringify({...s, ...updates, expiry: Date.now() + RC_SESSION_TTL}));
+  }catch(e){}
+}
+
+// Silently re-check role from server after restoring a cached session.
+// Logs the user out only if their access was revoked; otherwise just refreshes breakbot setting.
+async function silentRoleRefresh(email){
+  try{
+    const r = await fetch(BACKEND + '/api/role-check?email=' + encodeURIComponent(email));
+    const j = await r.json();
+    if(!j.success) return; // server error — stay logged in with cached role
+    if(j.role !== currentRole){
+      // Role changed — require fresh sign-in
+      doLogout();
+      showLoginMsg('Your access level was updated. Please sign in again.');
+      return;
+    }
+    const be = j.breakbotEnabled !== false;
+    currentBreakbotEnabled = be;
+    sessionStorage.setItem('rcBreakbotEnabled', be ? '1' : '0');
+    touchPersistedSession({ breakbotEnabled: be ? '1' : '0' });
+  }catch(e){ /* network down — keep cached session */ }
+}
+
 function doLogout(){
+  clearPersistedSession();
   sessionStorage.clear();currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   if(window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
   document.getElementById('loginScreen').style.display='flex';
@@ -9520,10 +9581,27 @@ function showLoginMsg(msg){
   document.getElementById('loginMsg').innerHTML = msg ? ('<div class="login-msg-error">'+msg+'</div>') : '';
 }
 function loadSession(){
+  // 1. Active tab — sessionStorage still alive
   const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');
-  const breakbotEnabled=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
-  if(u&&r) startApp(u,r,p,breakbotEnabled);
-  else initGoogleAuth(); // pre-initialise token client so button click is instant
+  const be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
+  if(u&&r){ startApp(u,r,p,be); return; }
+
+  // 2. Returning user — restore from localStorage (persists across tab close / refresh)
+  const s = loadPersistedSession();
+  if(s){
+    sessionStorage.setItem('rcUser', s.name);
+    sessionStorage.setItem('rcRole', s.role);
+    sessionStorage.setItem('rcEmail', s.email);
+    sessionStorage.setItem('rcPicture', s.picture);
+    sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled);
+    startApp(s.name, s.role, s.picture, s.breakbotEnabled !== '0');
+    // Re-check role in background — update expiry, catch any access changes
+    silentRoleRefresh(s.email);
+    return;
+  }
+
+  // 3. No session — show Google sign-in
+  initGoogleAuth();
 }
 
 // TZ
