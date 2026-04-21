@@ -14133,3 +14133,161 @@ header::before {
   color: rgba(100,116,139,.5) !important;
 }
 </style>
+
+<style id="bb-avatar-v3">
+/* ══════════════════════════════════════════════════════════════
+   BREAK BOT — Avatar v3  · Holographic · Energy · Innovative
+══════════════════════════════════════════════════════════════ */
+
+/* ── Container — larger stage ───────────────────────────────── */
+#agent-section-breakbot .bha-upgraded {
+  width: 280px !important;
+  height: 280px !important;
+  background: none !important;
+  margin: 30px auto !important;
+}
+
+/* ── Avatar image — bigger, vivid glow ─────────────────────── */
+#agent-section-breakbot .bha-avatar {
+  width: 160px !important;
+  height: 160px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  position: relative !important;
+  z-index: 10 !important;
+  box-shadow:
+    0 0 0 2px rgba(242,136,32,.8),
+    0 0 0 5px rgba(242,136,32,.2),
+    0 0 30px rgba(242,136,32,.7),
+    0 0 70px rgba(242,136,32,.35),
+    0 0 120px rgba(99,102,241,.25),
+    0 16px 48px rgba(0,0,0,.8) !important;
+  animation: bhaFloatV3 4s ease-in-out infinite !important;
+  filter:
+    drop-shadow(0 0 16px rgba(242,136,32,.8))
+    drop-shadow(0 0 40px rgba(242,136,32,.4))
+    brightness(1.08) contrast(1.05) !important;
+}
+@keyframes bhaFloatV3 {
+  0%,100% { transform: translateY(0) scale(1) rotate(0deg); }
+  25%     { transform: translateY(-8px) scale(1.03) rotate(.5deg); }
+  75%     { transform: translateY(5px) scale(.98) rotate(-.3deg); }
+}
+
+/* ── Halo — warm glow behind image ─────────────────────────── */
+#agent-section-breakbot .bha-halo {
+  position: absolute !important;
+  width: 180px !important; height: 180px !important;
+  border-radius: 50% !important;
+  background:
+    radial-gradient(circle,
+      rgba(242,136,32,.55) 0%,
+      rgba(239,68,68,.2) 35%,
+      rgba(99,102,241,.15) 60%,
+      transparent 75%) !important;
+  animation: bhaHaloV3 2.5s ease-in-out infinite !important;
+  z-index: 5 !important;
+  filter: blur(2px) !important;
+}
+@keyframes bhaHaloV3 {
+  0%,100% { transform: scale(1);    opacity: .75; }
+  50%     { transform: scale(1.18); opacity: 1; }
+}
+
+/* ── Rings ──────────────────────────────────────────────────── */
+#agent-section-breakbot .bha-ring-1 {
+  width: 190px !important; height: 190px !important;
+  border: 1.5px solid transparent !important;
+  border-top-color: rgba(242,136,32,.9) !important;
+  border-right-color: rgba(242,136,32,.3) !important;
+  box-shadow: 0 0 12px rgba(242,136,32,.3) !important;
+  animation: bhaR1 3s linear infinite !important;
+}
+#agent-section-breakbot .bha-ring-2 {
+  width: 230px !important; height: 230px !important;
+  border: 1px dashed rgba(99,102,241,.55) !important;
+  box-shadow: 0 0 10px rgba(99,102,241,.2) !important;
+  animation: bhaR2 10s linear infinite !important;
+}
+#agent-section-breakbot .bha-ring-3 {
+  width: 275px !important; height: 275px !important;
+  border: 1px solid transparent !important;
+  border-left-color: rgba(6,182,212,.8) !important;
+  border-bottom-color: rgba(6,182,212,.2) !important;
+  box-shadow: 0 0 14px rgba(6,182,212,.25) !important;
+  animation: bhaR3 7s linear infinite reverse !important;
+}
+
+/* ── Radar — dual sweep ─────────────────────────────────────── */
+#agent-section-breakbot .bha-radar {
+  width: 190px !important; height: 190px !important;
+  background:
+    conic-gradient(from 0deg,
+      transparent 0deg,
+      rgba(34,197,94,.04) 20deg,
+      rgba(34,197,94,.25) 45deg,
+      rgba(34,197,94,.08) 70deg,
+      transparent 90deg,
+      transparent 360deg) !important;
+  filter: blur(.5px) !important;
+  animation: bhaRadar 2.8s linear infinite !important;
+  z-index: 4 !important;
+}
+
+/* ── Orbit sizes ────────────────────────────────────────────── */
+#agent-section-breakbot .bha-orbit-1 { width: 190px !important; height: 190px !important; animation: bhaO1 4s linear infinite !important; }
+#agent-section-breakbot .bha-orbit-2 { width: 230px !important; height: 230px !important; animation: bhaO2 7s linear infinite !important; }
+#agent-section-breakbot .bha-orbit-3 { width: 275px !important; height: 275px !important; animation: bhaO3 11s linear infinite reverse !important; }
+
+/* ── Dots — bigger glow ─────────────────────────────────────── */
+#agent-section-breakbot .bha-dot {
+  width: 11px !important; height: 11px !important;
+  margin-left: -5.5px !important;
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.2),
+    0 0 10px 3px var(--dc,#fff),
+    0 0 24px var(--dc,#fff) !important;
+}
+
+/* ── Arcs ───────────────────────────────────────────────────── */
+#agent-section-breakbot .bha-arc-1 {
+  width: 210px !important; height: 210px !important;
+  border: 2px solid transparent !important;
+  border-top-color: rgba(99,102,241,.85) !important;
+  border-right-color: rgba(99,102,241,.15) !important;
+  box-shadow: 0 0 16px rgba(99,102,241,.3) !important;
+  animation: bhaArc1 2.2s ease-in-out infinite !important;
+}
+#agent-section-breakbot .bha-arc-2 {
+  width: 252px !important; height: 252px !important;
+  border: 2px solid transparent !important;
+  border-bottom-color: rgba(6,182,212,.8) !important;
+  border-left-color: rgba(6,182,212,.2) !important;
+  box-shadow: 0 0 16px rgba(6,182,212,.3) !important;
+  animation: bhaArc2 3.2s ease-in-out infinite reverse !important;
+}
+
+/* ── Pulse rings — sonar burst ──────────────────────────────── */
+#agent-section-breakbot .bha-flare-1 {
+  width: 160px !important; height: 160px !important;
+  border-radius: 50% !important;
+  top: 50% !important; left: 50% !important;
+  transform: translate(-50%,-50%) !important;
+  background: none !important;
+  border: 1.5px solid rgba(242,136,32,.6) !important;
+  animation: bhaPulse1 2.4s ease-out infinite !important;
+}
+#agent-section-breakbot .bha-flare-2 {
+  width: 160px !important; height: 160px !important;
+  border-radius: 50% !important;
+  top: 50% !important; left: 50% !important;
+  transform: translate(-50%,-50%) !important;
+  background: none !important;
+  border: 1px solid rgba(99,102,241,.5) !important;
+  animation: bhaPulse1 2.4s ease-out infinite 1.2s !important;
+}
+@keyframes bhaPulse1 {
+  0%   { transform: translate(-50%,-50%) scale(.8); opacity: .9; }
+  100% { transform: translate(-50%,-50%) scale(2);  opacity: 0; }
+}
+</style>
