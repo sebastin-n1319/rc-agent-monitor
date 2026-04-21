@@ -5542,10 +5542,23 @@ footer{
   backdrop-filter: blur(12px) !important;
 }
 
+/* ── Agent-view table: same container-scroll approach as admin table ──────── */
+#agent-tbl-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 620px;
+}
+#agent-tbl-wrap thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 14 !important;
+  background: rgba(7,13,28,.97) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
 /* ── Other tables: page-level sticky via JS-computed offset ─────────────── */
 /* getComputedStyle(nav).top + nav.offsetHeight = exact sticky threshold.    */
-#agent-section-dashboard thead th,
-.tbl-wrap:not(#admin-agent-tbl-wrap) thead th {
+.tbl-wrap:not(#admin-agent-tbl-wrap):not(#agent-tbl-wrap) thead th {
   position: sticky !important;
   top: var(--sticky-top, 100px) !important;
   z-index: 12 !important;
@@ -8698,7 +8711,7 @@ header{
           <span id="call-sync-label">Calls: checking...</span>
         </span>
       </div>
-      <div class="tbl-wrap">
+      <div class="tbl-wrap" id="agent-tbl-wrap">
       <table>
         <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="ahtInbound" data-label="AHT" title="Avg Handle Time (inbound)">AHT</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
         <tbody id="agent-view-table">
