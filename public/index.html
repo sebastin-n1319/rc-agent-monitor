@@ -8129,6 +8129,10 @@ header{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l1.9 3.84L18 6.44l-3 2.93.71 4.13L12 11.77 8.29 13.5 9 9.37 6 6.44l4.1-.6L12 2z"/><path d="M5 22h14"/><path d="M7 18h10"/></svg>
       Bonus Guide
     </button>
+    <button class="nav-tab" onclick="switchTab('calllogs',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Call Logs
+    </button>
   </div>
 
   <!-- LIVE -->
@@ -8581,6 +8585,68 @@ header{
   <div class="page" id="tab-bonus">
     <div class="card bonus-frame-shell">
       <iframe class="bonus-frame" src="/bonus-guide.html" title="Bonus Guide Admin Page" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- CALL LOGS -->
+  <div class="page" id="tab-calllogs">
+    <div class="card" style="padding:0;overflow:hidden">
+      <!-- Header bar -->
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--blue)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span style="font-weight:600;font-size:14px;color:var(--t1)">Call Logs</span>
+          <span id="cl-total-badge" style="font-size:11px;color:var(--t3);background:var(--surface);padding:2px 8px;border-radius:10px;"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <input type="date" id="cl-date-picker" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;" onchange="loadCallLogs()">
+          <select id="cl-dir-filter" onchange="loadCallLogs()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;">
+            <option value="">All Directions</option>
+            <option value="Inbound">Inbound</option>
+            <option value="Outbound">Outbound</option>
+          </select>
+          <select id="cl-result-filter" onchange="loadCallLogs()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;">
+            <option value="">All Results</option>
+            <option value="Answered">Answered</option>
+            <option value="Missed">Missed</option>
+            <option value="Abandoned">Abandoned</option>
+            <option value="Voicemail">Voicemail</option>
+          </select>
+          <input type="text" id="cl-search" placeholder="Search agent, number…" oninput="clApplyFilters()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;width:180px;">
+          <button class="btn btn-primary btn-sm" onclick="loadCallLogs()">&#8635; Refresh</button>
+        </div>
+      </div>
+      <!-- Summary chips -->
+      <div id="cl-summary-row" style="display:flex;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;"></div>
+      <!-- Table -->
+      <div style="overflow-x:auto;">
+        <table class="tbl" id="cl-table" style="min-width:900px;">
+          <thead>
+            <tr>
+              <th style="width:170px">From</th>
+              <th style="width:170px">To</th>
+              <th style="width:120px">Agent</th>
+              <th style="width:110px">Call Result</th>
+              <th style="width:80px">Length</th>
+              <th style="width:80px">Handle Time</th>
+              <th style="width:150px">Start Time</th>
+              <th style="width:140px">Queue</th>
+              <th style="width:90px">Direction</th>
+            </tr>
+          </thead>
+          <tbody id="cl-tbody">
+            <tr class="skel-row"><td colspan="9" style="text-align:center;color:var(--t3);padding:40px">Loading call logs…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div id="cl-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--border);background:var(--card);">
+        <span id="cl-page-info" style="font-size:12px;color:var(--t3)"></span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm" id="cl-prev-btn" onclick="clChangePage(-1)" disabled>← Prev</button>
+          <button class="btn btn-sm" id="cl-next-btn" onclick="clChangePage(1)" disabled>Next →</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -10637,6 +10703,160 @@ function switchTab(tab,el){
   if(tab==='agents')loadAgents();
   if(tab==='access')loadRoles();
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
+  if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
+}
+
+// ── CALL LOGS ──────────────────────────────────────────────────────────
+let clAllRows=[]; // full dataset for client-side filtering
+let clPage=0;
+const CL_PAGE_SIZE=100;
+
+async function loadCallLogs(){
+  const dp=document.getElementById('cl-date-picker');
+  const date=dp?.value||todayStr();
+  const tz=encodeURIComponent(activeTimeZone());
+  const tbody=document.getElementById('cl-tbody');
+  tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:40px">Loading…</td></tr>';
+  document.getElementById('cl-summary-row').innerHTML='';
+  try{
+    const r=await fetch(BACKEND+'/api/call-logs?date='+date+'&tz='+tz+'&limit=500');
+    const d=await r.json();
+    if(!d.success) throw new Error(d.error||'Failed to load');
+    clAllRows=d.rows||[];
+    clPage=0;
+    clBuildSummary(clAllRows);
+    clApplyFilters();
+  }catch(e){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--red);padding:40px">'+esc(e.message)+'</td></tr>';
+  }
+}
+
+function clBuildSummary(rows){
+  const total=rows.length;
+  const inbound=rows.filter(r=>r.direction==='Inbound').length;
+  const outbound=rows.filter(r=>r.direction==='Outbound').length;
+  const answered=rows.filter(r=>clIsAnswered(r)).length;
+  const missed=rows.filter(r=>clIsMissed(r)).length;
+  const container=document.getElementById('cl-summary-row');
+  container.innerHTML=[
+    {label:'Total',val:total,color:'var(--t1)'},
+    {label:'Inbound',val:inbound,color:'#818cf8'},
+    {label:'Outbound',val:outbound,color:'#22d3ee'},
+    {label:'Answered',val:answered,color:'#4ade80'},
+    {label:'Missed / Abandoned',val:missed,color:'#f87171'},
+  ].map(c=>`<div class="cl-summary-chip"><strong style="color:${c.color}">${c.val}</strong> ${esc(c.label)}</div>`).join('');
+  document.getElementById('cl-total-badge').textContent=total+' records';
+}
+
+function clIsAnswered(r){
+  const res=(r.result||'').toLowerCase();
+  return ['answered','connected','accepted'].some(k=>res.includes(k));
+}
+function clIsMissed(r){
+  const res=(r.result||'').toLowerCase();
+  return ['missed','abandoned'].some(k=>res.includes(k));
+}
+function clIsVoicemail(r){
+  return r.is_voicemail===1||(r.result||'').toLowerCase().includes('voicemail');
+}
+
+function clResultBadge(r){
+  const res=r.result||'';
+  const low=res.toLowerCase();
+  if(clIsVoicemail(r)) return `<span class="cl-result-badge cl-result-voicemail">📨 Voicemail</span>`;
+  if(clIsAnswered(r))  return `<span class="cl-result-badge cl-result-answered">✓ ${esc(res)}</span>`;
+  if(low.includes('missed'))   return `<span class="cl-result-badge cl-result-missed">✕ Missed</span>`;
+  if(low.includes('abandoned')) return `<span class="cl-result-badge cl-result-abandoned">↩ Abandoned</span>`;
+  return `<span class="cl-result-badge cl-result-other">${esc(res||'—')}</span>`;
+}
+
+function clDirBadge(dir){
+  if(!dir) return '<span class="cl-dir-badge cl-dir-out">—</span>';
+  if(dir==='Inbound') return '<span class="cl-dir-badge cl-dir-in">↙ IN</span>';
+  return '<span class="cl-dir-badge cl-dir-out">↗ OUT</span>';
+}
+
+function clFmtDuration(secs){
+  if(!secs) return '<span style="color:var(--t3)">—</span>';
+  const m=Math.floor(secs/60), s=secs%60;
+  return `<span class="mono" style="font-size:12px">${m}m ${String(s).padStart(2,'0')}s</span>`;
+}
+
+function clFmtTime(ts){
+  if(!ts) return '<span style="color:var(--t3)">—</span>';
+  const d=new Date(ts.includes('T')?ts:ts.replace(' ','T')+'Z');
+  return d.toLocaleString('en-IN',{timeZone:activeTimeZone()||'Asia/Kolkata',
+    month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true});
+}
+
+function clFmtNum(num){
+  if(!num) return '<span style="color:var(--t3)">—</span>';
+  return `<span class="cl-num">${esc(num)}</span>`;
+}
+
+function clApplyFilters(){
+  const dirF=(document.getElementById('cl-dir-filter')?.value||'').toLowerCase();
+  const resF=(document.getElementById('cl-result-filter')?.value||'').toLowerCase();
+  const search=(document.getElementById('cl-search')?.value||'').toLowerCase().trim();
+  let rows=clAllRows;
+  if(dirF) rows=rows.filter(r=>(r.direction||'').toLowerCase()===dirF);
+  if(resF) rows=rows.filter(r=>{
+    const low=(r.result||'').toLowerCase();
+    if(resF==='answered') return clIsAnswered(r);
+    if(resF==='missed') return low.includes('missed');
+    if(resF==='abandoned') return low.includes('abandoned');
+    if(resF==='voicemail') return clIsVoicemail(r);
+    return true;
+  });
+  if(search) rows=rows.filter(r=>{
+    return (r.agent_name||'').toLowerCase().includes(search)||
+      (r.from_number||'').toLowerCase().includes(search)||
+      (r.to_number||'').toLowerCase().includes(search)||
+      (r.queue_name||'').toLowerCase().includes(search)||
+      (r.result||'').toLowerCase().includes(search);
+  });
+  clPage=0;
+  clRenderRows(rows);
+}
+
+function clRenderRows(rows){
+  const tbody=document.getElementById('cl-tbody');
+  const start=clPage*CL_PAGE_SIZE;
+  const slice=rows.slice(start,start+CL_PAGE_SIZE);
+  if(!slice.length){
+    tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--t3);padding:40px">No call records found.</td></tr>';
+    document.getElementById('cl-page-info').textContent='';
+    document.getElementById('cl-prev-btn').disabled=true;
+    document.getElementById('cl-next-btn').disabled=true;
+    return;
+  }
+  tbody.innerHTML=slice.map(r=>`<tr>
+    <td><div class="cl-name">${esc(r.from_number?'':' ')}</div>${clFmtNum(r.from_number)}</td>
+    <td><div class="cl-name">${esc(r.to_number?'':' ')}</div>${clFmtNum(r.to_number)}</td>
+    <td><span class="cl-name">${esc(r.agent_name||'—')}</span></td>
+    <td>${clResultBadge(r)}</td>
+    <td>${clFmtDuration(r.duration)}</td>
+    <td>${clFmtDuration(r.hold_duration||0)}</td>
+    <td style="font-size:12px;color:var(--t2)">${clFmtTime(r.start_time)}</td>
+    <td style="font-size:12px;color:var(--t2)">${esc(r.queue_name||'—')}</td>
+    <td>${clDirBadge(r.direction)}</td>
+  </tr>`).join('');
+  const total=rows.length;
+  const end=Math.min(start+CL_PAGE_SIZE,total);
+  document.getElementById('cl-page-info').textContent=`Showing ${start+1}–${end} of ${total}`;
+  document.getElementById('cl-prev-btn').disabled=clPage===0;
+  document.getElementById('cl-next-btn').disabled=end>=total;
+  // store filtered rows for pagination
+  clRenderRows._filtered=rows;
+}
+clRenderRows._filtered=[];
+
+function clChangePage(dir){
+  const rows=clRenderRows._filtered;
+  const maxPage=Math.ceil(rows.length/CL_PAGE_SIZE)-1;
+  clPage=Math.max(0,Math.min(maxPage,clPage+dir));
+  clRenderRows(rows);
+  document.getElementById('tab-calllogs').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // Old single-agent autocomplete removed - using bulk panel
@@ -14985,4 +15205,30 @@ tr.row-unavail-alert td:first-child {
 
 /* ── Score tooltip ───────────────────────────────────────────── */
 .score[title] { cursor: help; }
+
+/* ── Call Logs section ───────────────────────────────────────── */
+#tab-calllogs .cl-result-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px;
+  white-space: nowrap;
+}
+#tab-calllogs .cl-result-answered  { background: rgba(34,197,94,.12); color: #4ade80; }
+#tab-calllogs .cl-result-missed    { background: rgba(239,68,68,.12);  color: #f87171; }
+#tab-calllogs .cl-result-abandoned { background: rgba(251,146,60,.12); color: #fb923c; }
+#tab-calllogs .cl-result-voicemail { background: rgba(168,85,247,.12); color: #c084fc; }
+#tab-calllogs .cl-result-other     { background: rgba(148,163,184,.1); color: var(--t3); }
+#tab-calllogs .cl-dir-badge {
+  font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px;
+  letter-spacing: .3px; white-space: nowrap;
+}
+#tab-calllogs .cl-dir-in  { background: rgba(99,102,241,.12); color: #818cf8; }
+#tab-calllogs .cl-dir-out { background: rgba(6,182,212,.10);  color: #22d3ee; }
+#tab-calllogs .cl-num     { font-family: var(--mono); font-size: 12px; color: var(--t1); }
+#tab-calllogs .cl-name    { font-size: 12px; color: var(--t2); line-height: 1.2; }
+#tab-calllogs .cl-summary-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 5px 12px; font-size: 12px; color: var(--t2);
+}
+#tab-calllogs .cl-summary-chip strong { color: var(--t1); font-size: 14px; }
 </style>

@@ -317,6 +317,18 @@ app.delete('/api/agent-notes/:id', async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+app.get('/api/call-logs', async (req, res) => {
+  const tz = req.query.tz || 'Asia/Kolkata';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+  const offset = parseInt(req.query.offset) || 0;
+  try {
+    const { getCallLogsFull } = require('./database');
+    const data = await getCallLogsFull(date, tz, limit, offset);
+    res.json({ success: true, date, timeZone: tz, ...data });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.get('/api/call-volume', async (req, res) => {
   const tz = req.query.tz || 'Asia/Kolkata';
   const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });

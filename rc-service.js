@@ -592,6 +592,9 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
       holdDuration: holdDuration || call.holdDuration || 0,
       transferred,
       isVoicemail: voicemailResult,
+      fromNumber: call.from?.phoneNumber || call.from?.extensionNumber || null,
+      toNumber: call.to?.phoneNumber || call.to?.extensionNumber || null,
+      queueName: call.to?.name || owner.name || null,
       startTime: call.startTime
     });
   }
@@ -1240,6 +1243,9 @@ async function fetchCallLogs(force = false) {
               holdDuration,
               transferred,
               isVoicemail,
+              fromNumber: call.from?.phoneNumber || call.from?.extensionNumber || null,
+              toNumber: call.to?.phoneNumber || call.to?.extensionNumber || null,
+              queueName: call.to?.name || null,
               startTime: call.startTime
             });
             imported++;

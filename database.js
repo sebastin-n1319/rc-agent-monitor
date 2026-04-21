@@ -321,7 +321,8 @@ async function initDB() {
     agent_name TEXT, call_id TEXT UNIQUE, source_call_id TEXT, direction TEXT,
     result TEXT, duration INTEGER, ring_duration INTEGER DEFAULT 0,
     hold_duration INTEGER DEFAULT 0, transferred INTEGER DEFAULT 0,
-    is_voicemail INTEGER DEFAULT 0, start_time DATETIME,
+    is_voicemail INTEGER DEFAULT 0, from_number TEXT, to_number TEXT,
+    queue_name TEXT, start_time DATETIME,
     fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE TABLE IF NOT EXISTS login_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT,
@@ -369,6 +370,9 @@ async function initDB() {
     `ALTER TABLE call_logs ADD COLUMN transferred INTEGER DEFAULT 0`,
     `ALTER TABLE call_logs ADD COLUMN is_voicemail INTEGER DEFAULT 0`,
     `ALTER TABLE call_logs ADD COLUMN source_call_id TEXT`,
+    `ALTER TABLE call_logs ADD COLUMN from_number TEXT`,
+    `ALTER TABLE call_logs ADD COLUMN to_number TEXT`,
+    `ALTER TABLE call_logs ADD COLUMN queue_name TEXT`,
     `ALTER TABLE break_events ADD COLUMN action_label TEXT DEFAULT ''`,
     `ALTER TABLE break_events ADD COLUMN current_status TEXT DEFAULT 'Logged Out'`,
     `ALTER TABLE break_events ADD COLUMN event_type TEXT DEFAULT 'session'`,
@@ -430,14 +434,17 @@ function getStoredCallLogValues(log){
     log.holdDuration||0,
     log.transferred?1:0,
     log.isVoicemail?1:0,
+    log.fromNumber||null,
+    log.toNumber||null,
+    log.queueName||null,
     log.startTime
   ];
 }
 
 function insertCallLog(log){
   return run(`INSERT OR IGNORE INTO call_logs
-    (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+    (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,from_number,to_number,queue_name,start_time)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     getStoredCallLogValues(log));
 }
 
@@ -453,8 +460,8 @@ async function replaceCallLogsRange(startIso,endIso,logs){
   try{
     for(const log of logs){
       await run(`INSERT OR IGNORE INTO call_logs
-        (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+        (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,from_number,to_number,queue_name,start_time)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         getStoredCallLogValues(log));
     }
     await run('COMMIT');
@@ -972,6 +979,27 @@ async function getCallVolume(dateIso, timeZone='Asia/Kolkata') {
   return filtered;
 }
 
+async function getCallLogsFull(dateIso, timeZone='Asia/Kolkata', limit=200, offset=0) {
+  const { start, end } = getDateWindow(dateIso, timeZone);
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  const rows = await all(
+    `SELECT id, agent_id, agent_name, source_call_id, direction, result,
+            duration, ring_duration, hold_duration, transferred, is_voicemail,
+            from_number, to_number, queue_name, start_time, fetched_at
+     FROM call_logs
+     WHERE start_time >= ? AND start_time < ?
+     ORDER BY start_time DESC
+     LIMIT ? OFFSET ?`,
+    [startIso, endIso, limit, offset]
+  );
+  const total = await get(
+    `SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?`,
+    [startIso, endIso]
+  );
+  return { rows, total: total?.cnt || 0, limit, offset };
+}
+
 async function getCallLogStats(dateIso) {
   // dateIso = 'YYYY-MM-DD' in IST; we compute IST midnight boundaries
   const istMidnight = new Date(dateIso + 'T00:00:00+05:30');
@@ -1005,7 +1033,7 @@ module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
-  getCallLogStats,getCallVolume,
+  getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
