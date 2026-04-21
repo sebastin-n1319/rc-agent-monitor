@@ -371,7 +371,8 @@ async function initDB() {
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
   ]) { try { await run(sql); } catch(e) {} }
 
-  for (const email of ['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com']) {
+  const coreAdmins = (process.env.CORE_ADMINS || 'sebastin.n@adit.com,ronnie@adit.com,imran@adit.com').split(',').map(e => e.trim()).filter(Boolean);
+  for (const email of coreAdmins) {
     try { await run(`INSERT OR IGNORE INTO app_roles (email,role,added_by) VALUES (?,'admin','system')`,[email]); } catch(e) {}
   }
   console.log('Database initialized');
@@ -437,9 +438,11 @@ function deleteCallLogsRange(startIso,endIso){
 }
 
 async function replaceCallLogsRange(startIso,endIso,logs){
+  // SAFE MERGE: never delete existing data — only add new records.
+  // INSERT OR IGNORE on the UNIQUE call_id means duplicates are silently skipped
+  // so a partial sync never overwrites a previously-complete snapshot.
   await run('BEGIN IMMEDIATE');
   try{
-    await run(`DELETE FROM call_logs WHERE start_time >= ? AND start_time < ?`,[startIso,endIso]);
     for(const log of logs){
       await run(`INSERT OR IGNORE INTO call_logs
         (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,start_time)
@@ -451,6 +454,12 @@ async function replaceCallLogsRange(startIso,endIso,logs){
     try{await run('ROLLBACK');}catch(_){}
     throw e;
   }
+}
+
+async function pruneCallLogs(daysToKeep=7){
+  // Remove call logs older than N days to prevent unbounded DB growth
+  const cutoff=new Date(Date.now()-daysToKeep*86400000).toISOString();
+  return run(`DELETE FROM call_logs WHERE start_time < ?`,[cutoff]);
 }
 
 // SUMMARY with all new metrics
@@ -940,7 +949,7 @@ async function getCallLogStats(dateIso) {
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,getAgentSummary,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
   getCallLogStats,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,

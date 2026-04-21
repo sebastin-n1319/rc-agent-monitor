@@ -8,7 +8,7 @@ const {
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
-  getCallLogStats
+  getCallLogStats, pruneCallLogs
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -34,6 +34,27 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const sseClients = new Set();
 const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
+const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+const NOTIFICATION_BLOCKLIST = (process.env.NOTIFICATION_BLOCKLIST || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+
+// ── Simple in-memory rate limiter ──────────────────────────────────────────
+const _rateBuckets = new Map();
+function rateLimit(maxReqs, windowMs) {
+  return (req, res, next) => {
+    const key = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown') + req.path;
+    const now = Date.now();
+    const bucket = _rateBuckets.get(key) || { count: 0, reset: now + windowMs };
+    if (now > bucket.reset) { bucket.count = 0; bucket.reset = now + windowMs; }
+    bucket.count++;
+    _rateBuckets.set(key, bucket);
+    if (bucket.count > maxReqs) {
+      return res.status(429).json({ success: false, error: 'Too many requests — slow down.' });
+    }
+    next();
+  };
+}
+// Clean up stale buckets every 10 minutes
+setInterval(() => { const now = Date.now(); for (const [k,v] of _rateBuckets) if (now > v.reset) _rateBuckets.delete(k); }, 600000);
 
 function formatBreakDuration(seconds){
   const total = Math.max(0, Number(seconds || 0));
@@ -229,7 +250,7 @@ app.delete('/api/agents/:extension', async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/rc-search', async (req, res) => {
+app.get('/api/rc-search', rateLimit(20, 60000), async (req, res) => {
   const q = req.query.q || '';
   if (q.length < 2) return res.json({ success: true, data: [] });
   try { res.json({ success: true, data: await searchRCUsers(q) }); }
@@ -268,10 +289,10 @@ app.post('/api/rc-webhook', async (req, res) => {
   }
 
   res.status(200).json({ ok: true });
-  void handleWebhookNotification(req.body);
+  handleWebhookNotification(req.body).catch(e => console.error('❌ webhook handler:', e.message));
 });
 
-app.post('/api/refresh', async (req, res) => {
+app.post('/api/refresh', rateLimit(5, 60000), async (req, res) => {
   try {
     await fetchPresenceForAll();
     await fetchCallLogs();
@@ -288,7 +309,7 @@ app.get('/api/sync-status', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.post('/api/force-call-sync', async (req, res) => {
+app.post('/api/force-call-sync', rateLimit(3, 60000), async (req, res) => {
   try {
     const result = await fetchCallLogs(true);
     res.json({ success: true, result });
@@ -346,14 +367,28 @@ app.get('/api/break-tracker', async (req, res) => {
   }
 });
 
+const VALID_BREAK_ACTIONS = new Set([
+  'LOGGED_IN','LOGGED_OUT',
+  'BRB_OUT','BRB_IN',
+  'BREAK_OUT','BREAK_IN',
+  'TRAINING_OUT','TRAINING_IN',
+  'QA_SESSION_OUT','QA_SESSION_IN',
+  'INTERNAL_CALL_OUT','INTERNAL_CALL_IN'
+]);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 app.post('/api/break-events', async (req, res) => {
   const { username, email, role, action, note, skipNotify } = req.body || {};
-  if(!username || !email || !action){
+  if(!username || !email || !action)
     return res.status(400).json({ success: false, error: 'Username, email, and action are required' });
-  }
-
-  // Emails that should never receive GChat notifications
-  const NOTIFICATION_BLOCKLIST = ['sebastin.n@adit.com'];
+  if(!EMAIL_RE.test(email))
+    return res.status(400).json({ success: false, error: 'Invalid email format' });
+  if(!VALID_BREAK_ACTIONS.has(action))
+    return res.status(400).json({ success: false, error: `Invalid action. Must be one of: ${[...VALID_BREAK_ACTIONS].join(', ')}` });
+  if(note && note.length > 500)
+    return res.status(400).json({ success: false, error: 'Note must be 500 characters or fewer' });
+  if(username.length > 120)
+    return res.status(400).json({ success: false, error: 'Username too long' });
 
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
@@ -400,6 +435,8 @@ app.get('/api/roles', async (req, res) => {
 app.post('/api/roles', async (req, res) => {
   const { email, role, addedBy, breakbotEnabled } = req.body;
   if (!email || !role) return res.status(400).json({ success: false, error: 'Email and role required' });
+  if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email format' });
+  if (!['admin','agent','readonly'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, or readonly' });
   try { await setRole(email.trim(), role, addedBy, breakbotEnabled); res.json({ success: true }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -418,14 +455,14 @@ app.patch('/api/roles/:email/breakbot', async (req, res) => {
 
 app.delete('/api/roles/:email', async (req, res) => {
   const email = decodeURIComponent(req.params.email);
-  if (['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'].includes(email))
+  if (CORE_ADMINS.includes(email.toLowerCase()))
     return res.status(403).json({ success: false, error: 'Cannot remove core admin' });
   try { await removeRole(email); res.json({ success: true }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // Admin announcement — sends a free-form card to the Google Chat space
-app.post('/api/announce', async (req, res) => {
+app.post('/api/announce', rateLimit(5, 60000), async (req, res) => {
   const { title, body, emoji, requester } = req.body || {};
   if(!title || !body) return res.status(400).json({ success: false, error: 'title and body required' });
   if(!GOOGLE_CHAT_WEBHOOK_URL) return res.status(503).json({ success: false, error: 'Webhook not configured' });
@@ -474,8 +511,10 @@ app.get('/api/role-check', async (req, res) => {
 });
 
 async function startScheduler() {
-  setInterval(() => { void fetchPresenceForAll(); }, getFallbackSyncMs());
-  cron.schedule('*/15 * * * *', async () => { await fetchCallLogs(); });
+  setInterval(() => { fetchPresenceForAll().catch(e => console.error('❌ presence sync:', e.message)); }, getFallbackSyncMs());
+  cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });
+  // Prune call logs older than 7 days at 1am IST daily
+  cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
@@ -486,9 +525,9 @@ async function start() {
     try {
       await authenticate();
       await fetchPresenceForAll();
-      setTimeout(() => { void fetchCallLogs(); }, 20000);
+      setTimeout(() => { fetchCallLogs().catch(e => console.error('❌ startup call log:', e.message)); }, 20000);
       await startScheduler();
-      setTimeout(() => { void ensureRealtimeSubscription(); }, 15000);
+      setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }
