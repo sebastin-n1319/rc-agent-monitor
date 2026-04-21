@@ -348,6 +348,14 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_break_events_email_time ON break_events(email, created_at DESC)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_break_events_time ON break_events(created_at DESC)`);
+  await run(`CREATE TABLE IF NOT EXISTS agent_notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_id TEXT NOT NULL,
+    agent_name TEXT,
+    note TEXT NOT NULL,
+    added_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_agent_notes_agent ON agent_notes(agent_id, created_at DESC)`);
 
   // Migrations
   for (const sql of [
@@ -932,6 +940,38 @@ async function getRoleSettingsForEmail(e){
   return row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled}:null;
 }
 
+async function getCallVolume(dateIso, timeZone='Asia/Kolkata') {
+  const { start, end } = getDateWindow(dateIso, timeZone);
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+  // Build 24 hourly buckets in the target timezone
+  const buckets = [];
+  for(let h=0; h<24; h++){
+    const hourStart = new Date(start.getTime() + h * 3600000);
+    const hourEnd   = new Date(start.getTime() + (h+1) * 3600000);
+    if(hourStart >= end) break;
+    const hStartIso = hourStart.toISOString();
+    const hEndIso   = new Date(Math.min(hourEnd.getTime(), end.getTime())).toISOString();
+    const label = hourStart.toLocaleTimeString('en-US', { timeZone, hour: 'numeric', hour12: true });
+    const inb = await get(
+      `SELECT COUNT(*) as total, SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed
+       FROM call_logs WHERE direction='Inbound' AND start_time >= ? AND start_time < ?`,
+      [hStartIso, hEndIso]);
+    const out = await get(
+      `SELECT COUNT(*) as total FROM call_logs WHERE direction='Outbound' AND start_time >= ? AND start_time < ?`,
+      [hStartIso, hEndIso]);
+    const inbTotal = inb?.total || 0;
+    const outTotal = out?.total || 0;
+    const missed = inb?.missed || 0;
+    if(inbTotal > 0 || outTotal > 0 || h >= 7) { // include business hours even if empty
+      buckets.push({ hour: h, label, inbound: inbTotal, outbound: outTotal, missed, handled: inbTotal - missed });
+    }
+  }
+  // Filter to only hours with any data, plus a buffer of business hours (8–20)
+  const filtered = buckets.filter(b => b.inbound > 0 || b.outbound > 0 || (b.hour >= 8 && b.hour <= 20));
+  return filtered;
+}
+
 async function getCallLogStats(dateIso) {
   // dateIso = 'YYYY-MM-DD' in IST; we compute IST midnight boundaries
   const istMidnight = new Date(dateIso + 'T00:00:00+05:30');
@@ -946,11 +986,27 @@ async function getCallLogStats(dateIso) {
   return { total: total?.cnt || 0, inbound: inbound?.cnt || 0, outbound: outbound?.cnt || 0, missed: missed?.cnt || 0, byAgent };
 }
 
+// AGENT NOTES
+async function addAgentNote(agentId, agentName, note, addedBy) {
+  const result = await run(
+    `INSERT INTO agent_notes (agent_id, agent_name, note, added_by) VALUES (?,?,?,?)`,
+    [agentId, agentName || null, note, addedBy || null]
+  );
+  return { id: result.lastID, agentId, agentName, note, addedBy };
+}
+async function getAgentNotes(agentId) {
+  return all(`SELECT * FROM agent_notes WHERE agent_id=? ORDER BY created_at DESC LIMIT 50`, [agentId]);
+}
+async function deleteAgentNote(id) {
+  return run(`DELETE FROM agent_notes WHERE id=?`, [id]);
+}
+
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
-  getCallLogStats,
+  getCallLogStats,getCallVolume,
+  addAgentNote,getAgentNotes,deleteAgentNote,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail

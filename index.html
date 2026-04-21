@@ -7810,6 +7810,7 @@ header{
   window.addEventListener('resize', syncStickyHeader);
 })();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -8266,6 +8267,35 @@ header{
       </div>
     </div>
 
+    <!-- ── Call Volume Chart ─────────────────────────────────────────── -->
+    <div class="card" id="call-volume-card" style="padding:16px 20px">
+      <div class="card-hdr" style="margin-bottom:12px">
+        <span class="card-title">Call Volume · Today</span>
+        <span class="chip" id="call-volume-chip">loading…</span>
+        <button onclick="loadCallVolumeChart()" style="margin-left:auto;background:none;border:1px solid var(--b1);border-radius:6px;color:var(--t2);font-size:11px;padding:3px 8px;cursor:pointer" title="Refresh chart">&#8635;</button>
+      </div>
+      <div style="position:relative;height:160px">
+        <canvas id="callVolumeChart"></canvas>
+        <div id="call-volume-empty" style="display:none;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);font-size:12px;gap:4px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:28px;height:28px;opacity:.4"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></svg>
+          No calls logged yet today
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:8px;justify-content:center">
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)"><span style="width:10px;height:3px;background:#22c55e;border-radius:2px;display:inline-block"></span>Handled</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)"><span style="width:10px;height:3px;background:#f28820;border-radius:2px;display:inline-block"></span>Outbound</span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--t2)"><span style="width:10px;height:3px;background:#f43f5e;border-radius:2px;display:inline-block"></span>Missed</span>
+      </div>
+    </div>
+
+    <!-- ── Queue Health Warning Banner ──────────────────────────────── -->
+    <div id="queue-health-banner" style="display:none;background:linear-gradient(90deg,rgba(244,63,94,.12),rgba(244,63,94,.06));border:1px solid rgba(244,63,94,.35);border-radius:10px;padding:10px 16px;margin-bottom:10px;display:none;align-items:center;gap:10px;animation:qhPulse 2s ease-in-out infinite;">
+      <svg style="width:16px;height:16px;flex-shrink:0;color:#f43f5e" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span id="queue-health-msg" style="font-size:12px;font-weight:700;color:#f43f5e;flex:1">Queue alert</span>
+      <button onclick="document.getElementById('queue-health-banner').style.display='none'" style="background:none;border:none;color:rgba(244,63,94,.6);cursor:pointer;font-size:16px;line-height:1;padding:0">&#x2715;</button>
+    </div>
+    <style>@keyframes qhPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.15)}50%{box-shadow:0 0 0 6px rgba(244,63,94,0)}}</style>
+
     <!-- ── Live Agent Table ────────────────────────────────────────────── -->
     <div class="card">
       <div class="card-hdr">
@@ -8286,15 +8316,17 @@ header{
             <th class="sortable" data-table="admin" data-sort-key="inboundCalls" data-label="IN">IN</th>
             <th class="sortable" data-table="admin" data-sort-key="outboundCalls" data-label="OUT">OUT</th>
             <th class="sortable" data-table="admin" data-sort-key="missedCalls" data-label="Miss">Miss</th>
+            <th class="sortable" data-table="admin" data-sort-key="ahtInbound" data-label="AHT" title="Avg Handle Time (inbound)">AHT</th>
+            <th class="sortable" data-table="admin" data-sort-key="transferCount" data-label="Xfer" title="Transferred calls">Xfer</th>
             <th class="sortable" data-table="admin" data-sort-key="score" data-label="Score">Score</th>
           </tr>
         </thead>
         <tbody id="agent-table">
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td></tr>
         </tbody>
       </table>
       </div>
@@ -8580,6 +8612,21 @@ header{
       <div class="card-hdr">
         <span class="card-title">Team Status</span>
         <span class="chip" id="agent-view-count">0 agents</span>
+        <div style="position:relative;margin-left:8px">
+          <button id="col-toggle-btn" onclick="toggleColMenu()" style="background:none;border:1px solid var(--b1);border-radius:6px;color:var(--t3);font-size:10px;padding:3px 8px;cursor:pointer;display:flex;align-items:center;gap:4px" title="Show/hide columns">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"/></svg>
+            Columns
+          </button>
+          <div id="col-toggle-menu" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--card1,#0c1424);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:10px 14px;z-index:500;white-space:nowrap;box-shadow:0 10px 30px rgba(0,0,0,.5);min-width:160px">
+            <div style="font-size:10px;font-weight:700;color:var(--t3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Visible Columns</div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t1);padding:3px 0;cursor:pointer"><input type="checkbox" id="col-avail" checked onchange="applyColVisibility()"> Avail Today</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t1);padding:3px 0;cursor:pointer"><input type="checkbox" id="col-unavail" checked onchange="applyColVisibility()"> Unavail Today</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t1);padding:3px 0;cursor:pointer"><input type="checkbox" id="col-in" checked onchange="applyColVisibility()"> IN</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t1);padding:3px 0;cursor:pointer"><input type="checkbox" id="col-out" checked onchange="applyColVisibility()"> OUT</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t1);padding:3px 0;cursor:pointer"><input type="checkbox" id="col-missed" checked onchange="applyColVisibility()"> Missed</label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--t1);padding:3px 0;cursor:pointer"><input type="checkbox" id="col-aht" checked onchange="applyColVisibility()"> AHT</label>
+          </div>
+        </div>
         <span id="call-sync-indicator" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--t3);margin-left:auto;cursor:pointer;" title="Click to force-sync call logs" onclick="forceCallSync()">
           <span id="call-sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;"></span>
           <span id="call-sync-label">Calls: checking...</span>
@@ -8587,13 +8634,13 @@ header{
       </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
+        <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="ahtInbound" data-label="AHT" title="Avg Handle Time (inbound)">AHT</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
         <tbody id="agent-view-table">
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-pill"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xl"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-pill"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-pill"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-pill"></div></td></tr>
-          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xl"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-pill"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-pill"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xl"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-pill"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-pill"></div></td></tr>
+          <tr class="skel-row"><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xl"></div></td><td><div class="skel-pill"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-lg"></div></td><td><div class="skel-bar w-md"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-xs"></div></td><td><div class="skel-bar w-sm"></div></td><td><div class="skel-pill"></div></td></tr>
         </tbody>
       </table>
       </div>
@@ -9580,6 +9627,7 @@ function getSortValue(op, key){
     case 'missedCalls': return op.missedCalls || 0;
     case 'ahtInbound': return op.sum?.ahtInbound || 0;
     case 'ahtOutbound': return op.sum?.ahtOutbound || 0;
+    case 'transferCount': return op.sum?.transferCount || 0;
     case 'score': return op.performanceScore?.v || 0;
     default: return 0;
   }
@@ -10668,24 +10716,40 @@ async function loadAgentStatuses(){
       const isLongUnavail=(status||'').toLowerCase()==='unavailable'&&sinceTs&&(Date.now()-new Date(sinceTs).getTime())>3600000;
       return'<tr'+(isLongUnavail?' class="row-unavail-alert"':'')+'>'+
         '<td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
-        '<td><div class="agent-name">'+esc(a.name)+'</div><div class="agent-ext">'+esc(a.extension)+'</div></td>'+
+        '<td><div style="display:flex;align-items:center;gap:6px"><div><div class="agent-name">'+esc(a.name)+'</div><div class="agent-ext">'+esc(a.extension)+'</div></div><button onclick="openNotesModal(\''+esc(a.rc_id||a.extension)+'\',\''+esc(a.name)+'\')" style="background:none;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--t3);cursor:pointer;padding:2px 5px;font-size:10px;line-height:1;flex-shrink:0" title="Coaching notes">&#x270E;</button></div></td>'+
         '<td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+esc(status)+'</span>'+(queueStatus==='Unavailable'?'<div style="font-size:9px;color:var(--t3);margin-top:2px">Queue Off</div>':'')+'</td>'+
         '<td class="mono" style="font-size:11px" title="Since '+toTime(sinceTs)+'">'+fmtSince(sinceTs)+'</td>'+
         '<td>'+liveBadge+'</td>'+
         '<td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td>'+
         '<td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td>'+
-        '<td class="mono" style="color:var(--teal)">'+inC+(ahtIn>0?'<div style="font-size:9px;color:var(--t3)">'+fmt(ahtIn)+'</div>':'')+'</td>'+
+        '<td class="mono" style="color:var(--teal)">'+inC+'</td>'+
         '<td class="mono" style="color:var(--orange2)">'+outC+'</td>'+
         '<td>'+missedBadge+'</td>'+
+        '<td class="mono" style="font-size:11px;color:var(--t2)" title="Avg Handle Time inbound">'+(ahtIn>0?'<span style="color:var(--teal)">'+fmt(ahtIn)+'</span>':'<span style="color:var(--t3)">—</span>')+'</td>'+
+        '<td class="mono" style="font-size:11px;color:var(--t3)" title="Transferred calls">'+((sum.transferCount||0)>0?'<span style="color:var(--orange2)">'+sum.transferCount+'</span>':'0')+'</td>'+
         '<td><span class="score '+sc.c+'" title="'+esc(sc.tip)+'">'+sc.v+'</span></td></tr>';
     });
 
     const tbody=document.getElementById('agent-table');
-    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="11" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
+    if(tbody)tbody.innerHTML=rows.length?rows.join(''):'<tr><td colspan="13" class="no-data">No agents &mdash; add in Manage Agents tab</td></tr>';
 
     document.getElementById('m-avail').textContent=totAvail;
     document.getElementById('m-unavail').textContent=totUnavail;
     document.getElementById('m-oncall').textContent=totOncall;
+    // Queue health warning banner
+    const qhBanner=document.getElementById('queue-health-banner');
+    const qhMsg=document.getElementById('queue-health-msg');
+    if(qhBanner&&qhMsg){
+      if(totAvail===0&&(totOncall>0||totUnavail>0)){
+        qhMsg.textContent='⚠ No agents available — queue unattended. '+(totOncall>0?totOncall+' on call, ':'')+totUnavail+' unavailable.';
+        qhBanner.style.display='flex';
+      }else if(totAvail===1){
+        qhMsg.textContent='⚠ Only 1 agent available — low coverage.';
+        qhBanner.style.display='flex';
+      }else{
+        qhBanner.style.display='none';
+      }
+    }
     const queueDash=queueDashboardSummary&&queueDashboardSummary.date===today?queueDashboardSummary:null;
     const teamVoicemailTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).voicemails||0),0);
     const teamTransferTotal=agents.reduce((s,a)=>s+((todaySummary[a.rc_id]||{}).transferCount||0),0);
@@ -10788,11 +10852,12 @@ async function loadAgentStatuses(){
         let lb='<span style="color:var(--text3)">&mdash;</span>';
         if(op&&op.live.isOnCall){const dir=normalizeLiveDirection(op.live.direction);lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
         const isUnavailLong=(status||'').toLowerCase()==='unavailable'&&sinceTs&&(Date.now()-new Date(sinceTs).getTime())>3600000;
+        const ahtInAgent=sum.ahtInbound||0;
         return'<tr'+(isUnavailLong?' class="row-unavail-alert"':'')+'>'+
-        '<td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+esc(a.name)+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+esc(status)+'</span></td><td class="mono" title="Since '+toTime(sinceTs)+'">'+fmtSince(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td><span class="score '+sc.c+'" title="'+esc(sc.tip)+'">'+sc.v+'</span></td></tr>';
+        '<td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+esc(a.name)+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+esc(status)+'</span></td><td class="mono" title="Since '+toTime(sinceTs)+'">'+fmtSince(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td class="mono" style="font-size:11px">'+(ahtInAgent>0?'<span style="color:var(--teal)">'+fmt(ahtInAgent)+'</span>':'<span style="color:var(--t3)">—</span>')+'</td><td><span class="score '+sc.c+'" title="'+esc(sc.tip)+'">'+sc.v+'</span></td></tr>';
       });
       const at=document.getElementById('agent-view-table');
-      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="11" class="no-data">No agents</td></tr>';
+      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="12" class="no-data">No agents</td></tr>';
       document.getElementById('ag-avail').textContent=totAvail;
       document.getElementById('ag-unavail').textContent=totUnavail;
       document.getElementById('ag-oncall').textContent=totOncall;
@@ -10802,6 +10867,65 @@ async function loadAgentStatuses(){
       document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
     }
   }catch(e){console.error('loadAgentStatuses',e);}
+}
+
+// ── Call Volume Chart ───────────────────────────────────────────────────
+let _callVolumeChart=null;
+async function loadCallVolumeChart(){
+  try{
+    const tz=currentTZ||'Asia/Kolkata';
+    const today=todayStr();
+    const res=await fetch(BACKEND+'/api/call-volume?date='+today+'&tz='+encodeURIComponent(tz));
+    const j=await res.json();
+    if(!j.success)return;
+    const data=j.data||[];
+    const card=document.getElementById('call-volume-card');
+    const chip=document.getElementById('call-volume-chip');
+    const empty=document.getElementById('call-volume-empty');
+    const canvas=document.getElementById('callVolumeChart');
+    const totalCalls=data.reduce((s,b)=>s+b.inbound+b.outbound,0);
+    if(chip)chip.textContent=totalCalls>0?(totalCalls+' calls'):'No data';
+    if(!data.length||totalCalls===0){
+      if(canvas)canvas.style.display='none';
+      if(empty){empty.style.display='flex';empty.style.position='absolute';}
+      return;
+    }
+    if(canvas)canvas.style.display='block';
+    if(empty)empty.style.display='none';
+    const labels=data.map(b=>b.label);
+    const handled=data.map(b=>b.handled);
+    const outbound=data.map(b=>b.outbound);
+    const missed=data.map(b=>b.missed);
+    if(_callVolumeChart){_callVolumeChart.destroy();_callVolumeChart=null;}
+    const ctx=canvas.getContext('2d');
+    _callVolumeChart=new Chart(ctx,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:'Handled',data:handled,backgroundColor:'rgba(34,197,94,.55)',borderColor:'#22c55e',borderWidth:1.5,borderRadius:3},
+          {label:'Outbound',data:outbound,backgroundColor:'rgba(242,136,32,.45)',borderColor:'#f28820',borderWidth:1.5,borderRadius:3},
+          {label:'Missed',data:missed,backgroundColor:'rgba(244,63,94,.45)',borderColor:'#f43f5e',borderWidth:1.5,borderRadius:3}
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{
+            backgroundColor:'rgba(7,13,28,.92)',borderColor:'rgba(255,255,255,.08)',borderWidth:1,
+            titleColor:'#e2e8f0',bodyColor:'#94a3b8',padding:10,
+            callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y}
+          }
+        },
+        scales:{
+          x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#4a5270',font:{size:10}}},
+          y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#4a5270',font:{size:10},stepSize:1},beginAtZero:true}
+        }
+      }
+    });
+  }catch(e){console.error('loadCallVolumeChart',e);}
 }
 
 async function loadCallSyncStatus(){
@@ -11361,6 +11485,7 @@ async function refresh(){
   await loadAgentStatuses();
   if(currentRole==='admin')await loadEventLog();
   loadCallSyncStatus();
+  loadCallVolumeChart();
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
   const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
 }
@@ -11370,6 +11495,7 @@ updateClock();
 setInterval(updateClock,1000);
 setInterval(()=>{if(currentUser)refresh();},30000);
 initParticles();
+loadColPrefs();
 initConfetti();
 initLoginAnimations();
 
@@ -12487,6 +12613,140 @@ window.addEventListener('load',()=>{
   z-index: 2 !important;
 }
 </style>
+
+<!-- ── Agent Notes Modal ─────────────────────────────────────────────── -->
+<div id="agent-notes-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center">
+  <div style="background:var(--card1,#0c1424);border:1px solid rgba(255,255,255,.1);border-radius:14px;width:min(480px,94vw);max-height:80vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.6)">
+    <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#f28820" stroke-width="2" style="width:16px;height:16px;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span style="font-weight:700;font-size:14px;color:var(--t1,#eef2ff)">Coaching Notes — <span id="notes-agent-name">Agent</span></span>
+      <button onclick="closeNotesModal()" style="margin-left:auto;background:none;border:none;color:var(--t3);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px">&#x2715;</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px 20px" id="notes-list">
+      <div style="text-align:center;color:var(--t3);font-size:12px;padding:20px 0">No notes yet</div>
+    </div>
+    <div style="padding:14px 20px;border-top:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:8px">
+      <textarea id="notes-input" placeholder="Add a coaching note… (max 500 chars)" maxlength="500" rows="3" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--t1,#eef2ff);font-size:12px;padding:10px 12px;resize:vertical;width:100%;box-sizing:border-box;font-family:inherit"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <span id="notes-char-count" style="font-size:10px;color:var(--t3);align-self:center">0/500</span>
+        <button onclick="submitAgentNote()" style="background:var(--orange,#f28820);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:12px;padding:7px 16px;cursor:pointer">Save Note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Column Visibility Toggle ─────────────────────────────────────────────
+// col index mapping for agent-view-table (0-based):
+// 0=# 1=Agent 2=Live 3=Status 4=Since 5=Avail 6=Unavail 7=IN 8=OUT 9=Missed 10=AHT 11=Score
+const COL_MAP={avail:5,unavail:6,'in':7,out:8,missed:9,aht:10};
+function toggleColMenu(){
+  const m=document.getElementById('col-toggle-menu');
+  if(m)m.style.display=m.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',function(e){
+  const btn=document.getElementById('col-toggle-btn');
+  const menu=document.getElementById('col-toggle-menu');
+  if(btn&&menu&&!btn.contains(e.target)&&!menu.contains(e.target))menu.style.display='none';
+});
+function applyColVisibility(){
+  const table=document.getElementById('agent-view-table');
+  const thead=table?table.closest('table')?.querySelector('thead'):null;
+  Object.entries(COL_MAP).forEach(([key,colIdx])=>{
+    const cb=document.getElementById('col-'+key);
+    const show=cb?cb.checked:true;
+    // Update header
+    if(thead){
+      const th=thead.querySelectorAll('th')[colIdx];
+      if(th)th.style.display=show?'':'none';
+    }
+    // Update all data rows
+    if(table){
+      table.querySelectorAll('tr').forEach(row=>{
+        const td=row.querySelectorAll('td')[colIdx];
+        if(td)td.style.display=show?'':'none';
+      });
+    }
+  });
+  // Save to localStorage
+  const prefs={};
+  Object.keys(COL_MAP).forEach(k=>{const cb=document.getElementById('col-'+k);prefs[k]=cb?cb.checked:true;});
+  try{localStorage.setItem('agentColPrefs',JSON.stringify(prefs));}catch(e){}
+}
+function loadColPrefs(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('agentColPrefs')||'{}');
+    Object.keys(COL_MAP).forEach(k=>{
+      const cb=document.getElementById('col-'+k);
+      if(cb&&saved[k]!==undefined)cb.checked=saved[k];
+    });
+    applyColVisibility();
+  }catch(e){}
+}
+// Apply after table renders — hooked into refresh cycle via MutationObserver
+const _colObserver=new MutationObserver(()=>applyColVisibility());
+(function initColObserver(){
+  const t=document.getElementById('agent-view-table');
+  if(t)_colObserver.observe(t,{childList:true});
+  else setTimeout(initColObserver,500);
+})();
+
+// ── Agent Notes ──────────────────────────────────────────────────────────
+let _notesAgentId=null,_notesAgentName=null;
+function openNotesModal(agentId,agentName){
+  _notesAgentId=agentId;_notesAgentName=agentName;
+  const modal=document.getElementById('agent-notes-modal');
+  document.getElementById('notes-agent-name').textContent=agentName||agentId;
+  document.getElementById('notes-input').value='';
+  document.getElementById('notes-char-count').textContent='0/500';
+  modal.style.display='flex';
+  loadNotesList();
+}
+function closeNotesModal(){
+  document.getElementById('agent-notes-modal').style.display='none';
+}
+document.getElementById('agent-notes-modal').addEventListener('click',function(e){if(e.target===this)closeNotesModal();});
+document.getElementById('notes-input').addEventListener('input',function(){
+  document.getElementById('notes-char-count').textContent=this.value.length+'/500';
+});
+async function loadNotesList(){
+  const list=document.getElementById('notes-list');
+  if(!list||!_notesAgentId)return;
+  list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px 0">Loading…</div>';
+  try{
+    const res=await fetch(BACKEND+'/api/agent-notes/'+encodeURIComponent(_notesAgentId));
+    const j=await res.json();
+    if(!j.success||!j.data.length){list.innerHTML='<div style="text-align:center;color:var(--t3);font-size:12px;padding:20px 0">No notes yet — add one below</div>';return;}
+    list.innerHTML=j.data.map(n=>`
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 12px;margin-bottom:8px;position:relative">
+        <div style="font-size:12px;color:var(--t1,#eef2ff);line-height:1.5;margin-bottom:6px">${esc(n.note)}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:var(--t3)">${n.added_by?esc(n.added_by):'Admin'}</span>
+          <span style="font-size:10px;color:var(--t3)">·</span>
+          <span style="font-size:10px;color:var(--t3)">${new Date(n.created_at.replace(' ','T')+'Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
+          ${currentRole==='admin'?`<button onclick="deleteNote(${n.id})" style="margin-left:auto;background:none;border:none;color:rgba(244,63,94,.5);cursor:pointer;font-size:11px;padding:0" title="Delete note">&#x1F5D1;</button>`:''}
+        </div>
+      </div>`).join('');
+  }catch(e){list.innerHTML='<div style="color:var(--red);font-size:12px;padding:10px">Failed to load notes</div>';}
+}
+async function submitAgentNote(){
+  const note=document.getElementById('notes-input').value.trim();
+  if(!note||!_notesAgentId)return;
+  try{
+    const res=await fetch(BACKEND+'/api/agent-notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agentId:_notesAgentId,agentName:_notesAgentName,note,addedBy:currentUser})});
+    const j=await res.json();
+    if(j.success){document.getElementById('notes-input').value='';document.getElementById('notes-char-count').textContent='0/500';loadNotesList();}
+    else alert('Error: '+j.error);
+  }catch(e){alert('Failed to save note');}
+}
+async function deleteNote(id){
+  if(!confirm('Delete this note?'))return;
+  try{
+    await fetch(BACKEND+'/api/agent-notes/'+id,{method:'DELETE'});
+    loadNotesList();
+  }catch(e){alert('Failed to delete note');}
+}
+</script>
 
 </body>
 </html>

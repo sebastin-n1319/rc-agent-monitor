@@ -8,7 +8,7 @@ const {
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
-  getCallLogStats, pruneCallLogs
+  getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -297,6 +297,33 @@ app.post('/api/refresh', rateLimit(5, 60000), async (req, res) => {
     await fetchPresenceForAll();
     await fetchCallLogs();
     res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Agent Notes
+app.get('/api/agent-notes/:agentId', async (req, res) => {
+  try { res.json({ success: true, data: await getAgentNotes(req.params.agentId) }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/agent-notes', async (req, res) => {
+  const { agentId, agentName, note, addedBy } = req.body || {};
+  if (!agentId || !note) return res.status(400).json({ success: false, error: 'agentId and note required' });
+  if (note.length > 500) return res.status(400).json({ success: false, error: 'Note must be 500 chars or fewer' });
+  try { res.json({ success: true, data: await addAgentNote(agentId, agentName, note.trim(), addedBy) }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.delete('/api/agent-notes/:id', async (req, res) => {
+  try { await deleteAgentNote(req.params.id); res.json({ success: true }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/call-volume', async (req, res) => {
+  const tz = req.query.tz || 'Asia/Kolkata';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  try {
+    const { getCallVolume } = require('./database');
+    const data = await getCallVolume(date, tz);
+    res.json({ success: true, date, timeZone: tz, data });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
