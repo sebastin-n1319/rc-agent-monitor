@@ -330,17 +330,21 @@ app.get('/api/break-tracker', async (req, res) => {
 });
 
 app.post('/api/break-events', async (req, res) => {
-  const { username, email, role, action, note } = req.body || {};
+  const { username, email, role, action, note, skipNotify } = req.body || {};
   if(!username || !email || !action){
     return res.status(400).json({ success: false, error: 'Username, email, and action are required' });
   }
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
     let notification = { notified: false, status: 'skipped', response: 'Not attempted' };
-    try {
-      notification = await sendBreakChatNotification(event);
-    } catch (notifyError) {
-      notification = { notified: false, status: 'failed', response: notifyError.message };
+    if(skipNotify) {
+      notification = { notified: false, status: 'disabled', response: 'Notifications disabled for this user' };
+    } else {
+      try {
+        notification = await sendBreakChatNotification(event);
+      } catch (notifyError) {
+        notification = { notified: false, status: 'failed', response: notifyError.message };
+      }
     }
     await updateBreakEventNotification(event.id, notification.notified, notification.status, notification.response);
     const date = req.body.date || new Date().toISOString().split('T')[0];

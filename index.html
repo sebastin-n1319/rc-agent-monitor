@@ -10463,7 +10463,8 @@ async function sendBreakAction(action, btn){
         action,
         note,
         date: todayStr(),
-        tz: activeTimeZone()
+        tz: activeTimeZone(),
+        skipNotify: currentEmail === 'sebastin.n@adit.com'
       })
     });
     const json = await res.json();
