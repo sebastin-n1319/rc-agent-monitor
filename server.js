@@ -7,11 +7,12 @@ const {
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
-  insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker
+  insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
+  getCallLogStats
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
-  handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription
+  handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus
 } = require('./rc-service');
 
 const app = express();
@@ -275,6 +276,22 @@ app.post('/api/refresh', async (req, res) => {
     await fetchPresenceForAll();
     await fetchCallLogs();
     res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/sync-status', async (req, res) => {
+  try {
+    const syncInfo = getCallSyncStatus();
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+    const callStats = await getCallLogStats(today);
+    res.json({ success: true, sync: syncInfo, callLogs: callStats, today });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/force-call-sync', async (req, res) => {
+  try {
+    const result = await fetchCallLogs(true);
+    res.json({ success: true, result });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

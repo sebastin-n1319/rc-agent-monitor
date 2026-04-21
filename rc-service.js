@@ -1361,6 +1361,15 @@ function getFallbackSyncMs() {
   return FALLBACK_SYNC_MS;
 }
 
+function getCallSyncStatus() {
+  return {
+    lastSyncAt: lastCallLogSyncAt || null,
+    lastSuccessAt: lastSuccessfulCallLogSyncAt || null,
+    syncIntervalMs: CALL_LOG_SYNC_MIN_INTERVAL_MS,
+    isSyncing: !!callLogSyncPromise
+  };
+}
+
 module.exports = {
   authenticate,
   ensureRealtimeSubscription,
@@ -1371,5 +1380,6 @@ module.exports = {
   fetchLiveCallStatus,
   handleWebhookNotification,
   liveEvents,
-  getFallbackSyncMs
+  getFallbackSyncMs,
+  getCallSyncStatus
 };

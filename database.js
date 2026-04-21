@@ -923,10 +923,25 @@ async function getRoleSettingsForEmail(e){
   return row?{role:row.role,breakbotEnabled:!!row.breakbot_enabled}:null;
 }
 
+async function getCallLogStats(dateIso) {
+  // dateIso = 'YYYY-MM-DD' in IST; we compute IST midnight boundaries
+  const istMidnight = new Date(dateIso + 'T00:00:00+05:30');
+  const istNext = new Date(istMidnight.getTime() + 86400000);
+  const start = istMidnight.toISOString();
+  const end = istNext.toISOString();
+  const total = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ?`, [start, end]);
+  const byAgent = await all(`SELECT agent_id, COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? GROUP BY agent_id`, [start, end]);
+  const inbound = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? AND direction='Inbound'`, [start, end]);
+  const outbound = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? AND direction='Outbound'`, [start, end]);
+  const missed = await get(`SELECT COUNT(*) as cnt FROM call_logs WHERE start_time >= ? AND start_time < ? AND lower(COALESCE(result,'')) IN ('missed','abandoned')`, [start, end]);
+  return { total: total?.cnt || 0, inbound: inbound?.cnt || 0, outbound: outbound?.cnt || 0, missed: missed?.cnt || 0, byAgent };
+}
+
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,getAgentSummary,getAbandonedCalls,
+  getCallLogStats,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail

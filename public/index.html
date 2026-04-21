@@ -8572,11 +8572,18 @@ header{
       <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="ag-outbound">--</div></div>
     </div>
     <div class="card">
-      <div class="card-hdr"><span class="card-title">Team Status</span><span class="chip" id="agent-view-count">0 agents</span></div>
+      <div class="card-hdr">
+        <span class="card-title">Team Status</span>
+        <span class="chip" id="agent-view-count">0 agents</span>
+        <span id="call-sync-indicator" style="display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--t3);margin-left:auto;cursor:pointer;" title="Click to force-sync call logs" onclick="forceCallSync()">
+          <span id="call-sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;"></span>
+          <span id="call-sync-label">Calls: checking...</span>
+        </span>
+      </div>
       <div class="tbl-wrap">
       <table>
-        <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th>24h</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
-        <tbody id="agent-view-table"><tr><td colspan="12" class="no-data">Loading...</td></tr></tbody>
+        <thead><tr><th class="sortable" data-table="agent" data-sort-key="idx" data-label="#">#</th><th class="sortable" data-table="agent" data-sort-key="name" data-label="Agent">Agent</th><th>Live</th><th class="sortable" data-table="agent" data-sort-key="status" data-label="Status">Status</th><th class="sortable" data-table="agent" data-sort-key="sinceTs" data-label="Since">Since</th><th class="sortable" data-table="agent" data-sort-key="availableSeconds" data-label="Avail Today">Avail Today</th><th class="sortable" data-table="agent" data-sort-key="unavailableSeconds" data-label="Unavail Today">Unavail Today</th><th class="sortable" data-table="agent" data-sort-key="inboundCalls" data-label="IN">IN</th><th class="sortable" data-table="agent" data-sort-key="outboundCalls" data-label="OUT">OUT</th><th class="sortable" data-table="agent" data-sort-key="missedCalls" data-label="Missed">Missed</th><th class="sortable" data-table="agent" data-sort-key="score" data-label="Score">Score</th></tr></thead>
+        <tbody id="agent-view-table"><tr><td colspan="11" class="no-data">Loading...</td></tr></tbody>
       </table>
       </div>
     </div>
@@ -8801,15 +8808,6 @@ header{
 
           </div>
         </div>
-        <div class="card">
-          <div class="card-hdr">
-            <span class="card-title">Your Break Log</span>
-            <span class="chip" id="break-self-log-chip">0 events</span>
-          </div>
-          <div class="break-log-list" id="break-self-log">
-            <div class="break-empty">No break events yet. Your first tap will appear here.</div>
-          </div>
-        </div>
       </div>
       <div class="break-stack">
         <div class="card break-hero-card">
@@ -8863,6 +8861,15 @@ header{
               <div class="bha-arc bha-arc-1"></div>
               <div class="bha-arc bha-arc-2"></div>
             </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Your Break Log</span>
+            <span class="chip" id="break-self-log-chip">0 events</span>
+          </div>
+          <div class="break-log-list" id="break-self-log">
+            <div class="break-empty">No break events yet. Your first tap will appear here.</div>
           </div>
         </div>
       </div>
@@ -10735,10 +10742,10 @@ async function loadAgentStatuses(){
         const tl=buildTL(a.rc_id,todayStr());
         let lb='<span style="color:var(--text3)">&mdash;</span>';
         if(op&&op.live.isOnCall){const dir=normalizeLiveDirection(op.live.direction);lb='<div class="live-badge"><span class="live-dot2"></span>'+dir+'</div>';}
-        return'<tr><td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+a.name+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td><td class="mono">'+toTime(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td>'+tl+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
+        return'<tr><td style="color:var(--text3)">'+(idx+1)+'</td><td><div class="agent-name">'+a.name+'</div></td><td>'+lb+'</td><td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+status+'</span></td><td class="mono">'+toTime(sinceTs)+'</td><td class="mono" style="color:var(--green)">'+fmt(sum.availableSeconds||0)+'</td><td class="mono" style="color:var(--red)">'+fmt(sum.unavailableSeconds||0)+'</td><td class="mono">'+inC+'</td><td class="mono">'+outC+'</td><td><span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span></td><td><span class="score '+sc.c+'">'+sc.v+'</span></td></tr>';
       });
       const at=document.getElementById('agent-view-table');
-      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="12" class="no-data">No agents</td></tr>';
+      if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="11" class="no-data">No agents</td></tr>';
       document.getElementById('ag-avail').textContent=totAvail;
       document.getElementById('ag-unavail').textContent=totUnavail;
       document.getElementById('ag-oncall').textContent=totOncall;
@@ -10748,6 +10755,46 @@ async function loadAgentStatuses(){
       document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
     }
   }catch(e){console.error('loadAgentStatuses',e);}
+}
+
+async function loadCallSyncStatus(){
+  try{
+    const res=await fetch(BACKEND+'/api/sync-status');
+    const j=await res.json();
+    if(!j.success)return;
+    const dot=document.getElementById('call-sync-dot');
+    const lbl=document.getElementById('call-sync-label');
+    if(!dot||!lbl)return;
+    const total=j.callLogs?.total||0;
+    const lastSync=j.sync?.lastSuccessAt;
+    const isSyncing=j.sync?.isSyncing;
+    let age='never';
+    if(lastSync){
+      const ms=Date.now()-lastSync;
+      const mins=Math.floor(ms/60000);
+      age=mins<1?'just now':mins<60?(mins+'m ago'):(Math.floor(mins/60)+'h ago');
+    }
+    const isHealthy=total>0;
+    dot.style.background=isSyncing?'var(--yellow)':isHealthy?'var(--green)':'var(--red)';
+    dot.style.boxShadow=isSyncing?'0 0 5px var(--yellow)':isHealthy?'0 0 5px var(--green)':'0 0 5px var(--red)';
+    lbl.textContent=isSyncing?'Syncing…':(total+' calls · '+age);
+    const ind=document.getElementById('call-sync-indicator');
+    if(ind)ind.title=`Call logs: ${total} total · ${j.callLogs?.inbound||0} in · ${j.callLogs?.outbound||0} out · ${j.callLogs?.missed||0} missed\nLast sync: ${age}\nClick to force refresh`;
+  }catch(e){}
+}
+
+async function forceCallSync(){
+  const lbl=document.getElementById('call-sync-label');
+  const dot=document.getElementById('call-sync-dot');
+  if(lbl)lbl.textContent='Syncing…';
+  if(dot){dot.style.background='var(--yellow)';dot.style.boxShadow='0 0 5px var(--yellow)';}
+  try{
+    await fetch(BACKEND+'/api/force-call-sync',{method:'POST'});
+    await new Promise(r=>setTimeout(r,3000));
+    await loadCallSyncStatus();
+    await loadData();
+    showToast('Call logs refreshed','success');
+  }catch(e){showToast('Sync failed','error');}
 }
 
 async function loadEventLog(){
@@ -11266,6 +11313,7 @@ async function refresh(){
   await loadBreakTracker();
   await loadAgentStatuses();
   if(currentRole==='admin')await loadEventLog();
+  loadCallSyncStatus();
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
   const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
 }
