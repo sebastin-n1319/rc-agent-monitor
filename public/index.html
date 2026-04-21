@@ -10113,7 +10113,7 @@ function buildBreakFeedRow(event, compact=false){
 }
 
 function buildBreakLaneCard(title, subtitle, cls, rows){
-  // keep empty lanes but mark them
+  if(rows.length === 0) return '';
   const names = rows.map(row => {
     const durationText = fmt(row.currentLaneSeconds || 0);
     const titleText = row.since
@@ -10122,9 +10122,7 @@ function buildBreakLaneCard(title, subtitle, cls, rows){
     return '<span class="break-lane-chip '+(row.alerts?.hasAlert?'alert':'')+'" title="'+titleText+'">'+row.username+' · '+durationText+'</span>';
   }).join('');
   const alertCount = rows.filter(row => row.alerts?.hasAlert).length;
-  const grow = rows.length === 0 ? 1 : Math.max(2, Math.ceil(Math.sqrt(rows.length)) + 1);
-  const emptyCls = rows.length === 0 ? ' lane-empty-state' : '';
-  return '<div class="break-lane-card '+cls+emptyCls+' '+(alertCount?'has-alert':'')+'" style="flex-grow:'+grow+'">'+
+  return '<div class="break-lane-card '+cls+' '+(alertCount?'has-alert':'')+'">'+
     '<div class="break-lane-head">'+
       '<div><div class="break-lane-kicker">Floor lane</div><div class="break-lane-title">'+title+'</div><div class="break-lane-sub">'+subtitle+(alertCount?' · '+alertCount+' alerts':'')+'</div></div>'+
       '<div class="break-lane-count">'+rows.length+'</div>'+
@@ -13417,5 +13415,81 @@ window.addEventListener('load',()=>{
 #agent-section-breakbot .break-lane-empty {
   font-size: 10.5px !important;
   margin-top: 8px !important;
+}
+</style>
+
+<style id="bb-lane-v8">
+/* ── Active-only lanes filling full width ───────────────────── */
+#agent-section-breakbot .break-lane-board {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#agent-section-breakbot .break-lane-card {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 14px 14px 12px !important;
+  box-sizing: border-box !important;
+}
+
+/* Text — clamp properly */
+#agent-section-breakbot .break-lane-kicker {
+  font-size: 9px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: .08em !important;
+}
+#agent-section-breakbot .break-lane-title {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.3 !important;
+  margin-top: 1px !important;
+}
+#agent-section-breakbot .break-lane-sub {
+  font-size: 10.5px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin-top: 2px !important;
+  opacity: .65 !important;
+}
+#agent-section-breakbot .break-lane-head {
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Chips wrap freely */
+#agent-section-breakbot .break-lane-list {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 5px !important;
+  margin-top: 8px !important;
+  overflow: visible !important;
+  width: 100% !important;
+}
+#agent-section-breakbot .break-lane-chip {
+  white-space: nowrap !important;
+  font-size: 10.5px !important;
+}
+#agent-section-breakbot .break-alert-tag {
+  font-size: 10px !important;
+  padding: 2px 8px !important;
+  margin-top: 6px !important;
 }
 </style>
