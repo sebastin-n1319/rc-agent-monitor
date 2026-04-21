@@ -8590,9 +8590,9 @@ header{
 
   <!-- CALL LOGS -->
   <div class="page" id="tab-calllogs">
-    <div class="card" style="padding:0;overflow:hidden">
+    <div class="card" style="padding:0;">
       <!-- Header bar -->
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);flex-wrap:wrap;border-radius:var(--r) var(--r) 0 0;">
         <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:180px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--blue)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
           <span style="font-weight:600;font-size:14px;color:var(--t1)">Call Logs</span>
@@ -8618,9 +8618,9 @@ header{
       </div>
       <!-- Summary chips -->
       <div id="cl-summary-row" style="display:flex;gap:10px;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--surface);flex-wrap:wrap;"></div>
-      <!-- Table -->
-      <div style="overflow-x:auto;">
-        <table class="tbl" id="cl-table" style="min-width:900px;">
+      <!-- Table — uses its own scroll container so thead sticky top:0 works correctly -->
+      <div id="cl-table-wrap">
+        <table id="cl-table" style="min-width:900px;width:100%;border-collapse:collapse;font-size:12px;">
           <thead>
             <tr>
               <th style="width:170px">From</th>
@@ -8635,12 +8635,12 @@ header{
             </tr>
           </thead>
           <tbody id="cl-tbody">
-            <tr class="skel-row"><td colspan="9" style="text-align:center;color:var(--t3);padding:40px">Loading call logs…</td></tr>
+            <tr><td colspan="9" style="text-align:center;color:var(--t3);padding:40px">Loading call logs…</td></tr>
           </tbody>
         </table>
       </div>
       <!-- Pagination -->
-      <div id="cl-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--border);background:var(--card);">
+      <div id="cl-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--border);background:var(--card);border-radius:0 0 var(--r) var(--r);">
         <span id="cl-page-info" style="font-size:12px;color:var(--t3)"></span>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-sm" id="cl-prev-btn" onclick="clChangePage(-1)" disabled>← Prev</button>
@@ -10764,10 +10764,13 @@ function clResultBadge(r){
   const res=r.result||'';
   const low=res.toLowerCase();
   if(clIsVoicemail(r)) return `<span class="cl-result-badge cl-result-voicemail">📨 Voicemail</span>`;
-  if(clIsAnswered(r))  return `<span class="cl-result-badge cl-result-answered">✓ ${esc(res)}</span>`;
-  if(low.includes('missed'))   return `<span class="cl-result-badge cl-result-missed">✕ Missed</span>`;
+  if(clIsAnswered(r))  return `<span class="cl-result-badge cl-result-answered">✓ Answered</span>`;
+  if(low.includes('missed'))    return `<span class="cl-result-badge cl-result-missed">✕ Missed</span>`;
   if(low.includes('abandoned')) return `<span class="cl-result-badge cl-result-abandoned">↩ Abandoned</span>`;
-  return `<span class="cl-result-badge cl-result-other">${esc(res||'—')}</span>`;
+  // RC-specific results: "IP Phone Offline", "Call connected", "HangUp", etc.
+  if(low.includes('offline')||low.includes('busy')||low.includes('no answer'))
+    return `<span class="cl-result-badge cl-result-missed" title="${esc(res)}">✕ ${esc(res)}</span>`;
+  return `<span class="cl-result-badge cl-result-other" title="${esc(res)}">${esc(res)||'—'}</span>`;
 }
 
 function clDirBadge(dir){
@@ -15205,6 +15208,37 @@ tr.row-unavail-alert td:first-child {
 
 /* ── Score tooltip ───────────────────────────────────────────── */
 .score[title] { cursor: help; }
+
+/* ── Call Logs table wrapper — own scroll context like admin table ── */
+#cl-table-wrap {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 600px;
+}
+/* Override the global sticky thead positioning for this table only.
+   The global rule uses top:130px which pushes the header below data rows
+   when the card doesn't scroll to 130px. Force top:0 relative to our
+   scroll container instead. */
+#cl-table-wrap thead th {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  background: rgba(9,15,28,.97) !important;
+  border-bottom: 1px solid rgba(148,163,184,.12) !important;
+  padding: 10px 11px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+  color: rgba(148,163,184,.7) !important;
+  white-space: nowrap !important;
+  cursor: default !important;
+}
+#cl-table-wrap tbody tr { border-bottom: 1px solid rgba(255,255,255,.038); transition: background .15s; }
+#cl-table-wrap tbody tr:hover { background: rgba(255,255,255,.028); }
+#cl-table-wrap tbody tr:last-child { border-bottom: none; }
+#cl-table-wrap td { padding: 11px 11px; vertical-align: middle; color: var(--t2); white-space: nowrap; }
+#cl-table-wrap td:first-child { color: var(--t2); font-size: 12px; }
 
 /* ── Call Logs section ───────────────────────────────────────── */
 #tab-calllogs .cl-result-badge {
