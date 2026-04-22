@@ -7916,6 +7916,7 @@ header{
         <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account.</p>
 
         <div id="loginMsg"></div>
+        <div id="sessionDebug" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:monospace;font-size:10.5px;color:#94a3b8;line-height:1.7;text-align:left"></div>
 
         <div class="ls-btn-wrap">
           <div class="gfb-wrapper" style="width:100%;">
@@ -9577,75 +9578,81 @@ function doLogout(){
 function showLoginMsg(msg){
   document.getElementById('loginMsg').innerHTML = msg ? ('<div class="login-msg-error">'+msg+'</div>') : '';
 }
+function showSessionDebug(lines){
+  const el = document.getElementById('sessionDebug');
+  if(!el) return;
+  el.style.display = 'block';
+  el.innerHTML = '<strong style="color:#f1f5f9">Session debug:</strong><br>' + lines.join('<br>');
+}
+
 async function loadSession(){
   const AGE_24H = 24 * 60 * 60 * 1000;
+  const debugLines = [];
 
   // ── Layer 1: localStorage — survives browser restarts, Railway redeploys, mobile unloads ──
-  // Checked FIRST because it's synchronous and the most durable store.
+  let cached = null;
   try{
-    const cached = JSON.parse(localStorage.getItem('rcSession') || 'null');
-    if(cached && cached.email && cached.name && cached.role && (Date.now() - (cached.savedAt||0)) < AGE_24H){
-      // Start the app immediately — no waiting for network
+    const raw = localStorage.getItem('rcSession');
+    debugLines.push('localStorage.rcSession: ' + (raw ? raw.substring(0,60)+'…' : 'empty'));
+    cached = JSON.parse(raw || 'null');
+  }catch(e){ debugLines.push('localStorage error: '+e.message); }
+
+  if(cached && cached.email && cached.name && cached.role){
+    const ageMs = Date.now() - (cached.savedAt||0);
+    const ageH = (ageMs/3600000).toFixed(1);
+    debugLines.push('rcSession age: '+ageH+'h (limit 24h)');
+    if(ageMs < AGE_24H){
       sessionStorage.setItem('rcUser', cached.name);
       sessionStorage.setItem('rcRole', cached.role);
       sessionStorage.setItem('rcEmail', cached.email);
       sessionStorage.setItem('rcPicture', cached.picture || '');
       sessionStorage.setItem('rcBreakbotEnabled', cached.breakbotEnabled ? '1' : '0');
-      startApp(cached.name, cached.role, cached.picture, cached.breakbotEnabled !== false);
-      // In background: validate with server + refresh cookie + sync role changes
-      fetch(BACKEND + '/api/session', { credentials: 'include' })
-        .then(r => r.json())
-        .then(s => {
-          if(s.success && s.role){
-            // Update role if it changed (e.g. promoted to admin)
-            if(s.role !== cached.role){
-              sessionStorage.setItem('rcRole', s.role);
-              sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled ? '1' : '0');
+      try{
+        startApp(cached.name, cached.role, cached.picture, cached.breakbotEnabled !== false);
+        // Background: validate with server and refresh cookie
+        fetch(BACKEND + '/api/session', { credentials: 'include' })
+          .then(r => r.json())
+          .then(s => {
+            if(s.success && s.role){
+              if(s.role !== cached.role) sessionStorage.setItem('rcRole', s.role);
+              try{ localStorage.setItem('rcSession', JSON.stringify({
+                name:s.name||cached.name, role:s.role, email:s.email||cached.email,
+                picture:s.picture||cached.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()
+              })); }catch(_){}
+            } else {
+              fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:cached.email,name:cached.name,picture:cached.picture||''})}).catch(()=>{});
             }
-            // Refresh localStorage timestamp so session keeps rolling
-            try{ localStorage.setItem('rcSession', JSON.stringify({
-              name: s.name||cached.name, role: s.role, email: s.email||cached.email,
-              picture: s.picture||cached.picture||'',
-              breakbotEnabled: s.breakbotEnabled !== false, savedAt: Date.now()
-            })); }catch(_){}
-          } else {
-            // Server doesn't recognise session — re-register cookie in background
-            fetch(BACKEND + '/api/session', {
-              method:'POST', credentials:'include',
-              headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({ email:cached.email, name:cached.name, picture:cached.picture||'' })
-            }).catch(()=>{});
-          }
-        }).catch(()=>{});
-      return;
+          }).catch(()=>{});
+        return;
+      }catch(err){ debugLines.push('startApp error: '+err.message); }
     }
-  }catch(e){}
+  }
 
-  // ── Layer 2: sessionStorage — same-tab fast path (fallback if localStorage empty) ──
+  // ── Layer 2: sessionStorage — same-tab fast path ──
   const u=sessionStorage.getItem('rcUser'), r=sessionStorage.getItem('rcRole'), p=sessionStorage.getItem('rcPicture');
-  const be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
-  if(u&&r){ startApp(u,r,p,be); return; }
+  debugLines.push('sessionStorage.rcUser: '+(u||'empty')+' | rcRole: '+(r||'empty'));
+  if(u&&r){
+    try{ startApp(u,r,p,sessionStorage.getItem('rcBreakbotEnabled')!=='0'); return; }
+    catch(err){ debugLines.push('startApp error (ss): '+err.message); }
+  }
 
-  // ── Layer 3: Server cookie — for first-time users or after localStorage clear ──
+  // ── Layer 3: Server cookie ──
   try{
     const resp = await fetch(BACKEND + '/api/session', { credentials: 'include' });
     const s = await resp.json();
+    debugLines.push('server cookie: '+(s.success?'valid ('+s.role+')':'invalid'));
     if(s.success && s.email && s.name && s.role){
-      sessionStorage.setItem('rcUser', s.name);
-      sessionStorage.setItem('rcRole', s.role);
-      sessionStorage.setItem('rcEmail', s.email);
-      sessionStorage.setItem('rcPicture', s.picture || '');
-      sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled ? '1' : '0');
-      try{ localStorage.setItem('rcSession', JSON.stringify({
-        name:s.name, role:s.role, email:s.email,
-        picture:s.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()
-      })); }catch(_){}
-      startApp(s.name, s.role, s.picture, s.breakbotEnabled !== false);
-      return;
+      sessionStorage.setItem('rcUser', s.name); sessionStorage.setItem('rcRole', s.role);
+      sessionStorage.setItem('rcEmail', s.email); sessionStorage.setItem('rcPicture', s.picture||'');
+      sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled?'1':'0');
+      try{ localStorage.setItem('rcSession', JSON.stringify({name:s.name,role:s.role,email:s.email,picture:s.picture||'',breakbotEnabled:s.breakbotEnabled!==false,savedAt:Date.now()})); }catch(_){}
+      try{ startApp(s.name,s.role,s.picture,s.breakbotEnabled!==false); return; }
+      catch(err){ debugLines.push('startApp error (cookie): '+err.message); }
     }
-  }catch(e){}
+  }catch(e){ debugLines.push('server cookie error: '+e.message); }
 
-  // ── No valid session anywhere — show Google sign-in ──
+  // ── No valid session — show debug info on login screen ──
+  showSessionDebug(debugLines);
   initGoogleAuth();
 }
 
