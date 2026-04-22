@@ -561,10 +561,11 @@ app.get('/api/role-check', async (req, res) => {
 // The cookie holds only the token — no secrets, survives server restarts.
 
 function setCookieToken(res, token) {
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
   res.cookie(SESSION_COOKIE, token, {
     maxAge: SESSION_MAX_AGE_S * 1000,
-    httpOnly: false,   // JS must read it to pass back on same-origin fetches
-    secure: false,     // works on both HTTP and HTTPS (Railway = HTTPS)
+    httpOnly: true,    // not readable by JS — only sent automatically by browser
+    secure: !!isProduction, // HTTPS-only on Railway, allows HTTP in local dev
     sameSite: 'lax',
     path: '/'
   });
@@ -574,13 +575,19 @@ function setCookieToken(res, token) {
 app.post('/api/session', async (req, res) => {
   const { email, name, picture } = req.body || {};
   if (!email) return res.status(400).json({ success: false, error: 'email required' });
+  const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || 'adit.com';
+  if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
+    return res.status(403).json({ success: false, error: 'Not authorised' });
+  }
   try {
-    const settings = await getRoleSettingsForEmail(email);
-    if (!settings) return res.status(403).json({ success: false, error: 'Not authorised' });
     const token = crypto.randomBytes(32).toString('hex');
     await createAppSession(token, email, name || '', picture || '');
     setCookieToken(res, token);
-    res.json({ success: true, role: settings.role, breakbotEnabled: settings.breakbotEnabled !== false });
+    // Look up role — default to 'agent' if not in app_roles yet
+    const settings = await getRoleSettingsForEmail(email).catch(() => null);
+    const role = settings?.role || 'agent';
+    const breakbotEnabled = settings ? settings.breakbotEnabled !== false : true;
+    res.json({ success: true, role, breakbotEnabled });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -591,21 +598,18 @@ app.get('/api/session', async (req, res) => {
     if (!token) return res.json({ success: false });
     const session = await getAppSession(token); // also rolls expiry
     if (!session) return res.json({ success: false });
-    // Re-validate role from DB
-    const settings = await getRoleSettingsForEmail(session.email);
-    if (!settings) {
-      await deleteAppSession(token);
-      res.clearCookie(SESSION_COOKIE, { path: '/' });
-      return res.json({ success: false });
-    }
+    // Look up role — default to 'agent' if not in app_roles (don't block the session)
+    const settings = await getRoleSettingsForEmail(session.email).catch(() => null);
+    const role = settings?.role || 'agent';
+    const breakbotEnabled = settings ? settings.breakbotEnabled !== false : true;
     setCookieToken(res, token); // refresh cookie max-age
     res.json({
       success: true,
       email: session.email,
       name: session.name,
       picture: session.picture,
-      role: settings.role,
-      breakbotEnabled: settings.breakbotEnabled !== false
+      role,
+      breakbotEnabled
     });
   } catch(e) { res.json({ success: false }); }
 });

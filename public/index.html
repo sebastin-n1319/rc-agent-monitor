@@ -8680,6 +8680,33 @@ header{
     <button class="agent-shell-btn" id="agent-tab-bonus" onclick="switchAgentSection('bonus',this)">Bonus Guide</button>
   </div>
   <div class="agent-shell-page active" id="agent-section-dashboard">
+    <!-- ── EOD Form Banner ───────────────────────────────────────────────── -->
+    <div id="eod-form-banner" style="
+      display:flex;align-items:center;gap:14px;
+      background:linear-gradient(90deg,rgba(250,204,21,.13) 0%,rgba(250,204,21,.06) 100%);
+      border:1px solid rgba(250,204,21,.35);border-radius:12px;
+      padding:14px 18px;margin-bottom:18px;position:relative;
+    ">
+      <div style="font-size:22px;flex-shrink:0">📋</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#fde047;margin-bottom:2px;letter-spacing:.01em">Action required — complete by EOD</div>
+        <div style="font-size:12px;color:rgba(253,224,71,.75);line-height:1.4">Please fill out the team form before the end of your shift today.</div>
+      </div>
+      <a href="https://forms.gle/AvkPN2rNcF2qNFU68" target="_blank" rel="noopener" style="
+        flex-shrink:0;display:inline-flex;align-items:center;gap:7px;
+        background:#fde047;color:#1a1400;font-size:12px;font-weight:700;
+        padding:9px 16px;border-radius:8px;text-decoration:none;letter-spacing:.02em;
+        transition:opacity .15s;white-space:nowrap;
+      " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        Open Form
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+      <button onclick="document.getElementById('eod-form-banner').style.display='none'" style="
+        position:absolute;top:8px;right:10px;background:none;border:none;
+        color:rgba(253,224,71,.5);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;
+      " title="Dismiss">×</button>
+    </div>
+    <!-- ──────────────────────────────────────────────────────────────────── -->
     <div class="metrics">
       <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="ag-avail">--</div></div>
       <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="ag-unavail">--</div></div>
@@ -9233,6 +9260,7 @@ async function handleTokenResponse(response){
 function switchGoogleAccount(){
   fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
   localStorage.removeItem('rcLastUser');
+  localStorage.removeItem('rcSession');
   sessionStorage.clear();
   updateLoginButton();
   try{ google.accounts.id.disableAutoSelect(); }catch(e){}
@@ -9519,20 +9547,26 @@ function initEmbeddedFrames(){
 // localStorage is kept as a fast-restore hint only (no security dependency).
 
 function savePersistedSession(name, role, email, picture, breakbotEnabled){
-  // Tell the server to create a signed session cookie
+  // Tell the server to create a DB-backed session cookie (survives browser restart)
   fetch(BACKEND + '/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ email, name, picture: picture || '' })
   }).catch(() => {});
-  // Also save to localStorage as a fast UI hint (not relied on for auth)
-  try{ localStorage.setItem('rcLastUser', JSON.stringify({ name, email, picture: picture||'' })); }catch(e){}
+  // Also save full auth state to localStorage (survives server restarts + Railway deploys)
+  try{
+    localStorage.setItem('rcLastUser', JSON.stringify({ name, email, picture: picture||'' }));
+    localStorage.setItem('rcSession', JSON.stringify({
+      name, role, email, picture: picture||'', breakbotEnabled: breakbotEnabled!==false,
+      savedAt: Date.now()
+    }));
+  }catch(e){}
 }
 
 function doLogout(){
   fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
-  try{ localStorage.removeItem('rcLastUser'); }catch(e){}
+  try{ localStorage.removeItem('rcLastUser'); localStorage.removeItem('rcSession'); }catch(e){}
   sessionStorage.clear();
   currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   if(window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
@@ -9544,12 +9578,12 @@ function showLoginMsg(msg){
   document.getElementById('loginMsg').innerHTML = msg ? ('<div class="login-msg-error">'+msg+'</div>') : '';
 }
 async function loadSession(){
-  // 1. Active tab — sessionStorage still alive (fastest)
+  // Layer 1: Active tab — sessionStorage still alive (survives F5 refresh, fastest)
   const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');
   const be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
   if(u&&r){ startApp(u,r,p,be); return; }
 
-  // 2. Ask the server if there is a valid session cookie (survives browser restart)
+  // Layer 2: Server-side cookie token in DB (survives browser close/reopen)
   try{
     const resp = await fetch(BACKEND + '/api/session', { credentials: 'include' });
     const s = await resp.json();
@@ -9559,12 +9593,35 @@ async function loadSession(){
       sessionStorage.setItem('rcEmail', s.email);
       sessionStorage.setItem('rcPicture', s.picture || '');
       sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled ? '1' : '0');
+      // Refresh the localStorage cache with latest role from server
+      try{ localStorage.setItem('rcSession', JSON.stringify({ name:s.name, role:s.role, email:s.email, picture:s.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now() })); }catch(_){}
       startApp(s.name, s.role, s.picture, s.breakbotEnabled !== false && s.breakbotEnabled !== '0');
       return;
     }
-  }catch(e){ /* server unreachable — fall through to login */ }
+  }catch(e){ /* server unreachable — try localStorage */ }
 
-  // 3. No valid session — show Google sign-in
+  // Layer 3: localStorage cache (survives server restarts / Railway deploys, up to 24h)
+  try{
+    const cached = JSON.parse(localStorage.getItem('rcSession') || 'null');
+    const AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+    if(cached && cached.email && cached.name && cached.role && (Date.now() - (cached.savedAt||0)) < AGE_MS){
+      sessionStorage.setItem('rcUser', cached.name);
+      sessionStorage.setItem('rcRole', cached.role);
+      sessionStorage.setItem('rcEmail', cached.email);
+      sessionStorage.setItem('rcPicture', cached.picture || '');
+      sessionStorage.setItem('rcBreakbotEnabled', cached.breakbotEnabled ? '1' : '0');
+      startApp(cached.name, cached.role, cached.picture, cached.breakbotEnabled !== false);
+      // Silently re-register the session with server in the background
+      fetch(BACKEND + '/api/session', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cached.email, name: cached.name, picture: cached.picture || '' })
+      }).catch(() => {});
+      return;
+    }
+  }catch(e){ /* no valid localStorage cache */ }
+
+  // No session anywhere — show Google sign-in
   initGoogleAuth();
 }
 
