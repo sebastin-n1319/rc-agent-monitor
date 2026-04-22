@@ -9578,12 +9578,55 @@ function showLoginMsg(msg){
   document.getElementById('loginMsg').innerHTML = msg ? ('<div class="login-msg-error">'+msg+'</div>') : '';
 }
 async function loadSession(){
-  // Layer 1: Active tab — sessionStorage still alive (survives F5 refresh, fastest)
-  const u=sessionStorage.getItem('rcUser'),r=sessionStorage.getItem('rcRole'),p=sessionStorage.getItem('rcPicture');
+  const AGE_24H = 24 * 60 * 60 * 1000;
+
+  // ── Layer 1: localStorage — survives browser restarts, Railway redeploys, mobile unloads ──
+  // Checked FIRST because it's synchronous and the most durable store.
+  try{
+    const cached = JSON.parse(localStorage.getItem('rcSession') || 'null');
+    if(cached && cached.email && cached.name && cached.role && (Date.now() - (cached.savedAt||0)) < AGE_24H){
+      // Start the app immediately — no waiting for network
+      sessionStorage.setItem('rcUser', cached.name);
+      sessionStorage.setItem('rcRole', cached.role);
+      sessionStorage.setItem('rcEmail', cached.email);
+      sessionStorage.setItem('rcPicture', cached.picture || '');
+      sessionStorage.setItem('rcBreakbotEnabled', cached.breakbotEnabled ? '1' : '0');
+      startApp(cached.name, cached.role, cached.picture, cached.breakbotEnabled !== false);
+      // In background: validate with server + refresh cookie + sync role changes
+      fetch(BACKEND + '/api/session', { credentials: 'include' })
+        .then(r => r.json())
+        .then(s => {
+          if(s.success && s.role){
+            // Update role if it changed (e.g. promoted to admin)
+            if(s.role !== cached.role){
+              sessionStorage.setItem('rcRole', s.role);
+              sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled ? '1' : '0');
+            }
+            // Refresh localStorage timestamp so session keeps rolling
+            try{ localStorage.setItem('rcSession', JSON.stringify({
+              name: s.name||cached.name, role: s.role, email: s.email||cached.email,
+              picture: s.picture||cached.picture||'',
+              breakbotEnabled: s.breakbotEnabled !== false, savedAt: Date.now()
+            })); }catch(_){}
+          } else {
+            // Server doesn't recognise session — re-register cookie in background
+            fetch(BACKEND + '/api/session', {
+              method:'POST', credentials:'include',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({ email:cached.email, name:cached.name, picture:cached.picture||'' })
+            }).catch(()=>{});
+          }
+        }).catch(()=>{});
+      return;
+    }
+  }catch(e){}
+
+  // ── Layer 2: sessionStorage — same-tab fast path (fallback if localStorage empty) ──
+  const u=sessionStorage.getItem('rcUser'), r=sessionStorage.getItem('rcRole'), p=sessionStorage.getItem('rcPicture');
   const be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
   if(u&&r){ startApp(u,r,p,be); return; }
 
-  // Layer 2: Server-side cookie token in DB (survives browser close/reopen)
+  // ── Layer 3: Server cookie — for first-time users or after localStorage clear ──
   try{
     const resp = await fetch(BACKEND + '/api/session', { credentials: 'include' });
     const s = await resp.json();
@@ -9593,35 +9636,16 @@ async function loadSession(){
       sessionStorage.setItem('rcEmail', s.email);
       sessionStorage.setItem('rcPicture', s.picture || '');
       sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled ? '1' : '0');
-      // Refresh the localStorage cache with latest role from server
-      try{ localStorage.setItem('rcSession', JSON.stringify({ name:s.name, role:s.role, email:s.email, picture:s.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now() })); }catch(_){}
-      startApp(s.name, s.role, s.picture, s.breakbotEnabled !== false && s.breakbotEnabled !== '0');
+      try{ localStorage.setItem('rcSession', JSON.stringify({
+        name:s.name, role:s.role, email:s.email,
+        picture:s.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()
+      })); }catch(_){}
+      startApp(s.name, s.role, s.picture, s.breakbotEnabled !== false);
       return;
     }
-  }catch(e){ /* server unreachable — try localStorage */ }
+  }catch(e){}
 
-  // Layer 3: localStorage cache (survives server restarts / Railway deploys, up to 24h)
-  try{
-    const cached = JSON.parse(localStorage.getItem('rcSession') || 'null');
-    const AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
-    if(cached && cached.email && cached.name && cached.role && (Date.now() - (cached.savedAt||0)) < AGE_MS){
-      sessionStorage.setItem('rcUser', cached.name);
-      sessionStorage.setItem('rcRole', cached.role);
-      sessionStorage.setItem('rcEmail', cached.email);
-      sessionStorage.setItem('rcPicture', cached.picture || '');
-      sessionStorage.setItem('rcBreakbotEnabled', cached.breakbotEnabled ? '1' : '0');
-      startApp(cached.name, cached.role, cached.picture, cached.breakbotEnabled !== false);
-      // Silently re-register the session with server in the background
-      fetch(BACKEND + '/api/session', {
-        method: 'POST', credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: cached.email, name: cached.name, picture: cached.picture || '' })
-      }).catch(() => {});
-      return;
-    }
-  }catch(e){ /* no valid localStorage cache */ }
-
-  // No session anywhere — show Google sign-in
+  // ── No valid session anywhere — show Google sign-in ──
   initGoogleAuth();
 }
 
