@@ -10032,6 +10032,7 @@ function configureAgentBreakbotAccess(){
 
 function startApp(username,role,picture,breakbotEnabled=true){
   currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
+  hideSessionDebug();
   applyAditBranding();
 
   // Pre-populate header & views before animation starts
@@ -10230,6 +10231,13 @@ function showSessionDebug(lines){
   el.innerHTML = '<strong style="color:#f1f5f9">Session debug:</strong><br>' + lines.join('<br>');
 }
 
+function hideSessionDebug(){
+  const el = document.getElementById('sessionDebug');
+  if(!el) return;
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+
 async function loadSession(){
   const AGE_7D = 7 * 24 * 60 * 60 * 1000;
   const debugLines = [];
@@ -10240,6 +10248,11 @@ async function loadSession(){
     const raw = localStorage.getItem('rcSession');
     debugLines.push('localStorage.rcSession: ' + (raw ? raw.substring(0,60)+'…' : 'empty'));
     cached = JSON.parse(raw || 'null');
+    if(cached && (!cached.name || !cached.email || !cached.role)){
+      debugLines.push('rcSession incomplete, clearing stale cache');
+      localStorage.removeItem('rcSession');
+      cached = null;
+    }
   }catch(e){ debugLines.push('localStorage error: '+e.message); }
 
   if(cached && cached.email && cached.name && cached.role){
@@ -10296,6 +10309,49 @@ async function loadSession(){
       catch(err){ debugLines.push('startApp error (cookie): '+err.message); }
     }
   }catch(e){ debugLines.push('server cookie error: '+e.message); }
+
+  // ── Layer 4: recover from remembered account if cookie/cache is missing ──
+  try{
+    const remembered = JSON.parse(localStorage.getItem('rcLastUser') || 'null');
+    if(remembered && remembered.email && remembered.name && remembered.email.endsWith('@'+DOMAIN)){
+      debugLines.push('rcLastUser present: '+remembered.email);
+      let role='agent', breakbotEnabled=true;
+      try{
+        const rr = await fetch(BACKEND+'/api/role-check?email='+encodeURIComponent(remembered.email));
+        const rj = await rr.json();
+        if(rj.success){
+          role = rj.role || 'agent';
+          breakbotEnabled = rj.breakbotEnabled !== false;
+        }
+      }catch(e){
+        debugLines.push('role-check recovery fallback: '+e.message);
+      }
+      try{
+        localStorage.setItem('rcSession', JSON.stringify({
+          name: remembered.name,
+          role,
+          email: remembered.email,
+          picture: remembered.picture || '',
+          breakbotEnabled,
+          savedAt: Date.now()
+        }));
+      }catch(_){}
+      sessionStorage.setItem('rcUser', remembered.name);
+      sessionStorage.setItem('rcRole', role);
+      sessionStorage.setItem('rcEmail', remembered.email);
+      sessionStorage.setItem('rcPicture', remembered.picture || '');
+      sessionStorage.setItem('rcBreakbotEnabled', breakbotEnabled ? '1' : '0');
+      fetch(BACKEND+'/api/session',{
+        method:'POST',
+        credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email:remembered.email,name:remembered.name,picture:remembered.picture||''})
+      }).catch(()=>{});
+      debugLines.push('recovered session from rcLastUser');
+      try{ startApp(remembered.name,role,remembered.picture,breakbotEnabled); return; }
+      catch(err){ debugLines.push('startApp error (recovered): '+err.message); }
+    }
+  }catch(e){ debugLines.push('rcLastUser recovery error: '+e.message); }
 
   // ── No valid session — show debug info on login screen ──
   showSessionDebug(debugLines);
