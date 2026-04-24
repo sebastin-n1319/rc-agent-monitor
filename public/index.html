@@ -9889,7 +9889,7 @@ async function handleTokenResponse(response){
     fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo:navigator.userAgent})}).catch(()=>{});
     sessionStorage.setItem('rcUser',name); sessionStorage.setItem('rcRole',role); sessionStorage.setItem('rcEmail',email); sessionStorage.setItem('rcPicture',picture||''); sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
     localStorage.setItem('rcLastUser', JSON.stringify({name, email, picture: picture||''}));
-    savePersistedSession(name, role, email, picture, breakbotEnabled);
+    await savePersistedSession(name, role, email, picture, breakbotEnabled);
     resetLoginBtn();
     startApp(name, role, picture, breakbotEnabled);
   }catch(e){
@@ -9989,7 +9989,7 @@ async function handleGoogleCredential(response){
   fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
   localStorage.setItem('rcLastUser',JSON.stringify({name,email,picture:picture||''}));
-  savePersistedSession(name, role, email, picture, breakbotEnabled);
+  await savePersistedSession(name, role, email, picture, breakbotEnabled);
   startApp(name,role,picture,breakbotEnabled);
 }
 
@@ -10191,14 +10191,14 @@ function initEmbeddedFrames(){
 // This survives browser restarts, tab closes, and browser storage clears.
 // localStorage is kept as a fast-restore hint only (no security dependency).
 
-function savePersistedSession(name, role, email, picture, breakbotEnabled){
+async function savePersistedSession(name, role, email, picture, breakbotEnabled){
   // Tell the server to create a DB-backed session cookie (survives browser restart)
-  fetch(BACKEND + '/api/session', {
+  const req = fetch(BACKEND + '/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify({ email, name, picture: picture || '' })
-  }).catch(() => {});
+  }).catch(() => null);
   // Also save full auth state to localStorage (survives server restarts + Railway deploys)
   try{
     localStorage.setItem('rcLastUser', JSON.stringify({ name, email, picture: picture||'' }));
@@ -10207,6 +10207,7 @@ function savePersistedSession(name, role, email, picture, breakbotEnabled){
       savedAt: Date.now()
     }));
   }catch(e){}
+  return req;
 }
 
 function doLogout(){
