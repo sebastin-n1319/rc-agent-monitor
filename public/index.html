@@ -9762,8 +9762,37 @@ let googleAuthReady = false;
 let tokenClient = null;
 let gisRendered = false;
 
+function renderGoogleIdentityButton(){
+  const host = document.getElementById('googleBtn');
+  const fallbackBtn = document.getElementById('googleFallbackBtn');
+  if(!host || gisRendered || !window.google?.accounts?.id) return false;
+  try{
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+    host.innerHTML = '';
+    google.accounts.id.renderButton(host, {
+      theme: 'outline',
+      size: 'large',
+      type: 'standard',
+      text: 'continue_with',
+      shape: 'pill',
+      width: 360
+    });
+    gisRendered = true;
+    host.classList.add('gis-ready');
+    if(fallbackBtn) fallbackBtn.classList.add('gfb-hidden');
+    return true;
+  }catch(e){
+    if(fallbackBtn) fallbackBtn.classList.remove('gfb-hidden');
+    return false;
+  }
+}
+
 function initGoogleAuth(){
-  let ready = false;
   if(window.google?.accounts?.oauth2 && !tokenClient){
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
@@ -9776,12 +9805,8 @@ function initGoogleAuth(){
     });
     googleAuthReady = true;
   }
-
-  // google.accounts.id (One Tap / FedCM) intentionally NOT used —
-  // it injects a native "Continue as …" pill we can't style.
-  // We use tokenClient.requestAccessToken() exclusively (OAuth2 token flow).
-
-  return !!tokenClient;
+  renderGoogleIdentityButton();
+  return !!tokenClient || !!window.google?.accounts?.id;
 }
 
 function resetLoginBtn(){
@@ -9889,6 +9914,7 @@ function updateLoginButton(){
   const btn = document.getElementById('googleFallbackBtn');
   const label = btn?.querySelector('.google-btn-label');
   const switchBtn = document.getElementById('gfbSwitch');
+  const host = document.getElementById('googleBtn');
   if(stored){
     try{
       const {name} = JSON.parse(stored);
@@ -9899,6 +9925,9 @@ function updateLoginButton(){
   } else {
     if(label) label.textContent = 'Continue with Google';
     if(switchBtn) switchBtn.style.display = 'none';
+  }
+  if(host && !host.classList.contains('gis-ready')){
+    if(btn) btn.classList.remove('gfb-hidden');
   }
 }
 
@@ -10201,7 +10230,7 @@ function showSessionDebug(lines){
 }
 
 async function loadSession(){
-  const AGE_24H = 24 * 60 * 60 * 1000;
+  const AGE_7D = 7 * 24 * 60 * 60 * 1000;
   const debugLines = [];
 
   // ── Layer 1: localStorage — survives browser restarts, Railway redeploys, mobile unloads ──
@@ -10213,10 +10242,11 @@ async function loadSession(){
   }catch(e){ debugLines.push('localStorage error: '+e.message); }
 
   if(cached && cached.email && cached.name && cached.role){
-    const ageMs = Date.now() - (cached.savedAt||0);
+    const savedAt = Number(cached.savedAt || Date.now());
+    const ageMs = Date.now() - savedAt;
     const ageH = (ageMs/3600000).toFixed(1);
-    debugLines.push('rcSession age: '+ageH+'h (limit 24h)');
-    if(ageMs < AGE_24H){
+    debugLines.push('rcSession age: '+ageH+'h (limit 168h)');
+    if(ageMs < AGE_7D){
       sessionStorage.setItem('rcUser', cached.name);
       sessionStorage.setItem('rcRole', cached.role);
       sessionStorage.setItem('rcEmail', cached.email);
