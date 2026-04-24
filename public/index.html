@@ -9888,7 +9888,9 @@ async function handleTokenResponse(response){
     }catch(e){}
     fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo:navigator.userAgent})}).catch(()=>{});
     sessionStorage.setItem('rcUser',name); sessionStorage.setItem('rcRole',role); sessionStorage.setItem('rcEmail',email); sessionStorage.setItem('rcPicture',picture||''); sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
-    localStorage.setItem('rcLastUser', JSON.stringify({name, email, picture: picture||''}));
+    localStorage.setItem('rcLastUser', JSON.stringify({
+      name, role, email, picture: picture||'', breakbotEnabled
+    }));
     await savePersistedSession(name, role, email, picture, breakbotEnabled);
     resetLoginBtn();
     startApp(name, role, picture, breakbotEnabled);
@@ -9988,7 +9990,9 @@ async function handleGoogleCredential(response){
   }catch(e){}
   fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
-  localStorage.setItem('rcLastUser',JSON.stringify({name,email,picture:picture||''}));
+  localStorage.setItem('rcLastUser',JSON.stringify({
+    name,role,email,picture:picture||'',breakbotEnabled
+  }));
   await savePersistedSession(name, role, email, picture, breakbotEnabled);
   startApp(name,role,picture,breakbotEnabled);
 }
@@ -10202,7 +10206,13 @@ async function savePersistedSession(name, role, email, picture, breakbotEnabled)
   }).catch(() => null);
   // Also save full auth state to localStorage (survives server restarts + Railway deploys)
   try{
-    localStorage.setItem('rcLastUser', JSON.stringify({ name, email, picture: picture||'' }));
+    localStorage.setItem('rcLastUser', JSON.stringify({
+      name,
+      role,
+      email,
+      picture: picture||'',
+      breakbotEnabled: breakbotEnabled!==false
+    }));
     localStorage.setItem('rcSession', JSON.stringify({
       name, role, email, picture: picture||'', breakbotEnabled: breakbotEnabled!==false,
       savedAt: Date.now()
@@ -10315,16 +10325,19 @@ async function loadSession(){
     const remembered = JSON.parse(localStorage.getItem('rcLastUser') || 'null');
     if(remembered && remembered.email && remembered.name && remembered.email.endsWith('@'+DOMAIN)){
       debugLines.push('rcLastUser present: '+remembered.email);
-      let role='agent', breakbotEnabled=true;
-      try{
-        const rr = await fetch(BACKEND+'/api/role-check?email='+encodeURIComponent(remembered.email));
-        const rj = await rr.json();
-        if(rj.success){
-          role = rj.role || 'agent';
-          breakbotEnabled = rj.breakbotEnabled !== false;
+      let role = remembered.role || 'agent';
+      let breakbotEnabled = remembered.breakbotEnabled !== false;
+      if(!remembered.role){
+        try{
+          const rr = await fetch(BACKEND+'/api/role-check?email='+encodeURIComponent(remembered.email));
+          const rj = await rr.json();
+          if(rj.success){
+            role = rj.role || 'agent';
+            breakbotEnabled = rj.breakbotEnabled !== false;
+          }
+        }catch(e){
+          debugLines.push('role-check recovery fallback: '+e.message);
         }
-      }catch(e){
-        debugLines.push('role-check recovery fallback: '+e.message);
       }
       try{
         localStorage.setItem('rcSession', JSON.stringify({
@@ -10341,6 +10354,8 @@ async function loadSession(){
       sessionStorage.setItem('rcEmail', remembered.email);
       sessionStorage.setItem('rcPicture', remembered.picture || '');
       sessionStorage.setItem('rcBreakbotEnabled', breakbotEnabled ? '1' : '0');
+      debugLines.push('restoring app from rcLastUser');
+      try{ startApp(remembered.name,role,remembered.picture,breakbotEnabled); }catch(err){ debugLines.push('startApp error (recovered): '+err.message); throw err; }
       fetch(BACKEND+'/api/session',{
         method:'POST',
         credentials:'include',
@@ -10348,8 +10363,7 @@ async function loadSession(){
         body:JSON.stringify({email:remembered.email,name:remembered.name,picture:remembered.picture||''})
       }).catch(()=>{});
       debugLines.push('recovered session from rcLastUser');
-      try{ startApp(remembered.name,role,remembered.picture,breakbotEnabled); return; }
-      catch(err){ debugLines.push('startApp error (recovered): '+err.message); }
+      return;
     }
   }catch(e){ debugLines.push('rcLastUser recovery error: '+e.message); }
 
