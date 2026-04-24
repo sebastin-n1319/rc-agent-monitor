@@ -12511,12 +12511,6 @@ initConfetti();
 initLoginAnimations();
 
 window.addEventListener('load', async () => {
-  applyAditBranding();
-  bindSortHeaders();
-  syncBreakDateInputs();
-  syncBreakActionState();
-  const dp=document.getElementById('date-picker');
-  if(dp)dp.value=todayStr();
   // Handle redirect-back from Google OAuth fallback
   (function(){
     if(window.location.hash.includes('id_token') && localStorage.getItem('gOAuthRedirect')){
@@ -12528,8 +12522,23 @@ window.addEventListener('load', async () => {
     }
   })();
 
-  // loadSession is async — it checks the server cookie before showing login
-  await loadSession();
+  // Restore auth state first. If any later UI helper throws, we still want
+  // the session to come back on refresh instead of dumping the user to login.
+  try{
+    await loadSession();
+  }catch(e){
+    console.error('loadSession failed', e);
+  }
+
+  // Non-critical UI bootstrapping should never block auth/session restore.
+  try{ applyAditBranding(); }catch(e){ console.error('applyAditBranding failed', e); }
+  try{ bindSortHeaders(); }catch(e){ console.error('bindSortHeaders failed', e); }
+  try{ syncBreakDateInputs(); }catch(e){ console.error('syncBreakDateInputs failed', e); }
+  try{ syncBreakActionState(); }catch(e){ console.error('syncBreakActionState failed', e); }
+  try{
+    const dp=document.getElementById('date-picker');
+    if(dp)dp.value=todayStr();
+  }catch(e){ console.error('date-picker init failed', e); }
 
   if(!currentUser){
     updateLoginButton(); // show remembered user immediately
