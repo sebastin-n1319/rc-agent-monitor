@@ -10054,8 +10054,27 @@ function startApp(username,role,picture,breakbotEnabled=true){
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
 
+  const forceAppVisible = () => {
+    if(loginEl){
+      loginEl.classList.add('login-gone');
+      loginEl.classList.remove('login-exiting');
+      loginEl.style.setProperty('display','none','important');
+      loginEl.style.setProperty('opacity','0','important');
+      loginEl.style.setProperty('visibility','hidden','important');
+      loginEl.style.setProperty('pointer-events','none','important');
+    }
+    if(appEl){
+      appEl.style.setProperty('display','flex','important');
+      appEl.style.setProperty('opacity','1','important');
+      appEl.style.setProperty('visibility','visible','important');
+      appEl.style.setProperty('pointer-events','auto','important');
+    }
+    document.documentElement.classList.add('app-authenticated');
+    document.body.classList.add('app-authenticated');
+  };
+
   // Show mainApp invisible so layout is ready behind the loginScreen
-  appEl.style.display='flex';
+  appEl.style.setProperty('display','flex','important');
   appEl.style.opacity='0';
 
   // Single rAF is enough — loginScreen is already painted, so adding the
@@ -10073,6 +10092,7 @@ function startApp(username,role,picture,breakbotEnabled=true){
     // (1,0,0), so its display:none !important wins the cascade.
     loginEl.classList.add('login-gone');
     loginEl.classList.remove('login-exiting');
+    forceAppVisible();
 
     // Fade in the app: add transition class, then double-rAF to change opacity.
     // Double-rAF is the standard browser pattern to guarantee the 'transition'
@@ -10089,12 +10109,15 @@ function startApp(username,role,picture,breakbotEnabled=true){
     setTimeout(()=>{
       appEl.classList.remove('app-revealing');
       appEl.style.opacity=''; // hand off to CSS; app stays fully visible
+      appEl.style.setProperty('opacity','1','important');
     }, 600);
 
     setupLiveStream();
     refresh();
     setTimeout(firstLoadSync,2000);
   }, 520);
+
+  setTimeout(forceAppVisible, 700);
 }
 
 function dismissAgentTicker(){
