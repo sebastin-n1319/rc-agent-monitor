@@ -12596,13 +12596,21 @@ async function refresh(){
 }
 
 // INIT
-updateClock();
-setInterval(updateClock,1000);
+function safeBoot(fn,name){
+  try{
+    if(typeof fn==='function') fn();
+  }catch(e){
+    console.error((name||'boot')+' failed', e);
+  }
+}
+
+safeBoot(updateClock,'updateClock');
+setInterval(()=>safeBoot(updateClock,'updateClock'),1000);
 setInterval(()=>{if(currentUser)refresh();},30000);
-initParticles();
-loadColPrefs();
-initConfetti();
-initLoginAnimations();
+safeBoot(initParticles,'initParticles');
+safeBoot(loadColPrefs,'loadColPrefs');
+safeBoot(initConfetti,'initConfetti');
+safeBoot(initLoginAnimations,'initLoginAnimations');
 
 window.addEventListener('load', async () => {
   // Handle redirect-back from Google OAuth fallback
