@@ -12684,14 +12684,38 @@ window.addEventListener('load', async () => {
   try{ const dp=document.getElementById('date-picker'); if(dp)dp.value=todayStr(); }catch(e){}
 
   if(sessionStorage.getItem('rcQuickBooted') === '1'){
-    // DOMContentLoaded already showed the app from localStorage — just call startApp to wire up state
     sessionStorage.removeItem('rcQuickBooted');
     const u=sessionStorage.getItem('rcUser'), r=sessionStorage.getItem('rcRole');
     const p=sessionStorage.getItem('rcPicture'), be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
     if(u && r){
-      try{ startApp(u, r, p, be); }catch(e){ console.error('startApp failed', e); }
-      // Background: re-register server cookie silently
-      const s = JSON.parse(localStorage.getItem('rcSession')||'null');
+      // Wire up global state WITHOUT calling startApp (which has opacity=0 animation that can break)
+      currentUser=u; currentRole=r; currentEmail=sessionStorage.getItem('rcEmail')||null;
+      currentBreakbotEnabled=be; currentViewMode=r;
+      // Force login hidden, app visible with inline !important (no animation)
+      const loginEl=document.getElementById('loginScreen');
+      const appEl=document.getElementById('mainApp');
+      if(loginEl){ loginEl.classList.add('login-gone'); loginEl.style.setProperty('display','none','important'); loginEl.style.setProperty('visibility','hidden','important'); }
+      if(appEl){ appEl.style.setProperty('display','flex','important'); appEl.style.setProperty('opacity','1','important'); appEl.style.setProperty('visibility','visible','important'); }
+      document.documentElement.classList.add('app-authenticated');
+      document.body.classList.add('app-authenticated');
+      // Wire up UI elements
+      try{
+        hideSessionDebug();
+        applyAditBranding();
+        const ul=document.getElementById('userLabel'); if(ul) ul.textContent=u.split(' ')[0];
+        const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':'Agent';
+        const rt=document.getElementById('userRoleTag'); if(rt){rt.textContent=r.toUpperCase();rt.className='role-pill '+(r==='admin'?'role-admin':'role-agent');}
+        if(p){const av=document.getElementById('userAvatar');if(av){av.src=p;av.style.display='block';}}
+        const tb=document.getElementById('viewToggleBtn'); if(tb) tb.style.display=r==='admin'?'inline-flex':'none';
+        applyView(r);
+        configureAgentBreakbotAccess();
+        initEmbeddedFrames();
+      }catch(e){ console.error('quick-boot UI wiring failed',e); }
+      // Background: start data, server sync
+      try{ setupLiveStream(); }catch(e){}
+      try{ refresh(); }catch(e){}
+      setTimeout(()=>{ try{firstLoadSync();}catch(e){} }, 2000);
+      const s=JSON.parse(localStorage.getItem('rcSession')||'null');
       if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
       return;
     }
