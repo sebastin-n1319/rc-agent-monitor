@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Adit Agent Monitor</title>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Session-restore CSS: adding .app-authenticated to <html> permanently hides login, shows app.
+     This beats every other CSS rule because it's the last stylesheet and uses element+class on html. -->
+<style id="auth-gate-css">
+html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;}
+html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
+</style>
+<!-- Inline session restore: runs before any other script, sets html.app-authenticated if localStorage has a valid session -->
+<script>
+(function(){
+  try{
+    var s=JSON.parse(localStorage.getItem('rcSession')||'null');
+    if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
+      document.documentElement.classList.add('app-authenticated');
+    }
+  }catch(e){}
+})();
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
@@ -10273,6 +10290,9 @@ function doLogout(){
   sessionStorage.clear();
   currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   if(window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
+  // Remove the CSS gate class so the login screen becomes visible again
+  document.documentElement.classList.remove('app-authenticated');
+  document.body.classList.remove('app-authenticated');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('mainApp').style.display='none';
   document.getElementById('loginMsg').innerHTML='';
