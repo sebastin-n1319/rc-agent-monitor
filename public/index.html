@@ -12612,6 +12612,34 @@ safeBoot(loadColPrefs,'loadColPrefs');
 safeBoot(initConfetti,'initConfetti');
 safeBoot(initLoginAnimations,'initLoginAnimations');
 
+// ── INSTANT SESSION RESTORE (AditPay pattern) ────────────────────────────────
+// Fires on DOMContentLoaded — no waiting for images/scripts to load.
+// Reads localStorage.rcSession and immediately hides the login screen.
+// This is why AditPay never shows the login screen on refresh.
+document.addEventListener('DOMContentLoaded', function rcQuickBoot() {
+  try {
+    const s = JSON.parse(localStorage.getItem('rcSession') || 'null');
+    if (!s || !s.email || !s.name || !s.role) return;
+    if (Date.now() - (s.savedAt || 0) > 24 * 60 * 60 * 1000) return;
+    // Valid session found — hide login screen instantly (same as AditPay's overlay.classList.add('hidden'))
+    const login = document.getElementById('loginScreen');
+    const app   = document.getElementById('mainApp');
+    if (!login || !app) return;
+    login.classList.add('login-gone');   // display:none !important via CSS
+    app.style.display  = 'flex';
+    app.style.opacity  = '1';
+    // Pre-populate sessionStorage so window.load handler's startApp call works immediately
+    sessionStorage.setItem('rcUser',             s.name);
+    sessionStorage.setItem('rcRole',             s.role);
+    sessionStorage.setItem('rcEmail',            s.email);
+    sessionStorage.setItem('rcPicture',          s.picture || '');
+    sessionStorage.setItem('rcBreakbotEnabled',  s.breakbotEnabled ? '1' : '0');
+    // Mark as quick-booted so window.load skips the async loadSession() entirely
+    sessionStorage.setItem('rcQuickBooted', '1');
+  } catch(e) { /* silent — window.load will handle it */ }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 window.addEventListener('load', async () => {
   // Handle redirect-back from Google OAuth fallback
   (function(){
@@ -12624,26 +12652,32 @@ window.addEventListener('load', async () => {
     }
   })();
 
-  // Restore auth state first. If any later UI helper throws, we still want
-  // the session to come back on refresh instead of dumping the user to login.
-  try{
-    await loadSession();
-  }catch(e){
-    console.error('loadSession failed', e);
+  // Non-critical UI bootstrapping
+  try{ applyAditBranding(); }catch(e){}
+  try{ bindSortHeaders(); }catch(e){}
+  try{ syncBreakDateInputs(); }catch(e){}
+  try{ syncBreakActionState(); }catch(e){}
+  try{ const dp=document.getElementById('date-picker'); if(dp)dp.value=todayStr(); }catch(e){}
+
+  if(sessionStorage.getItem('rcQuickBooted') === '1'){
+    // DOMContentLoaded already showed the app from localStorage — just call startApp to wire up state
+    sessionStorage.removeItem('rcQuickBooted');
+    const u=sessionStorage.getItem('rcUser'), r=sessionStorage.getItem('rcRole');
+    const p=sessionStorage.getItem('rcPicture'), be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
+    if(u && r){
+      try{ startApp(u, r, p, be); }catch(e){ console.error('startApp failed', e); }
+      // Background: re-register server cookie silently
+      const s = JSON.parse(localStorage.getItem('rcSession')||'null');
+      if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
+      return;
+    }
   }
 
-  // Non-critical UI bootstrapping should never block auth/session restore.
-  try{ applyAditBranding(); }catch(e){ console.error('applyAditBranding failed', e); }
-  try{ bindSortHeaders(); }catch(e){ console.error('bindSortHeaders failed', e); }
-  try{ syncBreakDateInputs(); }catch(e){ console.error('syncBreakDateInputs failed', e); }
-  try{ syncBreakActionState(); }catch(e){ console.error('syncBreakActionState failed', e); }
-  try{
-    const dp=document.getElementById('date-picker');
-    if(dp)dp.value=todayStr();
-  }catch(e){ console.error('date-picker init failed', e); }
+  // No quick-boot (no localStorage session) — full async check
+  try{ await loadSession(); }catch(e){ console.error('loadSession failed', e); }
 
   if(!currentUser){
-    updateLoginButton(); // show remembered user immediately
+    updateLoginButton();
     initGoogleAuth();
     let tries = 0;
     const authBoot = setInterval(() => {
