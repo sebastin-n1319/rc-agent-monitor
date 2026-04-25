@@ -8732,7 +8732,7 @@ tbody tr:hover td{
       <span id="clock" style="font-family:'JetBrains Mono',monospace">--:--:--</span>
     </div>
     <div class="hdr-user">
-      <img id="userAvatar" class="hdr-avatar" src="" alt="" style="display:none" onerror="this.style.display='none'">
+      <img id="userAvatar" class="hdr-avatar" src="" alt="" style="display:none">
       <span id="userLabel">--</span>
       <span id="userRoleTag" class="role-pill role-admin">ADMIN</span>
     </div>
@@ -10061,7 +10061,7 @@ function startApp(username,role,picture,breakbotEnabled=true){
   document.getElementById('roleLabel').textContent=role==='admin'?'Admin':'Agent';
   document.getElementById('userRoleTag').textContent=role.toUpperCase();
   document.getElementById('userRoleTag').className='role-pill '+(role==='admin'?'role-admin':'role-agent');
-  if(picture){const av=document.getElementById('userAvatar');av.src=picture;av.style.display='block';}
+  setAvatar(picture);
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.style.display=role==='admin'?'inline-flex':'none';
   applyView(role);
@@ -11610,12 +11610,28 @@ function switchTab(tab,el){
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }
 
+function setAvatar(url){
+  if(!url) return;
+  const av = document.getElementById('userAvatar');
+  if(!av) return;
+  const img = new Image();
+  img.onload  = () => { av.src = url; av.style.display = 'block'; };
+  img.onerror = () => { av.style.display = 'none'; };
+  img.src = url;
+}
+
 function restoreLastTab(){
   try{
     const tab = localStorage.getItem('rcActiveTab');
-    if(!tab) return;
-    const btn = document.querySelector('.nav-tab[onclick*="\''+tab+'\'"]');
-    if(btn) btn.click();
+    if(!tab || tab === 'live') return; // 'live' is the default, no action needed
+    const btns = document.querySelectorAll('.nav-tab');
+    for(const btn of btns){
+      const oc = btn.getAttribute('onclick') || '';
+      if(oc.includes("'" + tab + "'")){
+        btn.click();
+        break;
+      }
+    }
   }catch(e){}
 }
 
@@ -12725,20 +12741,20 @@ window.addEventListener('load', async () => {
       if(appEl){ appEl.style.setProperty('display','flex','important'); appEl.style.setProperty('opacity','1','important'); appEl.style.setProperty('visibility','visible','important'); }
       document.documentElement.classList.add('app-authenticated');
       document.body.classList.add('app-authenticated');
-      // Wire up UI elements
+      // Wire up UI elements — each in its own try so one failure doesn't block the rest
+      try{ hideSessionDebug(); }catch(e){}
+      try{ applyAditBranding(); }catch(e){}
       try{
-        hideSessionDebug();
-        applyAditBranding();
         const ul=document.getElementById('userLabel'); if(ul) ul.textContent=u.split(' ')[0];
         const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':'Agent';
         const rt=document.getElementById('userRoleTag'); if(rt){rt.textContent=r.toUpperCase();rt.className='role-pill '+(r==='admin'?'role-admin':'role-agent');}
-        if(p){const av=document.getElementById('userAvatar');if(av){av.src=p;av.style.display='block';}}
         const tb=document.getElementById('viewToggleBtn'); if(tb) tb.style.display=r==='admin'?'inline-flex':'none';
-        applyView(r);
-        configureAgentBreakbotAccess();
-        initEmbeddedFrames();
-        restoreLastTab();
-      }catch(e){ console.error('quick-boot UI wiring failed',e); }
+      }catch(e){}
+      try{ setAvatar(p); }catch(e){}       // only shows img after successful load
+      try{ applyView(r); }catch(e){}
+      try{ configureAgentBreakbotAccess(); }catch(e){}
+      try{ initEmbeddedFrames(); }catch(e){}
+      try{ restoreLastTab(); }catch(e){}
       // Background: start data, server sync
       try{ setupLiveStream(); }catch(e){}
       try{ refresh(); }catch(e){}
