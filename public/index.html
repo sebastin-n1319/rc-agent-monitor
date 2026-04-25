@@ -8442,6 +8442,29 @@ tbody tr:hover td{
 </head>
 <body>
 
+<!-- Storage debug pill — auto-hides after 8s, shows localStorage state -->
+<div id="dbgPill" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 14px;font-family:monospace;font-size:11px;color:#94a3b8;max-width:340px;line-height:1.6;pointer-events:none"></div>
+<script>
+(function(){
+  var el = document.getElementById('dbgPill');
+  if(!el) return;
+  var raw = null, err = '';
+  try{ raw = localStorage.getItem('rcSession'); }catch(e){ err = e.message; }
+  var lines = [];
+  lines.push('rcSession: ' + (raw ? raw.substring(0,80)+'…' : 'EMPTY'));
+  if(err) lines.push('Error: '+err);
+  try{
+    var s = JSON.parse(raw||'null');
+    if(s && s.savedAt){
+      var age = Math.round((Date.now()-s.savedAt)/60000);
+      lines.push('age: '+age+' min | role: '+s.role);
+    }
+  }catch(e){}
+  el.innerHTML = lines.join('<br>');
+  setTimeout(function(){ if(el) el.style.display='none'; }, 8000);
+})();
+</script>
+
 <!-- LOGIN v7 — Full animation suite -->
 <div id="loginScreen">
 
