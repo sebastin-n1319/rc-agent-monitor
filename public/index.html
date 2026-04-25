@@ -10051,7 +10051,7 @@ function configureAgentBreakbotAccess(){
   }
 }
 
-function startApp(username,role,picture,breakbotEnabled=true){
+function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false){
   currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
   hideSessionDebug();
   applyAditBranding();
@@ -10067,6 +10067,7 @@ function startApp(username,role,picture,breakbotEnabled=true){
   applyView(role);
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
+  if(skipAnimation) restoreLastTab(); // restore tab when coming from quick-boot
 
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
@@ -10089,6 +10090,15 @@ function startApp(username,role,picture,breakbotEnabled=true){
     document.documentElement.classList.add('app-authenticated');
     document.body.classList.add('app-authenticated');
   };
+
+  // skipAnimation = called from quick-boot where CSS gate already hid login/showed app
+  if(skipAnimation){
+    forceAppVisible();
+    setupLiveStream();
+    refresh();
+    setTimeout(firstLoadSync,2000);
+    return;
+  }
 
   // Show mainApp invisible so layout is ready behind the loginScreen
   appEl.style.setProperty('display','flex','important');
@@ -12731,34 +12741,10 @@ window.addEventListener('load', async () => {
     const u=sessionStorage.getItem('rcUser'), r=sessionStorage.getItem('rcRole');
     const p=sessionStorage.getItem('rcPicture'), be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
     if(u && r){
-      // Wire up global state WITHOUT calling startApp (which has opacity=0 animation that can break)
-      currentUser=u; currentRole=r; currentEmail=sessionStorage.getItem('rcEmail')||null;
-      currentBreakbotEnabled=be; currentViewMode=r;
-      // Force login hidden, app visible with inline !important (no animation)
-      const loginEl=document.getElementById('loginScreen');
-      const appEl=document.getElementById('mainApp');
-      if(loginEl){ loginEl.classList.add('login-gone'); loginEl.style.setProperty('display','none','important'); loginEl.style.setProperty('visibility','hidden','important'); }
-      if(appEl){ appEl.style.setProperty('display','flex','important'); appEl.style.setProperty('opacity','1','important'); appEl.style.setProperty('visibility','visible','important'); }
-      document.documentElement.classList.add('app-authenticated');
-      document.body.classList.add('app-authenticated');
-      // Wire up UI elements — each in its own try so one failure doesn't block the rest
-      try{ hideSessionDebug(); }catch(e){}
-      try{ applyAditBranding(); }catch(e){}
-      try{
-        const ul=document.getElementById('userLabel'); if(ul) ul.textContent=u.split(' ')[0];
-        const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':'Agent';
-        const rt=document.getElementById('userRoleTag'); if(rt){rt.textContent=r.toUpperCase();rt.className='role-pill '+(r==='admin'?'role-admin':'role-agent');}
-        const tb=document.getElementById('viewToggleBtn'); if(tb) tb.style.display=r==='admin'?'inline-flex':'none';
-      }catch(e){}
-      try{ setAvatar(p); }catch(e){}       // only shows img after successful load
-      try{ applyView(r); }catch(e){}
-      try{ configureAgentBreakbotAccess(); }catch(e){}
-      try{ initEmbeddedFrames(); }catch(e){}
-      try{ restoreLastTab(); }catch(e){}
-      // Background: start data, server sync
-      try{ setupLiveStream(); }catch(e){}
-      try{ refresh(); }catch(e){}
-      setTimeout(()=>{ try{firstLoadSync();}catch(e){} }, 2000);
+      // CSS gate already hid loginScreen and showed mainApp. Just call startApp
+      // with skipAnimation=true — it wires all UI, calls refresh/liveStream, skips opacity dance.
+      try{ startApp(u, r, p, be, true); }catch(e){ console.error('quick-boot startApp failed', e); }
+      // Background: re-register server cookie
       const s=JSON.parse(localStorage.getItem('rcSession')||'null');
       if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
       return;
