@@ -8459,29 +8459,6 @@ tbody tr:hover td{
 </head>
 <body>
 
-<!-- Storage debug pill — auto-hides after 8s, shows localStorage state -->
-<div id="dbgPill" style="position:fixed;top:10px;right:10px;z-index:99999;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 14px;font-family:monospace;font-size:11px;color:#94a3b8;max-width:340px;line-height:1.6;pointer-events:none"></div>
-<script>
-(function(){
-  var el = document.getElementById('dbgPill');
-  if(!el) return;
-  var raw = null, err = '';
-  try{ raw = localStorage.getItem('rcSession'); }catch(e){ err = e.message; }
-  var lines = [];
-  lines.push('rcSession: ' + (raw ? raw.substring(0,80)+'…' : 'EMPTY'));
-  if(err) lines.push('Error: '+err);
-  try{
-    var s = JSON.parse(raw||'null');
-    if(s && s.savedAt){
-      var age = Math.round((Date.now()-s.savedAt)/60000);
-      lines.push('age: '+age+' min | role: '+s.role);
-    }
-  }catch(e){}
-  el.innerHTML = lines.join('<br>');
-  setTimeout(function(){ if(el) el.style.display='none'; }, 8000);
-})();
-</script>
-
 <!-- LOGIN v7 — Full animation suite -->
 <div id="loginScreen">
 
@@ -8571,7 +8548,7 @@ tbody tr:hover td{
         <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account.</p>
 
         <div id="loginMsg"></div>
-        <div id="sessionDebug" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-family:monospace;font-size:10.5px;color:#94a3b8;line-height:1.7;text-align:left"></div>
+        <div id="sessionDebug" style="display:none"></div>
 
         <div class="ls-btn-wrap">
           <div class="gfb-wrapper" style="width:100%;">
@@ -8755,7 +8732,7 @@ tbody tr:hover td{
       <span id="clock" style="font-family:'JetBrains Mono',monospace">--:--:--</span>
     </div>
     <div class="hdr-user">
-      <img id="userAvatar" class="hdr-avatar" src="" alt="" style="display:none">
+      <img id="userAvatar" class="hdr-avatar" src="" alt="" style="display:none" onerror="this.style.display='none'">
       <span id="userLabel">--</span>
       <span id="userRoleTag" class="role-pill role-admin">ADMIN</span>
     </div>
@@ -11629,6 +11606,17 @@ function switchTab(tab,el){
   if(tab==='access')loadRoles();
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
+  // Remember the active tab so refresh restores it
+  try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
+}
+
+function restoreLastTab(){
+  try{
+    const tab = localStorage.getItem('rcActiveTab');
+    if(!tab) return;
+    const btn = document.querySelector('.nav-tab[onclick*="\''+tab+'\'"]');
+    if(btn) btn.click();
+  }catch(e){}
 }
 
 // ── CALL LOGS ──────────────────────────────────────────────────────────
@@ -12749,6 +12737,7 @@ window.addEventListener('load', async () => {
         applyView(r);
         configureAgentBreakbotAccess();
         initEmbeddedFrames();
+        restoreLastTab();
       }catch(e){ console.error('quick-boot UI wiring failed',e); }
       // Background: start data, server sync
       try{ setupLiveStream(); }catch(e){}
