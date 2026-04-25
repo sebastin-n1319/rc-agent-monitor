@@ -12635,32 +12635,33 @@ safeBoot(loadColPrefs,'loadColPrefs');
 safeBoot(initConfetti,'initConfetti');
 safeBoot(initLoginAnimations,'initLoginAnimations');
 
-// ── INSTANT SESSION RESTORE (AditPay pattern) ────────────────────────────────
-// Fires on DOMContentLoaded — no waiting for images/scripts to load.
-// Reads localStorage.rcSession and immediately hides the login screen.
-// This is why AditPay never shows the login screen on refresh.
-document.addEventListener('DOMContentLoaded', function rcQuickBoot() {
+// ── INLINE SESSION RESTORE (runs synchronously, DOM already available) ────────
+// This script tag is at the bottom of <body>, so loginScreen and mainApp
+// elements exist in the DOM right now. Run the restore INLINE — no event
+// listeners, no async, no timing issues. Exactly how AditPay works.
+(function rcInlineBoot(){
   try {
-    const s = JSON.parse(localStorage.getItem('rcSession') || 'null');
-    if (!s || !s.email || !s.name || !s.role) return;
-    if (Date.now() - (s.savedAt || 0) > 24 * 60 * 60 * 1000) return;
-    // Valid session found — hide login screen instantly (same as AditPay's overlay.classList.add('hidden'))
-    const login = document.getElementById('loginScreen');
-    const app   = document.getElementById('mainApp');
-    if (!login || !app) return;
-    login.classList.add('login-gone');   // display:none !important via CSS
-    app.style.display  = 'flex';
-    app.style.opacity  = '1';
-    // Pre-populate sessionStorage so window.load handler's startApp call works immediately
-    sessionStorage.setItem('rcUser',             s.name);
-    sessionStorage.setItem('rcRole',             s.role);
-    sessionStorage.setItem('rcEmail',            s.email);
-    sessionStorage.setItem('rcPicture',          s.picture || '');
-    sessionStorage.setItem('rcBreakbotEnabled',  s.breakbotEnabled ? '1' : '0');
-    // Mark as quick-booted so window.load skips the async loadSession() entirely
-    sessionStorage.setItem('rcQuickBooted', '1');
-  } catch(e) { /* silent — window.load will handle it */ }
-});
+    var raw = localStorage.getItem('rcSession');
+    if(!raw) return;
+    var s = JSON.parse(raw);
+    if(!s || !s.email || !s.name || !s.role) return;
+    if(Date.now() - (s.savedAt||0) > 86400000) return; // 24h
+    var login = document.getElementById('loginScreen');
+    var app   = document.getElementById('mainApp');
+    if(!login || !app) return;
+    // Hide login, show app — same as AditPay's overlay.classList.add('hidden')
+    login.classList.add('login-gone');
+    login.style.cssText += ';display:none!important';
+    app.style.cssText += ';display:flex!important;opacity:1!important;visibility:visible!important';
+    // Populate sessionStorage for startApp
+    sessionStorage.setItem('rcUser',            s.name);
+    sessionStorage.setItem('rcRole',            s.role);
+    sessionStorage.setItem('rcEmail',           s.email);
+    sessionStorage.setItem('rcPicture',         s.picture||'');
+    sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled?'1':'0');
+    sessionStorage.setItem('rcQuickBooted',     '1');
+  } catch(e) {}
+})();
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.addEventListener('load', async () => {
