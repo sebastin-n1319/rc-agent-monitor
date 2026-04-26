@@ -11,7 +11,8 @@ const {
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote,
-  createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions
+  createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions,
+  insertAuditLog, getAuditLog
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -38,7 +39,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-const sseClients = new Set();
+// PERF-4: SSE clients tracked with their role for scoped broadcasting
+const sseClients = new Map(); // res → { role }
 const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
 const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -107,9 +109,13 @@ function getBreakChatMeta(event){
   };
 }
 
-function broadcastLiveEvent(payload) {
+function broadcastLiveEvent(payload, targetRole) {
   const msg = `event: live-update\ndata: ${JSON.stringify(payload)}\n\n`;
-  for (const res of sseClients) res.write(msg);
+  for (const [res, meta] of sseClients) {
+    if (!targetRole || targetRole === 'all' || meta.role === targetRole) {
+      res.write(msg);
+    }
+  }
 }
 
 function formatBreakChatMessage(event){
@@ -280,12 +286,17 @@ app.post('/api/agents', requireAdmin, async (req, res) => {
   if (!name || !extension) return res.status(400).json({ success: false, error: 'Name and extension required' });
   try {
     await addAgent(name.trim(), extension.trim(), email ? email.trim() : null);
+    insertAuditLog(req.session.email, 'agent_added', name.trim(), `ext:${extension}`).catch(()=>{});
     res.json({ success: true, message: `${name} added` });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.delete('/api/agents/:extension', requireAdmin, async (req, res) => {
-  try { await removeAgent(req.params.extension); res.json({ success: true }); }
+  try {
+    await removeAgent(req.params.extension);
+    insertAuditLog(req.session.email, 'agent_removed', req.params.extension).catch(()=>{});
+    res.json({ success: true });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -308,7 +319,11 @@ app.get('/api/live-stream', requireAuth, (req, res) => {
     Connection: 'keep-alive'
   });
   res.write(`event: ready\ndata: ${JSON.stringify({ at: new Date().toISOString() })}\n\n`);
-  sseClients.add(res);
+  // Store client with role for scoped broadcasting (PERF-4)
+  const clientRole = req.session?.email
+    ? await getRoleSettingsForEmail(req.session.email).then(s => s?.role || 'agent').catch(() => 'agent')
+    : 'agent';
+  sseClients.set(res, { role: clientRole });
   req.on('close', () => sseClients.delete(res));
 });
 
@@ -520,7 +535,11 @@ app.post('/api/roles', requireAdmin, async (req, res) => {
   if (!email || !role) return res.status(400).json({ success: false, error: 'Email and role required' });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email format' });
   if (!['admin','agent','readonly'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, or readonly' });
-  try { await setRole(email.trim(), role, addedBy, breakbotEnabled); res.json({ success: true }); }
+  try {
+    await setRole(email.trim(), role, addedBy, breakbotEnabled);
+    insertAuditLog(req.session.email, 'role_set', email.trim(), `role:${role}`).catch(()=>{});
+    res.json({ success: true });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -530,6 +549,7 @@ app.patch('/api/roles/:email/breakbot', requireAdmin, async (req, res) => {
   if (!email) return res.status(400).json({ success: false, error: 'Email required' });
   try {
     await setBreakbotEnabled(email, enabled, updatedBy || 'system');
+    insertAuditLog(req.session.email, 'breakbot_toggled', email, `enabled:${enabled}`).catch(()=>{});
     res.json({ success: true });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
@@ -540,7 +560,11 @@ app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
   const email = decodeURIComponent(req.params.email);
   if (CORE_ADMINS.includes(email.toLowerCase()))
     return res.status(403).json({ success: false, error: 'Cannot remove core admin' });
-  try { await removeRole(email); res.json({ success: true }); }
+  try {
+    await removeRole(email);
+    insertAuditLog(req.session.email, 'role_removed', email).catch(()=>{});
+    res.json({ success: true });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -657,6 +681,57 @@ app.delete('/api/session', async (req, res) => {
   if (token) await deleteAppSession(token).catch(() => {});
   res.clearCookie(SESSION_COOKIE, { path: '/' });
   res.json({ success: true });
+});
+
+// FEAT-4: Audit log endpoint
+app.get('/api/audit-log', requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    res.json({ success: true, data: await getAuditLog(limit) });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// FEAT-5: CSV export endpoints
+app.get('/api/export/break-tracker', requireAdmin, async (req, res) => {
+  const date = req.query.date || new Date().toISOString().split('T')[0];
+  const tz = req.query.tz || 'America/Chicago';
+  try {
+    const data = await getBreakTracker(date, tz);
+    const rows = [['Agent','Email','Action','Note','Created At (UTC)','Duration (min)']];
+    for (const agent of data) {
+      for (const evt of (agent.events || [])) {
+        rows.push([
+          agent.username || '', agent.email || '',
+          evt.action || '', (evt.note || '').replace(/,/g,''),
+          evt.createdAt || '',
+          evt.linkedDurationSeconds ? Math.round(evt.linkedDurationSeconds/60) : ''
+        ]);
+      }
+    }
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="break-tracker-${date}.csv"`);
+    res.send(csv);
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
+  const tz = req.query.tz || 'Asia/Kolkata';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  try {
+    const { getCallLogsFull } = require('./database');
+    const { rows } = await getCallLogsFull(date, tz, 1000, 0);
+    const header = ['Agent','Direction','Result','Duration (s)','From','To','Queue','Start Time'];
+    const data = [header, ...(rows||[]).map(r => [
+      r.agent_name||'', r.direction||'', r.result||'',
+      r.duration||0, r.from_number||'', r.to_number||'',
+      r.queue_name||'', r.start_time||''
+    ])];
+    const csv = data.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="call-logs-${date}.csv"`);
+    res.send(csv);
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 async function startScheduler() {

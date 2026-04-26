@@ -8839,6 +8839,10 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
       Call Logs
     </button>
+    <button class="nav-tab" onclick="switchTab('auditlog',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Audit Log
+    </button>
   </div>
 
   <!-- LIVE -->
@@ -9243,6 +9247,8 @@ tbody tr:hover td{
           <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
           <span class="break-history-chip" id="break-admin-history-chip">Today</span>
           <button class="break-toolbar-btn" onclick="downloadBreakReport()">⬇ Report</button>
+          <button class="break-toolbar-btn" onclick="exportBreakCSV()" title="Export as CSV">⬇ CSV</button>
+          <button class="break-toolbar-btn" onclick="toggleBreakTimeline()" id="timeline-toggle-btn" title="Toggle timeline view">📊 Timeline</button>
         </div>
       </div>
     </div>
@@ -9255,6 +9261,12 @@ tbody tr:hover td{
 
     <!-- Alert Zone (auto-hides when empty via CSS :empty) -->
     <div id="btk-alert-zone"></div>
+
+    <!-- FEAT-6: Break Timeline View -->
+    <div id="break-timeline-wrap" style="display:none;background:rgba(255,255,255,.02);border:1px solid var(--b1);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--t3);margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Break Timeline — today's shift</div>
+      <div id="break-timeline-chart" style="overflow-x:auto;"></div>
+    </div>
 
     <!-- Body: Agent Grid + Feed -->
     <div class="btk-body">
@@ -9320,6 +9332,7 @@ tbody tr:hover td{
           </select>
           <input type="text" id="cl-search" placeholder="Search agent, number…" oninput="clApplyFilters()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;width:180px;">
           <button class="btn btn-primary btn-sm" onclick="loadCallLogs()">&#8635; Refresh</button>
+          <button class="btn btn-sm" onclick="exportCallLogsCSV()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);" title="Export as CSV">⬇ CSV</button>
         </div>
       </div>
       <!-- Summary chips -->
@@ -9358,6 +9371,31 @@ tbody tr:hover td{
 </div>
 
 <!-- AGENT ANNOUNCEMENT TICKER -->
+  <!-- AUDIT LOG (FEAT-4) -->
+  <div class="page" id="tab-auditlog">
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Admin Audit Log</span>
+        <span class="chip" id="audit-count">--</span>
+        <button onclick="loadAuditLog()" style="margin-left:auto;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t2);font-size:11px;padding:4px 10px;cursor:pointer;">Refresh</button>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="color:var(--t3);border-bottom:1px solid var(--b1);">
+            <th style="text-align:left;padding:8px 10px;font-weight:600;">Time</th>
+            <th style="text-align:left;padding:8px 10px;font-weight:600;">Admin</th>
+            <th style="text-align:left;padding:8px 10px;font-weight:600;">Action</th>
+            <th style="text-align:left;padding:8px 10px;font-weight:600;">Target</th>
+            <th style="text-align:left;padding:8px 10px;font-weight:600;">Detail</th>
+          </tr></thead>
+          <tbody id="audit-tbody"><tr><td colspan="5" style="text-align:center;padding:40px;color:var(--t3)">Click Audit Log tab to load</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#adminView -->
+
 <div id="agentTicker">
   <div class="at-track" id="agentTickerTrack"></div>
   <button class="at-close" onclick="dismissAgentTicker()" title="Dismiss">&#x2715;</button>
@@ -11610,6 +11648,7 @@ async function loadBreakTracker(){
     breakTrackerMeta = { enabled: false, target: 'Chat space' };
     breakTrackerData = { summary:{}, tracker:[], recentLog:[] };
   }
+  if(_timelineVisible) renderBreakTimeline(); // FEAT-6: refresh timeline if open
   syncBreakDateInputs();
   syncBreakActionState();
   renderBreakAdminView();
@@ -11761,6 +11800,7 @@ function switchTab(tab,el){
   if(tab==='access')loadRoles();
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
+  if(tab==='auditlog') loadAuditLog();
   // Remember the active tab so refresh restores it
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }
@@ -12781,7 +12821,7 @@ async function loadLoginLogs(){
     document.getElementById('login-count').textContent=logs.length+' logins';
     const el=document.getElementById('login-log-list');
     if(!logs.length){el.innerHTML='<div class="no-data">No records</div>';return;}
-    el.innerHTML=logs.map(l=>'<div class="ll-grid"><div><div class="ll-name">'+(l.username||'--')+'</div><div class="ll-meta">'+(l.email||'--')+'</div></div><div><div style="font-size:11px;color:var(--text2)">'+(l.location&&l.location!=='Unknown'?l.location.split(',').slice(0,2).join(','):'Location not shared')+'</div><div class="ll-meta">'+(l.ip||'--')+'</div><div class="ll-meta" style="font-size:9px;word-break:break-all;">'+(l.system_info?l.system_info.substring(0,80):'')+'</div></div><div class="mono" style="font-size:10px;">'+toDateTime(l.logged_in_at)+'</div><div><span class="role-pill '+(l.role==='admin'?'role-admin':'role-agent')+'">'+(l.role||'agent').toUpperCase()+'</span></div></div>').join('');
+    el.innerHTML=logs.map(l=>'<div class="ll-grid"><div><div class="ll-name">'+esc(l.username||'--')+'</div><div class="ll-meta">'+esc(l.email||'--')+'</div></div><div><div style="font-size:11px;color:var(--text2)">'+(l.location&&l.location!=='Unknown'?esc(l.location.split(',').slice(0,2).join(',')):'Location not shared')+'</div><div class="ll-meta">'+esc(l.ip||'--')+'</div><div class="ll-meta" style="font-size:9px;word-break:break-all;">'+esc(l.system_info?l.system_info.substring(0,80):'')+'</div></div><div class="mono" style="font-size:10px;">'+toDateTime(l.logged_in_at)+'</div><div><span class="role-pill '+(l.role==='admin'?'role-admin':'role-agent')+'">'+(l.role||'agent').toUpperCase()+'</span></div></div>').join('');
   }catch(e){showToast('Error','error');}
 }
 
@@ -12811,6 +12851,87 @@ async function doRefresh(){
     else showToast('Sync failed','error');
   }catch(e){showToast('Sync error','error');}
   finally{if(btn)btn.classList.remove('syncing');}
+}
+
+// ── FEAT-4: Audit Log ─────────────────────────────────────────────────────────
+async function loadAuditLog(){
+  const tbody=document.getElementById('audit-tbody');
+  const cnt=document.getElementById('audit-count');
+  if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--t3)">Loading…</td></tr>';
+  try{
+    const j=await fetch(BACKEND+'/api/audit-log',{credentials:'include'}).then(r=>r.json());
+    if(!j.success||!j.data.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--t3)">No audit events yet.</td></tr>';return;}
+    if(cnt) cnt.textContent=j.data.length+' events';
+    const actionColors={'role_set':'var(--blue)','role_removed':'var(--red)','agent_added':'var(--green)','agent_removed':'var(--red)','breakbot_toggled':'var(--orange)'};
+    tbody.innerHTML=j.data.map(e=>`<tr style="border-bottom:1px solid var(--b1)">
+      <td style="padding:8px 10px;color:var(--t3);font-size:11px;white-space:nowrap">${toDateTime(e.created_at)}</td>
+      <td style="padding:8px 10px;font-size:12px">${esc(e.actor_email||'')}</td>
+      <td style="padding:8px 10px"><span style="font-size:11px;font-weight:600;color:${actionColors[e.action]||'var(--t2)'};background:rgba(255,255,255,.04);padding:2px 7px;border-radius:5px">${esc(e.action||'')}</span></td>
+      <td style="padding:8px 10px;font-size:12px">${esc(e.target||'—')}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--t3)">${esc(e.detail||'')}</td>
+    </tr>`).join('');
+  }catch(e){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--red)">Error loading audit log</td></tr>';}
+}
+
+// ── FEAT-5: CSV Export ─────────────────────────────────────────────────────────
+function exportBreakCSV(){
+  const date=document.getElementById('break-admin-date')?.value||todayStr();
+  const tz=activeTimeZone();
+  window.open(BACKEND+'/api/export/break-tracker?date='+encodeURIComponent(date)+'&tz='+encodeURIComponent(tz),'_blank');
+}
+function exportCallLogsCSV(){
+  const date=document.getElementById('cl-date-picker')?.value||todayStr();
+  const tz=activeTimeZone();
+  window.open(BACKEND+'/api/export/call-logs?date='+encodeURIComponent(date)+'&tz='+encodeURIComponent(tz),'_blank');
+}
+
+// ── FEAT-6: Break Timeline View ──────────────────────────────────────────────
+let _timelineVisible=false;
+function toggleBreakTimeline(){
+  _timelineVisible=!_timelineVisible;
+  const wrap=document.getElementById('break-timeline-wrap');
+  const btn=document.getElementById('timeline-toggle-btn');
+  if(wrap) wrap.style.display=_timelineVisible?'block':'none';
+  if(btn) btn.style.background=_timelineVisible?'rgba(245,130,31,.15)':'';
+  if(_timelineVisible) renderBreakTimeline();
+}
+
+function renderBreakTimeline(){
+  const chart=document.getElementById('break-timeline-chart');
+  if(!chart) return;
+  // Use current break tracker data
+  if(!breakTrackerData||!breakTrackerData.tracker||!breakTrackerData.tracker.length){
+    chart.innerHTML='<div style="text-align:center;padding:24px;color:var(--t3)">No break data for this date.</div>';
+    return;
+  }
+  const agents=breakTrackerData.tracker;
+  // Shift window: 7am–8pm (13 hours)
+  const SHIFT_START=7*60, SHIFT_END=20*60, TOTAL=SHIFT_END-SHIFT_START;
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes();
+  const colorMap={'BRB':'rgba(251,146,60,.7)','Break':'rgba(239,68,68,.7)','Training / Coaching':'rgba(167,139,250,.7)','QA Session AUX':'rgba(34,211,238,.7)','Internal Calls':'rgba(96,165,250,.7)','Logged Out':'rgba(75,85,99,.7)'};
+  const rows=agents.map(a=>{
+    const events=a.events||[];
+    const bars=[];
+    for(let i=0;i<events.length;i++){
+      const e=events[i];
+      if(!e.startMin) continue;
+      const startM=Math.max(e.startMin-SHIFT_START,0);
+      const endM=Math.min((e.endMin||nowMin)-SHIFT_START,TOTAL);
+      if(endM<=0||startM>=TOTAL) continue;
+      const pct=w=>Math.max(0,Math.min(100,(w/TOTAL)*100)).toFixed(2)+'%';
+      const col=colorMap[e.lane]||'rgba(100,116,139,.5)';
+      bars.push(`<div title="${esc(e.lane)}: ${esc(e.start||'')}–${esc(e.end||'now')}" style="position:absolute;left:${pct(startM)};width:${pct(endM-startM)};height:100%;background:${col};border-radius:3px;"></div>`);
+    }
+    return`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <div style="font-size:11px;color:var(--t2);flex:0 0 110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(a.username)}">${esc(a.username)}</div>
+      <div style="position:relative;flex:1;height:18px;background:rgba(255,255,255,.04);border-radius:3px;overflow:hidden">${bars.join('')}</div>
+    </div>`;
+  }).join('');
+  // Hour labels
+  const labels=Array.from({length:14},(_,i)=>{const h=7+i;return`<div style="position:absolute;left:${((i/13)*100).toFixed(1)}%;font-size:9px;color:var(--t3);transform:translateX(-50%)">${h>12?h-12:h}${h>=12?'pm':'am'}</div>`;}).join('');
+  chart.innerHTML=`<div style="padding-bottom:20px;">${rows}</div><div style="position:relative;height:14px;margin-left:118px;">${labels}</div>`;
 }
 
 // ── FEAT-1: Stale data tracker ────────────────────────────────────────────────

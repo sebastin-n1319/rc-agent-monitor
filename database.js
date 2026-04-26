@@ -366,6 +366,16 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_app_sessions_email ON app_sessions(email)`);
 
+  // FEAT-4: Audit log table — tracks admin actions
+  await run(`CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_email TEXT NOT NULL,
+    action TEXT NOT NULL,
+    target TEXT,
+    detail TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC)`);
+
   // Migrations
   for (const sql of [
     `ALTER TABLE monitored_agents ADD COLUMN email TEXT`,
@@ -1068,6 +1078,21 @@ function pruneExpiredSessions(){
   return run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
 }
 
+// ── FEAT-4: Audit log ─────────────────────────────────────────────────────────
+function insertAuditLog(actorEmail, action, target, detail) {
+  return run(
+    `INSERT INTO audit_log (actor_email, action, target, detail) VALUES (?,?,?,?)`,
+    [actorEmail, action, target || null, detail || null]
+  );
+}
+
+async function getAuditLog(limit = 200) {
+  return all(
+    `SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ?`,
+    [limit]
+  );
+}
+
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
@@ -1077,5 +1102,6 @@ module.exports={
   createAppSession,getAppSession,deleteAppSession,pruneExpiredSessions,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
-  getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail
+  getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,
+  insertAuditLog,getAuditLog
 };
