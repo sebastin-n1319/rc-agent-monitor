@@ -10067,7 +10067,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   applyView(role);
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
-  if(skipAnimation) restoreLastTab(); // restore tab when coming from quick-boot
+  if(skipAnimation) setTimeout(restoreLastTab, 0); // restore tab after DOM settles
 
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
@@ -11621,24 +11621,24 @@ function switchTab(tab,el){
 }
 
 function setAvatar(url){
-  if(!url) return;
   const av = document.getElementById('userAvatar');
   if(!av) return;
-  const img = new Image();
-  img.onload  = () => { av.src = url; av.style.display = 'block'; };
-  img.onerror = () => { av.style.display = 'none'; };
-  img.src = url;
+  if(!url){ av.style.display = 'none'; return; }
+  // Set handlers BEFORE src so they are guaranteed to fire
+  av.onload  = function(){ av.style.display = 'block'; };
+  av.onerror = function(){ av.style.display = 'none'; av.removeAttribute('src'); };
+  av.src = url;
 }
 
 function restoreLastTab(){
   try{
     const tab = localStorage.getItem('rcActiveTab');
-    if(!tab || tab === 'live') return; // 'live' is the default, no action needed
+    if(!tab || tab === 'live') return;
     const btns = document.querySelectorAll('.nav-tab');
     for(const btn of btns){
       const oc = btn.getAttribute('onclick') || '';
       if(oc.includes("'" + tab + "'")){
-        btn.click();
+        switchTab(tab, btn); // call directly — more reliable than btn.click()
         break;
       }
     }
