@@ -12671,9 +12671,9 @@ safeBoot(initConfetti,'initConfetti');
 safeBoot(initLoginAnimations,'initLoginAnimations');
 
 // ── INLINE SESSION RESTORE ────────────────────────────────────────────────────
-// Runs synchronously at script parse time. DOM is fully available here.
-// Sets up a MutationObserver + interval enforcer to prevent ANYTHING from
-// re-showing the login screen once we've decided to restore the session.
+// The <head> CSS gate already hides loginScreen and shows mainApp via
+// html.app-authenticated. This IIFE just populates sessionStorage so the
+// window.load handler knows to run the quick-boot path.
 (function rcInlineBoot(){
   try {
     var raw = localStorage.getItem('rcSession');
@@ -12681,33 +12681,6 @@ safeBoot(initLoginAnimations,'initLoginAnimations');
     var s = JSON.parse(raw);
     if(!s || !s.email || !s.name || !s.role) return;
     if(Date.now() - (s.savedAt||0) > 86400000) return; // 24h
-
-    var login = document.getElementById('loginScreen');
-    var app   = document.getElementById('mainApp');
-    if(!login || !app) return;
-
-    // ── Force hide the login screen ──────────────────────────────────────────
-    function forceHideLogin(){
-      login.classList.add('login-gone');
-      login.style.setProperty('display',     'none',    'important');
-      login.style.setProperty('visibility',  'hidden',  'important');
-      login.style.setProperty('opacity',     '0',       'important');
-      login.style.setProperty('pointer-events','none',  'important');
-      app.style.setProperty('display',       'flex',    'important');
-      app.style.setProperty('opacity',       '1',       'important');
-      app.style.setProperty('visibility',    'visible', 'important');
-    }
-    forceHideLogin();
-
-    // ── MutationObserver: re-hide immediately if anything tries to show login ─
-    var _obs = new MutationObserver(function(){ forceHideLogin(); });
-    _obs.observe(login, { attributes:true, attributeFilter:['style','class'] });
-
-    // ── Interval enforcer: belt-and-suspenders for 5 seconds ─────────────────
-    var _iv = setInterval(forceHideLogin, 80);
-    setTimeout(function(){ clearInterval(_iv); _obs.disconnect(); }, 5000);
-
-    // ── Populate globals so window.load can finish setup ─────────────────────
     sessionStorage.setItem('rcUser',            s.name);
     sessionStorage.setItem('rcRole',            s.role);
     sessionStorage.setItem('rcEmail',           s.email);
