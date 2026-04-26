@@ -8469,7 +8469,7 @@ tbody tr:hover td{
 
 <!-- LOGIN v8 — Dark Premium Redesign -->
 <style id="login-v8">
-#loginScreen{all:unset;position:fixed!important;inset:0!important;z-index:100!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;}
+#loginScreen{position:fixed!important;inset:0!important;z-index:100!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;color:#f1f5f9!important;box-sizing:border-box!important;}
 #loginScreen .v8-orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);}
 #loginScreen .v8-orb-1{width:600px;height:600px;top:-180px;left:-100px;background:radial-gradient(circle,rgba(245,130,31,.18),transparent 70%);}
 #loginScreen .v8-orb-2{width:500px;height:500px;bottom:-150px;left:200px;background:radial-gradient(circle,rgba(99,102,241,.14),transparent 70%);}
@@ -10346,16 +10346,21 @@ function doLogout(){
 
   // 3. After 900ms show the login screen, fade out overlay
   setTimeout(function(){
-    // Remove CSS gate → loginScreen CSS activates
     document.documentElement.classList.remove('app-authenticated');
     document.body.classList.remove('app-authenticated');
-    // Explicitly show login, hide app
     const ls = document.getElementById('loginScreen');
     const ma = document.getElementById('mainApp');
-    if(ls){ ls.style.removeProperty('display'); ls.style.setProperty('display','flex','important'); }
+    if(ls){
+      // Remove all hiding classes and inline styles
+      ls.classList.remove('login-gone','login-exiting');
+      ['display','visibility','opacity','pointer-events'].forEach(function(p){ ls.style.removeProperty(p); });
+      // Force reflow so animations restart fresh
+      ls.style.animation='none';
+      void ls.offsetHeight;
+      ls.style.removeProperty('animation');
+    }
     if(ma){ ma.style.setProperty('display','none','important'); }
     try{ document.getElementById('loginMsg').innerHTML=''; }catch(e){}
-    // Fade out overlay
     if(overlay){
       overlay.style.transition='opacity .4s ease';
       overlay.style.opacity='0';
