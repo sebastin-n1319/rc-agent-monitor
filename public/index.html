@@ -12743,9 +12743,16 @@ window.addEventListener('load', async () => {
     const u=sessionStorage.getItem('rcUser'), r=sessionStorage.getItem('rcRole');
     const p=sessionStorage.getItem('rcPicture'), be=sessionStorage.getItem('rcBreakbotEnabled')!=='0';
     if(u && r){
-      // CSS gate already hid loginScreen and showed mainApp. Just call startApp
-      // with skipAnimation=true — it wires all UI, calls refresh/liveStream, skips opacity dance.
-      try{ startApp(u, r, p, be, true); }catch(e){ console.error('quick-boot startApp failed', e); }
+      // Set critical header elements first — before startApp, so they work even if startApp throws
+      try{
+        const ul=document.getElementById('userLabel'); if(ul) ul.textContent=u.split(' ')[0];
+        const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':'Agent';
+        const rt=document.getElementById('userRoleTag'); if(rt){rt.textContent=r.toUpperCase();rt.className='role-pill '+(r==='admin'?'role-admin':'role-agent');}
+        const tb=document.getElementById('viewToggleBtn'); if(tb) tb.style.setProperty('display',r==='admin'?'inline-flex':'none','important');
+        currentUser=u; currentRole=r; currentEmail=sessionStorage.getItem('rcEmail')||null; currentBreakbotEnabled=be; currentViewMode=r;
+      }catch(e){}
+      // Now call startApp for full initialization
+      try{ startApp(u, r, p, be, true); }catch(e){ console.error('quick-boot startApp failed',e); }
       // Background: re-register server cookie
       const s=JSON.parse(localStorage.getItem('rcSession')||'null');
       if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
