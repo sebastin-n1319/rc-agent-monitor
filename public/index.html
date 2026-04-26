@@ -9400,6 +9400,25 @@ tbody tr:hover td{
       " title="Dismiss">×</button>
     </div>
     <!-- ──────────────────────────────────────────────────────────────────── -->
+    <!-- Agent self-stats card (UI-4: show own role + score) -->
+    <div id="agent-self-card" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:none;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Your Performance Today</div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span id="self-role-pill" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:rgba(245,130,31,.12);color:#f5821f;border:1px solid rgba(245,130,31,.25);">Agent</span>
+            <span style="font-size:12px;color:var(--t2);">IN: <strong id="self-in" style="color:var(--t1)">--</strong></span>
+            <span style="font-size:12px;color:var(--t2);">OUT: <strong id="self-out" style="color:var(--t1)">--</strong></span>
+            <span style="font-size:12px;color:var(--t2);">Missed: <strong id="self-missed" style="color:var(--t1)">--</strong></span>
+            <span style="font-size:12px;color:var(--t2);">AHT: <strong id="self-aht" style="color:var(--teal,#34d399)">--</strong></span>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div style="font-size:10px;color:var(--t3);margin-bottom:4px;">Score</div>
+          <span id="self-score" style="font-size:22px;font-weight:700;color:var(--t1);">--</span>
+        </div>
+      </div>
+    </div>
     <div class="metrics">
       <div class="metric m-green"><div class="metric-lbl">Available</div><div class="metric-val" id="ag-avail">--</div></div>
       <div class="metric m-red"><div class="metric-lbl">Unavailable</div><div class="metric-val" id="ag-unavail">--</div></div>
@@ -9407,6 +9426,13 @@ tbody tr:hover td{
       <div class="metric m-teal"><div class="metric-lbl">Inbound Today</div><div class="metric-val" id="ag-inbound">--</div></div>
       <div class="metric m-orange"><div class="metric-lbl">Outbound Today</div><div class="metric-val" id="ag-outbound">--</div></div>
     </div>
+    <!-- FEAT-1: Stale data banner -->
+    <div id="stale-data-banner" style="display:none;align-items:center;gap:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);border-radius:10px;padding:10px 16px;margin-bottom:14px;">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px;color:#fbbf24;flex-shrink:0"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      <span style="font-size:12px;color:rgba(251,191,36,.9);flex:1">Data may be stale — last updated <strong class="stale-age">5m ago</strong>. <span style="opacity:.7">Click Sync to refresh.</span></span>
+      <button onclick="refresh();showToast('Refreshing…','info')" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:6px;color:#fbbf24;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer">Sync now</button>
+    </div>
+
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">Team Status</span>
@@ -9430,6 +9456,14 @@ tbody tr:hover td{
           <span id="call-sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;"></span>
           <span id="call-sync-label">Calls: checking...</span>
         </span>
+      </div>
+      <!-- UI-2: Quick-search -->
+      <div style="padding:8px 0 4px;display:flex;align-items:center;gap:8px;">
+        <input id="agent-search" type="text" placeholder="Search agents…" oninput="filterAgentTable(this.value)"
+          style="flex:1;max-width:240px;padding:5px 10px 5px 30px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t1);font-size:12px;outline:none;"
+          onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
+        <svg viewBox="0 0 20 20" fill="currentColor" style="width:13px;height:13px;position:absolute;margin-left:9px;color:var(--t3);pointer-events:none"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+        <span style="font-size:10px;color:var(--t3)">Tip: press <kbd style="background:rgba(255,255,255,.07);border:1px solid var(--b1);border-radius:3px;padding:1px 5px;font-size:10px">R</kbd> to refresh · <kbd style="background:rgba(255,255,255,.07);border:1px solid var(--b1);border-radius:3px;padding:1px 5px;font-size:10px">T</kbd> timezone · <kbd style="background:rgba(255,255,255,.07);border:1px solid var(--b1);border-radius:3px;padding:1px 5px;font-size:10px">1–7</kbd> tabs</span>
       </div>
       <div class="tbl-wrap" id="agent-tbl-wrap">
       <table>
@@ -9963,7 +9997,7 @@ async function handleTokenResponse(response){
         }, ()=>res2(), {timeout:5000});
       });
     }catch(e){}
-    fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo:navigator.userAgent})}).catch(()=>{});
+    fetch(BACKEND+'/api/login-log',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo:navigator.userAgent})}).catch(()=>{});
     sessionStorage.setItem('rcUser',name); sessionStorage.setItem('rcRole',role); sessionStorage.setItem('rcEmail',email); sessionStorage.setItem('rcPicture',picture||''); sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
     localStorage.setItem('rcLastUser', JSON.stringify({
       name, role, email, picture: picture||'', breakbotEnabled
@@ -10065,7 +10099,7 @@ async function handleGoogleCredential(response){
       },()=>res(),{timeout:5000});
     });
   }catch(e){}
-  fetch(BACKEND+'/api/login-log',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
+  fetch(BACKEND+'/api/login-log',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
   localStorage.setItem('rcLastUser',JSON.stringify({
     name,role,email,picture:picture||'',breakbotEnabled
@@ -10427,7 +10461,7 @@ async function loadSession(){
                 picture:s.picture||cached.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()
               })); }catch(_){}
             } else {
-              fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:cached.email,name:cached.name,picture:cached.picture||''})}).catch(()=>{});
+              fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:cached.email,name:cached.name,picture:cached.picture||''})}).catch(()=>{});
             }
           }).catch(()=>{});
         return;
@@ -10495,7 +10529,7 @@ async function loadSession(){
       debugLines.push('restoring app from rcLastUser');
       try{ startApp(remembered.name,role,remembered.picture,breakbotEnabled); }catch(err){ debugLines.push('startApp error (recovered): '+err.message); throw err; }
       fetch(BACKEND+'/api/session',{
-        method:'POST',
+        method:'POST',credentials:'include',
         credentials:'include',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({email:remembered.email,name:remembered.name,picture:remembered.picture||''})
@@ -11611,12 +11645,39 @@ async function sendBreakAction(action, btn){
       return;
     }
   }
+  // FEAT-2: Break reason category picker for BREAK_OUT and BRB_OUT
+  if(action==='BREAK_OUT' || action==='BRB_OUT'){
+    const categories = ['Personal','Restroom','Lunch / Meal','Tea / Coffee','Sick / Unwell','Other'];
+    const choice = await new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML=`<div style="background:var(--card1,#0c1424);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:24px 28px;width:340px;max-width:90vw;">
+        <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:4px;">Break reason <span style="font-size:11px;font-weight:400;color:var(--t3)">(optional)</span></div>
+        <div style="font-size:12px;color:var(--t3);margin-bottom:16px;">Select a category or skip</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+          ${categories.map(c=>`<button onclick="this.closest('.break-reason-modal').dataset.choice='${c}'" style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--t1);font-size:12px;cursor:pointer;text-align:left;transition:background .15s" onmouseover="this.style.background='rgba(245,130,31,.12)'" onmouseout="this.style.background='rgba(255,255,255,.04)'">${c}</button>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button onclick="this.closest('.break-reason-modal').dataset.choice=''" style="padding:7px 14px;background:none;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--t3);font-size:12px;cursor:pointer;">Skip</button>
+        </div>
+      </div>`;
+      overlay.firstElementChild.className='break-reason-modal';
+      overlay.firstElementChild.addEventListener('click',function(e){
+        if(this.dataset.choice!==undefined){ overlay.remove(); resolve(this.dataset.choice||''); }
+      });
+      overlay.addEventListener('click',function(e){ if(e.target===overlay){overlay.remove();resolve('');}});
+      document.body.appendChild(overlay);
+    });
+    if(choice) note = choice + (note ? ' — ' + note : '');
+  }
+  // UI-1: Disable all break action buttons to prevent double-submit
   const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
   buttons.forEach(button => button.disabled = true);
   if(btn) btn.classList.add('syncing');
   try{
     const res = await fetch(BACKEND+'/api/break-events',{
-      method:'POST',
+      method:'POST',credentials:'include',
+      credentials:'include',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         username: currentUser,
@@ -11960,7 +12021,7 @@ async function loadAgentStatuses(){
       }else{if(liveTimers[a.rc_id]){clearInterval(liveTimers[a.rc_id].interval);delete liveTimers[a.rc_id];}}
       const missedBadge='<span class="missed-badge '+(missed>0?'missed-red':'missed-zero')+'">'+missed+'</span>';
       const isLongUnavail=(status||'').toLowerCase()==='unavailable'&&sinceTs&&(Date.now()-new Date(sinceTs).getTime())>3600000;
-      return'<tr'+(isLongUnavail?' class="row-unavail-alert"':'')+'>'+
+      return'<tr'+(isLongUnavail?' class="row-unavail-alert"':'')+' data-agent-name="'+esc(a.name.toLowerCase())+'">'+
         '<td style="color:var(--text3);font-family:JetBrains Mono,monospace;font-size:11px">'+(idx+1)+'</td>'+
         '<td><div style="display:flex;align-items:center;gap:6px"><div><div class="agent-name">'+esc(a.name)+'</div><div class="agent-ext">'+esc(a.extension)+'</div></div><button onclick="openNotesModal(\''+esc(a.rc_id||a.extension)+'\',\''+esc(a.name)+'\')" style="background:none;border:1px solid rgba(255,255,255,.1);border-radius:5px;color:var(--t3);cursor:pointer;padding:2px 5px;font-size:10px;line-height:1;flex-shrink:0" title="Coaching notes">&#x270E;</button></div></td>'+
         '<td><span class="pill '+pillCls(status)+'"><span class="dot"></span>'+esc(status)+'</span>'+(queueStatus==='Unavailable'?'<div style="font-size:9px;color:var(--t3);margin-top:2px">Queue Off</div>':'')+'</td>'+
@@ -12111,6 +12172,33 @@ async function loadAgentStatuses(){
       document.getElementById('ag-outbound').textContent=totOut;
       document.getElementById('agent-view-count').textContent=agents.length+' agents';
       document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
+      // Agent self-stats (UI-4)
+      if(currentRole!=='admin' && currentEmail){
+        const selfData=sortedAdminOps.find(op=>op.agent&&op.agent.email&&op.agent.email.toLowerCase()===currentEmail.toLowerCase());
+        const card=document.getElementById('agent-self-card');
+        if(card&&selfData){
+          card.style.display='flex';
+          const {sum,status}=selfData;
+          const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
+          const ahtIn=inC>0?Math.round((sum.ahtInbound||0)/60)+'m':'—';
+          const toggles=(selfData.evts||[]).filter((e,i)=>i>0&&(selfData.evts)[i-1].status!==e.status).length;
+          const sc=calcScore(sum.availableSeconds||0,sum.unavailableSeconds||0,inC,outC,missed,toggles,sum.onCallSeconds||0,sum.ringingSeconds||0);
+          document.getElementById('self-in').textContent=inC;
+          document.getElementById('self-out').textContent=outC;
+          document.getElementById('self-missed').textContent=missed;
+          document.getElementById('self-aht').textContent=ahtIn;
+          const scoreEl=document.getElementById('self-score');
+          if(scoreEl){scoreEl.textContent=sc.v;scoreEl.className='score '+sc.c;}
+          const rolePill=document.getElementById('self-role-pill');
+          if(rolePill)rolePill.textContent=currentRole==='admin'?'Admin':'Agent';
+          // FEAT-3: Break threshold alert
+          const breakMins=Math.round((sum.unavailableSeconds||0)/60);
+          if(breakMins>=60&&!sessionStorage.getItem('breakAlertShown_'+todayStr())){
+            sessionStorage.setItem('breakAlertShown_'+todayStr(),'1');
+            showToast('⚠️ You have been unavailable for '+breakMins+' minutes today — break limit reached.','warning',6000);
+          }
+        }
+      }
     }
   }catch(e){console.error('loadAgentStatuses',e);}
 }
@@ -12206,7 +12294,7 @@ async function forceCallSync(){
   if(lbl)lbl.textContent='Syncing…';
   if(dot){dot.style.background='var(--yellow)';dot.style.boxShadow='0 0 5px var(--yellow)';}
   try{
-    await fetch(BACKEND+'/api/force-call-sync',{method:'POST'});
+    await fetch(BACKEND+'/api/force-call-sync',{method:'POST',credentials:'include'});
     await new Promise(r=>setTimeout(r,3000));
     await loadCallSyncStatus();
     await loadData();
@@ -12337,7 +12425,7 @@ async function addSelectedAgents(){
   for(const agent of toAdd){
     try{
       const res = await fetch(BACKEND+'/api/agents',{
-        method:'POST',
+        method:'POST',credentials:'include',
         headers:{'Content-Type':'application/json'},
         body:JSON.stringify({name:agent.name, extension:agent.extension, email:agent.email||''})
       });
@@ -12357,7 +12445,7 @@ async function addSelectedAgents(){
   if(failed > 0){ showToast(failed+' failed to add','error'); }
   loadAgents();
   // Trigger RC sync for newly added agents
-  if(added > 0) setTimeout(()=>fetch(BACKEND+'/api/refresh',{method:'POST'}),1000);
+  if(added > 0) setTimeout(()=>fetch(BACKEND+'/api/refresh',{method:'POST',credentials:'include'}),1000);
 }
 
 async function loadAgents(){
@@ -12497,7 +12585,7 @@ async function addRole(){
   const breakbotEnabled=document.getElementById('roleBreakbotEnabled').checked;
   if(!email){showToast('Email required','warning');return;}
   try{
-    const res=await fetch(BACKEND+'/api/roles',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser,breakbotEnabled})});
+    const res=await fetch(BACKEND+'/api/roles',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser,breakbotEnabled})});
     const json=await res.json();
     if(json.success){
       showToast('Saved','success');
@@ -12704,7 +12792,7 @@ async function firstLoadSync(){
       const events=await fetch(BACKEND+'/api/presence-events?date='+todayStr()+'&tz='+encodeURIComponent(activeTimeZone())).then(r=>r.json()).catch(()=>({data:[]}));
       if(!events.data||events.data.length===0){
         showToast('Auto-syncing agent data...','info');
-        await fetch(BACKEND+'/api/refresh',{method:'POST'}).catch(()=>{});
+        await fetch(BACKEND+'/api/refresh',{method:'POST',credentials:'include'}).catch(()=>{});
         await refresh();
         showToast('Data synced!','success');
       }
@@ -12717,13 +12805,33 @@ async function doRefresh(){
   if(btn)btn.classList.add('syncing');
   showToast('Syncing live data...','info');
   try{
-    const res=await fetch(BACKEND+'/api/refresh',{method:'POST'});
+    const res=await fetch(BACKEND+'/api/refresh',{method:'POST',credentials:'include'});
     const json=await res.json();
     if(json.success){await refresh();showToast('Synced successfully!','success');}
     else showToast('Sync failed','error');
   }catch(e){showToast('Sync error','error');}
   finally{if(btn)btn.classList.remove('syncing');}
 }
+
+// ── FEAT-1: Stale data tracker ────────────────────────────────────────────────
+let _lastRefreshAt = 0;
+const STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
+
+function updateStaleBanner(){
+  const banner = document.getElementById('stale-data-banner');
+  if(!banner) return;
+  const age = Date.now() - _lastRefreshAt;
+  if(_lastRefreshAt && age > STALE_THRESHOLD_MS){
+    const mins = Math.floor(age/60000);
+    const lbl = banner.querySelector('.stale-age');
+    if(lbl) lbl.textContent = mins+'m ago';
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+setInterval(updateStaleBanner, 30000);
+// ──────────────────────────────────────────────────────────────────────────────
 
 async function refresh(){
   await loadTodaySummary();
@@ -12732,9 +12840,54 @@ async function refresh(){
   if(currentRole==='admin')await loadEventLog();
   loadCallSyncStatus();
   loadCallVolumeChart();
+  _lastRefreshAt = Date.now();
+  updateStaleBanner();
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
   const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
 }
+
+// ── UI-2: Agent quick-search ──────────────────────────────────────────────────
+function filterAgentTable(q){
+  q = (q||'').toLowerCase().trim();
+  const rows = document.querySelectorAll('#admin-agent-tbl-wrap tbody tr[data-agent-name]');
+  let visible = 0;
+  rows.forEach(function(row){
+    const name = (row.getAttribute('data-agent-name')||'').toLowerCase();
+    const show = !q || name.includes(q);
+    row.style.display = show ? '' : 'none';
+    if(show) visible++;
+  });
+  const cnt = document.getElementById('agent-view-count');
+  if(cnt) cnt.textContent = visible + ' agent' + (visible!==1?'s':'');
+}
+// ──────────────────────────────────────────────────────────────────────────────
+
+// ── UI-3: Keyboard shortcuts ──────────────────────────────────────────────────
+document.addEventListener('keydown', function(e){
+  if(!currentUser) return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable) return;
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  const key = e.key.toLowerCase();
+  // R = refresh
+  if(key==='r' && !e.shiftKey){ e.preventDefault(); refresh(); showToast('Refreshing…','info'); return; }
+  // T = toggle timezone
+  if(key==='t'){ e.preventDefault(); toggleTZ(); return; }
+  // Escape = close any open modal/menu
+  if(e.key==='Escape'){
+    document.querySelectorAll('.col-toggle-menu').forEach(function(m){m.style.display='none';});
+    return;
+  }
+  // Number keys 1-7 = switch admin tabs
+  if(currentRole==='admin' && currentViewMode==='admin'){
+    const tabMap = {'1':'live','2':'reports','3':'agents','4':'access','5':'loginlogs','6':'breaks','7':'calllogs'};
+    if(tabMap[e.key]){
+      e.preventDefault();
+      const btn = document.querySelector(`.nav-tab[onclick*="'${tabMap[e.key]}'"]`);
+      if(btn) btn.click();
+    }
+  }
+});
+// ─────────────────────────────────────────────────────────────────────────────
 
 // INIT
 function safeBoot(fn,name){
@@ -12810,7 +12963,7 @@ window.addEventListener('load', async () => {
       try{ startApp(u, r, p, be, true); }catch(e){ console.error('quick-boot startApp failed',e); }
       // Background: re-register server cookie
       const s=JSON.parse(localStorage.getItem('rcSession')||'null');
-      if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
+      if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
       return;
     }
   }
@@ -14033,7 +14186,7 @@ async function submitAgentNote(){
   const note=document.getElementById('notes-input').value.trim();
   if(!note||!_notesAgentId)return;
   try{
-    const res=await fetch(BACKEND+'/api/agent-notes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({agentId:_notesAgentId,agentName:_notesAgentName,note,addedBy:currentUser})});
+    const res=await fetch(BACKEND+'/api/agent-notes',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({agentId:_notesAgentId,agentName:_notesAgentName,note,addedBy:currentUser})});
     const j=await res.json();
     if(j.success){document.getElementById('notes-input').value='';document.getElementById('notes-char-count').textContent='0/500';loadNotesList();}
     else alert('Error: '+j.error);
