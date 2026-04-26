@@ -10361,6 +10361,7 @@ function doLogout(){
     }
     if(ma){ ma.style.setProperty('display','none','important'); }
     try{ document.getElementById('loginMsg').innerHTML=''; }catch(e){}
+    try{ const sd=document.getElementById('sessionDebug'); if(sd){sd.style.display='none';sd.innerHTML='';} }catch(e){}
     if(overlay){
       overlay.style.transition='opacity .4s ease';
       overlay.style.opacity='0';
@@ -10504,8 +10505,7 @@ async function loadSession(){
     }
   }catch(e){ debugLines.push('rcLastUser recovery error: '+e.message); }
 
-  // ── No valid session — show debug info on login screen ──
-  showSessionDebug(debugLines);
+  // ── No valid session — show Google sign-in ──
   initGoogleAuth();
 }
 
