@@ -8461,124 +8461,111 @@ tbody tr:hover td{
 </head>
 <body>
 
-<!-- LOGIN v7 — Full animation suite -->
+<!-- LOGIN v8 — Dark Premium Redesign -->
+<style id="login-v8">
+#loginScreen{all:unset;position:fixed!important;inset:0!important;z-index:100!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;}
+#loginScreen .v8-orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);}
+#loginScreen .v8-orb-1{width:600px;height:600px;top:-180px;left:-100px;background:radial-gradient(circle,rgba(245,130,31,.18),transparent 70%);}
+#loginScreen .v8-orb-2{width:500px;height:500px;bottom:-150px;left:200px;background:radial-gradient(circle,rgba(99,102,241,.14),transparent 70%);}
+#loginScreen .v8-orb-3{width:400px;height:400px;top:50%;right:-80px;transform:translateY(-50%);background:radial-gradient(circle,rgba(245,130,31,.1),transparent 70%);}
+#loginScreen .v8-grid{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse 80% 70% at 40% 50%,black 0%,transparent 100%);}
+#loginScreen .v8-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 64px;position:relative;z-index:1;}
+#loginScreen .v8-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:100px;margin-bottom:40px;background:rgba(245,130,31,.12);border:1px solid rgba(245,130,31,.25);color:#f5821f;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;width:fit-content;}
+#loginScreen .v8-badge-dot{width:7px;height:7px;border-radius:50%;background:#f5821f;box-shadow:0 0 8px #f5821f;animation:v8pulse 2s ease-in-out infinite;}
+@keyframes v8pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#loginScreen .v8-headline{font-size:52px;font-weight:800;line-height:1.1;letter-spacing:-.02em;color:#f1f5f9;margin:0 0 16px;}
+#loginScreen .v8-headline em{font-style:normal;background:linear-gradient(135deg,#f5821f 0%,#fbbf24 50%,#f5821f 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+#loginScreen .v8-sub{font-size:16px;color:rgba(148,163,184,.8);line-height:1.65;max-width:420px;margin:0 0 48px;}
+#loginScreen .v8-features{display:flex;flex-direction:column;gap:20px;margin-bottom:48px;}
+#loginScreen .v8-feat{display:flex;align-items:flex-start;gap:14px;}
+#loginScreen .v8-feat-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(245,130,31,.1);border:1px solid rgba(245,130,31,.2);color:#f5821f;}
+#loginScreen .v8-feat-title{font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:2px;}
+#loginScreen .v8-feat-desc{font-size:12.5px;color:rgba(148,163,184,.7);line-height:1.5;}
+#loginScreen .v8-footer{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(100,116,139,.6);}
+#loginScreen .v8-divider{width:1px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.07) 20%,rgba(255,255,255,.07) 80%,transparent);flex-shrink:0;align-self:stretch;margin:40px 0;}
+#loginScreen .v8-right{width:460px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:40px;position:relative;z-index:1;}
+#loginScreen .v8-card{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:24px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:44px 40px;box-shadow:0 24px 64px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);position:relative;overflow:hidden;}
+#loginScreen .v8-card::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(245,130,31,.5),transparent);}
+#loginScreen .v8-card-logo{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
+#loginScreen .v8-card-logo img{width:36px;height:36px;object-fit:contain;}
+#loginScreen .v8-card-logo-name{font-size:14px;font-weight:700;color:#f1f5f9;}
+#loginScreen .v8-card-logo-sub{font-size:11px;color:rgba(148,163,184,.6);margin-top:1px;}
+#loginScreen .v8-welcome{font-size:28px;font-weight:800;color:#f1f5f9;margin:0 0 8px;letter-spacing:-.02em;}
+#loginScreen .v8-welcome-sub{font-size:14px;color:rgba(148,163,184,.7);margin:0 0 28px;line-height:1.5;}
+#loginScreen .v8-welcome-sub strong{color:rgba(245,130,31,.9);}
+#loginScreen .v8-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:#f1f5f9;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.01em;font-family:'Inter','Poppins',sans-serif;}
+#loginScreen .v8-google-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(245,130,31,.4);box-shadow:0 0 24px rgba(245,130,31,.12);}
+#loginScreen .v8-spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:#f5821f;animation:spin .7s linear infinite;display:none;flex-shrink:0;}
+#loginScreen .v8-google-btn[data-loading="true"] .v8-spinner{display:block;}
+#loginScreen .v8-google-btn[data-loading="true"] .v8-google-icon{display:none;}
+#loginScreen .v8-google-btn[data-loading="true"] .v8-btn-label{opacity:0;}
+#loginScreen .v8-login-msg{margin:12px 0 0;font-size:13px;color:#fca5a5;min-height:18px;text-align:center;}
+#loginScreen .v8-switch-btn{display:none;width:100%;margin-top:10px;padding:8px;background:none;border:none;color:rgba(148,163,184,.5);font-size:13px;cursor:pointer;font-family:'Inter','Poppins',sans-serif;}
+#loginScreen .v8-switch-btn:hover{color:rgba(148,163,184,.8);}
+#loginScreen .v8-sep{display:flex;align-items:center;gap:12px;margin:24px 0;color:rgba(100,116,139,.5);font-size:11px;letter-spacing:.04em;text-transform:uppercase;}
+#loginScreen .v8-sep::before,#loginScreen .v8-sep::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
+#loginScreen .v8-restrict{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:rgba(100,116,139,.6);}
+#loginScreen .v8-restrict strong{color:rgba(148,163,184,.7);font-weight:600;}
+@media(max-width:900px){#loginScreen .v8-left{display:none!important;}#loginScreen .v8-divider{display:none!important;}#loginScreen .v8-right{width:100%!important;}}
+</style>
+
 <div id="loginScreen">
+  <div class="v8-orb v8-orb-1"></div>
+  <div class="v8-orb v8-orb-2"></div>
+  <div class="v8-orb v8-orb-3"></div>
+  <div class="v8-grid"></div>
 
-  <!-- LEFT: animated brand panel -->
-  <div class="lv-left">
-    <!-- Animated blobs -->
-    <div class="lv-blob lv-blob-1"></div>
-    <div class="lv-blob lv-blob-2"></div>
-    <div class="lv-blob lv-blob-3"></div>
-    <div class="lv-blob lv-blob-4"></div>
-    <!-- Drifting grid -->
-    <div class="lv-grid"></div>
-    <!-- Particle container (filled by JS) -->
-    <div class="lv-particles" id="lvParticles"></div>
-    <!-- Scanline -->
-    <div class="lv-scanline"></div>
-
-    <!-- All content sits above layers -->
-    <div class="lv-content">
-
-      <div class="lv-logo-row">
-        <img class="lv-logo" src="/adit-logo-dark.png" alt="Adit">
-        <span class="lv-brand"><span>Adit</span> Agent Monitor</span>
-        <div class="lv-live-pill">
-          <span class="lv-live-dot"></span>
-          Live
-        </div>
+  <div class="v8-left">
+    <div class="v8-badge"><span class="v8-badge-dot"></span>Live Operations</div>
+    <h1 class="v8-headline">Your CS team,<br><em>live &amp; accountable.</em></h1>
+    <p class="v8-sub">The real-time command center for Adit's CS operations — agent presence, break tracking, QA scoring, and performance all in one place.</p>
+    <div class="v8-features">
+      <div class="v8-feat">
+        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><circle cx="10" cy="7" r="3"/><path d="M10 12c-4.5 0-6 2-6 3h12c0-1-1.5-3-6-3z"/></svg></div>
+        <div><div class="v8-feat-title">Real-time Agent Presence</div><div class="v8-feat-desc">Live status, availability, and active call data — refreshed every 30 seconds.</div></div>
       </div>
-
-      <div class="lv-hero">
-        <div class="lv-eyebrow">T1 CS Stars &nbsp;·&nbsp; Operations Hub</div>
-        <h2 class="lv-h1">Your CS team,<br><em>live &amp; accountable.</em></h2>
-        <p class="lv-sub">Real-time agent presence, break tracking, QA scoring, and performance recognition — all in one place.</p>
-
-        <div class="lv-stats">
-          <div class="lv-stat">
-            <div class="lv-stat-val" data-count="12" data-suffix="">0</div>
-            <div class="lv-stat-lbl">Agents Online</div>
-            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.75"></div></div>
-          </div>
-          <div class="lv-stat">
-            <div class="lv-stat-val" data-count="96" data-suffix="%">0%</div>
-            <div class="lv-stat-lbl">CSAT Score</div>
-            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.96"></div></div>
-          </div>
-          <div class="lv-stat">
-            <div class="lv-stat-val" data-count="88" data-suffix="%">0%</div>
-            <div class="lv-stat-lbl">QA Score</div>
-            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.88"></div></div>
-          </div>
-          <div class="lv-stat">
-            <div class="lv-stat-val" data-count="247" data-suffix="">0</div>
-            <div class="lv-stat-lbl">Tickets Today</div>
-            <div class="lv-stat-bar"><div class="lv-stat-bar-fill" style="--bar-w:.82"></div></div>
-          </div>
-        </div>
+      <div class="v8-feat">
+        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm.75 4.5v4.25l2.5 2.5-1.06 1.06-2.94-2.94V6.5h1.5z"/></svg></div>
+        <div><div class="v8-feat-title">Break Tracking &amp; Accountability</div><div class="v8-feat-desc">Automated break logging with alerts, thresholds, and team-wide visibility.</div></div>
       </div>
-
-      <!-- Live activity feed -->
-      <div class="lv-feed">
-        <div class="lv-feed-title">Live Activity</div>
-        <div class="lv-feed-list" id="lvFeed"></div>
+      <div class="v8-feat">
+        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M2 13l4-6 4 4 3-4 5 6H2z"/></svg></div>
+        <div><div class="v8-feat-title">QA Scoring &amp; Performance</div><div class="v8-feat-desc">Live scoring across inbound, outbound, transfers, and availability metrics.</div></div>
       </div>
-
-      <div class="lv-foot">
-        <span class="lv-live-dot"></span>
-        Live data &nbsp;·&nbsp; Updated in real-time
+      <div class="v8-feat">
+        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v3l-7 4-7-4V4zm0 5.5V15a1 1 0 001 1h12a1 1 0 001-1V9.5l-7 4-7-4z"/></svg></div>
+        <div><div class="v8-feat-title">Call Logs &amp; Abandon Radar</div><div class="v8-feat-desc">Full call history, queue stats, and missed call alerts with caller details.</div></div>
       </div>
+    </div>
+    <div class="v8-footer">T1 CS Stars &nbsp;·&nbsp; Operations Hub &nbsp;·&nbsp; Adit.com</div>
+  </div>
 
-    </div><!-- /.lv-content -->
-  </div><!-- /.lv-left -->
+  <div class="v8-divider"></div>
 
-  <!-- RIGHT: rotating-border auth card -->
-  <div class="lv-right">
-    <div class="lv-card-wrap">
-      <div class="ls-card">
-
-        <div class="ls-logo-wrap">
-          <img class="ls-logo" src="/adit-logo-dark.png" alt="Adit">
-          <div>
-            <div class="ls-logo-name">Adit Agent Monitor</div>
-            <div class="ls-logo-sub">T1 CS Stars &nbsp;·&nbsp; Operations Hub</div>
-          </div>
-        </div>
-
-        <h1 class="ls-headline">Welcome back</h1>
-        <p class="ls-sub-text">Sign in with your <strong>@adit.com</strong> Google Workspace account.</p>
-
-        <div id="loginMsg"></div>
-        <div id="sessionDebug" style="display:none"></div>
-
-        <div class="ls-btn-wrap">
-          <div class="gfb-wrapper" style="width:100%;">
-            <button id="googleFallbackBtn" class="google-fallback-btn" onclick="startGoogleSignIn()">
-              <div class="gfb-spinner"></div>
-              <svg class="gfb-google-icon" viewBox="0 0 24 24" width="18" height="18">
-                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-              </svg>
-              <span class="google-btn-label">Continue with Google</span>
-            </button>
-            <div id="googleBtn" class="google-btn-host"></div>
-          </div>
-        </div>
-        <button id="gfbSwitch" class="gfb-switch" style="display:none" onclick="switchGoogleAccount()">Use a different account</button>
-
-        <div class="ls-divider"></div>
-        <div class="ls-restrict-row">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="opacity:.32;flex-shrink:0"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 5.5v.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          <strong>@adit.com</strong> only &nbsp;·&nbsp; Contact Sebastin for access
-        </div>
-
-      </div><!-- /.ls-card -->
-    </div><!-- /.lv-card-wrap -->
-  </div><!-- /.lv-right -->
-
+  <div class="v8-right">
+    <div class="v8-card">
+      <div class="v8-card-logo">
+        <img src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none'">
+        <div><div class="v8-card-logo-name">Adit Agent Monitor</div><div class="v8-card-logo-sub">T1 CS Stars · Operations Hub</div></div>
+      </div>
+      <div class="v8-welcome">Welcome back</div>
+      <p class="v8-welcome-sub">Sign in with your <strong>@adit.com</strong> Google Workspace account to continue.</p>
+      <div id="loginMsg" class="v8-login-msg"></div>
+      <div id="sessionDebug" style="display:none"></div>
+      <button id="googleFallbackBtn" class="v8-google-btn" onclick="startGoogleSignIn()">
+        <div class="v8-spinner"></div>
+        <svg class="v8-google-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        <span class="v8-btn-label">Continue with Google</span>
+      </button>
+      <button id="gfbSwitch" class="v8-switch-btn" onclick="switchGoogleAccount()">Use a different account</button>
+      <div id="googleBtn" class="google-btn-host" style="display:none"></div>
+      <div class="v8-sep">@adit.com accounts only</div>
+      <div class="v8-restrict">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 7V5a4.5 4.5 0 019 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Contact <strong>&nbsp;Sebastin&nbsp;</strong> for access
+      </div>
+    </div>
+  </div>
 </div><!-- /#loginScreen -->
 
 <script>
