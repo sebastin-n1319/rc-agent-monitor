@@ -255,6 +255,24 @@ app.get('/api/summary', requireAuth, async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// FEAT-7: 7-day trend data — returns per-agent daily summaries for the last N days
+app.get('/api/trend', requireAuth, rateLimit(10, 60000), async (req, res) => {
+  const tz = req.query.tz || 'America/Chicago';
+  const days = Math.min(parseInt(req.query.days) || 7, 14);
+  try {
+    const results = [];
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+      const summary = await getAgentSummary(dateStr, tz);
+      results.push({ date: dateStr, agents: summary });
+    }
+    res.json({ success: true, days, timeZone: tz, data: results });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.get('/api/presence-events', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';

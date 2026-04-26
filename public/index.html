@@ -9086,6 +9086,28 @@ tbody tr:hover td{
       <div class="rpt-stat"><div class="rpt-lbl">Total Unavailable</div><div class="rpt-val" id="rs-unavail" style="color:var(--red)">--</div></div>
       <div class="rpt-stat"><div class="rpt-lbl">Total Missed</div><div class="rpt-val" id="rs-missed" style="color:var(--red)">--</div></div>
     </div>
+    <!-- FEAT-7: 7-day trend chart -->
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-hdr">
+        <span class="card-title">7-Day Performance Trend</span>
+        <select id="trend-agent-select" onchange="renderTrendChart()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;color:var(--t1);font-size:12px;padding:4px 8px;cursor:pointer;">
+          <option value="">All agents (avg)</option>
+        </select>
+        <select id="trend-metric-select" onchange="renderTrendChart()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;color:var(--t1);font-size:12px;padding:4px 8px;cursor:pointer;">
+          <option value="inboundCalls">Inbound Calls</option>
+          <option value="outboundCalls">Outbound Calls</option>
+          <option value="missedCalls">Missed Calls</option>
+          <option value="ahtInbound">AHT (min)</option>
+          <option value="score">Score</option>
+        </select>
+        <button onclick="loadTrendData()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;color:var(--t2);font-size:11px;padding:4px 10px;cursor:pointer;margin-left:auto;">Refresh</button>
+      </div>
+      <div style="position:relative;height:220px;padding:0 4px;">
+        <canvas id="trend-chart" role="img" aria-label="7-day performance trend chart"></canvas>
+      </div>
+      <div id="trend-loading" style="text-align:center;padding:20px;color:var(--t3);font-size:12px;">Loading trend data…</div>
+    </div>
+
     <div class="card" id="report-card">
       <div class="card-hdr">
         <span class="card-title">Agent Performance Breakdown</span>
@@ -11793,7 +11815,7 @@ function switchTab(tab,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+tab).classList.add('active');
   el.classList.add('active');
-  if(tab==='reports'){const dp=document.getElementById('date-picker');if(dp&&!dp.value)dp.value=todayStr();loadReport();}
+  if(tab==='reports'){const dp=document.getElementById('date-picker');if(dp&&!dp.value)dp.value=todayStr();loadReport();if(!_trendRawData)loadTrendData();}
   if(tab==='loginlogs')loadLoginLogs();
   if(tab==='breaks')loadBreakTracker();
   if(tab==='agents')loadAgents();
@@ -12241,6 +12263,87 @@ async function loadAgentStatuses(){
       }
     }
   }catch(e){console.error('loadAgentStatuses',e);}
+}
+
+// ── FEAT-7: 7-Day Performance Trend Chart ────────────────────────────────────
+let _trendChart=null;
+let _trendRawData=null;
+
+async function loadTrendData(){
+  const loading=document.getElementById('trend-loading');
+  const canvas=document.getElementById('trend-chart');
+  if(loading) loading.style.display='block';
+  if(canvas) canvas.style.display='none';
+  try{
+    const tz=activeTimeZone();
+    const j=await fetch(BACKEND+'/api/trend?days=7&tz='+encodeURIComponent(tz),{credentials:'include'}).then(r=>r.json());
+    if(!j.success) return;
+    _trendRawData=j.data;
+    // Populate agent selector
+    const sel=document.getElementById('trend-agent-select');
+    if(sel && j.data.length){
+      const agents=[...new Set(j.data.flatMap(d=>d.agents.map(a=>a.name)))].sort();
+      sel.innerHTML='<option value="">All agents (avg)</option>'+agents.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+    }
+    renderTrendChart();
+  }catch(e){}
+  finally{ if(loading) loading.style.display='none'; if(canvas) canvas.style.display='block'; }
+}
+
+function calcAgentScore(s){
+  if(!s) return 0;
+  const inC=s.inboundCalls||0,outC=s.outboundCalls||0,missed=s.missedCalls||0;
+  const avail=s.availableSeconds||0,unavail=s.unavailableSeconds||0;
+  const totalWork=avail+unavail||1;
+  const availPct=(avail/totalWork)*100;
+  let score=Math.round(availPct*0.4 + Math.min(inC,50)/50*30 + Math.max(0,1-(missed/(inC+1)))*20 + Math.min(outC,20)/20*10);
+  return Math.min(100,Math.max(0,score));
+}
+
+function renderTrendChart(){
+  if(!_trendRawData) { loadTrendData(); return; }
+  const metric=document.getElementById('trend-metric-select')?.value||'inboundCalls';
+  const agentFilter=document.getElementById('trend-agent-select')?.value||'';
+  const labels=_trendRawData.map(d=>{ const dt=new Date(d.date+'T12:00:00'); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}); });
+  const values=_trendRawData.map(d=>{
+    const agents=agentFilter?d.agents.filter(a=>a.name===agentFilter):d.agents;
+    if(!agents.length) return 0;
+    const vals=agents.map(a=>{
+      if(metric==='score') return calcAgentScore(a);
+      if(metric==='ahtInbound') return a.ahtInbound?+(a.ahtInbound/60).toFixed(1):0;
+      return a[metric]||0;
+    });
+    return +(vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1);
+  });
+  const metricLabels={'inboundCalls':'Inbound Calls','outboundCalls':'Outbound Calls','missedCalls':'Missed Calls','ahtInbound':'AHT (min)','score':'Score'};
+  const ctx=document.getElementById('trend-chart');
+  if(!ctx) return;
+  if(_trendChart){_trendChart.destroy();_trendChart=null;}
+  _trendChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[{
+        label:metricLabels[metric]||(agentFilter||'Team Avg'),
+        data:values,
+        borderColor:'#f5821f',
+        backgroundColor:'rgba(245,130,31,.1)',
+        borderWidth:2,
+        pointBackgroundColor:'#f5821f',
+        pointRadius:4,
+        fill:true,
+        tension:.35
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${metricLabels[metric]}: ${ctx.raw}`}}},
+      scales:{
+        x:{ticks:{color:'#64748b',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#64748b',font:{size:11}},grid:{color:'rgba(255,255,255,.04)'},beginAtZero:true}
+      }
+    }
+  });
 }
 
 // ── Call Volume Chart ───────────────────────────────────────────────────
