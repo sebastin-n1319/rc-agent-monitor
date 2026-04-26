@@ -8461,6 +8461,12 @@ tbody tr:hover td{
 </head>
 <body>
 
+<!-- Logout loading overlay -->
+<div id="logoutOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#060b14;flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:'Inter','Poppins',sans-serif;">
+  <div style="width:44px;height:44px;border-radius:50%;border:3px solid rgba(245,130,31,.2);border-top-color:#f5821f;animation:spin .8s linear infinite"></div>
+  <div style="color:rgba(148,163,184,.8);font-size:14px;letter-spacing:.02em;">Signing out…</div>
+</div>
+
 <!-- LOGIN v8 — Dark Premium Redesign -->
 <style id="login-v8">
 #loginScreen{all:unset;position:fixed!important;inset:0!important;z-index:100!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;}
@@ -10261,17 +10267,36 @@ async function savePersistedSession(name, role, email, picture, breakbotEnabled)
 }
 
 function doLogout(){
+  // 1. Show the logout loading overlay immediately (covers the app)
+  const overlay = document.getElementById('logoutOverlay');
+  if(overlay) overlay.style.display='flex';
+
+  // 2. Fire cleanup async in background
   fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
   try{ localStorage.removeItem('rcLastUser'); localStorage.removeItem('rcSession'); }catch(e){}
   sessionStorage.clear();
-  currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
-  if(window.google?.accounts?.id) google.accounts.id.disableAutoSelect();
-  // Remove the CSS gate class so the login screen becomes visible again
-  document.documentElement.classList.remove('app-authenticated');
-  document.body.classList.remove('app-authenticated');
-  document.getElementById('loginScreen').style.display='flex';
-  document.getElementById('mainApp').style.display='none';
-  document.getElementById('loginMsg').innerHTML='';
+  currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;
+  currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
+  if(window.google?.accounts?.id) try{google.accounts.id.disableAutoSelect();}catch(e){}
+
+  // 3. After 900ms show the login screen, fade out overlay
+  setTimeout(function(){
+    // Remove CSS gate → loginScreen CSS activates
+    document.documentElement.classList.remove('app-authenticated');
+    document.body.classList.remove('app-authenticated');
+    // Explicitly show login, hide app
+    const ls = document.getElementById('loginScreen');
+    const ma = document.getElementById('mainApp');
+    if(ls){ ls.style.removeProperty('display'); ls.style.setProperty('display','flex','important'); }
+    if(ma){ ma.style.setProperty('display','none','important'); }
+    try{ document.getElementById('loginMsg').innerHTML=''; }catch(e){}
+    // Fade out overlay
+    if(overlay){
+      overlay.style.transition='opacity .4s ease';
+      overlay.style.opacity='0';
+      setTimeout(function(){ overlay.style.display='none'; overlay.style.opacity='1'; overlay.style.transition=''; }, 420);
+    }
+  }, 900);
 }
 function showLoginMsg(msg){
   document.getElementById('loginMsg').innerHTML = msg ? ('<div class="login-msg-error">'+msg+'</div>') : '';
