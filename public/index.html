@@ -8513,6 +8513,71 @@ tbody tr:hover td{
 #loginScreen .v8-restrict{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:rgba(100,116,139,.6);}
 #loginScreen .v8-restrict strong{color:rgba(148,163,184,.7);font-weight:600;}
 @media(max-width:900px){#loginScreen .v8-left{display:none!important;}#loginScreen .v8-divider{display:none!important;}#loginScreen .v8-right{width:100%!important;}}
+
+/* ── Animations ── */
+@keyframes v8OrbDrift1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-20px,20px) scale(.95)}}
+@keyframes v8OrbDrift2{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(-50px,30px) scale(1.1)}70%{transform:translate(30px,-20px) scale(.92)}}
+@keyframes v8OrbDrift3{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(calc(-50% - 24px)) scale(1.06)}}
+@keyframes v8GridDrift{0%{background-position:0 0}100%{background-position:32px 32px}}
+@keyframes v8FadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+@keyframes v8FadeIn{from{opacity:0}to{opacity:1}}
+@keyframes v8CardIn{from{opacity:0;transform:translateY(32px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes v8GradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes v8BorderGlow{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes v8BtnShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+
+/* Orb motion */
+#loginScreen .v8-orb-1{animation:v8OrbDrift1 18s ease-in-out infinite;}
+#loginScreen .v8-orb-2{animation:v8OrbDrift2 22s ease-in-out infinite;}
+#loginScreen .v8-orb-3{animation:v8OrbDrift3 14s ease-in-out infinite;}
+
+/* Dot grid slow drift */
+#loginScreen .v8-grid{animation:v8GridDrift 8s linear infinite;}
+
+/* Animated gradient headline */
+#loginScreen .v8-headline em{
+  background:linear-gradient(135deg,#f5821f,#fbbf24,#fb923c,#f5821f);
+  background-size:300% 300%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:v8GradientShift 4s ease infinite;
+}
+
+/* Top card glow line pulse */
+#loginScreen .v8-card::before{animation:v8BorderGlow 3s ease-in-out infinite;}
+
+/* Page entry: left panel staggered fade-up */
+#loginScreen .v8-badge{animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .1s both;}
+#loginScreen .v8-headline{animation:v8FadeUp .7s cubic-bezier(.22,1,.36,1) .2s both;}
+#loginScreen .v8-sub{animation:v8FadeUp .7s cubic-bezier(.22,1,.36,1) .3s both;}
+#loginScreen .v8-feat:nth-child(1){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .35s both;}
+#loginScreen .v8-feat:nth-child(2){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .45s both;}
+#loginScreen .v8-feat:nth-child(3){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .55s both;}
+#loginScreen .v8-feat:nth-child(4){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .65s both;}
+#loginScreen .v8-footer{animation:v8FadeIn .8s ease .8s both;}
+
+/* Page entry: card slides up */
+#loginScreen .v8-card{animation:v8CardIn .8s cubic-bezier(.22,1,.36,1) .15s both;}
+
+/* Divider fade in */
+#loginScreen .v8-divider{animation:v8FadeIn .6s ease .4s both;}
+
+/* Google button shimmer on hover */
+#loginScreen .v8-google-btn{position:relative;overflow:hidden;}
+#loginScreen .v8-google-btn::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.08) 50%,transparent 60%);
+  background-size:200% 100%;background-position:200% center;
+  transition:background-position .5s ease;pointer-events:none;
+}
+#loginScreen .v8-google-btn:hover::after{background-position:-200% center;}
+#loginScreen .v8-google-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,130,31,.18);}
+#loginScreen .v8-google-btn:active{transform:translateY(0);transition:transform .1s;}
+
+/* Feature icon subtle hover */
+#loginScreen .v8-feat{transition:transform .2s ease;}
+#loginScreen .v8-feat:hover{transform:translateX(4px);}
+#loginScreen .v8-feat:hover .v8-feat-icon{background:rgba(245,130,31,.18);border-color:rgba(245,130,31,.35);}
+#loginScreen .v8-feat-icon{transition:background .2s,border-color .2s;}
 </style>
 
 <div id="loginScreen">
