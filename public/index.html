@@ -12667,7 +12667,6 @@ safeBoot(updateClock,'updateClock');
 setInterval(()=>safeBoot(updateClock,'updateClock'),1000);
 setInterval(()=>{if(currentUser)refresh();},30000);
 safeBoot(initParticles,'initParticles');
-safeBoot(loadColPrefs,'loadColPrefs');
 safeBoot(initConfetti,'initConfetti');
 safeBoot(initLoginAnimations,'initLoginAnimations');
 
@@ -12731,11 +12730,12 @@ window.addEventListener('load', async () => {
     }
   })();
 
-  // Non-critical UI bootstrapping
+  // Non-critical UI bootstrapping (all scripts parsed by now)
   try{ applyAditBranding(); }catch(e){}
   try{ bindSortHeaders(); }catch(e){}
   try{ syncBreakDateInputs(); }catch(e){}
   try{ syncBreakActionState(); }catch(e){}
+  try{ if(typeof loadColPrefs==='function') loadColPrefs(); }catch(e){}
   try{ const dp=document.getElementById('date-picker'); if(dp)dp.value=todayStr(); }catch(e){}
 
   if(sessionStorage.getItem('rcQuickBooted') === '1'){
