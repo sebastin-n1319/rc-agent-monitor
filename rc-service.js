@@ -34,6 +34,24 @@ let callLogSyncPromise = null;
 let lastCallLogSyncAt = 0;
 let lastSuccessfulCallLogSyncAt = 0;
 
+// PERF-2: Prune stale in-memory maps every 6 hours to prevent unbounded growth
+// lastLiveStatusSnapshot and lastQueueStatuses are keyed by agent rc_id / queue id
+// and grow with the agent roster; prune entries older than 4 hours.
+const SNAPSHOT_TTL_MS = 4 * 60 * 60 * 1000;
+setInterval(() => {
+  const cutoff = Date.now() - SNAPSHOT_TTL_MS;
+  // lastLiveStatusSnapshot entries have a .at timestamp
+  for (const [k, v] of Object.entries(lastLiveStatusSnapshot)) {
+    if (v && v.at && v.at < cutoff) delete lastLiveStatusSnapshot[k];
+  }
+  // lastQueueStatuses — reset if queue data is stale (covered by QUEUE_STATUS_TTL_MS already)
+  if (lastQueueStatusAt && Date.now() - lastQueueStatusAt > SNAPSHOT_TTL_MS) {
+    lastQueueStatuses = {};
+    lastQueueStatusAt = 0;
+  }
+  console.log(`🧹 Memory pruned: ${Object.keys(lastLiveStatusSnapshot).length} snapshot entries`);
+}, 6 * 60 * 60 * 1000);
+
 const liveEvents = new EventEmitter();
 liveEvents.setMaxListeners(50);
 
