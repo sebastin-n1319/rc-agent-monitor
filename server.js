@@ -210,40 +210,72 @@ initDB().then(() => console.log('DB ready'));
 
 liveEvents.on('update', payload => broadcastLiveEvent(payload));
 
-app.get('/api/summary', async (req, res) => {
+// ── Named constants (PERF-1) ──────────────────────────────────────────────────
+const SESSION_TTL_H      = 12;          // hours — session lifetime
+const BREAK_BRB_LIMIT_M  = 10;         // minutes — single BRB limit
+const BREAK_DAY_LIMIT_M  = 60;         // minutes — total break per day
+const CALL_LOG_RETAIN_D  = 7;          // days — call log retention
+
+// ── Auth middleware (SEC-1 + SEC-2) ──────────────────────────────────────────
+// requireAuth: validates session cookie; attaches session to req.session
+async function requireAuth(req, res, next) {
+  try {
+    const token = req.cookies[SESSION_COOKIE];
+    if (!token) return res.status(401).json({ success: false, error: 'Authentication required' });
+    const session = await getAppSession(token);
+    if (!session) return res.status(401).json({ success: false, error: 'Session expired — please sign in again' });
+    req.session = session;
+    next();
+  } catch(e) { res.status(500).json({ success: false, error: 'Auth check failed' }); }
+}
+
+// requireAdmin: extends requireAuth, also checks admin role
+async function requireAdmin(req, res, next) {
+  await requireAuth(req, res, async () => {
+    try {
+      const settings = await getRoleSettingsForEmail(req.session.email);
+      if (!settings || settings.role !== 'admin') {
+        return res.status(403).json({ success: false, error: 'Admin access required' });
+      }
+      next();
+    } catch(e) { res.status(500).json({ success: false, error: 'Role check failed' }); }
+  });
+}
+
+app.get('/api/summary', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';
   try { res.json({ success: true, date, timeZone: tz, data: await getAgentSummary(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/presence-events', async (req, res) => {
+app.get('/api/presence-events', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';
   try { res.json({ success: true, date, timeZone: tz, data: await getPresenceEvents(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/abandoned-calls', async (req, res) => {
+app.get('/api/abandoned-calls', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';
   try { res.json({ success: true, date, timeZone: tz, data: await getAbandonedCalls(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/queue-dashboard', async (req, res) => {
+app.get('/api/queue-dashboard', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';
   try { res.json({ success: true, date, timeZone: tz, data: await fetchQueueDashboardSummary(date, false, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/agents', async (req, res) => {
+app.get('/api/agents', requireAuth, async (req, res) => {
   try { res.json({ success: true, data: await getMonitoredAgents() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.post('/api/agents', async (req, res) => {
+app.post('/api/agents', requireAdmin, async (req, res) => {
   const { name, extension, email } = req.body;
   if (!name || !extension) return res.status(400).json({ success: false, error: 'Name and extension required' });
   try {
@@ -252,24 +284,24 @@ app.post('/api/agents', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.delete('/api/agents/:extension', async (req, res) => {
+app.delete('/api/agents/:extension', requireAdmin, async (req, res) => {
   try { await removeAgent(req.params.extension); res.json({ success: true }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/rc-search', rateLimit(20, 60000), async (req, res) => {
+app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) => {
   const q = req.query.q || '';
   if (q.length < 2) return res.json({ success: true, data: [] });
   try { res.json({ success: true, data: await searchRCUsers(q) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/live-status', async (req, res) => {
+app.get('/api/live-status', requireAuth, async (req, res) => {
   try { res.json({ success: true, data: await fetchLiveCallStatus() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/live-stream', (req, res) => {
+app.get('/api/live-stream', requireAuth, (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
@@ -299,7 +331,7 @@ app.post('/api/rc-webhook', async (req, res) => {
   handleWebhookNotification(req.body).catch(e => console.error('❌ webhook handler:', e.message));
 });
 
-app.post('/api/refresh', rateLimit(5, 60000), async (req, res) => {
+app.post('/api/refresh', requireAdmin, rateLimit(5, 60000), async (req, res) => {
   try {
     await fetchPresenceForAll();
     await fetchCallLogs();
@@ -308,23 +340,23 @@ app.post('/api/refresh', rateLimit(5, 60000), async (req, res) => {
 });
 
 // Agent Notes
-app.get('/api/agent-notes/:agentId', async (req, res) => {
+app.get('/api/agent-notes/:agentId', requireAuth, async (req, res) => {
   try { res.json({ success: true, data: await getAgentNotes(req.params.agentId) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
-app.post('/api/agent-notes', async (req, res) => {
+app.post('/api/agent-notes', requireAuth, async (req, res) => {
   const { agentId, agentName, note, addedBy } = req.body || {};
   if (!agentId || !note) return res.status(400).json({ success: false, error: 'agentId and note required' });
   if (note.length > 500) return res.status(400).json({ success: false, error: 'Note must be 500 chars or fewer' });
   try { res.json({ success: true, data: await addAgentNote(agentId, agentName, note.trim(), addedBy) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
-app.delete('/api/agent-notes/:id', async (req, res) => {
+app.delete('/api/agent-notes/:id', requireAuth, async (req, res) => {
   try { await deleteAgentNote(req.params.id); res.json({ success: true }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/call-logs', async (req, res) => {
+app.get('/api/call-logs', requireAuth, async (req, res) => {
   const tz = req.query.tz || 'Asia/Kolkata';
   const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   const limit = Math.min(parseInt(req.query.limit) || 200, 500);
@@ -336,7 +368,7 @@ app.get('/api/call-logs', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/call-volume', async (req, res) => {
+app.get('/api/call-volume', requireAuth, async (req, res) => {
   const tz = req.query.tz || 'Asia/Kolkata';
   const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   try {
@@ -346,7 +378,7 @@ app.get('/api/call-volume', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/sync-status', async (req, res) => {
+app.get('/api/sync-status', requireAuth, async (req, res) => {
   try {
     const syncInfo = getCallSyncStatus();
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
@@ -355,7 +387,7 @@ app.get('/api/sync-status', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.post('/api/force-call-sync', rateLimit(3, 60000), async (req, res) => {
+app.post('/api/force-call-sync', requireAdmin, rateLimit(3, 60000), async (req, res) => {
   try {
     const result = await fetchCallLogs(true);
     res.json({ success: true, result });
@@ -377,12 +409,12 @@ app.post('/api/login-log', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/login-logs', async (req, res) => {
+app.get('/api/login-logs', requireAdmin, async (req, res) => {
   try { res.json({ success: true, data: await getLoginLogs() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/break-events', async (req, res) => {
+app.get('/api/break-events', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';
   const email = req.query.email || null;
@@ -393,7 +425,7 @@ app.get('/api/break-events', async (req, res) => {
   }
 });
 
-app.get('/api/break-tracker', async (req, res) => {
+app.get('/api/break-tracker', requireAuth, async (req, res) => {
   const date = req.query.date || new Date().toISOString().split('T')[0];
   const tz = req.query.tz || 'America/Chicago';
   const email = req.query.email || null;
@@ -423,12 +455,17 @@ const VALID_BREAK_ACTIONS = new Set([
 ]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-app.post('/api/break-events', async (req, res) => {
+app.post('/api/break-events', requireAuth, async (req, res) => {
   const { username, email, role, action, note, skipNotify } = req.body || {};
   if(!username || !email || !action)
     return res.status(400).json({ success: false, error: 'Username, email, and action are required' });
   if(!EMAIL_RE.test(email))
     return res.status(400).json({ success: false, error: 'Invalid email format' });
+  // SEC-3: Enforce that agents can only log breaks for themselves; admins can log for anyone
+  const sessionSettings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+  const isAdmin = sessionSettings?.role === 'admin';
+  if (!isAdmin && email.toLowerCase() !== req.session.email.toLowerCase())
+    return res.status(403).json({ success: false, error: 'You can only log break events for yourself' });
   if(!VALID_BREAK_ACTIONS.has(action))
     return res.status(400).json({ success: false, error: `Invalid action. Must be one of: ${[...VALID_BREAK_ACTIONS].join(', ')}` });
   if(note && note.length > 500)
@@ -473,12 +510,12 @@ app.post('/api/break-events', async (req, res) => {
   }
 });
 
-app.get('/api/roles', async (req, res) => {
+app.get('/api/roles', requireAdmin, async (req, res) => {
   try { res.json({ success: true, data: await getAllRoles() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.post('/api/roles', async (req, res) => {
+app.post('/api/roles', requireAdmin, async (req, res) => {
   const { email, role, addedBy, breakbotEnabled } = req.body;
   if (!email || !role) return res.status(400).json({ success: false, error: 'Email and role required' });
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email format' });
@@ -487,7 +524,7 @@ app.post('/api/roles', async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.patch('/api/roles/:email/breakbot', async (req, res) => {
+app.patch('/api/roles/:email/breakbot', requireAdmin, async (req, res) => {
   const email = decodeURIComponent(req.params.email);
   const { enabled, updatedBy } = req.body || {};
   if (!email) return res.status(400).json({ success: false, error: 'Email required' });
@@ -499,7 +536,7 @@ app.patch('/api/roles/:email/breakbot', async (req, res) => {
   }
 });
 
-app.delete('/api/roles/:email', async (req, res) => {
+app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
   const email = decodeURIComponent(req.params.email);
   if (CORE_ADMINS.includes(email.toLowerCase()))
     return res.status(403).json({ success: false, error: 'Cannot remove core admin' });
@@ -508,7 +545,7 @@ app.delete('/api/roles/:email', async (req, res) => {
 });
 
 // Admin announcement — sends a free-form card to the Google Chat space
-app.post('/api/announce', rateLimit(5, 60000), async (req, res) => {
+app.post('/api/announce', requireAdmin, rateLimit(5, 60000), async (req, res) => {
   const { title, body, emoji, requester } = req.body || {};
   if(!title || !body) return res.status(400).json({ success: false, error: 'title and body required' });
   if(!GOOGLE_CHAT_WEBHOOK_URL) return res.status(503).json({ success: false, error: 'Webhook not configured' });
