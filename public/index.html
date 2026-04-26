@@ -10,6 +10,8 @@
 <style id="auth-gate-css">
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;}
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
+/* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
+#userAvatar{display:none!important;}
 </style>
 <!-- Inline session restore: runs before any other script, sets html.app-authenticated if localStorage has a valid session -->
 <script>
@@ -11623,10 +11625,10 @@ function switchTab(tab,el){
 function setAvatar(url){
   const av = document.getElementById('userAvatar');
   if(!av) return;
-  if(!url){ av.style.display = 'none'; return; }
-  // Set handlers BEFORE src so they are guaranteed to fire
-  av.onload  = function(){ av.style.display = 'block'; };
-  av.onerror = function(){ av.style.display = 'none'; av.removeAttribute('src'); };
+  // Use setProperty with 'important' so we beat .hdr-avatar{display:block!important} in CSS
+  if(!url){ av.style.setProperty('display','none','important'); return; }
+  av.onload  = function(){ av.style.setProperty('display','block','important'); };
+  av.onerror = function(){ av.style.setProperty('display','none','important'); av.removeAttribute('src'); };
   av.src = url;
 }
 
