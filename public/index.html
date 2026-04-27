@@ -9967,6 +9967,17 @@ function initGoogleAuth(){
     googleAuthReady = true;
   }
   renderGoogleIdentityButton();
+  // Always re-trigger One Tap prompt when login page is shown (reset allows it to re-fire)
+  if(window.google?.accounts?.id && !gisRendered){
+    try{
+      google.accounts.id.prompt(n => {
+        if(n.isNotDisplayed() || n.isSkippedMoment()){
+          const fb = document.getElementById('googleFallbackBtn');
+          if(fb) fb.classList.remove('gfb-hidden');
+        }
+      });
+    }catch(e){}
+  }
   return !!tokenClient || !!window.google?.accounts?.id;
 }
 
@@ -9991,25 +10002,34 @@ function startGoogleSignIn(){
   tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
-// One-click sign-in for remembered user — skips account picker
+// One-click sign-in for remembered user — triggers native FedCM overlay
 function startGoogleSignInQuick(){
-  const quickBtn = document.getElementById('v8-quick-btn');
-  if(quickBtn){ quickBtn.disabled = true; quickBtn.style.opacity='.6'; }
-  const mainBtn = document.getElementById('googleFallbackBtn');
-  if(mainBtn){ mainBtn.disabled = true; mainBtn.dataset.loading = 'true'; }
   showLoginMsg('');
-  if(!initGoogleAuth()){
-    showLoginMsg('Google sign-in is loading — please try again in a moment.');
-    if(quickBtn){ quickBtn.disabled = false; quickBtn.style.opacity='1'; }
-    resetLoginBtn();
-    return;
+  // If GIS (One Tap) is available, trigger the native browser popup
+  if(window.google?.accounts?.id){
+    try{
+      // Re-initialize with the remembered hint so the right account is shown
+      let hint = '';
+      try{ const s = localStorage.getItem('rcLastUser'); if(s) hint = JSON.parse(s).email || ''; }catch(e){}
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredential,
+        auto_select: true,
+        cancel_on_tap_outside: false,
+        context: 'signin',
+        login_hint: hint || undefined
+      });
+      google.accounts.id.prompt(notification => {
+        if(notification.isNotDisplayed() || notification.isSkippedMoment()){
+          // Native overlay not available — fall through to standard token flow
+          startGoogleSignIn();
+        }
+      });
+      return;
+    }catch(e){}
   }
-  let hint = '';
-  try{ const s = localStorage.getItem('rcLastUser'); if(s) hint = JSON.parse(s).email || ''; }catch(e){}
-  // login_hint pre-selects the account; omit prompt so Google auto-approves if session exists
-  const opts = { prompt: '' };
-  if(hint) opts.login_hint = hint;
-  tokenClient.requestAccessToken(opts);
+  // Fallback: standard token client flow
+  startGoogleSignIn();
 }
 
 async function handleTokenResponse(response){
@@ -10483,6 +10503,7 @@ function doLogout(){
   currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;
   currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   if(window.google?.accounts?.id) try{google.accounts.id.disableAutoSelect();}catch(e){}
+  gisRendered = false; // reset so prompt() fires fresh on next login page visit
 
   // 3. After 900ms show the login screen, fade out overlay
   setTimeout(function(){
