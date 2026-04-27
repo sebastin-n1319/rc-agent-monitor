@@ -10313,6 +10313,8 @@ function applyView(view){
   document.getElementById('agentView').style.display=isAdmin?'none':'block';
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.textContent=isAdmin?'Switch to Agent View':'Switch to Admin View';
+  // Always scroll to top when switching views so content is immediately visible
+  window.scrollTo({top:0,behavior:'instant'});
   configureAgentBreakbotAccess();
   // Default agent landing: Break Bot if available, else Dashboard
   if(!isAdmin){
