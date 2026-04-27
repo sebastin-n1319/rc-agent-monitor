@@ -9263,24 +9263,18 @@ tbody tr:hover td{
       <div class="card" style="margin-top:20px;">
         <div class="card-hdr">
           <span class="card-title">Break Thresholds</span>
-          <span style="font-size:11px;color:var(--t3);margin-left:8px">Set limits per AUX type. Leave blank for no limit.</span>
           <button onclick="saveAllThresholds()" id="save-thresholds-btn" style="margin-left:auto;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.35);border-radius:7px;color:#f5821f;font-size:12px;font-weight:600;padding:5px 14px;cursor:pointer;">Save All</button>
         </div>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;">
-            <thead>
-              <tr style="color:var(--t3);border-bottom:1px solid var(--b1);">
-                <th style="text-align:left;padding:10px 12px;font-weight:600;">AUX Type</th>
-                <th style="text-align:center;padding:10px 12px;font-weight:600;">Single occurrence limit (min)<br><span style="font-size:10px;font-weight:400">Alert if one break exceeds this</span></th>
-                <th style="text-align:center;padding:10px 12px;font-weight:600;">Daily total limit (min)<br><span style="font-size:10px;font-weight:400">Alert if total for the day exceeds this</span></th>
-              </tr>
-            </thead>
-            <tbody id="thresholds-tbody">
-              <tr><td colspan="3" style="text-align:center;padding:30px;color:var(--t3)">Loading...</td></tr>
-            </tbody>
-          </table>
+        <!-- Column labels -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:6px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--b1);">
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;">AUX Type</div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;text-align:center;">Single limit<br><span style="font-size:9px;font-weight:400;text-transform:none">Alert if 1 break exceeds this</span></div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;text-align:center;">Daily total<br><span style="font-size:9px;font-weight:400;text-transform:none">Alert if day total exceeds this</span></div>
         </div>
-        <div id="threshold-msg" style="padding:8px 12px;font-size:12px;display:none;"></div>
+        <div id="thresholds-tbody" style="display:flex;flex-direction:column;">
+          <div style="text-align:center;padding:30px;color:var(--t3);font-size:13px;">Loading…</div>
+        </div>
+        <div id="threshold-msg" style="padding:8px 16px;font-size:12px;display:none;border-top:1px solid var(--b1);"></div>
       </div>
     </div>
   </div>
@@ -12821,42 +12815,35 @@ const AUX_LABELS = {
 };
 
 async function loadBreakThresholds(){
-  const tbody = document.getElementById('thresholds-tbody');
-  if(!tbody) return;
+  const wrap = document.getElementById('thresholds-tbody');
+  if(!wrap) return;
   try{
     const j = await fetch(BACKEND+'/api/break-thresholds',{credentials:'include'}).then(r=>r.json());
-    if(!j.success){ tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--red)">Failed to load</td></tr>'; return; }
+    if(!j.success){ wrap.innerHTML='<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Failed to load</div>'; return; }
     const rows = (j.data||[]).map(t=>{
       const meta = AUX_LABELS[t.aux_type] || { label: t.aux_type, icon:'⏱️' };
-      return `<tr style="border-bottom:1px solid var(--b1);">
-        <td style="padding:12px 12px;font-weight:500;">
-          <span style="font-size:15px;margin-right:6px">${meta.icon}</span>${esc(meta.label)}
+      const singleVal = t.single_limit_minutes != null ? t.single_limit_minutes : '';
+      const dailyVal  = t.daily_limit_minutes  != null ? t.daily_limit_minutes  : '';
+      const inp = `background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;text-align:center;outline:none;padding:7px 10px;width:100px;`;
+      return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05);">
+        <div>
+          <div style="font-size:13px;font-weight:500;">${meta.icon}&nbsp; ${esc(meta.label)}</div>
           <div style="font-size:10px;color:var(--t3);margin-top:2px">AUX: ${esc(t.aux_type)}</div>
-        </td>
-        <td style="padding:12px 16px;text-align:center;">
-          <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
-            <input type="number" id="thr-single-${esc(t.aux_type)}" min="1" max="1440"
-              value="${t.single_limit_minutes!=null?t.single_limit_minutes:''}"
-              placeholder="No limit"
-              style="width:90px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t1);font-size:13px;text-align:center;outline:none;"
-              onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
-            <span style="font-size:11px;color:var(--t3)">min</span>
-          </div>
-        </td>
-        <td style="padding:12px 16px;text-align:center;">
-          <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
-            <input type="number" id="thr-daily-${esc(t.aux_type)}" min="1" max="1440"
-              value="${t.daily_limit_minutes!=null?t.daily_limit_minutes:''}"
-              placeholder="No limit"
-              style="width:90px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t1);font-size:13px;text-align:center;outline:none;"
-              onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
-            <span style="font-size:11px;color:var(--t3)">min</span>
-          </div>
-        </td>
-      </tr>`;
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+          <input type="number" id="thr-single-${t.aux_type}" min="1" max="1440" value="${singleVal}" placeholder="No limit"
+            style="${inp}" onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
+          <span style="font-size:11px;color:var(--t3)">min</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+          <input type="number" id="thr-daily-${t.aux_type}" min="1" max="1440" value="${dailyVal}" placeholder="No limit"
+            style="${inp}" onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
+          <span style="font-size:11px;color:var(--t3)">min</span>
+        </div>
+      </div>`;
     });
-    tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--t3)">No thresholds configured</td></tr>';
-  }catch(e){ tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--red)">Error: '+esc(e.message)+'</td></tr>'; }
+    wrap.innerHTML = rows.length ? rows.join('') : '<div style="text-align:center;padding:24px;color:var(--t3);font-size:13px">No thresholds configured</div>';
+  }catch(e){ wrap.innerHTML='<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Error: '+esc(e.message)+'</div>'; }
 }
 
 async function saveAllThresholds(){
