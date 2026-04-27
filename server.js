@@ -13,7 +13,8 @@ const {
   getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions,
   insertAuditLog, getAuditLog,
-  getBreakThresholds, setBreakThreshold
+  getBreakThresholds, setBreakThreshold,
+  getBreakReportData
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -733,6 +734,77 @@ app.post('/api/break-thresholds', requireAdmin, async (req, res) => {
       `single:${single??'none'} daily:${daily??'none'}`).catch(()=>{});
     res.json({ success: true });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ── Break Report ─────────────────────────────────────────────────────────────
+const AUX_NAMES = { BRB:'BRB', BREAK:'Break', TRAINING:'Training', QA_SESSION:'QA Session', INTERNAL_CALL:'Internal Call' };
+
+function fmtMin(m){ const v=Math.round(m||0); return v<60?v+'m':`${Math.floor(v/60)}h ${v%60}m`; }
+
+function buildReportChatPayload(data, label){
+  const { agents } = data;
+  const exceeded = agents.filter(a=>a.overallStatus==='exceeded');
+  const warning  = agents.filter(a=>a.overallStatus==='warning');
+  const ok       = agents.filter(a=>a.overallStatus==='ok');
+
+  const fmt = (a) => {
+    const parts = Object.entries(a.compliance).map(([aux,c])=>`${AUX_NAMES[aux]||aux}: ${fmtMin(c.mins)}${c.daily_limit?'/'+(c.daily_limit)+'m':''}`);
+    return `• ${a.username}${parts.length?' — '+parts.join(' | '):''}`;
+  };
+
+  let body = '';
+  if(exceeded.length) body += `🔴 *EXCEEDED LIMITS (${exceeded.length})*\n${exceeded.map(fmt).join('\n')}\n\n`;
+  if(warning.length)  body += `🟡 *APPROACHING LIMIT (${warning.length})*\n${warning.map(fmt).join('\n')}\n\n`;
+  if(ok.length)       body += `✅ *WITHIN LIMITS (${ok.length})*\n${ok.map(fmt).join('\n')}`;
+
+  // Team totals
+  const totals = {};
+  agents.forEach(a => Object.entries(a.totals).forEach(([k,v])=>{ totals[k]=(totals[k]||0)+v; }));
+  const totStr = Object.entries(totals).map(([k,v])=>`${AUX_NAMES[k]||k}: ${fmtMin(v)}`).join(' | ');
+  const summary = `👥 ${agents.length} agents tracked · ${totStr||'No break data'}`;
+
+  return {
+    cardsV2:[{ cardId:'break-report', card:{
+      header:{ title:`📊 Break Report — ${label}`, subtitle: summary },
+      sections:[{ widgets:[{ textParagraph:{ text: body.trim()||'No break events recorded for this period.' } }] }]
+    }}]
+  };
+}
+
+// GET /api/break-report — fetch report data (preview)
+app.get('/api/break-report', requireAdmin, async (req, res) => {
+  const tz = req.query.tz || 'America/Chicago';
+  const start = req.query.start;
+  const end   = req.query.end || start;
+  if(!start) return res.status(400).json({ success:false, error:'start date required' });
+  try {
+    const data = await getBreakReportData(start, end, tz);
+    res.json({ success:true, data });
+  } catch(e) { res.status(500).json({ success:false, error:e.message }); }
+});
+
+// POST /api/break-report/send — generate + send to Google Chat
+app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req, res) => {
+  const { start, end, tz='America/Chicago', label='Break Report', target='chat' } = req.body||{};
+  if(!start) return res.status(400).json({ success:false, error:'start date required' });
+  try {
+    const data = await getBreakReportData(start, end||start, tz);
+    const payload = buildReportChatPayload(data, label);
+    let sent = false, chatErr = null;
+    if(target==='chat' || target==='both'){
+      if(!GOOGLE_CHAT_WEBHOOK_URL) { chatErr='Google Chat webhook not configured'; }
+      else {
+        const r = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
+          method:'POST', headers:{'Content-Type':'application/json; charset=UTF-8'},
+          body: JSON.stringify(payload)
+        });
+        sent = r.ok;
+        if(!r.ok) chatErr = `Webhook returned HTTP ${r.status}`;
+      }
+    }
+    insertAuditLog(req.session.email, 'report_sent', label, `start:${start} end:${end||start} target:${target}`).catch(()=>{});
+    res.json({ success:true, sent, chatErr, agentCount:data.agents.length, data });
+  } catch(e) { res.status(500).json({ success:false, error:e.message }); }
 });
 
 // FEAT-5: CSV export endpoints

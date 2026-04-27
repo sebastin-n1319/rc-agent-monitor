@@ -1101,6 +1101,73 @@ function pruneExpiredSessions(){
   return run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
 }
 
+// ── Break report data ────────────────────────────────────────────────────────
+// Returns per-agent break totals across a date range (multi-day aggregation)
+async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Chicago'){
+  const AUX_OUT = { BRB_OUT:'BRB', BREAK_OUT:'BREAK', TRAINING_OUT:'TRAINING', QA_SESSION_OUT:'QA_SESSION', INTERNAL_CALL_OUT:'INTERNAL_CALL' };
+  const AUX_IN  = new Set(['BRB_IN','BREAK_IN','TRAINING_IN','QA_SESSION_IN','INTERNAL_CALL_IN','LOGGED_IN','LOGGED_OUT']);
+
+  // Get window across entire range
+  const { start } = getDateWindow(startDateIso, timeZone);
+  const { end }   = getDateWindow(endDateIso,   timeZone);
+  const startSql  = toSqliteUtc(start);
+  const endSql    = toSqliteUtc(end);
+
+  const events = await all(
+    `SELECT * FROM break_events WHERE datetime(created_at) >= datetime(?) AND datetime(created_at) < datetime(?) ORDER BY email, datetime(created_at) ASC`,
+    [startSql, endSql]
+  );
+  const thresholds = await all(`SELECT * FROM break_thresholds`);
+  const threshMap = {};
+  thresholds.forEach(t => { threshMap[t.aux_type] = t; });
+
+  // Aggregate per agent
+  const agentMap = {};
+  const openSessions = {}; // email:aux → start time
+
+  for(const ev of events){
+    const email = (ev.email||'').toLowerCase();
+    if(!agentMap[email]) agentMap[email] = { username: ev.username||email, email, totals:{}, events:[] };
+    agentMap[email].events.push(ev);
+
+    const auxOut = AUX_OUT[ev.action];
+    if(auxOut){
+      openSessions[email+':'+auxOut] = new Date(String(ev.created_at).replace(' ','T')+'Z').getTime();
+    } else if(AUX_IN.has(ev.action)){
+      // Close any open sessions
+      for(const auxType of Object.keys(AUX_OUT).map(k=>AUX_OUT[k])){
+        const key = email+':'+auxType;
+        if(openSessions[key]){
+          const durMs = new Date(String(ev.created_at).replace(' ','T')+'Z').getTime() - openSessions[key];
+          const durMin = Math.max(0, durMs/60000);
+          if(!agentMap[email].totals[auxType]) agentMap[email].totals[auxType]=0;
+          agentMap[email].totals[auxType] += durMin;
+          delete openSessions[key];
+        }
+      }
+    }
+  }
+
+  // Convert to array with compliance status
+  const now = Date.now();
+  const agents = Object.values(agentMap).map(a => {
+    const compliance = {};
+    let anyExceeded = false, anyWarning = false;
+    for(const [aux, mins] of Object.entries(a.totals)){
+      const thr = threshMap[aux];
+      const daily = thr?.daily_limit_minutes;
+      const status = !daily ? 'ok' : mins >= daily ? 'exceeded' : mins >= daily*0.8 ? 'warning' : 'ok';
+      compliance[aux] = { mins: Math.round(mins*10)/10, daily_limit: daily||null, status };
+      if(status==='exceeded') anyExceeded=true;
+      if(status==='warning')  anyWarning=true;
+    }
+    return { username:a.username, email:a.email, totals:a.totals, compliance,
+      overallStatus: anyExceeded?'exceeded': anyWarning?'warning':'ok' };
+  });
+
+  return { agents, thresholds: threshMap, startDate: startDateIso, endDate: endDateIso };
+}
+
 // ── Break thresholds ─────────────────────────────────────────────────────────
 async function getBreakThresholds() {
   return all(`SELECT * FROM break_thresholds ORDER BY aux_type`);
@@ -1145,5 +1212,6 @@ module.exports={
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,
   insertAuditLog,getAuditLog,
-  getBreakThresholds,setBreakThreshold
+  getBreakThresholds,setBreakThreshold,
+  getBreakReportData
 };
