@@ -330,7 +330,7 @@ app.get('/api/live-status', requireAuth, async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/live-stream', requireAuth, (req, res) => {
+app.get('/api/live-stream', requireAuth, async (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
