@@ -9932,21 +9932,20 @@ function renderGoogleIdentityButton(){
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleGoogleCredential,
-      auto_select: false,
-      cancel_on_tap_outside: true
-    });
-    host.innerHTML = '';
-    google.accounts.id.renderButton(host, {
-      theme: 'outline',
-      size: 'large',
-      type: 'standard',
-      text: 'continue_with',
-      shape: 'pill',
-      width: 360
+      auto_select: true,           // auto-sign-in if only one account
+      cancel_on_tap_outside: false,
+      context: 'signin',
+      itp_support: true            // Safari Intelligent Tracking Prevention support
     });
     gisRendered = true;
     host.classList.add('gis-ready');
-    if(fallbackBtn) fallbackBtn.classList.add('gfb-hidden');
+    // Trigger the native FedCM / One Tap popup — this is the "Continue as Sebastin" browser popup
+    google.accounts.id.prompt(notification => {
+      if(notification.isNotDisplayed() || notification.isSkippedMoment()){
+        // Native popup not available — fall back to custom button
+        if(fallbackBtn) fallbackBtn.classList.remove('gfb-hidden');
+      }
+    });
     return true;
   }catch(e){
     if(fallbackBtn) fallbackBtn.classList.remove('gfb-hidden');
