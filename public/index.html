@@ -8,7 +8,7 @@
 <!-- Session-restore CSS: adding .app-authenticated to <html> permanently hides login, shows app.
      This beats every other CSS rule because it's the last stylesheet and uses element+class on html. -->
 <style id="auth-gate-css">
-html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;}
+html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
 #userAvatar{display:none!important;}
@@ -8469,7 +8469,7 @@ tbody tr:hover td{
 
 <!-- LOGIN v8 — Dark Premium Redesign -->
 <style id="login-v8">
-#loginScreen{position:fixed!important;inset:0!important;z-index:100!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;color:#f1f5f9!important;box-sizing:border-box!important;}
+#loginScreen{position:fixed!important;inset:0!important;z-index:9999!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;color:#f1f5f9!important;box-sizing:border-box!important;}
 #loginScreen .v8-orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);}
 #loginScreen .v8-orb-1{width:600px;height:600px;top:-180px;left:-100px;background:radial-gradient(circle,rgba(245,130,31,.18),transparent 70%);}
 #loginScreen .v8-orb-2{width:500px;height:500px;bottom:-150px;left:200px;background:radial-gradient(circle,rgba(99,102,241,.14),transparent 70%);}
@@ -10313,8 +10313,8 @@ function applyView(view){
   document.getElementById('agentView').style.display=isAdmin?'none':'block';
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.textContent=isAdmin?'Switch to Agent View':'Switch to Admin View';
-  // Always scroll to top when switching views so content is immediately visible
-  window.scrollTo({top:0,behavior:'instant'});
+  // Always scroll to top when switching views — setTimeout ensures DOM reflow first
+  setTimeout(()=>window.scrollTo({top:0,behavior:'instant'}),0);
   configureAgentBreakbotAccess();
   // Default agent landing: Break Bot if available, else Dashboard
   if(!isAdmin){
@@ -10374,6 +10374,8 @@ function switchAgentSection(section,el){
   configureAgentBreakbotAccess();
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
   if(section==='breakbot')loadBreakTracker();
+  // Scroll to top of the agent view content area (below fixed header + sticky nav)
+  window.scrollTo({top:0,behavior:'instant'});
 }
 
 function resizeHallFrame(frame){
