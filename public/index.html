@@ -5111,8 +5111,7 @@ footer{
 #agentTicker.visible{display:flex;}
 #agentTicker .at-track{
   display:flex;align-items:center;white-space:nowrap;
-  animation:agentTicker 28s linear infinite;
-  will-change:transform;
+  will-change:auto;
 }
 #agentTicker .at-track:hover{animation-play-state:paused;}
 @keyframes agentTicker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
@@ -9453,33 +9452,6 @@ tbody tr:hover td{
   </div>
   <div class="agent-shell-page active" id="agent-section-dashboard">
     <!-- ── EOD Form Banner ───────────────────────────────────────────────── -->
-    <div id="eod-form-banner" style="
-      display:flex;align-items:center;gap:14px;
-      background:linear-gradient(90deg,rgba(250,204,21,.13) 0%,rgba(250,204,21,.06) 100%);
-      border:1px solid rgba(250,204,21,.35);border-radius:12px;
-      padding:14px 18px;margin-bottom:18px;position:relative;
-    ">
-      <div style="font-size:22px;flex-shrink:0">📋</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:700;color:#fde047;margin-bottom:2px;letter-spacing:.01em">Action required — complete by EOD</div>
-        <div style="font-size:12px;color:rgba(253,224,71,.75);line-height:1.4">Please fill out the team form before the end of your shift today.</div>
-      </div>
-      <a href="https://forms.gle/AvkPN2rNcF2qNFU68" target="_blank" rel="noopener" style="
-        flex-shrink:0;display:inline-flex;align-items:center;gap:7px;
-        background:#fde047;color:#1a1400;font-size:12px;font-weight:700;
-        padding:9px 16px;border-radius:8px;text-decoration:none;letter-spacing:.02em;
-        transition:opacity .15s;white-space:nowrap;
-      " onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-        Open Form
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      </a>
-      <button onclick="document.getElementById('eod-form-banner').style.display='none'" style="
-        position:absolute;top:8px;right:10px;background:none;border:none;
-        color:rgba(253,224,71,.5);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px;
-      " title="Dismiss">×</button>
-    </div>
-    <!-- ──────────────────────────────────────────────────────────────────── -->
-    <!-- Agent self-stats card (UI-4: show own role + score) -->
     <div id="agent-self-card" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 18px;margin-bottom:16px;display:none;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div style="flex:1;min-width:0;">
@@ -10405,7 +10377,7 @@ function applyView(view){
   const track=document.getElementById('agentTickerTrack');
   if(ticker && track && !track.innerHTML.trim()){
     const msg=`<span class="at-item">🏆&nbsp;&nbsp;<strong>Q1 2026 Hall of Fame is live!</strong>&nbsp;— Check out the Quarter Standouts &amp; Individual Awards<span class="sep">|</span>📅&nbsp;&nbsp;Performance &amp; Bonus results unlock on&nbsp;<strong>April 30, 2026</strong><span class="sep">|</span>✨&nbsp;&nbsp;Head to the Hall of Fame tab to see where you stand!&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`;
-    track.innerHTML=msg+msg;
+    track.innerHTML=msg;
   }
   let dismissed=false;try{dismissed=!!sessionStorage.getItem('agent_ticker_dismissed');}catch(e){}
   if(ticker) ticker.classList.toggle('visible',!isAdmin && isLive && !dismissed);
