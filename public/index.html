@@ -9258,6 +9258,30 @@ tbody tr:hover td{
           <div id="roleGrid" class="role-board-body"><div class="no-data">Loading...</div></div>
         </div>
       </div>
+
+      <!-- Break Thresholds -->
+      <div class="card" style="margin-top:20px;">
+        <div class="card-hdr">
+          <span class="card-title">Break Thresholds</span>
+          <span style="font-size:11px;color:var(--t3);margin-left:8px">Set limits per AUX type. Leave blank for no limit.</span>
+          <button onclick="saveAllThresholds()" id="save-thresholds-btn" style="margin-left:auto;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.35);border-radius:7px;color:#f5821f;font-size:12px;font-weight:600;padding:5px 14px;cursor:pointer;">Save All</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead>
+              <tr style="color:var(--t3);border-bottom:1px solid var(--b1);">
+                <th style="text-align:left;padding:10px 12px;font-weight:600;">AUX Type</th>
+                <th style="text-align:center;padding:10px 12px;font-weight:600;">Single occurrence limit (min)<br><span style="font-size:10px;font-weight:400">Alert if one break exceeds this</span></th>
+                <th style="text-align:center;padding:10px 12px;font-weight:600;">Daily total limit (min)<br><span style="font-size:10px;font-weight:400">Alert if total for the day exceeds this</span></th>
+              </tr>
+            </thead>
+            <tbody id="thresholds-tbody">
+              <tr><td colspan="3" style="text-align:center;padding:30px;color:var(--t3)">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="threshold-msg" style="padding:8px 12px;font-size:12px;display:none;"></div>
+      </div>
     </div>
   </div>
 
@@ -11886,7 +11910,7 @@ function switchTab(tab,el){
   if(tab==='loginlogs')loadLoginLogs();
   if(tab==='breaks')loadBreakTracker();
   if(tab==='agents')loadAgents();
-  if(tab==='access')loadRoles();
+  if(tab==='access'){ loadRoles(); loadBreakThresholds(); }
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
@@ -12320,11 +12344,12 @@ async function loadAgentStatuses(){
           if(scoreEl){scoreEl.textContent=sc.v;scoreEl.className='score '+sc.c;}
           const rolePill=document.getElementById('self-role-pill');
           if(rolePill)rolePill.textContent=currentRole==='admin'?'Admin':'Agent';
-          // FEAT-3: Break threshold alert
+          // FEAT-3: Break threshold alert — uses server-configured daily limit for BREAK
           const breakMins=Math.round((sum.unavailableSeconds||0)/60);
-          if(breakMins>=60&&!sessionStorage.getItem('breakAlertShown_'+todayStr())){
+          const breakDailyLimit=(_cachedThresholds['BREAK']?.daily_limit_minutes)||60;
+          if(breakMins>=breakDailyLimit&&!sessionStorage.getItem('breakAlertShown_'+todayStr())){
             sessionStorage.setItem('breakAlertShown_'+todayStr(),'1');
-            showToast('⚠️ You have been unavailable for '+breakMins+' minutes today — break limit reached.','warning',6000);
+            showToast('⚠️ You have been unavailable for '+breakMins+' minutes today — '+breakDailyLimit+'m daily limit reached.','warning',6000);
           }
         }
       }
@@ -12335,6 +12360,14 @@ async function loadAgentStatuses(){
 // ── FEAT-7: 7-Day Performance Trend Chart ────────────────────────────────────
 let _trendChart=null;
 let _trendRawData=null;
+let _cachedThresholds={}; // keyed by aux_type → {single_limit_minutes,daily_limit_minutes}
+
+async function fetchAndCacheThresholds(){
+  try{
+    const j=await fetch(BACKEND+'/api/break-thresholds',{credentials:'include'}).then(r=>r.json());
+    if(j.success&&j.data){ j.data.forEach(t=>{ _cachedThresholds[t.aux_type]=t; }); }
+  }catch(e){}
+}
 
 async function loadTrendData(){
   const loading=document.getElementById('trend-loading');
@@ -12779,6 +12812,87 @@ function setRoleFilter(mode, btn){
   renderRoleRows();
 }
 
+const AUX_LABELS = {
+  'BRB':           { label:'BRB (Quick Away)',       icon:'🟠' },
+  'BREAK':         { label:'Break',                   icon:'🍵' },
+  'TRAINING':      { label:'Training / Coaching',     icon:'🎯' },
+  'QA_SESSION':    { label:'QA Session AUX',          icon:'🧪' },
+  'INTERNAL_CALL': { label:'Internal Calls AUX',      icon:'📞' },
+};
+
+async function loadBreakThresholds(){
+  const tbody = document.getElementById('thresholds-tbody');
+  if(!tbody) return;
+  try{
+    const j = await fetch(BACKEND+'/api/break-thresholds',{credentials:'include'}).then(r=>r.json());
+    if(!j.success){ tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--red)">Failed to load</td></tr>'; return; }
+    const rows = (j.data||[]).map(t=>{
+      const meta = AUX_LABELS[t.aux_type] || { label: t.aux_type, icon:'⏱️' };
+      return `<tr style="border-bottom:1px solid var(--b1);">
+        <td style="padding:12px 12px;font-weight:500;">
+          <span style="font-size:15px;margin-right:6px">${meta.icon}</span>${esc(meta.label)}
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">AUX: ${esc(t.aux_type)}</div>
+        </td>
+        <td style="padding:12px 16px;text-align:center;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+            <input type="number" id="thr-single-${esc(t.aux_type)}" min="1" max="1440"
+              value="${t.single_limit_minutes!=null?t.single_limit_minutes:''}"
+              placeholder="No limit"
+              style="width:90px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t1);font-size:13px;text-align:center;outline:none;"
+              onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
+            <span style="font-size:11px;color:var(--t3)">min</span>
+          </div>
+        </td>
+        <td style="padding:12px 16px;text-align:center;">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
+            <input type="number" id="thr-daily-${esc(t.aux_type)}" min="1" max="1440"
+              value="${t.daily_limit_minutes!=null?t.daily_limit_minutes:''}"
+              placeholder="No limit"
+              style="width:90px;padding:6px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t1);font-size:13px;text-align:center;outline:none;"
+              onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
+            <span style="font-size:11px;color:var(--t3)">min</span>
+          </div>
+        </td>
+      </tr>`;
+    });
+    tbody.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--t3)">No thresholds configured</td></tr>';
+  }catch(e){ tbody.innerHTML='<tr><td colspan="3" style="text-align:center;padding:24px;color:var(--red)">Error: '+esc(e.message)+'</td></tr>'; }
+}
+
+async function saveAllThresholds(){
+  const btn = document.getElementById('save-thresholds-btn');
+  const msg = document.getElementById('threshold-msg');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  let errors=0, saved=0;
+  for(const auxType of Object.keys(AUX_LABELS)){
+    const singleEl = document.getElementById('thr-single-'+auxType);
+    const dailyEl  = document.getElementById('thr-daily-'+auxType);
+    if(!singleEl||!dailyEl) continue;
+    const single = singleEl.value.trim()===''?null:parseInt(singleEl.value);
+    const daily  = dailyEl.value.trim()==='' ?null:parseInt(dailyEl.value);
+    try{
+      const r = await fetch(BACKEND+'/api/break-thresholds',{
+        method:'POST',credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({aux_type:auxType,single_limit_minutes:single,daily_limit_minutes:daily})
+      });
+      const j = await r.json();
+      if(j.success) saved++; else errors++;
+    }catch(e){ errors++; }
+  }
+  if(btn){ btn.disabled=false; btn.textContent='Save All'; }
+  if(msg){
+    msg.style.display='block';
+    if(errors===0){
+      msg.style.color='var(--green)'; msg.textContent=`✓ All ${saved} thresholds saved.`;
+    } else {
+      msg.style.color='var(--red)'; msg.textContent=`Saved ${saved}, failed ${errors}. Check values.`;
+    }
+    setTimeout(()=>{ if(msg) msg.style.display='none'; },3000);
+  }
+  showToast(errors===0?'Break thresholds saved':'Some thresholds failed to save',errors===0?'success':'error');
+}
+
 async function loadRoles(){
   try{
     const res=await fetch(BACKEND+'/api/roles');const json=await res.json();const roles=json.data||[];
@@ -12996,8 +13110,9 @@ async function loadLoginLogs(){
 }
 
 async function firstLoadSync(){
+  try{ await fetchAndCacheThresholds(); }catch(e){} // load thresholds on startup
   try{
-    const agents=await fetch(BACKEND+'/api/agents').then(r=>r.json()).catch(()=>({data:[]}));
+    const agents=await fetch(BACKEND+'/api/agents',{credentials:'include'}).then(r=>r.json()).catch(()=>({data:[]}));
     if(agents.data&&agents.data.length>0){
       const events=await fetch(BACKEND+'/api/presence-events?date='+todayStr()+'&tz='+encodeURIComponent(activeTimeZone())).then(r=>r.json()).catch(()=>({data:[]}));
       if(!events.data||events.data.length===0){

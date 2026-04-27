@@ -12,7 +12,8 @@ const {
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions,
-  insertAuditLog, getAuditLog
+  insertAuditLog, getAuditLog,
+  getBreakThresholds, setBreakThreshold
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -706,6 +707,31 @@ app.get('/api/audit-log', requireAdmin, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 200, 500);
     res.json({ success: true, data: await getAuditLog(limit) });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Break threshold endpoints
+app.get('/api/break-thresholds', requireAuth, async (req, res) => {
+  try { res.json({ success: true, data: await getBreakThresholds() }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/break-thresholds', requireAdmin, async (req, res) => {
+  const { aux_type, single_limit_minutes, daily_limit_minutes } = req.body || {};
+  const VALID_AUX = ['BRB','BREAK','TRAINING','QA_SESSION','INTERNAL_CALL'];
+  if(!aux_type || !VALID_AUX.includes(aux_type))
+    return res.status(400).json({ success: false, error: 'Invalid aux_type' });
+  const single = single_limit_minutes === null || single_limit_minutes === '' ? null : parseInt(single_limit_minutes);
+  const daily  = daily_limit_minutes  === null || daily_limit_minutes  === '' ? null : parseInt(daily_limit_minutes);
+  if(single !== null && (isNaN(single) || single < 1 || single > 1440))
+    return res.status(400).json({ success: false, error: 'single_limit_minutes must be 1–1440 or null' });
+  if(daily !== null && (isNaN(daily) || daily < 1 || daily > 1440))
+    return res.status(400).json({ success: false, error: 'daily_limit_minutes must be 1–1440 or null' });
+  try {
+    await setBreakThreshold(aux_type, single, daily, req.session.email);
+    insertAuditLog(req.session.email, 'threshold_updated', aux_type,
+      `single:${single??'none'} daily:${daily??'none'}`).catch(()=>{});
+    res.json({ success: true });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

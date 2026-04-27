@@ -376,6 +376,29 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC)`);
 
+  // Break thresholds — configurable per AUX type
+  await run(`CREATE TABLE IF NOT EXISTS break_thresholds (
+    aux_type TEXT PRIMARY KEY,
+    single_limit_minutes INTEGER,
+    daily_limit_minutes INTEGER,
+    updated_by TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  // Seed defaults if table is empty
+  const thresholdCount = await get(`SELECT COUNT(*) as c FROM break_thresholds`);
+  if(!thresholdCount || thresholdCount.c === 0){
+    const defaults = [
+      ['BRB',           10,   null],
+      ['BREAK',         null, 60  ],
+      ['TRAINING',      null, null],
+      ['QA_SESSION',    null, null],
+      ['INTERNAL_CALL', null, null],
+    ];
+    for(const [aux, single, daily] of defaults){
+      await run(`INSERT OR IGNORE INTO break_thresholds (aux_type, single_limit_minutes, daily_limit_minutes) VALUES (?,?,?)`,
+        [aux, single, daily]);
+    }
+  }
+
   // Migrations
   for (const sql of [
     `ALTER TABLE monitored_agents ADD COLUMN email TEXT`,
@@ -1078,6 +1101,24 @@ function pruneExpiredSessions(){
   return run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
 }
 
+// ── Break thresholds ─────────────────────────────────────────────────────────
+async function getBreakThresholds() {
+  return all(`SELECT * FROM break_thresholds ORDER BY aux_type`);
+}
+
+async function setBreakThreshold(auxType, singleLimitMinutes, dailyLimitMinutes, updatedBy) {
+  return run(
+    `INSERT INTO break_thresholds (aux_type, single_limit_minutes, daily_limit_minutes, updated_by, updated_at)
+     VALUES (?,?,?,?,CURRENT_TIMESTAMP)
+     ON CONFLICT(aux_type) DO UPDATE SET
+       single_limit_minutes=excluded.single_limit_minutes,
+       daily_limit_minutes=excluded.daily_limit_minutes,
+       updated_by=excluded.updated_by,
+       updated_at=excluded.updated_at`,
+    [auxType, singleLimitMinutes ?? null, dailyLimitMinutes ?? null, updatedBy || 'admin']
+  );
+}
+
 // ── FEAT-4: Audit log ─────────────────────────────────────────────────────────
 function insertAuditLog(actorEmail, action, target, detail) {
   return run(
@@ -1103,5 +1144,6 @@ module.exports={
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,
-  insertAuditLog,getAuditLog
+  insertAuditLog,getAuditLog,
+  getBreakThresholds,setBreakThreshold
 };
