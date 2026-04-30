@@ -1172,9 +1172,9 @@ async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Ch
 async function pruneOldData() {
   const results = {};
 
-  // Presence events — BIGGEST table, poll every 2min × 13 agents = huge.
-  // Keep only 5 days (reports/trends only need recent data)
-  const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-5 days')`);
+  // Presence events — BIGGEST table, poll every 2min × 13 agents = ~5MB/day.
+  // Keep 14 days: covers 7-day trend charts + 2 weeks of Reports tab history.
+  const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-14 days')`);
   results.presence_events = pe.changes;
 
   // Call logs — keep 7 days
