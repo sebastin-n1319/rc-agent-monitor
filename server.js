@@ -21,6 +21,7 @@ const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus
 } = require('./rc-service');
+const { runArchive, getDbSizeMB } = require('./archive-service');
 
 const app = express();
 const SESSION_COOKIE = 'rcAuthSession';
@@ -865,10 +866,27 @@ app.get('/api/db-stats', requireAdmin, async (req, res) => {
 });
 app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res) => {
   try {
-    console.log('🧹 Manual DB cleanup triggered by', req.session?.email);
+    const { archive = false } = req.body || {};
+    console.log('🧹 Manual DB cleanup triggered by', req.session?.email, archive ? '+ archive' : '');
+    // Optionally archive first
+    let archiveResult = null;
+    if (archive) {
+      archiveResult = await runArchive(true); // force=true ignores threshold
+      if (archiveResult) insertAuditLog(req.session?.email||'system', 'manual_archive', 'google_sheets', JSON.stringify(archiveResult)).catch(()=>{});
+    }
     const results = await pruneOldData();
     insertAuditLog(req.session?.email||'system', 'db_cleanup', 'manual', JSON.stringify(results)).catch(()=>{});
-    res.json({ success: true, results });
+    res.json({ success: true, results, archiveResult });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Manual archive trigger
+app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res) => {
+  try {
+    const { force = false } = req.body || {};
+    const result = await runArchive(force);
+    if (result) insertAuditLog(req.session?.email||'system', 'manual_archive', 'google_sheets', JSON.stringify(result)).catch(()=>{});
+    res.json({ success: true, result: result || { skipped: 'Volume below threshold' } });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -879,12 +897,19 @@ async function startScheduler() {
   cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
-  // Prune + VACUUM every 6 hours to keep volume usage low (volume limit is 500MB)
+  // Every 6 hours: check volume, archive to Google Sheets if >90%, then prune
   cron.schedule('0 */6 * * *', async () => {
     try {
+      // 1. Try to archive old data to Google Sheets if above 90%
+      const archiveResult = await runArchive();
+      if (archiveResult) {
+        console.log('📤 Archive done:', JSON.stringify(archiveResult));
+        insertAuditLog('system', 'auto_archive', 'google_sheets', JSON.stringify(archiveResult)).catch(()=>{});
+      }
+      // 2. Always prune + VACUUM regardless
       const r = await pruneOldData();
       console.log('🧹 Prune+vacuum done:', JSON.stringify(r));
-    } catch(e) { console.error('❌ prune:', e.message); }
+    } catch(e) { console.error('❌ scheduled prune/archive:', e.message); }
   });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }

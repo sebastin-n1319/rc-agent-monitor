@@ -9457,6 +9457,7 @@ tbody tr:hover td{
           <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
           Clean &amp; VACUUM DB
         </button>
+        <button onclick="runDbCleanup(true)" title="Archive old data to Google Sheets then delete from DB" style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:7px;color:rgba(52,211,153,.8);font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;">📤 Archive → Sheets</button>
         <button onclick="checkDbStats()" id="db-stats-btn" title="Check database size and row counts" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t3);font-size:11px;padding:4px 10px;cursor:pointer;">📊 DB Stats</button>
       </div>
       <div style="overflow-x:auto;">
@@ -13422,16 +13423,22 @@ async function sendBreakReport(){
 }
 
 // ── FEAT-4: Audit Log ─────────────────────────────────────────────────────────
-async function runDbCleanup(){
+async function runDbCleanup(withArchive=false){
   const btn = document.getElementById('db-cleanup-btn');
-  if(btn){ btn.disabled=true; btn.textContent='Cleaning…'; }
+  if(btn){ btn.disabled=true; btn.textContent=withArchive?'Archiving & cleaning…':'Cleaning…'; }
   try{
-    const j = await fetch(BACKEND+'/api/db-cleanup',{method:'POST',credentials:'include'}).then(r=>r.json());
+    const j = await fetch(BACKEND+'/api/db-cleanup',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({archive:withArchive})
+    }).then(r=>r.json());
     if(j.success){
       const r = j.results;
-      const msg = `✓ Cleaned: presence=${r.presence_events} | calls=${r.call_logs} | logins=${r.login_logs} | breaks=${r.break_events} | audit=${r.audit_log} — VACUUM done`;
-      showToast(msg, 'success', 6000);
-      loadAuditLog(); // refresh log to show the cleanup entry
+      let msg = `✓ Cleaned: presence=${r.presence_events} | calls=${r.call_logs} | logins=${r.login_logs} | breaks=${r.break_events} — VACUUM done`;
+      if(withArchive && j.archiveResult) msg = '📤 Archived to Google Sheets + ' + msg;
+      else if(withArchive && !j.archiveResult) msg += ' (archive skipped — credentials not configured)';
+      showToast(msg, 'success', 7000);
+      loadAuditLog();
     } else {
       showToast('Cleanup failed: '+(j.error||'unknown'), 'error');
     }
