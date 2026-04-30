@@ -2226,7 +2226,7 @@ body::after {
 <div class="pg-tabs-wrap">
   <nav class="pg-tabs" id="pgTabs">
     <div class="tab-pill" id="tabPill"></div>
-    <button class="ptab" id="tab-hof" onclick="switchPage('hof',this)">
+    <button class="ptab active" id="tab-hof" onclick="switchPage('hof',this)">
       <span class="ico" id="ico-tab-hof"></span>Hall of Fame
     </button>
     <button class="ptab" id="tab-perf" onclick="switchPage('perf',this)">
@@ -2242,7 +2242,7 @@ body::after {
 <!-- ════════════════════════════════════════════════════════
      HALL OF FAME
 ════════════════════════════════════════════════════════ -->
-<div class="page" id="page-hof">
+<div class="page active" id="page-hof">
 
   <!-- Hero banner -->
   <div class="hof-hero io-hidden">
@@ -3335,11 +3335,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{ initBonus(); }catch(e){ console.error('initBonus:',e); }
   // Start on HoF tab — use setTimeout so layout is fully settled before
   // getBoundingClientRect() runs (rAF fires too early on lazy-loaded iframes)
-  switchPage('hof', document.getElementById('tab-hof')); // immediate: add active class
+  // page-hof is active by default in HTML; just update the pill position
   setTimeout(()=>{
-    switchPage('hof', document.getElementById('tab-hof')); // repeat: pill position now correct
+    const b = document.getElementById('tab-hof');
+    const pill = document.getElementById('tabPill');
+    const nav  = document.getElementById('pgTabs');
+    if(b && pill && nav){
+      const br=b.getBoundingClientRect(), nr=nav.getBoundingClientRect();
+      pill.style.left=(br.left-nr.left)+'px';
+      pill.style.width=br.width+'px';
+    }
     initObserver();
-  }, 80);
+  }, 120);
 });
 
 // Listen for impersonation messages from parent window
