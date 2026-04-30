@@ -13317,22 +13317,29 @@ function closeBonusNotif(){
 }
 function goToBonusPage(){
   closeBonusNotif();
-  // Switch to Hall of Fame tab and open Bonus sub-tab
-  const hofBtn = document.querySelector('.agent-shell-btn[onclick*="hall"]') ||
-                 document.querySelector('.nav-tab[onclick*="hall"]');
+  // Navigate to Hall of Fame in whichever view is active
+  const isAgentView = currentViewMode === 'agent' || currentRole !== 'admin';
+  const hofBtn = isAgentView
+    ? document.getElementById('agent-tab-hall')
+    : document.querySelector('.nav-tab[onclick*="\'hall\'"]');
   if(hofBtn) hofBtn.click();
-  // Wait for iframe to load then click bonus tab
-  setTimeout(()=>{
+  // After iframe loads, click the Bonus sub-tab inside it
+  function clickBonusTab(attempt){
     try{
-      const frames = document.querySelectorAll('iframe');
+      const frames = document.querySelectorAll('iframe.hof-frame, iframe.bonus-frame');
       for(const f of frames){
         try{
           const btn = f.contentDocument?.getElementById('tab-bonus');
-          if(btn){ btn.click(); break; }
+          if(btn){
+            btn.click();
+            return; // success
+          }
         }catch(e){}
       }
     }catch(e){}
-  }, 600);
+    if(attempt < 6) setTimeout(()=>clickBonusTab(attempt+1), 300);
+  }
+  setTimeout(()=>clickBonusTab(0), 400);
 }
 // ── Break Report ─────────────────────────────────────────────────────────────
 function openBreakReportModal(){

@@ -2458,7 +2458,6 @@ const DATA={
     {name:"Michelle Pinto",ext:"5555",ini:"MP",months:{
       "Jan'26":{inbound:292,tickets:97,fcr:82.5,qa:65.1,csat:100.0,cg:3,ct:3,present:21,leaves:0,upl:0,bonus:{eligible:true,pts:80,slab:1,base:7500,csat_inc:450,total:7950,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:0}}}},
       "Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,cg:2,ct:2,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:300,total:300,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
-      "Feb'26":{inbound:312,tickets:124,fcr:68.5,qa:76.0,csat:100.0,cg:2,ct:2,present:20,leaves:0,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:300,total:300,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
       "Mar'26":{inbound:350,tickets:98,fcr:77.6,qa:70.3,csat:50.0,cg:2,ct:4,present:22,leaves:0,upl:0,bonus:{eligible:true,pts:80,slab:1,base:7500,csat_inc:0,total:7500,mx:{inbound:{s:1},tickets:{s:2},fcr:{s:1},qa:{s:0}}}}}},
     {name:"Lincy Tabita",ext:"5208",ini:"LT",months:{
       "Jan'26":{inbound:237,tickets:115,fcr:53.9,qa:80.3,csat:94.7,cg:18,ct:19,present:19,leaves:2,upl:0,bonus:{eligible:false,reason:"FCR & QA below target",pts:55,slab:null,base:0,csat_inc:2700,total:2700,mx:{inbound:{s:1},tickets:{s:1},fcr:{s:0},qa:{s:0}}}},
@@ -2541,7 +2540,7 @@ function switchWing(page, wing, btn){
 /* ════════════════════════════════════════════════════════════
    BONUS LOCK
 ════════════════════════════════════════════════════════════ */
-function bonusUnlocked(){ return isAdmin || (new Date()>=BONUS_UNLOCK); }
+function bonusUnlocked(){ return true; } // Bonus released — always unlocked
 function adminUnlock(){
   showBonus();
 }
@@ -2933,8 +2932,13 @@ function buildHoF(){
    BONUS TOTALS
 ════════════════════════════════════════════════════════════ */
 function buildBonusTotals(){
-  const callsTotal=DATA.calls.reduce((s,a)=>s+totalBonus(a),0);
-  const chatTotal=DATA.chat.reduce((s,a)=>s+totalBonus(a),0);
+  // Sabrina Quinn appears in both calls and chat DATA for display purposes
+  // but her bonus is attributed once (to calls). Actual totals from spreadsheet:
+  // Calls Wing: ₹98,250 | Chat Wing: ₹0 (Anold/Tabinda/Evan not eligible)
+  const callsTotal = DATA.calls.reduce((s,a)=>s+totalBonus(a),0);
+  // Subtract Sabrina from chat to avoid double-counting
+  const sabinaBonus = totalBonus(DATA.chat.find(a=>a.name==="Sabrina Quinn")||{months:{}});
+  const chatTotal   = Math.max(0, DATA.chat.reduce((s,a)=>s+totalBonus(a),0) - sabinaBonus);
   const el=document.getElementById('bonusTotals');
   if(el) el.innerHTML=`
     <div class="btot btot-teal">
@@ -2944,6 +2948,10 @@ function buildBonusTotals(){
     <div class="btot btot-amber">
       <span class="btot-lbl">Chat Wing</span>
       <span class="btot-val">${rupee(chatTotal)}</span>
+    </div>
+    <div class="btot" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);">
+      <span class="btot-lbl" style="color:rgba(251,191,36,.7)">Q1 Total</span>
+      <span class="btot-val" style="color:#fbbf24">${rupee(callsTotal+chatTotal)}</span>
     </div>`;
 }
 
