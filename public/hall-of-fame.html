@@ -3292,11 +3292,13 @@ window.addEventListener('DOMContentLoaded',()=>{
   try{ renderBonusGrid('bon-calls-grid', BONUS_DATA.calls, false); }catch(e){ console.error('calls grid:',e); }
   try{ renderBonusGrid('bon-chat-grid',  BONUS_DATA.chat,  true);  }catch(e){ console.error('chat grid:',e); }
   try{ initBonus(); }catch(e){ console.error('initBonus:',e); }
-  // Start on HoF tab
-  requestAnimationFrame(()=>{
-    switchPage('hof',document.getElementById('tab-hof'));
+  // Start on HoF tab — use setTimeout so layout is fully settled before
+  // getBoundingClientRect() runs (rAF fires too early on lazy-loaded iframes)
+  switchPage('hof', document.getElementById('tab-hof')); // immediate: add active class
+  setTimeout(()=>{
+    switchPage('hof', document.getElementById('tab-hof')); // repeat: pill position now correct
     initObserver();
-  });
+  }, 80);
 });
 
 // Listen for impersonation messages from parent window
