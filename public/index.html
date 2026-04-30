@@ -11886,8 +11886,38 @@ async function sendBreakAction(action, btn){
   }
   let note='';
   if(action==='INTERNAL_CALL_OUT'){
-    note = prompt('Why are you moving into Internal Calls AUX?\nExample: Short huddle with QA / Inter-department call / Team sync') || '';
-    if(!note.trim()){
+    // In-app modal instead of browser prompt()
+    note = await new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText='position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.innerHTML=`<div style="background:var(--card1,#0c1424);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:28px 28px 22px;width:100%;max-width:400px;box-shadow:0 24px 64px rgba(0,0,0,.6);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="font-size:20px;">📞</span>
+          <div style="font-size:15px;font-weight:700;color:var(--t1,#eef2ff)">Internal Calls AUX</div>
+        </div>
+        <div style="font-size:13px;color:rgba(148,163,184,.8);margin-bottom:18px;line-height:1.5;">Why are you stepping into Internal Calls? Give a short reason so the team knows.</div>
+        <div style="font-size:11px;color:rgba(148,163,184,.5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Examples</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;" id="ic-suggestions">
+          ${['QA huddle','Team sync','Inter-dept call','Manager check-in','Training debrief'].map(s=>
+            `<button onclick="document.getElementById('ic-note-input').value='${s}';document.getElementById('ic-note-input').focus()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:rgba(148,163,184,.8);font-size:11px;padding:4px 10px;cursor:pointer;">${s}</button>`
+          ).join('')}
+        </div>
+        <textarea id="ic-note-input" placeholder="Type your reason here…" rows="2" style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--t1,#eef2ff);font-size:13px;padding:10px 12px;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"
+          onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'"></textarea>
+        <div style="display:flex;gap:10px;margin-top:14px;justify-content:flex-end;">
+          <button id="ic-cancel" style="padding:9px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:9px;color:rgba(148,163,184,.7);font-size:13px;cursor:pointer;font-family:inherit;">Cancel</button>
+          <button id="ic-confirm" style="padding:9px 20px;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.4);border-radius:9px;color:#f5821f;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Start Internal Call →</button>
+        </div>
+      </div>`;
+      document.body.appendChild(overlay);
+      const input = overlay.querySelector('#ic-note-input');
+      input.focus();
+      overlay.querySelector('#ic-cancel').onclick = ()=>{ overlay.remove(); resolve(''); };
+      overlay.querySelector('#ic-confirm').onclick = ()=>{ overlay.remove(); resolve(input.value.trim()); };
+      overlay.addEventListener('click', e=>{ if(e.target===overlay){ overlay.remove(); resolve(''); } });
+      input.addEventListener('keydown', e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); overlay.remove(); resolve(input.value.trim()); } });
+    });
+    if(!note){
       showToast('Internal Calls Out needs a short reason.','warning');
       syncBreakActionState();
       return;
