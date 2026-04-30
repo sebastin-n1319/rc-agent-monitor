@@ -49,6 +49,9 @@ const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
 const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const NOTIFICATION_BLOCKLIST = (process.env.NOTIFICATION_BLOCKLIST || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+// Test/demo accounts — always blocked from notifications and break tracking display
+const TEST_ACCOUNTS = new Set(['test.agent@adit.com']);
+function isTestAccount(email){ return TEST_ACCOUNTS.has((email||'').toLowerCase().trim()); }
 
 // ── Simple in-memory rate limiter ──────────────────────────────────────────
 const _rateBuckets = new Map();
@@ -520,7 +523,7 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
     let notification = { notified: false, status: 'skipped', response: 'Not attempted' };
-    if(skipNotify || NOTIFICATION_BLOCKLIST.includes((email || '').toLowerCase().trim())) {
+    if(skipNotify || isTestAccount(email) || NOTIFICATION_BLOCKLIST.includes((email || '').toLowerCase().trim())) {
       notification = { notified: false, status: 'disabled', response: 'Notifications disabled for this user' };
     } else {
       try {

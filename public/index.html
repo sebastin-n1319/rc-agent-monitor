@@ -11574,11 +11574,14 @@ function buildBreakLaneCard(title, subtitle, cls, rows){
 }
 
 function buildBreakLaneBoard(tracker){
-  const availableRows = tracker.filter(row => row.currentStatus === 'Logged In');
-  const brbRows = tracker.filter(row => row.currentStatus === 'BRB');
-  const breakRows = tracker.filter(row => row.currentStatus === 'Break');
-  const auxRows = tracker.filter(row => row.currentStatus === 'Training / Coaching' || row.currentStatus === 'QA Session AUX');
-  const internalRows = tracker.filter(row => row.currentStatus === 'Internal Calls');
+  // Filter out test/demo accounts from all floor signal lanes
+  const TEST_EMAILS_FLOOR = new Set(['test.agent@adit.com']);
+  const realTracker = tracker.filter(row => !TEST_EMAILS_FLOOR.has((row.email||'').toLowerCase()));
+  const availableRows = realTracker.filter(row => row.currentStatus === 'Logged In');
+  const brbRows = realTracker.filter(row => row.currentStatus === 'BRB');
+  const breakRows = realTracker.filter(row => row.currentStatus === 'Break');
+  const auxRows = realTracker.filter(row => row.currentStatus === 'Training / Coaching' || row.currentStatus === 'QA Session AUX');
+  const internalRows = realTracker.filter(row => row.currentStatus === 'Internal Calls');
   return [
     buildBreakLaneCard('Available', 'Ready on desk', 'avail', availableRows),
     buildBreakLaneCard('BRB', 'Quick-away lane', 'brb', brbRows),
@@ -11735,8 +11738,9 @@ function renderBreakAdminView(){
   const alertZoneEl = document.getElementById('btk-alert-zone');
   if(alertZoneEl) alertZoneEl.innerHTML = buildBtkAlertZone(tracker);
 
-  // — Agent grid: active agents only (exclude Logged Out), alerts first, then by urgency
-  const active = tracker.filter(r => r.currentStatus !== 'Logged Out');
+  // — Agent grid: active agents only (exclude Logged Out + test accounts), alerts first, then by urgency
+  const TEST_EMAILS = new Set(['test.agent@adit.com']);
+  const active = tracker.filter(r => r.currentStatus !== 'Logged Out' && !TEST_EMAILS.has((r.email||'').toLowerCase()));
   const chipEl = document.getElementById('break-board-chip');
   if(chipEl) chipEl.textContent = active.length+' active'+(active.length!==1?'s':'');
   const gridEl = document.getElementById('btk-agent-grid');
