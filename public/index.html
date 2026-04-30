@@ -8656,21 +8656,6 @@ tbody tr:hover td{
         Contact <strong>&nbsp;Sebastin&nbsp;</strong> for access
       </div>
 
-      <!-- Test / Preview Mode — only shown when Sebastin's account is remembered -->
-      <div id="admin-test-section" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
-        <div style="font-size:10px;font-weight:600;color:rgba(100,116,139,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Admin Tools</div>
-        <button onclick="startTestSession()" style="
-          width:100%;padding:10px 16px;
-          background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.25);
-          border-radius:10px;color:rgba(165,180,252,.8);font-size:12px;font-weight:600;
-          cursor:pointer;font-family:'Inter','Poppins',sans-serif;
-          display:flex;align-items:center;justify-content:center;gap:8px;
-          transition:background .2s;
-        " onmouseover="this.style.background='rgba(99,102,241,.15)'" onmouseout="this.style.background='rgba(99,102,241,.08)'">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
-          Preview as Agent (Test Mode)
-        </button>
-      </div>
     </div>
   </div>
 </div><!-- /#loginScreen -->
@@ -8833,6 +8818,10 @@ tbody tr:hover td{
       <span id="userRoleTag" class="role-pill role-admin">ADMIN</span>
     </div>
     <button class="btn btn-sm" id="viewToggleBtn" onclick="toggleView()" style="display:none;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text2);font-size:11px;border-radius:8px;padding:5px 11px;">Switch to Agent View</button>
+    <button id="test-agent-btn" onclick="startTestSession()" title="Preview the app as a test agent" style="display:none;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:rgba(165,180,252,.85);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;align-items:center;gap:6px;">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12" style="flex-shrink:0"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+      Test Agent
+    </button>
     <button class="logout-btn" onclick="doLogout()">Logout</button>
   </div>
 </header>
@@ -10236,14 +10225,6 @@ function updateLoginButton(){
   const quickPanel = document.getElementById('v8-quick-signin');
   const welcomeText = document.getElementById('v8-welcome-text');
 
-  // Show admin test section only for Sebastin
-  const OWNER_EMAIL = 'sebastin.n@adit.com';
-  const testSection = document.getElementById('admin-test-section');
-  try{
-    const rememberedEmail = stored ? (JSON.parse(stored).email||'') : '';
-    if(testSection) testSection.style.display = rememberedEmail.toLowerCase()===OWNER_EMAIL ? 'block' : 'none';
-  }catch(e){ if(testSection) testSection.style.display='none'; }
-
   if(stored){
     try{
       const {name, email, picture} = JSON.parse(stored);
@@ -10413,6 +10394,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
   if(skipAnimation) setTimeout(restoreLastTab, 0); // restore tab after DOM settles
+  // Show/hide test agent button (only for Sebastin in admin view)
+  setTimeout(showTestAgentBtn, 100);
   // Show test mode banner if in preview mode
   if(isTestMode()) setTimeout(showTestBanner, 600);
   // Show bonus notification once per session (not in test mode)
@@ -13241,10 +13224,23 @@ async function doRefresh(){
 }
 
 // ── Test / Preview Mode ───────────────────────────────────────────────────────
+const OWNER_EMAIL_CONST = 'sebastin.n@adit.com';
+
+function showTestAgentBtn(){
+  const btn = document.getElementById('test-agent-btn');
+  if(!btn) return;
+  // Only show for Sebastin when in admin view
+  const isOwner = (currentEmail||'').toLowerCase() === OWNER_EMAIL_CONST;
+  btn.style.display = (isOwner && currentRole === 'admin') ? 'inline-flex' : 'none';
+}
+
 function startTestSession(){
   const TEST_NAME  = 'Test Agent';
   const TEST_EMAIL = 'test.agent@adit.com';
   const TEST_ROLE  = 'agent';
+  // Hide the test button while in test mode
+  const btn = document.getElementById('test-agent-btn');
+  if(btn) btn.style.display = 'none';
   // Mark as test so banner shows
   sessionStorage.setItem('rcTestMode','1');
   sessionStorage.setItem('rcUser',  TEST_NAME);
@@ -13281,6 +13277,25 @@ function showTestBanner(){
 
 function exitTestMode(){
   sessionStorage.removeItem('rcTestMode');
+  // Restore original admin session from localStorage
+  const stored = localStorage.getItem('rcSession');
+  if(stored){
+    try{
+      const s = JSON.parse(stored);
+      sessionStorage.setItem('rcUser',  s.name);
+      sessionStorage.setItem('rcRole',  s.role);
+      sessionStorage.setItem('rcEmail', s.email);
+      sessionStorage.setItem('rcPicture', s.picture||'');
+      sessionStorage.setItem('rcBreakbotEnabled', s.breakbotEnabled?'1':'0');
+      // Close test banner
+      const banner = document.getElementById('test-mode-banner');
+      if(banner) banner.style.display='none';
+      // Go back to admin
+      startApp(s.name, s.role, s.picture||'', s.breakbotEnabled!==false, true);
+      return;
+    }catch(e){}
+  }
+  // No stored session — full logout
   sessionStorage.removeItem('rcUser');
   sessionStorage.removeItem('rcRole');
   sessionStorage.removeItem('rcEmail');
