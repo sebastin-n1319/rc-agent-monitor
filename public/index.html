@@ -430,7 +430,7 @@ header{
   transition:color .15s,background .15s;white-space:nowrap;
   border-bottom:2px solid transparent;position:relative;
 }
-.nav-tab svg{width:14px;height:14px;flex-shrink:0;opacity:.7;}
+.nav-tab svg{width:15px;height:15px;flex-shrink:0;opacity:.6;transition:opacity .2s;}
 .nav-tab:hover{color:var(--t2);background:rgba(255,255,255,.03);}
 .nav-tab.active{
   color:var(--orange);
@@ -439,6 +439,14 @@ header{
   font-weight:600;
 }
 .nav-tab.active svg{opacity:1;}
+/* Futuristic icon glow on active tabs */
+.nav-tab.active svg { opacity:1; filter:drop-shadow(0 0 4px currentColor); }
+.nav-tab svg { transition:opacity .2s, filter .2s; }
+.agent-shell-btn { display:inline-flex; align-items:center; gap:6px; }
+.agent-shell-btn.active svg { filter:drop-shadow(0 0 3px currentColor); opacity:1; }
+.agent-shell-btn svg { opacity:.55; transition:opacity .2s, filter .2s; flex-shrink:0; }
+.agent-shell-btn:hover svg { opacity:.9; }
+
 
 /* ══════════════════════════════════════════════════════════════════════════
    PAGES
@@ -8829,43 +8837,43 @@ tbody tr:hover td{
 <div id="adminView">
   <div class="nav">
     <button class="nav-tab active" onclick="switchTab('live',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M12 8v4l2.5 2.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 7.76a6 6 0 0 0 0 8.49"/></svg>
       Live Dashboard
     </button>
     <button class="nav-tab" onclick="switchTab('reports',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 17V13M12 17V9M16 17V11"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z" rx="2"/><path d="M7 16V10"/><path d="M12 16V7"/><path d="M17 16v-4"/><path d="M3 8h18"/></svg>
       Reports
     </button>
     <button class="nav-tab" onclick="switchTab('agents',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="8" r="2.5"/><path d="M21 20c0-2.8-1.8-5-4-5.4"/></svg>
       Manage Agents
     </button>
     <button class="nav-tab" onclick="switchTab('access',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9.2 2 7 4.2 7 7v1H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-2V7c0-2.8-2.2-5-5-5z"/><circle cx="12" cy="14" r="1.5" fill="currentColor"/><path d="M12 15.5v2"/></svg>
       Access Control
     </button>
     <button class="nav-tab" onclick="switchTab('loginlogs',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z"/><path d="M15 3v6h6"/><path d="M9 13h6M9 17h4"/></svg>
       Login Logs
     </button>
     <button class="nav-tab" onclick="switchTab('breaks',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6"/><path d="M5 11h14v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M10 15h4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M3 12h2M19 12h2M12 3v2M12 19v2"/></svg>
       Break Tracker
     </button>
     <button class="nav-tab" onclick="switchTab('hall',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v3a5 5 0 0 1-10 0z"/><path d="M7 7H5a2 2 0 0 1-2-2V4h4"/><path d="M17 7h2a2 2 0 0 0 2-2V4h-4"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       Hall of Fame
     </button>
     <button class="nav-tab" onclick="switchTab('bonus',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l1.9 3.84L18 6.44l-3 2.93.71 4.13L12 11.77 8.29 13.5 9 9.37 6 6.44l4.1-.6L12 2z"/><path d="M5 22h14"/><path d="M7 18h10"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
       Bonus Guide
     </button>
     <button class="nav-tab" onclick="switchTab('calllogs',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C9.6 21 3 14.4 3 6c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
       Call Logs
     </button>
     <button class="nav-tab" onclick="switchTab('auditlog',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="M8 12l3 3 5-5"/></svg>
       Audit Log
     </button>
   </div>
@@ -9554,11 +9562,26 @@ tbody tr:hover td{
 <!-- AGENT VIEW -->
 <div id="agentView" style="display:none;">
   <div class="agent-shell-nav">
-    <button class="agent-shell-btn active" id="agent-tab-dashboard" onclick="switchAgentSection('dashboard',this)">Dashboard</button>
-    <button class="agent-shell-btn" id="agent-breakbot-tab" onclick="switchAgentSection('breakbot',this)">Break Bot</button>
-    <button class="agent-shell-btn preview" id="agent-breakbot-preview-btn" style="display:none" onclick="openBreakbotPreview(this)">Preview Break Bot</button>
-    <button class="agent-shell-btn" id="agent-tab-hall" onclick="switchAgentSection('hall',this)">Hall of Fame</button>
-    <button class="agent-shell-btn" id="agent-tab-bonus" onclick="switchAgentSection('bonus',this)">Bonus Guide</button>
+    <button class="agent-shell-btn active" id="agent-tab-dashboard" onclick="switchAgentSection('dashboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+      Dashboard
+    </button>
+    <button class="agent-shell-btn" id="agent-breakbot-tab" onclick="switchAgentSection('breakbot',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M3 12h2M19 12h2"/></svg>
+      Break Bot
+    </button>
+    <button class="agent-shell-btn preview" id="agent-breakbot-preview-btn" style="display:none" onclick="openBreakbotPreview(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Preview Break Bot
+    </button>
+    <button class="agent-shell-btn" id="agent-tab-hall" onclick="switchAgentSection('hall',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Hall of Fame
+    </button>
+    <button class="agent-shell-btn" id="agent-tab-bonus" onclick="switchAgentSection('bonus',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
+      Bonus Guide
+    </button>
   </div>
   <div class="agent-shell-page active" id="agent-section-dashboard">
     <!-- ── EOD Form Banner ───────────────────────────────────────────────── -->
