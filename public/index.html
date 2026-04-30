@@ -9453,6 +9453,11 @@ tbody tr:hover td{
         <span class="card-title">Admin Audit Log</span>
         <span class="chip" id="audit-count">--</span>
         <button onclick="loadAuditLog()" style="margin-left:auto;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t2);font-size:11px;padding:4px 10px;cursor:pointer;">Refresh</button>
+        <button onclick="runDbCleanup()" id="db-cleanup-btn" title="Prune old data + VACUUM to reclaim disk space" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:7px;color:rgba(252,165,165,.8);font-size:11px;font-weight:600;padding:4px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          Clean &amp; VACUUM DB
+        </button>
+        <button onclick="checkDbStats()" id="db-stats-btn" title="Check database size and row counts" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t3);font-size:11px;padding:4px 10px;cursor:pointer;">📊 DB Stats</button>
       </div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -13417,6 +13422,33 @@ async function sendBreakReport(){
 }
 
 // ── FEAT-4: Audit Log ─────────────────────────────────────────────────────────
+async function runDbCleanup(){
+  const btn = document.getElementById('db-cleanup-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Cleaning…'; }
+  try{
+    const j = await fetch(BACKEND+'/api/db-cleanup',{method:'POST',credentials:'include'}).then(r=>r.json());
+    if(j.success){
+      const r = j.results;
+      const msg = `✓ Cleaned: presence=${r.presence_events} | calls=${r.call_logs} | logins=${r.login_logs} | breaks=${r.break_events} | audit=${r.audit_log} — VACUUM done`;
+      showToast(msg, 'success', 6000);
+      loadAuditLog(); // refresh log to show the cleanup entry
+    } else {
+      showToast('Cleanup failed: '+(j.error||'unknown'), 'error');
+    }
+  }catch(e){ showToast('Error: '+e.message, 'error'); }
+  finally{ if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg> Clean &amp; VACUUM DB'; } }
+}
+
+async function checkDbStats(){
+  try{
+    const j = await fetch(BACKEND+'/api/db-stats',{credentials:'include'}).then(r=>r.json());
+    if(!j.success){ showToast('Failed to get stats','error'); return; }
+    const d = j.data;
+    const rows = Object.entries(d.counts).map(([t,c])=>`${t}: ${c.toLocaleString()}`).join(' | ');
+    showToast(`DB: ${d.dbSizeMB}MB used, ${d.freeMB}MB reclaimable — ${rows}`, 'info', 8000);
+  }catch(e){ showToast('Error: '+e.message,'error'); }
+}
+
 async function loadAuditLog(){
   const tbody=document.getElementById('audit-tbody');
   const cnt=document.getElementById('audit-count');

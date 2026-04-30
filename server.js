@@ -215,7 +215,14 @@ async function sendBreakChatNotification(event){
   };
 }
 
-initDB().then(() => console.log('DB ready'));
+initDB().then(async () => {
+  console.log('DB ready');
+  // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
+  try {
+    const r = await pruneOldData();
+    console.log('🧹 Startup prune+vacuum:', JSON.stringify(r));
+  } catch(e) { console.error('❌ startup prune:', e.message); }
+});
 
 liveEvents.on('update', payload => broadcastLiveEvent(payload));
 
@@ -872,12 +879,12 @@ async function startScheduler() {
   cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
-  // Full data prune + VACUUM daily at 2am IST (cleans presence_events, login_logs, break_events, etc.)
-  cron.schedule('30 20 * * *', async () => {
+  // Prune + VACUUM every 6 hours to keep volume usage low (volume limit is 500MB)
+  cron.schedule('0 */6 * * *', async () => {
     try {
       const r = await pruneOldData();
-      console.log('🧹 Daily prune+vacuum done:', JSON.stringify(r));
-    } catch(e) { console.error('❌ daily prune:', e.message); }
+      console.log('🧹 Prune+vacuum done:', JSON.stringify(r));
+    } catch(e) { console.error('❌ prune:', e.message); }
   });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }

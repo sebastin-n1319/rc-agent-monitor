@@ -1169,35 +1169,35 @@ async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Ch
 }
 
 // ── Database maintenance ──────────────────────────────────────────────────────
-async function pruneOldData(retainDays = 30) {
-  const cutoff = new Date(Date.now() - retainDays * 86400000).toISOString();
+async function pruneOldData() {
   const results = {};
 
-  // Presence events (biggest table) — keep last 14 days
-  const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime(?)`, [new Date(Date.now() - 14*86400000).toISOString()]);
+  // Presence events — BIGGEST table, poll every 2min × 13 agents = huge.
+  // Keep only 5 days (reports/trends only need recent data)
+  const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-5 days')`);
   results.presence_events = pe.changes;
 
-  // Call logs — keep last 7 days (already handled by pruneCallLogs)
-  const cl = await run(`DELETE FROM call_logs WHERE date(start_time) < date('now', '-7 days')`);
+  // Call logs — keep 7 days
+  const cl = await run(`DELETE FROM call_logs WHERE date(start_time) < date('now','-7 days')`);
   results.call_logs = cl.changes;
 
-  // Login logs — keep last 60 days
-  const ll = await run(`DELETE FROM login_logs WHERE datetime(logged_in_at) < datetime(?)`, [new Date(Date.now() - 60*86400000).toISOString()]);
+  // Login logs — keep 30 days
+  const ll = await run(`DELETE FROM login_logs WHERE datetime(logged_in_at) < datetime('now','-30 days')`);
   results.login_logs = ll.changes;
 
-  // Break events — keep last 90 days
-  const be = await run(`DELETE FROM break_events WHERE datetime(created_at) < datetime(?)`, [new Date(Date.now() - 90*86400000).toISOString()]);
+  // Break events — keep 60 days
+  const be = await run(`DELETE FROM break_events WHERE datetime(created_at) < datetime('now','-60 days')`);
   results.break_events = be.changes;
 
-  // Audit log — keep last 90 days
-  const al = await run(`DELETE FROM audit_log WHERE datetime(created_at) < datetime(?)`, [new Date(Date.now() - 90*86400000).toISOString()]);
+  // Audit log — keep 60 days
+  const al = await run(`DELETE FROM audit_log WHERE datetime(created_at) < datetime('now','-60 days')`);
   results.audit_log = al.changes;
 
-  // App sessions — already handled by pruneExpiredSessions
+  // Expired sessions
   const as = await run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
   results.app_sessions = as.changes;
 
-  // VACUUM to actually reclaim disk space (this is critical — DELETE only marks pages free)
+  // VACUUM — physically reclaims disk space (DELETE only marks pages free)
   await run(`VACUUM`);
   results.vacuumed = true;
 
