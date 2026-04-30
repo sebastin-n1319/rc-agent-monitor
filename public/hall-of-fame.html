@@ -2577,10 +2577,11 @@ const slabColor=s=>s===1?'s1c':s===2?'s2c':s===0?'s0c':'snac';
 ════════════════════════════════════════════════════════════ */
 function switchPage(page, btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.ptab').forEach(t=>t.removeAttribute('data-a'));
+  document.querySelectorAll('.ptab').forEach(t=>{ t.removeAttribute('data-a'); t.classList.remove('active'); });
   document.getElementById('page-'+page).classList.add('active');
   const b=btn||document.getElementById('tab-'+page);
   b.setAttribute('data-a',page);
+  b.classList.add('active');
   // Slide pill
   const pill=document.getElementById('tabPill');
   const nav=document.getElementById('pgTabs');
@@ -3091,27 +3092,67 @@ function getLoggedInName(){
 }
 
 function bonDetailPanel(a){
-  // Detailed month-by-month breakdown from cell comments — only shown to the agent themselves
   const months = ['jan','feb','mar'];
-  const mLabels = ["January 2026","February 2026","March 2026"];
-  return `<div style="border-top:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);padding:16px 18px;">
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(251,191,36,.7);margin-bottom:12px;">📋 Your Detailed Breakdown</div>
-    ${months.map((k,i)=>{
-      const m = a[k]||{};
-      const mt = (m.slab||0)+(m.csat||0);
-      return `<div style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-          <span style="font-size:12px;font-weight:700;color:#eef2ff">${mLabels[i]}</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:${mt>0?'#22c55e':'rgba(136,146,176,.4)'};">${mt>0?'₹'+mt.toLocaleString('en-IN'):'—'}</span>
+  const mLabels = ['January 2026','February 2026','March 2026'];
+  const mShort  = ['Jan','Feb','Mar'];
+
+  // Q1 summary stats
+  const q1Slab = months.reduce((s,k)=>s+(a[k]?.slab||0),0);
+  const q1Csat = months.reduce((s,k)=>s+(a[k]?.csat||0),0);
+  const eligMonths = months.filter(k=>(a[k]?.slab||0)>0).length;
+
+  const monthCards = months.map((k,i)=>{
+    const m = a[k]||{};
+    const mt  = (m.slab||0)+(m.csat||0);
+    const isElig  = m.elig && m.elig.startsWith('✅');
+    const isWarn  = m.elig && m.elig.startsWith('➖');
+    const isIneli = !isElig && !isWarn;
+    const borderC = isElig?'rgba(34,197,94,.35)':isWarn?'rgba(251,191,36,.3)':'rgba(248,113,113,.25)';
+    const bgC     = isElig?'rgba(34,197,94,.06)':isWarn?'rgba(251,191,36,.05)':'rgba(248,113,113,.04)';
+    const icon    = isElig?'✅':isWarn?'➖':'❌';
+    const textC   = isElig?'#22c55e':isWarn?'#fbbf24':'#f87171';
+    const eligShort = (m.elig||'').replace('❌ Not Eligible — ','').replace('✅ Eligible — ','').replace('➖ ','');
+
+    return `<div style="border:1px solid ${borderC};background:${bgC};border-radius:12px;padding:14px 16px;flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:12px;font-weight:700;color:#eef2ff">${mLabels[i]}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:${mt>0?textC:'rgba(100,116,139,.5)'};">${mt>0?'₹'+mt.toLocaleString('en-IN'):'—'}</span>
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:5px;background:${isElig?'rgba(34,197,94,.12)':isWarn?'rgba(251,191,36,.1)':'rgba(248,113,113,.1)'};border-radius:99px;padding:3px 10px;margin-bottom:10px;">
+        <span style="font-size:11px;">${icon}</span>
+        <span style="font-size:11px;font-weight:700;color:${textC};">${eligShort}</span>
+      </div>
+      ${m.why?`<div style="font-size:11px;color:rgba(148,163,184,.75);line-height:1.65;margin-bottom:${(m.csat||0)>0?'8px':'0'}">${m.why.replace(/·/g,'<span style="color:rgba(100,116,139,.5);margin:0 3px">·</span>')}</div>`:''}
+      ${(m.csat||0)>0?`<div style="display:flex;align-items:center;gap:6px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:7px 10px;">
+        <span style="font-size:13px;">⭐</span>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.05em;">CSAT Incentive</div>
+          <div style="font-size:11px;color:rgba(251,191,36,.85);margin-top:1px">${m.csatWhy||''}</div>
         </div>
-        <div style="font-size:11px;color:${m.elig&&m.elig.startsWith('✅')?'rgba(34,197,94,.8)':m.elig&&m.elig.startsWith('➖')?'rgba(251,191,36,.7)':'rgba(248,113,113,.8)'};margin-bottom:6px;font-weight:600;">${m.elig||''}</div>
-        ${m.why?`<div style="font-size:11px;color:rgba(136,146,176,.65);line-height:1.6;margin-bottom:${m.csatWhy?'6px':'0'}">${m.why}</div>`:''}
-        ${m.csatWhy&&(m.csat||0)>0?`<div style="font-size:11px;color:rgba(251,191,36,.65);line-height:1.6;">⭐ ${m.csatWhy}</div>`:''}
-        ${m.csatWhy&&(m.csat||0)===0&&mt===0?`<div style="font-size:11px;color:rgba(136,146,176,.5);line-height:1.6;">${m.csatWhy}</div>`:''}
-      </div>`;
-    }).join('')}
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#fbbf24;margin-left:auto;">₹${(m.csat||0).toLocaleString('en-IN')}</span>
+      </div>`:''}
+      ${(m.csat||0)===0&&m.csatWhy&&mt===0?`<div style="font-size:11px;color:rgba(100,116,139,.55);line-height:1.5;margin-top:4px;font-style:italic">${m.csatWhy}</div>`:''}
+    </div>`;
+  }).join('');
+
+  return `<div style="border-top:2px solid rgba(245,130,31,.2);background:linear-gradient(135deg,rgba(245,130,31,.04) 0%,rgba(251,191,36,.03) 100%);padding:18px 18px 14px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.3);display:flex;align-items:center;justify-content:center;font-size:14px;">📊</div>
+        <div>
+          <div style="font-size:12px;font-weight:800;color:#f5821f;letter-spacing:.02em;">Your Bonus Breakdown</div>
+          <div style="font-size:10px;color:rgba(148,163,184,.6);margin-top:1px">Only visible to you · Q1 2026</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${q1Slab>0?`<div style="background:rgba(56,182,224,.1);border:1px solid rgba(56,182,224,.25);border-radius:8px;padding:5px 12px;text-align:center;"><div style="font-size:10px;color:rgba(56,182,224,.7);font-weight:600;">SLAB</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#38b6e0;">₹${q1Slab.toLocaleString('en-IN')}</div></div>`:''}
+        ${q1Csat>0?`<div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:5px 12px;text-align:center;"><div style="font-size:10px;color:rgba(251,191,36,.7);font-weight:600;">CSAT ⭐</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#fbbf24;">₹${q1Csat.toLocaleString('en-IN')}</div></div>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;">${monthCards}</div>
   </div>`;
 }
+
 
 function bonCard(a, idx, isChat){
   const total = a.total;
