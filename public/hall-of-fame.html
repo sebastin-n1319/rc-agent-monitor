@@ -3098,16 +3098,17 @@ function bonDetailPanel(a){
   // Helper: shorten the "why" text to one crisp line
   function shortWhy(why){
     if(!why) return '';
-    return why
-      .replace(/·/g,'•')
-      .replace(/\s*•\s*Slab\s*=\s*₹0/,'')
-      .replace(/\s*•\s*Final slab.*$/,'')
-      .replace(/Slab base ₹[\d,]+ × \d+% = /, 'Slab: ')
-      .replace(/Base: ₹[\d,]+ × \d+%
-?= /, 'Slab: ')
-      .replace(/Leave: ×\d+%\s*\([^)]+\)\s*•?/g,'')
-      .replace(/Note:.*$/,'')
-      .trim().replace(/•\s*$/,'').trim();
+    // Simple string cleanup — no complex regex to avoid parse issues
+    let s = why.replace(/·/g, '•'); // · → •
+    // Remove noise phrases
+    ['Slab = ₹0', 'Final slab', 'Note:', '= ₹0'].forEach(p => {
+      const i = s.indexOf(p); if(i > 0) s = s.substring(0, i);
+    });
+    // Shorten long leave/PL patterns to just the key fact
+    s = s.replace(/•?\s*Slab base ₹[\d,]+ × \d+%\s*=\s*/g, 'Slab: ');
+    s = s.replace(/Leave:\s*×\d+%\s*\([^)]+\)/g, '');
+    s = s.replace(/•\s*•/g, '•').replace(/•\s*$/,'');
+    return s.trim();
   }
 
   const q1Slab = months.reduce((s,k)=>s+(a[k]?.slab||0),0);
