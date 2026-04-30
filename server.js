@@ -14,7 +14,8 @@ const {
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions,
   insertAuditLog, getAuditLog,
   getBreakThresholds, setBreakThreshold,
-  getBreakReportData
+  getBreakReportData,
+  pruneOldData, getDbStats
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -850,6 +851,20 @@ app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// DB stats + manual cleanup endpoints (admin only)
+app.get('/api/db-stats', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, data: await getDbStats() }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res) => {
+  try {
+    console.log('🧹 Manual DB cleanup triggered by', req.session?.email);
+    const results = await pruneOldData();
+    insertAuditLog(req.session?.email||'system', 'db_cleanup', 'manual', JSON.stringify(results)).catch(()=>{});
+    res.json({ success: true, results });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 async function startScheduler() {
   setInterval(() => { fetchPresenceForAll().catch(e => console.error('❌ presence sync:', e.message)); }, getFallbackSyncMs());
   cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });
@@ -857,6 +872,13 @@ async function startScheduler() {
   cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
+  // Full data prune + VACUUM daily at 2am IST (cleans presence_events, login_logs, break_events, etc.)
+  cron.schedule('30 20 * * *', async () => {
+    try {
+      const r = await pruneOldData();
+      console.log('🧹 Daily prune+vacuum done:', JSON.stringify(r));
+    } catch(e) { console.error('❌ daily prune:', e.message); }
+  });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
