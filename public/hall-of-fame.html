@@ -3085,6 +3085,8 @@ const BON_MAX = 31425;
 
 // Get the currently logged-in user's name from parent window (the main app)
 function getLoggedInName(){
+  // Use impersonated name if set via postMessage
+  if(window._impersonatedName) return window._impersonatedName;
   try{ return window.parent?.currentUser || sessionStorage.getItem('rcUser') || ''; }catch(e){ return ''; }
 }
 
@@ -3295,6 +3297,24 @@ window.addEventListener('DOMContentLoaded',()=>{
     switchPage('hof',document.getElementById('tab-hof'));
     initObserver();
   });
+});
+
+// Listen for impersonation messages from parent window
+window.addEventListener('message', (e) => {
+  if(!e.data || e.data.type !== 'impersonate') return;
+  const name = e.data.name || '';
+  // Override getLoggedInName result for this iframe session
+  window._impersonatedName = name;
+  // Re-render bonus cards with new identity
+  try{ buildBonusPodium(); }catch(e){}
+  try{ renderBonusGrid('bon-calls-grid', BONUS_DATA.calls, false); }catch(e){}
+  try{ renderBonusGrid('bon-chat-grid',  BONUS_DATA.chat,  true);  }catch(e){}
+  setTimeout(()=>{
+    document.querySelectorAll('.bon-month-bar-fill').forEach(b=>{ b.style.width=b.dataset.pct+'%'; });
+  }, 150);
+  // Switch to bonus tab so the agent sees their card
+  const bonBtn = document.getElementById('tab-bonus');
+  if(bonBtn) switchPage('bonus', bonBtn);
 });
 </script>
 

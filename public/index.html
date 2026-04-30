@@ -13277,9 +13277,14 @@ function impersonate(name){
   // Update header label
   const ul = document.getElementById('userLabel');
   if(ul) ul.textContent = name.split(' ')[0];
-  // Refresh any open iframes so bonus page re-renders with new name
-  document.querySelectorAll('iframe').forEach(f => { try{ f.src = f.src; }catch(e){} });
-  showToast('Viewing as: ' + name, 'info', 2000);
+  // Tell all open iframes to re-render the bonus page for this user (no reload needed)
+  document.querySelectorAll('iframe').forEach(f => {
+    try{
+      // postMessage so the iframe re-runs the bonus render with the new name
+      f.contentWindow.postMessage({ type:'impersonate', name }, '*');
+    }catch(e){}
+  });
+  showToast('Now viewing as: ' + name, 'info', 2000);
 }
 
 function showTestBanner(){
