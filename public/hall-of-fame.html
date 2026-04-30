@@ -2587,6 +2587,17 @@ function switchPage(page, btn){
   const br=b.getBoundingClientRect(), nr=nav.getBoundingClientRect();
   pill.style.left=(br.left-nr.left)+'px';
   pill.style.width=br.width+'px';
+  // Re-render bonus page cards each time tab is opened (so isMe check is fresh)
+  if(page==='bonus'){
+    try{ buildBonusPodium(); }catch(e){}
+    try{ renderBonusGrid('bon-calls-grid', BONUS_DATA.calls, false); }catch(e){}
+    try{ renderBonusGrid('bon-chat-grid',  BONUS_DATA.chat,  true);  }catch(e){}
+    // Trigger bar animations after render
+    setTimeout(()=>{
+      document.querySelectorAll('#bon-calls-grid .bon-month-bar-fill, #bon-chat-grid .bon-month-bar-fill')
+        .forEach(b=>{ b.style.width=b.dataset.pct+'%'; });
+    }, 150);
+  }
 }
 function switchWing(page, wing, btn){
   const prefix=page+'-';
@@ -2607,10 +2618,13 @@ function adminUnlock(){
   showBonus();
 }
 function showBonus(){
-  document.getElementById('bonus-locked').style.display='none';
-  document.getElementById('bonus-open').style.display='block';
-  setIco('ico-tab-bonus','unlock',14);
-  document.getElementById('bonusLockIco').innerHTML='';
+  const locked = document.getElementById('bonus-locked');
+  if(locked) locked.style.display='none';
+  const open = document.getElementById('bonus-open');
+  if(open) open.style.display='block';
+  try{ setIco('ico-tab-bonus','unlock',14); }catch(e){}
+  const li = document.getElementById('bonusLockIco');
+  if(li) li.innerHTML='';
 }
 
 let cdTimer=null;
@@ -2633,7 +2647,7 @@ function startCountdown(){
 function initBonus(){
   if(bonusUnlocked()){showBonus();}
   else{
-    document.getElementById('bonus-locked').style.display='block';
+    const bl=document.getElementById('bonus-locked'); if(bl) bl.style.display='block';
     // Only show the admin early-unlock button to actual admins
     const adminBtn=document.getElementById('btn-admin-unlock');
     const adminNote=document.getElementById('lock-note-admin');
@@ -3272,10 +3286,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   renderGrid('bonus-calls-grid',DATA.calls,'calls',buildBonusCard);
   renderGrid('bonus-chat-grid',DATA.chat,'chat',buildBonusCard);
   // New bonus page redesign
-  buildBonusPodium();
-  renderBonusGrid('bon-calls-grid', BONUS_DATA.calls, false);
-  renderBonusGrid('bon-chat-grid',  BONUS_DATA.chat,  true);
-  initBonus();
+  try{ buildBonusPodium(); }catch(e){ console.error('podium:',e); }
+  try{ renderBonusGrid('bon-calls-grid', BONUS_DATA.calls, false); }catch(e){ console.error('calls grid:',e); }
+  try{ renderBonusGrid('bon-chat-grid',  BONUS_DATA.chat,  true);  }catch(e){ console.error('chat grid:',e); }
+  try{ initBonus(); }catch(e){ console.error('initBonus:',e); }
   // Start on HoF tab
   requestAnimationFrame(()=>{
     switchPage('hof',document.getElementById('tab-hof'));
