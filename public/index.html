@@ -8656,8 +8656,8 @@ tbody tr:hover td{
         Contact <strong>&nbsp;Sebastin&nbsp;</strong> for access
       </div>
 
-      <!-- Test / Preview Mode -->
-      <div style="margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
+      <!-- Test / Preview Mode — only shown when Sebastin's account is remembered -->
+      <div id="admin-test-section" style="display:none;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06);text-align:center;">
         <div style="font-size:10px;font-weight:600;color:rgba(100,116,139,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Admin Tools</div>
         <button onclick="startTestSession()" style="
           width:100%;padding:10px 16px;
@@ -10229,6 +10229,14 @@ function updateLoginButton(){
   const switchBtn = document.getElementById('gfbSwitch');
   const quickPanel = document.getElementById('v8-quick-signin');
   const welcomeText = document.getElementById('v8-welcome-text');
+
+  // Show admin test section only for Sebastin
+  const OWNER_EMAIL = 'sebastin.n@adit.com';
+  const testSection = document.getElementById('admin-test-section');
+  try{
+    const rememberedEmail = stored ? (JSON.parse(stored).email||'') : '';
+    if(testSection) testSection.style.display = rememberedEmail.toLowerCase()===OWNER_EMAIL ? 'block' : 'none';
+  }catch(e){ if(testSection) testSection.style.display='none'; }
 
   if(stored){
     try{
