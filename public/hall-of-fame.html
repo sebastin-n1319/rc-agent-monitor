@@ -2995,33 +2995,107 @@ function buildHoF(){
 ════════════════════════════════════════════════════════════ */
 // ── Bonus redesign — exact data from Q1 2026 Bonus Worksheet ─────────────────
 const BONUS_DATA = {
-  // Calls Wing — source: Total Earnings sheet (Q1 2026 Bonus Worksheet)
   calls: [
-    { name:'Debra Horton',   ini:'DH', ext:'5477', jan:{slab:7500,csat:7800}, feb:{slab:0,   csat:5100}, mar:{slab:5625,csat:5400}, total:31425, top:true },
-    // Sabrina Quinn: Jan on Chat team, Feb+Mar on Calls — full Q1 combined ₹18,000
-    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:5625,csat:1500}, mar:{slab:0,   csat:2550}, total:18000, note:'Dual Role · Jan: Chat  Feb–Mar: Calls' },
-    { name:'Lincy Tabita',   ini:'LT', ext:'5208', jan:{slab:0,   csat:2700}, feb:{slab:0,   csat:3450}, mar:{slab:5625,csat:4500}, total:16275 },
-    { name:'Michelle Pinto', ini:'MP', ext:'5555', jan:{slab:7500,csat:450},  feb:{slab:0,   csat:300},  mar:{slab:7500,csat:0},    total:15750 },
-    { name:'Henry P',        ini:'HP', ext:'5348', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:1800}, mar:{slab:5625,csat:1200}, total:8625  },
-    { name:'Caroline Lock',  ini:'CL', ext:'5528', jan:{slab:0,   csat:150},  feb:{slab:5625,csat:750},  mar:{slab:0,   csat:0},    total:6525  },
-    { name:'Greg Dawson',    ini:'GD', ext:'5466', jan:{slab:0,   csat:600},  feb:{slab:0,   csat:0},    mar:{slab:0,   csat:450},  total:1050  },
-    { name:'Sky Gibson',     ini:'SG', ext:'5357', jan:{slab:0,   csat:300},  feb:{slab:0,   csat:150},  mar:{slab:0,   csat:150},  total:600   },
-    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},    mar:{slab:0,   csat:0},    total:0     },
+    { name:'Debra Horton',   ini:'DH', ext:'5477',
+      jan:{slab:7500,csat:7800, elig:'✅ Eligible — Slab 1', why:'100/100 pts · 21 days ✓ · No leave · Slab base ₹7,500 → ₹7,500', csatWhy:'Ticket CSAT 98.1% > 92% ✓ · 52 good tickets × ₹150 = ₹7,800'},
+      feb:{slab:0,   csat:5100,  elig:'❌ Not Eligible — Slab', why:'100/100 pts ✓ · But only 16 working days (min 18 required) · PL=3 → 50% · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 34 good tickets × ₹150 = ₹5,100 · CSAT unaffected by leave'},
+      mar:{slab:5625,csat:5400, elig:'✅ Eligible — Slab 1', why:'100/100 pts · 19 days ✓ · PL=2 → 75% · Slab base ₹7,500 × 75% = ₹5,625', csatWhy:'Ticket CSAT 100% > 92% ✓ · 36 good tickets × ₹150 = ₹5,400'},
+      total:31425, top:true },
+    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512',
+      jan:{slab:5625,csat:2700, elig:'✅ Eligible — Slab 1 (Chat)', why:'100/100 pts · 20 days ✓ · Chat team Jan · PL=1 → 75% · Slab base ₹7,500 × 75% = ₹5,625', csatWhy:'Chat CSAT 85.7% > 85% ✓ · 54 happy chats × ₹50 = ₹2,700'},
+      feb:{slab:5625,csat:1500, elig:'✅ Eligible — Slab 1 (Calls)', why:'80/100 pts · 18 days ✓ · Calls team Feb · PL=2 → 75% · Slab base ₹7,500 × 75% = ₹5,625', csatWhy:'Chat CSAT — 10 happy chats × ₹50 = ₹1,500'},
+      mar:{slab:0,  csat:2550,  elig:'➖ No slab (Calls)', why:'No calls slab this month · CSAT incentive applies from chat performance', csatWhy:'Chat CSAT — 17 happy chats × ₹50 = ₹2,550'},
+      total:18000, note:'Dual Role · Jan: Chat  Feb–Mar: Calls' },
+    { name:'Lincy Tabita',   ini:'LT', ext:'5208',
+      jan:{slab:0,   csat:2700, elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 53.9% (need 75%) & QA 80.3% (need 90%) below target · PL=2 → 75% · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 18 good tickets × ₹150 = ₹2,700 · CSAT unaffected by leave'},
+      feb:{slab:0,   csat:3450, elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 47.3% (need 75%) below target · 20 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 95.8% > 92% ✓ · 23 good tickets × ₹150 = ₹3,450'},
+      mar:{slab:5625,csat:4500, elig:'✅ Eligible — Slab 1', why:'75/100 pts · 21 days ✓ · PL=1 → 75% · Slab base ₹7,500 × 75% = ₹5,625', csatWhy:'Ticket CSAT 100% > 92% ✓ · 30 good tickets × ₹150 = ₹4,500'},
+      total:16275 },
+    { name:'Michelle Pinto', ini:'MP', ext:'5555',
+      jan:{slab:7500,csat:450,  elig:'✅ Eligible — Slab 1', why:'80/100 pts · 21 days ✓ · No leave · Slab base ₹7,500 × 100% = ₹7,500', csatWhy:'Ticket CSAT 100% > 92% ✓ · 3 good tickets × ₹150 = ₹450'},
+      feb:{slab:0,   csat:300,  elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 68.5% & QA 76% below Slab 1 target · 20 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 2 good tickets × ₹150 = ₹300'},
+      mar:{slab:7500,csat:0,    elig:'✅ Eligible — Slab 1', why:'80/100 pts · 22 days ✓ · No leave · Slab base ₹7,500 × 100% = ₹7,500', csatWhy:'Ticket CSAT 50% (need >92%) · 0 eligible tickets'},
+      total:15750 },
+    { name:'Henry P',        ini:'HP', ext:'5348',
+      jan:{slab:0,   csat:0,    elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 69.9% & QA 77% below target · 20 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 88.9% (need >92%) · Below threshold'},
+      feb:{slab:0,   csat:1800, elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 66% & QA 77.6% below target · Only 15 days (min 18) · PL=4>3 → 0% slab · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 12 good tickets × ₹150 = ₹1,800'},
+      mar:{slab:5625,csat:1200, elig:'✅ Eligible — Slab 1', why:'80/100 pts · 20 days ✓ · PL=2 → 75% · Slab base ₹7,500 × 75% = ₹5,625', csatWhy:'Ticket CSAT 100% > 92% ✓ · 8 good tickets × ₹150 = ₹1,200'},
+      total:8625  },
+    { name:'Caroline Lock',  ini:'CL', ext:'5528',
+      jan:{slab:0,   csat:150,  elig:'❌ Not Eligible — Slab', why:'60/100 pts · Only 12 working days (min 18) · PL=8>3 → 0% slab · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 1 good ticket × ₹150 = ₹150'},
+      feb:{slab:5625,csat:750,  elig:'✅ Eligible — Slab 1', why:'80/100 pts · 18 days ✓ · PL=1 → 75% · Slab base ₹7,500 × 75% = ₹5,625', csatWhy:'Ticket CSAT 100% > 92% ✓ · 5 good tickets × ₹150 = ₹750'},
+      mar:{slab:0,   csat:0,    elig:'❌ Not Eligible — Slab', why:'80/100 pts · 18 days ✓ · UPL/NCNS → 0% slab · Slab = ₹0', csatWhy:'CSAT incentive blocked by UPL leave'},
+      total:6525  },
+    { name:'Greg Dawson',    ini:'GD', ext:'5466',
+      jan:{slab:0,   csat:600,  elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 54.1% & QA 81.1% below target · 20 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 4 good tickets × ₹150 = ₹600'},
+      feb:{slab:0,   csat:0,    elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR 65.5% & QA 81.5% below target · 20 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 80% (need >92%) · Below threshold'},
+      mar:{slab:0,   csat:450,  elig:'❌ Not Eligible — Slab', why:'55/100 pts · FCR & QA below target · 22 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 3 good tickets × ₹150 = ₹450'},
+      total:1050  },
+    { name:'Sky Gibson',     ini:'SG', ext:'5357',
+      jan:{slab:0,   csat:300,  elig:'❌ Not Eligible — Slab', why:'60/100 pts · Tickets 3.52/day (need 5+) · 19 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 2 good tickets × ₹150 = ₹300'},
+      feb:{slab:0,   csat:150,  elig:'❌ Not Eligible — Slab', why:'35/100 pts · Only 17 days (min 18) · PL=3 → 50% · Very low performance · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 1 good ticket × ₹150 = ₹150'},
+      mar:{slab:0,   csat:150,  elig:'❌ Not Eligible — Slab', why:'60/100 pts · Tickets & QA below target · 18 days ✓ · PL=2 → 75% · Slab = ₹0', csatWhy:'Ticket CSAT 100% > 92% ✓ · 1 good ticket × ₹150 = ₹150'},
+      total:600   },
+    { name:'Evan Cruz',      ini:'EC', ext:'5574',
+      jan:{slab:0,   csat:0,    elig:'❌ Not Eligible', why:'25/100 pts · Very low calls & tickets · 21 days ✓ · No leave · Slab = ₹0', csatWhy:'Ticket CSAT N/A · No eligible tickets'},
+      feb:{slab:0,   csat:0,    elig:'❌ Not Eligible', why:'Not enough data / very low performance', csatWhy:'No eligible CSAT'},
+      mar:{slab:0,   csat:0,    elig:'❌ Not Eligible', why:'Not enough data / very low performance', csatWhy:'No eligible CSAT'},
+      total:0     },
   ],
-  // Chat Wing — source: Chat sheet (Q1 2026 Bonus Worksheet)
-  // Sabrina Quinn earned in Chat (Jan eligible, 100/100 pts, Slab 1)
-  // CSAT incentive for all months is from Chat happy counts (₹50/happy, >85%, min 5)
   chat: [
-    // Jan: Chat Slab ₹5,625 + CSAT ₹2,700 = ₹8,325 | Feb–Mar: CSAT from Chat happy counts only
-    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:0,csat:1500}, mar:{slab:0,csat:2550}, total:18000, top:true, note:'Dual Role · Full Q1 = ₹18,000' },
-    { name:'Anold F',        ini:'AF', ext:'5313', jan:{slab:0,   csat:0},    feb:{slab:0,csat:0},    mar:{slab:0,csat:0},    total:0 },
-    { name:'Tabbie Shine',   ini:'TS', ext:'5456', jan:{slab:0,   csat:0},    feb:{slab:0,csat:0},    mar:{slab:0,csat:0},    total:0 },
-    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,csat:0},    mar:{slab:0,csat:0},    total:0 },
+    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512',
+      jan:{slab:5625,csat:2700, elig:'✅ Eligible — Slab 1', why:'100/100 pts · All metrics Slab 1 · 20 days ✓ · PL=1 → 75% · Slab ₹7,500 × 75% = ₹5,625', csatWhy:'Chat CSAT 85.7% > 85% ✓ · 54 happy chats × ₹50 = ₹2,700'},
+      feb:{slab:0,  csat:1500, elig:'➖ Moved to Calls', why:'Switched to Calls team in Feb · Slab from Calls wing', csatWhy:'Chat happy chats still counted · 10 × ₹50 = ₹1,500'},
+      mar:{slab:0,  csat:2550, elig:'➖ Moved to Calls', why:'Switched to Calls team in Mar', csatWhy:'Chat happy chats · 17 × ₹50 = ₹2,550'},
+      total:18000, top:true, note:'Dual Role · Full Q1 = ₹18,000' },
+    { name:'Anold F',        ini:'AF', ext:'5313',
+      jan:{slab:0,csat:0, elig:'❌ Not Eligible', why:'35/100 pts · Chat CSAT 60% (need 85%+) & FCR 49% below target · 21 days ✓', csatWhy:'Chat CSAT 60% — below 85% threshold'},
+      feb:{slab:0,csat:0, elig:'❌ Not Eligible', why:'15/100 pts · Only 15 days (min 18) · PL=5>3 → 0% · Slab = ₹0', csatWhy:'Chat CSAT 56.4% — below 85% threshold'},
+      mar:{slab:0,csat:0, elig:'❌ Not Eligible', why:'35/100 pts · Chat CSAT 55.3% below target · 21 days ✓', csatWhy:'Chat CSAT 55.3% — below 85% threshold'},
+      total:0 },
+    { name:'Tabbie Shine',   ini:'TS', ext:'5456',
+      jan:{slab:0,csat:0, elig:'❌ Not Eligible', why:'15/100 pts · Very low points · 18 days ✓ · PL=2 → 75%', csatWhy:'Chat CSAT 52.9% — below 85% threshold'},
+      feb:{slab:0,csat:0, elig:'❌ Not Eligible', why:'15/100 pts · Only 14 days (min 18) ⚠ · PL=2', csatWhy:'Chat CSAT 72.5% — below 85% threshold'},
+      mar:{slab:0,csat:0, elig:'❌ Not Eligible', why:'15/100 pts · 17 days (min 18) ⚠ · UPL/NCNS → 0%', csatWhy:'CSAT blocked by UPL leave'},
+      total:0 },
+    { name:'Evan Cruz',      ini:'EC', ext:'5574',
+      jan:{slab:0,csat:0, elig:'❌ Not Eligible', why:'Not enough data for Jan', csatWhy:'Chat CSAT N/A'},
+      feb:{slab:0,csat:0, elig:'❌ Not Eligible', why:'35/100 pts · Chat CSAT 67.9% below target · 19 days ✓', csatWhy:'Chat CSAT 67.9% — below 85% threshold'},
+      mar:{slab:0,csat:0, elig:'❌ Not Eligible', why:'35/100 pts · UPL/NCNS → 0% · 19 days ✓', csatWhy:'CSAT blocked by UPL leave'},
+      total:0 },
   ]
 };
 
 // ── Bonus redesign JS ─────────────────────────────────────────────────────────
-const BON_MAX = 31425; // Debra Horton — top earner
+const BON_MAX = 31425;
+
+// Get the currently logged-in user's name from parent window (the main app)
+function getLoggedInName(){
+  try{ return window.parent?.currentUser || sessionStorage.getItem('rcUser') || ''; }catch(e){ return ''; }
+}
+
+function bonDetailPanel(a){
+  // Detailed month-by-month breakdown from cell comments — only shown to the agent themselves
+  const months = ['jan','feb','mar'];
+  const mLabels = ["January 2026","February 2026","March 2026"];
+  return `<div style="border-top:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);padding:16px 18px;">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(251,191,36,.7);margin-bottom:12px;">📋 Your Detailed Breakdown</div>
+    ${months.map((k,i)=>{
+      const m = a[k]||{};
+      const mt = (m.slab||0)+(m.csat||0);
+      return `<div style="margin-bottom:14px;padding:12px 14px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid rgba(255,255,255,.06);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:700;color:#eef2ff">${mLabels[i]}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:${mt>0?'#22c55e':'rgba(136,146,176,.4)'};">${mt>0?'₹'+mt.toLocaleString('en-IN'):'—'}</span>
+        </div>
+        <div style="font-size:11px;color:${m.elig&&m.elig.startsWith('✅')?'rgba(34,197,94,.8)':m.elig&&m.elig.startsWith('➖')?'rgba(251,191,36,.7)':'rgba(248,113,113,.8)'};margin-bottom:6px;font-weight:600;">${m.elig||''}</div>
+        ${m.why?`<div style="font-size:11px;color:rgba(136,146,176,.65);line-height:1.6;margin-bottom:${m.csatWhy?'6px':'0'}">${m.why}</div>`:''}
+        ${m.csatWhy&&(m.csat||0)>0?`<div style="font-size:11px;color:rgba(251,191,36,.65);line-height:1.6;">⭐ ${m.csatWhy}</div>`:''}
+        ${m.csatWhy&&(m.csat||0)===0&&mt===0?`<div style="font-size:11px;color:rgba(136,146,176,.5);line-height:1.6;">${m.csatWhy}</div>`:''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
 
 function bonCard(a, idx, isChat){
   const total = a.total;
@@ -3030,6 +3104,9 @@ function bonCard(a, idx, isChat){
   const aviColor = a.top ? '#fbbf24' : isChat ? '#f9a84d' : '#38b6e0';
   const aviBg    = a.top ? 'rgba(251,191,36,.2)' : isChat ? 'rgba(242,136,32,.12)' : 'rgba(6,135,190,.12)';
   const aviBrd   = a.top ? 'rgba(251,191,36,.4)' : isChat ? 'rgba(242,136,32,.3)' : 'rgba(6,135,190,.3)';
+
+  const loggedIn = getLoggedInName();
+  const isMe = loggedIn && a.name.toLowerCase() === loggedIn.toLowerCase();
 
   const mths = months.map((k,i)=>{
     const m = a[k] || {slab:0,csat:0};
@@ -3054,11 +3131,14 @@ function bonCard(a, idx, isChat){
   const rankBadge = rankNum>=1&&rankNum<=3
     ? `<span style="font-size:10px;font-weight:800;color:${rankNum===1?'#fbbf24':rankNum===2?'#c8d2ff':'#cd7f32'};background:${rankNum===1?'rgba(251,191,36,.15)':rankNum===2?'rgba(200,210,255,.1)':'rgba(205,127,50,.12)'};border-radius:99px;padding:2px 8px;margin-left:6px;">${rankNum===1?'🥇':rankNum===2?'🥈':'🥉'}</span>` : '';
 
-  return `<div class="bon-card${a.top?' top-earner':''}" style="animation-delay:${idx*60}ms">
+  const meBorder = isMe ? 'border-color:rgba(245,130,31,.5);box-shadow:0 0 0 2px rgba(245,130,31,.15);' : '';
+  const meBadge  = isMe ? '<span style="font-size:10px;background:rgba(245,130,31,.2);color:#f5821f;border-radius:99px;padding:2px 8px;margin-left:6px;font-weight:700;">You</span>' : '';
+
+  return `<div class="bon-card${a.top?' top-earner':''}" style="animation-delay:${idx*60}ms;${meBorder}">
     <div class="bon-card-hd">
       <div class="bon-card-avi" style="background:${aviBg};border:2px solid ${aviBrd};color:${aviColor}">${a.ini}</div>
       <div style="flex:1;min-width:0">
-        <div class="bon-card-nm">${a.name}${rankBadge}${a.note?`<span style="font-size:10px;color:rgba(251,191,36,.55);font-weight:500;margin-left:6px">${a.note}</span>`:''}</div>
+        <div class="bon-card-nm">${a.name}${rankBadge}${meBadge}${a.note?`<span style="font-size:10px;color:rgba(251,191,36,.55);font-weight:500;margin-left:6px">${a.note}</span>`:''}</div>
         <div class="bon-card-sub">Ext. ${a.ext} · ${isChat?'Chat':'Calls'}</div>
       </div>
     </div>
@@ -3070,6 +3150,7 @@ function bonCard(a, idx, isChat){
         : `<div class="bon-q1-zero">—</div>`
       }
     </div>
+    ${isMe ? bonDetailPanel(a) : ''}
   </div>`;
 }
 
