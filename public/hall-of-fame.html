@@ -2351,11 +2351,13 @@ body::after {
     <div style="display:flex;gap:12px;flex-wrap:wrap;">
       <div style="background:rgba(6,135,190,.1);border:1px solid rgba(6,135,190,.25);border-radius:12px;padding:12px 20px;text-align:center;">
         <div style="font-size:10px;font-weight:600;color:rgba(56,182,224,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Calls Wing</div>
-        <div style="font-size:22px;font-weight:800;color:#38b6e0;font-family:'JetBrains Mono',monospace">&#x20b9;98,250</div>
+        <div style="font-size:22px;font-weight:800;color:#38b6e0;font-family:'JetBrains Mono',monospace">&#x20b9;89,925</div>
+        <div style="font-size:10px;color:rgba(56,182,224,.5);margin-top:2px">Calls team + Sabrina Feb–Mar</div>
       </div>
       <div style="background:rgba(242,136,32,.08);border:1px solid rgba(242,136,32,.2);border-radius:12px;padding:12px 20px;text-align:center;">
         <div style="font-size:10px;font-weight:600;color:rgba(249,168,77,.6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Chat Wing</div>
-        <div style="font-size:22px;font-weight:800;color:#f9a84d;font-family:'JetBrains Mono',monospace">&#x20b9;0</div>
+        <div style="font-size:22px;font-weight:800;color:#f9a84d;font-family:'JetBrains Mono',monospace">&#x20b9;8,325</div>
+        <div style="font-size:10px;color:rgba(249,168,77,.5);margin-top:2px">Sabrina Quinn (Jan)</div>
       </div>
       <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:12px 20px;text-align:center;">
         <div style="font-size:10px;font-weight:600;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Q1 Total</div>
@@ -2367,7 +2369,7 @@ body::after {
   <!-- Wing toggle -->
   <div style="display:flex;gap:8px;margin-bottom:20px;">
     <button onclick="bonusShowWing('calls',this)" id="bw-calls" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(6,135,190,.18);border:1px solid rgba(6,135,190,.4);color:#38b6e0;font-size:12px;font-weight:700;cursor:pointer;">📞 Calls Wing <span style="background:rgba(6,135,190,.3);border-radius:99px;padding:1px 8px;font-size:10px">9</span></button>
-    <button onclick="bonusShowWing('chat',this)" id="bw-chat" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(136,146,176,.7);font-size:12px;font-weight:700;cursor:pointer;">💬 Chat Wing <span style="background:rgba(255,255,255,.1);border-radius:99px;padding:1px 8px;font-size:10px">3</span></button>
+    <button onclick="bonusShowWing('chat',this)" id="bw-chat" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(136,146,176,.7);font-size:12px;font-weight:700;cursor:pointer;">💬 Chat Wing <span style="background:rgba(242,136,32,.2);border-radius:99px;padding:1px 8px;font-size:10px">4</span></button>
   </div>
 
   <!-- Calls wing -->
@@ -2945,22 +2947,28 @@ function buildHoF(){
 ════════════════════════════════════════════════════════════ */
 // ── Bonus redesign — exact data from Q1 2026 Bonus Worksheet ─────────────────
 const BONUS_DATA = {
+  // Calls Wing — source: Total Earnings sheet (Q1 2026 Bonus Worksheet)
   calls: [
-    { name:'Debra Horton',   ini:'DH', ext:'5477', jan:{slab:7500,csat:7800}, feb:{slab:0,csat:5100},  mar:{slab:5625,csat:5400},  total:31425, top:true  },
-    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:5625,csat:1500},mar:{slab:0,  csat:2550},   total:18000, note:'Also Chat' },
-    { name:'Lincy Tabita',   ini:'LT', ext:'5208', jan:{slab:0,   csat:2700}, feb:{slab:0,   csat:3450},mar:{slab:5625,csat:4500},  total:16275 },
-    { name:'Michelle Pinto', ini:'MP', ext:'5555', jan:{slab:7500,csat:450},  feb:{slab:0,   csat:300}, mar:{slab:7500,csat:0},     total:15750 },
-    { name:'Henry P',        ini:'HP', ext:'5348', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:1800},mar:{slab:5625,csat:1200},  total:8625  },
-    { name:'Caroline Lock',  ini:'CL', ext:'5528', jan:{slab:0,   csat:150},  feb:{slab:5625,csat:750}, mar:{slab:0,   csat:0},     total:6525  },
-    { name:'Greg Dawson',    ini:'GD', ext:'5466', jan:{slab:0,   csat:600},  feb:{slab:0,   csat:0},   mar:{slab:0,   csat:450},   total:1050  },
-    { name:'Sky Gibson',     ini:'SG', ext:'5357', jan:{slab:0,   csat:300},  feb:{slab:0,   csat:150}, mar:{slab:0,   csat:150},   total:600   },
-    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,   csat:0},     total:0     },
+    { name:'Debra Horton',   ini:'DH', ext:'5477', jan:{slab:7500,csat:7800}, feb:{slab:0,   csat:5100}, mar:{slab:5625,csat:5400}, total:31425, top:true },
+    // Sabrina Quinn: Jan on Chat team, Feb+Mar on Calls — full Q1 combined ₹18,000
+    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:5625,csat:1500}, mar:{slab:0,   csat:2550}, total:18000, note:'Dual Role · Jan: Chat  Feb–Mar: Calls' },
+    { name:'Lincy Tabita',   ini:'LT', ext:'5208', jan:{slab:0,   csat:2700}, feb:{slab:0,   csat:3450}, mar:{slab:5625,csat:4500}, total:16275 },
+    { name:'Michelle Pinto', ini:'MP', ext:'5555', jan:{slab:7500,csat:450},  feb:{slab:0,   csat:300},  mar:{slab:7500,csat:0},    total:15750 },
+    { name:'Henry P',        ini:'HP', ext:'5348', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:1800}, mar:{slab:5625,csat:1200}, total:8625  },
+    { name:'Caroline Lock',  ini:'CL', ext:'5528', jan:{slab:0,   csat:150},  feb:{slab:5625,csat:750},  mar:{slab:0,   csat:0},    total:6525  },
+    { name:'Greg Dawson',    ini:'GD', ext:'5466', jan:{slab:0,   csat:600},  feb:{slab:0,   csat:0},    mar:{slab:0,   csat:450},  total:1050  },
+    { name:'Sky Gibson',     ini:'SG', ext:'5357', jan:{slab:0,   csat:300},  feb:{slab:0,   csat:150},  mar:{slab:0,   csat:150},  total:600   },
+    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},    mar:{slab:0,   csat:0},    total:0     },
   ],
+  // Chat Wing — source: Chat sheet (Q1 2026 Bonus Worksheet)
+  // Sabrina Quinn earned in Chat (Jan eligible, 100/100 pts, Slab 1)
+  // CSAT incentive for all months is from Chat happy counts (₹50/happy, >85%, min 5)
   chat: [
-    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:5625,csat:1500},mar:{slab:0,csat:2550},    total:18000, note:'Counted in Calls' },
-    { name:'Anold F',        ini:'AF', ext:'5313', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,csat:0},       total:0      },
-    { name:'Tabbie Shine',   ini:'TS', ext:'5456', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,csat:0},       total:0      },
-    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,csat:0},       total:0      },
+    // Jan: Chat Slab ₹5,625 + CSAT ₹2,700 = ₹8,325 | Feb–Mar: CSAT from Chat happy counts only
+    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:0,csat:1500}, mar:{slab:0,csat:2550}, total:18000, top:true, note:'Dual Role · Full Q1 = ₹18,000' },
+    { name:'Anold F',        ini:'AF', ext:'5313', jan:{slab:0,   csat:0},    feb:{slab:0,csat:0},    mar:{slab:0,csat:0},    total:0 },
+    { name:'Tabbie Shine',   ini:'TS', ext:'5456', jan:{slab:0,   csat:0},    feb:{slab:0,csat:0},    mar:{slab:0,csat:0},    total:0 },
+    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,csat:0},    mar:{slab:0,csat:0},    total:0 },
   ]
 };
 
