@@ -2339,51 +2339,63 @@ body::after {
      BONUS
 ════════════════════════════════════════════════════════ -->
 <div class="page" id="page-bonus">
+  <!-- Always unlocked — results are live -->
+  <div id="bonus-open" style="display:block">
 
-  <!-- Lock state -->
-  <div id="bonus-locked" style="display:none">
-    <div class="lock-screen">
-      <div class="lock-ico"><span id="ico-lock"></span></div>
-      <h2 class="lock-title">Bonus Results &mdash; Coming Soon</h2>
-      <p class="lock-sub">Q1 2026 bonus calculations are finalised. Results will be published to the team on:</p>
-      <div class="lock-date"><span id="ico-cal"></span>&nbsp;April 30, 2026 &middot; 6:00 PM IST</div>
-      <div class="cd-wrap">
-        <div class="cd-blk"><span class="cd-num" id="cd-d">--</span><div class="cd-lbl">Days</div></div>
-        <div class="cd-sep">:</div>
-        <div class="cd-blk"><span class="cd-num" id="cd-h">--</span><div class="cd-lbl">Hours</div></div>
-        <div class="cd-sep">:</div>
-        <div class="cd-blk"><span class="cd-num" id="cd-m">--</span><div class="cd-lbl">Mins</div></div>
-        <div class="cd-sep">:</div>
-        <div class="cd-blk"><span class="cd-num" id="cd-s">--</span><div class="cd-lbl">Secs</div></div>
+  <!-- Summary strip -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+    <div>
+      <div style="font-size:20px;font-weight:800;letter-spacing:-.02em;color:#eef2ff">Q1 2026 Bonus Breakdown</div>
+      <div style="font-size:13px;color:rgba(136,146,176,.7);margin-top:3px">Slab bonus + CSAT incentive &middot; Per agent &middot; Jan–Mar 2026</div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <div style="background:rgba(6,135,190,.1);border:1px solid rgba(6,135,190,.25);border-radius:12px;padding:12px 20px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;color:rgba(56,182,224,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Calls Wing</div>
+        <div style="font-size:22px;font-weight:800;color:#38b6e0;font-family:'JetBrains Mono',monospace">&#x20b9;98,250</div>
       </div>
-      <div class="lock-note" id="lock-note-admin" style="display:none">Results are under final review before release. Managers and admins can access early using the button below.</div>
-      <button class="lock-admin" id="btn-admin-unlock" onclick="adminUnlock()" style="display:none">
-        <span id="ico-key"></span>&nbsp;Admin &mdash; Unlock Early
-      </button>
+      <div style="background:rgba(242,136,32,.08);border:1px solid rgba(242,136,32,.2);border-radius:12px;padding:12px 20px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;color:rgba(249,168,77,.6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Chat Wing</div>
+        <div style="font-size:22px;font-weight:800;color:#f9a84d;font-family:'JetBrains Mono',monospace">&#x20b9;0</div>
+      </div>
+      <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:12px 20px;text-align:center;">
+        <div style="font-size:10px;font-weight:600;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Q1 Total</div>
+        <div style="font-size:22px;font-weight:800;color:#fbbf24;font-family:'JetBrains Mono',monospace">&#x20b9;98,250</div>
+      </div>
     </div>
   </div>
 
-  <!-- Unlocked state -->
-  <div id="bonus-open" style="display:none">
-    <div class="bonus-hdr">
-      <div>
-        <div class="bonus-hdr-title">Q1 2026 Bonus Breakdown</div>
-        <div class="bonus-hdr-sub">Performance bonus per agent, per month</div>
-      </div>
-      <div class="bonus-totals" id="bonusTotals"></div>
-    </div>
-    <div class="wt-bar">
-      <div class="wt wt-on-t" id="bonus-wt-calls" onclick="switchWing('bonus','calls',this)">
-        <span id="ico-bwt-calls"></span>Calls Wing<span class="wt-ct">8</span>
-      </div>
-      <div class="wt" id="bonus-wt-chat" onclick="switchWing('bonus','chat',this)">
-        <span id="ico-bwt-chat"></span>Chat Wing<span class="wt-ct">3</span>
-      </div>
-    </div>
-    <div class="wc active" id="bonus-wc-calls"><div class="bonus-grid" id="bonus-calls-grid"></div></div>
-    <div class="wc" id="bonus-wc-chat"><div class="bonus-grid" id="bonus-chat-grid"></div></div>
+  <!-- Wing toggle -->
+  <div style="display:flex;gap:8px;margin-bottom:20px;">
+    <button onclick="bonusShowWing('calls',this)" id="bw-calls" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(6,135,190,.18);border:1px solid rgba(6,135,190,.4);color:#38b6e0;font-size:12px;font-weight:700;cursor:pointer;">📞 Calls Wing <span style="background:rgba(6,135,190,.3);border-radius:99px;padding:1px 8px;font-size:10px">9</span></button>
+    <button onclick="bonusShowWing('chat',this)" id="bw-chat" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(136,146,176,.7);font-size:12px;font-weight:700;cursor:pointer;">💬 Chat Wing <span style="background:rgba(255,255,255,.1);border-radius:99px;padding:1px 8px;font-size:10px">3</span></button>
   </div>
 
+  <!-- Calls wing -->
+  <div id="bwc-calls">
+  <!-- Column headers -->
+  <div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr 140px;gap:0;padding:8px 16px;background:rgba(255,255,255,.025);border-radius:10px 10px 0 0;border:1px solid rgba(255,255,255,.06);border-bottom:none;margin-bottom:0;">
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em">Agent</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Jan '26</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Feb '26</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Mar '26</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.07em;text-align:right">Q1 Total</div>
+  </div>
+  <div id="bonus-calls-rows" style="border:1px solid rgba(255,255,255,.06);border-radius:0 0 10px 10px;overflow:hidden;"></div>
+  </div>
+
+  <!-- Chat wing -->
+  <div id="bwc-chat" style="display:none">
+  <div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr 140px;gap:0;padding:8px 16px;background:rgba(255,255,255,.025);border-radius:10px 10px 0 0;border:1px solid rgba(255,255,255,.06);border-bottom:none;">
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em">Agent</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Jan '26</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Feb '26</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Mar '26</div>
+    <div style="font-size:10px;font-weight:700;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.07em;text-align:right">Q1 Total</div>
+  </div>
+  <div id="bonus-chat-rows" style="border:1px solid rgba(255,255,255,.06);border-radius:0 0 10px 10px;overflow:hidden;"></div>
+  </div>
+
+  </div><!-- /bonus-open -->
 </div><!-- /bonus -->
 
 <!-- FOOTER -->
@@ -2931,6 +2943,67 @@ function buildHoF(){
 /* ════════════════════════════════════════════════════════════
    BONUS TOTALS
 ════════════════════════════════════════════════════════════ */
+// ── Bonus redesign — exact data from Q1 2026 Bonus Worksheet ─────────────────
+const BONUS_DATA = {
+  calls: [
+    { name:'Debra Horton',   ini:'DH', ext:'5477', jan:{slab:7500,csat:7800}, feb:{slab:0,csat:5100},  mar:{slab:5625,csat:5400},  total:31425, top:true  },
+    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:5625,csat:1500},mar:{slab:0,  csat:2550},   total:18000, note:'Also Chat' },
+    { name:'Lincy Tabita',   ini:'LT', ext:'5208', jan:{slab:0,   csat:2700}, feb:{slab:0,   csat:3450},mar:{slab:5625,csat:4500},  total:16275 },
+    { name:'Michelle Pinto', ini:'MP', ext:'5555', jan:{slab:7500,csat:450},  feb:{slab:0,   csat:300}, mar:{slab:7500,csat:0},     total:15750 },
+    { name:'Henry P',        ini:'HP', ext:'5348', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:1800},mar:{slab:5625,csat:1200},  total:8625  },
+    { name:'Caroline Lock',  ini:'CL', ext:'5528', jan:{slab:0,   csat:150},  feb:{slab:5625,csat:750}, mar:{slab:0,   csat:0},     total:6525  },
+    { name:'Greg Dawson',    ini:'GD', ext:'5466', jan:{slab:0,   csat:600},  feb:{slab:0,   csat:0},   mar:{slab:0,   csat:450},   total:1050  },
+    { name:'Sky Gibson',     ini:'SG', ext:'5357', jan:{slab:0,   csat:300},  feb:{slab:0,   csat:150}, mar:{slab:0,   csat:150},   total:600   },
+    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,   csat:0},     total:0     },
+  ],
+  chat: [
+    { name:'Sabrina Quinn',  ini:'SQ', ext:'5512', jan:{slab:5625,csat:2700}, feb:{slab:5625,csat:1500},mar:{slab:0,csat:2550},    total:18000, note:'Counted in Calls' },
+    { name:'Anold F',        ini:'AF', ext:'5313', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,csat:0},       total:0      },
+    { name:'Tabbie Shine',   ini:'TS', ext:'5456', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,csat:0},       total:0      },
+    { name:'Evan Cruz',      ini:'EC', ext:'5574', jan:{slab:0,   csat:0},    feb:{slab:0,   csat:0},   mar:{slab:0,csat:0},       total:0      },
+  ]
+};
+
+function bonusMthCell(m){
+  const total = m.slab + m.csat;
+  if(total===0) return '<div style="text-align:center;color:rgba(136,146,176,.35);font-size:13px;">—</div>';
+  return '<div style="text-align:center;">'
+    +'<div style="font-size:14px;font-weight:700;color:#22c55e;font-family:\'JetBrains Mono\',monospace;">₹'+total.toLocaleString('en-IN')+'</div>'
+    +(m.slab>0?'<div style="font-size:10px;color:rgba(56,182,224,.65);margin-top:1px">Slab ₹'+m.slab.toLocaleString('en-IN')+'</div>':'')
+    +(m.csat>0?'<div style="font-size:10px;color:rgba(251,191,36,.65)">CSAT ₹'+m.csat.toLocaleString('en-IN')+'</div>':'')
+    +'</div>';
+}
+
+function renderBonusRows(containerId, agents){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = agents.map((a,i) => {
+    const ini = '<div style="width:36px;height:36px;border-radius:50%;background:'+(a.top?'rgba(251,191,36,.2)':'rgba(99,102,241,.12)')+';border:1px solid '+(a.top?'rgba(251,191,36,.4)':'rgba(99,102,241,.25)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(a.top?'#fbbf24':'#a5b4fc')+';flex-shrink:0;">'+a.ini+'</div>';
+    return '<div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr 140px;gap:0;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);background:'+(a.top?'rgba(251,191,36,.03)':i%2===0?'rgba(255,255,255,.012)':'transparent')+';">'
+      +'<div style="display:flex;align-items:center;gap:10px;">'+ini
+      +'<div><div style="font-size:13px;font-weight:600;color:#eef2ff">'+a.name+(a.top?'<span style="font-size:10px;background:rgba(251,191,36,.18);color:#fbbf24;border-radius:99px;padding:1px 7px;margin-left:6px;">Top</span>':'')+'</div>'
+      +'<div style="font-size:10px;color:rgba(136,146,176,.45);margin-top:1px">Ext. '+a.ext+(a.note?' &middot; <span style="color:rgba(251,191,36,.5)">'+a.note+'</span>':'')+'</div></div></div>'
+      +bonusMthCell(a.jan)+bonusMthCell(a.feb)+bonusMthCell(a.mar)
+      +'<div style="text-align:right;">'
+      +(a.total>0?'<div style="font-size:17px;font-weight:800;color:#fbbf24;font-family:\'JetBrains Mono\',monospace;">₹'+a.total.toLocaleString('en-IN')+'</div><div style="font-size:9px;color:rgba(251,191,36,.5);margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Q1 Total</div>'
+        :'<div style="font-size:14px;color:rgba(136,146,176,.3);font-family:\'JetBrains Mono\',monospace;">—</div>')
+      +'</div></div>';
+  }).join('');
+}
+
+function bonusShowWing(wing, btn){
+  document.getElementById('bwc-calls').style.display = wing==='calls'?'block':'none';
+  document.getElementById('bwc-chat').style.display  = wing==='chat' ?'block':'none';
+  document.querySelectorAll('#bw-calls,#bw-chat').forEach(b=>{
+    b.style.background='rgba(255,255,255,.04)';b.style.borderColor='rgba(255,255,255,.1)';b.style.color='rgba(136,146,176,.7)';
+  });
+  if(btn){
+    btn.style.background=wing==='calls'?'rgba(6,135,190,.18)':'rgba(242,136,32,.12)';
+    btn.style.borderColor=wing==='calls'?'rgba(6,135,190,.4)':'rgba(242,136,32,.35)';
+    btn.style.color=wing==='calls'?'#38b6e0':'#f9a84d';
+  }
+}
+
 function buildBonusTotals(){
   // Sabrina Quinn appears in both calls and chat DATA for display purposes
   // but her bonus is attributed once (to calls). Actual totals from spreadsheet:
@@ -3028,6 +3101,9 @@ window.addEventListener('DOMContentLoaded',()=>{
   buildBonusTotals();
   renderGrid('bonus-calls-grid',DATA.calls,'calls',buildBonusCard);
   renderGrid('bonus-chat-grid',DATA.chat,'chat',buildBonusCard);
+  // New bonus redesign — renders rows with correct spreadsheet data
+  renderBonusRows('bonus-calls-rows', BONUS_DATA.calls);
+  renderBonusRows('bonus-chat-rows',  BONUS_DATA.chat);
   initBonus();
   // Start on HoF tab
   requestAnimationFrame(()=>{
