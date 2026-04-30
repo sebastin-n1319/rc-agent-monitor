@@ -2339,65 +2339,113 @@ body::after {
      BONUS
 ════════════════════════════════════════════════════════ -->
 <div class="page" id="page-bonus">
-  <!-- Always unlocked — results are live -->
-  <div id="bonus-open" style="display:block">
+<style>
+/* ── Bonus page redesign ────────────────────────── */
+.bon-hero{background:linear-gradient(135deg,rgba(251,191,36,.06) 0%,rgba(242,136,32,.08) 50%,rgba(168,85,247,.05) 100%);border:1px solid rgba(251,191,36,.18);border-radius:20px;padding:28px 32px;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;position:relative;overflow:hidden;}
+.bon-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(251,191,36,.12),transparent 70%);pointer-events:none;}
+.bon-kpi-row{display:flex;gap:16px;flex-wrap:wrap;}
+.bon-kpi{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 20px;min-width:130px;text-align:center;}
+.bon-kpi-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:800;line-height:1;}
+.bon-kpi-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(136,146,176,.6);margin-top:5px;}
+.bon-podium{display:flex;align-items:flex-end;justify-content:center;gap:12px;margin-bottom:28px;}
+.bon-pod{display:flex;flex-direction:column;align-items:center;gap:8px;animation:bonPodIn .7s cubic-bezier(.22,1,.36,1) both;}
+.bon-pod:nth-child(1){animation-delay:.2s}.bon-pod:nth-child(2){animation-delay:.05s}.bon-pod:nth-child(3){animation-delay:.3s}
+@keyframes bonPodIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.bon-pod-avi{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;position:relative;}
+.bon-pod-rank{position:absolute;bottom:-4px;right:-4px;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;border:2px solid var(--bg);}
+.bon-pod-name{font-size:12px;font-weight:700;color:#eef2ff;text-align:center;max-width:90px;line-height:1.3;}
+.bon-pod-amt{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;text-align:center;}
+.bon-pod-plinth{border-radius:10px 10px 0 0;width:88px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.bon-pod-p1 .bon-pod-avi{background:rgba(251,191,36,.2);border:2px solid rgba(251,191,36,.5);color:#fbbf24;width:68px;height:68px;font-size:22px;}
+.bon-pod-p1 .bon-pod-rank{background:#fbbf24;color:#1a0a00;}
+.bon-pod-p1 .bon-pod-plinth{height:80px;background:linear-gradient(180deg,rgba(251,191,36,.2),rgba(251,191,36,.08));border:1px solid rgba(251,191,36,.3);}
+.bon-pod-p2 .bon-pod-avi{background:rgba(200,210,255,.12);border:2px solid rgba(200,210,255,.3);color:#c8d2ff;}
+.bon-pod-p2 .bon-pod-rank{background:#c8d2ff;color:#1a1a2e;}
+.bon-pod-p2 .bon-pod-plinth{height:56px;background:rgba(200,210,255,.08);border:1px solid rgba(200,210,255,.2);}
+.bon-pod-p3 .bon-pod-avi{background:rgba(205,127,50,.15);border:2px solid rgba(205,127,50,.35);color:#cd7f32;}
+.bon-pod-p3 .bon-pod-rank{background:#cd7f32;color:#1a0800;}
+.bon-pod-p3 .bon-pod-plinth{height:40px;background:rgba(205,127,50,.08);border:1px solid rgba(205,127,50,.2);}
+.bon-wing-tabs{display:flex;gap:10px;margin-bottom:20px;}
+.bon-wing-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;border:none;}
+.bon-wing-btn.active-calls{background:rgba(6,135,190,.18);border:1px solid rgba(6,135,190,.4)!important;color:#38b6e0;}
+.bon-wing-btn.active-chat{background:rgba(242,136,32,.15);border:1px solid rgba(242,136,32,.4)!important;color:#f9a84d;}
+.bon-wing-btn.inactive{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)!important;color:rgba(136,146,176,.6);}
+.bon-agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+.bon-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;overflow:hidden;transition:border-color .2s,background .2s;animation:bonCardIn .5s cubic-bezier(.22,1,.36,1) both;}
+.bon-card:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12);}
+.bon-card.top-earner{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.04);}
+@keyframes bonCardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.bon-card-hd{display:flex;align-items:center;gap:12px;padding:16px 18px 12px;}
+.bon-card-avi{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
+.bon-card-nm{font-size:14px;font-weight:700;color:#eef2ff;}
+.bon-card-sub{font-size:11px;color:rgba(136,146,176,.55);margin-top:2px;}
+.bon-months{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid rgba(255,255,255,.05);}
+.bon-month{padding:12px 14px;border-right:1px solid rgba(255,255,255,.05);}
+.bon-month:last-child{border-right:none;}
+.bon-month-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(136,146,176,.5);margin-bottom:6px;}
+.bon-month-amt{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:#22c55e;}
+.bon-month-zero{font-size:13px;color:rgba(136,146,176,.3);}
+.bon-month-breakdown{margin-top:4px;}
+.bon-slab{font-size:9.5px;color:rgba(56,182,224,.7);}
+.bon-csat{font-size:9.5px;color:rgba(251,191,36,.7);}
+.bon-month-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;margin-top:6px;overflow:hidden;}
+.bon-month-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#38b6e0,#22c55e);transition:width 1.2s cubic-bezier(.22,1,.36,1);}
+.bon-card-ft{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);}
+.bon-q1-amt{font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:800;color:#fbbf24;}
+.bon-q1-zero{font-family:'JetBrains Mono',monospace;font-size:16px;color:rgba(136,146,176,.3);}
+.bon-elig-badge{font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;}
+.bon-elig-y{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);}
+.bon-elig-n{background:rgba(255,255,255,.05);color:rgba(136,146,176,.5);border:1px solid rgba(255,255,255,.07);}
+</style>
 
-  <!-- Summary strip -->
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
-    <div>
-      <div style="font-size:20px;font-weight:800;letter-spacing:-.02em;color:#eef2ff">Q1 2026 Bonus Breakdown</div>
-      <div style="font-size:13px;color:rgba(136,146,176,.7);margin-top:3px">Slab bonus + CSAT incentive &middot; Per agent &middot; Jan–Mar 2026</div>
+<div id="bonus-open" style="display:block">
+
+<!-- ── HERO ── -->
+<div class="bon-hero">
+  <div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(251,191,36,.7);margin-bottom:8px;">🏆 Q1 2026 · Results Released</div>
+    <div style="font-family:'Poppins','Inter',sans-serif;font-size:28px;font-weight:900;letter-spacing:-.03em;color:#eef2ff;line-height:1.1;">Bonus Breakdown</div>
+    <div style="font-size:13px;color:rgba(136,146,176,.65);margin-top:6px;">Slab bonus + CSAT incentive &middot; January – March 2026</div>
+  </div>
+  <div class="bon-kpi-row">
+    <div class="bon-kpi">
+      <div class="bon-kpi-val" style="color:#fbbf24">&#x20b9;98,250</div>
+      <div class="bon-kpi-lbl">Q1 Grand Total</div>
     </div>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;">
-      <div style="background:rgba(6,135,190,.1);border:1px solid rgba(6,135,190,.25);border-radius:12px;padding:12px 20px;text-align:center;">
-        <div style="font-size:10px;font-weight:600;color:rgba(56,182,224,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Calls Wing</div>
-        <div style="font-size:22px;font-weight:800;color:#38b6e0;font-family:'JetBrains Mono',monospace">&#x20b9;89,925</div>
-        <div style="font-size:10px;color:rgba(56,182,224,.5);margin-top:2px">Calls team + Sabrina Feb–Mar</div>
-      </div>
-      <div style="background:rgba(242,136,32,.08);border:1px solid rgba(242,136,32,.2);border-radius:12px;padding:12px 20px;text-align:center;">
-        <div style="font-size:10px;font-weight:600;color:rgba(249,168,77,.6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Chat Wing</div>
-        <div style="font-size:22px;font-weight:800;color:#f9a84d;font-family:'JetBrains Mono',monospace">&#x20b9;8,325</div>
-        <div style="font-size:10px;color:rgba(249,168,77,.5);margin-top:2px">Sabrina Quinn (Jan)</div>
-      </div>
-      <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:12px;padding:12px 20px;text-align:center;">
-        <div style="font-size:10px;font-weight:600;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Q1 Total</div>
-        <div style="font-size:22px;font-weight:800;color:#fbbf24;font-family:'JetBrains Mono',monospace">&#x20b9;98,250</div>
-      </div>
+    <div class="bon-kpi">
+      <div class="bon-kpi-val" style="color:#38b6e0">&#x20b9;56,250</div>
+      <div class="bon-kpi-lbl">Slab Bonus</div>
+    </div>
+    <div class="bon-kpi">
+      <div class="bon-kpi-val" style="color:#a855f7">&#x20b9;42,000</div>
+      <div class="bon-kpi-lbl">CSAT Incentive</div>
+    </div>
+    <div class="bon-kpi">
+      <div class="bon-kpi-val" style="color:#22c55e">7 / 11</div>
+      <div class="bon-kpi-lbl">Agents Earned</div>
     </div>
   </div>
+</div>
 
-  <!-- Wing toggle -->
-  <div style="display:flex;gap:8px;margin-bottom:20px;">
-    <button onclick="bonusShowWing('calls',this)" id="bw-calls" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(6,135,190,.18);border:1px solid rgba(6,135,190,.4);color:#38b6e0;font-size:12px;font-weight:700;cursor:pointer;">📞 Calls Wing <span style="background:rgba(6,135,190,.3);border-radius:99px;padding:1px 8px;font-size:10px">9</span></button>
-    <button onclick="bonusShowWing('chat',this)" id="bw-chat" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:rgba(136,146,176,.7);font-size:12px;font-weight:700;cursor:pointer;">💬 Chat Wing <span style="background:rgba(242,136,32,.2);border-radius:99px;padding:1px 8px;font-size:10px">4</span></button>
-  </div>
+<!-- ── PODIUM ── -->
+<div style="text-align:center;margin-bottom:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(136,146,176,.5);">Top Earners Q1 2026</div>
+<div class="bon-podium" id="bonPodium"></div>
 
-  <!-- Calls wing -->
-  <div id="bwc-calls">
-  <!-- Column headers -->
-  <div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr 140px;gap:0;padding:8px 16px;background:rgba(255,255,255,.025);border-radius:10px 10px 0 0;border:1px solid rgba(255,255,255,.06);border-bottom:none;margin-bottom:0;">
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em">Agent</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Jan '26</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Feb '26</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Mar '26</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.07em;text-align:right">Q1 Total</div>
-  </div>
-  <div id="bonus-calls-rows" style="border:1px solid rgba(255,255,255,.06);border-radius:0 0 10px 10px;overflow:hidden;"></div>
-  </div>
+<!-- ── WING TABS ── -->
+<div class="bon-wing-tabs">
+  <button class="bon-wing-btn active-calls" id="bw-calls" onclick="bonusShowWing2('calls',this)">
+    📞 Calls Wing &nbsp;<span style="background:rgba(6,135,190,.3);border-radius:99px;padding:1px 8px;font-size:10px;">9</span>
+  </button>
+  <button class="bon-wing-btn inactive" id="bw-chat" onclick="bonusShowWing2('chat',this)">
+    💬 Chat Wing &nbsp;<span style="background:rgba(255,255,255,.1);border-radius:99px;padding:1px 8px;font-size:10px;">4</span>
+  </button>
+</div>
 
-  <!-- Chat wing -->
-  <div id="bwc-chat" style="display:none">
-  <div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr 140px;gap:0;padding:8px 16px;background:rgba(255,255,255,.025);border-radius:10px 10px 0 0;border:1px solid rgba(255,255,255,.06);border-bottom:none;">
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em">Agent</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Jan '26</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Feb '26</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(136,146,176,.6);text-transform:uppercase;letter-spacing:.07em;text-align:center">Mar '26</div>
-    <div style="font-size:10px;font-weight:700;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.07em;text-align:right">Q1 Total</div>
-  </div>
-  <div id="bonus-chat-rows" style="border:1px solid rgba(255,255,255,.06);border-radius:0 0 10px 10px;overflow:hidden;"></div>
-  </div>
+<!-- ── AGENT CARDS ── -->
+<div id="bwc-calls2"><div class="bon-agent-grid" id="bon-calls-grid"></div></div>
+<div id="bwc-chat2" style="display:none"><div class="bon-agent-grid" id="bon-chat-grid"></div></div>
 
-  </div><!-- /bonus-open -->
+</div><!-- /bonus-open -->
 </div><!-- /bonus -->
 
 <!-- FOOTER -->
@@ -2972,69 +3020,102 @@ const BONUS_DATA = {
   ]
 };
 
-function bonusMthCell(m){
-  const total = m.slab + m.csat;
-  if(total===0) return '<div style="text-align:center;color:rgba(136,146,176,.35);font-size:13px;">—</div>';
-  return '<div style="text-align:center;">'
-    +'<div style="font-size:14px;font-weight:700;color:#22c55e;font-family:\'JetBrains Mono\',monospace;">₹'+total.toLocaleString('en-IN')+'</div>'
-    +(m.slab>0?'<div style="font-size:10px;color:rgba(56,182,224,.65);margin-top:1px">Slab ₹'+m.slab.toLocaleString('en-IN')+'</div>':'')
-    +(m.csat>0?'<div style="font-size:10px;color:rgba(251,191,36,.65)">CSAT ₹'+m.csat.toLocaleString('en-IN')+'</div>':'')
-    +'</div>';
+// ── Bonus redesign JS ─────────────────────────────────────────────────────────
+const BON_MAX = 31425; // Debra Horton — top earner
+
+function bonCard(a, idx, isChat){
+  const total = a.total;
+  const months = ['jan','feb','mar'];
+  const mLabels = ["Jan '26","Feb '26","Mar '26"];
+  const aviColor = a.top ? '#fbbf24' : isChat ? '#f9a84d' : '#38b6e0';
+  const aviBg    = a.top ? 'rgba(251,191,36,.2)' : isChat ? 'rgba(242,136,32,.12)' : 'rgba(6,135,190,.12)';
+  const aviBrd   = a.top ? 'rgba(251,191,36,.4)' : isChat ? 'rgba(242,136,32,.3)' : 'rgba(6,135,190,.3)';
+
+  const mths = months.map((k,i)=>{
+    const m = a[k] || {slab:0,csat:0};
+    const mt = m.slab + m.csat;
+    const pct = BON_MAX > 0 ? Math.round(mt/BON_MAX*100) : 0;
+    return `<div class="bon-month">
+      <div class="bon-month-lbl">${mLabels[i]}</div>
+      ${mt > 0
+        ? `<div class="bon-month-amt">₹${mt.toLocaleString('en-IN')}</div>
+           <div class="bon-month-breakdown">
+             ${m.slab>0?`<div class="bon-slab">Slab ₹${m.slab.toLocaleString('en-IN')}</div>`:''}
+             ${m.csat>0?`<div class="bon-csat">CSAT ₹${m.csat.toLocaleString('en-IN')}</div>`:''}
+           </div>
+           <div class="bon-month-bar"><div class="bon-month-bar-fill" data-pct="${pct}" style="width:0%"></div></div>`
+        : `<div class="bon-month-zero">—</div>`
+      }
+    </div>`;
+  }).join('');
+
+  const rankNum = BONUS_DATA.calls.concat(BONUS_DATA.chat)
+    .filter(x=>x.total>0).sort((a,b)=>b.total-a.total).findIndex(x=>x.name===a.name&&x.ext===a.ext)+1;
+  const rankBadge = rankNum>=1&&rankNum<=3
+    ? `<span style="font-size:10px;font-weight:800;color:${rankNum===1?'#fbbf24':rankNum===2?'#c8d2ff':'#cd7f32'};background:${rankNum===1?'rgba(251,191,36,.15)':rankNum===2?'rgba(200,210,255,.1)':'rgba(205,127,50,.12)'};border-radius:99px;padding:2px 8px;margin-left:6px;">${rankNum===1?'🥇':rankNum===2?'🥈':'🥉'}</span>` : '';
+
+  return `<div class="bon-card${a.top?' top-earner':''}" style="animation-delay:${idx*60}ms">
+    <div class="bon-card-hd">
+      <div class="bon-card-avi" style="background:${aviBg};border:2px solid ${aviBrd};color:${aviColor}">${a.ini}</div>
+      <div style="flex:1;min-width:0">
+        <div class="bon-card-nm">${a.name}${rankBadge}${a.note?`<span style="font-size:10px;color:rgba(251,191,36,.55);font-weight:500;margin-left:6px">${a.note}</span>`:''}</div>
+        <div class="bon-card-sub">Ext. ${a.ext} · ${isChat?'Chat':'Calls'}</div>
+      </div>
+    </div>
+    <div class="bon-months">${mths}</div>
+    <div class="bon-card-ft">
+      <span class="${total>0?'bon-elig-badge bon-elig-y':'bon-elig-badge bon-elig-n'}">${total>0?'✓ Earned':'Not eligible'}</span>
+      ${total>0
+        ? `<div><div class="bon-q1-amt">₹${total.toLocaleString('en-IN')}</div><div style="font-size:9px;color:rgba(251,191,36,.5);text-align:right;margin-top:1px">Q1 Total</div></div>`
+        : `<div class="bon-q1-zero">—</div>`
+      }
+    </div>
+  </div>`;
 }
 
-function renderBonusRows(containerId, agents){
+function renderBonusGrid(containerId, agents, isChat){
   const el = document.getElementById(containerId);
   if(!el) return;
-  el.innerHTML = agents.map((a,i) => {
-    const ini = '<div style="width:36px;height:36px;border-radius:50%;background:'+(a.top?'rgba(251,191,36,.2)':'rgba(99,102,241,.12)')+';border:1px solid '+(a.top?'rgba(251,191,36,.4)':'rgba(99,102,241,.25)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:'+(a.top?'#fbbf24':'#a5b4fc')+';flex-shrink:0;">'+a.ini+'</div>';
-    return '<div style="display:grid;grid-template-columns:200px 1fr 1fr 1fr 140px;gap:0;align-items:center;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);background:'+(a.top?'rgba(251,191,36,.03)':i%2===0?'rgba(255,255,255,.012)':'transparent')+';">'
-      +'<div style="display:flex;align-items:center;gap:10px;">'+ini
-      +'<div><div style="font-size:13px;font-weight:600;color:#eef2ff">'+a.name+(a.top?'<span style="font-size:10px;background:rgba(251,191,36,.18);color:#fbbf24;border-radius:99px;padding:1px 7px;margin-left:6px;">Top</span>':'')+'</div>'
-      +'<div style="font-size:10px;color:rgba(136,146,176,.45);margin-top:1px">Ext. '+a.ext+(a.note?' &middot; <span style="color:rgba(251,191,36,.5)">'+a.note+'</span>':'')+'</div></div></div>'
-      +bonusMthCell(a.jan)+bonusMthCell(a.feb)+bonusMthCell(a.mar)
-      +'<div style="text-align:right;">'
-      +(a.total>0?'<div style="font-size:17px;font-weight:800;color:#fbbf24;font-family:\'JetBrains Mono\',monospace;">₹'+a.total.toLocaleString('en-IN')+'</div><div style="font-size:9px;color:rgba(251,191,36,.5);margin-top:2px;text-transform:uppercase;letter-spacing:.05em">Q1 Total</div>'
-        :'<div style="font-size:14px;color:rgba(136,146,176,.3);font-family:\'JetBrains Mono\',monospace;">—</div>')
-      +'</div></div>';
+  el.innerHTML = agents.map((a,i) => bonCard(a,i,isChat)).join('');
+  // Animate progress bars
+  requestAnimationFrame(()=>setTimeout(()=>{
+    el.querySelectorAll('.bon-month-bar-fill').forEach(b=>{b.style.width=b.dataset.pct+'%';});
+  },100));
+}
+
+function buildBonusPodium(){
+  const allEarners = BONUS_DATA.calls.filter(a=>a.total>0).sort((a,b)=>b.total-a.total);
+  const top3 = allEarners.slice(0,3);
+  const display = [top3[1],top3[0],top3[2]]; // silver | gold | bronze
+  const pos = [2,1,3];
+  const cls = ['bon-pod-p2','bon-pod-p1','bon-pod-p3'];
+  const ht  = [56,80,40];
+  const medals = ['🥈','🥇','🥉'];
+  const el = document.getElementById('bonPodium');
+  if(!el) return;
+  el.innerHTML = display.map((a,i)=>{
+    if(!a) return '';
+    return `<div class="bon-pod ${cls[i]}">
+      <div class="bon-pod-avi">${a.ini}<span class="bon-pod-rank">${pos[i]}</span></div>
+      <div class="bon-pod-name">${a.name}</div>
+      <div class="bon-pod-amt" style="color:${i===1?'#fbbf24':i===0?'#c8d2ff':'#cd7f32'}">₹${a.total.toLocaleString('en-IN')}</div>
+      <div class="bon-pod-plinth" style="height:${ht[i]}px">${medals[i]}</div>
+    </div>`;
   }).join('');
 }
 
-function bonusShowWing(wing, btn){
-  document.getElementById('bwc-calls').style.display = wing==='calls'?'block':'none';
-  document.getElementById('bwc-chat').style.display  = wing==='chat' ?'block':'none';
+function bonusShowWing2(wing, btn){
+  document.getElementById('bwc-calls2').style.display = wing==='calls'?'block':'none';
+  document.getElementById('bwc-chat2').style.display  = wing==='chat' ?'block':'none';
   document.querySelectorAll('#bw-calls,#bw-chat').forEach(b=>{
-    b.style.background='rgba(255,255,255,.04)';b.style.borderColor='rgba(255,255,255,.1)';b.style.color='rgba(136,146,176,.7)';
+    b.className = 'bon-wing-btn inactive';
   });
-  if(btn){
-    btn.style.background=wing==='calls'?'rgba(6,135,190,.18)':'rgba(242,136,32,.12)';
-    btn.style.borderColor=wing==='calls'?'rgba(6,135,190,.4)':'rgba(242,136,32,.35)';
-    btn.style.color=wing==='calls'?'#38b6e0':'#f9a84d';
-  }
+  if(btn) btn.className = 'bon-wing-btn '+(wing==='calls'?'active-calls':'active-chat');
 }
 
-function buildBonusTotals(){
-  // Sabrina Quinn appears in both calls and chat DATA for display purposes
-  // but her bonus is attributed once (to calls). Actual totals from spreadsheet:
-  // Calls Wing: ₹98,250 | Chat Wing: ₹0 (Anold/Tabinda/Evan not eligible)
-  const callsTotal = DATA.calls.reduce((s,a)=>s+totalBonus(a),0);
-  // Subtract Sabrina from chat to avoid double-counting
-  const sabinaBonus = totalBonus(DATA.chat.find(a=>a.name==="Sabrina Quinn")||{months:{}});
-  const chatTotal   = Math.max(0, DATA.chat.reduce((s,a)=>s+totalBonus(a),0) - sabinaBonus);
-  const el=document.getElementById('bonusTotals');
-  if(el) el.innerHTML=`
-    <div class="btot btot-teal">
-      <span class="btot-lbl">Calls Wing</span>
-      <span class="btot-val">${rupee(callsTotal)}</span>
-    </div>
-    <div class="btot btot-amber">
-      <span class="btot-lbl">Chat Wing</span>
-      <span class="btot-val">${rupee(chatTotal)}</span>
-    </div>
-    <div class="btot" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);">
-      <span class="btot-lbl" style="color:rgba(251,191,36,.7)">Q1 Total</span>
-      <span class="btot-val" style="color:#fbbf24">${rupee(callsTotal+chatTotal)}</span>
-    </div>`;
-}
+function bonusShowWing(wing, btn){ bonusShowWing2(wing,btn); } // compat alias
+
+function renderBonusRows(containerId, agents){ /* old fn — superseded */ }
 
 /* ════════════════════════════════════════════════════════════
    RENDER GRIDS
@@ -3109,9 +3190,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   buildBonusTotals();
   renderGrid('bonus-calls-grid',DATA.calls,'calls',buildBonusCard);
   renderGrid('bonus-chat-grid',DATA.chat,'chat',buildBonusCard);
-  // New bonus redesign — renders rows with correct spreadsheet data
-  renderBonusRows('bonus-calls-rows', BONUS_DATA.calls);
-  renderBonusRows('bonus-chat-rows',  BONUS_DATA.chat);
+  // New bonus page redesign
+  buildBonusPodium();
+  renderBonusGrid('bon-calls-grid', BONUS_DATA.calls, false);
+  renderBonusGrid('bon-chat-grid',  BONUS_DATA.chat,  true);
   initBonus();
   // Start on HoF tab
   requestAnimationFrame(()=>{
