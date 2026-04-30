@@ -3092,67 +3092,77 @@ function getLoggedInName(){
 }
 
 function bonDetailPanel(a){
-  const months = ['jan','feb','mar'];
-  const mLabels = ['January 2026','February 2026','March 2026'];
-  const mShort  = ['Jan','Feb','Mar'];
+  const months   = ['jan','feb','mar'];
+  const mLabels  = ['January','February','March'];
 
-  // Q1 summary stats
+  // Helper: shorten the "why" text to one crisp line
+  function shortWhy(why){
+    if(!why) return '';
+    return why
+      .replace(/·/g,'•')
+      .replace(/\s*•\s*Slab\s*=\s*₹0/,'')
+      .replace(/\s*•\s*Final slab.*$/,'')
+      .replace(/Slab base ₹[\d,]+ × \d+% = /, 'Slab: ')
+      .replace(/Base: ₹[\d,]+ × \d+%
+?= /, 'Slab: ')
+      .replace(/Leave: ×\d+%\s*\([^)]+\)\s*•?/g,'')
+      .replace(/Note:.*$/,'')
+      .trim().replace(/•\s*$/,'').trim();
+  }
+
   const q1Slab = months.reduce((s,k)=>s+(a[k]?.slab||0),0);
   const q1Csat = months.reduce((s,k)=>s+(a[k]?.csat||0),0);
-  const eligMonths = months.filter(k=>(a[k]?.slab||0)>0).length;
 
-  const monthCards = months.map((k,i)=>{
-    const m = a[k]||{};
+  const rows = months.map((k,i)=>{
+    const m   = a[k]||{};
     const mt  = (m.slab||0)+(m.csat||0);
-    const isElig  = m.elig && m.elig.startsWith('✅');
-    const isWarn  = m.elig && m.elig.startsWith('➖');
-    const isIneli = !isElig && !isWarn;
-    const borderC = isElig?'rgba(34,197,94,.35)':isWarn?'rgba(251,191,36,.3)':'rgba(248,113,113,.25)';
-    const bgC     = isElig?'rgba(34,197,94,.06)':isWarn?'rgba(251,191,36,.05)':'rgba(248,113,113,.04)';
-    const icon    = isElig?'✅':isWarn?'➖':'❌';
-    const textC   = isElig?'#22c55e':isWarn?'#fbbf24':'#f87171';
-    const eligShort = (m.elig||'').replace('❌ Not Eligible — ','').replace('✅ Eligible — ','').replace('➖ ','');
+    const isElig = m.elig&&m.elig.startsWith('✅');
+    const isWarn = m.elig&&m.elig.startsWith('➖');
+    const col    = isElig?'#22c55e':isWarn?'#fbbf24':'#f87171';
+    const bgRow  = isElig?'rgba(34,197,94,.05)':isWarn?'rgba(251,191,36,.04)':'rgba(248,113,113,.04)';
+    const icon   = isElig?'✅':isWarn?'➖':'❌';
+    const why    = shortWhy(m.why);
 
-    return `<div style="border:1px solid ${borderC};background:${bgC};border-radius:12px;padding:14px 16px;flex:1;min-width:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <span style="font-size:12px;font-weight:700;color:#eef2ff">${mLabels[i]}</span>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:${mt>0?textC:'rgba(100,116,139,.5)'};">${mt>0?'₹'+mt.toLocaleString('en-IN'):'—'}</span>
+    // Concise status label
+    const statusText = isElig ? 'Earned'
+                     : isWarn ? 'Partial'
+                     : 'Not earned';
+
+    return `<div style="display:flex;flex-direction:column;gap:0;border-bottom:1px solid rgba(255,255,255,.05);padding:10px 0;background:${bgRow};">
+      <div style="display:flex;align-items:center;gap:10px;padding:0 14px;">
+        <span style="font-size:15px;flex-shrink:0">${icon}</span>
+        <span style="font-size:12px;font-weight:700;color:rgba(148,163,184,.8);min-width:60px">${mLabels[i]}</span>
+        <span style="font-size:11px;font-weight:600;color:${col};background:${col}18;border-radius:99px;padding:2px 8px;flex-shrink:0">${statusText}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:800;color:${mt>0?col:'rgba(100,116,139,.4)'};margin-left:auto;">${mt>0?'₹'+mt.toLocaleString('en-IN'):'—'}</span>
       </div>
-      <div style="display:inline-flex;align-items:center;gap:5px;background:${isElig?'rgba(34,197,94,.12)':isWarn?'rgba(251,191,36,.1)':'rgba(248,113,113,.1)'};border-radius:99px;padding:3px 10px;margin-bottom:10px;">
-        <span style="font-size:11px;">${icon}</span>
-        <span style="font-size:11px;font-weight:700;color:${textC};">${eligShort}</span>
-      </div>
-      ${m.why?`<div style="font-size:11px;color:rgba(148,163,184,.75);line-height:1.65;margin-bottom:${(m.csat||0)>0?'8px':'0'}">${m.why.replace(/·/g,'<span style="color:rgba(100,116,139,.5);margin:0 3px">·</span>')}</div>`:''}
-      ${(m.csat||0)>0?`<div style="display:flex;align-items:center;gap:6px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:7px 10px;">
-        <span style="font-size:13px;">⭐</span>
-        <div>
-          <div style="font-size:10px;font-weight:700;color:rgba(251,191,36,.7);text-transform:uppercase;letter-spacing:.05em;">CSAT Incentive</div>
-          <div style="font-size:11px;color:rgba(251,191,36,.85);margin-top:1px">${m.csatWhy||''}</div>
-        </div>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#fbbf24;margin-left:auto;">₹${(m.csat||0).toLocaleString('en-IN')}</span>
+      ${why?`<div style="font-size:11px;color:rgba(100,116,139,.8);line-height:1.5;padding:3px 14px 0 39px;">${why}</div>`:''}
+      ${(m.csat||0)>0?`<div style="display:flex;align-items:center;gap:6px;padding:4px 14px 0 39px;">
+        <span style="font-size:11px;">⭐</span>
+        <span style="font-size:11px;color:rgba(251,191,36,.8);">${(m.csatWhy||'').split('·')[0].trim()}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#fbbf24;margin-left:auto;">+₹${(m.csat||0).toLocaleString('en-IN')}</span>
       </div>`:''}
-      ${(m.csat||0)===0&&m.csatWhy&&mt===0?`<div style="font-size:11px;color:rgba(100,116,139,.55);line-height:1.5;margin-top:4px;font-style:italic">${m.csatWhy}</div>`:''}
     </div>`;
   }).join('');
 
-  return `<div style="border-top:2px solid rgba(245,130,31,.2);background:linear-gradient(135deg,rgba(245,130,31,.04) 0%,rgba(251,191,36,.03) 100%);padding:18px 18px 14px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+  return `<div style="border-top:2px solid rgba(245,130,31,.25);margin-top:0;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;background:rgba(245,130,31,.06);">
       <div style="display:flex;align-items:center;gap:8px;">
-        <div style="width:28px;height:28px;border-radius:8px;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.3);display:flex;align-items:center;justify-content:center;font-size:14px;">📊</div>
+        <span style="font-size:16px">📊</span>
         <div>
-          <div style="font-size:12px;font-weight:800;color:#f5821f;letter-spacing:.02em;">Your Bonus Breakdown</div>
-          <div style="font-size:10px;color:rgba(148,163,184,.6);margin-top:1px">Only visible to you · Q1 2026</div>
+          <div style="font-size:12px;font-weight:800;color:#f5821f">Your Q1 Breakdown</div>
+          <div style="font-size:10px;color:rgba(100,116,139,.7)">Only visible to you</div>
         </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${q1Slab>0?`<div style="background:rgba(56,182,224,.1);border:1px solid rgba(56,182,224,.25);border-radius:8px;padding:5px 12px;text-align:center;"><div style="font-size:10px;color:rgba(56,182,224,.7);font-weight:600;">SLAB</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#38b6e0;">₹${q1Slab.toLocaleString('en-IN')}</div></div>`:''}
-        ${q1Csat>0?`<div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:5px 12px;text-align:center;"><div style="font-size:10px;color:rgba(251,191,36,.7);font-weight:600;">CSAT ⭐</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:800;color:#fbbf24;">₹${q1Csat.toLocaleString('en-IN')}</div></div>`:''}
+      <div style="display:flex;gap:6px;">
+        ${q1Slab>0?`<div style="text-align:center;background:rgba(56,182,224,.1);border:1px solid rgba(56,182,224,.25);border-radius:8px;padding:4px 10px;"><div style="font-size:9px;color:rgba(56,182,224,.7);font-weight:700;letter-spacing:.04em">SLAB</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:#38b6e0">₹${q1Slab.toLocaleString('en-IN')}</div></div>`:''}
+        ${q1Csat>0?`<div style="text-align:center;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:4px 10px;"><div style="font-size:9px;color:rgba(251,191,36,.7);font-weight:700;letter-spacing:.04em">CSAT ⭐</div><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800;color:#fbbf24">₹${q1Csat.toLocaleString('en-IN')}</div></div>`:''}
       </div>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:nowrap;overflow-x:auto;">${monthCards}</div>
+    <!-- Month rows -->
+    ${rows}
   </div>`;
 }
-
 
 function bonCard(a, idx, isChat){
   const total = a.total;
