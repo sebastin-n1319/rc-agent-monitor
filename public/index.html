@@ -9455,6 +9455,32 @@ tbody tr:hover td{
 
 </div><!-- /#adminView -->
 
+<!-- Bonus Results Notification -->
+<div id="bonus-notif-overlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.65);align-items:center;justify-content:center;padding:20px;">
+  <div style="max-width:420px;width:100%;background:linear-gradient(135deg,#0d1525 0%,#0a1020 100%);border:1px solid rgba(251,191,36,.35);border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.7),0 0 60px rgba(251,191,36,.08);">
+    <!-- Gold top bar -->
+    <div style="height:3px;background:linear-gradient(90deg,transparent,#fbbf24,#f28820,#fbbf24,transparent);"></div>
+    <div style="padding:32px 28px 24px;text-align:center;">
+      <div style="font-size:44px;margin-bottom:12px;">🎉</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(251,191,36,.7);margin-bottom:8px;">New · Q1 2026</div>
+      <h2 style="font-size:22px;font-weight:800;color:#fbbf24;line-height:1.2;margin-bottom:10px;font-family:'Poppins','Inter',sans-serif;">Bonus Results Are Live!</h2>
+      <p style="font-size:14px;color:rgba(232,238,255,.65);line-height:1.6;margin-bottom:24px;">Your Q1 2026 performance bonus has been calculated and is now available. Head to the <strong style="color:#fbbf24;">Hall of Fame → Bonus</strong> tab to see your full breakdown.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;">
+        <div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:12px 8px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:#fbbf24;font-family:'JetBrains Mono',monospace;">₹98,250</div>
+          <div style="font-size:10px;color:rgba(232,238,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;">Total Team Payout</div>
+        </div>
+        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px 8px;text-align:center;">
+          <div style="font-size:18px;font-weight:700;color:#22c55e;font-family:'JetBrains Mono',monospace;">7 / 11</div>
+          <div style="font-size:10px;color:rgba(232,238,255,.45);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;">Agents Earned</div>
+        </div>
+      </div>
+      <button onclick="goToBonusPage()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f28820,#fbbf24);border:none;border-radius:10px;color:#1a0a00;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.02em;margin-bottom:10px;font-family:'Inter',sans-serif;">View My Bonus Results →</button>
+      <button onclick="closeBonusNotif()" style="width:100%;padding:9px;background:none;border:none;color:rgba(232,238,255,.35);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;">Dismiss</button>
+    </div>
+  </div>
+</div>
+
 <!-- Break Report Modal -->
 <div id="break-report-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.6);overflow-y:auto;padding:40px 20px;">
   <div style="max-width:720px;margin:0 auto;background:var(--card1,#0d1525);border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;">
@@ -10357,6 +10383,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
   if(skipAnimation) setTimeout(restoreLastTab, 0); // restore tab after DOM settles
+  // Show bonus notification once per session
+  setTimeout(()=>{ try{ showBonusNotification(role); }catch(e){} }, 800);
 
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
@@ -13180,6 +13208,37 @@ async function doRefresh(){
   finally{if(btn)btn.classList.remove('syncing');}
 }
 
+// ── Bonus Notification ───────────────────────────────────────────────────────
+const BONUS_NOTIF_KEY = 'bonusNotifSeen_Q1_2026';
+function showBonusNotification(role){
+  if(sessionStorage.getItem(BONUS_NOTIF_KEY)) return; // only once per session
+  sessionStorage.setItem(BONUS_NOTIF_KEY,'1');
+  const el = document.getElementById('bonus-notif-overlay');
+  if(el) el.style.display='flex';
+}
+function closeBonusNotif(){
+  const el = document.getElementById('bonus-notif-overlay');
+  if(el){ el.style.opacity='0'; el.style.transition='opacity .35s'; setTimeout(()=>{el.style.display='none';el.style.opacity='';el.style.transition='';},360); }
+}
+function goToBonusPage(){
+  closeBonusNotif();
+  // Switch to Hall of Fame tab and open Bonus sub-tab
+  const hofBtn = document.querySelector('.agent-shell-btn[onclick*="hall"]') ||
+                 document.querySelector('.nav-tab[onclick*="hall"]');
+  if(hofBtn) hofBtn.click();
+  // Wait for iframe to load then click bonus tab
+  setTimeout(()=>{
+    try{
+      const frames = document.querySelectorAll('iframe');
+      for(const f of frames){
+        try{
+          const btn = f.contentDocument?.getElementById('tab-bonus');
+          if(btn){ btn.click(); break; }
+        }catch(e){}
+      }
+    }catch(e){}
+  }, 600);
+}
 // ── Break Report ─────────────────────────────────────────────────────────────
 function openBreakReportModal(){
   const m=document.getElementById('break-report-modal');
