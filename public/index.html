@@ -8864,7 +8864,7 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       Hall of Fame
     </button>
-    <button class="nav-tab" onclick="switchTab('bonus',this)" style="display:none" data-hidden-until="Q2-2026">
+    <button class="nav-tab" onclick="switchTab('bonus',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
       Bonus Guide
     </button>
@@ -9608,7 +9608,7 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       Hall of Fame
     </button>
-    <button class="agent-shell-btn" id="agent-tab-bonus" onclick="switchAgentSection('bonus',this)" style="display:none" data-hidden-until="Q2-2026">
+    <button class="agent-shell-btn" id="agent-tab-bonus" onclick="switchAgentSection('bonus',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
       Bonus Guide
     </button>
@@ -10564,7 +10564,7 @@ function applyView(view){
   const ticker=document.getElementById('agentTicker');
   const track=document.getElementById('agentTickerTrack');
   if(ticker && track && !track.innerHTML.trim()){
-    const msg=`<span class="at-item">🏆&nbsp;&nbsp;<strong>Q1 2026 Hall of Fame is live!</strong>&nbsp;— Check out the Quarter Standouts &amp; Individual Awards<span class="sep">|</span>📅&nbsp;&nbsp;Performance &amp; Bonus results unlock on&nbsp;<strong>April 30, 2026</strong><span class="sep">|</span>✨&nbsp;&nbsp;Head to the Hall of Fame tab to see where you stand!&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`;
+    const msg=`<span class="at-item">📋&nbsp;&nbsp;<strong>Weekend Support OT</strong>&nbsp;— Ronnie will ping every Friday for weekend volunteers (7am–7pm CST). Volunteering = you pick your shift!<span class="sep">|</span>💰&nbsp;&nbsp;All weekend shifts count as <strong>overtime</strong> under our existing policy<span class="sep">|</span>✅&nbsp;&nbsp;Completely voluntary — no pressure. See login announcement for full details.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>`;
     track.innerHTML=msg;
   }
   let dismissed=false;try{dismissed=!!sessionStorage.getItem('agent_ticker_dismissed');}catch(e){}
