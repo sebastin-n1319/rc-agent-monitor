@@ -12,6 +12,9 @@ html.app-authenticated #loginScreen{display:none!important;visibility:hidden!imp
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
 #userAvatar{display:none!important;}
+
+/* Hidden until next quarter — beats class-level display rules */
+[data-hidden-until] { display: none !important; }
 </style>
 <!-- Inline session restore: runs before any other script, sets html.app-authenticated if localStorage has a valid session -->
 <script>
