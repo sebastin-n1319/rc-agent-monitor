@@ -13771,6 +13771,18 @@ function safeBoot(fn,name){
   }
 }
 
+// Force-hide elements marked for next quarter using inline !important
+// (CSS attribute selector alone doesn't beat all existing display rules)
+(function hideUntilNextQuarter(){
+  document.querySelectorAll('[data-hidden-until]').forEach(function(el){
+    el.style.setProperty('display','none','important');
+    el.style.setProperty('visibility','hidden','important');
+    el.style.setProperty('pointer-events','none','important');
+    el.setAttribute('aria-hidden','true');
+    el.tabIndex = -1;
+  });
+})();
+
 safeBoot(updateClock,'updateClock');
 setInterval(()=>safeBoot(updateClock,'updateClock'),1000);
 setInterval(()=>{if(currentUser)refresh();},30000);
