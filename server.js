@@ -893,6 +893,72 @@ app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ── AI Writing Assistant ─────────────────────────────────────────────────────
+app.post('/api/write-assist', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const { text, style = 'email', tone = 'professional' } = req.body || {};
+    if (!text || !text.trim()) return res.status(400).json({ success: false, error: 'No text provided' });
+    if (text.length > 4000) return res.status(400).json({ success: false, error: 'Text too long (max 4000 chars)' });
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(503).json({ success: false, error: 'AI service not configured. Please contact your admin.' });
+
+    const styleGuides = {
+      email:    'a professional business email',
+      customer: 'a clear, empathetic customer-facing response',
+      docs:     'formal technical documentation',
+      slack:    'a concise, friendly Slack/team message',
+      general:  'clear, professional written communication'
+    };
+    const toneGuides = {
+      professional: 'professional and polished',
+      friendly:     'warm, friendly and approachable',
+      concise:      'brief and to the point',
+      formal:       'formal and corporate'
+    };
+
+    const systemPrompt = `You are a professional writing assistant for a customer support team at Adit, a dental software company. Your job is to improve agent-written text to be clear, correct, and well-structured.
+
+Always:
+- Fix grammar, spelling, and punctuation
+- Improve sentence structure and flow
+- Keep the original meaning intact
+- Be natural — not overly robotic or excessively formal
+- Output ONLY the improved text, no explanations or prefixes`;
+
+    const userPrompt = `Please rewrite the following as ${styleGuides[style] || styleGuides.general}. Use a ${toneGuides[tone] || toneGuides.professional} tone.\n\nOriginal text:\n${text.trim()}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 1000,
+        temperature: 0.4
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `OpenAI API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const improved = data.choices?.[0]?.message?.content?.trim() || '';
+    if (!improved) throw new Error('No response from AI');
+
+    insertAuditLog(req.session?.email || 'unknown', 'write_assist', style, `tone:${tone},chars:${text.length}`).catch(() => {});
+    res.json({ success: true, result: improved });
+  } catch (e) {
+    console.error('❌ write-assist error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 async function startScheduler() {
   setInterval(() => { fetchPresenceForAll().catch(e => console.error('❌ presence sync:', e.message)); }, getFallbackSyncMs());
   cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });

@@ -28,7 +28,7 @@ html.app-authenticated #mainApp{display:flex!important;visibility:visible!import
 })();
 </script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
 
 /* ══════════════════════════════════════════════════════════════════════════
    RESET
@@ -40,97 +40,86 @@ button,input,select,textarea{font:inherit;}
    DESIGN TOKENS
 ══════════════════════════════════════════════════════════════════════════ */
 :root{
-  /* ── Core surfaces */
-  --bg:#030712;
-  --bg2:#070d1c;
-  --bg3:#0c1424;
-  --bg4:#111b30;
-  --glass:rgba(8,13,28,.82);
-  --glass2:rgba(12,18,38,.88);
+  /* ── Adit Design System — App (betaapp.adit.com) ── */
 
-  /* ── Card system */
-  --card:rgba(255,255,255,.030);
-  --card2:rgba(255,255,255,.048);
-  --card3:rgba(255,255,255,.072);
-  --card4:rgba(255,255,255,.10);
+  /* Core surfaces */
+  --bg:#F7F8F8;
+  --bg2:#F0F2F5;
+  --bg3:#E6ECF4;
+  --bg4:#DEE1E6;
+  --glass:#FFFFFF;
+  --glass2:#FAFAFA;
 
-  /* ── Borders */
-  --b0:rgba(255,255,255,.04);
-  --b1:rgba(255,255,255,.07);
-  --b2:rgba(255,255,255,.12);
-  --b3:rgba(255,255,255,.22);
-  --border:var(--b1);
-  --border-strong:var(--b2);
+  /* Card system */
+  --card:#FFFFFF;
+  --card2:#F7F8F8;
+  --card3:#F0F2F5;
+  --card4:#E6ECF4;
 
-  /* ── Text */
-  --t1:#eef2ff;
-  --t2:#8892b0;
-  --t3:#4a5270;
-  --t4:#262f48;
-  --text:var(--t1);
-  --text2:var(--t2);
-  --text3:var(--t3);
-  --text4:var(--t4);
+  /* Borders */
+  --b0:#F0F2F5;
+  --b1:#DEE1E6;
+  --b2:#C8D0DC;
+  --b3:#A8B5C4;
+  --border:#DEE1E6;
+  --border-strong:#C8D0DC;
 
-  /* ── Brand */
-  --orange:#f28820;
-  --orange2:#f9a84d;
-  --orange-lo:rgba(242,136,32,.08);
-  --orange-mid:rgba(242,136,32,.18);
-  --orange-hi:rgba(242,136,32,.30);
-  --teal:#0687be;
-  --teal-lo:rgba(6,135,190,.08);
-  --teal-mid:rgba(6,135,190,.18);
+  /* Text — Adit dark navy scale */
+  --t1:#072B40;
+  --t2:#3A5068;
+  --t3:#6B849A;
+  --t4:#9BAFC0;
+  --text:#072B40;
+  --text2:#3A5068;
+  --text3:#6B849A;
+  --text4:#9BAFC0;
 
-  /* ── Status */
-  --green:#22c55e;
-  --green-lo:rgba(34,197,94,.08);
-  --red:#f43f5e;
-  --red-lo:rgba(244,63,94,.08);
-  --blue:#3b82f6;
-  --blue2:#60a5fa;
-  --blue-lo:rgba(59,130,246,.08);
-  --yellow:#f59e0b;
-  --yellow-lo:rgba(245,158,11,.08);
-  --purple:#a855f7;
-  --purple-lo:rgba(168,85,247,.08);
-  --pink:#ec4899;
+  /* Brand */
+  --orange:#F4891F;
+  --orange2:#F28820;
+  --orange-lo:rgba(244,137,31,.10);
+  --orange-mid:rgba(244,137,31,.20);
+  --orange-hi:rgba(244,137,31,.35);
+  --teal:#21AAE0;
+  --teal-lo:rgba(33,170,224,.10);
+  --teal-mid:rgba(33,170,224,.20);
 
-  /* ── Radius */
-  --r:14px;
-  --r-sm:10px;
+  /* Status — Adit fixed status colors */
+  --green:#2DDC96;
+  --green-lo:rgba(45,220,150,.10);
+  --red:#ED666B;
+  --red-lo:rgba(237,102,107,.10);
+  --blue:#21AAE0;
+  --blue2:#25A8E0;
+  --blue-lo:rgba(33,170,224,.10);
+  --yellow:#FBC84B;
+  --yellow-lo:rgba(251,200,75,.10);
+  --purple:#9B59B6;
+  --purple-lo:rgba(155,89,182,.10);
+  --pink:#E91E8C;
+
+  /* Radius — Adit app uses 6-8px for most elements */
+  --r:8px;
+  --r-sm:8px;
   --r-xs:6px;
 
-  /* ── Shadows */
-  --shadow-sm:0 1px 4px rgba(0,0,0,.5);
-  --shadow-md:0 4px 20px rgba(0,0,0,.55);
-  --shadow-lg:0 12px 40px rgba(0,0,0,.65);
-  --shadow-xl:0 24px 64px rgba(0,0,0,.75);
+  /* Shadows — lighter for light UI */
+  --shadow-sm:0 1px 4px rgba(0,0,0,.08);
+  --shadow-md:0 4px 16px rgba(0,0,0,.10);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --shadow-xl:0 16px 48px rgba(0,0,0,.15);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    BODY & AMBIENT
 ══════════════════════════════════════════════════════════════════════════ */
 body{
-  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-family:'Poppins',sans-serif;
   background:var(--bg);color:var(--t1);
   min-height:100vh;overflow-x:clip;
   -webkit-font-smoothing:antialiased;position:relative;
 }
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 80% 55% at -5% -5%,  rgba(242,136,32,.10) 0%,transparent 55%),
-    radial-gradient(ellipse 55% 45% at 98% 2%,   rgba(59,130,246,.07) 0%,transparent 50%),
-    radial-gradient(ellipse 50% 60% at 50% 105%, rgba(6,135,190,.08) 0%,transparent 50%),
-    radial-gradient(ellipse 65% 50% at 85% 65%,  rgba(168,85,247,.04) 0%,transparent 55%);
-}
-body::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(rgba(255,255,255,.055) 1px,transparent 1px);
-  background-size:30px 30px;
-  mask-image:linear-gradient(to bottom,rgba(0,0,0,.55) 0%,transparent 75%);
-}
+body::before,body::after{display:none;}
 
 /* ══════════════════════════════════════════════════════════════════════════
    LOGIN
@@ -4297,6 +4286,317 @@ footer{
   .lp-ap-1,.lp-ap-2{display:none !important;}
   #loginScreen .login-form-wrap{max-width:none !important;padding:24px 20px !important;}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ADIT DESIGN SYSTEM OVERRIDES
+   Applied on top of base styles to match betaapp.adit.com
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Global font override ──────────────────────────────────────────────── */
+*{font-family:'Poppins',sans-serif!important;}
+input,select,textarea,button{font-family:'Poppins',sans-serif!important;}
+
+/* ── Header / Topbar — white, 48px, Adit style ─────────────────────────── */
+header{
+  background:#FFFFFF!important;
+  border-bottom:1px solid #DEE1E6!important;
+  box-shadow:rgba(0,0,0,0.06) 0px 1px 8px!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  height:48px!important;
+}
+.hdr-title{color:#072B40!important;font-weight:700!important;}
+.hdr-sub{color:#6B849A!important;}
+.hdr-sep{background:#DEE1E6!important;}
+.hdr-chip{background:#F7F8F8!important;border-color:#DEE1E6!important;color:#3A5068!important;}
+.hdr-chip:hover{background:#F0F2F5!important;color:#072B40!important;}
+.hdr-user{color:#3A5068!important;}
+.hdr-avatar{border-color:#DEE1E6!important;}
+.live-dot{background:#2DDC96!important;box-shadow:0 0 6px #2DDC96!important;}
+.tz-on{color:#F4891F!important;}
+.logout-btn{
+  background:rgba(237,102,107,.08)!important;
+  border-color:rgba(237,102,107,.2)!important;
+  color:#ED666B!important;
+}
+.logout-btn:hover{background:rgba(237,102,107,.15)!important;border-color:rgba(237,102,107,.4)!important;}
+.role-admin{background:rgba(244,137,31,.1)!important;color:#F4891F!important;border-color:rgba(244,137,31,.25)!important;}
+.role-agent{background:rgba(33,170,224,.1)!important;color:#21AAE0!important;border-color:rgba(33,170,224,.2)!important;}
+#impersonateBtn{border-color:rgba(33,170,224,.3)!important;color:#21AAE0!important;background:rgba(33,170,224,.06)!important;}
+
+/* ── Main App wrapper ───────────────────────────────────────────────────── */
+#mainApp{background:#F7F8F8!important;padding-top:48px!important;}
+
+/* ── Navigation tabs — Adit inline tab bar ─────────────────────────────── */
+.nav{
+  background:#FFFFFF!important;
+  border-bottom:1px solid #DEE1E6!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  top:48px!important;
+  padding:0 16px!important;
+}
+.nav-tab{color:#6B849A!important;border-bottom:2px solid transparent!important;padding:11px 14px!important;border-radius:0!important;background:transparent!important;}
+.nav-tab:hover{color:#072B40!important;background:transparent!important;}
+.nav-tab.active{
+  color:#F4891F!important;
+  border-bottom-color:#F4891F!important;
+  background:transparent!important;
+  font-weight:600!important;
+}
+.nav-tab.active svg{filter:none!important;color:#F4891F!important;}
+.nav-tab svg{opacity:.65!important;}
+.nav-tab.active svg{opacity:1!important;}
+
+/* ── Pages ──────────────────────────────────────────────────────────────── */
+.page{padding:20px!important;}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.card,.ld-panel,.viz-card,.rpt-stat,.agent-card,.evt-group{
+  background:#FFFFFF!important;
+  border:1px solid #DEE1E6!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:rgba(0,0,0,0.05) 0px 1px 8px!important;
+}
+.card-title,.ld-panel-title{color:#072B40!important;font-weight:600!important;}
+.card-hdr,.ld-panel-hdr{border-bottom:none!important;}
+
+/* ── Metric Cards ───────────────────────────────────────────────────────── */
+.metric{
+  background:#FFFFFF!important;
+  border:1px solid #DEE1E6!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:rgba(0,0,0,0.05) 0px 1px 8px!important;
+}
+.metric:hover{transform:translateY(-2px)!important;box-shadow:rgba(0,0,0,0.10) 0px 4px 16px!important;border-color:#C8D0DC!important;}
+.metric-lbl{color:#6B849A!important;}
+.metric-val{color:#072B40!important;font-family:'Poppins',sans-serif!important;font-size:26px!important;font-weight:700!important;letter-spacing:-.01em!important;}
+.metric-sub{color:#6B849A!important;}
+
+/* ── KPI Chips ──────────────────────────────────────────────────────────── */
+.ld-kpi{background:#FFFFFF!important;border:1px solid #DEE1E6!important;}
+.ld-kpi:hover{border-color:#C8D0DC!important;}
+.ld-kpi-lbl{color:#6B849A!important;}
+.ld-kpi-val{color:#072B40!important;font-family:'Poppins',sans-serif!important;letter-spacing:-.01em!important;}
+.ld-kpi-sub{color:#9BAFC0!important;font-family:'Poppins',sans-serif!important;}
+
+/* ── Command Strip ──────────────────────────────────────────────────────── */
+.ld-strip{background:#FFFFFF!important;border:1px solid #DEE1E6!important;}
+.ld-strip-chip,.ops-chip{background:#F7F8F8!important;border-color:#DEE1E6!important;color:#3A5068!important;}
+.ld-strip-chip strong,.ops-chip strong{color:#072B40!important;}
+.admin-ribbon{background:#FFFFFF!important;border:1px solid #DEE1E6!important;}
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+table{background:#FFFFFF!important;}
+thead tr,thead th{background:#F7F8F8!important;color:#072B40!important;font-size:12px!important;font-weight:600!important;}
+#admin-agent-tbl-wrap thead th{background:#F7F8F8!important;}
+tbody tr{border-bottom:1px solid #DEE1E6!important;background:#FFFFFF!important;}
+tbody tr:hover{background:#FAFAFA!important;}
+td{color:#072B40!important;font-size:13px!important;}
+th{color:#072B40!important;}
+
+/* ── Status pills ───────────────────────────────────────────────────────── */
+.s-available,.s-Available{background:rgba(45,220,150,.1)!important;color:#2DDC96!important;border-color:rgba(45,220,150,.25)!important;}
+.s-unavailable,.s-Unavailable,.s-DND,.s-dnd{background:rgba(237,102,107,.1)!important;color:#ED666B!important;border-color:rgba(237,102,107,.25)!important;}
+.s-oncall,.s-OnCall,.s-Busy,.s-busy{background:rgba(33,170,224,.1)!important;color:#21AAE0!important;border-color:rgba(33,170,224,.25)!important;}
+.s-offline,.s-Offline{background:rgba(107,132,154,.08)!important;color:#6B849A!important;border-color:rgba(107,132,154,.2)!important;}
+
+/* ── Form inputs — Adit ice-blue style ──────────────────────────────────── */
+input[type=text],input[type=date],input[type=email],select,textarea{
+  background:#EEF6FB!important;
+  border:1px solid #DEE1E6!important;
+  border-radius:8px!important;
+  color:#072B40!important;
+  font-size:13px!important;
+}
+input[type=text]:focus,input[type=date]:focus,input[type=email]:focus,select:focus,textarea:focus{
+  border-color:rgba(244,137,31,.5)!important;
+  background:#F7F8F8!important;
+  box-shadow:0 0 0 3px rgba(244,137,31,.1)!important;
+}
+input::placeholder{color:#9BAFC0!important;}
+select option{background:#FFF!important;color:#072B40!important;}
+.field label{color:#6B849A!important;font-weight:600!important;}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+button.btn,button[class*="btn-"]{border-radius:8px!important;}
+button{font-family:'Poppins',sans-serif!important;}
+
+/* Primary orange CTA button */
+.btn-primary,.btn-orange,.save-btn,[onclick*="save"]:not(.nav-tab){
+  background:#F4891F!important;color:#FFF!important;border:none!important;border-radius:8px!important;
+  box-shadow:rgba(244,137,31,0.4) 0px 4px 16px 0px!important;
+}
+.btn-primary:hover{opacity:.9!important;transform:translateY(-1px)!important;}
+
+/* ── Event Log (Status Change Log) ─────────────────────────────────────── */
+.evt-hdr{background:#F7F8F8!important;}
+.evt-hdr:hover{background:#F0F2F5!important;}
+.evt-agent{color:#072B40!important;}
+.evt-meta{color:#6B849A!important;}
+.evt-arr{color:#9BAFC0!important;}
+.evt-body{border-top:1px solid #DEE1E6!important;}
+.evt-row{background:#F7F8F8!important;}
+.evt-time{color:#9BAFC0!important;font-family:'Poppins',sans-serif!important;}
+.evt-group{border-color:#DEE1E6!important;}
+.evt-group.open .evt-body{background:#FFFFFF!important;}
+
+/* ── Agent cards ─────────────────────────────────────────────────────────── */
+.agent-card{background:#FFFFFF!important;border-color:#DEE1E6!important;}
+.agent-card:hover{border-color:#C8D0DC!important;box-shadow:rgba(0,0,0,0.1) 0px 4px 16px!important;}
+.agent-card-name{color:#072B40!important;}
+.agent-card-ext{color:#9BAFC0!important;}
+.agent-card-actions button{background:#F7F8F8!important;border-color:#DEE1E6!important;color:#3A5068!important;}
+.agent-card-actions button:hover{background:#F4891F!important;color:#FFF!important;border-color:#F4891F!important;}
+
+/* ── Viz Row ─────────────────────────────────────────────────────────────── */
+.viz-card{background:#FFFFFF!important;border:1px solid #DEE1E6!important;backdrop-filter:none!important;}
+.viz-title{color:#6B849A!important;}
+.mix-bar{background:#F0F2F5!important;}
+.health-core{background:#F7F8F8!important;border-color:#DEE1E6!important;}
+.health-label{color:#6B849A!important;}
+.health-score{color:#072B40!important;}
+.health-row{color:#3A5068!important;}
+.health-row b{color:#072B40!important;}
+.health-track{background:#E6ECF4!important;}
+
+/* ── Act Items ───────────────────────────────────────────────────────────── */
+.ld-act-item{background:#FFFFFF!important;border:1px solid #DEE1E6!important;}
+.ld-act-lbl{color:#6B849A!important;}
+.ld-act-val{color:#072B40!important;font-family:'Poppins',sans-serif!important;}
+
+/* ── Occ Extras ──────────────────────────────────────────────────────────── */
+.ld-oe{background:#F7F8F8!important;border-color:#DEE1E6!important;}
+.ld-oe span{color:#6B849A!important;}
+.ld-oe strong{color:#072B40!important;}
+.ld-pbar-label{color:#3A5068!important;}
+.ld-pbar-row b{color:#072B40!important;}
+.ld-health-badge{background:#F7F8F8!important;border-color:#DEE1E6!important;}
+.ld-health-score{color:#072B40!important;}
+
+/* ── Report Stats ────────────────────────────────────────────────────────── */
+.rpt-stat{background:#FFFFFF!important;border:1px solid #DEE1E6!important;backdrop-filter:none!important;}
+.rpt-lbl{color:#6B849A!important;}
+
+/* ── Chips & badges ──────────────────────────────────────────────────────── */
+.chip,.hdr-chip{background:#F7F8F8!important;border-color:#DEE1E6!important;color:#3A5068!important;}
+.pill{font-size:11px!important;}
+
+/* ── Scrollbars — Adit light ─────────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:#F0F2F5;}
+::-webkit-scrollbar-thumb{background:#C8D0DC;border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:#A8B5C4;}
+
+/* ── Toast ───────────────────────────────────────────────────────────────── */
+.toast{
+  background:#072B40!important;color:#FFFFFF!important;
+  border:none!important;
+  box-shadow:rgba(0,0,0,0.2) 0px 4px 24px!important;
+  border-radius:8px!important;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+footer{background:#FFFFFF!important;color:#6B849A!important;border-top:1px solid #DEE1E6!important;}
+.f-name,.f-v{color:#F4891F!important;}
+
+/* ── Floor signal cards (agent ticker) ───────────────────────────────────── */
+.floor-card{background:#FFFFFF!important;border:1px solid #DEE1E6!important;box-shadow:rgba(0,0,0,0.05) 0px 1px 8px!important;}
+
+/* ── Modals ──────────────────────────────────────────────────────────────── */
+.modal-box,.modal-card,[class*="modal"]:not(.modal-overlay){
+  background:#FFFFFF!important;
+  border-radius:16px!important;
+  box-shadow:rgba(0,0,0,0.2) 0px 0px 30px!important;
+}
+
+/* ── Skeleton loading ────────────────────────────────────────────────────── */
+.skeleton,.skel{background:#E6ECF4!important;}
+
+/* ── Agent shell (agent view) ────────────────────────────────────────────── */
+.agent-shell-nav{
+  background:#FFFFFF!important;
+  border-bottom:1px solid #DEE1E6!important;
+  backdrop-filter:none!important;
+}
+.agent-shell-btn{
+  background:transparent!important;
+  color:#6B849A!important;
+  border:none!important;
+  border-bottom:2px solid transparent!important;
+  border-radius:0!important;
+  padding:10px 14px!important;
+  font-weight:500!important;
+  font-size:13px!important;
+}
+.agent-shell-btn:hover{color:#072B40!important;background:transparent!important;}
+.agent-shell-btn.active{
+  color:#F4891F!important;
+  border-bottom-color:#F4891F!important;
+  background:transparent!important;
+  font-weight:600!important;
+}
+.agent-shell-btn svg{opacity:.6!important;}
+.agent-shell-btn.active svg{opacity:1!important;filter:none!important;}
+.agent-shell-btn.preview{
+  background:rgba(244,137,31,.08)!important;
+  color:#F4891F!important;
+  border:1px solid rgba(244,137,31,.2)!important;
+  border-radius:6px!important;
+  padding:6px 12px!important;
+  margin-left:8px!important;
+}
+
+/* ── Agent shell pages ───────────────────────────────────────────────────── */
+.agent-shell-page{background:#F7F8F8!important;}
+
+/* ── Announcement ticker ─────────────────────────────────────────────────── */
+#agentTicker{
+  background:linear-gradient(90deg,#072B40,#0A4060)!important;
+  border-bottom:1px solid rgba(244,137,31,.3)!important;
+}
+#agentTicker .at-close{color:rgba(255,255,255,.6)!important;}
+#agentTicker .at-close:hover{color:#FFF!important;}
+
+/* ── Table controls — search, filter ─────────────────────────────────────── */
+.search-input{
+  background:#F7F8F8!important;border:1px solid #DEE1E6!important;
+  border-radius:20px!important;color:#072B40!important;
+}
+.search-input::placeholder{color:#9BAFC0!important;}
+.search-input:focus{border-color:rgba(244,137,31,.4)!important;background:#FFF!important;}
+
+/* ── Hover row highlight for agent table ─────────────────────────────────── */
+.unavail-alert td{background:rgba(237,102,107,.06)!important;}
+
+/* ── Break timeline ──────────────────────────────────────────────────────── */
+.bt-lane{background:#FFFFFF!important;border:1px solid #DEE1E6!important;}
+.bt-slot{border-right:1px solid #F0F2F5!important;}
+.bt-label{color:#6B849A!important;background:#F7F8F8!important;}
+
+/* ── Call log table override ─────────────────────────────────────────────── */
+#call-log-section table thead th{background:#F7F8F8!important;color:#072B40!important;}
+
+/* ── Audit log ───────────────────────────────────────────────────────────── */
+#audit-section table thead th{background:#F7F8F8!important;color:#072B40!important;}
+
+/* ── Bonus guide frame wrapper ───────────────────────────────────────────── */
+.bonus-frame-shell{background:#FFFFFF!important;border:1px solid #DEE1E6!important;padding:0!important;overflow:hidden!important;}
+
+/* ── Agent self-card ─────────────────────────────────────────────────────── */
+#agent-self-card{background:#FFFFFF!important;border:1px solid #DEE1E6!important;box-shadow:rgba(0,0,0,0.04) 0px 1px 6px!important;}
+#self-role-pill{background:rgba(244,137,31,.1)!important;color:#F4891F!important;border-color:rgba(244,137,31,.25)!important;}
+
+/* ── Stale indicator ─────────────────────────────────────────────────────── */
+#staleIndicator{background:#FFFFFF!important;border:1px solid #DEE1E6!important;}
+
+/* ── Column visibility toggle ────────────────────────────────────────────── */
+.col-toggle-panel{background:#FFFFFF!important;border:1px solid #DEE1E6!important;box-shadow:rgba(0,0,0,0.12) 0px 4px 24px!important;}
+
+/* ── Notes / coaching log ────────────────────────────────────────────────── */
+.note-item{background:#F7F8F8!important;border:1px solid #DEE1E6!important;border-radius:8px!important;}
+
+/* ── DEBUG PANEL — hide in production ───────────────────────────────────── */
+#sessionDebug{background:#FFFFFF!important;border:1px solid #DEE1E6!important;color:#072B40!important;}
 </style>
 
 <style id="breakbot-v2">
@@ -8472,201 +8772,248 @@ tbody tr:hover td{
 <body>
 
 <!-- Logout loading overlay -->
-<div id="logoutOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:#060b14;flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:'Inter','Poppins',sans-serif;">
-  <div style="width:44px;height:44px;border-radius:50%;border:3px solid rgba(245,130,31,.2);border-top-color:#f5821f;animation:spin .8s linear infinite"></div>
-  <div style="color:rgba(148,163,184,.8);font-size:14px;letter-spacing:.02em;">Signing out…</div>
+<div id="logoutOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,43,64,.95);flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:'Poppins',sans-serif;">
+  <div style="width:44px;height:44px;border-radius:50%;border:3px solid rgba(244,137,31,.2);border-top-color:#F4891F;animation:spin .8s linear infinite"></div>
+  <div style="color:rgba(226,242,250,.8);font-size:14px;font-weight:500;">Signing out…</div>
 </div>
 
-<!-- LOGIN v8 — Dark Premium Redesign -->
-<style id="login-v8">
-#loginScreen{position:fixed!important;inset:0!important;z-index:9999!important;display:flex!important;align-items:stretch!important;background:#060b14!important;font-family:'Inter','Poppins',sans-serif!important;overflow:hidden!important;color:#f1f5f9!important;box-sizing:border-box!important;}
-#loginScreen .v8-orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);}
-#loginScreen .v8-orb-1{width:600px;height:600px;top:-180px;left:-100px;background:radial-gradient(circle,rgba(245,130,31,.18),transparent 70%);}
-#loginScreen .v8-orb-2{width:500px;height:500px;bottom:-150px;left:200px;background:radial-gradient(circle,rgba(99,102,241,.14),transparent 70%);}
-#loginScreen .v8-orb-3{width:400px;height:400px;top:50%;right:-80px;transform:translateY(-50%);background:radial-gradient(circle,rgba(245,130,31,.1),transparent 70%);}
-#loginScreen .v8-grid{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.045) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse 80% 70% at 40% 50%,black 0%,transparent 100%);}
-#loginScreen .v8-left{flex:1;display:flex;flex-direction:column;justify-content:center;padding:60px 64px;position:relative;z-index:1;}
-#loginScreen .v8-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:100px;margin-bottom:40px;background:rgba(245,130,31,.12);border:1px solid rgba(245,130,31,.25);color:#f5821f;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;width:fit-content;}
-#loginScreen .v8-badge-dot{width:7px;height:7px;border-radius:50%;background:#f5821f;box-shadow:0 0 8px #f5821f;animation:v8pulse 2s ease-in-out infinite;}
-@keyframes v8pulse{0%,100%{opacity:1}50%{opacity:.4}}
-#loginScreen .v8-headline{font-size:52px;font-weight:800;line-height:1.1;letter-spacing:-.02em;color:#f1f5f9;margin:0 0 16px;}
-#loginScreen .v8-headline em{font-style:normal;background:linear-gradient(135deg,#f5821f 0%,#fbbf24 50%,#f5821f 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-#loginScreen .v8-sub{font-size:16px;color:rgba(148,163,184,.8);line-height:1.65;max-width:420px;margin:0 0 48px;}
-#loginScreen .v8-features{display:flex;flex-direction:column;gap:20px;margin-bottom:48px;}
-#loginScreen .v8-feat{display:flex;align-items:flex-start;gap:14px;}
-#loginScreen .v8-feat-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(245,130,31,.1);border:1px solid rgba(245,130,31,.2);color:#f5821f;}
-#loginScreen .v8-feat-title{font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:2px;}
-#loginScreen .v8-feat-desc{font-size:12.5px;color:rgba(148,163,184,.7);line-height:1.5;}
-#loginScreen .v8-footer{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(100,116,139,.6);}
-#loginScreen .v8-divider{width:1px;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.07) 20%,rgba(255,255,255,.07) 80%,transparent);flex-shrink:0;align-self:stretch;margin:40px 0;}
-#loginScreen .v8-right{width:460px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:40px;position:relative;z-index:1;}
-#loginScreen .v8-card{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:24px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:44px 40px;box-shadow:0 24px 64px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08);position:relative;overflow:hidden;}
-#loginScreen .v8-card::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(245,130,31,.5),transparent);}
-#loginScreen .v8-card-logo{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
-#loginScreen .v8-card-logo img{width:36px;height:36px;object-fit:contain;}
-#loginScreen .v8-card-logo-name{font-size:14px;font-weight:700;color:#f1f5f9;}
-#loginScreen .v8-card-logo-sub{font-size:11px;color:rgba(148,163,184,.6);margin-top:1px;}
-#loginScreen .v8-welcome{font-size:28px;font-weight:800;color:#f1f5f9;margin:0 0 8px;letter-spacing:-.02em;}
-#loginScreen .v8-welcome-sub{font-size:14px;color:rgba(148,163,184,.7);margin:0 0 28px;line-height:1.5;}
-#loginScreen .v8-welcome-sub strong{color:rgba(245,130,31,.9);}
-#loginScreen .v8-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.07);color:#f1f5f9;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.01em;font-family:'Inter','Poppins',sans-serif;}
-#loginScreen .v8-google-btn:hover{background:rgba(255,255,255,.12);border-color:rgba(245,130,31,.4);box-shadow:0 0 24px rgba(245,130,31,.12);}
-#loginScreen .v8-spinner{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:#f5821f;animation:spin .7s linear infinite;display:none;flex-shrink:0;}
+<!-- LOGIN — Adit betaapp.adit.com Style -->
+<style id="login-adit">
+#loginScreen{position:fixed!important;inset:0!important;z-index:9999!important;display:flex!important;align-items:stretch!important;background:#E2F2FA!important;font-family:'Poppins',sans-serif!important;overflow:hidden!important;color:#072B40!important;box-sizing:border-box!important;}
+/* ── Adit betaapp.adit.com Login Style ── */
+#loginScreen .adit-login-left{
+  flex:1;background:rgb(212,242,255);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:60px 52px;position:relative;overflow:hidden;
+}
+#loginScreen .adit-login-left-decor{
+  position:absolute;top:-80px;right:-80px;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,168,224,.15) 0%,transparent 70%);
+  pointer-events:none;
+}
+#loginScreen .adit-login-left-decor2{
+  position:absolute;bottom:-60px;left:-60px;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(244,137,31,.1) 0%,transparent 70%);
+  pointer-events:none;
+}
+#loginScreen .adit-login-carousel{
+  width:100%;max-width:440px;background:#FFFFFF;border-radius:20px;
+  box-shadow:rgba(0,0,0,0.12) 0px 8px 40px;overflow:hidden;
+  animation:aditCardIn .7s cubic-bezier(.22,1,.36,1) both;
+}
+#loginScreen .adit-carousel-slide{
+  padding:48px 44px 44px;text-align:center;
+}
+#loginScreen .adit-carousel-icon{
+  width:72px;height:72px;border-radius:50%;margin:0 auto 24px;
+  background:linear-gradient(135deg,#E2F2FA,#B1E3F9);
+  display:flex;align-items:center;justify-content:center;
+}
+#loginScreen .adit-carousel-title{
+  font-size:22px;font-weight:700;color:#072B40;margin-bottom:10px;line-height:1.25;
+}
+#loginScreen .adit-carousel-sub{
+  font-size:14px;color:#6B849A;line-height:1.65;margin-bottom:32px;
+}
+#loginScreen .adit-feat-list{display:flex;flex-direction:column;gap:12px;text-align:left;margin-bottom:32px;}
+#loginScreen .adit-feat-row{display:flex;align-items:center;gap:12px;}
+#loginScreen .adit-feat-dot{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:rgb(226,242,250);display:flex;align-items:center;justify-content:center;
+}
+#loginScreen .adit-feat-dot svg{color:#072B40;}
+#loginScreen .adit-feat-text{font-size:13px;font-weight:500;color:#072B40;}
+#loginScreen .adit-slide-dots{display:flex;align-items:center;justify-content:center;gap:6px;}
+#loginScreen .adit-dot{height:8px;border-radius:30px;background:rgb(177,227,249);transition:all .4s ease;cursor:pointer;}
+#loginScreen .adit-dot.active{width:24px;background:#25A8E0;}
+#loginScreen .adit-dot:not(.active){width:8px;}
+
+/* Right panel */
+#loginScreen .adit-login-right{
+  width:480px;flex-shrink:0;background:linear-gradient(135deg,#072B40 0%,#0A3D5C 100%);
+  display:flex;align-items:center;justify-content:center;padding:48px 44px;position:relative;
+}
+#loginScreen .adit-login-right::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background-image:radial-gradient(rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:28px 28px;pointer-events:none;
+}
+#loginScreen .adit-login-card{
+  width:100%;max-width:360px;position:relative;z-index:1;
+  animation:aditCardIn .8s cubic-bezier(.22,1,.36,1) .1s both;
+}
+#loginScreen .adit-brand{display:flex;align-items:center;gap:12px;margin-bottom:36px;}
+#loginScreen .adit-brand img{width:40px;height:40px;object-fit:contain;border-radius:10px;}
+#loginScreen .adit-brand-name{font-size:16px;font-weight:700;color:#FFFFFF;}
+#loginScreen .adit-brand-sub{font-size:11px;color:rgba(178,219,240,.65);margin-top:2px;}
+#loginScreen .adit-welcome{font-size:30px;font-weight:700;color:#FFFFFF;margin-bottom:6px;}
+#loginScreen .adit-welcome-sub{font-size:14px;color:rgba(178,219,240,.75);margin-bottom:32px;line-height:1.55;}
+#loginScreen .adit-welcome-sub strong{color:#F4891F;}
+
+/* Quick sign-in card */
+#loginScreen .adit-quick-card{
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:14px 16px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;
+}
+#loginScreen .adit-quick-card:hover{background:rgba(255,255,255,.1);border-color:rgba(244,137,31,.4);}
+#loginScreen .adit-quick-label{font-size:10px;font-weight:600;color:rgba(178,219,240,.5);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+#loginScreen .adit-quick-name{font-size:14px;font-weight:600;color:#FFF;line-height:1.2;}
+#loginScreen .adit-quick-email{font-size:11px;color:rgba(178,219,240,.65);}
+#loginScreen .adit-quick-arrow{font-size:18px;color:#F4891F;margin-left:auto;}
+
+/* Google button — Adit app style */
+#loginScreen .v8-google-btn,#loginScreen .adit-google-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:12px;
+  padding:15px 20px;border-radius:8px;
+  border:none;
+  background:#F4891F;
+  color:#FFFFFF;font-size:15px;font-weight:600;cursor:pointer;
+  transition:all .2s;letter-spacing:.01em;
+  box-shadow:rgba(244,137,31,0.45) 0px 4px 20px 0px;
+  position:relative;overflow:hidden;
+}
+#loginScreen .v8-google-btn:hover,#loginScreen .adit-google-btn:hover{
+  background:#F28820;transform:translateY(-1px);
+  box-shadow:rgba(244,137,31,0.6) 0px 8px 28px 0px;
+}
+#loginScreen .v8-google-btn:active{transform:translateY(0);transition:transform .1s;}
+
+/* Spinner */
+#loginScreen .v8-spinner,#loginScreen .adit-spinner{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#FFF;
+  animation:spin .7s linear infinite;display:none;flex-shrink:0;
+}
 #loginScreen .v8-google-btn[data-loading="true"] .v8-spinner{display:block;}
 #loginScreen .v8-google-btn[data-loading="true"] .v8-google-icon{display:none;}
 #loginScreen .v8-google-btn[data-loading="true"] .v8-btn-label{opacity:0;}
-#loginScreen .v8-login-msg{margin:12px 0 0;font-size:13px;color:#fca5a5;min-height:18px;text-align:center;}
-#loginScreen .v8-switch-btn{display:none;width:100%;margin-top:10px;padding:8px;background:none;border:none;color:rgba(148,163,184,.5);font-size:13px;cursor:pointer;font-family:'Inter','Poppins',sans-serif;}
-#loginScreen .v8-switch-btn:hover{color:rgba(148,163,184,.8);}
-#loginScreen .v8-sep{display:flex;align-items:center;gap:12px;margin:24px 0;color:rgba(100,116,139,.5);font-size:11px;letter-spacing:.04em;text-transform:uppercase;}
-#loginScreen .v8-sep::before,#loginScreen .v8-sep::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
-#loginScreen .v8-restrict{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:rgba(100,116,139,.6);}
-#loginScreen .v8-restrict strong{color:rgba(148,163,184,.7);font-weight:600;}
-@media(max-width:900px){#loginScreen .v8-left{display:none!important;}#loginScreen .v8-divider{display:none!important;}#loginScreen .v8-right{width:100%!important;}}
 
-/* ── Animations ── */
-@keyframes v8OrbDrift1{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-20px,20px) scale(.95)}}
-@keyframes v8OrbDrift2{0%,100%{transform:translate(0,0) scale(1)}40%{transform:translate(-50px,30px) scale(1.1)}70%{transform:translate(30px,-20px) scale(.92)}}
-@keyframes v8OrbDrift3{0%,100%{transform:translateY(-50%) scale(1)}50%{transform:translateY(calc(-50% - 24px)) scale(1.06)}}
-@keyframes v8GridDrift{0%{background-position:0 0}100%{background-position:32px 32px}}
-@keyframes v8FadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
-@keyframes v8FadeIn{from{opacity:0}to{opacity:1}}
-@keyframes v8CardIn{from{opacity:0;transform:translateY(32px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes v8GradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-@keyframes v8BorderGlow{0%,100%{opacity:.5}50%{opacity:1}}
-@keyframes v8BtnShimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+#loginScreen .adit-switch-btn{
+  display:none;width:100%;margin-top:10px;padding:8px;background:none;border:none;
+  color:rgba(178,219,240,.45);font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;
+  transition:color .2s;
+}
+#loginScreen .adit-switch-btn:hover{color:rgba(178,219,240,.8);}
 
-/* Orb motion */
-#loginScreen .v8-orb-1{animation:v8OrbDrift1 18s ease-in-out infinite;}
-#loginScreen .v8-orb-2{animation:v8OrbDrift2 22s ease-in-out infinite;}
-#loginScreen .v8-orb-3{animation:v8OrbDrift3 14s ease-in-out infinite;}
-
-/* Dot grid slow drift */
-#loginScreen .v8-grid{animation:v8GridDrift 8s linear infinite;}
-
-/* Animated gradient headline */
-#loginScreen .v8-headline em{
-  background:linear-gradient(135deg,#f5821f,#fbbf24,#fb923c,#f5821f);
-  background-size:300% 300%;
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:v8GradientShift 4s ease infinite;
+#loginScreen .v8-switch-btn{
+  display:none;width:100%;margin-top:10px;padding:8px;background:none;border:none;
+  color:rgba(178,219,240,.45);font-size:13px;cursor:pointer;font-family:'Poppins',sans-serif;
 }
 
-/* Top card glow line pulse */
-#loginScreen .v8-card::before{animation:v8BorderGlow 3s ease-in-out infinite;}
-
-/* Page entry: left panel staggered fade-up */
-#loginScreen .v8-badge{animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .1s both;}
-#loginScreen .v8-headline{animation:v8FadeUp .7s cubic-bezier(.22,1,.36,1) .2s both;}
-#loginScreen .v8-sub{animation:v8FadeUp .7s cubic-bezier(.22,1,.36,1) .3s both;}
-#loginScreen .v8-feat:nth-child(1){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .35s both;}
-#loginScreen .v8-feat:nth-child(2){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .45s both;}
-#loginScreen .v8-feat:nth-child(3){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .55s both;}
-#loginScreen .v8-feat:nth-child(4){animation:v8FadeUp .6s cubic-bezier(.22,1,.36,1) .65s both;}
-#loginScreen .v8-footer{animation:v8FadeIn .8s ease .8s both;}
-
-/* Page entry: card slides up */
-#loginScreen .v8-card{animation:v8CardIn .8s cubic-bezier(.22,1,.36,1) .15s both;}
-
-/* Divider fade in */
-#loginScreen .v8-divider{animation:v8FadeIn .6s ease .4s both;}
-
-/* Google button shimmer on hover */
-#loginScreen .v8-google-btn{position:relative;overflow:hidden;}
-#loginScreen .v8-google-btn::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.08) 50%,transparent 60%);
-  background-size:200% 100%;background-position:200% center;
-  transition:background-position .5s ease;pointer-events:none;
+#loginScreen .v8-sep,#loginScreen .adit-sep{
+  display:flex;align-items:center;gap:12px;margin:22px 0;
+  color:rgba(178,219,240,.35);font-size:11px;letter-spacing:.04em;text-transform:uppercase;
 }
-#loginScreen .v8-google-btn:hover::after{background-position:-200% center;}
-#loginScreen .v8-google-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(245,130,31,.18);}
-#loginScreen .v8-google-btn:active{transform:translateY(0);transition:transform .1s;}
+#loginScreen .v8-sep::before,#loginScreen .v8-sep::after,
+#loginScreen .adit-sep::before,#loginScreen .adit-sep::after{
+  content:'';flex:1;height:1px;background:rgba(255,255,255,.1);
+}
+#loginScreen .v8-restrict,#loginScreen .adit-restrict{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  font-size:12px;color:rgba(178,219,240,.4);
+}
+#loginScreen .v8-restrict strong,#loginScreen .adit-restrict strong{
+  color:rgba(178,219,240,.65);font-weight:600;
+}
 
-/* Feature icon subtle hover */
-#loginScreen .v8-feat{transition:transform .2s ease;}
-#loginScreen .v8-feat:hover{transform:translateX(4px);}
-#loginScreen .v8-feat:hover .v8-feat-icon{background:rgba(245,130,31,.18);border-color:rgba(245,130,31,.35);}
-#loginScreen .v8-feat-icon{transition:background .2s,border-color .2s;}
+#loginScreen .v8-login-msg,#loginScreen #loginMsg{
+  margin:10px 0 0;font-size:13px;color:#ED666B;min-height:18px;text-align:center;
+}
+
+@keyframes aditCardIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@media(max-width:860px){
+  #loginScreen .adit-login-left{display:none!important;}
+  #loginScreen .adit-login-right{width:100%!important;}
+}
 </style>
 
 <div id="loginScreen">
-  <div class="v8-orb v8-orb-1"></div>
-  <div class="v8-orb v8-orb-2"></div>
-  <div class="v8-orb v8-orb-3"></div>
-  <div class="v8-grid"></div>
-
-  <div class="v8-left">
-    <div class="v8-badge"><span class="v8-badge-dot"></span>Live Operations</div>
-    <h1 class="v8-headline">Your CS team,<br><em>live &amp; accountable.</em></h1>
-    <p class="v8-sub">The real-time command center for Adit's CS operations — agent presence, break tracking, QA scoring, and performance all in one place.</p>
-    <div class="v8-features">
-      <div class="v8-feat">
-        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><circle cx="10" cy="7" r="3"/><path d="M10 12c-4.5 0-6 2-6 3h12c0-1-1.5-3-6-3z"/></svg></div>
-        <div><div class="v8-feat-title">Real-time Agent Presence</div><div class="v8-feat-desc">Live status, availability, and active call data — refreshed every 30 seconds.</div></div>
-      </div>
-      <div class="v8-feat">
-        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm.75 4.5v4.25l2.5 2.5-1.06 1.06-2.94-2.94V6.5h1.5z"/></svg></div>
-        <div><div class="v8-feat-title">Break Tracking &amp; Accountability</div><div class="v8-feat-desc">Automated break logging with alerts, thresholds, and team-wide visibility.</div></div>
-      </div>
-      <div class="v8-feat">
-        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M2 13l4-6 4 4 3-4 5 6H2z"/></svg></div>
-        <div><div class="v8-feat-title">QA Scoring &amp; Performance</div><div class="v8-feat-desc">Live scoring across inbound, outbound, transfers, and availability metrics.</div></div>
-      </div>
-      <div class="v8-feat">
-        <div class="v8-feat-icon"><svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v3l-7 4-7-4V4zm0 5.5V15a1 1 0 001 1h12a1 1 0 001-1V9.5l-7 4-7-4z"/></svg></div>
-        <div><div class="v8-feat-title">Call Logs &amp; Abandon Radar</div><div class="v8-feat-desc">Full call history, queue stats, and missed call alerts with caller details.</div></div>
+  <!-- LEFT PANEL — Baby blue, feature carousel -->
+  <div class="adit-login-left">
+    <div class="adit-login-left-decor"></div>
+    <div class="adit-login-left-decor2"></div>
+    <div class="adit-login-carousel">
+      <div class="adit-carousel-slide">
+        <div class="adit-carousel-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#072B40" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="adit-carousel-title">Your CS Team,<br>Live &amp; Accountable</div>
+        <div class="adit-carousel-sub">The real-time command center for Adit's Customer Success operations.</div>
+        <div class="adit-feat-list">
+          <div class="adit-feat-row">
+            <div class="adit-feat-dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#072B40" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+            <div class="adit-feat-text">Real-time agent presence &amp; status — refreshed every 30s</div>
+          </div>
+          <div class="adit-feat-row">
+            <div class="adit-feat-dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#072B40" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></div>
+            <div class="adit-feat-text">QA scoring, call logs &amp; performance analytics</div>
+          </div>
+          <div class="adit-feat-row">
+            <div class="adit-feat-dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#072B40" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+            <div class="adit-feat-text">Break tracking with threshold alerts &amp; accountability</div>
+          </div>
+          <div class="adit-feat-row">
+            <div class="adit-feat-dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#072B40" stroke-width="1.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+            <div class="adit-feat-text">AI Writing Assistant for emails &amp; customer notes</div>
+          </div>
+        </div>
+        <div class="adit-slide-dots">
+          <div class="adit-dot active"></div>
+          <div class="adit-dot"></div>
+          <div class="adit-dot"></div>
+        </div>
       </div>
     </div>
-    <div class="v8-footer">T1 CS Stars &nbsp;·&nbsp; Operations Hub &nbsp;·&nbsp; Adit.com</div>
+    <div style="margin-top:20px;font-size:12px;color:rgba(7,43,64,.5);text-align:center;">T1 CS Stars &nbsp;·&nbsp; Operations Hub &nbsp;·&nbsp; Adit.com</div>
   </div>
 
-  <div class="v8-divider"></div>
-
-  <div class="v8-right">
-    <div class="v8-card">
-      <div class="v8-card-logo">
+  <!-- RIGHT PANEL — Dark navy, auth form -->
+  <div class="adit-login-right">
+    <div class="adit-login-card">
+      <div class="adit-brand">
         <img src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none'">
-        <div><div class="v8-card-logo-name">Adit Agent Monitor</div><div class="v8-card-logo-sub">T1 CS Stars · Operations Hub</div></div>
+        <div>
+          <div class="adit-brand-name">Adit Agent Monitor</div>
+          <div class="adit-brand-sub">T1 CS Stars · Operations Hub</div>
+        </div>
       </div>
+
       <div id="v8-welcome-text">
-        <div class="v8-welcome">Welcome back</div>
-        <p class="v8-welcome-sub">Sign in with your <strong>@adit.com</strong> Google Workspace account to continue.</p>
+        <div class="adit-welcome">Welcome!</div>
+        <p class="adit-welcome-sub">Log in with your <strong>@adit.com</strong> Google Workspace account to continue.</p>
       </div>
-      <!-- Remembered user quick-sign-in (populated by updateLoginButton) -->
+
+      <!-- Remembered user quick-sign-in -->
       <div id="v8-quick-signin" style="display:none;margin-bottom:16px;">
-        <div style="font-size:11px;font-weight:600;color:rgba(148,163,184,.6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Continue as</div>
-        <button id="v8-quick-btn" onclick="startGoogleSignInQuick()" style="
-          width:100%;display:flex;align-items:center;gap:12px;
-          padding:12px 16px;border-radius:12px;
-          border:1px solid rgba(245,130,31,.35);
-          background:rgba(245,130,31,.08);
-          cursor:pointer;transition:all .2s;text-align:left;
-        " onmouseover="this.style.background='rgba(245,130,31,.15)'" onmouseout="this.style.background='rgba(245,130,31,.08)'">
+        <div class="adit-quick-label">Continue as</div>
+        <div class="adit-quick-card" onclick="startGoogleSignInQuick()" id="v8-quick-btn">
           <img id="v8-quick-avatar" src="" alt="" width="36" height="36" style="border-radius:50%;object-fit:cover;flex-shrink:0;display:none">
-          <div id="v8-quick-initials" style="width:36px;height:36px;border-radius:50%;background:rgba(245,130,31,.3);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#f5821f;flex-shrink:0;"></div>
+          <div id="v8-quick-initials" style="width:36px;height:36px;border-radius:50%;background:rgba(244,137,31,.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#F4891F;flex-shrink:0;"></div>
           <div style="flex:1;min-width:0;">
-            <div id="v8-quick-name" style="font-size:14px;font-weight:600;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-            <div id="v8-quick-email" style="font-size:11px;color:rgba(148,163,184,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            <div id="v8-quick-name" class="adit-quick-name"></div>
+            <div id="v8-quick-email" class="adit-quick-email"></div>
           </div>
-          <div style="font-size:12px;font-weight:600;color:#f5821f;flex-shrink:0;">Sign in →</div>
-        </button>
+          <div class="adit-quick-arrow">→</div>
+        </div>
       </div>
+
       <div id="loginMsg" class="v8-login-msg"></div>
       <div id="sessionDebug" style="display:none"></div>
+
       <button id="googleFallbackBtn" class="v8-google-btn" onclick="startGoogleSignIn()">
         <div class="v8-spinner"></div>
         <svg class="v8-google-icon" viewBox="0 0 24 24" width="20" height="20"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
         <span class="v8-btn-label" id="google-btn-label">Continue with Google</span>
       </button>
+
       <button id="gfbSwitch" class="v8-switch-btn" onclick="switchGoogleAccount()">Use a different account</button>
       <div id="googleBtn" class="google-btn-host" style="display:none"></div>
+
       <div class="v8-sep">@adit.com accounts only</div>
       <div class="v8-restrict">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 7V5a4.5 4.5 0 019 0v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Contact <strong>&nbsp;Sebastin&nbsp;</strong> for access
       </div>
-
     </div>
   </div>
 </div><!-- /#loginScreen -->
@@ -8821,15 +9168,15 @@ tbody tr:hover td{
     </button>
     <div class="hdr-chip" style="cursor:default">
       <span class="live-dot"></span>
-      <span id="clock" style="font-family:'JetBrains Mono',monospace">--:--:--</span>
+      <span id="clock" style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px;">--:--:--</span>
     </div>
     <div class="hdr-user">
       <img id="userAvatar" class="hdr-avatar" src="" alt="" style="display:none">
       <span id="userLabel">--</span>
       <span id="userRoleTag" class="role-pill role-admin">ADMIN</span>
     </div>
-    <button class="btn btn-sm" id="viewToggleBtn" onclick="toggleView()" style="display:none;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text2);font-size:11px;border-radius:8px;padding:5px 11px;">Switch to Agent View</button>
-    <button id="test-agent-btn" onclick="startTestSession()" title="Preview the app as a test agent" style="display:none;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3);border-radius:8px;color:rgba(165,180,252,.85);font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;align-items:center;gap:6px;">
+    <button class="btn btn-sm" id="viewToggleBtn" onclick="toggleView()" style="display:none;background:rgba(244,137,31,.08);border:1px solid rgba(244,137,31,.25);color:#F4891F;font-size:11px;border-radius:6px;padding:5px 11px;font-weight:600;cursor:pointer;">Switch to Agent View</button>
+    <button id="test-agent-btn" onclick="startTestSession()" title="Preview the app as a test agent" style="display:none;background:rgba(33,170,224,.08);border:1px solid rgba(33,170,224,.25);border-radius:6px;color:#21AAE0;font-size:11px;font-weight:600;padding:5px 12px;cursor:pointer;align-items:center;gap:6px;">
       <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12" style="flex-shrink:0"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
       Test Agent
     </button>
@@ -9615,6 +9962,10 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
       Bonus Guide
     </button>
+    <button class="agent-shell-btn" id="agent-tab-writer" onclick="switchAgentSection('writer',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      AI Writer
+    </button>
   </div>
   <div class="agent-shell-page active" id="agent-section-dashboard">
     <!-- ── EOD Form Banner ───────────────────────────────────────────────── -->
@@ -10006,6 +10357,131 @@ tbody tr:hover td{
   <div class="agent-shell-page" id="agent-section-bonus">
     <div class="card bonus-frame-shell">
       <iframe class="bonus-frame" src="/bonus-guide.html" title="Bonus Guide Agent Page" loading="lazy"></iframe>
+    </div>
+  </div>
+
+  <!-- ── AI Writer Section ───────────────────────────────────────────────── -->
+  <div class="agent-shell-page" id="agent-section-writer">
+    <style>
+      .aw-wrap { display:flex; flex-direction:column; gap:16px; max-width:860px; margin:0 auto; }
+      .aw-header { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+      .aw-header-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+      .aw-title { font-size:17px; font-weight:700; color:var(--t1); }
+      .aw-sub { font-size:12px; color:var(--t3); margin-top:2px; }
+      .aw-controls { display:flex; gap:10px; flex-wrap:wrap; }
+      .aw-control-group { display:flex; flex-direction:column; gap:5px; flex:1; min-width:160px; }
+      .aw-control-label { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.06em; }
+      .aw-select { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:var(--t1); font-size:13px; padding:8px 12px; outline:none; cursor:pointer; transition:border .2s; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23888' d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:32px; }
+      .aw-select:focus { border-color:rgba(99,102,241,.5); }
+      .aw-select option { background:#1a1a2e; color:#fff; }
+      .aw-panels { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      @media(max-width:640px){ .aw-panels{ grid-template-columns:1fr; } }
+      .aw-panel { display:flex; flex-direction:column; gap:8px; }
+      .aw-panel-header { display:flex; align-items:center; justify-content:space-between; }
+      .aw-panel-label { font-size:11px; font-weight:600; color:var(--t2); display:flex; align-items:center; gap:6px; }
+      .aw-textarea { width:100%; min-height:200px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; color:var(--t1); font-size:13px; line-height:1.6; padding:14px; resize:vertical; outline:none; font-family:inherit; transition:border .2s; box-sizing:border-box; }
+      .aw-textarea:focus { border-color:rgba(99,102,241,.45); }
+      .aw-textarea::placeholder { color:var(--t3); }
+      .aw-output { width:100%; min-height:200px; background:rgba(99,102,241,.05); border:1px solid rgba(99,102,241,.18); border-radius:10px; color:var(--t1); font-size:13px; line-height:1.7; padding:14px; font-family:inherit; white-space:pre-wrap; word-break:break-word; box-sizing:border-box; position:relative; }
+      .aw-output.empty { color:var(--t3); font-style:italic; }
+      .aw-output-placeholder { color:var(--t3); font-style:italic; }
+      .aw-btn { display:inline-flex; align-items:center; gap:7px; padding:10px 20px; border-radius:9px; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all .2s; }
+      .aw-btn-primary { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; }
+      .aw-btn-primary:hover { opacity:.9; transform:translateY(-1px); box-shadow:0 4px 16px rgba(99,102,241,.35); }
+      .aw-btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+      .aw-btn-ghost { background:rgba(255,255,255,.07); color:var(--t2); border:1px solid rgba(255,255,255,.1); }
+      .aw-btn-ghost:hover { background:rgba(255,255,255,.12); color:var(--t1); }
+      .aw-btn-copy { background:rgba(99,102,241,.12); color:#818cf8; border:1px solid rgba(99,102,241,.25); padding:6px 12px; font-size:11px; }
+      .aw-btn-copy:hover { background:rgba(99,102,241,.22); }
+      .aw-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+      .aw-char-count { font-size:11px; color:var(--t3); margin-left:auto; }
+      .aw-char-count.over { color:#f87171; }
+      .aw-spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+      .aw-tip { background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.15); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--t3); line-height:1.5; }
+      .aw-tip strong { color:#818cf8; }
+    </style>
+
+    <div class="aw-wrap">
+      <!-- Header -->
+      <div class="aw-header">
+        <div class="aw-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </div>
+        <div>
+          <div class="aw-title">AI Writing Assistant</div>
+          <div class="aw-sub">Paste your draft — AI will rephrase, structure, and polish it for you</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="aw-controls">
+        <div class="aw-control-group">
+          <div class="aw-control-label">Writing Style</div>
+          <select class="aw-select" id="aw-style">
+            <option value="email">📧 Professional Email</option>
+            <option value="customer">💬 Customer Response</option>
+            <option value="docs">📄 Documentation</option>
+            <option value="slack">💡 Slack / Team Message</option>
+            <option value="general">✏️ General</option>
+          </select>
+        </div>
+        <div class="aw-control-group">
+          <div class="aw-control-label">Tone</div>
+          <select class="aw-select" id="aw-tone">
+            <option value="professional">Professional</option>
+            <option value="friendly">Friendly</option>
+            <option value="concise">Concise</option>
+            <option value="formal">Formal</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Input / Output Panels -->
+      <div class="aw-panels">
+        <div class="aw-panel">
+          <div class="aw-panel-header">
+            <span class="aw-panel-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Your Draft
+            </span>
+            <button class="aw-btn aw-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="document.getElementById('aw-input').value='';updateAwCharCount()">Clear</button>
+          </div>
+          <textarea class="aw-textarea" id="aw-input" placeholder="Paste your email, comment, or text here...&#10;&#10;Example: hey client the dental software thing is not working fine, i tried but still problem is there please help" oninput="updateAwCharCount()"></textarea>
+        </div>
+        <div class="aw-panel">
+          <div class="aw-panel-header">
+            <span class="aw-panel-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.5" style="width:13px;height:13px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+              <span style="color:#818cf8;">AI Improved Version</span>
+            </span>
+            <button class="aw-btn aw-btn-copy" id="aw-copy-btn" onclick="copyAwOutput()" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:11px;height:11px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+          <div class="aw-output empty" id="aw-output">
+            <span class="aw-output-placeholder">Your improved text will appear here...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="aw-actions">
+        <button class="aw-btn aw-btn-primary" id="aw-submit-btn" onclick="sendToAIWriter()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Improve My Writing
+        </button>
+        <button class="aw-btn aw-btn-ghost" onclick="useAwResult()" id="aw-use-btn" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Use as New Input
+        </button>
+        <span class="aw-char-count" id="aw-char-count">0 / 4000</span>
+      </div>
+
+      <!-- Tip -->
+      <div class="aw-tip">
+        <strong>💡 Tips:</strong> For best results, include the full context of what you're writing. The AI keeps your original meaning — it only improves clarity, grammar, and structure. Try different styles for emails vs. customer tickets vs. internal notes.
+      </div>
     </div>
   </div>
 </div>
@@ -10631,6 +11107,95 @@ function initEmbeddedFrames(){
     }
     if(frame.contentDocument)setTimeout(()=>resizeHallFrame(frame),30);
   });
+}
+
+// ── AI Writing Assistant ─────────────────────────────────────────────────────
+function updateAwCharCount(){
+  const inp=document.getElementById('aw-input');
+  const counter=document.getElementById('aw-char-count');
+  if(!inp||!counter)return;
+  const len=inp.value.length;
+  counter.textContent=len+' / 4000';
+  counter.classList.toggle('over',len>4000);
+}
+
+async function sendToAIWriter(){
+  const inp=document.getElementById('aw-input');
+  const out=document.getElementById('aw-output');
+  const btn=document.getElementById('aw-submit-btn');
+  const copyBtn=document.getElementById('aw-copy-btn');
+  const useBtn=document.getElementById('aw-use-btn');
+  if(!inp||!out||!btn)return;
+
+  const text=inp.value.trim();
+  if(!text){showToast('Please paste some text first.','warning');inp.focus();return;}
+  if(text.length>4000){showToast('Text is too long. Max 4000 characters.','error');return;}
+
+  const style=document.getElementById('aw-style')?.value||'email';
+  const tone=document.getElementById('aw-tone')?.value||'professional';
+
+  // Loading state
+  btn.disabled=true;
+  btn.innerHTML='<div class="aw-spinner"></div> Improving...';
+  out.classList.remove('empty');
+  out.innerHTML='<span style="color:var(--t3);font-style:italic;">✨ AI is polishing your text...</span>';
+  if(copyBtn)copyBtn.style.display='none';
+  if(useBtn)useBtn.style.display='none';
+
+  try{
+    const res=await fetch('/api/write-assist',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text,style,tone})
+    });
+    const data=await res.json();
+    if(!data.success)throw new Error(data.error||'AI request failed');
+
+    out.classList.remove('empty');
+    out.textContent=data.result;
+    if(copyBtn)copyBtn.style.display='inline-flex';
+    if(useBtn)useBtn.style.display='inline-flex';
+    showToast('Text improved successfully!','success');
+  }catch(e){
+    out.classList.add('empty');
+    const errEl=document.createElement('span');
+    errEl.style.color='#f87171';
+    errEl.textContent='⚠️ '+e.message;
+    out.innerHTML='';
+    out.appendChild(errEl);
+    showToast('AI writer error: '+e.message,'error');
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Improve My Writing';
+  }
+}
+
+function copyAwOutput(){
+  const out=document.getElementById('aw-output');
+  const copyBtn=document.getElementById('aw-copy-btn');
+  if(!out||!out.textContent.trim())return;
+  navigator.clipboard.writeText(out.textContent).then(()=>{
+    if(copyBtn){
+      const orig=copyBtn.innerHTML;
+      copyBtn.innerHTML='✓ Copied!';
+      setTimeout(()=>{ copyBtn.innerHTML=orig; },1800);
+    }
+    showToast('Copied to clipboard!','success');
+  }).catch(()=>showToast('Copy failed — please select and copy manually.','error'));
+}
+
+function useAwResult(){
+  const inp=document.getElementById('aw-input');
+  const out=document.getElementById('aw-output');
+  if(!inp||!out||!out.textContent.trim())return;
+  inp.value=out.textContent;
+  out.classList.add('empty');
+  out.innerHTML='<span class="aw-output-placeholder">Your improved text will appear here...</span>';
+  document.getElementById('aw-copy-btn').style.display='none';
+  document.getElementById('aw-use-btn').style.display='none';
+  updateAwCharCount();
+  inp.focus();
+  showToast('Moved to input — refine and improve again!','info');
 }
 
 // ── Server-side session helpers ───────────────────────────────────────────
