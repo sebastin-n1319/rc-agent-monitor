@@ -9147,6 +9147,304 @@ tbody tr:hover td{
   setTimeout(lvInit, 800);
 })();
 </script>
+<!-- ════════════════════════════════════════════════════════════════════
+     ADIT DESIGN SYSTEM — SIDEBAR + LAYOUT
+     Matches betaapp.adit.com exactly:
+     70px dark navy sidebar (#072B40) · 48px white topbar · #F7F8F8 bg
+════════════════════════════════════════════════════════════════════ -->
+<style id="adit-layout">
+/* ── Sidebar container ─────────────────────────────────────────────── */
+.adit-sidebar{
+  position:fixed;left:0;top:48px;
+  width:70px;height:calc(100vh - 48px);
+  background:#072B40;
+  display:none;flex-direction:column;align-items:center;
+  padding:6px 0 12px;z-index:150;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;
+}
+.adit-sidebar::-webkit-scrollbar{display:none;}
+
+/* ── Sidebar icon items ────────────────────────────────────────────── */
+.sb-item{
+  width:70px;min-height:54px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;
+  color:rgba(255,255,255,.38);
+  border-left:3px solid transparent;
+  transition:color .15s,background .15s,border-color .15s;
+  gap:4px;padding:8px 0;text-align:center;
+}
+.sb-item:hover{color:rgba(255,255,255,.8);background:rgba(244,137,31,.08);}
+.sb-item.active{color:#F4891F;border-left-color:#F4891F;background:rgba(244,137,31,.08);}
+.sb-item svg{width:20px;height:20px;flex-shrink:0;stroke:currentColor;}
+.sb-label{
+  font-family:'Poppins',sans-serif;font-size:9px;font-weight:600;
+  letter-spacing:.03em;text-transform:uppercase;line-height:1;
+  white-space:nowrap;
+}
+/* Orange notification badge on sidebar item */
+.sb-badge{
+  position:absolute;top:5px;right:6px;
+  background:#F4891F;color:#FFF;border-radius:50%;
+  font-size:10px;font-weight:700;
+  min-width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;line-height:1;
+}
+/* Sidebar divider */
+.sb-div{width:36px;height:1px;background:rgba(255,255,255,.08);margin:6px auto;}
+
+/* ── Hide old horizontal nav bars — sidebar replaces them ──────────── */
+.nav{display:none!important;}
+.agent-shell-nav{display:none!important;}
+
+/* ── Main content: shift right to clear sidebar ────────────────────── */
+#adminView,#agentView{margin-left:70px!important;}
+
+/* ── Topbar: make it exactly 48px and crisp Adit white ────────────── */
+header{
+  height:48px!important;
+  background:#FFFFFF!important;
+  border-bottom:1px solid #E6ECF4!important;
+  box-shadow:rgba(0,0,0,0.06) 0px 1px 6px!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+}
+#mainApp{padding-top:48px!important;background:#F7F8F8!important;}
+
+/* ── Pages / content padding ────────────────────────────────────────── */
+.page{padding:20px 20px 40px!important;}
+.agent-shell-page{padding:16px 20px 40px!important;}
+
+/* ── Global Adit light background ──────────────────────────────────── */
+body{background:#F7F8F8!important;color:#072B40!important;}
+
+/* ── Topbar elements ────────────────────────────────────────────────── */
+.hdr-title{color:#072B40!important;font-size:13px!important;font-weight:700!important;}
+.hdr-sub{color:#6B849A!important;font-size:11px!important;}
+.hdr-sep{background:#E6ECF4!important;}
+.hdr-chip{
+  background:#F7F8F8!important;border:1px solid #E6ECF4!important;
+  color:#3A5068!important;border-radius:20px!important;padding:4px 12px!important;
+  font-size:12px!important;font-weight:500!important;
+}
+.hdr-chip:hover{background:#F0F2F5!important;color:#072B40!important;}
+.live-dot{background:#2DDC96!important;box-shadow:0 0 6px #2DDC96!important;}
+.tz-on{color:#F4891F!important;}
+.logout-btn{
+  background:rgba(237,102,107,.08)!important;border:1px solid rgba(237,102,107,.2)!important;
+  color:#ED666B!important;border-radius:6px!important;font-size:11px!important;
+  padding:5px 12px!important;font-weight:600!important;cursor:pointer!important;
+}
+.logout-btn:hover{background:rgba(237,102,107,.15)!important;}
+.role-admin{background:rgba(244,137,31,.1)!important;color:#F4891F!important;border:1px solid rgba(244,137,31,.22)!important;}
+.role-agent{background:rgba(33,170,224,.1)!important;color:#21AAE0!important;border:1px solid rgba(33,170,224,.2)!important;}
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.card,.ld-panel,.viz-card,.rpt-stat,.agent-card,.evt-group,.ld-strip,.ld-kpi,.ld-act-item,.ld-oe{
+  background:#FFFFFF!important;
+  border:1px solid #E6ECF4!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:rgba(0,0,0,0.05) 0px 0px 10px!important;
+}
+.card-title,.ld-panel-title{color:#072B40!important;font-size:13px!important;font-weight:600!important;}
+
+/* ── KPI accent top bar ─────────────────────────────────────────────── */
+.ld-kpi::before{background:var(--kpi-accent,#F4891F)!important;height:2px!important;}
+
+/* ── Metric cards ───────────────────────────────────────────────────── */
+.metric{
+  background:#FFFFFF!important;border:1px solid #E6ECF4!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  box-shadow:rgba(0,0,0,0.05) 0px 0px 10px!important;
+}
+.metric:hover{transform:translateY(-2px)!important;box-shadow:rgba(0,0,0,.10) 0px 4px 16px!important;border-color:#C8D0DC!important;}
+.metric-lbl{color:#6B849A!important;font-size:9px!important;font-weight:700!important;letter-spacing:.1em!important;}
+.metric-val{color:#072B40!important;font-family:'Poppins',sans-serif!important;font-size:26px!important;font-weight:700!important;letter-spacing:-.01em!important;}
+.metric-sub{color:#9BAFC0!important;}
+
+/* ── KPI, Activity, Occ text ─────────────────────────────────────────── */
+.ld-kpi-lbl{color:#6B849A!important;font-size:9px!important;font-weight:700!important;letter-spacing:.1em!important;}
+.ld-kpi-val{color:#072B40!important;font-family:'Poppins',sans-serif!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.01em!important;}
+.ld-kpi-sub{color:#9BAFC0!important;font-family:'Poppins',sans-serif!important;}
+.ld-act-lbl{color:#6B849A!important;font-size:9px!important;font-weight:600!important;letter-spacing:.07em!important;}
+.ld-act-val{color:#072B40!important;font-family:'Poppins',sans-serif!important;font-size:18px!important;font-weight:700!important;}
+.ld-pbar-label{color:#3A5068!important;} .ld-pbar-row b{color:#072B40!important;}
+.ld-oe span{color:#6B849A!important;} .ld-oe strong{color:#072B40!important;}
+.ld-health-badge{background:#F7F8F8!important;border-color:#E6ECF4!important;}
+.ld-health-score{color:#072B40!important;}
+
+/* ── Strip chips ────────────────────────────────────────────────────── */
+.ld-strip-chip,.ops-chip,.chip{background:#F7F8F8!important;border:1px solid #E6ECF4!important;color:#3A5068!important;}
+.ld-strip-chip strong,.ops-chip strong,.chip strong{color:#072B40!important;}
+.admin-ribbon{background:#FFFFFF!important;border:1px solid #E6ECF4!important;}
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+table{background:#FFFFFF!important;border-radius:8px!important;overflow:hidden!important;}
+thead tr,thead th{
+  background:#F7F8F8!important;color:#072B40!important;
+  font-size:12px!important;font-weight:600!important;
+  border-bottom:1px solid #E6ECF4!important;
+}
+#admin-agent-tbl-wrap thead th{background:#F7F8F8!important;color:#072B40!important;}
+tbody tr{background:#FFFFFF!important;transition:background .15s!important;}
+tbody tr:hover{background:#FAFAFA!important;}
+tbody tr td{color:#072B40!important;font-size:13px!important;border-bottom:1px solid #F0F2F5!important;}
+
+/* ── Status pills ───────────────────────────────────────────────────── */
+.s-available,.s-Available{background:rgba(45,220,150,.1)!important;color:#2DDC96!important;border:1px solid rgba(45,220,150,.25)!important;}
+.s-unavailable,.s-Unavailable,.s-DND,.s-dnd{background:rgba(237,102,107,.1)!important;color:#ED666B!important;border:1px solid rgba(237,102,107,.25)!important;}
+.s-oncall,.s-OnCall,.s-Busy,.s-busy{background:rgba(33,170,224,.1)!important;color:#21AAE0!important;border:1px solid rgba(33,170,224,.25)!important;}
+.s-offline,.s-Offline{background:rgba(107,132,154,.08)!important;color:#6B849A!important;border:1px solid rgba(107,132,154,.15)!important;}
+
+/* ── Inputs ─────────────────────────────────────────────────────────── */
+input[type=text],input[type=date],input[type=email],select,textarea{
+  background:#F0F7FB!important;border:1px solid #E6ECF4!important;
+  border-radius:8px!important;color:#072B40!important;font-size:13px!important;
+  font-family:'Poppins',sans-serif!important;
+}
+input[type=text]:focus,input[type=date]:focus,input[type=email]:focus,select:focus,textarea:focus{
+  border-color:rgba(244,137,31,.5)!important;background:#FDFAF7!important;
+  box-shadow:0 0 0 3px rgba(244,137,31,.1)!important;outline:none!important;
+}
+input::placeholder{color:#9BAFC0!important;}
+select option{background:#FFF!important;color:#072B40!important;}
+.field label{color:#6B849A!important;font-size:10px!important;font-weight:600!important;letter-spacing:.08em!important;}
+
+/* ── Primary button ─────────────────────────────────────────────────── */
+.btn-primary,.btn.btn-primary,[class*="btn-primary"]{
+  background:#F4891F!important;color:#FFF!important;border:none!important;
+  border-radius:8px!important;font-weight:600!important;cursor:pointer!important;
+  box-shadow:rgba(244,137,31,.4) 0px 4px 16px!important;
+  transition:all .2s!important;font-family:'Poppins',sans-serif!important;
+}
+.btn-primary:hover{background:#F28820!important;transform:translateY(-1px)!important;box-shadow:rgba(244,137,31,.5) 0px 6px 20px!important;}
+
+/* ── Event log ──────────────────────────────────────────────────────── */
+.evt-hdr{background:#F7F8F8!important;border-bottom:none!important;}
+.evt-hdr:hover{background:#F0F2F5!important;}
+.evt-agent{color:#072B40!important;font-size:13px!important;}
+.evt-meta{color:#6B849A!important;}
+.evt-row{background:#F7F8F8!important;}
+.evt-time{color:#9BAFC0!important;font-family:'Poppins',sans-serif!important;font-size:10px!important;}
+.evt-body{border-top:1px solid #F0F2F5!important;}
+
+/* ── Agent cards ────────────────────────────────────────────────────── */
+.agent-card{background:#FFFFFF!important;border:1px solid #E6ECF4!important;}
+.agent-card:hover{border-color:#C8D0DC!important;box-shadow:rgba(0,0,0,.08) 0px 4px 16px!important;}
+.agent-card-name{color:#072B40!important;font-weight:600!important;}
+.agent-card-ext{color:#9BAFC0!important;}
+.agent-card-actions button{background:#F7F8F8!important;border:1px solid #E6ECF4!important;color:#3A5068!important;border-radius:6px!important;}
+.agent-card-actions button:hover{background:#F4891F!important;color:#FFF!important;border-color:#F4891F!important;}
+
+/* ── Viz / health ───────────────────────────────────────────────────── */
+.viz-title{color:#6B849A!important;font-size:10px!important;font-weight:700!important;letter-spacing:.1em!important;text-transform:uppercase!important;}
+.mix-bar{background:#F0F2F5!important;}
+.health-core{background:#F7F8F8!important;border:1px solid #E6ECF4!important;}
+.health-label{color:#6B849A!important;} .health-score{color:#072B40!important;}
+.health-row{color:#3A5068!important;} .health-row b{color:#072B40!important;}
+.health-track{background:#E6ECF4!important;}
+.rpt-lbl{color:#6B849A!important;font-size:9px!important;}
+
+/* ── Toast ──────────────────────────────────────────────────────────── */
+.toast{background:#072B40!important;color:#FFF!important;border:none!important;box-shadow:rgba(0,0,0,.2) 0px 4px 24px!important;border-radius:8px!important;}
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+footer{background:#FFFFFF!important;color:#9BAFC0!important;border-top:1px solid #E6ECF4!important;font-size:12px!important;}
+.f-name,.f-v{color:#F4891F!important;}
+
+/* ── Agent view ticker ───────────────────────────────────────────────── */
+#agentTicker{background:linear-gradient(90deg,#072B40,#0A4060)!important;border-bottom:2px solid rgba(244,137,31,.3)!important;}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:#F0F2F5;}
+::-webkit-scrollbar-thumb{background:#C8D0DC;border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:#A8B5C4;}
+
+/* ── Agent self-card ─────────────────────────────────────────────────── */
+#agent-self-card{background:#FFFFFF!important;border:1px solid #E6ECF4!important;box-shadow:rgba(0,0,0,.04) 0px 1px 6px!important;}
+#self-role-pill{background:rgba(244,137,31,.1)!important;color:#F4891F!important;border:1px solid rgba(244,137,31,.22)!important;}
+
+/* ── Modals ─────────────────────────────────────────────────────────── */
+.modal-card,.modal-box,dialog{background:#FFFFFF!important;border-radius:16px!important;box-shadow:rgba(0,0,0,.2) 0px 0px 30px!important;}
+
+/* ── Font override: every element ───────────────────────────────────── */
+*{font-family:'Poppins',sans-serif!important;}
+</style>
+
+<!-- ADMIN SIDEBAR — 70px dark navy, icon-only navigation -->
+<nav class="adit-sidebar" id="adit-admin-sidebar">
+  <div class="sb-item active" id="sb-live" title="Live Dashboard"
+       onclick="sbAdmin('live',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M12 8v4l2.5 2.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+    <span class="sb-label">Live</span>
+  </div>
+  <div class="sb-item" id="sb-reports" title="Reports"
+       onclick="sbAdmin('reports',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    <span class="sb-label">Reports</span>
+  </div>
+  <div class="sb-item" id="sb-agents" title="Manage Agents"
+       onclick="sbAdmin('agents',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="8" r="2.5"/><path d="M21 20c0-2.8-1.8-5-4-5.4"/></svg>
+    <span class="sb-label">Agents</span>
+  </div>
+  <div class="sb-item" id="sb-breaks" title="Break Tracker"
+       onclick="sbAdmin('breaks',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    <span class="sb-label">Breaks</span>
+  </div>
+  <div class="sb-item" id="sb-calllogs" title="Call Logs"
+       onclick="sbAdmin('calllogs',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C9.6 21 3 14.4 3 6c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+    <span class="sb-label">Calls</span>
+  </div>
+  <div class="sb-item" id="sb-access" title="Access Control"
+       onclick="sbAdmin('access',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9.2 2 7 4.2 7 7v1H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-2V7c0-2.8-2.2-5-5-5z"/><circle cx="12" cy="14" r="1.5" fill="currentColor"/><path d="M12 15.5v2"/></svg>
+    <span class="sb-label">Access</span>
+  </div>
+  <div class="sb-item" id="sb-loginlogs" title="Login Logs"
+       onclick="sbAdmin('loginlogs',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z"/><path d="M15 3v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+    <span class="sb-label">Logs</span>
+  </div>
+  <div class="sb-item" id="sb-auditlog" title="Audit Log"
+       onclick="sbAdmin('auditlog',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="M8 12l3 3 5-5"/></svg>
+    <span class="sb-label">Audit</span>
+  </div>
+  <div class="sb-item" id="sb-bonus" title="Bonus Guide"
+       onclick="sbAdmin('bonus',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
+    <span class="sb-label">Bonus</span>
+  </div>
+</nav>
+
+<!-- AGENT SIDEBAR — 70px dark navy, icon-only navigation -->
+<nav class="adit-sidebar" id="adit-agent-sidebar">
+  <div class="sb-item active" id="sb-agent-dashboard" title="Dashboard"
+       onclick="sbAgent('dashboard',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+    <span class="sb-label">Home</span>
+  </div>
+  <div class="sb-item" id="sb-agent-breakbot" title="Break Bot"
+       onclick="sbAgent('breakbot',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    <span class="sb-label">Breaks</span>
+  </div>
+  <div class="sb-item" id="sb-agent-bonus" title="Bonus Guide"
+       onclick="sbAgent('bonus',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
+    <span class="sb-label">Bonus</span>
+  </div>
+  <div class="sb-item" id="sb-agent-writer" title="AI Writer"
+       onclick="sbAgent('writer',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+    <span class="sb-label">AI Write</span>
+  </div>
+</nav>
+
 <!-- APP -->
 <div id="mainApp">
 <header>
@@ -9186,46 +9484,16 @@ tbody tr:hover td{
 
 <div id="adminView">
   <div class="nav">
-    <button class="nav-tab active" onclick="switchTab('live',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M12 8v4l2.5 2.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49M7.76 7.76a6 6 0 0 0 0 8.49"/></svg>
-      Live Dashboard
-    </button>
-    <button class="nav-tab" onclick="switchTab('reports',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v18H3z" rx="2"/><path d="M7 16V10"/><path d="M12 16V7"/><path d="M17 16v-4"/><path d="M3 8h18"/></svg>
-      Reports
-    </button>
-    <button class="nav-tab" onclick="switchTab('agents',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="8" r="2.5"/><path d="M21 20c0-2.8-1.8-5-4-5.4"/></svg>
-      Manage Agents
-    </button>
-    <button class="nav-tab" onclick="switchTab('access',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9.2 2 7 4.2 7 7v1H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-2V7c0-2.8-2.2-5-5-5z"/><circle cx="12" cy="14" r="1.5" fill="currentColor"/><path d="M12 15.5v2"/></svg>
-      Access Control
-    </button>
-    <button class="nav-tab" onclick="switchTab('loginlogs',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9z"/><path d="M15 3v6h6"/><path d="M9 13h6M9 17h4"/></svg>
-      Login Logs
-    </button>
-    <button class="nav-tab" onclick="switchTab('breaks',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/><path d="M3 12h2M19 12h2M12 3v2M12 19v2"/></svg>
-      Break Tracker
-    </button>
-    <button class="nav-tab" onclick="switchTab('hall',this)" style="display:none" data-hidden-until="Q2-2026">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-      Hall of Fame
-    </button>
-    <button class="nav-tab" onclick="switchTab('bonus',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
-      Bonus Guide
-    </button>
-    <button class="nav-tab" onclick="switchTab('calllogs',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C9.6 21 3 14.4 3 6c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
-      Call Logs
-    </button>
-    <button class="nav-tab" onclick="switchTab('auditlog',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="M8 12l3 3 5-5"/></svg>
-      Audit Log
-    </button>
+    <button class="nav-tab active" data-tab="live" onclick="switchTab('live',this)">Live Dashboard</button>
+    <button class="nav-tab" data-tab="reports" onclick="switchTab('reports',this)">Reports</button>
+    <button class="nav-tab" data-tab="agents" onclick="switchTab('agents',this)">Manage Agents</button>
+    <button class="nav-tab" data-tab="access" onclick="switchTab('access',this)">Access Control</button>
+    <button class="nav-tab" data-tab="loginlogs" onclick="switchTab('loginlogs',this)">Login Logs</button>
+    <button class="nav-tab" data-tab="breaks" onclick="switchTab('breaks',this)">Break Tracker</button>
+    <button class="nav-tab" data-tab="hall" onclick="switchTab('hall',this)" style="display:none" data-hidden-until="Q2-2026">Hall of Fame</button>
+    <button class="nav-tab" data-tab="bonus" onclick="switchTab('bonus',this)">Bonus Guide</button>
+    <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
+    <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
   </div>
 
   <!-- LIVE -->
@@ -11021,6 +11289,11 @@ function applyView(view){
   const isAdmin=view==='admin';
   document.getElementById('adminView').style.display=isAdmin?'block':'none';
   document.getElementById('agentView').style.display=isAdmin?'none':'block';
+  // Show correct sidebar
+  const adminSb=document.getElementById('adit-admin-sidebar');
+  const agentSb=document.getElementById('adit-agent-sidebar');
+  if(adminSb)adminSb.style.display=isAdmin?'flex':'none';
+  if(agentSb)agentSb.style.display=isAdmin?'none':'flex';
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.textContent=isAdmin?'Switch to Agent View':'Switch to Admin View';
   // Always scroll to top when switching views — setTimeout ensures DOM reflow first
@@ -11078,6 +11351,10 @@ function switchAgentSection(section,el){
   currentAgentSection=section;
   document.querySelectorAll('.agent-shell-btn').forEach(btn=>btn.classList.remove('active'));
   document.querySelectorAll('.agent-shell-page').forEach(page=>page.classList.remove('active'));
+  // Sync agent sidebar active state
+  document.querySelectorAll('#adit-agent-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
+  const sbItem=document.getElementById('sb-agent-'+section);
+  if(sbItem)sbItem.classList.add('active');
   const next=document.getElementById('agent-section-'+section);
   if(next)next.classList.add('active');
   if(el)el.classList.add('active');
@@ -12648,11 +12925,28 @@ function evtToggle(el){
   el.parentElement.classList.toggle('open', !isOpen);
 }
 
+// ── Sidebar navigation helpers ────────────────────────────────────────
+function sbAdmin(tab, sbEl){
+  // Get corresponding hidden nav-tab (for backward compat with switchTab logic)
+  const navEl = document.querySelector('.nav-tab[data-tab="'+tab+'"]') || document.querySelector('.nav-tab');
+  switchTab(tab, navEl);
+  // switchTab already syncs sidebar via sb-{tab} id
+}
+function sbAgent(section, sbEl){
+  const btnEl = document.getElementById('agent-tab-'+section) || document.getElementById('agent-breakbot-tab');
+  switchAgentSection(section, btnEl);
+  // switchAgentSection already syncs sidebar via sb-agent-{section} id
+}
+
 function switchTab(tab,el){
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  // Sync admin sidebar active state
+  document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
+  const sbItem=document.getElementById('sb-'+tab);
+  if(sbItem)sbItem.classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
-  el.classList.add('active');
+  if(el)el.classList.add('active');
   if(tab==='reports'){const dp=document.getElementById('date-picker');if(dp&&!dp.value)dp.value=todayStr();loadReport();if(!_trendRawData)loadTrendData();}
   if(tab==='loginlogs')loadLoginLogs();
   if(tab==='breaks')loadBreakTracker();
