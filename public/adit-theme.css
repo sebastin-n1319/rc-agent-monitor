@@ -1637,3 +1637,244 @@ footer {
 
 /* ── Break preview banner ── */
 .bb-scan-host  { background:#FFFFFF; }
+
+/* ═══════════════════════════════════════════════════════════════
+   DYNAMICALLY RENDERED COMPONENTS (JS-generated HTML)
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Login logs ── */
+.ll-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 120px 80px;
+  gap: 8px 16px;
+  align-items: start;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgb(222,225,230);
+  background: #FFFFFF;
+  transition: background .15s;
+}
+.ll-grid:hover  { background: rgb(250,250,250); }
+.ll-name        { font-size:13px; font-weight:600; color:#072B40; }
+.ll-meta        { font-size:11px; color:#6B849A; margin-top:2px; }
+.no-data        { text-align:center; padding:24px; color:#9BAFC0; font-size:13px; }
+
+/* ── Access / Role rows ── */
+.role-row {
+  display: grid;
+  grid-template-columns: 1.5fr 100px 100px 120px auto;
+  gap: 8px 16px;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgb(222,225,230);
+  background: #FFFFFF;
+  transition: background .15s;
+}
+.role-row:hover           { background: rgb(250,250,250); }
+.role-cell                { min-width:0; }
+.role-identity            { display:flex; flex-direction:column; gap:2px; }
+.role-name-line           { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.role-name-label          { font-size:13px; font-weight:600; color:#072B40; }
+.role-email               { font-size:11px; color:#6B849A; }
+.role-inline-pill         { font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:1px 6px; border-radius:4px; }
+.role-inline-pill.self    { background:rgba(33,170,224,.1); color:#21AAE0; }
+.role-inline-pill.preview { background:rgba(244,137,31,.1); color:#F4891F; }
+.role-added-by            { font-size:11px; color:#072B40; }
+.role-core-note           { font-size:10px; color:#9BAFC0; }
+.role-actions             { display:flex; gap:6px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+
+.role-breakbot-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.role-breakbot-chip.on  { background:rgba(45,220,150,.1); color:#2DDC96; border:1px solid rgba(45,220,150,.25); }
+.role-breakbot-chip.off { background:rgba(107,132,154,.08); color:#6B849A; border:1px solid rgba(107,132,154,.15); }
+
+.role-toggle-btn {
+  background: rgba(244,137,31,.08);
+  border: 1px solid rgba(244,137,31,.25);
+  color: #F4891F;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px; font-weight: 600;
+  cursor: pointer; font-family: 'Poppins', sans-serif;
+  transition: all .15s;
+}
+.role-toggle-btn:hover  { background: rgba(244,137,31,.18); }
+.role-toggle-btn.off    { background: rgba(107,132,154,.06); border-color: rgba(107,132,154,.2); color: #6B849A; }
+.role-toggle-btn.off:hover { background: rgba(107,132,154,.12); }
+
+.role-core-note { font-size: 11px; color: #9BAFC0; font-style: italic; }
+
+/* Role grid wrapper */
+#roleGrid {
+  border: 1px solid rgb(222,225,230);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+/* ── Breakbot role filter buttons ── */
+.role-filter-btn {
+  background: #F7F8F8;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px; font-weight: 500; color: #3A5068;
+  cursor: pointer; font-family: 'Poppins', sans-serif;
+  transition: all .15s;
+}
+.role-filter-btn:hover  { background: #F0F2F5; color: #072B40; }
+.role-filter-btn.active { background: rgba(244,137,31,.1); border-color: rgba(244,137,31,.3); color: #F4891F; font-weight: 600; }
+
+/* ── Break tracker admin section ── */
+.break-tracker-hdr { font-size:22px; font-weight:700; color:#072B40; margin-bottom:4px; }
+.break-tracker-sub { font-size:13px; color:#6B849A; margin-bottom:14px; }
+
+.bt-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.bt-btn {
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 12px; font-weight: 500; color: #072B40;
+  cursor: pointer; font-family: 'Poppins', sans-serif;
+  transition: all .15s;
+}
+.bt-btn:hover     { background: #F0F2F5; border-color: #C8D0DC; }
+.bt-btn.primary   { background: #F4891F; color: #FFFFFF; border-color: #F4891F; }
+.bt-btn.secondary { background: rgba(244,137,31,.08); border-color: rgba(244,137,31,.25); color: #F4891F; }
+
+/* Break tracker stat chips */
+.bt-stat-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.bt-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px;
+  background: #F7F8F8;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 50px;
+  font-size: 12px; color: #3A5068;
+}
+.bt-chip strong { color: #072B40; font-weight: 700; }
+.bt-chip.avail  { background: rgba(45,220,150,.08); border-color: rgba(45,220,150,.2); color: #2DDC96; }
+.bt-chip.away   { background: rgba(237,102,107,.08); border-color: rgba(237,102,107,.2); color: #ED666B; }
+
+/* Break agent status grid */
+.break-agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.break-agent-card {
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: rgba(0,0,0,0.04) 0px 0px 8px;
+}
+.break-agent-name { font-size:13px; font-weight:700; color:#072B40; margin-bottom:4px; }
+.break-agent-meta { font-size:11px; color:#6B849A; }
+
+/* ── Audit log ── */
+.audit-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 120px 90px;
+  gap: 8px 16px;
+  align-items: start;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgb(222,225,230);
+  background: #FFFFFF;
+  transition: background .15s;
+}
+.audit-row:hover { background: rgb(250,250,250); }
+.audit-actor     { font-size:12px; color:#6B849A; }
+.audit-action    { font-size:13px; font-weight:600; color:#072B40; }
+.audit-target    { font-size:12px; color:#3A5068; }
+.audit-time      { font-size:11px; color:#9BAFC0; }
+
+/* ── Search results dropdown ── */
+#agentSearchResults {
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 8px;
+  box-shadow: rgba(0,0,0,0.12) 0px 4px 24px;
+  overflow: hidden;
+  z-index: 500;
+}
+.search-result-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px; color: #072B40;
+  border-bottom: 1px solid rgb(222,225,230);
+  transition: background .15s;
+  background: #FFFFFF;
+}
+.search-result-item:hover { background: #F7F8F8; }
+.search-result-item:last-child { border-bottom: none; }
+
+/* ── Score tooltip ── */
+.score-tt, .score-detail-panel {
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 10px;
+  box-shadow: rgba(0,0,0,0.15) 0px 4px 24px;
+  padding: 12px 16px;
+  font-size: 12px; color: #072B40;
+}
+.score-tt-row { display:flex; justify-content:space-between; gap:16px; padding:3px 0; border-bottom:1px solid #F0F2F5; }
+.score-tt-row:last-child { border-bottom:none; }
+.score-tt-label { color:#6B849A; }
+.score-tt-val   { font-weight:700; color:#072B40; }
+
+/* ── Sync button ── */
+#syncBtn {
+  background: #F4891F;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer; font-family: 'Poppins', sans-serif;
+  box-shadow: rgba(244,137,31,0.4) 0px 4px 16px;
+  transition: all .2s;
+}
+#syncBtn:hover { background: #F28820; transform: translateY(-1px); }
+#syncBtn.syncing { opacity: .7; cursor: wait; }
+
+/* ── Date picker (inline style override via class) ── */
+#date-picker, #cl-date-picker, #audit-date-picker {
+  background: rgb(215,241,247);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px; color: #072B40;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* ── Breakbot large clock/visual - fix oversized rendering ── */
+.bb-break-grid-visual,
+#break-grid-panel img,
+#break-grid-panel svg.bb-clock {
+  max-width: 100%;
+  max-height: 200px;
+  opacity: 0.15;
+}
+
+/* ── Break grid panel (right side of breakbot) ── */
+.bb-grid-shell .card,
+#break-grid-panel {
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 8px;
+  padding: 18px;
+}
