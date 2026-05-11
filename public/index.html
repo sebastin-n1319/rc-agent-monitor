@@ -21,13 +21,18 @@ html.app-authenticated #mainApp{display:flex!important;visibility:visible!import
 /* Hidden until next quarter — beats class-level display rules */
 [data-hidden-until] { display: none !important; }
 </style>
-<!-- Inline session restore: runs before any other script, sets html.app-authenticated if localStorage has a valid session -->
+<!-- Inline session + dark mode restore: runs before first paint, no flash -->
 <script>
 (function(){
   try{
     var s=JSON.parse(localStorage.getItem('rcSession')||'null');
     if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
       document.documentElement.classList.add('app-authenticated');
+    }
+  }catch(e){}
+  try{
+    if(localStorage.getItem('aditDarkMode')==='1'){
+      document.documentElement.classList.add('dark-mode');
     }
   }catch(e){}
 })();
@@ -9267,6 +9272,18 @@ tbody tr:hover td{
       <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12" style="flex-shrink:0"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
       Test Agent
     </button>
+    <!-- Dark mode toggle -->
+    <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark mode"
+      style="width:32px;height:32px;border-radius:50%;border:1px solid rgb(222,225,230);background:#F7F8F8;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;">
+      <!-- Sun icon (shown in dark mode) -->
+      <svg id="dm-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:none;color:#FBC84B;">
+        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+      <!-- Moon icon (shown in light mode) -->
+      <svg id="dm-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:#6B849A;">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
     <button class="logout-btn" onclick="doLogout()">Logout</button>
   </div>
 </header>
@@ -11293,6 +11310,38 @@ async function savePersistedSession(name, role, email, picture, breakbotEnabled)
   }catch(e){}
   return req;
 }
+
+// ── Dark mode ─────────────────────────────────────────────────────────────────
+function applyDarkModeUI(isDark){
+  const btn = document.getElementById('darkModeBtn');
+  const sun = document.getElementById('dm-sun');
+  const moon= document.getElementById('dm-moon');
+  if(isDark){
+    document.documentElement.classList.add('dark-mode');
+    if(btn){ btn.style.background='#0D2A3E'; btn.style.borderColor='rgba(255,255,255,.12)'; }
+    if(sun)  sun.style.display='block';
+    if(moon) moon.style.display='none';
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+    if(btn){ btn.style.background='#F7F8F8'; btn.style.borderColor='rgb(222,225,230)'; }
+    if(sun)  sun.style.display='none';
+    if(moon) moon.style.display='block';
+  }
+}
+
+function toggleDarkMode(){
+  const isDark = !document.documentElement.classList.contains('dark-mode');
+  try{ localStorage.setItem('aditDarkMode', isDark ? '1' : '0'); }catch(e){}
+  applyDarkModeUI(isDark);
+}
+
+// Restore dark mode preference on load
+(function(){
+  try{
+    const saved = localStorage.getItem('aditDarkMode');
+    if(saved === '1') applyDarkModeUI(true);
+  }catch(e){}
+})();
 
 function doLogout(){
   // 1. Show the logout loading overlay immediately (covers the app)
