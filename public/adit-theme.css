@@ -2228,3 +2228,4 @@ footer {
 
 /* ── Live floor lane board ── */
 .break-lane-board { display: flex; flex-direction: column; gap: 5px; }
+.bb-float-icon { display: none !important; }
