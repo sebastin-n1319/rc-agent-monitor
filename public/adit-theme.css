@@ -1,0 +1,969 @@
+/* =============================================================
+   ADIT DESIGN SYSTEM — FINAL THEME OVERRIDE
+   Loaded last; overrides all preceding stylesheets.
+   !important used on every property in sections 2-22.
+   Section 1 (:root vars) intentionally has NO !important.
+   ============================================================= */
+
+/* ─────────────────────────────────────────────
+   SECTION 1 · CSS ROOT VARIABLES (no !important)
+   ───────────────────────────────────────────── */
+:root {
+  --bg: #F7F8F8;
+  --bg2: #F0F2F5;
+  --bg3: #E6ECF4;
+  --glass: #FFFFFF;
+  --glass2: #FAFAFA;
+  --card: #FFFFFF;
+  --card2: #F7F8F8;
+  --card3: #F0F2F5;
+  --card4: #E6ECF4;
+  --b0: #F0F2F5;
+  --b1: #E6ECF4;
+  --b2: #C8D0DC;
+  --b3: #A8B5C4;
+  --border: #E6ECF4;
+  --border-strong: #C8D0DC;
+  --t1: #072B40;
+  --t2: #3A5068;
+  --t3: #6B849A;
+  --t4: #9BAFC0;
+  --text: #072B40;
+  --text2: #3A5068;
+  --text3: #6B849A;
+  --text4: #9BAFC0;
+  --orange: #F4891F;
+  --orange2: #F28820;
+  --orange-lo: rgba(244,137,31,.10);
+  --orange-mid: rgba(244,137,31,.20);
+  --orange-hi: rgba(244,137,31,.35);
+  --teal: #21AAE0;
+  --teal-lo: rgba(33,170,224,.10);
+  --teal-mid: rgba(33,170,224,.20);
+  --green: #2DDC96;
+  --green-lo: rgba(45,220,150,.10);
+  --red: #ED666B;
+  --red-lo: rgba(237,102,107,.10);
+  --blue: #21AAE0;
+  --blue2: #25A8E0;
+  --blue-lo: rgba(33,170,224,.10);
+  --yellow: #FBC84B;
+  --yellow-lo: rgba(251,200,75,.10);
+  --purple: #9B59B6;
+  --purple-lo: rgba(155,89,182,.10);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 16px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.10);
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 2 · GLOBAL BASE
+   ───────────────────────────────────────────── */
+html, body {
+  background: #F7F8F8 !important;
+  color: #072B40 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+body::before, body::after {
+  display: none !important;
+}
+
+*, *::before, *::after {
+  font-family: 'Poppins', sans-serif !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 3 · TOPBAR / HEADER
+   ───────────────────────────────────────────── */
+header,
+.topbar,
+.hdr,
+[class*="hdr-wrap"],
+[class*="top-bar"] {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.06) 0px 1px 6px !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  height: 48px !important;
+}
+
+.hdr-logo,
+.hdr-title,
+.hdr-brand {
+  color: #072B40 !important;
+}
+
+.hdr-nav,
+.hdr-link {
+  color: #3A5068 !important;
+}
+
+.hdr-meta,
+.hdr-time,
+.hdr-info {
+  color: #6B849A !important;
+}
+
+.hdr-icon {
+  color: #9BAFC0 !important;
+}
+
+.live-dot {
+  background: #2DDC96 !important;
+  box-shadow: 0 0 6px #2DDC96 !important;
+}
+
+.tz-on {
+  color: #F4891F !important;
+}
+
+.logout-btn {
+  background: rgba(237,102,107,.10) !important;
+  color: #ED666B !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(237,102,107,.25) !important;
+}
+
+.role-admin {
+  background: rgba(244,137,31,.10) !important;
+  color: #F4891F !important;
+}
+
+.role-agent {
+  background: rgba(33,170,224,.10) !important;
+  color: #21AAE0 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 4 · LAYOUT
+   ───────────────────────────────────────────── */
+#mainApp {
+  background: #F7F8F8 !important;
+  padding-top: 48px !important;
+}
+
+#adminView,
+#agentView {
+  margin-left: 70px !important;
+  background: #F7F8F8 !important;
+}
+
+.page {
+  background: transparent !important;
+  padding: 20px !important;
+}
+
+.agent-shell-page {
+  background: #F7F8F8 !important;
+  padding: 16px 20px !important;
+}
+
+.nav {
+  display: none !important;
+}
+
+.agent-shell-nav {
+  display: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 5 · ADIT SIDEBAR
+   ───────────────────────────────────────────── */
+.adit-sidebar {
+  position: fixed !important;
+  left: 0 !important;
+  top: 48px !important;
+  width: 70px !important;
+  height: calc(100vh - 48px) !important;
+  background: #072B40 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  z-index: 150 !important;
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+}
+
+.adit-sidebar::-webkit-scrollbar {
+  display: none !important;
+}
+
+#adit-admin-sidebar,
+#adit-agent-sidebar {
+  display: none !important;
+}
+
+.sb-item {
+  width: 70px !important;
+  min-height: 54px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  color: rgba(255,255,255,.38) !important;
+  border-left: 3px solid transparent !important;
+  gap: 4px !important;
+  padding: 8px 0 !important;
+  text-align: center !important;
+  transition: all .15s !important;
+}
+
+.sb-item:hover {
+  color: rgba(255,255,255,.80) !important;
+  background: rgba(244,137,31,.08) !important;
+}
+
+.sb-item.active {
+  color: #F4891F !important;
+  border-left-color: #F4891F !important;
+  background: rgba(244,137,31,.08) !important;
+}
+
+.sb-item svg {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0 !important;
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+.sb-label {
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  letter-spacing: .03em !important;
+  text-transform: uppercase !important;
+  line-height: 1 !important;
+  color: inherit !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 6 · CARDS AND PANELS
+   ───────────────────────────────────────────── */
+.card,
+.ld-panel,
+.viz-card,
+.rpt-stat,
+.agent-card,
+.evt-group,
+.ld-strip,
+.ld-occ-panel,
+.floor-card,
+.admin-ribbon,
+.col-toggle-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 7 · METRIC CARDS
+   ───────────────────────────────────────────── */
+.metric {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.metric:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: rgba(0,0,0,0.10) 0px 4px 20px !important;
+}
+
+.metric::before {
+  box-shadow: none !important;
+}
+
+.metric-lbl {
+  color: #6B849A !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+}
+
+.metric-val {
+  color: #072B40 !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.metric-sub {
+  color: #9BAFC0 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 8 · KPI CHIPS
+   ───────────────────────────────────────────── */
+.ld-kpi {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.ld-kpi-lbl {
+  color: #6B849A !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+}
+
+.ld-kpi-val {
+  color: #072B40 !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.ld-kpi-sub {
+  color: #9BAFC0 !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-size: 9px !important;
+}
+
+.ld-kpi::before {
+  height: 2px !important;
+  background: var(--kpi-accent, #F4891F) !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 9 · ACTIVITY ITEMS AND OCCUPANCY
+   ───────────────────────────────────────────── */
+.ld-act-item {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.ld-act-lbl {
+  color: #6B849A !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+
+.ld-act-val {
+  color: #072B40 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.ld-oe {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.ld-oe span {
+  color: #6B849A !important;
+}
+
+.ld-oe strong {
+  color: #072B40 !important;
+}
+
+.ld-pbar-label {
+  color: #3A5068 !important;
+}
+
+.ld-pbar-row b {
+  color: #072B40 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 10 · COMMAND STRIP
+   ───────────────────────────────────────────── */
+.ld-strip {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.ld-strip-chip,
+.ops-chip,
+.chip {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+  color: #3A5068 !important;
+}
+
+.ld-strip-chip strong,
+.ops-chip strong,
+.chip strong {
+  color: #072B40 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 11 · DATA TABLES
+   ───────────────────────────────────────────── */
+table {
+  background: #FFFFFF !important;
+}
+
+thead tr,
+thead th {
+  background: #F7F8F8 !important;
+  color: #072B40 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #E6ECF4 !important;
+}
+
+#admin-agent-tbl-wrap thead th {
+  background: #F7F8F8 !important;
+}
+
+tbody tr {
+  background: #FFFFFF !important;
+}
+
+tbody tr:hover {
+  background: #FAFAFA !important;
+}
+
+tbody td {
+  color: #072B40 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid #F0F2F5 !important;
+}
+
+td a {
+  color: #21AAE0 !important;
+  font-weight: 500 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 12 · FORM INPUTS
+   ───────────────────────────────────────────── */
+input[type=text],
+input[type=date],
+input[type=email],
+select,
+textarea {
+  background: #EEF6FB !important;
+  border: 1px solid #E6ECF4 !important;
+  border-radius: 8px !important;
+  color: #072B40 !important;
+  font-size: 13px !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+input[type=text]:focus,
+input[type=date]:focus,
+input[type=email]:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(244,137,31,.5) !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 0 0 3px rgba(244,137,31,.1) !important;
+  outline: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9BAFC0 !important;
+}
+
+select option {
+  background: #FFFFFF !important;
+  color: #072B40 !important;
+}
+
+.field label {
+  color: #6B849A !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 13 · STATUS CHIPS
+   ───────────────────────────────────────────── */
+.status-available,
+[class*="status"][class*="available"],
+.chip-available {
+  background: rgba(45,220,150,.1) !important;
+  color: #2DDC96 !important;
+  border: 1px solid rgba(45,220,150,.25) !important;
+}
+
+.status-unavailable,
+.status-dnd,
+[class*="status"][class*="unavailable"],
+[class*="status"][class*="dnd"],
+.chip-unavailable,
+.chip-dnd {
+  background: rgba(237,102,107,.1) !important;
+  color: #ED666B !important;
+  border: 1px solid rgba(237,102,107,.25) !important;
+}
+
+.status-oncall,
+.status-busy,
+[class*="status"][class*="oncall"],
+[class*="status"][class*="busy"],
+.chip-oncall,
+.chip-busy {
+  background: rgba(33,170,224,.1) !important;
+  color: #21AAE0 !important;
+  border: 1px solid rgba(33,170,224,.25) !important;
+}
+
+.status-offline,
+[class*="status"][class*="offline"],
+.chip-offline {
+  background: rgba(107,132,154,.08) !important;
+  color: #6B849A !important;
+  border: 1px solid rgba(107,132,154,.15) !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 14 · BUTTONS
+   ───────────────────────────────────────────── */
+.btn-primary {
+  background: #F4891F !important;
+  color: #FFFFFF !important;
+  border-radius: 8px !important;
+  box-shadow: rgba(244,137,31,0.4) 0px 4px 16px !important;
+  font-weight: 600 !important;
+  border: none !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.btn-primary:hover {
+  background: #F28820 !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 15 · EVENT LOG
+   ───────────────────────────────────────────── */
+.evt-group {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.evt-hdr {
+  background: #F7F8F8 !important;
+}
+
+.evt-hdr:hover {
+  background: #F0F2F5 !important;
+}
+
+.evt-agent {
+  color: #072B40 !important;
+}
+
+.evt-meta {
+  color: #6B849A !important;
+}
+
+.evt-row {
+  background: #F7F8F8 !important;
+}
+
+.evt-time {
+  color: #9BAFC0 !important;
+}
+
+.evt-body {
+  background: #FFFFFF !important;
+  border-top: 1px solid #F0F2F5 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 16 · AGENT CARDS
+   ───────────────────────────────────────────── */
+.agent-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.agent-card-name {
+  color: #072B40 !important;
+  font-weight: 600 !important;
+}
+
+.agent-card-ext {
+  color: #9BAFC0 !important;
+}
+
+.agent-card-actions button {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+  border-radius: 6px !important;
+  color: #3A5068 !important;
+}
+
+.agent-card-actions button:hover {
+  background: #F4891F !important;
+  color: #FFFFFF !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 17 · VIZ / HEALTH CARDS
+   ───────────────────────────────────────────── */
+.viz-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.viz-title {
+  color: #6B849A !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .1em !important;
+}
+
+.mix-bar {
+  background: #F0F2F5 !important;
+}
+
+.health-core {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.health-track {
+  background: #E6ECF4 !important;
+}
+
+.health-label {
+  color: #6B849A !important;
+}
+
+.health-score {
+  color: #072B40 !important;
+}
+
+.health-row {
+  color: #3A5068 !important;
+}
+
+.health-row b {
+  color: #072B40 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 18 · BREAKBOT SECTION OVERRIDE
+   ───────────────────────────────────────────── */
+#agent-section-breakbot {
+  background: #F7F8F8 !important;
+}
+
+#agent-section-breakbot::before,
+#agent-section-breakbot::after {
+  display: none !important;
+}
+
+#agent-section-breakbot .break-action {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+  border-radius: 12px !important;
+  transform-style: flat !important;
+}
+
+#agent-section-breakbot .break-action:hover:not(:disabled) {
+  background: #FAFAFA !important;
+  border-color: #C8D0DC !important;
+  box-shadow: rgba(0,0,0,0.10) 0px 4px 20px !important;
+  transform: translateY(-3px) !important;
+}
+
+#agent-section-breakbot .break-action:hover::after {
+  display: none !important;
+}
+
+#agent-section-breakbot .break-action-title {
+  color: #072B40 !important;
+}
+
+#agent-section-breakbot .break-action-copy {
+  color: #6B849A !important;
+}
+
+#agent-section-breakbot .break-action-state {
+  color: #9BAFC0 !important;
+}
+
+#agent-section-breakbot table {
+  background: #FFFFFF !important;
+}
+
+#agent-section-breakbot thead tr,
+#agent-section-breakbot thead th {
+  background: #F7F8F8 !important;
+  color: #072B40 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #E6ECF4 !important;
+}
+
+#agent-section-breakbot tbody tr {
+  background: #FFFFFF !important;
+}
+
+#agent-section-breakbot tbody tr:hover {
+  background: #FAFAFA !important;
+}
+
+#agent-section-breakbot tbody td {
+  color: #072B40 !important;
+  font-size: 13px !important;
+  border-bottom: 1px solid #F0F2F5 !important;
+}
+
+#agent-section-breakbot [class*="text"],
+#agent-section-breakbot [class*="label"],
+#agent-section-breakbot [class*="name"],
+#agent-section-breakbot [class*="title"],
+#agent-section-breakbot [class*="desc"] {
+  color: #072B40 !important;
+}
+
+#agent-section-breakbot [class*="meta"],
+#agent-section-breakbot [class*="sub"],
+#agent-section-breakbot [class*="hint"],
+#agent-section-breakbot [class*="muted"] {
+  color: #6B849A !important;
+}
+
+#agent-section-breakbot [class*="card"],
+#agent-section-breakbot [class*="panel"],
+#agent-section-breakbot [class*="lane"] {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 19 · OTHER SECTIONS
+   ───────────────────────────────────────────── */
+#agent-section-dashboard,
+#agent-section-writer,
+#agent-section-bonus {
+  background: #F7F8F8 !important;
+}
+
+#agent-self-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+#self-role-pill {
+  background: rgba(244,137,31,.1) !important;
+  color: #F4891F !important;
+}
+
+#staleIndicator {
+  background: rgba(251,200,75,.1) !important;
+  border: 1px solid rgba(251,200,75,.3) !important;
+}
+
+.bonus-frame-shell {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.bt-lane {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+  color: #3A5068 !important;
+}
+
+.bt-label {
+  color: #6B849A !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+}
+
+.bt-slot {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  color: #072B40 !important;
+}
+
+.cl-row,
+.cl-item,
+.cl-entry {
+  color: #072B40 !important;
+}
+
+.cl-header,
+.cl-head {
+  background: #F7F8F8 !important;
+  color: #072B40 !important;
+  border-bottom: 1px solid #E6ECF4 !important;
+}
+
+.cl-meta,
+.cl-sub,
+.cl-time {
+  color: #6B849A !important;
+}
+
+.cl-wrap,
+.cl-panel,
+.cl-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.audit-wrap,
+.audit-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.note-item {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+  border-radius: 8px !important;
+}
+
+.score-tooltip,
+[class*="tooltip"] {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.12) 0px 8px 30px !important;
+  color: #072B40 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 20 · AI WRITER TAB
+   ───────────────────────────────────────────── */
+.aw-textarea,
+.aw-select {
+  background: #EEF6FB !important;
+  border: 1px solid #E6ECF4 !important;
+  color: #072B40 !important;
+  border-radius: 8px !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.aw-output {
+  background: rgba(244,137,31,.04) !important;
+  border: 1px solid rgba(244,137,31,.15) !important;
+  color: #072B40 !important;
+  border-radius: 8px !important;
+}
+
+.aw-output.empty {
+  color: #9BAFC0 !important;
+}
+
+.aw-btn-primary {
+  background: #F4891F !important;
+  color: #FFFFFF !important;
+  border-radius: 8px !important;
+  box-shadow: rgba(244,137,31,0.4) 0px 4px 16px !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 600 !important;
+  border: none !important;
+}
+
+.aw-btn-ghost {
+  background: #F7F8F8 !important;
+  border: 1px solid #E6ECF4 !important;
+  color: #3A5068 !important;
+  border-radius: 8px !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.aw-title {
+  color: #072B40 !important;
+}
+
+.aw-sub,
+.aw-control-label {
+  color: #6B849A !important;
+}
+
+/* .aw-header-icon intentionally NOT overridden — purple gradient is correct */
+
+/* ─────────────────────────────────────────────
+   SECTION 21 · UI ELEMENTS
+   ───────────────────────────────────────────── */
+.toast {
+  background: #072B40 !important;
+  color: #FFFFFF !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 24px rgba(0,0,0,.2) !important;
+}
+
+footer {
+  background: #FFFFFF !important;
+  color: #9BAFC0 !important;
+  border-top: 1px solid #E6ECF4 !important;
+  font-size: 12px !important;
+}
+
+.f-name,
+.f-v {
+  color: #F4891F !important;
+}
+
+#agentTicker {
+  background: linear-gradient(90deg, #072B40, #0A4060) !important;
+  border-bottom: 2px solid rgba(244,137,31,.3) !important;
+}
+
+.modal-card,
+.modal-box {
+  background: #FFFFFF !important;
+  border-radius: 16px !important;
+  box-shadow: rgba(0,0,0,.2) 0 0 30px !important;
+}
+
+.floor-card,
+.abandon-card {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+.col-toggle-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,.12) 0 4px 24px !important;
+}
+
+.health-panel,
+.rpt-grid,
+.rpt-stat {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+}
+
+/* ─────────────────────────────────────────────
+   SECTION 22 · SCROLLBARS (LIGHT)
+   ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px !important;
+  height: 5px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: #F0F2F5 !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #C8D0DC !important;
+  border-radius: 3px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #A8B5C4 !important;
+}

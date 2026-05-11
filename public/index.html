@@ -18240,3 +18240,507 @@ tr.row-unavail-alert td:first-child {
 }
 #tab-calllogs .cl-summary-chip strong { color: var(--t1); font-size: 14px; }
 </style>
+
+<!-- ████████████████████████████████████████████████████████████████████████
+     ADIT DESIGN SYSTEM — MASTER OVERRIDE
+     This block is last in the document and wins ALL cascade battles.
+     Source of truth: adit-design-system-reference.md — betaapp.adit.com
+████████████████████████████████████████████████████████████████████████ -->
+<style id="adit-master-final">
+
+/* ── 1. CSS Variables — Adit Design System ────────────────────────────── */
+:root {
+  --bg:#F7F8F8 !important; --bg2:#F0F2F5 !important; --bg3:#E6ECF4 !important;
+  --glass:#FFFFFF !important; --glass2:#FAFAFA !important;
+  --card:#FFFFFF !important; --card2:#F7F8F8 !important;
+  --card3:#F0F2F5 !important; --card4:#E6ECF4 !important;
+  --b0:#F0F2F5 !important; --b1:#E6ECF4 !important;
+  --b2:#C8D0DC !important; --b3:#A8B5C4 !important;
+  --border:#E6ECF4 !important; --border-strong:#C8D0DC !important;
+  --t1:#072B40 !important; --t2:#3A5068 !important;
+  --t3:#6B849A !important; --t4:#9BAFC0 !important;
+  --text:#072B40 !important; --text2:#3A5068 !important;
+  --text3:#6B849A !important; --text4:#9BAFC0 !important;
+  --orange:#F4891F !important; --orange2:#F28820 !important;
+  --orange-lo:rgba(244,137,31,.10) !important;
+  --orange-mid:rgba(244,137,31,.20) !important;
+  --orange-hi:rgba(244,137,31,.35) !important;
+  --teal:#21AAE0 !important;
+  --teal-lo:rgba(33,170,224,.10) !important;
+  --teal-mid:rgba(33,170,224,.20) !important;
+  --green:#2DDC96 !important; --green-lo:rgba(45,220,150,.10) !important;
+  --red:#ED666B !important;   --red-lo:rgba(237,102,107,.10) !important;
+  --blue:#21AAE0 !important;  --blue2:#25A8E0 !important;
+  --blue-lo:rgba(33,170,224,.10) !important;
+  --yellow:#FBC84B !important; --yellow-lo:rgba(251,200,75,.10) !important;
+  --purple:#9B59B6 !important; --purple-lo:rgba(155,89,182,.10) !important;
+  --shadow-sm:0 1px 4px rgba(0,0,0,.06) !important;
+  --shadow-md:0 4px 16px rgba(0,0,0,.08) !important;
+  --shadow-lg:0 8px 32px rgba(0,0,0,.10) !important;
+}
+
+/* ── 2. Body — #F7F8F8 background, Poppins font ───────────────────────── */
+html, body {
+  background: #F7F8F8 !important;
+  color: #072B40 !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+body::before, body::after { display: none !important; }
+*, *::before, *::after { font-family: 'Poppins', sans-serif !important; }
+
+/* ── 3. Topbar — 48px white, #E6ECF4 border ─────────────────────────── */
+header {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.06) 0px 1px 6px !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  height: 48px !important;
+}
+.hdr-title { color: #072B40 !important; font-weight: 700 !important; font-size: 13px !important; }
+.hdr-sub { color: #6B849A !important; font-size: 11px !important; }
+.hdr-sep { background: #E6ECF4 !important; }
+.hdr-chip {
+  background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important;
+  color: #3A5068 !important; border-radius: 20px !important;
+  padding: 4px 12px !important; font-size: 12px !important;
+}
+.hdr-chip:hover { background: #F0F2F5 !important; color: #072B40 !important; }
+.hdr-user { color: #3A5068 !important; }
+.hdr-avatar { border: 1px solid #E6ECF4 !important; }
+.live-dot { background: #2DDC96 !important; box-shadow: 0 0 6px #2DDC96 !important; }
+.tz-on { color: #F4891F !important; }
+.logout-btn {
+  background: rgba(237,102,107,.08) !important; border: 1px solid rgba(237,102,107,.2) !important;
+  color: #ED666B !important; border-radius: 6px !important;
+  padding: 5px 12px !important; font-size: 11px !important; font-weight: 600 !important;
+}
+.logout-btn:hover { background: rgba(237,102,107,.15) !important; }
+.role-admin {
+  background: rgba(244,137,31,.1) !important; color: #F4891F !important;
+  border: 1px solid rgba(244,137,31,.22) !important;
+}
+.role-agent {
+  background: rgba(33,170,224,.1) !important; color: #21AAE0 !important;
+  border: 1px solid rgba(33,170,224,.2) !important;
+}
+
+/* ── 4. Main app layout ───────────────────────────────────────────────── */
+#mainApp { background: #F7F8F8 !important; padding-top: 48px !important; }
+#adminView, #agentView { margin-left: 70px !important; background: #F7F8F8 !important; }
+.page { background: transparent !important; padding: 20px !important; }
+.agent-shell-page { background: #F7F8F8 !important; padding: 16px 20px !important; }
+.nav { display: none !important; }
+.agent-shell-nav { display: none !important; }
+.adit-sidebar { display: flex !important; }
+
+/* ── 5. Cards & panels — white, #E6ECF4 border, subtle shadow ─────────── */
+.card, .ld-panel, .viz-card, .rpt-stat, .agent-card, .evt-group,
+.ld-strip, .ld-occ-panel, .floor-card, .admin-ribbon,
+.col-toggle-panel, #staleIndicator, #sessionDebug {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+}
+.card-title, .ld-panel-title { color: #072B40 !important; font-size: 13px !important; font-weight: 600 !important; }
+.ld-panel-sub { color: #6B849A !important; }
+
+/* ── 6. KPI chips ─────────────────────────────────────────────────────── */
+.ld-kpi {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.04) 0px 0px 8px !important;
+}
+.ld-kpi:hover { transform: translateY(-1px) !important; border-color: #C8D0DC !important; }
+.ld-kpi-lbl {
+  color: #6B849A !important; font-size: 9px !important;
+  font-weight: 700 !important; letter-spacing: .1em !important; text-transform: uppercase !important;
+}
+.ld-kpi-val {
+  color: #072B40 !important; font-size: 24px !important;
+  font-weight: 700 !important; letter-spacing: -.01em !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+.ld-kpi-sub { color: #9BAFC0 !important; font-family: 'Poppins', sans-serif !important; font-size: 9px !important; }
+.ld-kpi::before { height: 2px !important; background: var(--kpi-accent, #F4891F) !important; }
+
+/* ── 7. Activity items ────────────────────────────────────────────────── */
+.ld-act-item {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+}
+.ld-act-lbl {
+  color: #6B849A !important; font-size: 9px !important;
+  font-weight: 600 !important; letter-spacing: .07em !important;
+}
+.ld-act-val {
+  color: #072B40 !important; font-size: 18px !important;
+  font-weight: 700 !important; font-family: 'Poppins', sans-serif !important;
+}
+
+/* ── 8. Occupancy panel ───────────────────────────────────────────────── */
+.ld-oe {
+  background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important;
+}
+.ld-oe span { color: #6B849A !important; }
+.ld-oe strong { color: #072B40 !important; font-family: 'Poppins', sans-serif !important; }
+.ld-pbar-label { color: #3A5068 !important; }
+.ld-pbar-row b { color: #072B40 !important; font-family: 'Poppins', sans-serif !important; }
+.ld-health-badge { background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important; }
+.ld-health-score { color: #072B40 !important; font-family: 'Poppins', sans-serif !important; }
+.ld-panel-title { color: #072B40 !important; }
+
+/* ── 9. Command strip chips ───────────────────────────────────────────── */
+.ld-strip-chip, .ops-chip, .chip {
+  background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important; color: #3A5068 !important;
+}
+.ld-strip-chip strong, .ops-chip strong { color: #072B40 !important; }
+
+/* ── 10. Metric cards ─────────────────────────────────────────────────── */
+.metric {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+  backdrop-filter: none !important;
+}
+.metric:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: rgba(0,0,0,.10) 0px 4px 16px !important; border-color: #C8D0DC !important;
+}
+.metric::before { box-shadow: none !important; }
+.metric-lbl {
+  color: #6B849A !important; font-size: 9px !important;
+  font-weight: 700 !important; letter-spacing: .1em !important;
+}
+.metric-val {
+  color: #072B40 !important; font-size: 24px !important; font-weight: 700 !important;
+  font-family: 'Poppins', sans-serif !important; letter-spacing: -.01em !important;
+}
+.metric-sub { color: #9BAFC0 !important; }
+
+/* ── 11. Data tables — Adit table pattern ─────────────────────────────── */
+table { background: #FFFFFF !important; }
+thead tr, thead th {
+  background: #F7F8F8 !important; color: #072B40 !important;
+  font-size: 12px !important; font-weight: 600 !important;
+  border-bottom: 1px solid #E6ECF4 !important;
+}
+#admin-agent-tbl-wrap thead th { background: #F7F8F8 !important; color: #072B40 !important; }
+tbody tr { background: #FFFFFF !important; transition: background .15s !important; }
+tbody tr:hover { background: #FAFAFA !important; }
+tbody td {
+  color: #072B40 !important; font-size: 13px !important;
+  border-bottom: 1px solid #F0F2F5 !important;
+}
+td a, tbody td a { color: #21AAE0 !important; font-weight: 500 !important; }
+
+/* ── 12. Viz cards / health ───────────────────────────────────────────── */
+.viz-card { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; backdrop-filter: none !important; }
+.viz-title {
+  color: #6B849A !important; font-size: 10px !important; font-weight: 700 !important;
+  text-transform: uppercase !important; letter-spacing: .1em !important;
+}
+.mix-bar { background: #F0F2F5 !important; }
+.health-core { background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important; }
+.health-label { color: #6B849A !important; } .health-score { color: #072B40 !important; }
+.health-row { color: #3A5068 !important; } .health-row b { color: #072B40 !important; }
+.health-track { background: #E6ECF4 !important; }
+.health-gauge {
+  background: conic-gradient(#F4891F 0deg, #F4891F var(--gauge,0deg), #F0F2F5 var(--gauge,0deg) 360deg) !important;
+  box-shadow: 0 0 0 4px #F7F8F8 !important;
+}
+
+/* ── 13. Form inputs — Adit ice-blue style ────────────────────────────── */
+input[type=text], input[type=date], input[type=email], select, textarea {
+  background: #EEF6FB !important;
+  border: 1px solid #E6ECF4 !important;
+  border-radius: 8px !important;
+  color: #072B40 !important;
+  font-size: 13px !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+input[type=text]:focus, input[type=date]:focus,
+input[type=email]:focus, select:focus, textarea:focus {
+  border-color: rgba(244,137,31,.5) !important;
+  background: #FFF !important;
+  box-shadow: 0 0 0 3px rgba(244,137,31,.1) !important;
+  outline: none !important;
+}
+input::placeholder { color: #9BAFC0 !important; }
+select option { background: #FFF !important; color: #072B40 !important; }
+.field label {
+  color: #6B849A !important; font-size: 10px !important;
+  font-weight: 600 !important; letter-spacing: .08em !important;
+}
+
+/* ── 14. Status chips — exact Adit colors ─────────────────────────────── */
+.s-available, .s-Available {
+  background: rgba(45,220,150,.1) !important; color: #2DDC96 !important;
+  border: 1px solid rgba(45,220,150,.25) !important;
+}
+.s-unavailable, .s-Unavailable, .s-DND, .s-dnd {
+  background: rgba(237,102,107,.1) !important; color: #ED666B !important;
+  border: 1px solid rgba(237,102,107,.25) !important;
+}
+.s-oncall, .s-OnCall, .s-Busy, .s-busy {
+  background: rgba(33,170,224,.1) !important; color: #21AAE0 !important;
+  border: 1px solid rgba(33,170,224,.25) !important;
+}
+.s-offline, .s-Offline {
+  background: rgba(107,132,154,.08) !important; color: #6B849A !important;
+  border: 1px solid rgba(107,132,154,.15) !important;
+}
+
+/* ── 15. Primary CTA button — orange rectangular ──────────────────────── */
+.btn-primary, .btn.btn-primary, button.btn-primary {
+  background: #F4891F !important; color: #FFFFFF !important;
+  border: none !important; border-radius: 8px !important;
+  box-shadow: rgba(244,137,31,.4) 0px 4px 16px !important;
+  font-weight: 600 !important; font-family: 'Poppins', sans-serif !important;
+}
+.btn-primary:hover { background: #F28820 !important; transform: translateY(-1px) !important; }
+
+/* ── 16. Event log ────────────────────────────────────────────────────── */
+.evt-group { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; }
+.evt-hdr { background: #F7F8F8 !important; }
+.evt-hdr:hover { background: #F0F2F5 !important; }
+.evt-agent { color: #072B40 !important; font-size: 13px !important; }
+.evt-meta { color: #6B849A !important; }
+.evt-arr { color: #9BAFC0 !important; }
+.evt-body { border-top: 1px solid #F0F2F5 !important; background: #FFFFFF !important; }
+.evt-row { background: #F7F8F8 !important; }
+.evt-time { color: #9BAFC0 !important; font-family: 'Poppins', sans-serif !important; }
+
+/* ── 17. Agent cards ──────────────────────────────────────────────────── */
+.agent-card { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; }
+.agent-card:hover { border-color: #C8D0DC !important; box-shadow: rgba(0,0,0,.08) 0px 4px 16px !important; }
+.agent-card-name { color: #072B40 !important; font-weight: 600 !important; }
+.agent-card-ext { color: #9BAFC0 !important; }
+.agent-card-actions button {
+  background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important;
+  color: #3A5068 !important; border-radius: 6px !important;
+}
+.agent-card-actions button:hover { background: #F4891F !important; color: #FFF !important; border-color: #F4891F !important; }
+
+/* ── 18. Report stats ─────────────────────────────────────────────────── */
+.rpt-stat { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; backdrop-filter: none !important; }
+.rpt-lbl { color: #6B849A !important; font-size: 9px !important; font-weight: 700 !important; letter-spacing: .1em !important; }
+
+/* ── 19. Break timeline ───────────────────────────────────────────────── */
+.bt-lane { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; }
+.bt-label { color: #6B849A !important; background: #F7F8F8 !important; border-right: 1px solid #E6ECF4 !important; }
+.bt-slot { border-right: 1px solid #F0F2F5 !important; }
+
+/* ── 20. Admin ribbon / ops chips ────────────────────────────────────── */
+.admin-ribbon { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; }
+.ops-chip { background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important; color: #3A5068 !important; }
+.ops-chip strong { color: #072B40 !important; }
+
+/* ── 21. Breakbot section — override ALL dark glass ──────────────────── */
+#agent-section-breakbot { background: #F7F8F8 !important; }
+#agent-section-breakbot::before, #agent-section-breakbot::after { display: none !important; }
+#agent-section-breakbot .break-hero,
+#agent-section-breakbot [class*="break-hero"] {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+}
+#agent-section-breakbot .break-action {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+  border-radius: 12px !important;
+  transform: none !important;
+  transform-style: flat !important;
+}
+#agent-section-breakbot .break-action:hover:not(:disabled) {
+  background: #FAFAFA !important; border-color: #C8D0DC !important;
+  box-shadow: rgba(0,0,0,.10) 0px 4px 20px !important;
+  transform: translateY(-3px) !important;
+}
+#agent-section-breakbot .break-action:hover::after { display: none !important; }
+#agent-section-breakbot .break-action-title { color: #072B40 !important; }
+#agent-section-breakbot .break-action-copy { color: #6B849A !important; }
+#agent-section-breakbot .break-action-state { color: #9BAFC0 !important; }
+#agent-section-breakbot [class*="hero-title"],
+#agent-section-breakbot .break-hero-title { color: #072B40 !important; }
+#agent-section-breakbot [class*="hero-sub"],
+#agent-section-breakbot .break-hero-sub { color: #6B849A !important; }
+#agent-section-breakbot .bb-avatar-ring { border-color: rgba(244,137,31,.3) !important; }
+/* BB tables and cards */
+#agent-section-breakbot table { background: #FFFFFF !important; }
+#agent-section-breakbot thead th { background: #F7F8F8 !important; color: #072B40 !important; }
+#agent-section-breakbot tbody tr { background: #FFFFFF !important; }
+#agent-section-breakbot tbody tr:hover { background: #FAFAFA !important; }
+#agent-section-breakbot [class*="card"],
+#agent-section-breakbot [class*="panel"],
+#agent-section-breakbot [class*="lane"] {
+  background: #FFFFFF !important;
+  border: 1px solid #E6ECF4 !important;
+  backdrop-filter: none !important;
+}
+#agent-section-breakbot [class*="text"],
+#agent-section-breakbot [class*="label"],
+#agent-section-breakbot [class*="name"],
+#agent-section-breakbot p, #agent-section-breakbot span { color: #072B40 !important; }
+#agent-section-breakbot [class*="sub"], #agent-section-breakbot [class*="desc"] { color: #6B849A !important; }
+/* Keep colored accent strips on break-action tiles */
+#agent-section-breakbot .break-action::before { height: 3px !important; opacity: 1 !important; }
+
+/* ── 22. Agent dashboard section ─────────────────────────────────────── */
+#agent-section-dashboard { background: #F7F8F8 !important; }
+#agent-section-dashboard .card,
+#agent-section-dashboard [class*="card"],
+#agent-section-dashboard .metric {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+}
+#agent-self-card { background: #FFFFFF !important; border: 1px solid #E6ECF4 !important; }
+#self-role-pill { background: rgba(244,137,31,.1) !important; color: #F4891F !important; border: 1px solid rgba(244,137,31,.22) !important; }
+
+/* ── 23. Floor signal / abandon cards ─────────────────────────────────── */
+.floor-card, .abandon-card, [class*="floor-"] {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,0.05) 0px 0px 10px !important;
+}
+
+/* ── 24. Modals ───────────────────────────────────────────────────────── */
+.modal-card, .modal-box {
+  background: #FFFFFF !important; border-radius: 16px !important;
+  box-shadow: rgba(0,0,0,.2) 0px 0px 30px !important;
+}
+
+/* ── 25. Call logs & audit tables ────────────────────────────────────── */
+#tab-calllogs table, #audit-section table, #login-section table {
+  background: #FFFFFF !important;
+}
+#tab-calllogs thead th, #audit-section thead th, #login-section thead th {
+  background: #F7F8F8 !important; color: #072B40 !important;
+}
+#tab-calllogs .cl-row-name, #tab-calllogs .cl-row-detail,
+#tab-calllogs .cl-name, #tab-calllogs strong { color: #072B40 !important; }
+#tab-calllogs .cl-summary-chip {
+  background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important; color: #3A5068 !important;
+}
+#tab-calllogs .cl-summary-chip strong { color: #072B40 !important; }
+
+/* ── 26. Score tooltip ────────────────────────────────────────────────── */
+.score-tooltip, .bonus-tooltip, [class*="tooltip"] {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,.15) 0px 4px 24px !important; color: #072B40 !important;
+}
+
+/* ── 27. Toast notification ───────────────────────────────────────────── */
+.toast {
+  background: #072B40 !important; color: #FFFFFF !important;
+  border: none !important; border-radius: 8px !important;
+  box-shadow: rgba(0,0,0,.2) 0px 4px 24px !important;
+}
+
+/* ── 28. Announcement ticker ─────────────────────────────────────────── */
+#agentTicker {
+  background: linear-gradient(90deg, #072B40, #0A4060) !important;
+  border-bottom: 2px solid rgba(244,137,31,.3) !important;
+}
+
+/* ── 29. Footer ───────────────────────────────────────────────────────── */
+footer {
+  background: #FFFFFF !important; color: #9BAFC0 !important;
+  border-top: 1px solid #E6ECF4 !important; font-size: 12px !important;
+}
+.f-name, .f-v { color: #F4891F !important; }
+
+/* ── 30. Bonus frame wrapper ──────────────────────────────────────────── */
+.bonus-frame-shell {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  padding: 0 !important; overflow: hidden !important;
+}
+
+/* ── 31. AI Writer tab ────────────────────────────────────────────────── */
+#agent-section-writer { background: #F7F8F8 !important; }
+.aw-wrap { font-family: 'Poppins', sans-serif !important; }
+.aw-textarea {
+  background: #EEF6FB !important; border: 1px solid #E6ECF4 !important;
+  color: #072B40 !important; border-radius: 8px !important;
+}
+.aw-textarea:focus { border-color: rgba(244,137,31,.5) !important; }
+.aw-output {
+  background: rgba(244,137,31,.04) !important;
+  border: 1px solid rgba(244,137,31,.15) !important;
+  color: #072B40 !important; border-radius: 8px !important;
+}
+.aw-output.empty { color: #9BAFC0 !important; }
+.aw-select {
+  background: #EEF6FB !important; border: 1px solid #E6ECF4 !important;
+  color: #072B40 !important; border-radius: 8px !important;
+}
+.aw-btn-primary {
+  background: #F4891F !important; color: #FFF !important;
+  border-radius: 8px !important;
+  box-shadow: rgba(244,137,31,.4) 0px 4px 16px !important;
+}
+.aw-btn-ghost { background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important; color: #3A5068 !important; }
+.aw-title { color: #072B40 !important; }
+.aw-sub, .aw-control-label { color: #6B849A !important; }
+.aw-panel-label { color: #072B40 !important; }
+
+/* ── 32. Column visibility toggle ─────────────────────────────────────── */
+.col-toggle-panel {
+  background: #FFFFFF !important; border: 1px solid #E6ECF4 !important;
+  box-shadow: rgba(0,0,0,.12) 0px 4px 24px !important;
+}
+
+/* ── 33. Notes ────────────────────────────────────────────────────────── */
+.note-item {
+  background: #F7F8F8 !important; border: 1px solid #E6ECF4 !important;
+  border-radius: 8px !important; color: #072B40 !important;
+}
+
+/* ── 34. Scrollbars — Adit light ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #F0F2F5; }
+::-webkit-scrollbar-thumb { background: #C8D0DC; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #A8B5C4; }
+
+/* ── 35. Adit sidebar (ensure it shows correctly) ─────────────────────── */
+.adit-sidebar {
+  position: fixed !important; left: 0 !important; top: 48px !important;
+  width: 70px !important; height: calc(100vh - 48px) !important;
+  background: #072B40 !important;
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; padding: 6px 0 12px !important;
+  z-index: 150 !important;
+  overflow-y: auto !important; overflow-x: hidden !important;
+}
+/* Only display the correct sidebar per view */
+#adit-admin-sidebar { display: none; }
+#adit-agent-sidebar { display: none; }
+/* JS applyView() will set display:flex on the correct one */
+
+.sb-item {
+  width: 70px !important; min-height: 54px !important;
+  display: flex !important; flex-direction: column !important;
+  align-items: center !important; justify-content: center !important;
+  cursor: pointer !important; position: relative !important;
+  color: rgba(255,255,255,.38) !important;
+  border-left: 3px solid transparent !important;
+  transition: color .15s, background .15s, border-color .15s !important;
+  gap: 4px !important; padding: 8px 0 !important; text-align: center !important;
+}
+.sb-item:hover {
+  color: rgba(255,255,255,.8) !important;
+  background: rgba(244,137,31,.08) !important;
+}
+.sb-item.active {
+  color: #F4891F !important;
+  border-left-color: #F4891F !important;
+  background: rgba(244,137,31,.08) !important;
+}
+.sb-item svg { width: 20px !important; height: 20px !important; flex-shrink: 0 !important; }
+.sb-label {
+  font-size: 9px !important; font-weight: 600 !important;
+  letter-spacing: .03em !important; text-transform: uppercase !important;
+  line-height: 1 !important; font-family: 'Poppins', sans-serif !important;
+  color: inherit !important;
+}
+
+</style>
+
+<!-- ADIT THEME — External CSS loaded absolutely last, wins all cascade conflicts -->
+<!-- Root cause fix: CSS vars cannot use !important; this external file redefines them correctly -->
+<link rel="stylesheet" href="/adit-theme.css" id="adit-theme-link">
