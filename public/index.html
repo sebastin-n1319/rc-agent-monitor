@@ -11587,6 +11587,48 @@ async function submitTicketLog() {
   if (!tlSelections.type)    { showToast('Please select a ticket type','warning'); return; }
 
   const ticketId = '#' + idRaw;
+
+  // ── Duplicate check against agent's sheet history ──────────────────────
+  const existing = tlSheetData.find(t => t.ticketId === ticketId);
+  if (existing) {
+    const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+    const chC = chColors[existing.channel] || '#6B849A';
+    const confirmed = await new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9200;background:rgba(7,43,64,.45);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+      overlay.innerHTML = `
+        <div style="background:#FFFFFF;border-radius:16px;padding:28px 28px 22px;width:100%;max-width:400px;box-shadow:rgba(0,0,0,.25) 0 16px 48px;font-family:'Poppins',sans-serif;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:rgba(251,200,75,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 20 20" fill="#FBC84B" style="width:18px;height:18px"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            </div>
+            <div style="font-size:16px;font-weight:700;color:#072B40;">Duplicate Ticket</div>
+          </div>
+          <p style="font-size:13px;color:#6B849A;margin-bottom:16px;line-height:1.55;">
+            You've already logged <strong style="color:#F4891F;">${ticketId}</strong> before:
+          </p>
+          <div style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:10px;padding:12px 14px;margin-bottom:18px;display:flex;flex-direction:column;gap:4px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;font-weight:700;color:#21AAE0;">${ticketId}</span>
+              <span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:11px;font-weight:700;">${existing.channel}</span>
+            </div>
+            <div style="font-size:12px;color:#3A5068;">${existing.ticketType}</div>
+            <div style="font-size:11px;color:#9BAFC0;">${existing.date} ${existing.month}</div>
+          </div>
+          <p style="font-size:12px;color:#9BAFC0;margin-bottom:18px;">Log it again only if this is a genuinely different interaction.</p>
+          <div style="display:flex;gap:8px;">
+            <button id="dup-cancel" style="flex:1;padding:10px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;font-size:13px;font-weight:600;color:#6B849A;cursor:pointer;font-family:'Poppins',sans-serif;">Cancel</button>
+            <button id="dup-confirm" style="flex:1;padding:10px;background:#F4891F;border:none;border-radius:9px;font-size:13px;font-weight:700;color:#FFF;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:rgba(244,137,31,.35) 0 3px 10px;">Log Anyway</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.querySelector('#dup-cancel').onclick  = () => { overlay.remove(); resolve(false); };
+      overlay.querySelector('#dup-confirm').onclick = () => { overlay.remove(); resolve(true); };
+      overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+    });
+    if (!confirmed) return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Saving...';
   msgEl.style.color = '#9BAFC0';
