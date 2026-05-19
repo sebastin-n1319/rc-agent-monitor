@@ -902,6 +902,42 @@ app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res
 });
 
 // ── Ticket Logger — Google Sheets Integration ────────────────────────────────
+// GET /api/check-ticket — check if any agent already logged this ticket ID + type
+app.get('/api/check-ticket', requireAuth, rateLimit(120, 60000), async (req, res) => {
+  try {
+    const { id, type } = req.query;
+    if (!id || !type) return res.json({ found: false });
+    if (!TICKET_SHEET_ID) return res.json({ found: false });
+    const sheets = getTicketSheetsClient();
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:H`,
+    });
+    const rows = (resp.data.values || []).slice(1);
+    const match = rows.find(r =>
+      (r[0] || '').trim() === id.trim() &&
+      (r[4] || '').trim() === type.trim()
+    );
+    if (match) {
+      return res.json({
+        found: true,
+        entry: {
+          ticketId:   (match[0] || '').trim(),
+          agentName:  (match[1] || '').trim(),
+          channel:    (match[2] || '').trim(),
+          ticketType: (match[4] || '').trim(),
+          date:       (match[5] || '').trim(),
+          month:      (match[6] || '').trim(),
+          notes:      (match[7] || '').trim(),
+        }
+      });
+    }
+    res.json({ found: false });
+  } catch(e) {
+    res.json({ found: false }); // fail silently — don't block submission
+  }
+});
+
 const { google: googleApis } = require('googleapis');
 
 function getTicketSheetsClient() {
@@ -934,7 +970,7 @@ const VALID_TICKET_TYPES = new Set([
 // POST /api/tickets — agent logs a ticket (writes a row to Google Sheet)
 app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => {
   try {
-    const { ticketId, channel, pickedFromQueue, ticketType } = req.body || {};
+    const { ticketId, channel, pickedFromQueue, ticketType, isDuplicate } = req.body || {};
     // Validate ticket ID
     if (!ticketId || !/^#\d+$/.test(String(ticketId).trim()))
       return res.status(400).json({ success: false, error: 'Ticket ID must start with # followed by digits (e.g. #198756)' });
@@ -955,14 +991,15 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
       pickedFromQueue || '',
       ticketType,
       fmtTicketDate(now),
-      fmtTicketMonth(now)
+      fmtTicketMonth(now),
+      isDuplicate ? 'DUPLICATE' : ''   // column H — flag
     ];
 
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
     const sheets = getTicketSheetsClient();
     await sheets.spreadsheets.values.append({
       spreadsheetId: TICKET_SHEET_ID,
-      range: `'${TICKET_SHEET_TAB}'!A:G`,
+      range: `'${TICKET_SHEET_TAB}'!A:H`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [row] },
