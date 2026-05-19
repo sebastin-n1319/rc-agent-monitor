@@ -4015,3 +4015,259 @@ html.dark-mode .tl-card-title { color: #6A92AC; }
 .aw-tip { background:rgba(244,137,31,.06); border:1px solid rgba(244,137,31,.15); border-radius:8px; padding:10px 14px; font-size:12px; color:#6B849A; line-height:1.5; }
 .aw-tip strong { color:#F4891F; }
 .aw-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+/* ═══════════════════════════════════════════════════════════════
+   LIVE FLOOR SIGNAL — Complete Redesign (flc-* classes)
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Outer section card ── */
+.flc-section {
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: rgba(0,0,0,0.05) 0px 2px 12px;
+  margin-bottom: 14px;
+  animation: bb-slide-in .3s ease;
+}
+
+.flc-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgb(222,225,230);
+  background: rgb(248,250,252);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.flc-section-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.flc-section-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  background: rgba(244,137,31,.1);
+  color: #F4891F;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: rgba(244,137,31,.2) 0px 0px 0px 4px;
+}
+
+.flc-section-title { font-size: 15px; font-weight: 700; color: #072B40; }
+.flc-section-sub   { font-size: 11px; color: #9BAFC0; margin-top: 2px; }
+
+/* Live badge */
+.flc-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(45,220,150,.1);
+  border: 1px solid rgba(45,220,150,.25);
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2DDC96;
+}
+.flc-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #2DDC96;
+  box-shadow: 0 0 5px #2DDC96;
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+
+/* ── Summary strip ── */
+.flc-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgb(222,225,230);
+  background: rgb(250,251,252);
+}
+.flc-sum-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #FFFFFF;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 50px;
+  font-size: 12px;
+  color: #3A5068;
+  font-weight: 500;
+}
+.flc-sum-item strong { font-weight: 700; color: #072B40; }
+.flc-sum-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.flc-sum-total {
+  margin-left: auto;
+  font-size: 11px;
+  color: #9BAFC0;
+  font-weight: 600;
+}
+
+/* ── Lane board container ── */
+.break-lane-board {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+}
+
+/* ── Individual lane card ── */
+.flc-lane {
+  border-bottom: 1px solid rgb(222,225,230);
+  transition: background .15s;
+}
+.flc-lane:last-child { border-bottom: none; }
+.flc-lane.has-alert  { background: rgba(237,102,107,.02); }
+
+/* Lane header row */
+.flc-lane-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 3px solid transparent;
+  transition: background .2s;
+}
+.flc-lane:hover .flc-lane-header { background: rgba(0,0,0,.015); }
+
+/* Lane icon circle */
+.flc-lane-icon {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.04);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform .2s;
+}
+.flc-lane-icon svg {
+  width: 16px; height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.flc-lane:hover .flc-lane-icon { transform: scale(1.1); }
+
+.flc-lane-info  { flex: 1; min-width: 0; }
+.flc-lane-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #072B40;
+  margin-bottom: 2px;
+}
+.flc-lane-sub   {
+  font-size: 11px;
+  color: #9BAFC0;
+  font-weight: 500;
+}
+
+/* Count badge (right side of header) */
+.flc-lane-badge {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #FFFFFF;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  padding: 0 6px;
+  animation: bb-count-pop .4s cubic-bezier(.22,1,.36,1);
+}
+
+/* ── Agent chips grid ── */
+.flc-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 20px 16px;
+}
+
+.flc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #F7F8F8;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 50px;
+  padding: 5px 12px 5px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3A5068;
+  cursor: default;
+  transition: all .18s;
+  animation: bb-slide-in .3s ease both;
+}
+.flc-chip:hover {
+  background: #F0F2F5;
+  border-color: #C8D0DC;
+  color: #072B40;
+  transform: translateY(-1px);
+  box-shadow: rgba(0,0,0,.06) 0px 3px 8px;
+}
+.flc-chip-alert {
+  background: rgba(237,102,107,.06);
+  border-color: rgba(237,102,107,.3);
+  color: #ED666B;
+  animation: qhPulse 2.5s ease-in-out infinite;
+}
+.flc-chip-alert:hover { background: rgba(237,102,107,.1); }
+
+/* Initials mini-avatar in chip */
+.flc-avatar {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  flex-shrink: 0;
+  letter-spacing: -.01em;
+}
+
+.flc-name { font-weight: 600; color: inherit; }
+.flc-dur  { font-size: 11px; color: #9BAFC0; font-weight: 500; }
+.flc-chip-alert .flc-dur { color: inherit; }
+
+/* Loading state */
+.flc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+/* Dark mode */
+html.dark-mode .flc-section         { background:#0D2A3E; border-color:rgba(255,255,255,.08); }
+html.dark-mode .flc-section-header  { background:#091F30; border-bottom-color:rgba(255,255,255,.07); }
+html.dark-mode .flc-section-title   { color:#E8F4FC; }
+html.dark-mode .flc-section-sub     { color:#4A6F88; }
+html.dark-mode .flc-summary         { background:#091F30; border-bottom-color:rgba(255,255,255,.06); }
+html.dark-mode .flc-sum-item        { background:#0D2A3E; border-color:rgba(255,255,255,.08); color:#A8CBE0; }
+html.dark-mode .flc-sum-item strong { color:#E8F4FC; }
+html.dark-mode .flc-lane            { border-bottom-color:rgba(255,255,255,.06); }
+html.dark-mode .flc-lane-header     { background:transparent; }
+html.dark-mode .flc-lane:hover .flc-lane-header { background:rgba(255,255,255,.02); }
+html.dark-mode .flc-lane-title      { color:#E8F4FC; }
+html.dark-mode .flc-lane-sub        { color:#4A6F88; }
+html.dark-mode .flc-chip            { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.08); color:#A8CBE0; }
+html.dark-mode .flc-chip:hover      { background:rgba(255,255,255,.1); border-color:rgba(255,255,255,.15); color:#E8F4FC; }
+html.dark-mode .flc-dur             { color:#4A6F88; }
