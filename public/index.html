@@ -11488,28 +11488,37 @@ const tlHistory    = [];  // session additions (for immediate feedback)
 let   tlSheetData  = [];  // full history from Google Sheet
 let   tlPeriod     = 'today'; // current period filter
 
-// Parse DD-MMM date (e.g. "19-May") into a Date for the current year
-function parseTlDate(str) {
-  if (!str) return null;
-  const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
-  const [d, m] = str.split('-');
-  if (!d || !months.hasOwnProperty(m)) return null;
-  const now = new Date();
-  return new Date(now.getFullYear(), months[m], parseInt(d));
+// Parse date using BOTH date ("19-May") and month ("May'26") columns
+// The month column contains the year — critical for year-accurate filtering
+function parseTlDate(dateStr, monthStr) {
+  if (!dateStr) return null;
+  const M = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+  const parts = dateStr.split('-');
+  if (parts.length < 2) return null;
+  const day = parseInt(parts[0]);
+  const monIdx = M[parts[1]];
+  if (isNaN(day) || monIdx === undefined) return null;
+  // Extract year from "May'26" → 2026, "Sep'24" → 2024
+  let year = new Date().getFullYear();
+  if (monthStr) {
+    const ym = monthStr.match(/'(\d{2})$/);
+    if (ym) year = 2000 + parseInt(ym[1]);
+  }
+  return new Date(year, monIdx, day);
 }
 
 function tlFilterByPeriod(tickets) {
-  const now = new Date();
+  const now   = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 6);
-  const monthAgo = new Date(today); monthAgo.setDate(1);
+  const weekStart  = new Date(today); weekStart.setDate(today.getDate() - 6);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
   return tickets.filter(t => {
-    const d = parseTlDate(t.date);
+    const d = parseTlDate(t.date, t.month);  // pass month for year context
     if (!d) return tlPeriod === 'all';
-    if (tlPeriod === 'today')  return d >= today;
-    if (tlPeriod === 'week')   return d >= weekAgo;
-    if (tlPeriod === 'month')  return d >= monthAgo;
-    return true;
+    if (tlPeriod === 'today') return d.getTime() >= today.getTime() && d.getTime() < today.getTime() + 86400000;
+    if (tlPeriod === 'week')  return d >= weekStart;
+    if (tlPeriod === 'month') return d >= monthStart;
+    return true; // all time
   });
 }
 
@@ -11536,6 +11545,7 @@ async function loadMyTicketsFromSheet() {
     if (data.success) {
       tlSheetData = data.data || [];
       renderTlPivot();
+      renderTlTodaySubmissions();
     }
   } catch(e) { /* silent fail */ }
 }
@@ -11611,15 +11621,60 @@ async function submitTicketLog() {
 }
 
 function renderTlHistory() {
-  // Merge sheet data with session additions (session additions may not be in sheet yet)
+  // Merge session additions into sheet data (deduplicate by ticketId)
   const sessionIds = new Set(tlHistory.map(t => t.ticketId));
-  const merged = [
-    ...tlHistory.map(t => ({ ...t, _session: true })),
-    ...tlSheetData.filter(t => !sessionIds.has(t.ticketId))
-  ];
-  // Update sheet data with session entries for future filtering
   tlSheetData = [...tlSheetData.filter(t => !sessionIds.has(t.ticketId)), ...tlHistory];
   renderTlPivot();
+  renderTlTodaySubmissions();
+}
+
+function renderTlTodaySubmissions() {
+  const list    = document.getElementById('tl-history-list');
+  const countEl = document.getElementById('tl-today-count');
+  if (!list) return;
+
+  // Get today's tickets from sheet + session
+  const savedPeriod = tlPeriod;
+  tlPeriod = 'today';
+  const todayTickets = tlFilterByPeriod(tlSheetData);
+  tlPeriod = savedPeriod;
+
+  if (countEl) countEl.textContent = todayTickets.length + (todayTickets.length === 1 ? ' ticket' : ' tickets');
+
+  if (!todayTickets.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px 0;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>';
+    return;
+  }
+
+  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  list.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="background:#F7F8F8;border-bottom:1px solid rgb(222,225,230);">
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Ticket ID</th>
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Type</th>
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Channel</th>
+          <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Queue</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${todayTickets.slice().reverse().map(t => {
+          const ch = t.channel || '';
+          const chC = chColors[ch] || '#6B849A';
+          const shortType = (t.ticketType||'').replace(' Ticket','').replace('Auto-Generated/Spam','Spam');
+          const q = t.pickedFromQueue;
+          const qBadge = q === 'Yes' ? `<span style="color:#2DDC96;font-size:11px;font-weight:700;">✓ Yes</span>`
+                       : q === 'No'  ? `<span style="color:#ED666B;font-size:11px;font-weight:700;">✗ No</span>`
+                       : `<span style="color:#9BAFC0;font-size:11px;">—</span>`;
+          return `<tr style="border-bottom:1px solid rgb(222,225,230);transition:background .12s;" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='transparent'">
+            <td style="padding:9px 12px;font-weight:700;color:#21AAE0;">${t.ticketId}</td>
+            <td style="padding:9px 12px;color:#3A5068;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortType}</td>
+            <td style="padding:9px 12px;"><span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:11px;font-weight:700;">${ch}</span></td>
+            <td style="padding:9px 12px;">${qBadge}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
 }
 
 function renderTlPivot() {
@@ -11670,16 +11725,38 @@ function renderTlPivot() {
     </div>`;
   }).join('');
 
-  // Recent 5
-  if (pivRec) pivRec.innerHTML = filtered.slice(-5).reverse().map(t => {
-    const timeStr = t.time || t.date || '';
-    return `<div class="tl-pivot-recent-row">
-      <span class="tl-h-id">${t.ticketId}</span>
-      <span class="tl-h-type">${(t.ticketType||'').replace(' Ticket','').replace('Auto-Generated/Spam','Spam')}</span>
-      <span class="tl-h-chip" style="background:${chColors[t.channel]||'#6B849A'}22;color:${chColors[t.channel]||'#6B849A'}">${t.channel}</span>
-      <span class="tl-h-time">${timeStr}</span>
-    </div>`;
-  }).join('');
+  // Recent 5 — proper table
+  const recentRows = filtered.slice(-5).reverse();
+  if (pivRec) {
+    if (!recentRows.length) {
+      pivRec.innerHTML = '<div class="tl-pivot-empty">No recent tickets.</div>';
+    } else {
+      pivRec.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-family:'Poppins',sans-serif;">
+          <thead>
+            <tr style="border-bottom:1px solid rgba(255,255,255,.08);">
+              <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:left;">Ticket</th>
+              <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:left;">Type</th>
+              <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:left;">Channel</th>
+              <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:right;">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${recentRows.map(t => {
+              const shortType = (t.ticketType||'').replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New - Transferred','Transferred');
+              const ch = t.channel || '';
+              const chC = chColors[ch] || '#6B849A';
+              return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='transparent'">
+                <td style="padding:7px 8px;font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${t.ticketId}</td>
+                <td style="padding:7px 8px;font-size:11px;color:rgba(178,219,240,.8);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortType}</td>
+                <td style="padding:7px 8px;"><span style="background:${chC}22;color:${chC};padding:2px 7px;border-radius:50px;font-size:10px;font-weight:700;">${ch}</span></td>
+                <td style="padding:7px 8px;font-size:10px;color:rgba(178,219,240,.45);text-align:right;white-space:nowrap;">${t.date||''}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>`;
+    }
+  }
 }
 
 // ── Success popup ──────────────────────────────────────────────────────────
