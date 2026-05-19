@@ -1037,12 +1037,23 @@ app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) =
 
     const rows = (resp.data.values || []).slice(1);
     const tickets = rows
-      .filter(r => r[0] && nameSet.has((r[1]||'').toLowerCase().trim()))
+      // Skip rows where Ticket ID is empty or agent name doesn't match
+      .filter(r => {
+        const id   = (r[0] || '').trim();
+        const name = (r[1] || '').trim().toLowerCase();
+        return id && nameSet.has(name);
+      })
       .map(r => ({
-        ticketId: r[0] || '', agentName: r[1] || '',
-        channel: r[2] || '', pickedFromQueue: r[3] || '',
-        ticketType: r[4] || '', date: r[5] || '', month: r[6] || '',
-      }));
+        ticketId:        (r[0] || '').trim(),
+        agentName:       (r[1] || '').trim(),
+        channel:         (r[2] || '').trim(),
+        pickedFromQueue: (r[3] || '').trim(),
+        ticketType:      (r[4] || '').trim(),
+        date:            (r[5] || '').trim(),
+        month:           (r[6] || '').trim(),
+      }))
+      // Final guard: skip any row that ended up with no ticket ID
+      .filter(t => t.ticketId);
     res.json({ success: true, data: tickets });
   } catch(e) {
     console.error('❌ my-tickets error:', e.message);

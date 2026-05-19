@@ -11743,6 +11743,7 @@ function renderTlPivot() {
   const chColors= { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
 
   // Apply period filter then COUNTUNIQUE by ticketId (match sheet pivot behaviour)
+  // Entries with empty date show only in 'All Time' (parseTlDate returns null → safe)
   const raw = tlFilterByPeriod(tlSheetData);
   const seen = new Set();
   const filtered = raw.filter(t => {
@@ -11751,6 +11752,8 @@ function renderTlPivot() {
     return true;
   });
   const total = filtered.length;
+  // Helper: blank-safe label
+  const safe = (v, fallback = '—') => (v || '').trim() || fallback;
 
   if (pivNum) {
     pivNum.textContent = total;
@@ -11767,9 +11770,12 @@ function renderTlPivot() {
     return;
   }
 
-  // Channel breakdown
+  // Channel breakdown — group blank channel as '(Unknown)'
   const chMap = {};
-  filtered.forEach(t => { chMap[t.channel] = (chMap[t.channel]||0)+1; });
+  filtered.forEach(t => {
+    const ch = safe(t.channel, '(Unknown)');
+    chMap[ch] = (chMap[ch]||0)+1;
+  });
   if (pivCh) pivCh.innerHTML = Object.entries(chMap).sort((a,b)=>b[1]-a[1]).map(([ch,n]) => `
     <div class="tl-pbar-row">
       <div class="tl-pbar-label" style="color:${chColors[ch]||'#6B849A'}">${ch}</div>
@@ -11777,11 +11783,14 @@ function renderTlPivot() {
       <div class="tl-pbar-count">${n}</div>
     </div>`).join('');
 
-  // Type breakdown
+  // Type breakdown — group blank type as '(Unknown)'
   const typeMap = {};
-  filtered.forEach(t => { typeMap[t.ticketType] = (typeMap[t.ticketType]||0)+1; });
+  filtered.forEach(t => {
+    const tp = safe(t.ticketType, '(Unknown)');
+    typeMap[tp] = (typeMap[tp]||0)+1;
+  });
   if (pivType) pivType.innerHTML = Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).map(([tp,n]) => {
-    const short = tp.replace(' Ticket','').replace('Auto-Generated/Spam','Spam');
+    const short = tp.replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New Ticket - Transferred','Transferred');
     return `<div class="tl-pbar-row">
       <div class="tl-pbar-label">${short}</div>
       <div class="tl-pbar-track"><div class="tl-pbar-fill" style="width:${(n/total*100).toFixed(0)}%;background:#F4891F"></div></div>
@@ -11807,14 +11816,15 @@ function renderTlPivot() {
           </thead>
           <tbody>
             ${recentRows.map(t => {
-              const shortType = (t.ticketType||'').replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New - Transferred','Transferred');
-              const ch = t.channel || '';
+              const shortType = safe(t.ticketType,'?').replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New Ticket - Transferred','Transferred');
+              const ch  = safe(t.channel, '?');
               const chC = chColors[ch] || '#6B849A';
+              const dt  = safe(t.date, '—');
               return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='transparent'">
                 <td style="padding:7px 8px;font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${t.ticketId}</td>
                 <td style="padding:7px 8px;font-size:11px;color:rgba(178,219,240,.8);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortType}</td>
                 <td style="padding:7px 8px;"><span style="background:${chC}22;color:${chC};padding:2px 7px;border-radius:50px;font-size:10px;font-weight:700;">${ch}</span></td>
-                <td style="padding:7px 8px;font-size:10px;color:rgba(178,219,240,.45);text-align:right;white-space:nowrap;">${t.date||''}</td>
+                <td style="padding:7px 8px;font-size:10px;color:rgba(178,219,240,.45);text-align:right;white-space:nowrap;">${dt}</td>
               </tr>`;
             }).join('')}
           </tbody>
