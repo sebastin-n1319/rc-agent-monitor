@@ -147,53 +147,121 @@ function buildBreakChatPayload(event){
   const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
   const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
   const meta = getBreakChatMeta(event);
-  const directionLabel = meta.flow === 'in' ? 'IN' : 'OUT';
-  const detailLine = event.linkedDurationSeconds
-    ? `${meta.detail} · ${formatBreakDuration(event.linkedDurationSeconds)}`
-    : meta.detail;
-  const widgets = [
+  const isOut = meta.flow === 'out';
+  const directionLabel = isOut ? 'OUT' : 'IN';
+
+  // Agent avatar via ui-avatars (initials circle, Adit navy bg)
+  const avatarName = encodeURIComponent(event.username || 'Agent');
+  const avatarUrl  = `https://ui-avatars.com/api/?name=${avatarName}&background=072B40&color=ffffff&size=128&bold=true&rounded=true`;
+
+  // Duration line — shown on "IN" events when paired duration exists
+  const durationText = event.linkedDurationSeconds
+    ? `⏱ Duration: <b>${formatBreakDuration(event.linkedDurationSeconds)}</b>`
+    : null;
+
+  // ── Section 1: Status update ─────────────────────────────────────
+  const statusWidgets = [
     {
       decoratedText: {
-        topLabel: 'Update',
-        text: `${meta.emoji} ${detailLine}`
-      }
-    },
-    {
-      decoratedText: {
-        topLabel: 'Primary time',
-        text: `🕒 IST ${timeIst}`
-      }
-    },
-    {
-      decoratedText: {
-        topLabel: 'Reference time',
-        text: `CST ${timeCst}`
+        startIcon: { knownIcon: isOut ? 'CLOCK' : 'CONFIRM' },
+        text: `<b>${meta.detail}</b>`,
+        bottomLabel: `Lane → ${meta.lane}`
       }
     }
   ];
 
-  if (event.note) {
-    widgets.push({
+  if (durationText) {
+    statusWidgets.push({
       decoratedText: {
-        topLabel: 'Reason',
-        text: event.note
+        startIcon: { knownIcon: 'TICKET' },
+        text: durationText
       }
     });
   }
 
+  if (event.note) {
+    statusWidgets.push({
+      decoratedText: {
+        startIcon: { knownIcon: 'DESCRIPTION' },
+        topLabel: 'Reason',
+        text: `<i>${event.note}</i>`
+      }
+    });
+  }
+
+  // ── Section 2: Timestamps side by side using columns ─────────────
+  const timeSection = {
+    hasDivider: true,
+    widgets: [
+      {
+        columns: {
+          columnItems: [
+            {
+              horizontalSizeStyle: 'FILL_AVAILABLE_SPACE',
+              horizontalAlignment: 'START',
+              verticalAlignment: 'CENTER',
+              widgets: [{
+                decoratedText: {
+                  startIcon: { knownIcon: 'CLOCK' },
+                  topLabel: '🇮🇳 IST (Primary)',
+                  text: `<b>${timeIst}</b>`
+                }
+              }]
+            },
+            {
+              horizontalSizeStyle: 'FILL_AVAILABLE_SPACE',
+              horizontalAlignment: 'START',
+              verticalAlignment: 'CENTER',
+              widgets: [{
+                decoratedText: {
+                  startIcon: { knownIcon: 'STAR' },
+                  topLabel: '🇺🇸 CST (Reference)',
+                  text: `<b>${timeCst}</b>`
+                }
+              }]
+            }
+          ]
+        }
+      }
+    ]
+  };
+
+  // ── Section 3: Footer chip ────────────────────────────────────────
+  const footerSection = {
+    hasDivider: true,
+    widgets: [
+      {
+        chipList: {
+          chips: [
+            {
+              label: 'T1 CS Stars · Break Tracker',
+              icon: { knownIcon: 'PERSON' }
+            },
+            {
+              label: isOut ? '🔴 Away' : '🟢 Returned',
+            }
+          ]
+        }
+      }
+    ]
+  };
+
   return {
     cardsV2: [
       {
-        cardId: 'break-bot-status',
+        cardId: `break-${event.action}-${Date.now()}`,
         card: {
           header: {
-            title: `${event.username}`,
-            subtitle: `${meta.accent} ${directionLabel} · ${meta.lane}`
+            title: event.username || 'Agent',
+            subtitle: `${meta.accent} ${directionLabel} · ${meta.lane}`,
+            imageUrl: avatarUrl,
+            imageType: 'CIRCLE',
+            imageAltText: `${event.username} avatar`
           },
           sections: [
-            {
-              widgets
-            }
+            { widgets: statusWidgets },
+            timeSection,
+            footerSection
           ]
         }
       }
