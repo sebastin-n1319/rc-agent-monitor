@@ -10630,39 +10630,39 @@ tbody tr:hover td{
             Ticket Type
           </div>
           <div class="tl-type-grid">
-            <button class="tl-type-btn" data-group="type" data-val="New Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="New Ticket" data-desc="A newly added ticket in the queue from a customer." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
               New Ticket
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="Follow-up Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="Follow-up Ticket" data-desc="A ticket resulting from a client's response to a previous ticket handled by your team." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.08"/></svg>
               Follow-up
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="Reopened Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="Reopened Ticket" data-desc="A previously closed ticket reopened — client provided new info or the issue wasn't resolved." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
               Reopened
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="Transfer-In Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="Transfer-In Ticket" data-desc="A ticket transferred TO Tier 1 CS from another team or department." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
               Transfer-In
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="New Ticket - Transferred" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="New Ticket - Transferred" data-desc="A new ticket transferred OUT to another department without any action from your end." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/><polyline points="8 7 3 12 8 17"/></svg>
               Transferred Out
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="Merged Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="Merged Ticket" data-desc="Multiple tickets from the same client about the same issue, merged into one for streamlined resolution." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
               Merged
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="Outbound Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="Outbound Ticket" data-desc="Your team initiated contact with the client — proactive follow-up or query." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               Outbound
             </button>
-            <button class="tl-type-btn" data-group="type" data-val="Feedback Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn" data-group="type" data-val="Feedback Ticket" data-desc="A ticket created when a client submits feedback or a rating after a resolved issue." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               Feedback
             </button>
-            <button class="tl-type-btn wide" data-group="type" data-val="Auto-Generated/Spam Ticket" onclick="tlSelect(this)">
+            <button class="tl-type-btn wide" data-group="type" data-val="Auto-Generated/Spam Ticket" data-desc="System-generated ticket from automated triggers, monitoring alerts, or spam — no real customer action needed." onclick="tlSelect(this)">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
               Auto-Generated / Spam
             </button>
@@ -10691,41 +10691,62 @@ tbody tr:hover td{
         </div>
       </div>
 
-      <!-- RIGHT: Info panel -->
+      <!-- RIGHT: Live pivot report -->
       <div>
-        <div class="tl-info-card">
-          <div style="width:36px;height:36px;border-radius:9px;background:rgba(244,137,31,.25);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <!-- Today's pivot report -->
+        <div class="tl-pivot-card" id="tl-pivot-card">
+          <div class="tl-pivot-header">
+            <div class="tl-pivot-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Today's Pivot Report
+            </div>
+            <span class="tl-pivot-live"><span class="tl-pivot-dot"></span>Live</span>
           </div>
-          <div class="tl-info-title">Ticket Logging Guide</div>
-          <div class="tl-info-sub">Your entries go directly into the Working sheet.</div>
-
-          <div class="tl-info-rule">
-            <div class="tl-q-dot" style="background:#F4891F;margin-top:5px;flex-shrink:0;"></div>
-            <div class="tl-info-text"><strong>Ticket ID</strong> — Enter only the digits. The # is added automatically. E.g. type <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px;">198756</code></div>
+          <!-- Big total -->
+          <div class="tl-pivot-total" id="tl-pivot-total">
+            <div class="tl-pivot-total-num" id="tl-pivot-num">0</div>
+            <div class="tl-pivot-total-lbl">tickets logged today</div>
           </div>
-          <div class="tl-info-rule">
-            <div class="tl-q-dot" style="background:#21AAE0;margin-top:5px;flex-shrink:0;"></div>
-            <div class="tl-info-text"><strong>Channel</strong> — Select how the ticket came in: Email, Chat, Phone, or Web.</div>
+          <!-- Channel breakdown -->
+          <div class="tl-pivot-section">
+            <div class="tl-pivot-section-lbl">By Channel</div>
+            <div id="tl-pivot-channels" class="tl-pivot-bars">
+              <div class="tl-pivot-empty">No data yet</div>
+            </div>
           </div>
-          <div class="tl-info-rule">
-            <div class="tl-q-dot" style="background:#2DDC96;margin-top:5px;flex-shrink:0;"></div>
-            <div class="tl-info-text"><strong>Queue</strong> — Did you pick this ticket from the queue? Leave N/A if not applicable.</div>
+          <!-- Type breakdown -->
+          <div class="tl-pivot-section">
+            <div class="tl-pivot-section-lbl">By Ticket Type</div>
+            <div id="tl-pivot-types" class="tl-pivot-bars">
+              <div class="tl-pivot-empty">No data yet</div>
+            </div>
           </div>
-          <div class="tl-info-rule">
-            <div class="tl-q-dot" style="background:#9B59B6;margin-top:5px;flex-shrink:0;"></div>
-            <div class="tl-info-text"><strong>Ticket Type</strong> — Select the type that best describes the ticket. Date and month are filled automatically.</div>
+          <!-- Recent -->
+          <div class="tl-pivot-section">
+            <div class="tl-pivot-section-lbl">Recent</div>
+            <div id="tl-pivot-recent" class="tl-pivot-recent-list">
+              <div class="tl-pivot-empty">No tickets logged yet.</div>
+            </div>
           </div>
         </div>
-
-        <!-- Sheet link -->
-        <a href="https://docs.google.com/spreadsheets/d/105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y/edit" target="_blank"
-          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:10px;color:#21AAE0;font-size:13px;font-weight:600;text-decoration:none;margin-top:12px;transition:all .15s;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          View in Google Sheet
-        </a>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Ticket success popup -->
+<div id="tl-success-popup" style="display:none;position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;pointer-events:none;">
+  <div class="tl-success-overlay"></div>
+  <div class="tl-success-card" id="tl-success-card">
+    <div class="tl-success-ring">
+      <div class="tl-success-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2DDC96" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:32px;height:32px"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+    </div>
+    <div class="tl-success-title">Ticket Logged!</div>
+    <div class="tl-success-id" id="tl-success-id">#198756</div>
+    <div class="tl-success-sub">Saved to the T1 CS productivity sheet</div>
+    <div class="tl-success-bar"><div class="tl-success-bar-fill" id="tl-success-bar"></div></div>
   </div>
 </div>
 
@@ -11499,17 +11520,15 @@ async function submitTicketLog() {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed');
 
-    // Success — reset form
+    // Success — show popup then reset form
+    showTicketSuccessPopup(ticketId);
     document.getElementById('tl-ticket-id').value = '';
     ['channel','type'].forEach(g => {
       tlSelections[g] = '';
       document.querySelectorAll(`.tl-opt-btn[data-group="${g}"], .tl-type-btn[data-group="${g}"]`)
         .forEach(b => b.classList.remove('active'));
     });
-    // Keep queue selection
-    msgEl.style.color = '#2DDC96';
-    msgEl.textContent = `✓ ${ticketId} logged successfully!`;
-    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+    msgEl.textContent = '';
 
     // Add to session history
     tlHistory.unshift({ ...data.data, time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) });
@@ -11527,22 +11546,82 @@ async function submitTicketLog() {
 }
 
 function renderTlHistory() {
-  const list    = document.getElementById('tl-history-list');
-  const countEl = document.getElementById('tl-today-count');
-  if (!tlHistory.length) {
-    list.innerHTML = '<div style="text-align:center;padding:16px;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>';
-    if (countEl) countEl.textContent = '0 tickets';
+  // ── Pivot report ──────────────────────────────────────────────────────────
+  const pivNum  = document.getElementById('tl-pivot-num');
+  const pivCh   = document.getElementById('tl-pivot-channels');
+  const pivType = document.getElementById('tl-pivot-types');
+  const pivRec  = document.getElementById('tl-pivot-recent');
+  const total   = tlHistory.length;
+  if (pivNum) pivNum.textContent = total;
+  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+
+  if (!total) {
+    [pivCh, pivType, pivRec].forEach(el => {
+      if (el) el.innerHTML = '<div class="tl-pivot-empty">No data yet</div>';
+    });
     return;
   }
-  if (countEl) countEl.textContent = tlHistory.length + ' ticket' + (tlHistory.length !== 1 ? 's' : '');
-  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
-  list.innerHTML = tlHistory.slice(0,15).map(t => `
-    <div class="tl-history-row">
+
+  // Channel breakdown
+  const chMap = {};
+  tlHistory.forEach(t => { chMap[t.channel] = (chMap[t.channel]||0)+1; });
+  if (pivCh) pivCh.innerHTML = Object.entries(chMap).sort((a,b)=>b[1]-a[1]).map(([ch,n]) => `
+    <div class="tl-pbar-row">
+      <div class="tl-pbar-label" style="color:${chColors[ch]||'#6B849A'}">${ch}</div>
+      <div class="tl-pbar-track"><div class="tl-pbar-fill" style="width:${(n/total*100).toFixed(0)}%;background:${chColors[ch]||'#6B849A'}"></div></div>
+      <div class="tl-pbar-count">${n}</div>
+    </div>`).join('');
+
+  // Type breakdown
+  const typeMap = {};
+  tlHistory.forEach(t => { typeMap[t.ticketType] = (typeMap[t.ticketType]||0)+1; });
+  if (pivType) pivType.innerHTML = Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).map(([tp,n]) => {
+    const short = tp.replace(' Ticket','').replace('Auto-Generated/Spam','Spam');
+    return `<div class="tl-pbar-row">
+      <div class="tl-pbar-label">${short}</div>
+      <div class="tl-pbar-track"><div class="tl-pbar-fill" style="width:${(n/total*100).toFixed(0)}%;background:#F4891F"></div></div>
+      <div class="tl-pbar-count">${n}</div>
+    </div>`;
+  }).join('');
+
+  // Recent 5
+  if (pivRec) pivRec.innerHTML = tlHistory.slice(0,5).map(t => `
+    <div class="tl-pivot-recent-row">
       <span class="tl-h-id">${t.ticketId}</span>
-      <span class="tl-h-type">${t.ticketType}</span>
+      <span class="tl-h-type">${t.ticketType.replace(' Ticket','')}</span>
       <span class="tl-h-chip" style="background:${chColors[t.channel]||'#6B849A'}22;color:${chColors[t.channel]||'#6B849A'}">${t.channel}</span>
       <span class="tl-h-time">${t.time}</span>
     </div>`).join('');
+
+  // Legacy list (hidden but keep for compat)
+  const list = document.getElementById('tl-history-list');
+  if (list) list.innerHTML = '';
+}
+
+// ── Success popup ──────────────────────────────────────────────────────────
+function showTicketSuccessPopup(ticketId) {
+  const popup = document.getElementById('tl-success-popup');
+  const idEl  = document.getElementById('tl-success-id');
+  const bar   = document.getElementById('tl-success-bar');
+  const card  = document.getElementById('tl-success-card');
+  if (!popup) return;
+  if (idEl) idEl.textContent = ticketId;
+  // Reset
+  if (bar) { bar.style.transition = 'none'; bar.style.width = '100%'; }
+  if (card) card.classList.remove('tl-success-exit');
+  popup.style.display = 'flex';
+  // Animate bar down
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (bar) { bar.style.transition = 'width 2.2s linear'; bar.style.width = '0%'; }
+    });
+  });
+  // Auto-close
+  setTimeout(() => {
+    if (card) card.classList.add('tl-success-exit');
+    setTimeout(() => { popup.style.display = 'none'; }, 350);
+  }, 2200);
+  popup.onclick = () => { popup.style.display = 'none'; };
 }
 
 // ── Ticket Report — Admin UI ──────────────────────────────────────────────
