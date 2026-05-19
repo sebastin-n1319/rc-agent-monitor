@@ -150,101 +150,51 @@ function buildBreakChatPayload(event){
   const isOut = meta.flow === 'out';
   const directionLabel = isOut ? 'OUT' : 'IN';
 
-  // Agent avatar via ui-avatars (initials circle, Adit navy bg)
+  // Agent avatar — initials circle via ui-avatars (Adit navy bg)
   const avatarName = encodeURIComponent(event.username || 'Agent');
-  const avatarUrl  = `https://ui-avatars.com/api/?name=${avatarName}&background=072B40&color=ffffff&size=128&bold=true&rounded=true`;
+  const avatarUrl  = `https://ui-avatars.com/api/?name=${avatarName}&background=072B40&color=ffffff&size=128&bold=true`;
 
-  // Duration line — shown on "IN" events when paired duration exists
-  const durationText = event.linkedDurationSeconds
-    ? `⏱ Duration: <b>${formatBreakDuration(event.linkedDurationSeconds)}</b>`
-    : null;
-
-  // ── Section 1: Status update ─────────────────────────────────────
-  const statusWidgets = [
+  const widgets = [
     {
       decoratedText: {
-        startIcon: { knownIcon: isOut ? 'CLOCK' : 'CONFIRM' },
-        text: `<b>${meta.detail}</b>`,
-        bottomLabel: `Lane → ${meta.lane}`
+        topLabel: 'Update',
+        text: `${meta.emoji} ${meta.detail}`,
+        bottomLabel: `Lane: ${meta.lane}`
+      }
+    },
+    {
+      decoratedText: {
+        topLabel: '🇮🇳 IST (Primary)',
+        text: `🕒 ${timeIst}`
+      }
+    },
+    {
+      decoratedText: {
+        topLabel: '🇺🇸 CST (Reference)',
+        text: `${timeCst}`
       }
     }
   ];
 
-  if (durationText) {
-    statusWidgets.push({
+  // Duration — shown on return events
+  if (event.linkedDurationSeconds) {
+    widgets.push({
       decoratedText: {
-        startIcon: { knownIcon: 'TICKET' },
-        text: durationText
+        topLabel: 'Duration',
+        text: `⏱ ${formatBreakDuration(event.linkedDurationSeconds)}`
       }
     });
   }
 
+  // Reason — shown if agent selected a break category
   if (event.note) {
-    statusWidgets.push({
+    widgets.push({
       decoratedText: {
-        startIcon: { knownIcon: 'DESCRIPTION' },
         topLabel: 'Reason',
-        text: `<i>${event.note}</i>`
+        text: `${event.note}`
       }
     });
   }
-
-  // ── Section 2: Timestamps side by side using columns ─────────────
-  const timeSection = {
-    hasDivider: true,
-    widgets: [
-      {
-        columns: {
-          columnItems: [
-            {
-              horizontalSizeStyle: 'FILL_AVAILABLE_SPACE',
-              horizontalAlignment: 'START',
-              verticalAlignment: 'CENTER',
-              widgets: [{
-                decoratedText: {
-                  startIcon: { knownIcon: 'CLOCK' },
-                  topLabel: '🇮🇳 IST (Primary)',
-                  text: `<b>${timeIst}</b>`
-                }
-              }]
-            },
-            {
-              horizontalSizeStyle: 'FILL_AVAILABLE_SPACE',
-              horizontalAlignment: 'START',
-              verticalAlignment: 'CENTER',
-              widgets: [{
-                decoratedText: {
-                  startIcon: { knownIcon: 'STAR' },
-                  topLabel: '🇺🇸 CST (Reference)',
-                  text: `<b>${timeCst}</b>`
-                }
-              }]
-            }
-          ]
-        }
-      }
-    ]
-  };
-
-  // ── Section 3: Footer chip ────────────────────────────────────────
-  const footerSection = {
-    hasDivider: true,
-    widgets: [
-      {
-        chipList: {
-          chips: [
-            {
-              label: 'T1 CS Stars · Break Tracker',
-              icon: { knownIcon: 'PERSON' }
-            },
-            {
-              label: isOut ? '🔴 Away' : '🟢 Returned',
-            }
-          ]
-        }
-      }
-    ]
-  };
 
   return {
     cardsV2: [
@@ -258,11 +208,7 @@ function buildBreakChatPayload(event){
             imageType: 'CIRCLE',
             imageAltText: `${event.username} avatar`
           },
-          sections: [
-            { widgets: statusWidgets },
-            timeSection,
-            footerSection
-          ]
+          sections: [{ widgets }]
         }
       }
     ]
