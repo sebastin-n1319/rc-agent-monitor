@@ -11588,8 +11588,13 @@ async function submitTicketLog() {
 
   const ticketId = '#' + idRaw;
 
-  // ── Duplicate check against agent's sheet history ──────────────────────
-  const existing = tlSheetData.find(t => t.ticketId === ticketId);
+  // ── Duplicate check: same agent + same ticket ID + same ticket type ────
+  // Same ticket CAN be logged by different agents (transfers, handoffs).
+  // Same ticket CAN be logged by same agent with different types (New → Follow-up).
+  // Only block: same agent + same ID + same type = true duplicate.
+  const existing = tlSheetData.find(t =>
+    t.ticketId === ticketId && t.ticketType === tlSelections.type
+  );
   if (existing) {
     const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
     const chC = chColors[existing.channel] || '#6B849A';
@@ -11605,7 +11610,7 @@ async function submitTicketLog() {
             <div style="font-size:16px;font-weight:700;color:#072B40;">Duplicate Ticket</div>
           </div>
           <p style="font-size:13px;color:#6B849A;margin-bottom:16px;line-height:1.55;">
-            You've already logged <strong style="color:#F4891F;">${ticketId}</strong> before:
+            You've already logged <strong style="color:#F4891F;">${ticketId}</strong> as <strong style="color:#072B40;">${tlSelections.type}</strong>:
           </p>
           <div style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:10px;padding:12px 14px;margin-bottom:18px;display:flex;flex-direction:column;gap:4px;">
             <div style="display:flex;align-items:center;gap:8px;">
