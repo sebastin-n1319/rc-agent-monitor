@@ -10714,7 +10714,7 @@ tbody tr:hover td{
           <!-- Big total -->
           <div class="tl-pivot-total" id="tl-pivot-total">
             <div class="tl-pivot-total-num" id="tl-pivot-num">0</div>
-            <div class="tl-pivot-total-lbl">tickets logged today</div>
+            <div class="tl-pivot-total-lbl" id="tl-pivot-lbl">tickets logged today</div>
           </div>
           <!-- Channel breakdown -->
           <div class="tl-pivot-section">
@@ -11512,10 +11512,19 @@ function tlFilterByPeriod(tickets) {
   });
 }
 
+const TL_PERIOD_LABELS = {
+  today: 'tickets logged today',
+  week:  'tickets this week',
+  month: 'tickets this month',
+  all:   'tickets logged (all time)',
+};
+
 function tlSetPeriod(period, btn) {
   tlPeriod = period;
   document.querySelectorAll('.tl-period-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  const lbl = document.getElementById('tl-pivot-lbl');
+  if (lbl) lbl.textContent = TL_PERIOD_LABELS[period] || 'tickets';
   renderTlPivot();
 }
 
