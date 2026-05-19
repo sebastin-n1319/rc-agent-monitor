@@ -11507,18 +11507,29 @@ function parseTlDate(dateStr, monthStr) {
   return new Date(year, monIdx, day);
 }
 
+// Get "today" in CST (America/Chicago) — sheet dates are stored in CST
+function getTodayCST() {
+  const cstStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric', month: 'numeric', day: 'numeric'
+  }).format(new Date());
+  const [m, d, y] = cstStr.split('/').map(Number);
+  return new Date(y, m - 1, d); // midnight of CST today, no timezone offset
+}
+
 function tlFilterByPeriod(tickets) {
-  const now   = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const today      = getTodayCST();
   const weekStart  = new Date(today); weekStart.setDate(today.getDate() - 6);
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
   return tickets.filter(t => {
-    const d = parseTlDate(t.date, t.month);  // pass month for year context
+    const d = parseTlDate(t.date, t.month);
     if (!d) return tlPeriod === 'all';
-    if (tlPeriod === 'today') return d.getTime() >= today.getTime() && d.getTime() < today.getTime() + 86400000;
-    if (tlPeriod === 'week')  return d >= weekStart;
-    if (tlPeriod === 'month') return d >= monthStart;
-    return true; // all time
+    const dMs = d.getTime();
+    if (tlPeriod === 'today')  return dMs >= today.getTime() && dMs < today.getTime() + 86400000;
+    if (tlPeriod === 'week')   return d >= weekStart;
+    if (tlPeriod === 'month')  return d >= monthStart;
+    return true;
   });
 }
 
