@@ -9216,6 +9216,11 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
     <span class="sb-label">Bonus</span>
   </div>
+  <div class="sb-item" id="sb-tickets" title="Ticket Report"
+       onclick="sbAdmin('tickets',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+    <span class="sb-label">Tickets</span>
+  </div>
 </nav>
 
 <!-- AGENT SIDEBAR — 70px dark navy, icon-only navigation -->
@@ -9239,6 +9244,11 @@ tbody tr:hover td{
        onclick="sbAgent('writer',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
     <span class="sb-label">AI Write</span>
+  </div>
+  <div class="sb-item" id="sb-agent-tickets" title="Log Ticket"
+       onclick="sbAgent('tickets',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+    <span class="sb-label">Tickets</span>
   </div>
 </nav>
 
@@ -9303,6 +9313,7 @@ tbody tr:hover td{
     <button class="nav-tab" data-tab="bonus" onclick="switchTab('bonus',this)">Bonus Guide</button>
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
     <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
+    <button class="nav-tab" data-tab="tickets" onclick="switchTab('tickets',this)">Tickets</button>
   </div>
 
   <!-- LIVE -->
@@ -9899,6 +9910,82 @@ tbody tr:hover td{
     </div>
   </div>
 
+  <!-- TICKET REPORT (Admin) -->
+  <div class="page" id="tab-tickets">
+    <style>
+      .tkt-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
+      .tkt-stat{background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:8px;padding:14px;box-shadow:rgba(0,0,0,0.05) 0px 0px 10px;}
+      .tkt-stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6B849A;margin-bottom:6px;}
+      .tkt-stat-val{font-size:28px;font-weight:700;color:#072B40;letter-spacing:-.01em;}
+      .tkt-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+      .tkt-filter-select{background:rgb(215,241,247);border:none;border-radius:8px;padding:7px 12px;font-size:13px;color:#072B40;font-family:'Poppins',sans-serif;cursor:pointer;}
+      .tkt-row{display:grid;grid-template-columns:110px 1fr 90px 90px 1fr 80px;gap:8px 14px;padding:10px 16px;border-bottom:1px solid rgb(222,225,230);align-items:center;transition:background .15s;}
+      .tkt-row:hover{background:rgb(250,250,250);}
+      .tkt-id{font-weight:700;color:#21AAE0;font-size:13px;}
+      .tkt-agent{font-size:13px;font-weight:600;color:#072B40;}
+      .tkt-chip{display:inline-flex;padding:2px 8px;border-radius:50px;font-size:11px;font-weight:600;}
+      .tkt-chip.email{background:rgba(33,170,224,.1);color:#21AAE0;}
+      .tkt-chip.chat{background:rgba(45,220,150,.1);color:#2DDC96;}
+      .tkt-chip.phone{background:rgba(244,137,31,.1);color:#F4891F;}
+      .tkt-chip.web{background:rgba(155,89,182,.1);color:#9B59B6;}
+      .tkt-type{font-size:12px;color:#3A5068;}
+      .tkt-date{font-size:11px;color:#9BAFC0;white-space:nowrap;}
+      .tkt-queue-yes{color:#2DDC96;font-size:11px;font-weight:600;}
+      .tkt-queue-no{color:#ED666B;font-size:11px;font-weight:600;}
+    </style>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:22px;font-weight:700;color:#072B40;">Ticket Report</div>
+        <div style="font-size:13px;color:#6B849A;margin-top:2px;">Live from Google Sheets · T1 CS Productivity</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button onclick="loadAdminTickets()" style="background:#F4891F;color:#FFF;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:rgba(244,137,31,.35) 0 4px 12px;">↻ Refresh</button>
+        <a href="https://docs.google.com/spreadsheets/d/105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y/edit" target="_blank" style="background:rgba(33,170,224,.1);color:#21AAE0;border:1px solid rgba(33,170,224,.25);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open Sheet
+        </a>
+      </div>
+    </div>
+    <!-- Stats row -->
+    <div class="tkt-stats" id="tkt-stats-row"></div>
+    <!-- Filters -->
+    <div class="tkt-filters">
+      <select class="tkt-filter-select" id="tkt-filter-agent" onchange="applyTicketFilters()">
+        <option value="">All Agents</option>
+      </select>
+      <select class="tkt-filter-select" id="tkt-filter-channel" onchange="applyTicketFilters()">
+        <option value="">All Channels</option>
+        <option>Email</option><option>Chat</option><option>Phone</option><option>Web</option>
+      </select>
+      <select class="tkt-filter-select" id="tkt-filter-type" onchange="applyTicketFilters()">
+        <option value="">All Types</option>
+        <option>New Ticket</option><option>Follow-up Ticket</option>
+        <option>Transfer-In Ticket</option><option>Reopened Ticket</option>
+        <option>Merged Ticket</option><option>Outbound Ticket</option>
+        <option>Feedback Ticket</option><option>Auto-Generated/Spam Ticket</option>
+        <option>New Ticket - Transferred</option>
+      </select>
+      <select class="tkt-filter-select" id="tkt-filter-month" onchange="applyTicketFilters()">
+        <option value="">All Months</option>
+      </select>
+      <span id="tkt-showing" style="font-size:12px;color:#9BAFC0;margin-left:auto;"></span>
+    </div>
+    <!-- Table -->
+    <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:8px;overflow:hidden;box-shadow:rgba(0,0,0,0.05) 0px 0px 10px;">
+      <div style="display:grid;grid-template-columns:110px 1fr 90px 90px 1fr 80px;gap:8px 14px;padding:10px 16px;background:rgb(247,248,248);border-bottom:1px solid rgb(222,225,230);">
+        <span style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Ticket ID</span>
+        <span style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Agent</span>
+        <span style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Channel</span>
+        <span style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Queue</span>
+        <span style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Ticket Type</span>
+        <span style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Date</span>
+      </div>
+      <div id="tkt-admin-list" style="max-height:560px;overflow-y:auto;">
+        <div style="text-align:center;padding:40px;color:#9BAFC0;font-size:13px;">Click Tickets tab to load</div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /#adminView -->
 
 <!-- Bonus Results Notification -->
@@ -10042,6 +10129,10 @@ tbody tr:hover td{
     <button class="agent-shell-btn" id="agent-tab-writer" onclick="switchAgentSection('writer',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       AI Writer
+    </button>
+    <button class="agent-shell-btn" id="agent-tab-tickets" onclick="switchAgentSection('tickets',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+      Tickets
     </button>
   </div>
   <div class="agent-shell-page active" id="agent-section-dashboard">
@@ -10558,6 +10649,112 @@ tbody tr:hover td{
       <!-- Tip -->
       <div class="aw-tip">
         <strong>💡 Tips:</strong> For best results, include the full context of what you're writing. The AI keeps your original meaning — it only improves clarity, grammar, and structure. Try different styles for emails vs. customer tickets vs. internal notes.
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENT TICKET LOGGER -->
+  <div class="agent-shell-page" id="agent-section-tickets">
+  <style>
+    .tl-wrap{max-width:600px;margin:0 auto;}
+    .tl-section{background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:rgba(0,0,0,0.05) 0px 0px 10px;}
+    .tl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B849A;margin-bottom:10px;}
+    .tl-id-row{display:flex;align-items:center;gap:8px;}
+    .tl-hash{font-size:20px;font-weight:700;color:#072B40;}
+    .tl-id-input{flex:1;background:rgb(215,241,247);border:none;border-radius:8px;padding:10px 14px;font-size:18px;font-weight:700;color:#072B40;font-family:'Poppins',sans-serif;outline:none;letter-spacing:.02em;}
+    .tl-id-input::placeholder{color:#9BAFC0;font-weight:400;}
+    .tl-btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+    .tl-opt-btn{flex:1;min-width:80px;padding:10px 8px;background:#F7F8F8;border:1.5px solid rgb(222,225,230);border-radius:8px;font-size:13px;font-weight:600;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;text-align:center;}
+    .tl-opt-btn:hover{background:#F0F2F5;border-color:#C8D0DC;color:#072B40;}
+    .tl-opt-btn.active{background:#F4891F;border-color:#F4891F;color:#FFFFFF;box-shadow:rgba(244,137,31,.3) 0 3px 10px;}
+    .tl-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .tl-type-btn{padding:10px 12px;background:#F7F8F8;border:1.5px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:500;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;text-align:left;line-height:1.3;}
+    .tl-type-btn:hover{background:#F0F2F5;border-color:#C8D0DC;color:#072B40;}
+    .tl-type-btn.active{background:rgba(244,137,31,.1);border-color:#F4891F;color:#F4891F;font-weight:700;}
+    .tl-submit{width:100%;padding:14px;background:#F4891F;color:#FFF;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:rgba(244,137,31,.4) 0 4px 16px;transition:all .2s;margin-top:4px;}
+    .tl-submit:hover{background:#F28820;transform:translateY(-1px);}
+    .tl-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+    .tl-history-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgb(222,225,230);font-size:12px;}
+    .tl-history-row:last-child{border-bottom:none;}
+    .tl-h-id{font-weight:700;color:#21AAE0;min-width:80px;}
+    .tl-h-type{flex:1;color:#3A5068;}
+    .tl-h-chip{padding:2px 7px;border-radius:50px;font-size:10px;font-weight:600;}
+    .tl-h-time{color:#9BAFC0;white-space:nowrap;}
+  </style>
+    <div class="tl-wrap">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#F4891F,#F28820);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:17px;font-weight:700;color:#072B40;">Log a Ticket</div>
+          <div style="font-size:12px;color:#6B849A;">Goes straight into your team productivity sheet</div>
+        </div>
+      </div>
+
+      <!-- Ticket ID -->
+      <div class="tl-section">
+        <div class="tl-label">Ticket ID</div>
+        <div class="tl-id-row">
+          <span class="tl-hash">#</span>
+          <input class="tl-id-input" id="tl-ticket-id" type="text" inputmode="numeric" placeholder="198756" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div id="tl-id-error" style="font-size:11px;color:#ED666B;margin-top:6px;display:none;">Please enter a valid ticket number</div>
+      </div>
+
+      <!-- Channel -->
+      <div class="tl-section">
+        <div class="tl-label">Ticket Channel</div>
+        <div class="tl-btn-group">
+          <button class="tl-opt-btn" data-group="channel" data-val="Email" onclick="tlSelect(this)">📧 Email</button>
+          <button class="tl-opt-btn" data-group="channel" data-val="Chat" onclick="tlSelect(this)">💬 Chat</button>
+          <button class="tl-opt-btn" data-group="channel" data-val="Phone" onclick="tlSelect(this)">📞 Phone</button>
+          <button class="tl-opt-btn" data-group="channel" data-val="Web" onclick="tlSelect(this)">🌐 Web</button>
+        </div>
+      </div>
+
+      <!-- Picked from Queue -->
+      <div class="tl-section">
+        <div class="tl-label">Picked from the Queue?</div>
+        <div class="tl-btn-group">
+          <button class="tl-opt-btn" data-group="queue" data-val="Yes" onclick="tlSelect(this)">✅ Yes</button>
+          <button class="tl-opt-btn" data-group="queue" data-val="No" onclick="tlSelect(this)">❌ No</button>
+          <button class="tl-opt-btn active" data-group="queue" data-val="" onclick="tlSelect(this)">— N/A</button>
+        </div>
+      </div>
+
+      <!-- Ticket Type -->
+      <div class="tl-section">
+        <div class="tl-label">Ticket Type</div>
+        <div class="tl-type-grid">
+          <button class="tl-type-btn" data-group="type" data-val="New Ticket" onclick="tlSelect(this)">🆕 New Ticket</button>
+          <button class="tl-type-btn" data-group="type" data-val="Follow-up Ticket" onclick="tlSelect(this)">🔄 Follow-up Ticket</button>
+          <button class="tl-type-btn" data-group="type" data-val="Reopened Ticket" onclick="tlSelect(this)">🔓 Reopened Ticket</button>
+          <button class="tl-type-btn" data-group="type" data-val="Transfer-In Ticket" onclick="tlSelect(this)">📥 Transfer-In</button>
+          <button class="tl-type-btn" data-group="type" data-val="New Ticket - Transferred" onclick="tlSelect(this)">📤 New Ticket - Transferred</button>
+          <button class="tl-type-btn" data-group="type" data-val="Merged Ticket" onclick="tlSelect(this)">🔀 Merged Ticket</button>
+          <button class="tl-type-btn" data-group="type" data-val="Outbound Ticket" onclick="tlSelect(this)">📢 Outbound Ticket</button>
+          <button class="tl-type-btn" data-group="type" data-val="Feedback Ticket" onclick="tlSelect(this)">⭐ Feedback Ticket</button>
+          <button class="tl-type-btn" data-group="type" data-val="Auto-Generated/Spam Ticket" onclick="tlSelect(this)" style="grid-column:span 2;">🤖 Auto-Generated / Spam</button>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button class="tl-submit" id="tl-submit-btn" onclick="submitTicketLog()">
+        Log Ticket to Sheet →
+      </button>
+      <div id="tl-submit-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;"></div>
+
+      <!-- Today's submissions -->
+      <div class="tl-section" style="margin-top:18px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="tl-label" style="margin:0;">Today's Submissions</div>
+          <span id="tl-today-count" style="font-size:11px;color:#9BAFC0;">0 tickets</span>
+        </div>
+        <div id="tl-history-list">
+          <div style="text-align:center;padding:16px;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -11282,6 +11479,193 @@ function useAwResult(){
   updateAwCharCount();
   inp.focus();
   showToast('Moved to input — refine and improve again!','info');
+}
+
+// ── Ticket Logger — Agent UI ──────────────────────────────────────────────
+const tlSelections = { channel: '', queue: '', type: '' };
+const tlHistory = []; // session-level history
+
+function tlSelect(btn) {
+  const group = btn.dataset.group;
+  const val   = btn.dataset.val;
+  document.querySelectorAll(`.tl-opt-btn[data-group="${group}"], .tl-type-btn[data-group="${group}"]`)
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  tlSelections[group] = val;
+}
+
+async function submitTicketLog() {
+  const idRaw = (document.getElementById('tl-ticket-id').value || '').trim();
+  const errEl = document.getElementById('tl-id-error');
+  const msgEl = document.getElementById('tl-submit-msg');
+  const btn   = document.getElementById('tl-submit-btn');
+
+  // Validate
+  if (!idRaw || !/^\d+$/.test(idRaw)) {
+    errEl.style.display = 'block';
+    document.getElementById('tl-ticket-id').focus();
+    return;
+  }
+  errEl.style.display = 'none';
+  if (!tlSelections.channel) { showToast('Please select a channel','warning'); return; }
+  if (!tlSelections.type)    { showToast('Please select a ticket type','warning'); return; }
+
+  const ticketId = '#' + idRaw;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  msgEl.style.color = '#9BAFC0';
+  msgEl.textContent = '';
+
+  try {
+    const res  = await fetch('/api/tickets', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticketId,
+        channel:         tlSelections.channel,
+        pickedFromQueue: tlSelections.queue,
+        ticketType:      tlSelections.type
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed');
+
+    // Success — reset form
+    document.getElementById('tl-ticket-id').value = '';
+    ['channel','type'].forEach(g => {
+      tlSelections[g] = '';
+      document.querySelectorAll(`.tl-opt-btn[data-group="${g}"], .tl-type-btn[data-group="${g}"]`)
+        .forEach(b => b.classList.remove('active'));
+    });
+    // Keep queue selection
+    msgEl.style.color = '#2DDC96';
+    msgEl.textContent = `✓ ${ticketId} logged successfully!`;
+    setTimeout(() => { msgEl.textContent = ''; }, 3000);
+
+    // Add to session history
+    tlHistory.unshift({ ...data.data, time: new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) });
+    renderTlHistory();
+    showToast(`${ticketId} logged to sheet!`, 'success');
+    document.getElementById('tl-ticket-id').focus();
+  } catch(e) {
+    msgEl.style.color = '#ED666B';
+    msgEl.textContent = '✗ ' + e.message;
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Log Ticket to Sheet →';
+  }
+}
+
+function renderTlHistory() {
+  const list    = document.getElementById('tl-history-list');
+  const countEl = document.getElementById('tl-today-count');
+  if (!tlHistory.length) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>';
+    if (countEl) countEl.textContent = '0 tickets';
+    return;
+  }
+  if (countEl) countEl.textContent = tlHistory.length + ' ticket' + (tlHistory.length !== 1 ? 's' : '');
+  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  list.innerHTML = tlHistory.slice(0,15).map(t => `
+    <div class="tl-history-row">
+      <span class="tl-h-id">${t.ticketId}</span>
+      <span class="tl-h-type">${t.ticketType}</span>
+      <span class="tl-h-chip" style="background:${chColors[t.channel]||'#6B849A'}22;color:${chColors[t.channel]||'#6B849A'}">${t.channel}</span>
+      <span class="tl-h-time">${t.time}</span>
+    </div>`).join('');
+}
+
+// ── Ticket Report — Admin UI ──────────────────────────────────────────────
+let allAdminTickets = [];
+
+async function loadAdminTickets() {
+  const list = document.getElementById('tkt-admin-list');
+  if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:#9BAFC0;">Loading...</div>';
+  try {
+    const res  = await fetch('/api/tickets', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    allAdminTickets = (data.data || []).reverse(); // newest first
+    populateTicketFilters();
+    applyTicketFilters();
+    renderTicketStats(allAdminTickets);
+  } catch(e) {
+    if (list) list.innerHTML = `<div style="text-align:center;padding:40px;color:#ED666B;">Error: ${e.message}</div>`;
+  }
+}
+
+function populateTicketFilters() {
+  const agents = [...new Set(allAdminTickets.map(t => t.agentName).filter(Boolean))].sort();
+  const months = [...new Set(allAdminTickets.map(t => t.month).filter(Boolean))].reverse();
+  const agentSel = document.getElementById('tkt-filter-agent');
+  const monthSel = document.getElementById('tkt-filter-month');
+  if (agentSel) {
+    const cur = agentSel.value;
+    agentSel.innerHTML = '<option value="">All Agents</option>' + agents.map(a => `<option${a===cur?' selected':''}>${a}</option>`).join('');
+  }
+  if (monthSel) {
+    const cur = monthSel.value;
+    monthSel.innerHTML = '<option value="">All Months</option>' + months.map(m => `<option${m===cur?' selected':''}>${m}</option>`).join('');
+  }
+}
+
+function applyTicketFilters() {
+  const agent   = document.getElementById('tkt-filter-agent')?.value  || '';
+  const channel = document.getElementById('tkt-filter-channel')?.value || '';
+  const type    = document.getElementById('tkt-filter-type')?.value    || '';
+  const month   = document.getElementById('tkt-filter-month')?.value   || '';
+  const filtered = allAdminTickets.filter(t =>
+    (!agent   || t.agentName === agent) &&
+    (!channel || t.channel   === channel) &&
+    (!type    || t.ticketType === type) &&
+    (!month   || t.month     === month)
+  );
+  renderTicketStats(filtered);
+  renderAdminTicketList(filtered);
+  const showEl = document.getElementById('tkt-showing');
+  if (showEl) showEl.textContent = `Showing ${filtered.length} of ${allAdminTickets.length}`;
+}
+
+function renderTicketStats(tickets) {
+  const statsEl = document.getElementById('tkt-stats-row');
+  if (!statsEl) return;
+  const total = tickets.length;
+  const byType = {};
+  const byCh   = {};
+  tickets.forEach(t => {
+    byType[t.ticketType] = (byType[t.ticketType] || 0) + 1;
+    byCh[t.channel]       = (byCh[t.channel]       || 0) + 1;
+  });
+  const topType = Object.entries(byType).sort((a,b)=>b[1]-a[1])[0];
+  const topCh   = Object.entries(byCh).sort((a,b)=>b[1]-a[1])[0];
+  statsEl.innerHTML = `
+    <div class="tkt-stat"><div class="tkt-stat-lbl">Total Tickets</div><div class="tkt-stat-val">${total}</div></div>
+    <div class="tkt-stat"><div class="tkt-stat-lbl">Email</div><div class="tkt-stat-val">${byCh['Email']||0}</div></div>
+    <div class="tkt-stat"><div class="tkt-stat-lbl">Chat</div><div class="tkt-stat-val">${byCh['Chat']||0}</div></div>
+    <div class="tkt-stat"><div class="tkt-stat-lbl">Phone</div><div class="tkt-stat-val">${byCh['Phone']||0}</div></div>
+    <div class="tkt-stat"><div class="tkt-stat-lbl">Web</div><div class="tkt-stat-val">${byCh['Web']||0}</div></div>
+    ${topType?`<div class="tkt-stat"><div class="tkt-stat-lbl">Top Type</div><div style="font-size:13px;font-weight:700;color:#072B40;margin-top:4px;line-height:1.3;">${topType[0]}</div><div style="font-size:11px;color:#6B849A;">${topType[1]} tickets</div></div>`:''}
+  `;
+}
+
+function renderAdminTicketList(tickets) {
+  const list = document.getElementById('tkt-admin-list');
+  if (!list) return;
+  if (!tickets.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:#9BAFC0;">No tickets match the selected filters.</div>';
+    return;
+  }
+  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  list.innerHTML = tickets.map(t => `
+    <div class="tkt-row">
+      <span class="tkt-id">${t.ticketId}</span>
+      <span class="tkt-agent">${t.agentName}</span>
+      <span class="tkt-chip" style="background:${chColors[t.channel]||'#6B849A'}22;color:${chColors[t.channel]||'#6B849A'}">${t.channel}</span>
+      <span class="${t.pickedFromQueue==='Yes'?'tkt-queue-yes':t.pickedFromQueue==='No'?'tkt-queue-no':''}" style="font-size:12px;">${t.pickedFromQueue||'—'}</span>
+      <span class="tkt-type">${t.ticketType}</span>
+      <span class="tkt-date">${t.date} ${t.month}</span>
+    </div>`).join('');
 }
 
 // ── Server-side session helpers ───────────────────────────────────────────
@@ -12796,6 +13180,7 @@ function switchTab(tab,el){
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
+  if(tab==='tickets')  loadAdminTickets();
   // Remember the active tab so refresh restores it
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }

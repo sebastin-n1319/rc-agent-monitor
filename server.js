@@ -47,6 +47,8 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const sseClients = new Map(); // res → { role }
 const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
+const TICKET_SHEET_ID = process.env.TICKET_SHEET_ID || '105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y';
+const TICKET_SHEET_TAB = 'Working';
 const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const NOTIFICATION_BLOCKLIST = (process.env.NOTIFICATION_BLOCKLIST || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 // Test/demo accounts — always blocked from notifications and break tracking display
@@ -897,6 +899,107 @@ app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res
     insertAuditLog(req.session?.email||'system', 'db_cleanup', 'manual', JSON.stringify(results)).catch(()=>{});
     res.json({ success: true, results, archiveResult });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ── Ticket Logger — Google Sheets Integration ────────────────────────────────
+const { google: googleApis } = require('googleapis');
+
+function getTicketSheetsClient() {
+  const keyRaw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!keyRaw) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not configured');
+  const key = JSON.parse(keyRaw);
+  const auth = new googleApis.auth.GoogleAuth({
+    credentials: key,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  return googleApis.sheets({ version: 'v4', auth });
+}
+
+function fmtTicketDate(d) {
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()}-${M[d.getMonth()]}`;
+}
+function fmtTicketMonth(d) {
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${M[d.getMonth()]}'${String(d.getFullYear()).slice(2)}`;
+}
+
+const VALID_CHANNELS     = new Set(['Email','Chat','Phone','Web']);
+const VALID_TICKET_TYPES = new Set([
+  'New Ticket','Follow-up Ticket','Transfer-In Ticket','Reopened Ticket',
+  'Merged Ticket','Outbound Ticket','Feedback Ticket',
+  'Auto-Generated/Spam Ticket','New Ticket - Transferred'
+]);
+
+// POST /api/tickets — agent logs a ticket (writes a row to Google Sheet)
+app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try {
+    const { ticketId, channel, pickedFromQueue, ticketType } = req.body || {};
+    // Validate ticket ID
+    if (!ticketId || !/^#\d+$/.test(String(ticketId).trim()))
+      return res.status(400).json({ success: false, error: 'Ticket ID must start with # followed by digits (e.g. #198756)' });
+    if (!VALID_CHANNELS.has(channel))
+      return res.status(400).json({ success: false, error: 'Invalid channel' });
+    if (!VALID_TICKET_TYPES.has(ticketType))
+      return res.status(400).json({ success: false, error: 'Invalid ticket type' });
+    if (pickedFromQueue && !['Yes','No',''].includes(pickedFromQueue))
+      return res.status(400).json({ success: false, error: 'Picked from Queue must be Yes, No, or blank' });
+
+    const session = req.session;
+    const agentName = session.name || session.email;
+    const now = new Date();
+    const row = [
+      ticketId.trim(),
+      agentName,
+      channel,
+      pickedFromQueue || '',
+      ticketType,
+      fmtTicketDate(now),
+      fmtTicketMonth(now)
+    ];
+
+    if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
+    const sheets = getTicketSheetsClient();
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:G`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: [row] },
+    });
+
+    insertAuditLog(session.email, 'ticket_log', ticketId.trim(), `${channel}|${ticketType}`).catch(() => {});
+    res.json({ success: true, message: 'Ticket logged successfully', data: { ticketId: ticketId.trim(), agentName, channel, pickedFromQueue: pickedFromQueue || '', ticketType, date: fmtTicketDate(now), month: fmtTicketMonth(now) } });
+  } catch(e) {
+    console.error('❌ ticket log error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// GET /api/tickets — admin reads recent ticket entries from Google Sheet
+app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
+    const sheets = getTicketSheetsClient();
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:G`,
+    });
+    const rows = (resp.data.values || []).slice(1); // skip header row
+    const tickets = rows.filter(r => r[0]).map(r => ({
+      ticketId:        r[0] || '',
+      agentName:       r[1] || '',
+      channel:         r[2] || '',
+      pickedFromQueue: r[3] || '',
+      ticketType:      r[4] || '',
+      date:            r[5] || '',
+      month:           r[6] || '',
+    }));
+    res.json({ success: true, data: tickets });
+  } catch(e) {
+    console.error('❌ ticket read error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 // Manual archive trigger
