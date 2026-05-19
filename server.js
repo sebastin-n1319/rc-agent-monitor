@@ -985,10 +985,26 @@ app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) =
       spreadsheetId: TICKET_SHEET_ID,
       range: `'${TICKET_SHEET_TAB}'!A:G`,
     });
-    const agentName = req.session.name || req.session.email;
+    // Allow ?name= override so agents can match their historical sheet name
+    const sessionName = ((req.query.name || req.session.name || req.session.email || '')).trim();
+    const sessionFirst = sessionName.split(' ')[0].toLowerCase(); // e.g. "henry" from "Henry Pham"
+
+    // Smart matching: handles manual sheet entries (first name only) vs Google full names
+    // Matches if: exact match, OR session contains sheet name, OR sheet contains first name
+    function nameMatches(sheetName) {
+      if (!sheetName) return false;
+      const s = sheetName.trim().toLowerCase();
+      const n = sessionName.toLowerCase();
+      return s === n                          // exact: "Henry" === "Henry"
+          || n.startsWith(s + ' ')           // "Henry" matches "Henry Pham"
+          || n === s                          // same
+          || s.startsWith(sessionFirst + ' ')// "Henry P" starts with "Henry"
+          || s === sessionFirst;              // "Henry" === "henry"
+    }
+
     const rows = (resp.data.values || []).slice(1);
     const tickets = rows
-      .filter(r => r[0] && r[1] === agentName)
+      .filter(r => r[0] && nameMatches(r[1]))
       .map(r => ({
         ticketId: r[0] || '', agentName: r[1] || '',
         channel: r[2] || '', pickedFromQueue: r[3] || '',

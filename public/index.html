@@ -10737,6 +10737,17 @@ tbody tr:hover td{
               <div class="tl-pivot-empty">No tickets logged yet.</div>
             </div>
           </div>
+          <!-- Sheet name override -->
+          <div class="tl-pivot-section" style="padding-top:10px;padding-bottom:10px;">
+            <div class="tl-pivot-section-lbl" style="margin-bottom:6px;">Name in sheet</div>
+            <div style="display:flex;gap:6px;">
+              <input id="tl-name-override" type="text" placeholder="e.g. Henry"
+                style="flex:1;font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#E8F4FC;font-family:'Poppins',sans-serif;outline:none;"
+                value="">
+              <button onclick="tlApplyNameOverride()" style="background:rgba(244,137,31,.2);border:1px solid rgba(244,137,31,.4);border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;color:#F4891F;cursor:pointer;font-family:'Poppins',sans-serif;">Apply</button>
+            </div>
+            <div style="font-size:10px;color:rgba(178,219,240,.4);margin-top:4px;">If your count looks wrong, enter your name exactly as it appears in the Google Sheet.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -11528,9 +11539,12 @@ function tlSetPeriod(period, btn) {
   renderTlPivot();
 }
 
+let tlSheetNameOverride = ''; // agent can set their sheet name if auto-detect fails
+
 async function loadMyTicketsFromSheet() {
   try {
-    const res  = await fetch('/api/my-tickets', { credentials: 'include' });
+    const url = '/api/my-tickets' + (tlSheetNameOverride ? `?name=${encodeURIComponent(tlSheetNameOverride)}` : '');
+    const res  = await fetch(url, { credentials: 'include' });
     const data = await res.json();
     if (data.success) {
       tlSheetData = data.data || [];
@@ -13366,6 +13380,14 @@ const TL_TICKET_DESCS = {
   'Auto-Generated/Spam Ticket': 'System-generated ticket from automated triggers, monitoring alerts, or spam notifications.',
   'New Ticket - Transferred':'A new ticket transferred OUT to another department without any action taken from your end.',
 };
+
+function tlApplyNameOverride() {
+  const inp = document.getElementById('tl-name-override');
+  if (!inp) return;
+  tlSheetNameOverride = inp.value.trim();
+  tlSheetData = [];
+  loadMyTicketsFromSheet();
+}
 
 let _tlTip = null;
 function initTlTooltips(){
