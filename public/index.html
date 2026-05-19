@@ -9912,27 +9912,7 @@ tbody tr:hover td{
 
   <!-- TICKET REPORT (Admin) -->
   <div class="page" id="tab-tickets">
-    <style>
-      .tkt-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;}
-      .tkt-stat{background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:8px;padding:14px;box-shadow:rgba(0,0,0,0.05) 0px 0px 10px;}
-      .tkt-stat-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#6B849A;margin-bottom:6px;}
-      .tkt-stat-val{font-size:28px;font-weight:700;color:#072B40;letter-spacing:-.01em;}
-      .tkt-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
-      .tkt-filter-select{background:rgb(215,241,247);border:none;border-radius:8px;padding:7px 12px;font-size:13px;color:#072B40;font-family:'Poppins',sans-serif;cursor:pointer;}
-      .tkt-row{display:grid;grid-template-columns:110px 1fr 90px 90px 1fr 80px;gap:8px 14px;padding:10px 16px;border-bottom:1px solid rgb(222,225,230);align-items:center;transition:background .15s;}
-      .tkt-row:hover{background:rgb(250,250,250);}
-      .tkt-id{font-weight:700;color:#21AAE0;font-size:13px;}
-      .tkt-agent{font-size:13px;font-weight:600;color:#072B40;}
-      .tkt-chip{display:inline-flex;padding:2px 8px;border-radius:50px;font-size:11px;font-weight:600;}
-      .tkt-chip.email{background:rgba(33,170,224,.1);color:#21AAE0;}
-      .tkt-chip.chat{background:rgba(45,220,150,.1);color:#2DDC96;}
-      .tkt-chip.phone{background:rgba(244,137,31,.1);color:#F4891F;}
-      .tkt-chip.web{background:rgba(155,89,182,.1);color:#9B59B6;}
-      .tkt-type{font-size:12px;color:#3A5068;}
-      .tkt-date{font-size:11px;color:#9BAFC0;white-space:nowrap;}
-      .tkt-queue-yes{color:#2DDC96;font-size:11px;font-weight:600;}
-      .tkt-queue-no{color:#ED666B;font-size:11px;font-weight:600;}
-    </style>
+    
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
       <div>
         <div style="font-size:22px;font-weight:700;color:#072B40;">Ticket Report</div>
@@ -10530,44 +10510,7 @@ tbody tr:hover td{
 
   <!-- ── AI Writer Section ───────────────────────────────────────────────── -->
   <div class="agent-shell-page" id="agent-section-writer">
-    <style>
-      .aw-wrap { display:flex; flex-direction:column; gap:16px; max-width:860px; margin:0 auto; }
-      .aw-header { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
-      .aw-header-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-      .aw-title { font-size:17px; font-weight:700; color:var(--t1); }
-      .aw-sub { font-size:12px; color:var(--t3); margin-top:2px; }
-      .aw-controls { display:flex; gap:10px; flex-wrap:wrap; }
-      .aw-control-group { display:flex; flex-direction:column; gap:5px; flex:1; min-width:160px; }
-      .aw-control-label { font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.06em; }
-      .aw-select { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:8px; color:var(--t1); font-size:13px; padding:8px 12px; outline:none; cursor:pointer; transition:border .2s; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23888' d='M8 11L3 6h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; background-size:14px; padding-right:32px; }
-      .aw-select:focus { border-color:rgba(99,102,241,.5); }
-      .aw-select option { background:#1a1a2e; color:#fff; }
-      .aw-panels { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-      @media(max-width:640px){ .aw-panels{ grid-template-columns:1fr; } }
-      .aw-panel { display:flex; flex-direction:column; gap:8px; }
-      .aw-panel-header { display:flex; align-items:center; justify-content:space-between; }
-      .aw-panel-label { font-size:11px; font-weight:600; color:var(--t2); display:flex; align-items:center; gap:6px; }
-      .aw-textarea { width:100%; min-height:200px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; color:var(--t1); font-size:13px; line-height:1.6; padding:14px; resize:vertical; outline:none; font-family:inherit; transition:border .2s; box-sizing:border-box; }
-      .aw-textarea:focus { border-color:rgba(99,102,241,.45); }
-      .aw-textarea::placeholder { color:var(--t3); }
-      .aw-output { width:100%; min-height:200px; background:rgba(99,102,241,.05); border:1px solid rgba(99,102,241,.18); border-radius:10px; color:var(--t1); font-size:13px; line-height:1.7; padding:14px; font-family:inherit; white-space:pre-wrap; word-break:break-word; box-sizing:border-box; position:relative; }
-      .aw-output.empty { color:var(--t3); font-style:italic; }
-      .aw-output-placeholder { color:var(--t3); font-style:italic; }
-      .aw-btn { display:inline-flex; align-items:center; gap:7px; padding:10px 20px; border-radius:9px; font-size:13px; font-weight:600; border:none; cursor:pointer; transition:all .2s; }
-      .aw-btn-primary { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; }
-      .aw-btn-primary:hover { opacity:.9; transform:translateY(-1px); box-shadow:0 4px 16px rgba(99,102,241,.35); }
-      .aw-btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
-      .aw-btn-ghost { background:rgba(255,255,255,.07); color:var(--t2); border:1px solid rgba(255,255,255,.1); }
-      .aw-btn-ghost:hover { background:rgba(255,255,255,.12); color:var(--t1); }
-      .aw-btn-copy { background:rgba(99,102,241,.12); color:#818cf8; border:1px solid rgba(99,102,241,.25); padding:6px 12px; font-size:11px; }
-      .aw-btn-copy:hover { background:rgba(99,102,241,.22); }
-      .aw-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-      .aw-char-count { font-size:11px; color:var(--t3); margin-left:auto; }
-      .aw-char-count.over { color:#f87171; }
-      .aw-spinner { width:16px; height:16px; border:2px solid rgba(255,255,255,.25); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
-      .aw-tip { background:rgba(99,102,241,.08); border:1px solid rgba(99,102,241,.15); border-radius:8px; padding:10px 14px; font-size:12px; color:var(--t3); line-height:1.5; }
-      .aw-tip strong { color:#818cf8; }
-    </style>
+    
 
     <div class="aw-wrap">
       <!-- Header -->
@@ -10655,95 +10598,7 @@ tbody tr:hover td{
 
   <!-- AGENT TICKET LOGGER -->
   <div class="agent-shell-page" id="agent-section-tickets">
-  <style>
-    /* ── Ticket Logger Layout ── */
-    .tl-page { display:grid; grid-template-columns:1fr 320px; gap:16px; align-items:start; max-width:960px; margin:0 auto; }
-    @media(max-width:780px){ .tl-page{ grid-template-columns:1fr; } }
 
-    /* Cards */
-    .tl-card { background:#FFFFFF; border:1px solid rgb(222,225,230); border-radius:12px; padding:20px; box-shadow:rgba(0,0,0,0.04) 0px 1px 8px; margin-bottom:12px; }
-    .tl-card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#6B849A; margin-bottom:14px; display:flex; align-items:center; gap:7px; }
-    .tl-card-title svg { color:#F4891F; }
-
-    /* Ticket ID input */
-    .tl-id-field { display:flex; align-items:center; background:rgb(215,241,247); border-radius:10px; overflow:hidden; border:2px solid transparent; transition:border-color .2s; }
-    .tl-id-field:focus-within { border-color:rgba(244,137,31,.5); }
-    .tl-id-prefix { padding:12px 6px 12px 16px; font-size:20px; font-weight:800; color:#072B40; line-height:1; user-select:none; }
-    .tl-id-input { flex:1; border:none; background:transparent; padding:12px 16px 12px 4px; font-size:20px; font-weight:700; color:#072B40; font-family:'Poppins',sans-serif; outline:none; min-width:0; }
-    .tl-id-input::placeholder { color:#9BAFC0; font-weight:400; font-size:16px; }
-
-    /* Channel buttons — icon + label */
-    .tl-channel-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
-    .tl-ch-btn {
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
-      padding:14px 8px; border-radius:10px; border:1.5px solid rgb(222,225,230);
-      background:#FAFAFA; cursor:pointer; font-family:'Poppins',sans-serif;
-      transition:all .15s; color:#6B849A;
-    }
-    .tl-ch-btn:hover { background:#F0F2F5; border-color:#C8D0DC; color:#072B40; }
-    .tl-ch-btn.active { background:rgba(244,137,31,.08); border-color:#F4891F; color:#F4891F; }
-    .tl-ch-btn svg { width:20px; height:20px; stroke:currentColor; }
-    .tl-ch-btn span { font-size:11px; font-weight:600; }
-
-    /* Queue toggle */
-    .tl-queue-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-    .tl-q-btn {
-      display:flex; align-items:center; justify-content:center; gap:7px;
-      padding:11px; border-radius:10px; border:1.5px solid rgb(222,225,230);
-      background:#FAFAFA; cursor:pointer; font-family:'Poppins',sans-serif;
-      font-size:13px; font-weight:600; color:#6B849A; transition:all .15s;
-    }
-    .tl-q-btn:hover { background:#F0F2F5; border-color:#C8D0DC; color:#072B40; }
-    .tl-q-btn.active.yes { background:rgba(45,220,150,.08); border-color:#2DDC96; color:#2DDC96; }
-    .tl-q-btn.active.no  { background:rgba(237,102,107,.08); border-color:#ED666B; color:#ED666B; }
-    .tl-q-btn.active.na  { background:rgba(107,132,154,.08); border-color:#6B849A; color:#6B849A; }
-    .tl-q-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-
-    /* Ticket type grid */
-    .tl-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .tl-type-btn {
-      display:flex; align-items:center; gap:9px;
-      padding:11px 14px; border-radius:10px; border:1.5px solid rgb(222,225,230);
-      background:#FAFAFA; cursor:pointer; font-family:'Poppins',sans-serif;
-      font-size:12px; font-weight:500; color:#3A5068; transition:all .15s; text-align:left;
-    }
-    .tl-type-btn:hover { background:#F0F2F5; border-color:#C8D0DC; color:#072B40; }
-    .tl-type-btn.active { background:rgba(244,137,31,.08); border-color:#F4891F; color:#F4891F; font-weight:700; }
-    .tl-type-btn svg { width:15px; height:15px; flex-shrink:0; stroke:currentColor; }
-    .tl-type-btn.wide { grid-column:span 2; }
-
-    /* Submit button */
-    .tl-submit-btn {
-      width:100%; padding:15px; border:none; border-radius:10px;
-      background:#F4891F; color:#FFFFFF; font-size:15px; font-weight:700;
-      font-family:'Poppins',sans-serif; cursor:pointer;
-      box-shadow:rgba(244,137,31,.4) 0px 4px 20px;
-      transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px;
-    }
-    .tl-submit-btn:hover { background:#F28820; transform:translateY(-1px); box-shadow:rgba(244,137,31,.5) 0px 6px 24px; }
-    .tl-submit-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
-
-    /* History list */
-    .tl-history-item {
-      display:flex; align-items:center; gap:10px;
-      padding:10px 0; border-bottom:1px solid rgb(222,225,230);
-    }
-    .tl-history-item:last-child { border-bottom:none; }
-    .tl-hi-id { font-size:13px; font-weight:700; color:#21AAE0; min-width:80px; }
-    .tl-hi-type { flex:1; font-size:12px; color:#3A5068; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .tl-hi-badge { padding:2px 8px; border-radius:50px; font-size:10px; font-weight:700; white-space:nowrap; }
-    .tl-hi-time { font-size:11px; color:#9BAFC0; white-space:nowrap; }
-
-    /* Right panel */
-    .tl-info-card { background:linear-gradient(135deg,#072B40 0%,#0A3D5C 100%); border-radius:12px; padding:20px; color:#FFFFFF; }
-    .tl-info-title { font-size:14px; font-weight:700; color:#FFFFFF; margin-bottom:4px; }
-    .tl-info-sub { font-size:12px; color:rgba(178,219,240,.7); margin-bottom:18px; }
-    .tl-info-rule { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); }
-    .tl-info-rule:last-child { border-bottom:none; }
-    .tl-info-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-    .tl-info-text { font-size:12px; color:rgba(178,219,240,.85); line-height:1.55; }
-    .tl-info-text strong { color:#FFFFFF; }
-  </style>
 
     <div class="tl-page">
       <!-- LEFT: Form -->
