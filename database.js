@@ -1097,6 +1097,16 @@ function deleteAppSession(token){
   return run(`DELETE FROM app_sessions WHERE token=?`, [token]);
 }
 
+/** Look up the most recent Google profile picture URL for an email address */
+async function getPictureForEmail(email){
+  if(!email) return null;
+  const row = await get(
+    `SELECT picture FROM app_sessions WHERE email=? AND picture IS NOT NULL AND picture!='' ORDER BY expires_at DESC LIMIT 1`,
+    [email]
+  );
+  return row ? row.picture : null;
+}
+
 function pruneExpiredSessions(){
   return run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
 }
@@ -1261,7 +1271,7 @@ module.exports={
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
-  createAppSession,getAppSession,deleteAppSession,pruneExpiredSessions,
+  createAppSession,getAppSession,deleteAppSession,pruneExpiredSessions,getPictureForEmail,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,

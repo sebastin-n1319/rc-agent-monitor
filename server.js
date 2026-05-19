@@ -11,7 +11,7 @@ const {
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote,
-  createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions,
+  createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   insertAuditLog, getAuditLog,
   getBreakThresholds, setBreakThreshold,
   getBreakReportData,
@@ -142,7 +142,7 @@ function formatBreakChatMessage(event){
   ].filter(Boolean).join('\n');
 }
 
-function buildBreakChatPayload(event){
+async function buildBreakChatPayload(event){
   const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
   const timeCst = formatBreakTime(stamp, 'America/Chicago', 'CST');
   const timeIst = formatBreakTime(stamp, 'Asia/Kolkata', 'IST');
@@ -150,9 +150,11 @@ function buildBreakChatPayload(event){
   const isOut = meta.flow === 'out';
   const directionLabel = isOut ? 'OUT' : 'IN';
 
-  // Agent avatar — initials circle via ui-avatars (Adit navy bg)
+  // Use real Google profile picture if available, fallback to initials avatar
+  const googlePic = await getPictureForEmail(event.email).catch(() => null);
   const avatarName = encodeURIComponent(event.username || 'Agent');
-  const avatarUrl  = `https://ui-avatars.com/api/?name=${avatarName}&background=072B40&color=ffffff&size=128&bold=true`;
+  const avatarUrl  = googlePic
+    || `https://ui-avatars.com/api/?name=${avatarName}&background=072B40&color=ffffff&size=128&bold=true`;
 
   const widgets = [
     {
@@ -219,7 +221,7 @@ async function sendBreakChatNotification(event){
   if(!GOOGLE_CHAT_WEBHOOK_URL){
     return { notified: false, status: 'disabled', response: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
   }
-  const payload = buildBreakChatPayload(event);
+  const payload = await buildBreakChatPayload(event);
   const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
