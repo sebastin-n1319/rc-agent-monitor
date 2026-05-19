@@ -5160,3 +5160,55 @@ html.dark-mode #agent-section-tickets {
     radial-gradient(ellipse 60% 45% at 100% 100%, rgba(33,170,224,.08) 0%, transparent 55%),
     #051824 !important;
 }
+
+/* ═══ CRITICAL OVERRIDES ═══════════════════════════════════════════ */
+/* Remove old CSS-only tooltip that creates orange/black dots */
+.tl-type-btn::after,
+.tl-type-btn::before { display: none !important; content: none !important; }
+
+/* Background — stronger, uses !important to beat all overrides */
+#agent-section-tickets {
+  background:
+    radial-gradient(ellipse 90% 60% at -5% -10%, rgba(244,137,31,.14) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 105% 110%, rgba(33,170,224,.10) 0%, transparent 55%),
+    linear-gradient(160deg, #E8EEF6 0%, #ECF1F8 50%, #E4EDF5 100%) !important;
+  min-height: calc(100vh - 96px) !important;
+  padding: 24px 24px 60px !important;
+  position: relative !important;
+}
+/* Override agent-shell-page at highest specificity */
+html body #mainApp #agentView .agent-shell-page#agent-section-tickets {
+  background:
+    radial-gradient(ellipse 90% 60% at -5% -10%, rgba(244,137,31,.14) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 105% 110%, rgba(33,170,224,.10) 0%, transparent 55%),
+    linear-gradient(160deg, #E8EEF6 0%, #ECF1F8 50%, #E4EDF5 100%) !important;
+}
+html.dark-mode #agent-section-tickets,
+html.dark-mode body #mainApp #agentView .agent-shell-page#agent-section-tickets {
+  background:
+    radial-gradient(ellipse 90% 60% at -5% -10%, rgba(244,137,31,.12) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 105% 110%, rgba(33,170,224,.10) 0%, transparent 55%),
+    linear-gradient(160deg, #061420 0%, #071A2C 50%, #051824 100%) !important;
+}
+
+/* Period toggle buttons */
+.tl-period-tabs {
+  display: flex; gap: 4px;
+  background: rgba(255,255,255,.5);
+  border: 1px solid rgb(222,225,230);
+  border-radius: 8px;
+  padding: 3px;
+}
+.tl-period-btn {
+  flex: 1; padding: 5px 10px;
+  border: none; border-radius: 6px;
+  font-size: 11px; font-weight: 600; font-family: 'Poppins', sans-serif;
+  color: #6B849A; background: transparent;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.tl-period-btn.active {
+  background: #FFFFFF; color: #F4891F;
+  box-shadow: rgba(0,0,0,.08) 0px 1px 4px;
+}
+html.dark-mode .tl-period-tabs { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+html.dark-mode .tl-period-btn.active { background: #0D2A3E; }

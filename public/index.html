@@ -10698,9 +10698,18 @@ tbody tr:hover td{
           <div class="tl-pivot-header">
             <div class="tl-pivot-title">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-              Today's Pivot Report
+              My Ticket Report
             </div>
             <span class="tl-pivot-live"><span class="tl-pivot-dot"></span>Live</span>
+          </div>
+          <!-- Period toggle -->
+          <div style="padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.08);">
+            <div class="tl-period-tabs">
+              <button class="tl-period-btn active" data-period="today" onclick="tlSetPeriod('today',this)">Today</button>
+              <button class="tl-period-btn" data-period="week" onclick="tlSetPeriod('week',this)">This Week</button>
+              <button class="tl-period-btn" data-period="month" onclick="tlSetPeriod('month',this)">This Month</button>
+              <button class="tl-period-btn" data-period="all" onclick="tlSetPeriod('all',this)">All Time</button>
+            </div>
           </div>
           <!-- Big total -->
           <div class="tl-pivot-total" id="tl-pivot-total">
@@ -11357,6 +11366,7 @@ function switchAgentSection(section,el){
   configureAgentBreakbotAccess();
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
   if(section==='breakbot')loadBreakTracker();
+  if(section==='tickets'){ setTimeout(initTlTooltips,80); loadMyTicketsFromSheet(); }
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -11473,7 +11483,52 @@ function useAwResult(){
 
 // ── Ticket Logger — Agent UI ──────────────────────────────────────────────
 const tlSelections = { channel: '', queue: '', type: '' };
-const tlHistory = []; // session-level history
+const tlHistory    = [];  // session additions (for immediate feedback)
+let   tlSheetData  = [];  // full history from Google Sheet
+let   tlPeriod     = 'today'; // current period filter
+
+// Parse DD-MMM date (e.g. "19-May") into a Date for the current year
+function parseTlDate(str) {
+  if (!str) return null;
+  const months = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
+  const [d, m] = str.split('-');
+  if (!d || !months.hasOwnProperty(m)) return null;
+  const now = new Date();
+  return new Date(now.getFullYear(), months[m], parseInt(d));
+}
+
+function tlFilterByPeriod(tickets) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 6);
+  const monthAgo = new Date(today); monthAgo.setDate(1);
+  return tickets.filter(t => {
+    const d = parseTlDate(t.date);
+    if (!d) return tlPeriod === 'all';
+    if (tlPeriod === 'today')  return d >= today;
+    if (tlPeriod === 'week')   return d >= weekAgo;
+    if (tlPeriod === 'month')  return d >= monthAgo;
+    return true;
+  });
+}
+
+function tlSetPeriod(period, btn) {
+  tlPeriod = period;
+  document.querySelectorAll('.tl-period-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTlPivot();
+}
+
+async function loadMyTicketsFromSheet() {
+  try {
+    const res  = await fetch('/api/my-tickets', { credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      tlSheetData = data.data || [];
+      renderTlPivot();
+    }
+  } catch(e) { /* silent fail */ }
+}
 
 function tlSelect(btn) {
   const group = btn.dataset.group;
@@ -11546,25 +11601,46 @@ async function submitTicketLog() {
 }
 
 function renderTlHistory() {
-  // ── Pivot report ──────────────────────────────────────────────────────────
+  // Merge sheet data with session additions (session additions may not be in sheet yet)
+  const sessionIds = new Set(tlHistory.map(t => t.ticketId));
+  const merged = [
+    ...tlHistory.map(t => ({ ...t, _session: true })),
+    ...tlSheetData.filter(t => !sessionIds.has(t.ticketId))
+  ];
+  // Update sheet data with session entries for future filtering
+  tlSheetData = [...tlSheetData.filter(t => !sessionIds.has(t.ticketId)), ...tlHistory];
+  renderTlPivot();
+}
+
+function renderTlPivot() {
   const pivNum  = document.getElementById('tl-pivot-num');
   const pivCh   = document.getElementById('tl-pivot-channels');
   const pivType = document.getElementById('tl-pivot-types');
   const pivRec  = document.getElementById('tl-pivot-recent');
-  const total   = tlHistory.length;
-  if (pivNum) pivNum.textContent = total;
-  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  const chColors= { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+
+  // Apply period filter
+  const filtered = tlFilterByPeriod(tlSheetData);
+  const total    = filtered.length;
+
+  if (pivNum) {
+    pivNum.textContent = total;
+    // Animate number change
+    pivNum.style.transform = 'scale(1.2)';
+    setTimeout(() => { pivNum.style.transform = 'scale(1)'; }, 200);
+  }
 
   if (!total) {
+    const label = tlPeriod === 'today' ? 'No tickets logged yet today.' : 'No tickets in this period.';
     [pivCh, pivType, pivRec].forEach(el => {
-      if (el) el.innerHTML = '<div class="tl-pivot-empty">No data yet</div>';
+      if (el) el.innerHTML = `<div class="tl-pivot-empty">${label}</div>`;
     });
     return;
   }
 
   // Channel breakdown
   const chMap = {};
-  tlHistory.forEach(t => { chMap[t.channel] = (chMap[t.channel]||0)+1; });
+  filtered.forEach(t => { chMap[t.channel] = (chMap[t.channel]||0)+1; });
   if (pivCh) pivCh.innerHTML = Object.entries(chMap).sort((a,b)=>b[1]-a[1]).map(([ch,n]) => `
     <div class="tl-pbar-row">
       <div class="tl-pbar-label" style="color:${chColors[ch]||'#6B849A'}">${ch}</div>
@@ -11574,7 +11650,7 @@ function renderTlHistory() {
 
   // Type breakdown
   const typeMap = {};
-  tlHistory.forEach(t => { typeMap[t.ticketType] = (typeMap[t.ticketType]||0)+1; });
+  filtered.forEach(t => { typeMap[t.ticketType] = (typeMap[t.ticketType]||0)+1; });
   if (pivType) pivType.innerHTML = Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).map(([tp,n]) => {
     const short = tp.replace(' Ticket','').replace('Auto-Generated/Spam','Spam');
     return `<div class="tl-pbar-row">
@@ -11585,17 +11661,15 @@ function renderTlHistory() {
   }).join('');
 
   // Recent 5
-  if (pivRec) pivRec.innerHTML = tlHistory.slice(0,5).map(t => `
-    <div class="tl-pivot-recent-row">
+  if (pivRec) pivRec.innerHTML = filtered.slice(-5).reverse().map(t => {
+    const timeStr = t.time || t.date || '';
+    return `<div class="tl-pivot-recent-row">
       <span class="tl-h-id">${t.ticketId}</span>
-      <span class="tl-h-type">${t.ticketType.replace(' Ticket','')}</span>
+      <span class="tl-h-type">${(t.ticketType||'').replace(' Ticket','').replace('Auto-Generated/Spam','Spam')}</span>
       <span class="tl-h-chip" style="background:${chColors[t.channel]||'#6B849A'}22;color:${chColors[t.channel]||'#6B849A'}">${t.channel}</span>
-      <span class="tl-h-time">${t.time}</span>
-    </div>`).join('');
-
-  // Legacy list (hidden but keep for compat)
-  const list = document.getElementById('tl-history-list');
-  if (list) list.innerHTML = '';
+      <span class="tl-h-time">${timeStr}</span>
+    </div>`;
+  }).join('');
 }
 
 // ── Success popup ──────────────────────────────────────────────────────────
@@ -13265,7 +13339,10 @@ function sbAdmin(tab, sbEl){
 function sbAgent(section, sbEl){
   const btnEl = document.getElementById('agent-tab-'+section) || document.getElementById('agent-breakbot-tab');
   switchAgentSection(section, btnEl);
-  if(section === 'tickets') setTimeout(initTlTooltips, 80);
+  if(section === 'tickets'){
+    setTimeout(initTlTooltips, 80);
+    loadMyTicketsFromSheet();
+  }
 }
 
 // ── Ticket type hover tooltip (JS-driven — CSS ::after gets clipped by parent) ──

@@ -976,6 +976,31 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
   }
 });
 
+// GET /api/my-tickets — agent reads their own ticket entries from Google Sheet
+app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
+    const sheets = getTicketSheetsClient();
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:G`,
+    });
+    const agentName = req.session.name || req.session.email;
+    const rows = (resp.data.values || []).slice(1);
+    const tickets = rows
+      .filter(r => r[0] && r[1] === agentName)
+      .map(r => ({
+        ticketId: r[0] || '', agentName: r[1] || '',
+        channel: r[2] || '', pickedFromQueue: r[3] || '',
+        ticketType: r[4] || '', date: r[5] || '', month: r[6] || '',
+      }));
+    res.json({ success: true, data: tickets });
+  } catch(e) {
+    console.error('❌ my-tickets error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/tickets — admin reads recent ticket entries from Google Sheet
 app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try {
