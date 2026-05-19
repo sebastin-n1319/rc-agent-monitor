@@ -976,6 +976,45 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
   }
 });
 
+// ── Email → Sheet Name mapping (T1 CS Stars team) ───────────────────────────
+// Maps each agent's login email to the possible names used in the Google Sheet.
+// The sheet uses first-name or shortened names from months of manual entries.
+const AGENT_SHEET_NAMES = {
+  'ronnie@adit.com':          ['Ronnie G', 'Ronnie'],
+  'sebastin.n@adit.com':      ['Sebastin', 'Sabarirajan', 'Sebastin N'],
+  'anold.fernandes@adit.com': ['Anold', 'Anold Fernandes'],
+  'audrey.miles@adit.com':    ['Audrey', 'Audrey Miles'],
+  'caroline.lock@adit.com':   ['Caroline', 'Caroline Lock'],
+  'debra.horton@adit.com':    ['Debra Horton', 'Debra', 'Danica', 'Debra Horton (Deblina Chakraborty)'],
+  'evan.cruz@adit.com':       ['Evan', 'Evan Cruz'],
+  'greg.dawson@adit.com':     ['Greg Dawson', 'Greg'],
+  'henry.patel@adit.com':     ['Henry', 'Henry P', 'Henry Patel'],
+  'imran@adit.com':           ['Imran'],
+  'lincy@adit.com':           ['Lincy', 'Lincy Tabita'],
+  'sabrina.quinn@adit.com':   ['Sabrina', 'Sabrina Quinn'],
+  // Add more agents here as needed
+};
+
+// Build a set of lowercase name variants for fast matching
+function buildNameSet(email, sessionName) {
+  const mapped = AGENT_SHEET_NAMES[(email||'').toLowerCase()];
+  if (mapped && mapped.length) {
+    // Use mapped names (case-insensitive set)
+    return new Set(mapped.map(n => n.toLowerCase().trim()));
+  }
+  // Fallback: derive variations from session name
+  const n = (sessionName || '').trim();
+  const first = n.split(' ')[0];
+  const variants = new Set([
+    n.toLowerCase(),
+    first.toLowerCase(),
+  ]);
+  // Also add "First L" format
+  const parts = n.split(' ');
+  if (parts.length >= 2) variants.add((parts[0] + ' ' + parts[1][0]).toLowerCase());
+  return variants;
+}
+
 // GET /api/my-tickets — agent reads their own ticket entries from Google Sheet
 app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
@@ -985,26 +1024,14 @@ app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) =
       spreadsheetId: TICKET_SHEET_ID,
       range: `'${TICKET_SHEET_TAB}'!A:G`,
     });
-    // Allow ?name= override so agents can match their historical sheet name
-    const sessionName = ((req.query.name || req.session.name || req.session.email || '')).trim();
-    const sessionFirst = sessionName.split(' ')[0].toLowerCase(); // e.g. "henry" from "Henry Pham"
 
-    // Smart matching: handles manual sheet entries (first name only) vs Google full names
-    // Matches if: exact match, OR session contains sheet name, OR sheet contains first name
-    function nameMatches(sheetName) {
-      if (!sheetName) return false;
-      const s = sheetName.trim().toLowerCase();
-      const n = sessionName.toLowerCase();
-      return s === n                          // exact: "Henry" === "Henry"
-          || n.startsWith(s + ' ')           // "Henry" matches "Henry Pham"
-          || n === s                          // same
-          || s.startsWith(sessionFirst + ' ')// "Henry P" starts with "Henry"
-          || s === sessionFirst;              // "Henry" === "henry"
-    }
+    const agentEmail = (req.session.email || '').toLowerCase();
+    const sessionName = req.session.name || req.session.email || '';
+    const nameSet = buildNameSet(agentEmail, sessionName);
 
     const rows = (resp.data.values || []).slice(1);
     const tickets = rows
-      .filter(r => r[0] && nameMatches(r[1]))
+      .filter(r => r[0] && nameSet.has((r[1]||'').toLowerCase().trim()))
       .map(r => ({
         ticketId: r[0] || '', agentName: r[1] || '',
         channel: r[2] || '', pickedFromQueue: r[3] || '',
