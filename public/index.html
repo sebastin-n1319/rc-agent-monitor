@@ -10656,105 +10656,271 @@ tbody tr:hover td{
   <!-- AGENT TICKET LOGGER -->
   <div class="agent-shell-page" id="agent-section-tickets">
   <style>
-    .tl-wrap{max-width:600px;margin:0 auto;}
-    .tl-section{background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:10px;padding:18px;margin-bottom:14px;box-shadow:rgba(0,0,0,0.05) 0px 0px 10px;}
-    .tl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B849A;margin-bottom:10px;}
-    .tl-id-row{display:flex;align-items:center;gap:8px;}
-    .tl-hash{font-size:20px;font-weight:700;color:#072B40;}
-    .tl-id-input{flex:1;background:rgb(215,241,247);border:none;border-radius:8px;padding:10px 14px;font-size:18px;font-weight:700;color:#072B40;font-family:'Poppins',sans-serif;outline:none;letter-spacing:.02em;}
-    .tl-id-input::placeholder{color:#9BAFC0;font-weight:400;}
-    .tl-btn-group{display:flex;gap:8px;flex-wrap:wrap;}
-    .tl-opt-btn{flex:1;min-width:80px;padding:10px 8px;background:#F7F8F8;border:1.5px solid rgb(222,225,230);border-radius:8px;font-size:13px;font-weight:600;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;text-align:center;}
-    .tl-opt-btn:hover{background:#F0F2F5;border-color:#C8D0DC;color:#072B40;}
-    .tl-opt-btn.active{background:#F4891F;border-color:#F4891F;color:#FFFFFF;box-shadow:rgba(244,137,31,.3) 0 3px 10px;}
-    .tl-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-    .tl-type-btn{padding:10px 12px;background:#F7F8F8;border:1.5px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:500;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;text-align:left;line-height:1.3;}
-    .tl-type-btn:hover{background:#F0F2F5;border-color:#C8D0DC;color:#072B40;}
-    .tl-type-btn.active{background:rgba(244,137,31,.1);border-color:#F4891F;color:#F4891F;font-weight:700;}
-    .tl-submit{width:100%;padding:14px;background:#F4891F;color:#FFF;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:rgba(244,137,31,.4) 0 4px 16px;transition:all .2s;margin-top:4px;}
-    .tl-submit:hover{background:#F28820;transform:translateY(-1px);}
-    .tl-submit:disabled{opacity:.5;cursor:not-allowed;transform:none;}
-    .tl-history-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgb(222,225,230);font-size:12px;}
-    .tl-history-row:last-child{border-bottom:none;}
-    .tl-h-id{font-weight:700;color:#21AAE0;min-width:80px;}
-    .tl-h-type{flex:1;color:#3A5068;}
-    .tl-h-chip{padding:2px 7px;border-radius:50px;font-size:10px;font-weight:600;}
-    .tl-h-time{color:#9BAFC0;white-space:nowrap;}
+    /* ── Ticket Logger Layout ── */
+    .tl-page { display:grid; grid-template-columns:1fr 320px; gap:16px; align-items:start; max-width:960px; margin:0 auto; }
+    @media(max-width:780px){ .tl-page{ grid-template-columns:1fr; } }
+
+    /* Cards */
+    .tl-card { background:#FFFFFF; border:1px solid rgb(222,225,230); border-radius:12px; padding:20px; box-shadow:rgba(0,0,0,0.04) 0px 1px 8px; margin-bottom:12px; }
+    .tl-card-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#6B849A; margin-bottom:14px; display:flex; align-items:center; gap:7px; }
+    .tl-card-title svg { color:#F4891F; }
+
+    /* Ticket ID input */
+    .tl-id-field { display:flex; align-items:center; background:rgb(215,241,247); border-radius:10px; overflow:hidden; border:2px solid transparent; transition:border-color .2s; }
+    .tl-id-field:focus-within { border-color:rgba(244,137,31,.5); }
+    .tl-id-prefix { padding:12px 6px 12px 16px; font-size:20px; font-weight:800; color:#072B40; line-height:1; user-select:none; }
+    .tl-id-input { flex:1; border:none; background:transparent; padding:12px 16px 12px 4px; font-size:20px; font-weight:700; color:#072B40; font-family:'Poppins',sans-serif; outline:none; min-width:0; }
+    .tl-id-input::placeholder { color:#9BAFC0; font-weight:400; font-size:16px; }
+
+    /* Channel buttons — icon + label */
+    .tl-channel-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .tl-ch-btn {
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+      padding:14px 8px; border-radius:10px; border:1.5px solid rgb(222,225,230);
+      background:#FAFAFA; cursor:pointer; font-family:'Poppins',sans-serif;
+      transition:all .15s; color:#6B849A;
+    }
+    .tl-ch-btn:hover { background:#F0F2F5; border-color:#C8D0DC; color:#072B40; }
+    .tl-ch-btn.active { background:rgba(244,137,31,.08); border-color:#F4891F; color:#F4891F; }
+    .tl-ch-btn svg { width:20px; height:20px; stroke:currentColor; }
+    .tl-ch-btn span { font-size:11px; font-weight:600; }
+
+    /* Queue toggle */
+    .tl-queue-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .tl-q-btn {
+      display:flex; align-items:center; justify-content:center; gap:7px;
+      padding:11px; border-radius:10px; border:1.5px solid rgb(222,225,230);
+      background:#FAFAFA; cursor:pointer; font-family:'Poppins',sans-serif;
+      font-size:13px; font-weight:600; color:#6B849A; transition:all .15s;
+    }
+    .tl-q-btn:hover { background:#F0F2F5; border-color:#C8D0DC; color:#072B40; }
+    .tl-q-btn.active.yes { background:rgba(45,220,150,.08); border-color:#2DDC96; color:#2DDC96; }
+    .tl-q-btn.active.no  { background:rgba(237,102,107,.08); border-color:#ED666B; color:#ED666B; }
+    .tl-q-btn.active.na  { background:rgba(107,132,154,.08); border-color:#6B849A; color:#6B849A; }
+    .tl-q-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+    /* Ticket type grid */
+    .tl-type-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .tl-type-btn {
+      display:flex; align-items:center; gap:9px;
+      padding:11px 14px; border-radius:10px; border:1.5px solid rgb(222,225,230);
+      background:#FAFAFA; cursor:pointer; font-family:'Poppins',sans-serif;
+      font-size:12px; font-weight:500; color:#3A5068; transition:all .15s; text-align:left;
+    }
+    .tl-type-btn:hover { background:#F0F2F5; border-color:#C8D0DC; color:#072B40; }
+    .tl-type-btn.active { background:rgba(244,137,31,.08); border-color:#F4891F; color:#F4891F; font-weight:700; }
+    .tl-type-btn svg { width:15px; height:15px; flex-shrink:0; stroke:currentColor; }
+    .tl-type-btn.wide { grid-column:span 2; }
+
+    /* Submit button */
+    .tl-submit-btn {
+      width:100%; padding:15px; border:none; border-radius:10px;
+      background:#F4891F; color:#FFFFFF; font-size:15px; font-weight:700;
+      font-family:'Poppins',sans-serif; cursor:pointer;
+      box-shadow:rgba(244,137,31,.4) 0px 4px 20px;
+      transition:all .2s; display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .tl-submit-btn:hover { background:#F28820; transform:translateY(-1px); box-shadow:rgba(244,137,31,.5) 0px 6px 24px; }
+    .tl-submit-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+    /* History list */
+    .tl-history-item {
+      display:flex; align-items:center; gap:10px;
+      padding:10px 0; border-bottom:1px solid rgb(222,225,230);
+    }
+    .tl-history-item:last-child { border-bottom:none; }
+    .tl-hi-id { font-size:13px; font-weight:700; color:#21AAE0; min-width:80px; }
+    .tl-hi-type { flex:1; font-size:12px; color:#3A5068; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .tl-hi-badge { padding:2px 8px; border-radius:50px; font-size:10px; font-weight:700; white-space:nowrap; }
+    .tl-hi-time { font-size:11px; color:#9BAFC0; white-space:nowrap; }
+
+    /* Right panel */
+    .tl-info-card { background:linear-gradient(135deg,#072B40 0%,#0A3D5C 100%); border-radius:12px; padding:20px; color:#FFFFFF; }
+    .tl-info-title { font-size:14px; font-weight:700; color:#FFFFFF; margin-bottom:4px; }
+    .tl-info-sub { font-size:12px; color:rgba(178,219,240,.7); margin-bottom:18px; }
+    .tl-info-rule { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+    .tl-info-rule:last-child { border-bottom:none; }
+    .tl-info-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+    .tl-info-text { font-size:12px; color:rgba(178,219,240,.85); line-height:1.55; }
+    .tl-info-text strong { color:#FFFFFF; }
   </style>
-    <div class="tl-wrap">
-      <!-- Header -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#F4891F,#F28820);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+
+    <div class="tl-page">
+      <!-- LEFT: Form -->
+      <div>
+        <!-- Page header -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F4891F,#F28820);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:rgba(244,137,31,.35) 0 4px 14px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#072B40;letter-spacing:-.01em;">Log a Ticket</div>
+            <div style="font-size:12px;color:#6B849A;margin-top:2px;">Syncs directly to the T1 CS productivity sheet</div>
+          </div>
         </div>
-        <div>
-          <div style="font-size:17px;font-weight:700;color:#072B40;">Log a Ticket</div>
-          <div style="font-size:12px;color:#6B849A;">Goes straight into your team productivity sheet</div>
+
+        <!-- Ticket ID -->
+        <div class="tl-card">
+          <div class="tl-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.4-2 3.6-2.7 4.5-2.4M14.5 6c0-.7-0.3-2-1.5-2"/></svg>
+            Ticket ID
+          </div>
+          <div class="tl-id-field">
+            <span class="tl-id-prefix">#</span>
+            <input class="tl-id-input" id="tl-ticket-id" type="text" inputmode="numeric" placeholder="Enter ticket number…" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          </div>
+          <div id="tl-id-error" style="font-size:11px;color:#ED666B;margin-top:8px;display:none;display:flex;align-items:center;gap:4px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="#ED666B" stroke-width="1.5" style="width:12px;height:12px"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
+            Please enter a valid ticket number (digits only)
+          </div>
+        </div>
+
+        <!-- Channel -->
+        <div class="tl-card">
+          <div class="tl-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Ticket Channel
+          </div>
+          <div class="tl-channel-grid">
+            <button class="tl-ch-btn" data-group="channel" data-val="Email" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <span>Email</span>
+            </button>
+            <button class="tl-ch-btn" data-group="channel" data-val="Chat" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>Chat</span>
+            </button>
+            <button class="tl-ch-btn" data-group="channel" data-val="Phone" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <span>Phone</span>
+            </button>
+            <button class="tl-ch-btn" data-group="channel" data-val="Web" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span>Web</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Queue -->
+        <div class="tl-card">
+          <div class="tl-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Picked from the Queue?
+          </div>
+          <div class="tl-queue-row">
+            <button class="tl-q-btn yes" data-group="queue" data-val="Yes" onclick="tlSelect(this)">
+              <span class="tl-q-dot" style="background:#2DDC96;"></span> Yes
+            </button>
+            <button class="tl-q-btn no" data-group="queue" data-val="No" onclick="tlSelect(this)">
+              <span class="tl-q-dot" style="background:#ED666B;"></span> No
+            </button>
+            <button class="tl-q-btn na active" data-group="queue" data-val="" onclick="tlSelect(this)">
+              <span class="tl-q-dot" style="background:#C8D0DC;"></span> N/A
+            </button>
+          </div>
+        </div>
+
+        <!-- Ticket Type -->
+        <div class="tl-card">
+          <div class="tl-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+            Ticket Type
+          </div>
+          <div class="tl-type-grid">
+            <button class="tl-type-btn" data-group="type" data-val="New Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              New Ticket
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="Follow-up Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.08"/></svg>
+              Follow-up
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="Reopened Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+              Reopened
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="Transfer-In Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+              Transfer-In
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="New Ticket - Transferred" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/><polyline points="8 7 3 12 8 17"/></svg>
+              Transferred Out
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="Merged Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+              Merged
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="Outbound Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Outbound
+            </button>
+            <button class="tl-type-btn" data-group="type" data-val="Feedback Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Feedback
+            </button>
+            <button class="tl-type-btn wide" data-group="type" data-val="Auto-Generated/Spam Ticket" onclick="tlSelect(this)">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg>
+              Auto-Generated / Spam
+            </button>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button class="tl-submit-btn" id="tl-submit-btn" onclick="submitTicketLog()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+          Log Ticket to Sheet
+        </button>
+        <div id="tl-submit-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;font-weight:500;"></div>
+
+        <!-- Today's history -->
+        <div class="tl-card" style="margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="tl-card-title" style="margin:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#F4891F"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Today's Submissions
+            </div>
+            <span id="tl-today-count" style="font-size:11px;color:#9BAFC0;background:#F7F8F8;padding:2px 8px;border-radius:50px;border:1px solid rgb(222,225,230);">0 tickets</span>
+          </div>
+          <div id="tl-history-list">
+            <div style="text-align:center;padding:20px 0;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>
+          </div>
         </div>
       </div>
 
-      <!-- Ticket ID -->
-      <div class="tl-section">
-        <div class="tl-label">Ticket ID</div>
-        <div class="tl-id-row">
-          <span class="tl-hash">#</span>
-          <input class="tl-id-input" id="tl-ticket-id" type="text" inputmode="numeric" placeholder="198756" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
-        </div>
-        <div id="tl-id-error" style="font-size:11px;color:#ED666B;margin-top:6px;display:none;">Please enter a valid ticket number</div>
-      </div>
+      <!-- RIGHT: Info panel -->
+      <div>
+        <div class="tl-info-card">
+          <div style="width:36px;height:36px;border-radius:9px;background:rgba(244,137,31,.25);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="tl-info-title">Ticket Logging Guide</div>
+          <div class="tl-info-sub">Your entries go directly into the Working sheet.</div>
 
-      <!-- Channel -->
-      <div class="tl-section">
-        <div class="tl-label">Ticket Channel</div>
-        <div class="tl-btn-group">
-          <button class="tl-opt-btn" data-group="channel" data-val="Email" onclick="tlSelect(this)">📧 Email</button>
-          <button class="tl-opt-btn" data-group="channel" data-val="Chat" onclick="tlSelect(this)">💬 Chat</button>
-          <button class="tl-opt-btn" data-group="channel" data-val="Phone" onclick="tlSelect(this)">📞 Phone</button>
-          <button class="tl-opt-btn" data-group="channel" data-val="Web" onclick="tlSelect(this)">🌐 Web</button>
+          <div class="tl-info-rule">
+            <div class="tl-q-dot" style="background:#F4891F;margin-top:5px;flex-shrink:0;"></div>
+            <div class="tl-info-text"><strong>Ticket ID</strong> — Enter only the digits. The # is added automatically. E.g. type <code style="background:rgba(255,255,255,.1);padding:1px 5px;border-radius:4px;">198756</code></div>
+          </div>
+          <div class="tl-info-rule">
+            <div class="tl-q-dot" style="background:#21AAE0;margin-top:5px;flex-shrink:0;"></div>
+            <div class="tl-info-text"><strong>Channel</strong> — Select how the ticket came in: Email, Chat, Phone, or Web.</div>
+          </div>
+          <div class="tl-info-rule">
+            <div class="tl-q-dot" style="background:#2DDC96;margin-top:5px;flex-shrink:0;"></div>
+            <div class="tl-info-text"><strong>Queue</strong> — Did you pick this ticket from the queue? Leave N/A if not applicable.</div>
+          </div>
+          <div class="tl-info-rule">
+            <div class="tl-q-dot" style="background:#9B59B6;margin-top:5px;flex-shrink:0;"></div>
+            <div class="tl-info-text"><strong>Ticket Type</strong> — Select the type that best describes the ticket. Date and month are filled automatically.</div>
+          </div>
         </div>
-      </div>
 
-      <!-- Picked from Queue -->
-      <div class="tl-section">
-        <div class="tl-label">Picked from the Queue?</div>
-        <div class="tl-btn-group">
-          <button class="tl-opt-btn" data-group="queue" data-val="Yes" onclick="tlSelect(this)">✅ Yes</button>
-          <button class="tl-opt-btn" data-group="queue" data-val="No" onclick="tlSelect(this)">❌ No</button>
-          <button class="tl-opt-btn active" data-group="queue" data-val="" onclick="tlSelect(this)">— N/A</button>
-        </div>
-      </div>
-
-      <!-- Ticket Type -->
-      <div class="tl-section">
-        <div class="tl-label">Ticket Type</div>
-        <div class="tl-type-grid">
-          <button class="tl-type-btn" data-group="type" data-val="New Ticket" onclick="tlSelect(this)">🆕 New Ticket</button>
-          <button class="tl-type-btn" data-group="type" data-val="Follow-up Ticket" onclick="tlSelect(this)">🔄 Follow-up Ticket</button>
-          <button class="tl-type-btn" data-group="type" data-val="Reopened Ticket" onclick="tlSelect(this)">🔓 Reopened Ticket</button>
-          <button class="tl-type-btn" data-group="type" data-val="Transfer-In Ticket" onclick="tlSelect(this)">📥 Transfer-In</button>
-          <button class="tl-type-btn" data-group="type" data-val="New Ticket - Transferred" onclick="tlSelect(this)">📤 New Ticket - Transferred</button>
-          <button class="tl-type-btn" data-group="type" data-val="Merged Ticket" onclick="tlSelect(this)">🔀 Merged Ticket</button>
-          <button class="tl-type-btn" data-group="type" data-val="Outbound Ticket" onclick="tlSelect(this)">📢 Outbound Ticket</button>
-          <button class="tl-type-btn" data-group="type" data-val="Feedback Ticket" onclick="tlSelect(this)">⭐ Feedback Ticket</button>
-          <button class="tl-type-btn" data-group="type" data-val="Auto-Generated/Spam Ticket" onclick="tlSelect(this)" style="grid-column:span 2;">🤖 Auto-Generated / Spam</button>
-        </div>
-      </div>
-
-      <!-- Submit -->
-      <button class="tl-submit" id="tl-submit-btn" onclick="submitTicketLog()">
-        Log Ticket to Sheet →
-      </button>
-      <div id="tl-submit-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;"></div>
-
-      <!-- Today's submissions -->
-      <div class="tl-section" style="margin-top:18px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <div class="tl-label" style="margin:0;">Today's Submissions</div>
-          <span id="tl-today-count" style="font-size:11px;color:#9BAFC0;">0 tickets</span>
-        </div>
-        <div id="tl-history-list">
-          <div style="text-align:center;padding:16px;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>
-        </div>
+        <!-- Sheet link -->
+        <a href="https://docs.google.com/spreadsheets/d/105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y/edit" target="_blank"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;padding:13px;background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:10px;color:#21AAE0;font-size:13px;font-weight:600;text-decoration:none;margin-top:12px;transition:all .15s;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          View in Google Sheet
+        </a>
       </div>
     </div>
   </div>
