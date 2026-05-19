@@ -5095,3 +5095,68 @@ html.dark-mode .tl-success-title { color: #E8F4FC; }
 html.dark-mode .tl-success-bar  { background: rgba(255,255,255,.06); }
 html.dark-mode .tl-type-btn[data-desc]::after { background: #E8F4FC; color: #072B40; }
 html.dark-mode .tl-type-btn[data-desc]::before { border-top-color: #E8F4FC; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TICKET PAGE FIXES — override agent-shell-page background
+═══════════════════════════════════════════════════════════════ */
+
+/* Must use !important to beat .agent-shell-page { background: #F7F8F8 } */
+#agent-section-tickets {
+  background:
+    radial-gradient(ellipse 80% 55% at 0% 0%, rgba(244,137,31,.09) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 100% 100%, rgba(33,170,224,.07) 0%, transparent 55%),
+    #EEF2F7 !important;
+  min-height: calc(100vh - 96px) !important;
+  padding: 24px 24px 60px !important;
+}
+#agent-section-tickets::before {
+  content: '' !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background-image: radial-gradient(rgba(7,43,64,.035) 1px, transparent 1px) !important;
+  background-size: 22px 22px !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+#agent-section-tickets > * { position: relative; z-index: 1; }
+
+/* Tighter layout — remove excess blank space */
+.tl-page {
+  gap: 16px !important;
+  max-width: 1040px !important;
+}
+.tl-card { margin-bottom: 10px !important; padding: 16px !important; }
+
+/* Pivot card sections — tighter */
+.tl-pivot-section { padding: 12px 16px !important; }
+.tl-pivot-total   { padding: 16px 16px 10px !important; }
+.tl-pivot-total-num { font-size: 48px !important; }
+
+/* JS tooltip styles — rendered via JS, positioned with cursor */
+.tl-js-tooltip {
+  position: fixed !important;
+  z-index: 9100 !important;
+  background: #072B40 !important;
+  color: #E8F4FC !important;
+  font-size: 12px !important;
+  font-family: 'Poppins', sans-serif !important;
+  line-height: 1.55 !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  max-width: 260px !important;
+  box-shadow: rgba(0,0,0,.35) 0px 6px 20px !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity .15s ease !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+}
+.tl-js-tooltip.visible { opacity: 1 !important; }
+.tl-js-tooltip strong { color: #F4891F; display: block; margin-bottom: 4px; font-size: 12px; }
+
+/* Dark mode */
+html.dark-mode #agent-section-tickets {
+  background:
+    radial-gradient(ellipse 80% 55% at 0% 0%, rgba(244,137,31,.1) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 45% at 100% 100%, rgba(33,170,224,.08) 0%, transparent 55%),
+    #051824 !important;
+}

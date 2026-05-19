@@ -13265,7 +13265,50 @@ function sbAdmin(tab, sbEl){
 function sbAgent(section, sbEl){
   const btnEl = document.getElementById('agent-tab-'+section) || document.getElementById('agent-breakbot-tab');
   switchAgentSection(section, btnEl);
-  // switchAgentSection already syncs sidebar via sb-agent-{section} id
+  if(section === 'tickets') setTimeout(initTlTooltips, 80);
+}
+
+// ── Ticket type hover tooltip (JS-driven — CSS ::after gets clipped by parent) ──
+const TL_TICKET_DESCS = {
+  'New Ticket':              'A newly added ticket in the queue.',
+  'Follow-up Ticket':        'A ticket resulting from a client\'s response to a previous ticket handled by you or your team.',
+  'Transfer-In Ticket':      'A ticket transferred TO Tier 1 Customer Support by an internal team.',
+  'Reopened Ticket':         'A previously closed ticket reopened because the client provided more info or the issue wasn\'t resolved.',
+  'Merged Ticket':           'Multiple tickets from the same client about the same issue, merged into one for streamlined resolution.',
+  'Outbound Ticket':         'Your team initiated contact with a client — proactive follow-up or query rather than waiting for them.',
+  'Feedback Ticket':         'A ticket created when a client submits feedback or a rating after a resolved issue.',
+  'Auto-Generated/Spam Ticket': 'System-generated ticket from automated triggers, monitoring alerts, or spam notifications.',
+  'New Ticket - Transferred':'A new ticket transferred OUT to another department without any action taken from your end.',
+};
+
+let _tlTip = null;
+function initTlTooltips(){
+  if(!_tlTip){
+    _tlTip = document.createElement('div');
+    _tlTip.className = 'tl-js-tooltip';
+    document.body.appendChild(_tlTip);
+  }
+  document.querySelectorAll('.tl-type-btn[data-val]').forEach(btn => {
+    if(btn._tipBound) return;
+    btn._tipBound = true;
+    const val = btn.dataset.val;
+    const desc = TL_TICKET_DESCS[val] || '';
+    if(!desc) return;
+    btn.addEventListener('mouseenter', e => {
+      _tlTip.innerHTML = `<strong>${val}</strong>${desc}`;
+      _tlTip.classList.add('visible');
+      moveTip(e);
+    });
+    btn.addEventListener('mousemove', moveTip);
+    btn.addEventListener('mouseleave', () => _tlTip.classList.remove('visible'));
+  });
+  function moveTip(e){
+    if(!_tlTip) return;
+    const x = e.clientX, y = e.clientY;
+    const tw = 268;
+    _tlTip.style.left = Math.min(x + 14, window.innerWidth - tw - 8) + 'px';
+    _tlTip.style.top  = Math.max(y - 90, 8) + 'px';
+  }
 }
 
 function switchTab(tab,el){
@@ -13285,7 +13328,7 @@ function switchTab(tab,el){
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
-  if(tab==='tickets')  loadAdminTickets();
+  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); }
   // Remember the active tab so refresh restores it
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }
