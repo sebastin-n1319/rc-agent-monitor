@@ -11571,14 +11571,43 @@ async function loadMyTicketsFromSheet() {
   } catch(e) { /* silent fail */ }
 }
 
+// Channels that cannot be picked from a queue (live inbound only)
+const TL_NO_QUEUE_CHANNELS = new Set(['Phone', 'Chat']);
+
 function tlSelect(btn) {
   const group = btn.dataset.group;
   const val   = btn.dataset.val;
-  // Use attribute selector to catch ALL button types (ch-btn, q-btn, type-btn, opt-btn)
+
+  // Queue Yes is not allowed for Phone/Chat — enforce before selection
+  if (group === 'queue' && val === 'Yes' && TL_NO_QUEUE_CHANNELS.has(tlSelections.channel)) {
+    showToast(`${tlSelections.channel} tickets cannot be picked from the queue — they come in live.`, 'warning', 3500);
+    return; // block selection
+  }
+
   document.querySelectorAll(`[data-group="${group}"]`)
     .forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   tlSelections[group] = val;
+
+  // When channel changes: enforce queue restrictions
+  if (group === 'channel') {
+    const isNoQueue = TL_NO_QUEUE_CHANNELS.has(val);
+    const yesBtn = document.querySelector('.tl-q-btn.yes');
+    if (yesBtn) {
+      yesBtn.style.opacity    = isNoQueue ? '0.35' : '';
+      yesBtn.style.cursor     = isNoQueue ? 'not-allowed' : '';
+      yesBtn.title            = isNoQueue ? `${val} tickets come in live — cannot be queue-picked` : '';
+    }
+    // If Yes was active, auto-switch to N/A
+    if (isNoQueue && tlSelections.queue === 'Yes') {
+      const naBtn = document.querySelector('.tl-q-btn.na');
+      if (naBtn) {
+        document.querySelectorAll('[data-group="queue"]').forEach(b => b.classList.remove('active'));
+        naBtn.classList.add('active');
+        tlSelections.queue = '';
+      }
+    }
+  }
 }
 
 async function submitTicketLog() {
@@ -11599,56 +11628,79 @@ async function submitTicketLog() {
 
   const ticketId = '#' + idRaw;
 
-  // ── Global duplicate check: any agent + same ticket ID + same ticket type ──
+  // ── Global duplicate check: ANY prior entry with this ticket ID in the sheet ──
+  // Fire regardless of ticket type — show ALL previous entries for full context
   let isDuplicate = false;
   try {
-    const chkRes  = await fetch(`/api/check-ticket?id=${encodeURIComponent(ticketId)}&type=${encodeURIComponent(tlSelections.type)}`, { credentials:'include' });
+    const chkRes  = await fetch(`/api/check-ticket?id=${encodeURIComponent(ticketId)}`, { credentials:'include' });
     const chkData = await chkRes.json();
-    if (chkData.found) {
-      const e = chkData.entry;
-      const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
-      const chC = chColors[e.channel] || '#6B849A';
-      const isSelf = !e.agentName || tlHistory.some(t => t.ticketId === ticketId);
-      const whoMsg = isSelf
-        ? `You've already logged <strong style="color:#F4891F;">${ticketId}</strong> as <strong style="color:#072B40;">${tlSelections.type}</strong>.`
-        : `<strong style="color:#072B40;">${e.agentName}</strong> already logged <strong style="color:#F4891F;">${ticketId}</strong> as <strong style="color:#072B40;">${tlSelections.type}</strong>.`;
+    if (chkData.found && chkData.entries && chkData.entries.length) {
+      const entries   = chkData.entries;
+      const chColors  = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+      const sameTypeExists = entries.some(e => e.ticketType === tlSelections.type);
+
+      const entriesHtml = entries.map(e => {
+        const chC = chColors[e.channel] || '#6B849A';
+        return `<div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid rgba(237,102,107,.1);">
+          <span style="font-size:12px;font-weight:700;color:#21AAE0;min-width:72px;">${e.ticketId}</span>
+          <span style="background:${chC}22;color:${chC};padding:1px 7px;border-radius:50px;font-size:10px;font-weight:700;flex-shrink:0;">${e.channel||'—'}</span>
+          <span style="font-size:11px;color:#3A5068;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(e.ticketType||'—').replace(' Ticket','')}</span>
+          <span style="font-size:10px;color:#9BAFC0;white-space:nowrap;">${e.agentName||'?'} · ${e.date||''}</span>
+          ${e.notes?`<span style="background:rgba(237,102,107,.1);color:#ED666B;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;">${e.notes}</span>`:''}
+        </div>`;
+      }).join('');
+
+      const warnMsg = sameTypeExists
+        ? `<strong style="color:#ED666B;">⚠ Same ticket + same type already exists.</strong> Logging again will be flagged as DUPLICATE.`
+        : `This ticket has been logged before by your team. You're adding a <strong>different type</strong> — verify this is intentional.`;
 
       const action = await new Promise(resolve => {
         const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;inset:0;z-index:9200;background:rgba(7,43,64,.5);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9200;background:rgba(7,43,64,.55);backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:20px;';
         overlay.innerHTML = `
-          <div style="background:#FFFFFF;border-radius:16px;padding:28px 28px 22px;width:100%;max-width:420px;box-shadow:rgba(0,0,0,.3) 0 20px 60px;font-family:'Poppins',sans-serif;">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-              <div style="width:40px;height:40px;border-radius:50%;background:rgba(237,102,107,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg viewBox="0 0 20 20" fill="#ED666B" style="width:20px;height:20px"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          <div style="background:#FFFFFF;border-radius:16px;width:100%;max-width:460px;box-shadow:rgba(0,0,0,.3) 0 24px 64px;font-family:'Poppins',sans-serif;overflow:hidden;">
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#072B40,#0D3D5C);padding:18px 22px;display:flex;align-items:center;gap:12px;">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(237,102,107,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg viewBox="0 0 20 20" fill="#ED666B" style="width:18px;height:18px"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
               </div>
-              <div style="font-size:17px;font-weight:800;color:#072B40;">Duplicate Found in Sheet</div>
+              <div>
+                <div style="font-size:15px;font-weight:800;color:#FFFFFF;">Ticket Already in Sheet</div>
+                <div style="font-size:11px;color:rgba(178,219,240,.6);margin-top:2px;">${ticketId} · ${entries.length} existing ${entries.length===1?'entry':'entries'}</div>
+              </div>
             </div>
-            <p style="font-size:13px;color:#6B849A;margin-bottom:14px;line-height:1.6;">${whoMsg}</p>
-            <div style="background:#FFF8F8;border:1px solid rgba(237,102,107,.25);border-left:4px solid #ED666B;border-radius:10px;padding:13px 15px;margin-bottom:6px;display:flex;flex-direction:column;gap:5px;">
+            <!-- Existing entries -->
+            <div style="background:#FFF8F8;border-bottom:1px solid rgba(237,102,107,.15);">
+              <div style="padding:8px 12px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#ED666B;">Previous Entries in Sheet</div>
+              ${entriesHtml}
+            </div>
+            <!-- You're logging -->
+            <div style="padding:12px 16px;background:#F7F8F8;border-bottom:1px solid rgb(222,225,230);">
+              <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#6B849A;margin-bottom:6px;">You're about to log</div>
               <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:14px;font-weight:800;color:#21AAE0;">${e.ticketId}</span>
-                <span style="background:${chC}22;color:${chC};padding:2px 9px;border-radius:50px;font-size:11px;font-weight:700;">${e.channel||'—'}</span>
-                ${e.notes?`<span style="background:rgba(237,102,107,.1);color:#ED666B;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${e.notes}</span>`:''}
+                <span style="font-size:13px;font-weight:800;color:#F4891F;">${ticketId}</span>
+                <span style="background:${(chColors[tlSelections.channel]||'#6B849A')+'22'};color:${chColors[tlSelections.channel]||'#6B849A'};padding:2px 9px;border-radius:50px;font-size:11px;font-weight:700;">${tlSelections.channel}</span>
+                <span style="font-size:12px;color:#3A5068;font-weight:600;">${(tlSelections.type||'').replace(' Ticket','')}</span>
               </div>
-              <div style="font-size:12px;color:#3A5068;font-weight:600;">${e.ticketType||'—'}</div>
-              <div style="font-size:11px;color:#9BAFC0;">Logged by <strong>${e.agentName||'Unknown'}</strong> · ${e.date||''} ${e.month||''}</div>
             </div>
-            <p style="font-size:11px;color:#9BAFC0;margin-bottom:20px;margin-top:8px;">If this is a different interaction, click <strong>Log as Duplicate</strong> — it will be flagged in the sheet as <strong>DUPLICATE</strong>. Otherwise correct the ticket ID.</p>
-            <div style="display:flex;gap:8px;">
-              <button id="dup-cancel" style="flex:1;padding:11px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;font-size:13px;font-weight:600;color:#6B849A;cursor:pointer;font-family:'Poppins',sans-serif;">← Correct Ticket ID</button>
-              <button id="dup-confirm" style="flex:1;padding:11px;background:#ED666B;border:none;border-radius:9px;font-size:13px;font-weight:700;color:#FFF;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:rgba(237,102,107,.35) 0 3px 10px;">Log as Duplicate</button>
+            <!-- Warning + buttons -->
+            <div style="padding:16px 18px;">
+              <p style="font-size:12px;color:#6B849A;line-height:1.6;margin-bottom:16px;">${warnMsg}</p>
+              <div style="display:flex;gap:8px;">
+                <button id="dup-cancel" style="flex:1;padding:11px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;font-size:13px;font-weight:600;color:#6B849A;cursor:pointer;font-family:'Poppins',sans-serif;">← Fix Ticket ID</button>
+                <button id="dup-confirm" style="flex:1;padding:11px;background:#ED666B;border:none;border-radius:9px;font-size:13px;font-weight:700;color:#FFF;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:rgba(237,102,107,.35) 0 3px 10px;">Log as Duplicate</button>
+              </div>
             </div>
           </div>`;
         document.body.appendChild(overlay);
         overlay.querySelector('#dup-cancel').onclick  = () => { overlay.remove(); resolve('cancel'); };
         overlay.querySelector('#dup-confirm').onclick = () => { overlay.remove(); resolve('confirm'); };
-        overlay.addEventListener('click', e => { if (e.target===overlay){ overlay.remove(); resolve('cancel'); } });
+        overlay.addEventListener('click', ev => { if(ev.target===overlay){ overlay.remove(); resolve('cancel'); } });
       });
       if (action === 'cancel') return;
-      isDuplicate = true; // will be flagged as DUPLICATE in column H
+      isDuplicate = true;
     }
-  } catch(e) { /* silent — don't block if check fails */ }
+  } catch(e) { /* silent */ }
 
   btn.disabled = true;
   btn.textContent = 'Saving...';

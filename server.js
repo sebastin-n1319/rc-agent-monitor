@@ -902,11 +902,11 @@ app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res
 });
 
 // ── Ticket Logger — Google Sheets Integration ────────────────────────────────
-// GET /api/check-ticket — check if any agent already logged this ticket ID + type
+// GET /api/check-ticket — check if ticket ID already exists in sheet (any agent, any type)
 app.get('/api/check-ticket', requireAuth, rateLimit(120, 60000), async (req, res) => {
   try {
-    const { id, type } = req.query;
-    if (!id || !type) return res.json({ found: false });
+    const { id } = req.query;
+    if (!id) return res.json({ found: false });
     if (!TICKET_SHEET_ID) return res.json({ found: false });
     const sheets = getTicketSheetsClient();
     const resp = await sheets.spreadsheets.values.get({
@@ -914,27 +914,22 @@ app.get('/api/check-ticket', requireAuth, rateLimit(120, 60000), async (req, res
       range: `'${TICKET_SHEET_TAB}'!A:H`,
     });
     const rows = (resp.data.values || []).slice(1);
-    const match = rows.find(r =>
-      (r[0] || '').trim() === id.trim() &&
-      (r[4] || '').trim() === type.trim()
-    );
-    if (match) {
-      return res.json({
-        found: true,
-        entry: {
-          ticketId:   (match[0] || '').trim(),
-          agentName:  (match[1] || '').trim(),
-          channel:    (match[2] || '').trim(),
-          ticketType: (match[4] || '').trim(),
-          date:       (match[5] || '').trim(),
-          month:      (match[6] || '').trim(),
-          notes:      (match[7] || '').trim(),
-        }
-      });
-    }
+    // Return ALL entries with this ticket ID (not just one, not filtered by type)
+    const matches = rows
+      .filter(r => (r[0] || '').trim() === id.trim())
+      .map(r => ({
+        ticketId:   (r[0] || '').trim(),
+        agentName:  (r[1] || '').trim(),
+        channel:    (r[2] || '').trim(),
+        ticketType: (r[4] || '').trim(),
+        date:       (r[5] || '').trim(),
+        month:      (r[6] || '').trim(),
+        notes:      (r[7] || '').trim(),
+      }));
+    if (matches.length) return res.json({ found: true, entries: matches });
     res.json({ found: false });
   } catch(e) {
-    res.json({ found: false }); // fail silently — don't block submission
+    res.json({ found: false });
   }
 });
 
