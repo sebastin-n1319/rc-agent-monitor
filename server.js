@@ -980,19 +980,25 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
 // Maps each agent's login email to the possible names used in the Google Sheet.
 // The sheet uses first-name or shortened names from months of manual entries.
 const AGENT_SHEET_NAMES = {
+  // Core admins
+  'sebastin.n@adit.com':      ['Sebastin', 'Sabarirajan', 'Sebastin N', 'Sebastin N (Sabarirajan)'],
   'ronnie@adit.com':          ['Ronnie G', 'Ronnie'],
-  'sebastin.n@adit.com':      ['Sebastin', 'Sabarirajan', 'Sebastin N'],
+  'imran@adit.com':           ['Imran'],
+  // Agents
   'anold.fernandes@adit.com': ['Anold', 'Anold Fernandes'],
   'audrey.miles@adit.com':    ['Audrey', 'Audrey Miles'],
   'caroline.lock@adit.com':   ['Caroline', 'Caroline Lock'],
-  'debra.horton@adit.com':    ['Debra Horton', 'Debra', 'Danica', 'Debra Horton (Deblina Chakraborty)'],
+  'debra.horton@adit.com':    ['Debra Horton', 'Debra', 'Debra Horton (Deblina Chakraborty)', 'Danica'],
   'evan.cruz@adit.com':       ['Evan', 'Evan Cruz'],
   'greg.dawson@adit.com':     ['Greg Dawson', 'Greg'],
   'henry.patel@adit.com':     ['Henry', 'Henry P', 'Henry Patel'],
-  'imran@adit.com':           ['Imran'],
   'lincy@adit.com':           ['Lincy', 'Lincy Tabita'],
   'sabrina.quinn@adit.com':   ['Sabrina', 'Sabrina Quinn'],
-  // Add more agents here as needed
+  'sky.gibson@adit.com':      ['Sky Gibson', 'Sky'],
+  'tabbie.shine@adit.com':    ['Tabbi Shine', 'Tabbie Shine', 'Tabbi', 'Tabbie'],
+  'michelle.pinto@adit.com':  ['Michelle', 'Michelle Pinto'],
+  'sam.marshall@adit.com':    ['Samuel', 'Samuel Marshall', 'Sam'],
+  'sandy.clark@adit.com':     ['Sandy', 'Sandy Clark', 'Sabrina'],
 };
 
 // Build a set of lowercase name variants for fast matching

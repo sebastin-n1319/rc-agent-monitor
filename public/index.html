@@ -11684,9 +11684,15 @@ function renderTlPivot() {
   const pivRec  = document.getElementById('tl-pivot-recent');
   const chColors= { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
 
-  // Apply period filter
-  const filtered = tlFilterByPeriod(tlSheetData);
-  const total    = filtered.length;
+  // Apply period filter then COUNTUNIQUE by ticketId (match sheet pivot behaviour)
+  const raw = tlFilterByPeriod(tlSheetData);
+  const seen = new Set();
+  const filtered = raw.filter(t => {
+    if (!t.ticketId || seen.has(t.ticketId)) return false;
+    seen.add(t.ticketId);
+    return true;
+  });
+  const total = filtered.length;
 
   if (pivNum) {
     pivNum.textContent = total;
