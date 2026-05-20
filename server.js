@@ -901,7 +901,117 @@ app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ── Ticket Logger — Google Sheets Integration ────────────────────────────────
+// ── Zoho Desk Integration ─────────────────────────────────────────────────────
+const ZOHO_CLIENT_ID     = process.env.ZOHO_CLIENT_ID     || '';
+const ZOHO_CLIENT_SECRET = process.env.ZOHO_CLIENT_SECRET || '';
+const ZOHO_REFRESH_TOKEN = process.env.ZOHO_REFRESH_TOKEN || '';
+const ZOHO_DESK_ORG_ID   = process.env.ZOHO_DESK_ORG_ID   || '';
+const ZOHO_API_BASE      = 'https://desk.zoho.com/api/v1';
+
+// In-memory token cache (refresh_token gives us a new access_token when needed)
+let _zohoToken = null;
+let _zohoTokenExpiry = 0;
+
+async function getZohoAccessToken() {
+  if (_zohoToken && Date.now() < _zohoTokenExpiry - 60000) return _zohoToken;
+  if (!ZOHO_CLIENT_ID || !ZOHO_REFRESH_TOKEN) throw new Error('Zoho not configured');
+  const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type:    'refresh_token',
+      client_id:     ZOHO_CLIENT_ID,
+      client_secret: ZOHO_CLIENT_SECRET,
+      refresh_token: ZOHO_REFRESH_TOKEN,
+    }),
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error('Zoho token refresh failed: ' + JSON.stringify(data));
+  _zohoToken       = data.access_token;
+  _zohoTokenExpiry = Date.now() + (data.expires_in || 3600) * 1000;
+  return _zohoToken;
+}
+
+async function zohoDesk(path, params = {}) {
+  const token = await getZohoAccessToken();
+  const qs    = new URLSearchParams(params).toString();
+  const url   = `${ZOHO_API_BASE}${path}${qs ? '?' + qs : ''}`;
+  const res   = await fetch(url, {
+    headers: {
+      'Authorization': `Zoho-oauthtoken ${token}`,
+      'orgId': ZOHO_DESK_ORG_ID,
+    },
+  });
+  if (!res.ok) throw new Error(`Zoho API ${res.status}: ${await res.text()}`);
+  return res.json();
+}
+
+// Map Zoho channel → our channel names
+function mapZohoChannel(ch) {
+  const m = { EMAIL: 'Email', CHAT: 'Chat', PHONE: 'Phone', WEB: 'Web',
+              EMAIL_IN:'Email', TWITTER:'Web', FACEBOOK:'Web', WHATSAPP:'Chat' };
+  return m[(ch||'').toUpperCase()] || 'Email';
+}
+// Map Zoho category/tags → our ticket types
+function mapZohoType(ticket) {
+  const cat = ((ticket.category || ticket.subCategory || ticket.classification || '')).toLowerCase();
+  if (cat.includes('follow') || cat.includes('follow-up')) return 'Follow-up Ticket';
+  if (cat.includes('reopen'))  return 'Reopened Ticket';
+  if (cat.includes('transfer') && cat.includes('in'))  return 'Transfer-In Ticket';
+  if (cat.includes('transfer')) return 'New Ticket - Transferred';
+  if (cat.includes('merge'))   return 'Merged Ticket';
+  if (cat.includes('outbound') || cat.includes('proactive')) return 'Outbound Ticket';
+  if (cat.includes('feedback') || cat.includes('csat')) return 'Feedback Ticket';
+  if (cat.includes('spam') || cat.includes('auto'))   return 'Auto-Generated/Spam Ticket';
+  return 'New Ticket';
+}
+
+// GET /api/zoho/ticket/:id — fetch a Zoho Desk ticket and return structured data
+app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try {
+    if (!ZOHO_CLIENT_ID) return res.status(503).json({ success: false, error: 'Zoho not configured' });
+    const rawId   = req.params.id.replace(/^#/, '');
+    const ticketNumber = rawId; // Zoho Desk uses ticketNumber field
+
+    // Search by ticket number
+    const search = await zohoDesk('/tickets/search', { ticketNumber, limit: 1 });
+    const ticket  = search.data && search.data[0];
+    if (!ticket) return res.json({ success: true, found: false });
+
+    // Get contact info
+    let contact = null;
+    if (ticket.contactId) {
+      try { contact = await zohoDesk(`/contacts/${ticket.contactId}`); } catch(e) {}
+    }
+
+    res.json({
+      success: true,
+      found: true,
+      ticket: {
+        id:           ticket.id,
+        ticketNumber: ticket.ticketNumber,
+        subject:      ticket.subject,
+        status:       ticket.status,
+        priority:     ticket.priority,
+        channel:      mapZohoChannel(ticket.channel),
+        ticketType:   mapZohoType(ticket),
+        assignee:     ticket.assignee?.name || ticket.assigneeId || null,
+        contact:      contact ? { name: contact.fullName, email: contact.email } : null,
+        createdTime:  ticket.createdTime,
+        modifiedTime: ticket.modifiedTime,
+        satisfaction: ticket.satisfaction?.type || null,
+        teamId:       ticket.teamId,
+        departmentId: ticket.departmentId,
+        tags:         ticket.tags || [],
+      }
+    });
+  } catch(e) {
+    console.error('❌ Zoho ticket lookup:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── Ticket Logger — Google Sheets Integration ─────────────────────────────────
 // GET /api/check-ticket — check if ticket ID already exists in sheet (any agent, any type)
 app.get('/api/check-ticket', requireAuth, rateLimit(120, 60000), async (req, res) => {
   try {
