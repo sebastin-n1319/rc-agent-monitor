@@ -991,12 +991,30 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
   try {
     if (!ZOHO_CLIENT_ID) return res.status(503).json({ success: false, error: 'Zoho not configured' });
     const rawId = req.params.id.replace(/^#/, '');
+    const token = await getZohoAccessToken();
+    const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
 
-    // Search by ticket number string — Zoho Desk full-text search
-    const search = await zohoDesk('/tickets/search', { searchStr: rawId, limit: 10 });
-    const results = search.data || [];
-    // Find exact ticketNumber match first, then fall back to first result
-    const ticket = results.find(t => String(t.ticketNumber) === rawId) || results[0] || null;
+    // Try multiple Zoho Desk endpoints to find the correct one
+    const attempts = [
+      `${ZOHO_API_BASE}/search?searchStr=${encodeURIComponent(rawId)}`,
+      `${ZOHO_API_BASE}/tickets/${rawId}`,
+      `${ZOHO_API_BASE}/tickets?from=0&limit=20`,
+    ];
+    let ticket = null;
+    const debugInfo = [];
+    for (const url of attempts) {
+      try {
+        const r = await fetch(url, { headers });
+        const body = await r.json();
+        debugInfo.push({ url, status: r.status, topKeys: Object.keys(body).slice(0,5) });
+        if (r.ok) {
+          const t = body.ticketNumber ? body :
+                    (body.data||[]).find(t => String(t.ticketNumber) === rawId) || null;
+          if (t) { ticket = t; break; }
+        }
+      } catch(e) { debugInfo.push({ url, error: e.message }); }
+    }
+    if (!ticket) return res.json({ success: true, found: false, debug: debugInfo });
     if (!ticket) return res.json({ success: true, found: false });
 
     // Get contact info
