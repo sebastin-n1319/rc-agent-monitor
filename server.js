@@ -966,6 +966,24 @@ function mapZohoType(ticket) {
   return 'New Ticket';
 }
 
+// GET /api/zoho/ping — test Zoho connectivity (admin only)
+app.get('/api/zoho/ping', requireAdmin, async (req, res) => {
+  try {
+    if (!ZOHO_CLIENT_ID)     return res.json({ ok:false, error:'ZOHO_CLIENT_ID not set' });
+    if (!ZOHO_REFRESH_TOKEN) return res.json({ ok:false, error:'ZOHO_REFRESH_TOKEN not set' });
+    if (!ZOHO_DESK_ORG_ID)  return res.json({ ok:false, error:'ZOHO_DESK_ORG_ID not set' });
+    const token = await getZohoAccessToken();
+    // Test: fetch org details
+    const r = await fetch(`${ZOHO_API_BASE}/organizations`, {
+      headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID }
+    });
+    const body = await r.text();
+    res.json({ ok: r.ok, status: r.status, body: JSON.parse(body) });
+  } catch(e) {
+    res.json({ ok: false, error: e.message });
+  }
+});
+
 // GET /api/zoho/ticket/:id — fetch a Zoho Desk ticket and return structured data
 app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, res) => {
   try {
