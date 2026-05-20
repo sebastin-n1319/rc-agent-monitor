@@ -10569,7 +10569,7 @@ tbody tr:hover td{
 
   <!-- ── AI Writer Section ───────────────────────────────────────────────── -->
   <div class="agent-shell-page" id="agent-section-writer">
-  <!-- awv2 styles moved to adit-theme.css -->
+  <!-- awv2 styles in adit-theme.css -->
 
     <div class="awv2-page">
 
@@ -10580,38 +10580,38 @@ tbody tr:hover td{
         </div>
         <div>
           <div style="font-size:20px;font-weight:800;color:#072B40;letter-spacing:-.01em;">AI Writing Assistant</div>
-          <div style="font-size:12px;color:#6B849A;margin-top:2px;">Specialised for Call, Email &amp; Chat agents — smart templates, context-aware AI</div>
+          <div style="font-size:12px;color:#6B849A;margin-top:2px;">Specialised for Call, Email &amp; Chat — tone control, variations, readability scoring</div>
         </div>
       </div>
 
-      <!-- Step 1: Pick your agent type -->
+      <!-- Step 1: Agent type -->
       <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">Step 1 — I am a...</div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">I am a...</div>
         <div class="awv2-types">
           <button class="awv2-type-btn active" data-type="email" onclick="awSetType('email',this)" style="--aw-color:#21AAE0">
             <div class="awv2-type-icon" style="background:rgba(33,170,224,.12);color:#21AAE0;">
-              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
             <div class="awv2-type-label">Email / Ticket</div>
-            <div class="awv2-type-sub">Support emails, ticket replies</div>
+            <div class="awv2-type-sub">Replies, follow-ups, resolutions</div>
           </button>
           <button class="awv2-type-btn" data-type="call" onclick="awSetType('call',this)" style="--aw-color:#2DDC96">
             <div class="awv2-type-icon" style="background:rgba(45,220,150,.12);color:#2DDC96;">
-              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             </div>
             <div class="awv2-type-label">Call Agent</div>
-            <div class="awv2-type-sub">Call notes, follow-ups, scripts</div>
+            <div class="awv2-type-sub">Summaries, post-call notes</div>
           </button>
           <button class="awv2-type-btn" data-type="chat" onclick="awSetType('chat',this)" style="--aw-color:#9B59B6">
             <div class="awv2-type-icon" style="background:rgba(155,89,182,.12);color:#9B59B6;">
-              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
             <div class="awv2-type-label">Chat Agent</div>
-            <div class="awv2-type-sub">Chat replies, summaries</div>
+            <div class="awv2-type-sub">Live replies, summaries</div>
           </button>
           <button class="awv2-type-btn" data-type="general" onclick="awSetType('general',this)" style="--aw-color:#F4891F">
             <div class="awv2-type-icon" style="background:rgba(244,137,31,.12);color:#F4891F;">
-              <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </div>
             <div class="awv2-type-label">General</div>
             <div class="awv2-type-sub">Any text improvement</div>
@@ -10619,61 +10619,105 @@ tbody tr:hover td{
         </div>
       </div>
 
-      <!-- Step 2: Pick the task -->
+      <!-- Step 2: Task + templates -->
       <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">Step 2 — What do you need?</div>
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">What do you need?</div>
         <div class="awv2-modes" id="awv2-modes"></div>
-        <!-- Quick templates -->
-        <div style="margin-top:12px;border-top:1px solid rgb(222,225,230);padding-top:12px;">
-          <div style="font-size:10px;font-weight:700;color:#9BAFC0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Quick Templates — click to load</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgb(222,225,230);">
+          <div style="font-size:10px;font-weight:700;color:#9BAFC0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Quick Templates</div>
           <div class="awv2-templates" id="awv2-templates"></div>
         </div>
       </div>
 
-      <!-- Step 3: Input / Output -->
-      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-        <div class="awv2-grid">
+      <!-- Main workspace: Input + Output side by side -->
+      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+        <div class="awv2-grid" style="padding:16px;padding-bottom:0;">
+          <!-- Left: Input -->
           <div class="awv2-panel">
             <div class="awv2-panel-hdr">
               <span class="awv2-panel-label">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M13.5 2.5a2.121 2.121 0 0 1 0 3L5 14l-3.5 1 1-3.5z"/></svg>
                 Your Draft / Notes
               </span>
-              <button class="awv2-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="awClear()">Clear</button>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span id="aw-readability-in" style="font-size:10px;color:#9BAFC0;"></span>
+                <button class="awv2-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="awClear()">Clear</button>
+              </div>
             </div>
-            <textarea class="awv2-textarea" id="aw-input" id="awv2-input" placeholder="Paste your rough draft, call notes, or chat message here..." oninput="awUpdateCount()"></textarea>
+            <textarea class="awv2-textarea" id="aw-input" placeholder="Paste your rough draft, call notes, or customer message here..." oninput="awUpdateCount();awDebounceAnalyze('in')"></textarea>
+            <!-- Channel limit warning for chat -->
+            <div id="aw-chat-warn" style="display:none;font-size:11px;color:#ED666B;margin-top:4px;font-weight:600;"></div>
           </div>
+          <!-- Right: Output -->
           <div class="awv2-panel">
             <div class="awv2-panel-hdr">
               <span class="awv2-panel-label" style="color:#6366f1;">
                 <svg viewBox="0 0 16 16" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
-                AI Result
+                AI Output
               </span>
-              <button class="awv2-btn-ghost" id="aw-copy-btn" onclick="copyAwOutput()" style="display:none;padding:4px 10px;font-size:11px;">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg>
-                Copy
-              </button>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span id="aw-readability-out" style="font-size:10px;color:#9BAFC0;"></span>
+                <button class="awv2-btn-ghost" id="aw-copy-btn" onclick="copyAwOutput()" style="display:none;padding:4px 10px;font-size:11px;">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg> Copy
+                </button>
+              </div>
             </div>
-            <div class="awv2-output empty" id="aw-output">Your AI-improved text will appear here...</div>
+            <div class="awv2-output empty" id="aw-output">Your AI output will appear here...</div>
           </div>
+        </div>
+
+        <!-- Quick transform buttons (post-generation) -->
+        <div id="aw-transform-bar" style="display:none;padding:10px 16px;border-top:1px solid rgb(222,225,230);background:#F7F8F8;display:none;flex-wrap:wrap;gap:6px;align-items:center;">
+          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;margin-right:4px;">Quick Transform:</span>
+          <button class="awv2-tpl" onclick="awTransform('formal')" style="border-color:rgba(7,43,64,.2);color:#072B40;background:rgba(7,43,64,.05);">More Formal</button>
+          <button class="awv2-tpl" onclick="awTransform('empathetic')" style="border-color:rgba(45,220,150,.2);color:#2DDC96;background:rgba(45,220,150,.05);">More Empathetic</button>
+          <button class="awv2-tpl" onclick="awTransform('shorter')" style="border-color:rgba(244,137,31,.2);color:#F4891F;background:rgba(244,137,31,.05);">Shorter</button>
+          <button class="awv2-tpl" onclick="awTransform('simpler')" style="border-color:rgba(33,170,224,.2);color:#21AAE0;background:rgba(33,170,224,.05);">Simpler Language</button>
+          <button class="awv2-tpl" onclick="awTransform('bullets')" style="border-color:rgba(155,89,182,.2);color:#9B59B6;background:rgba(155,89,182,.05);">→ Bullets</button>
+          <button class="awv2-tpl" onclick="awTransform('prose')" style="border-color:rgba(155,89,182,.2);color:#9B59B6;background:rgba(155,89,182,.05);">→ Prose</button>
+          <div style="margin-left:auto;display:flex;gap:6px;">
+            <button class="awv2-tpl" onclick="awGetVariations()" style="border-color:rgba(99,102,241,.3);color:#6366f1;background:rgba(99,102,241,.06);">✦ 3 Variations</button>
+            <button class="awv2-tpl" onclick="awTransform('subject')" style="display:var(--show-subject,none);border-color:rgba(244,137,31,.3);color:#F4891F;background:rgba(244,137,31,.06);" id="aw-subject-btn">Subject Lines</button>
+            <button class="awv2-tpl" onclick="awTransform('summarize')" style="border-color:rgba(33,170,224,.3);color:#21AAE0;background:rgba(33,170,224,.06);">Summarize Thread</button>
+          </div>
+        </div>
+
+        <!-- 3 Variations panel -->
+        <div id="aw-variations-panel" style="display:none;padding:14px 16px;border-top:1px solid rgb(222,225,230);background:#FAFAFA;">
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#9BAFC0;margin-bottom:10px;">3 Variations — Choose Your Favourite</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" id="aw-var-grid">
+            <div class="awv2-var-card" id="aw-var-a"><div class="awv2-var-lbl">A — Formal</div><div class="awv2-var-body"></div><button class="awv2-var-use" onclick="awUseVar('a')">Use This</button></div>
+            <div class="awv2-var-card" id="aw-var-b"><div class="awv2-var-lbl">B — Friendly</div><div class="awv2-var-body"></div><button class="awv2-var-use" onclick="awUseVar('b')">Use This</button></div>
+            <div class="awv2-var-card" id="aw-var-c"><div class="awv2-var-lbl">C — Concise</div><div class="awv2-var-body"></div><button class="awv2-var-use" onclick="awUseVar('c')">Use This</button></div>
+          </div>
+        </div>
+
+        <!-- Action row -->
+        <div style="padding:14px 16px;border-top:1px solid rgb(222,225,230);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <button class="awv2-submit" id="aw-submit-btn" onclick="sendToAIWriter()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
+            Generate
+          </button>
+          <button class="awv2-btn-ghost" onclick="useAwResult()" id="aw-use-btn" style="display:none;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><polyline points="10 12 14 8 10 4"/><polyline points="6 4 2 8 6 12"/></svg>
+            Refine
+          </button>
+          <button class="awv2-btn-ghost" onclick="awSummarize()" style="display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M2 4h12M2 7h9M2 10h7M2 13h5"/></svg>
+            Summarize Thread
+          </button>
+          <span class="awv2-char" id="aw-char-count">0 / 5000</span>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="awv2-actions">
-        <button class="awv2-submit" id="aw-submit-btn" onclick="sendToAIWriter()">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
-          Generate with AI
-        </button>
-        <button class="awv2-btn-ghost" onclick="useAwResult()" id="aw-use-btn" style="display:none;">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><polyline points="10 12 14 8 10 4"/><polyline points="6 4 2 8 6 12"/></svg>
-          Refine Again
-        </button>
-        <span class="awv2-char" id="aw-char-count">0 / 5000</span>
+      <!-- Jargon warning (shows when technical words detected) -->
+      <div id="aw-jargon-warn" style="display:none;padding:10px 14px;background:rgba(251,200,75,.08);border:1px solid rgba(251,200,75,.25);border-radius:10px;font-size:12px;color:#B45309;display:none;align-items:center;gap:8px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;color:#D97706"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
+        <span id="aw-jargon-text"></span>
       </div>
+
     </div>
   </div>
-
   <!-- AGENT TICKET LOGGER -->
   <div class="agent-shell-page" id="agent-section-tickets">
 
@@ -11776,10 +11820,111 @@ function awUpdateCount() {
   const counter = document.getElementById('aw-char-count');
   if (!inp || !counter) return;
   const len = inp.value.length;
-  counter.textContent = len + ' / 5000';
+  const words = inp.value.trim().split(/\s+/).filter(Boolean).length;
+  counter.textContent = `${words} words · ${len} / 5000 chars`;
   counter.classList.toggle('over', len > 5000);
+  // Chat length warning
+  const chatWarn = document.getElementById('aw-chat-warn');
+  if (chatWarn) {
+    if (awCurrentType === 'chat' && words > 100) {
+      chatWarn.style.display = 'block';
+      chatWarn.textContent = `⚠ ${words} words — chat responses should be under 100 words`;
+    } else { chatWarn.style.display = 'none'; }
+  }
 }
-function updateAwCharCount() { awUpdateCount(); } // backward compat
+function updateAwCharCount() { awUpdateCount(); }
+
+// ── Readability analysis ──────────────────────────────────────────────────────
+let _awAnalyzeTimer = null;
+function awDebounceAnalyze(side) {
+  clearTimeout(_awAnalyzeTimer);
+  _awAnalyzeTimer = setTimeout(() => awAnalyzeText(side), 800);
+}
+async function awAnalyzeText(side) {
+  const inp = side === 'in' ? document.getElementById('aw-input') : document.getElementById('aw-output');
+  if (!inp) return;
+  const text = (side === 'in' ? inp.value : inp.textContent) || '';
+  if (text.length < 20) return;
+  try {
+    const res  = await fetch('/api/write-analyze', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
+    const data = await res.json();
+    if (!data.success) return;
+    const d = data.data;
+    const el = document.getElementById(side==='in' ? 'aw-readability-in' : 'aw-readability-out');
+    if (el && d.words) {
+      const col = d.gradeLevel <= 8 ? '#2DDC96' : d.gradeLevel <= 12 ? '#FBC84B' : '#ED666B';
+      el.innerHTML = `<span style="color:${col};font-weight:700;">${d.readLevel}</span> · ${d.words}w`;
+    }
+    if (side === 'in' && d.jargon?.length) {
+      const jw = document.getElementById('aw-jargon-warn');
+      const jt = document.getElementById('aw-jargon-text');
+      if (jw && jt) { jt.innerHTML = `Technical terms clients may not understand: <strong>${d.jargon.join(', ')}</strong>`; jw.style.display='flex'; }
+    } else if (side === 'in') { const jw=document.getElementById('aw-jargon-warn'); if(jw) jw.style.display='none'; }
+  } catch(e) {}
+}
+
+// ── Post-generation transforms ────────────────────────────────────────────────
+async function awTransform(transform) {
+  const out = document.getElementById('aw-output');
+  if (!out || out.classList.contains('empty')) { showToast('Generate something first.','warning'); return; }
+  const text = out.textContent;
+  if (!text.trim()) return;
+  const orig = out.textContent;
+  out.textContent = 'Transforming…';
+  try {
+    const res  = await fetch('/api/write-transform', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text,transform}) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    out.className = 'awv2-output has-result';
+    out.textContent = data.result;
+    awDebounceAnalyze('out');
+    showToast('Done!','success');
+  } catch(e) { out.textContent=orig; showToast('Failed: '+e.message,'error'); }
+}
+
+// ── 3 Variations ──────────────────────────────────────────────────────────────
+async function awGetVariations() {
+  const inp = document.getElementById('aw-input');
+  if (!inp || !inp.value.trim()) { showToast('Paste your draft first.','warning'); return; }
+  const panel = document.getElementById('aw-variations-panel');
+  if (panel) { panel.style.display=''; panel.innerHTML='<div style="text-align:center;padding:20px;color:#9BAFC0;">Generating 3 variations…</div>'; }
+  try {
+    const res  = await fetch('/api/write-variations', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:inp.value.trim(),mode:awCurrentMode}) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    const vars = data.variations;
+    const mkCard = (k,label) => `<div style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;">${label}</div>
+      <div style="font-size:12px;color:#072B40;line-height:1.6;flex:1;white-space:pre-wrap;">${vars[k]||''}</div>
+      <button onclick="awUseVarText(this.closest('div').querySelector('div+div').textContent)" style="background:#6366f1;color:#FFF;border:none;border-radius:7px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;">Use This</button>
+    </div>`;
+    if (panel) panel.innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#9BAFC0;margin-bottom:10px;">Choose the best version</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">${mkCard('formal','A — Formal')}${mkCard('friendly','B — Friendly')}${mkCard('concise','C — Concise')}</div>`;
+  } catch(e) { if(panel) panel.style.display='none'; showToast('Failed: '+e.message,'error'); }
+}
+function awUseVarText(text) {
+  const out=document.getElementById('aw-output');
+  if(out){ out.className='awv2-output has-result'; out.textContent=text; awDebounceAnalyze('out'); }
+  const panel=document.getElementById('aw-variations-panel'); if(panel) panel.style.display='none';
+  const cpBtn=document.getElementById('aw-copy-btn'); if(cpBtn) cpBtn.style.display='inline-flex';
+  const usBtn=document.getElementById('aw-use-btn'); if(usBtn) usBtn.style.display='inline-flex';
+}
+
+// ── Thread summarizer shortcut ────────────────────────────────────────────────
+async function awSummarize() {
+  const inp=document.getElementById('aw-input');
+  if(!inp||!inp.value.trim()){ showToast('Paste the email thread first.','warning'); return; }
+  const out=document.getElementById('aw-output');
+  if(out){ out.className='awv2-output'; out.textContent='Summarizing…'; }
+  try {
+    const res=await fetch('/api/write-transform',{ method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:inp.value.trim(),transform:'summarize'}) });
+    const data=await res.json();
+    if(!data.success) throw new Error(data.error);
+    if(out){ out.className='awv2-output has-result'; out.textContent=data.result; awDebounceAnalyze('out'); }
+    const cpBtn=document.getElementById('aw-copy-btn'); if(cpBtn) cpBtn.style.display='inline-flex';
+    showToast('Thread summarized!','success');
+  } catch(e){ showToast('Failed: '+e.message,'error'); }
+}
 
 function awClear() {
   const inp = document.getElementById('aw-input');
@@ -11822,15 +11967,24 @@ async function sendToAIWriter() {
     out.textContent = data.result;
     document.getElementById('aw-copy-btn').style.display = 'inline-flex';
     document.getElementById('aw-use-btn').style.display  = 'inline-flex';
-    showToast('Done! Review and copy.', 'success');
+    // Show transform bar + subject button for email agents
+    const tb = document.getElementById('aw-transform-bar');
+    if (tb) tb.style.display = 'flex';
+    const sb = document.getElementById('aw-subject-btn');
+    if (sb) sb.style.display = awCurrentType === 'email' ? 'inline-flex' : 'none';
+    // Reset variations panel
+    const vp = document.getElementById('aw-variations-panel');
+    if (vp) vp.style.display = 'none';
+    // Analyze output readability
+    awDebounceAnalyze('out');
+    showToast('Done! Use the transform buttons below to refine.', 'success');
   } catch(e) {
     out.className = 'awv2-output';
     out.textContent = '⚠️ ' + e.message;
     showToast('AI error: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
-    const cfg = AW_CONFIG[awCurrentType] || AW_CONFIG.general;
-    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg> Generate with AI`;
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg> Generate`;
   }
 }
 

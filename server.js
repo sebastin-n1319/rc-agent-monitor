@@ -1493,6 +1493,94 @@ app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res
 });
 
 // ── AI Writing Assistant ─────────────────────────────────────────────────────
+// ── AI Writer — Enhanced Prompts & Multi-Feature Endpoints ───────────────────
+
+// POST /api/write-transform — one-click post-generation transforms
+app.post('/api/write-transform', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try {
+    const { text, transform } = req.body || {};
+    if (!text || !text.trim()) return res.status(400).json({ success:false, error:'No text' });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(503).json({ success:false, error:'AI not configured' });
+
+    const prompts = {
+      formal:     'Rewrite this to be more formal and professional. Keep the same meaning and length. Output only the rewritten text.',
+      empathetic: 'Rewrite this to be warmer and more empathetic. Acknowledge the customer\'s situation. Keep the same core message. Output only the rewritten text.',
+      shorter:    'Make this significantly shorter (aim for 40-50% fewer words) while keeping all key information. Output only the shortened text.',
+      simpler:    'Rewrite this using simpler language (Grade 8 level). Avoid jargon and technical terms. Output only the simplified text.',
+      bullets:    'Convert this into clear bullet points. Group related items. Start each bullet with a verb or key noun. Output only the bullet-pointed version.',
+      prose:      'Convert these bullet points or notes into a professional, flowing paragraph. Output only the prose version.',
+      subject:    'Generate 3 email subject lines for this email body. Format as:\n1. [Subject 1]\n2. [Subject 2]\n3. [Subject 3]\nOutput only the numbered list.',
+      summarize:  'Summarize this email thread or long message into 3-5 bullet points covering: what the customer needs, what has been done, and what the next step is. Output only the bullets.',
+    };
+
+    const systemPrompt = prompts[transform] || prompts.shorter;
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role:'system', content:systemPrompt }, { role:'user', content:text.trim() }],
+        max_tokens: 800, temperature: 0.3
+      })
+    });
+    const data = await resp.json();
+    const result = data.choices?.[0]?.message?.content?.trim() || '';
+    if (!result) throw new Error('No response');
+    res.json({ success:true, result });
+  } catch(e) { res.status(500).json({ success:false, error:e.message }); }
+});
+
+// POST /api/write-variations — generate 3 variations at once (formal/friendly/concise)
+app.post('/api/write-variations', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const { text, mode = 'general' } = req.body || {};
+    if (!text || !text.trim()) return res.status(400).json({ success:false, error:'No text' });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(503).json({ success:false, error:'AI not configured' });
+
+    const baseCtx = AI_SYSTEM_PROMPTS[mode] || AI_SYSTEM_PROMPTS.general;
+    const variationPrompt = `${baseCtx}\n\nGenerate exactly 3 different versions of a response to the following text. Each version should have a distinct style:\nVersion A: Professional and formal\nVersion B: Warm and empathetic\nVersion C: Brief and direct (50% shorter)\n\nFormat exactly as:\n[VERSION_A]\n<text here>\n[VERSION_B]\n<text here>\n[VERSION_C]\n<text here>`;
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':`Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role:'system', content:variationPrompt }, { role:'user', content:text.trim() }],
+        max_tokens: 1500, temperature: 0.5
+      })
+    });
+    const data = await resp.json();
+    const raw = data.choices?.[0]?.message?.content?.trim() || '';
+    const parseVar = (tag) => { const m = raw.match(new RegExp(`\\[${tag}\\]\\s*([\\s\\S]*?)(?=\\[VERSION_|$)`)); return m ? m[1].trim() : ''; };
+    res.json({ success:true, variations: { formal: parseVar('VERSION_A'), friendly: parseVar('VERSION_B'), concise: parseVar('VERSION_C') } });
+  } catch(e) { res.status(500).json({ success:false, error:e.message }); }
+});
+
+// GET /api/write-analyze — analyze text readability, tone, word count
+app.post('/api/write-analyze', requireAuth, rateLimit(120, 60000), async (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text) return res.json({ success:true, data: {} });
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    const sentences = (text.match(/[.!?]+/g) || []).length || 1;
+    const avgWordsPerSentence = words / sentences;
+    // Flesch-Kincaid Grade Level approximation
+    const syllables = text.split(/[aeiou]/gi).length;
+    const fkgl = Math.max(0, (0.39 * avgWordsPerSentence + 11.8 * (syllables/words) - 15.59)).toFixed(1);
+    const readLevel = fkgl <= 6 ? 'Very Easy' : fkgl <= 8 ? 'Easy' : fkgl <= 10 ? 'Medium' : fkgl <= 12 ? 'Fairly Hard' : 'Complex';
+    // Estimated read time
+    const readTimeSec = Math.ceil(words / 3.5); // avg reading speed ~210 wpm
+    // Jargon flags (common CS/dental software terms that confuse clients)
+    const jargonWords = ['API','backend','database','SQL','cache','latency','payload','webhook','sync','async','endpoint','middleware'];
+    const foundJargon = jargonWords.filter(j => text.toLowerCase().includes(j.toLowerCase()));
+    // Chat length warning
+    const chatWarning = words > 150 ? `${words} words — too long for chat (aim under 100)` : null;
+    res.json({ success:true, data: { words, sentences, avgWordsPerSentence:avgWordsPerSentence.toFixed(1), gradeLevel:fkgl, readLevel, readTimeSec, jargon:foundJargon, chatWarning } });
+  } catch(e) { res.json({ success:true, data:{} }); }
+});
+
 // ── AI Writer — agent-mode-aware system prompts ──────────────────────────────
 const AI_SYSTEM_PROMPTS = {
   // Email/ticket agents

@@ -5708,3 +5708,23 @@ html.dark-mode #agent-section-writer .awv2-page > div { background:#0D2A3E; bord
   100% { background-position: 200% 50%; }
 }
 #page-reload-indicator { pointer-events:none; }
+
+/* ── AI Writer enhanced components ── */
+.awv2-var-card {
+  background:#F7F8F8; border:1px solid rgb(222,225,230);
+  border-radius:10px; padding:12px;
+  display:flex; flex-direction:column; gap:8px;
+  transition:border-color .15s, box-shadow .15s;
+}
+.awv2-var-card:hover { border-color:#6366f1; box-shadow:rgba(99,102,241,.1) 0 3px 12px; }
+.awv2-var-lbl { font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#9BAFC0; }
+.awv2-var-body { font-size:12px; color:#072B40; line-height:1.6; flex:1; white-space:pre-wrap; }
+.awv2-var-use {
+  background:#6366f1; color:#FFF; border:none; border-radius:7px;
+  padding:7px 12px; font-size:11px; font-weight:700;
+  cursor:pointer; font-family:'Poppins',sans-serif; transition:background .15s;
+}
+.awv2-var-use:hover { background:#4f46e5; }
+html.dark-mode .awv2-var-card { background:#091F30; border-color:rgba(255,255,255,.08); }
+html.dark-mode .awv2-var-lbl { color:#4A6F88; }
+html.dark-mode .awv2-var-body { color:#E8F4FC; }
