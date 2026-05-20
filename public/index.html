@@ -10696,25 +10696,55 @@ tbody tr:hover td{
 
         <!-- BULK ENTRY panel (hidden by default) -->
         <div id="tl-bulk-panel" style="display:none;">
-          <div class="tl-card" style="background:linear-gradient(135deg,#FFF8EC,#FFF3E0);border-color:rgba(244,137,31,.25);">
-            <div class="tl-card-title" style="color:#B45309;">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
-              Bulk Backlog Entry
-              <span style="margin-left:auto;font-size:10px;font-weight:500;color:#D97706;text-transform:none;letter-spacing:0;">Paste ticket IDs from your notepad — one per line</span>
+
+          <!-- Step 1: Paste IDs -->
+          <div id="tl-bulk-step1">
+            <div class="tl-card" style="background:linear-gradient(135deg,#FFF8EC,#FFF3E0);border-color:rgba(244,137,31,.25);">
+              <div class="tl-card-title" style="color:#B45309;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
+                Step 1 — Paste Ticket IDs
+                <span style="margin-left:auto;font-size:10px;font-weight:500;color:#D97706;text-transform:none;letter-spacing:0;">One per line, with or without #</span>
+              </div>
+              <textarea id="tl-bulk-ids" rows="7"
+                placeholder="#360544&#10;#360519&#10;#359403&#10;360590&#10;360601"
+                style="width:100%;background:#FFFFFF;border:1px solid rgba(244,137,31,.25);border-radius:10px;padding:12px;font-size:13px;color:#072B40;font-family:'Poppins',monospace;resize:vertical;outline:none;box-sizing:border-box;line-height:1.9;"></textarea>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                <span id="tl-bulk-count" style="font-size:12px;color:#D97706;font-weight:600;">0 tickets detected</span>
+                <span style="font-size:11px;color:#9BAFC0;">Next step: set Channel, Type & Queue per ticket</span>
+              </div>
             </div>
-            <textarea id="tl-bulk-ids" rows="6"
-              placeholder="#360544&#10;#360519&#10;#359403&#10;#360590&#10;...or paste without # too&#10;360601"
-              style="width:100%;background:#FFFFFF;border:1px solid rgba(244,137,31,.25);border-radius:10px;padding:12px;font-size:13px;color:#072B40;font-family:'Poppins',monospace;resize:vertical;outline:none;box-sizing:border-box;line-height:1.8;"></textarea>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-              <span id="tl-bulk-count" style="font-size:12px;color:#D97706;font-weight:600;">0 tickets detected</span>
-              <span style="font-size:11px;color:#9BAFC0;">Channel, Type & Queue from selections above · Date from date picker</span>
-            </div>
+            <button onclick="tlBuildReviewTable()" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#D97706,#B45309);color:#FFF;font-size:14px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:rgba(217,119,6,.4) 0 4px 16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
+              Preview & Set Details →
+            </button>
           </div>
-          <button class="tl-submit-btn" id="tl-bulk-submit-btn" onclick="submitBulkTickets()" style="background:linear-gradient(135deg,#D97706,#B45309);box-shadow:rgba(217,119,6,.4) 0 4px 16px;">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
-            Submit All Backlog Tickets
-          </button>
-          <div id="tl-bulk-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;font-weight:500;"></div>
+
+          <!-- Step 2: Review table (per-ticket channel/type/queue) -->
+          <div id="tl-bulk-step2" style="display:none;">
+            <div class="tl-card" style="padding:0;overflow:hidden;">
+              <div style="padding:12px 16px;background:#F7F8F8;border-bottom:1px solid rgb(222,225,230);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+                <div style="font-size:12px;font-weight:700;color:#072B40;">
+                  Step 2 — Set details per ticket
+                  <span id="tl-review-count" style="color:#D97706;margin-left:6px;"></span>
+                </div>
+                <button onclick="tlBackToStep1()" style="font-size:11px;color:#9BAFC0;background:none;border:1px solid rgb(222,225,230);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:'Poppins',sans-serif;">← Edit IDs</button>
+              </div>
+              <!-- Column headers -->
+              <div style="display:grid;grid-template-columns:90px 1fr 1fr 90px 28px;gap:0;background:#F7F8F8;border-bottom:1px solid rgb(222,225,230);padding:6px 12px;">
+                <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;">Ticket ID</span>
+                <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;">Channel</span>
+                <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;">Ticket Type</span>
+                <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;">Queue</span>
+                <span></span>
+              </div>
+              <div id="tl-review-rows" style="max-height:340px;overflow-y:auto;"></div>
+            </div>
+            <button class="tl-submit-btn" id="tl-bulk-submit-btn" onclick="submitBulkTickets()" style="background:linear-gradient(135deg,#D97706,#B45309);box-shadow:rgba(217,119,6,.4) 0 4px 16px;margin-top:12px;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
+              Submit All Tickets
+            </button>
+            <div id="tl-bulk-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;font-weight:500;"></div>
+          </div>
         </div>
 
         <!-- SINGLE entry submit -->
@@ -11677,6 +11707,63 @@ function tlSetMode(mode) {
   }
 }
 
+// ── Bulk review table ─────────────────────────────────────────────────────
+const TL_CHANNELS = ['Email','Chat','Phone','Web'];
+const TL_TYPES    = ['New Ticket','Follow-up Ticket','Transfer-In Ticket','Reopened Ticket',
+  'New Ticket - Transferred','Merged Ticket','Outbound Ticket','Feedback Ticket','Auto-Generated/Spam Ticket'];
+
+function tlGetParsedIds() {
+  const ta = document.getElementById('tl-bulk-ids');
+  if (!ta) return [];
+  return ta.value.split('\n')
+    .map(l => l.trim().replace(/^#/,''))
+    .filter(l => /^\d+$/.test(l))
+    .map(l => '#' + l);
+}
+
+function tlBuildReviewTable() {
+  const ids = tlGetParsedIds();
+  if (!ids.length) { showToast('Paste at least one ticket ID first.','warning'); return; }
+
+  document.getElementById('tl-bulk-step1').style.display = 'none';
+  document.getElementById('tl-bulk-step2').style.display = '';
+  document.getElementById('tl-review-count').textContent = `${ids.length} ticket${ids.length>1?'s':''}`;
+
+  // Default from the selector dropdowns
+  const defCh = tlSelections.channel || 'Email';
+  const defTp = tlSelections.type    || 'New Ticket';
+  const defQ  = tlSelections.queue === '' ? '' : (tlSelections.queue || '');
+
+  const chOpts = TL_CHANNELS.map(c => `<option value="${c}"${c===defCh?' selected':''}>${c}</option>`).join('');
+  const tpOpts = TL_TYPES.map(t => `<option value="${t}"${t===defTp?' selected':''}>${t.replace(' Ticket','').replace('Auto-Generated/Spam','Spam')}</option>`).join('');
+
+  const rowsHtml = ids.map((id, i) => `
+    <div style="display:grid;grid-template-columns:90px 1fr 1fr 90px 28px;gap:4px;align-items:center;padding:6px 12px;border-bottom:1px solid rgb(222,225,230);transition:background .12s;" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='transparent'">
+      <span style="font-size:12px;font-weight:700;color:#21AAE0;">${id}</span>
+      <select id="tl-row-ch-${i}" style="font-size:12px;background:rgb(215,241,247);border:none;border-radius:6px;padding:5px 8px;color:#072B40;font-family:'Poppins',sans-serif;outline:none;cursor:pointer;">${chOpts}</select>
+      <select id="tl-row-tp-${i}" style="font-size:12px;background:rgb(215,241,247);border:none;border-radius:6px;padding:5px 8px;color:#072B40;font-family:'Poppins',sans-serif;outline:none;cursor:pointer;">${tpOpts}</select>
+      <select id="tl-row-q-${i}" style="font-size:12px;background:rgb(215,241,247);border:none;border-radius:6px;padding:5px 8px;color:#072B40;font-family:'Poppins',sans-serif;outline:none;cursor:pointer;">
+        <option value="" ${defQ===''?'selected':''}>N/A</option>
+        <option value="Yes" ${defQ==='Yes'?'selected':''}>Yes</option>
+        <option value="No"  ${defQ==='No'?'selected':''}>No</option>
+      </select>
+      <button onclick="this.closest('div').remove();tlUpdateReviewCount()" title="Remove" style="background:rgba(237,102,107,.1);border:none;border-radius:6px;color:#ED666B;cursor:pointer;font-size:14px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;">×</button>
+    </div>`).join('');
+
+  document.getElementById('tl-review-rows').innerHTML = rowsHtml;
+}
+
+function tlUpdateReviewCount() {
+  const rows = document.querySelectorAll('#tl-review-rows > div').length;
+  const el = document.getElementById('tl-review-count');
+  if (el) el.textContent = `${rows} ticket${rows>1?'s':''}`;
+}
+
+function tlBackToStep1() {
+  document.getElementById('tl-bulk-step1').style.display = '';
+  document.getElementById('tl-bulk-step2').style.display = 'none';
+}
+
 // ── Bulk submission ───────────────────────────────────────────────────────
 async function submitBulkTickets() {
   const textarea = document.getElementById('tl-bulk-ids');
@@ -11684,55 +11771,63 @@ async function submitBulkTickets() {
   const msgEl    = document.getElementById('tl-bulk-msg');
   if (!textarea || !btn) return;
 
-  if (!tlSelections.channel) { showToast('Please select a channel first.', 'warning'); return; }
-  if (!tlSelections.type)    { showToast('Please select a ticket type first.', 'warning'); return; }
+  // Collect per-row data from the review table
+  const reviewRows = document.querySelectorAll('#tl-review-rows > div');
+  if (!reviewRows.length) { showToast('No tickets in the review table.', 'warning'); return; }
 
-  const raw = textarea.value.split('\n')
-    .map(l => l.trim().replace(/^#/, ''))
-    .filter(l => /^\d+$/.test(l))
-    .map(l => '#' + l);
+  const tickets = [];
+  reviewRows.forEach((row, i) => {
+    const idEl = row.querySelector('span');
+    const ch   = row.querySelector(`[id^="tl-row-ch-"]`)?.value || '';
+    const tp   = row.querySelector(`[id^="tl-row-tp-"]`)?.value || '';
+    const q    = row.querySelector(`[id^="tl-row-q-"]`)?.value  || '';
+    const id   = idEl ? idEl.textContent.trim() : '';
+    if (id && ch && tp) tickets.push({ ticketId: id, channel: ch, ticketType: tp, pickedFromQueue: q });
+  });
 
-  if (!raw.length) { showToast('No valid ticket IDs found. Enter one per line.', 'warning'); return; }
+  if (!tickets.length) { showToast('No valid tickets to submit.', 'warning'); return; }
 
   btn.disabled = true;
-  btn.textContent = `Submitting ${raw.length} tickets…`;
-  msgEl.style.color = '#9BAFC0'; msgEl.textContent = '';
+  btn.textContent = `Submitting ${tickets.length} tickets…`;
+  if (msgEl) { msgEl.style.color = '#9BAFC0'; msgEl.textContent = ''; }
 
   try {
     const res  = await fetch('/api/tickets/bulk', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        tickets: raw,
-        channel:         tlSelections.channel,
-        pickedFromQueue: tlSelections.queue,
-        ticketType:      tlSelections.type,
+        tickets,         // array of per-ticket objects (each has own channel/type/queue)
+        channel:         tickets[0].channel,    // fallback defaults
+        pickedFromQueue: tickets[0].pickedFromQueue,
+        ticketType:      tickets[0].ticketType,
         logDate:         tlGetLogDate(),
       })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
-    const isBacklog = data.isBacklog;
-    msgEl.style.color = '#2DDC96';
-    msgEl.textContent = `✓ ${data.count} tickets logged${isBacklog ? ` for ${data.date} (backlog)` : ' successfully'}!`;
-    textarea.value = '';
-    document.getElementById('tl-bulk-count').textContent = '0 tickets detected';
+    if (msgEl) { msgEl.style.color = '#2DDC96'; msgEl.textContent = `✓ ${data.count} tickets logged${data.isBacklog ? ` for ${data.date} (backlog)` : ''}!`; }
 
-    // Add to local history for pivot update
-    raw.forEach(id => {
-      tlHistory.unshift({ ticketId: id, ticketType: tlSelections.type, channel: tlSelections.channel, date: data.date, time: data.date });
+    // Reset to step 1
+    document.getElementById('tl-bulk-ids').value = '';
+    document.getElementById('tl-bulk-count').textContent = '0 tickets detected';
+    document.getElementById('tl-review-rows').innerHTML = '';
+    tlBackToStep1();
+
+    // Update pivot
+    tickets.forEach(t => {
+      tlHistory.unshift({ ticketId: t.ticketId, ticketType: t.ticketType, channel: t.channel, date: data.date, time: data.date });
     });
-    tlSheetData = [...tlHistory, ...tlSheetData.filter(t => !new Set(raw).has(t.ticketId))];
+    const ids = new Set(tickets.map(t => t.ticketId));
+    tlSheetData = [...tlHistory, ...tlSheetData.filter(t => !ids.has(t.ticketId))];
     renderTlPivot();
-    showToast(`${data.count} backlog tickets logged!`, 'success');
+    showToast(`${data.count} tickets logged!`, 'success');
   } catch(e) {
-    msgEl.style.color = '#ED666B';
-    msgEl.textContent = '✗ ' + e.message;
+    if (msgEl) { msgEl.style.color = '#ED666B'; msgEl.textContent = '✗ ' + e.message; }
     showToast('Error: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px"><path d="M1 4h14M1 8h14M1 12h14"/></svg> Submit All Backlog Tickets';
+    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:14px;height:14px"><path d="M1 4h14M1 8h14M1 12h14"/></svg> Submit All Tickets';
   }
 }
 

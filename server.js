@@ -1094,13 +1094,25 @@ app.post('/api/tickets/bulk', requireAuth, rateLimit(10, 60000), async (req, res
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
     const sheets = getTicketSheetsClient();
 
+    // Each item can be a string ID (use defaults) OR a full object with own channel/type/queue
     const rows = tickets
-      .map(id => (id || '').trim())
-      .filter(id => /^#?\d+$/.test(id))
-      .map(id => {
-        const ticketId = id.startsWith('#') ? id : '#' + id;
-        return [ticketId, agentName, channel, pickedFromQueue || '', ticketType, dateStr, monthStr, isBacklog ? 'BACKLOG' : ''];
-      });
+      .map(item => {
+        if (typeof item === 'string') {
+          const id = item.trim();
+          if (!/^#?\d+$/.test(id)) return null;
+          const ticketId = id.startsWith('#') ? id : '#' + id;
+          return [ticketId, agentName, channel, pickedFromQueue || '', ticketType, dateStr, monthStr, isBacklog ? 'BACKLOG' : ''];
+        } else {
+          // Full object: { ticketId, channel, pickedFromQueue, ticketType }
+          const id = (item.ticketId || '').trim();
+          if (!id) return null;
+          const ch  = VALID_CHANNELS.has(item.channel) ? item.channel : channel;
+          const tp  = VALID_TICKET_TYPES.has(item.ticketType) ? item.ticketType : ticketType;
+          const q   = ['Yes','No',''].includes(item.pickedFromQueue) ? item.pickedFromQueue : (pickedFromQueue || '');
+          return [id, agentName, ch, q, tp, dateStr, monthStr, isBacklog ? 'BACKLOG' : ''];
+        }
+      })
+      .filter(Boolean);
 
     if (!rows.length) return res.status(400).json({ success: false, error: 'No valid ticket IDs found' });
 
