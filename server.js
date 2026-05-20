@@ -1179,17 +1179,18 @@ app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => 
     const sheets = getTicketSheetsClient();
     const resp = await sheets.spreadsheets.values.get({
       spreadsheetId: TICKET_SHEET_ID,
-      range: `'${TICKET_SHEET_TAB}'!A:G`,
+      range: `'${TICKET_SHEET_TAB}'!A:H`,
     });
     const rows = (resp.data.values || []).slice(1); // skip header row
-    const tickets = rows.filter(r => r[0]).map(r => ({
-      ticketId:        r[0] || '',
-      agentName:       r[1] || '',
-      channel:         r[2] || '',
-      pickedFromQueue: r[3] || '',
-      ticketType:      r[4] || '',
-      date:            r[5] || '',
-      month:           r[6] || '',
+    const tickets = rows.filter(r => (r[0]||'').trim()).map(r => ({
+      ticketId:        (r[0]||'').trim(),
+      agentName:       (r[1]||'').trim(),
+      channel:         (r[2]||'').trim(),
+      pickedFromQueue: (r[3]||'').trim(),
+      ticketType:      (r[4]||'').trim(),
+      date:            (r[5]||'').trim(),
+      month:           (r[6]||'').trim(),
+      notes:           (r[7]||'').trim(),
     }));
     res.json({ success: true, data: tickets });
   } catch(e) {
