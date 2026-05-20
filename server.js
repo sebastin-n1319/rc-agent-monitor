@@ -946,6 +946,122 @@ async function zohoDesk(path, params = {}) {
   return res.json();
 }
 
+// ── Ticket Intelligence Rules Engine ─────────────────────────────────────────
+// Each rule evaluates Zoho ticket data and returns a suggested type + warning.
+// Rules are prioritised — highest priority wins.
+// Add new rules here as new scenarios are discovered in the field.
+const TICKET_RULES = [
+  // ── Priority 10: Spam / auto-generated ──────────────────────────────────────
+  {
+    name:        'spam_auto_generated',
+    description: 'Zoho marks ticket as spam, or it was created automatically by the system (no real customer action)',
+    condition:   t => t.isSpam === true || t.source?.type === 'SYSTEM',
+    type:        'Auto-Generated/Spam Ticket',
+    warning:     'This ticket is marked as spam or system-generated in Zoho — verify before logging.',
+    severity:    'yellow',
+    priority:    10,
+  },
+  // ── Priority 9: Closed or Resolved → Reopened ───────────────────────────────
+  {
+    name:        'closed_ticket',
+    description: 'Ticket is already Closed or Resolved in Zoho — agent is working on it again',
+    condition:   t => ['Closed','Resolved'].includes(t.status),
+    type:        'Reopened Ticket',
+    warning:     'This ticket is {status} in Zoho — logging as Reopened Ticket.',
+    severity:    'amber',
+    priority:    9,
+  },
+  // ── Priority 8: Team was transferred (came via another team) ────────────────
+  {
+    name:        'team_transfer',
+    description: 'Ticket was transferred from another team or department into T1 CS queue',
+    condition:   t => {
+      const sub = (t.subject||'').toLowerCase();
+      const tags = (t.tags||[]).map(g=>g.toLowerCase());
+      return sub.includes('transfer') || tags.some(g=>g.includes('transfer') || g.includes('handoff') || g.includes('escalat'));
+    },
+    type:        'Transfer-In Ticket',
+    warning:     'Subject or tags suggest this was transferred into T1 — verify if it is a Transfer-In.',
+    severity:    'blue',
+    priority:    8,
+  },
+  // ── Priority 7: Outbound (agent/team sent the last message) ─────────────────
+  {
+    name:        'outbound_last_thread',
+    description: 'The most recent thread was sent BY the support team, not the customer — proactive outreach',
+    condition:   t => t.lastThread?.direction === 'out' && t.lastThread?.isForward !== true,
+    type:        'Outbound Ticket',
+    warning:     'Your team sent the last message — this may be an Outbound ticket (team-initiated contact).',
+    severity:    'blue',
+    priority:    7,
+  },
+  // ── Priority 6: Feedback / CSAT present ─────────────────────────────────────
+  {
+    name:        'csat_feedback',
+    description: 'Customer submitted a CSAT rating or feedback — ticket was created from that feedback',
+    condition:   t => t.satisfaction !== null && t.satisfaction !== undefined,
+    type:        'Feedback Ticket',
+    warning:     'This ticket has a CSAT score ({satisfaction}) — may be a Feedback ticket.',
+    severity:    'blue',
+    priority:    6,
+  },
+  // ── Priority 5: Follow-up (agent already handled this client recently) ───────
+  {
+    name:        'followup_subject',
+    description: 'Subject line contains follow-up indicators — client responding to a previous ticket',
+    condition:   t => {
+      const sub = (t.subject||'').toLowerCase();
+      return sub.startsWith('re:') || sub.startsWith('fw:') || sub.startsWith('fwd:')
+          || sub.includes('follow up') || sub.includes('follow-up') || sub.includes('following up');
+    },
+    type:        'Follow-up Ticket',
+    warning:     'Subject suggests this is a reply/follow-up to a previous conversation.',
+    severity:    'blue',
+    priority:    5,
+  },
+  // ── Priority 4: Merged (multiple contacts / duplicate keywords) ──────────────
+  {
+    name:        'merged_ticket',
+    description: 'Subject or tags indicate this ticket was merged from duplicates',
+    condition:   t => {
+      const sub  = (t.subject||'').toLowerCase();
+      const tags = (t.tags||[]).map(g=>g.toLowerCase());
+      return sub.includes('merged') || sub.includes('duplicate') || tags.some(g=>g.includes('merge') || g.includes('duplicate'));
+    },
+    type:        'Merged Ticket',
+    warning:     'Subject or tags suggest this ticket was merged — verify before logging.',
+    severity:    'yellow',
+    priority:    4,
+  },
+];
+
+// Evaluate rules against a Zoho ticket, return best match
+function evaluateTicketRules(ticket) {
+  const matched = TICKET_RULES
+    .filter(r => { try { return r.condition(ticket); } catch(e) { return false; } })
+    .sort((a,b) => b.priority - a.priority);
+  if (!matched.length) return null;
+  const rule = matched[0];
+  // Interpolate {field} placeholders in warning message
+  const warning = rule.warning.replace(/\{(\w+)\}/g, (_, k) => ticket[k] || k);
+  return { ...rule, warning };
+}
+
+// GET /api/zoho/rules — list all ticket intelligence rules (admin view)
+app.get('/api/zoho/rules', requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    rules: TICKET_RULES.map(r => ({
+      name:        r.name,
+      description: r.description,
+      type:        r.type,
+      warning:     r.warning,
+      severity:    r.severity,
+      priority:    r.priority,
+    }))
+  });
+});
+
 // Map Zoho channel → our channel names
 function mapZohoChannel(ch) {
   const m = { EMAIL: 'Email', CHAT: 'Chat', PHONE: 'Phone', WEB: 'Web',
@@ -1031,27 +1147,37 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       try { contact = await zohoDesk(`/contacts/${ticket.contactId}`); } catch(e) {}
     }
 
-    res.json({
-      success: true,
-      found: true,
-      ticket: {
-        id:           ticket.id,
-        ticketNumber: ticket.ticketNumber,
-        subject:      ticket.subject,
-        status:       ticket.status,
-        priority:     ticket.priority,
-        channel:      mapZohoChannel(ticket.channel),
-        ticketType:   mapZohoType(ticket),
-        assignee:     ticket.assignee?.name || ticket.assigneeId || null,
-        contact:      contact ? { name: contact.fullName, email: contact.email } : null,
-        createdTime:  ticket.createdTime,
-        modifiedTime: ticket.modifiedTime,
-        satisfaction: ticket.satisfaction?.type || null,
-        teamId:       ticket.teamId,
-        departmentId: ticket.departmentId,
-        tags:         ticket.tags || [],
-      }
-    });
+    const mappedTicket = {
+      id:           ticket.id,
+      ticketNumber: ticket.ticketNumber,
+      subject:      ticket.subject,
+      status:       ticket.status,
+      priority:     ticket.priority,
+      channel:      mapZohoChannel(ticket.channel),
+      ticketType:   mapZohoType(ticket),
+      assignee:     ticket.assignee?.name || ticket.assigneeId || null,
+      contact:      contact ? { name: contact.fullName, email: contact.email } : null,
+      createdTime:  ticket.createdTime,
+      modifiedTime: ticket.modifiedTime,
+      satisfaction: ticket.satisfaction?.type || null,
+      teamId:       ticket.teamId,
+      departmentId: ticket.departmentId,
+      tags:         ticket.tags || [],
+      isSpam:       ticket.isSpam || false,
+      source:       ticket.source || null,
+      lastThread:   ticket.lastThread || null,
+    };
+
+    // Run the rules engine — overrides base type if a rule matches
+    const matchedRule = evaluateTicketRules(mappedTicket);
+    if (matchedRule) {
+      mappedTicket.ticketType    = matchedRule.type;
+      mappedTicket.ruleWarning   = matchedRule.warning;
+      mappedTicket.ruleSeverity  = matchedRule.severity;
+      mappedTicket.ruleName      = matchedRule.name;
+    }
+
+    res.json({ success: true, found: true, ticket: mappedTicket });
   } catch(e) {
     console.error('❌ Zoho ticket lookup:', e.message);
     res.status(500).json({ success: false, error: e.message });
