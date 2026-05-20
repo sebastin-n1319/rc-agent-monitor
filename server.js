@@ -965,7 +965,7 @@ const VALID_TICKET_TYPES = new Set([
 // POST /api/tickets — agent logs a ticket (writes a row to Google Sheet)
 app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => {
   try {
-    const { ticketId, channel, pickedFromQueue, ticketType, isDuplicate } = req.body || {};
+    const { ticketId, channel, pickedFromQueue, ticketType, isDuplicate, logDate } = req.body || {};
     // Validate ticket ID
     if (!ticketId || !/^#\d+$/.test(String(ticketId).trim()))
       return res.status(400).json({ success: false, error: 'Ticket ID must start with # followed by digits (e.g. #198756)' });
@@ -978,7 +978,16 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
 
     const session = req.session;
     const agentName = session.name || session.email;
-    const now = new Date();
+    // Support backlog: use provided logDate (YYYY-MM-DD) or default to today CST
+    let now;
+    if (logDate && /^\d{4}-\d{2}-\d{2}$/.test(logDate)) {
+      now = new Date(logDate + 'T12:00:00'); // noon to avoid timezone issues
+      // Don't allow future dates
+      const todayCST = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+      if (now > todayCST) now = new Date(); // fallback to today
+    } else {
+      now = new Date();
+    }
     const row = [
       ticketId.trim(),
       agentName,
@@ -1052,6 +1061,64 @@ function buildNameSet(email, sessionName) {
   if (parts.length >= 2) variants.add((parts[0] + ' ' + parts[1][0]).toLowerCase());
   return variants;
 }
+
+// POST /api/tickets/bulk — agent submits multiple backlog tickets at once
+app.post('/api/tickets/bulk', requireAuth, rateLimit(10, 60000), async (req, res) => {
+  try {
+    const { tickets, channel, pickedFromQueue, ticketType, logDate } = req.body || {};
+    if (!Array.isArray(tickets) || !tickets.length)
+      return res.status(400).json({ success: false, error: 'No tickets provided' });
+    if (tickets.length > 50)
+      return res.status(400).json({ success: false, error: 'Max 50 tickets per bulk entry' });
+    if (!VALID_CHANNELS.has(channel))
+      return res.status(400).json({ success: false, error: 'Invalid channel' });
+    if (!VALID_TICKET_TYPES.has(ticketType))
+      return res.status(400).json({ success: false, error: 'Invalid ticket type' });
+
+    const session = req.session;
+    const agentName = session.name || session.email;
+
+    let now;
+    if (logDate && /^\d{4}-\d{2}-\d{2}$/.test(logDate)) {
+      now = new Date(logDate + 'T12:00:00');
+      const todayCST = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' }));
+      if (now > todayCST) now = new Date();
+    } else {
+      now = new Date();
+    }
+
+    const dateStr  = fmtTicketDate(now);
+    const monthStr = fmtTicketMonth(now);
+    const isBacklog = logDate && dateStr !== fmtTicketDate(new Date());
+
+    if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
+    const sheets = getTicketSheetsClient();
+
+    const rows = tickets
+      .map(id => (id || '').trim())
+      .filter(id => /^#?\d+$/.test(id))
+      .map(id => {
+        const ticketId = id.startsWith('#') ? id : '#' + id;
+        return [ticketId, agentName, channel, pickedFromQueue || '', ticketType, dateStr, monthStr, isBacklog ? 'BACKLOG' : ''];
+      });
+
+    if (!rows.length) return res.status(400).json({ success: false, error: 'No valid ticket IDs found' });
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:H`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: rows },
+    });
+
+    insertAuditLog(session.email, 'bulk_ticket_log', `${rows.length} tickets`, `${channel}|${ticketType}|${dateStr}`).catch(() => {});
+    res.json({ success: true, count: rows.length, date: dateStr, isBacklog });
+  } catch(e) {
+    console.error('❌ bulk ticket error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
 
 // GET /api/my-tickets — agent reads their own ticket entries from Google Sheet
 app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) => {

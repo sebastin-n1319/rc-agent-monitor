@@ -10552,14 +10552,33 @@ tbody tr:hover td{
       <!-- LEFT: Form -->
       <div>
         <!-- Page header -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-          <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F4891F,#F28820);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:rgba(244,137,31,.35) 0 4px 14px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#F4891F,#F28820);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:rgba(244,137,31,.35) 0 4px 14px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:700;color:#072B40;letter-spacing:-.01em;">Log a Ticket</div>
+              <div style="font-size:12px;color:#6B849A;margin-top:2px;">Syncs directly to the T1 CS productivity sheet</div>
+            </div>
           </div>
-          <div>
-            <div style="font-size:20px;font-weight:700;color:#072B40;letter-spacing:-.01em;">Log a Ticket</div>
-            <div style="font-size:12px;color:#6B849A;margin-top:2px;">Syncs directly to the T1 CS productivity sheet</div>
+          <!-- Mode toggle + date picker -->
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button onclick="tlSetMode('single')" id="tl-mode-single" class="tl-mode-btn active">Single Entry</button>
+            <button onclick="tlSetMode('bulk')" id="tl-mode-bulk" class="tl-mode-btn">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
+              Bulk Backlog Entry
+            </button>
           </div>
+        </div>
+
+        <!-- Backlog date selector (shown always so agents can set past date) -->
+        <div class="tl-date-bar" id="tl-date-bar">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;color:#F4891F"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v2M11 1v2M2 7h12"/></svg>
+          <span style="font-size:12px;font-weight:600;color:#6B849A;">Logging for date:</span>
+          <input type="date" id="tl-log-date" class="tl-date-input-bar" onchange="tlUpdateDateMode()">
+          <button onclick="tlResetDate()" style="font-size:11px;color:#9BAFC0;background:none;border:none;cursor:pointer;font-family:'Poppins',sans-serif;padding:2px 6px;border-radius:5px;transition:color .15s;" onmouseover="this.style.color='#F4891F'" onmouseout="this.style.color='#9BAFC0'">Reset to Today</button>
+          <span id="tl-backlog-badge" style="display:none;background:#FBC84B;color:#5A3E00;border-radius:50px;padding:2px 10px;font-size:10px;font-weight:800;letter-spacing:.06em;">BACKLOG MODE</span>
         </div>
 
         <!-- Ticket ID -->
@@ -10669,12 +10688,37 @@ tbody tr:hover td{
           </div>
         </div>
 
-        <!-- Submit -->
+        <!-- BULK ENTRY panel (hidden by default) -->
+        <div id="tl-bulk-panel" style="display:none;">
+          <div class="tl-card" style="background:linear-gradient(135deg,#FFF8EC,#FFF3E0);border-color:rgba(244,137,31,.25);">
+            <div class="tl-card-title" style="color:#B45309;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
+              Bulk Backlog Entry
+              <span style="margin-left:auto;font-size:10px;font-weight:500;color:#D97706;text-transform:none;letter-spacing:0;">Paste ticket IDs from your notepad — one per line</span>
+            </div>
+            <textarea id="tl-bulk-ids" rows="6"
+              placeholder="#360544&#10;#360519&#10;#359403&#10;#360590&#10;...or paste without # too&#10;360601"
+              style="width:100%;background:#FFFFFF;border:1px solid rgba(244,137,31,.25);border-radius:10px;padding:12px;font-size:13px;color:#072B40;font-family:'Poppins',monospace;resize:vertical;outline:none;box-sizing:border-box;line-height:1.8;"></textarea>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+              <span id="tl-bulk-count" style="font-size:12px;color:#D97706;font-weight:600;">0 tickets detected</span>
+              <span style="font-size:11px;color:#9BAFC0;">Channel, Type & Queue from selections above · Date from date picker</span>
+            </div>
+          </div>
+          <button class="tl-submit-btn" id="tl-bulk-submit-btn" onclick="submitBulkTickets()" style="background:linear-gradient(135deg,#D97706,#B45309);box-shadow:rgba(217,119,6,.4) 0 4px 16px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
+            Submit All Backlog Tickets
+          </button>
+          <div id="tl-bulk-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;font-weight:500;"></div>
+        </div>
+
+        <!-- SINGLE entry submit -->
+        <div id="tl-single-panel">
         <button class="tl-submit-btn" id="tl-submit-btn" onclick="submitTicketLog()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
           Log Ticket to Sheet
         </button>
         <div id="tl-submit-msg" style="text-align:center;font-size:13px;margin-top:10px;min-height:18px;font-weight:500;"></div>
+        </div><!-- /#tl-single-panel -->
 
         <!-- Today's history -->
         <div class="tl-card" style="margin-top:16px;">
@@ -11371,7 +11415,7 @@ function switchAgentSection(section,el){
   configureAgentBreakbotAccess();
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
   if(section==='breakbot')loadBreakTracker();
-  if(section==='tickets'){ setTimeout(initTlTooltips,80); loadMyTicketsFromSheet(); }
+  if(section==='tickets'){ setTimeout(initTlTooltips,80); setTimeout(tlInitDate,50); loadMyTicketsFromSheet(); }
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -11553,6 +11597,121 @@ function tlSetPeriod(period, btn) {
   renderTlPivot();
 }
 
+// ── Date picker & backlog mode ────────────────────────────────────────────
+function getTodayCSTStr() {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date());
+}
+
+function tlInitDate() {
+  const inp = document.getElementById('tl-log-date');
+  if (!inp) return;
+  const today = getTodayCSTStr();
+  inp.value = today;
+  inp.max   = today; // can't log future
+  tlUpdateDateMode();
+}
+
+function tlUpdateDateMode() {
+  const inp    = document.getElementById('tl-log-date');
+  const badge  = document.getElementById('tl-backlog-badge');
+  const bar    = document.getElementById('tl-date-bar');
+  if (!inp) return;
+  const today  = getTodayCSTStr();
+  const isBack = inp.value && inp.value < today;
+  if (badge) badge.style.display = isBack ? 'inline-flex' : 'none';
+  if (bar)   bar.style.background = isBack ? 'rgba(251,200,75,.08)' : 'rgba(244,137,31,.04)';
+  if (bar)   bar.style.borderColor = isBack ? 'rgba(251,200,75,.3)' : 'rgba(244,137,31,.15)';
+}
+
+function tlResetDate() {
+  const inp = document.getElementById('tl-log-date');
+  if (inp) { inp.value = getTodayCSTStr(); tlUpdateDateMode(); }
+}
+
+function tlGetLogDate() {
+  const inp = document.getElementById('tl-log-date');
+  return inp ? inp.value : getTodayCSTStr();
+}
+
+// ── Mode toggle: single vs bulk ───────────────────────────────────────────
+let tlMode = 'single';
+function tlSetMode(mode) {
+  tlMode = mode;
+  document.getElementById('tl-mode-single').classList.toggle('active', mode === 'single');
+  document.getElementById('tl-mode-bulk').classList.toggle('active', mode === 'bulk');
+  document.getElementById('tl-single-panel').style.display = mode === 'single' ? '' : 'none';
+  document.getElementById('tl-bulk-panel').style.display   = mode === 'bulk'   ? '' : 'none';
+}
+
+// ── Bulk submission ───────────────────────────────────────────────────────
+async function submitBulkTickets() {
+  const textarea = document.getElementById('tl-bulk-ids');
+  const btn      = document.getElementById('tl-bulk-submit-btn');
+  const msgEl    = document.getElementById('tl-bulk-msg');
+  if (!textarea || !btn) return;
+
+  if (!tlSelections.channel) { showToast('Please select a channel first.', 'warning'); return; }
+  if (!tlSelections.type)    { showToast('Please select a ticket type first.', 'warning'); return; }
+
+  const raw = textarea.value.split('\n')
+    .map(l => l.trim().replace(/^#/, ''))
+    .filter(l => /^\d+$/.test(l))
+    .map(l => '#' + l);
+
+  if (!raw.length) { showToast('No valid ticket IDs found. Enter one per line.', 'warning'); return; }
+
+  btn.disabled = true;
+  btn.textContent = `Submitting ${raw.length} tickets…`;
+  msgEl.style.color = '#9BAFC0'; msgEl.textContent = '';
+
+  try {
+    const res  = await fetch('/api/tickets/bulk', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tickets: raw,
+        channel:         tlSelections.channel,
+        pickedFromQueue: tlSelections.queue,
+        ticketType:      tlSelections.type,
+        logDate:         tlGetLogDate(),
+      })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    const isBacklog = data.isBacklog;
+    msgEl.style.color = '#2DDC96';
+    msgEl.textContent = `✓ ${data.count} tickets logged${isBacklog ? ` for ${data.date} (backlog)` : ' successfully'}!`;
+    textarea.value = '';
+    document.getElementById('tl-bulk-count').textContent = '0 tickets detected';
+
+    // Add to local history for pivot update
+    raw.forEach(id => {
+      tlHistory.unshift({ ticketId: id, ticketType: tlSelections.type, channel: tlSelections.channel, date: data.date, time: data.date });
+    });
+    tlSheetData = [...tlHistory, ...tlSheetData.filter(t => !new Set(raw).has(t.ticketId))];
+    renderTlPivot();
+    showToast(`${data.count} backlog tickets logged!`, 'success');
+  } catch(e) {
+    msgEl.style.color = '#ED666B';
+    msgEl.textContent = '✗ ' + e.message;
+    showToast('Error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:15px;height:15px"><path d="M1 4h14M1 8h14M1 12h14"/></svg> Submit All Backlog Tickets';
+  }
+}
+
+// Count ticket IDs as user types in bulk textarea
+document.addEventListener('input', e => {
+  if (e.target && e.target.id === 'tl-bulk-ids') {
+    const count = e.target.value.split('\n')
+      .filter(l => /^\d+$/.test(l.trim().replace(/^#/, ''))).length;
+    const el = document.getElementById('tl-bulk-count');
+    if (el) el.textContent = `${count} ticket${count !== 1 ? 's' : ''} detected`;
+  }
+});
+
 function tlRefresh() {
   tlSheetData = [];
   loadMyTicketsFromSheet();
@@ -11722,6 +11881,7 @@ async function submitTicketLog() {
         pickedFromQueue: tlSelections.queue,
         ticketType:      tlSelections.type,
         isDuplicate,
+        logDate:         tlGetLogDate(),
       })
     });
     const data = await res.json();

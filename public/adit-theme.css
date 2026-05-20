@@ -5212,3 +5212,39 @@ html.dark-mode body #mainApp #agentView .agent-shell-page#agent-section-tickets 
 }
 html.dark-mode .tl-period-tabs { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
 html.dark-mode .tl-period-btn.active { background: #0D2A3E; }
+
+/* ═══ BACKLOG DATE BAR + MODE TOGGLE ══════════════════════════════════ */
+.tl-date-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; border-radius: 10px;
+  background: rgba(244,137,31,.04);
+  border: 1px solid rgba(244,137,31,.15);
+  margin-bottom: 14px;
+  transition: all .25s;
+}
+.tl-date-input-bar {
+  background: #FFFFFF; border: 1px solid rgb(222,225,230);
+  border-radius: 7px; padding: 5px 10px;
+  font-size: 13px; font-weight: 600; color: #072B40;
+  font-family: 'Poppins', sans-serif; outline: none; cursor: pointer;
+  transition: border-color .15s;
+}
+.tl-date-input-bar:focus { border-color: #F4891F; }
+
+/* Mode toggle buttons */
+.tl-mode-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: 8px;
+  border: 1.5px solid rgb(222,225,230);
+  background: #FFFFFF; color: #6B849A;
+  font-size: 12px; font-weight: 600; font-family: 'Poppins', sans-serif;
+  cursor: pointer; transition: all .15s;
+}
+.tl-mode-btn:hover { border-color: #F4891F; color: #F4891F; }
+.tl-mode-btn.active { background: #F4891F; border-color: #F4891F; color: #FFFFFF; box-shadow: rgba(244,137,31,.3) 0 3px 10px; }
+
+/* Dark mode */
+html.dark-mode .tl-date-bar   { background: rgba(244,137,31,.06); border-color: rgba(244,137,31,.2); }
+html.dark-mode .tl-date-input-bar { background: #091F30; border-color: rgba(255,255,255,.12); color: #E8F4FC; }
+html.dark-mode .tl-mode-btn   { background: #091F30; border-color: rgba(255,255,255,.1); color: #A8CBE0; }
+html.dark-mode .tl-mode-btn.active { background: #F4891F; }
