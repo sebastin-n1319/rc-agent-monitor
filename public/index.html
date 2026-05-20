@@ -9924,12 +9924,86 @@ tbody tr:hover td{
 
   <!-- TICKET REPORT (Admin) -->
   <div class="page" id="tab-tickets">
-    <!-- Header -->
+
+    <!-- ── Dashboard / Report view toggle ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div id="tkt-view-title" style="font-size:22px;font-weight:800;color:#072B40;letter-spacing:-.01em;">Today's Dashboard</div>
+        <div style="font-size:13px;color:#6B849A;margin-top:3px;" id="tkt-view-sub">Live snapshot · Auto-refreshes every 5 min · <span id="tkt-last-refresh" style="color:#F4891F;">—</span></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;padding:3px;display:flex;gap:2px;">
+          <button id="tkt-view-dash" onclick="tktSetView('dashboard')" style="padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;background:#F4891F;color:#FFF;transition:all .15s;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+            Dashboard
+          </button>
+          <button id="tkt-view-rpt" onclick="tktSetView('report')" style="padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:transparent;color:#6B849A;transition:all .15s;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
+            Full Report
+          </button>
+        </div>
+        <button onclick="loadAdminTickets()" style="background:#F4891F;color:#FFF;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:rgba(244,137,31,.35) 0 4px 12px;display:flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px"><path d="M13 2.5A6.5 6.5 0 1 1 8 1.5M8 1.5v4M13 2.5h-4"/></svg>
+          Refresh
+        </button>
+        <a href="https://docs.google.com/spreadsheets/d/105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y/edit" target="_blank" style="background:rgba(33,170,224,.1);color:#21AAE0;border:1px solid rgba(33,170,224,.25);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M12 9v4a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h4M10 2h4v4M14 2l-6 6"/></svg>
+          Sheet
+        </a>
+      </div>
+    </div>
+
+    <!-- ── DASHBOARD VIEW ── -->
+    <div id="tkt-dashboard-view">
+      <!-- KPI cards row -->
+      <div id="tkt-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+      <!-- Agent leaderboard + Type breakdown -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <!-- Agent leaderboard -->
+        <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:12px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0 1px 8px;">
+          <div style="padding:12px 16px;background:rgb(248,250,252);border-bottom:1px solid rgb(222,225,230);display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#6B849A;display:flex;align-items:center;gap:7px;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#F4891F" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><circle cx="8" cy="4" r="2.5"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+              Agent Leaderboard
+            </span>
+            <span id="tkt-dash-period-label" style="font-size:10px;color:#9BAFC0;font-weight:600;background:#F0F2F5;padding:2px 8px;border-radius:50px;">Today</span>
+          </div>
+          <div id="tkt-agent-board" style="max-height:320px;overflow-y:auto;padding:8px 0;"></div>
+        </div>
+
+        <!-- Type breakdown -->
+        <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:12px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0 1px 8px;">
+          <div style="padding:12px 16px;background:rgb(248,250,252);border-bottom:1px solid rgb(222,225,230);">
+            <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#6B849A;display:flex;align-items:center;gap:7px;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#F4891F" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M9 5H7a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5V3a2 2 0 0 0-4 0v2"/></svg>
+              Ticket Type Breakdown
+            </span>
+          </div>
+          <div id="tkt-type-board" style="padding:12px 16px;display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+
+      <!-- Period filter for dashboard -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:12px;font-weight:600;color:#9BAFC0;">Filter:</span>
+        <div style="display:flex;gap:5px;">
+          <button class="tkt-dash-filter active" data-p="today" onclick="tktDashFilter('today',this)">Today</button>
+          <button class="tkt-dash-filter" data-p="week"  onclick="tktDashFilter('week',this)">This Week</button>
+          <button class="tkt-dash-filter" data-p="month" onclick="tktDashFilter('month',this)">This Month</button>
+          <button class="tkt-dash-filter" data-p="all"   onclick="tktDashFilter('all',this)">All Time</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── REPORT VIEW (existing) ── -->
+    <div id="tkt-report-view" style="display:none;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <div style="font-size:13px;color:#6B849A;">Live report · <strong id="tkt-unique-count" style="color:#F4891F;">—</strong> unique tickets</div>
+      </div>
+      <!-- Header -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
       <div>
-        <div style="font-size:22px;font-weight:800;color:#072B40;letter-spacing:-.01em;">Ticket Report</div>
-        <div style="font-size:13px;color:#6B849A;margin-top:3px;">Live from Google Sheets · T1 CS Productivity · <strong id="tkt-unique-count" style="color:#F4891F;">—</strong> unique tickets</div>
-      </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <div style="position:relative;">
           <input id="tkt-search" type="text" placeholder="Search ticket ID or agent…"
@@ -10000,7 +10074,8 @@ tbody tr:hover td{
         <div style="text-align:center;padding:40px;color:#9BAFC0;font-size:13px;">Click Tickets tab to load</div>
       </div>
     </div>
-  </div>
+    </div><!-- /#tkt-report-view -->
+  </div><!-- /#tab-tickets -->
 
 </div><!-- /#adminView -->
 
@@ -12574,6 +12649,145 @@ function tktClearFilters() {
   applyTicketFilters();
 }
 
+// ── Admin Ticket Dashboard ────────────────────────────────────────────────────
+let tktDashPeriod = 'today';
+let _tktAutoRefresh = null;
+
+function tktSetView(view) {
+  const isDash = view === 'dashboard';
+  document.getElementById('tkt-dashboard-view').style.display = isDash ? '' : 'none';
+  document.getElementById('tkt-report-view').style.display    = isDash ? 'none' : '';
+  document.getElementById('tkt-view-dash').style.background   = isDash ? '#F4891F' : 'transparent';
+  document.getElementById('tkt-view-dash').style.color        = isDash ? '#FFF' : '#6B849A';
+  document.getElementById('tkt-view-rpt').style.background    = isDash ? 'transparent' : '#F4891F';
+  document.getElementById('tkt-view-rpt').style.color         = isDash ? '#6B849A' : '#FFF';
+  document.getElementById('tkt-view-title').textContent       = isDash ? "Today's Dashboard" : 'Ticket Report';
+  if (!isDash && allAdminTickets.length === 0) loadAdminTickets();
+}
+
+function tktDashFilter(period, btn) {
+  tktDashPeriod = period;
+  document.querySelectorAll('.tkt-dash-filter').forEach(b => b.classList.toggle('active', b===btn));
+  const labels = { today:"Today", week:"This Week", month:"This Month", all:"All Time" };
+  const el = document.getElementById('tkt-dash-period-label');
+  if (el) el.textContent = labels[period] || 'Today';
+  renderAdminDashboard();
+}
+
+function tktFilterByPeriod(tickets) {
+  const cstStr = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Chicago' }).format(new Date());
+  const [cy,cm,cd] = cstStr.split('-').map(Number);
+  const today = new Date(cy,cm-1,cd);
+  const weekAgo = new Date(today); weekAgo.setDate(today.getDate()-6);
+  const monthStart = new Date(cy,cm-1,1);
+  return tickets.filter(t => {
+    if (!t.date || !t.month) return tktDashPeriod==='all';
+    const M={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const parts = (t.date||'').split('-');
+    const ym = (t.month||'').match(/'(\d{2})$/);
+    if (!parts[1]||!ym) return tktDashPeriod==='all';
+    const d = new Date(2000+parseInt(ym[1]), M[parts[1]]||0, parseInt(parts[0]));
+    if (tktDashPeriod==='today')  return d.getTime()===today.getTime();
+    if (tktDashPeriod==='week')   return d>=weekAgo;
+    if (tktDashPeriod==='month')  return d>=monthStart;
+    return true;
+  });
+}
+
+function renderAdminDashboard() {
+  if (!allAdminTickets.length) return;
+  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  const agColors = ['#F4891F','#21AAE0','#2DDC96','#9B59B6','#FBC84B','#ED666B','#36AFB4'];
+
+  // COUNTUNIQUE
+  const seen = new Set();
+  const filtered = tktFilterByPeriod(allAdminTickets).filter(t=>{
+    if(!t.ticketId||seen.has(t.ticketId)) return false;
+    seen.add(t.ticketId); return true;
+  });
+  const total = filtered.length;
+
+  // KPI cards
+  const byCh = {};
+  filtered.forEach(t=>{ const c=t.channel||'?'; byCh[c]=(byCh[c]||0)+1; });
+  const kpiEl = document.getElementById('tkt-kpi-row');
+  if (kpiEl) {
+    const pct = n => total ? Math.round(n/total*100)+'%' : '0%';
+    kpiEl.innerHTML = `
+      <div class="tkt-kpi-card" style="--kc:#072B40">
+        <div class="tkt-kpi-lbl">Total Tickets</div>
+        <div class="tkt-kpi-val">${total.toLocaleString()}</div>
+        <div class="tkt-kpi-sub">Unique ticket IDs</div>
+      </div>
+      <div class="tkt-kpi-card" style="--kc:#21AAE0">
+        <div class="tkt-kpi-lbl">Email</div>
+        <div class="tkt-kpi-val" style="color:#21AAE0">${(byCh.Email||0).toLocaleString()}</div>
+        <div class="tkt-kpi-sub">${pct(byCh.Email||0)} of total</div>
+      </div>
+      <div class="tkt-kpi-card" style="--kc:#F4891F">
+        <div class="tkt-kpi-lbl">Phone</div>
+        <div class="tkt-kpi-val" style="color:#F4891F">${(byCh.Phone||0).toLocaleString()}</div>
+        <div class="tkt-kpi-sub">${pct(byCh.Phone||0)} of total</div>
+      </div>
+      <div class="tkt-kpi-card" style="--kc:#2DDC96">
+        <div class="tkt-kpi-lbl">Chat</div>
+        <div class="tkt-kpi-val" style="color:#2DDC96">${(byCh.Chat||0).toLocaleString()}</div>
+        <div class="tkt-kpi-sub">${pct(byCh.Chat||0)} of total</div>
+      </div>
+      <div class="tkt-kpi-card" style="--kc:#9B59B6">
+        <div class="tkt-kpi-lbl">Web</div>
+        <div class="tkt-kpi-val" style="color:#9B59B6">${(byCh.Web||0).toLocaleString()}</div>
+        <div class="tkt-kpi-sub">${pct(byCh.Web||0)} of total</div>
+      </div>
+      <div class="tkt-kpi-card" style="--kc:#ED666B">
+        <div class="tkt-kpi-lbl">Duplicates</div>
+        <div class="tkt-kpi-val" style="color:#ED666B">${filtered.filter(t=>t.notes==='DUPLICATE').length}</div>
+        <div class="tkt-kpi-sub">Flagged entries</div>
+      </div>`;
+  }
+
+  // Agent leaderboard
+  const byAgent = {};
+  filtered.forEach(t=>{ const a=t.agentName||'?'; byAgent[a]=(byAgent[a]||0)+1; });
+  const topAgents = Object.entries(byAgent).sort((a,b)=>b[1]-a[1]);
+  const maxA = topAgents[0]?.[1] || 1;
+  const boardEl = document.getElementById('tkt-agent-board');
+  if (boardEl) {
+    boardEl.innerHTML = topAgents.map(([name,n],i) => {
+      const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+      const bg = agColors[i%agColors.length];
+      return `<div class="tkt-lb-row">
+        <div class="tkt-lb-rank${i<3?' top':''}">${i+1}</div>
+        <div class="tkt-lb-av" style="background:${bg}22;color:${bg}">${initials}</div>
+        <div class="tkt-lb-name" title="${name}">${name}</div>
+        <div class="tkt-lb-bar-wrap"><div class="tkt-lb-bar" style="width:${Math.round(n/maxA*100)}%;background:${bg}"></div></div>
+        <div class="tkt-lb-count">${n}</div>
+      </div>`;
+    }).join('') || '<div style="padding:20px;text-align:center;color:#9BAFC0;font-size:13px;">No data</div>';
+  }
+
+  // Type breakdown
+  const byType = {};
+  filtered.forEach(t=>{ const tp=(t.ticketType||'?').replace(' Ticket','').replace('Auto-Generated/Spam','Spam'); byType[tp]=(byType[tp]||0)+1; });
+  const topTypes = Object.entries(byType).sort((a,b)=>b[1]-a[1]);
+  const maxT = topTypes[0]?.[1] || 1;
+  const typeEl = document.getElementById('tkt-type-board');
+  if (typeEl) {
+    typeEl.innerHTML = topTypes.map(([tp,n]) =>
+      `<div class="tkt-type-row">
+        <div class="tkt-type-lbl">${tp}</div>
+        <div class="tkt-type-track"><div class="tkt-type-fill" style="width:${Math.round(n/maxT*100)}%"></div></div>
+        <div class="tkt-type-n">${n}</div>
+        <div class="tkt-type-pct">${Math.round(n/total*100)}%</div>
+      </div>`
+    ).join('') || '<div style="color:#9BAFC0;font-size:13px;">No data</div>';
+  }
+
+  // Update last refresh time
+  const refEl = document.getElementById('tkt-last-refresh');
+  if (refEl) refEl.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',timeZone:'America/Chicago'})+' CST';
+}
+
 async function loadAdminTickets() {
   const list = document.getElementById('tkt-admin-list');
   if (list) list.innerHTML = '<div style="text-align:center;padding:40px;color:#9BAFC0;display:flex;align-items:center;justify-content:center;gap:10px;"><div class="adit-spinner" style="width:20px;height:20px;border-width:2px;"></div> Loading…</div>';
@@ -12582,7 +12796,7 @@ async function loadAdminTickets() {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     // Normalise canonical names
-    allAdminTickets = (data.data || []).reverse().map(t => ({
+    allAdminTickets = (data.data || []).reverse().map(t => ({ // newest first
       ...t,
       agentName: tktCanonical(t.agentName),
       _rawName:  t.agentName,
@@ -12594,6 +12808,10 @@ async function loadAdminTickets() {
     if (uel) uel.textContent = uniqueIds.toLocaleString() + ' unique';
     populateTicketFilters();
     applyTicketFilters();
+    renderAdminDashboard();
+    // Auto-refresh every 5 min
+    clearInterval(_tktAutoRefresh);
+    _tktAutoRefresh = setInterval(loadAdminTickets, 5 * 60 * 1000);
   } catch(e) {
     if (list) list.innerHTML = `<div style="text-align:center;padding:40px;color:#ED666B;">Error: ${e.message}</div>`;
   }
@@ -14335,7 +14553,7 @@ function switchTab(tab,el){
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
-  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); }
+  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); }
   // Remember the active tab so refresh restores it
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }
