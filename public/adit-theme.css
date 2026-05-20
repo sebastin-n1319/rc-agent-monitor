@@ -5495,3 +5495,14 @@ html.dark-mode .role-row:hover { background: #112F46 !important; }
 html.dark-mode .role-name-label { color: #E8F4FC !important; }
 html.dark-mode .role-email  { color: #4A6F88 !important; }
 html.dark-mode .role-shell input[type=text], html.dark-mode .role-shell select { background: rgba(255,255,255,.07) !important; color: #E8F4FC !important; }
+
+/* ── AI Writer v2 spinner ── */
+.awv2-spinner {
+  width:16px; height:16px;
+  border:2px solid rgba(255,255,255,.3);
+  border-top-color:#FFF;
+  border-radius:50%;
+  animation:spin .6s linear infinite;
+  display:inline-block;
+  flex-shrink:0;
+}

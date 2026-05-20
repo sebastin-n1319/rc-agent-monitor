@@ -1367,39 +1367,38 @@ app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res
 });
 
 // ── AI Writing Assistant ─────────────────────────────────────────────────────
+// ── AI Writer — agent-mode-aware system prompts ──────────────────────────────
+const AI_SYSTEM_PROMPTS = {
+  // Email/ticket agents
+  email_reply: `You are an expert CS email writer for Adit, a dental practice management software company. Rewrite the agent's draft into a polished, professional email reply to a dental practice client. Fix all grammar, be empathetic, clear, and solution-focused. Sign off warmly. Output ONLY the email body — no subject line, no explanation.`,
+  email_followup: `You are an expert CS writer for Adit dental software. Write a professional follow-up email based on the agent's notes. Be warm, clear, and proactive. Remind the client of the next steps. Output ONLY the email body.`,
+  ticket_note: `You are a CS documentation writer for Adit dental software. Turn the agent's rough notes into a clean, structured internal ticket note. Use bullet points for steps taken. Be factual and concise. Output ONLY the formatted note.`,
+  ticket_resolution: `You are a CS writer for Adit dental software. Write a professional ticket resolution message to the client. Summarise what was resolved, confirm the fix, and invite them to reach out if needed. Be warm and clear. Output ONLY the message.`,
+
+  // Call agents
+  call_summary: `You are a CS call documentation specialist for Adit dental software. Convert the agent's call notes into a clean, structured call summary for the ticket. Format: What the client called about, what was done, next steps (if any). Be concise and factual. Output ONLY the summary.`,
+  call_followup: `You are a CS writer for Adit dental software. Write a professional post-call follow-up email based on the agent's call notes. Reference what was discussed, confirm any action items, and thank the client. Output ONLY the email body.`,
+  voicemail: `You are a CS writer for Adit dental software. Write a friendly, professional voicemail script based on the agent's notes. Keep it under 30 seconds to read. Be clear about who is calling, why, and what the client should do next. Output ONLY the script.`,
+
+  // Chat agents
+  chat_reply: `You are a CS chat agent writer for Adit dental software. Rewrite the agent's draft into a friendly, clear, concise chat message. Keep it conversational but professional — short paragraphs, easy to scan. No formal greetings needed. Output ONLY the chat message.`,
+  chat_summary: `You are a CS documentation writer for Adit dental software. Summarise this chat conversation into a clean ticket note. Cover: what the client needed, what was resolved, any pending actions. Be brief and factual. Output ONLY the summary.`,
+  chat_escalation: `You are a CS writer for Adit dental software. Write a professional escalation note based on the agent's chat notes. Explain the issue clearly so the next team can understand without reading the full chat. Include client name/practice if mentioned. Output ONLY the escalation note.`,
+
+  // General
+  general: `You are a professional writing assistant for the Adit CS team (dental practice management software). Fix grammar, improve clarity, and keep the original meaning. Be natural and professional. Output ONLY the improved text.`,
+};
+
 app.post('/api/write-assist', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
-    const { text, style = 'email', tone = 'professional' } = req.body || {};
+    const { text, mode = 'general', agentType = 'email' } = req.body || {};
     if (!text || !text.trim()) return res.status(400).json({ success: false, error: 'No text provided' });
-    if (text.length > 4000) return res.status(400).json({ success: false, error: 'Text too long (max 4000 chars)' });
+    if (text.length > 5000) return res.status(400).json({ success: false, error: 'Text too long (max 5000 chars)' });
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) return res.status(503).json({ success: false, error: 'AI service not configured. Please contact your admin.' });
 
-    const styleGuides = {
-      email:    'a professional business email',
-      customer: 'a clear, empathetic customer-facing response',
-      docs:     'formal technical documentation',
-      slack:    'a concise, friendly Slack/team message',
-      general:  'clear, professional written communication'
-    };
-    const toneGuides = {
-      professional: 'professional and polished',
-      friendly:     'warm, friendly and approachable',
-      concise:      'brief and to the point',
-      formal:       'formal and corporate'
-    };
-
-    const systemPrompt = `You are a professional writing assistant for a customer support team at Adit, a dental software company. Your job is to improve agent-written text to be clear, correct, and well-structured.
-
-Always:
-- Fix grammar, spelling, and punctuation
-- Improve sentence structure and flow
-- Keep the original meaning intact
-- Be natural — not overly robotic or excessively formal
-- Output ONLY the improved text, no explanations or prefixes`;
-
-    const userPrompt = `Please rewrite the following as ${styleGuides[style] || styleGuides.general}. Use a ${toneGuides[tone] || toneGuides.professional} tone.\n\nOriginal text:\n${text.trim()}`;
+    const systemPrompt = AI_SYSTEM_PROMPTS[mode] || AI_SYSTEM_PROMPTS.general;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -1408,10 +1407,10 @@ Always:
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'user', content: text.trim() }
         ],
-        max_tokens: 1000,
-        temperature: 0.4
+        max_tokens: 1200,
+        temperature: 0.35
       })
     });
 
@@ -1424,7 +1423,7 @@ Always:
     const improved = data.choices?.[0]?.message?.content?.trim() || '';
     if (!improved) throw new Error('No response from AI');
 
-    insertAuditLog(req.session?.email || 'unknown', 'write_assist', style, `tone:${tone},chars:${text.length}`).catch(() => {});
+    insertAuditLog(req.session?.email || 'unknown', 'write_assist', mode, `agent:${agentType},chars:${text.length}`).catch(() => {});
     res.json({ success: true, result: improved });
   } catch (e) {
     console.error('❌ write-assist error:', e.message);

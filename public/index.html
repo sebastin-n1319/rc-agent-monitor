@@ -9757,10 +9757,22 @@ tbody tr:hover td{
           <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next →</button>
           <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
           <span class="break-history-chip" id="break-admin-history-chip">Today</span>
-          <button class="break-toolbar-btn" onclick="downloadBreakReport()">⬇ Report</button>
-          <button class="break-toolbar-btn" onclick="exportBreakCSV()" title="Export as CSV">⬇ CSV</button>
-          <button class="break-toolbar-btn" onclick="toggleBreakTimeline()" id="timeline-toggle-btn" title="Toggle timeline view">📊 Timeline</button>
-          <button class="break-toolbar-btn primary" onclick="openBreakReportModal()" title="Send break report">📧 Send Report</button>
+          <button class="break-toolbar-btn" onclick="downloadBreakReport()" title="Download PDF report" style="display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M8 1v9M5 7l3 3 3-3"/><path d="M2 11v2a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-2"/></svg>
+            Report
+          </button>
+          <button class="break-toolbar-btn" onclick="exportBreakCSV()" title="Export as CSV" style="display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 8h6M5 5h6M5 11h4"/></svg>
+            CSV
+          </button>
+          <button class="break-toolbar-btn" onclick="toggleBreakTimeline()" id="timeline-toggle-btn" title="Toggle timeline view" style="display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M1 12l4-4 3 3 4-5 3 2"/></svg>
+            Timeline
+          </button>
+          <button class="break-toolbar-btn primary" onclick="openBreakReportModal()" title="Send break report" style="display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M14 2L7 9M14 2L9 14l-2-5-5-2 12-5z"/></svg>
+            Send Report
+          </button>
         </div>
       </div>
     </div>
@@ -10482,88 +10494,178 @@ tbody tr:hover td{
 
   <!-- ── AI Writer Section ───────────────────────────────────────────────── -->
   <div class="agent-shell-page" id="agent-section-writer">
-    
+  <style id="aw-v2-styles">
+    .awv2-page { max-width:1020px;margin:0 auto;display:flex;flex-direction:column;gap:14px; }
+    /* Agent type tabs */
+    .awv2-types { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
+    .awv2-type-btn {
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+      padding:14px 10px;border-radius:12px;border:1.5px solid rgb(222,225,230);
+      background:#FFFFFF;cursor:pointer;font-family:'Poppins',sans-serif;
+      transition:all .18s;text-align:center;
+    }
+    .awv2-type-btn:hover { border-color:#C8D0DC;background:#F7F8F8;transform:translateY(-1px); }
+    .awv2-type-btn.active { border-color:var(--aw-color,#F4891F);background:color-mix(in srgb,var(--aw-color,#F4891F) 8%,transparent); }
+    .awv2-type-btn svg { width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round; }
+    .awv2-type-icon { width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .18s; }
+    .awv2-type-label { font-size:12px;font-weight:700;color:#072B40; }
+    .awv2-type-sub   { font-size:10px;color:#9BAFC0;margin-top:-4px; }
+    /* Mode selector */
+    .awv2-modes { display:flex;gap:7px;flex-wrap:wrap; }
+    .awv2-mode-btn {
+      padding:7px 14px;border-radius:8px;border:1px solid rgb(222,225,230);
+      background:#F7F8F8;font-size:12px;font-weight:600;color:#6B849A;
+      cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;
+    }
+    .awv2-mode-btn:hover  { border-color:#C8D0DC;color:#072B40;background:#F0F2F5; }
+    .awv2-mode-btn.active { background:var(--aw-color,#F4891F);border-color:var(--aw-color,#F4891F);color:#FFFFFF; }
+    /* Quick templates */
+    .awv2-templates { display:flex;gap:6px;flex-wrap:wrap; }
+    .awv2-tpl {
+      padding:5px 12px;border-radius:50px;border:1px solid rgba(244,137,31,.25);
+      background:rgba(244,137,31,.06);font-size:11px;font-weight:600;color:#F4891F;
+      cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;
+    }
+    .awv2-tpl:hover { background:rgba(244,137,31,.15);border-color:rgba(244,137,31,.4); }
+    /* Main grid */
+    .awv2-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+    @media(max-width:700px){ .awv2-grid{grid-template-columns:1fr;} }
+    .awv2-panel { display:flex;flex-direction:column;gap:8px; }
+    .awv2-panel-hdr { display:flex;align-items:center;justify-content:space-between; }
+    .awv2-panel-label { font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;display:flex;align-items:center;gap:6px; }
+    .awv2-textarea {
+      width:100%;min-height:220px;background:rgb(215,241,247);border:none;
+      border-radius:10px;color:#072B40;font-size:13px;line-height:1.65;
+      padding:14px;resize:vertical;outline:none;font-family:'Poppins',sans-serif;
+      box-sizing:border-box;transition:box-shadow .2s;
+    }
+    .awv2-textarea:focus { box-shadow:0 0 0 3px rgba(244,137,31,.18); }
+    .awv2-output {
+      width:100%;min-height:220px;background:#F7F8F8;border:1.5px solid rgb(222,225,230);
+      border-radius:10px;color:#072B40;font-size:13px;line-height:1.7;
+      padding:14px;white-space:pre-wrap;word-break:break-word;box-sizing:border-box;
+      position:relative;overflow-y:auto;
+    }
+    .awv2-output.empty { color:#9BAFC0;font-style:italic; }
+    .awv2-output.has-result { background:#FFFFFF;border-color:rgba(244,137,31,.25);box-shadow:rgba(244,137,31,.08) 0 0 0 3px; }
+    /* Submit row */
+    .awv2-actions { display:flex;align-items:center;gap:10px;flex-wrap:wrap; }
+    .awv2-submit {
+      display:flex;align-items:center;gap:8px;padding:12px 24px;border:none;
+      border-radius:10px;background:linear-gradient(135deg,var(--aw-color,#F4891F),color-mix(in srgb,var(--aw-color,#F4891F) 80%,#000));
+      color:#FFFFFF;font-size:14px;font-weight:700;font-family:'Poppins',sans-serif;
+      cursor:pointer;box-shadow:color-mix(in srgb,var(--aw-color,#F4891F) 40%,transparent) 0 4px 16px;
+      transition:all .2s;
+    }
+    .awv2-submit:hover { transform:translateY(-2px);box-shadow:color-mix(in srgb,var(--aw-color,#F4891F) 55%,transparent) 0 6px 22px; }
+    .awv2-submit:disabled { opacity:.5;cursor:not-allowed;transform:none; }
+    .awv2-btn-ghost { padding:10px 16px;border-radius:9px;border:1px solid rgb(222,225,230);background:#F7F8F8;color:#3A5068;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px; }
+    .awv2-btn-ghost:hover { background:#F0F2F5;border-color:#C8D0DC;color:#072B40; }
+    .awv2-char { font-size:11px;color:#9BAFC0;margin-left:auto; }
+    .awv2-char.over { color:#ED666B; }
+    /* Spinner */
+    .awv2-spinner { width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#FFF;border-radius:50%;animation:spin .6s linear infinite; }
+  </style>
 
-    <div class="aw-wrap">
+    <div class="awv2-page">
+
       <!-- Header -->
-      <div class="aw-header">
-        <div class="aw-header-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:rgba(99,102,241,.35) 0 4px 14px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><path d="M9 14h.01M15 14h.01"/></svg>
         </div>
         <div>
-          <div class="aw-title">AI Writing Assistant</div>
-          <div class="aw-sub">Paste your draft — AI will rephrase, structure, and polish it for you</div>
+          <div style="font-size:20px;font-weight:800;color:#072B40;letter-spacing:-.01em;">AI Writing Assistant</div>
+          <div style="font-size:12px;color:#6B849A;margin-top:2px;">Specialised for Call, Email &amp; Chat agents — smart templates, context-aware AI</div>
         </div>
       </div>
 
-      <!-- Controls -->
-      <div class="aw-controls">
-        <div class="aw-control-group">
-          <div class="aw-control-label">Writing Style</div>
-          <select class="aw-select" id="aw-style">
-            <option value="email">📧 Professional Email</option>
-            <option value="customer">💬 Customer Response</option>
-            <option value="docs">📄 Documentation</option>
-            <option value="slack">💡 Slack / Team Message</option>
-            <option value="general">✏️ General</option>
-          </select>
-        </div>
-        <div class="aw-control-group">
-          <div class="aw-control-label">Tone</div>
-          <select class="aw-select" id="aw-tone">
-            <option value="professional">Professional</option>
-            <option value="friendly">Friendly</option>
-            <option value="concise">Concise</option>
-            <option value="formal">Formal</option>
-          </select>
+      <!-- Step 1: Pick your agent type -->
+      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">Step 1 — I am a...</div>
+        <div class="awv2-types">
+          <button class="awv2-type-btn active" data-type="email" onclick="awSetType('email',this)" style="--aw-color:#21AAE0">
+            <div class="awv2-type-icon" style="background:rgba(33,170,224,.12);color:#21AAE0;">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="awv2-type-label">Email / Ticket</div>
+            <div class="awv2-type-sub">Support emails, ticket replies</div>
+          </button>
+          <button class="awv2-type-btn" data-type="call" onclick="awSetType('call',this)" style="--aw-color:#2DDC96">
+            <div class="awv2-type-icon" style="background:rgba(45,220,150,.12);color:#2DDC96;">
+              <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div class="awv2-type-label">Call Agent</div>
+            <div class="awv2-type-sub">Call notes, follow-ups, scripts</div>
+          </button>
+          <button class="awv2-type-btn" data-type="chat" onclick="awSetType('chat',this)" style="--aw-color:#9B59B6">
+            <div class="awv2-type-icon" style="background:rgba(155,89,182,.12);color:#9B59B6;">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div class="awv2-type-label">Chat Agent</div>
+            <div class="awv2-type-sub">Chat replies, summaries</div>
+          </button>
+          <button class="awv2-type-btn" data-type="general" onclick="awSetType('general',this)" style="--aw-color:#F4891F">
+            <div class="awv2-type-icon" style="background:rgba(244,137,31,.12);color:#F4891F;">
+              <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </div>
+            <div class="awv2-type-label">General</div>
+            <div class="awv2-type-sub">Any text improvement</div>
+          </button>
         </div>
       </div>
 
-      <!-- Input / Output Panels -->
-      <div class="aw-panels">
-        <div class="aw-panel">
-          <div class="aw-panel-header">
-            <span class="aw-panel-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Your Draft
-            </span>
-            <button class="aw-btn aw-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="document.getElementById('aw-input').value='';updateAwCharCount()">Clear</button>
-          </div>
-          <textarea class="aw-textarea" id="aw-input" placeholder="Paste your email, comment, or text here...&#10;&#10;Example: hey client the dental software thing is not working fine, i tried but still problem is there please help" oninput="updateAwCharCount()"></textarea>
+      <!-- Step 2: Pick the task -->
+      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">Step 2 — What do you need?</div>
+        <div class="awv2-modes" id="awv2-modes"></div>
+        <!-- Quick templates -->
+        <div style="margin-top:12px;border-top:1px solid rgb(222,225,230);padding-top:12px;">
+          <div style="font-size:10px;font-weight:700;color:#9BAFC0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Quick Templates — click to load</div>
+          <div class="awv2-templates" id="awv2-templates"></div>
         </div>
-        <div class="aw-panel">
-          <div class="aw-panel-header">
-            <span class="aw-panel-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.5" style="width:13px;height:13px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-              <span style="color:#818cf8;">AI Improved Version</span>
-            </span>
-            <button class="aw-btn aw-btn-copy" id="aw-copy-btn" onclick="copyAwOutput()" style="display:none">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:11px;height:11px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              Copy
-            </button>
+      </div>
+
+      <!-- Step 3: Input / Output -->
+      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+        <div class="awv2-grid">
+          <div class="awv2-panel">
+            <div class="awv2-panel-hdr">
+              <span class="awv2-panel-label">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M13.5 2.5a2.121 2.121 0 0 1 0 3L5 14l-3.5 1 1-3.5z"/></svg>
+                Your Draft / Notes
+              </span>
+              <button class="awv2-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="awClear()">Clear</button>
+            </div>
+            <textarea class="awv2-textarea" id="aw-input" id="awv2-input" placeholder="Paste your rough draft, call notes, or chat message here..." oninput="awUpdateCount()"></textarea>
           </div>
-          <div class="aw-output empty" id="aw-output">
-            <span class="aw-output-placeholder">Your improved text will appear here...</span>
+          <div class="awv2-panel">
+            <div class="awv2-panel-hdr">
+              <span class="awv2-panel-label" style="color:#6366f1;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
+                AI Result
+              </span>
+              <button class="awv2-btn-ghost" id="aw-copy-btn" onclick="copyAwOutput()" style="display:none;padding:4px 10px;font-size:11px;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg>
+                Copy
+              </button>
+            </div>
+            <div class="awv2-output empty" id="aw-output">Your AI-improved text will appear here...</div>
           </div>
         </div>
       </div>
 
       <!-- Actions -->
-      <div class="aw-actions">
-        <button class="aw-btn aw-btn-primary" id="aw-submit-btn" onclick="sendToAIWriter()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          Improve My Writing
+      <div class="awv2-actions">
+        <button class="awv2-submit" id="aw-submit-btn" onclick="sendToAIWriter()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
+          Generate with AI
         </button>
-        <button class="aw-btn aw-btn-ghost" onclick="useAwResult()" id="aw-use-btn" style="display:none">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          Use as New Input
+        <button class="awv2-btn-ghost" onclick="useAwResult()" id="aw-use-btn" style="display:none;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><polyline points="10 12 14 8 10 4"/><polyline points="6 4 2 8 6 12"/></svg>
+          Refine Again
         </button>
-        <span class="aw-char-count" id="aw-char-count">0 / 4000</span>
-      </div>
-
-      <!-- Tip -->
-      <div class="aw-tip">
-        <strong>💡 Tips:</strong> For best results, include the full context of what you're writing. The AI keeps your original meaning — it only improves clarity, grammar, and structure. Try different styles for emails vs. customer tickets vs. internal notes.
+        <span class="awv2-char" id="aw-char-count">0 / 5000</span>
       </div>
     </div>
   </div>
@@ -11478,6 +11580,7 @@ function switchAgentSection(section,el){
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
   if(section==='breakbot')loadBreakTracker();
   if(section==='tickets'){ setTimeout(initTlTooltips,80); setTimeout(tlInitDate,50); loadMyTicketsFromSheet(); }
+  if(section==='writer')setTimeout(initAIWriter,50);
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -11503,93 +11606,204 @@ function initEmbeddedFrames(){
   });
 }
 
-// ── AI Writing Assistant ─────────────────────────────────────────────────────
-function updateAwCharCount(){
-  const inp=document.getElementById('aw-input');
-  const counter=document.getElementById('aw-char-count');
-  if(!inp||!counter)return;
-  const len=inp.value.length;
-  counter.textContent=len+' / 4000';
-  counter.classList.toggle('over',len>4000);
+// ── AI Writing Assistant v2 — Agent-mode aware ───────────────────────────────
+const AW_CONFIG = {
+  email: {
+    color: '#21AAE0',
+    modes: [
+      { id:'email_reply',    label:'Email Reply',      icon:'↩' },
+      { id:'email_followup', label:'Follow-up Email',  icon:'→' },
+      { id:'ticket_note',    label:'Ticket Note',      icon:'📋' },
+      { id:'ticket_resolution', label:'Resolution',   icon:'✓'  },
+    ],
+    templates: [
+      { label:'Apology for delay',    text:'sorry for the delay in getting back to you. we were looking into the issue and wanted to make sure we had the right answer before responding.' },
+      { label:'Issue resolved',       text:'the issue has been fixed. i made the changes on my end and it should be working now. let me know if you need anything else.' },
+      { label:'Needs more info',      text:'i need a bit more information to help you with this. can you tell me what exactly is happening and when it started?' },
+      { label:'Escalating ticket',    text:'this needs to go to the next level. the client is having an issue with X and i have tried Y but it is not working.' },
+    ]
+  },
+  call: {
+    color: '#2DDC96',
+    modes: [
+      { id:'call_summary',   label:'Call Summary',     icon:'📝' },
+      { id:'call_followup',  label:'Post-Call Email',  icon:'📧' },
+      { id:'voicemail',      label:'Voicemail Script', icon:'🎙' },
+    ],
+    templates: [
+      { label:'Called about billing',    text:'called about billing issue. client is being charged twice for same month. checked account and confirmed duplicate charge. need to refund one payment.' },
+      { label:'Tech support call',       text:'called about software not loading. tried clearing cache and restarting. did not fix. escalated to tier 2. client will be contacted within 24 hours.' },
+      { label:'Onboarding check-in',     text:'called to check in on onboarding progress. client has completed setup but struggling with insurance verification feature. scheduled training for next week.' },
+      { label:'Voicemail - callback',    text:'hi this is [name] from adit support calling for [client]. please call us back at your convenience regarding [issue].' },
+    ]
+  },
+  chat: {
+    color: '#9B59B6',
+    modes: [
+      { id:'chat_reply',      label:'Chat Reply',      icon:'💬' },
+      { id:'chat_summary',    label:'Chat Summary',    icon:'📄' },
+      { id:'chat_escalation', label:'Escalation Note', icon:'⚠' },
+    ],
+    templates: [
+      { label:'Quick fix reply',     text:'i can help with that. go to settings then billing and click on update. let me know if you see the option.' },
+      { label:'Can\'t solve in chat', text:'this is a bit complex for chat. let me create a ticket and our team will follow up within a few hours.' },
+      { label:'Asking for screenshot', text:'can you take a screenshot of what you are seeing and share it here? that will help me understand better.' },
+      { label:'Warm handoff',        text:'i am going to connect you with a specialist who can help with this. one moment please.' },
+    ]
+  },
+  general: {
+    color: '#F4891F',
+    modes: [
+      { id:'general', label:'Improve Writing', icon:'✏' },
+    ],
+    templates: [
+      { label:'Internal update',    text:'just wanted to give a quick update on the situation.' },
+      { label:'Team message',       text:'hey team, quick heads up about something that came up today.' },
+    ]
+  }
+};
+
+let awCurrentType = 'email';
+let awCurrentMode = 'email_reply';
+
+function awSetType(type, btn) {
+  awCurrentType = type;
+  const cfg = AW_CONFIG[type];
+  // Update color on page
+  document.querySelectorAll('.awv2-type-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+    b.style.setProperty('--aw-color', AW_CONFIG[b.dataset.type]?.color || '#F4891F');
+  });
+  document.querySelectorAll('.awv2-submit').forEach(b => b.style.setProperty('--aw-color', cfg.color));
+  // Render modes
+  const modesEl = document.getElementById('awv2-modes');
+  if (modesEl) {
+    awCurrentMode = cfg.modes[0].id;
+    modesEl.innerHTML = cfg.modes.map(m =>
+      `<button class="awv2-mode-btn${m.id===awCurrentMode?' active':''}" style="--aw-color:${cfg.color}" onclick="awSetMode('${m.id}',this)">${m.label}</button>`
+    ).join('');
+  }
+  // Render templates
+  const tplEl = document.getElementById('awv2-templates');
+  if (tplEl) {
+    tplEl.innerHTML = cfg.templates.map(t =>
+      `<button class="awv2-tpl" onclick="awLoadTemplate(${JSON.stringify(t.text)})">${t.label}</button>`
+    ).join('');
+  }
+  // Update submit button color
+  const submitBtn = document.getElementById('aw-submit-btn');
+  if (submitBtn) submitBtn.style.setProperty('--aw-color', cfg.color);
+  // Update placeholder
+  const inp = document.getElementById('aw-input');
+  const placeholders = {
+    email: 'Paste your rough email draft here...\n\nExample: hi the invoice is wrong we got charged twice please fix this',
+    call:  'Paste your call notes here...\n\nExample: client called about integration not syncing called 3 times this week tried restart did not help',
+    chat:  'Paste your chat message here...\n\nExample: hi yes i can help with that go to settings and click on',
+    general: 'Paste any text here to improve...',
+  };
+  if (inp) inp.placeholder = placeholders[type] || placeholders.general;
 }
 
-async function sendToAIWriter(){
-  const inp=document.getElementById('aw-input');
-  const out=document.getElementById('aw-output');
-  const btn=document.getElementById('aw-submit-btn');
-  const copyBtn=document.getElementById('aw-copy-btn');
-  const useBtn=document.getElementById('aw-use-btn');
-  if(!inp||!out||!btn)return;
+function awSetMode(mode, btn) {
+  awCurrentMode = mode;
+  document.querySelectorAll('.awv2-mode-btn').forEach(b => b.classList.toggle('active', b===btn));
+}
 
-  const text=inp.value.trim();
-  if(!text){showToast('Please paste some text first.','warning');inp.focus();return;}
-  if(text.length>4000){showToast('Text is too long. Max 4000 characters.','error');return;}
+function awLoadTemplate(text) {
+  const inp = document.getElementById('aw-input');
+  if (inp) { inp.value = text; awUpdateCount(); inp.focus(); }
+}
 
-  const style=document.getElementById('aw-style')?.value||'email';
-  const tone=document.getElementById('aw-tone')?.value||'professional';
+function awUpdateCount() {
+  const inp = document.getElementById('aw-input');
+  const counter = document.getElementById('aw-char-count');
+  if (!inp || !counter) return;
+  const len = inp.value.length;
+  counter.textContent = len + ' / 5000';
+  counter.classList.toggle('over', len > 5000);
+}
+function updateAwCharCount() { awUpdateCount(); } // backward compat
 
-  // Loading state
-  btn.disabled=true;
-  btn.innerHTML='<div class="aw-spinner"></div> Improving...';
-  out.classList.remove('empty');
-  out.innerHTML='<span style="color:var(--t3);font-style:italic;">✨ AI is polishing your text...</span>';
-  if(copyBtn)copyBtn.style.display='none';
-  if(useBtn)useBtn.style.display='none';
+function awClear() {
+  const inp = document.getElementById('aw-input');
+  if (inp) { inp.value = ''; awUpdateCount(); }
+  const out = document.getElementById('aw-output');
+  if (out) { out.className = 'awv2-output empty'; out.textContent = 'Your AI-improved text will appear here...'; }
+  const copyBtn = document.getElementById('aw-copy-btn');
+  const useBtn  = document.getElementById('aw-use-btn');
+  if (copyBtn) copyBtn.style.display = 'none';
+  if (useBtn)  useBtn.style.display  = 'none';
+}
 
-  try{
-    const res=await fetch('/api/write-assist',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({text,style,tone})
+async function sendToAIWriter() {
+  const inp = document.getElementById('aw-input');
+  const out = document.getElementById('aw-output');
+  const btn = document.getElementById('aw-submit-btn');
+  if (!inp || !out || !btn) return;
+
+  const text = inp.value.trim();
+  if (!text) { showToast('Please paste some text first.', 'warning'); inp.focus(); return; }
+  if (text.length > 5000) { showToast('Text too long — max 5000 characters.', 'error'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="awv2-spinner"></div> Generating...';
+  out.className = 'awv2-output';
+  out.innerHTML = '<span style="color:#9BAFC0;font-style:italic;">✨ AI is working on it...</span>';
+  document.getElementById('aw-copy-btn').style.display = 'none';
+  document.getElementById('aw-use-btn').style.display  = 'none';
+
+  try {
+    const res  = await fetch('/api/write-assist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, mode: awCurrentMode, agentType: awCurrentType })
     });
-    const data=await res.json();
-    if(!data.success)throw new Error(data.error||'AI request failed');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'AI request failed');
 
-    out.classList.remove('empty');
-    out.textContent=data.result;
-    if(copyBtn)copyBtn.style.display='inline-flex';
-    if(useBtn)useBtn.style.display='inline-flex';
-    showToast('Text improved successfully!','success');
-  }catch(e){
-    out.classList.add('empty');
-    const errEl=document.createElement('span');
-    errEl.style.color='#f87171';
-    errEl.textContent='⚠️ '+e.message;
-    out.innerHTML='';
-    out.appendChild(errEl);
-    showToast('AI writer error: '+e.message,'error');
-  }finally{
-    btn.disabled=false;
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Improve My Writing';
+    out.className = 'awv2-output has-result';
+    out.textContent = data.result;
+    document.getElementById('aw-copy-btn').style.display = 'inline-flex';
+    document.getElementById('aw-use-btn').style.display  = 'inline-flex';
+    showToast('Done! Review and copy.', 'success');
+  } catch(e) {
+    out.className = 'awv2-output';
+    out.textContent = '⚠️ ' + e.message;
+    showToast('AI error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    const cfg = AW_CONFIG[awCurrentType] || AW_CONFIG.general;
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg> Generate with AI`;
   }
 }
 
-function copyAwOutput(){
-  const out=document.getElementById('aw-output');
-  const copyBtn=document.getElementById('aw-copy-btn');
-  if(!out||!out.textContent.trim())return;
-  navigator.clipboard.writeText(out.textContent).then(()=>{
-    if(copyBtn){
-      const orig=copyBtn.innerHTML;
-      copyBtn.innerHTML='✓ Copied!';
-      setTimeout(()=>{ copyBtn.innerHTML=orig; },1800);
-    }
-    showToast('Copied to clipboard!','success');
-  }).catch(()=>showToast('Copy failed — please select and copy manually.','error'));
+function copyAwOutput() {
+  const out = document.getElementById('aw-output');
+  const btn = document.getElementById('aw-copy-btn');
+  if (!out || !out.textContent.trim()) return;
+  navigator.clipboard.writeText(out.textContent).then(() => {
+    if (btn) { const o=btn.innerHTML; btn.innerHTML='✓ Copied!'; setTimeout(()=>btn.innerHTML=o,1800); }
+    showToast('Copied to clipboard!', 'success');
+  }).catch(() => showToast('Copy failed — select manually.', 'error'));
 }
 
-function useAwResult(){
-  const inp=document.getElementById('aw-input');
-  const out=document.getElementById('aw-output');
-  if(!inp||!out||!out.textContent.trim())return;
-  inp.value=out.textContent;
-  out.classList.add('empty');
-  out.innerHTML='<span class="aw-output-placeholder">Your improved text will appear here...</span>';
-  document.getElementById('aw-copy-btn').style.display='none';
-  document.getElementById('aw-use-btn').style.display='none';
-  updateAwCharCount();
+function useAwResult() {
+  const inp = document.getElementById('aw-input');
+  const out = document.getElementById('aw-output');
+  if (!inp || !out || !out.textContent.trim()) return;
+  inp.value = out.textContent;
+  awUpdateCount();
+  out.className = 'awv2-output empty';
+  out.textContent = 'Your AI-improved text will appear here...';
+  document.getElementById('aw-copy-btn').style.display = 'none';
+  document.getElementById('aw-use-btn').style.display  = 'none';
   inp.focus();
-  showToast('Moved to input — refine and improve again!','info');
+  showToast('Loaded — refine and generate again!', 'info');
+}
+
+// Initialise AI Writer when tab opens
+function initAIWriter() {
+  awSetType('email', document.querySelector('.awv2-type-btn[data-type="email"]'));
 }
 
 // ── Ticket Logger — Agent UI ──────────────────────────────────────────────
