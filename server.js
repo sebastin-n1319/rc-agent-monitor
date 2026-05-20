@@ -994,20 +994,24 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     const token = await getZohoAccessToken();
     const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
 
-    // Zoho Desk: /tickets/X is NOT by display number, it's by internal ID.
-    // Display number (ticketNumber field) requires fetching recent tickets and filtering.
-    // Agents log tickets they just handled, so it'll be in the last 200.
     let ticket = null;
 
-    // Fetch up to 200 recent tickets in 2 batches and find by ticketNumber
-    for (const from of [0, 100]) {
-      const url = `${ZOHO_API_BASE}/tickets?from=${from}&limit=100&sortBy=createdTime&order=desc`;
-      const r   = await fetch(url, { headers });
+    // Fetch recent tickets and return sample ticket numbers for debugging
+    const r1  = await fetch(`${ZOHO_API_BASE}/tickets?from=0&limit=10`, { headers });
+    const d1  = await r1.json();
+    const sample = (d1.data||[]).map(t => ({ num: t.ticketNumber, id: t.id, status: t.status }));
+
+    // Search across 500 tickets in batches (agents may log tickets from earlier today)
+    for (const from of [0, 100, 200, 300, 400]) {
+      const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100`, { headers });
       if (!r.ok) break;
-      const d   = await r.json();
-      const found = (d.data || []).find(t => String(t.ticketNumber) === rawId);
+      const d = await r.json();
+      if (!(d.data||[]).length) break; // no more tickets
+      const found = d.data.find(t => String(t.ticketNumber) === rawId);
       if (found) { ticket = found; break; }
     }
+
+    if (!ticket) return res.json({ success: true, found: false, searched: 500, sample });
     if (!ticket) return res.json({ success: true, found: false });
 
     // Get contact info
