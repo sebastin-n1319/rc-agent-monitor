@@ -1007,18 +1007,22 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       }
     } catch(e) { /* empty response or parse error — try next */ }
 
-    // Strategy 2: Fetch tickets sorted by ticketNumber desc — most efficient
-    // Zoho ticket numbers aren't sequential across teams, so we go wide (500)
+    // Strategy 2: fetch first batch and return RAW first ticket so we can see field names
     if (!ticket) {
-      for (const from of [0, 100, 200, 300, 400]) {
-        const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100&sortBy=ticketNumber`, { headers });
-        if (!r.ok) break;
-        const d = await r.json();
-        const list = d.data || [];
-        if (!list.length) break;
-        const found = list.find(t => String(t.ticketNumber) === rawId);
-        if (found) { ticket = found; break; }
-        // If all numbers in this batch are far from target, continue searching
+      const r = await fetch(`${ZOHO_API_BASE}/tickets?from=0&limit=5`, { headers });
+      const d = await r.json();
+      const list = d.data || [];
+      // Return the raw first ticket so we can see exactly what fields exist
+      if (list.length) {
+        return res.json({
+          success: true, found: false,
+          debug_first_ticket: list[0],
+          debug_all_keys: Object.keys(list[0]),
+          debug_ticketNumber_field: list[0].ticketNumber,
+          debug_id_field: list[0].id,
+          debug_number_field: list[0].number,
+          debug_ticketId_field: list[0].ticketId,
+        });
       }
     }
 
