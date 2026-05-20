@@ -992,10 +992,11 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     if (!ZOHO_CLIENT_ID) return res.status(503).json({ success: false, error: 'Zoho not configured' });
     const rawId = req.params.id.replace(/^#/, '');
 
-    // Search by ticketNumber filter (within Desk.tickets.ALL scope)
-    const search = await zohoDesk('/tickets', { ticketNumber: rawId, limit: 1 });
-    const ticket = (search.data && search.data[0]) ||
-                   (Array.isArray(search) && search[0]) || null;
+    // Search by ticket number string — Zoho Desk full-text search
+    const search = await zohoDesk('/tickets/search', { searchStr: rawId, limit: 10 });
+    const results = search.data || [];
+    // Find exact ticketNumber match first, then fall back to first result
+    const ticket = results.find(t => String(t.ticketNumber) === rawId) || results[0] || null;
     if (!ticket) return res.json({ success: true, found: false });
 
     // Get contact info
