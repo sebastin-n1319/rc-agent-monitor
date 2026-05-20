@@ -5701,3 +5701,10 @@ html.dark-mode .awv2-textarea { background:rgba(255,255,255,.08); color:#E8F4FC;
 html.dark-mode .awv2-output { background:#091F30; border-color:rgba(255,255,255,.08); color:#E8F4FC; }
 html.dark-mode .awv2-output.has-result { background:#0D2A3E; }
 html.dark-mode #agent-section-writer .awv2-page > div { background:#0D2A3E; border-color:rgba(255,255,255,.08); }
+
+/* ── Page reload indicator bar ── */
+@keyframes shimmerBar {
+  0%   { background-position:   0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+#page-reload-indicator { pointer-events:none; }

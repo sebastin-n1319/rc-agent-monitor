@@ -11045,7 +11045,57 @@ function setupLiveStream(){
   if(liveStream)liveStream.close();
   liveStream=new EventSource(BACKEND+'/api/live-stream');
   liveStream.addEventListener('live-update',()=>scheduleRefresh(120));
-  liveStream.onerror=()=>{};
+  liveStream.onerror=()=>{
+    // Auto-reconnect after 10s if connection drops
+    setTimeout(()=>{ if(currentUser) setupLiveStream(); }, 10000);
+  };
+}
+
+// ── Visibility & focus handling ───────────────────────────────────────────────
+let _lastVisible = Date.now();
+let _refreshOnReturn = false;
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    _lastVisible = Date.now();
+  } else {
+    // User returned — check how long they were away
+    const awayMs = Date.now() - _lastVisible;
+    if (!currentUser) return; // not logged in
+
+    if (awayMs > 60 * 1000) {
+      // Away > 1 min: refresh data silently
+      showPageLoadingState();
+      refresh().then(hidePageLoadingState).catch(hidePageLoadingState);
+    }
+    if (awayMs > 30 * 60 * 1000) {
+      // Away > 30 min: reconnect SSE as well
+      setupLiveStream();
+    }
+    if (awayMs > 12 * 60 * 60 * 1000) {
+      // Away > 12 hours: full session check
+      fetch(BACKEND+'/api/session', { credentials:'include' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if(d && !d.success) doLogout(); })
+        .catch(() => {});
+    }
+  }
+});
+
+// Show/hide a subtle loading overlay while data reloads
+function showPageLoadingState() {
+  let el = document.getElementById('page-reload-indicator');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'page-reload-indicator';
+    el.style.cssText = 'position:fixed;top:48px;left:70px;right:0;height:2px;background:linear-gradient(90deg,#F4891F,#21AAE0,#F4891F);background-size:200%;animation:shimmerBar 1.5s linear infinite;z-index:9999;';
+    document.body.appendChild(el);
+  }
+  el.style.display = 'block';
+}
+function hidePageLoadingState() {
+  const el = document.getElementById('page-reload-indicator');
+  if (el) el.style.display = 'none';
 }
 
 // AUTH — uses google.accounts.oauth2.initTokenClient (modern GIS approach)
@@ -11415,7 +11465,10 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   applyView(role);
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
-  if(skipAnimation) setTimeout(restoreLastTab, 0); // restore tab after DOM settles
+  if(skipAnimation) {
+    setTimeout(restoreLastTab, 0);        // admin tab
+    setTimeout(restoreLastAgentSection, 50); // agent section
+  }
   // Show/hide test agent button (only for Sebastin in admin view)
   setTimeout(showTestAgentBtn, 100);
   // Show test mode banner if in preview mode
@@ -14523,11 +14576,27 @@ function restoreLastTab(){
     for(const btn of btns){
       const oc = btn.getAttribute('onclick') || '';
       if(oc.includes("'" + tab + "'")){
-        switchTab(tab, btn); // call directly — more reliable than btn.click()
+        switchTab(tab, btn);
         break;
       }
     }
   }catch(e){}
+}
+
+// Restore agent section (Breaks/Bonus/Tickets etc.)
+function restoreLastAgentSection(){
+  try{
+    const section = localStorage.getItem('rcActiveAgentSection') || 'dashboard';
+    const btn = document.getElementById('sb-agent-'+section) || document.getElementById('agent-tab-'+section);
+    if(btn) sbAgent(section, btn);
+  }catch(e){}
+}
+
+// Save agent section on switch
+const _origSwitchAgentSection = switchAgentSection;
+function switchAgentSection(section, el){
+  _origSwitchAgentSection(section, el);
+  try{ localStorage.setItem('rcActiveAgentSection', section); }catch(e){}
 }
 
 // ── CALL LOGS ──────────────────────────────────────────────────────────
