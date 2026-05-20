@@ -966,21 +966,23 @@ function mapZohoType(ticket) {
   return 'New Ticket';
 }
 
-// GET /api/zoho/ping — test Zoho connectivity (admin only)
+// GET /api/zoho/ping — test Zoho connectivity using tickets scope (admin only)
 app.get('/api/zoho/ping', requireAdmin, async (req, res) => {
   try {
-    if (!ZOHO_CLIENT_ID)     return res.json({ ok:false, error:'ZOHO_CLIENT_ID not set' });
-    if (!ZOHO_REFRESH_TOKEN) return res.json({ ok:false, error:'ZOHO_REFRESH_TOKEN not set' });
-    if (!ZOHO_DESK_ORG_ID)  return res.json({ ok:false, error:'ZOHO_DESK_ORG_ID not set' });
+    if (!ZOHO_CLIENT_ID)     return res.json({ ok:false, step:'config', error:'ZOHO_CLIENT_ID not set' });
+    if (!ZOHO_REFRESH_TOKEN) return res.json({ ok:false, step:'config', error:'ZOHO_REFRESH_TOKEN not set' });
+    if (!ZOHO_DESK_ORG_ID)  return res.json({ ok:false, step:'config', error:'ZOHO_DESK_ORG_ID not set' });
+    // Step 1: get access token
     const token = await getZohoAccessToken();
-    // Test: fetch org details
-    const r = await fetch(`${ZOHO_API_BASE}/organizations`, {
+    // Step 2: test with /tickets (within our Desk.tickets.ALL scope)
+    const r = await fetch(`${ZOHO_API_BASE}/tickets?limit=1`, {
       headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID }
     });
-    const body = await r.text();
-    res.json({ ok: r.ok, status: r.status, body: JSON.parse(body) });
+    const body = await r.json();
+    if (!r.ok) return res.json({ ok:false, step:'api', status:r.status, body });
+    res.json({ ok:true, step:'success', status:r.status, ticketCount: body.count, token_preview: token.slice(0,20)+'...' });
   } catch(e) {
-    res.json({ ok: false, error: e.message });
+    res.json({ ok: false, step:'exception', error: e.message });
   }
 });
 
@@ -988,12 +990,12 @@ app.get('/api/zoho/ping', requireAdmin, async (req, res) => {
 app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, res) => {
   try {
     if (!ZOHO_CLIENT_ID) return res.status(503).json({ success: false, error: 'Zoho not configured' });
-    const rawId   = req.params.id.replace(/^#/, '');
-    const ticketNumber = rawId; // Zoho Desk uses ticketNumber field
+    const rawId = req.params.id.replace(/^#/, '');
 
-    // Search by ticket number
-    const search = await zohoDesk('/tickets/search', { ticketNumber, limit: 1 });
-    const ticket  = search.data && search.data[0];
+    // Search by ticketNumber filter (within Desk.tickets.ALL scope)
+    const search = await zohoDesk('/tickets', { ticketNumber: rawId, limit: 1 });
+    const ticket = (search.data && search.data[0]) ||
+                   (Array.isArray(search) && search[0]) || null;
     if (!ticket) return res.json({ success: true, found: false });
 
     // Get contact info
