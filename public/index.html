@@ -11684,6 +11684,8 @@ function switchAgentSection(section,el){
   if(section==='writer')setTimeout(initAIWriter,50);
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
+  // Save last active section for restore on return
+  try{ localStorage.setItem('rcActiveAgentSection', section); }catch(e){}
 }
 
 function resizeHallFrame(frame){
@@ -14746,12 +14748,7 @@ function restoreLastAgentSection(){
   }catch(e){}
 }
 
-// Save agent section on switch
-const _origSwitchAgentSection = switchAgentSection;
-function switchAgentSection(section, el){
-  _origSwitchAgentSection(section, el);
-  try{ localStorage.setItem('rcActiveAgentSection', section); }catch(e){}
-}
+// Note: localStorage save added directly into switchAgentSection at line 11663
 
 // ── CALL LOGS ──────────────────────────────────────────────────────────
 let clAllRows=[]; // full dataset for client-side filtering
