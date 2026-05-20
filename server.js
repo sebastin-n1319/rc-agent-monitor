@@ -996,22 +996,33 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
-    // Fetch recent tickets and return sample ticket numbers for debugging
-    const r1  = await fetch(`${ZOHO_API_BASE}/tickets?from=0&limit=10`, { headers });
-    const d1  = await r1.json();
-    const sample = (d1.data||[]).map(t => ({ num: t.ticketNumber, id: t.id, status: t.status }));
+    // Strategy 1: Zoho /search endpoint — handles empty body gracefully
+    try {
+      const sr   = await fetch(`${ZOHO_API_BASE}/search?searchStr=${encodeURIComponent(rawId)}&limit=5`, { headers });
+      const text = await sr.text(); // don't assume JSON
+      if (text && text.trim() && text.trim() !== 'null') {
+        const sd = JSON.parse(text);
+        const list = sd.data || (Array.isArray(sd) ? sd : []);
+        ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+      }
+    } catch(e) { /* empty response or parse error — try next */ }
 
-    // Search across 500 tickets in batches (agents may log tickets from earlier today)
-    for (const from of [0, 100, 200, 300, 400]) {
-      const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100`, { headers });
-      if (!r.ok) break;
-      const d = await r.json();
-      if (!(d.data||[]).length) break; // no more tickets
-      const found = d.data.find(t => String(t.ticketNumber) === rawId);
-      if (found) { ticket = found; break; }
+    // Strategy 2: Fetch tickets sorted by ticketNumber desc — most efficient
+    // Zoho ticket numbers aren't sequential across teams, so we go wide (500)
+    if (!ticket) {
+      for (const from of [0, 100, 200, 300, 400]) {
+        const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100&sortBy=ticketNumber`, { headers });
+        if (!r.ok) break;
+        const d = await r.json();
+        const list = d.data || [];
+        if (!list.length) break;
+        const found = list.find(t => String(t.ticketNumber) === rawId);
+        if (found) { ticket = found; break; }
+        // If all numbers in this batch are far from target, continue searching
+      }
     }
 
-    if (!ticket) return res.json({ success: true, found: false, searched: 500, sample });
+    if (!ticket) return res.json({ success: true, found: false });
     if (!ticket) return res.json({ success: true, found: false });
 
     // Get contact info
