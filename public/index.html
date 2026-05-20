@@ -11571,42 +11571,47 @@ async function loadMyTicketsFromSheet() {
   } catch(e) { /* silent fail */ }
 }
 
-// Channels that cannot be picked from a queue (live inbound only)
-const TL_NO_QUEUE_CHANNELS = new Set(['Phone', 'Chat']);
+// Context-aware hints for channel + queue combinations
+// Logic: Phone/Chat CAN be from queue when CSM creates and assigns the ticket to T1
+// Phone/Chat cannot be from queue ONLY when it's a direct live interaction
+const TL_QUEUE_HINTS = {
+  'Phone|Yes':  'CSM created this phone ticket and assigned it to your queue.',
+  'Phone|No':   'Direct live call you handled — not from queue.',
+  'Phone|':     'N/A — not applicable for this phone ticket.',
+  'Chat|Yes':   'CSM created this chat ticket and assigned it to your queue.',
+  'Chat|No':    'Live chat you handled directly — not from queue.',
+  'Email|Yes':  'Ticket was in your email queue and you picked it up.',
+  'Email|No':   'Email ticket not from the standard queue.',
+  'Web|Yes':    'Web form ticket appeared in your queue.',
+  'Web|No':     'Web ticket handled outside the queue.',
+};
+
+function updateQueueHint() {
+  const hint = TL_QUEUE_HINTS[`${tlSelections.channel}|${tlSelections.queue}`] || '';
+  let hintEl = document.getElementById('tl-queue-hint');
+  if (!hintEl) {
+    hintEl = document.createElement('div');
+    hintEl.id = 'tl-queue-hint';
+    hintEl.style.cssText = 'font-size:11px;color:#6B849A;margin-top:8px;padding:6px 10px;background:rgba(244,137,31,.06);border-left:3px solid rgba(244,137,31,.3);border-radius:0 6px 6px 0;transition:all .2s;line-height:1.5;';
+    const queueCard = document.querySelector('.tl-queue-row');
+    if (queueCard) queueCard.after(hintEl);
+  }
+  hintEl.style.display = hint ? 'block' : 'none';
+  hintEl.textContent = hint;
+}
 
 function tlSelect(btn) {
   const group = btn.dataset.group;
   const val   = btn.dataset.val;
-
-  // Queue Yes is not allowed for Phone/Chat — enforce before selection
-  if (group === 'queue' && val === 'Yes' && TL_NO_QUEUE_CHANNELS.has(tlSelections.channel)) {
-    showToast(`${tlSelections.channel} tickets cannot be picked from the queue — they come in live.`, 'warning', 3500);
-    return; // block selection
-  }
 
   document.querySelectorAll(`[data-group="${group}"]`)
     .forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   tlSelections[group] = val;
 
-  // When channel changes: enforce queue restrictions
-  if (group === 'channel') {
-    const isNoQueue = TL_NO_QUEUE_CHANNELS.has(val);
-    const yesBtn = document.querySelector('.tl-q-btn.yes');
-    if (yesBtn) {
-      yesBtn.style.opacity    = isNoQueue ? '0.35' : '';
-      yesBtn.style.cursor     = isNoQueue ? 'not-allowed' : '';
-      yesBtn.title            = isNoQueue ? `${val} tickets come in live — cannot be queue-picked` : '';
-    }
-    // If Yes was active, auto-switch to N/A
-    if (isNoQueue && tlSelections.queue === 'Yes') {
-      const naBtn = document.querySelector('.tl-q-btn.na');
-      if (naBtn) {
-        document.querySelectorAll('[data-group="queue"]').forEach(b => b.classList.remove('active'));
-        naBtn.classList.add('active');
-        tlSelections.queue = '';
-      }
-    }
+  // Always show a contextual hint after any channel or queue selection
+  if (group === 'channel' || group === 'queue') {
+    updateQueueHint();
   }
 }
 
