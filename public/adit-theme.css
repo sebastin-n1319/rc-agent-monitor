@@ -6407,14 +6407,7 @@ html.dark-mode #mainApp {
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   border-bottom: 1px solid var(--v5-b0) !important;
   box-shadow: 0 1px 0 rgba(255,255,255,.6), var(--v5-sh0) !important;
-  position: relative;
-}
-#mainApp header::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 8%; right: 8%; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(245,129,31,.3), transparent);
-  pointer-events: none;
+  /* Do NOT override position — keeps existing position:fixed intact */
 }
 
 .hdr-title {
@@ -6602,17 +6595,7 @@ html.dark-mode .sb-item.active { color: #F5811F !important; background: rgba(245
 /* ════════════════════════════════════════════════════════════════
    ADMIN NAV TABS (.nav / .nav-tab)
 ════════════════════════════════════════════════════════════════ */
-.nav {
-  background: rgba(255,255,255,.82) !important;
-  backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid var(--v5-b0) !important;
-  padding: 0 16px !important;
-  display: flex !important;
-  gap: 2px !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 30 !important;
-}
+/* .nav is hidden by existing CSS (sidebar replaces it) — keep display:none, only style nav-tab */
 .nav-tab {
   padding: 10px 14px !important;
   font-size: 11.5px !important;
@@ -7171,16 +7154,13 @@ select { border-radius: 10px !important; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.card,
-.metrics .metric,
-.break-lane,
-.tier-card,
-.bonus-card {
-  animation: v5SlideUp .4s cubic-bezier(.22,1,.36,1) both;
+/* Entrance animation only on metric cards (not .card — causes blank content with fill-mode:both) */
+.metrics .metric {
+  animation: v5SlideUp .35s cubic-bezier(.22,1,.36,1) forwards;
 }
-.metrics .metric:nth-child(1){ animation-delay:.04s; }
-.metrics .metric:nth-child(2){ animation-delay:.08s; }
-.metrics .metric:nth-child(3){ animation-delay:.12s; }
+.metrics .metric:nth-child(1){ animation-delay:.0s; }
+.metrics .metric:nth-child(2){ animation-delay:.06s; }
+.metrics .metric:nth-child(3){ animation-delay:.11s; }
 .metrics .metric:nth-child(4){ animation-delay:.16s; }
 .metrics .metric:nth-child(5){ animation-delay:.20s; }
 
