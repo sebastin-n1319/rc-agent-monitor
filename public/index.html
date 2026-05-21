@@ -12304,6 +12304,9 @@ function initAIWriter() {
 
 // ── Ticket Logger — Agent UI ──────────────────────────────────────────────
 const tlSelections = { channel: '', queue: '', type: '' };
+// Track which fields were auto-filled by Zoho vs manually set by the agent.
+// When ticket ID changes, only Zoho-auto-filled fields get reset — manual picks persist.
+const tlAutoFilled = { channel: false, type: false };
 const tlHistory    = [];  // session additions (for immediate feedback)
 let   tlSheetData  = [];  // full history from Google Sheet
 let   tlPeriod     = 'today'; // current period filter
@@ -12584,10 +12587,32 @@ let _zohoLastId = '';
 function tlOnTicketIdInput() {
   const raw = (document.getElementById('tl-ticket-id')?.value || '').trim();
   if (raw === _zohoLastId) return;
+
+  // Ticket ID changed — reset any Zoho-auto-filled fields so the new ticket
+  // gets a clean re-fill. Manually chosen fields (tlAutoFilled=false) are kept.
+  if (_zohoLastId && raw !== _zohoLastId) {
+    if (tlAutoFilled.channel) {
+      tlSelections.channel = '';
+      document.querySelectorAll('[data-group="channel"]').forEach(b => b.classList.remove('active'));
+      tlAutoFilled.channel = false;
+    }
+    if (tlAutoFilled.type) {
+      tlSelections.type = '';
+      document.querySelectorAll('[data-group="type"]').forEach(b => b.classList.remove('active'));
+      tlAutoFilled.type = false;
+    }
+  }
+
   _zohoLastId = raw;
   clearTimeout(_zohoLookupTimer);
   const card = document.getElementById('tl-zoho-card');
-  if (!raw || raw.length < 4) { if(card) card.style.display='none'; return; }
+
+  // Scenario: field cleared — hide card, reset
+  if (!raw || raw.length < 4) {
+    if (card) card.style.display = 'none';
+    return;
+  }
+
   if (card) {
     card.style.display = 'block';
     card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;display:flex;align-items:center;gap:8px;background:#F7F8F8;"><div class="adit-spinner" style="width:14px;height:14px;border-width:2px;"></div> Looking up #${raw} in Zoho Desk…</div>`;
@@ -12622,9 +12647,15 @@ async function zohoLookupTicket(id) {
     const sc = sevColors[t.ruleSeverity] || sevColors.blue;
     const greenStyle = { bg:'#F0FDF4', border:'rgba(45,220,150,.2)', text:'#166534' };
 
-    // Auto-fill channel & smart type from rules engine
-    if (t.channel && !tlSelections.channel) { const b = document.querySelector(`.tl-ch-btn[data-val="${t.channel}"]`); if(b) tlSelect(b); }
-    if (t.ticketType && !tlSelections.type) { const b = document.querySelector(`.tl-type-btn[data-val="${t.ticketType}"]`); if(b) tlSelect(b); }
+    // Auto-fill channel — always apply from Zoho (agent hasn't manually overridden)
+    if (t.channel && !tlSelections.channel) {
+      const b = document.querySelector(`.tl-ch-btn[data-val="${t.channel}"]`);
+      if (b) { tlSelect(b, true); tlAutoFilled.channel = true; }
+    }
+    if (t.ticketType && !tlSelections.type) {
+      const b = document.querySelector(`.tl-type-btn[data-val="${t.ticketType}"]`);
+      if (b) { tlSelect(b, true); tlAutoFilled.type = true; }
+    }
 
     const headerBg     = hasRule ? sc.bg     : greenStyle.bg;
     const headerBorder = hasRule ? sc.border  : greenStyle.border;
@@ -12857,7 +12888,7 @@ function updateQueueHint() {
   hintEl.textContent = hint;
 }
 
-function tlSelect(btn) {
+function tlSelect(btn, _isZohoAutoFill = false) {
   const group = btn.dataset.group;
   const val   = btn.dataset.val;
 
@@ -12866,7 +12897,13 @@ function tlSelect(btn) {
   btn.classList.add('active');
   tlSelections[group] = val;
 
-  // Always show a contextual hint after any channel or queue selection
+  // If agent clicks manually (not via Zoho auto-fill), mark as manual.
+  // This prevents Zoho re-fill from overriding a deliberate agent choice.
+  if (!_isZohoAutoFill) {
+    if (group === 'channel') tlAutoFilled.channel = false;
+    if (group === 'type')    tlAutoFilled.type    = false;
+  }
+
   if (group === 'channel' || group === 'queue') {
     updateQueueHint();
   }
@@ -12988,9 +13025,14 @@ async function submitTicketLog() {
     // Success — show popup then reset form
     showTicketSuccessPopup(ticketId);
     document.getElementById('tl-ticket-id').value = '';
+    _zohoLastId = ''; // reset so next ticket triggers fresh lookup
+    tlAutoFilled.channel = false;
+    tlAutoFilled.type    = false;
+    const card = document.getElementById('tl-zoho-card');
+    if (card) card.style.display = 'none';
     ['channel','type'].forEach(g => {
       tlSelections[g] = '';
-      document.querySelectorAll(`.tl-opt-btn[data-group="${g}"], .tl-type-btn[data-group="${g}"]`)
+      document.querySelectorAll(`.tl-opt-btn[data-group="${g}"], .tl-type-btn[data-group="${g}"], .tl-ch-btn[data-group="${g}"]`)
         .forEach(b => b.classList.remove('active'));
     });
     msgEl.textContent = '';
