@@ -1168,29 +1168,43 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
-    // Strategy 1: Zoho /search endpoint — handles empty body gracefully
+    // Strategy 0: direct ticketNumber filter — fastest, works for any age
     try {
-      const sr   = await fetch(`${ZOHO_API_BASE}/search?searchStr=${encodeURIComponent(rawId)}&limit=5`, { headers });
-      const text = await sr.text(); // don't assume JSON
+      const r0   = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
+      const text = await r0.text();
       if (text && text.trim() && text.trim() !== 'null') {
-        const sd = JSON.parse(text);
-        const list = sd.data || (Array.isArray(sd) ? sd : []);
+        const d0 = JSON.parse(text);
+        const list = d0.data || (Array.isArray(d0) ? d0 : []);
         ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
       }
-    } catch(e) { /* empty response or parse error — try next */ }
+    } catch(e) { /* unsupported param or parse error — try next */ }
 
-    // Strategy 2: fetch recent tickets (default sort = newest first, no sortBy needed)
-    // sortBy=ticketNumber was wrong — it sorted ASCENDING from ticket #1!
-    // Default sort is createdTime desc — exactly what we need for agents logging recent tickets
+    // Strategy 1: Zoho /search endpoint with module=Tickets for targeted results
     if (!ticket) {
-      for (const from of [0, 100, 200, 300]) {
-        const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100`, { headers });
-        if (!r.ok) break;
-        const d = await r.json();
-        const list = d.data || [];
-        if (!list.length) break;
-        const found = list.find(t => String(t.ticketNumber) === rawId);
-        if (found) { ticket = found; break; }
+      try {
+        const sr   = await fetch(`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=10`, { headers });
+        const text = await sr.text(); // don't assume JSON
+        if (text && text.trim() && text.trim() !== 'null') {
+          const sd = JSON.parse(text);
+          const list = sd.data || (Array.isArray(sd) ? sd : []);
+          ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+        }
+      } catch(e) { /* empty response or parse error — try next */ }
+    }
+
+    // Strategy 2: fetch recent tickets in pages (default sort = newest first)
+    // Extended to 800 tickets (8 pages) to cover older tickets
+    if (!ticket) {
+      for (const from of [0, 100, 200, 300, 400, 500, 600, 700]) {
+        try {
+          const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100`, { headers });
+          if (!r.ok) break;
+          const d = await r.json();
+          const list = d.data || [];
+          if (!list.length) break;
+          const found = list.find(t => String(t.ticketNumber) === rawId);
+          if (found) { ticket = found; break; }
+        } catch(e) { break; }
       }
     }
 

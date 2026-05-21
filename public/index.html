@@ -13294,11 +13294,22 @@ async function zohoLookupTicket(id) {
     if (!card) return;
     // Stale-response guard: if the ticket ID was cleared/changed since this lookup started, discard
     if (_zohoLastId !== id) { card.style.display = 'none'; tlClearAISide(); return; }
-    if (!data.success) { card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;">Zoho lookup unavailable — log manually.</div>`; return; }
+    if (!data.success) {
+      card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>⚠ Zoho lookup failed — log manually.</span>
+        <button onclick="zohoLookupTicket('${esc(id)}')" style="padding:2px 9px;background:rgba(244,137,31,.08);border:1px solid rgba(244,137,31,.2);border-radius:6px;font-size:11px;font-weight:600;color:#C26510;cursor:pointer;font-family:'Poppins',sans-serif;">Retry</button>
+        <span style="font-size:10px;color:#C0CCDA;">${esc(data.error||'')}</span>
+      </div>`;
+      card.style.display = '';
+      return;
+    }
     if (!data.found) {
-      card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#ED666B;background:rgba(237,102,107,.05);display:flex;align-items:center;gap:7px;">
+      card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#ED666B;background:rgba(237,102,107,.05);display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
         <svg viewBox="0 0 16 16" fill="none" stroke="#ED666B" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
-        <strong>#${id}</strong> not found in Zoho Desk — double-check the ticket number.</div>`;
+        <span><strong>#${esc(id)}</strong> not found in Zoho Desk — double-check the ticket number.</span>
+        <button onclick="zohoLookupTicket('${esc(id)}')" style="padding:2px 9px;background:rgba(237,102,107,.08);border:1px solid rgba(237,102,107,.2);border-radius:6px;font-size:11px;font-weight:600;color:#C82B30;cursor:pointer;font-family:'Poppins',sans-serif;">Retry</button>
+      </div>`;
+      card.style.display = '';
       return;
     }
     const t = data.ticket;
@@ -13329,7 +13340,7 @@ async function zohoLookupTicket(id) {
     const headerBorder = hasRule ? sc.border  : greenStyle.border;
     const headerContent = hasRule
       ? `<svg viewBox="0 0 16 16" fill="${sc.icon}" style="width:13px;height:13px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm-.75 3.75h1.5v4.5h-1.5zm0 6h1.5v1.5h-1.5z"/></svg>
-         <span style="font-size:11px;font-weight:700;color:${sc.text};">${t.ruleWarning}</span>`
+         <span style="font-size:11px;font-weight:700;color:${sc.text};">${esc(t.ruleWarning)}</span>`
       : `<svg viewBox="0 0 16 16" fill="#2DDC96" style="width:13px;height:13px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 5.5-4 4a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L7 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06z"/></svg>
          <span style="font-size:11px;font-weight:700;color:#166534;">Found in Zoho Desk — channel &amp; type auto-filled</span>`;
 
@@ -13340,8 +13351,8 @@ async function zohoLookupTicket(id) {
       <div style="padding:12px 14px;background:#FFFFFF;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:#072B40;margin-bottom:2px;">${t.subject||'(No subject)'}</div>
-            <div style="font-size:11px;color:#9BAFC0;">${t.contact?.name||''} ${t.contact?.email?'· '+t.contact.email:''}</div>
+            <div style="font-size:13px;font-weight:700;color:#072B40;margin-bottom:2px;">${esc(t.subject||'(No subject)')}</div>
+            <div style="font-size:11px;color:#9BAFC0;">${esc(t.contact?.name||'')} ${t.contact?.email?'· '+esc(t.contact.email):''}</div>
           </div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;">
             <span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${t.channel}</span>
@@ -13351,8 +13362,8 @@ async function zohoLookupTicket(id) {
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);align-items:center;">
-          <span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Type:</strong> ${t.ticketType}${t.ruleName?` <span style="background:rgba(251,200,75,.15);color:#B45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.04em;">AUTO-RULE</span>`:''}</span>
-          ${t.assignee?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Assignee:</strong> ${t.assignee}</span>`:''}
+          <span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Type:</strong> ${esc(t.ticketType||'—')}${t.ruleName?` <span style="background:rgba(251,200,75,.15);color:#B45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.04em;">AUTO-RULE</span>`:''}</span>
+          ${t.assignee?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Assignee:</strong> ${esc(t.assignee)}</span>`:''}
           <span style="margin-left:auto;display:flex;gap:4px;align-items:center;">
             <span style="font-size:10px;color:#9BAFC0;">Type correct?</span>
             <button class="tl-fb-correct" data-num="${esc(t.ticketNumber)}" data-subj="${esc(t.subject||'')}" data-ch="${esc(t.channel)}" data-type="${esc(t.ticketType)}" data-rule="${esc(t.ruleName||'ai')}" onclick="tlSendFeedback(this,'correct')" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
@@ -13379,11 +13390,11 @@ async function zohoLookupTicket(id) {
             return `<div style="border-radius:8px;border:1px solid ${bc};background:${bg};padding:9px 12px;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
                 <span style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:${lc};background:${lc}18;padding:1px 7px;border-radius:20px;">${label}</span>
-                ${th.fromName||th.from?`<span style="font-size:11px;font-weight:600;color:#072B40;">${th.fromName||th.from}</span>`:''}
-                ${th.from&&th.fromName&&th.from!==th.fromName?`<span style="font-size:10px;color:#9BAFC0;">&lt;${th.from}&gt;</span>`:''}
-                ${ts?`<span style="font-size:10px;color:#9BAFC0;margin-left:auto;">${ts}</span>`:''}
+                ${th.fromName||th.from?`<span style="font-size:11px;font-weight:600;color:#072B40;">${esc(th.fromName||th.from)}</span>`:''}
+                ${th.from&&th.fromName&&th.from!==th.fromName?`<span style="font-size:10px;color:#9BAFC0;">&lt;${esc(th.from)}&gt;</span>`:''}
+                ${ts?`<span style="font-size:10px;color:#9BAFC0;margin-left:auto;">${esc(ts)}</span>`:''}
               </div>
-              ${th.content?`<div style="font-size:12px;color:#2D4A6F;line-height:1.5;white-space:pre-wrap;">${th.content}</div>`:'<div style="font-size:11px;color:#9BAFC0;font-style:italic;">(No preview available)</div>'}
+              ${th.content?`<div style="font-size:12px;color:#2D4A6F;line-height:1.5;white-space:pre-wrap;">${esc(th.content)}</div>`:'<div style="font-size:11px;color:#9BAFC0;font-style:italic;">(No preview available)</div>'}
             </div>`;
           }).join('')}
         </div>
@@ -13394,7 +13405,13 @@ async function zohoLookupTicket(id) {
     tlUpdateAISide(t);
 
   } catch(e) {
-    if (card) card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;">Zoho lookup unavailable — log manually.</div>`;
+    if (card) {
+      card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span>⚠ Zoho lookup unavailable — log manually.</span>
+        <button onclick="zohoLookupTicket('${esc(id)}')" style="padding:2px 9px;background:rgba(244,137,31,.08);border:1px solid rgba(244,137,31,.2);border-radius:6px;font-size:11px;font-weight:600;color:#C26510;cursor:pointer;font-family:'Poppins',sans-serif;">Retry</button>
+      </div>`;
+      card.style.display = '';
+    }
     tlClearAISide();
   }
 }
