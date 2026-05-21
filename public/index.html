@@ -12407,11 +12407,11 @@ function awSetType(type, btn) {
       `<button class="awv2-mode-btn${m.id===awCurrentMode?' active':''}" style="--aw-color:${cfg.color}" onclick="awSetMode('${m.id}',this)">${m.label}</button>`
     ).join('');
   }
-  // Render templates
+  // Render templates — use data-text to avoid JSON-in-onclick double-quote breakage
   const tplEl = document.getElementById('awv2-templates');
   if (tplEl) {
     tplEl.innerHTML = cfg.templates.map(t =>
-      `<button class="awv2-tpl" onclick="awLoadTemplate(${JSON.stringify(t.text)})">${t.label}</button>`
+      `<button class="awv2-tpl" data-text="${esc(t.text)}" onclick="awLoadTemplate(this)">${esc(t.label)}</button>`
     ).join('');
   }
   // Update submit button color
@@ -12433,7 +12433,9 @@ function awSetMode(mode, btn) {
   document.querySelectorAll('.awv2-mode-btn').forEach(b => b.classList.toggle('active', b===btn));
 }
 
-function awLoadTemplate(text) {
+function awLoadTemplate(btnOrText) {
+  // Accepts either a button element (new data-text pattern) or a raw string
+  const text = (btnOrText && typeof btnOrText === 'object') ? (btnOrText.dataset.text || '') : (btnOrText || '');
   const inp = document.getElementById('aw-input');
   if (inp) { inp.value = text; awUpdateCount(); inp.focus(); }
 }
