@@ -952,30 +952,17 @@ async function zohoDesk(path, params = {}) {
 // Add new rules here as new scenarios are discovered in the field.
 const TICKET_RULES = [
   // ── Priority 10: Spam / auto-generated ──────────────────────────────────────
-  // NOTE: isSpam===true is intentionally NOT used here — Zoho's spam AI flags many
-  // legitimate customer emails (especially from hotmail/forwarded chains). Only flag
-  // when source.type === 'SYSTEM' which means it was purely system/automation generated
-  // with no real human sender. isSpam alone is too noisy.
+  // Only flag when BOTH: source.type===SYSTEM AND no real human contact (email).
+  // Zoho sets source.type='SYSTEM' even on legitimate email tickets created via
+  // automation rules — so we require the absence of a real sender to confirm.
   {
     name:        'spam_auto_generated',
-    description: 'Ticket was created automatically by the system (no real customer action)',
-    condition:   t => t.source?.type === 'SYSTEM',
+    description: 'Ticket was created automatically by the system with no real human sender',
+    condition:   t => t.source?.type === 'SYSTEM' && !t.contact?.email,
     type:        'Auto-Generated/Spam Ticket',
     warning:     'This ticket appears to be system-generated (no human sender) — verify before logging.',
     severity:    'yellow',
     priority:    10,
-  },
-  // ── Priority 10b: Zoho spam flag (soft warning, does not change type) ─────────
-  // isSpam=true from Zoho is informational only — Zoho often misclassifies email replies.
-  // We note it but don't override the ticket type or block the agent.
-  {
-    name:        'zoho_spam_flag',
-    description: 'Zoho has internally flagged this ticket as spam — may be a false positive, verify with customer',
-    condition:   t => t.isSpam === true && t.source?.type !== 'SYSTEM',
-    type:        null,   // null = don't override ticket type
-    warning:     'Zoho has flagged this ticket as potential spam — verify it is a genuine customer request.',
-    severity:    'info',
-    priority:    5,
   },
   // ── Priority 9: Closed or Resolved → Reopened ───────────────────────────────
   {
