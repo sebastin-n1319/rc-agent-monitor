@@ -9596,6 +9596,10 @@ tbody tr:hover td{
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
     <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
     <button class="nav-tab" data-tab="tickets" onclick="switchTab('tickets',this)">Tickets</button>
+    <button class="nav-tab" data-tab="ai-agent" onclick="switchTab('ai-agent',this)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;margin-right:4px;vertical-align:-2px"><circle cx="8" cy="5" r="3"/><path d="M2 13c0-3.314 2.686-5 6-5s6 1.686 6 5"/><path d="M8 10v3M6 12h4"/></svg>
+      AI Agent
+    </button>
   </div>
 
   <!-- LIVE -->
@@ -10468,6 +10472,147 @@ tbody tr:hover td{
     <div id="rpt-preview" style="padding:20px 24px;display:none;">
       <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Report Preview</div>
       <div id="rpt-preview-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     AI LEARNING AGENT — Admin Tab
+     Shows rule accuracy, wrong patterns, and GPT-4o analysis
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="tab-ai-agent" style="display:none;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:22px;font-weight:800;color:#072B40;letter-spacing:-.01em;display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><circle cx="12" cy="8" r="5"/><path d="M9 11.5C5.5 12.5 3 15 3 18h18c0-3-2.5-5.5-6-6.5"/><circle cx="17" cy="17" r="3"/><path d="M17 15v2l1.5 1.5"/></svg>
+        AI Learning Agent
+      </div>
+      <div style="font-size:13px;color:#6B849A;margin-top:3px;">Feedback analytics · Pattern discovery · Auto-improvement engine</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button onclick="laLoadStats()" id="la-refresh-btn" style="padding:8px 16px;background:#F7F8F8;border:1px solid #DEE1E6;border-radius:8px;font-size:12px;font-weight:700;color:#3A5068;cursor:pointer;display:flex;align-items:center;gap:6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        Refresh
+      </button>
+      <button onclick="laRunAnalysis()" id="la-analyze-btn" style="padding:8px 18px;background:linear-gradient(135deg,#F4891F,#e07b10);border:none;border-radius:8px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(244,137,31,.3);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Run AI Analysis
+      </button>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div id="la-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+    <div class="metric" style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;padding:16px 20px;">
+      <div style="font-size:11px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;">Total Feedback</div>
+      <div id="la-kpi-total" style="font-size:32px;font-weight:800;color:#072B40;line-height:1.1;margin-top:6px;">—</div>
+    </div>
+    <div class="metric" style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;padding:16px 20px;">
+      <div style="font-size:11px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;">Correct ✅</div>
+      <div id="la-kpi-correct" style="font-size:32px;font-weight:800;color:#21AAE0;line-height:1.1;margin-top:6px;">—</div>
+    </div>
+    <div class="metric" style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;padding:16px 20px;">
+      <div style="font-size:11px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;">Wrong ❌</div>
+      <div id="la-kpi-wrong" style="font-size:32px;font-weight:800;color:#ED666B;line-height:1.1;margin-top:6px;">—</div>
+    </div>
+    <div class="metric" style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;padding:16px 20px;">
+      <div style="font-size:11px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;">Overall Accuracy</div>
+      <div id="la-kpi-accuracy" style="font-size:32px;font-weight:800;color:#F4891F;line-height:1.1;margin-top:6px;">—</div>
+    </div>
+    <div class="metric" style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;padding:16px 20px;">
+      <div style="font-size:11px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;">Learned Patterns</div>
+      <div id="la-kpi-patterns" style="font-size:32px;font-weight:800;color:#6c47d0;line-height:1.1;margin-top:6px;">—</div>
+    </div>
+  </div>
+
+  <!-- Two-column layout -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;" id="la-grid">
+
+    <!-- Rule Accuracy Table -->
+    <div style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;overflow:hidden;">
+      <div style="padding:14px 18px;border-bottom:1px solid #F0F3F7;display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span style="font-size:13px;font-weight:700;color:#072B40;">Rule Accuracy</span>
+        <span style="margin-left:auto;font-size:11px;color:#9BAFC0;">👍 / 👎 per auto-rule</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:#F7F8F8;">
+              <th style="text-align:left;padding:8px 14px;font-weight:600;color:#6B849A;font-size:11px;white-space:nowrap;">Rule</th>
+              <th style="padding:8px 10px;font-weight:600;color:#6B849A;font-size:11px;">Total</th>
+              <th style="padding:8px 10px;font-weight:600;color:#21AAE0;font-size:11px;">✅</th>
+              <th style="padding:8px 10px;font-weight:600;color:#ED666B;font-size:11px;">❌</th>
+              <th style="padding:8px 14px;font-weight:600;color:#6B849A;font-size:11px;">Accuracy</th>
+            </tr>
+          </thead>
+          <tbody id="la-rule-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:24px;color:#9BAFC0;">Click Refresh to load data</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Wrong Classification Patterns -->
+    <div style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;overflow:hidden;">
+      <div style="padding:14px 18px;border-bottom:1px solid #F0F3F7;display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ED666B" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        <span style="font-size:13px;font-weight:700;color:#072B40;">Misclassification Patterns</span>
+        <span style="margin-left:auto;font-size:11px;color:#9BAFC0;">What agents corrected</span>
+      </div>
+      <div id="la-wrong-list" style="padding:12px 14px;max-height:280px;overflow-y:auto;">
+        <div style="text-align:center;padding:24px;color:#9BAFC0;font-size:12px;">Click Refresh to load data</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learned Patterns Table -->
+  <div style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    <div style="padding:14px 18px;border-bottom:1px solid #F0F3F7;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#6c47d0" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px"><path d="M12 2a7 7 0 1 1 0 14A7 7 0 0 1 12 2z"/><path d="M12 12v4M12 8h.01"/></svg>
+      <span style="font-size:13px;font-weight:700;color:#072B40;">Learned Patterns</span>
+      <span style="margin-left:auto;font-size:11px;color:#9BAFC0;">Auto-discovered classification rules</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#F7F8F8;">
+            <th style="text-align:left;padding:8px 14px;font-weight:600;color:#6B849A;font-size:11px;">Pattern</th>
+            <th style="text-align:left;padding:8px 10px;font-weight:600;color:#6B849A;font-size:11px;">Type</th>
+            <th style="text-align:left;padding:8px 10px;font-weight:600;color:#6B849A;font-size:11px;">Suggests</th>
+            <th style="padding:8px 10px;font-weight:600;color:#6B849A;font-size:11px;">Samples</th>
+            <th style="padding:8px 10px;font-weight:600;color:#6B849A;font-size:11px;">Confidence</th>
+            <th style="padding:8px 14px;font-weight:600;color:#6B849A;font-size:11px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="la-patterns-tbody">
+          <tr><td colspan="6" style="text-align:center;padding:24px;color:#9BAFC0;">Click Refresh to load data</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AI Analysis Result -->
+  <div id="la-analysis-card" style="display:none;background:#fff;border:1px solid #E8EDF2;border-radius:12px;overflow:hidden;margin-bottom:20px;">
+    <div style="padding:14px 18px;border-bottom:1px solid #F0F3F7;display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span style="font-size:13px;font-weight:700;color:#072B40;">GPT-4o Analysis Report</span>
+      <span id="la-analysis-ts" style="margin-left:auto;font-size:11px;color:#9BAFC0;"></span>
+    </div>
+    <div id="la-analysis-body" style="padding:20px 24px;font-size:13px;color:#3A5068;line-height:1.6;white-space:pre-wrap;font-family:inherit;max-height:500px;overflow-y:auto;"></div>
+  </div>
+
+  <!-- Recent Feedback Feed -->
+  <div style="background:#fff;border:1px solid #E8EDF2;border-radius:12px;overflow:hidden;">
+    <div style="padding:14px 18px;border-bottom:1px solid #F0F3F7;display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#21AAE0" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span style="font-size:13px;font-weight:700;color:#072B40;">Recent Feedback</span>
+      <span style="margin-left:auto;font-size:11px;color:#9BAFC0;">Last 50 agent ratings</span>
+    </div>
+    <div id="la-recent-list" style="max-height:320px;overflow-y:auto;">
+      <div style="text-align:center;padding:24px;color:#9BAFC0;font-size:12px;">Click Refresh to load data</div>
     </div>
   </div>
 </div>
@@ -15183,6 +15328,7 @@ function switchTab(tab,el){
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
   if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); }
+  if(tab==='ai-agent') laLoadStats();
   // Remember the active tab so refresh restores it
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }
@@ -21081,6 +21227,207 @@ input:focus, textarea:focus, select:focus {
   authObs.observe(document.documentElement, { attributes: true });
 
 })();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// AI LEARNING AGENT DASHBOARD — admin JS
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _laLoaded = false;
+
+async function laLoadStats() {
+  const btn = document.getElementById('la-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+  try {
+    const r = await fetch(BACKEND + '/api/agent-learning/stats');
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || 'Failed');
+
+    // KPIs
+    const totalFb = j.stats.reduce((s,x) => s + (x.correct_count||0) + (x.wrong_count||0), 0);
+    const totalCorrect = j.stats.reduce((s,x) => s + (x.correct_count||0), 0);
+    const totalWrong   = j.stats.reduce((s,x) => s + (x.wrong_count||0), 0);
+    const accuracy = totalFb > 0 ? Math.round(100 * totalCorrect / totalFb) : 0;
+    document.getElementById('la-kpi-total').textContent     = totalFb || '0';
+    document.getElementById('la-kpi-correct').textContent   = totalCorrect || '0';
+    document.getElementById('la-kpi-wrong').textContent     = totalWrong || '0';
+    document.getElementById('la-kpi-accuracy').textContent  = totalFb ? accuracy + '%' : '—';
+    document.getElementById('la-kpi-patterns').textContent  = (j.patterns || []).length;
+
+    // Rule accuracy table
+    const tbody = document.getElementById('la-rule-tbody');
+    if (!j.stats.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#9BAFC0;">No feedback recorded yet</td></tr>';
+    } else {
+      tbody.innerHTML = j.stats.map(row => {
+        const tot = (row.correct_count||0) + (row.wrong_count||0);
+        const acc = tot > 0 ? Math.round(100 * row.correct_count / tot) : 0;
+        const accColor = acc >= 80 ? '#21B57A' : acc >= 60 ? '#F4891F' : '#ED666B';
+        const bar = `<div style="height:4px;background:#E8EDF2;border-radius:2px;margin-top:3px;"><div style="height:4px;background:${accColor};border-radius:2px;width:${acc}%;transition:width .4s;"></div></div>`;
+        return `<tr style="border-top:1px solid #F0F3F7;">
+          <td style="padding:8px 14px;font-size:12px;color:#072B40;font-weight:600;">${esc(row.suggested_rule || '(no rule)')}</td>
+          <td style="padding:8px 10px;text-align:center;font-size:12px;color:#6B849A;">${tot}</td>
+          <td style="padding:8px 10px;text-align:center;font-size:12px;color:#21B57A;font-weight:700;">${row.correct_count||0}</td>
+          <td style="padding:8px 10px;text-align:center;font-size:12px;color:#ED666B;font-weight:700;">${row.wrong_count||0}</td>
+          <td style="padding:8px 14px;font-size:12px;color:${accColor};font-weight:700;">${acc}%${bar}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Wrong patterns list
+    const wrongList = document.getElementById('la-wrong-list');
+    if (!j.wrong.length) {
+      wrongList.innerHTML = '<div style="text-align:center;padding:24px;color:#9BAFC0;font-size:12px;">No misclassifications found 🎉</div>';
+    } else {
+      wrongList.innerHTML = j.wrong.map(w => `
+        <div style="padding:10px 12px;border-radius:8px;background:#FFF5F5;border:1px solid rgba(237,102,107,.15);margin-bottom:8px;">
+          <div style="font-size:11px;font-weight:700;color:#ED666B;margin-bottom:4px;">
+            Rule: ${esc(w.suggested_rule || '(no rule)')} → ${esc(w.agent_type || '?')}
+          </div>
+          <div style="font-size:11px;color:#6B849A;">
+            ❌ ${w.wrong_count} wrong classification${w.wrong_count>1?'s':''}
+            ${w.sample_subject ? `<br><span style="font-style:italic">"${esc(w.sample_subject)}"</span>` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Learned patterns table
+    const ptbody = document.getElementById('la-patterns-tbody');
+    if (!j.patterns.length) {
+      ptbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#9BAFC0;">No patterns discovered yet</td></tr>';
+    } else {
+      ptbody.innerHTML = j.patterns.map(p => {
+        const conf = Math.round((p.confidence||0) * 100);
+        const confColor = conf >= 80 ? '#21B57A' : conf >= 60 ? '#F4891F' : '#ED666B';
+        const statusBg = p.status === 'active' ? 'rgba(33,181,122,.12)' : 'rgba(237,102,107,.12)';
+        const statusColor = p.status === 'active' ? '#21B57A' : '#ED666B';
+        return `<tr style="border-top:1px solid #F0F3F7;">
+          <td style="padding:8px 14px;font-size:12px;color:#072B40;font-weight:600;max-width:180px;word-break:break-all;">${esc(p.pattern_value)}</td>
+          <td style="padding:8px 10px;font-size:11px;color:#6B849A;">${esc(p.pattern_type)}</td>
+          <td style="padding:8px 10px;font-size:12px;font-weight:600;color:#F4891F;">${esc(p.suggested_type)}</td>
+          <td style="padding:8px 10px;text-align:center;font-size:12px;color:#6B849A;">${p.sample_count||0}</td>
+          <td style="padding:8px 10px;text-align:center;font-size:12px;color:${confColor};font-weight:700;">${conf}%</td>
+          <td style="padding:8px 14px;"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px;background:${statusBg};color:${statusColor};">${esc(p.status)}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // Recent feedback feed
+    const recentList = document.getElementById('la-recent-list');
+    if (!j.recent.length) {
+      recentList.innerHTML = '<div style="text-align:center;padding:24px;color:#9BAFC0;font-size:12px;">No feedback yet</div>';
+    } else {
+      recentList.innerHTML = j.recent.map(f => {
+        const fbColor = f.feedback === 'correct' ? '#21B57A' : '#ED666B';
+        const fbIcon  = f.feedback === 'correct' ? '👍' : '👎';
+        return `<div style="padding:10px 16px;border-bottom:1px solid #F0F3F7;display:flex;align-items:flex-start;gap:10px;">
+          <span style="font-size:16px;flex-shrink:0;line-height:1.3;">${fbIcon}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:600;color:#072B40;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              #${esc(f.ticket_number)} · ${esc(f.ticket_subject||'No subject')}
+            </div>
+            <div style="font-size:11px;color:#6B849A;margin-top:2px;">
+              Rule: <span style="color:#F4891F;font-weight:600;">${esc(f.suggested_rule||'—')}</span>
+              → Suggested: <strong>${esc(f.suggested_type||'—')}</strong>
+              ${f.agent_type && f.agent_type !== f.suggested_type ? `→ Agent chose: <strong style="color:${fbColor};">${esc(f.agent_type)}</strong>` : ''}
+            </div>
+            <div style="font-size:10px;color:#9BAFC0;margin-top:2px;">${esc(f.agent_email||'?')} · ${f.created_at ? new Date(f.created_at+'Z').toLocaleString() : ''}</div>
+          </div>
+          <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:99px;background:${f.feedback==='correct'?'rgba(33,181,122,.1)':'rgba(237,102,107,.1)'};color:${fbColor};flex-shrink:0;">${esc(f.feedback)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    _laLoaded = true;
+  } catch(e) {
+    console.error('laLoadStats error:', e);
+    document.getElementById('la-rule-tbody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#ED666B;">Error: ${esc(e.message)}</td></tr>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;display:inline;margin-right:4px;"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Refresh'; }
+  }
+}
+
+async function laRunAnalysis() {
+  const btn = document.getElementById('la-analyze-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Running GPT-4o analysis…'; }
+  const card = document.getElementById('la-analysis-card');
+  const body = document.getElementById('la-analysis-body');
+  const ts   = document.getElementById('la-analysis-ts');
+  if (card) card.style.display = 'none';
+  try {
+    const r = await fetch(BACKEND + '/api/agent-learning/analyze', { method: 'POST' });
+    const j = await r.json();
+    if (!j.success) throw new Error(j.error || 'Analysis failed');
+
+    // Display result
+    if (card) card.style.display = 'block';
+    if (ts) ts.textContent = 'Generated ' + new Date().toLocaleTimeString();
+    if (body) {
+      const rec = j.recommendations;
+      if (typeof rec === 'string') {
+        body.textContent = rec;
+      } else if (typeof rec === 'object') {
+        body.innerHTML = laFormatAnalysis(rec);
+      } else {
+        body.textContent = JSON.stringify(j, null, 2);
+      }
+    }
+  } catch(e) {
+    if (card) card.style.display = 'block';
+    if (body) body.innerHTML = `<span style="color:#ED666B;">Analysis failed: ${esc(e.message)}</span>`;
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;display:inline;margin-right:4px;"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Run AI Analysis';
+    }
+  }
+}
+
+function laFormatAnalysis(rec) {
+  const sections = [];
+
+  if (rec.summary) {
+    sections.push(`<div style="background:rgba(244,137,31,.07);border-left:3px solid #F4891F;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#F4891F;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">📊 Analysis Summary</div>
+      <div style="font-size:13px;color:#3A5068;line-height:1.6;">${esc(rec.summary)}</div>
+    </div>`);
+  }
+
+  if (rec.rule_improvements && rec.rule_improvements.length) {
+    const items = rec.rule_improvements.map(r => `
+      <div style="background:#F7F8F8;border-radius:8px;padding:12px 14px;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;color:#072B40;">🔧 ${esc(r.rule||r.pattern||'Rule')}</div>
+        <div style="font-size:12px;color:#6B849A;margin-top:4px;">${esc(r.suggestion||r.improvement||'')}</div>
+        ${r.confidence ? `<div style="font-size:11px;color:#F4891F;margin-top:4px;font-weight:600;">Confidence: ${esc(String(r.confidence))}</div>` : ''}
+      </div>`).join('');
+    sections.push(`<div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#072B40;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">🎯 Suggested Rule Improvements</div>
+      ${items}
+    </div>`);
+  }
+
+  if (rec.new_patterns && rec.new_patterns.length) {
+    const items = rec.new_patterns.map(p => `
+      <div style="background:#F7F8F8;border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+        <div style="font-size:12px;font-weight:700;color:#6c47d0;">${esc(p.pattern||p.value||'Pattern')}</div>
+        <div style="font-size:12px;color:#6B849A;margin-top:3px;">Suggests: <strong>${esc(p.type||p.suggested_type||'')}</strong></div>
+      </div>`).join('');
+    sections.push(`<div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#072B40;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">✨ Newly Discovered Patterns</div>
+      ${items}
+    </div>`);
+  }
+
+  if (rec.observations) {
+    sections.push(`<div style="margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:#072B40;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">📝 Observations</div>
+      <div style="font-size:13px;color:#3A5068;line-height:1.6;white-space:pre-wrap;">${esc(rec.observations)}</div>
+    </div>`);
+  }
+
+  return sections.join('') || `<pre style="font-size:12px;color:#3A5068;">${esc(JSON.stringify(rec, null, 2))}</pre>`;
+}
+
 </script>
 
 <!-- ADIT THEME — External CSS loaded absolutely last, wins all cascade conflicts -->
