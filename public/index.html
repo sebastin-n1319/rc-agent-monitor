@@ -11386,17 +11386,56 @@ tbody tr:hover td{
         <!-- MY TICKETS table view — shown when tl-mode-mytickets is active -->
         <div id="tl-mytickets-panel" style="display:none;">
           <div class="tl-card" style="padding:0;overflow:hidden;">
-            <div style="padding:14px 16px;border-bottom:1px solid rgb(222,225,230);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-              <div class="tl-card-title" style="margin:0;">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#F4891F"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-                My Logged Tickets
+            <!-- My Tickets header + filter bar -->
+            <div style="padding:12px 16px;border-bottom:1px solid rgb(222,225,230);">
+              <!-- Row 1: title + search + refresh -->
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+                <div class="tl-card-title" style="margin:0;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#F4891F"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                  My Logged Tickets
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <div style="position:relative;display:flex;align-items:center;">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="#9BAFC0" stroke-width="1.6" stroke-linecap="round" style="position:absolute;left:8px;width:12px;height:12px;pointer-events:none;"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/></svg>
+                    <input id="tl-mt-search" type="text" placeholder="Search tickets…" oninput="tlFilterMyTickets()" style="padding:5px 10px 5px 26px;border:1px solid rgb(222,225,230);border-radius:7px;font-size:12px;font-family:'Poppins',sans-serif;outline:none;color:#072B40;width:160px;">
+                  </div>
+                  <button onclick="tlLoadMyTickets()" style="padding:5px 12px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:7px;font-size:11px;font-weight:600;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:5px;">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:11px;height:11px"><path d="M13.5 2.5A6.5 6.5 0 1 1 8 1.5"/><path d="M8 1.5v4M13.5 2.5h-4"/></svg>
+                    Refresh
+                  </button>
+                </div>
               </div>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <input id="tl-mt-search" type="text" placeholder="Search…" oninput="tlFilterMyTickets()" style="padding:5px 10px;border:1px solid rgb(222,225,230);border-radius:7px;font-size:12px;font-family:'Poppins',sans-serif;outline:none;color:#072B40;width:140px;">
-                <button onclick="tlLoadMyTickets()" style="padding:5px 12px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:7px;font-size:11px;font-weight:600;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:5px;">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:11px;height:11px"><path d="M13.5 2.5A6.5 6.5 0 1 1 8 1.5"/><path d="M8 1.5v4M13.5 2.5h-4"/></svg>
-                  Refresh
-                </button>
+              <!-- Row 2: filter chips -->
+              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                <!-- Channel filter -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <span style="font-size:10px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.05em;margin-right:2px;">Channel</span>
+                  <button class="tl-mt-chip tl-mt-chip-channel active" data-val="" onclick="tlMtSetFilter('channel','')" style="">All</button>
+                  <button class="tl-mt-chip tl-mt-chip-channel" data-val="Email" onclick="tlMtSetFilter('channel','Email')" style="">Email</button>
+                  <button class="tl-mt-chip tl-mt-chip-channel" data-val="Chat" onclick="tlMtSetFilter('channel','Chat')" style="">Chat</button>
+                  <button class="tl-mt-chip tl-mt-chip-channel" data-val="Phone" onclick="tlMtSetFilter('channel','Phone')" style="">Phone</button>
+                  <button class="tl-mt-chip tl-mt-chip-channel" data-val="Web" onclick="tlMtSetFilter('channel','Web')" style="">Web</button>
+                </div>
+                <div style="width:1px;height:18px;background:rgb(222,225,230);flex-shrink:0;"></div>
+                <!-- Queue filter -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <span style="font-size:10px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.05em;margin-right:2px;">Queue</span>
+                  <button class="tl-mt-chip tl-mt-chip-queue active" data-val="" onclick="tlMtSetFilter('queue','')" style="">All</button>
+                  <button class="tl-mt-chip tl-mt-chip-queue" data-val="Yes" onclick="tlMtSetFilter('queue','Yes')" style="">Yes</button>
+                  <button class="tl-mt-chip tl-mt-chip-queue" data-val="No" onclick="tlMtSetFilter('queue','No')" style="">No</button>
+                  <button class="tl-mt-chip tl-mt-chip-queue" data-val="N/A" onclick="tlMtSetFilter('queue','N/A')" style="">N/A</button>
+                </div>
+                <div style="width:1px;height:18px;background:rgb(222,225,230);flex-shrink:0;"></div>
+                <!-- Period filter -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <span style="font-size:10px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.05em;margin-right:2px;">Period</span>
+                  <button class="tl-mt-chip tl-mt-chip-period active" data-val="" onclick="tlMtSetFilter('period','')" style="">All</button>
+                  <button class="tl-mt-chip tl-mt-chip-period" data-val="today" onclick="tlMtSetFilter('period','today')" style="">Today</button>
+                  <button class="tl-mt-chip tl-mt-chip-period" data-val="week" onclick="tlMtSetFilter('period','week')" style="">This Week</button>
+                  <button class="tl-mt-chip tl-mt-chip-period" data-val="month" onclick="tlMtSetFilter('period','month')" style="">This Month</button>
+                </div>
+                <!-- Clear filters -->
+                <button id="tl-mt-clear-filters" onclick="tlMtClearFilters()" style="display:none;margin-left:4px;padding:3px 9px;background:rgba(237,102,107,.08);border:1px solid rgba(237,102,107,.2);border-radius:50px;font-size:10px;font-weight:600;color:#ED666B;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;" onmouseover="this.style.background='rgba(237,102,107,.16)'" onmouseout="this.style.background='rgba(237,102,107,.08)'">✕ Clear filters</button>
               </div>
             </div>
             <div style="overflow-x:auto;">
@@ -12767,6 +12806,38 @@ function tlSetMode(mode) {
 
 // ── My Tickets — table view ────────────────────────────────────────────────
 let tlMyTicketsData = [];   // cached rows for client-side filter
+let tlMtFilterChannel = ''; // '' = All
+let tlMtFilterQueue   = ''; // '' = All
+let tlMtFilterPeriod  = ''; // '' = All | 'today' | 'week' | 'month'
+
+function tlMtSetFilter(type, val) {
+  if (type === 'channel') tlMtFilterChannel = val;
+  else if (type === 'queue') tlMtFilterQueue = val;
+  else if (type === 'period') tlMtFilterPeriod = val;
+  // Update active chip
+  document.querySelectorAll('.tl-mt-chip-' + type).forEach(b => {
+    b.classList.toggle('active', b.dataset.val === val);
+  });
+  // Show/hide clear-filters button
+  const hasFilter = tlMtFilterChannel || tlMtFilterQueue || tlMtFilterPeriod || (document.getElementById('tl-mt-search')||{}).value;
+  const clearBtn = document.getElementById('tl-mt-clear-filters');
+  if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
+  tlFilterMyTickets();
+}
+
+function tlMtClearFilters() {
+  tlMtFilterChannel = '';
+  tlMtFilterQueue   = '';
+  tlMtFilterPeriod  = '';
+  const searchEl = document.getElementById('tl-mt-search');
+  if (searchEl) searchEl.value = '';
+  document.querySelectorAll('.tl-mt-chip').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === '');
+  });
+  const clearBtn = document.getElementById('tl-mt-clear-filters');
+  if (clearBtn) clearBtn.style.display = 'none';
+  tlFilterMyTickets();
+}
 
 async function tlLoadMyTickets() {
   const tbody  = document.getElementById('tl-mt-tbody');
@@ -12789,18 +12860,61 @@ async function tlLoadMyTickets() {
 
 function tlFilterMyTickets() {
   const q = ((document.getElementById('tl-mt-search') || {}).value || '').toLowerCase().trim();
-  const rows = q
-    ? tlMyTicketsData.filter(t =>
-        (t.ticketId||'').toLowerCase().includes(q) ||
-        (t.channel||'').toLowerCase().includes(q) ||
-        (t.ticketType||'').toLowerCase().includes(q) ||
-        (t.date||'').toLowerCase().includes(q))
-    : tlMyTicketsData;
+
+  // Date range helpers
+  const now = new Date();
+  const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
+  const weekAgo  = new Date(now); weekAgo.setDate(now.getDate() - 6);
+  const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 29);
+  const parseDate = s => { // handles both DD/MM/YYYY and YYYY-MM-DD
+    if (!s) return null;
+    if (s.includes('/')) { const [d,m,y] = s.split('/'); return new Date(+y, +m-1, +d); }
+    return new Date(s);
+  };
+
+  let rows = tlMyTicketsData;
+
+  // Text search
+  if (q) rows = rows.filter(t =>
+    (t.ticketId||'').toLowerCase().includes(q) ||
+    (t.channel||'').toLowerCase().includes(q) ||
+    (t.ticketType||'').toLowerCase().includes(q) ||
+    (t.date||'').toLowerCase().includes(q) ||
+    (t.notes||'').toLowerCase().includes(q));
+
+  // Channel filter
+  if (tlMtFilterChannel) rows = rows.filter(t => (t.channel||'') === tlMtFilterChannel);
+
+  // Queue filter
+  if (tlMtFilterQueue) {
+    if (tlMtFilterQueue === 'N/A') rows = rows.filter(t => !t.pickedFromQueue || t.pickedFromQueue === '' || t.pickedFromQueue === 'N/A');
+    else rows = rows.filter(t => (t.pickedFromQueue||'') === tlMtFilterQueue);
+  }
+
+  // Period filter
+  if (tlMtFilterPeriod) {
+    rows = rows.filter(t => {
+      const d = parseDate(t.date);
+      if (!d) return false;
+      if (tlMtFilterPeriod === 'today') return t.date === todayStr || d.toLocaleDateString('en-CA') === todayStr;
+      if (tlMtFilterPeriod === 'week')  return d >= weekAgo;
+      if (tlMtFilterPeriod === 'month') return d >= monthAgo;
+      return true;
+    });
+  }
+
+  // Update clear-filters button visibility
+  const hasFilter = tlMtFilterChannel || tlMtFilterQueue || tlMtFilterPeriod || q;
+  const clearBtn = document.getElementById('tl-mt-clear-filters');
+  if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
 
   const tbody = document.getElementById('tl-mt-tbody');
   if (!tbody) return;
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:#9BAFC0;font-size:12px;">${q ? 'No tickets match your search.' : 'No tickets found.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:#9BAFC0;font-size:12px;">${hasFilter ? 'No tickets match the current filters.' : 'No tickets found.'}</td></tr>`;
+    // Update footer count
+    const footer = document.getElementById('tl-mt-footer');
+    if (footer) { footer.style.display = ''; footer.textContent = `0 of ${tlMyTicketsData.length} tickets`; }
     return;
   }
 
@@ -12832,6 +12946,17 @@ function tlFilterMyTickets() {
       </td>
     </tr>`;
   }).join('');
+
+  // Update footer count
+  const footer = document.getElementById('tl-mt-footer');
+  if (footer) {
+    const total = tlMyTicketsData.length;
+    const shown = rows.length;
+    footer.style.display = '';
+    footer.innerHTML = hasFilter
+      ? `<span style="color:#3A5068;font-weight:600;">${shown}</span> of <span>${total}</span> tickets match filters`
+      : `<span style="color:#3A5068;font-weight:600;">${total}</span> ticket${total !== 1 ? 's' : ''} total`;
+  }
 }
 
 // ── Edit Modal ─────────────────────────────────────────────────────────────

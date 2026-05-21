@@ -5266,6 +5266,40 @@ html.dark-mode .tl-period-btn.active { background: #0D2A3E; }
 .tl-edit-opt-btn[data-field="notes"][data-val="DUPLICATE"].active { background: rgba(237,102,107,.1) !important; border-color: #ED666B !important; color: #C82B30 !important; }
 .tl-edit-opt-btn[data-field="notes"][data-val="BACKLOG"].active   { background: rgba(217,119,6,.1)  !important; border-color: #D97706 !important; color: #B45309 !important; }
 
+/* My Tickets filter chips */
+.tl-mt-chip {
+  padding: 3px 10px;
+  background: #F7F8F8;
+  border: 1px solid rgb(222,225,230);
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6B849A;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tl-mt-chip:hover {
+  background: rgba(244,137,31,.06);
+  border-color: rgba(244,137,31,.3);
+  color: #C26510;
+}
+.tl-mt-chip.active {
+  background: rgba(244,137,31,.12);
+  border-color: #F4891F;
+  color: #C26510;
+  box-shadow: 0 0 0 2px rgba(244,137,31,.12);
+}
+/* Channel-specific active colours */
+.tl-mt-chip-channel[data-val="Email"].active  { background: rgba(33,170,224,.1);  border-color: #21AAE0; color: #0C73A8; box-shadow: 0 0 0 2px rgba(33,170,224,.12); }
+.tl-mt-chip-channel[data-val="Chat"].active   { background: rgba(45,220,150,.1);  border-color: #2DDC96; color: #0D8C5B; box-shadow: 0 0 0 2px rgba(45,220,150,.12); }
+.tl-mt-chip-channel[data-val="Phone"].active  { background: rgba(244,137,31,.12); border-color: #F4891F; color: #C26510; box-shadow: 0 0 0 2px rgba(244,137,31,.12); }
+.tl-mt-chip-channel[data-val="Web"].active    { background: rgba(155,89,182,.1);  border-color: #9B59B6; color: #6C3483; box-shadow: 0 0 0 2px rgba(155,89,182,.12); }
+/* Queue-specific active colours */
+.tl-mt-chip-queue[data-val="Yes"].active { background: rgba(22,101,52,.1);  border-color: #16A34A; color: #166534; box-shadow: 0 0 0 2px rgba(22,163,74,.12); }
+.tl-mt-chip-queue[data-val="No"].active  { background: rgba(159,18,57,.08); border-color: #E11D48; color: #9F1239; box-shadow: 0 0 0 2px rgba(225,29,72,.12); }
+
 /* Dark mode */
 html.dark-mode .tl-date-bar   { background: rgba(244,137,31,.06); border-color: rgba(244,137,31,.2); }
 html.dark-mode .tl-date-input-bar { background: #091F30; border-color: rgba(255,255,255,.12); color: #E8F4FC; }
