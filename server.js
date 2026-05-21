@@ -1139,7 +1139,9 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     }
 
     if (!ticket) return res.json({ success: true, found: false });
-    if (!ticket) return res.json({ success: true, found: false });
+
+    // Debug: log raw Zoho fields to diagnose spam false-positives
+    console.log(`🔍 Zoho ticket #${rawId} raw fields: isSpam=${JSON.stringify(ticket.isSpam)} source=${JSON.stringify(ticket.source)} channel=${JSON.stringify(ticket.channel)} assigneeId=${ticket.assigneeId}`);
 
     // Get contact info
     let contact = null;
