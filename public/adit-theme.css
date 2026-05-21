@@ -3590,7 +3590,17 @@ html.dark-mode .break-protocol-pill strong { color:#E8F4FC; }
   margin: 0 auto;
   animation: fadeUp .25s ease;
 }
-@media(max-width:780px){ .tl-page { grid-template-columns: 1fr; } }
+/* Right column stays pinned while scrolling the long form */
+.tl-page > div:last-child {
+  position: sticky;
+  top: 72px; /* clears the fixed header */
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+@media(max-width:780px){
+  .tl-page { grid-template-columns: 1fr; }
+  .tl-page > div:last-child { position: static; max-height: none; overflow-y: visible; }
+}
 
 /* ── Cards ── */
 .tl-card {

@@ -11375,8 +11375,25 @@ tbody tr:hover td{
         </div>
       </div>
 
-      <!-- RIGHT: Live pivot report -->
-      <div>
+      <!-- RIGHT: AI analysis + live pivot report -->
+      <div style="display:flex;flex-direction:column;gap:14px;">
+
+        <!-- AI Analysis side panel — hidden until a ticket is loaded -->
+        <div id="tl-ai-side" style="display:none;border-radius:12px;overflow:hidden;border:1px solid #E8EDF2;background:#fff;animation:fadeUp .2s ease;">
+          <!-- header -->
+          <div style="padding:10px 14px;background:linear-gradient(135deg,#0D2A3E,#1A3D5C);display:flex;align-items:center;gap:8px;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="width:26px;height:26px;border-radius:7px;background:rgba(244,137,31,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <span style="font-size:12px;font-weight:800;color:#fff;letter-spacing:-.01em;">AI Ticket Analysis</span>
+            </div>
+            <span style="font-size:9px;font-weight:700;color:rgba(178,219,240,.6);background:rgba(255,255,255,.08);padding:2px 7px;border-radius:20px;letter-spacing:.04em;">gpt-4o · live</span>
+          </div>
+          <!-- body — populated by JS -->
+          <div id="tl-ai-side-body" style="padding:12px 14px;"></div>
+        </div>
+
         <!-- Today's pivot report -->
         <div class="tl-pivot-card" id="tl-pivot-card">
           <div class="tl-pivot-header">
@@ -11427,8 +11444,9 @@ tbody tr:hover td{
           </div>
           <!-- No manual override — server uses email→name mapping automatically -->
         </div>
-      </div>
-    </div>
+
+      </div><!-- end right column -->
+    </div><!-- end tl-page -->
   </div>
 </div>
 
@@ -12752,9 +12770,10 @@ function tlOnTicketIdInput() {
   clearTimeout(_zohoLookupTimer);
   const card = document.getElementById('tl-zoho-card');
 
-  // Scenario: field cleared — hide card, reset
+  // Scenario: field cleared — hide card + AI side panel, reset
   if (!raw || raw.length < 4) {
     if (card) card.style.display = 'none';
+    tlClearAISide();
     return;
   }
 
@@ -12827,11 +12846,9 @@ async function zohoLookupTicket(id) {
             ${t.satisfaction?`<span style="font-size:10px;color:#6B849A;">${{Positive:'⭐ Positive',Neutral:'👍 Neutral',Negative:'⚠ Negative'}[t.satisfaction]||t.satisfaction}</span>`:''}
           </div>
         </div>
-        ${t.aiAnalysis ? renderAIPanel(t.aiAnalysis, t) : ''}
-        <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);align-items:center;">
-          <span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Suggested type:</strong> ${t.ticketType}${t.ruleName?` <span style="background:rgba(251,200,75,.15);color:#B45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.04em;">AUTO-RULE</span>`:''}</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);align-items:center;">
+          <span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Type:</strong> ${t.ticketType}${t.ruleName?` <span style="background:rgba(251,200,75,.15);color:#B45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.04em;">AUTO-RULE</span>`:''}</span>
           ${t.assignee?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Assignee:</strong> ${t.assignee}</span>`:''}
-          ${t.tags?.length?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Tags:</strong> ${t.tags.join(', ')}</span>`:''}
           <span style="margin-left:auto;display:flex;gap:4px;align-items:center;">
             <span style="font-size:10px;color:#9BAFC0;">Type correct?</span>
             <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'')},'${t.channel}','${t.ticketType}','${t.ruleName||'ai'}','correct',this)" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
@@ -12868,9 +12885,132 @@ async function zohoLookupTicket(id) {
         </div>
       </div>` : ''}
       `;
+
+    // Push AI analysis into the right-column side panel
+    tlUpdateAISide(t);
+
   } catch(e) {
     if (card) card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;">Zoho lookup unavailable — log manually.</div>`;
+    tlClearAISide();
   }
+}
+
+// ── AI side panel helpers ─────────────────────────────────────────────────────
+function tlUpdateAISide(t) {
+  const panel = document.getElementById('tl-ai-side');
+  const body  = document.getElementById('tl-ai-side-body');
+  if (!panel || !body) return;
+  if (!t.aiAnalysis) { tlClearAISide(); return; }
+
+  body.innerHTML = renderAIPanelSide(t.aiAnalysis, t);
+  panel.style.display = 'block';
+}
+
+function tlClearAISide() {
+  const panel = document.getElementById('tl-ai-side');
+  const body  = document.getElementById('tl-ai-side-body');
+  if (panel) panel.style.display = 'none';
+  if (body)  body.innerHTML = '';
+}
+
+// Compact side-column version of the AI panel (no outer wrapper — panel provides it)
+function renderAIPanelSide(ai, t) {
+  const sentimentConfig = {
+    'Frustrated': { icon:'😤', color:'#DC2626', bg:'rgba(220,38,38,.08)', border:'rgba(220,38,38,.2)' },
+    'Urgent':     { icon:'🚨', color:'#EA580C', bg:'rgba(234,88,12,.08)', border:'rgba(234,88,12,.2)' },
+    'Confused':   { icon:'🤔', color:'#D97706', bg:'rgba(217,119,6,.08)',  border:'rgba(217,119,6,.2)' },
+    'Neutral':    { icon:'😐', color:'#6B84A8', bg:'rgba(107,132,168,.08)',border:'rgba(107,132,168,.2)' },
+    'Satisfied':  { icon:'😊', color:'#16A34A', bg:'rgba(22,163,74,.08)',  border:'rgba(22,163,74,.2)' },
+  };
+  const urgencyConfig = {
+    'Critical': { color:'#DC2626', bg:'rgba(220,38,38,.1)', dot:'#DC2626' },
+    'High':     { color:'#EA580C', bg:'rgba(234,88,12,.1)', dot:'#EA580C' },
+    'Medium':   { color:'#D97706', bg:'rgba(217,119,6,.1)', dot:'#D97706' },
+    'Low':      { color:'#6B84A8', bg:'rgba(107,132,168,.1)',dot:'#9BAFC0' },
+  };
+
+  const sc   = sentimentConfig[ai.sentiment] || sentimentConfig['Neutral'];
+  const uc   = urgencyConfig[ai.urgency]     || urgencyConfig['Low'];
+  const conf = ai.ticket_type_confidence ? Math.round(ai.ticket_type_confidence * 100) : null;
+  const confBar = conf !== null
+    ? `<div style="margin-top:5px;height:3px;background:#E8EDF2;border-radius:2px;overflow:hidden;"><div style="height:3px;background:${conf>=75?'#21B57A':conf>=50?'#F4891F':'#ED666B'};width:${conf}%;border-radius:2px;transition:width .5s;"></div></div>`
+    : '';
+
+  const tags = [
+    ai.sentiment  ? `<span style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">${sc.icon} ${ai.sentiment}</span>` : '',
+    ai.urgency    ? `<span style="background:${uc.bg};color:${uc.color};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">⚡ ${ai.urgency} Urgency</span>` : '',
+    ai.issue_category ? `<span style="background:rgba(108,71,208,.08);color:#6c47d0;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">${ai.issue_category}</span>` : '',
+  ].filter(Boolean).join('');
+
+  const sections = [];
+
+  // Summary
+  if (ai.summary) {
+    sections.push(`<div style="font-size:12px;color:#3A5068;line-height:1.5;margin-bottom:10px;">${esc(ai.summary)}</div>`);
+  }
+
+  // Tags row
+  if (tags) {
+    sections.push(`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">${tags}</div>`);
+  }
+
+  // AI type + confidence
+  if (ai.ticket_type) {
+    sections.push(`<div style="background:#F7F8F8;border-radius:8px;padding:8px 10px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:11px;font-weight:600;color:#6B849A;">AI Ticket Type</span>
+        ${conf!==null?`<span style="font-size:11px;font-weight:800;color:${conf>=75?'#21B57A':conf>=50?'#F4891F':'#ED666B'};">${conf}% confident</span>`:''}
+      </div>
+      <div style="font-size:13px;font-weight:700;color:#072B40;margin-top:2px;">${esc(ai.ticket_type)}</div>
+      ${confBar}
+    </div>`);
+  }
+
+  // Suggested tone
+  if (ai.suggested_response_tone) {
+    sections.push(`<div style="font-size:11px;color:#6B849A;margin-bottom:10px;">Suggested tone: <strong style="color:#072B40;">${esc(ai.suggested_response_tone)}</strong></div>`);
+  }
+
+  // Escalation flag
+  if (ai.escalation_needed) {
+    sections.push(`<div style="background:rgba(220,38,38,.07);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:11px;color:#DC2626;font-weight:600;">
+      🚨 Escalation needed${ai.escalation_reason?` — ${esc(ai.escalation_reason)}`:''}
+    </div>`);
+  }
+
+  // Suggested action
+  if (ai.suggested_action) {
+    sections.push(`<div style="background:rgba(33,170,224,.06);border-left:3px solid #21AAE0;border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:10px;">
+      <div style="font-size:9.5px;font-weight:800;color:#21AAE0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">⚡ Suggested Action</div>
+      <div style="font-size:11.5px;color:#1A3D5C;line-height:1.5;">${esc(ai.suggested_action)}</div>
+    </div>`);
+  }
+
+  // Resolution hint
+  if (ai.possible_resolution) {
+    sections.push(`<div style="background:rgba(22,163,74,.06);border-left:3px solid #21B57A;border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:10px;">
+      <div style="font-size:9.5px;font-weight:800;color:#21B57A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">🔧 Resolution Hint</div>
+      <div style="font-size:11.5px;color:#1A3D5C;line-height:1.5;">${esc(ai.possible_resolution)}</div>
+    </div>`);
+  }
+
+  // Key details
+  if (ai.key_details && ai.key_details.length) {
+    const items = ai.key_details.map(d=>`<li style="font-size:11px;color:#3A5068;line-height:1.5;margin-bottom:2px;">› ${esc(d)}</li>`).join('');
+    sections.push(`<div style="margin-bottom:10px;">
+      <div style="font-size:9.5px;font-weight:800;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Key Details</div>
+      <ul style="margin:0;padding:0;list-style:none;">${items}</ul>
+    </div>`);
+  }
+
+  // Tags suggested
+  if (ai.tags_suggested && ai.tags_suggested.length) {
+    sections.push(`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;">
+      ${ai.tags_suggested.map(tag=>`<span style="background:#F0F3F7;color:#3A5068;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600;">#${esc(tag)}</span>`).join('')}
+    </div>`);
+  }
+
+  return sections.join('');
 }
 
 function renderAIPanel(ai, t) {
@@ -13175,6 +13315,7 @@ async function submitTicketLog() {
     tlAutoFilled.type    = false;
     const card = document.getElementById('tl-zoho-card');
     if (card) card.style.display = 'none';
+    tlClearAISide();
     ['channel','type'].forEach(g => {
       tlSelections[g] = '';
       document.querySelectorAll(`.tl-opt-btn[data-group="${g}"], .tl-type-btn[data-group="${g}"], .tl-ch-btn[data-group="${g}"]`)
