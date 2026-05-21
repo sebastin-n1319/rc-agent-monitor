@@ -11198,6 +11198,7 @@ tbody tr:hover td{
           <div class="tl-id-field">
             <span class="tl-id-prefix">#</span>
             <input class="tl-id-input" id="tl-ticket-id" type="text" inputmode="numeric" placeholder="Enter ticket number…" oninput="this.value=this.value.replace(/[^0-9]/g,'');tlOnTicketIdInput()">
+          <button id="tl-id-clear-btn" onclick="tlClearTicketId()" title="Clear ticket" style="display:none;background:none;border:none;cursor:pointer;padding:4px 8px;color:#9BAFC0;font-size:16px;line-height:1;transition:color .15s;flex-shrink:0;" onmouseover="this.style.color='#ED666B'" onmouseout="this.style.color='#9BAFC0'">×</button>
           </div>
           <div id="tl-id-error" style="font-size:11px;color:#ED666B;margin-top:8px;display:none;align-items:center;gap:4px;">
             <svg viewBox="0 0 16 16" fill="none" stroke="#ED666B" stroke-width="1.5" style="width:12px;height:12px"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
@@ -12125,6 +12126,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     setupLiveStream();
     refresh();
     setTimeout(firstLoadSync,2000);
+    setTimeout(restoreLastTab, 0);          // restore admin tab
+    setTimeout(restoreLastAgentSection, 50); // restore agent section
     return;
   }
 
@@ -12170,6 +12173,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     setupLiveStream();
     refresh();
     setTimeout(firstLoadSync,2000);
+    setTimeout(restoreLastTab, 0);          // restore admin tab after animation
+    setTimeout(restoreLastAgentSection, 50); // restore agent section after animation
   }, 520);
 
   setTimeout(forceAppVisible, 700);
@@ -12489,6 +12494,12 @@ function awUseVarText(text) {
   const usBtn=document.getElementById('aw-use-btn'); if(usBtn) usBtn.style.display='inline-flex';
 }
 
+// awUseVar(key) — used by the static variation card HTML (aw-var-a/b/c)
+function awUseVar(key) {
+  const bodyEl = document.querySelector(`#aw-var-${key} .awv2-var-body`);
+  if (bodyEl) awUseVarText(bodyEl.textContent);
+}
+
 // ── Thread summarizer shortcut ────────────────────────────────────────────────
 async function awSummarize() {
   const inp=document.getElementById('aw-input');
@@ -12536,6 +12547,7 @@ async function sendToAIWriter() {
   try {
     const res  = await fetch('/api/write-assist', {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, mode: awCurrentMode, agentType: awCurrentType })
     });
@@ -13082,6 +13094,23 @@ document.addEventListener('input', e => {
 let _zohoLookupTimer = null;
 let _zohoLastId = '';
 
+function tlClearTicketId() {
+  const inp = document.getElementById('tl-ticket-id');
+  if (inp) { inp.value = ''; inp.focus(); }
+  const clearBtn = document.getElementById('tl-id-clear-btn');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const card = document.getElementById('tl-zoho-card');
+  if (card) card.style.display = 'none';
+  tlClearAISide();
+  clearTimeout(_zohoLookupTimer);
+  _zohoLastId = '';
+  // Also reset auto-filled selections so next ticket gets a fresh auto-fill
+  if (tlAutoFilled.channel) { tlSelections.channel = ''; document.querySelectorAll('[data-group="channel"]').forEach(b=>b.classList.remove('active')); tlAutoFilled.channel=false; }
+  if (tlAutoFilled.type)    { tlSelections.type    = ''; document.querySelectorAll('[data-group="type"]').forEach(b=>b.classList.remove('active')); tlAutoFilled.type=false; }
+  const errEl = document.getElementById('tl-id-error');
+  if (errEl) errEl.style.display = 'none';
+}
+
 function tlOnTicketIdInput() {
   const raw = (document.getElementById('tl-ticket-id')?.value || '').trim();
   if (raw === _zohoLastId) return;
@@ -13103,10 +13132,21 @@ function tlOnTicketIdInput() {
 
   _zohoLastId = raw;
   clearTimeout(_zohoLookupTimer);
-  const card = document.getElementById('tl-zoho-card');
+  const card     = document.getElementById('tl-zoho-card');
+  const clearBtn = document.getElementById('tl-id-clear-btn');
 
-  // Scenario: field cleared — hide card + AI side panel, reset
-  if (!raw || raw.length < 4) {
+  // Show/hide the × clear button
+  if (clearBtn) clearBtn.style.display = raw ? 'inline-flex' : 'none';
+
+  // Scenario: field cleared — hide card + AI side panel immediately
+  if (!raw) {
+    if (card) card.style.display = 'none';
+    tlClearAISide();
+    return;
+  }
+
+  // Too short to look up yet — hide stale card but keep clear button
+  if (raw.length < 4) {
     if (card) card.style.display = 'none';
     tlClearAISide();
     return;
@@ -13125,6 +13165,8 @@ async function zohoLookupTicket(id) {
     const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include' });
     const data = await res.json();
     if (!card) return;
+    // Stale-response guard: if the ticket ID was cleared/changed since this lookup started, discard
+    if (_zohoLastId !== id) { card.style.display = 'none'; tlClearAISide(); return; }
     if (!data.success) { card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;">Zoho lookup unavailable — log manually.</div>`; return; }
     if (!data.found) {
       card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#ED666B;background:rgba(237,102,107,.05);display:flex;align-items:center;gap:7px;">
@@ -13186,8 +13228,8 @@ async function zohoLookupTicket(id) {
           ${t.assignee?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Assignee:</strong> ${t.assignee}</span>`:''}
           <span style="margin-left:auto;display:flex;gap:4px;align-items:center;">
             <span style="font-size:10px;color:#9BAFC0;">Type correct?</span>
-            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'')},'${t.channel}','${t.ticketType}','${t.ruleName||'ai'}','correct',this)" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
-            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'')},'${t.channel}','${t.ticketType}','${t.ruleName||'ai'}','wrong',this)" title="No, wrong" style="border:none;background:rgba(237,102,107,.1);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#9F1239;font-weight:700;">👎</button>
+            <button class="tl-fb-correct" data-num="${esc(t.ticketNumber)}" data-subj="${esc(t.subject||'')}" data-ch="${esc(t.channel)}" data-type="${esc(t.ticketType)}" data-rule="${esc(t.ruleName||'ai')}" onclick="tlSendFeedback(this,'correct')" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
+            <button class="tl-fb-wrong" data-num="${esc(t.ticketNumber)}" data-subj="${esc(t.subject||'')}" data-ch="${esc(t.channel)}" data-type="${esc(t.ticketType)}" data-rule="${esc(t.ruleName||'ai')}" onclick="tlSendFeedback(this,'wrong')" title="No, wrong" style="border:none;background:rgba(237,102,107,.1);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#9F1239;font-weight:700;">👎</button>
           </span>
         </div>
       </div>
@@ -13446,18 +13488,23 @@ function renderAIPanel(ai, t) {
   </div>`;
 }
 
-async function tlSendFeedback(ticketNumber, ticketSubject, channel, suggestedType, ruleName, verdict, btn) {
+async function tlSendFeedback(btn, verdict) {
+  // Read ticket context from data-* attributes (avoids JSON-in-onclick encoding issues)
+  const ticketNumber  = btn.dataset.num   || '';
+  const ticketSubject = btn.dataset.subj  || '';
+  const channel       = btn.dataset.ch    || '';
+  const suggestedType = btn.dataset.type  || '';
+  const ruleName      = btn.dataset.rule  || 'ai';
   try {
-    // Get the type the agent actually selected (if any)
     const agentType = tlSelections?.type || suggestedType;
     await fetch('/api/ticket-feedback', {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticketNumber, ticketSubject, zohoChannel: channel, suggestedType, suggestedRule: ruleName, agentType, feedback: verdict })
     });
-    // Visual confirmation
+    // Visual confirmation — replace entire thumbs row
     const row = btn.closest('span');
-    row.innerHTML = `<span style="font-size:10px;color:#166534;font-weight:600;">${verdict==='correct'?'✓ Thanks!':'✓ Noted — we\'ll improve'}</span>`;
+    if (row) row.innerHTML = `<span style="font-size:10px;color:#166534;font-weight:600;">${verdict==='correct'?'✓ Thanks!':'✓ Noted — we\'ll improve'}</span>`;
   } catch(e) { /* silent */ }
 }
 
