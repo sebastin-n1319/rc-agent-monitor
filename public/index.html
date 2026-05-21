@@ -12623,16 +12623,32 @@ async function rcnFetchTicket() {
       return;
     }
     const t = data.ticket;
-    // Pre-fill fields
-    const fn = (id, val) => { const el = document.getElementById(id); if (el && val) { el.value = val; el.style.borderColor='#2DDC96'; setTimeout(()=>{ el.style.borderColor='rgb(222,225,230)'; },1200); } };
-    fn('rcn-client-name', t.contact?.name || '');
+    // Pre-fill fields — highlight green on auto-fill, fade back after 1.2s
+    const fn = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (val) { el.value = val; el.style.borderColor='#2DDC96'; setTimeout(()=>{ el.style.borderColor='rgb(222,225,230)'; },1200); }
+      // Don't clear existing agent-typed values when Zoho has nothing
+    };
+    fn('rcn-client-name', t.contact?.name  || '');
     fn('rcn-email',       t.contact?.email || '');
-    // Practice name: from Zoho contact account name (often in contact)
-    // Callback: Zoho doesn't always return phone, leave blank if unavailable
+    fn('rcn-practice',    t.contact?.accountName || '');
+    fn('rcn-callback',    t.contact?.phone || '');
     if (status) {
-      status.innerHTML = `<div style="padding:8px 12px;background:rgba(45,220,150,.07);border:1px solid rgba(45,220,150,.2);border-radius:8px;font-size:12px;color:#166534;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-        <svg viewBox="0 0 16 16" fill="#2DDC96" style="width:12px;height:12px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 5.5-4 4a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L7 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06z"/></svg>
-        <strong>#${esc(String(t.ticketNumber))}</strong>: ${esc(t.subject||'')} — client details auto-filled. Check and complete any missing fields below.
+      const filled = [
+        t.contact?.name        && 'Name',
+        t.contact?.accountName && 'Practice',
+        t.contact?.email       && 'Email',
+        t.contact?.phone       && 'Callback',
+      ].filter(Boolean);
+      const missing = ['Name','Practice','Email','Callback','Account #'].filter(f => !filled.includes(f));
+      status.innerHTML = `<div style="padding:8px 12px;background:rgba(45,220,150,.07);border:1px solid rgba(45,220,150,.2);border-radius:8px;font-size:12px;color:#166534;display:flex;flex-direction:column;gap:4px;">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+          <svg viewBox="0 0 16 16" fill="#2DDC96" style="width:12px;height:12px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 5.5-4 4a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L7 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06z"/></svg>
+          <strong>#${esc(String(t.ticketNumber))}</strong>: ${esc(t.subject||'')}
+        </div>
+        ${filled.length ? `<div style="font-size:11px;">✓ Auto-filled: <strong>${filled.join(', ')}</strong></div>` : ''}
+        ${missing.length ? `<div style="font-size:11px;color:#B45309;">⚠ Fill manually: ${missing.join(', ')}</div>` : ''}
       </div>`;
       status.style.display = '';
     }

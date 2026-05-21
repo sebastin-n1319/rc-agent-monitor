@@ -1322,7 +1322,12 @@ Return this exact JSON structure:
       channel:      mapZohoChannel(ticket.channel),
       ticketType:   mapZohoType(ticket),
       assignee:     assigneeName,
-      contact:      contact ? { name: contact.fullName, email: contact.email } : null,
+      contact:      contact ? {
+        name:        contact.fullName || [contact.firstName, contact.lastName].filter(Boolean).join(' ') || '',
+        email:       contact.email || '',
+        phone:       contact.phone || contact.mobile || contact.homePhone || '',
+        accountName: contact.account?.accountName || contact.accountName || '',
+      } : null,
       aiAnalysis:   aiAnalysis,
       createdTime:  ticket.createdTime,
       modifiedTime: ticket.modifiedTime,
