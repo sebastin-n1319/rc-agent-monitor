@@ -12651,19 +12651,16 @@ async function zohoLookupTicket(id) {
             ${t.satisfaction?`<span style="font-size:10px;color:#6B849A;">${{Positive:'⭐ Positive',Neutral:'👍 Neutral',Negative:'⚠ Negative'}[t.satisfaction]||t.satisfaction}</span>`:''}
           </div>
         </div>
-        ${t.aiSummary ? `<div style="margin-top:2px;padding:8px 10px;background:rgba(33,170,224,.06);border:1px solid rgba(33,170,224,.18);border-radius:8px;font-size:12px;color:#1E40AF;line-height:1.5;">
-          <span style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#21AAE0;display:block;margin-bottom:3px;">AI Summary</span>
-          ${t.aiSummary}
-        </div>` : ''}
+        ${t.aiAnalysis ? renderAIPanel(t.aiAnalysis, t) : ''}
         <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);align-items:center;">
           <span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Suggested type:</strong> ${t.ticketType}${t.ruleName?` <span style="background:rgba(251,200,75,.15);color:#B45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.04em;">AUTO-RULE</span>`:''}</span>
           ${t.assignee?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Assignee:</strong> ${t.assignee}</span>`:''}
           ${t.tags?.length?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Tags:</strong> ${t.tags.join(', ')}</span>`:''}
-          ${t.ruleName ? `<span style="margin-left:auto;display:flex;gap:4px;align-items:center;">
-            <span style="font-size:10px;color:#9BAFC0;">Suggestion accurate?</span>
-            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'').replace(/'/g,"\\'")},'${t.channel}','${t.ticketType}','${t.ruleName}','correct',this)" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
-            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'').replace(/'/g,"\\'")},'${t.channel}','${t.ticketType}','${t.ruleName}','wrong',this)" title="No, wrong" style="border:none;background:rgba(237,102,107,.1);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#9F1239;font-weight:700;">👎</button>
-          </span>` : ''}
+          <span style="margin-left:auto;display:flex;gap:4px;align-items:center;">
+            <span style="font-size:10px;color:#9BAFC0;">Type correct?</span>
+            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'')},'${t.channel}','${t.ticketType}','${t.ruleName||'ai'}','correct',this)" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
+            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'')},'${t.channel}','${t.ticketType}','${t.ruleName||'ai'}','wrong',this)" title="No, wrong" style="border:none;background:rgba(237,102,107,.1);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#9F1239;font-weight:700;">👎</button>
+          </span>
         </div>
       </div>
       ${(t.threads&&t.threads.length) ? `
@@ -12698,6 +12695,104 @@ async function zohoLookupTicket(id) {
   } catch(e) {
     if (card) card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;">Zoho lookup unavailable — log manually.</div>`;
   }
+}
+
+function renderAIPanel(ai, t) {
+  const sentimentConfig = {
+    'Frustrated': { icon:'😤', color:'#DC2626', bg:'rgba(220,38,38,.08)', border:'rgba(220,38,38,.2)' },
+    'Urgent':     { icon:'🚨', color:'#EA580C', bg:'rgba(234,88,12,.08)', border:'rgba(234,88,12,.2)' },
+    'Confused':   { icon:'🤔', color:'#D97706', bg:'rgba(217,119,6,.08)',  border:'rgba(217,119,6,.2)' },
+    'Neutral':    { icon:'😐', color:'#6B84A8', bg:'rgba(107,132,168,.08)',border:'rgba(107,132,168,.2)' },
+    'Satisfied':  { icon:'😊', color:'#16A34A', bg:'rgba(22,163,74,.08)',  border:'rgba(22,163,74,.2)' },
+  };
+  const urgencyConfig = {
+    'Critical': { color:'#DC2626', bg:'rgba(220,38,38,.1)', dot:'#DC2626' },
+    'High':     { color:'#EA580C', bg:'rgba(234,88,12,.1)', dot:'#EA580C' },
+    'Medium':   { color:'#D97706', bg:'rgba(217,119,6,.1)', dot:'#D97706' },
+    'Low':      { color:'#6B84A8', bg:'rgba(107,132,168,.1)',dot:'#9BAFC0' },
+  };
+  const sc = sentimentConfig[ai.sentiment] || sentimentConfig['Neutral'];
+  const uc = urgencyConfig[ai.urgency]    || urgencyConfig['Low'];
+  const confPct = Math.round((ai.ticket_type_confidence||0)*100);
+  const confColor = confPct >= 80 ? '#16A34A' : confPct >= 60 ? '#D97706' : '#DC2626';
+
+  return `
+  <div style="margin-top:6px;border:1px solid rgba(62,158,255,.2);border-radius:10px;overflow:hidden;background:#F8FBFF;">
+    <!-- AI Header -->
+    <div style="background:linear-gradient(135deg,rgba(62,158,255,.12),rgba(139,92,246,.08));padding:8px 12px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(62,158,255,.15);">
+      <div style="width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#3E9EFF,#8B5CF6);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg viewBox="0 0 16 16" fill="white" style="width:11px;height:11px;"><path d="M8 1.5a3 3 0 0 1 3 3v.5h1a1.5 1.5 0 0 1 0 3h-.08A5 5 0 0 1 3 8v-.17a1.5 1.5 0 0 1 .5-2.83H4v-.5a3 3 0 0 1 3-3h1zm-1 8a1 1 0 1 0 2 0H7z"/></svg>
+      </div>
+      <span style="font-size:11px;font-weight:800;color:#1E3A5F;letter-spacing:-.01em;">AI Ticket Analysis</span>
+      <span style="margin-left:auto;font-size:9.5px;color:#6B84A8;font-weight:500;">gpt-4o · live</span>
+    </div>
+
+    <div style="padding:10px 12px;display:flex;flex-direction:column;gap:10px;">
+
+      <!-- Summary -->
+      <div style="font-size:12.5px;color:#0A1628;line-height:1.55;font-weight:500;">${ai.summary || ''}</div>
+
+      <!-- Chips row: sentiment + urgency + type confidence -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};"
+          title="${ai.sentiment_reason||''}">${sc.icon} ${ai.sentiment}</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:${uc.bg};color:${uc.color};border:1px solid ${uc.color}22;"
+          title="${ai.urgency_reason||''}">⚡ ${ai.urgency} Urgency</span>
+        ${ai.issue_category?`<span style="padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(139,92,246,.1);color:#7C3AED;border:1px solid rgba(139,92,246,.2);">${ai.issue_category}</span>`:''}
+        ${ai.escalation_needed?`<span style="padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:800;background:rgba(220,38,38,.1);color:#DC2626;border:1px solid rgba(220,38,38,.25);animation:livePulse 1.5s infinite;">🔺 Escalate</span>`:''}
+        ${ai.duplicate_risk?`<span style="padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(217,119,6,.1);color:#D97706;border:1px solid rgba(217,119,6,.2);">⚠ Possible Duplicate</span>`:''}
+      </div>
+
+      <!-- Type confidence bar -->
+      <div style="background:#EEF2FA;border-radius:8px;padding:8px 10px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+          <span style="font-size:10.5px;font-weight:700;color:#2D4A6F;">AI Ticket Type: <span style="color:#0A1628;">${ai.ticket_type||'Unknown'}</span></span>
+          <span style="font-size:10.5px;font-weight:800;color:${confColor};">${confPct}% confident</span>
+        </div>
+        <div style="height:4px;background:rgba(10,22,40,.1);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${confPct}%;background:linear-gradient(90deg,${confColor},${confColor}88);border-radius:4px;transition:width .4s;"></div>
+        </div>
+        ${ai.suggested_response_tone?`<div style="margin-top:5px;font-size:10px;color:#6B84A8;">Suggested tone: <strong style="color:#2D4A6F;">${ai.suggested_response_tone}</strong></div>`:''}
+      </div>
+
+      <!-- Suggested Action -->
+      ${ai.suggested_action ? `
+      <div style="padding:8px 10px;background:rgba(0,192,125,.07);border:1px solid rgba(0,192,125,.2);border-radius:8px;">
+        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#059669;margin-bottom:3px;">💡 Suggested Action</div>
+        <div style="font-size:12px;color:#065F46;line-height:1.45;">${ai.suggested_action}</div>
+      </div>` : ''}
+
+      <!-- Possible resolution -->
+      ${ai.possible_resolution ? `
+      <div style="padding:8px 10px;background:#FAFBFC;border:1px solid rgb(222,225,230);border-radius:8px;">
+        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6B84A8;margin-bottom:3px;">🔧 Resolution Hint</div>
+        <div style="font-size:12px;color:#2D4A6F;line-height:1.45;">${ai.possible_resolution}</div>
+      </div>` : ''}
+
+      <!-- Key details -->
+      ${(ai.key_details?.length) ? `
+      <div>
+        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#6B84A8;margin-bottom:5px;">Key Details</div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          ${ai.key_details.map(d=>`<div style="display:flex;align-items:flex-start;gap:6px;font-size:11.5px;color:#2D4A6F;"><span style="color:#3E9EFF;margin-top:1px;flex-shrink:0;">›</span>${d}</div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <!-- Escalation reason -->
+      ${ai.escalation_needed && ai.escalation_reason ? `
+      <div style="padding:7px 10px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:8px;font-size:11.5px;color:#DC2626;">
+        <strong>Escalation reason:</strong> ${ai.escalation_reason}
+      </div>` : ''}
+
+      <!-- Suggested tags -->
+      ${(ai.tags_suggested?.length) ? `
+      <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:10px;color:#9BAFC0;font-weight:600;">Suggested tags:</span>
+        ${ai.tags_suggested.map(tag=>`<span style="padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(107,132,168,.1);color:#6B84A8;border:1px solid rgba(107,132,168,.2);">#${tag}</span>`).join('')}
+      </div>` : ''}
+
+    </div>
+  </div>`;
 }
 
 async function tlSendFeedback(ticketNumber, ticketSubject, channel, suggestedType, ruleName, verdict, btn) {

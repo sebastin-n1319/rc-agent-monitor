@@ -1179,29 +1179,73 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
         : Promise.resolve(),
     ]);
 
-    // Generate AI summary from thread content (if AI configured)
-    let aiSummary = null;
+    // Deep AI analysis — structured JSON output using gpt-4o
+    let aiAnalysis = null;
     const apiKey = process.env.OPENAI_API_KEY;
-    if (apiKey && threads.length) {
+    if (apiKey) {
       try {
         const threadText = threads
-          .filter(t => t.content)
-          .map(t => `[${t.fromName || t.from || 'Unknown'}]: ${t.content}`)
-          .join('\n\n');
-        const prompt = `You are a customer support AI. Summarize this support ticket in 2 sentences max.
-Subject: ${ticket.subject}
-Customer: ${contact?.fullName || 'Unknown'}
-Conversation:\n${threadText.slice(0, 2000)}
+          .filter(th => th.content)
+          .map(th => {
+            const dir = (th.type||'').includes('OUT') ? 'AGENT' : 'CUSTOMER';
+            return `[${dir} — ${th.fromName||th.from||'Unknown'} @ ${th.created||''}]:\n${th.content}`;
+          })
+          .join('\n\n---\n\n');
 
-Reply with ONLY the summary, no preamble.`;
+        const systemPrompt = `You are an expert customer support analyst for Adit — a dental software company. Analyze support tickets and return ONLY valid JSON, no markdown, no explanation.`;
+
+        const userPrompt = `Analyze this support ticket and return a JSON object with EXACTLY these fields:
+
+TICKET INFO:
+Subject: ${ticket.subject}
+Customer: ${contact?.fullName || 'Unknown'} <${contact?.email || 'unknown'}>
+Status: ${ticket.status} | Priority: ${ticket.priority} | Channel: ${ticket.channel}
+Created: ${ticket.createdTime}
+Tags: ${(ticket.tags||[]).join(', ') || 'none'}
+
+CONVERSATION:
+${threadText ? threadText.slice(0, 3000) : '(No conversation threads available — analyze from subject only)'}
+
+Return this exact JSON structure:
+{
+  "summary": "2-3 sentence plain English summary of what the customer needs",
+  "issue_category": "one of: Technical Issue | Billing | Account Access | Feature Request | Training/How-To | Data Issue | Integration | Cancellation | Compliance | General Inquiry",
+  "sentiment": "Frustrated | Neutral | Satisfied | Urgent | Confused",
+  "sentiment_reason": "1 sentence why",
+  "urgency": "Critical | High | Medium | Low",
+  "urgency_reason": "1 sentence why",
+  "ticket_type": "New Ticket | Follow-up Ticket | Reopened Ticket | Transfer-In | Outbound | Auto-Generated/Spam Ticket | Feedback Ticket",
+  "ticket_type_confidence": 0.0,
+  "suggested_action": "Specific actionable next step for the agent in 1-2 sentences",
+  "suggested_response_tone": "Empathetic | Professional | Urgent | Informational",
+  "possible_resolution": "Brief hint at how to resolve this, based on the issue",
+  "duplicate_risk": true or false,
+  "escalation_needed": true or false,
+  "escalation_reason": "why escalation needed or null",
+  "key_details": ["array", "of", "3-5", "key", "facts", "extracted"],
+  "tags_suggested": ["suggested", "tags"]
+}`;
+
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-          body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 120, temperature: 0.2 })
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            max_tokens: 600,
+            temperature: 0.15,
+            response_format: { type: 'json_object' }
+          })
         });
         const aiData = await resp.json();
-        aiSummary = aiData.choices?.[0]?.message?.content?.trim() || null;
-      } catch(e) { /* AI summary optional — fail silently */ }
+        const raw = aiData.choices?.[0]?.message?.content?.trim();
+        if (raw) aiAnalysis = JSON.parse(raw);
+      } catch(e) {
+        console.error('AI analysis error:', e.message);
+      }
     }
 
     const mappedTicket = {
@@ -1214,7 +1258,7 @@ Reply with ONLY the summary, no preamble.`;
       ticketType:   mapZohoType(ticket),
       assignee:     assigneeName,
       contact:      contact ? { name: contact.fullName, email: contact.email } : null,
-      aiSummary:    aiSummary,
+      aiAnalysis:   aiAnalysis,
       createdTime:  ticket.createdTime,
       modifiedTime: ticket.modifiedTime,
       satisfaction: ticket.satisfaction?.type || null,
