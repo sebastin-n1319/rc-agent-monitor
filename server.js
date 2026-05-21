@@ -1168,47 +1168,88 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
-    // Strategy 0: direct ticketNumber filter — fastest, works for any age
+    // Strategy A: fetch directly by ticketNumber using isNumber=true param
+    // Zoho Desk supports GET /tickets/{ticketNumber}?isNumber=true
     try {
-      const r0   = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
-      const text = await r0.text();
-      if (text && text.trim() && text.trim() !== 'null') {
-        const d0 = JSON.parse(text);
-        const list = d0.data || (Array.isArray(d0) ? d0 : []);
-        ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+      const rA = await fetch(`${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`, { headers });
+      if (rA.ok) {
+        const text = await rA.text();
+        if (text && text.trim() && text.trim() !== 'null') {
+          const d = JSON.parse(text);
+          // Could return a single object or a data array
+          const candidate = d.data ? (Array.isArray(d.data) ? d.data[0] : d.data) : (d.id ? d : null);
+          if (candidate && String(candidate.ticketNumber) === rawId) ticket = candidate;
+        }
       }
-    } catch(e) { /* unsupported param or parse error — try next */ }
+    } catch(e) { /* try next */ }
 
-    // Strategy 1: Zoho /search endpoint with module=Tickets for targeted results
+    // Strategy B: Zoho /search endpoint — try both with and without module restriction
+    if (!ticket) {
+      for (const url of [
+        `${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=50`,
+        `${ZOHO_API_BASE}/search?searchStr=${encodeURIComponent(rawId)}&limit=50`,
+      ]) {
+        try {
+          const sr   = await fetch(url, { headers });
+          const text = await sr.text();
+          if (text && text.trim() && text.trim() !== 'null') {
+            const sd = JSON.parse(text);
+            const list = sd.data || (Array.isArray(sd) ? sd : []);
+            const found = list.find(t => t.ticketNumber && String(t.ticketNumber) === rawId);
+            if (found) { ticket = found; break; }
+          }
+        } catch(e) { /* try next */ }
+      }
+    }
+
+    // Strategy C: smart paginated scan — estimate offset from most-recent ticket number,
+    // then fetch targeted pages around that position (covers any ticket age efficiently)
     if (!ticket) {
       try {
-        const sr   = await fetch(`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=10`, { headers });
-        const text = await sr.text(); // don't assume JSON
-        if (text && text.trim() && text.trim() !== 'null') {
-          const sd = JSON.parse(text);
-          const list = sd.data || (Array.isArray(sd) ? sd : []);
-          ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+        // Page 0 gives us the most recent ticket number → lets us estimate depth
+        const rHead = await fetch(`${ZOHO_API_BASE}/tickets?from=0&limit=100`, { headers });
+        if (rHead.ok) {
+          const dHead = await rHead.json();
+          const headList = dHead.data || [];
+          // Check page 0 first — common case for recent tickets
+          const found0 = headList.find(t => String(t.ticketNumber) === rawId);
+          if (found0) {
+            ticket = found0;
+          } else if (headList.length > 0) {
+            // Estimate how many tickets back rawId is
+            const newestNum = parseInt(headList[0].ticketNumber, 10);
+            const targetNum = parseInt(rawId, 10);
+            if (!isNaN(newestNum) && !isNaN(targetNum) && targetNum < newestNum) {
+              const estimatedOffset = Math.max(0, newestNum - targetNum - 50);
+              // Build a set of pages to check around the estimated position
+              // ±200 tickets around estimate covers gaps from deletions/merges
+              const offsets = new Set();
+              for (let o = Math.max(100, estimatedOffset - 200); o <= estimatedOffset + 300; o += 100) {
+                offsets.add(o);
+              }
+              // Also scan first 300 (page 0 already done) as recent safety net
+              [100, 200, 300].forEach(o => offsets.add(o));
+              for (const from of [...offsets].sort((a,b) => a - b)) {
+                try {
+                  const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100`, { headers });
+                  if (!r.ok) continue;
+                  const d = await r.json();
+                  const list = d.data || [];
+                  if (!list.length) break;
+                  const found = list.find(t => String(t.ticketNumber) === rawId);
+                  if (found) { ticket = found; break; }
+                } catch(e) { /* keep trying other offsets */ }
+              }
+            }
+          }
         }
-      } catch(e) { /* empty response or parse error — try next */ }
+      } catch(e) { /* strategy C failed entirely */ }
     }
 
-    // Strategy 2: fetch recent tickets in pages (default sort = newest first)
-    // Extended to 800 tickets (8 pages) to cover older tickets
     if (!ticket) {
-      for (const from of [0, 100, 200, 300, 400, 500, 600, 700]) {
-        try {
-          const r = await fetch(`${ZOHO_API_BASE}/tickets?from=${from}&limit=100`, { headers });
-          if (!r.ok) break;
-          const d = await r.json();
-          const list = d.data || [];
-          if (!list.length) break;
-          const found = list.find(t => String(t.ticketNumber) === rawId);
-          if (found) { ticket = found; break; }
-        } catch(e) { break; }
-      }
+      console.log(`⚠️  Ticket #${rawId} not found after all strategies`);
+      return res.json({ success: true, found: false });
     }
-
-    if (!ticket) return res.json({ success: true, found: false });
 
     // Debug: log raw Zoho fields to diagnose spam false-positives
     console.log(`🔍 Zoho ticket #${rawId} raw fields: isSpam=${JSON.stringify(ticket.isSpam)} source=${JSON.stringify(ticket.source)} channel=${JSON.stringify(ticket.channel)} assigneeId=${ticket.assigneeId}`);
