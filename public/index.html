@@ -11044,11 +11044,18 @@ tbody tr:hover td{
             <div class="awv2-type-label">General</div>
             <div class="awv2-type-sub">Any text improvement</div>
           </button>
+          <button class="awv2-type-btn" data-type="rcnotes" onclick="awSetType('rcnotes',this)" style="--aw-color:#0EA5E9">
+            <div class="awv2-type-icon" style="background:rgba(14,165,233,.12);color:#0EA5E9;">
+              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="awv2-type-label">RC Call Notes</div>
+            <div class="awv2-type-sub">Auto-fill ticket documentation</div>
+          </button>
         </div>
       </div>
 
-      <!-- Step 2: Task + templates -->
-      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+      <!-- Step 2: Task + templates (hidden in RC Notes mode) -->
+      <div id="aw-step2-panel" style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
         <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">What do you need?</div>
         <div class="awv2-modes" id="awv2-modes"></div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgb(222,225,230);">
@@ -11057,8 +11064,117 @@ tbody tr:hover td{
         </div>
       </div>
 
+      <!-- RC Call Notes Builder (shown only in rcnotes mode) -->
+      <div id="aw-rcnotes-panel" style="display:none;">
+        <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+          <!-- Header -->
+          <div style="padding:14px 18px;background:linear-gradient(135deg,#0369A1,#0EA5E9);display:flex;align-items:center;gap:10px;">
+            <div style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div>
+              <div style="font-size:13px;font-weight:800;color:#fff;">RC Call Notes Builder</div>
+              <div style="font-size:11px;color:rgba(186,230,253,.75);">Enter ticket ID + call notes → AI fills the complete documentation</div>
+            </div>
+          </div>
+
+          <div style="padding:18px;display:flex;flex-direction:column;gap:16px;">
+
+            <!-- Row 1: Ticket ID lookup -->
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;">
+              <div>
+                <label style="font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Ticket ID</label>
+                <div style="display:flex;align-items:center;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;overflow:hidden;">
+                  <span style="padding:8px 10px;font-size:13px;font-weight:700;color:#0EA5E9;background:#EFF6FF;border-right:1px solid rgb(222,225,230);">#</span>
+                  <input id="rcn-ticket-id" type="text" inputmode="numeric" placeholder="361898" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')rcnFetchTicket()" style="flex:1;padding:8px 10px;border:none;background:transparent;font-size:13px;font-weight:700;color:#072B40;font-family:'Poppins',sans-serif;outline:none;">
+                </div>
+              </div>
+              <button onclick="rcnFetchTicket()" id="rcn-fetch-btn" style="padding:9px 16px;background:linear-gradient(135deg,#0369A1,#0EA5E9);border:none;border-radius:9px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(14,165,233,.3);">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:12px;height:12px"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/></svg>
+                Fetch from Zoho
+              </button>
+            </div>
+
+            <!-- Zoho status banner -->
+            <div id="rcn-zoho-status" style="display:none;"></div>
+
+            <!-- Row 2: Client details (pre-filled from Zoho, editable) -->
+            <div>
+              <div style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px;color:#2DDC96"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6a5 5 0 0 1 10 0"/></svg>
+                Client Details
+                <span id="rcn-zoho-badge" style="display:none;background:rgba(45,220,150,.12);color:#166534;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;">Auto-filled from Zoho ✓</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div>
+                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Client Name</label>
+                  <input id="rcn-client-name" type="text" placeholder="e.g. Erin" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
+                </div>
+                <div>
+                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Practice Name</label>
+                  <input id="rcn-practice" type="text" placeholder="e.g. Lydia Wyatt DDS" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
+                </div>
+                <div>
+                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Account Number</label>
+                  <input id="rcn-account" type="text" placeholder="e.g. 23428" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
+                </div>
+                <div>
+                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Email</label>
+                  <input id="rcn-email" type="email" placeholder="e.g. lw@lydiawyattdds.com" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
+                </div>
+                <div style="grid-column:1/-1;">
+                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Callback Number</label>
+                  <input id="rcn-callback" type="text" placeholder="e.g. (702) 220-5555" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Deal Stage -->
+            <div>
+              <label style="font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:7px;">Deal Stage</label>
+              <div style="display:flex;gap:7px;">
+                <button class="rcn-stage-btn" data-val="OB"    onclick="rcnSetStage(this)" style="padding:7px 18px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;background:#F7F8F8;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">OB</button>
+                <button class="rcn-stage-btn" data-val="CSM"   onclick="rcnSetStage(this)" style="padding:7px 18px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;background:#F7F8F8;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">CSM</button>
+                <button class="rcn-stage-btn" data-val="Churn" onclick="rcnSetStage(this)" style="padding:7px 18px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;background:#F7F8F8;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">Churn</button>
+              </div>
+            </div>
+
+            <!-- Row 4: Call notes -->
+            <div>
+              <label style="font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Your Call Notes / Summary</label>
+              <textarea id="rcn-notes" placeholder="Type what happened on the call — what the client needed, what you did, any follow-up agreed…&#10;&#10;e.g. Erin reached out and requested to have Adit app training for herself and few new staff members. Took down the dates as they'll be available from 2nd June to..." style="width:100%;min-height:110px;padding:10px 12px;border:1px solid rgb(222,225,230);border-radius:9px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;resize:vertical;box-sizing:border-box;line-height:1.6;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'"></textarea>
+            </div>
+
+            <!-- Generate button -->
+            <button onclick="rcnGenerate()" id="rcn-gen-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,#0369A1,#0EA5E9);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(14,165,233,.3);transition:all .2s;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
+              Generate Documentation
+            </button>
+
+            <!-- Error message -->
+            <div id="rcn-err" style="display:none;padding:9px 12px;background:rgba(237,102,107,.1);border:1px solid rgba(237,102,107,.25);border-radius:8px;font-size:12px;color:#ED666B;"></div>
+
+            <!-- Generated output -->
+            <div id="rcn-output-wrap" style="display:none;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:11px;font-weight:700;color:#0EA5E9;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px;">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M13 2L3 6l4 2 2 4z"/></svg>
+                  Generated Notes — ready to paste into Zoho
+                </div>
+                <button onclick="rcnCopy()" id="rcn-copy-btn" style="padding:5px 14px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);border-radius:7px;font-size:11px;font-weight:700;color:#0369A1;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s;" onmouseover="this.style.background='rgba(14,165,233,.2)'" onmouseout="this.style.background='rgba(14,165,233,.1)'">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg>
+                  Copy to Clipboard
+                </button>
+              </div>
+              <pre id="rcn-output" style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:10px;padding:14px 16px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;white-space:pre-wrap;line-height:1.7;margin:0;"></pre>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
       <!-- Main workspace: Input + Output side by side -->
-      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
+      <div id="aw-workspace" style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
         <div class="awv2-grid" style="padding:16px;padding-bottom:0;">
           <!-- Left: Input -->
           <div class="awv2-panel">
@@ -12395,6 +12511,11 @@ const AW_CONFIG = {
       { label:'Internal update',    text:'just wanted to give a quick update on the situation.' },
       { label:'Team message',       text:'hey team, quick heads up about something that came up today.' },
     ]
+  },
+  rcnotes: {
+    color: '#0EA5E9',
+    modes: [],
+    templates: []
   }
 };
 
@@ -12403,6 +12524,21 @@ let awCurrentMode = 'email_reply';
 
 function awSetType(type, btn) {
   awCurrentType = type;
+  // Toggle RC Notes panel vs standard workspace
+  const isRC = (type === 'rcnotes');
+  const rcPanel     = document.getElementById('aw-rcnotes-panel');
+  const step2       = document.getElementById('aw-step2-panel');
+  const workspace   = document.getElementById('aw-workspace');
+  if (rcPanel)   rcPanel.style.display   = isRC ? '' : 'none';
+  if (step2)     step2.style.display     = isRC ? 'none' : '';
+  if (workspace) workspace.style.display = isRC ? 'none' : '';
+  // Always update the active type button highlight
+  document.querySelectorAll('.awv2-type-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.type === type);
+    b.style.setProperty('--aw-color', AW_CONFIG[b.dataset.type]?.color || '#F4891F');
+  });
+  if (isRC) return; // RC panel has its own flow
+
   const cfg = AW_CONFIG[type];
   // Update color on page
   document.querySelectorAll('.awv2-type-btn').forEach(b => {
@@ -12449,6 +12585,115 @@ function awLoadTemplate(btnOrText) {
   const text = (btnOrText && typeof btnOrText === 'object') ? (btnOrText.dataset.text || '') : (btnOrText || '');
   const inp = document.getElementById('aw-input');
   if (inp) { inp.value = text; awUpdateCount(); inp.focus(); }
+}
+
+// ── RC Call Notes Builder ─────────────────────────────────────────────────────
+let rcnDealStage = '';
+
+function rcnSetStage(btn) {
+  rcnDealStage = btn.dataset.val || '';
+  document.querySelectorAll('.rcn-stage-btn').forEach(b => {
+    const active = b === btn;
+    b.style.background    = active ? 'rgba(14,165,233,.12)' : '#F7F8F8';
+    b.style.borderColor   = active ? '#0EA5E9' : 'rgb(222,225,230)';
+    b.style.color         = active ? '#0369A1' : '#3A5068';
+    b.style.boxShadow     = active ? '0 0 0 2px rgba(14,165,233,.15)' : '';
+  });
+}
+
+async function rcnFetchTicket() {
+  const id = (document.getElementById('rcn-ticket-id')?.value || '').trim();
+  if (!id) { showToast('Enter a ticket ID first', 'warning'); return; }
+  const btn = document.getElementById('rcn-fetch-btn');
+  const status = document.getElementById('rcn-zoho-status');
+  const badge  = document.getElementById('rcn-zoho-badge');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="awv2-spinner"></div> Fetching…'; }
+  if (status) status.style.display = 'none';
+  try {
+    const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include' });
+    const data = await res.json();
+    if (!data.success || !data.found) {
+      if (status) {
+        status.innerHTML = `<div style="padding:8px 12px;background:rgba(237,102,107,.07);border:1px solid rgba(237,102,107,.2);border-radius:8px;font-size:12px;color:#ED666B;display:flex;align-items:center;gap:7px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="#ED666B" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
+          Ticket #${esc(id)} not found — fill in the client details manually.
+        </div>`;
+        status.style.display = '';
+      }
+      return;
+    }
+    const t = data.ticket;
+    // Pre-fill fields
+    const fn = (id, val) => { const el = document.getElementById(id); if (el && val) { el.value = val; el.style.borderColor='#2DDC96'; setTimeout(()=>{ el.style.borderColor='rgb(222,225,230)'; },1200); } };
+    fn('rcn-client-name', t.contact?.name || '');
+    fn('rcn-email',       t.contact?.email || '');
+    // Practice name: from Zoho contact account name (often in contact)
+    // Callback: Zoho doesn't always return phone, leave blank if unavailable
+    if (status) {
+      status.innerHTML = `<div style="padding:8px 12px;background:rgba(45,220,150,.07);border:1px solid rgba(45,220,150,.2);border-radius:8px;font-size:12px;color:#166534;display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
+        <svg viewBox="0 0 16 16" fill="#2DDC96" style="width:12px;height:12px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 5.5-4 4a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L7 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06z"/></svg>
+        <strong>#${esc(String(t.ticketNumber))}</strong>: ${esc(t.subject||'')} — client details auto-filled. Check and complete any missing fields below.
+      </div>`;
+      status.style.display = '';
+    }
+    if (badge) badge.style.display = '';
+    showToast('Ticket details fetched ✓', 'success');
+  } catch(e) {
+    if (status) {
+      status.innerHTML = `<div style="padding:8px 12px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;color:#9BAFC0;">Zoho lookup failed — fill in details manually.</div>`;
+      status.style.display = '';
+    }
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:12px;height:12px"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/></svg> Fetch from Zoho'; }
+  }
+}
+
+async function rcnGenerate() {
+  const notes = (document.getElementById('rcn-notes')?.value || '').trim();
+  if (!notes) { showToast('Please enter your call notes first', 'warning'); document.getElementById('rcn-notes')?.focus(); return; }
+  const btn = document.getElementById('rcn-gen-btn');
+  const err = document.getElementById('rcn-err');
+  const outWrap = document.getElementById('rcn-output-wrap');
+  if (err) err.style.display = 'none';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="awv2-spinner"></div> Generating…'; }
+
+  const payload = {
+    ticketId:       (document.getElementById('rcn-ticket-id')?.value || '').trim(),
+    dealStage:      rcnDealStage,
+    callNotes:      notes,
+    clientName:     (document.getElementById('rcn-client-name')?.value || '').trim(),
+    practiceName:   (document.getElementById('rcn-practice')?.value || '').trim(),
+    accountNumber:  (document.getElementById('rcn-account')?.value || '').trim(),
+    email:          (document.getElementById('rcn-email')?.value || '').trim(),
+    callbackNumber: (document.getElementById('rcn-callback')?.value || '').trim(),
+  };
+
+  try {
+    const res  = await fetch('/api/write-call-doc', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Generation failed');
+    const out = document.getElementById('rcn-output');
+    if (out) out.textContent = data.template;
+    if (outWrap) outWrap.style.display = '';
+    // Scroll to output
+    outWrap?.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    showToast('Documentation ready — copy and paste into Zoho ✓', 'success');
+  } catch(e) {
+    if (err) { err.textContent = e.message; err.style.display = ''; }
+    showToast('Failed: ' + e.message, 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg> Generate Documentation'; }
+  }
+}
+
+function rcnCopy() {
+  const out = document.getElementById('rcn-output');
+  if (!out || !out.textContent) return;
+  navigator.clipboard.writeText(out.textContent).then(() => {
+    const btn = document.getElementById('rcn-copy-btn');
+    if (btn) { btn.innerHTML = '✓ Copied!'; setTimeout(() => { btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg> Copy to Clipboard'; }, 2000); }
+    showToast('Copied to clipboard — paste into Zoho private notes', 'success');
+  }).catch(() => showToast('Copy failed — select and copy manually', 'error'));
 }
 
 function awUpdateCount() {

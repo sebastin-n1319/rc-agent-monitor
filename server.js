@@ -1972,6 +1972,157 @@ app.post('/api/write-assist', requireAuth, rateLimit(30, 60000), async (req, res
   }
 });
 
+// POST /api/write-call-doc — RC call documentation builder
+// Fetches Zoho ticket context + uses AI to generate the private-notes template
+app.post('/api/write-call-doc', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const {
+      ticketId, dealStage = '',
+      callNotes = '',
+      clientName = '', practiceName = '', accountNumber = '',
+      callbackNumber = '', email = ''
+    } = req.body || {};
+
+    if (!callNotes || !callNotes.trim()) return res.status(400).json({ success: false, error: 'Call notes are required' });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(503).json({ success: false, error: 'AI service not configured' });
+
+    // Attempt Zoho lookup if ticket ID provided and fields not already supplied
+    let zohoData = {};
+    if (ticketId && ZOHO_CLIENT_ID) {
+      try {
+        const token = await getZohoAccessToken();
+        const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
+        const rawId = String(ticketId).replace(/^#/, '');
+        let ticket = null;
+
+        // Strategy 0: direct ticketNumber filter
+        try {
+          const r = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
+          const text = await r.text();
+          if (text && text.trim() !== 'null') {
+            const d = JSON.parse(text);
+            const list = d.data || (Array.isArray(d) ? d : []);
+            ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+          }
+        } catch(e) {}
+
+        // Strategy 1: search
+        if (!ticket) {
+          try {
+            const sr = await fetch(`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=10`, { headers });
+            const text = await sr.text();
+            if (text && text.trim() !== 'null') {
+              const sd = JSON.parse(text);
+              const list = sd.data || (Array.isArray(sd) ? sd : []);
+              ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+            }
+          } catch(e) {}
+        }
+
+        if (ticket) {
+          // Get contact details
+          let contact = null;
+          if (ticket.contactId) {
+            try { contact = await zohoDesk(`/contacts/${ticket.contactId}`); } catch(e) {}
+          }
+          zohoData = {
+            ticketNumber: ticket.ticketNumber,
+            subject:      ticket.subject || '',
+            clientName:   contact?.fullName || ticket.contact?.fullName || '',
+            practiceName: contact?.account?.accountName || ticket.account?.accountName || '',
+            email:        contact?.email || ticket.email || '',
+            callbackNumber: contact?.phone || contact?.mobile || ticket.phone || '',
+          };
+        }
+      } catch(e) {
+        console.warn('⚠ Zoho lookup in call-doc failed:', e.message);
+      }
+    }
+
+    // Merge: Zoho data fills gaps; agent-provided values take precedence if supplied
+    const finalClientName    = clientName    || zohoData.clientName    || '';
+    const finalPracticeName  = practiceName  || zohoData.practiceName  || '';
+    const finalAccountNumber = accountNumber || '';
+    const finalEmail         = email         || zohoData.email         || '';
+    const finalCallback      = callbackNumber|| zohoData.callbackNumber|| '';
+    const finalTicket        = ticketId ? String(ticketId).replace(/^#/, '') : (zohoData.ticketNumber || '');
+    const finalSubject       = zohoData.subject || '';
+
+    const systemPrompt = `You are a customer support documentation assistant for Adit, a dental practice software company.
+Your job is to fill in the "Reason for contact" and "Resolution" fields of an internal RC (Relationship Coordinator) call note, based on agent-provided call notes.
+
+Rules:
+- "Reason for contact": 1–2 clear sentences describing why the client reached out (what issue/request/question)
+- "Resolution": 1–2 clear sentences describing what the agent did to resolve or handle it. If not fully resolved, note next steps.
+- Use professional but plain English — no jargon, no filler phrases like "I hope this helps"
+- Do not repeat the template labels in your response — return ONLY the two field values separated by the exact delimiter: |||RESOLUTION|||
+- Example output format:
+  Client reached out regarding X.
+  |||RESOLUTION|||
+  Agent did Y and Z. Next steps: follow up on date.`;
+
+    const userPrompt = `Subject: ${finalSubject || '(no subject)'}
+Client: ${finalClientName || 'Unknown'}
+Practice: ${finalPracticeName || 'Unknown'}
+Agent call notes:
+${callNotes.trim().slice(0, 2000)}`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        max_tokens: 400,
+        temperature: 0.25
+      })
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `OpenAI API error ${response.status}`);
+    }
+    const aiData = await response.json();
+    const aiRaw  = aiData.choices?.[0]?.message?.content?.trim() || '';
+    const parts  = aiRaw.split('|||RESOLUTION|||');
+    const reason     = (parts[0] || '').trim();
+    const resolution = (parts[1] || '').trim();
+
+    // Build the formatted template
+    const template = [
+      `Client Name  - ${finalClientName}`,
+      `Practice Name - ${finalPracticeName}`,
+      `Account Number - ${finalAccountNumber}`,
+      `Deal Stage (OB or CSM or Churn) - ${dealStage}`,
+      `Callback Number - ${finalCallback}`,
+      `Email - ${finalEmail}`,
+      `Ticket - #${finalTicket}`,
+      `Reason for contact (issue, existing ticket, or some request) - ${reason}`,
+      ``,
+      `Resolution - ${resolution}`,
+    ].join('\n');
+
+    insertAuditLog(req.session?.email || 'unknown', 'write_call_doc', 'rcnotes', `ticket:${finalTicket}`).catch(() => {});
+    res.json({
+      success: true,
+      template,
+      prefilled: {
+        clientName:    finalClientName,
+        practiceName:  finalPracticeName,
+        email:         finalEmail,
+        callbackNumber: finalCallback,
+        ticketNumber:  finalTicket,
+      }
+    });
+  } catch(e) {
+    console.error('❌ write-call-doc error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 async function startScheduler() {
   setInterval(() => { fetchPresenceForAll().catch(e => console.error('❌ presence sync:', e.message)); }, getFallbackSyncMs());
   cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });
