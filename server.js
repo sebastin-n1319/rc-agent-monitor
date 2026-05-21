@@ -1166,6 +1166,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       isSpam:       ticket.isSpam || false,
       source:       ticket.source || null,
       lastThread:   ticket.lastThread || null,
+      _debug: { rawIsSpam: ticket.isSpam, rawSource: ticket.source, rawChannel: ticket.channel },
     };
 
     // Run the rules engine — overrides base type if a rule matches
