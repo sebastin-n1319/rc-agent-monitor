@@ -11171,9 +11171,15 @@ tbody tr:hover td{
               <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M1 4h14M1 8h14M1 12h14"/></svg>
               Bulk Backlog Entry
             </button>
+            <button onclick="tlSetMode('mytickets')" id="tl-mode-mytickets" class="tl-mode-btn">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><rect x="2" y="2" width="12" height="12" rx="1.5"/><path d="M5 5h6M5 8h6M5 11h3"/></svg>
+              My Tickets
+            </button>
           </div>
         </div>
 
+        <!-- Form body — hidden when My Tickets view is active -->
+        <div id="tl-form-body">
         <!-- Backlog date selector (shown always so agents can set past date) -->
         <div class="tl-date-bar" id="tl-date-bar">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;color:#F4891F"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M5 1v2M11 1v2M2 7h12"/></svg>
@@ -11373,6 +11379,46 @@ tbody tr:hover td{
             <div style="text-align:center;padding:20px 0;color:#9BAFC0;font-size:13px;">No tickets logged yet today.</div>
           </div>
         </div>
+
+        </div><!-- /#tl-form-body -->
+
+        <!-- MY TICKETS table view — shown when tl-mode-mytickets is active -->
+        <div id="tl-mytickets-panel" style="display:none;">
+          <div class="tl-card" style="padding:0;overflow:hidden;">
+            <div style="padding:14px 16px;border-bottom:1px solid rgb(222,225,230);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div class="tl-card-title" style="margin:0;">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#F4891F"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                My Logged Tickets
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input id="tl-mt-search" type="text" placeholder="Search…" oninput="tlFilterMyTickets()" style="padding:5px 10px;border:1px solid rgb(222,225,230);border-radius:7px;font-size:12px;font-family:'Poppins',sans-serif;outline:none;color:#072B40;width:140px;">
+                <button onclick="tlLoadMyTickets()" style="padding:5px 12px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:7px;font-size:11px;font-weight:600;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:5px;">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:11px;height:11px"><path d="M13.5 2.5A6.5 6.5 0 1 1 8 1.5"/><path d="M8 1.5v4M13.5 2.5h-4"/></svg>
+                  Refresh
+                </button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-family:'Poppins',sans-serif;font-size:12px;">
+                <thead>
+                  <tr style="background:#F7F8F8;border-bottom:1px solid rgb(222,225,230);">
+                    <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">Ticket ID</th>
+                    <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;">Channel</th>
+                    <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;">Type</th>
+                    <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;">Queue</th>
+                    <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;">Date</th>
+                    <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tl-mt-tbody">
+                  <tr><td colspan="6" style="text-align:center;padding:30px;color:#9BAFC0;">Click Refresh to load your tickets</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="tl-mt-footer" style="padding:10px 16px;border-top:1px solid rgb(222,225,230);font-size:11px;color:#9BAFC0;display:none;"></div>
+          </div>
+        </div>
+
       </div>
 
       <!-- RIGHT: AI analysis + live pivot report -->
@@ -11447,6 +11493,91 @@ tbody tr:hover td{
 
       </div><!-- end right column -->
     </div><!-- end tl-page -->
+  </div>
+</div>
+
+<!-- ══ TICKET EDIT MODAL ══════════════════════════════════════════════════════ -->
+<div id="tl-edit-modal" style="display:none;position:fixed;inset:0;z-index:9600;background:rgba(7,43,64,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:480px;box-shadow:0 24px 64px rgba(7,43,64,.25);overflow:hidden;animation:fadeUp .2s ease;">
+    <!-- Modal header -->
+    <div style="padding:16px 20px;background:linear-gradient(135deg,#072B40,#1A3D5C);display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:32px;height:32px;border-radius:9px;background:rgba(244,137,31,.25);display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:#fff;">Edit Ticket</div>
+          <div id="tl-edit-modal-sub" style="font-size:11px;color:rgba(178,219,240,.6);">#—</div>
+        </div>
+      </div>
+      <button onclick="tlCloseEditModal()" style="background:rgba(255,255,255,.1);border:none;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;color:rgba(178,219,240,.7);display:flex;align-items:center;justify-content:center;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.2)'" onmouseout="this.style.background='rgba(255,255,255,.1)'">✕</button>
+    </div>
+
+    <div style="padding:18px 20px;">
+
+      <!-- Ticket ID -->
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Ticket ID</label>
+        <div style="display:flex;align-items:center;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;overflow:hidden;">
+          <span style="padding:9px 12px;font-size:14px;font-weight:700;color:#F4891F;background:#F0F2F5;border-right:1px solid rgb(222,225,230);">#</span>
+          <input id="tl-edit-ticketid" type="text" inputmode="numeric" style="flex:1;padding:9px 12px;border:none;background:transparent;font-size:14px;font-weight:700;color:#072B40;font-family:'Poppins',sans-serif;outline:none;" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+      </div>
+
+      <!-- Channel -->
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Channel</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="tl-edit-channel-btns">
+          ${['Email','Chat','Phone','Web'].map(c=>`<button class="tl-edit-opt-btn" data-field="channel" data-val="${c}" onclick="tlEditOptSelect(this)" style="padding:6px 14px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:#F7F8F8;color:#3A5068;font-family:'Poppins',sans-serif;transition:all .15s;">${c}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- Ticket Type -->
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Ticket Type</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;" id="tl-edit-type-btns">
+          ${['New Ticket','Follow-up Ticket','Transfer-In Ticket','Reopened Ticket','Merged Ticket','Outbound Ticket','Feedback Ticket','Auto-Generated/Spam Ticket','New Ticket - Transferred'].map(tp=>`<button class="tl-edit-opt-btn" data-field="type" data-val="${tp}" onclick="tlEditOptSelect(this)" style="padding:5px 11px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;background:#F7F8F8;color:#3A5068;font-family:'Poppins',sans-serif;transition:all .15s;">${tp.replace(' Ticket','').replace('Auto-Generated/Spam','Spam')}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- Queue + Date row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Picked from Queue?</label>
+          <div style="display:flex;gap:6px;">
+            <button class="tl-edit-opt-btn" data-field="queue" data-val="Yes" onclick="tlEditOptSelect(this)" style="flex:1;padding:7px 0;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#F7F8F8;color:#166534;font-family:'Poppins',sans-serif;transition:all .15s;">✓ Yes</button>
+            <button class="tl-edit-opt-btn" data-field="queue" data-val="No" onclick="tlEditOptSelect(this)" style="flex:1;padding:7px 0;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#F7F8F8;color:#9F1239;font-family:'Poppins',sans-serif;transition:all .15s;">✗ No</button>
+            <button class="tl-edit-opt-btn" data-field="queue" data-val="" onclick="tlEditOptSelect(this)" style="flex:1;padding:7px 0;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;background:#F7F8F8;color:#9BAFC0;font-family:'Poppins',sans-serif;transition:all .15s;">N/A</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Date</label>
+          <input id="tl-edit-date" type="date" style="width:100%;padding:8px 10px;border:1px solid rgb(222,225,230);border-radius:9px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <!-- Notes (DUPLICATE / BACKLOG) -->
+      <div style="margin-bottom:18px;">
+        <label style="font-size:11px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Flag (optional)</label>
+        <div style="display:flex;gap:6px;">
+          <button class="tl-edit-opt-btn" data-field="notes" data-val="" onclick="tlEditOptSelect(this)" style="padding:6px 14px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;background:#F7F8F8;color:#6B849A;font-family:'Poppins',sans-serif;transition:all .15s;">None</button>
+          <button class="tl-edit-opt-btn" data-field="notes" data-val="DUPLICATE" onclick="tlEditOptSelect(this)" style="padding:6px 14px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;background:#F7F8F8;color:#ED666B;font-family:'Poppins',sans-serif;transition:all .15s;">DUPLICATE</button>
+          <button class="tl-edit-opt-btn" data-field="notes" data-val="BACKLOG" onclick="tlEditOptSelect(this)" style="padding:6px 14px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;background:#F7F8F8;color:#D97706;font-family:'Poppins',sans-serif;transition:all .15s;">BACKLOG</button>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div id="tl-edit-err" style="display:none;padding:8px 12px;background:rgba(237,102,107,.1);border:1px solid rgba(237,102,107,.25);border-radius:8px;font-size:12px;color:#ED666B;margin-bottom:12px;"></div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:8px;">
+        <button onclick="tlCloseEditModal()" style="flex:1;padding:10px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;font-size:13px;font-weight:600;color:#6B849A;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">Cancel</button>
+        <button onclick="tlSubmitEdit()" id="tl-edit-save-btn" style="flex:2;padding:10px;background:linear-gradient(135deg,#F4891F,#e07b10);border:none;border-radius:9px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Poppins',sans-serif;box-shadow:0 3px 10px rgba(244,137,31,.3);transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M20 6L9 17l-5-5"/></svg>
+          Save Changes
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -12575,11 +12706,24 @@ function tlGetLogDate() {
 let tlMode = 'single';
 function tlSetMode(mode) {
   tlMode = mode;
-  const isBulk = mode === 'bulk';
+  const isBulk      = mode === 'bulk';
+  const isMyTickets = mode === 'mytickets';
 
   // Toggle mode buttons
-  document.getElementById('tl-mode-single').classList.toggle('active', !isBulk);
+  document.getElementById('tl-mode-single').classList.toggle('active', mode === 'single');
   document.getElementById('tl-mode-bulk').classList.toggle('active', isBulk);
+  document.getElementById('tl-mode-mytickets').classList.toggle('active', isMyTickets);
+
+  // My Tickets view: hide form, show table
+  const formBody    = document.getElementById('tl-form-body');
+  const myPanel     = document.getElementById('tl-mytickets-panel');
+  if (formBody)  formBody.style.display  = isMyTickets ? 'none' : '';
+  if (myPanel)   myPanel.style.display   = isMyTickets ? '' : 'none';
+
+  if (isMyTickets) {
+    tlLoadMyTickets();
+    return;
+  }
 
   // Ticket ID card: hidden in bulk (you paste IDs into textarea instead)
   const idCard = document.getElementById('tl-ticketid-card');
@@ -12606,6 +12750,197 @@ function tlSetMode(mode) {
     setTimeout(() => { const t = document.getElementById('tl-bulk-ids'); if(t) t.focus(); }, 50);
   } else {
     setTimeout(() => { const t = document.getElementById('tl-ticket-id'); if(t) t.focus(); }, 50);
+  }
+}
+
+// ── My Tickets — table view ────────────────────────────────────────────────
+let tlMyTicketsData = [];   // cached rows for client-side filter
+
+async function tlLoadMyTickets() {
+  const tbody  = document.getElementById('tl-mt-tbody');
+  const footer = document.getElementById('tl-mt-footer');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#9BAFC0;font-size:12px;">Loading…</td></tr>`;
+  try {
+    const res  = await fetch('/api/my-tickets', { credentials: 'include' });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Load failed');
+    tlMyTicketsData = data.data || [];
+    tlFilterMyTickets();
+    if (footer) {
+      footer.style.display = '';
+      footer.textContent = `${tlMyTicketsData.length} total tickets across all time`;
+    }
+  } catch(e) {
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:#ED666B;font-size:12px;">Failed to load tickets — ${esc(e.message)}</td></tr>`;
+  }
+}
+
+function tlFilterMyTickets() {
+  const q = ((document.getElementById('tl-mt-search') || {}).value || '').toLowerCase().trim();
+  const rows = q
+    ? tlMyTicketsData.filter(t =>
+        (t.ticketId||'').toLowerCase().includes(q) ||
+        (t.channel||'').toLowerCase().includes(q) ||
+        (t.ticketType||'').toLowerCase().includes(q) ||
+        (t.date||'').toLowerCase().includes(q))
+    : tlMyTicketsData;
+
+  const tbody = document.getElementById('tl-mt-tbody');
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px;color:#9BAFC0;font-size:12px;">${q ? 'No tickets match your search.' : 'No tickets found.'}</td></tr>`;
+    return;
+  }
+
+  const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  // Show most recent first
+  const sorted = [...rows].reverse();
+  tbody.innerHTML = sorted.map(t => {
+    const ch  = t.channel  || '—';
+    const chC = chColors[ch] || '#6B849A';
+    const tp  = (t.ticketType || '—').replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New Ticket - Transferred','Transferred');
+    const q2  = t.pickedFromQueue;
+    const qBg = q2 === 'Yes' ? 'rgba(45,220,150,.12)' : q2 === 'No' ? 'rgba(237,102,107,.12)' : '#F7F8F8';
+    const qCl = q2 === 'Yes' ? '#166534' : q2 === 'No' ? '#9F1239' : '#9BAFC0';
+    const qTx = q2 === 'Yes' ? '✓ Yes' : q2 === 'No' ? '✗ No' : 'N/A';
+    const note = t.notes ? `<span style="background:rgba(237,102,107,.1);color:#ED666B;padding:1px 5px;border-radius:4px;font-size:9px;font-weight:700;margin-left:4px;">${esc(t.notes)}</span>` : '';
+    return `<tr style="border-bottom:1px solid rgb(240,242,245);transition:background .1s;" onmouseover="this.style.background='#FAFBFC'" onmouseout="this.style.background='transparent'">
+      <td style="padding:9px 12px;font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${esc(t.ticketId)}${note}</td>
+      <td style="padding:9px 12px;"><span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${esc(ch)}</span></td>
+      <td style="padding:9px 12px;font-size:11px;color:#3A5068;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(t.ticketType||'')}">${esc(tp)}</td>
+      <td style="padding:9px 12px;text-align:center;"><span style="background:${qBg};color:${qCl};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${qTx}</span></td>
+      <td style="padding:9px 12px;font-size:11px;color:#6B849A;white-space:nowrap;">${esc(t.date||'—')}</td>
+      <td style="padding:9px 12px;text-align:center;">
+        <button onclick="tlOpenEditModal(tlMyTicketsData[${tlMyTicketsData.indexOf(t)}])"
+          style="background:rgba(244,137,31,.08);border:1px solid rgba(244,137,31,.2);border-radius:7px;padding:4px 10px;cursor:pointer;font-size:11px;font-weight:600;color:#F4891F;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .15s;"
+          onmouseover="this.style.background='rgba(244,137,31,.16)'" onmouseout="this.style.background='rgba(244,137,31,.08)'">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px"><path d="M11 2.5a1.5 1.5 0 0 1 2.12 2.12L5 13 2 14l1-3 8.12-8.5z"/></svg>
+          Edit
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Edit Modal ─────────────────────────────────────────────────────────────
+let tlEditOriginalId = '';   // original ticketId before any edits
+
+function tlOpenEditModal(t) {
+  // t can be a plain object (from pivot) or an escaped JSON string (from onclick attr)
+  if (typeof t === 'string') {
+    try { t = JSON.parse(t); } catch {
+      // unescape &quot; entities from onclick attribute encoding
+      try { t = JSON.parse(t.replace(/&quot;/g, '"')); } catch { return; }
+    }
+  }
+  tlEditOriginalId = t.ticketId || '';
+
+  // Header subtitle
+  const sub = document.getElementById('tl-edit-modal-sub');
+  if (sub) sub.textContent = tlEditOriginalId;
+
+  // Ticket ID input (modal uses id="tl-edit-ticketid")
+  const idInp = document.getElementById('tl-edit-ticketid');
+  if (idInp) idInp.value = (tlEditOriginalId || '').replace(/^#/, '');
+
+  // Date — sheet stores "22 May 2026", convert to YYYY-MM-DD for date input
+  const dateInp = document.getElementById('tl-edit-date');
+  if (dateInp) {
+    if (t.date) {
+      try {
+        const d = new Date(t.date);
+        dateInp.value = isNaN(d) ? '' : d.toISOString().slice(0, 10);
+      } catch { dateInp.value = ''; }
+    } else { dateInp.value = ''; }
+  }
+
+  // Reset all opt buttons, then activate the matching ones
+  document.querySelectorAll('.tl-edit-opt-btn').forEach(btn => btn.classList.remove('active'));
+
+  const markActive = (field, val) => {
+    document.querySelectorAll(`.tl-edit-opt-btn[data-field="${field}"]`).forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.val === (val === undefined ? '' : val));
+    });
+  };
+  markActive('channel', t.channel || '');
+  markActive('type',    t.ticketType || '');
+  markActive('queue',   t.pickedFromQueue !== undefined ? t.pickedFromQueue : '');
+  // Flag buttons use data-field="notes"
+  const noteFlag = (t.notes || '') === 'DUPLICATE' ? 'DUPLICATE'
+                 : (t.notes || '') === 'BACKLOG'    ? 'BACKLOG' : '';
+  markActive('notes', noteFlag);
+
+  // Clear errors (error div uses id="tl-edit-err")
+  const errEl = document.getElementById('tl-edit-err');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+  // Show modal
+  const modal = document.getElementById('tl-edit-modal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function tlCloseEditModal() {
+  const modal = document.getElementById('tl-edit-modal');
+  if (modal) modal.style.display = 'none';
+  tlEditOriginalId = '';
+}
+
+function tlEditOptSelect(btn) {
+  const field = btn.dataset.field;
+  // Deactivate all siblings in the same data-field group
+  document.querySelectorAll(`.tl-edit-opt-btn[data-field="${field}"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function tlSubmitEdit() {
+  const saveBtn = document.getElementById('tl-edit-save-btn');
+  const errEl   = document.getElementById('tl-edit-err');
+
+  const getActive = (field) => {
+    const btn = document.querySelector(`.tl-edit-opt-btn[data-field="${field}"].active`);
+    return btn ? btn.dataset.val : undefined;
+  };
+
+  // Ticket ID: input stores digits only, we prepend # for the API
+  const rawId   = (document.getElementById('tl-edit-ticketid')?.value || '').trim().replace(/^#/, '');
+  const newId   = rawId ? '#' + rawId : '';
+  const dateVal = document.getElementById('tl-edit-date')?.value || '';
+  const channel = getActive('channel');
+  const type    = getActive('type');
+  const queue   = getActive('queue');
+  const notes   = getActive('notes');   // '' | 'DUPLICATE' | 'BACKLOG' | undefined
+
+  if (!tlEditOriginalId) return;
+
+  const payload = { ticketId: tlEditOriginalId };
+  if (newId && newId !== tlEditOriginalId) payload.newTicketId = newId;
+  if (channel !== undefined) payload.channel         = channel;
+  if (type    !== undefined) payload.ticketType      = type;
+  if (queue   !== undefined) payload.pickedFromQueue = queue;
+  if (dateVal)               payload.date            = dateVal;
+  if (notes   !== undefined) payload.notes           = notes;
+
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '.6'; }
+
+  try {
+    const res  = await fetch('/api/ticket-entry', {
+      method: 'PUT', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Save failed');
+
+    tlCloseEditModal();
+    showToast(`Ticket ${esc(data.updated?.ticketId || tlEditOriginalId)} updated ✓`, 'success', 2500);
+
+    // Refresh pivot panel + my-tickets table
+    loadMyTicketsFromSheet();
+    if (tlMode === 'mytickets') tlLoadMyTickets();
+  } catch(e) {
+    if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; }
   }
 }
 
@@ -13472,6 +13807,7 @@ function renderTlPivot() {
               <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:left;">Type</th>
               <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:left;">Channel</th>
               <th style="padding:5px 8px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(178,219,240,.45);text-align:right;">Date</th>
+              <th style="padding:5px 8px;width:28px;"></th>
             </tr>
           </thead>
           <tbody>
@@ -13480,11 +13816,19 @@ function renderTlPivot() {
               const ch  = safe(t.channel, '?');
               const chC = chColors[ch] || '#6B849A';
               const dt  = safe(t.date, '—');
+              const tIdx = filtered.length - 1 - filtered.indexOf(t);
               return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='transparent'">
                 <td style="padding:7px 8px;font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${t.ticketId}</td>
                 <td style="padding:7px 8px;font-size:11px;color:rgba(178,219,240,.8);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortType}</td>
                 <td style="padding:7px 8px;"><span style="background:${chC}22;color:${chC};padding:2px 7px;border-radius:50px;font-size:10px;font-weight:700;">${ch}</span></td>
                 <td style="padding:7px 8px;font-size:10px;color:rgba(178,219,240,.45);text-align:right;white-space:nowrap;">${dt}</td>
+                <td style="padding:7px 4px;text-align:center;">
+                  <button onclick="tlOpenEditModal(tlSheetData[${tlSheetData.indexOf(t)}])" title="Edit ticket"
+                    style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;width:22px;height:22px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;padding:0;"
+                    onmouseover="this.style.background='rgba(244,137,31,.3)';this.style.borderColor='rgba(244,137,31,.5)'" onmouseout="this.style.background='rgba(255,255,255,.07)';this.style.borderColor='rgba(255,255,255,.12)'">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="#B2DBF0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M11 2.5a1.5 1.5 0 0 1 2.12 2.12L5 13 2 14l1-3 8.12-8.5z"/></svg>
+                  </button>
+                </td>
               </tr>`;
             }).join('')}
           </tbody>

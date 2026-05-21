@@ -1720,6 +1720,81 @@ app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => 
   }
 });
 
+// PUT /api/ticket-entry — agent edits a previously logged ticket row in Google Sheet
+// Agents can only edit their own rows. Admins can edit any row.
+app.put('/api/ticket-entry', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
+    const { ticketId, newTicketId, channel, ticketType, pickedFromQueue, date, notes } = req.body || {};
+    if (!ticketId) return res.status(400).json({ success: false, error: 'ticketId is required' });
+
+    const agentEmail   = (req.session.email || '').toLowerCase();
+    const sessionName  = req.session.name || req.session.email || '';
+    const callerRole   = await getRoleSettingsForEmail(agentEmail).then(s => s?.role || 'agent').catch(() => 'agent');
+    const isAdmin      = callerRole === 'admin';
+    const nameSet      = buildNameSet(agentEmail, sessionName);
+
+    const sheets = getTicketSheetsClient();
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:H`,
+    });
+
+    const allRows = resp.data.values || [];
+
+    // Find the LAST matching row (most recently appended) — scan backwards
+    let foundSheetRow = -1; // 1-based sheet row number
+    for (let i = allRows.length - 1; i >= 1; i--) {
+      const rowId   = (allRows[i][0] || '').trim();
+      const rowName = (allRows[i][1] || '').trim().toLowerCase();
+      if (rowId === ticketId.trim() && (isAdmin || nameSet.has(rowName))) {
+        foundSheetRow = i + 1; // convert 0-based → 1-based sheet row
+        break;
+      }
+    }
+
+    if (foundSheetRow === -1) {
+      return res.status(404).json({ success: false, error: 'Ticket not found or you don\'t have permission to edit it' });
+    }
+
+    const existing = allRows[foundSheetRow - 1]; // back to 0-based for array access
+    const finalId      = (newTicketId || ticketId).trim();
+    const finalAgent   = existing[1] || '';
+    const finalChannel = channel    !== undefined ? channel    : (existing[2] || '');
+    const finalQueue   = pickedFromQueue !== undefined ? pickedFromQueue : (existing[3] || '');
+    const finalType    = ticketType !== undefined ? ticketType : (existing[4] || '');
+
+    let finalDate  = existing[5] || '';
+    let finalMonth = existing[6] || '';
+    if (date) {
+      const d = new Date(date + 'T12:00:00'); // noon to avoid TZ off-by-one
+      finalDate  = fmtTicketDate(d);
+      finalMonth = fmtTicketMonth(d);
+    }
+
+    const finalNotes = notes !== undefined ? notes : (existing[7] || '');
+    const updatedRow  = [finalId, finalAgent, finalChannel, finalQueue, finalType, finalDate, finalMonth, finalNotes];
+
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A${foundSheetRow}:H${foundSheetRow}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [updatedRow] },
+    });
+
+    insertAuditLog(agentEmail, 'ticket_edit', finalId, `${finalChannel}|${finalType}`).catch(() => {});
+    res.json({
+      success: true,
+      updated: { ticketId: finalId, agentName: finalAgent, channel: finalChannel,
+                 pickedFromQueue: finalQueue, ticketType: finalType,
+                 date: finalDate, month: finalMonth, notes: finalNotes },
+    });
+  } catch(e) {
+    console.error('❌ ticket edit error:', e.message);
+    res.status(500).json({ success: false, error: 'Edit failed' });
+  }
+});
+
 // Manual archive trigger
 app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res) => {
   try {

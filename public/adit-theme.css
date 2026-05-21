@@ -5253,6 +5253,19 @@ html.dark-mode .tl-period-btn.active { background: #0D2A3E; }
 .tl-mode-btn:hover { border-color: #F4891F; color: #F4891F; }
 .tl-mode-btn.active { background: #F4891F; border-color: #F4891F; color: #FFFFFF; box-shadow: rgba(244,137,31,.3) 0 3px 10px; }
 
+/* Edit modal option buttons — channel / type / queue / flag selectors */
+.tl-edit-opt-btn.active {
+  background: rgba(244,137,31,.12) !important;
+  border-color: #F4891F !important;
+  color: #C26510 !important;
+  box-shadow: 0 0 0 2px rgba(244,137,31,.2);
+}
+.tl-edit-opt-btn[data-field="queue"][data-val="Yes"].active  { background: rgba(22,101,52,.1)  !important; border-color: #16A34A !important; color: #166534 !important; box-shadow: 0 0 0 2px rgba(22,163,74,.2); }
+.tl-edit-opt-btn[data-field="queue"][data-val="No"].active   { background: rgba(159,18,57,.08) !important; border-color: #E11D48 !important; color: #9F1239 !important; box-shadow: 0 0 0 2px rgba(225,29,72,.2); }
+.tl-edit-opt-btn[data-field="queue"][data-val=""].active     { background: rgba(156,163,175,.12) !important; border-color: #9BAFC0 !important; color: #6B849A !important; }
+.tl-edit-opt-btn[data-field="notes"][data-val="DUPLICATE"].active { background: rgba(237,102,107,.1) !important; border-color: #ED666B !important; color: #C82B30 !important; }
+.tl-edit-opt-btn[data-field="notes"][data-val="BACKLOG"].active   { background: rgba(217,119,6,.1)  !important; border-color: #D97706 !important; color: #B45309 !important; }
+
 /* Dark mode */
 html.dark-mode .tl-date-bar   { background: rgba(244,137,31,.06); border-color: rgba(244,137,31,.2); }
 html.dark-mode .tl-date-input-bar { background: #091F30; border-color: rgba(255,255,255,.12); color: #E8F4FC; }
