@@ -1146,11 +1146,29 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     // Debug: log raw Zoho fields to diagnose spam false-positives
     console.log(`🔍 Zoho ticket #${rawId} raw fields: isSpam=${JSON.stringify(ticket.isSpam)} source=${JSON.stringify(ticket.source)} channel=${JSON.stringify(ticket.channel)} assigneeId=${ticket.assigneeId}`);
 
-    // Get contact info
+    // Get contact info and conversation threads in parallel
     let contact = null;
-    if (ticket.contactId) {
-      try { contact = await zohoDesk(`/contacts/${ticket.contactId}`); } catch(e) {}
-    }
+    let threads = [];
+    await Promise.all([
+      ticket.contactId
+        ? zohoDesk(`/contacts/${ticket.contactId}`).then(c => { contact = c; }).catch(() => {})
+        : Promise.resolve(),
+      zohoDesk(`/tickets/${ticket.id}/threads`, { limit: 20, sortBy: 'createdTime', order: 'asc' })
+        .then(d => { threads = (d.data || []).map(th => ({
+          id:        th.id,
+          type:      th.type,        // 'EMAIL_IN' | 'EMAIL_OUT' | 'PUBLIC' | 'PRIVATE' | 'TWEET' etc.
+          from:      th.fromEmailAddress || th.author?.name || null,
+          fromName:  th.author?.name || null,
+          to:        th.toEmailAddress || null,
+          summary:   th.summary || null,
+          content:   th.content    // raw HTML — we'll strip client-side
+                      ? th.content.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 600)
+                      : null,
+          created:   th.createdTime,
+          channel:   th.channel || null,
+        })); })
+        .catch(() => {}),
+    ]);
 
     const mappedTicket = {
       id:           ticket.id,
@@ -1171,7 +1189,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       isSpam:       ticket.isSpam || false,
       source:       ticket.source || null,
       lastThread:   ticket.lastThread || null,
-      _debug: { rawIsSpam: ticket.isSpam, rawSource: ticket.source, rawChannel: ticket.channel },
+      threads:      threads,
     };
 
     // Run the rules engine — overrides base type if a rule matches
