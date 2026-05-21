@@ -12651,10 +12651,19 @@ async function zohoLookupTicket(id) {
             ${t.satisfaction?`<span style="font-size:10px;color:#6B849A;">${{Positive:'⭐ Positive',Neutral:'👍 Neutral',Negative:'⚠ Negative'}[t.satisfaction]||t.satisfaction}</span>`:''}
           </div>
         </div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);">
+        ${t.aiSummary ? `<div style="margin-top:2px;padding:8px 10px;background:rgba(33,170,224,.06);border:1px solid rgba(33,170,224,.18);border-radius:8px;font-size:12px;color:#1E40AF;line-height:1.5;">
+          <span style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#21AAE0;display:block;margin-bottom:3px;">AI Summary</span>
+          ${t.aiSummary}
+        </div>` : ''}
+        <div style="display:flex;gap:14px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);align-items:center;">
           <span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Suggested type:</strong> ${t.ticketType}${t.ruleName?` <span style="background:rgba(251,200,75,.15);color:#B45309;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:.04em;">AUTO-RULE</span>`:''}</span>
           ${t.assignee?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Assignee:</strong> ${t.assignee}</span>`:''}
           ${t.tags?.length?`<span style="font-size:11px;color:#6B849A;"><strong style="color:#072B40;">Tags:</strong> ${t.tags.join(', ')}</span>`:''}
+          ${t.ruleName ? `<span style="margin-left:auto;display:flex;gap:4px;align-items:center;">
+            <span style="font-size:10px;color:#9BAFC0;">Suggestion accurate?</span>
+            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'').replace(/'/g,"\\'")},'${t.channel}','${t.ticketType}','${t.ruleName}','correct',this)" title="Yes, correct" style="border:none;background:rgba(45,220,150,.12);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#166534;font-weight:700;">👍</button>
+            <button onclick="tlSendFeedback('${t.ticketNumber}',${JSON.stringify(t.subject||'').replace(/'/g,"\\'")},'${t.channel}','${t.ticketType}','${t.ruleName}','wrong',this)" title="No, wrong" style="border:none;background:rgba(237,102,107,.1);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:12px;color:#9F1239;font-weight:700;">👎</button>
+          </span>` : ''}
         </div>
       </div>
       ${(t.threads&&t.threads.length) ? `
@@ -12689,6 +12698,21 @@ async function zohoLookupTicket(id) {
   } catch(e) {
     if (card) card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;">Zoho lookup unavailable — log manually.</div>`;
   }
+}
+
+async function tlSendFeedback(ticketNumber, ticketSubject, channel, suggestedType, ruleName, verdict, btn) {
+  try {
+    // Get the type the agent actually selected (if any)
+    const agentType = tlSelections?.type || suggestedType;
+    await fetch('/api/ticket-feedback', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketNumber, ticketSubject, zohoChannel: channel, suggestedType, suggestedRule: ruleName, agentType, feedback: verdict })
+    });
+    // Visual confirmation
+    const row = btn.closest('span');
+    row.innerHTML = `<span style="font-size:10px;color:#166534;font-weight:600;">${verdict==='correct'?'✓ Thanks!':'✓ Noted — we\'ll improve'}</span>`;
+  } catch(e) { /* silent */ }
 }
 
 function tlRefresh() {

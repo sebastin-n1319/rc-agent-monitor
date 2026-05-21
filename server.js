@@ -15,7 +15,9 @@ const {
   insertAuditLog, getAuditLog,
   getBreakThresholds, setBreakThreshold,
   getBreakReportData,
-  pruneOldData, getDbStats
+  pruneOldData, getDbStats,
+  insertTicketFeedback, getTicketFeedback, getFeedbackStats, getWrongPatterns,
+  upsertLearnedPattern, getLearnedPatterns, updatePatternFeedback,
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -1146,29 +1148,61 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     // Debug: log raw Zoho fields to diagnose spam false-positives
     console.log(`🔍 Zoho ticket #${rawId} raw fields: isSpam=${JSON.stringify(ticket.isSpam)} source=${JSON.stringify(ticket.source)} channel=${JSON.stringify(ticket.channel)} assigneeId=${ticket.assigneeId}`);
 
-    // Get contact info and conversation threads in parallel
+    // Get contact info, threads, and assignee name in parallel
     let contact = null;
     let threads = [];
+    let assigneeName = ticket.assignee?.name || null;
+
     await Promise.all([
+      // Contact
       ticket.contactId
         ? zohoDesk(`/contacts/${ticket.contactId}`).then(c => { contact = c; }).catch(() => {})
         : Promise.resolve(),
+      // Threads
       zohoDesk(`/tickets/${ticket.id}/threads`, { limit: 20, sortBy: 'createdTime', order: 'asc' })
         .then(d => { threads = (d.data || []).map(th => ({
           id:        th.id,
-          type:      th.type,        // 'EMAIL_IN' | 'EMAIL_OUT' | 'PUBLIC' | 'PRIVATE' | 'TWEET' etc.
+          type:      th.type,
           from:      th.fromEmailAddress || th.author?.name || null,
           fromName:  th.author?.name || null,
           to:        th.toEmailAddress || null,
-          summary:   th.summary || null,
-          content:   th.content    // raw HTML — we'll strip client-side
-                      ? th.content.replace(/<[^>]+>/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 600)
+          content:   th.content
+                      ? th.content.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g,' ').replace(/\s{2,}/g, ' ').trim().slice(0, 800)
                       : null,
           created:   th.createdTime,
           channel:   th.channel || null,
         })); })
         .catch(() => {}),
+      // Resolve assignee name if only ID was returned
+      (!assigneeName && ticket.assigneeId)
+        ? zohoDesk(`/agents/${ticket.assigneeId}`).then(a => { assigneeName = a.fullName || a.firstName || null; }).catch(() => {})
+        : Promise.resolve(),
     ]);
+
+    // Generate AI summary from thread content (if AI configured)
+    let aiSummary = null;
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey && threads.length) {
+      try {
+        const threadText = threads
+          .filter(t => t.content)
+          .map(t => `[${t.fromName || t.from || 'Unknown'}]: ${t.content}`)
+          .join('\n\n');
+        const prompt = `You are a customer support AI. Summarize this support ticket in 2 sentences max.
+Subject: ${ticket.subject}
+Customer: ${contact?.fullName || 'Unknown'}
+Conversation:\n${threadText.slice(0, 2000)}
+
+Reply with ONLY the summary, no preamble.`;
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'user', content: prompt }], max_tokens: 120, temperature: 0.2 })
+        });
+        const aiData = await resp.json();
+        aiSummary = aiData.choices?.[0]?.message?.content?.trim() || null;
+      } catch(e) { /* AI summary optional — fail silently */ }
+    }
 
     const mappedTicket = {
       id:           ticket.id,
@@ -1178,8 +1212,9 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       priority:     ticket.priority,
       channel:      mapZohoChannel(ticket.channel),
       ticketType:   mapZohoType(ticket),
-      assignee:     ticket.assignee?.name || ticket.assigneeId || null,
+      assignee:     assigneeName,
       contact:      contact ? { name: contact.fullName, email: contact.email } : null,
+      aiSummary:    aiSummary,
       createdTime:  ticket.createdTime,
       modifiedTime: ticket.modifiedTime,
       satisfaction: ticket.satisfaction?.type || null,
@@ -1206,6 +1241,90 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     console.error('❌ Zoho ticket lookup:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
+});
+
+// ════════════════════════════════════════════════════════════════════════════════
+// AI LEARNING AGENT — feedback loop, pattern discovery, rule analysis
+// ════════════════════════════════════════════════════════════════════════════════
+
+// POST /api/ticket-feedback — agent rates a classification suggestion
+app.post('/api/ticket-feedback', requireAuth, rateLimit(120, 60000), async (req, res) => {
+  try {
+    const { ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback } = req.body || {};
+    if (!ticketNumber || !feedback) return res.status(400).json({ success: false, error: 'Missing required fields' });
+    const agentEmail = req.session?.userEmail || req.user?.email || 'unknown';
+    await insertTicketFeedback(ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback, agentEmail);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// GET /api/agent-learning/stats — accuracy stats per rule
+app.get('/api/agent-learning/stats', requireAdmin, async (req, res) => {
+  try {
+    const [stats, wrong, patterns, recent] = await Promise.all([
+      getFeedbackStats(),
+      getWrongPatterns(),
+      getLearnedPatterns(),
+      getTicketFeedback(50),
+    ]);
+    res.json({ success: true, stats, wrong, patterns, recent });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// POST /api/agent-learning/analyze — AI analyzes feedback, suggests rule improvements
+app.post('/api/agent-learning/analyze', requireAdmin, async (req, res) => {
+  try {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(503).json({ success: false, error: 'OpenAI not configured' });
+
+    const [stats, wrongPatterns, recent] = await Promise.all([
+      getFeedbackStats(),
+      getWrongPatterns(),
+      getTicketFeedback(100),
+    ]);
+
+    const prompt = `You are an expert customer support operations analyst and QA specialist.
+You analyze how an AI ticket classification system is performing and suggest improvements.
+
+CURRENT RULE ACCURACY:
+${JSON.stringify(stats, null, 2)}
+
+MOST COMMON WRONG CLASSIFICATIONS (agent corrected these):
+${JSON.stringify(wrongPatterns, null, 2)}
+
+RECENT FEEDBACK SAMPLE:
+${JSON.stringify(recent.slice(0,20), null, 2)}
+
+Based on this data, provide:
+1. ACCURACY ANALYSIS — which rules are working well vs poorly (with percentages)
+2. ROOT CAUSES — why are certain tickets being misclassified
+3. SPECIFIC RULE IMPROVEMENTS — exact changes to make to the classification logic
+4. NEW PATTERNS DISCOVERED — patterns you see in wrong classifications that could become new rules
+5. QA RECOMMENDATIONS — what the team should watch out for
+
+Be specific, actionable, and use the actual data. Format as structured sections.`;
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 1500, temperature: 0.3
+      })
+    });
+    const data = await resp.json();
+    const analysis = data.choices?.[0]?.message?.content?.trim() || 'No analysis generated';
+    res.json({ success: true, analysis, dataPoints: recent.length });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// GET /api/agent-learning/patterns — get all learned patterns
+app.get('/api/agent-learning/patterns', requireAdmin, async (req, res) => {
+  try {
+    const patterns = await getLearnedPatterns();
+    res.json({ success: true, patterns });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // ── Ticket Logger — Google Sheets Integration ─────────────────────────────────

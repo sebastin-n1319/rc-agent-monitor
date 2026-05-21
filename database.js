@@ -399,6 +399,36 @@ async function initDB() {
     }
   }
 
+  // ── AI Learning Agent: feedback + discovered patterns ─────────────────────
+  await run(`CREATE TABLE IF NOT EXISTS ticket_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_number TEXT NOT NULL,
+    ticket_subject TEXT,
+    zoho_channel TEXT,
+    suggested_type TEXT,
+    suggested_rule TEXT,
+    agent_type TEXT,        -- what the agent actually selected
+    feedback TEXT,          -- 'correct' | 'wrong' | 'edited'
+    agent_email TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_tf_created ON ticket_feedback(created_at DESC)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_tf_rule ON ticket_feedback(suggested_rule)`);
+
+  await run(`CREATE TABLE IF NOT EXISTS learned_patterns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern_key TEXT UNIQUE NOT NULL,  -- e.g. 'subject:re:' or 'contact_domain:hotmail.com'
+    pattern_type TEXT NOT NULL,        -- 'subject_prefix'|'contact_domain'|'channel'|'custom'
+    pattern_value TEXT NOT NULL,
+    suggested_type TEXT NOT NULL,
+    confidence REAL DEFAULT 0.5,       -- 0..1, updated from feedback
+    sample_count INTEGER DEFAULT 0,
+    correct_count INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'active',      -- 'active'|'paused'|'rejected'
+    source TEXT DEFAULT 'agent',       -- 'agent'|'ai_analysis'
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+
   // Migrations
   for (const sql of [
     `ALTER TABLE monitored_agents ADD COLUMN email TEXT`,
@@ -1265,6 +1295,51 @@ async function getAuditLog(limit = 200) {
   );
 }
 
+// ── AI Learning Agent DB functions ────────────────────────────────────────────
+function insertTicketFeedback(ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback, agentEmail) {
+  return run(`INSERT INTO ticket_feedback (ticket_number,ticket_subject,zoho_channel,suggested_type,suggested_rule,agent_type,feedback,agent_email) VALUES (?,?,?,?,?,?,?,?)`,
+    [ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback, agentEmail]);
+}
+function getTicketFeedback(limit = 200) {
+  return all(`SELECT * FROM ticket_feedback ORDER BY created_at DESC LIMIT ?`, [limit]);
+}
+function getFeedbackStats() {
+  return all(`
+    SELECT suggested_rule, suggested_type,
+      COUNT(*) as total,
+      SUM(CASE WHEN feedback='correct' THEN 1 ELSE 0 END) as correct,
+      SUM(CASE WHEN feedback='wrong' THEN 1 ELSE 0 END) as wrong,
+      SUM(CASE WHEN feedback='edited' THEN 1 ELSE 0 END) as edited,
+      ROUND(1.0*SUM(CASE WHEN feedback='correct' THEN 1 ELSE 0 END)/COUNT(*),2) as accuracy
+    FROM ticket_feedback WHERE suggested_rule IS NOT NULL
+    GROUP BY suggested_rule ORDER BY total DESC`);
+}
+function getWrongPatterns() {
+  return all(`
+    SELECT ticket_subject, zoho_channel, suggested_type, agent_type, COUNT(*) as freq
+    FROM ticket_feedback WHERE feedback IN ('wrong','edited')
+    GROUP BY ticket_subject, zoho_channel, suggested_type, agent_type
+    ORDER BY freq DESC LIMIT 50`);
+}
+function upsertLearnedPattern(patternKey, patternType, patternValue, suggestedType, createdBy) {
+  return run(`INSERT INTO learned_patterns (pattern_key,pattern_type,pattern_value,suggested_type,created_by,sample_count,correct_count)
+    VALUES (?,?,?,?,?,1,0)
+    ON CONFLICT(pattern_key) DO UPDATE SET
+      suggested_type=excluded.suggested_type, sample_count=sample_count+1, updated_at=CURRENT_TIMESTAMP`,
+    [patternKey, patternType, patternValue, suggestedType, createdBy]);
+}
+function getLearnedPatterns() {
+  return all(`SELECT * FROM learned_patterns WHERE status='active' ORDER BY confidence DESC, sample_count DESC`);
+}
+function updatePatternFeedback(patternKey, isCorrect) {
+  return run(`UPDATE learned_patterns SET
+    sample_count=sample_count+1,
+    correct_count=correct_count+${isCorrect?1:0},
+    confidence=ROUND(1.0*correct_count/sample_count,2),
+    updated_at=CURRENT_TIMESTAMP
+    WHERE pattern_key=?`, [patternKey]);
+}
+
 module.exports={
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
@@ -1278,5 +1353,7 @@ module.exports={
   insertAuditLog,getAuditLog,
   getBreakThresholds,setBreakThreshold,
   getBreakReportData,
-  pruneOldData,getDbStats
+  pruneOldData,getDbStats,
+  insertTicketFeedback,getTicketFeedback,getFeedbackStats,getWrongPatterns,
+  upsertLearnedPattern,getLearnedPatterns,updatePatternFeedback
 };
