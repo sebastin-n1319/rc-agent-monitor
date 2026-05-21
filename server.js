@@ -29,7 +29,22 @@ const app = express();
 const SESSION_COOKIE = 'rcAuthSession';
 const SESSION_MAX_AGE_S = 12 * 60 * 60; // 12 hours in seconds
 
-app.use(cors({ origin: true, credentials: true }));
+// ── CORS — restrict to allowlisted origins when ALLOWED_ORIGINS env var is set ─
+// Set ALLOWED_ORIGINS=https://your-app.up.railway.app in Railway env vars.
+// If unset, all origins are permitted (backward-compat for existing deploys).
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',').map(o => o.trim()).filter(Boolean);
+app.use(cors({
+  origin: (origin, cb) => {
+    // Non-browser or same-origin requests (no Origin header) always allowed
+    if (!origin) return cb(null, true);
+    // If no allowlist configured, fall back to permissive (backward compat)
+    if (ALLOWED_ORIGINS.length === 0) return cb(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+    cb(new Error('CORS: origin not allowed'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'), {
@@ -239,6 +254,24 @@ async function sendBreakChatNotification(event){
   };
 }
 
+// ── XSS-safe HTML escaper (used server-side for any reflected values) ─────────
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// ── Global process error handlers — prevent silent crashes ────────────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('❌ Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught exception:', err.message, err.stack);
+});
+
 initDB().then(async () => {
   console.log('DB ready');
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
@@ -377,6 +410,14 @@ app.get('/api/live-stream', requireAuth, async (req, res) => {
     : 'agent';
   sseClients.set(res, { role: clientRole });
   req.on('close', () => sseClients.delete(res));
+
+  // Heartbeat every 25 seconds — prevents proxies from closing idle connections
+  // and lets the client detect disconnects quickly
+  const heartbeat = setInterval(() => {
+    try { res.write(': heartbeat\n\n'); }
+    catch { clearInterval(heartbeat); sseClients.delete(res); }
+  }, 25000);
+  req.on('close', () => clearInterval(heartbeat));
 });
 
 app.get('/api/rc-webhook', (req, res) => {
@@ -462,8 +503,13 @@ app.post('/api/force-call-sync', requireAdmin, rateLimit(3, 60000), async (req, 
 });
 
 // Login log - also auto-registers user in access list
-app.post('/api/login-log', async (req, res) => {
+// Rate-limited to prevent open write abuse; no auth required (pre-session endpoint)
+app.post('/api/login-log', rateLimit(10, 60000), async (req, res) => {
   const { username, email, role, ip, location, systemInfo } = req.body;
+  // Validate email is an @adit.com address to prevent arbitrary user registration
+  if (!email || typeof email !== 'string' || !email.toLowerCase().endsWith('@adit.com')) {
+    return res.status(400).json({ success: false, error: 'Invalid email domain' });
+  }
   const realIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || ip;
   try {
     await insertLoginLog(username, email, role, realIp, location, systemInfo);
@@ -473,7 +519,7 @@ app.post('/api/login-log', async (req, res) => {
       await setRole(email, 'agent', 'auto');
     }
     res.json({ success: true });
-  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  } catch(e) { res.status(500).json({ success: false, error: 'Login log failed' }); }
 });
 
 app.get('/api/login-logs', requireAdmin, async (req, res) => {
@@ -655,9 +701,14 @@ app.post('/api/announce', requireAdmin, rateLimit(5, 60000), async (req, res) =>
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-app.get('/api/role-check', async (req, res) => {
+// Role check — called pre-session during OAuth login flow; rate-limited + domain-locked
+app.get('/api/role-check', rateLimit(20, 60000), async (req, res) => {
   const email = req.query.email;
-  if (!email) return res.status(400).json({ success: false });
+  if (!email || typeof email !== 'string') return res.status(400).json({ success: false });
+  // Only serve role info for @adit.com addresses — prevents external enumeration
+  if (!email.toLowerCase().endsWith('@adit.com')) {
+    return res.status(403).json({ success: false, error: 'Domain not permitted' });
+  }
   try {
     const settings = await getRoleSettingsForEmail(email);
     res.json({
@@ -666,7 +717,7 @@ app.get('/api/role-check', async (req, res) => {
       breakbotEnabled: settings ? settings.breakbotEnabled : true
     });
   }
-  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  catch(e) { res.status(500).json({ success: false, error: 'Role check failed' }); }
 });
 
 // ── Server-side sessions via DB token + plain cookie ─────────────────────────
@@ -1296,7 +1347,7 @@ app.post('/api/ticket-feedback', requireAuth, rateLimit(120, 60000), async (req,
   try {
     const { ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback } = req.body || {};
     if (!ticketNumber || !feedback) return res.status(400).json({ success: false, error: 'Missing required fields' });
-    const agentEmail = req.session?.userEmail || req.user?.email || 'unknown';
+    const agentEmail = req.session?.email || 'unknown';
     await insertTicketFeedback(ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback, agentEmail);
     res.json({ success: true });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -1474,7 +1525,7 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
     await sheets.spreadsheets.values.append({
       spreadsheetId: TICKET_SHEET_ID,
       range: `'${TICKET_SHEET_TAB}'!A:H`,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [row] },
     });
@@ -1589,7 +1640,7 @@ app.post('/api/tickets/bulk', requireAuth, rateLimit(10, 60000), async (req, res
     await sheets.spreadsheets.values.append({
       spreadsheetId: TICKET_SHEET_ID,
       range: `'${TICKET_SHEET_TAB}'!A:H`,
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: rows },
     });
@@ -1855,6 +1906,19 @@ async function startScheduler() {
   });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
+
+// ── Health endpoint — required for Railway healthchecks ───────────────────────
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', ts: Date.now() });
+});
+
+// ── Global error handler — must be last; masks internal details from responses ─
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('❌ Unhandled route error:', err.message, err.stack);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).json({ success: false, error: err.status ? err.message : 'Internal server error' });
+});
 
 async function start() {
   const PORT = process.env.PORT || 8080;

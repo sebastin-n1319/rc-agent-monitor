@@ -12941,11 +12941,11 @@ async function submitTicketLog() {
       const entriesHtml = entries.map(e => {
         const chC = chColors[e.channel] || '#6B849A';
         return `<div style="display:flex;align-items:center;gap:7px;padding:8px 12px;border-bottom:1px solid rgba(237,102,107,.1);">
-          <span style="font-size:12px;font-weight:700;color:#21AAE0;min-width:72px;">${e.ticketId}</span>
-          <span style="background:${chC}22;color:${chC};padding:1px 7px;border-radius:50px;font-size:10px;font-weight:700;flex-shrink:0;">${e.channel||'—'}</span>
-          <span style="font-size:11px;color:#3A5068;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(e.ticketType||'—').replace(' Ticket','')}</span>
-          <span style="font-size:10px;color:#9BAFC0;white-space:nowrap;">${e.agentName||'?'} · ${e.date||''}</span>
-          ${e.notes?`<span style="background:rgba(237,102,107,.1);color:#ED666B;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;">${e.notes}</span>`:''}
+          <span style="font-size:12px;font-weight:700;color:#21AAE0;min-width:72px;">${esc(e.ticketId)}</span>
+          <span style="background:${chC}22;color:${chC};padding:1px 7px;border-radius:50px;font-size:10px;font-weight:700;flex-shrink:0;">${esc(e.channel||'—')}</span>
+          <span style="font-size:11px;color:#3A5068;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc((e.ticketType||'—').replace(' Ticket',''))}</span>
+          <span style="font-size:10px;color:#9BAFC0;white-space:nowrap;">${esc(e.agentName||'?')} · ${esc(e.date||'')}</span>
+          ${e.notes?`<span style="background:rgba(237,102,107,.1);color:#ED666B;padding:1px 6px;border-radius:4px;font-size:9px;font-weight:700;">${esc(e.notes)}</span>`:''}
         </div>`;
       }).join('');
 
@@ -14565,8 +14565,8 @@ function buildBreakFeedRow(event, compact=false){
   return '<div class="break-log-row">'+
     '<div class="break-log-badge">'+meta.badge+'</div>'+
     '<div class="break-log-main">'+
-      '<div class="break-log-title">'+(event.username || 'Agent')+' · '+meta.label+'</div>'+
-      '<div class="break-log-sub">'+meta.copy+durationCopy+(event.note ? ' · '+event.note : '')+'</div>'+
+      '<div class="break-log-title">'+esc(event.username || 'Agent')+' · '+esc(meta.label)+'</div>'+
+      '<div class="break-log-sub">'+esc(meta.copy)+durationCopy+(event.note ? ' · '+esc(event.note) : '')+'</div>'+
       '<div class="break-log-sub"><span class="break-mini-chip '+notifyCls+'">'+notifyText+'</span></div>'+
     '</div>'+
     '<div class="break-log-time">'+toTime(event.createdAt)+'</div>'+
@@ -14593,7 +14593,7 @@ function buildFlcAgentRow(row, cls){
   const tip = since ? `Since ${since} · ${dur}` : dur;
   return `<div class="flc-row${isAlert?' flc-row-alert':''}" title="${tip}">
     <div class="flc-row-av" style="background:${isAlert?'rgba(237,102,107,.18)':cfg.bg};color:${isAlert?'#ED666B':cfg.c}">${init}</div>
-    <div class="flc-row-name">${row.username}</div>
+    <div class="flc-row-name">${esc(row.username)}</div>
     <div class="flc-row-time">${dur}${isAlert?'<span class="flc-warn">!</span>':''}</div>
   </div>`;
 }
@@ -14766,7 +14766,7 @@ function buildBtkAgentTile(row){
   <div class="btk-tile-top">
     <div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>
     <div class="btk-tile-info">
-      <div class="btk-tile-name">${row.username||'--'}</div>
+      <div class="btk-tile-name">${esc(row.username||'--')}</div>
       <div class="btk-tile-status" style="color:${c.text}">
         <span class="btk-tile-dot" style="background:${c.dot};box-shadow:0 0 4px ${c.dot}99"></span>
         <span class="btk-tile-status-label">${status}</span>
@@ -15902,7 +15902,7 @@ async function searchAgentsPanel(q){
       resultsWrap.style.display = 'block';
       updateAddBtn();
     }catch(e){
-      resultsList.innerHTML='<div style="padding:14px;color:var(--red);font-size:12px;">Search error: '+e.message+'</div>';
+      resultsList.innerHTML='<div style="padding:14px;color:var(--red);font-size:12px;">Search error: '+esc(e.message)+'</div>';
     }
   }, 400);
 }

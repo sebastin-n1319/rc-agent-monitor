@@ -454,6 +454,13 @@ async function initDB() {
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
   ]) { try { await run(sql); } catch(e) {} }
 
+  // ── Performance indexes on high-query columns (added SEC/PERF audit) ─────────
+  for (const sql of [
+    `CREATE INDEX IF NOT EXISTS idx_call_logs_agent_time ON call_logs(agent_id, start_time DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_presence_agent_time  ON presence_events(agent_id, timestamp DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_login_logs_email      ON login_logs(email)`,
+  ]) { try { await run(sql); } catch(e) {} }
+
   const coreAdmins = (process.env.CORE_ADMINS || 'sebastin.n@adit.com,ronnie@adit.com,imran@adit.com').split(',').map(e => e.trim()).filter(Boolean);
   for (const email of coreAdmins) {
     try { await run(`INSERT OR IGNORE INTO app_roles (email,role,added_by) VALUES (?,'admin','system')`,[email]); } catch(e) {}
@@ -1332,12 +1339,13 @@ function getLearnedPatterns() {
   return all(`SELECT * FROM learned_patterns WHERE status='active' ORDER BY confidence DESC, sample_count DESC`);
 }
 function updatePatternFeedback(patternKey, isCorrect) {
+  const delta = isCorrect ? 1 : 0;
   return run(`UPDATE learned_patterns SET
     sample_count=sample_count+1,
-    correct_count=correct_count+${isCorrect?1:0},
-    confidence=ROUND(1.0*correct_count/sample_count,2),
+    correct_count=correct_count+?,
+    confidence=ROUND(1.0*(correct_count+?)/(sample_count+1),2),
     updated_at=CURRENT_TIMESTAMP
-    WHERE pattern_key=?`, [patternKey]);
+    WHERE pattern_key=?`, [delta, delta, patternKey]);
 }
 
 module.exports={

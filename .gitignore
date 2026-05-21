@@ -1,2 +1,5 @@
 node_modules/
 productivity.db
+.env
+*.db-shm
+*.db-wal
