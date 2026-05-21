@@ -6134,9 +6134,10 @@ header.v5-scrolled {
   50% { opacity: 1; }
 }
 
-/* PAGE TRANSITIONS */
-.page, .agent-shell-page {
-  animation: v5PageEnter .32s cubic-bezier(.22,1,.36,1) both !important;
+/* PAGE TRANSITIONS — only animate active pages (inactive are display:none anyway) */
+/* Use forwards NOT both — 'both' causes opacity:0 before animation fires = blank page */
+.page.active, .agent-shell-page.active {
+  animation: v5PageEnter .32s cubic-bezier(.22,1,.36,1) forwards !important;
 }
 @keyframes v5PageEnter {
   from { opacity: 0; transform: translateY(14px); }
