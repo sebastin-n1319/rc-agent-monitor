@@ -13254,44 +13254,20 @@ function tlOpenEditModal(t) {
   const idInp = document.getElementById('tl-edit-ticketid');
   if (idInp) idInp.value = (tlEditOriginalId || '').replace(/^#/, '');
 
-  // Date — sheet stores date as "22-May" (day-MonthAbbr) and month as "May'26"
-  // Reconstruct the full date by combining both fields, fall back to today only if both fail
+  // Date — reuse the existing parseTlDate() which correctly handles "22-May" + "May'26"
   const dateInp = document.getElementById('tl-edit-date');
   if (dateInp) {
-    const _MONTHS = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-    const _fmtISO = d => d && !isNaN(d)
-      ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-      : null;
-    const _todayISO = _fmtISO(new Date());
-
-    let parsedDate = null;
-    const ds = String(t.date  || '').trim();
-    const ms = String(t.month || '').trim();
-
-    // Primary: "22-May" + "May'26" → full date
-    const dmMatch = ds.match(/^(\d{1,2})-([A-Za-z]{3})$/);
-    if (dmMatch) {
-      const day    = parseInt(dmMatch[1], 10);
-      const monIdx = _MONTHS.indexOf(dmMatch[2].toLowerCase());
-      // Recover year from month field "May'26" → 2026
-      let year = new Date().getFullYear();
-      const yrMatch = ms.match(/(\d{2})$/);
-      if (yrMatch) year = 2000 + parseInt(yrMatch[1], 10);
-      if (monIdx >= 0) parsedDate = new Date(year, monIdx, day);
-    }
-
-    // Fallback A: YYYY-MM-DD
-    if (!parsedDate || isNaN(parsedDate)) {
-      const isoMatch = ds.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (isoMatch) parsedDate = new Date(+isoMatch[1], +isoMatch[2]-1, +isoMatch[3]);
-    }
-    // Fallback B: DD/MM/YYYY
-    if (!parsedDate || isNaN(parsedDate)) {
-      const slashMatch = ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (slashMatch) parsedDate = new Date(+slashMatch[3], +slashMatch[2]-1, +slashMatch[1]);
-    }
-
-    dateInp.value = _fmtISO(parsedDate) || _todayISO;
+    // Always build YYYY-MM-DD without toLocaleDateString (locale-safe)
+    const toISO = d => {
+      if (!d || isNaN(d.getTime())) return null;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+    const today = toISO(new Date());
+    const parsed = parseTlDate(t.date, t.month);
+    dateInp.value = toISO(parsed) || today;
   }
 
   // Reset all opt buttons, then activate the matching ones
