@@ -1144,6 +1144,13 @@ select option{background:#0c1424;color:var(--t1);}
 ══════════════════════════════════════════════════════════════════════════ */
 .hof-frame,.bonus-frame{width:100%;min-height:calc(100vh - 120px);border:none;border-radius:var(--r);background:var(--bg);}
 .bonus-frame-shell,.hof-frame-shell{padding:0;overflow:hidden;}
+/* Prevent any fixed/absolute chat widgets inside iframes from escaping their container */
+.bonus-frame-shell,.hof-frame-shell{position:relative;isolation:isolate;}
+/* Hide any rogue fixed-position dark widgets that bleed to bottom-right of main window */
+body > iframe[style*="position: fixed"],
+body > div[style*="position: fixed"][style*="bottom"][style*="right"]:not(.toast):not(#loginScreen) {
+  display: none !important;
+}
 
 /* ── HOF mini cards */
 .hof-stack{display:flex;flex-direction:column;gap:8px;}
@@ -9538,6 +9545,11 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
+  <div class="sb-item" id="sb-debug" title="Debug / Logs"
+       onclick="sbAdmin('debug',this);loadDebugPanel()">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 8v4"/><path d="M12 16h.01"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
+    <span class="sb-label">Debug</span>
+  </div>
 </nav>
 
 <!-- AGENT SIDEBAR — 70px dark navy, icon-only navigation -->
@@ -10405,7 +10417,7 @@ tbody tr:hover td{
   </div><!-- /#tab-tickets -->
 
   <!-- DEBUG TAB ─────────────────────────────────────────────────────────── -->
-  <div id="tab-debug" class="tab-content" style="display:none;padding:24px 0;">
+  <div id="tab-debug" class="page" style="padding:24px 0;">
     <style>
       #debug-panel { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
       .dbg-card { background: var(--card-bg, rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; overflow: hidden; }
@@ -16448,6 +16460,7 @@ function switchTab(tab,el){
   if(tab==='auditlog') loadAuditLog();
   if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); }
   if(tab==='ai-agent') laLoadStats();
+  if(tab==='debug') loadDebugPanel();
   // Remember the active tab so refresh restores it
   try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
 }
