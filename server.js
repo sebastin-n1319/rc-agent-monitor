@@ -22,7 +22,7 @@ const {
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
-  fetchRecentMissedCalls, fetchRawRecentMissedLog,
+  fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 
@@ -2421,7 +2421,7 @@ async function runMissedCallPoll() {
 
 // ── Debug panel endpoints ────────────────────────────────────────────────────
 
-// GET /api/admin/debug-config — notifier configuration + last poll time
+// GET /api/admin/debug-config — notifier configuration + last poll time + rate limit state
 app.get('/api/admin/debug-config', requireAdmin, (req, res) => {
   res.json({
     webhookSet:       !!MISSED_CALL_WEBHOOK_URL,
@@ -2430,6 +2430,7 @@ app.get('/api/admin/debug-config', requireAdmin, (req, res) => {
     pollIntervalSecs: POLL_INTERVAL_SECS,
     lastPollAt:       _lastPollAt,
     notifiedCount:    _notifiedCallIds.size,
+    rcRateLimit:      getRcRateLimitState(),
   });
 });
 

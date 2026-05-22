@@ -10,6 +10,15 @@ const rcsdk = new RC({
 });
 const platform = rcsdk.platform();
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── Global RC API rate-limit gate ─────────────────────────────────────────────
+// RC Heavy tier: 40 req/min shared budget across ALL endpoints.
+// When ANY call gets a 429/CMN-301, we set a global pause so presence sync,
+// call-log sync, and the missed-call poll stop competing and let the budget recover.
+let _rcRateLimitedUntil = 0;     // epoch ms — wall clock time to resume API calls
+const RC_GLOBAL_PAUSE_MS = 65000; // 65 s → budget fully replenishes in 60 s; +5 s buffer
+// ─────────────────────────────────────────────────────────────────────────────
+
 const LIVE_STATUS_TTL_MS = Number(process.env.LIVE_STATUS_TTL_MS || 60000);
 const QUEUE_STATUS_TTL_MS = Number(process.env.QUEUE_STATUS_TTL_MS || 5000);
 const FALLBACK_SYNC_MS = Number(process.env.FALLBACK_SYNC_MS || 120000); // 2-min default; webhooks handle real-time updates
@@ -460,16 +469,7 @@ async function listAccountCallLogRecords(params) {
   let page = 1;
 
   while (page <= 10) {
-    const r = await platform.get('/restapi/v1.0/account/~/call-log', {
-      ...params,
-      page
-    });
-    const data = await r.json();
-    if (data.errorCode) {
-      const err = new Error(data.message || data.errorCode);
-      err.rcData = data;
-      throw err;
-    }
+    const data = await rcGet('/restapi/v1.0/account/~/call-log', { ...params, page });
     records.push(...(data.records || []));
     if (!data.navigation || !data.navigation.nextPage || !(data.records || []).length) break;
     page++;
@@ -484,16 +484,7 @@ async function listExtensionCallLogRecords(extensionId, params) {
   let page = 1;
 
   while (page <= 10) {
-    const r = await platform.get(`/restapi/v1.0/account/~/extension/${extensionId}/call-log`, {
-      ...params,
-      page
-    });
-    const data = await r.json();
-    if (data.errorCode) {
-      const err = new Error(data.message || data.errorCode);
-      err.rcData = data;
-      throw err;
-    }
+    const data = await rcGet(`/restapi/v1.0/account/~/extension/${extensionId}/call-log`, { ...params, page });
     records.push(...(data.records || []));
     if (!data.navigation || !data.navigation.nextPage || !(data.records || []).length) break;
     page++;
@@ -569,13 +560,12 @@ function resolveCallOwner(call, lookups) {
 
 async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
   const lookups = buildAgentLookups(agents);
-  const r = await platform.get('/restapi/v1.0/account/~/call-log', {
+  const d = await rcGet('/restapi/v1.0/account/~/call-log', {
     dateFrom: istMidnight.toISOString(),
     perPage: 200,
     view: 'Detailed',
     direction: 'Inbound'
   });
-  const d = await r.json();
   const logs = [];
 
   for (const call of (d.records || [])) {
@@ -757,6 +747,52 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
 function isRateLimitError(err, data) {
   const msg = `${err?.message || ''} ${data?.message || ''} ${data?.errorCode || ''}`.toLowerCase();
   return msg.includes('rate limit') || msg.includes('rate exceeded') || msg.includes('too many requests') || data?.errorCode === 'CMN-301';
+}
+
+// Mark all RC API calls globally paused for `extraMs` ms (default: RC_GLOBAL_PAUSE_MS).
+// Any subsystem that receives a 429 calls this to protect every other subsystem too.
+function markRcRateLimited(extraMs = RC_GLOBAL_PAUSE_MS) {
+  const until = Date.now() + extraMs;
+  if (until > _rcRateLimitedUntil) {
+    _rcRateLimitedUntil = until;
+    console.warn(`🚫 RC rate limit — GLOBAL pause until ${new Date(_rcRateLimitedUntil).toISOString()} (${Math.round(extraMs / 1000)}s)`);
+  }
+}
+
+// Returns the current rate-limit pause state (for debug/observability).
+function getRcRateLimitState() {
+  const remaining = Math.max(0, _rcRateLimitedUntil - Date.now());
+  return {
+    limited:     remaining > 0,
+    remainingMs: remaining,
+    remainingSecs: Math.ceil(remaining / 1000),
+    until:       _rcRateLimitedUntil ? new Date(_rcRateLimitedUntil).toISOString() : null,
+  };
+}
+
+// Central RC API GET helper.  All platform.get() calls route through here so that:
+//   1. If a global rate-limit pause is active, we wait for it to expire first.
+//   2. The response JSON is parsed once and returned directly (no double-consume).
+//   3. Any 429/CMN-301 in the response body automatically sets the global pause.
+//
+// Returns the parsed JSON data object on success.
+// Throws an Error (with .rcData set) on RC API errors.
+async function rcGet(path, params) {
+  const pause = _rcRateLimitedUntil - Date.now();
+  if (pause > 0) {
+    const tag = String(path).split('/').slice(-2).join('/');
+    console.log(`⏳ rcGet(${tag}) waiting ${Math.ceil(pause / 1000)}s for global rate-limit pause…`);
+    await sleep(pause);
+  }
+  const r = await platform.get(path, params);
+  const data = await r.json();
+  if (data.errorCode) {
+    const err = new Error(data.message || data.errorCode);
+    err.rcData = data;
+    if (isRateLimitError(err, data)) markRcRateLimited();
+    throw err;
+  }
+  return data;
 }
 
 function buildLiveStatusEntry(agent, data, fetchedAt) {
@@ -1001,8 +1037,7 @@ async function authenticate() {
 
 async function findQueueId() {
   try {
-    const r = await platform.get('/restapi/v1.0/account/~/call-queues', { perPage: 100 });
-    const data = await r.json();
+    const data = await rcGet('/restapi/v1.0/account/~/call-queues', { perPage: 100 });
     const queues = data.records || [];
     // Look for Customer Service queue
     const csQueue = queues.find(q =>
@@ -1038,10 +1073,7 @@ async function fetchQueueStatuses() {
     if (!customerServiceQueueId) return {};
   }
   try {
-    const r = await platform.get(
-      `/restapi/v1.0/account/~/call-queues/${customerServiceQueueId}/presence`
-    );
-    const data = await r.json();
+    const data = await rcGet(`/restapi/v1.0/account/~/call-queues/${customerServiceQueueId}/presence`);
     const statusMap = {};
     for (const rec of (data.records || [])) {
       if (rec.member && rec.member.id) {
@@ -1062,15 +1094,7 @@ async function fetchQueueStatuses() {
 }
 
 async function fetchAccountPresenceMap() {
-  const r = await platform.get('/restapi/v1.0/account/~/presence', {
-    detailedTelephonyState: true
-  });
-  const data = await r.json();
-  if (data.errorCode) {
-    const err = new Error(data.message || data.errorCode);
-    err.rcData = data;
-    throw err;
-  }
+  const data = await rcGet('/restapi/v1.0/account/~/presence', { detailedTelephonyState: true });
   const presenceMap = {};
   for (const rec of (data.records || [])) {
     const extId = String(
@@ -1084,21 +1108,20 @@ async function fetchAccountPresenceMap() {
   return presenceMap;
 }
 
-// Wraps fetchAccountPresenceMap with exponential backoff on rate-limit errors.
-// RC's Heavy API allows 40 req/min; if we get a 429/CMN-301 we wait and retry
-// rather than failing the whole sync cycle.
+// Wraps fetchAccountPresenceMap with retry on rate-limit errors.
+// rcGet() already sets a 65 s global pause when it hits a 429, so subsequent
+// calls (including retries here) will automatically wait.  We just retry.
 async function fetchAccountPresenceMapWithRetry(maxRetries = 3) {
-  const BACKOFF_MS = [20000, 60000, 120000]; // 20s → 60s → 120s
   let lastErr;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await fetchAccountPresenceMap();
     } catch (e) {
       lastErr = e;
-      if (!isRateLimitError(e, e.rcData)) throw e; // Non-rate-limit error → bail immediately
-      const waitMs = BACKOFF_MS[attempt - 1] || 120000;
-      console.warn(`⏳ RC rate limit on presence fetch (attempt ${attempt}/${maxRetries}), waiting ${waitMs / 1000}s before retry…`);
-      await sleep(waitMs);
+      if (!isRateLimitError(e, e.rcData)) throw e; // Non-rate-limit → bail immediately
+      // rcGet already set _rcRateLimitedUntil; next fetchAccountPresenceMap call
+      // will auto-wait for the global pause before hitting RC again.
+      console.warn(`⏳ Presence fetch rate-limited (attempt ${attempt}/${maxRetries}), will retry after global pause clears…`);
     }
   }
   throw lastErr;
@@ -1108,10 +1131,9 @@ async function searchRCUsers(query) {
   try {
     let allRecords = [], page = 1;
     while (true) {
-      const r = await platform.get('/restapi/v1.0/account/~/extension', {
+      const d = await rcGet('/restapi/v1.0/account/~/extension', {
         status: 'Enabled', type: 'User', perPage: 200, page
       });
-      const d = await r.json();
       allRecords = allRecords.concat(d.records || []);
       if (!d.navigation || !d.navigation.nextPage) break;
       page++;
@@ -1138,10 +1160,9 @@ async function resolveAgentRcIds() {
   const agents = await getMonitoredAgents();
   for (const agent of agents.filter(a => !a.rc_id)) {
     try {
-      const r = await platform.get('/restapi/v1.0/account/~/extension', {
+      const d = await rcGet('/restapi/v1.0/account/~/extension', {
         extensionNumber: agent.extension, status: 'Enabled'
       });
-      const d = await r.json();
       if (d.records && d.records.length > 0) {
         await updateAgentRcId(agent.extension, String(d.records[0].id));
         console.log(`✅ Resolved ${agent.name} → ${d.records[0].id}`);
@@ -1403,13 +1424,12 @@ async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId 
   try {
     const dateFrom = new Date(new Date(startTimeIso).getTime() - 30000).toISOString();
     const dateTo   = new Date(new Date(startTimeIso).getTime() + 5 * 60 * 1000).toISOString();
-    const r = await platform.get(`/restapi/v1.0/account/~/extension/${extensionId}/message-store`, {
+    const data = await rcGet(`/restapi/v1.0/account/~/extension/${extensionId}/message-store`, {
       messageType: 'VoiceMail',
       dateFrom,
       dateTo,
       perPage: 20,
     });
-    const data = await r.json();
     const messages = data.records || [];
     const stripped = (callerNumber || '').replace(/\D/g, '');
     const match = messages.find(m => (m.from?.phoneNumber || '').replace(/\D/g, '') === stripped)
@@ -1438,21 +1458,25 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   //   - internal ext → main DID → queue  : direction may vary
   // The queue ext filter (1025) + result filter (Missed/Voicemail) + age guard
   // are the real gates and will prevent false positives regardless of direction.
-  // Fetch with rate-limit retry — presence sync may have exhausted the bucket
+  // Fetch with rate-limit retry.
+  // rcGet() (called inside listAccountCallLogRecords) automatically:
+  //   • waits for any active global rate-limit pause before making the request
+  //   • marks a 65 s global pause if a 429 is received
+  // So retries here just need to re-call; the built-in pause handles the waiting.
   let records;
   {
     const params = { dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100 };
-    const BACKOFF = [15000, 30000]; // 15s then 30s
     let attempt = 0;
     while (true) {
       try {
         records = await listAccountCallLogRecords(params);
         break;
       } catch(e) {
-        if (isRateLimitError(e, e.rcData) && attempt < BACKOFF.length) {
-          console.warn(`⏳ Missed-call poll rate limited (attempt ${attempt + 1}), waiting ${BACKOFF[attempt] / 1000}s…`);
-          await sleep(BACKOFF[attempt]);
-          attempt++;
+        attempt++;
+        if (isRateLimitError(e, e.rcData) && attempt <= 2) {
+          // rcGet already set _rcRateLimitedUntil=now+65s; next call will auto-wait.
+          console.warn(`⏳ Missed-call poll rate limited (attempt ${attempt}/2), retrying after global pause clears…`);
+          await sleep(500); // tiny yield before re-entering rcGet's wait loop
         } else {
           throw e;
         }
@@ -1705,4 +1729,5 @@ module.exports = {
   getCallSyncStatus,
   fetchRecentMissedCalls,
   fetchRawRecentMissedLog,
+  getRcRateLimitState,
 };

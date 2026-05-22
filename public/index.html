@@ -10478,6 +10478,10 @@ tbody tr:hover td{
             <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Next Poll ~</div>
             <div id="dbg-next-poll" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
           </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">RC Rate Limit</div>
+            <div id="dbg-ratelimit-state" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
+          </div>
         </div>
       </div>
 
@@ -17214,6 +17218,15 @@ async function loadDebugPanel() {
       document.getElementById('dbg-last-poll').textContent = cfg.lastPollAt ? _dbgFmtTime(cfg.lastPollAt) : 'Not run yet';
       const nextMs = cfg.lastPollAt ? (new Date(cfg.lastPollAt).getTime() + (cfg.pollIntervalSecs || 180) * 1000) : null;
       document.getElementById('dbg-next-poll').textContent = nextMs ? _dbgFmtTime(new Date(nextMs).toISOString()) : '—';
+      const rl = cfg.rcRateLimit;
+      if (rl) {
+        const rlEl = document.getElementById('dbg-ratelimit-state');
+        if (rl.limited) {
+          rlEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;background:#FFF7ED;border:1px solid rgba(245,130,31,.4);color:#92400e;font-size:10.5px;font-weight:700;">🚫 PAUSED ${rl.remainingSecs}s</span>`;
+        } else {
+          rlEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:6px;background:#F0FDF4;border:1px solid rgba(34,197,94,.4);color:#15803d;font-size:10.5px;font-weight:700;">✓ OK</span>';
+        }
+      }
     }
 
     // Poll log
