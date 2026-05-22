@@ -2246,10 +2246,15 @@ function _fmtSecs(s) {
 }
 
 function _buildGoogleChatCard(call) {
-  const isVM   = call.isVoicemail;
-  const inQ    = call.wasInQueue;
-  const icon   = isVM ? '📬' : '📞';
-  const label  = isVM ? 'Voicemail Left' : (inQ ? 'Queue Abandoned' : 'Missed Call');
+  const isVM     = call.isVoicemail;
+  const inQ      = call.wasInQueue;
+  const isDirect = call.isDirect === true;
+
+  // Header
+  const icon  = isVM ? '📬' : '📞';
+  const label = isVM
+    ? (isDirect ? 'Voicemail — Direct' : 'Voicemail Left')
+    : (isDirect ? 'Missed Call — Direct' : (inQ ? 'Queue Abandoned' : 'Missed Call'));
 
   const callerName   = call.from.name || '';
   const callerNumber = call.from.number || '';
@@ -2261,14 +2266,24 @@ function _buildGoogleChatCard(call) {
     hour: '2-digit', minute: '2-digit', hour12: true,
   }) + ' CST';
 
-  // Queue label (e.g. "Customer Service (Ext 1025)")
-  const queueLabel = call.queueName
-    ? (call.queueExt ? `${call.queueName}  (Ext ${call.queueExt})` : call.queueName)
-    : (call.queueExt ? `Ext ${call.queueExt}` : '—');
+  // Destination row — queue or direct agent
+  let destLabel, destTopLabel;
+  if (isDirect) {
+    const da = call.directAgent;
+    destTopLabel = 'Called agent';
+    destLabel = da
+      ? `${da.name}  (Ext ${da.extNumber})`
+      : (call.to.ext ? `Ext ${call.to.ext}` : call.to.name || '—');
+  } else {
+    destTopLabel = 'Queue';
+    destLabel = call.queueName
+      ? (call.queueExt ? `${call.queueName}  (Ext ${call.queueExt})` : call.queueName)
+      : (call.queueExt ? `Ext ${call.queueExt}` : '—');
+  }
 
-  // Agent details: "Name (Ext XXXX) — 12s"
+  // Agent ring details (only meaningful for queue calls that reached agents)
   const agents = (call.agentDetails || []);
-  const agentLines = agents.length
+  const agentLines = !isDirect && agents.length
     ? agents.map(a => `${a.name}  (Ext ${a.extNumber})${a.duration ? `  —  ${_fmtSecs(a.duration)}` : ''}`).join('\n')
     : null;
 
@@ -2277,42 +2292,46 @@ function _buildGoogleChatCard(call) {
     ? `${_fmtSecs(call.totalSecs)} total  (agents rang ${_fmtSecs(call.agentRingSecs)})`
     : _fmtSecs(call.totalSecs);
 
+  // Call type chip
+  let callTypeText;
+  if (isVM)      callTypeText = isDirect ? '📬 Voicemail (direct)' : '📬 Voicemail (queue)';
+  else if (isDirect) callTypeText = '📞 Direct to agent';
+  else if (inQ)  callTypeText = '🚪 Queue abandon';
+  else           callTypeText = '📞 Missed direct';
+
   // Disposition
   let dispositionLine;
-  if (isVM) {
+  if (isDirect) {
+    dispositionLine = isVM ? 'Left voicemail on agent extension' : 'Rang agent extension — no answer';
+  } else if (isVM) {
     dispositionLine = inQ ? 'Left voicemail after waiting in queue' : 'Left voicemail (direct to extension)';
   } else if (inQ) {
     dispositionLine = agents.length ? 'Caller hung up while agent(s) were ringing' : 'Caller hung up — no agent picked up';
   } else {
-    dispositionLine = agents.length ? 'Direct ring — no answer' : 'Rang extension — no answer';
+    dispositionLine = 'Rang extension — no answer';
   }
 
-  // Build widgets list
+  // Build widgets
   const widgets = [
-    { decoratedText: { topLabel: 'Time',         text: timeStr       } },
-    { decoratedText: { topLabel: 'Queue',         text: queueLabel    } },
-    { decoratedText: { topLabel: 'Ring time',     text: ringLine      } },
-    { decoratedText: { topLabel: 'Call type',     text: isVM ? '📬 Voicemail' : (inQ ? '🚪 Queue abandon' : '📞 Missed direct') } },
-    { decoratedText: { topLabel: 'Disposition',   text: dispositionLine } },
+    { decoratedText: { topLabel: 'Time',       text: timeStr       } },
+    { decoratedText: { topLabel: destTopLabel,  text: destLabel     } },
+    { decoratedText: { topLabel: 'Ring time',   text: ringLine      } },
+    { decoratedText: { topLabel: 'Call type',   text: callTypeText  } },
+    { decoratedText: { topLabel: 'Disposition', text: dispositionLine } },
   ];
 
   if (agentLines) {
     widgets.push({ decoratedText: { topLabel: 'Agent(s) that rang', text: agentLines } });
   }
-
   if (isVM && call.vmTranscript) {
     widgets.push({ decoratedText: { topLabel: '🎙 Voicemail transcript', text: call.vmTranscript } });
   }
 
-  // Google Chat cardsV2 format
   return {
     cardsV2: [{
       cardId: `rc-missed-${call.id}`,
       card: {
-        header: {
-          title:    `${icon} ${label}`,
-          subtitle: callerLine,
-        },
+        header: { title: `${icon} ${label}`, subtitle: callerLine },
         sections: [{ widgets }],
       },
     }],
@@ -2342,11 +2361,22 @@ async function _sendMissedCallNotification(call) {
 async function runMissedCallPoll() {
   if (!MISSED_CALL_WEBHOOK_URL) return; // nothing to do without a dedicated webhook
   try {
-    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID); // CS queue, 3-min window
+    // Gather monitored agent extensions for direct-call detection
+    let agentExts = [];
+    try {
+      const agents = await getMonitoredAgents();
+      agentExts = agents.filter(a => a.extension).map(a => String(a.extension));
+    } catch(e) { /* non-fatal */ }
+
+    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID, agentExts);
     for (const call of calls) {
       if (_notifiedCallIds.has(call.id)) continue;
       _notifiedCallIds.add(call.id);
-      console.log(`📞 Queue missed call: ${call.from.number} → queue ${call.queueExt} → ${call.result} (${call.totalSecs}s)`);
+      const tag = call.isDirect ? 'Direct missed' : 'Queue missed';
+      const dest = call.isDirect
+        ? `${call.directAgent?.name || call.to.ext} (Ext ${call.to.ext})`
+        : `queue ${call.queueExt}`;
+      console.log(`📞 ${tag}: ${call.from.number} → ${dest} → ${call.result} (${call.totalSecs}s)`);
       await _sendMissedCallNotification(call);
     }
     // Keep set bounded

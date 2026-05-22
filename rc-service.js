@@ -1429,7 +1429,7 @@ async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId 
  *   - which agents rang and for how long (with real agent names)
  *   - whether voicemail was left + transcript
  */
-async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, knownDidDigits = '') {
+async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, knownDidDigits = '', agentExtensions = []) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
   // Fetch ALL call directions — no direction filter.
   // RC classifies calls differently depending on how they arrive:
@@ -1444,7 +1444,6 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     result:    'Missed,Voicemail',
     view:      'Detailed',
     perPage:   100,
-    // no direction filter — let queue ext + result do the work
   });
 
   // Build extension → agent name lookup from monitored agents
@@ -1456,68 +1455,74 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
 
   // Debug: log what was fetched so we can diagnose filter misses
   if (records.length) {
-    console.log(`📞 [missed-poll] ${records.length} Missed/VM records fetched (queueFilter=${queueExtFilter || 'none'})`);
+    console.log(`📞 [missed-poll] ${records.length} Missed/VM records fetched (queueFilter=${queueExtFilter || 'none'}, agentExts=${agentExtensions.length})`);
     for (const call of records.slice(0, 8)) {
       console.log(`  · id=${call.id} from=${call.from?.phoneNumber} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" to.phone=${call.to?.phoneNumber || '—'} legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
     }
   }
 
-  // Filter to the specified queue extension if provided
-  const queueExtStr = queueExtFilter ? String(queueExtFilter) : null;
-  const filtered = queueExtStr
-    ? records.filter(call => {
-        // 1. Call was placed directly to the queue extension number
-        const toExt = String(call.to?.extensionNumber || '');
-        if (toExt === queueExtStr) return true;
+  const queueExtStr  = queueExtFilter ? String(queueExtFilter) : null;
+  const agentExtSet  = new Set((agentExtensions || []).map(String).filter(Boolean));
 
-        // 2. Any routing leg passed through the queue extension
-        const legs = call.legs || [];
-        if (legs.some(l =>
-          String(l.to?.extensionNumber   || '') === queueExtStr ||
-          String(l.extension?.extensionNumber || '') === queueExtStr
-        )) return true;
+  // Classify each record as a queue call, a direct agent call, or neither.
+  // Returns null for non-matching records.
+  const classify = (call) => {
+    const toExt        = String(call.to?.extensionNumber || '');
+    const legs         = call.legs || [];
+    const toName       = call.to?.name || '';
+    const toPhoneDigits = (call.to?.phoneNumber || '').replace(/\D/g, '');
 
-        // 3. DID name fallback: RC may record the destination queue name on call.to.name
-        //    even when to.extensionNumber is blank (caller hung up before any agent legs).
-        const toName = call.to?.name || '';
-        if (toName && isCustomerServiceLabel(toName)) {
-          console.log(`📞 [queue-match] name fallback: id=${call.id} to.name="${toName}" from=${call.from?.phoneNumber}`);
-          return true;
-        }
+    // ── Queue match ──────────────────────────────────────────────────────────
+    if (queueExtStr) {
+      // 1. Call placed directly to the queue extension number
+      if (toExt === queueExtStr) return 'queue';
+      // 2. Any routing leg passed through the queue extension
+      if (legs.some(l =>
+        String(l.to?.extensionNumber   || '') === queueExtStr ||
+        String(l.extension?.extensionNumber || '') === queueExtStr
+      )) return 'queue';
+      // 3. RC name on call.to.name matches the CS queue (name-based fallback)
+      if (toName && isCustomerServiceLabel(toName)) {
+        console.log(`📞 [queue-match] name fallback: id=${call.id} to.name="${toName}"`);
+        return 'queue';
+      }
+      // 4. DID phone number matches MISSED_CALL_DID (most reliable DID fallback)
+      if (knownDidDigits && toPhoneDigits && toPhoneDigits === knownDidDigits) {
+        console.log(`📞 [queue-match] DID phone fallback: id=${call.id} to.phone=${call.to?.phoneNumber}`);
+        return 'queue';
+      }
+    }
 
-        // 4. DID phone number fallback: if MISSED_CALL_DID env var is set and this call's
-        //    to.phoneNumber matches, include it regardless of name or ext — this is the most
-        //    reliable fallback for quick hang-ups on the main line before any routing happens.
-        const toPhoneDigits = (call.to?.phoneNumber || '').replace(/\D/g, '');
-        if (knownDidDigits && toPhoneDigits && toPhoneDigits === knownDidDigits) {
-          console.log(`📞 [queue-match] DID phone fallback: id=${call.id} to.phone=${call.to?.phoneNumber} from=${call.from?.phoneNumber}`);
-          return true;
-        }
+    // ── Direct agent match ───────────────────────────────────────────────────
+    // Call went straight to a monitored agent's personal extension (bypassed queue).
+    if (agentExtSet.size > 0 && toExt && agentExtSet.has(toExt)) return 'direct';
 
-        return false;
-      })
-    : records;
+    return null;
+  };
+
+  // Filter and tag records
+  const filtered = records
+    .map(call => ({ call, matchType: classify(call) }))
+    .filter(({ matchType }) => matchType !== null);
 
   // Hard-filter: only process calls that have definitively ended as Missed or Voicemail.
   // The RC API `result=Missed,Voicemail` filter can return in-progress calls when
   // individual legs were missed even though the overall call is still routing.
   const MIN_CALL_AGE_MS = 60 * 1000; // wait 60s after call start — ensures routing is complete
   const now = Date.now();
-  const completed = filtered.filter(call => {
+  const completed = filtered.filter(({ call }) => {
     const result   = (call.result || '').toLowerCase();
     const callAge  = now - new Date(call.startTime).getTime();
     const duration = call.duration ?? -1;
-    // Must be definitively missed or voicemail (not 'in progress', 'accepted', etc.)
     if (result !== 'missed' && result !== 'voicemail') return false;
-    // Must have started at least 60s ago so in-progress calls have time to route/answer
     if (callAge < MIN_CALL_AGE_MS) return false;
-    // A call with duration=0 AND very recent is suspicious — still in progress
     if (duration === 0 && callAge < 3 * 60 * 1000) return false;
     return true;
   });
 
   const results = [];
-  for (const call of completed) {
+  for (const { call, matchType } of completed) {
+    const isDirect = matchType === 'direct';
     const legs = call.legs || [];
 
     // Queue detection — check action, type, extension name, AND extension type.
@@ -1542,11 +1547,12 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     });
     // DID fallback: no legs (caller bailed before routing) but name or DID matched.
     const toPhoneDigits = (call.to?.phoneNumber || '').replace(/\D/g, '');
-    const wasInQueueFromName = !wasInQueueFromLegs && legs.length === 0 && (
+    const wasInQueueFromName = !wasInQueueFromLegs && !isDirect && legs.length === 0 && (
       isCustomerServiceLabel(call.to?.name || '') ||
       (knownDidDigits && toPhoneDigits && toPhoneDigits === knownDidDigits)
     );
-    const wasInQueue = wasInQueueFromLegs || wasInQueueFromName;
+    // Direct agent calls never count as "in queue" even if they somehow matched a leg
+    const wasInQueue = !isDirect && (wasInQueueFromLegs || wasInQueueFromName);
 
     // Agent ring legs: legs that rang a specific extension (not the queue ext itself)
     const agentRingLegs = legs.filter(l => {
@@ -1590,6 +1596,10 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
       vmTranscript = await fetchVoicemailTranscript(call.from?.phoneNumber, call.startTime);
     }
 
+    // For direct calls the destination IS the agent — surface them clearly
+    const destExt  = String(call.to?.extensionNumber || '');
+    const destAgent = isDirect && destExt ? (extToAgent[destExt] || null) : null;
+
     results.push({
       id:            call.id,
       sessionId:     call.sessionId,
@@ -1598,10 +1608,18 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
       agentRingSecs,
       isVoicemail,
       wasInQueue,
+      isDirect,
       vmTranscript,
       result:        call.result,
-      queueExt:      String(call.to?.extensionNumber || ''),
-      queueName:     call.to?.name || '',
+      // For queue calls: the queue ext/name. For direct calls: the agent's ext/name.
+      queueExt:      isDirect ? '' : destExt,
+      queueName:     isDirect ? '' : (call.to?.name || ''),
+      // For direct calls, surface the destination agent separately
+      directAgent: isDirect ? {
+        extNumber: destExt,
+        name:      destAgent?.name || call.to?.name || `Ext ${destExt}`,
+        rcId:      String(destAgent?.rc_id || ''),
+      } : null,
       from: {
         name:   call.from?.name        || '',
         number: call.from?.phoneNumber || '',
@@ -1612,7 +1630,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
         ext:    call.to?.extensionNumber    || '',
       },
       agentDetails,
-      agentNames: agentDetails.map(a => a.name), // kept for backwards compat
+      agentNames: agentDetails.map(a => a.name),
     });
   }
   return results;
