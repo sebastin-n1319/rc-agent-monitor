@@ -1461,8 +1461,26 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
       })
     : records;
 
+  // Hard-filter: only process calls that have definitively ended as Missed or Voicemail.
+  // The RC API `result=Missed,Voicemail` filter can return in-progress calls when
+  // individual legs were missed even though the overall call is still routing.
+  const MIN_CALL_AGE_MS = 60 * 1000; // wait 60s after call start — ensures routing is complete
+  const now = Date.now();
+  const completed = filtered.filter(call => {
+    const result   = (call.result || '').toLowerCase();
+    const callAge  = now - new Date(call.startTime).getTime();
+    const duration = call.duration ?? -1;
+    // Must be definitively missed or voicemail (not 'in progress', 'accepted', etc.)
+    if (result !== 'missed' && result !== 'voicemail') return false;
+    // Must have started at least 60s ago so in-progress calls have time to route/answer
+    if (callAge < MIN_CALL_AGE_MS) return false;
+    // A call with duration=0 AND very recent is suspicious — still in progress
+    if (duration === 0 && callAge < 3 * 60 * 1000) return false;
+    return true;
+  });
+
   const results = [];
-  for (const call of filtered) {
+  for (const call of completed) {
     const legs = call.legs || [];
 
     // Queue detection: any leg with 'queue' in action/type
