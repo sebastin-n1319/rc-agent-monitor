@@ -22,7 +22,7 @@ const {
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
-  fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState,
+  fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 
@@ -2472,12 +2472,29 @@ app.get('/api/admin/debug-notified-ids', requireAdmin, (req, res) => {
   res.json({ ids: [..._notifiedCallIds] });
 });
 
-// GET /api/admin/debug-missed-raw?minutes=15 — raw RC API fields, no filter applied
+// GET /api/admin/debug-missed-raw?minutes=15&live=1
+// Default (live=0): returns cached records from the last poll run — zero extra RC API calls.
+// With live=1: makes a fresh RC API call (may be rate-limited).
 app.get('/api/admin/debug-missed-raw', requireAdmin, async (req, res) => {
+  const live = req.query.live === '1';
   try {
+    if (!live) {
+      // Serve from the in-memory cache populated by the last poll — no RC call needed
+      const cached = getLastRawRecords();
+      return res.json({
+        source:   'poll-cache',
+        fetchedAt: cached.fetchedAt,
+        queueExt: MISSED_CALL_QUEUE_EXT,
+        knownDid: MISSED_CALL_DID || '(not set)',
+        count:    cached.records.length,
+        records:  cached.records,
+      });
+    }
+    // Live fetch — may be rate-limited
     const minutes = Math.min(Number(req.query.minutes) || 15, 60);
     const raw = await fetchRawRecentMissedLog(minutes);
     res.json({
+      source:   'live',
       minutes,
       queueExt:  MISSED_CALL_QUEUE_EXT,
       knownDid:  MISSED_CALL_DID || '(not set — add MISSED_CALL_DID to Railway)',

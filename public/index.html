@@ -10530,7 +10530,8 @@ tbody tr:hover td{
               <option value="30">Last 30 min</option>
               <option value="60">Last 60 min</option>
             </select>
-            <button onclick="loadDebugRaw()" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;">🔄 Fetch from RC</button>
+            <button onclick="loadDebugRaw(false)" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;" title="Load from last poll cache — no RC API call">📋 From last poll</button>
+            <button onclick="loadDebugRaw(true)" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;" title="Make a live RC API call (may be rate-limited)">🔄 Fetch live from RC</button>
             <button id="dbg-raw-copy-btn" onclick="_dbgCopyJSON('raw')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy JSON</button>
             <button id="dbg-raw-dl-btn" onclick="_dbgDownloadJSON('raw','rc-raw-calls')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">⬇ Download</button>
           </div>
@@ -10552,7 +10553,7 @@ tbody tr:hover td{
               </tr>
             </thead>
             <tbody id="dbg-raw-body">
-              <tr><td colspan="10" style="text-align:center;padding:28px;color:#9BAFC0;font-size:11.5px;">Click "Fetch from RC" to load</td></tr>
+              <tr><td colspan="10" style="text-align:center;padding:28px;color:#9BAFC0;font-size:11.5px;">Click "From last poll" to load cached data, or "Fetch live from RC" for a fresh call</td></tr>
             </tbody>
           </table>
         </div>
@@ -17295,14 +17296,17 @@ async function loadDebugPanel() {
   }
 }
 
-async function loadDebugRaw() {
+async function loadDebugRaw(live = false) {
   const mins = document.getElementById('dbg-raw-mins')?.value || 15;
   const tbody = document.getElementById('dbg-raw-body');
   document.getElementById('dbg-raw-copy-btn').style.display = 'none';
   document.getElementById('dbg-raw-dl-btn').style.display   = 'none';
-  tbody.innerHTML = '<tr><td colspan="10" class="dbg-empty">Loading from RC…</td></tr>';
+  tbody.innerHTML = `<tr><td colspan="10" class="dbg-empty">${live ? 'Fetching live from RC…' : 'Loading from poll cache…'}</td></tr>`;
   try {
-    const res = await fetch(BACKEND + `/api/admin/debug-missed-raw?minutes=${mins}`, { credentials: 'include' });
+    const url = live
+      ? BACKEND + `/api/admin/debug-missed-raw?live=1&minutes=${mins}`
+      : BACKEND + `/api/admin/debug-missed-raw`;
+    const res = await fetch(url, { credentials: 'include' });
     const data = await res.json();
     if (!res.ok) { tbody.innerHTML = `<tr><td colspan="10" class="dbg-empty" style="color:#ef4444">Error: ${data.error}</td></tr>`; return; }
 

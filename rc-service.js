@@ -1459,6 +1459,15 @@ async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId 
  *   - which agents rang and for how long (with real agent names)
  *   - whether voicemail was left + transcript
  */
+// In-memory cache of the last raw records returned by fetchRecentMissedCalls.
+// Updated every poll; read by getLastRawRecords() so the debug UI doesn't
+// need an extra RC API call just to display the raw log.
+let _lastRawRecordsCache = [];
+let _lastRawRecordsFetchedAt = null;
+function getLastRawRecords() {
+  return { records: _lastRawRecordsCache, fetchedAt: _lastRawRecordsFetchedAt };
+}
+
 async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, knownDidDigits = '', agentExtensions = []) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
   // Fetch ALL call directions — no direction filter.
@@ -1500,6 +1509,25 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     const agents = (await getMonitoredAgents()).filter(a => a.extension);
     for (const a of agents) extToAgent[String(a.extension)] = a;
   } catch(e) { /* non-fatal */ }
+
+  // Cache raw records for the debug panel (no extra RC API call needed)
+  _lastRawRecordsCache = records.map(call => ({
+    id:        call.id,
+    result:    call.result,
+    direction: call.direction,
+    startTime: call.startTime,
+    duration:  call.duration,
+    ageSeconds: Math.round((Date.now() - new Date(call.startTime).getTime()) / 1000),
+    from: { name: call.from?.name, phoneNumber: call.from?.phoneNumber, extensionNumber: call.from?.extensionNumber },
+    to:   { name: call.to?.name,   phoneNumber: call.to?.phoneNumber,   extensionNumber: call.to?.extensionNumber },
+    legCount: (call.legs || []).length,
+    legs: (call.legs || []).slice(0, 6).map(l => ({
+      action: l.action, type: l.type, duration: l.duration,
+      extName: l.extension?.name, extNumber: l.extension?.extensionNumber, extType: l.extension?.type,
+      toExtNumber: l.to?.extensionNumber,
+    })),
+  }));
+  _lastRawRecordsFetchedAt = new Date().toISOString();
 
   // Debug: log what was fetched so we can diagnose filter misses
   if (records.length) {
@@ -1742,4 +1770,5 @@ module.exports = {
   fetchRecentMissedCalls,
   fetchRawRecentMissedLog,
   getRcRateLimitState,
+  getLastRawRecords,
 };
