@@ -2370,8 +2370,14 @@ async function _sendMissedCallNotification(call) {
   }
 }
 
+let _pollRunning = false; // concurrency guard — prevent overlapping poll runs
 async function runMissedCallPoll() {
   if (!MISSED_CALL_WEBHOOK_URL) return;
+  if (_pollRunning) {
+    console.log('⏭️ Missed call poll already running — skipping overlap');
+    return;
+  }
+  _pollRunning = true;
   const runAt = new Date().toISOString();
   _lastPollAt = runAt;
   const logEntry = { at: runAt, fetched: 0, matched: 0, notified: 0, skipped: 0, error: null, calls: [] };
@@ -2415,6 +2421,7 @@ async function runMissedCallPoll() {
     console.error('❌ Missed call poll error:', e.message);
     logEntry.error = e.message;
   } finally {
+    _pollRunning = false;
     _pollLogPush(logEntry);
   }
 }

@@ -773,7 +773,8 @@ function getRcRateLimitState() {
 // Central RC API GET helper.  All platform.get() calls route through here so that:
 //   1. If a global rate-limit pause is active, we wait for it to expire first.
 //   2. The response JSON is parsed once and returned directly (no double-consume).
-//   3. Any 429/CMN-301 in the response body automatically sets the global pause.
+//   3. Any 429/CMN-301 — whether thrown by the SDK as an exception OR returned
+//      as an errorCode in the JSON body — automatically sets the global pause.
 //
 // Returns the parsed JSON data object on success.
 // Throws an Error (with .rcData set) on RC API errors.
@@ -784,15 +785,24 @@ async function rcGet(path, params) {
     console.log(`⏳ rcGet(${tag}) waiting ${Math.ceil(pause / 1000)}s for global rate-limit pause…`);
     await sleep(pause);
   }
-  const r = await platform.get(path, params);
-  const data = await r.json();
-  if (data.errorCode) {
-    const err = new Error(data.message || data.errorCode);
-    err.rcData = data;
-    if (isRateLimitError(err, data)) markRcRateLimited();
-    throw err;
+  // Wrap EVERYTHING — the RC SDK can throw a JS exception for HTTP 429s
+  // before we ever get a chance to call r.json(), so we must catch at this level.
+  try {
+    const r = await platform.get(path, params);
+    const data = await r.json();
+    if (data.errorCode) {
+      const err = new Error(data.message || data.errorCode);
+      err.rcData = data;
+      if (isRateLimitError(err, data)) markRcRateLimited();
+      throw err;
+    }
+    return data;
+  } catch (e) {
+    // Catch SDK-level throws (HTTP 429 etc.) and mark the global pause.
+    // isRateLimitError is safe with undefined rcData.
+    if (isRateLimitError(e, e.rcData)) markRcRateLimited();
+    throw e;
   }
-  return data;
 }
 
 function buildLiveStatusEntry(agent, data, fetchedAt) {
