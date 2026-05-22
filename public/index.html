@@ -12071,15 +12071,32 @@ function initConfetti(){
   }
 }
 
+let _toastTimer = null;
 function showToast(msg,type='info',dur=3000){
-  const icons={info:'&#8505;',success:'&#10004;',error:'&#10060;',warning:'&#9888;'};
+  const icons={info:'ℹ',success:'✔',error:'✖',warning:'⚠'};
   const t=document.getElementById('toast');
+  if(!t) return;
   const ti=document.getElementById('toastIcon'),tm=document.getElementById('toastMsg');
-  if(ti)ti.innerHTML=icons[type]||'';
-  if(tm)tm.textContent=msg;
+  if(ti)ti.textContent=icons[type]||'';
+  if(tm)tm.textContent=msg||'';
+  // Cancel any existing hide timer
+  if(_toastTimer){ clearTimeout(_toastTimer); _toastTimer=null; }
+  // Show: remove inline style override, add class
+  t.style.removeProperty('display');
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),dur);
+  _toastTimer=setTimeout(()=>{
+    t.classList.remove('show');
+    // Belt-and-suspenders: also force display:none inline so it can never
+    // stay visible if the CSS class doesn't take effect
+    t.style.setProperty('display','none','important');
+    _toastTimer=null;
+  }, Math.max(dur,1000));
 }
+// Safety: force-hide toast on page load in case it got stuck from a prior page session
+(function(){
+  const t=document.getElementById('toast');
+  if(t){ t.classList.remove('show'); t.style.setProperty('display','none','important'); }
+})();
 
 function scheduleRefresh(delay=150){
   if(refreshDebounce)clearTimeout(refreshDebounce);
@@ -22688,9 +22705,13 @@ input:focus, textarea:focus, select:focus {
 
 // ── Debug: scan all fixed elements (called from debug panel) ─────────────────
 function _dbgScanFixed() {
+  // Known-safe IDs — these are our own UI elements, not injected widgets
+  const KNOWN_SAFE = new Set(['toast','loginScreen','weekend-announce-overlay','adit-admin-sidebar']);
   const out = [];
   document.querySelectorAll('*').forEach(el => {
     try {
+      if (KNOWN_SAFE.has(el.id)) return;
+      if (el.tagName === 'HEADER') return; // site header is always fixed
       const cs = window.getComputedStyle(el);
       if (cs.position !== 'fixed') return;
       if (cs.display === 'none' || cs.visibility === 'hidden') return;
