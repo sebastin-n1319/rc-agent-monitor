@@ -1470,32 +1470,45 @@ function getLastRawRecords() {
 
 async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, knownDidDigits = '', agentExtensions = []) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
-  // Fetch ALL call directions — no direction filter.
-  // RC classifies calls differently depending on how they arrive:
-  //   - external customer → DID → queue : direction = 'Inbound'
-  //   - internal ext → ext 1025 directly : direction = 'Internal'
-  //   - internal ext → main DID → queue  : direction may vary
-  // The queue ext filter (1025) + result filter (Missed/Voicemail) + age guard
-  // are the real gates and will prevent false positives regardless of direction.
-  // Fetch with rate-limit retry.
-  // rcGet() (called inside listAccountCallLogRecords) automatically:
-  //   • waits for any active global rate-limit pause before making the request
-  //   • marks a 65 s global pause if a 429 is received
-  // So retries here just need to re-call; the built-in pause handles the waiting.
+  // Strategy: use the EXTENSION-LEVEL call log for the CS queue extension.
+  // The account-level call log (/account/~/call-log) ignores the `result` filter
+  // and returns ALL call types (outbound connected calls, etc.), so the client-side
+  // `result=missed/voicemail` check never finds anything.
+  // The extension-level log (/extension/{id}/call-log) scopes to just that queue's
+  // calls and the `result=Missed,Voicemail` filter works correctly there.
+  //
+  // Fallback: if the queue extension ID isn't resolved yet, fall back to the
+  // account-level log (which was the prior behavior — still broken, but won't error).
+  //
+  // rcGet() automatically waits for any active global rate-limit pause and marks
+  // a 65s pause on 429, so retries here just re-invoke after the pause clears.
   let records;
   {
     const params = { dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100 };
+
+    // Ensure queue ID is resolved before attempting extension-level fetch
+    if (!customerServiceQueueId) {
+      try { await findQueueId(); } catch(e) { /* non-fatal — will use account-level below */ }
+    }
+
+    const fetchFn = customerServiceQueueId
+      ? () => listExtensionCallLogRecords(customerServiceQueueId, params)
+      : () => listAccountCallLogRecords(params);
+
+    const fetchLabel = customerServiceQueueId
+      ? `ext/${customerServiceQueueId}` : 'account';
+
     let attempt = 0;
     while (true) {
       try {
-        records = await listAccountCallLogRecords(params);
+        records = await fetchFn();
+        console.log(`📞 [missed-poll] Fetched from ${fetchLabel} — ${records.length} records`);
         break;
       } catch(e) {
         attempt++;
         if (isRateLimitError(e, e.rcData) && attempt <= 2) {
-          // rcGet already set _rcRateLimitedUntil=now+65s; next call will auto-wait.
           console.warn(`⏳ Missed-call poll rate limited (attempt ${attempt}/2), retrying after global pause clears…`);
-          await sleep(500); // tiny yield before re-entering rcGet's wait loop
+          await sleep(500);
         } else {
           throw e;
         }
@@ -1529,12 +1542,9 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   }));
   _lastRawRecordsFetchedAt = new Date().toISOString();
 
-  // Debug: log what was fetched so we can diagnose filter misses
-  if (records.length) {
-    console.log(`📞 [missed-poll] ${records.length} Missed/VM records fetched (queueFilter=${queueExtFilter || 'none'}, agentExts=${agentExtensions.length})`);
-    for (const call of records.slice(0, 8)) {
-      console.log(`  · id=${call.id} from=${call.from?.phoneNumber} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" to.phone=${call.to?.phoneNumber || '—'} legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
-    }
+  // Debug: log first few records so we can verify filter results in Railway logs
+  for (const call of records.slice(0, 8)) {
+    console.log(`  · id=${call.id} from=${call.from?.phoneNumber} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" to.phone=${call.to?.phoneNumber || '—'} legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
   }
 
   const queueExtStr  = queueExtFilter ? String(queueExtFilter) : null;
@@ -1722,9 +1732,15 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
  */
 async function fetchRawRecentMissedLog(minutesBack = 15) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000).toISOString();
-  const records = await listAccountCallLogRecords({
-    dateFrom, type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 50,
-  });
+  const params = { dateFrom, type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 50 };
+  // Use extension-level log for the CS queue so the result filter actually works.
+  // Account-level log ignores the `result` param and returns all call types.
+  if (!customerServiceQueueId) {
+    try { await findQueueId(); } catch(e) { /* fall through to account-level */ }
+  }
+  const records = customerServiceQueueId
+    ? await listExtensionCallLogRecords(customerServiceQueueId, params)
+    : await listAccountCallLogRecords(params);
   return records.map(call => ({
     id:          call.id,
     result:      call.result,
