@@ -22,7 +22,7 @@ const {
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
-  fetchRecentMissedCalls,
+  fetchRecentMissedCalls, fetchRawRecentMissedLog,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 
@@ -2387,6 +2387,24 @@ async function runMissedCallPoll() {
     console.error('❌ Missed call poll error:', e.message);
   }
 }
+
+// Debug: dump raw RC call-log fields for recent missed/VM calls — helps diagnose filter misses.
+// GET /api/admin/debug-missed-raw?minutes=10
+app.get('/api/admin/debug-missed-raw', requireAdmin, async (req, res) => {
+  try {
+    const minutes = Math.min(Number(req.query.minutes) || 15, 60);
+    const raw = await fetchRawRecentMissedLog(minutes);
+    res.json({
+      minutes,
+      queueExt:  MISSED_CALL_QUEUE_EXT,
+      knownDid:  MISSED_CALL_DID || '(not set — add MISSED_CALL_DID to Railway)',
+      count:     raw.length,
+      records:   raw,
+    });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 /// Admin: manual trigger — always sends a synthetic test card so the webhook
 // can be verified even when there are no real missed calls in the window.

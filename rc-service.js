@@ -1636,6 +1636,47 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   return results;
 }
 
+/**
+ * Raw debug helper — returns the exact fields RC sends for recent Missed/VM calls,
+ * with NO queue filtering applied. Use the /api/admin/debug-missed-raw endpoint
+ * to call this and see what to.extensionNumber / to.name / to.phoneNumber look like
+ * for DID calls so the filter can be tuned.
+ */
+async function fetchRawRecentMissedLog(minutesBack = 15) {
+  const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000).toISOString();
+  const records = await listAccountCallLogRecords({
+    dateFrom, type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 50,
+  });
+  return records.map(call => ({
+    id:          call.id,
+    result:      call.result,
+    direction:   call.direction,
+    startTime:   call.startTime,
+    duration:    call.duration,
+    ageSeconds:  Math.round((Date.now() - new Date(call.startTime).getTime()) / 1000),
+    from: {
+      name:            call.from?.name,
+      phoneNumber:     call.from?.phoneNumber,
+      extensionNumber: call.from?.extensionNumber,
+    },
+    to: {
+      name:            call.to?.name,
+      phoneNumber:     call.to?.phoneNumber,
+      extensionNumber: call.to?.extensionNumber,
+    },
+    legCount: (call.legs || []).length,
+    legs: (call.legs || []).slice(0, 5).map(l => ({
+      action:          l.action,
+      type:            l.type,
+      duration:        l.duration,
+      extName:         l.extension?.name,
+      extNumber:       l.extension?.extensionNumber,
+      extType:         l.extension?.type,
+      toExtNumber:     l.to?.extensionNumber,
+    })),
+  }));
+}
+
 module.exports = {
   authenticate,
   ensureRealtimeSubscription,
@@ -1649,4 +1690,5 @@ module.exports = {
   getFallbackSyncMs,
   getCallSyncStatus,
   fetchRecentMissedCalls,
+  fetchRawRecentMissedLog,
 };
