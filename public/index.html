@@ -10427,196 +10427,164 @@ tbody tr:hover td{
   </div><!-- /#tab-tickets -->
 
   <!-- DEBUG TAB ─────────────────────────────────────────────────────────── -->
-  <div id="tab-debug" class="page" style="padding:24px 0;">
-    <style>
-      /* ── Debug panel — light mode (admin default) ── */
-      #tab-debug { background: #F7F8F8; }
-      #debug-panel { max-width: 1380px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-      /* Cards */
-      .dbg-card { background: #FFFFFF; border: 1px solid #DEE1E6; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
-      .dbg-card-hdr { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #F0F2F5; background: #F7F8F8; flex-wrap: wrap; }
-      .dbg-card-hdr h3 { font-size: 12.5px; font-weight: 700; color: #072B40; letter-spacing: .01em; margin: 0; flex: 1; min-width: 0; }
-      .dbg-card-body { padding: 14px 16px; }
-      .dbg-card-body.no-pad { padding: 0; }
-      /* Config grid */
-      .dbg-cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 24px; }
-      .dbg-cfg-item { display: flex; flex-direction: column; gap: 3px; }
-      .dbg-cfg-item label { font-size: 9.5px; font-weight: 700; color: #9BAFC0; text-transform: uppercase; letter-spacing: .07em; }
-      .dbg-cfg-item span  { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: #072B40; word-break: break-all; }
-      /* Badges */
-      .dbg-badge { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; }
-      .dbg-badge.ok   { background: rgba(34,197,94,.12);  color: #16a34a; border: 1px solid rgba(34,197,94,.25); }
-      .dbg-badge.warn { background: rgba(245,158,11,.12); color: #d97706; border: 1px solid rgba(245,158,11,.25); }
-      .dbg-badge.err  { background: rgba(239,68,68,.10);  color: #dc2626; border: 1px solid rgba(239,68,68,.25); }
-      .dbg-badge.info { background: rgba(59,130,246,.10); color: #2563eb; border: 1px solid rgba(59,130,246,.25); }
-      /* Tables */
-      .dbg-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-      .dbg-table th { text-align: left; font-size: 9.5px; font-weight: 700; color: #9BAFC0; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-bottom: 1px solid #DEE1E6; white-space: nowrap; background: #F7F8F8; }
-      .dbg-table td { padding: 7px 12px; border-bottom: 1px solid #F0F2F5; vertical-align: top; font-family: 'JetBrains Mono', monospace; color: #3A5068; font-size: 10.5px; }
-      .dbg-table tr:last-child td { border-bottom: none; }
-      .dbg-table tr:hover td { background: #F7F8F8; }
-      /* Pills */
-      .dbg-pill { display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
-      .dbg-pill.matched  { background: rgba(34,197,94,.1);   color: #16a34a;  border: 1px solid rgba(34,197,94,.2); }
-      .dbg-pill.direct   { background: rgba(59,130,246,.1);  color: #2563eb;  border: 1px solid rgba(59,130,246,.2); }
-      .dbg-pill.skipped  { background: rgba(156,163,175,.1); color: #6b7280;  border: 1px solid rgba(156,163,175,.2); }
-      .dbg-pill.notified { background: rgba(245,130,31,.1);  color: #c2470a;  border: 1px solid rgba(245,130,31,.2); }
-      .dbg-pill.miss     { background: rgba(239,68,68,.08);  color: #dc2626;  border: 1px solid rgba(239,68,68,.15); }
-      /* Buttons — match admin UI style */
-      .dbg-btn { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 7px; border: 1px solid #DEE1E6; background: #FFFFFF; color: #3A5068; cursor: pointer; transition: background .15s, border-color .15s; white-space: nowrap; }
-      .dbg-btn:hover { background: #F0F2F5; border-color: #C8D0DC; }
-      .dbg-btn.primary { background: rgba(245,130,31,.08); border-color: rgba(245,130,31,.4); color: #c2470a; }
-      .dbg-btn.primary:hover { background: rgba(245,130,31,.15); }
-      .dbg-btn.danger { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.3); color: #dc2626; }
-      .dbg-btn.danger:hover { background: rgba(239,68,68,.12); }
-      .dbg-btn.success { background: rgba(34,197,94,.06); border-color: rgba(34,197,94,.3); color: #16a34a; }
-      /* Empty/misc */
-      .dbg-empty { text-align: center; padding: 28px; color: #9BAFC0; font-size: 11.5px; }
-      /* Header action group */
-      .dbg-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto; }
-      /* Monospace value inline */
-      .dbg-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-      /* Rate-limit / alert banners */
-      #dbg-ratelimit-banner { margin: 10px 16px 0; padding: 10px 14px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); border-radius: 8px; font-size: 11px; color: #92400e; line-height: 1.5; }
+  <div id="tab-debug" class="page" style="padding:20px;background:#F7F8F8;min-height:100%;">
 
-      /* ── Dark mode overrides ── */
-      .dark-mode #tab-debug { background: transparent; }
-      .dark-mode .dbg-card { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.08); box-shadow: none; }
-      .dark-mode .dbg-card-hdr { background: rgba(0,0,0,.2); border-bottom-color: rgba(255,255,255,.06); }
-      .dark-mode .dbg-card-hdr h3 { color: #e2e8f0; }
-      .dark-mode .dbg-cfg-item span { color: #e2e8f0; }
-      .dark-mode .dbg-table th { background: rgba(0,0,0,.2); border-bottom-color: rgba(255,255,255,.07); color: #64748b; }
-      .dark-mode .dbg-table td { border-bottom-color: rgba(255,255,255,.04); color: #cbd5e1; }
-      .dark-mode .dbg-table tr:hover td { background: rgba(255,255,255,.025); }
-      .dark-mode .dbg-btn { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); color: #cbd5e1; }
-      .dark-mode .dbg-btn:hover { background: rgba(255,255,255,.1); }
-      .dark-mode .dbg-badge.ok   { background: rgba(52,211,153,.15); color: #34d399; border-color: transparent; }
-      .dark-mode .dbg-badge.warn { background: rgba(251,191,36,.15); color: #fbbf24; border-color: transparent; }
-      .dark-mode .dbg-badge.err  { background: rgba(239,68,68,.15);  color: #ef4444; border-color: transparent; }
-      .dark-mode .dbg-badge.info { background: rgba(96,165,250,.15); color: #60a5fa; border-color: transparent; }
-      .dark-mode #dbg-ratelimit-banner { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.3); color: #fbbf24; }
-      .dark-mode #dbg-scan-results code { background: rgba(0,0,0,.2); }
-    </style>
-
-    <!-- PAGE HEADER -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 8px;flex-wrap:wrap;gap:8px;border-bottom:1px solid #DEE1E6;margin-bottom:4px;">
+    <!-- HEADER ROW -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid #DEE1E6;">
       <div>
-        <h2 style="font-size:15px;font-weight:800;color:#072B40;margin:0;letter-spacing:-.01em;">🛠 Debug &amp; Diagnostics</h2>
-        <p style="font-size:11px;color:#9BAFC0;margin:2px 0 0;">Live server telemetry · Missed call notifier · DOM scanner</p>
+        <div style="font-size:15px;font-weight:800;color:#072B40;letter-spacing:-.01em;">🛠 Debug &amp; Diagnostics</div>
+        <div style="font-size:11px;color:#9BAFC0;margin-top:2px;">Live server telemetry · Missed call notifier · DOM inspector</div>
       </div>
-      <button class="dbg-btn primary" onclick="loadDebugPanel()" style="font-size:12px;padding:7px 16px;">↺ Refresh all</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#3A5068;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="dbg-auto-refresh" onchange="_dbgToggleAutoRefresh(this.checked)" style="cursor:pointer;">
+          Auto-refresh (30s)
+        </label>
+        <button onclick="loadDebugPanel()" style="font-size:11px;font-weight:600;padding:6px 14px;border-radius:7px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;">↺ Refresh all</button>
+        <button onclick="_dbgForcePoll()" style="font-size:11px;font-weight:600;padding:6px 14px;border-radius:7px;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.07);color:#15803d;cursor:pointer;">▶ Force poll now</button>
+      </div>
     </div>
 
-    <div id="debug-panel">
+    <div id="debug-panel" style="display:flex;flex-direction:column;gap:14px;max-width:1380px;">
 
-      <!-- Config card -->
-      <div class="dbg-card">
-        <div class="dbg-card-hdr">
-          <h3>⚙️ Notifier Config</h3>
-          <span style="font-size:10px;color:#64748b;">Env vars loaded at server start</span>
+      <!-- ── ROW 1: Config + Status ── -->
+      <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+          <span style="font-size:12px;font-weight:700;color:#072B40;">⚙️ Notifier Config</span>
+          <span style="font-size:10px;color:#9BAFC0;">Loaded from Railway env vars at server start</span>
         </div>
-        <div class="dbg-card-body">
-          <div class="dbg-cfg-grid">
-            <div class="dbg-cfg-item"><label>Webhook</label><span id="dbg-webhook">—</span></div>
-            <div class="dbg-cfg-item"><label>Queue Ext</label><span id="dbg-qext">—</span></div>
-            <div class="dbg-cfg-item"><label>Known DID</label><span id="dbg-did">—</span></div>
-            <div class="dbg-cfg-item"><label>Poll Interval</label><span id="dbg-interval">—</span></div>
-            <div class="dbg-cfg-item"><label>Last Poll</label><span id="dbg-last-poll">—</span></div>
-            <div class="dbg-cfg-item"><label>Next Poll ~</label><span id="dbg-next-poll">—</span></div>
+        <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 24px;">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Webhook URL</div>
+            <div id="dbg-webhook" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Queue Ext</div>
+            <div id="dbg-qext" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Known DID</div>
+            <div id="dbg-did" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Poll Interval</div>
+            <div id="dbg-interval" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Last Poll (CST)</div>
+            <div id="dbg-last-poll" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.07em;">Next Poll ~</div>
+            <div id="dbg-next-poll" style="font-size:11.5px;font-family:'JetBrains Mono',monospace;color:#072B40;">—</div>
           </div>
         </div>
       </div>
 
-      <!-- DOM Diagnostics card -->
-      <div class="dbg-card">
-        <div class="dbg-card-hdr">
-          <h3>🔍 DOM Fixed-Element Scanner</h3>
-          <div class="dbg-actions">
-            <span style="font-size:10px;color:#64748b;">Identifies the black blob &amp; any injected overlays</span>
-            <button class="dbg-btn primary" onclick="runDbgScanFixed()">Scan now</button>
-            <button class="dbg-btn danger" onclick="_dbgKillFixed()">Kill all rogue</button>
+      <!-- ── ROW 2: Poll Log ── -->
+      <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+          <span style="font-size:12px;font-weight:700;color:#072B40;">📋 Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:10.5px;margin-left:4px;">(last 30 runs)</span></span>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;">
+            <button id="dbg-poll-copy-btn" onclick="_dbgCopyJSON('poll')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy JSON</button>
+            <button id="dbg-poll-dl-btn" onclick="_dbgDownloadJSON('poll','poll-log')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">⬇ Download</button>
+            <button onclick="clearDebugPollLog()" style="font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#6b7280;cursor:pointer;">🗑 Clear</button>
           </div>
         </div>
-        <div class="dbg-card-body">
-          <div id="dbg-scan-results" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7280;min-height:36px;">
-            Click <strong style="color:#c2470a;">Scan now</strong> to list every visible <code style="background:#F0F2F5;padding:1px 5px;border-radius:4px;font-size:10px;">position:fixed</code> element on this page.
-          </div>
+        <!-- Rate-limit banner -->
+        <div id="dbg-ratelimit-banner" style="display:none;margin:12px 16px 0;padding:10px 14px;background:#FFF7ED;border:1px solid rgba(245,130,31,.35);border-radius:8px;font-size:11px;color:#92400e;line-height:1.55;">
+          ⚠️ <strong>Rate limit errors detected in log.</strong> RC's Heavy API is throttled (~40 req/min). The server now staggers polls: 75 s startup offset + 3-min interval + backoff retry. If still failing, the errors should clear within one poll cycle.
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead>
+              <tr style="background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Time (CST)</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Fetched</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Matched</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Notified</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Skipped (dup)</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Errors</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Calls detail</th>
+              </tr>
+            </thead>
+            <tbody id="dbg-poll-log-body">
+              <tr><td colspan="7" style="text-align:center;padding:28px;color:#9BAFC0;font-size:11.5px;">No poll runs recorded yet — polls every 3 min (first run 75 s after server start)</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Poll Log -->
-      <div class="dbg-card">
-        <div class="dbg-card-hdr">
-          <h3>📋 Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(last 30 runs)</span></h3>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <button class="dbg-btn" id="dbg-poll-copy-btn" onclick="_dbgCopyJSON('poll')" style="display:none;">📋 Copy JSON</button>
-            <button class="dbg-btn" id="dbg-poll-dl-btn" onclick="_dbgDownloadJSON('poll','poll-log')" style="display:none;">⬇ Download</button>
-            <button class="dbg-btn" onclick="clearDebugPollLog()">🗑 Clear log</button>
-          </div>
-        </div>
-        <!-- Rate-limit warning banner -->
-        <div id="dbg-ratelimit-banner" style="display:none;margin:10px 20px 0;padding:10px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:8px;font-size:11.5px;color:#ef4444;line-height:1.5;">
-          ⚠️ <strong>Rate limit errors detected.</strong> RC's Heavy API is throttled (~40 req/min shared across all polls). The server has been updated to stagger polls (75 s offset + 3 min interval + backoff retry). If errors persist, wait a minute and refresh.
-        </div>
-        <div class="dbg-card-body" style="padding:0;padding-top:10px;">
-          <div id="dbg-poll-log-wrap" style="overflow-x:auto;">
-            <table class="dbg-table">
-              <thead><tr>
-                <th>Time (CST)</th><th>Fetched</th><th>Matched</th><th>Notified</th><th>Skipped (dup)</th><th>Errors</th><th>Detail</th>
-              </tr></thead>
-              <tbody id="dbg-poll-log-body">
-                <tr><td colspan="7" class="dbg-empty">No poll runs recorded yet — the notifier polls every 3 min</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Raw RC Records -->
-      <div class="dbg-card">
-        <div class="dbg-card-hdr">
-          <h3>🔬 Raw RC Call-Log Fields <span style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(Missed + Voicemail, no filter)</span></h3>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <select id="dbg-raw-mins" class="dbg-btn" style="padding:4px 10px;">
+      <!-- ── ROW 3: Raw RC call-log ── -->
+      <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+          <span style="font-size:12px;font-weight:700;color:#072B40;">🔬 Raw RC Call-Log <span style="font-weight:400;color:#9BAFC0;font-size:10.5px;margin-left:4px;">Missed + Voicemail, no filter applied</span></span>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+            <select id="dbg-raw-mins" style="font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">
               <option value="10">Last 10 min</option>
               <option value="15" selected>Last 15 min</option>
               <option value="30">Last 30 min</option>
               <option value="60">Last 60 min</option>
             </select>
-            <button class="dbg-btn primary" onclick="loadDebugRaw()">🔄 Fetch from RC</button>
-            <button class="dbg-btn" id="dbg-raw-copy-btn" onclick="_dbgCopyJSON('raw')" style="display:none;">📋 Copy JSON</button>
-            <button class="dbg-btn" id="dbg-raw-dl-btn" onclick="_dbgDownloadJSON('raw','rc-raw-calls')" style="display:none;">⬇ Download</button>
+            <button onclick="loadDebugRaw()" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;">🔄 Fetch from RC</button>
+            <button id="dbg-raw-copy-btn" onclick="_dbgCopyJSON('raw')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy JSON</button>
+            <button id="dbg-raw-dl-btn" onclick="_dbgDownloadJSON('raw','rc-raw-calls')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">⬇ Download</button>
           </div>
         </div>
-        <div class="dbg-card-body" style="padding:0;">
-          <div style="overflow-x:auto;">
-            <table class="dbg-table">
-              <thead><tr>
-                <th>Age</th><th>Result</th><th>Dir</th><th>From</th>
-                <th>to.ext</th><th>to.name</th><th>to.phone</th>
-                <th>Legs</th><th>Duration</th><th>Filter match?</th>
-              </tr></thead>
-              <tbody id="dbg-raw-body">
-                <tr><td colspan="10" class="dbg-empty">Click "Fetch from RC" to load</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead>
+              <tr style="background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Age</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Result</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Dir</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">From</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">to.ext</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">to.name</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">to.phone</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Legs</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Dur</th>
+                <th style="text-align:left;font-size:9.5px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;white-space:nowrap;">Filter match?</th>
+              </tr>
+            </thead>
+            <tbody id="dbg-raw-body">
+              <tr><td colspan="10" style="text-align:center;padding:28px;color:#9BAFC0;font-size:11.5px;">Click "Fetch from RC" to load</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Notified Call IDs (de-dup set) -->
-      <div class="dbg-card">
-        <div class="dbg-card-hdr">
-          <h3>🔔 Notified Call ID Cache</h3>
-          <div class="dbg-actions">
-            <span style="font-size:10px;color:#64748b;">These IDs won't re-fire until server restarts</span>
-            <button class="dbg-btn" id="dbg-ids-copy-btn" onclick="_dbgCopyJSON('ids')" style="display:none;">📋 Copy</button>
+      <!-- ── ROW 4: Notified IDs + DOM Scanner side by side ── -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+        <!-- Notified Call IDs -->
+        <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+            <span style="font-size:12px;font-weight:700;color:#072B40;">🔔 Notified Call ID Cache</span>
+            <button id="dbg-ids-copy-btn" onclick="_dbgCopyJSON('ids')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy</button>
+          </div>
+          <div style="padding:14px 16px;">
+            <div style="font-size:10px;color:#9BAFC0;margin-bottom:8px;">These call IDs won't trigger another alert until the server restarts.</div>
+            <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7280;line-height:1.9;word-break:break-all;">—</div>
           </div>
         </div>
-        <div class="dbg-card-body">
-          <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7280;line-height:1.9;word-break:break-all;">—</div>
+
+        <!-- DOM Fixed-Element Scanner -->
+        <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
+            <span style="font-size:12px;font-weight:700;color:#072B40;">🔍 DOM Element Scanner</span>
+            <div style="display:flex;gap:7px;">
+              <button onclick="runDbgScanFixed()" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;">Scan</button>
+              <button onclick="_dbgKillFixed()" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);color:#dc2626;cursor:pointer;">Kill rogue</button>
+            </div>
+          </div>
+          <div style="padding:14px 16px;">
+            <div style="font-size:10px;color:#9BAFC0;margin-bottom:8px;">Lists all visible <code style="background:#F0F2F5;padding:1px 4px;border-radius:3px;">position:fixed</code> elements — highlights dark backgrounds as potential rogue overlays.</div>
+            <div id="dbg-scan-results" style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6b7280;min-height:32px;">Click Scan to inspect.</div>
+          </div>
         </div>
-      </div>
+
+      </div><!-- /ROW 4 -->
 
     </div><!-- /#debug-panel -->
   </div><!-- /#tab-debug -->
@@ -17262,25 +17230,35 @@ async function loadDebugPanel() {
       if (!hasData) {
         tbody.innerHTML = '<tr><td colspan="7" class="dbg-empty">No poll runs recorded yet</td></tr>';
       } else {
+        const tdStyle = 'padding:7px 12px;border-bottom:1px solid #F0F2F5;vertical-align:top;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:#3A5068;';
         tbody.innerHTML = log.entries.slice().reverse().map(e => {
-          const detailParts = (e.calls || []).map(c =>
-            `<div style="margin:2px 0;font-size:10px;font-family:'JetBrains Mono',monospace;">` +
-            `<span class="dbg-pill ${c.isDirect ? 'direct' : 'matched'}">${c.isDirect ? 'direct' : 'queue'}</span> ` +
-            `${c.fromNumber || '?'} → ${c.isDirect ? (c.toExt || '?') : ('q' + (c.queueExt || '?'))} ` +
-            `${c.result || ''} ${c.totalSecs}s ` +
-            `<span class="dbg-pill ${c.notified ? 'notified' : 'skipped'}">${c.notified ? 'notified' : 'dup-skip'}</span>` +
-            `</div>`
-          ).join('');
-          const errTxt = e.error || '—';
+          const detailParts = (e.calls || []).map(c => {
+            const pType = c.isDirect ? 'direct' : 'queue';
+            const pStyle = c.isDirect
+              ? 'display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(59,130,246,.1);color:#2563eb;border:1px solid rgba(59,130,246,.2);white-space:nowrap;'
+              : 'display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(34,197,94,.1);color:#16a34a;border:1px solid rgba(34,197,94,.2);white-space:nowrap;';
+            const nStyle = c.notified
+              ? 'display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(245,130,31,.1);color:#c2470a;border:1px solid rgba(245,130,31,.2);white-space:nowrap;'
+              : 'display:inline-block;font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:rgba(156,163,175,.1);color:#6b7280;border:1px solid rgba(156,163,175,.2);white-space:nowrap;';
+            return `<div style="margin:2px 0;font-size:10px;font-family:'JetBrains Mono',monospace;color:#3A5068;">` +
+              `<span style="${pStyle}">${pType}</span> ` +
+              `${c.fromNumber || '?'} → ${c.isDirect ? (c.toExt || '?') : ('q' + (c.queueExt || '?'))} ` +
+              `<span style="${nStyle}">${c.notified ? 'notified' : 'dup-skip'}</span>` +
+              `</div>`;
+          }).join('');
+          const errTxt = e.error || '';
           const isRateErr = e.error && e.error.toLowerCase().includes('rate');
-          return `<tr>
-            <td>${_dbgFmtTime(e.at)}</td>
-            <td>${e.fetched ?? '?'}</td>
-            <td>${e.matched ?? '?'}</td>
-            <td>${e.notified ?? '?'}</td>
-            <td>${e.skipped ?? '?'}</td>
-            <td style="color:${e.error ? (isRateErr ? '#fbbf24' : '#ef4444') : '#34d399'};font-size:10px;max-width:200px;word-break:break-word;">${isRateErr ? '⚠️ ' + errTxt : errTxt}</td>
-            <td>${detailParts || '<span style="color:#9BAFC0;font-size:10px;">no matched calls</span>'}</td>
+          const isOk = !e.error;
+          const errColor = isOk ? '#16a34a' : (isRateErr ? '#d97706' : '#dc2626');
+          const errBg   = isOk ? '' : (isRateErr ? 'background:#FFFBEB;' : 'background:#FEF2F2;');
+          return `<tr style="${errBg}">
+            <td style="${tdStyle}">${_dbgFmtTime(e.at)}</td>
+            <td style="${tdStyle}">${e.fetched ?? '?'}</td>
+            <td style="${tdStyle};color:${(e.matched||0)>0?'#16a34a':'#3A5068'};">${e.matched ?? '?'}</td>
+            <td style="${tdStyle};color:${(e.notified||0)>0?'#c2470a':'#3A5068'};font-weight:${(e.notified||0)>0?'700':'400'};">${e.notified ?? '?'}</td>
+            <td style="${tdStyle}">${e.skipped ?? '?'}</td>
+            <td style="${tdStyle};color:${errColor};font-size:10px;max-width:200px;word-break:break-word;">${isOk ? '<span style="color:#16a34a;">✓ OK</span>' : (isRateErr ? '⚠ ' + errTxt : '✖ ' + errTxt)}</td>
+            <td style="${tdStyle}">${detailParts || '<span style="color:#9BAFC0;font-size:10px;">no matched calls</span>'}</td>
           </tr>`;
         }).join('');
       }
@@ -17327,28 +17305,32 @@ async function loadDebugRaw() {
     document.getElementById('dbg-raw-copy-btn').style.display = '';
     document.getElementById('dbg-raw-dl-btn').style.display   = '';
 
+    const td = 'padding:7px 12px;border-bottom:1px solid #F0F2F5;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:#3A5068;vertical-align:top;';
     tbody.innerHTML = data.records.map(r => {
       const toExt   = r.to?.extensionNumber || '';
       const toName  = r.to?.name || '';
       const toPhone = (r.to?.phoneNumber || '').replace(/\D/g, '');
-      let matchReason = '';
-      if (toExt === qExt)                         matchReason = '✅ to.ext=queue';
-      else if (r.legs?.some(l => l.toExtNumber === qExt || l.extNumber === qExt)) matchReason = '✅ leg.ext=queue';
-      else if (toName.toLowerCase().includes('customer service') || toName.toLowerCase().includes('t1 cs')) matchReason = '✅ name~queue';
-      else if (knDid && toPhone === knDid)         matchReason = '✅ DID match';
-      else                                         matchReason = '<span style="color:#ef4444">❌ no match</span>';
-
-      return `<tr>
-        <td>${r.ageSeconds}s ago</td>
-        <td><span class="dbg-badge ${r.result === 'Missed' ? 'warn' : 'info'}">${r.result}</span></td>
-        <td style="color:#9BAFC0">${r.direction || '—'}</td>
-        <td>${r.from?.phoneNumber || r.from?.extensionNumber || '—'}</td>
-        <td style="color:${toExt === qExt ? '#34d399' : '#e2e8f0'}">${toExt || '<span style="color:#ef4444">EMPTY</span>'}</td>
-        <td style="color:#e2e8f0;max-width:180px;word-break:break-word">${toName || '<span style="color:#ef4444">EMPTY</span>'}</td>
-        <td style="color:${knDid && toPhone === knDid ? '#34d399' : '#9BAFC0'}">${r.to?.phoneNumber || '—'}</td>
-        <td>${r.legCount}</td>
-        <td>${r.duration ?? '?'}s</td>
-        <td style="font-size:10px">${matchReason}</td>
+      let matchReason = '', matchColor = '';
+      if (toExt === qExt)                         { matchReason = '✅ to.ext=queue'; matchColor='#16a34a'; }
+      else if (r.legs?.some(l => l.toExtNumber === qExt || l.extNumber === qExt)) { matchReason = '✅ leg.ext'; matchColor='#16a34a'; }
+      else if (toName.toLowerCase().includes('customer service') || toName.toLowerCase().includes('t1 cs')) { matchReason = '✅ name~queue'; matchColor='#16a34a'; }
+      else if (knDid && toPhone === knDid)         { matchReason = '✅ DID match'; matchColor='#16a34a'; }
+      else                                         { matchReason = '❌ no match'; matchColor='#dc2626'; }
+      const resultBadge = r.result === 'Missed'
+        ? `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#FFF7ED;color:#c2470a;border:1px solid rgba(245,130,31,.3);">${r.result}</span>`
+        : `<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:#EFF6FF;color:#2563eb;border:1px solid rgba(59,130,246,.25);">${r.result}</span>`;
+      const isMatch = matchColor === '#16a34a';
+      return `<tr style="${isMatch ? 'background:#F0FDF4;' : ''}">
+        <td style="${td}">${r.ageSeconds}s ago</td>
+        <td style="${td}">${resultBadge}</td>
+        <td style="${td};color:#9BAFC0;">${r.direction || '—'}</td>
+        <td style="${td}">${r.from?.phoneNumber || r.from?.extensionNumber || '—'}</td>
+        <td style="${td};color:${toExt === qExt ? '#16a34a' : (toExt ? '#3A5068' : '#dc2626')};">${toExt || 'EMPTY'}</td>
+        <td style="${td};max-width:160px;word-break:break-word;color:${toName ? '#3A5068' : '#dc2626'};">${toName || 'EMPTY'}</td>
+        <td style="${td};color:${knDid && toPhone === knDid ? '#16a34a' : '#9BAFC0'};">${r.to?.phoneNumber || '—'}</td>
+        <td style="${td}">${r.legCount}</td>
+        <td style="${td}">${r.duration ?? '?'}s</td>
+        <td style="${td};font-size:10px;font-weight:600;color:${matchColor};">${matchReason}</td>
       </tr>`;
     }).join('');
   } catch(e) {
@@ -17395,6 +17377,28 @@ function _dbgDownloadJSON(key, filename) {
   a.download = `${filename}-${new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)}.json`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+let _dbgAutoRefreshInterval = null;
+function _dbgToggleAutoRefresh(on) {
+  if (_dbgAutoRefreshInterval) { clearInterval(_dbgAutoRefreshInterval); _dbgAutoRefreshInterval = null; }
+  if (on) { _dbgAutoRefreshInterval = setInterval(loadDebugPanel, 30000); }
+}
+
+async function _dbgForcePoll() {
+  const btn = event?.target;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Running…'; }
+  try {
+    const r = await fetch(BACKEND + '/api/admin/force-poll', { method: 'POST', credentials: 'include' });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || 'Failed');
+    showToast('Poll ran — check Poll Log', 'success', 3000);
+    setTimeout(loadDebugPanel, 800);
+  } catch(e) {
+    showToast('Force poll failed: ' + e.message, 'error', 4000);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '▶ Force poll now'; }
+  }
 }
 
 async function loadEventLog(){

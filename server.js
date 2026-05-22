@@ -2444,6 +2444,20 @@ app.delete('/api/admin/debug-poll-log', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/admin/force-poll — trigger a missed call poll immediately (debug)
+app.post('/api/admin/force-poll', requireAdmin, async (req, res) => {
+  if (!MISSED_CALL_WEBHOOK_URL) {
+    return res.status(400).json({ error: 'MISSED_CALL_WEBHOOK_URL not set — notifier is disabled' });
+  }
+  try {
+    await runMissedCallPoll();
+    const last = _pollLog[_pollLog.length - 1] || null;
+    res.json({ ok: true, result: last });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // GET /api/admin/debug-notified-ids — the dedup set of already-notified call IDs
 app.get('/api/admin/debug-notified-ids', requireAdmin, (req, res) => {
   res.json({ ids: [..._notifiedCallIds] });
