@@ -1431,19 +1431,20 @@ async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId 
  */
 async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
-  // Fetch Inbound AND Internal calls — internal ext-to-queue calls (e.g. testing
-  // from ext 5288 → queue 1025) are classified as 'Internal' by RC, not 'Inbound'.
-  // We rely on the queue ext filter + result filter to block unwanted calls instead.
-  const [inboundRecs, internalRecs] = await Promise.all([
-    listAccountCallLogRecords({ dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100, direction: 'Inbound' }),
-    listAccountCallLogRecords({ dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100, direction: 'Internal' }),
-  ]);
-  // Deduplicate by call id (shouldn't overlap but be safe)
-  const seenIds = new Set();
-  const records = [...inboundRecs, ...internalRecs].filter(r => {
-    if (seenIds.has(r.id)) return false;
-    seenIds.add(r.id);
-    return true;
+  // Fetch ALL call directions — no direction filter.
+  // RC classifies calls differently depending on how they arrive:
+  //   - external customer → DID → queue : direction = 'Inbound'
+  //   - internal ext → ext 1025 directly : direction = 'Internal'
+  //   - internal ext → main DID → queue  : direction may vary
+  // The queue ext filter (1025) + result filter (Missed/Voicemail) + age guard
+  // are the real gates and will prevent false positives regardless of direction.
+  const records = await listAccountCallLogRecords({
+    dateFrom:  dateFrom.toISOString(),
+    type:      'Voice',
+    result:    'Missed,Voicemail',
+    view:      'Detailed',
+    perPage:   100,
+    // no direction filter — let queue ext + result do the work
   });
 
   // Build extension → agent name lookup from monitored agents
@@ -1453,17 +1454,41 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
     for (const a of agents) extToAgent[String(a.extension)] = a;
   } catch(e) { /* non-fatal */ }
 
+  // Debug: log what was fetched so we can diagnose filter misses
+  if (records.length) {
+    console.log(`📞 [missed-poll] ${records.length} Missed/VM records fetched (queueFilter=${queueExtFilter || 'none'})`);
+    for (const call of records.slice(0, 8)) {
+      console.log(`  · id=${call.id} from=${call.from?.phoneNumber} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" to.phone=${call.to?.phoneNumber || '—'} legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
+    }
+  }
+
   // Filter to the specified queue extension if provided
   const queueExtStr = queueExtFilter ? String(queueExtFilter) : null;
   const filtered = queueExtStr
     ? records.filter(call => {
+        // 1. Call was placed directly to the queue extension number
         const toExt = String(call.to?.extensionNumber || '');
         if (toExt === queueExtStr) return true;
+
+        // 2. Any routing leg passed through the queue extension
         const legs = call.legs || [];
-        return legs.some(l =>
+        if (legs.some(l =>
           String(l.to?.extensionNumber   || '') === queueExtStr ||
           String(l.extension?.extensionNumber || '') === queueExtStr
-        );
+        )) return true;
+
+        // 3. DID fallback: caller dialed the main number, RC routed it to the Customer
+        //    Service queue, but the caller hung up before any agent legs were created
+        //    (e.g. a 5-second hang-up).  In this case legs[] is empty and
+        //    call.to.extensionNumber may be blank — but RC still records the destination
+        //    queue name on call.to.name (e.g. "Customer Service").
+        const toName = call.to?.name || '';
+        if (toName && isCustomerServiceLabel(toName)) {
+          console.log(`📞 [queue-match] DID name fallback: id=${call.id} to.name="${toName}" from=${call.from?.phoneNumber}`);
+          return true;
+        }
+
+        return false;
       })
     : records;
 
@@ -1493,7 +1518,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
     // RC legs for queue routing often have action='Phone Call' with an extension
     // whose name contains "Queue" (e.g. "Customer Service + VoIP Queue").
     // Also consider a direct call to the monitored queue ext as "in queue".
-    const wasInQueue = legs.some(l => {
+    const wasInQueueFromLegs = legs.some(l => {
       const a       = (l.action            || '').toLowerCase();
       const t       = (l.type              || '').toLowerCase();
       const eName   = (l.extension?.name   || '').toLowerCase();
@@ -1509,6 +1534,12 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
              // If the leg destination IS the monitored queue ext, it's in-queue by definition
              (queueExtStr && extNum === queueExtStr);
     });
+    // DID fallback: no legs (caller bailed before routing), but RC recorded the queue
+    // name on call.to.name — treat it as a queue abandon.
+    const wasInQueueFromName = !wasInQueueFromLegs &&
+      legs.length === 0 &&
+      isCustomerServiceLabel(call.to?.name || '');
+    const wasInQueue = wasInQueueFromLegs || wasInQueueFromName;
 
     // Agent ring legs: legs that rang a specific extension (not the queue ext itself)
     const agentRingLegs = legs.filter(l => {
