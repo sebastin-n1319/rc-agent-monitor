@@ -7735,6 +7735,41 @@ header{
   pointer-events: none !important;
 }
 
+/* ── Locked-reason custom tooltip (replaces ugly native title) ── */
+#agent-section-breakbot .bb-act.is-locked {
+  pointer-events: auto !important; /* re-enable so hover works */
+  position: relative !important;
+}
+#agent-section-breakbot .bb-act.is-locked::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15,20,35,.96);
+  color: #c8d0e7;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: 0 8px 24px rgba(0,0,0,.55);
+  width: max-content;
+  max-width: 240px;
+  white-space: normal;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s ease, transform .15s ease;
+  transform: translateX(-50%) translateY(4px);
+  z-index: 9999;
+}
+#agent-section-breakbot .bb-act.is-locked:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ── Icon row ──────────────────────────────────────────────── */
 #agent-section-breakbot .bb-act-top {
   display: flex !important;
@@ -14983,13 +15018,16 @@ function syncBreakActionState(){
     const enabled=!isHistory && !isPreview && allowed.has(action);
     button.disabled=!enabled;
     button.classList.toggle('is-locked',!enabled);
-    button.title=isHistory
-      ? 'History mode is read-only. Switch back to today to post a live signal.'
+    // Use data-tip for custom styled tooltip; clear native title to avoid double tooltips
+    button.title='';
+    const tipText = isHistory
+      ? 'History mode — switch back to today to post a live signal.'
       : isPreview
-        ? 'Preview mode is read-only. Enable Break Bot for this account to post live signals.'
+        ? 'Preview mode — enable Break Bot for this account to post live signals.'
       : enabled
-        ? 'Available now'
+        ? ''
         : getBreakInvalidActionCopy(action,currentStatus);
+    button.dataset.tip = tipText;
   });
   const note=document.getElementById('break-history-note');
   if(note){

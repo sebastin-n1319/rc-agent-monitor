@@ -2354,14 +2354,51 @@ async function runMissedCallPoll() {
   }
 }
 
-// Admin: manual trigger for testing
+/// Admin: manual trigger — always sends a synthetic test card so the webhook
+// can be verified even when there are no real missed calls in the window.
 app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
   try {
     if (!MISSED_CALL_WEBHOOK_URL) {
       return res.status(503).json({ success: false, error: 'MISSED_CALL_WEBHOOK_URL not set in Railway env vars' });
     }
+
+    // 1. Send a synthetic test card immediately so the webhook is always verifiable
+    const testCard = {
+      cardsV2: [{
+        cardId: `rc-test-${Date.now()}`,
+        card: {
+          header: {
+            title:    '🧪 Test — Missed Call Alert',
+            subtitle: 'TEST CALLER  ·  +10000000000',
+          },
+          sections: [{
+            widgets: [
+              { decoratedText: { topLabel: 'Time',         text: new Date().toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }) + ' CST' } },
+              { decoratedText: { topLabel: 'Queue',        text: `Customer Service  (Ext ${MISSED_CALL_QUEUE_EXT})` } },
+              { decoratedText: { topLabel: 'Ring time',    text: '18s' } },
+              { decoratedText: { topLabel: 'Call type',    text: '🚪 Queue abandon' } },
+              { decoratedText: { topLabel: 'Disposition',  text: 'Caller hung up while agent(s) were ringing' } },
+              { decoratedText: { topLabel: 'Agent(s) that rang', text: 'Test Agent  (Ext 5512)  —  18s' } },
+              { decoratedText: { topLabel: 'ℹ️ Note',      text: 'This is a test notification from Adit Agent Monitor' } },
+            ],
+          }],
+        },
+      }],
+    };
+    const tr = await fetch(MISSED_CALL_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testCard),
+    });
+    if (!tr.ok) {
+      const errText = await tr.text();
+      return res.status(502).json({ success: false, error: `Webhook returned ${tr.status}: ${errText}` });
+    }
+
+    // 2. Also run the real poll in case there are genuine recent missed calls
     await runMissedCallPoll();
-    res.json({ success: true, message: 'Poll ran — check Google Chat' });
+
+    res.json({ success: true, message: 'Test card sent + poll ran — check Google Chat' });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
   }
