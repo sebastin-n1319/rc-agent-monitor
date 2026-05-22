@@ -2056,18 +2056,20 @@ app.post('/api/write-call-doc', requireAuth, rateLimit(30, 60000), async (req, r
         const rawId = String(ticketId).replace(/^#/, '');
         let ticket = null;
 
-        // Strategy 0: direct ticketNumber filter
+        // Strategy A: isNumber=true direct fetch (works for any ticket age)
         try {
-          const r = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
-          const text = await r.text();
-          if (text && text.trim() !== 'null') {
-            const d = JSON.parse(text);
-            const list = d.data || (Array.isArray(d) ? d : []);
-            ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+          const rA = await fetch(`${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`, { headers });
+          if (rA.ok) {
+            const text = await rA.text();
+            if (text && text.trim() !== 'null') {
+              const d = JSON.parse(text);
+              const candidate = d.data ? (Array.isArray(d.data) ? d.data[0] : d.data) : (d.id ? d : null);
+              if (candidate && String(candidate.ticketNumber) === rawId) ticket = candidate;
+            }
           }
         } catch(e) {}
 
-        // Strategy 1: search
+        // Strategy B: search (fallback)
         if (!ticket) {
           try {
             const sr = await fetch(`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=10`, { headers });
@@ -2081,18 +2083,21 @@ app.post('/api/write-call-doc', requireAuth, rateLimit(30, 60000), async (req, r
         }
 
         if (ticket) {
-          // Get contact details
-          let contact = null;
-          if (ticket.contactId) {
-            try { contact = await zohoDesk(`/contacts/${ticket.contactId}`); } catch(e) {}
-          }
+          // Fetch contact AND account in parallel for complete practice info
+          let contact = null, acct = null;
+          await Promise.all([
+            ticket.contactId ? zohoDesk(`/contacts/${ticket.contactId}`).then(c => { contact = c; }).catch(() => {}) : Promise.resolve(),
+            ticket.accountId ? zohoDesk(`/accounts/${ticket.accountId}`).then(a => { acct = a;    }).catch(() => {}) : Promise.resolve(),
+          ]);
           zohoData = {
-            ticketNumber: ticket.ticketNumber,
-            subject:      ticket.subject || '',
-            clientName:   contact?.fullName || ticket.contact?.fullName || '',
-            practiceName: contact?.account?.accountName || ticket.account?.accountName || '',
-            email:        contact?.email || ticket.email || '',
-            callbackNumber: contact?.phone || contact?.mobile || ticket.phone || '',
+            ticketNumber:   ticket.ticketNumber,
+            subject:        ticket.subject || '',
+            clientName:     contact?.fullName || [contact?.firstName, contact?.lastName].filter(Boolean).join(' ') || '',
+            // Practice name: account record is the source of truth
+            practiceName:   acct?.accountName || contact?.accountName || '',
+            accountNumber:  ticket.cf?.['Acct Number'] || ticket.cf?.cf_acct_number || acct?.cf?.['Acct Number'] || acct?.cf?.cf_acct_number || '',
+            email:          contact?.email || '',
+            callbackNumber: contact?.phone || contact?.mobile || contact?.homePhone || '',
           };
         }
       } catch(e) {
@@ -2103,7 +2108,7 @@ app.post('/api/write-call-doc', requireAuth, rateLimit(30, 60000), async (req, r
     // Merge: Zoho data fills gaps; agent-provided values take precedence if supplied
     const finalClientName    = clientName    || zohoData.clientName    || '';
     const finalPracticeName  = practiceName  || zohoData.practiceName  || '';
-    const finalAccountNumber = accountNumber || '';
+    const finalAccountNumber = accountNumber || zohoData.accountNumber || '';
     const finalEmail         = email         || zohoData.email         || '';
     const finalCallback      = callbackNumber|| zohoData.callbackNumber|| '';
     const finalTicket        = ticketId ? String(ticketId).replace(/^#/, '') : (zohoData.ticketNumber || '');
