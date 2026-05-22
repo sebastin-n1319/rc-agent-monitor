@@ -21,7 +21,8 @@ const {
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
-  handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus
+  handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
+  fetchRecentMissedCalls,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 
@@ -2217,6 +2218,124 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', ts: Date.now() });
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// MISSED CALL → GOOGLE CHAT NOTIFIER
+// Polls RC call logs every 2 minutes for missed/voicemail calls and posts a
+// rich notification to a Google Chat Space via incoming webhook.
+// Requires env: GOOGLE_CHAT_WEBHOOK_URL
+// ══════════════════════════════════════════════════════════════════════════════
+const _notifiedCallIds = new Set();
+
+function _fmtSecs(s) {
+  if (!s) return '0s';
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+function _buildGoogleChatCard(call) {
+  const isVM   = call.isVoicemail;
+  const inQ    = call.wasInQueue;
+  const icon   = isVM ? '📬' : '📞';
+  const label  = isVM ? 'Voicemail Left' : 'Missed Call';
+
+  const callerName   = call.from.name || '';
+  const callerNumber = call.from.number || '';
+  const callerLine   = callerName ? `${callerName}  ·  ${callerNumber}` : callerNumber;
+
+  const timeStr = new Date(call.startTime).toLocaleString('en-US', {
+    timeZone: 'America/Chicago',
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  }) + ' CST';
+
+  let dispositionLine;
+  if (isVM) {
+    dispositionLine = inQ
+      ? `Left voicemail after waiting in queue`
+      : `Left voicemail (rang agent directly)`;
+  } else if (inQ) {
+    dispositionLine = call.agentNames.length
+      ? `Queue abandoned — rang ${call.agentNames.join(', ')} (no answer)`
+      : `Queue abandoned (no agent answered)`;
+  } else {
+    dispositionLine = call.agentNames.length
+      ? `Rang ${call.agentNames.join(', ')} directly — no answer`
+      : `Rang extension directly — no answer`;
+  }
+
+  const ringLine = call.agentRingSecs && call.agentRingSecs !== call.totalSecs
+    ? `${_fmtSecs(call.totalSecs)} total  (agent rang ${_fmtSecs(call.agentRingSecs)})`
+    : _fmtSecs(call.totalSecs);
+
+  // Google Chat cardsV2 format (supported by all Spaces incoming webhooks)
+  return {
+    cardsV2: [{
+      cardId: `rc-missed-${call.id}`,
+      card: {
+        header: {
+          title:    `${icon} ${label}`,
+          subtitle: callerLine,
+        },
+        sections: [{
+          widgets: [
+            { decoratedText: { topLabel: 'Time',           text: timeStr            } },
+            { decoratedText: { topLabel: 'Ring time',      text: ringLine           } },
+            { decoratedText: { topLabel: 'Call type',      text: isVM ? '📬 Voicemail' : '📞 Missed' } },
+            { decoratedText: { topLabel: 'Disposition',    text: dispositionLine    } },
+          ],
+        }],
+      },
+    }],
+  };
+}
+
+async function _sendMissedCallNotification(call) {
+  const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
+  if (!url) return;
+  try {
+    const body = _buildGoogleChatCard(call);
+    const r = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(body),
+    });
+    if (!r.ok) console.error(`⚠ Google Chat webhook ${r.status}: ${await r.text()}`);
+  } catch(e) {
+    console.error('❌ Google Chat send failed:', e.message);
+  }
+}
+
+async function runMissedCallPoll() {
+  const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
+  if (!url) return;
+  try {
+    const calls = await fetchRecentMissedCalls(3); // look back 3 minutes
+    for (const call of calls) {
+      if (_notifiedCallIds.has(call.id)) continue;
+      _notifiedCallIds.add(call.id);
+      console.log(`📞 Missed call detected: ${call.from.number} → ${call.result} (${call.totalSecs}s)`);
+      await _sendMissedCallNotification(call);
+    }
+    // Keep set bounded — prune oldest 200 when over 500
+    if (_notifiedCallIds.size > 500) {
+      [..._notifiedCallIds].slice(0, 200).forEach(id => _notifiedCallIds.delete(id));
+    }
+  } catch(e) {
+    console.error('❌ Missed call poll error:', e.message);
+  }
+}
+
+// Admin: manual trigger for testing
+app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
+  try {
+    const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
+    if (!url) return res.status(503).json({ success: false, error: 'GOOGLE_CHAT_WEBHOOK_URL not set' });
+    await runMissedCallPoll();
+    res.json({ success: true, message: 'Poll ran — check Google Chat' });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // ── Global error handler — must be last; masks internal details from responses ─
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
@@ -2235,6 +2354,12 @@ async function start() {
       setTimeout(() => { fetchCallLogs().catch(e => console.error('❌ startup call log:', e.message)); }, 20000);
       await startScheduler();
       setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
+      // Start missed-call → Google Chat notifier (every 2 min) if webhook is configured
+      if (process.env.GOOGLE_CHAT_WEBHOOK_URL) {
+        setTimeout(() => runMissedCallPoll().catch(() => {}), 30000); // first run 30s after boot
+        setInterval(() => runMissedCallPoll().catch(() => {}), 2 * 60 * 1000);
+        console.log('📞 Missed call → Google Chat notifier started (2-min poll)');
+      }
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }

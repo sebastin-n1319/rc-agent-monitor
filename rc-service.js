@@ -1394,6 +1394,80 @@ function getCallSyncStatus() {
   };
 }
 
+// ── Missed Call Polling ───────────────────────────────────────────────────
+/**
+ * Fetch voice calls that ended as Missed or Voicemail in the last N minutes.
+ * Uses view=Detailed to get legs, which lets us determine:
+ *   - whether the call went through a queue (queue-abandoned)
+ *   - whether it rang directly to an agent extension
+ *   - whether voicemail was left
+ */
+async function fetchRecentMissedCalls(minutesBack = 3) {
+  const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
+  const records = await listAccountCallLogRecords({
+    dateFrom:  dateFrom.toISOString(),
+    type:      'Voice',
+    result:    'Missed,Voicemail',
+    view:      'Detailed',  // includes legs[]
+    perPage:   100,
+    direction: 'Inbound',
+  });
+
+  return records.map(call => {
+    const legs = call.legs || [];
+
+    // Queue detection: any leg with 'queue' in action/type
+    const wasInQueue = legs.some(l => {
+      const a = (l.action || '').toLowerCase();
+      const t = (l.type   || '').toLowerCase();
+      return a.includes('queue') || t.includes('queue') || a === 'holdabandon';
+    });
+
+    // Agent ring legs: inbound legs that rang a specific extension (not queue itself)
+    const agentRingLegs = legs.filter(l => {
+      const a = (l.action || '').toLowerCase();
+      return (a === 'phone call' || a === 'ring') &&
+             l.extension && l.extension.extensionNumber &&
+             !a.includes('queue');
+    });
+
+    // Voicemail: call.result or any leg action indicates VM
+    const isVoicemail = call.result === 'Voicemail' ||
+      legs.some(l => (l.action || '').toLowerCase().includes('voicemail') ||
+                     (l.action || '').toLowerCase() === 'vmgreeting');
+
+    // Ring time = total call duration (queue hold + ring time)
+    // Individual agent ring duration = sum of agent leg durations
+    const totalSecs   = call.duration || 0;
+    const agentRingSecs = agentRingLegs.reduce((s, l) => s + (l.duration || 0), 0);
+
+    return {
+      id:            call.id,
+      sessionId:     call.sessionId,
+      startTime:     call.startTime,
+      totalSecs,
+      agentRingSecs,
+      isVoicemail,
+      wasInQueue,
+      result:        call.result,
+      from: {
+        name:   call.from?.name        || '',
+        number: call.from?.phoneNumber || '',
+      },
+      to: {
+        name:   call.to?.name               || '',
+        number: call.to?.phoneNumber        || '',
+        ext:    call.to?.extensionNumber    || '',
+      },
+      agentNames: [...new Set(
+        agentRingLegs
+          .map(l => l.extension?.extensionNumber ? `Ext ${l.extension.extensionNumber}` : '')
+          .filter(Boolean)
+      )],
+    };
+  });
+}
+
 module.exports = {
   authenticate,
   ensureRealtimeSubscription,
@@ -1405,5 +1479,6 @@ module.exports = {
   handleWebhookNotification,
   liveEvents,
   getFallbackSyncMs,
-  getCallSyncStatus
+  getCallSyncStatus,
+  fetchRecentMissedCalls,
 };
