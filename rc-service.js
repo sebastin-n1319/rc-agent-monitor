@@ -1483,11 +1483,25 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
   for (const call of completed) {
     const legs = call.legs || [];
 
-    // Queue detection: any leg with 'queue' in action/type
+    // Queue detection — check action, type, extension name, AND extension type.
+    // RC legs for queue routing often have action='Phone Call' with an extension
+    // whose name contains "Queue" (e.g. "Customer Service + VoIP Queue").
+    // Also consider a direct call to the monitored queue ext as "in queue".
     const wasInQueue = legs.some(l => {
-      const a = (l.action || '').toLowerCase();
-      const t = (l.type   || '').toLowerCase();
-      return a.includes('queue') || t.includes('queue') || a === 'holdabandon';
+      const a       = (l.action            || '').toLowerCase();
+      const t       = (l.type              || '').toLowerCase();
+      const eName   = (l.extension?.name   || '').toLowerCase();
+      const eType   = (l.extension?.type   || '').toLowerCase();
+      const extNum  = String(l.extension?.extensionNumber || '');
+      return a.includes('queue') ||
+             t.includes('queue') ||
+             a === 'holdabandon' ||
+             a === 'hold abandon' ||
+             eName.includes('queue') ||
+             eType === 'queue' ||
+             eType === 'departmentextension' ||
+             // If the leg destination IS the monitored queue ext, it's in-queue by definition
+             (queueExtStr && extNum === queueExtStr);
     });
 
     // Agent ring legs: legs that rang a specific extension (not the queue ext itself)

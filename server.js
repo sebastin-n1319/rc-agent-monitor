@@ -2341,15 +2341,6 @@ async function runMissedCallPoll() {
     const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT); // CS queue, 3-min window
     for (const call of calls) {
       if (_notifiedCallIds.has(call.id)) continue;
-
-      // Only alert on calls that actually went through the monitored queue.
-      // This blocks direct-to-extension rings (e.g. agent called directly).
-      if (!call.wasInQueue) {
-        console.log(`📞 Skipping direct-ring call ${call.id} (not via queue)`);
-        _notifiedCallIds.add(call.id); // still mark so we don't re-evaluate
-        continue;
-      }
-
       _notifiedCallIds.add(call.id);
       console.log(`📞 Queue missed call: ${call.from.number} → queue ${call.queueExt} → ${call.result} (${call.totalSecs}s)`);
       await _sendMissedCallNotification(call);
