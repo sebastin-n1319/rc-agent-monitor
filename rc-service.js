@@ -1431,13 +1431,19 @@ async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId 
  */
 async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
-  const records = await listAccountCallLogRecords({
-    dateFrom:  dateFrom.toISOString(),
-    type:      'Voice',
-    result:    'Missed,Voicemail',
-    view:      'Detailed',  // includes legs[]
-    perPage:   100,
-    direction: 'Inbound',
+  // Fetch Inbound AND Internal calls — internal ext-to-queue calls (e.g. testing
+  // from ext 5288 → queue 1025) are classified as 'Internal' by RC, not 'Inbound'.
+  // We rely on the queue ext filter + result filter to block unwanted calls instead.
+  const [inboundRecs, internalRecs] = await Promise.all([
+    listAccountCallLogRecords({ dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100, direction: 'Inbound' }),
+    listAccountCallLogRecords({ dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100, direction: 'Internal' }),
+  ]);
+  // Deduplicate by call id (shouldn't overlap but be safe)
+  const seenIds = new Set();
+  const records = [...inboundRecs, ...internalRecs].filter(r => {
+    if (seenIds.has(r.id)) return false;
+    seenIds.add(r.id);
+    return true;
   });
 
   // Build extension → agent name lookup from monitored agents
