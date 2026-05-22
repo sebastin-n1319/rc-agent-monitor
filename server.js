@@ -2240,6 +2240,18 @@ const MISSED_CALL_DID          = (process.env.MISSED_CALL_DID || '').replace(/\D
 
 const _notifiedCallIds = new Set();
 
+// ── Debug / observability ring buffer ────────────────────────────────────────
+const POLL_LOG_MAX   = 30;
+const _pollLog       = [];          // ring buffer of poll run summaries
+let   _lastPollAt    = null;        // ISO string of last poll start
+const POLL_INTERVAL_SECS = 120;     // must match the setInterval below
+
+function _pollLogPush(entry) {
+  _pollLog.push(entry);
+  if (_pollLog.length > POLL_LOG_MAX) _pollLog.shift();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function _fmtSecs(s) {
   if (!s) return '0s';
   return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
@@ -2359,7 +2371,10 @@ async function _sendMissedCallNotification(call) {
 }
 
 async function runMissedCallPoll() {
-  if (!MISSED_CALL_WEBHOOK_URL) return; // nothing to do without a dedicated webhook
+  if (!MISSED_CALL_WEBHOOK_URL) return;
+  const runAt = new Date().toISOString();
+  _lastPollAt = runAt;
+  const logEntry = { at: runAt, fetched: 0, matched: 0, notified: 0, skipped: 0, error: null, calls: [] };
   try {
     // Gather monitored agent extensions for direct-call detection
     let agentExts = [];
@@ -2369,27 +2384,72 @@ async function runMissedCallPoll() {
     } catch(e) { /* non-fatal */ }
 
     const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID, agentExts);
+    logEntry.matched = calls.length;
+
     for (const call of calls) {
-      if (_notifiedCallIds.has(call.id)) continue;
+      const isDup = _notifiedCallIds.has(call.id);
+      const callSummary = {
+        id: call.id, result: call.result, totalSecs: call.totalSecs,
+        fromNumber: call.from.number, queueExt: call.queueExt,
+        toExt: call.to.ext, isDirect: call.isDirect,
+        notified: !isDup,
+      };
+      logEntry.calls.push(callSummary);
+
+      if (isDup) { logEntry.skipped++; continue; }
       _notifiedCallIds.add(call.id);
-      const tag = call.isDirect ? 'Direct missed' : 'Queue missed';
+      logEntry.notified++;
+
+      const tag  = call.isDirect ? 'Direct missed' : 'Queue missed';
       const dest = call.isDirect
         ? `${call.directAgent?.name || call.to.ext} (Ext ${call.to.ext})`
         : `queue ${call.queueExt}`;
       console.log(`📞 ${tag}: ${call.from.number} → ${dest} → ${call.result} (${call.totalSecs}s)`);
       await _sendMissedCallNotification(call);
     }
-    // Keep set bounded
+    // Keep dedup set bounded
     if (_notifiedCallIds.size > 500) {
       [..._notifiedCallIds].slice(0, 200).forEach(id => _notifiedCallIds.delete(id));
     }
   } catch(e) {
     console.error('❌ Missed call poll error:', e.message);
+    logEntry.error = e.message;
+  } finally {
+    _pollLogPush(logEntry);
   }
 }
 
-// Debug: dump raw RC call-log fields for recent missed/VM calls — helps diagnose filter misses.
-// GET /api/admin/debug-missed-raw?minutes=10
+// ── Debug panel endpoints ────────────────────────────────────────────────────
+
+// GET /api/admin/debug-config — notifier configuration + last poll time
+app.get('/api/admin/debug-config', requireAdmin, (req, res) => {
+  res.json({
+    webhookSet:       !!MISSED_CALL_WEBHOOK_URL,
+    queueExt:         MISSED_CALL_QUEUE_EXT,
+    knownDid:         MISSED_CALL_DID || null,
+    pollIntervalSecs: POLL_INTERVAL_SECS,
+    lastPollAt:       _lastPollAt,
+    notifiedCount:    _notifiedCallIds.size,
+  });
+});
+
+// GET /api/admin/debug-poll-log — ring buffer of last N poll runs
+app.get('/api/admin/debug-poll-log', requireAdmin, (req, res) => {
+  res.json({ entries: _pollLog });
+});
+
+// DELETE /api/admin/debug-poll-log — clear the poll log
+app.delete('/api/admin/debug-poll-log', requireAdmin, (req, res) => {
+  _pollLog.length = 0;
+  res.json({ ok: true });
+});
+
+// GET /api/admin/debug-notified-ids — the dedup set of already-notified call IDs
+app.get('/api/admin/debug-notified-ids', requireAdmin, (req, res) => {
+  res.json({ ids: [..._notifiedCallIds] });
+});
+
+// GET /api/admin/debug-missed-raw?minutes=15 — raw RC API fields, no filter applied
 app.get('/api/admin/debug-missed-raw', requireAdmin, async (req, res) => {
   try {
     const minutes = Math.min(Number(req.query.minutes) || 15, 60);

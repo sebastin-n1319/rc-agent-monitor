@@ -9635,6 +9635,7 @@ tbody tr:hover td{
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
     <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
     <button class="nav-tab" data-tab="tickets" onclick="switchTab('tickets',this)">Tickets</button>
+    <button class="nav-tab" data-tab="debug" onclick="switchTab('debug',this);loadDebugPanel()">🔍 Debug</button>
     <button class="nav-tab" data-tab="ai-agent" onclick="switchTab('ai-agent',this)">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;margin-right:4px;vertical-align:-2px"><circle cx="8" cy="5" r="3"/><path d="M2 13c0-3.314 2.686-5 6-5s6 1.686 6 5"/><path d="M8 10v3M6 12h4"/></svg>
       AI Agent
@@ -10402,6 +10403,128 @@ tbody tr:hover td{
     </div>
     </div><!-- /#tkt-report-view -->
   </div><!-- /#tab-tickets -->
+
+  <!-- DEBUG TAB ─────────────────────────────────────────────────────────── -->
+  <div id="tab-debug" class="tab-content" style="display:none;padding:24px 0;">
+    <style>
+      #debug-panel { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+      .dbg-card { background: var(--card-bg, rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; overflow: hidden; }
+      .dbg-card-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,.06); }
+      .dbg-card-hdr h3 { font-size: 13px; font-weight: 700; color: var(--text-primary, #e2e8f0); letter-spacing: .03em; margin: 0; }
+      .dbg-card-body { padding: 16px 20px; }
+      .dbg-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; }
+      .dbg-badge.ok  { background: rgba(52,211,153,.15); color: #34d399; }
+      .dbg-badge.warn { background: rgba(251,191,36,.15); color: #fbbf24; }
+      .dbg-badge.err  { background: rgba(239,68,68,.15); color: #ef4444; }
+      .dbg-badge.info { background: rgba(96,165,250,.15); color: #60a5fa; }
+      .dbg-row { display: grid; grid-template-columns: 140px 1fr; gap: 4px 16px; align-items: baseline; margin-bottom: 6px; font-size: 12px; }
+      .dbg-row label { color: #9BAFC0; font-weight: 600; white-space: nowrap; }
+      .dbg-row span  { color: var(--text-primary, #e2e8f0); font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+      .dbg-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+      .dbg-table th { text-align: left; font-size: 10px; font-weight: 700; color: #9BAFC0; text-transform: uppercase; letter-spacing: .06em; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.06); white-space: nowrap; }
+      .dbg-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; font-family: 'JetBrains Mono', monospace; color: var(--text-primary, #e2e8f0); }
+      .dbg-table tr:last-child td { border-bottom: none; }
+      .dbg-table tr:hover td { background: rgba(255,255,255,.03); }
+      .dbg-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+      .dbg-pill.matched { background: rgba(52,211,153,.12); color: #34d399; }
+      .dbg-pill.direct  { background: rgba(96,165,250,.12); color: #60a5fa; }
+      .dbg-pill.skipped { background: rgba(156,163,175,.10); color: #9ca3af; }
+      .dbg-pill.notified { background: rgba(245,130,31,.15); color: #F5821F; }
+      .dbg-pill.miss  { background: rgba(239,68,68,.12); color: #ef4444; }
+      .dbg-btn { font-size: 11px; font-weight: 600; padding: 5px 14px; border-radius: 7px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: var(--text-primary, #e2e8f0); cursor: pointer; transition: background .15s; }
+      .dbg-btn:hover { background: rgba(255,255,255,.1); }
+      .dbg-btn.primary { background: rgba(245,130,31,.12); border-color: rgba(245,130,31,.3); color: #F5821F; }
+      .dbg-btn.primary:hover { background: rgba(245,130,31,.22); }
+      .dbg-empty { text-align: center; padding: 32px; color: #9BAFC0; font-size: 12px; }
+      .dbg-raw-pre { background: rgba(0,0,0,.3); border-radius: 8px; padding: 14px; overflow: auto; max-height: 480px; font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8; line-height: 1.6; white-space: pre; }
+      .dbg-match-why { font-size: 10px; color: #9BAFC0; font-family: sans-serif; }
+    </style>
+
+    <div id="debug-panel">
+
+      <!-- Status Row -->
+      <div class="dbg-card">
+        <div class="dbg-card-hdr">
+          <h3>⚙️ Missed Call Notifier — Config</h3>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="dbg-btn primary" onclick="loadDebugPanel()">↺ Refresh</button>
+          </div>
+        </div>
+        <div class="dbg-card-body">
+          <div id="dbg-config-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px 24px;">
+            <div class="dbg-row"><label>Webhook</label><span id="dbg-webhook">—</span></div>
+            <div class="dbg-row"><label>Queue Ext</label><span id="dbg-qext">—</span></div>
+            <div class="dbg-row"><label>Known DID</label><span id="dbg-did">—</span></div>
+            <div class="dbg-row"><label>Poll Interval</label><span id="dbg-interval">—</span></div>
+            <div class="dbg-row"><label>Last Poll</label><span id="dbg-last-poll">—</span></div>
+            <div class="dbg-row"><label>Next Poll ~</label><span id="dbg-next-poll">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poll Log -->
+      <div class="dbg-card">
+        <div class="dbg-card-hdr">
+          <h3>📋 Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(last 20 runs)</span></h3>
+          <button class="dbg-btn" onclick="clearDebugPollLog()">Clear log</button>
+        </div>
+        <div class="dbg-card-body" style="padding:0;">
+          <div id="dbg-poll-log-wrap" style="overflow-x:auto;">
+            <table class="dbg-table">
+              <thead><tr>
+                <th>Time (CST)</th><th>Fetched</th><th>Matched</th><th>Notified</th><th>Skipped (dup)</th><th>Errors</th><th>Detail</th>
+              </tr></thead>
+              <tbody id="dbg-poll-log-body">
+                <tr><td colspan="7" class="dbg-empty">No poll runs recorded yet — the notifier polls every 2 min</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Raw RC Records -->
+      <div class="dbg-card">
+        <div class="dbg-card-hdr">
+          <h3>🔬 Raw RC Call-Log Fields <span style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(last 15 min, Missed + Voicemail, no filter)</span></h3>
+          <div style="display:flex;gap:8px;">
+            <select id="dbg-raw-mins" class="dbg-btn" style="padding:4px 10px;">
+              <option value="10">Last 10 min</option>
+              <option value="15" selected>Last 15 min</option>
+              <option value="30">Last 30 min</option>
+              <option value="60">Last 60 min</option>
+            </select>
+            <button class="dbg-btn primary" onclick="loadDebugRaw()">Fetch from RC</button>
+          </div>
+        </div>
+        <div class="dbg-card-body" style="padding:0;">
+          <div style="overflow-x:auto;">
+            <table class="dbg-table">
+              <thead><tr>
+                <th>Age</th><th>Result</th><th>Dir</th><th>From</th>
+                <th>to.ext</th><th>to.name</th><th>to.phone</th>
+                <th>Legs</th><th>Duration</th><th>Filter match?</th>
+              </tr></thead>
+              <tbody id="dbg-raw-body">
+                <tr><td colspan="10" class="dbg-empty">Click "Fetch from RC" to load</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notified Call IDs (de-dup set) -->
+      <div class="dbg-card">
+        <div class="dbg-card-hdr">
+          <h3>🔔 Notified Call ID Cache</h3>
+          <span style="font-size:11px;color:#9BAFC0;">Calls in this set won't fire again until server restarts</span>
+        </div>
+        <div class="dbg-card-body">
+          <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;line-height:1.8;word-break:break-all;">—</div>
+        </div>
+      </div>
+
+    </div><!-- /#debug-panel -->
+  </div><!-- /#tab-debug -->
 
 </div><!-- /#adminView -->
 
@@ -16983,6 +17106,134 @@ async function testMissedCallAlert(){
   } finally {
     if(btn){ btn.disabled=false; btn.textContent='🔔 Test Missed Call Alert'; }
   }
+}
+
+// ── Debug Panel ─────────────────────────────────────────────────────────────
+let _debugAutoRefreshTimer = null;
+
+async function loadDebugPanel() {
+  try {
+    // Load config + poll log
+    const [cfgRes, logRes, idsRes] = await Promise.all([
+      fetch(BACKEND + '/api/admin/debug-config', { credentials: 'include' }),
+      fetch(BACKEND + '/api/admin/debug-poll-log', { credentials: 'include' }),
+      fetch(BACKEND + '/api/admin/debug-notified-ids', { credentials: 'include' }),
+    ]);
+    const cfg  = cfgRes.ok  ? await cfgRes.json()  : null;
+    const log  = logRes.ok  ? await logRes.json()  : null;
+    const ids  = idsRes.ok  ? await idsRes.json()  : null;
+
+    // Config section
+    if (cfg) {
+      const fmt = v => v || '<span style="color:#ef4444">NOT SET</span>';
+      document.getElementById('dbg-webhook').innerHTML  = cfg.webhookSet ? '<span class="dbg-badge ok">SET</span>' : '<span class="dbg-badge err">MISSING</span>';
+      document.getElementById('dbg-qext').textContent   = cfg.queueExt   || '—';
+      document.getElementById('dbg-did').innerHTML      = cfg.knownDid   ? `<span class="dbg-badge ok">${cfg.knownDid}</span>` : '<span class="dbg-badge warn">Not set — add MISSED_CALL_DID to Railway</span>';
+      document.getElementById('dbg-interval').textContent = cfg.pollIntervalSecs ? cfg.pollIntervalSecs + 's' : '—';
+      document.getElementById('dbg-last-poll').textContent = cfg.lastPollAt ? _dbgFmtTime(cfg.lastPollAt) : 'Not run yet';
+      const nextMs = cfg.lastPollAt ? (new Date(cfg.lastPollAt).getTime() + (cfg.pollIntervalSecs || 120) * 1000) : null;
+      document.getElementById('dbg-next-poll').textContent = nextMs ? _dbgFmtTime(new Date(nextMs).toISOString()) : '—';
+    }
+
+    // Poll log
+    if (log && log.entries) {
+      const tbody = document.getElementById('dbg-poll-log-body');
+      if (!log.entries.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="dbg-empty">No poll runs recorded yet</td></tr>';
+      } else {
+        tbody.innerHTML = log.entries.slice().reverse().map(e => {
+          const detailParts = (e.calls || []).map(c =>
+            `<div style="margin:2px 0;font-size:10px;font-family:'JetBrains Mono',monospace;">` +
+            `<span class="dbg-pill ${c.isDirect ? 'direct' : 'matched'}">${c.isDirect ? 'direct' : 'queue'}</span> ` +
+            `${c.fromNumber || '?'} → ${c.isDirect ? (c.toExt || '?') : ('q' + (c.queueExt || '?'))} ` +
+            `${c.result || ''} ${c.totalSecs}s ` +
+            `<span class="dbg-pill ${c.notified ? 'notified' : 'skipped'}">${c.notified ? 'notified' : 'dup-skip'}</span>` +
+            `</div>`
+          ).join('');
+          return `<tr>
+            <td>${_dbgFmtTime(e.at)}</td>
+            <td>${e.fetched ?? '?'}</td>
+            <td>${e.matched ?? '?'}</td>
+            <td>${e.notified ?? '?'}</td>
+            <td>${e.skipped ?? '?'}</td>
+            <td style="color:${e.error ? '#ef4444' : '#34d399'}">${e.error || '—'}</td>
+            <td>${detailParts || '<span style="color:#9BAFC0;font-size:10px;">no matched calls</span>'}</td>
+          </tr>`;
+        }).join('');
+      }
+    }
+
+    // Notified IDs
+    if (ids) {
+      const el = document.getElementById('dbg-notified-ids');
+      if (!ids.ids || !ids.ids.length) {
+        el.textContent = 'Cache is empty';
+      } else {
+        el.textContent = `${ids.ids.length} ID(s): ` + ids.ids.join('  ·  ');
+      }
+    }
+  } catch(e) {
+    console.error('loadDebugPanel:', e);
+  }
+}
+
+async function loadDebugRaw() {
+  const mins = document.getElementById('dbg-raw-mins')?.value || 15;
+  const tbody = document.getElementById('dbg-raw-body');
+  tbody.innerHTML = '<tr><td colspan="10" class="dbg-empty">Loading from RC…</td></tr>';
+  try {
+    const res = await fetch(BACKEND + `/api/admin/debug-missed-raw?minutes=${mins}`, { credentials: 'include' });
+    const data = await res.json();
+    if (!res.ok) { tbody.innerHTML = `<tr><td colspan="10" class="dbg-empty" style="color:#ef4444">Error: ${data.error}</td></tr>`; return; }
+
+    const qExt  = data.queueExt  || '';
+    const knDid = (data.knownDid || '').replace(/\D/g, '');
+
+    if (!data.records || !data.records.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="dbg-empty">No Missed/VM calls in this window</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.records.map(r => {
+      const toExt   = r.to?.extensionNumber || '';
+      const toName  = r.to?.name || '';
+      const toPhone = (r.to?.phoneNumber || '').replace(/\D/g, '');
+      let matchReason = '';
+      if (toExt === qExt)                         matchReason = '✅ to.ext=queue';
+      else if (r.legs?.some(l => l.toExtNumber === qExt || l.extNumber === qExt)) matchReason = '✅ leg.ext=queue';
+      else if (toName.toLowerCase().includes('customer service') || toName.toLowerCase().includes('t1 cs')) matchReason = '✅ name~queue';
+      else if (knDid && toPhone === knDid)         matchReason = '✅ DID match';
+      else                                         matchReason = '<span style="color:#ef4444">❌ no match</span>';
+
+      return `<tr>
+        <td>${r.ageSeconds}s ago</td>
+        <td><span class="dbg-badge ${r.result === 'Missed' ? 'warn' : 'info'}">${r.result}</span></td>
+        <td style="color:#9BAFC0">${r.direction || '—'}</td>
+        <td>${r.from?.phoneNumber || r.from?.extensionNumber || '—'}</td>
+        <td style="color:${toExt === qExt ? '#34d399' : '#e2e8f0'}">${toExt || '<span style="color:#ef4444">EMPTY</span>'}</td>
+        <td style="color:#e2e8f0;max-width:180px;word-break:break-word">${toName || '<span style="color:#ef4444">EMPTY</span>'}</td>
+        <td style="color:${knDid && toPhone === knDid ? '#34d399' : '#9BAFC0'}">${r.to?.phoneNumber || '—'}</td>
+        <td>${r.legCount}</td>
+        <td>${r.duration ?? '?'}s</td>
+        <td style="font-size:10px">${matchReason}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="10" class="dbg-empty" style="color:#ef4444">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function clearDebugPollLog() {
+  try {
+    await fetch(BACKEND + '/api/admin/debug-poll-log', { method: 'DELETE', credentials: 'include' });
+    loadDebugPanel();
+  } catch(e) {}
+}
+
+function _dbgFmtTime(iso) {
+  try {
+    return new Date(iso).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+  } catch(e) { return iso; }
 }
 
 async function loadEventLog(){
