@@ -1681,6 +1681,8 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
       agentNames: agentDetails.map(a => a.name),
     });
   }
+  // Attach raw fetch count so callers can distinguish "API returned 0" from "filter matched 0"
+  results._fetchedRaw = records.length;
   return results;
 }
 

@@ -2389,7 +2389,8 @@ async function runMissedCallPoll() {
       agentExts = agents.filter(a => a.extension).map(a => String(a.extension));
     } catch(e) { /* non-fatal */ }
 
-    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID, agentExts);
+    const calls = await fetchRecentMissedCalls(6, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID, agentExts);
+    logEntry.fetched = calls._fetchedRaw ?? calls.length; // raw RC count before filter
     logEntry.matched = calls.length;
 
     for (const call of calls) {
