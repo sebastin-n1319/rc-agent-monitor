@@ -10429,63 +10429,80 @@ tbody tr:hover td{
   <!-- DEBUG TAB ─────────────────────────────────────────────────────────── -->
   <div id="tab-debug" class="page" style="padding:24px 0;">
     <style>
-      #debug-panel { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+      /* ── Debug panel — light mode (admin default) ── */
+      #tab-debug { background: #F7F8F8; }
+      #debug-panel { max-width: 1380px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
       /* Cards */
-      .dbg-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; overflow: hidden; }
-      .dbg-card.dbg-card-alert { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.04); }
-      .dbg-card-hdr { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,.06); flex-wrap: wrap; }
-      .dbg-card-hdr h3 { font-size: 12.5px; font-weight: 700; color: #e2e8f0; letter-spacing: .03em; margin: 0; flex: 1; min-width: 0; }
-      .dbg-card-body { padding: 16px 18px; }
+      .dbg-card { background: #FFFFFF; border: 1px solid #DEE1E6; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+      .dbg-card-hdr { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #F0F2F5; background: #F7F8F8; flex-wrap: wrap; }
+      .dbg-card-hdr h3 { font-size: 12.5px; font-weight: 700; color: #072B40; letter-spacing: .01em; margin: 0; flex: 1; min-width: 0; }
+      .dbg-card-body { padding: 14px 16px; }
       .dbg-card-body.no-pad { padding: 0; }
       /* Config grid */
-      .dbg-cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 20px; }
+      .dbg-cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 24px; }
       .dbg-cfg-item { display: flex; flex-direction: column; gap: 3px; }
-      .dbg-cfg-item label { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .07em; }
-      .dbg-cfg-item span  { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: #e2e8f0; word-break: break-all; }
+      .dbg-cfg-item label { font-size: 9.5px; font-weight: 700; color: #9BAFC0; text-transform: uppercase; letter-spacing: .07em; }
+      .dbg-cfg-item span  { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: #072B40; word-break: break-all; }
       /* Badges */
       .dbg-badge { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; }
-      .dbg-badge.ok   { background: rgba(52,211,153,.15); color: #34d399; }
-      .dbg-badge.warn { background: rgba(251,191,36,.15); color: #fbbf24; }
-      .dbg-badge.err  { background: rgba(239,68,68,.15); color: #ef4444; }
-      .dbg-badge.info { background: rgba(96,165,250,.15); color: #60a5fa; }
+      .dbg-badge.ok   { background: rgba(34,197,94,.12);  color: #16a34a; border: 1px solid rgba(34,197,94,.25); }
+      .dbg-badge.warn { background: rgba(245,158,11,.12); color: #d97706; border: 1px solid rgba(245,158,11,.25); }
+      .dbg-badge.err  { background: rgba(239,68,68,.10);  color: #dc2626; border: 1px solid rgba(239,68,68,.25); }
+      .dbg-badge.info { background: rgba(59,130,246,.10); color: #2563eb; border: 1px solid rgba(59,130,246,.25); }
       /* Tables */
       .dbg-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-      .dbg-table th { text-align: left; font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.06); white-space: nowrap; background: rgba(0,0,0,.15); }
-      .dbg-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; font-family: 'JetBrains Mono', monospace; color: #e2e8f0; font-size: 10.5px; }
+      .dbg-table th { text-align: left; font-size: 9.5px; font-weight: 700; color: #9BAFC0; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-bottom: 1px solid #DEE1E6; white-space: nowrap; background: #F7F8F8; }
+      .dbg-table td { padding: 7px 12px; border-bottom: 1px solid #F0F2F5; vertical-align: top; font-family: 'JetBrains Mono', monospace; color: #3A5068; font-size: 10.5px; }
       .dbg-table tr:last-child td { border-bottom: none; }
-      .dbg-table tr:hover td { background: rgba(255,255,255,.025); }
+      .dbg-table tr:hover td { background: #F7F8F8; }
       /* Pills */
       .dbg-pill { display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
-      .dbg-pill.matched  { background: rgba(52,211,153,.12); color: #34d399; }
-      .dbg-pill.direct   { background: rgba(96,165,250,.12); color: #60a5fa; }
-      .dbg-pill.skipped  { background: rgba(156,163,175,.10); color: #9ca3af; }
-      .dbg-pill.notified { background: rgba(245,130,31,.15); color: #F5821F; }
-      .dbg-pill.miss     { background: rgba(239,68,68,.12); color: #ef4444; }
-      /* Buttons */
-      .dbg-btn { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 7px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: #cbd5e1; cursor: pointer; transition: background .15s; white-space: nowrap; }
-      .dbg-btn:hover { background: rgba(255,255,255,.1); color: #e2e8f0; }
-      .dbg-btn.primary { background: rgba(245,130,31,.12); border-color: rgba(245,130,31,.3); color: #F5821F; }
-      .dbg-btn.primary:hover { background: rgba(245,130,31,.22); }
-      .dbg-btn.danger { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.25); color: #ef4444; }
-      .dbg-btn.danger:hover { background: rgba(239,68,68,.16); }
-      .dbg-btn.success { background: rgba(52,211,153,.08); border-color: rgba(52,211,153,.25); color: #34d399; }
+      .dbg-pill.matched  { background: rgba(34,197,94,.1);   color: #16a34a;  border: 1px solid rgba(34,197,94,.2); }
+      .dbg-pill.direct   { background: rgba(59,130,246,.1);  color: #2563eb;  border: 1px solid rgba(59,130,246,.2); }
+      .dbg-pill.skipped  { background: rgba(156,163,175,.1); color: #6b7280;  border: 1px solid rgba(156,163,175,.2); }
+      .dbg-pill.notified { background: rgba(245,130,31,.1);  color: #c2470a;  border: 1px solid rgba(245,130,31,.2); }
+      .dbg-pill.miss     { background: rgba(239,68,68,.08);  color: #dc2626;  border: 1px solid rgba(239,68,68,.15); }
+      /* Buttons — match admin UI style */
+      .dbg-btn { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 7px; border: 1px solid #DEE1E6; background: #FFFFFF; color: #3A5068; cursor: pointer; transition: background .15s, border-color .15s; white-space: nowrap; }
+      .dbg-btn:hover { background: #F0F2F5; border-color: #C8D0DC; }
+      .dbg-btn.primary { background: rgba(245,130,31,.08); border-color: rgba(245,130,31,.4); color: #c2470a; }
+      .dbg-btn.primary:hover { background: rgba(245,130,31,.15); }
+      .dbg-btn.danger { background: rgba(239,68,68,.06); border-color: rgba(239,68,68,.3); color: #dc2626; }
+      .dbg-btn.danger:hover { background: rgba(239,68,68,.12); }
+      .dbg-btn.success { background: rgba(34,197,94,.06); border-color: rgba(34,197,94,.3); color: #16a34a; }
       /* Empty/misc */
-      .dbg-empty { text-align: center; padding: 28px; color: #64748b; font-size: 11.5px; }
+      .dbg-empty { text-align: center; padding: 28px; color: #9BAFC0; font-size: 11.5px; }
       /* Header action group */
       .dbg-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto; }
-      /* Banner */
-      .dbg-banner { margin: 0 18px 12px; padding: 10px 14px; border-radius: 8px; font-size: 11px; line-height: 1.55; }
-      .dbg-banner.warn  { background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); color: #fbbf24; }
-      .dbg-banner.err   { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.3); color: #ef4444; }
-      /* Section divider */
-      .dbg-section-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #475569; padding: 10px 18px 4px; }
+      /* Monospace value inline */
+      .dbg-mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+      /* Rate-limit / alert banners */
+      #dbg-ratelimit-banner { margin: 10px 16px 0; padding: 10px 14px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.3); border-radius: 8px; font-size: 11px; color: #92400e; line-height: 1.5; }
+
+      /* ── Dark mode overrides ── */
+      .dark-mode #tab-debug { background: transparent; }
+      .dark-mode .dbg-card { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.08); box-shadow: none; }
+      .dark-mode .dbg-card-hdr { background: rgba(0,0,0,.2); border-bottom-color: rgba(255,255,255,.06); }
+      .dark-mode .dbg-card-hdr h3 { color: #e2e8f0; }
+      .dark-mode .dbg-cfg-item span { color: #e2e8f0; }
+      .dark-mode .dbg-table th { background: rgba(0,0,0,.2); border-bottom-color: rgba(255,255,255,.07); color: #64748b; }
+      .dark-mode .dbg-table td { border-bottom-color: rgba(255,255,255,.04); color: #cbd5e1; }
+      .dark-mode .dbg-table tr:hover td { background: rgba(255,255,255,.025); }
+      .dark-mode .dbg-btn { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.1); color: #cbd5e1; }
+      .dark-mode .dbg-btn:hover { background: rgba(255,255,255,.1); }
+      .dark-mode .dbg-badge.ok   { background: rgba(52,211,153,.15); color: #34d399; border-color: transparent; }
+      .dark-mode .dbg-badge.warn { background: rgba(251,191,36,.15); color: #fbbf24; border-color: transparent; }
+      .dark-mode .dbg-badge.err  { background: rgba(239,68,68,.15);  color: #ef4444; border-color: transparent; }
+      .dark-mode .dbg-badge.info { background: rgba(96,165,250,.15); color: #60a5fa; border-color: transparent; }
+      .dark-mode #dbg-ratelimit-banner { background: rgba(251,191,36,.08); border-color: rgba(251,191,36,.3); color: #fbbf24; }
+      .dark-mode #dbg-scan-results code { background: rgba(0,0,0,.2); }
     </style>
 
     <!-- PAGE HEADER -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 4px;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 8px;flex-wrap:wrap;gap:8px;border-bottom:1px solid #DEE1E6;margin-bottom:4px;">
       <div>
-        <h2 style="font-size:16px;font-weight:800;color:#e2e8f0;margin:0;letter-spacing:-.01em;">🛠 Debug & Diagnostics</h2>
-        <p style="font-size:11px;color:#64748b;margin:2px 0 0;">Live server telemetry · Missed call notifier · DOM scanner</p>
+        <h2 style="font-size:15px;font-weight:800;color:#072B40;margin:0;letter-spacing:-.01em;">🛠 Debug &amp; Diagnostics</h2>
+        <p style="font-size:11px;color:#9BAFC0;margin:2px 0 0;">Live server telemetry · Missed call notifier · DOM scanner</p>
       </div>
       <button class="dbg-btn primary" onclick="loadDebugPanel()" style="font-size:12px;padding:7px 16px;">↺ Refresh all</button>
     </div>
@@ -10521,8 +10538,8 @@ tbody tr:hover td{
           </div>
         </div>
         <div class="dbg-card-body">
-          <div id="dbg-scan-results" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;min-height:36px;">
-            Click <strong style="color:#F5821F;">Scan now</strong> to list every visible <code>position:fixed</code> element on this page.
+          <div id="dbg-scan-results" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7280;min-height:36px;">
+            Click <strong style="color:#c2470a;">Scan now</strong> to list every visible <code style="background:#F0F2F5;padding:1px 5px;border-radius:4px;font-size:10px;">position:fixed</code> element on this page.
           </div>
         </div>
       </div>
@@ -10597,7 +10614,7 @@ tbody tr:hover td{
           </div>
         </div>
         <div class="dbg-card-body">
-          <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;line-height:1.9;word-break:break-all;">—</div>
+          <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#6b7280;line-height:1.9;word-break:break-all;">—</div>
         </div>
       </div>
 
@@ -17261,8 +17278,8 @@ async function loadDebugPanel() {
       if (!hasIds) {
         el.textContent = 'Cache is empty';
       } else {
-        el.innerHTML = `<span style="color:#9BAFC0;">${ids.ids.length} ID(s):</span> ` +
-          ids.ids.map(id => `<span style="display:inline-block;margin:2px 4px;padding:1px 8px;background:rgba(245,130,31,.1);border:1px solid rgba(245,130,31,.2);border-radius:6px;">${id}</span>`).join('');
+        el.innerHTML = `<span style="color:#9BAFC0;font-size:10px;">${ids.ids.length} ID(s):</span><br>` +
+          ids.ids.map(id => `<span style="display:inline-block;margin:2px 4px;padding:2px 9px;background:#FFF7ED;border:1px solid rgba(245,130,31,.25);border-radius:6px;color:#92400e;">${id}</span>`).join('');
       }
     }
   } catch(e) {
@@ -22663,7 +22680,10 @@ input:focus, textarea:focus, select:focus {
   setTimeout(purge, 500);
   setTimeout(purge, 2000);
   setTimeout(purge, 5000);
-  new MutationObserver(() => setTimeout(purge, 100)).observe(document.body, { childList: true });
+  setTimeout(purge, 10000);
+  // Continuous patrol — re-runs every 8s to catch widgets that re-inject themselves
+  setInterval(purge, 8000);
+  new MutationObserver(() => setTimeout(purge, 150)).observe(document.body, { childList: true, subtree: false });
 })();
 
 // ── Debug: scan all fixed elements (called from debug panel) ─────────────────
