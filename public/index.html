@@ -10429,57 +10429,100 @@ tbody tr:hover td{
   <!-- DEBUG TAB ─────────────────────────────────────────────────────────── -->
   <div id="tab-debug" class="page" style="padding:24px 0;">
     <style>
-      #debug-panel { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-      .dbg-card { background: var(--card-bg, rgba(255,255,255,.04)); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; overflow: hidden; }
-      .dbg-card-hdr { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,.06); }
-      .dbg-card-hdr h3 { font-size: 13px; font-weight: 700; color: var(--text-primary, #e2e8f0); letter-spacing: .03em; margin: 0; }
-      .dbg-card-body { padding: 16px 20px; }
-      .dbg-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; }
-      .dbg-badge.ok  { background: rgba(52,211,153,.15); color: #34d399; }
+      #debug-panel { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+      /* Cards */
+      .dbg-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; overflow: hidden; }
+      .dbg-card.dbg-card-alert { border-color: rgba(239,68,68,.3); background: rgba(239,68,68,.04); }
+      .dbg-card-hdr { display: flex; align-items: center; gap: 12px; padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,.06); flex-wrap: wrap; }
+      .dbg-card-hdr h3 { font-size: 12.5px; font-weight: 700; color: #e2e8f0; letter-spacing: .03em; margin: 0; flex: 1; min-width: 0; }
+      .dbg-card-body { padding: 16px 18px; }
+      .dbg-card-body.no-pad { padding: 0; }
+      /* Config grid */
+      .dbg-cfg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 20px; }
+      .dbg-cfg-item { display: flex; flex-direction: column; gap: 3px; }
+      .dbg-cfg-item label { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .07em; }
+      .dbg-cfg-item span  { font-size: 11.5px; font-family: 'JetBrains Mono', monospace; color: #e2e8f0; word-break: break-all; }
+      /* Badges */
+      .dbg-badge { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; }
+      .dbg-badge.ok   { background: rgba(52,211,153,.15); color: #34d399; }
       .dbg-badge.warn { background: rgba(251,191,36,.15); color: #fbbf24; }
       .dbg-badge.err  { background: rgba(239,68,68,.15); color: #ef4444; }
       .dbg-badge.info { background: rgba(96,165,250,.15); color: #60a5fa; }
-      .dbg-row { display: grid; grid-template-columns: 140px 1fr; gap: 4px 16px; align-items: baseline; margin-bottom: 6px; font-size: 12px; }
-      .dbg-row label { color: #9BAFC0; font-weight: 600; white-space: nowrap; }
-      .dbg-row span  { color: var(--text-primary, #e2e8f0); font-family: 'JetBrains Mono', monospace; word-break: break-all; }
-      .dbg-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-      .dbg-table th { text-align: left; font-size: 10px; font-weight: 700; color: #9BAFC0; text-transform: uppercase; letter-spacing: .06em; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,.06); white-space: nowrap; }
-      .dbg-table td { padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; font-family: 'JetBrains Mono', monospace; color: var(--text-primary, #e2e8f0); }
+      /* Tables */
+      .dbg-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+      .dbg-table th { text-align: left; font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.06); white-space: nowrap; background: rgba(0,0,0,.15); }
+      .dbg-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; font-family: 'JetBrains Mono', monospace; color: #e2e8f0; font-size: 10.5px; }
       .dbg-table tr:last-child td { border-bottom: none; }
-      .dbg-table tr:hover td { background: rgba(255,255,255,.03); }
-      .dbg-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
-      .dbg-pill.matched { background: rgba(52,211,153,.12); color: #34d399; }
-      .dbg-pill.direct  { background: rgba(96,165,250,.12); color: #60a5fa; }
-      .dbg-pill.skipped { background: rgba(156,163,175,.10); color: #9ca3af; }
+      .dbg-table tr:hover td { background: rgba(255,255,255,.025); }
+      /* Pills */
+      .dbg-pill { display: inline-block; font-size: 9.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px; white-space: nowrap; }
+      .dbg-pill.matched  { background: rgba(52,211,153,.12); color: #34d399; }
+      .dbg-pill.direct   { background: rgba(96,165,250,.12); color: #60a5fa; }
+      .dbg-pill.skipped  { background: rgba(156,163,175,.10); color: #9ca3af; }
       .dbg-pill.notified { background: rgba(245,130,31,.15); color: #F5821F; }
-      .dbg-pill.miss  { background: rgba(239,68,68,.12); color: #ef4444; }
-      .dbg-btn { font-size: 11px; font-weight: 600; padding: 5px 14px; border-radius: 7px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.05); color: var(--text-primary, #e2e8f0); cursor: pointer; transition: background .15s; }
-      .dbg-btn:hover { background: rgba(255,255,255,.1); }
+      .dbg-pill.miss     { background: rgba(239,68,68,.12); color: #ef4444; }
+      /* Buttons */
+      .dbg-btn { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 7px; border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.05); color: #cbd5e1; cursor: pointer; transition: background .15s; white-space: nowrap; }
+      .dbg-btn:hover { background: rgba(255,255,255,.1); color: #e2e8f0; }
       .dbg-btn.primary { background: rgba(245,130,31,.12); border-color: rgba(245,130,31,.3); color: #F5821F; }
       .dbg-btn.primary:hover { background: rgba(245,130,31,.22); }
-      .dbg-empty { text-align: center; padding: 32px; color: #9BAFC0; font-size: 12px; }
-      .dbg-raw-pre { background: rgba(0,0,0,.3); border-radius: 8px; padding: 14px; overflow: auto; max-height: 480px; font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: #94a3b8; line-height: 1.6; white-space: pre; }
-      .dbg-match-why { font-size: 10px; color: #9BAFC0; font-family: sans-serif; }
+      .dbg-btn.danger { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.25); color: #ef4444; }
+      .dbg-btn.danger:hover { background: rgba(239,68,68,.16); }
+      .dbg-btn.success { background: rgba(52,211,153,.08); border-color: rgba(52,211,153,.25); color: #34d399; }
+      /* Empty/misc */
+      .dbg-empty { text-align: center; padding: 28px; color: #64748b; font-size: 11.5px; }
+      /* Header action group */
+      .dbg-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-left: auto; }
+      /* Banner */
+      .dbg-banner { margin: 0 18px 12px; padding: 10px 14px; border-radius: 8px; font-size: 11px; line-height: 1.55; }
+      .dbg-banner.warn  { background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.3); color: #fbbf24; }
+      .dbg-banner.err   { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.3); color: #ef4444; }
+      /* Section divider */
+      .dbg-section-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #475569; padding: 10px 18px 4px; }
     </style>
+
+    <!-- PAGE HEADER -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:0 2px 4px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <h2 style="font-size:16px;font-weight:800;color:#e2e8f0;margin:0;letter-spacing:-.01em;">🛠 Debug & Diagnostics</h2>
+        <p style="font-size:11px;color:#64748b;margin:2px 0 0;">Live server telemetry · Missed call notifier · DOM scanner</p>
+      </div>
+      <button class="dbg-btn primary" onclick="loadDebugPanel()" style="font-size:12px;padding:7px 16px;">↺ Refresh all</button>
+    </div>
 
     <div id="debug-panel">
 
-      <!-- Status Row -->
+      <!-- Config card -->
       <div class="dbg-card">
         <div class="dbg-card-hdr">
-          <h3>⚙️ Missed Call Notifier — Config</h3>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <button class="dbg-btn primary" onclick="loadDebugPanel()">↺ Refresh</button>
+          <h3>⚙️ Notifier Config</h3>
+          <span style="font-size:10px;color:#64748b;">Env vars loaded at server start</span>
+        </div>
+        <div class="dbg-card-body">
+          <div class="dbg-cfg-grid">
+            <div class="dbg-cfg-item"><label>Webhook</label><span id="dbg-webhook">—</span></div>
+            <div class="dbg-cfg-item"><label>Queue Ext</label><span id="dbg-qext">—</span></div>
+            <div class="dbg-cfg-item"><label>Known DID</label><span id="dbg-did">—</span></div>
+            <div class="dbg-cfg-item"><label>Poll Interval</label><span id="dbg-interval">—</span></div>
+            <div class="dbg-cfg-item"><label>Last Poll</label><span id="dbg-last-poll">—</span></div>
+            <div class="dbg-cfg-item"><label>Next Poll ~</label><span id="dbg-next-poll">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOM Diagnostics card -->
+      <div class="dbg-card">
+        <div class="dbg-card-hdr">
+          <h3>🔍 DOM Fixed-Element Scanner</h3>
+          <div class="dbg-actions">
+            <span style="font-size:10px;color:#64748b;">Identifies the black blob &amp; any injected overlays</span>
+            <button class="dbg-btn primary" onclick="runDbgScanFixed()">Scan now</button>
+            <button class="dbg-btn danger" onclick="_dbgKillFixed()">Kill all rogue</button>
           </div>
         </div>
         <div class="dbg-card-body">
-          <div id="dbg-config-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px 24px;">
-            <div class="dbg-row"><label>Webhook</label><span id="dbg-webhook">—</span></div>
-            <div class="dbg-row"><label>Queue Ext</label><span id="dbg-qext">—</span></div>
-            <div class="dbg-row"><label>Known DID</label><span id="dbg-did">—</span></div>
-            <div class="dbg-row"><label>Poll Interval</label><span id="dbg-interval">—</span></div>
-            <div class="dbg-row"><label>Last Poll</label><span id="dbg-last-poll">—</span></div>
-            <div class="dbg-row"><label>Next Poll ~</label><span id="dbg-next-poll">—</span></div>
+          <div id="dbg-scan-results" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;min-height:36px;">
+            Click <strong style="color:#F5821F;">Scan now</strong> to list every visible <code>position:fixed</code> element on this page.
           </div>
         </div>
       </div>
@@ -10548,13 +10591,13 @@ tbody tr:hover td{
       <div class="dbg-card">
         <div class="dbg-card-hdr">
           <h3>🔔 Notified Call ID Cache</h3>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <span style="font-size:11px;color:#9BAFC0;">Won't re-fire until server restarts</span>
+          <div class="dbg-actions">
+            <span style="font-size:10px;color:#64748b;">These IDs won't re-fire until server restarts</span>
             <button class="dbg-btn" id="dbg-ids-copy-btn" onclick="_dbgCopyJSON('ids')" style="display:none;">📋 Copy</button>
           </div>
         </div>
         <div class="dbg-card-body">
-          <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;line-height:1.8;word-break:break-all;">—</div>
+          <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;line-height:1.9;word-break:break-all;">—</div>
         </div>
       </div>
 
@@ -22578,40 +22621,121 @@ input:focus, textarea:focus, select:focus {
 })();
 
 // ── Rogue widget killer ───────────────────────────────────────────────────────
-// Actively removes any third-party fixed-position elements injected into <body>
-// (browser extensions, RC embedded widgets, chat bubbles, etc.)
+// Uses getComputedStyle (not inline-style string matching) so class-based
+// widgets are caught too. Runs on load, after 500ms/2s/5s, and on any <body>
+// child insertion.
 (function() {
-  const KNOWN_IDS = ['rc-widget-adapter-frame','rc-widget','ringcentral-widget-adapter'];
+  // Allowlist: our own fixed elements that must survive
+  const SAFE_IDS = new Set(['toast','loginScreen','weekend-announce-overlay']);
+  const SAFE_CLASSES = ['toast'];
+
   const isRogue = el => {
     if (!el || el.nodeType !== 1) return false;
-    // Known IDs
-    if (KNOWN_IDS.some(id => el.id && el.id.startsWith(id))) return true;
-    // Fixed position on body with bottom-right corner
+    if (SAFE_IDS.has(el.id)) return false;
+    if (SAFE_CLASSES.some(c => el.classList && el.classList.contains(c))) return false;
     try {
-      const s = el.getAttribute('style') || '';
-      if ((s.includes('position: fixed') || s.includes('position:fixed')) &&
-          (s.includes('bottom') || s.includes('right')) &&
-          !['toast','loginScreen','weekend-announce-overlay'].includes(el.id)) {
-        return true;
-      }
+      const cs = window.getComputedStyle(el);
+      if (cs.position !== 'fixed') return false;
+      const rect = el.getBoundingClientRect();
+      // Must be visible and in the bottom-right quadrant of the viewport
+      if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      if (rect.width < 1 || rect.height < 1) return false;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      // Bottom-right: element sits in the right 40% and bottom 40% of screen
+      if (rect.right > vw * 0.6 && rect.bottom > vh * 0.6) return true;
     } catch(e) {}
     return false;
   };
+
   const purge = () => {
-    document.querySelectorAll('body > iframe, body > div').forEach(el => {
+    document.querySelectorAll('body > *').forEach(el => {
       if (isRogue(el)) {
-        el.style.cssText = 'display:none!important;visibility:hidden!important;pointer-events:none!important;';
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        el.style.setProperty('pointer-events', 'none', 'important');
       }
     });
   };
-  // Run on load + observe for new injections
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', purge);
   } else { purge(); }
-  setTimeout(purge, 1000);
-  setTimeout(purge, 3000);
-  new MutationObserver(purge).observe(document.body, { childList: true });
+  setTimeout(purge, 500);
+  setTimeout(purge, 2000);
+  setTimeout(purge, 5000);
+  new MutationObserver(() => setTimeout(purge, 100)).observe(document.body, { childList: true });
 })();
+
+// ── Debug: scan all fixed elements (called from debug panel) ─────────────────
+function _dbgScanFixed() {
+  const out = [];
+  document.querySelectorAll('*').forEach(el => {
+    try {
+      const cs = window.getComputedStyle(el);
+      if (cs.position !== 'fixed') return;
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 1 && rect.height < 1) return;
+      out.push({
+        tag:    el.tagName.toLowerCase(),
+        id:     el.id || '(none)',
+        cls:    el.className && typeof el.className === 'string' ? el.className.trim().slice(0,60) : '(none)',
+        zIndex: cs.zIndex,
+        bg:     cs.backgroundColor,
+        rect:   `${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}×${Math.round(rect.height)}`,
+      });
+    } catch(e) {}
+  });
+  return out;
+}
+
+function runDbgScanFixed() {
+  const results = _dbgScanFixed();
+  const el = document.getElementById('dbg-scan-results');
+  if (!el) return;
+  if (!results.length) {
+    el.innerHTML = '<span style="color:#34d399;">✅ No visible fixed-position elements found.</span>';
+    return;
+  }
+  el.innerHTML = `<div style="margin-bottom:10px;font-size:10px;color:#64748b;">Found ${results.length} visible fixed element(s):</div>` +
+    results.map(r => {
+      const isDark = r.bg && (r.bg.includes('rgba(0') || r.bg.includes('rgb(0,') || r.bg.includes('rgb(8,') || r.bg.includes('rgb(10') || r.bg.includes('rgb(12') || r.bg.includes('rgb(11') || r.bg.includes('#000') || r.bg === 'black');
+      return `<div style="margin-bottom:8px;padding:9px 13px;border-radius:8px;border:1px solid ${isDark ? 'rgba(239,68,68,.4)' : 'rgba(255,255,255,.08)'};background:${isDark ? 'rgba(239,68,68,.07)' : 'rgba(255,255,255,.03)'};">` +
+        `<code style="color:${isDark ? '#ef4444' : '#60a5fa'};font-weight:700;">&lt;${r.tag}&gt;</code> ` +
+        `<code style="color:#fbbf24;">id="${r.id}"</code><br>` +
+        `<code style="color:#94a3b8;font-size:10px;">class: ${r.cls}</code><br>` +
+        `<code style="color:#64748b;font-size:10px;">z-index: ${r.zIndex} &nbsp;|&nbsp; bg: ${r.bg} &nbsp;|&nbsp; pos: ${r.rect}</code>` +
+        (isDark ? `<br><span style="font-size:10px;color:#ef4444;font-weight:700;">⚠ Likely the dark blob — copy the id/class above and paste in chat</span>` : '') +
+        `</div>`;
+    }).join('');
+}
+
+function _dbgKillFixed() {
+  const SAFE_IDS = new Set(['toast','loginScreen','weekend-announce-overlay']);
+  let killed = 0;
+  document.querySelectorAll('*').forEach(el => {
+    try {
+      if (SAFE_IDS.has(el.id)) return;
+      const cs = window.getComputedStyle(el);
+      if (cs.position !== 'fixed') return;
+      if (cs.display === 'none' || cs.visibility === 'hidden') return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width < 1 && rect.height < 1) return;
+      const vw = window.innerWidth, vh = window.innerHeight;
+      if (rect.right > vw * 0.5 && rect.bottom > vh * 0.5) {
+        el.style.setProperty('display', 'none', 'important');
+        el.style.setProperty('visibility', 'hidden', 'important');
+        killed++;
+      }
+    } catch(e) {}
+  });
+  const el = document.getElementById('dbg-scan-results');
+  if (el) {
+    el.innerHTML += `<div style="margin-top:10px;padding:8px 12px;border-radius:6px;background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);color:#34d399;font-size:11px;">Killed ${killed} rogue element(s). Re-scan to verify.</div>`;
+  }
+  // re-run auto-scan to show updated state
+  setTimeout(runDbgScanFixed, 300);
+}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // AI LEARNING AGENT DASHBOARD — admin JS
