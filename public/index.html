@@ -9567,6 +9567,10 @@ tbody tr:hover td{
       <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12" style="flex-shrink:0"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
       Test Agent
     </button>
+    <!-- Missed Call Alert test button (admin only) -->
+    <button id="test-missed-call-btn" onclick="testMissedCallAlert()" title="Trigger missed call poll and send test notification to Google Chat" style="background:rgba(245,130,31,.08);border:1px solid rgba(245,130,31,.25);border-radius:6px;color:#F5821F;font-size:11px;font-weight:600;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+      🔔 Test Alert
+    </button>
     <!-- Dark mode toggle -->
     <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark mode"
       style="width:32px;height:32px;border-radius:50%;border:1px solid rgb(222,225,230);background:#F7F8F8;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;">
@@ -10711,7 +10715,6 @@ tbody tr:hover td{
           <span id="call-sync-dot" style="width:6px;height:6px;border-radius:50%;background:var(--t3);flex-shrink:0;"></span>
           <span id="call-sync-label">Calls: checking...</span>
         </span>
-        <button id="test-missed-call-btn" onclick="testMissedCallAlert()" style="margin-left:8px;background:rgba(245,130,31,.12);border:1px solid rgba(245,130,31,.35);border-radius:6px;color:rgba(245,130,31,.9);font-size:10px;font-weight:600;padding:3px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;" title="Send a test missed-call notification to Google Chat">🔔 Test Alert</button>
       </div>
       <!-- UI-2: Quick-search -->
       <div style="padding:8px 0 4px;display:flex;align-items:center;gap:8px;">

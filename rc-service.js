@@ -1396,13 +1396,40 @@ function getCallSyncStatus() {
 
 // ── Missed Call Polling ───────────────────────────────────────────────────
 /**
- * Fetch voice calls that ended as Missed or Voicemail in the last N minutes.
+ * Try to fetch a voicemail transcript from RC message store for a given call.
+ * RC populates vmTranscription when AI transcription is available.
+ */
+async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId = '~') {
+  try {
+    const dateFrom = new Date(new Date(startTimeIso).getTime() - 30000).toISOString();
+    const dateTo   = new Date(new Date(startTimeIso).getTime() + 5 * 60 * 1000).toISOString();
+    const r = await platform.get(`/restapi/v1.0/account/~/extension/${extensionId}/message-store`, {
+      messageType: 'VoiceMail',
+      dateFrom,
+      dateTo,
+      perPage: 20,
+    });
+    const data = await r.json();
+    const messages = data.records || [];
+    const stripped = (callerNumber || '').replace(/\D/g, '');
+    const match = messages.find(m => (m.from?.phoneNumber || '').replace(/\D/g, '') === stripped)
+               || messages[0];
+    return match?.vmTranscription || null;
+  } catch (e) {
+    console.warn('⚠ fetchVoicemailTranscript:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Fetch voice calls that ended as Missed or Voicemail in the last N minutes,
+ * optionally filtered to a specific queue extension number (e.g. '1025').
  * Uses view=Detailed to get legs, which lets us determine:
  *   - whether the call went through a queue (queue-abandoned)
- *   - whether it rang directly to an agent extension
- *   - whether voicemail was left
+ *   - which agents rang and for how long (with real agent names)
+ *   - whether voicemail was left + transcript
  */
-async function fetchRecentMissedCalls(minutesBack = 3) {
+async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
   const records = await listAccountCallLogRecords({
     dateFrom:  dateFrom.toISOString(),
@@ -1413,7 +1440,29 @@ async function fetchRecentMissedCalls(minutesBack = 3) {
     direction: 'Inbound',
   });
 
-  return records.map(call => {
+  // Build extension → agent name lookup from monitored agents
+  let extToAgent = {};
+  try {
+    const agents = (await getMonitoredAgents()).filter(a => a.extension);
+    for (const a of agents) extToAgent[String(a.extension)] = a;
+  } catch(e) { /* non-fatal */ }
+
+  // Filter to the specified queue extension if provided
+  const queueExtStr = queueExtFilter ? String(queueExtFilter) : null;
+  const filtered = queueExtStr
+    ? records.filter(call => {
+        const toExt = String(call.to?.extensionNumber || '');
+        if (toExt === queueExtStr) return true;
+        const legs = call.legs || [];
+        return legs.some(l =>
+          String(l.to?.extensionNumber   || '') === queueExtStr ||
+          String(l.extension?.extensionNumber || '') === queueExtStr
+        );
+      })
+    : records;
+
+  const results = [];
+  for (const call of filtered) {
     const legs = call.legs || [];
 
     // Queue detection: any leg with 'queue' in action/type
@@ -1423,12 +1472,15 @@ async function fetchRecentMissedCalls(minutesBack = 3) {
       return a.includes('queue') || t.includes('queue') || a === 'holdabandon';
     });
 
-    // Agent ring legs: inbound legs that rang a specific extension (not queue itself)
+    // Agent ring legs: legs that rang a specific extension (not the queue ext itself)
     const agentRingLegs = legs.filter(l => {
-      const a = (l.action || '').toLowerCase();
+      const a      = (l.action || '').toLowerCase();
+      const extNum = String(l.extension?.extensionNumber || '');
+      const isQueueExt = queueExtStr && extNum === queueExtStr;
       return (a === 'phone call' || a === 'ring') &&
-             l.extension && l.extension.extensionNumber &&
-             !a.includes('queue');
+             l.extension && extNum &&
+             !a.includes('queue') &&
+             !isQueueExt;
     });
 
     // Voicemail: call.result or any leg action indicates VM
@@ -1436,12 +1488,33 @@ async function fetchRecentMissedCalls(minutesBack = 3) {
       legs.some(l => (l.action || '').toLowerCase().includes('voicemail') ||
                      (l.action || '').toLowerCase() === 'vmgreeting');
 
-    // Ring time = total call duration (queue hold + ring time)
-    // Individual agent ring duration = sum of agent leg durations
-    const totalSecs   = call.duration || 0;
+    // Ring times
+    const totalSecs     = call.duration || 0;
     const agentRingSecs = agentRingLegs.reduce((s, l) => s + (l.duration || 0), 0);
 
-    return {
+    // Rich agent details: deduplicated by extension number
+    const agentDetails = [...new Map(
+      agentRingLegs
+        .filter(l => l.extension?.extensionNumber)
+        .map(l => {
+          const extNum = String(l.extension.extensionNumber);
+          const agent  = extToAgent[extNum];
+          return [extNum, {
+            extNumber: extNum,
+            name:      agent?.name || l.extension.name || `Ext ${extNum}`,
+            rcId:      String(l.extension.id || agent?.rc_id || ''),
+            duration:  l.duration || 0,
+          }];
+        })
+    ).values()];
+
+    // Try to get voicemail transcript (only if VM, non-blocking)
+    let vmTranscript = null;
+    if (isVoicemail) {
+      vmTranscript = await fetchVoicemailTranscript(call.from?.phoneNumber, call.startTime);
+    }
+
+    results.push({
       id:            call.id,
       sessionId:     call.sessionId,
       startTime:     call.startTime,
@@ -1449,7 +1522,10 @@ async function fetchRecentMissedCalls(minutesBack = 3) {
       agentRingSecs,
       isVoicemail,
       wasInQueue,
+      vmTranscript,
       result:        call.result,
+      queueExt:      String(call.to?.extensionNumber || ''),
+      queueName:     call.to?.name || '',
       from: {
         name:   call.from?.name        || '',
         number: call.from?.phoneNumber || '',
@@ -1459,13 +1535,11 @@ async function fetchRecentMissedCalls(minutesBack = 3) {
         number: call.to?.phoneNumber        || '',
         ext:    call.to?.extensionNumber    || '',
       },
-      agentNames: [...new Set(
-        agentRingLegs
-          .map(l => l.extension?.extensionNumber ? `Ext ${l.extension.extensionNumber}` : '')
-          .filter(Boolean)
-      )],
-    };
-  });
+      agentDetails,
+      agentNames: agentDetails.map(a => a.name), // kept for backwards compat
+    });
+  }
+  return results;
 }
 
 module.exports = {

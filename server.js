@@ -2224,6 +2224,9 @@ app.get('/health', (req, res) => {
 // rich notification to a Google Chat Space via incoming webhook.
 // Requires env: GOOGLE_CHAT_WEBHOOK_URL
 // ══════════════════════════════════════════════════════════════════════════════
+// Queue extension to monitor for missed call alerts (default: Customer Service 1025)
+const MISSED_CALL_QUEUE_EXT = process.env.MISSED_CALL_QUEUE_EXT || '1025';
+
 const _notifiedCallIds = new Set();
 
 function _fmtSecs(s) {
@@ -2235,7 +2238,7 @@ function _buildGoogleChatCard(call) {
   const isVM   = call.isVoicemail;
   const inQ    = call.wasInQueue;
   const icon   = isVM ? '📬' : '📞';
-  const label  = isVM ? 'Voicemail Left' : 'Missed Call';
+  const label  = isVM ? 'Voicemail Left' : (inQ ? 'Queue Abandoned' : 'Missed Call');
 
   const callerName   = call.from.name || '';
   const callerNumber = call.from.number || '';
@@ -2247,26 +2250,50 @@ function _buildGoogleChatCard(call) {
     hour: '2-digit', minute: '2-digit', hour12: true,
   }) + ' CST';
 
-  let dispositionLine;
-  if (isVM) {
-    dispositionLine = inQ
-      ? `Left voicemail after waiting in queue`
-      : `Left voicemail (rang agent directly)`;
-  } else if (inQ) {
-    dispositionLine = call.agentNames.length
-      ? `Queue abandoned — rang ${call.agentNames.join(', ')} (no answer)`
-      : `Queue abandoned (no agent answered)`;
-  } else {
-    dispositionLine = call.agentNames.length
-      ? `Rang ${call.agentNames.join(', ')} directly — no answer`
-      : `Rang extension directly — no answer`;
-  }
+  // Queue label (e.g. "Customer Service (Ext 1025)")
+  const queueLabel = call.queueName
+    ? (call.queueExt ? `${call.queueName}  (Ext ${call.queueExt})` : call.queueName)
+    : (call.queueExt ? `Ext ${call.queueExt}` : '—');
 
+  // Agent details: "Name (Ext XXXX) — 12s"
+  const agents = (call.agentDetails || []);
+  const agentLines = agents.length
+    ? agents.map(a => `${a.name}  (Ext ${a.extNumber})${a.duration ? `  —  ${_fmtSecs(a.duration)}` : ''}`).join('\n')
+    : null;
+
+  // Ring time
   const ringLine = call.agentRingSecs && call.agentRingSecs !== call.totalSecs
-    ? `${_fmtSecs(call.totalSecs)} total  (agent rang ${_fmtSecs(call.agentRingSecs)})`
+    ? `${_fmtSecs(call.totalSecs)} total  (agents rang ${_fmtSecs(call.agentRingSecs)})`
     : _fmtSecs(call.totalSecs);
 
-  // Google Chat cardsV2 format (supported by all Spaces incoming webhooks)
+  // Disposition
+  let dispositionLine;
+  if (isVM) {
+    dispositionLine = inQ ? 'Left voicemail after waiting in queue' : 'Left voicemail (direct to extension)';
+  } else if (inQ) {
+    dispositionLine = agents.length ? 'Caller hung up while agent(s) were ringing' : 'Caller hung up — no agent picked up';
+  } else {
+    dispositionLine = agents.length ? 'Direct ring — no answer' : 'Rang extension — no answer';
+  }
+
+  // Build widgets list
+  const widgets = [
+    { decoratedText: { topLabel: 'Time',         text: timeStr       } },
+    { decoratedText: { topLabel: 'Queue',         text: queueLabel    } },
+    { decoratedText: { topLabel: 'Ring time',     text: ringLine      } },
+    { decoratedText: { topLabel: 'Call type',     text: isVM ? '📬 Voicemail' : (inQ ? '🚪 Queue abandon' : '📞 Missed direct') } },
+    { decoratedText: { topLabel: 'Disposition',   text: dispositionLine } },
+  ];
+
+  if (agentLines) {
+    widgets.push({ decoratedText: { topLabel: 'Agent(s) that rang', text: agentLines } });
+  }
+
+  if (isVM && call.vmTranscript) {
+    widgets.push({ decoratedText: { topLabel: '🎙 Voicemail transcript', text: call.vmTranscript } });
+  }
+
+  // Google Chat cardsV2 format
   return {
     cardsV2: [{
       cardId: `rc-missed-${call.id}`,
@@ -2275,14 +2302,7 @@ function _buildGoogleChatCard(call) {
           title:    `${icon} ${label}`,
           subtitle: callerLine,
         },
-        sections: [{
-          widgets: [
-            { decoratedText: { topLabel: 'Time',           text: timeStr            } },
-            { decoratedText: { topLabel: 'Ring time',      text: ringLine           } },
-            { decoratedText: { topLabel: 'Call type',      text: isVM ? '📬 Voicemail' : '📞 Missed' } },
-            { decoratedText: { topLabel: 'Disposition',    text: dispositionLine    } },
-          ],
-        }],
+        sections: [{ widgets }],
       },
     }],
   };
@@ -2308,7 +2328,7 @@ async function runMissedCallPoll() {
   const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
   if (!url) return;
   try {
-    const calls = await fetchRecentMissedCalls(3); // look back 3 minutes
+    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT); // look back 3 min, CS queue only
     for (const call of calls) {
       if (_notifiedCallIds.has(call.id)) continue;
       _notifiedCallIds.add(call.id);
