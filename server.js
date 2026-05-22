@@ -2233,6 +2233,10 @@ app.get('/health', (req, res) => {
 const MISSED_CALL_QUEUE_EXT    = process.env.MISSED_CALL_QUEUE_EXT || '1025';
 // Dedicated webhook — MUST be different from GOOGLE_CHAT_WEBHOOK_URL (break bot)
 const MISSED_CALL_WEBHOOK_URL  = process.env.MISSED_CALL_WEBHOOK_URL || '';
+// Optional: main DID that routes to the queue (e.g. "2814681445").
+// When set, any Missed call to this number is treated as a queue call even if
+// RC doesn't populate to.extensionNumber (happens for quick hang-ups on the DID).
+const MISSED_CALL_DID          = (process.env.MISSED_CALL_DID || '').replace(/\D/g, '');
 
 const _notifiedCallIds = new Set();
 
@@ -2338,7 +2342,7 @@ async function _sendMissedCallNotification(call) {
 async function runMissedCallPoll() {
   if (!MISSED_CALL_WEBHOOK_URL) return; // nothing to do without a dedicated webhook
   try {
-    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT); // CS queue, 3-min window
+    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID); // CS queue, 3-min window
     for (const call of calls) {
       if (_notifiedCallIds.has(call.id)) continue;
       _notifiedCallIds.add(call.id);

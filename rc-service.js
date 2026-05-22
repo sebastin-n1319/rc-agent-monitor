@@ -1429,7 +1429,7 @@ async function fetchVoicemailTranscript(callerNumber, startTimeIso, extensionId 
  *   - which agents rang and for how long (with real agent names)
  *   - whether voicemail was left + transcript
  */
-async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
+async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, knownDidDigits = '') {
   const dateFrom = new Date(Date.now() - minutesBack * 60 * 1000);
   // Fetch ALL call directions — no direction filter.
   // RC classifies calls differently depending on how they arrive:
@@ -1477,14 +1477,20 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
           String(l.extension?.extensionNumber || '') === queueExtStr
         )) return true;
 
-        // 3. DID fallback: caller dialed the main number, RC routed it to the Customer
-        //    Service queue, but the caller hung up before any agent legs were created
-        //    (e.g. a 5-second hang-up).  In this case legs[] is empty and
-        //    call.to.extensionNumber may be blank — but RC still records the destination
-        //    queue name on call.to.name (e.g. "Customer Service").
+        // 3. DID name fallback: RC may record the destination queue name on call.to.name
+        //    even when to.extensionNumber is blank (caller hung up before any agent legs).
         const toName = call.to?.name || '';
         if (toName && isCustomerServiceLabel(toName)) {
-          console.log(`📞 [queue-match] DID name fallback: id=${call.id} to.name="${toName}" from=${call.from?.phoneNumber}`);
+          console.log(`📞 [queue-match] name fallback: id=${call.id} to.name="${toName}" from=${call.from?.phoneNumber}`);
+          return true;
+        }
+
+        // 4. DID phone number fallback: if MISSED_CALL_DID env var is set and this call's
+        //    to.phoneNumber matches, include it regardless of name or ext — this is the most
+        //    reliable fallback for quick hang-ups on the main line before any routing happens.
+        const toPhoneDigits = (call.to?.phoneNumber || '').replace(/\D/g, '');
+        if (knownDidDigits && toPhoneDigits && toPhoneDigits === knownDidDigits) {
+          console.log(`📞 [queue-match] DID phone fallback: id=${call.id} to.phone=${call.to?.phoneNumber} from=${call.from?.phoneNumber}`);
           return true;
         }
 
@@ -1534,11 +1540,12 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null) {
              // If the leg destination IS the monitored queue ext, it's in-queue by definition
              (queueExtStr && extNum === queueExtStr);
     });
-    // DID fallback: no legs (caller bailed before routing), but RC recorded the queue
-    // name on call.to.name — treat it as a queue abandon.
-    const wasInQueueFromName = !wasInQueueFromLegs &&
-      legs.length === 0 &&
-      isCustomerServiceLabel(call.to?.name || '');
+    // DID fallback: no legs (caller bailed before routing) but name or DID matched.
+    const toPhoneDigits = (call.to?.phoneNumber || '').replace(/\D/g, '');
+    const wasInQueueFromName = !wasInQueueFromLegs && legs.length === 0 && (
+      isCustomerServiceLabel(call.to?.name || '') ||
+      (knownDidDigits && toPhoneDigits && toPhoneDigits === knownDidDigits)
+    );
     const wasInQueue = wasInQueueFromLegs || wasInQueueFromName;
 
     // Agent ring legs: legs that rang a specific extension (not the queue ext itself)
