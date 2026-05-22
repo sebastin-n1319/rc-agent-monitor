@@ -1438,13 +1438,27 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   //   - internal ext → main DID → queue  : direction may vary
   // The queue ext filter (1025) + result filter (Missed/Voicemail) + age guard
   // are the real gates and will prevent false positives regardless of direction.
-  const records = await listAccountCallLogRecords({
-    dateFrom:  dateFrom.toISOString(),
-    type:      'Voice',
-    result:    'Missed,Voicemail',
-    view:      'Detailed',
-    perPage:   100,
-  });
+  // Fetch with rate-limit retry — presence sync may have exhausted the bucket
+  let records;
+  {
+    const params = { dateFrom: dateFrom.toISOString(), type: 'Voice', result: 'Missed,Voicemail', view: 'Detailed', perPage: 100 };
+    const BACKOFF = [15000, 30000]; // 15s then 30s
+    let attempt = 0;
+    while (true) {
+      try {
+        records = await listAccountCallLogRecords(params);
+        break;
+      } catch(e) {
+        if (isRateLimitError(e, e.rcData) && attempt < BACKOFF.length) {
+          console.warn(`⏳ Missed-call poll rate limited (attempt ${attempt + 1}), waiting ${BACKOFF[attempt] / 1000}s…`);
+          await sleep(BACKOFF[attempt]);
+          attempt++;
+        } else {
+          throw e;
+        }
+      }
+    }
+  }
 
   // Build extension → agent name lookup from monitored agents
   let extToAgent = {};

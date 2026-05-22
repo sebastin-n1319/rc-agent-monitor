@@ -2244,7 +2244,7 @@ const _notifiedCallIds = new Set();
 const POLL_LOG_MAX   = 30;
 const _pollLog       = [];          // ring buffer of poll run summaries
 let   _lastPollAt    = null;        // ISO string of last poll start
-const POLL_INTERVAL_SECS = 120;     // must match the setInterval below
+const POLL_INTERVAL_SECS = 180;     // 3 min — staggered vs presence sync (2 min)
 
 function _pollLogPush(entry) {
   _pollLog.push(entry);
@@ -2537,9 +2537,11 @@ async function start() {
       // Start missed-call → Google Chat notifier (every 2 min)
       // Uses MISSED_CALL_WEBHOOK_URL — separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
       if (MISSED_CALL_WEBHOOK_URL) {
-        setTimeout(() => runMissedCallPoll().catch(() => {}), 30000); // first run 30s after boot
-        setInterval(() => runMissedCallPoll().catch(() => {}), 2 * 60 * 1000);
-        console.log(`📞 Missed call notifier started (queue ext ${MISSED_CALL_QUEUE_EXT}, 2-min poll)`);
+        // Stagger: presence sync fires at 0s and every 2 min.
+        // Missed call poll fires at 75s then every 3 min — offset avoids rate-limit collisions.
+        setTimeout(() => runMissedCallPoll().catch(() => {}), 75000);
+        setInterval(() => runMissedCallPoll().catch(() => {}), 3 * 60 * 1000);
+        console.log(`📞 Missed call notifier started (queue ext ${MISSED_CALL_QUEUE_EXT}, 3-min poll, +75s offset)`);
       } else {
         console.log('📞 Missed call notifier disabled — set MISSED_CALL_WEBHOOK_URL to enable');
       }

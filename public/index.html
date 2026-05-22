@@ -1148,8 +1148,18 @@ select option{background:#0c1424;color:var(--t1);}
 .bonus-frame-shell,.hof-frame-shell{position:relative;isolation:isolate;}
 /* Hide any rogue fixed-position dark widgets that bleed to bottom-right of main window */
 body > iframe[style*="position: fixed"],
-body > div[style*="position: fixed"][style*="bottom"][style*="right"]:not(.toast):not(#loginScreen) {
+body > iframe[style*="position:fixed"],
+body > div[style*="position: fixed"][style*="bottom"][style*="right"]:not(.toast):not(#loginScreen),
+body > div[style*="position:fixed"][style*="bottom"][style*="right"]:not(.toast):not(#loginScreen),
+#rc-widget-adapter-frame,
+[id^="rc-widget"],
+[id^="ringcentral-widget"],
+#embbnb_chat_widget,
+div[class*="chat-widget"][style*="fixed"],
+div[class*="livechat"][style*="fixed"] {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 /* ── HOF mini cards */
@@ -10477,17 +10487,25 @@ tbody tr:hover td{
       <!-- Poll Log -->
       <div class="dbg-card">
         <div class="dbg-card-hdr">
-          <h3>📋 Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(last 20 runs)</span></h3>
-          <button class="dbg-btn" onclick="clearDebugPollLog()">Clear log</button>
+          <h3>📋 Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(last 30 runs)</span></h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="dbg-btn" id="dbg-poll-copy-btn" onclick="_dbgCopyJSON('poll')" style="display:none;">📋 Copy JSON</button>
+            <button class="dbg-btn" id="dbg-poll-dl-btn" onclick="_dbgDownloadJSON('poll','poll-log')" style="display:none;">⬇ Download</button>
+            <button class="dbg-btn" onclick="clearDebugPollLog()">🗑 Clear log</button>
+          </div>
         </div>
-        <div class="dbg-card-body" style="padding:0;">
+        <!-- Rate-limit warning banner -->
+        <div id="dbg-ratelimit-banner" style="display:none;margin:10px 20px 0;padding:10px 14px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.35);border-radius:8px;font-size:11.5px;color:#ef4444;line-height:1.5;">
+          ⚠️ <strong>Rate limit errors detected.</strong> RC's Heavy API is throttled (~40 req/min shared across all polls). The server has been updated to stagger polls (75 s offset + 3 min interval + backoff retry). If errors persist, wait a minute and refresh.
+        </div>
+        <div class="dbg-card-body" style="padding:0;padding-top:10px;">
           <div id="dbg-poll-log-wrap" style="overflow-x:auto;">
             <table class="dbg-table">
               <thead><tr>
                 <th>Time (CST)</th><th>Fetched</th><th>Matched</th><th>Notified</th><th>Skipped (dup)</th><th>Errors</th><th>Detail</th>
               </tr></thead>
               <tbody id="dbg-poll-log-body">
-                <tr><td colspan="7" class="dbg-empty">No poll runs recorded yet — the notifier polls every 2 min</td></tr>
+                <tr><td colspan="7" class="dbg-empty">No poll runs recorded yet — the notifier polls every 3 min</td></tr>
               </tbody>
             </table>
           </div>
@@ -10497,15 +10515,17 @@ tbody tr:hover td{
       <!-- Raw RC Records -->
       <div class="dbg-card">
         <div class="dbg-card-hdr">
-          <h3>🔬 Raw RC Call-Log Fields <span style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(last 15 min, Missed + Voicemail, no filter)</span></h3>
-          <div style="display:flex;gap:8px;">
+          <h3>🔬 Raw RC Call-Log Fields <span style="font-weight:400;color:#9BAFC0;font-size:11px;margin-left:6px;">(Missed + Voicemail, no filter)</span></h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             <select id="dbg-raw-mins" class="dbg-btn" style="padding:4px 10px;">
               <option value="10">Last 10 min</option>
               <option value="15" selected>Last 15 min</option>
               <option value="30">Last 30 min</option>
               <option value="60">Last 60 min</option>
             </select>
-            <button class="dbg-btn primary" onclick="loadDebugRaw()">Fetch from RC</button>
+            <button class="dbg-btn primary" onclick="loadDebugRaw()">🔄 Fetch from RC</button>
+            <button class="dbg-btn" id="dbg-raw-copy-btn" onclick="_dbgCopyJSON('raw')" style="display:none;">📋 Copy JSON</button>
+            <button class="dbg-btn" id="dbg-raw-dl-btn" onclick="_dbgDownloadJSON('raw','rc-raw-calls')" style="display:none;">⬇ Download</button>
           </div>
         </div>
         <div class="dbg-card-body" style="padding:0;">
@@ -10528,7 +10548,10 @@ tbody tr:hover td{
       <div class="dbg-card">
         <div class="dbg-card-hdr">
           <h3>🔔 Notified Call ID Cache</h3>
-          <span style="font-size:11px;color:#9BAFC0;">Calls in this set won't fire again until server restarts</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:#9BAFC0;">Won't re-fire until server restarts</span>
+            <button class="dbg-btn" id="dbg-ids-copy-btn" onclick="_dbgCopyJSON('ids')" style="display:none;">📋 Copy</button>
+          </div>
         </div>
         <div class="dbg-card-body">
           <div id="dbg-notified-ids" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#94a3b8;line-height:1.8;word-break:break-all;">—</div>
@@ -17123,6 +17146,7 @@ async function testMissedCallAlert(){
 
 // ── Debug Panel ─────────────────────────────────────────────────────────────
 let _debugAutoRefreshTimer = null;
+let _dbgDataStore = { poll: null, raw: null, ids: null };
 
 async function loadDebugPanel() {
   try {
@@ -17138,20 +17162,27 @@ async function loadDebugPanel() {
 
     // Config section
     if (cfg) {
-      const fmt = v => v || '<span style="color:#ef4444">NOT SET</span>';
       document.getElementById('dbg-webhook').innerHTML  = cfg.webhookSet ? '<span class="dbg-badge ok">SET</span>' : '<span class="dbg-badge err">MISSING</span>';
       document.getElementById('dbg-qext').textContent   = cfg.queueExt   || '—';
       document.getElementById('dbg-did').innerHTML      = cfg.knownDid   ? `<span class="dbg-badge ok">${cfg.knownDid}</span>` : '<span class="dbg-badge warn">Not set — add MISSED_CALL_DID to Railway</span>';
       document.getElementById('dbg-interval').textContent = cfg.pollIntervalSecs ? cfg.pollIntervalSecs + 's' : '—';
       document.getElementById('dbg-last-poll').textContent = cfg.lastPollAt ? _dbgFmtTime(cfg.lastPollAt) : 'Not run yet';
-      const nextMs = cfg.lastPollAt ? (new Date(cfg.lastPollAt).getTime() + (cfg.pollIntervalSecs || 120) * 1000) : null;
+      const nextMs = cfg.lastPollAt ? (new Date(cfg.lastPollAt).getTime() + (cfg.pollIntervalSecs || 180) * 1000) : null;
       document.getElementById('dbg-next-poll').textContent = nextMs ? _dbgFmtTime(new Date(nextMs).toISOString()) : '—';
     }
 
     // Poll log
     if (log && log.entries) {
+      _dbgDataStore.poll = log;
+      const hasData = log.entries.length > 0;
+      document.getElementById('dbg-poll-copy-btn').style.display = hasData ? '' : 'none';
+      document.getElementById('dbg-poll-dl-btn').style.display   = hasData ? '' : 'none';
+      // Show rate-limit warning if any entry has a rate-limit error
+      const hasRateErr = log.entries.some(e => e.error && e.error.toLowerCase().includes('rate'));
+      document.getElementById('dbg-ratelimit-banner').style.display = hasRateErr ? '' : 'none';
+
       const tbody = document.getElementById('dbg-poll-log-body');
-      if (!log.entries.length) {
+      if (!hasData) {
         tbody.innerHTML = '<tr><td colspan="7" class="dbg-empty">No poll runs recorded yet</td></tr>';
       } else {
         tbody.innerHTML = log.entries.slice().reverse().map(e => {
@@ -17163,13 +17194,15 @@ async function loadDebugPanel() {
             `<span class="dbg-pill ${c.notified ? 'notified' : 'skipped'}">${c.notified ? 'notified' : 'dup-skip'}</span>` +
             `</div>`
           ).join('');
+          const errTxt = e.error || '—';
+          const isRateErr = e.error && e.error.toLowerCase().includes('rate');
           return `<tr>
             <td>${_dbgFmtTime(e.at)}</td>
             <td>${e.fetched ?? '?'}</td>
             <td>${e.matched ?? '?'}</td>
             <td>${e.notified ?? '?'}</td>
             <td>${e.skipped ?? '?'}</td>
-            <td style="color:${e.error ? '#ef4444' : '#34d399'}">${e.error || '—'}</td>
+            <td style="color:${e.error ? (isRateErr ? '#fbbf24' : '#ef4444') : '#34d399'};font-size:10px;max-width:200px;word-break:break-word;">${isRateErr ? '⚠️ ' + errTxt : errTxt}</td>
             <td>${detailParts || '<span style="color:#9BAFC0;font-size:10px;">no matched calls</span>'}</td>
           </tr>`;
         }).join('');
@@ -17178,11 +17211,15 @@ async function loadDebugPanel() {
 
     // Notified IDs
     if (ids) {
+      _dbgDataStore.ids = ids;
+      const hasIds = ids.ids && ids.ids.length > 0;
+      document.getElementById('dbg-ids-copy-btn').style.display = hasIds ? '' : 'none';
       const el = document.getElementById('dbg-notified-ids');
-      if (!ids.ids || !ids.ids.length) {
+      if (!hasIds) {
         el.textContent = 'Cache is empty';
       } else {
-        el.textContent = `${ids.ids.length} ID(s): ` + ids.ids.join('  ·  ');
+        el.innerHTML = `<span style="color:#9BAFC0;">${ids.ids.length} ID(s):</span> ` +
+          ids.ids.map(id => `<span style="display:inline-block;margin:2px 4px;padding:1px 8px;background:rgba(245,130,31,.1);border:1px solid rgba(245,130,31,.2);border-radius:6px;">${id}</span>`).join('');
       }
     }
   } catch(e) {
@@ -17193,12 +17230,15 @@ async function loadDebugPanel() {
 async function loadDebugRaw() {
   const mins = document.getElementById('dbg-raw-mins')?.value || 15;
   const tbody = document.getElementById('dbg-raw-body');
+  document.getElementById('dbg-raw-copy-btn').style.display = 'none';
+  document.getElementById('dbg-raw-dl-btn').style.display   = 'none';
   tbody.innerHTML = '<tr><td colspan="10" class="dbg-empty">Loading from RC…</td></tr>';
   try {
     const res = await fetch(BACKEND + `/api/admin/debug-missed-raw?minutes=${mins}`, { credentials: 'include' });
     const data = await res.json();
     if (!res.ok) { tbody.innerHTML = `<tr><td colspan="10" class="dbg-empty" style="color:#ef4444">Error: ${data.error}</td></tr>`; return; }
 
+    _dbgDataStore.raw = data;
     const qExt  = data.queueExt  || '';
     const knDid = (data.knownDid || '').replace(/\D/g, '');
 
@@ -17206,6 +17246,9 @@ async function loadDebugRaw() {
       tbody.innerHTML = '<tr><td colspan="10" class="dbg-empty">No Missed/VM calls in this window</td></tr>';
       return;
     }
+
+    document.getElementById('dbg-raw-copy-btn').style.display = '';
+    document.getElementById('dbg-raw-dl-btn').style.display   = '';
 
     tbody.innerHTML = data.records.map(r => {
       const toExt   = r.to?.extensionNumber || '';
@@ -17247,6 +17290,34 @@ function _dbgFmtTime(iso) {
   try {
     return new Date(iso).toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
   } catch(e) { return iso; }
+}
+
+function _dbgCopyJSON(key) {
+  const data = _dbgDataStore[key];
+  if (!data) return;
+  const text = JSON.stringify(data, null, 2);
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(`dbg-${key === 'poll' ? 'poll' : key === 'raw' ? 'raw' : 'ids'}-copy-btn`);
+    if (btn) { const orig = btn.textContent; btn.textContent = '✓ Copied!'; setTimeout(() => btn.textContent = orig, 1800); }
+  }).catch(() => {
+    // fallback: select a textarea
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+function _dbgDownloadJSON(key, filename) {
+  const data = _dbgDataStore[key];
+  if (!data) return;
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `${filename}-${new Date().toISOString().replace(/[:.]/g,'-').slice(0,19)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 async function loadEventLog(){
@@ -22504,6 +22575,42 @@ input:focus, textarea:focus, select:focus {
   });
   authObs.observe(document.documentElement, { attributes: true });
 
+})();
+
+// ── Rogue widget killer ───────────────────────────────────────────────────────
+// Actively removes any third-party fixed-position elements injected into <body>
+// (browser extensions, RC embedded widgets, chat bubbles, etc.)
+(function() {
+  const KNOWN_IDS = ['rc-widget-adapter-frame','rc-widget','ringcentral-widget-adapter'];
+  const isRogue = el => {
+    if (!el || el.nodeType !== 1) return false;
+    // Known IDs
+    if (KNOWN_IDS.some(id => el.id && el.id.startsWith(id))) return true;
+    // Fixed position on body with bottom-right corner
+    try {
+      const s = el.getAttribute('style') || '';
+      if ((s.includes('position: fixed') || s.includes('position:fixed')) &&
+          (s.includes('bottom') || s.includes('right')) &&
+          !['toast','loginScreen','weekend-announce-overlay'].includes(el.id)) {
+        return true;
+      }
+    } catch(e) {}
+    return false;
+  };
+  const purge = () => {
+    document.querySelectorAll('body > iframe, body > div').forEach(el => {
+      if (isRogue(el)) {
+        el.style.cssText = 'display:none!important;visibility:hidden!important;pointer-events:none!important;';
+      }
+    });
+  };
+  // Run on load + observe for new injections
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', purge);
+  } else { purge(); }
+  setTimeout(purge, 1000);
+  setTimeout(purge, 3000);
+  new MutationObserver(purge).observe(document.body, { childList: true });
 })();
 
 // ══════════════════════════════════════════════════════════════════════════════
