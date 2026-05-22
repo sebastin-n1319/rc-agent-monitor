@@ -2222,10 +2222,17 @@ app.get('/health', (req, res) => {
 // MISSED CALL → GOOGLE CHAT NOTIFIER
 // Polls RC call logs every 2 minutes for missed/voicemail calls and posts a
 // rich notification to a Google Chat Space via incoming webhook.
-// Requires env: GOOGLE_CHAT_WEBHOOK_URL
+//
+// Requires separate env vars so this bot does NOT share the break-bot webhook:
+//   MISSED_CALL_WEBHOOK_URL  – webhook for the missed-calls space (REQUIRED)
+//   MISSED_CALL_QUEUE_EXT    – queue extension to monitor (default: 1025)
+//
+// Falls back to GOOGLE_CHAT_WEBHOOK_URL only if MISSED_CALL_WEBHOOK_URL is unset.
 // ══════════════════════════════════════════════════════════════════════════════
 // Queue extension to monitor for missed call alerts (default: Customer Service 1025)
-const MISSED_CALL_QUEUE_EXT = process.env.MISSED_CALL_QUEUE_EXT || '1025';
+const MISSED_CALL_QUEUE_EXT    = process.env.MISSED_CALL_QUEUE_EXT || '1025';
+// Dedicated webhook — MUST be different from GOOGLE_CHAT_WEBHOOK_URL (break bot)
+const MISSED_CALL_WEBHOOK_URL  = process.env.MISSED_CALL_WEBHOOK_URL || '';
 
 const _notifiedCallIds = new Set();
 
@@ -2309,8 +2316,12 @@ function _buildGoogleChatCard(call) {
 }
 
 async function _sendMissedCallNotification(call) {
-  const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
-  if (!url) return;
+  // Use the dedicated missed-call webhook — NEVER the break-bot webhook
+  const url = MISSED_CALL_WEBHOOK_URL;
+  if (!url) {
+    console.warn('⚠ MISSED_CALL_WEBHOOK_URL not set — skipping notification');
+    return;
+  }
   try {
     const body = _buildGoogleChatCard(call);
     const r = await fetch(url, {
@@ -2318,24 +2329,32 @@ async function _sendMissedCallNotification(call) {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify(body),
     });
-    if (!r.ok) console.error(`⚠ Google Chat webhook ${r.status}: ${await r.text()}`);
+    if (!r.ok) console.error(`⚠ Missed-call webhook ${r.status}: ${await r.text()}`);
   } catch(e) {
-    console.error('❌ Google Chat send failed:', e.message);
+    console.error('❌ Missed-call send failed:', e.message);
   }
 }
 
 async function runMissedCallPoll() {
-  const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
-  if (!url) return;
+  if (!MISSED_CALL_WEBHOOK_URL) return; // nothing to do without a dedicated webhook
   try {
-    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT); // look back 3 min, CS queue only
+    const calls = await fetchRecentMissedCalls(3, MISSED_CALL_QUEUE_EXT); // CS queue, 3-min window
     for (const call of calls) {
       if (_notifiedCallIds.has(call.id)) continue;
+
+      // Only alert on calls that actually went through the monitored queue.
+      // This blocks direct-to-extension rings (e.g. agent called directly).
+      if (!call.wasInQueue) {
+        console.log(`📞 Skipping direct-ring call ${call.id} (not via queue)`);
+        _notifiedCallIds.add(call.id); // still mark so we don't re-evaluate
+        continue;
+      }
+
       _notifiedCallIds.add(call.id);
-      console.log(`📞 Missed call detected: ${call.from.number} → ${call.result} (${call.totalSecs}s)`);
+      console.log(`📞 Queue missed call: ${call.from.number} → queue ${call.queueExt} → ${call.result} (${call.totalSecs}s)`);
       await _sendMissedCallNotification(call);
     }
-    // Keep set bounded — prune oldest 200 when over 500
+    // Keep set bounded
     if (_notifiedCallIds.size > 500) {
       [..._notifiedCallIds].slice(0, 200).forEach(id => _notifiedCallIds.delete(id));
     }
@@ -2347,8 +2366,9 @@ async function runMissedCallPoll() {
 // Admin: manual trigger for testing
 app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
   try {
-    const url = process.env.GOOGLE_CHAT_WEBHOOK_URL;
-    if (!url) return res.status(503).json({ success: false, error: 'GOOGLE_CHAT_WEBHOOK_URL not set' });
+    if (!MISSED_CALL_WEBHOOK_URL) {
+      return res.status(503).json({ success: false, error: 'MISSED_CALL_WEBHOOK_URL not set in Railway env vars' });
+    }
     await runMissedCallPoll();
     res.json({ success: true, message: 'Poll ran — check Google Chat' });
   } catch(e) {
@@ -2374,11 +2394,14 @@ async function start() {
       setTimeout(() => { fetchCallLogs().catch(e => console.error('❌ startup call log:', e.message)); }, 20000);
       await startScheduler();
       setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
-      // Start missed-call → Google Chat notifier (every 2 min) if webhook is configured
-      if (process.env.GOOGLE_CHAT_WEBHOOK_URL) {
+      // Start missed-call → Google Chat notifier (every 2 min)
+      // Uses MISSED_CALL_WEBHOOK_URL — separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
+      if (MISSED_CALL_WEBHOOK_URL) {
         setTimeout(() => runMissedCallPoll().catch(() => {}), 30000); // first run 30s after boot
         setInterval(() => runMissedCallPoll().catch(() => {}), 2 * 60 * 1000);
-        console.log('📞 Missed call → Google Chat notifier started (2-min poll)');
+        console.log(`📞 Missed call notifier started (queue ext ${MISSED_CALL_QUEUE_EXT}, 2-min poll)`);
+      } else {
+        console.log('📞 Missed call notifier disabled — set MISSED_CALL_WEBHOOK_URL to enable');
       }
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
