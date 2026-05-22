@@ -1251,11 +1251,12 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       return res.json({ success: true, found: false });
     }
 
-    // Debug: log raw Zoho fields to diagnose spam false-positives
-    console.log(`🔍 Zoho ticket #${rawId} raw fields: isSpam=${JSON.stringify(ticket.isSpam)} source=${JSON.stringify(ticket.source)} channel=${JSON.stringify(ticket.channel)} assigneeId=${ticket.assigneeId}`);
+    // Debug: log raw Zoho fields to diagnose spam false-positives and custom field names
+    console.log(`🔍 Zoho ticket #${rawId} raw fields: isSpam=${JSON.stringify(ticket.isSpam)} source=${JSON.stringify(ticket.source)} channel=${JSON.stringify(ticket.channel)} assigneeId=${ticket.assigneeId} accountId=${ticket.accountId} cf=${JSON.stringify(ticket.cf||{})}}`);
 
-    // Get contact info, threads, and assignee name in parallel
+    // Get contact info, account, threads, and assignee name in parallel
     let contact = null;
+    let account = null;
     let threads = [];
     let assigneeName = ticket.assignee?.name || null;
 
@@ -1263,6 +1264,10 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       // Contact
       ticket.contactId
         ? zohoDesk(`/contacts/${ticket.contactId}`).then(c => { contact = c; }).catch(() => {})
+        : Promise.resolve(),
+      // Account (practice) — for accountName and account number custom field
+      ticket.accountId
+        ? zohoDesk(`/accounts/${ticket.accountId}`).then(a => { account = a; }).catch(() => {})
         : Promise.resolve(),
       // Threads
       zohoDesk(`/tickets/${ticket.id}/threads`, { limit: 20, sortBy: 'createdTime', order: 'asc' })
@@ -1367,7 +1372,16 @@ Return this exact JSON structure:
         name:        contact.fullName || [contact.firstName, contact.lastName].filter(Boolean).join(' ') || '',
         email:       contact.email || '',
         phone:       contact.phone || contact.mobile || contact.homePhone || '',
-        accountName: contact.account?.accountName || contact.accountName || '',
+        // Practice name: prefer account record name, fall back to contact's accountName
+        accountName: account?.accountName || contact.account?.accountName || contact.accountName || '',
+        // Account number: check ticket custom fields first, then account custom fields
+        accountNumber: (
+          ticket.cf?.['Acct Number'] || ticket.cf?.cf_acct_number || ticket.cf?.acctNumber ||
+          account?.cf?.['Acct Number'] || account?.cf?.cf_acct_number || account?.cf?.acctNumber ||
+          ''
+        ),
+        // Deal/practice association from ticket
+        dealName: ticket.product || ticket.cf?.Deal || ticket.cf?.deal || '',
       } : null,
       aiAnalysis:   aiAnalysis,
       createdTime:  ticket.createdTime,

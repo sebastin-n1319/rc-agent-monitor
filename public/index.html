@@ -12630,18 +12630,20 @@ async function rcnFetchTicket() {
       if (val) { el.value = val; el.style.borderColor='#2DDC96'; setTimeout(()=>{ el.style.borderColor='rgb(222,225,230)'; },1200); }
       // Don't clear existing agent-typed values when Zoho has nothing
     };
-    fn('rcn-client-name', t.contact?.name  || '');
-    fn('rcn-email',       t.contact?.email || '');
-    fn('rcn-practice',    t.contact?.accountName || '');
-    fn('rcn-callback',    t.contact?.phone || '');
+    fn('rcn-client-name', t.contact?.name         || '');
+    fn('rcn-email',       t.contact?.email        || '');
+    fn('rcn-practice',    t.contact?.accountName  || '');
+    fn('rcn-account',     t.contact?.accountNumber|| '');
+    fn('rcn-callback',    t.contact?.phone        || '');
     if (status) {
       const filled = [
-        t.contact?.name        && 'Name',
-        t.contact?.accountName && 'Practice',
-        t.contact?.email       && 'Email',
-        t.contact?.phone       && 'Callback',
+        t.contact?.name          && 'Name',
+        t.contact?.accountName   && 'Practice',
+        t.contact?.accountNumber && 'Account #',
+        t.contact?.email         && 'Email',
+        t.contact?.phone         && 'Callback',
       ].filter(Boolean);
-      const missing = ['Name','Practice','Email','Callback','Account #'].filter(f => !filled.includes(f));
+      const missing = ['Name','Practice','Account #','Email','Callback'].filter(f => !filled.includes(f));
       status.innerHTML = `<div style="padding:8px 12px;background:rgba(45,220,150,.07);border:1px solid rgba(45,220,150,.2);border-radius:8px;font-size:12px;color:#166534;display:flex;flex-direction:column;gap:4px;">
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
           <svg viewBox="0 0 16 16" fill="#2DDC96" style="width:12px;height:12px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 5.5-4 4a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L7 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06z"/></svg>
@@ -13135,16 +13137,10 @@ async function tlLoadMyTickets() {
 function tlFilterMyTickets() {
   const q = ((document.getElementById('tl-mt-search') || {}).value || '').toLowerCase().trim();
 
-  // Date range helpers
-  const now = new Date();
-  const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD local
-  const weekAgo  = new Date(now); weekAgo.setDate(now.getDate() - 6);
-  const monthAgo = new Date(now); monthAgo.setDate(now.getDate() - 29);
-  const parseDate = s => { // handles both DD/MM/YYYY and YYYY-MM-DD
-    if (!s) return null;
-    if (s.includes('/')) { const [d,m,y] = s.split('/'); return new Date(+y, +m-1, +d); }
-    return new Date(s);
-  };
+  // Use CST "today" — consistent with how tickets are logged (fmtTicketDate uses local CST)
+  const todayCST = getTodayCST();
+  const weekAgo  = new Date(todayCST); weekAgo.setDate(todayCST.getDate() - 6);
+  const monthAgo = new Date(todayCST); monthAgo.setDate(todayCST.getDate() - 29);
 
   let rows = tlMyTicketsData;
 
@@ -13165,12 +13161,17 @@ function tlFilterMyTickets() {
     else rows = rows.filter(t => (t.pickedFromQueue||'') === tlMtFilterQueue);
   }
 
-  // Period filter
+  // Period filter — uses parseTlDate() which handles the "22-May" + "May'26" sheet format
   if (tlMtFilterPeriod) {
     rows = rows.filter(t => {
-      const d = parseDate(t.date);
-      if (!d) return false;
-      if (tlMtFilterPeriod === 'today') return t.date === todayStr || d.toLocaleDateString('en-CA') === todayStr;
+      const d = parseTlDate(t.date, t.month);
+      if (!d || isNaN(d.getTime())) return false;
+      if (tlMtFilterPeriod === 'today') {
+        // Compare year/month/day individually to avoid timezone edge cases
+        return d.getFullYear() === todayCST.getFullYear() &&
+               d.getMonth()    === todayCST.getMonth()    &&
+               d.getDate()     === todayCST.getDate();
+      }
       if (tlMtFilterPeriod === 'week')  return d >= weekAgo;
       if (tlMtFilterPeriod === 'month') return d >= monthAgo;
       return true;
