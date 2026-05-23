@@ -1184,7 +1184,25 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       }
     } catch(e) { /* try next */ }
 
-    // Strategy B: Zoho /search endpoint — try both with and without module restriction
+    // Strategy B: direct ticketNumber filter (most reliable — scope to exact number)
+    if (!ticket) {
+      try {
+        const rB = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
+        if (rB.ok) {
+          const text = await rB.text();
+          if (text && text.trim() && text.trim() !== 'null') {
+            const d = JSON.parse(text);
+            const list = d.data || (Array.isArray(d) ? d : []);
+            const found = Array.isArray(list)
+              ? list.find(t => t.ticketNumber && String(t.ticketNumber) === rawId)
+              : (d.ticketNumber && String(d.ticketNumber) === rawId ? d : null);
+            if (found) ticket = found;
+          }
+        }
+      } catch(e) { /* try next */ }
+    }
+
+    // Strategy C: Zoho /search endpoint — fulltext search, catches tickets Strategy B misses
     if (!ticket) {
       for (const url of [
         `${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=50`,
@@ -1203,7 +1221,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       }
     }
 
-    // Strategy C: smart paginated scan — estimate offset from most-recent ticket number,
+    // Strategy D: smart paginated scan — estimate offset from most-recent ticket number,
     // then fetch targeted pages around that position (covers any ticket age efficiently)
     if (!ticket) {
       try {
@@ -1244,7 +1262,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
             }
           }
         }
-      } catch(e) { /* strategy C failed entirely */ }
+      } catch(e) { /* strategy D failed entirely */ }
     }
 
     if (!ticket) {

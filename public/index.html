@@ -7750,6 +7750,8 @@ header{
   opacity: .28 !important;
   cursor: not-allowed !important;
   pointer-events: none !important;
+  transform: none !important; /* reset any hover translateY so buttons don't appear "bigger" */
+  box-shadow: none !important;
 }
 
 /* ── Locked-reason custom tooltip (replaces ugly native title) ── */
@@ -12016,6 +12018,11 @@ function esc(str){
 }
 
 let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,currentBreakbotEnabled=true,currentBreakbotPreviewMode=false,reportData=[],todaySummary={},yesterdaySummary={},timelineData={},liveCallData={},abandonedCalls=[],queueDashboardSummary={},breakTrackerData={summary:{},tracker:[],recentLog:[]},breakTrackerMeta={enabled:false,target:'Chat space'},breakSelectedDate='',roleDirectory=[],roleFilterMode='all',roleSearchTerm='';
+// Guard: true while a break action POST is in-flight.
+// syncBreakActionState() returns early when set, so the 30s background
+// refresh timer can't re-enable buttons mid-submit (which caused double-
+// submits, button-size glitches, and missed Chat notifications).
+let _breakActionPending = false;
 let dashboardSortState={admin:{key:'idx',dir:'asc'},agent:{key:'idx',dir:'asc'}};
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
@@ -15216,6 +15223,10 @@ function syncBreakDateInputs(){
   if(agentChip)agentChip.textContent=label;
 }
 function syncBreakActionState(){
+  // Don't touch button states while a break action POST is in-flight.
+  // The 30s background refresh timer fires during the await and would
+  // re-enable buttons, causing double-submits and missed notifications.
+  if(_breakActionPending) return;
   const isHistory=breakHistoryMode();
   const isPreview=currentBreakbotPreviewMode && !currentBreakbotEnabled;
   const self=getSelfBreakRow();
@@ -16376,13 +16387,16 @@ async function sendBreakAction(action, btn){
     });
     if(choice) note = choice + (note ? ' — ' + note : '');
   }
-  // UI-1: Disable all break action buttons to prevent double-submit
+  // UI-1: Disable all break action buttons to prevent double-submit.
+  // Set _breakActionPending FIRST so the background refresh timer's
+  // syncBreakActionState() call can't re-enable buttons mid-flight.
+  _breakActionPending = true;
   const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
   buttons.forEach(button => button.disabled = true);
   if(btn) btn.classList.add('syncing');
   try{
     const res = await fetch(BACKEND+'/api/break-events',{
-      method:'POST',credentials:'include',
+      method:'POST',
       credentials:'include',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
@@ -16408,6 +16422,7 @@ async function sendBreakAction(action, btn){
   }catch(e){
     showToast(e.message || 'Break event failed','error');
   }finally{
+    _breakActionPending = false; // release guard before re-evaluating button states
     if(btn) btn.classList.remove('syncing');
     syncBreakActionState();
   }
