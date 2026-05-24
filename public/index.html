@@ -7218,14 +7218,14 @@ header{
    HOLOGRAPHIC ACTION BUTTONS
 ──────────────────────────────────────────────── */
 #agent-section-breakbot .break-action {
-  min-height: 128px !important;
+  min-height: 56px !important;
   border-radius: 20px !important;
   position: relative !important;
   overflow: hidden !important;
   cursor: pointer !important;
   background: rgba(4,10,24,.7) !important;
   border: 1px solid rgba(0,212,255,.12) !important;
-  animation: bbBtnIn .6s cubic-bezier(.22,1,.36,1) both !important;
+  animation: none !important; /* entrance handled by .bb-act:not(:disabled) — prevents restart on disable/enable */
   transition: transform .25s cubic-bezier(.34,1.56,.64,1),
               box-shadow .25s, border-color .25s, background .25s !important;
   backdrop-filter: blur(12px) !important;
@@ -7283,7 +7283,7 @@ header{
 #agent-section-breakbot .break-action:disabled {
   opacity: .3 !important; cursor: not-allowed !important;
   filter: saturate(.3) brightness(.6) !important;
-  animation: bbBtnIn .6s cubic-bezier(.22,1,.36,1) both !important;
+  animation: none !important; /* no restart when disabled */
 }
 
 /* Stagger */
@@ -22540,7 +22540,10 @@ input:focus, textarea:focus, select:focus {
 
     /* Scroll reveal with IntersectionObserver */
     function initScrollReveal() {
-      $$('.card,.metric,.break-action,.break-lane').forEach(function(el, i) {
+      $$('.card,.metric,.break-lane').forEach(function(el, i) {
+        /* .break-action excluded — has its own entrance animation via .bb-act:not(:disabled);
+           including it caused v5-sr+transitionDelay to be re-added on every refresh,
+           fighting with bbBtnIn and causing layout thrash */
         el.classList.add('v5-sr');
         el.style.transitionDelay = (i * 0.04)+'s';
       });
