@@ -12503,7 +12503,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   document.getElementById('userRoleTag').className='role-pill '+(role==='admin'?'role-admin':'role-agent');
   setAvatar(picture);
   const toggleBtn=document.getElementById('viewToggleBtn');
-  if(toggleBtn)toggleBtn.style.display=role==='admin'?'inline-flex':'none';
+  if(toggleBtn)toggleBtn.style.setProperty('display',role==='admin'?'inline-flex':'none','important');
   applyView(role);
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
@@ -12651,7 +12651,9 @@ function applyView(view){
 }
 
 function toggleView(){
-  if(currentRole!=='admin')return;
+  // If in test-agent session, the button acts as "Exit Test Mode"
+  if(isTestMode()){ exitTestMode(); return; }
+  if(currentRole!=='admin') return;
   applyView(currentViewMode==='admin'?'agent':'admin');
   refresh();
 }
@@ -15079,7 +15081,7 @@ async function loadSession(){
                 picture:s.picture||cached.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()
               })); }catch(_){}
             } else {
-              fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:cached.email,name:cached.name,picture:cached.picture||''})}).catch(()=>{});
+              fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:cached.email,name:cached.name,picture:cached.picture||''})}).catch(()=>{});
             }
           }).catch(()=>{});
         return;
@@ -18554,7 +18556,7 @@ window.addEventListener('load', async () => {
       try{ startApp(u, r, p, be, true); }catch(e){ console.error('quick-boot startApp failed',e); }
       // Background: re-register server cookie
       const s=JSON.parse(localStorage.getItem('rcSession')||'null');
-      if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
+      if(s) fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:s.email,name:s.name,picture:s.picture||''})}).catch(()=>{});
       return;
     }
   }
