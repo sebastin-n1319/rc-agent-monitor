@@ -19146,23 +19146,8 @@ window.addEventListener('load', async () => {
     });
   }
 
-  /* ── 2. 3D tilt on buttons ── */
-  function initTilt(){
-    document.querySelectorAll('#agent-section-breakbot .bb-act').forEach(function(btn){
-      btn.addEventListener('mousemove', function(e){
-        if(btn.disabled) return;
-        var r = btn.getBoundingClientRect();
-        var cx = r.left + r.width/2, cy = r.top + r.height/2;
-        var dx = (e.clientX - cx) / (r.width/2);
-        var dy = (e.clientY - cy) / (r.height/2);
-        // no scale() — avoids button appearing to grow
-        btn.style.transform = 'translateY(-3px) rotateX('+(-dy*5)+'deg) rotateY('+(dx*6)+'deg)';
-      });
-      btn.addEventListener('mouseleave', function(){
-        btn.style.transform = '';
-      });
-    });
-  }
+  /* ── 2. 3D tilt on buttons — disabled: CSS hover handles lift, JS tilt caused stale inline style bugs ── */
+  function initTilt(){ /* no-op */ }
 
   /* ── 3. Enhanced particle burst (uses button accent color) ── */
   var _rippleHandler = document.querySelector('#agent-section-breakbot') && null;
@@ -19314,7 +19299,6 @@ window.addEventListener('load', async () => {
       if(btn){
         btn.classList.add('bb-sent');
         /* big flash */
-        btn.style.transition = 'background .1s';
         btn.style.background = 'rgba(255,255,255,.14)';
         setTimeout(function(){
           btn.style.background = '';
