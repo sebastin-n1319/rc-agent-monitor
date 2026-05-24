@@ -15253,6 +15253,7 @@ function syncBreakActionState(){
     const action=button.dataset.breakAction;
     const enabled=!isHistory && !isPreview && allowed.has(action);
     button.disabled=!enabled;
+    button.style.transform=''; // clear inline tilt from JS mousemove handler on every sync
     button.classList.toggle('is-locked',!enabled);
     // Use data-tip for custom styled tooltip; clear native title to avoid double tooltips
     button.title='';
@@ -16409,7 +16410,10 @@ async function sendBreakAction(action, btn){
   // syncBreakActionState() call can't re-enable buttons mid-flight.
   _breakActionPending = true;
   const buttons = Array.from(document.querySelectorAll('[data-break-action]'));
-  buttons.forEach(button => button.disabled = true);
+  buttons.forEach(button => {
+    button.disabled = true;
+    button.style.transform = ''; // clear any inline tilt set by mousemove handler
+  });
   if(btn) btn.classList.add('syncing');
   try{
     const res = await fetch(BACKEND+'/api/break-events',{
