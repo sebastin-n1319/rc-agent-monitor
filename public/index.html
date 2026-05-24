@@ -19155,7 +19155,8 @@ window.addEventListener('load', async () => {
         var cx = r.left + r.width/2, cy = r.top + r.height/2;
         var dx = (e.clientX - cx) / (r.width/2);
         var dy = (e.clientY - cy) / (r.height/2);
-        btn.style.transform = 'translateY(-3px) rotateX('+(-dy*5)+'deg) rotateY('+(dx*6)+'deg) scale(1.01)';
+        // no scale() — avoids button appearing to grow
+        btn.style.transform = 'translateY(-3px) rotateX('+(-dy*5)+'deg) rotateY('+(dx*6)+'deg)';
       });
       btn.addEventListener('mouseleave', function(){
         btn.style.transform = '';
@@ -22536,10 +22537,11 @@ input:focus, textarea:focus, select:focus {
       }, { passive: true });
     }
 
-    /* 3D tilt on metric cards */
+    /* 3D tilt on metric cards — .break-action excluded (managed by breakbot tilt system) */
     function initTilt() {
-      $$('.metric,.break-action,.break-action-tile,.break-lane,.break-hero-card').forEach(function(card) {
+      $$('.metric,.break-action-tile,.break-lane,.break-hero-card').forEach(function(card) {
         card.addEventListener('mousemove', function(e) {
+          if(card.disabled) return;
           var r = card.getBoundingClientRect();
           var x = e.clientX - r.left, y = e.clientY - r.top;
           var cx = r.width/2, cy = r.height/2;
@@ -22547,15 +22549,7 @@ input:focus, textarea:focus, select:focus {
           card.style.transform = 'perspective(550px) rotateX('+rx+'deg) rotateY('+ry+'deg) translateY(-4px)';
         });
         card.addEventListener('mouseleave', function() {
-          if (typeof anime !== 'undefined') {
-            anime({
-              targets: card,
-              rotateX: 0, rotateY: 0, translateY: 0,
-              duration: 400, easing: 'easeOutExpo',
-            });
-          } else {
-            card.style.transform = '';
-          }
+          card.style.transform = '';
         });
       });
     }
