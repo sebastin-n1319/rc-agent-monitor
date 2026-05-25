@@ -7215,117 +7215,63 @@ header{
 .bb-val-tick { animation: bbValTick .45s cubic-bezier(.34,1.56,.64,1) !important; }
 
 /* ──────────────────────────────────────────────
-   HOLOGRAPHIC ACTION BUTTONS
+   CLEAN ACTION BUTTON OVERRIDES
+   (Replaces holographic block — no ::before spinning
+   border, no ::after glow sweep that fought the tooltip,
+   no stagger animation-delays, no bbBtnIn replay.)
 ──────────────────────────────────────────────── */
 #agent-section-breakbot .break-action {
-  min-height: 56px !important;
-  border-radius: 20px !important;
   position: relative !important;
   overflow: hidden !important;
   cursor: pointer !important;
-  background: rgba(4,10,24,.7) !important;
-  border: 1px solid rgba(0,212,255,.12) !important;
-  animation: none !important; /* entrance handled by .bb-act:not(:disabled) — prevents restart on disable/enable */
-  transition: transform .25s cubic-bezier(.34,1.56,.64,1),
-              box-shadow .25s, border-color .25s, background .25s !important;
-  backdrop-filter: blur(12px) !important;
+  background: rgba(12, 22, 48, 0.88) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 10px !important;
+  animation: none !important;
+  transition: background .15s ease, box-shadow .15s ease !important;
+  backdrop-filter: none !important;
+  transform: none !important;
 }
 
-/* Rotating neon border */
-#agent-section-breakbot .break-action::before {
-  content: '' !important;
-  position: absolute !important;
-  inset: -2px !important;
-  border-radius: 22px !important;
-  background: conic-gradient(from var(--bb-angle,0deg),
-    transparent 0deg, var(--_ac,rgba(0,212,255,.6)) 60deg, transparent 120deg) !important;
-  z-index: -1 !important;
-  animation: bbBorderSpin 4s linear infinite !important;
-  opacity: 0 !important;
-  transition: opacity .25s !important;
-}
-@property --bb-angle { syntax:'<angle>'; initial-value:0deg; inherits:false; }
-@keyframes bbBorderSpin { to { --bb-angle: 360deg; } }
+/* Kill pseudo-elements — ::before had spinning conic border (z-index:-1 bugs),
+   ::after had height:200%!important which blocked the .is-locked tooltip */
+#agent-section-breakbot .break-action::before { display: none !important; }
+#agent-section-breakbot .break-action::after  { display: none !important; }
 
-/* Interior glow sweep */
-#agent-section-breakbot .break-action::after {
-  content: '' !important;
-  position: absolute !important;
-  top: -50% !important; left: -60% !important;
-  width: 80% !important; height: 200% !important;
-  background: linear-gradient(105deg, transparent, rgba(255,255,255,.055), transparent) !important;
-  transform: rotate(-15deg) !important;
-  pointer-events: none !important;
-  transition: left .4s !important;
-  opacity: 0 !important;
-}
-
-/* Hover — lift, glow, reveal spinning border + sweep */
+/* Hover — subtle glow only, no translateY (no layout shift) */
 #agent-section-breakbot .break-action:hover:not(:disabled) {
-  transform: translateY(-8px) scale(1.02) !important;
-  background: rgba(6,14,32,.9) !important;
-  border-color: transparent !important;
-  box-shadow:
-    0 0 0 1px rgba(0,212,255,.35),
-    0 20px 50px rgba(0,0,0,.6),
-    0 0 40px rgba(0,212,255,.12) !important;
+  background: rgba(20, 36, 70, 0.95) !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.12) !important;
 }
-#agent-section-breakbot .break-action:hover::before { opacity: 1 !important; }
-#agent-section-breakbot .break-action:hover::after  { left: 120% !important; opacity: 1 !important; }
 
 /* Active press */
 #agent-section-breakbot .break-action:active:not(:disabled) {
-  transform: translateY(0) scale(.97) !important;
-  transition: transform .08s !important;
+  transform: scale(.97) !important;
+  transition: transform .07s !important;
+  box-shadow: none !important;
 }
 
 /* Disabled */
 #agent-section-breakbot .break-action:disabled {
-  opacity: .3 !important; cursor: not-allowed !important;
-  filter: saturate(.3) brightness(.6) !important;
-  animation: none !important; /* no restart when disabled */
+  opacity: .28 !important;
+  cursor: not-allowed !important;
+  animation: none !important;
+  transform: none !important;
 }
 
-/* Stagger */
-#agent-section-breakbot .break-action:nth-child(1)  { animation-delay:.08s  !important; }
-#agent-section-breakbot .break-action:nth-child(2)  { animation-delay:.13s  !important; }
-#agent-section-breakbot .break-action:nth-child(3)  { animation-delay:.18s  !important; }
-#agent-section-breakbot .break-action:nth-child(4)  { animation-delay:.23s  !important; }
-#agent-section-breakbot .break-action:nth-child(5)  { animation-delay:.28s  !important; }
-#agent-section-breakbot .break-action:nth-child(6)  { animation-delay:.33s  !important; }
-#agent-section-breakbot .break-action:nth-child(7)  { animation-delay:.38s  !important; }
-#agent-section-breakbot .break-action:nth-child(8)  { animation-delay:.43s  !important; }
-#agent-section-breakbot .break-action:nth-child(9)  { animation-delay:.48s  !important; }
-#agent-section-breakbot .break-action:nth-child(10) { animation-delay:.53s  !important; }
-#agent-section-breakbot .break-action:nth-child(11) { animation-delay:.58s  !important; }
-#agent-section-breakbot .break-action:nth-child(12) { animation-delay:.63s  !important; }
-@keyframes bbBtnIn {
-  from { opacity: 0; transform: translateY(28px) scale(.92) rotateX(8deg); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* Per-type hover glow accent color */
-#agent-section-breakbot .break-action.loggedin  { --_ac: rgba(0,255,159,.7); }
-#agent-section-breakbot .break-action.brbout    { --_ac: rgba(255,184,48,.7); }
-#agent-section-breakbot .break-action.brbin     { --_ac: rgba(0,255,159,.7); }
-#agent-section-breakbot .break-action.breakout  { --_ac: rgba(255,68,102,.7); }
-#agent-section-breakbot .break-action.breakin   { --_ac: rgba(0,255,159,.7); }
+/* Per-type left-accent border — replaces hover-only conic glow */
+#agent-section-breakbot .break-action.loggedin       { border-left: 3px solid rgba(0,255,159,.65) !important; }
+#agent-section-breakbot .break-action.loggedout      { border-left: 3px solid rgba(255,68,102,.65) !important; }
+#agent-section-breakbot .break-action.brbout         { border-left: 3px solid rgba(255,184,48,.65) !important; }
+#agent-section-breakbot .break-action.brbin          { border-left: 3px solid rgba(0,255,159,.65) !important; }
+#agent-section-breakbot .break-action.breakout       { border-left: 3px solid rgba(255,68,102,.65) !important; }
+#agent-section-breakbot .break-action.breakin        { border-left: 3px solid rgba(34,211,153,.65) !important; }
 #agent-section-breakbot .break-action.trainingout,
-#agent-section-breakbot .break-action.trainingin { --_ac: rgba(191,127,255,.7); }
+#agent-section-breakbot .break-action.trainingin     { border-left: 3px solid rgba(167,139,250,.65) !important; }
 #agent-section-breakbot .break-action.qaauxout,
-#agent-section-breakbot .break-action.qaauxin   { --_ac: rgba(0,212,255,.7); }
+#agent-section-breakbot .break-action.qaauxin        { border-left: 3px solid rgba(34,211,238,.65) !important; }
 #agent-section-breakbot .break-action.internalcallout,
-#agent-section-breakbot .break-action.internalcallin { --_ac: rgba(255,122,32,.7); }
-#agent-section-breakbot .break-action.loggedout  { --_ac: rgba(255,68,102,.7); }
-
-/* ── Icon bounce on hover ── */
-#agent-section-breakbot .break-action:hover .break-action-icon {
-  transform: scale(1.18) rotate(-6deg) !important;
-  filter: drop-shadow(0 0 6px currentColor) !important;
-}
-#agent-section-breakbot .break-action-icon {
-  transition: transform .3s cubic-bezier(.34,1.56,.64,1), filter .3s !important;
-}
+#agent-section-breakbot .break-action.internalcallin { border-left: 3px solid rgba(251,146,60,.65) !important; }
 
 /* ── Particle burst element (injected by JS) ── */
 #agent-section-breakbot .bb-particle {
@@ -7668,7 +7614,7 @@ header{
   display: grid !important;
   grid-template-columns: 64px 1fr 1fr !important;
   gap: 6px !important;
-  align-items: stretch !important;
+  align-items: center !important;  /* was stretch — stretch let a tall button expand siblings */
   animation: bbRowIn .5s cubic-bezier(.22,1,.36,1) both !important;
 }
 #agent-section-breakbot .bb-pad-row:nth-child(1) { animation-delay:.04s !important; }
@@ -7722,19 +7668,18 @@ header{
   flex-direction: column !important;
   justify-content: center !important;
   gap: 3px !important;
-  padding: 12px 14px !important;
-  background: rgba(255,255,255,.05) !important;
-  border: 1px solid rgba(255,255,255,.09) !important;
-  border-radius: 11px !important;
+  padding: 10px 13px !important;
+  background: rgba(12, 22, 48, 0.88) !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 10px !important;
   cursor: pointer !important;
   overflow: hidden !important;
   text-align: left !important;
-  min-height: 64px !important;
-  box-sizing: border-box !important; /* restore after all:unset content-box reset */
-  transition:
-    background .2s ease,
-    transform .15s cubic-bezier(.34,1.56,.64,1),
-    box-shadow .2s ease !important;
+  height: 56px !important;       /* fixed — cannot grow on click/state-change */
+  min-height: unset !important;  /* override any downstream min-height */
+  max-height: 56px !important;   /* belt-and-suspenders cap */
+  box-sizing: border-box !important;
+  transition: background .15s ease, box-shadow .15s ease !important;
 }
 #agent-section-breakbot .bb-act.bb-act-out {
   border-left: 3px solid var(--ca, rgba(255,255,255,.18)) !important;
@@ -7870,40 +7815,12 @@ header{
   padding-left: 38px !important;
 }
 
-/* ── Shimmer sweep on hover ───────────────────────────────── */
-#agent-section-breakbot .bb-act::before {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  background: linear-gradient(
-    110deg,
-    transparent 20%,
-    rgba(255,255,255,.07) 50%,
-    transparent 80%
-  ) !important;
-  transform: translateX(-110%) !important;
-  transition: none !important;
-  border-radius: inherit !important;
-}
-#agent-section-breakbot .bb-act:hover:not(:disabled)::before {
-  transform: translateX(110%) !important;
-  transition: transform .55s ease !important;
-}
+/* ── Shimmer sweep DISABLED — removed to prevent pseudo-element height conflicts */
+#agent-section-breakbot .bb-act::before { display: none !important; }
 
-/* ── Ripple ────────────────────────────────────────────────── */
-#agent-section-breakbot .bb-ripple {
-  position: absolute !important;
-  border-radius: 50% !important;
-  pointer-events: none !important;
-  width: 0 !important; height: 0 !important;
-  background: rgba(255,255,255,.22) !important;
-  transform: translate(-50%,-50%) scale(0) !important;
-  animation: bbRipple .6s cubic-bezier(.22,1,.36,1) forwards !important;
-}
-@keyframes bbRipple {
-  0%   { width:0;     height:0;     opacity:.9; transform:translate(-50%,-50%) scale(0); }
-  100% { width:220px; height:220px; opacity:0;  transform:translate(-50%,-50%) scale(1); }
-}
+/* ── Ripple DISABLED — removed because orphaned spans appeared as blue squares
+   when animation/position context changed between disable/enable cycles ── */
+#agent-section-breakbot .bb-ripple { display: none !important; }
 
 /* ── Sent flash ─────────────────────────────────────────────── */
 #agent-section-breakbot .bb-act.bb-sent {
@@ -8116,12 +8033,13 @@ header{
   overflow: hidden !important;
 }
 
-/* ── Bigger, bolder action buttons ─────────────────────────── */
+/* ── Action button height lock ─────────────────────────────── */
 #agent-section-breakbot .bb-act {
-  min-height: 56px !important;
-  max-height: 90px !important; /* hard cap — prevents layout drift from animation/cascade bugs */
+  height: 56px !important;
+  min-height: unset !important;
+  max-height: 56px !important;
   padding: 10px 13px !important;
-  box-sizing: border-box !important; /* undo all:unset content-box regression */
+  box-sizing: border-box !important;
 }
 #agent-section-breakbot .bb-act-ico {
   width: 28px !important;
@@ -8141,7 +8059,8 @@ header{
 /* ── Category label sizing ──────────────────────────────────── */
 #agent-section-breakbot .bb-cat-lbl {
   font-size: 9px !important;
-  min-height: 56px !important;
+  height: 56px !important;
+  min-height: unset !important;
 }
 
 /* ── Stats strip ────────────────────────────────────────────── */
@@ -8161,7 +8080,9 @@ header{
     grid-template-columns: 52px 1fr 1fr !important;
   }
   #agent-section-breakbot .bb-act {
-    min-height: 66px !important;
+    height: 60px !important;
+    min-height: unset !important;
+    max-height: 60px !important;
     padding: 11px 10px !important;
   }
   #agent-section-breakbot .bb-act-ico {
@@ -18666,16 +18587,10 @@ window.addEventListener('load', async () => {
   z-index: 1 !important;
 }
 
-/* ── Neon idle glow on enabled buttons ────────────────────── */
-/* bbBtnIn removed from here — it was replaying on EVERY disable→enable
-   cycle (i.e. every click + refresh), causing the buttons to visually
-   "grow" each time.  Entrance is handled once by .bb-pad-row bbRowIn. */
+/* ── Neon idle animation REMOVED — infinite animation on every button
+   added unnecessary repaints and interacted with disable/enable cycles */
 #agent-section-breakbot .bb-act:not(:disabled) {
-  animation: bbNeonIdle 4s ease-in-out infinite !important;
-}
-@keyframes bbNeonIdle {
-  0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
-  50%      { box-shadow: 0 2px 16px rgba(0,0,0,.4), 0 0 12px -4px var(--bbt-accent, rgba(255,255,255,.15)); }
+  animation: none !important;
 }
 
 /* ── Active-category label glow pulse ───────────────────────── */
