@@ -7652,6 +7652,8 @@ header{
   flex-direction: column !important;
   gap: 5px !important;
   grid-template-columns: none !important;
+  background: transparent !important; /* kill adit-theme.css #FAFBFC white bg */
+  padding: 0 !important;              /* kill adit-theme.css padding: 10px */
 }
 
 /* ─────────────────────────────────────────
@@ -7723,6 +7725,7 @@ header{
   overflow: hidden !important;
   text-align: left !important;
   min-height: 64px !important;
+  box-sizing: border-box !important; /* restore after all:unset content-box reset */
   transition:
     background .2s ease,
     transform .15s cubic-bezier(.34,1.56,.64,1),
@@ -8108,7 +8111,9 @@ header{
 /* ── Bigger, bolder action buttons ─────────────────────────── */
 #agent-section-breakbot .bb-act {
   min-height: 56px !important;
+  max-height: 90px !important; /* hard cap — prevents layout drift from animation/cascade bugs */
   padding: 10px 13px !important;
+  box-sizing: border-box !important; /* undo all:unset content-box regression */
 }
 #agent-section-breakbot .bb-act-ico {
   width: 28px !important;
@@ -18648,9 +18653,12 @@ window.addEventListener('load', async () => {
   z-index: 1 !important;
 }
 
-/* ── Neon animated border on enabled buttons ──────────────── */
+/* ── Neon idle glow on enabled buttons ────────────────────── */
+/* bbBtnIn removed from here — it was replaying on EVERY disable→enable
+   cycle (i.e. every click + refresh), causing the buttons to visually
+   "grow" each time.  Entrance is handled once by .bb-pad-row bbRowIn. */
 #agent-section-breakbot .bb-act:not(:disabled) {
-  animation: bbBtnIn .5s cubic-bezier(.22,1,.36,1) both, bbNeonIdle 4s ease-in-out infinite !important;
+  animation: bbNeonIdle 4s ease-in-out infinite !important;
 }
 @keyframes bbNeonIdle {
   0%,100% { box-shadow: 0 2px 8px rgba(0,0,0,.3); }
@@ -18895,7 +18903,8 @@ window.addEventListener('load', async () => {
   perspective: 600px !important;
 }
 #agent-section-breakbot .bb-act {
-  transform-style: preserve-3d !important;
+  /* preserve-3d removed — caused 3D rendering artifacts with bbBtnIn rotateX
+     and triggered layout-height bugs in combination with align-items:stretch */
   will-change: transform !important;
 }
 
