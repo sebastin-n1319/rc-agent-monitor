@@ -7818,9 +7818,10 @@ header{
 /* ── Shimmer sweep DISABLED — removed to prevent pseudo-element height conflicts */
 #agent-section-breakbot .bb-act::before { display: none !important; }
 
-/* ── Ripple DISABLED — removed because orphaned spans appeared as blue squares
-   when animation/position context changed between disable/enable cycles ── */
+/* ── Ripple + particle spans DISABLED — accumulate as orphaned blue squares ── */
 #agent-section-breakbot .bb-ripple { display: none !important; }
+#agent-section-breakbot .bb-px     { display: none !important; }
+#agent-section-breakbot .bb-particle { display: none !important; }
 
 /* ── Sent flash ─────────────────────────────────────────────── */
 #agent-section-breakbot .bb-act.bb-sent {
@@ -8104,24 +8105,10 @@ header{
 /* ── Breakbot Futuristic v2 — JS effects ──────────────────────────────── */
 (function(){
 
-  /* Ripple on action button click */
-  document.addEventListener('mousedown', function(e){
-    var btn = e.target.closest('#agent-section-breakbot .bb-act:not(:disabled)');
-    if(!btn) return;
-    /* Purge any stale ripple spans left over from previous clicks
-       (animationend can fail to fire if tab was backgrounded) */
-    btn.querySelectorAll('.bb-ripple').forEach(function(old){ old.remove(); });
-    var rect = btn.getBoundingClientRect();
-    var cx = e.clientX - rect.left, cy = e.clientY - rect.top;
-    var r = document.createElement('span');
-    r.className = 'bb-ripple';
-    r.style.left = cx + 'px';
-    r.style.top  = cy + 'px';
-    btn.appendChild(r);
-    /* Primary cleanup via animationend; 900ms timeout as failsafe */
-    r.addEventListener('animationend', function(){ r.remove(); });
-    setTimeout(function(){ if(r.parentNode) r.remove(); }, 900);
-  });
+  /* Ripple handler DISABLED — orphaned spans accumulated as blue squares.
+     Purge any existing ripple/particle spans on load as a one-time cleanup. */
+  document.querySelectorAll('#agent-section-breakbot .bb-ripple, #agent-section-breakbot .bb-px, #agent-section-breakbot .bb-particle')
+    .forEach(function(el){ el.remove(); });
 
   /* Success flash on send */
   var _orig = window.sendBreakAction;
@@ -19086,58 +19073,11 @@ window.addEventListener('load', async () => {
   /* ── 2. 3D tilt on buttons — disabled: CSS hover handles lift, JS tilt caused stale inline style bugs ── */
   function initTilt(){ /* no-op */ }
 
-  /* ── 3. Enhanced particle burst (uses button accent color) ── */
-  var _rippleHandler = document.querySelector('#agent-section-breakbot') && null;
-  document.addEventListener('mousedown', function(e){
-    var btn = e.target.closest('#agent-section-breakbot .bb-act:not(:disabled)');
-    if(!btn) return;
-    var rect  = btn.getBoundingClientRect();
-    var cx = e.clientX - rect.left, cy = e.clientY - rect.top;
-    var style = getComputedStyle(btn);
-    var accent = style.getPropertyValue('--ca').trim() || '#06b6d4';
-
-    /* ripple */
-    var r = document.createElement('span');
-    r.className = 'bb-ripple';
-    r.style.left = cx+'px'; r.style.top = cy+'px';
-    r.style.background = accent;
-    btn.appendChild(r);
-    r.addEventListener('animationend', function(){ r.remove(); });
-
-    /* particles */
-    var row = btn.closest('.bb-pad-row');
-    var colors = [accent];
-    if(row){
-      var s = getComputedStyle(row);
-      colors = [
-        s.getPropertyValue('--ca').trim() || accent,
-        s.getPropertyValue('--cb').trim() || accent,
-        s.getPropertyValue('--cat').trim() || accent,
-        '#ffffff'
-      ];
-    }
-    for(var i=0;i<18;i++){
-      (function(idx){
-        var p = document.createElement('span');
-        p.className = 'bb-px';
-        var sz = 3 + Math.random()*5;
-        var angle = (idx/18)*Math.PI*2 + (Math.random()-.5)*.5;
-        var dist  = 28 + Math.random()*50;
-        var col = colors[idx % colors.length];
-        p.style.cssText =
-          'width:'+sz+'px;height:'+sz+'px;'+
-          'left:'+(cx-sz/2)+'px;top:'+(cy-sz/2)+'px;'+
-          'background:'+col+';'+
-          'box-shadow:0 0 4px '+col+';'+
-          '--px-x:'+(Math.cos(angle)*dist)+'px;'+
-          '--py-y:'+(Math.sin(angle)*dist - 15)+'px;'+
-          '--px-dur:'+(0.45+Math.random()*.35)+'s;'+
-          'animation-delay:'+(idx*.018)+'s;';
-        btn.appendChild(p);
-        p.addEventListener('animationend', function(){ p.remove(); });
-      })(i);
-    }
-  });
+  /* ── 3. Particle burst DISABLED — both ripple + particle handlers removed.
+     Spans accumulated in DOM without cleanup, appearing as blue squares.
+     On-load: sweep out any leftover spans from previous sessions. ── */
+  document.querySelectorAll('#agent-section-breakbot .bb-ripple, #agent-section-breakbot .bb-px, #agent-section-breakbot .bb-particle')
+    .forEach(function(el){ el.remove(); });
 
   /* ── 4. Typewriter effect on subtitle ── */
   function initTypewriter(){
