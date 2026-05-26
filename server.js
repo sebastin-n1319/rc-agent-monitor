@@ -363,8 +363,11 @@ app.get('/api/queue-dashboard', requireAuth, async (req, res) => {
 });
 
 app.get('/api/agents', requireAuth, async (req, res) => {
-  try { res.json({ success: true, data: await getMonitoredAgents() }); }
-  catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  // #3: 5s cache — high-traffic endpoint (polled by every browser session)
+  try {
+    const data = await cacheWrap('agents:list', 5000, () => getMonitoredAgents());
+    res.json({ success: true, data, cached: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.post('/api/agents', requireAdmin, async (req, res) => {
@@ -373,11 +376,14 @@ app.post('/api/agents', requireAdmin, async (req, res) => {
   try {
     await addAgent(name.trim(), extension.trim(), email ? email.trim() : null);
     insertAuditLog(req.session.email, 'agent_added', name.trim(), `ext:${extension}`).catch(()=>{});
+    _cache.delete('agents:list'); // #3: invalidate cache on mutation
     res.json({ success: true, message: `${name} added` });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.delete('/api/agents/:extension', requireAdmin, async (req, res) => {
+  // #3: invalidate cache on mutation (runs before handler)
+  _cache.delete('agents:list');
   try {
     await removeAgent(req.params.extension);
     insertAuditLog(req.session.email, 'agent_removed', req.params.extension).catch(()=>{});
@@ -2573,6 +2579,183 @@ app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
     res.status(500).json({ success: false, error: e.message });
   }
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENHANCEMENT BATCH 1 — Performance, Health, Backup, Job Queue
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── #3: In-memory cache with TTL ────────────────────────────────────────────
+const _cache = new Map();
+function cacheGet(key) {
+  const e = _cache.get(key);
+  if (!e) return null;
+  if (Date.now() > e.exp) { _cache.delete(key); return null; }
+  return e.val;
+}
+function cacheSet(key, val, ttlMs) {
+  _cache.set(key, { val, exp: Date.now() + ttlMs });
+}
+async function cacheWrap(key, ttlMs, fn) {
+  const hit = cacheGet(key);
+  if (hit !== null) return hit;
+  const val = await fn();
+  cacheSet(key, val, ttlMs);
+  return val;
+}
+// Cache stats endpoint (admin only)
+app.get('/api/admin/cache-stats', requireAdmin, (req, res) => {
+  const entries = [];
+  for (const [k, v] of _cache.entries()) {
+    entries.push({ key: k, expiresInMs: Math.max(0, v.exp - Date.now()) });
+  }
+  res.json({ success: true, count: _cache.size, entries });
+});
+// Manual cache flush (admin only)
+app.post('/api/admin/cache-flush', requireAdmin, (req, res) => {
+  const n = _cache.size;
+  _cache.clear();
+  res.json({ success: true, cleared: n });
+});
+
+// ─── #25: Enhanced /healthz endpoint ─────────────────────────────────────────
+app.get('/healthz', async (req, res) => {
+  const checks = { server: 'ok', ts: Date.now() };
+  // DB check
+  try {
+    const db = require('./database');
+    if (typeof db.dbReady !== 'undefined') checks.db = db.dbReady ? 'ok' : 'initializing';
+    else checks.db = 'ok';
+  } catch (e) { checks.db = 'error:' + e.message; }
+  // RingCentral check
+  try {
+    const rc = require('./rc-service');
+    checks.rc = (rc && typeof rc.isConnected === 'function')
+      ? (rc.isConnected() ? 'ok' : 'disconnected')
+      : 'unknown';
+  } catch (e) { checks.rc = 'error:' + e.message; }
+  // Last successful agent-status poll (if tracked)
+  checks.lastPollAgeMs = global._lastSuccessfulPollAt
+    ? Date.now() - global._lastSuccessfulPollAt
+    : null;
+  const allOk = checks.db === 'ok' && checks.server === 'ok';
+  res.status(allOk ? 200 : 503).json(checks);
+});
+
+// ─── #29: DB backup endpoint (admin) ─────────────────────────────────────────
+app.get('/api/admin/backup-db', requireAdmin, async (req, res) => {
+  try {
+    const fs = require('fs');
+    const dbPath = path.join(__dirname, 'productivity.db');
+    if (!fs.existsSync(dbPath)) {
+      return res.status(404).json({ success: false, error: 'DB file not found' });
+    }
+    const stat = fs.statSync(dbPath);
+    const filename = `productivity-backup-${new Date().toISOString().slice(0,10)}.db`;
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', stat.size);
+    fs.createReadStream(dbPath).pipe(res);
+    insertAuditLog(req.session.email, 'db_backup_downloaded', filename, `size:${stat.size}b`).catch(()=>{});
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ─── #26: Background job queue ───────────────────────────────────────────────
+const _jobs = new Map();
+function jobId() { return 'job-' + Date.now() + '-' + Math.random().toString(36).slice(2,8); }
+function runJob(fn) {
+  const id = jobId();
+  const job = { id, status: 'queued', startedAt: null, finishedAt: null, result: null, error: null };
+  _jobs.set(id, job);
+  setImmediate(async () => {
+    job.status = 'running';
+    job.startedAt = Date.now();
+    try {
+      job.result = await fn();
+      job.status = 'completed';
+    } catch (e) {
+      job.error = e.message;
+      job.status = 'failed';
+    }
+    job.finishedAt = Date.now();
+    // Auto-clean after 1 hour
+    setTimeout(() => _jobs.delete(id), 3600000);
+  });
+  return id;
+}
+app.get('/api/admin/jobs', requireAdmin, (req, res) => {
+  res.json({ success: true, jobs: Array.from(_jobs.values()) });
+});
+app.get('/api/admin/jobs/:id', requireAdmin, (req, res) => {
+  const j = _jobs.get(req.params.id);
+  if (!j) return res.status(404).json({ success: false, error: 'Job not found' });
+  res.json({ success: true, job: j });
+});
+// Example async report job — non-blocking
+app.post('/api/admin/jobs/heavy-report', requireAdmin, (req, res) => {
+  const tz = req.query.tz || 'America/Chicago';
+  const days = Math.min(parseInt(req.query.days) || 30, 90);
+  const id = runJob(async () => {
+    const results = [];
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+      results.push({ date: dateStr, agents: await getAgentSummary(dateStr, tz) });
+    }
+    return { days, generated: results.length };
+  });
+  res.json({ success: true, jobId: id });
+});
+
+// ─── #13: Daily digest HTML generator (no email wiring yet) ──────────────────
+app.get('/api/admin/daily-digest', requireAdmin, async (req, res) => {
+  try {
+    const tz = req.query.tz || 'America/Chicago';
+    const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const summary = await getAgentSummary(date, tz);
+    const totalCalls   = summary.reduce((a, x) => a + (x.calls_handled || 0), 0);
+    const totalMissed  = summary.reduce((a, x) => a + (x.calls_missed  || 0), 0);
+    const totalLive    = summary.reduce((a, x) => a + (x.live_minutes  || 0), 0);
+    const topAgent = summary.slice().sort((a,b) => (b.calls_handled||0) - (a.calls_handled||0))[0];
+    const html = `<!doctype html><html><body style="font-family:Poppins,Arial,sans-serif;background:#F7F8F8;padding:20px;">
+      <div style="max-width:600px;margin:auto;background:white;border-radius:12px;padding:24px;border:1px solid #E6ECF4;">
+        <h2 style="color:#072B40;margin:0 0 4px;">Daily Digest · ${date}</h2>
+        <p style="color:#6B849A;margin:0 0 20px;font-size:13px;">Adit Agent Monitor — automated rollup</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div style="background:#F0F2F5;padding:12px;border-radius:8px;"><div style="font-size:10px;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Calls Handled</div><div style="font-size:24px;font-weight:800;color:#072B40;">${totalCalls}</div></div>
+          <div style="background:#F0F2F5;padding:12px;border-radius:8px;"><div style="font-size:10px;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Missed</div><div style="font-size:24px;font-weight:800;color:#ED666B;">${totalMissed}</div></div>
+          <div style="background:#F0F2F5;padding:12px;border-radius:8px;"><div style="font-size:10px;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Live Min</div><div style="font-size:24px;font-weight:800;color:#2DDC96;">${totalLive}</div></div>
+        </div>
+        ${topAgent ? `<div style="background:rgba(244,137,31,.06);border-left:3px solid #F4891F;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;"><div style="font-size:11px;color:#F4891F;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">⭐ Top Performer</div><div style="font-size:15px;font-weight:700;color:#072B40;margin-top:4px;">${topAgent.name || topAgent.agent || 'Unknown'} — ${topAgent.calls_handled||0} calls</div></div>` : ''}
+        <p style="font-size:11px;color:#9BAFC0;margin:20px 0 0;border-top:1px solid #E6ECF4;padding-top:12px;">Generated ${new Date().toISOString()} · ${summary.length} agents tracked.</p>
+      </div>
+    </body></html>`;
+    res.setHeader('Content-Type', 'text/html');
+    res.send(html);
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ─── #29: Apply cache to high-traffic endpoints (wrap existing handlers) ─────
+// Note: we patch via middleware so original behavior is preserved
+function cachedGet(path, ttlMs, keyFn) {
+  return async (req, res, next) => {
+    const key = `${path}:${keyFn ? keyFn(req) : ''}`;
+    const hit = cacheGet(key);
+    if (hit !== null) return res.json(hit);
+    // Hijack res.json to cache the response
+    const origJson = res.json.bind(res);
+    res.json = (body) => {
+      if (body && body.success !== false) cacheSet(key, body, ttlMs);
+      return origJson(body);
+    };
+    next();
+  };
+}
 
 // ── Global error handler — must be last; masks internal details from responses ─
 // eslint-disable-next-line no-unused-vars

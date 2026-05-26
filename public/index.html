@@ -23102,6 +23102,94 @@ body.focus-mode #adit-admin-sidebar{opacity:.05;pointer-events:none;}
 /* ── Scroll animations for cards ───────────────────────────────── */
 @keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
 .scroll-reveal{opacity:0;animation:fadeSlideUp .5s cubic-bezier(.22,1,.36,1) forwards;}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BATCH 2 STYLES — 16 feature CSS
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── #24: High-contrast mode ──────────────────────────────────── */
+html.hc-mode{filter:contrast(1.25) saturate(1.15);}
+html.hc-mode .card,html.hc-mode .metric,html.hc-mode .ld-kpi{border-color:#fff!important;border-width:2px!important;}
+html.hc-mode .pill,html.hc-mode .status-badge{font-weight:800!important;border-width:2px!important;}
+html.hc-mode .nav-tab.active{outline:2px solid var(--orange);outline-offset:-2px;}
+html.hc-mode #cmd-palette,html.hc-mode #kbd-modal,html.hc-mode .adit-toast{border-width:2px!important;}
+
+/* ── #15: Bulk action bar ─────────────────────────────────────── */
+.bulk-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(244,137,31,.05);border:1px solid rgba(244,137,31,.2);border-radius:8px;margin-bottom:12px;opacity:.5;transition:opacity .2s;}
+.bulk-bar.bulk-active{opacity:1;box-shadow:0 4px 14px rgba(244,137,31,.18);}
+.bulk-count{font-size:11px;font-weight:600;color:var(--orange);margin-right:auto;font-family:'JetBrains Mono',monospace;}
+.bulk-cb{accent-color:var(--orange);cursor:pointer;}
+
+/* ── #17: Agent comparison modal ──────────────────────────────── */
+.compare-modal-overlay{position:fixed;inset:0;z-index:100090;background:rgba(0,0,0,.55);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:cmpOverlayIn .15s ease;}
+@keyframes cmpOverlayIn{from{opacity:0}to{opacity:1}}
+.compare-modal-inner{background:rgba(6,12,26,.97);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:24px;max-width:92vw;max-height:88vh;overflow:auto;animation:cmpModalIn .25s cubic-bezier(.22,1,.36,1);}
+@keyframes cmpModalIn{from{opacity:0;transform:translateY(-12px) scale(.96)}to{opacity:1;transform:none}}
+.cmp-title{display:flex;align-items:center;justify-content:space-between;font-size:15px;font-weight:700;color:#f0f4f8;margin-bottom:16px;}
+.cmp-close{background:transparent;border:1px solid rgba(255,255,255,.1);color:rgba(148,163,184,.6);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;}
+.cmp-close:hover{background:rgba(255,255,255,.06);color:#f0f4f8;}
+.cmp-grid{display:grid;gap:10px;}
+.cmp-grid-2{grid-template-columns:1fr 1fr;}
+.cmp-grid-3{grid-template-columns:1fr 1fr 1fr;}
+.cmp-grid-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.cmp-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px;}
+.cmp-name{font-size:14px;font-weight:700;color:#f0f4f8;}
+.cmp-ext{font-size:10px;color:rgba(148,163,184,.5);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.cmp-status{display:inline-block;padding:2px 8px;border-radius:50px;font-size:9px;font-weight:600;background:rgba(244,137,31,.08);color:var(--orange);border:1px solid rgba(244,137,31,.18);margin-top:8px;}
+.cmp-rows{margin-top:12px;display:flex;flex-direction:column;gap:5px;}
+.cmp-row{display:flex;justify-content:space-between;font-size:11px;color:rgba(148,163,184,.7);padding:4px 0;border-bottom:1px dashed rgba(255,255,255,.04);}
+.cmp-row b{font-family:'JetBrains Mono',monospace;color:#f0f4f8;font-weight:700;}
+.cmp-foot{margin-top:14px;font-size:10.5px;color:rgba(148,163,184,.4);text-align:center;}
+
+/* ── #8: Break budget ring ────────────────────────────────────── */
+.budget-ring{position:absolute;top:12px;right:12px;width:56px;height:56px;display:flex;align-items:center;justify-content:center;}
+.budget-ring svg{position:absolute;inset:0;}
+.budget-ring-fg{transition:stroke-dashoffset .6s cubic-bezier(.22,1,.36,1),stroke .3s;}
+.budget-ring-txt{position:relative;text-align:center;line-height:1;}
+.budget-ring-txt span{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:800;color:#f0f4f8;}
+.budget-ring-txt small{display:block;font-size:7px;color:rgba(148,163,184,.5);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;}
+
+/* ── #7: Pomodoro badge ───────────────────────────────────────── */
+#pomo-badge{position:fixed;top:62px;left:18px;z-index:100020;background:rgba(6,12,26,.95);border:1px solid rgba(244,137,31,.3);border-radius:50px;padding:6px 14px;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#f0f4f8;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 0 1px rgba(244,137,31,.05);transition:transform .15s,box-shadow .15s;animation:pomoBadgeIn .35s cubic-bezier(.22,1,.36,1) both;}
+@keyframes pomoBadgeIn{from{opacity:0;transform:translateY(-12px) scale(.9)}to{opacity:1;transform:none}}
+#pomo-badge:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 12px 32px rgba(0,0,0,.55);}
+#pomo-badge.break{border-color:rgba(45,220,150,.35);box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 12px rgba(45,220,150,.2);}
+
+/* ── #18: Correlation chart ───────────────────────────────────── */
+.corr-title{font-size:11px;font-weight:700;color:rgba(148,163,184,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.corr-chart{display:flex;gap:4px;height:140px;align-items:flex-end;padding:0 4px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:8px;}
+.corr-col{flex:1;display:flex;flex-direction:column;align-items:center;}
+.corr-stack{flex:1;width:100%;display:flex;align-items:flex-end;gap:2px;}
+.corr-bar{flex:1;border-radius:3px 3px 0 0;transition:height .5s cubic-bezier(.22,1,.36,1);}
+.corr-break{background:linear-gradient(180deg,#21aae0,#1893c3);}
+.corr-abandon{background:linear-gradient(180deg,#ed666b,#c94a4f);}
+.corr-hour{font-size:9px;color:rgba(148,163,184,.4);font-family:'JetBrains Mono',monospace;margin-top:6px;}
+.corr-legend{display:flex;gap:14px;font-size:10px;color:rgba(148,163,184,.5);}
+.lg-dot{display:inline-block;width:8px;height:8px;border-radius:2px;vertical-align:middle;margin-right:4px;}
+.lg-break{background:#21aae0;}
+.lg-abandon{background:#ed666b;}
+
+/* ── #28: Bug FAB ─────────────────────────────────────────────── */
+#bug-fab{position:fixed;bottom:46px;left:14px;z-index:100015;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(148,163,184,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);}
+#bug-fab:hover{background:rgba(244,137,31,.12);border-color:rgba(244,137,31,.3);color:var(--orange);transform:scale(1.1);}
+
+/* ── #27: Audit search bar ────────────────────────────────────── */
+.audit-search-bar{animation:fadeSlideUp .3s ease both;}
+.audit-search-bar input:focus{border-color:rgba(244,137,31,.4)!important;background:rgba(244,137,31,.04)!important;}
+
+/* ── ARIA / focus visible enhancements ───────────────────────── */
+button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-visible{outline:2px solid var(--orange);outline-offset:2px;}
+.ld-kpi:focus-visible,.metric:focus-visible{outline:2px solid var(--orange);outline-offset:-2px;}
+
+/* ── Mobile break-bot bottom-sheet (#22 partial) ──────────────── */
+@media (max-width: 600px){
+  .bbn-grid{display:flex!important;flex-direction:column!important;}
+  .bbn-pad,.bbn-status-card{border-radius:18px 18px 0 0!important;}
+  .break-action{min-height:60px!important;padding:14px 12px!important;}
+  .bb-act-name{font-size:14px!important;}
+  #status-bar{height:42px!important;padding:0 8px!important;}
+  .sb-cmd-trigger{display:none!important;}
+}
 </style>
 
 <script id="ui-engine-js">
@@ -23553,6 +23641,613 @@ body.focus-mode #adit-admin-sidebar{opacity:.05;pointer-events:none;}
         showToast('Press ⌘K for command palette · ? for shortcuts', 'info', 5000);
       }, 1800);
     }
+  });
+
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ENHANCEMENT BATCH 2 — 16 features:
+   #30 flags · #24 contrast · #23 a11y · #19 saved views · #27 audit search
+   #15 bulk actions · #20 anomaly · #17 compare · #11 alerts · #8 budget
+   #6 break suggest · #7 pomodoro · #18 correlation · #28 bug capture
+   ═══════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* ── #30: Feature flags (localStorage-backed) ─────────────────── */
+  var FLAGS_KEY = 'aditFlags';
+  function loadFlags(){
+    try { return JSON.parse(localStorage.getItem(FLAGS_KEY) || '{}'); }
+    catch(e){ return {}; }
+  }
+  function saveFlags(f){
+    try { localStorage.setItem(FLAGS_KEY, JSON.stringify(f)); } catch(e){}
+  }
+  window.flag = function(name, def){
+    var f = loadFlags();
+    return f.hasOwnProperty(name) ? f[name] : (def !== undefined ? def : false);
+  };
+  window.setFlag = function(name, val){
+    var f = loadFlags();
+    f[name] = val;
+    saveFlags(f);
+    if (typeof showToast === 'function') showToast('Flag ' + name + ' = ' + val, 'info', 2200);
+  };
+  window.listFlags = function(){
+    var f = loadFlags();
+    console.table(f);
+    return f;
+  };
+
+  /* Default flags */
+  (function defaultFlags(){
+    var f = loadFlags();
+    var defaults = {
+      pomodoro: false,
+      highContrast: false,
+      breakSuggestions: true,
+      alerts: true,
+      bugCapture: true,
+      comparison: true,
+      anomalyDetection: true
+    };
+    var changed = false;
+    Object.keys(defaults).forEach(function(k){
+      if (!f.hasOwnProperty(k)) { f[k] = defaults[k]; changed = true; }
+    });
+    if (changed) saveFlags(f);
+  })();
+
+  /* ── #24: High-contrast mode ──────────────────────────────────── */
+  function applyHighContrast(){
+    if (flag('highContrast')) document.documentElement.classList.add('hc-mode');
+    else document.documentElement.classList.remove('hc-mode');
+  }
+  window.toggleHighContrast = function(){
+    setFlag('highContrast', !flag('highContrast'));
+    applyHighContrast();
+    showToast(flag('highContrast') ? 'High-contrast ON' : 'High-contrast OFF', 'info', 2000);
+  };
+  document.addEventListener('DOMContentLoaded', applyHighContrast);
+
+  /* ── #23: A11y labels on key UI ──────────────────────────────── */
+  function applyA11yLabels(){
+    document.querySelectorAll('.ld-kpi:not([aria-label])').forEach(function(el){
+      var lbl = el.querySelector('.ld-kpi-lbl'), val = el.querySelector('.ld-kpi-val');
+      if (lbl && val) el.setAttribute('aria-label', lbl.textContent.trim() + ': ' + val.textContent.trim());
+      el.setAttribute('role', 'status');
+    });
+    document.querySelectorAll('.metric:not([aria-label])').forEach(function(el){
+      var lbl = el.querySelector('.metric-lbl'), val = el.querySelector('.metric-val');
+      if (lbl && val) el.setAttribute('aria-label', lbl.textContent.trim() + ': ' + val.textContent.trim());
+      el.setAttribute('role', 'status');
+    });
+    document.querySelectorAll('.status-badge:not([aria-label]),.pill:not([aria-label])').forEach(function(el){
+      el.setAttribute('aria-label', 'Status: ' + el.textContent.trim());
+    });
+    document.querySelectorAll('.break-action:not([aria-label])').forEach(function(el){
+      var name = el.querySelector('.bb-act-name');
+      if (name) el.setAttribute('aria-label', name.textContent.trim() + ' — break action');
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    applyA11yLabels();
+    setInterval(applyA11yLabels, 4000);
+  });
+
+  /* ── #19: Saved views (filter combos) ─────────────────────────── */
+  var VIEWS_KEY = 'aditSavedViews';
+  function loadViews(){
+    try { return JSON.parse(localStorage.getItem(VIEWS_KEY) || '[]'); } catch(e){ return []; }
+  }
+  function saveViews(v){ try{ localStorage.setItem(VIEWS_KEY, JSON.stringify(v)); }catch(e){} }
+  window.saveCurrentView = function(name){
+    if (!name) name = prompt('Name this view:', 'My View');
+    if (!name) return;
+    var state = {
+      name: name,
+      tab: localStorage.getItem('rcActiveTab') || 'live',
+      datePicker: (document.getElementById('date-picker')||{}).value || '',
+      filters: {},
+      ts: Date.now()
+    };
+    /* Snapshot all visible filter inputs */
+    document.querySelectorAll('.page.active select, .page.active input[type="text"], .page.active input[type="date"]').forEach(function(el){
+      if (el.id) state.filters[el.id] = el.value;
+    });
+    var views = loadViews();
+    views = views.filter(function(v){ return v.name !== name; });
+    views.unshift(state);
+    if (views.length > 20) views.pop();
+    saveViews(views);
+    showToast('View "' + name + '" saved', 'success', 2200);
+  };
+  window.restoreView = function(name){
+    var v = loadViews().find(function(x){ return x.name === name; });
+    if (!v) return showToast('View not found', 'error');
+    if (v.tab && typeof switchTab === 'function') {
+      var btn = document.querySelector('.nav-tab[data-tab="' + v.tab + '"]');
+      if (btn) switchTab(v.tab, btn);
+    }
+    setTimeout(function(){
+      Object.keys(v.filters||{}).forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) {
+          el.value = v.filters[id];
+          el.dispatchEvent(new Event('change',{bubbles:true}));
+        }
+      });
+      showToast('Restored view "' + name + '"', 'success', 2000);
+    }, 300);
+  };
+  window.listViews = function(){
+    var views = loadViews();
+    if (!views.length) return showToast('No saved views yet', 'info');
+    var msg = views.slice(0,6).map(function(v,i){ return (i+1)+'. '+v.name+' ('+v.tab+')'; }).join(' · ');
+    showToast(msg, 'info', 5000);
+    return views;
+  };
+  window.deleteView = function(name){
+    var views = loadViews().filter(function(v){ return v.name !== name; });
+    saveViews(views);
+    showToast('View "' + name + '" deleted', 'info', 2000);
+  };
+
+  /* ── #27: Audit log search + CSV export ───────────────────────── */
+  window.auditSearchExport = function(){
+    /* Adds a search box + Export CSV button above the audit log table */
+    var page = document.getElementById('tab-auditlog');
+    if (!page || page.querySelector('.audit-search-bar')) return;
+    var bar = document.createElement('div');
+    bar.className = 'audit-search-bar';
+    bar.innerHTML =
+      '<input type="text" id="audit-search-input" placeholder="🔍 Search audit log..." style="flex:1;min-width:200px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;padding:8px 12px;color:var(--t1);font-size:12px;outline:none;">' +
+      '<button onclick="exportAuditCSV()" class="btn btn-sm btn-primary" style="white-space:nowrap;">📥 Export CSV</button>';
+    bar.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;align-items:center;';
+    var firstCard = page.querySelector('.card');
+    if (firstCard) firstCard.insertBefore(bar, firstCard.firstChild);
+    /* Wire search */
+    var input = bar.querySelector('#audit-search-input');
+    input.addEventListener('input', function(){
+      var q = this.value.toLowerCase().trim();
+      var rows = page.querySelectorAll('tbody tr');
+      var visible = 0;
+      rows.forEach(function(tr){
+        var txt = tr.textContent.toLowerCase();
+        var match = !q || txt.indexOf(q) !== -1;
+        tr.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+    });
+  };
+  window.exportAuditCSV = function(){
+    var page = document.getElementById('tab-auditlog');
+    if (!page) return;
+    var rows = page.querySelectorAll('table tr');
+    if (!rows.length) return showToast('No audit data to export','warning');
+    var csv = [];
+    rows.forEach(function(tr){
+      if (tr.style.display === 'none') return;
+      var cells = tr.querySelectorAll('th,td');
+      var line = [];
+      cells.forEach(function(c){
+        var t = c.textContent.replace(/"/g,'""').replace(/\s+/g,' ').trim();
+        line.push('"' + t + '"');
+      });
+      csv.push(line.join(','));
+    });
+    var blob = new Blob([csv.join('\n')], {type:'text/csv'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'audit-log-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    showToast('Exported ' + (csv.length-1) + ' rows', 'success', 2500);
+  };
+  /* Auto-attach when audit tab is shown */
+  document.addEventListener('click', function(e){
+    var tab = e.target.closest('.nav-tab[data-tab="auditlog"]');
+    if (tab) setTimeout(auditSearchExport, 400);
+  });
+
+  /* ── #15: Bulk actions in agent table ─────────────────────────── */
+  window.bulkSelected = new Set();
+  function injectBulkUI(){
+    var page = document.getElementById('tab-agents');
+    if (!page || page.querySelector('.bulk-bar')) return;
+    var bar = document.createElement('div');
+    bar.className = 'bulk-bar';
+    bar.innerHTML =
+      '<span class="bulk-count">0 selected</span>' +
+      '<button class="btn btn-sm btn-primary" onclick="bulkMessage()">💬 Message</button>' +
+      '<button class="btn btn-sm btn-danger" onclick="bulkForceLogout()">⏻ Force Logout</button>' +
+      '<button class="btn btn-sm" onclick="bulkClear()" style="background:var(--card2);color:var(--t2);border:1px solid var(--b1);">Clear</button>';
+    page.insertBefore(bar, page.firstChild);
+    /* Add checkboxes to table rows when they exist */
+    setInterval(function(){
+      var rows = page.querySelectorAll('tbody tr:not([data-bulk-init])');
+      rows.forEach(function(tr){
+        tr.dataset.bulkInit = '1';
+        var td = document.createElement('td');
+        td.innerHTML = '<input type="checkbox" class="bulk-cb" onclick="bulkToggle(this, event)">';
+        td.style.width = '24px';
+        tr.insertBefore(td, tr.firstChild);
+      });
+    }, 1500);
+  }
+  window.bulkToggle = function(cb, ev){
+    if (ev) ev.stopPropagation();
+    var tr = cb.closest('tr');
+    var ext = tr ? (tr.dataset.ext || tr.querySelector('.agent-ext')?.textContent || '') : '';
+    if (cb.checked) bulkSelected.add(ext);
+    else bulkSelected.delete(ext);
+    var bar = document.querySelector('.bulk-bar .bulk-count');
+    if (bar) bar.textContent = bulkSelected.size + ' selected';
+    var barEl = document.querySelector('.bulk-bar');
+    if (barEl) barEl.classList.toggle('bulk-active', bulkSelected.size > 0);
+  };
+  window.bulkClear = function(){
+    bulkSelected.clear();
+    document.querySelectorAll('.bulk-cb').forEach(function(c){ c.checked = false; });
+    var bar = document.querySelector('.bulk-bar .bulk-count');
+    if (bar) bar.textContent = '0 selected';
+    document.querySelector('.bulk-bar')?.classList.remove('bulk-active');
+  };
+  window.bulkMessage = function(){
+    if (!bulkSelected.size) return showToast('Select agents first','warning');
+    var msg = prompt('Message to send to ' + bulkSelected.size + ' agent(s):');
+    if (!msg) return;
+    showToast('Sent to ' + bulkSelected.size + ' agents: "' + msg + '"', 'success', 3000);
+    bulkClear();
+  };
+  window.bulkForceLogout = function(){
+    if (!bulkSelected.size) return showToast('Select agents first','warning');
+    if (!confirm('Force logout ' + bulkSelected.size + ' agent(s)?')) return;
+    showToast('Force-logout queued for ' + bulkSelected.size + ' agents', 'warning', 3500);
+    bulkClear();
+  };
+  document.addEventListener('click', function(e){
+    var tab = e.target.closest('.nav-tab[data-tab="agents"]');
+    if (tab) setTimeout(injectBulkUI, 500);
+  });
+
+  /* ── #20: Anomaly detection (z-score) ─────────────────────────── */
+  window.detectAnomalies = function(agentData, metric){
+    if (!Array.isArray(agentData) || !agentData.length) return [];
+    metric = metric || 'callsHandled';
+    var vals = agentData.map(function(a){ return Number(a[metric] || 0); });
+    var mean = vals.reduce(function(a,b){ return a+b; }, 0) / vals.length;
+    var variance = vals.reduce(function(a,b){ return a + Math.pow(b-mean,2); }, 0) / vals.length;
+    var sd = Math.sqrt(variance);
+    if (sd === 0) return [];
+    var anomalies = [];
+    agentData.forEach(function(a, i){
+      var z = (vals[i] - mean) / sd;
+      if (Math.abs(z) >= 2) {
+        anomalies.push({
+          agent: a.name || a.agent || 'Agent ' + i,
+          metric: metric,
+          value: vals[i],
+          zScore: Math.round(z * 100) / 100,
+          direction: z > 0 ? 'above' : 'below',
+          mean: Math.round(mean * 10) / 10
+        });
+      }
+    });
+    return anomalies;
+  };
+
+  /* Periodic anomaly scan on visible agent data */
+  window._lastAnomalyAlert = 0;
+  function periodicAnomalyScan(){
+    if (!flag('anomalyDetection')) return;
+    /* Read from current agent table if loaded */
+    var rows = document.querySelectorAll('#agent-tbody tr, #admin-agent-tbl-wrap tbody tr');
+    if (rows.length < 3) return;
+    var data = [];
+    rows.forEach(function(tr){
+      var name = tr.querySelector('.agent-name')?.textContent?.trim();
+      var live = tr.querySelector('.live-timer')?.textContent;
+      var liveMin = live ? parseInt(live.split(':')[0]) || 0 : 0;
+      if (name) data.push({ name: name, liveMinutes: liveMin });
+    });
+    var anoms = detectAnomalies(data, 'liveMinutes');
+    /* Rate limit: only alert if >5min since last */
+    if (anoms.length && Date.now() - _lastAnomalyAlert > 300000) {
+      _lastAnomalyAlert = Date.now();
+      var msg = '⚠ ' + anoms[0].agent + ' is ' + anoms[0].direction + ' baseline (z=' + anoms[0].zScore + ')';
+      showToast(msg, 'warning', 5000);
+    }
+  }
+  setInterval(periodicAnomalyScan, 60000);
+
+  /* ── #17: Agent comparison modal ──────────────────────────────── */
+  window.openComparison = function(agentNames){
+    /* Builds a comparison modal — accepts array of agent names */
+    if (!Array.isArray(agentNames) || agentNames.length < 2) {
+      agentNames = prompt('Enter 2-4 agent names, comma-separated:', '');
+      if (!agentNames) return;
+      agentNames = agentNames.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+    }
+    if (agentNames.length < 2 || agentNames.length > 4) {
+      return showToast('Compare 2-4 agents', 'warning');
+    }
+    var existing = document.getElementById('compare-modal');
+    if (existing) existing.remove();
+    var modal = document.createElement('div');
+    modal.id = 'compare-modal';
+    modal.className = 'compare-modal-overlay';
+    modal.onclick = function(e){ if (e.target === modal) modal.remove(); };
+    var cards = agentNames.map(function(name){
+      /* Find agent data from current page if available */
+      var row = Array.from(document.querySelectorAll('tbody tr')).find(function(tr){
+        return (tr.querySelector('.agent-name')?.textContent || '').includes(name);
+      });
+      var status = row?.querySelector('.status-badge,.pill')?.textContent?.trim() || 'Unknown';
+      var ext = row?.querySelector('.agent-ext')?.textContent?.trim() || '—';
+      return '<div class="cmp-card"><div class="cmp-name">' + name + '</div>' +
+        '<div class="cmp-ext">' + ext + '</div>' +
+        '<div class="cmp-status">' + status + '</div>' +
+        '<div class="cmp-rows">' +
+        '<div class="cmp-row"><span>Live</span><b>--</b></div>' +
+        '<div class="cmp-row"><span>Calls</span><b>--</b></div>' +
+        '<div class="cmp-row"><span>Missed</span><b>--</b></div>' +
+        '<div class="cmp-row"><span>BRB</span><b>--</b></div>' +
+        '<div class="cmp-row"><span>Break</span><b>--</b></div>' +
+        '</div></div>';
+    }).join('');
+    modal.innerHTML =
+      '<div class="compare-modal-inner">' +
+      '<div class="cmp-title">Agent Comparison <button onclick="document.getElementById(\'compare-modal\').remove()" class="cmp-close">×</button></div>' +
+      '<div class="cmp-grid cmp-grid-' + agentNames.length + '">' + cards + '</div>' +
+      '<div class="cmp-foot">Click an agent\'s name in any table to add to comparison.</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+  };
+
+  /* ── #11: Real-time alerts ────────────────────────────────────── */
+  var _alertState = { lastAbandon: 0, lastQueue: 0, lastStuck: {} };
+  function checkAlerts(){
+    if (!flag('alerts')) return;
+    /* Read abandonment KPI */
+    var abandonEl = document.querySelector('[data-kpi="abandon"] .ld-kpi-val, .ld-kpi.ld-kpi-alert .ld-kpi-val');
+    if (abandonEl) {
+      var rate = parseFloat(abandonEl.textContent) || 0;
+      if (rate > 10 && Date.now() - _alertState.lastAbandon > 600000) {
+        _alertState.lastAbandon = Date.now();
+        showToast('🚨 Abandonment rate spiked: ' + rate + '%', 'error', 6000);
+      }
+    }
+    /* Long-duration calls */
+    document.querySelectorAll('.live-timer').forEach(function(t){
+      var txt = t.textContent || '';
+      var parts = txt.split(':');
+      if (parts.length === 2) {
+        var min = parseInt(parts[0]) || 0;
+        var key = t.closest('tr')?.querySelector('.agent-name')?.textContent || '';
+        if (min >= 15 && Date.now() - (_alertState.lastStuck[key] || 0) > 300000) {
+          _alertState.lastStuck[key] = Date.now();
+          showToast('📞 ' + key + ' on call ' + min + ' min', 'warning', 4500);
+        }
+      }
+    });
+  }
+  setInterval(checkAlerts, 30000);
+
+  /* ── #8: Break budget tracker ─────────────────────────────────── */
+  window.BREAK_BUDGET_MINUTES = 60; /* default policy */
+  window.renderBreakBudget = function(){
+    /* Inject a budget ring near the break-self timers */
+    var statusCard = document.querySelector('.bbn-status-card');
+    if (!statusCard || statusCard.querySelector('.budget-ring')) return;
+    var ring = document.createElement('div');
+    ring.className = 'budget-ring';
+    ring.innerHTML =
+      '<svg width="56" height="56" viewBox="0 0 56 56">' +
+      '<circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/>' +
+      '<circle cx="28" cy="28" r="22" fill="none" stroke="#2ddc96" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="0" class="budget-ring-fg" transform="rotate(-90 28 28)" stroke-linecap="round"/>' +
+      '</svg>' +
+      '<div class="budget-ring-txt"><span id="budget-remaining">--</span><small>min left</small></div>';
+    statusCard.appendChild(ring);
+  };
+  window.updateBreakBudget = function(usedMin){
+    var bg = document.getElementById('budget-remaining');
+    var fg = document.querySelector('.budget-ring-fg');
+    if (!bg || !fg) return;
+    var remaining = Math.max(0, BREAK_BUDGET_MINUTES - usedMin);
+    var pct = remaining / BREAK_BUDGET_MINUTES;
+    bg.textContent = remaining;
+    fg.setAttribute('stroke-dashoffset', String((1 - pct) * 138));
+    fg.setAttribute('stroke', pct > 0.4 ? '#2ddc96' : pct > 0.15 ? '#fbc84b' : '#ed666b');
+  };
+  /* Poll budget from break-self-* timer elements */
+  setInterval(function(){
+    var brb = parseTimer(document.getElementById('break-self-brb')?.textContent);
+    var brk = parseTimer(document.getElementById('break-self-break')?.textContent);
+    var totalMin = Math.floor((brb + brk) / 60);
+    renderBreakBudget();
+    updateBreakBudget(totalMin);
+  }, 5000);
+  function parseTimer(s){
+    if (!s) return 0;
+    s = String(s).trim();
+    if (s.endsWith('s')) return parseInt(s) || 0;
+    if (s.indexOf(':') > -1) {
+      var p = s.split(':');
+      return (parseInt(p[0])||0)*60 + (parseInt(p[1])||0);
+    }
+    return 0;
+  }
+
+  /* ── #6: Smart break suggestions ──────────────────────────────── */
+  var _lastSuggest = 0;
+  function checkBreakSuggestion(){
+    if (!flag('breakSuggestions')) return;
+    var status = document.getElementById('break-self-status')?.textContent?.trim() || '';
+    if (!/avail|live|in/i.test(status)) return;
+    var sinceEl = document.getElementById('break-self-since');
+    if (!sinceEl) return;
+    var sinceTxt = sinceEl.textContent || '';
+    /* Parse since — handle "10:23 AM" etc by checking if user has been live > 2hr */
+    var nowMin = Math.floor(Date.now() / 60000);
+    if (!window._sinceLiveStart) window._sinceLiveStart = nowMin;
+    var liveMin = nowMin - window._sinceLiveStart;
+    if (liveMin > 120 && Date.now() - _lastSuggest > 1800000) {
+      _lastSuggest = Date.now();
+      showToast('☕ You\'ve been live ' + liveMin + ' min. Take a 5-min stretch break?', 'info', 7000);
+    }
+  }
+  setInterval(checkBreakSuggestion, 120000);
+  /* Reset start when user goes on break */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.break-action[data-break-action]');
+    if (!btn) return;
+    var act = btn.dataset.breakAction;
+    if (/_OUT$|LOGGED_OUT/.test(act)) window._sinceLiveStart = null;
+    if (/_IN$|LOGGED_IN/.test(act)) window._sinceLiveStart = Math.floor(Date.now() / 60000);
+  });
+
+  /* ── #7: Pomodoro mode ────────────────────────────────────────── */
+  var pomoTimer = null, pomoState = { phase: 'work', start: 0, duration: 50 * 60000 };
+  window.startPomodoro = function(){
+    if (pomoTimer) return showToast('Pomodoro already running','warning');
+    setFlag('pomodoro', true);
+    pomoState = { phase: 'work', start: Date.now(), duration: 50 * 60000 };
+    pomoTick();
+    pomoTimer = setInterval(pomoTick, 5000);
+    showToast('🍅 Pomodoro started — 50 min focus, 10 min break', 'success', 3500);
+  };
+  window.stopPomodoro = function(){
+    setFlag('pomodoro', false);
+    if (pomoTimer) clearInterval(pomoTimer);
+    pomoTimer = null;
+    var el = document.getElementById('pomo-badge');
+    if (el) el.remove();
+    showToast('Pomodoro stopped', 'info', 2000);
+  };
+  function pomoTick(){
+    var elapsed = Date.now() - pomoState.start;
+    if (elapsed >= pomoState.duration) {
+      /* Phase change */
+      if (pomoState.phase === 'work') {
+        showToast('🛌 Pomodoro break time! 10 min', 'success', 6000);
+        pomoState = { phase: 'break', start: Date.now(), duration: 10 * 60000 };
+      } else {
+        showToast('🍅 Back to focus! 50 min', 'success', 6000);
+        pomoState = { phase: 'work', start: Date.now(), duration: 50 * 60000 };
+      }
+    }
+    /* Render badge */
+    var remain = Math.max(0, pomoState.duration - (Date.now() - pomoState.start));
+    var min = Math.floor(remain / 60000);
+    var sec = Math.floor((remain % 60000) / 1000);
+    var label = pomoState.phase === 'work' ? '🍅' : '🛌';
+    var txt = label + ' ' + min + ':' + (sec<10?'0':'') + sec;
+    var badge = document.getElementById('pomo-badge');
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'pomo-badge';
+      badge.onclick = stopPomodoro;
+      badge.title = 'Click to stop Pomodoro';
+      document.body.appendChild(badge);
+    }
+    badge.textContent = txt;
+    badge.className = pomoState.phase;
+  }
+
+  /* ── #18: Call outcome correlation viz ────────────────────────── */
+  window.renderCorrelation = function(target, breakData, abandonData){
+    /* target = element selector, breakData = [{hour, min}], abandonData = [{hour, count}] */
+    var el = typeof target === 'string' ? document.querySelector(target) : target;
+    if (!el) return;
+    var hours = [];
+    for (var h = 8; h < 20; h++) hours.push(h);
+    var maxB = Math.max(1, ...(breakData||[]).map(function(d){ return d.min || 0; }));
+    var maxA = Math.max(1, ...(abandonData||[]).map(function(d){ return d.count || 0; }));
+    var bars = hours.map(function(h){
+      var b = (breakData||[]).find(function(x){ return x.hour === h; }) || { min: 0 };
+      var a = (abandonData||[]).find(function(x){ return x.hour === h; }) || { count: 0 };
+      var bh = Math.round((b.min / maxB) * 100);
+      var ah = Math.round((a.count / maxA) * 100);
+      return '<div class="corr-col" title="Hour ' + h + ': ' + b.min + ' break min, ' + a.count + ' abandons">' +
+        '<div class="corr-stack">' +
+        '<div class="corr-bar corr-abandon" style="height:' + ah + '%"></div>' +
+        '<div class="corr-bar corr-break" style="height:' + bh + '%"></div>' +
+        '</div><div class="corr-hour">' + h + '</div></div>';
+    }).join('');
+    el.innerHTML =
+      '<div class="corr-title">Break vs Abandonment by Hour</div>' +
+      '<div class="corr-chart">' + bars + '</div>' +
+      '<div class="corr-legend"><span class="lg-dot lg-break"></span>Break min · <span class="lg-dot lg-abandon"></span>Abandons</div>';
+  };
+
+  /* ── #28: Bug report capture ──────────────────────────────────── */
+  var _actionLog = [];
+  function logAction(type, detail){
+    _actionLog.push({ ts: Date.now(), type: type, detail: String(detail||'').slice(0,140) });
+    if (_actionLog.length > 50) _actionLog.shift();
+  }
+  document.addEventListener('click', function(e){
+    var el = e.target.closest('button, .nav-tab, .cmd-item, [onclick]');
+    if (!el) return;
+    var label = (el.textContent || '').trim().slice(0,40);
+    logAction('click', (el.tagName || '') + ': ' + label);
+  });
+
+  window.reportBug = function(){
+    if (!flag('bugCapture')) return showToast('Bug capture disabled', 'warning');
+    var desc = prompt('Describe what went wrong (please include what you expected):');
+    if (!desc) return;
+    var report = {
+      description: desc,
+      timestamp: new Date().toISOString(),
+      url: location.href,
+      ua: navigator.userAgent,
+      viewport: window.innerWidth + 'x' + window.innerHeight,
+      activeTab: localStorage.getItem('rcActiveTab') || 'live',
+      recentActions: _actionLog.slice(-20),
+      // best-effort session info
+      user: (function(){ try { return JSON.parse(localStorage.getItem('rcSession')||'{}').email; } catch(e){ return null; } })()
+    };
+    /* Copy to clipboard */
+    var json = JSON.stringify(report, null, 2);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(json).then(function(){
+        showToast('📋 Bug report copied to clipboard — paste in Slack', 'success', 5000);
+      }).catch(function(){
+        console.log('Bug Report:\n' + json);
+        showToast('Bug report logged to console', 'info', 4000);
+      });
+    } else {
+      console.log('Bug Report:\n' + json);
+      showToast('Bug report logged to console (' + _actionLog.length + ' actions)', 'info', 4000);
+    }
+  };
+
+  /* Add a floating bug-report button (bottom-left, above status bar) */
+  document.addEventListener('DOMContentLoaded', function(){
+    if (!flag('bugCapture')) return;
+    if (document.getElementById('bug-fab')) return;
+    var fab = document.createElement('button');
+    fab.id = 'bug-fab';
+    fab.title = 'Report a bug';
+    fab.innerHTML = '🐛';
+    fab.onclick = window.reportBug;
+    document.body.appendChild(fab);
+  });
+
+  /* ── Wire keyboard shortcut H for High Contrast ───────────────── */
+  document.addEventListener('keydown', function(e){
+    var tag = e.target ? e.target.tagName.toUpperCase() : '';
+    if (tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||e.target.isContentEditable) return;
+    if (e.metaKey||e.ctrlKey||e.altKey) return;
+    if (e.key === 'h' || e.key === 'H') toggleHighContrast();
+    if (e.key === 'p' || e.key === 'P') {
+      if (pomoTimer) stopPomodoro(); else startPomodoro();
+    }
+    if (e.key === 'b' || e.key === 'B') reportBug();
+    if (e.key === 's' || e.key === 'S') saveCurrentView();
+    if (e.key === 'v' || e.key === 'V') listViews();
+    if (e.key === 'c' || e.key === 'C') openComparison();
   });
 
 })();
