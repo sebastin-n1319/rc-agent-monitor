@@ -1559,6 +1559,16 @@ async function ackAlert(id, byEmail){
     [byEmail || 'unknown', id]);
 }
 
+/** Ack every currently-active alert in one statement. Returns affected count. */
+async function ackAllActiveAlerts(byEmail){
+  const r = await run(`UPDATE alert_events
+                       SET acked_at=CURRENT_TIMESTAMP, acked_by=?
+                       WHERE acked_at IS NULL
+                         AND (snoozed_until IS NULL OR snoozed_until < CURRENT_TIMESTAMP)`,
+    [byEmail || 'unknown']);
+  return r ? r.changes : 0;
+}
+
 async function snoozeAlert(id, minutes){
   const m = Math.min(Math.max(parseInt(minutes)||15, 1), 1440);
   return run(`UPDATE alert_events SET snoozed_until=datetime('now', ?) WHERE id=?`,
@@ -1583,7 +1593,7 @@ module.exports={
   // #11 Session 2 — alerts
   getAlertThresholds, updateAlertThreshold,
   isAlertInCooldown, insertAlertEvent,
-  getActiveAlerts, getRecentAlerts, ackAlert, snoozeAlert, getAlertCounts,
+  getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,

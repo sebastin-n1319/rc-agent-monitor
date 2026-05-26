@@ -4,7 +4,7 @@
  * - Network-first with stale fallback for API requests
  * - Offline shell: serve cached index.html when navigation fails
  */
-const CACHE_VERSION = 'adit-v1.0.0';
+const CACHE_VERSION = 'adit-v1.2.0';  // bump → forces shell refresh after Session 3 deploy
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const API_CACHE   = `${CACHE_VERSION}-api`;
 

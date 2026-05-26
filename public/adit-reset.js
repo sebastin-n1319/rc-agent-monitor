@@ -15,6 +15,7 @@
     'fonts.gstatic.com',
     'adit-theme.css',
     'agent-view-v2.css',
+    'alert-center.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

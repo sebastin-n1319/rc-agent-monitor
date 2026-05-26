@@ -19,7 +19,9 @@
 <script src="/adit-reset.js"></script>
 <link rel="stylesheet" href="/adit-theme.css" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css" id="agent-view-v2-link">
+<link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
 <script src="/agent-view-v2.js" defer></script>
+<script src="/alert-center.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- V5 Animation Engine — anime.js + Motion.dev -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -22656,8 +22658,10 @@ input:focus, textarea:focus, select:focus {
   // Allowlist: our own fixed elements that must survive
   const SAFE_IDS = new Set(['toast','loginScreen','weekend-announce-overlay',
     'status-bar','scroll-progress-wrap','cmd-overlay','toast-wrap',
-    'kbd-overlay','focus-hud']);
-  const SAFE_CLASSES = ['toast', 'adit-toast'];
+    'kbd-overlay','focus-hud',
+    // Session 3 — alert center overlays
+    'ac-modal','ac-history-modal','ac-thresh-modal']);
+  const SAFE_CLASSES = ['toast', 'adit-toast', 'ac-overlay'];
 
   const isRogue = el => {
     if (!el || el.nodeType !== 1) return false;
@@ -24121,24 +24125,26 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     document.body.appendChild(modal);
   };
 
-  /* ── #11: Real-time alerts — Session 2 ────────────────────────── *
-   * Legacy DOM-scraping rate-limited toasts REMOVED.
-   * Alerts are now driven by the server-side engine in lib/alerts.js
-   * and persisted in alert_events. The client polls /api/alerts/active
-   * every 30s and surfaces new alerts as toasts. Future (Session 3):
-   * subscribe to the SSE 'alert' channel for instant delivery + a
-   * proper alert center modal. */
+  /* ── #11: Real-time alerts — Session 2 / 3 ─────────────────────── *
+   * When the AlertCenter module (Session 3) is loaded, it owns delivery:
+   *   - SSE push for instant arrival
+   *   - Bell badge + modal + history + threshold form
+   *   - Browser notifications when tab unfocused
+   *
+   * This block remains as a polling fallback that activates ONLY if
+   * AlertCenter is missing (e.g. asset load failure or feature flag off).
+   * It surfaces unseen alerts as toasts every 30s. */
   var _seenAlertIds = new Set();
   var _alertPollTimer = null;
 
   async function pollServerAlerts(){
     if (!flag('alerts')) return;
+    if (window.AlertCenter) return;  // delegate to the proper UI when available
     try {
       var r = await fetch('/api/alerts/active?limit=20', { credentials: 'same-origin' });
       if (!r.ok) return;
       var j = await r.json();
       if (!j.success || !Array.isArray(j.alerts)) return;
-      /* Newest first → reverse so older ones toast first */
       j.alerts.slice().reverse().forEach(function(a){
         if (_seenAlertIds.has(a.id)) return;
         _seenAlertIds.add(a.id);
@@ -24146,24 +24152,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
         var icon = a.severity === 'critical' ? '🚨' : a.severity === 'warning' ? '⚠' : 'ℹ';
         if (typeof showToast === 'function') showToast(icon + ' ' + a.body, toastType, 7000);
       });
-      /* Update bell badge (in case Session 3 UI is present) */
-      var bell = document.getElementById('alert-bell-count');
-      if (bell && j.counts) {
-        bell.textContent = String(j.counts.total || 0);
-        bell.dataset.severity = j.counts.critical > 0 ? 'critical' : j.counts.warning > 0 ? 'warning' : 'none';
-        bell.style.display = j.counts.total > 0 ? '' : 'none';
-      }
     } catch (e) { /* network blip — try next tick */ }
   }
-  /* Start polling once authenticated */
   function startAlertPolling(){
     if (_alertPollTimer) return;
     if (!document.documentElement.classList.contains('app-authenticated')) return;
     _alertPollTimer = setInterval(pollServerAlerts, 30000);
-    setTimeout(pollServerAlerts, 3000);  // initial run after 3s
+    setTimeout(pollServerAlerts, 3000);
   }
   document.addEventListener('DOMContentLoaded', startAlertPolling);
-  /* Also start when auth flips on later */
   if (window.MutationObserver) {
     new MutationObserver(function(){
       if (document.documentElement.classList.contains('app-authenticated')) startAlertPolling();

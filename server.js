@@ -25,7 +25,7 @@ const {
   createCoachFlag, getPendingCoachFlag, ackCoachFlag, listActiveCoachFlags,
   // #11 Session 2 — real-time alerts
   getAlertThresholds, updateAlertThreshold, isAlertInCooldown, insertAlertEvent,
-  getActiveAlerts, getRecentAlerts, ackAlert, snoozeAlert, getAlertCounts,
+  getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
 } = require('./database');
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const {
@@ -153,6 +153,22 @@ function broadcastLiveEvent(payload, targetRole) {
     }
   }
 }
+
+// Generic SSE broadcaster — any event type, any payload, optional role filter.
+// Exposed on `global` so feature code (e.g. alert engine) can use it without
+// importing this module circularly. Used by lib/alerts.js evaluator.
+global.broadcastSseEvent = function broadcastSseEvent(eventType, payload, targetRole) {
+  if (!eventType) return 0;
+  const safePayload = JSON.stringify(payload || {});
+  const msg = `event: ${eventType}\ndata: ${safePayload}\n\n`;
+  let sent = 0;
+  for (const [res, meta] of sseClients) {
+    if (!targetRole || targetRole === 'all' || meta.role === targetRole) {
+      try { res.write(msg); sent++; } catch (e) { /* dead socket — close handler will clean up */ }
+    }
+  }
+  return sent;
+};
 
 function formatBreakChatMessage(event){
   const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
@@ -3113,7 +3129,23 @@ app.post('/api/alerts/:id/ack', requireAuth, async (req, res) => {
     if (!id) return res.status(400).json({ success: false, error: 'invalid id' });
     await ackAlert(id, req.session.email);
     log.info('alert_acked', { id, by: req.session.email });
+    // Broadcast so other open tabs update their bell badge in real time
+    if (typeof global.broadcastSseEvent === 'function') {
+      global.broadcastSseEvent('alert_ack', { id, by: req.session.email });
+    }
     res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Acknowledge every active alert in one call ("Mark all read")
+app.post('/api/alerts/ack-all', requireAuth, async (req, res) => {
+  try {
+    const changed = await ackAllActiveAlerts(req.session.email);
+    log.info('alerts_ack_all', { count: changed, by: req.session.email });
+    if (typeof global.broadcastSseEvent === 'function') {
+      global.broadcastSseEvent('alert_ack_all', { count: changed, by: req.session.email });
+    }
+    res.json({ success: true, count: changed });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
