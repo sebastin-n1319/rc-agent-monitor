@@ -469,6 +469,21 @@ async function initDB() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT)`);
 
+  // #16 Session 11: Predictive abandonment — persisted logistic regression model
+  await run(`CREATE TABLE IF NOT EXISTS predict_models (
+    id INTEGER PRIMARY KEY,
+    model_key TEXT NOT NULL,
+    fitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    weights_json TEXT NOT NULL,
+    mu_json TEXT NOT NULL,
+    sigma_json TEXT NOT NULL,
+    feature_keys_json TEXT NOT NULL,
+    sample_size INTEGER NOT NULL,
+    precision REAL,
+    recall REAL,
+    accuracy REAL,
+    notes TEXT)`);
+
   // #20 Session 6: Anomaly detection — thresholds + event log
   await run(`CREATE TABLE IF NOT EXISTS anomaly_thresholds (
     metric TEXT PRIMARY KEY,
@@ -1666,6 +1681,53 @@ async function snoozeAlert(id, minutes){
     [`+${m} minutes`, id]);
 }
 
+// ── Predictive abandonment (#16 Session 11) ───────────────────────────
+
+/** Persist the latest fitted model. Single-row table — INSERT OR REPLACE. */
+async function savePredictModel(model){
+  if (!model || !model.ready) throw new Error('only ready models can be saved');
+  return run(`INSERT OR REPLACE INTO predict_models
+    (id, model_key, fitted_at, weights_json, mu_json, sigma_json,
+     feature_keys_json, sample_size, precision, recall, accuracy, notes)
+    VALUES (1, ?, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ['abandon_15min',
+     JSON.stringify(model.weights),
+     JSON.stringify(model.mu),
+     JSON.stringify(model.sigma),
+     JSON.stringify(model.featureKeys),
+     model.sampleSize,
+     (model.evalMetrics && model.evalMetrics.precision) || 0,
+     (model.evalMetrics && model.evalMetrics.recall) || 0,
+     (model.evalMetrics && model.evalMetrics.accuracy) || 0,
+     model.notes || null]);
+}
+
+/** Load the latest fitted model. Returns null if no model has been trained. */
+async function loadPredictModel(){
+  const row = await get(`SELECT * FROM predict_models WHERE id=1`);
+  if (!row) return null;
+  try {
+    return {
+      ready: true,
+      modelKey: row.model_key,
+      fittedAt: row.fitted_at,
+      weights: JSON.parse(row.weights_json || '[]'),
+      mu: JSON.parse(row.mu_json || '[]'),
+      sigma: JSON.parse(row.sigma_json || '[]'),
+      featureKeys: JSON.parse(row.feature_keys_json || '[]'),
+      sampleSize: row.sample_size,
+      evalMetrics: {
+        precision: row.precision || 0,
+        recall: row.recall || 0,
+        accuracy: row.accuracy || 0
+      },
+      notes: row.notes
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
 // ── Anomaly detection (#20 Session 6) ─────────────────────────────────
 
 async function getAnomalyThresholds(){
@@ -1866,6 +1928,8 @@ module.exports={
   getAnomalyThresholds, updateAnomalyThreshold,
   insertAnomalyEvent, getRecentAnomalies, getActiveAnomalies,
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
+  // #16 Session 11 — predictive abandonment
+  savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,

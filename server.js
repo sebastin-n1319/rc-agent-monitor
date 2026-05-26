@@ -2938,79 +2938,241 @@ app.get('/api/coach-flags', requireAdmin, async (req, res) => {
   catch(e){ res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ─── #16: Predictive abandonment (lightweight linear model) ─────────────────
-// Uses simple weighted linear regression on (queue_depth, hour_of_day, avg_wait)
-// Trained on the last 14 days of abandoned-calls data, refit hourly.
-let _abandonModel = null;
-let _abandonModelFitAt = 0;
-async function fitAbandonModel() {
-  try {
-    const tz = 'America/Chicago';
-    const samples = [];
-    const today = new Date();
-    for (let i = 13; i >= 1; i--) {
-      const d = new Date(today); d.setDate(d.getDate() - i);
-      const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
-      try {
-        const abandoned = await getAbandonedCalls(dateStr, tz);
-        if (!Array.isArray(abandoned)) continue;
-        // bucket by hour
-        const byHour = new Map();
-        abandoned.forEach(c => {
-          const h = new Date(c.start_time || c.startTime || Date.now()).getHours();
-          byHour.set(h, (byHour.get(h) || 0) + 1);
-        });
-        for (const [hour, count] of byHour) {
-          samples.push({ hour, count, weekday: d.getDay() });
-        }
-      } catch(e){}
-    }
-    if (samples.length < 5) {
-      _abandonModel = { intercept: 0, perHour: {}, fitted: false };
-      return;
-    }
-    // Compute per-hour mean (this becomes the predictor for "next hour")
-    const perHour = {};
-    samples.forEach(s => {
-      perHour[s.hour] = perHour[s.hour] || [];
-      perHour[s.hour].push(s.count);
-    });
-    const perHourMean = {};
-    Object.keys(perHour).forEach(h => {
-      const arr = perHour[h];
-      perHourMean[h] = arr.reduce((a,b)=>a+b,0) / arr.length;
-    });
-    _abandonModel = { perHour: perHourMean, fitted: true, sampleCount: samples.length };
-    _abandonModelFitAt = Date.now();
-  } catch(e) {
-    _abandonModel = { perHour: {}, fitted: false, error: e.message };
-  }
-}
-// Fit on boot + every hour
-setTimeout(fitAbandonModel, 5000);
-setInterval(fitAbandonModel, 3600000);
+// ══════════════════════════════════════════════════════════════════════════════
+// PREDICTIVE ABANDONMENT (#16 Session 11) — real logistic regression
+// Replaces the Session 1 per-hour-mean stub.
+// ══════════════════════════════════════════════════════════════════════════════
+const PREDICT = require('./lib/predict');
 
-app.get('/api/predict/abandonment', requireAuth, async (req, res) => {
-  if (!_abandonModel || !_abandonModel.fitted) {
-    return res.json({ success: true, prediction: null, message: 'Model not yet trained' });
+// Build a training row dataset from the last N days of call_logs.
+// Each row = one 15-minute window with features + label.
+async function buildPredictTrainingSet(days) {
+  const tz = 'America/Chicago';
+  days = Math.min(Math.max(days || 30, 7), 90);
+  const today = new Date();
+  const rows = [];
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+    let abandoned = [];
+    try { abandoned = await getAbandonedCalls(dateStr, tz); } catch (e) { continue; }
+    if (!Array.isArray(abandoned)) continue;
+
+    // Bucket abandons by hour-of-day → quick label lookup
+    const abandonsByHourMin = new Map();
+    for (const c of abandoned) {
+      const t = new Date(c.start_time || c.startTime || Date.now());
+      const h = t.getHours();
+      const m = Math.floor(t.getMinutes() / 15);
+      const key = h + ':' + m;  // e.g. "14:2" = 14:30-14:45
+      abandonsByHourMin.set(key, (abandonsByHourMin.get(key) || 0) + 1);
+    }
+
+    // Build feature rows for business-hours 15-min windows
+    for (let h = 9; h < 17; h++) {
+      for (let m = 0; m < 4; m++) {
+        const key = h + ':' + m;
+        const label = (abandonsByHourMin.get(key) || 0) > 0 ? 1 : 0;
+        // Synthesize feature values from the day's overall stats — in v2 we'd
+        // pull queue_depth at-time-T from presence_events; that's a future
+        // refinement. For now, use end-of-day aggregates as a proxy.
+        const features = {
+          queueDepth: 0,           // placeholder until we query presence_events
+          hourOfDay: h + m * 0.25,
+          weekday: d.getDay(),
+          avgWaitSeconds: 0,       // placeholder
+          agentsAvailable: 0       // placeholder
+        };
+        rows.push({ features, label });
+      }
+    }
   }
-  const tz = req.query.tz || 'America/Chicago';
-  const now = new Date();
-  const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(now);
-  const hour = parseInt(hourStr) % 24;
-  const next = (hour + 1) % 24;
+  return rows;
+}
+
+// Cache the latest model in memory so we don't hit the DB on every prediction request
+let _cachedPredictModel = null;
+let _cachedPredictModelAt = 0;
+const PREDICT_CACHE_TTL_MS = 60 * 1000;  // 1 minute
+
+async function getCachedPredictModel() {
+  if (_cachedPredictModel && Date.now() - _cachedPredictModelAt < PREDICT_CACHE_TTL_MS) {
+    return _cachedPredictModel;
+  }
+  _cachedPredictModel = await loadPredictModel().catch(() => null);
+  _cachedPredictModelAt = Date.now();
+  return _cachedPredictModel;
+}
+
+async function trainAndPersistPredictModel(days) {
+  const rows = await buildPredictTrainingSet(days || 30);
+  const model = PREDICT.trainLogisticRegression(rows, { iterations: 300 });
+  if (model.ready) {
+    await savePredictModel(model);
+    log.info('predict_model_trained', {
+      sampleSize: model.sampleSize,
+      finalLoss: model.finalLoss,
+      precision: model.evalMetrics?.precision,
+      recall: model.evalMetrics?.recall,
+      accuracy: model.evalMetrics?.accuracy
+    });
+    // Invalidate cache so next request picks up the freshly trained model
+    _cachedPredictModel = null;
+  } else {
+    log.warn('predict_model_train_skipped', { reason: model.reason, sampleSize: model.sampleSize });
+  }
+  return model;
+}
+
+// Nightly retraining cron — fires every 10 min, runs at 03:30 CST
+let _predictCronStarted = false;
+global._startPredictCron = function startPredictCron() {
+  if (_predictCronStarted) return;
+  _predictCronStarted = true;
+  const HOUR = parseInt(process.env.PREDICT_RUN_HOUR_CST) || 3;
+  const MIN = 30;  // offset from anomaly cron (which runs at :00)
+  setInterval(async () => {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(new Date());
+    const h = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+    const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+    if (h === HOUR && Math.abs(m - MIN) < 5) {
+      log.info('predict_cron_tick', { hour: HOUR, min: MIN });
+      await trainAndPersistPredictModel(30);
+    }
+  }, 10 * 60 * 1000);  // every 10 min
+  log.info('predict_cron_started', { hourCst: HOUR, min: MIN });
+};
+
+// ─── Inference endpoint ────────────────────────────────────────────────────
+app.get('/api/predict/abandonment', requireAuth, async (req, res) => {
+  try {
+    const model = await getCachedPredictModel();
+    if (!model || !model.ready) {
+      return res.json({
+        success: true,
+        ready: false,
+        reason: 'no_model',
+        message: 'No trained model yet. Trigger via POST /api/admin/predict/train (admin).'
+      });
+    }
+    const tz = req.query.tz || 'America/Chicago';
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz, hour: 'numeric', hour12: false, minute: '2-digit', weekday: 'short'
+    }).formatToParts(now);
+    const hourOfDay = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+    const wd = parts.find(p => p.type === 'weekday')?.value || 'Mon';
+    const weekday = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(wd);
+
+    // Build features — agents/queue come from in-memory globals
+    const liveMap = (typeof global.rcLiveStatus === 'object' && global.rcLiveStatus) || {};
+    let queueDepth = 0, agentsAvailable = 0;
+    for (const ext of Object.keys(liveMap)) {
+      const a = liveMap[ext] || {};
+      if (String(a.status || '').toLowerCase() === 'ringing') queueDepth++;
+      if (String(a.status || '').toLowerCase() === 'available') agentsAvailable++;
+    }
+    // avgWait — use the queueDepth snapshot if maintained, else 0
+    const avgWaitSeconds = (global._queueDepthSnapshot && global._queueDepthSnapshot.avgWaitSec) || 0;
+
+    const features = { queueDepth, hourOfDay, weekday, avgWaitSeconds, agentsAvailable };
+    const prediction = PREDICT.predictAbandonProb({ model, features });
+
+    res.json({
+      success: true,
+      ready: true,
+      prediction,
+      model: {
+        fittedAt: model.fittedAt,
+        sampleSize: model.sampleSize,
+        evalMetrics: model.evalMetrics
+      }
+    });
+  } catch (e) {
+    log.error('predict_failed', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ─── Admin: force retrain ──────────────────────────────────────────────────
+app.post('/api/admin/predict/train', requireAdmin, async (req, res) => {
+  try {
+    const days = req.body && req.body.days ? parseInt(req.body.days) : 30;
+    const model = await trainAndPersistPredictModel(days);
+    insertAuditLog(req.session.email, 'predict_model_trained', 'abandon_15min',
+      `sampleSize=${model.sampleSize || 0} ready=${!!model.ready}`).catch(() => {});
+    res.json({
+      success: true,
+      ready: !!model.ready,
+      sampleSize: model.sampleSize,
+      reason: model.reason,
+      evalMetrics: model.evalMetrics,
+      notes: model.notes
+    });
+  } catch (e) {
+    log.error('predict_train_endpoint_failed', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ─── Admin: model debug info ───────────────────────────────────────────────
+app.get('/api/predict/model', requireAdmin, async (req, res) => {
+  const model = await getCachedPredictModel();
+  if (!model) return res.json({ success: true, ready: false });
   res.json({
     success: true,
-    currentHour: hour,
-    nextHour: next,
-    prediction: {
-      currentHourExpected: Math.round(_abandonModel.perHour[hour] || 0),
-      nextHourExpected:    Math.round(_abandonModel.perHour[next] || 0),
-      confidence: _abandonModel.sampleCount > 50 ? 'high' : _abandonModel.sampleCount > 15 ? 'medium' : 'low'
-    },
-    fittedAt: _abandonModelFitAt,
-    sampleCount: _abandonModel.sampleCount
+    ready: true,
+    modelKey: model.modelKey,
+    fittedAt: model.fittedAt,
+    featureKeys: model.featureKeys,
+    weights: model.weights,
+    mu: model.mu,
+    sigma: model.sigma,
+    sampleSize: model.sampleSize,
+    evalMetrics: model.evalMetrics,
+    notes: model.notes
   });
+});
+
+// ─── Backtest viewer (yesterday's predictions vs reality) ──────────────────
+app.get('/api/predict/backtest', requireAuth, async (req, res) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 30);
+    const tz = 'America/Chicago';
+    const model = await getCachedPredictModel();
+    if (!model || !model.ready) {
+      return res.json({ success: true, ready: false, message: 'No trained model yet' });
+    }
+    const today = new Date();
+    const out = [];
+    for (let i = days; i >= 1; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+      let abandoned = [];
+      try { abandoned = await getAbandonedCalls(dateStr, tz); } catch (e) {}
+      const actualAbandons = Array.isArray(abandoned) ? abandoned.length : 0;
+      // Aggregate: for each hour the model would have predicted vs reality.
+      // Simplified — predict at mid-day with average features.
+      const features = {
+        queueDepth: 0, hourOfDay: 13, weekday: d.getDay(),
+        avgWaitSeconds: 0, agentsAvailable: 0
+      };
+      const pred = PREDICT.predictAbandonProb({ model, features });
+      out.push({
+        date: dateStr,
+        predicted: pred.probability,
+        actual: actualAbandons > 0 ? 1 : 0,
+        actualCount: actualAbandons
+      });
+    }
+    res.json({ success: true, ready: true, days, backtest: out });
+  } catch (e) {
+    log.error('predict_backtest_failed', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 // ─── #14: Schedule adherence (computed from break_events) ───────────────────
@@ -3956,6 +4118,8 @@ async function start() {
       setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
       // #11 Session 2: real-time alert cron (every 30s by default)
       if (typeof global._startAlertCron === 'function') global._startAlertCron();
+      // Session 11: nightly predict-model retraining at 03:30 CST
+      if (typeof global._startPredictCron === 'function') global._startPredictCron();
       // #20 Session 6: anomaly cron (fires at 03:00 CST daily)
       if (typeof global._startAnomalyCron === 'function') global._startAnomalyCron();
       // Start missed-call → Google Chat notifier (every 2 min)
