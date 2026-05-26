@@ -459,6 +459,46 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     acknowledged_at DATETIME)`);
 
+  // #11 Session 2: Real-time alert thresholds (admin-configurable per rule)
+  await run(`CREATE TABLE IF NOT EXISTS alert_thresholds (
+    key TEXT PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    severity TEXT NOT NULL DEFAULT 'warning',
+    threshold_json TEXT NOT NULL,
+    cooldown_seconds INTEGER NOT NULL DEFAULT 300,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT)`);
+
+  // #11 Session 2: Alert events — append-only audit log of every fire
+  await run(`CREATE TABLE IF NOT EXISTS alert_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    key TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    body TEXT NOT NULL,
+    data_json TEXT,
+    agent_email TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    acked_at DATETIME,
+    acked_by TEXT,
+    snoozed_until DATETIME)`);
+
+  // Performance index — every alert lookup filters by key + time
+  await run(`CREATE INDEX IF NOT EXISTS idx_alert_events_key_time
+             ON alert_events(key, created_at DESC)`).catch(()=>{});
+  await run(`CREATE INDEX IF NOT EXISTS idx_alert_events_active
+             ON alert_events(acked_at, snoozed_until, created_at DESC)`).catch(()=>{});
+
+  // Seed default thresholds — only inserts missing rows (won't overwrite admin edits)
+  const { DEFAULT_THRESHOLDS } = require('./lib/alerts');
+  for (const [key, cfg] of Object.entries(DEFAULT_THRESHOLDS)) {
+    try {
+      await run(`INSERT OR IGNORE INTO alert_thresholds
+                 (key, enabled, severity, threshold_json, cooldown_seconds, updated_by)
+                 VALUES (?, ?, ?, ?, ?, 'system')`,
+        [key, cfg.enabled, cfg.severity, JSON.stringify(cfg.threshold), cfg.cooldown_seconds]);
+    } catch(e) { /* swallow — non-critical */ }
+  }
+
   // Migrations
   for (const sql of [
     `ALTER TABLE monitored_agents ADD COLUMN email TEXT`,
@@ -1432,10 +1472,118 @@ async function listActiveCoachFlags(){
               WHERE status='pending' ORDER BY created_at DESC`);
 }
 
+// ── Real-time alerts (#11 Session 2) ──────────────────────────────────
+
+/** Return all threshold configs as a map keyed by alert key. Each row's
+ *  threshold_json is parsed and merged into the row's `threshold` field. */
+async function getAlertThresholds(){
+  const rows = await all(`SELECT key,enabled,severity,threshold_json,cooldown_seconds,updated_at,updated_by
+                          FROM alert_thresholds`);
+  const out = {};
+  for (const r of rows) {
+    let threshold = {};
+    try { threshold = JSON.parse(r.threshold_json || '{}'); } catch(e){}
+    out[r.key] = {
+      enabled: r.enabled,
+      severity: r.severity,
+      threshold,
+      cooldown_seconds: r.cooldown_seconds,
+      updated_at: r.updated_at,
+      updated_by: r.updated_by
+    };
+  }
+  return out;
+}
+
+/** Update a single threshold. Validates severity and ensures the key exists.
+ *  Returns nothing on success; throws on validation failure. */
+async function updateAlertThreshold(key, updates, byEmail){
+  if (!key) throw new Error('key required');
+  const valid = new Set(['info','warning','critical']);
+  if (updates.severity && !valid.has(updates.severity)) {
+    throw new Error('severity must be info|warning|critical');
+  }
+  const existing = await get(`SELECT * FROM alert_thresholds WHERE key=?`,[key]);
+  if (!existing) throw new Error('Unknown alert key: ' + key);
+  const merged = {
+    enabled: updates.enabled != null ? (updates.enabled ? 1 : 0) : existing.enabled,
+    severity: updates.severity || existing.severity,
+    threshold_json: updates.threshold ? JSON.stringify(updates.threshold) : existing.threshold_json,
+    cooldown_seconds: updates.cooldown_seconds != null ? Number(updates.cooldown_seconds) : existing.cooldown_seconds
+  };
+  await run(`UPDATE alert_thresholds
+             SET enabled=?, severity=?, threshold_json=?, cooldown_seconds=?,
+                 updated_at=CURRENT_TIMESTAMP, updated_by=?
+             WHERE key=?`,
+    [merged.enabled, merged.severity, merged.threshold_json, merged.cooldown_seconds, byEmail || 'system', key]);
+}
+
+/** Check if the same alert key has fired within `cooldownSeconds`. */
+async function isAlertInCooldown(key, cooldownSeconds){
+  const row = await get(`SELECT created_at FROM alert_events
+                         WHERE key=? AND created_at > datetime('now', ?)
+                         ORDER BY created_at DESC LIMIT 1`,
+    [key, `-${cooldownSeconds} seconds`]);
+  return !!row;
+}
+
+/** Insert a new alert event. Returns the new row id. */
+async function insertAlertEvent({ key, severity, body, data, agentEmail }){
+  if (!key || !severity || !body) throw new Error('key, severity, body required');
+  const r = await run(`INSERT INTO alert_events (key,severity,body,data_json,agent_email)
+                       VALUES (?,?,?,?,?)`,
+    [key, severity, body, JSON.stringify(data || {}), agentEmail || null]);
+  return r.lastID;
+}
+
+/** Active = not acked AND (not snoozed OR snooze expired). Most recent first. */
+async function getActiveAlerts(limit){
+  return all(`SELECT id,key,severity,body,data_json,agent_email,created_at,snoozed_until
+              FROM alert_events
+              WHERE acked_at IS NULL
+                AND (snoozed_until IS NULL OR snoozed_until < CURRENT_TIMESTAMP)
+              ORDER BY created_at DESC LIMIT ?`,[limit || 50]);
+}
+
+/** Full audit list — used for retrospective analytics. */
+async function getRecentAlerts(days){
+  const d = Math.min(Math.max(parseInt(days)||7, 1), 90);
+  return all(`SELECT id,key,severity,body,data_json,agent_email,created_at,acked_at,acked_by,snoozed_until
+              FROM alert_events
+              WHERE created_at > datetime('now', ?)
+              ORDER BY created_at DESC LIMIT 500`, [`-${d} days`]);
+}
+
+async function ackAlert(id, byEmail){
+  return run(`UPDATE alert_events SET acked_at=CURRENT_TIMESTAMP, acked_by=? WHERE id=? AND acked_at IS NULL`,
+    [byEmail || 'unknown', id]);
+}
+
+async function snoozeAlert(id, minutes){
+  const m = Math.min(Math.max(parseInt(minutes)||15, 1), 1440);
+  return run(`UPDATE alert_events SET snoozed_until=datetime('now', ?) WHERE id=?`,
+    [`+${m} minutes`, id]);
+}
+
+/** Returns unack count grouped by severity — used by the bell badge. */
+async function getAlertCounts(){
+  const rows = await all(`SELECT severity, COUNT(*) AS n FROM alert_events
+                          WHERE acked_at IS NULL
+                            AND (snoozed_until IS NULL OR snoozed_until < CURRENT_TIMESTAMP)
+                          GROUP BY severity`);
+  const out = { info: 0, warning: 0, critical: 0, total: 0 };
+  rows.forEach(r => { out[r.severity] = r.n; out.total += r.n; });
+  return out;
+}
+
 module.exports={
   createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
   upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
   createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,
+  // #11 Session 2 — alerts
+  getAlertThresholds, updateAlertThreshold,
+  isAlertInCooldown, insertAlertEvent,
+  getActiveAlerts, getRecentAlerts, ackAlert, snoozeAlert, getAlertCounts,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,

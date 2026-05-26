@@ -24121,34 +24121,73 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     document.body.appendChild(modal);
   };
 
-  /* ── #11: Real-time alerts ────────────────────────────────────── */
-  var _alertState = { lastAbandon: 0, lastQueue: 0, lastStuck: {} };
-  function checkAlerts(){
+  /* ── #11: Real-time alerts — Session 2 ────────────────────────── *
+   * Legacy DOM-scraping rate-limited toasts REMOVED.
+   * Alerts are now driven by the server-side engine in lib/alerts.js
+   * and persisted in alert_events. The client polls /api/alerts/active
+   * every 30s and surfaces new alerts as toasts. Future (Session 3):
+   * subscribe to the SSE 'alert' channel for instant delivery + a
+   * proper alert center modal. */
+  var _seenAlertIds = new Set();
+  var _alertPollTimer = null;
+
+  async function pollServerAlerts(){
     if (!flag('alerts')) return;
-    /* Read abandonment KPI */
-    var abandonEl = document.querySelector('[data-kpi="abandon"] .ld-kpi-val, .ld-kpi.ld-kpi-alert .ld-kpi-val');
-    if (abandonEl) {
-      var rate = parseFloat(abandonEl.textContent) || 0;
-      if (rate > 10 && Date.now() - _alertState.lastAbandon > 600000) {
-        _alertState.lastAbandon = Date.now();
-        showToast('🚨 Abandonment rate spiked: ' + rate + '%', 'error', 6000);
+    try {
+      var r = await fetch('/api/alerts/active?limit=20', { credentials: 'same-origin' });
+      if (!r.ok) return;
+      var j = await r.json();
+      if (!j.success || !Array.isArray(j.alerts)) return;
+      /* Newest first → reverse so older ones toast first */
+      j.alerts.slice().reverse().forEach(function(a){
+        if (_seenAlertIds.has(a.id)) return;
+        _seenAlertIds.add(a.id);
+        var toastType = a.severity === 'critical' ? 'error' : a.severity === 'warning' ? 'warning' : 'info';
+        var icon = a.severity === 'critical' ? '🚨' : a.severity === 'warning' ? '⚠' : 'ℹ';
+        if (typeof showToast === 'function') showToast(icon + ' ' + a.body, toastType, 7000);
+      });
+      /* Update bell badge (in case Session 3 UI is present) */
+      var bell = document.getElementById('alert-bell-count');
+      if (bell && j.counts) {
+        bell.textContent = String(j.counts.total || 0);
+        bell.dataset.severity = j.counts.critical > 0 ? 'critical' : j.counts.warning > 0 ? 'warning' : 'none';
+        bell.style.display = j.counts.total > 0 ? '' : 'none';
       }
-    }
-    /* Long-duration calls */
-    document.querySelectorAll('.live-timer').forEach(function(t){
-      var txt = t.textContent || '';
-      var parts = txt.split(':');
-      if (parts.length === 2) {
-        var min = parseInt(parts[0]) || 0;
-        var key = t.closest('tr')?.querySelector('.agent-name')?.textContent || '';
-        if (min >= 15 && Date.now() - (_alertState.lastStuck[key] || 0) > 300000) {
-          _alertState.lastStuck[key] = Date.now();
-          showToast('📞 ' + key + ' on call ' + min + ' min', 'warning', 4500);
-        }
-      }
-    });
+    } catch (e) { /* network blip — try next tick */ }
   }
-  setInterval(checkAlerts, 30000);
+  /* Start polling once authenticated */
+  function startAlertPolling(){
+    if (_alertPollTimer) return;
+    if (!document.documentElement.classList.contains('app-authenticated')) return;
+    _alertPollTimer = setInterval(pollServerAlerts, 30000);
+    setTimeout(pollServerAlerts, 3000);  // initial run after 3s
+  }
+  document.addEventListener('DOMContentLoaded', startAlertPolling);
+  /* Also start when auth flips on later */
+  if (window.MutationObserver) {
+    new MutationObserver(function(){
+      if (document.documentElement.classList.contains('app-authenticated')) startAlertPolling();
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  /* Acknowledge helper — wire up from alert center UI in Session 3 */
+  window.ackServerAlert = async function(id){
+    try {
+      var r = await fetch('/api/alerts/' + id + '/ack', { method: 'POST', credentials: 'same-origin' });
+      var j = await r.json();
+      if (j.success && typeof showToast === 'function') showToast('Alert acknowledged','success',1500);
+      return j.success;
+    } catch (e) { return false; }
+  };
+  window.snoozeServerAlert = async function(id, minutes){
+    minutes = minutes || 15;
+    try {
+      var r = await fetch('/api/alerts/' + id + '/snooze?minutes=' + minutes, { method: 'POST', credentials: 'same-origin' });
+      var j = await r.json();
+      if (j.success && typeof showToast === 'function') showToast('Snoozed ' + minutes + ' min','info',1500);
+      return j.success;
+    } catch (e) { return false; }
+  };
 
   /* ── #8: Break budget tracker ─────────────────────────────────── */
   window.BREAK_BUDGET_MINUTES = 60; /* default policy */

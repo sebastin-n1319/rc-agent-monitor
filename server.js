@@ -23,7 +23,11 @@ const {
   createHandoff, getRecentHandoffs, getUnreadHandoffs, ackHandoff,
   upsertWellness, getWellnessForEmail, getWellnessTeamSummary, hasWellnessToday,
   createCoachFlag, getPendingCoachFlag, ackCoachFlag, listActiveCoachFlags,
+  // #11 Session 2 — real-time alerts
+  getAlertThresholds, updateAlertThreshold, isAlertInCooldown, insertAlertEvent,
+  getActiveAlerts, getRecentAlerts, ackAlert, snoozeAlert, getAlertCounts,
 } = require('./database');
+const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
@@ -2991,6 +2995,198 @@ app.get('/api/modules', requireAuth, (req, res) => {
   });
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// REAL-TIME ALERTS (#11 Session 2) — engine wiring + endpoints + cron
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── Build state snapshot for the alert engine ─────────────────────────────
+// All sources are best-effort — missing data simply means "skip that rule".
+async function buildAlertState() {
+  const now = Date.now();
+  const thresholds = await getAlertThresholds();
+
+  // Snapshot agents (use cache so we don't hammer DB on the cron tick)
+  let agents = [];
+  try { agents = await cacheWrap('agents:list', 5000, () => getMonitoredAgents()); } catch(e){}
+
+  // Map agents into the engine's expected shape.
+  // We rely on rc-service to track live status — read from globals it exposes.
+  const liveMap = (typeof global.rcLiveStatus === 'object' && global.rcLiveStatus) || {};
+  const agentSnapshots = (agents || []).map(a => {
+    const live = liveMap[a.extension] || {};
+    return {
+      email: a.email,
+      name: a.name,
+      extension: a.extension,
+      status: String(live.status || 'offline'),
+      sinceMs: live.sinceMs || null,
+      currentCallStartedAt: live.currentCallStartedAt || null
+    };
+  });
+
+  // Queue depth + zero-coverage tracking (maintained globally)
+  const queueDepth = global._queueDepthSnapshot || null;
+  const coverage   = global._coverageSnapshot || null;
+
+  // Calls in last 15 min — read from a rolling buffer if available
+  const callsLast15Min = Array.isArray(global._callsLast15Min) ? global._callsLast15Min : [];
+
+  // Hour-of-day in business timezone (CST)
+  const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false }).format(new Date(now));
+  const nowHourCST = parseInt(hourStr) % 24;
+
+  return { now, thresholds, agents: agentSnapshots, queueDepth, coverage, callsLast15Min, nowHourCST };
+}
+
+// ─── Cron evaluator — runs every 30s ───────────────────────────────────────
+const ALERT_INTERVAL_MS = parseInt(process.env.ALERT_INTERVAL_MS) || 30_000;
+async function runAlertEvaluator() {
+  try {
+    const state = await buildAlertState();
+    const fired = evaluateAllAlerts(state);
+    if (!fired.length) return;
+    for (const alert of fired) {
+      try {
+        const cfg = state.thresholds[alert.key];
+        const cooldownSec = (cfg && cfg.cooldown_seconds) || 300;
+        if (await isAlertInCooldown(alert.key, cooldownSec)) {
+          log.debug('alert_skipped_cooldown', { key: alert.key, cooldownSec });
+          continue;
+        }
+        const id = await insertAlertEvent({
+          key: alert.key,
+          severity: alert.severity,
+          body: alert.body,
+          data: alert.data || {},
+          agentEmail: alert.agentEmail || null
+        });
+        log.info('alert_fired', { id, key: alert.key, severity: alert.severity });
+        // Broadcast via SSE if the broadcaster is wired up
+        if (typeof global.broadcastSseEvent === 'function') {
+          global.broadcastSseEvent('alert', { id, ...alert });
+        }
+      } catch (innerErr) {
+        log.error('alert_persist_failed', innerErr, { key: alert.key });
+      }
+    }
+  } catch (err) {
+    log.error('alert_evaluator_failed', err);
+  }
+}
+// Start after server boots — see start() below
+global._startAlertCron = function startAlertCron() {
+  if (global._alertCronStarted) return;
+  global._alertCronStarted = true;
+  log.info('alert_cron_started', { intervalMs: ALERT_INTERVAL_MS });
+  setInterval(runAlertEvaluator, ALERT_INTERVAL_MS);
+  setTimeout(runAlertEvaluator, 5000);  // initial run after 5s
+};
+
+// ─── Endpoints ─────────────────────────────────────────────────────────────
+
+// List active (unacked + not-snoozed) alerts — newest first
+app.get('/api/alerts/active', requireAuth, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 50, 200);
+    const rows = await getActiveAlerts(limit);
+    const counts = await getAlertCounts();
+    res.json({ success: true, alerts: rows.map(parseAlertRow), counts });
+  } catch (e) {
+    log.error('alerts_active_failed', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Audit list — last N days of all alerts (acked or not)
+app.get('/api/alerts/recent', requireAuth, async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 7, 90);
+    const rows = await getRecentAlerts(days);
+    res.json({ success: true, days, alerts: rows.map(parseAlertRow) });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Acknowledge a single alert
+app.post('/api/alerts/:id/ack', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: 'invalid id' });
+    await ackAlert(id, req.session.email);
+    log.info('alert_acked', { id, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Snooze an alert for N minutes (default 15)
+app.post('/api/alerts/:id/snooze', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const minutes = parseInt(req.query.minutes) || 15;
+    if (!id) return res.status(400).json({ success: false, error: 'invalid id' });
+    await snoozeAlert(id, minutes);
+    log.info('alert_snoozed', { id, minutes, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Read all thresholds
+app.get('/api/alerts/thresholds', requireAuth, async (req, res) => {
+  try { res.json({ success: true, thresholds: await getAlertThresholds() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Admin: update one threshold
+app.put('/api/alerts/thresholds/:key', requireAdmin, async (req, res) => {
+  try {
+    const key = req.params.key;
+    if (!ALERT_KEYS.includes(key)) {
+      return res.status(400).json({ success: false, error: 'unknown alert key' });
+    }
+    await updateAlertThreshold(key, req.body || {}, req.session.email);
+    insertAuditLog(req.session.email, 'alert_threshold_updated', key, JSON.stringify(req.body || {})).catch(()=>{});
+    log.info('alert_threshold_updated', { key, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(e.message.includes('Unknown') ? 404 : 400).json({ success: false, error: e.message });
+  }
+});
+
+// Admin: fire a synthetic alert for testing the broadcast pipeline
+app.post('/api/admin/alerts/test', requireAdmin, async (req, res) => {
+  try {
+    const { key, severity, body } = req.body || {};
+    if (!key || !body) return res.status(400).json({ success: false, error: 'key and body required' });
+    const id = await insertAlertEvent({
+      key,
+      severity: severity || 'info',
+      body: '[TEST] ' + body,
+      data: { test: true, firedBy: req.session.email }
+    });
+    if (typeof global.broadcastSseEvent === 'function') {
+      global.broadcastSseEvent('alert', { id, key, severity: severity || 'info', body: '[TEST] ' + body, data: { test: true } });
+    }
+    res.json({ success: true, id });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Helper — parses data_json on an alert row
+function parseAlertRow(row) {
+  let data = {};
+  try { data = JSON.parse(row.data_json || '{}'); } catch(e){}
+  return {
+    id: row.id,
+    key: row.key,
+    severity: row.severity,
+    body: row.body,
+    data,
+    agentEmail: row.agent_email,
+    createdAt: row.created_at,
+    ackedAt: row.acked_at || null,
+    ackedBy: row.acked_by || null,
+    snoozedUntil: row.snoozed_until || null
+  };
+}
+
 // ── Global error handler — structured logger replaces ad-hoc console ─────────
 app.use(errorTracker());
 
@@ -3004,6 +3200,8 @@ async function start() {
       setTimeout(() => { fetchCallLogs().catch(e => console.error('❌ startup call log:', e.message)); }, 20000);
       await startScheduler();
       setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
+      // #11 Session 2: real-time alert cron (every 30s by default)
+      if (typeof global._startAlertCron === 'function') global._startAlertCron();
       // Start missed-call → Google Chat notifier (every 2 min)
       // Uses MISSED_CALL_WEBHOOK_URL — separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
       if (MISSED_CALL_WEBHOOK_URL) {
