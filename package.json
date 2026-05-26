@@ -1,15 +1,22 @@
 {
   "name": "rc-productivity-monitor",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Adit Agent Monitor — real-time call center productivity dashboard",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "lint": "echo 'TODO: add eslint'",
+    "ci": "npm run test && npm run test:e2e"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["adit", "ringcentral", "call-center", "productivity"],
+  "author": "Adit",
+  "license": "UNLICENSED",
   "type": "commonjs",
   "dependencies": {
     "@ringcentral/sdk": "^5.0.6",
@@ -23,6 +30,9 @@
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@playwright/test": "^1.48.0",
+    "@vitest/coverage-v8": "^2.1.0",
+    "nodemon": "^3.1.14",
+    "vitest": "^2.1.0"
   }
 }

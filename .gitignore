@@ -1,5 +1,14 @@
 node_modules/
 productivity.db
 .env
+.env.local
 *.db-shm
 *.db-wal
+*.log
+/coverage
+/playwright-report
+/test-results
+/tmp
+.DS_Store
+.cursor/
+.claude/

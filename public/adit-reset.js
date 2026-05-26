@@ -14,6 +14,7 @@
     'fonts.googleapis.com',
     'fonts.gstatic.com',
     'adit-theme.css',
+    'agent-view-v2.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

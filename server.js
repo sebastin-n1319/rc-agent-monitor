@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const { log, errorTracker, installProcessGuards } = require('./lib/logger');
+installProcessGuards();
 const cron = require('node-cron');
 const path = require('path');
 const {
@@ -2989,13 +2991,8 @@ app.get('/api/modules', requireAuth, (req, res) => {
   });
 });
 
-// ── Global error handler — must be last; masks internal details from responses ─
-// eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  console.error('❌ Unhandled route error:', err.message, err.stack);
-  if (res.headersSent) return next(err);
-  res.status(err.status || 500).json({ success: false, error: err.status ? err.message : 'Internal server error' });
-});
+// ── Global error handler — structured logger replaces ad-hoc console ─────────
+app.use(errorTracker());
 
 async function start() {
   const PORT = process.env.PORT || 8080;
