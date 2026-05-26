@@ -23805,7 +23805,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       callCorrelation: false,
       virtualScroll: false,
       predictiveAbandonment: false,
-      scheduleAdherence: false,
+      scheduleAdherence: false,     // legacy stub flag, kept for compatibility
+      scheduleAdherenceV2: false,   // Session 4 — real engine; default off until validated
       bulkActions: false,
       moduleLoader: false,
       websocketDiff: false
@@ -24536,18 +24537,47 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     }
   });
 
-  /* ── #14: Schedule adherence card (admin only) ───────────────────── */
+  /* ── #14: Schedule adherence — Session 4 ─────────────────────────── *
+   * Real implementation now lives in server.js + lib/schedule.js.
+   * Client API:
+   *   loadScheduleAdherence()       — fetch today's adherence (returns the array)
+   *   summarizeAdherence(records)   — counts by status
+   *   showAdherenceSummary()        — toast notification for admins
+   *   loadMyAdherence(days)         — agent's own history
+   * The admin UI form + timeline viz arrive in Session 5. */
   window.loadScheduleAdherence = async function(){
-    if (!flag('scheduleAdherence')) return;
+    if (!flag('scheduleAdherenceV2')) return null;
     try {
-      var r = await fetch('/api/schedule-adherence');
+      var r = await fetch('/api/schedule-adherence', { credentials: 'same-origin' });
       var j = await r.json();
-      if (!j.success) return;
-      var late = j.adherence.filter(function(a){ return a.status === 'late' || a.status === 'minor-late'; });
-      if (late.length) {
-        showToast('⏰ ' + late.length + ' agent(s) logged in late today', 'warning', 4500);
-      }
-    } catch(e){}
+      return j.success ? j.adherence : null;
+    } catch(e) { return null; }
+  };
+  window.summarizeAdherence = function(records){
+    var counts = { 'on-time':0,'minor-late':0,'late':0,'no-show':0,'early-leave':0,'overstay':0,'pending':0,'day-off':0,'unknown':0 };
+    (records || []).forEach(function(r){ if (counts[r.status] != null) counts[r.status]++; });
+    return counts;
+  };
+  window.showAdherenceSummary = async function(){
+    if (!flag('scheduleAdherenceV2')) return;
+    var records = await loadScheduleAdherence();
+    if (!records) return;
+    var counts = summarizeAdherence(records);
+    var bad = counts.late + counts['no-show'] + counts['early-leave'];
+    if (bad > 0 && typeof showToast === 'function') {
+      var msg = '⏰ Schedule alert: ' + counts['no-show'] + ' no-show, ' + counts.late + ' late, ' + counts['early-leave'] + ' early-leave';
+      showToast(msg, 'warning', 5500);
+    }
+  };
+  window.loadMyAdherence = async function(days){
+    if (!flag('scheduleAdherenceV2')) return null;
+    try {
+      var session = await fetch('/api/session', { credentials: 'same-origin' }).then(r => r.json());
+      if (!session.success) return null;
+      var r = await fetch('/api/schedule-adherence/' + encodeURIComponent(session.email) + '?days=' + (days || 7), { credentials: 'same-origin' });
+      var j = await r.json();
+      return j.success ? j.adherence : null;
+    } catch(e) { return null; }
   };
 
   /* ── #16: Predictive abandonment widget ─────────────────────────── */

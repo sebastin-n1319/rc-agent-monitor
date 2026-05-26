@@ -2945,26 +2945,210 @@ app.get('/api/predict/abandonment', requireAuth, async (req, res) => {
 });
 
 // ─── #14: Schedule adherence (computed from break_events) ───────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// SCHEDULE ADHERENCE (#14 Session 4) — versioned schedules + real adherence
+// Replaces the hardcoded 9-5 stub from Session 1.
+// ══════════════════════════════════════════════════════════════════════════════
+const { evaluateBulk: evaluateScheduleBulk, parseTimeStrToMinutes } = require('./lib/schedule');
+
+// Helper: parse 'HH:MM' (or 'HH:MM:SS') from a summary row → minutes-of-day
+function summaryTimeToMinute(s) {
+  if (typeof s !== 'string') return null;
+  const m = s.match(/^(\d{1,2}):(\d{2})/);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const mm = parseInt(m[2], 10);
+  if (h < 0 || h > 23 || mm < 0 || mm > 59) return null;
+  return h * 60 + mm;
+}
+
+// ─── GET /api/schedule-adherence ───────────────────────────────────────────
+// Real implementation using lib/schedule engine + configured schedules.
 app.get('/api/schedule-adherence', requireAuth, async (req, res) => {
   try {
     const tz = req.query.tz || 'America/Chicago';
     const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
-    const expected = { start: '09:00', end: '17:00' };  // default policy
+
+    // 1. Pull configured schedules for all agents (map: email → rowsArray)
+    const schedulesByAgent = await getAllSchedules();
+    // 2. Pull today's actuals (login/logout times + break minutes)
     const summary = await getAgentSummary(date, tz);
-    const adherence = (summary || []).map(a => {
-      const loginMin = a.first_login_time ? parseInt(a.first_login_time.split(':')[0]) * 60 + parseInt(a.first_login_time.split(':')[1]) : null;
-      const expectedStart = 9 * 60;
-      const variance = loginMin !== null ? loginMin - expectedStart : null;
-      return {
-        name: a.name || a.agent,
-        first_login: a.first_login_time || null,
-        expected_start: expected.start,
-        variance_minutes: variance,
-        status: variance === null ? 'no-data' : variance < 5 ? 'on-time' : variance < 15 ? 'minor-late' : 'late'
+    const actualsByAgent = {};
+    for (const a of (summary || [])) {
+      const email = a.email || a.agent_email;
+      if (!email) continue;
+      actualsByAgent[email] = {
+        firstLoginMinute: summaryTimeToMinute(a.first_login_time),
+        lastLogoutMinute: summaryTimeToMinute(a.last_logout_time),
+        breakMinutes: parseInt(a.break_minutes || a.breakMinutes || 0),
+        scheduledBreakMinutes: 60  // default policy — Session 5 will make this configurable per-agent
       };
+    }
+
+    // 3. Compute current minute-of-day in business tz for "now" evaluation
+    const nowParts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(new Date());
+    const hStr = nowParts.find(p => p.type === 'hour')?.value || '0';
+    const mStr = nowParts.find(p => p.type === 'minute')?.value || '0';
+    const nowMinute = parseInt(hStr, 10) * 60 + parseInt(mStr, 10);
+
+    // 4. Run the engine
+    const records = evaluateScheduleBulk(schedulesByAgent, actualsByAgent, date, nowMinute);
+
+    // 5. Enrich each record with agent display name (best effort)
+    const monitored = await cacheWrap('agents:list', 5000, () => getMonitoredAgents());
+    const nameByEmail = {};
+    for (const a of (monitored || [])) if (a.email) nameByEmail[a.email] = a.name;
+
+    const enriched = records.map(r => ({
+      ...r,
+      name: nameByEmail[r.email] || r.email,
+    }));
+
+    res.json({
+      success: true,
+      date,
+      timeZone: tz,
+      nowMinute,
+      count: enriched.length,
+      adherence: enriched
     });
-    res.json({ success: true, date, expected, adherence });
-  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+  } catch (e) {
+    log.error('schedule_adherence_failed', e);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ─── GET /api/schedule-adherence/:email — per-agent history ────────────────
+app.get('/api/schedule-adherence/:email', requireAuth, async (req, res) => {
+  try {
+    const email = req.params.email;
+    // Self or admin
+    if (req.session.email !== email && req.session.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    const days = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 90);
+    const tz = req.query.tz || 'America/Chicago';
+    const schedules = await getSchedulesForAgent(email);
+    const out = [];
+    const today = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+      const summary = await getAgentSummary(dateStr, tz);
+      const row = (summary || []).find(a => a.email === email || a.agent_email === email);
+      const actuals = row ? {
+        firstLoginMinute: summaryTimeToMinute(row.first_login_time),
+        lastLogoutMinute: summaryTimeToMinute(row.last_logout_time),
+        breakMinutes: parseInt(row.break_minutes || 0),
+        scheduledBreakMinutes: 60
+      } : {};
+      const records = evaluateScheduleBulk(
+        { [email]: schedules },
+        { [email]: actuals },
+        dateStr,
+        i === 0 ? 1440 : 1440  // historical days: evaluate as end-of-day
+      );
+      out.push(records[0] || { dateStr, status: 'unknown' });
+    }
+    res.json({ success: true, email, days, adherence: out });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── GET /api/schedules — list all (admin) ─────────────────────────────────
+app.get('/api/schedules', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, schedules: await getAllSchedules() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── GET /api/schedules/:email — one agent (self or admin) ─────────────────
+app.get('/api/schedules/:email', requireAuth, async (req, res) => {
+  try {
+    const email = req.params.email;
+    if (req.session.email !== email && req.session.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    const rows = await getSchedulesForAgent(email);
+    res.json({ success: true, email, schedules: rows });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── GET /api/schedules/:email/history — versioned history (admin) ─────────
+app.get('/api/schedules/:email/history', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, history: await getScheduleHistory(req.params.email) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── PUT /api/schedules/:email — admin sets/replaces (versions) ────────────
+//   body: { effectiveFrom: 'YYYY-MM-DD', week: [{day_of_week, start_time, end_time, is_working_day, timezone}] }
+app.put('/api/schedules/:email', requireAdmin, async (req, res) => {
+  try {
+    const email = req.params.email;
+    const { effectiveFrom, week } = req.body || {};
+    if (!effectiveFrom || !Array.isArray(week) || week.length === 0) {
+      return res.status(400).json({ success: false, error: 'effectiveFrom and week[] required' });
+    }
+    // Validate times via parseTimeStrToMinutes — engine's parser
+    for (const r of week) {
+      if (r.is_working_day !== 0) {
+        if (parseTimeStrToMinutes(r.start_time) == null || parseTimeStrToMinutes(r.end_time) == null) {
+          return res.status(400).json({ success: false, error: `Invalid time for day ${r.day_of_week}` });
+        }
+      }
+    }
+    // End-date prior versions, then insert the new version
+    await endDatePriorSchedule(email, effectiveFrom);
+    await insertScheduleVersion(week, email, effectiveFrom, req.session.email);
+    insertAuditLog(req.session.email, 'schedule_updated', email,
+      `from=${effectiveFrom} days=${week.length}`).catch(()=>{});
+    log.info('schedule_updated', { email, effectiveFrom, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(400).json({ success: false, error: e.message });
+  }
+});
+
+// ─── POST /api/schedules/bulk — apply schedule to many agents (admin) ──────
+//   body: { emails: [...], effectiveFrom, week }
+app.post('/api/schedules/bulk', requireAdmin, async (req, res) => {
+  try {
+    const { emails, effectiveFrom, week } = req.body || {};
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return res.status(400).json({ success: false, error: 'emails[] required' });
+    }
+    if (!effectiveFrom || !Array.isArray(week)) {
+      return res.status(400).json({ success: false, error: 'effectiveFrom and week[] required' });
+    }
+    const results = [];
+    for (const email of emails) {
+      try {
+        await endDatePriorSchedule(email, effectiveFrom);
+        await insertScheduleVersion(week, email, effectiveFrom, req.session.email);
+        results.push({ email, ok: true });
+      } catch (innerErr) {
+        results.push({ email, ok: false, error: innerErr.message });
+      }
+    }
+    insertAuditLog(req.session.email, 'schedule_bulk_updated', '',
+      `count=${emails.length} from=${effectiveFrom}`).catch(()=>{});
+    log.info('schedule_bulk_updated', { count: emails.length, effectiveFrom, by: req.session.email });
+    res.json({ success: true, results });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── DELETE /api/schedules/:email — end-date current schedule (admin) ──────
+// Note: this end-dates instead of physically deleting, preserving history.
+app.delete('/api/schedules/:email', requireAdmin, async (req, res) => {
+  try {
+    const email = req.params.email;
+    const tz = req.query.tz || 'America/Chicago';
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    await endDatePriorSchedule(email, today);
+    insertAuditLog(req.session.email, 'schedule_ended', email, `endDate=${today}`).catch(()=>{});
+    log.info('schedule_ended', { email, today, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // ─── #4: WebSocket diff broadcasts (helper) ─────────────────────────────────

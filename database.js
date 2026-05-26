@@ -469,6 +469,22 @@ async function initDB() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT)`);
 
+  // #14 Session 4: Agent schedules (versioned, per-day-of-week)
+  await run(`CREATE TABLE IF NOT EXISTS agent_schedules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_email TEXT NOT NULL,
+    day_of_week INTEGER NOT NULL,         -- 0=Sun .. 6=Sat
+    start_time TEXT NOT NULL,             -- HH:MM 24h in the timezone column
+    end_time TEXT NOT NULL,
+    timezone TEXT NOT NULL DEFAULT 'America/Chicago',
+    is_working_day INTEGER NOT NULL DEFAULT 1,
+    effective_from TEXT NOT NULL,         -- YYYY-MM-DD
+    effective_to TEXT,                    -- YYYY-MM-DD (null = open-ended)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_by TEXT)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_agent_schedules_lookup
+             ON agent_schedules(agent_email, day_of_week, effective_from DESC)`).catch(()=>{});
+
   // #11 Session 2: Alert events — append-only audit log of every fire
   await run(`CREATE TABLE IF NOT EXISTS alert_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1575,6 +1591,83 @@ async function snoozeAlert(id, minutes){
     [`+${m} minutes`, id]);
 }
 
+// ── Schedule adherence (#14 Session 4) ────────────────────────────────
+
+/** All schedule rows for one agent. The engine versions internally. */
+async function getSchedulesForAgent(email){
+  return all(`SELECT id,agent_email,day_of_week,start_time,end_time,timezone,
+              is_working_day,effective_from,effective_to,created_at,created_by
+              FROM agent_schedules WHERE agent_email=?
+              ORDER BY day_of_week ASC, effective_from DESC`,[email]);
+}
+
+/** All schedule rows for every agent. Returned as map {email → rows[]}. */
+async function getAllSchedules(){
+  const rows = await all(`SELECT id,agent_email,day_of_week,start_time,end_time,timezone,
+                          is_working_day,effective_from,effective_to,created_at,created_by
+                          FROM agent_schedules
+                          ORDER BY agent_email, day_of_week, effective_from DESC`);
+  const out = {};
+  for (const r of rows) {
+    if (!out[r.agent_email]) out[r.agent_email] = [];
+    out[r.agent_email].push(r);
+  }
+  return out;
+}
+
+/** Versioned history (admin view) for one agent — newest first. */
+async function getScheduleHistory(email){
+  return all(`SELECT id,agent_email,day_of_week,start_time,end_time,timezone,
+              is_working_day,effective_from,effective_to,created_at,created_by
+              FROM agent_schedules WHERE agent_email=?
+              ORDER BY effective_from DESC, day_of_week ASC`,[email]);
+}
+
+/**
+ * Insert a new schedule version. Accepts an array of day-of-week rows.
+ * Caller is responsible for end-dating prior rows via endDatePriorSchedule.
+ *
+ * @param {Array} weekRows — [{day_of_week, start_time, end_time, timezone, is_working_day}]
+ * @param {string} email
+ * @param {string} effectiveFrom — YYYY-MM-DD
+ * @param {string} createdBy
+ */
+async function insertScheduleVersion(weekRows, email, effectiveFrom, createdBy){
+  if (!email || !effectiveFrom) throw new Error('email and effectiveFrom required');
+  if (!Array.isArray(weekRows) || weekRows.length === 0) throw new Error('weekRows required');
+  // Basic validation
+  for (const r of weekRows) {
+    if (r.day_of_week == null || r.day_of_week < 0 || r.day_of_week > 6) {
+      throw new Error('day_of_week must be 0..6');
+    }
+    if (r.is_working_day !== 0) {
+      if (!r.start_time || !r.end_time) throw new Error('start_time/end_time required when working');
+    }
+  }
+  // Insert rows
+  for (const r of weekRows) {
+    await run(`INSERT INTO agent_schedules
+               (agent_email, day_of_week, start_time, end_time, timezone, is_working_day, effective_from, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [email, r.day_of_week, r.start_time || '00:00', r.end_time || '00:00',
+       r.timezone || 'America/Chicago', r.is_working_day != null ? (r.is_working_day ? 1 : 0) : 1,
+       effectiveFrom, createdBy || 'system']);
+  }
+}
+
+/** End-date all currently-open schedule rows for an agent so a new version takes over. */
+async function endDatePriorSchedule(email, endDate){
+  if (!email || !endDate) throw new Error('email and endDate required');
+  await run(`UPDATE agent_schedules SET effective_to=?
+             WHERE agent_email=? AND effective_to IS NULL AND effective_from < ?`,
+    [endDate, email, endDate]);
+}
+
+/** Delete all schedule rows for an agent (rare — admin reset). */
+async function deleteAllSchedulesForAgent(email){
+  return run(`DELETE FROM agent_schedules WHERE agent_email=?`,[email]);
+}
+
 /** Returns unack count grouped by severity — used by the bell badge. */
 async function getAlertCounts(){
   const rows = await all(`SELECT severity, COUNT(*) AS n FROM alert_events
@@ -1594,6 +1687,9 @@ module.exports={
   getAlertThresholds, updateAlertThreshold,
   isAlertInCooldown, insertAlertEvent,
   getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
+  // #14 Session 4 — schedule adherence
+  getSchedulesForAgent, getAllSchedules, getScheduleHistory,
+  insertScheduleVersion, endDatePriorSchedule, deleteAllSchedulesForAgent,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
