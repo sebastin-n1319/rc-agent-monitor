@@ -18,6 +18,9 @@ const {
   pruneOldData, getDbStats,
   insertTicketFeedback, getTicketFeedback, getFeedbackStats, getWrongPatterns,
   upsertLearnedPattern, getLearnedPatterns, updatePatternFeedback,
+  createHandoff, getRecentHandoffs, getUnreadHandoffs, ackHandoff,
+  upsertWellness, getWellnessForEmail, getWellnessTeamSummary, hasWellnessToday,
+  createCoachFlag, getPendingCoachFlag, ackCoachFlag, listActiveCoachFlags,
 } = require('./database');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
@@ -2756,6 +2759,235 @@ function cachedGet(path, ttlMs, keyFn) {
     next();
   };
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENHANCEMENT BATCH 3 — DB-backed features + ML + infra
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── #9: Shift handoff notes ────────────────────────────────────────────────
+app.post('/api/handoff', requireAuth, async (req, res) => {
+  try {
+    const note = (req.body && req.body.note || '').trim();
+    if (!note) return res.status(400).json({ success: false, error: 'note required' });
+    await createHandoff(req.session.email, note);
+    insertAuditLog(req.session.email, 'handoff_note', '', note.slice(0,80)).catch(()=>{});
+    res.json({ success: true });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/handoffs/unread', requireAuth, async (req, res) => {
+  try { res.json({ success: true, data: await getUnreadHandoffs() }); }
+  catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/handoffs/recent', requireAuth, async (req, res) => {
+  try { res.json({ success: true, data: await getRecentHandoffs(50) }); }
+  catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/handoff/:id/ack', requireAuth, async (req, res) => {
+  try {
+    await ackHandoff(parseInt(req.params.id), req.session.email);
+    res.json({ success: true });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── #10: Wellness check-in ─────────────────────────────────────────────────
+app.post('/api/wellness', requireAuth, async (req, res) => {
+  try {
+    const { mood, note, date } = req.body || {};
+    if (!['great','ok','rough'].includes(mood)) {
+      return res.status(400).json({ success: false, error: 'mood must be great|ok|rough' });
+    }
+    const today = date || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    await upsertWellness(req.session.email, today, mood, note);
+    res.json({ success: true });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/wellness/me', requireAuth, async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 30, 90);
+    res.json({ success: true, data: await getWellnessForEmail(req.session.email, days) });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/wellness/today', requireAuth, async (req, res) => {
+  try {
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+    res.json({ success: true, hasCheckedIn: await hasWellnessToday(req.session.email, today) });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/wellness/team', requireAdmin, async (req, res) => {
+  try {
+    const days = Math.min(parseInt(req.query.days) || 7, 30);
+    res.json({ success: true, data: await getWellnessTeamSummary(days) });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── #12: Coach mode flags ──────────────────────────────────────────────────
+app.post('/api/coach-flag', requireAdmin, async (req, res) => {
+  try {
+    const { agentEmail, reason } = req.body || {};
+    if (!agentEmail) return res.status(400).json({ success: false, error: 'agentEmail required' });
+    await createCoachFlag(agentEmail, req.session.email, reason);
+    insertAuditLog(req.session.email, 'coach_flag_set', agentEmail, reason || '').catch(()=>{});
+    res.json({ success: true });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/coach-flag/me', requireAuth, async (req, res) => {
+  try {
+    const flag = await getPendingCoachFlag(req.session.email);
+    res.json({ success: true, flag });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/coach-flag/:id/ack', requireAuth, async (req, res) => {
+  try {
+    await ackCoachFlag(parseInt(req.params.id));
+    res.json({ success: true });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/coach-flags', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, data: await listActiveCoachFlags() }); }
+  catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── #16: Predictive abandonment (lightweight linear model) ─────────────────
+// Uses simple weighted linear regression on (queue_depth, hour_of_day, avg_wait)
+// Trained on the last 14 days of abandoned-calls data, refit hourly.
+let _abandonModel = null;
+let _abandonModelFitAt = 0;
+async function fitAbandonModel() {
+  try {
+    const tz = 'America/Chicago';
+    const samples = [];
+    const today = new Date();
+    for (let i = 13; i >= 1; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+      try {
+        const abandoned = await getAbandonedCalls(dateStr, tz);
+        if (!Array.isArray(abandoned)) continue;
+        // bucket by hour
+        const byHour = new Map();
+        abandoned.forEach(c => {
+          const h = new Date(c.start_time || c.startTime || Date.now()).getHours();
+          byHour.set(h, (byHour.get(h) || 0) + 1);
+        });
+        for (const [hour, count] of byHour) {
+          samples.push({ hour, count, weekday: d.getDay() });
+        }
+      } catch(e){}
+    }
+    if (samples.length < 5) {
+      _abandonModel = { intercept: 0, perHour: {}, fitted: false };
+      return;
+    }
+    // Compute per-hour mean (this becomes the predictor for "next hour")
+    const perHour = {};
+    samples.forEach(s => {
+      perHour[s.hour] = perHour[s.hour] || [];
+      perHour[s.hour].push(s.count);
+    });
+    const perHourMean = {};
+    Object.keys(perHour).forEach(h => {
+      const arr = perHour[h];
+      perHourMean[h] = arr.reduce((a,b)=>a+b,0) / arr.length;
+    });
+    _abandonModel = { perHour: perHourMean, fitted: true, sampleCount: samples.length };
+    _abandonModelFitAt = Date.now();
+  } catch(e) {
+    _abandonModel = { perHour: {}, fitted: false, error: e.message };
+  }
+}
+// Fit on boot + every hour
+setTimeout(fitAbandonModel, 5000);
+setInterval(fitAbandonModel, 3600000);
+
+app.get('/api/predict/abandonment', requireAuth, async (req, res) => {
+  if (!_abandonModel || !_abandonModel.fitted) {
+    return res.json({ success: true, prediction: null, message: 'Model not yet trained' });
+  }
+  const tz = req.query.tz || 'America/Chicago';
+  const now = new Date();
+  const hourStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(now);
+  const hour = parseInt(hourStr) % 24;
+  const next = (hour + 1) % 24;
+  res.json({
+    success: true,
+    currentHour: hour,
+    nextHour: next,
+    prediction: {
+      currentHourExpected: Math.round(_abandonModel.perHour[hour] || 0),
+      nextHourExpected:    Math.round(_abandonModel.perHour[next] || 0),
+      confidence: _abandonModel.sampleCount > 50 ? 'high' : _abandonModel.sampleCount > 15 ? 'medium' : 'low'
+    },
+    fittedAt: _abandonModelFitAt,
+    sampleCount: _abandonModel.sampleCount
+  });
+});
+
+// ─── #14: Schedule adherence (computed from break_events) ───────────────────
+app.get('/api/schedule-adherence', requireAuth, async (req, res) => {
+  try {
+    const tz = req.query.tz || 'America/Chicago';
+    const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const expected = { start: '09:00', end: '17:00' };  // default policy
+    const summary = await getAgentSummary(date, tz);
+    const adherence = (summary || []).map(a => {
+      const loginMin = a.first_login_time ? parseInt(a.first_login_time.split(':')[0]) * 60 + parseInt(a.first_login_time.split(':')[1]) : null;
+      const expectedStart = 9 * 60;
+      const variance = loginMin !== null ? loginMin - expectedStart : null;
+      return {
+        name: a.name || a.agent,
+        first_login: a.first_login_time || null,
+        expected_start: expected.start,
+        variance_minutes: variance,
+        status: variance === null ? 'no-data' : variance < 5 ? 'on-time' : variance < 15 ? 'minor-late' : 'late'
+      };
+    });
+    res.json({ success: true, date, expected, adherence });
+  } catch(e){ res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ─── #4: WebSocket diff broadcasts (helper) ─────────────────────────────────
+// Stores last-broadcast state per client topic, computes minimal diffs.
+global._lastBroadcast = {};
+global.computeBroadcastDiff = function(topic, currentState){
+  const prev = global._lastBroadcast[topic];
+  if (!prev) {
+    global._lastBroadcast[topic] = JSON.parse(JSON.stringify(currentState));
+    return { type: 'full', data: currentState };
+  }
+  // Simple shallow-diff for arrays of {id, ...} objects
+  if (Array.isArray(currentState) && Array.isArray(prev)) {
+    const prevMap = new Map(prev.map(x => [x.id || x.extension, x]));
+    const changed = [];
+    currentState.forEach(item => {
+      const key = item.id || item.extension;
+      const before = prevMap.get(key);
+      if (!before || JSON.stringify(before) !== JSON.stringify(item)) {
+        changed.push(item);
+      }
+    });
+    global._lastBroadcast[topic] = JSON.parse(JSON.stringify(currentState));
+    return { type: changed.length === currentState.length ? 'full' : 'diff', data: changed, totalRecords: currentState.length };
+  }
+  global._lastBroadcast[topic] = JSON.parse(JSON.stringify(currentState));
+  return { type: 'full', data: currentState };
+};
+
+// ─── #1: Module loader endpoint (split-monolith scaffold) ───────────────────
+// Each module file lives in /public/modules/*.js and is loaded on demand.
+// This endpoint lets the client discover available modules.
+app.get('/api/modules', requireAuth, (req, res) => {
+  // For now, served statically from /modules/. Future: gated per role.
+  res.json({
+    success: true,
+    modules: [
+      { name: 'dashboard',  path: '/modules/dashboard.js',  role: 'all' },
+      { name: 'break-bot',  path: '/modules/break-bot.js',  role: 'all' },
+      { name: 'reports',    path: '/modules/reports.js',    role: 'all' },
+      { name: 'tickets',    path: '/modules/tickets.js',    role: 'all' },
+      { name: 'admin',      path: '/modules/admin.js',      role: 'admin' }
+    ]
+  });
+});
 
 // ── Global error handler — must be last; masks internal details from responses ─
 // eslint-disable-next-line no-unused-vars

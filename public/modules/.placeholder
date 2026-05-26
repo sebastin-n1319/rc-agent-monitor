@@ -1,0 +1,9 @@
+/* Module loader scaffold — see /api/modules endpoint.
+ *
+ * Future modules will live here as ES modules:
+ *   dashboard.js, break-bot.js, reports.js, tickets.js, admin.js
+ *
+ * Each module exports an init(container) function that mounts its UI.
+ * The monolith split is a multi-session refactor; this scaffold lets us
+ * incrementally extract sections without breaking existing functionality.
+ */

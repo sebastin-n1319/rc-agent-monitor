@@ -429,6 +429,36 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
+  // #9: Shift handoff notes
+  await run(`CREATE TABLE IF NOT EXISTS shift_handoff (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    note TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    acknowledged INTEGER DEFAULT 0,
+    acknowledged_by TEXT,
+    acknowledged_at DATETIME)`);
+
+  // #10: Daily wellness check-ins
+  await run(`CREATE TABLE IF NOT EXISTS wellness_checkin (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    date TEXT NOT NULL,
+    mood TEXT NOT NULL,  -- 'great'|'ok'|'rough'
+    note TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(email, date))`);
+
+  // #12: Coach mode flags (supervisor → agent)
+  await run(`CREATE TABLE IF NOT EXISTS coach_flag (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_email TEXT NOT NULL,
+    set_by TEXT NOT NULL,
+    reason TEXT,
+    status TEXT DEFAULT 'pending',  -- 'pending'|'acknowledged'|'dismissed'
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    acknowledged_at DATETIME)`);
+
   // Migrations
   for (const sql of [
     `ALTER TABLE monitored_agents ADD COLUMN email TEXT`,
@@ -1348,7 +1378,64 @@ function updatePatternFeedback(patternKey, isCorrect) {
     WHERE pattern_key=?`, [delta, delta, patternKey]);
 }
 
+// ── Shift handoff (#9) ────────────────────────────────────────────────
+async function createHandoff(email, note){
+  if(!email||!note) throw new Error('email and note required');
+  return run(`INSERT INTO shift_handoff (email,note) VALUES (?,?)`,[email,note.trim().slice(0,500)]);
+}
+async function getRecentHandoffs(limit=20){
+  return all(`SELECT id,email,note,created_at,acknowledged,acknowledged_by,acknowledged_at
+              FROM shift_handoff ORDER BY created_at DESC LIMIT ?`,[limit]);
+}
+async function getUnreadHandoffs(){
+  return all(`SELECT id,email,note,created_at FROM shift_handoff
+              WHERE acknowledged=0 ORDER BY created_at DESC LIMIT 10`);
+}
+async function ackHandoff(id, byEmail){
+  return run(`UPDATE shift_handoff SET acknowledged=1,acknowledged_by=?,acknowledged_at=CURRENT_TIMESTAMP WHERE id=?`,[byEmail,id]);
+}
+
+// ── Wellness check-in (#10) ───────────────────────────────────────────
+async function upsertWellness(email, date, mood, note){
+  if(!email||!date||!mood) throw new Error('email, date, mood required');
+  return run(`INSERT INTO wellness_checkin (email,date,mood,note) VALUES (?,?,?,?)
+              ON CONFLICT(email,date) DO UPDATE SET mood=excluded.mood,note=excluded.note`,
+    [email,date,mood,note||null]);
+}
+async function getWellnessForEmail(email, days=30){
+  return all(`SELECT date,mood,note,created_at FROM wellness_checkin
+              WHERE email=? AND date>=DATE('now',?) ORDER BY date DESC`,[email,`-${days} days`]);
+}
+async function getWellnessTeamSummary(days=7){
+  return all(`SELECT date,mood,COUNT(*) AS count FROM wellness_checkin
+              WHERE date>=DATE('now',?) GROUP BY date,mood ORDER BY date DESC`,[`-${days} days`]);
+}
+async function hasWellnessToday(email, date){
+  const r = await get(`SELECT 1 FROM wellness_checkin WHERE email=? AND date=?`,[email,date]);
+  return !!r;
+}
+
+// ── Coach mode (#12) ──────────────────────────────────────────────────
+async function createCoachFlag(agentEmail, setBy, reason){
+  if(!agentEmail||!setBy) throw new Error('agentEmail and setBy required');
+  return run(`INSERT INTO coach_flag (agent_email,set_by,reason) VALUES (?,?,?)`,[agentEmail,setBy,reason||null]);
+}
+async function getPendingCoachFlag(agentEmail){
+  return get(`SELECT id,agent_email,set_by,reason,created_at FROM coach_flag
+              WHERE agent_email=? AND status='pending' ORDER BY created_at DESC LIMIT 1`,[agentEmail]);
+}
+async function ackCoachFlag(id){
+  return run(`UPDATE coach_flag SET status='acknowledged',acknowledged_at=CURRENT_TIMESTAMP WHERE id=?`,[id]);
+}
+async function listActiveCoachFlags(){
+  return all(`SELECT id,agent_email,set_by,reason,status,created_at FROM coach_flag
+              WHERE status='pending' ORDER BY created_at DESC`);
+}
+
 module.exports={
+  createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
+  upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
+  createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,

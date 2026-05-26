@@ -1,0 +1,49 @@
+{
+  "name": "Adit Agent Monitor",
+  "short_name": "Adit Monitor",
+  "description": "Real-time call center productivity monitor for Adit T1 CS Stars",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#F4891F",
+  "background_color": "#072B40",
+  "icons": [
+    {
+      "src": "/adit-logo-dark.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/adit-logo-dark.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/adit-logo-dark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Break Bot",
+      "url": "/?tab=breaks",
+      "description": "Quick access to break tracker"
+    },
+    {
+      "name": "Live Dashboard",
+      "url": "/?tab=live",
+      "description": "Real-time agent dashboard"
+    },
+    {
+      "name": "Tickets",
+      "url": "/?tab=tickets",
+      "description": "Support tickets"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}

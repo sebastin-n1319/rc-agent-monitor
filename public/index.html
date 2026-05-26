@@ -7,6 +7,12 @@
 <link rel="icon" type="image/png" href="/adit-logo-dark.png">
 <link rel="shortcut icon" type="image/png" href="/adit-logo-dark.png">
 <link rel="apple-touch-icon" href="/adit-logo-dark.png">
+<!-- #21 PWA: manifest + theme color -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#072B40">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Adit Monitor">
 <!-- Poppins font — Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
@@ -23181,6 +23187,21 @@ html.hc-mode #cmd-palette,html.hc-mode #kbd-modal,html.hc-mode .adit-toast{borde
 button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-visible{outline:2px solid var(--orange);outline-offset:2px;}
 .ld-kpi:focus-visible,.metric:focus-visible{outline:2px solid var(--orange);outline-offset:-2px;}
 
+/* ── #10: Wellness check-in modal ─────────────────────────────── */
+.wellness-overlay{position:fixed;inset:0;z-index:100085;background:rgba(0,0,0,.5);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;animation:cmpOverlayIn .2s ease;}
+.wellness-card{background:rgba(6,12,26,.97);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 32px;width:380px;max-width:92vw;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.6);animation:cmpModalIn .3s cubic-bezier(.22,1,.36,1);}
+.wellness-title{font-size:16px;font-weight:700;color:#f0f4f8;margin-bottom:4px;}
+.wellness-sub{font-size:11px;color:rgba(148,163,184,.55);margin-bottom:20px;}
+.wellness-opts{display:flex;gap:8px;margin-bottom:14px;}
+.wellness-opt{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px 8px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:24px;line-height:1.2;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:6px;color:#f0f4f8;}
+.wellness-opt:hover{background:rgba(244,137,31,.08);border-color:rgba(244,137,31,.3);transform:translateY(-2px);}
+.wellness-opt span{font-size:11px;font-weight:600;color:rgba(148,163,184,.7);}
+.wellness-skip{background:transparent;border:1px solid rgba(255,255,255,.07);color:rgba(148,163,184,.5);font-size:11px;padding:6px 16px;border-radius:50px;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;}
+.wellness-skip:hover{background:rgba(255,255,255,.04);color:rgba(148,163,184,.8);}
+
+/* ── Virtual list ─────────────────────────────────────────────── */
+.vlist-rows{will-change:transform;}
+
 /* ── Mobile break-bot bottom-sheet (#22 partial) ──────────────── */
 @media (max-width: 600px){
   .bbn-grid{display:flex!important;flex-direction:column!important;}
@@ -24249,6 +24270,199 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     if (e.key === 'v' || e.key === 'V') listViews();
     if (e.key === 'c' || e.key === 'C') openComparison();
   });
+
+  /* ── #5/#21: Service worker + PWA install prompt ────────────────── */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg){ console.log('[SW] registered scope:', reg.scope); })
+        .catch(function(err){ console.warn('[SW] register failed:', err); });
+    });
+  }
+  /* PWA install prompt — show a tasteful prompt when available */
+  var _deferredInstall = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    _deferredInstall = e;
+    /* Inject "Install" chip in status bar */
+    if (document.getElementById('pwa-install-chip')) return;
+    var chip = document.createElement('button');
+    chip.id = 'pwa-install-chip';
+    chip.className = 'sb-btn';
+    chip.title = 'Install as app';
+    chip.innerHTML = '📲 Install';
+    chip.onclick = async function(){
+      if (!_deferredInstall) return;
+      _deferredInstall.prompt();
+      var result = await _deferredInstall.userChoice;
+      if (result.outcome === 'accepted') {
+        showToast('Installing as app…','success',3000);
+        chip.remove();
+      }
+      _deferredInstall = null;
+    };
+    var sbRight = document.querySelector('#status-bar .sb-right');
+    if (sbRight) sbRight.insertBefore(chip, sbRight.firstChild);
+  });
+
+  /* ── #9: Shift handoff — prompt on logout, show on login ─────────── */
+  window.submitHandoff = function(note){
+    if (!note) note = prompt('Shift handoff note for next shift (max 500 chars):');
+    if (!note || !note.trim()) return;
+    fetch('/api/handoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: note.trim() }) })
+      .then(r => r.json())
+      .then(j => {
+        if (j.success) showToast('📝 Handoff note saved','success',3000);
+        else showToast('Failed: ' + (j.error||'unknown'),'error',4000);
+      });
+  };
+  window.checkUnreadHandoffs = function(){
+    fetch('/api/handoffs/unread').then(r => r.json()).then(j => {
+      if (!j.success || !j.data || !j.data.length) return;
+      var n = j.data[0];
+      showToast('📩 Handoff from ' + (n.email||'previous shift') + ': ' + (n.note||'').slice(0,80), 'info', 8000);
+      /* Auto-ack after showing */
+      fetch('/api/handoff/' + n.id + '/ack', { method: 'POST' });
+    }).catch(()=>{});
+  };
+  /* Auto-check on first load if authenticated */
+  document.addEventListener('DOMContentLoaded', function(){
+    if (document.documentElement.classList.contains('app-authenticated')) {
+      setTimeout(checkUnreadHandoffs, 3500);
+    }
+  });
+  /* Hook into Break Bot LOGGED_OUT to prompt for a note */
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest('.break-action[data-break-action="LOGGED_OUT"]');
+    if (!btn) return;
+    setTimeout(function(){
+      if (confirm('Leave a handoff note for the next shift?')) submitHandoff();
+    }, 1200);
+  });
+
+  /* ── #10: Wellness check-in prompt on first daily login ──────────── */
+  window.promptWellness = function(){
+    var existing = document.getElementById('wellness-modal');
+    if (existing) return;
+    var modal = document.createElement('div');
+    modal.id = 'wellness-modal';
+    modal.className = 'wellness-overlay';
+    modal.innerHTML =
+      '<div class="wellness-card">' +
+      '<div class="wellness-title">How are you feeling today?</div>' +
+      '<div class="wellness-sub">Quick daily check-in · anonymous to peers</div>' +
+      '<div class="wellness-opts">' +
+        '<button class="wellness-opt" data-mood="great">😊<span>Great</span></button>' +
+        '<button class="wellness-opt" data-mood="ok">😐<span>OK</span></button>' +
+        '<button class="wellness-opt" data-mood="rough">😩<span>Rough</span></button>' +
+      '</div>' +
+      '<button class="wellness-skip" onclick="document.getElementById(\'wellness-modal\').remove()">Skip for today</button>' +
+      '</div>';
+    document.body.appendChild(modal);
+    modal.querySelectorAll('.wellness-opt').forEach(function(b){
+      b.onclick = function(){
+        var mood = b.dataset.mood;
+        fetch('/api/wellness', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mood: mood }) })
+          .then(r => r.json()).then(j => {
+            if (j.success) showToast('Thanks for checking in 💜','success',2800);
+          });
+        modal.remove();
+      };
+    });
+  };
+  window.checkWellnessNeeded = function(){
+    fetch('/api/wellness/today').then(r => r.json()).then(j => {
+      if (j.success && !j.hasCheckedIn) {
+        setTimeout(promptWellness, 4000);
+      }
+    }).catch(()=>{});
+  };
+  document.addEventListener('DOMContentLoaded', function(){
+    if (document.documentElement.classList.contains('app-authenticated')) {
+      setTimeout(checkWellnessNeeded, 6000);
+    }
+  });
+
+  /* ── #12: Coach mode — check for pending flag ────────────────────── */
+  window.checkCoachFlag = function(){
+    fetch('/api/coach-flag/me').then(r => r.json()).then(j => {
+      if (j.success && j.flag) {
+        var msg = '👋 Your supervisor has scheduled a coaching chat — ' + (j.flag.reason || 'tap to acknowledge');
+        showToast(msg, 'info', 8000);
+        /* Auto-ack after acknowledgement */
+        setTimeout(function(){
+          fetch('/api/coach-flag/' + j.flag.id + '/ack', { method: 'POST' });
+        }, 1000);
+      }
+    }).catch(()=>{});
+  };
+  document.addEventListener('DOMContentLoaded', function(){
+    if (document.documentElement.classList.contains('app-authenticated')) {
+      setInterval(checkCoachFlag, 120000);  // every 2 min
+      setTimeout(checkCoachFlag, 8000);
+    }
+  });
+
+  /* ── #14: Schedule adherence card (admin only) ───────────────────── */
+  window.loadScheduleAdherence = async function(){
+    try {
+      var r = await fetch('/api/schedule-adherence');
+      var j = await r.json();
+      if (!j.success) return;
+      var late = j.adherence.filter(function(a){ return a.status === 'late' || a.status === 'minor-late'; });
+      if (late.length) {
+        showToast('⏰ ' + late.length + ' agent(s) logged in late today', 'warning', 4500);
+      }
+    } catch(e){}
+  };
+
+  /* ── #16: Predictive abandonment widget ─────────────────────────── */
+  window.loadAbandonmentPrediction = async function(){
+    try {
+      var r = await fetch('/api/predict/abandonment');
+      var j = await r.json();
+      if (!j.success || !j.prediction) return;
+      var p = j.prediction;
+      if (p.nextHourExpected > 5 && p.confidence !== 'low') {
+        showToast('🔮 Predicted ' + p.nextHourExpected + ' abandons next hr — staff up?', 'warning', 6000);
+      }
+    } catch(e){}
+  };
+  /* Run hourly */
+  setInterval(loadAbandonmentPrediction, 3600000);
+  document.addEventListener('DOMContentLoaded', function(){
+    if (document.documentElement.classList.contains('app-authenticated')) {
+      setTimeout(loadAbandonmentPrediction, 12000);
+    }
+  });
+
+  /* ── #2: Virtual scrolling helper ───────────────────────────────── */
+  /* Generic — call virtualizeList(containerSelector, items, renderItem, rowHeight) */
+  window.virtualizeList = function(container, items, renderItem, rowHeight){
+    var el = typeof container === 'string' ? document.querySelector(container) : container;
+    if (!el || !Array.isArray(items)) return;
+    rowHeight = rowHeight || 44;
+    var totalHeight = items.length * rowHeight;
+    el.style.position = 'relative';
+    el.style.overflowY = 'auto';
+    el.innerHTML = '<div class="vlist-sizer" style="height:' + totalHeight + 'px;"></div>' +
+                   '<div class="vlist-rows" style="position:absolute;top:0;left:0;right:0;"></div>';
+    var rowsEl = el.querySelector('.vlist-rows');
+    function render(){
+      var st = el.scrollTop;
+      var startIdx = Math.max(0, Math.floor(st / rowHeight) - 5);
+      var endIdx   = Math.min(items.length, startIdx + Math.ceil(el.clientHeight / rowHeight) + 10);
+      var frag = '';
+      for (var i = startIdx; i < endIdx; i++) {
+        frag += '<div style="position:absolute;top:' + (i * rowHeight) + 'px;left:0;right:0;height:' + rowHeight + 'px;">' +
+                renderItem(items[i], i) + '</div>';
+      }
+      rowsEl.innerHTML = frag;
+    }
+    el.addEventListener('scroll', render, { passive: true });
+    render();
+    return { rerender: render, destroy: function(){ el.removeEventListener('scroll', render); } };
+  };
 
 })();
 </script>
