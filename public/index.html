@@ -24,12 +24,14 @@
 <link rel="stylesheet" href="/anomaly-center.css" id="anomaly-center-link">
 <link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
 <link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
+<link rel="stylesheet" href="/predict-center.css" id="predict-center-link">
 <script src="/agent-view-v2.js" defer></script>
 <script src="/alert-center.js" defer></script>
 <script src="/schedule-admin.js" defer></script>
 <script src="/anomaly-center.js" defer></script>
 <script src="/offline-bridge.js" defer></script>
 <script src="/bulk-actions.js" defer></script>
+<script src="/predict-center.js" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js" defer></script>
 <style id="a11y-css">
@@ -22713,8 +22715,10 @@ input:focus, textarea:focus, select:focus {
     // Session 7 — anomaly center overlays
     'an-dashboard','an-drill','an-thresh',
     // Session 10 — bulk actions overlays + toolbar
-    'ba-toolbar','ba-picker','ba-result']);
-  const SAFE_CLASSES = ['toast', 'adit-toast', 'ac-overlay', 'sa-overlay', 'an-overlay', 'ba-overlay'];
+    'ba-toolbar','ba-picker','ba-result',
+    // Session 12 — predict center modal
+    'pc-modal']);
+  const SAFE_CLASSES = ['toast', 'adit-toast', 'ac-overlay', 'sa-overlay', 'an-overlay', 'ba-overlay', 'pc-overlay'];
 
   const isRogue = el => {
     if (!el || el.nodeType !== 1) return false;

@@ -40,7 +40,8 @@ test.describe('BulkActions assets', () => {
     const body = await res.text();
     expect(body).toContain('/bulk-actions.js');
     expect(body).toContain('/bulk-actions.css');
-    expect(body).toContain('adit-v1.6.0');
+    // Version-agnostic — Session 10 bumped to v1.6, Session 12 to v1.7, etc.
+    expect(body).toMatch(/CACHE_VERSION\s*=\s*['"]adit-v1\.[6-9]/);
   });
 });
 

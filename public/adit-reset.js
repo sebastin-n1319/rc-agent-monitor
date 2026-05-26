@@ -20,6 +20,7 @@
     'anomaly-center.css',
     'offline-bridge.css',
     'bulk-actions.css',
+    'predict-center.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
