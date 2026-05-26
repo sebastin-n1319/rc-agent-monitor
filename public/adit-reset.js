@@ -17,6 +17,7 @@
     'agent-view-v2.css',
     'alert-center.css',
     'schedule-admin.css',
+    'anomaly-center.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

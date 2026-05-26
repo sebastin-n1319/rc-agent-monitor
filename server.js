@@ -3509,6 +3509,24 @@ async function runAnomalyEvaluator(targetDateStr) {
             id, email: a.agentEmail, metric: a.metric, severity: a.severity,
             z: a.modifiedZ, today: a.todayValue, median: a.baselineMedian
           });
+          // Live-push to any open AnomalyCenter clients (Session 7)
+          if (typeof global.broadcastSseEvent === 'function') {
+            global.broadcastSseEvent('anomaly', {
+              id,
+              agent_email: a.agentEmail,
+              metric: a.metric,
+              date,
+              today_value: a.todayValue,
+              baseline_median: a.baselineMedian,
+              baseline_mad: a.baselineMad,
+              modified_z: a.modifiedZ,
+              direction: a.direction,
+              severity: a.severity,
+              flat_baseline: !!a.flatBaseline,
+              sample_size: a.sampleSize,
+              created_at: new Date().toISOString()
+            });
+          }
         } else {
           skipped++;  // UNIQUE constraint — already recorded today
         }
@@ -3624,7 +3642,7 @@ app.post('/api/admin/anomalies/test', requireAdmin, async (req, res) => {
     const { email, metric, severity } = req.body || {};
     const tz = 'America/Chicago';
     const date = (req.body && req.body.date) || new Date().toLocaleDateString('en-CA', { timeZone: tz });
-    const id = await insertAnomalyEvent({
+    const payload = {
       agent_email: email || req.session.email,
       metric: metric || 'daily_missed_calls',
       date,
@@ -3636,7 +3654,12 @@ app.post('/api/admin/anomalies/test', requireAdmin, async (req, res) => {
       severity: severity || 'warning',
       flat_baseline: true,
       sample_size: 20
-    });
+    };
+    const id = await insertAnomalyEvent(payload);
+    // Broadcast for live UI testing
+    if (id && typeof global.broadcastSseEvent === 'function') {
+      global.broadcastSseEvent('anomaly', { id, ...payload, created_at: new Date().toISOString() });
+    }
     res.json({ success: true, id });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });

@@ -21,9 +21,11 @@
 <link rel="stylesheet" href="/agent-view-v2.css" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
 <link rel="stylesheet" href="/schedule-admin.css" id="schedule-admin-link">
+<link rel="stylesheet" href="/anomaly-center.css" id="anomaly-center-link">
 <script src="/agent-view-v2.js" defer></script>
 <script src="/alert-center.js" defer></script>
 <script src="/schedule-admin.js" defer></script>
+<script src="/anomaly-center.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- V5 Animation Engine — anime.js + Motion.dev -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -22664,8 +22666,10 @@ input:focus, textarea:focus, select:focus {
     // Session 3 — alert center overlays
     'ac-modal','ac-history-modal','ac-thresh-modal',
     // Session 5 — schedule admin overlays
-    'sa-dashboard','sa-editor','sa-bulk']);
-  const SAFE_CLASSES = ['toast', 'adit-toast', 'ac-overlay', 'sa-overlay'];
+    'sa-dashboard','sa-editor','sa-bulk',
+    // Session 7 — anomaly center overlays
+    'an-dashboard','an-drill','an-thresh']);
+  const SAFE_CLASSES = ['toast', 'adit-toast', 'ac-overlay', 'sa-overlay', 'an-overlay'];
 
   const isRogue = el => {
     if (!el || el.nodeType !== 1) return false;
