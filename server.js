@@ -26,8 +26,16 @@ const {
   // #11 Session 2 — real-time alerts
   getAlertThresholds, updateAlertThreshold, isAlertInCooldown, insertAlertEvent,
   getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
+  // #14 Session 4 — schedule adherence
+  getSchedulesForAgent, getAllSchedules, getScheduleHistory,
+  insertScheduleVersion, endDatePriorSchedule, deleteAllSchedulesForAgent,
+  // #20 Session 6 — anomaly detection
+  getAnomalyThresholds, updateAnomalyThreshold,
+  insertAnomalyEvent, getRecentAnomalies, getActiveAnomalies,
+  getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
 } = require('./database');
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
+const ANOMALY = require('./lib/anomaly');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
@@ -3404,6 +3412,235 @@ function parseAlertRow(row) {
 }
 
 // ── Global error handler — structured logger replaces ad-hoc console ─────────
+// ══════════════════════════════════════════════════════════════════════════════
+// ANOMALY DETECTION (#20 Session 6) — robust z-score engine + daily cron
+// Replaces the rough DOM-scraping stub from Session 1.
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── Build per-agent history snapshot for the engine ──────────────────────
+// For each agent, pull the last `lookbackDays` days of getAgentSummary()
+// data and map into the metric arrays the engine expects.
+async function buildAnomalyHistoryForDate(targetDateStr) {
+  const tz = 'America/Chicago';
+  const thresholds = await getAnomalyThresholds();
+  // Maximum lookback across all metrics — single pass through history
+  const maxLookback = Math.max(...Object.values(thresholds).map(t => t.lookback_days || 30), 30);
+  const agents = await cacheWrap('agents:list', 5000, () => getMonitoredAgents());
+  const targetDate = new Date(targetDateStr + 'T12:00:00Z');  // mid-day to avoid TZ edge
+
+  // Initialize per-email skeleton
+  const out = {};
+  for (const a of (agents || [])) {
+    if (!a.email) continue;
+    out[a.email] = {
+      historyByMetric: {
+        daily_live_minutes: [],
+        daily_call_volume: [],
+        daily_missed_calls: [],
+        daily_break_minutes: [],
+        daily_aht_seconds: []
+      },
+      todayByMetric: {}
+    };
+  }
+
+  // Walk back day-by-day. Last position = today; earlier = baseline history.
+  for (let i = 0; i <= maxLookback; i++) {
+    const d = new Date(targetDate); d.setUTCDate(d.getUTCDate() - i);
+    const dateStr = d.toLocaleDateString('en-CA', { timeZone: tz });
+    let summary;
+    try { summary = await getAgentSummary(dateStr, tz); }
+    catch (e) { continue; }
+    if (!Array.isArray(summary)) continue;
+    for (const row of summary) {
+      const email = row.email || row.agent_email;
+      if (!email || !out[email]) continue;
+      const liveMin = Math.round((row.availableSeconds || 0) / 60);
+      const callVol = (row.totalCalls != null) ? row.totalCalls : ((row.inboundCalls || 0) + (row.outboundCalls || 0));
+      const missed = row.missedCalls || 0;
+      const breakMin = Math.round((row.unavailableSeconds || 0) / 60);  // proxy until break_events aggregation lands
+      const aht = row.ahtInbound || 0;
+      if (i === 0) {
+        // Today's values
+        out[email].todayByMetric.daily_live_minutes = liveMin;
+        out[email].todayByMetric.daily_call_volume = callVol;
+        out[email].todayByMetric.daily_missed_calls = missed;
+        out[email].todayByMetric.daily_break_minutes = breakMin;
+        out[email].todayByMetric.daily_aht_seconds = aht;
+      } else {
+        // Push to history
+        out[email].historyByMetric.daily_live_minutes.push(liveMin);
+        out[email].historyByMetric.daily_call_volume.push(callVol);
+        out[email].historyByMetric.daily_missed_calls.push(missed);
+        out[email].historyByMetric.daily_break_minutes.push(breakMin);
+        out[email].historyByMetric.daily_aht_seconds.push(aht);
+      }
+    }
+  }
+  return { agents: out, thresholds, date: targetDateStr };
+}
+
+// ─── Run evaluator + persist results ───────────────────────────────────────
+async function runAnomalyEvaluator(targetDateStr) {
+  try {
+    const tz = 'America/Chicago';
+    const date = targetDateStr || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const { agents, thresholds } = await buildAnomalyHistoryForDate(date);
+    const anomalies = ANOMALY.evaluateBulk(agents, thresholds);
+    let inserted = 0, skipped = 0;
+    for (const a of anomalies) {
+      try {
+        const id = await insertAnomalyEvent({
+          agent_email: a.agentEmail,
+          metric: a.metric,
+          date,
+          today_value: a.todayValue,
+          baseline_median: a.baselineMedian,
+          baseline_mad: a.baselineMad,
+          modified_z: a.modifiedZ,
+          direction: a.direction,
+          severity: a.severity,
+          flat_baseline: !!a.flatBaseline,
+          sample_size: a.sampleSize
+        });
+        if (id) {
+          inserted++;
+          log.info('anomaly_detected', {
+            id, email: a.agentEmail, metric: a.metric, severity: a.severity,
+            z: a.modifiedZ, today: a.todayValue, median: a.baselineMedian
+          });
+        } else {
+          skipped++;  // UNIQUE constraint — already recorded today
+        }
+      } catch (err) {
+        log.error('anomaly_persist_failed', err, { email: a.agentEmail, metric: a.metric });
+      }
+    }
+    log.info('anomaly_run_complete', { date, total: anomalies.length, inserted, skipped });
+    return { date, total: anomalies.length, inserted, skipped };
+  } catch (err) {
+    log.error('anomaly_evaluator_failed', err);
+    return { error: err.message };
+  }
+}
+
+// Wire the daily cron — fires at 03:00 CST every day
+let _anomalyCronStarted = false;
+global._startAnomalyCron = function startAnomalyCron() {
+  if (_anomalyCronStarted) return;
+  _anomalyCronStarted = true;
+  // Schedule: check every 10 minutes whether the current minute-of-day in CST is 3:00.
+  // Crude but correct — doesn't fire twice because of insert UNIQUE constraint.
+  const ANOMALY_HOUR = parseInt(process.env.ANOMALY_RUN_HOUR_CST) || 3;
+  setInterval(async () => {
+    const nowH = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false }).format(new Date());
+    if (parseInt(nowH) === ANOMALY_HOUR) {
+      log.info('anomaly_cron_tick', { hour: ANOMALY_HOUR });
+      await runAnomalyEvaluator();
+    }
+  }, 10 * 60 * 1000);  // every 10 min
+  log.info('anomaly_cron_started', { hourCst: ANOMALY_HOUR });
+};
+
+// ─── Endpoints ─────────────────────────────────────────────────────────────
+
+// Read anomaly thresholds (everyone authenticated can read)
+app.get('/api/anomaly/thresholds', requireAuth, async (req, res) => {
+  try { res.json({ success: true, thresholds: await getAnomalyThresholds() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Update a threshold (admin only, audit-logged)
+app.put('/api/anomaly/thresholds/:metric', requireAdmin, async (req, res) => {
+  try {
+    const metric = req.params.metric;
+    if (!ANOMALY.METRICS.includes(metric)) {
+      return res.status(400).json({ success: false, error: 'unknown metric' });
+    }
+    await updateAnomalyThreshold(metric, req.body || {}, req.session.email);
+    insertAuditLog(req.session.email, 'anomaly_threshold_updated', metric, JSON.stringify(req.body || {})).catch(()=>{});
+    log.info('anomaly_threshold_updated', { metric, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(e.message.includes('Unknown') ? 404 : 400).json({ success: false, error: e.message });
+  }
+});
+
+// Recent anomalies (audit view)
+app.get('/api/anomalies/recent', requireAuth, async (req, res) => {
+  try {
+    const days = Math.min(Math.max(parseInt(req.query.days) || 7, 1), 90);
+    const rows = await getRecentAnomalies(days);
+    res.json({ success: true, days, anomalies: rows });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Active anomalies (unacked)
+app.get('/api/anomalies/active', requireAuth, async (req, res) => {
+  try {
+    const rows = await getActiveAnomalies(Math.min(parseInt(req.query.limit) || 100, 500));
+    const counts = await getAnomalyCounts();
+    res.json({ success: true, anomalies: rows, counts });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Per-agent history (self or admin)
+app.get('/api/anomalies/agent/:email', requireAuth, async (req, res) => {
+  try {
+    const email = req.params.email;
+    if (req.session.email !== email && req.session.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'forbidden' });
+    }
+    const days = Math.min(Math.max(parseInt(req.query.days) || 30, 1), 180);
+    const rows = await getAnomaliesForAgent(email, days);
+    res.json({ success: true, email, days, anomalies: rows });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Acknowledge an anomaly
+app.post('/api/anomalies/:id/ack', requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (!id) return res.status(400).json({ success: false, error: 'invalid id' });
+    await ackAnomaly(id, req.session.email);
+    log.info('anomaly_acked', { id, by: req.session.email });
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Admin: force a run now (useful for backfilling or testing)
+app.post('/api/admin/anomalies/run', requireAdmin, async (req, res) => {
+  try {
+    const date = req.body && req.body.date;
+    const result = await runAnomalyEvaluator(date);
+    insertAuditLog(req.session.email, 'anomaly_run_forced', '', JSON.stringify(result)).catch(()=>{});
+    res.json({ success: true, ...result });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Admin: insert a synthetic anomaly for testing the UI pipeline
+app.post('/api/admin/anomalies/test', requireAdmin, async (req, res) => {
+  try {
+    const { email, metric, severity } = req.body || {};
+    const tz = 'America/Chicago';
+    const date = (req.body && req.body.date) || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const id = await insertAnomalyEvent({
+      agent_email: email || req.session.email,
+      metric: metric || 'daily_missed_calls',
+      date,
+      today_value: 99,
+      baseline_median: 1,
+      baseline_mad: 0,
+      modified_z: 10,
+      direction: 'high',
+      severity: severity || 'warning',
+      flat_baseline: true,
+      sample_size: 20
+    });
+    res.json({ success: true, id });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.use(errorTracker());
 
 async function start() {
@@ -3418,6 +3655,8 @@ async function start() {
       setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
       // #11 Session 2: real-time alert cron (every 30s by default)
       if (typeof global._startAlertCron === 'function') global._startAlertCron();
+      // #20 Session 6: anomaly cron (fires at 03:00 CST daily)
+      if (typeof global._startAnomalyCron === 'function') global._startAnomalyCron();
       // Start missed-call → Google Chat notifier (every 2 min)
       // Uses MISSED_CALL_WEBHOOK_URL — separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
       if (MISSED_CALL_WEBHOOK_URL) {

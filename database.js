@@ -469,6 +469,49 @@ async function initDB() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT)`);
 
+  // #20 Session 6: Anomaly detection — thresholds + event log
+  await run(`CREATE TABLE IF NOT EXISTS anomaly_thresholds (
+    metric TEXT PRIMARY KEY,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    z_threshold REAL NOT NULL DEFAULT 3.5,
+    direction TEXT NOT NULL DEFAULT 'either',
+    min_history_days INTEGER NOT NULL DEFAULT 10,
+    lookback_days INTEGER NOT NULL DEFAULT 30,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT)`);
+
+  await run(`CREATE TABLE IF NOT EXISTS anomaly_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    agent_email TEXT NOT NULL,
+    metric TEXT NOT NULL,
+    date TEXT NOT NULL,
+    today_value REAL,
+    baseline_median REAL,
+    baseline_mad REAL,
+    modified_z REAL,
+    direction TEXT,
+    severity TEXT NOT NULL,
+    flat_baseline INTEGER DEFAULT 0,
+    sample_size INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    acked_at DATETIME,
+    acked_by TEXT,
+    UNIQUE(agent_email, metric, date))`);
+
+  await run(`CREATE INDEX IF NOT EXISTS idx_anomaly_events_recent
+             ON anomaly_events(created_at DESC, severity)`).catch(()=>{});
+
+  // Seed default thresholds on first boot — never overwrite admin edits
+  try {
+    const { DEFAULT_THRESHOLDS: ANOM_DEFAULTS } = require('./lib/anomaly');
+    for (const [metric, cfg] of Object.entries(ANOM_DEFAULTS)) {
+      await run(`INSERT OR IGNORE INTO anomaly_thresholds
+                 (metric, enabled, z_threshold, direction, min_history_days, lookback_days, updated_by)
+                 VALUES (?, ?, ?, ?, ?, ?, 'system')`,
+        [metric, cfg.enabled, cfg.z_threshold, cfg.direction, cfg.min_history_days, cfg.lookback_days]);
+    }
+  } catch(e) { /* non-critical */ }
+
   // #14 Session 4: Agent schedules (versioned, per-day-of-week)
   await run(`CREATE TABLE IF NOT EXISTS agent_schedules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1591,6 +1634,101 @@ async function snoozeAlert(id, minutes){
     [`+${m} minutes`, id]);
 }
 
+// ── Anomaly detection (#20 Session 6) ─────────────────────────────────
+
+async function getAnomalyThresholds(){
+  const rows = await all(`SELECT metric,enabled,z_threshold,direction,min_history_days,
+                          lookback_days,updated_at,updated_by FROM anomaly_thresholds`);
+  const out = {};
+  for (const r of rows) {
+    out[r.metric] = {
+      enabled: r.enabled,
+      z_threshold: r.z_threshold,
+      direction: r.direction,
+      min_history_days: r.min_history_days,
+      lookback_days: r.lookback_days,
+      updated_at: r.updated_at,
+      updated_by: r.updated_by
+    };
+  }
+  return out;
+}
+
+async function updateAnomalyThreshold(metric, updates, byEmail){
+  if (!metric) throw new Error('metric required');
+  const valid = new Set(['low','high','either']);
+  if (updates.direction && !valid.has(updates.direction)) {
+    throw new Error('direction must be low|high|either');
+  }
+  const existing = await get(`SELECT * FROM anomaly_thresholds WHERE metric=?`,[metric]);
+  if (!existing) throw new Error('Unknown metric: ' + metric);
+  const merged = {
+    enabled: updates.enabled != null ? (updates.enabled ? 1 : 0) : existing.enabled,
+    z_threshold: updates.z_threshold != null ? Number(updates.z_threshold) : existing.z_threshold,
+    direction: updates.direction || existing.direction,
+    min_history_days: updates.min_history_days != null ? parseInt(updates.min_history_days) : existing.min_history_days,
+    lookback_days: updates.lookback_days != null ? parseInt(updates.lookback_days) : existing.lookback_days
+  };
+  await run(`UPDATE anomaly_thresholds
+             SET enabled=?, z_threshold=?, direction=?, min_history_days=?, lookback_days=?,
+                 updated_at=CURRENT_TIMESTAMP, updated_by=?
+             WHERE metric=?`,
+    [merged.enabled, merged.z_threshold, merged.direction, merged.min_history_days, merged.lookback_days, byEmail || 'system', metric]);
+}
+
+async function insertAnomalyEvent(ev){
+  if (!ev || !ev.agent_email || !ev.metric || !ev.date || !ev.severity) {
+    throw new Error('agent_email, metric, date, severity required');
+  }
+  // INSERT OR IGNORE — UNIQUE(agent_email, metric, date) prevents duplicates
+  const r = await run(`INSERT OR IGNORE INTO anomaly_events
+    (agent_email, metric, date, today_value, baseline_median, baseline_mad,
+     modified_z, direction, severity, flat_baseline, sample_size)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+    [ev.agent_email, ev.metric, ev.date,
+     ev.today_value, ev.baseline_median, ev.baseline_mad,
+     ev.modified_z, ev.direction, ev.severity,
+     ev.flat_baseline ? 1 : 0, ev.sample_size || null]);
+  return r ? r.lastID : null;
+}
+
+async function getRecentAnomalies(days){
+  const d = Math.min(Math.max(parseInt(days)||7, 1), 90);
+  return all(`SELECT * FROM anomaly_events
+              WHERE created_at > datetime('now', ?)
+              ORDER BY created_at DESC, severity LIMIT 500`, [`-${d} days`]);
+}
+
+async function getActiveAnomalies(limit){
+  return all(`SELECT * FROM anomaly_events
+              WHERE acked_at IS NULL
+              ORDER BY created_at DESC LIMIT ?`,[limit || 100]);
+}
+
+async function getAnomaliesForAgent(email, days){
+  const d = Math.min(Math.max(parseInt(days)||30, 1), 180);
+  return all(`SELECT * FROM anomaly_events
+              WHERE agent_email=? AND created_at > datetime('now', ?)
+              ORDER BY date DESC, created_at DESC`,[email, `-${d} days`]);
+}
+
+async function ackAnomaly(id, byEmail){
+  return run(`UPDATE anomaly_events SET acked_at=CURRENT_TIMESTAMP, acked_by=?
+              WHERE id=? AND acked_at IS NULL`, [byEmail || 'unknown', id]);
+}
+
+async function getAnomalyCounts(){
+  const row = await get(`SELECT COUNT(*) AS total,
+                                SUM(CASE WHEN severity='critical' THEN 1 ELSE 0 END) AS critical,
+                                SUM(CASE WHEN severity='warning' THEN 1 ELSE 0 END) AS warning
+                         FROM anomaly_events WHERE acked_at IS NULL`);
+  return {
+    total: row ? row.total : 0,
+    critical: row ? row.critical : 0,
+    warning: row ? row.warning : 0
+  };
+}
+
 // ── Schedule adherence (#14 Session 4) ────────────────────────────────
 
 /** All schedule rows for one agent. The engine versions internally. */
@@ -1690,6 +1828,10 @@ module.exports={
   // #14 Session 4 — schedule adherence
   getSchedulesForAgent, getAllSchedules, getScheduleHistory,
   insertScheduleVersion, endDatePriorSchedule, deleteAllSchedulesForAgent,
+  // #20 Session 6 — anomaly detection
+  getAnomalyThresholds, updateAnomalyThreshold,
+  insertAnomalyEvent, getRecentAnomalies, getActiveAnomalies,
+  getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
