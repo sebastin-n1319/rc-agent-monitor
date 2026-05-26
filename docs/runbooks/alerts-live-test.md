@@ -36,13 +36,16 @@ Paste this whole block. It will:
 (async function liveAlertTest(){
   console.log('🧪 Adit alert system — live test starting…');
 
-  // 1. Confirm session
-  const me = await fetch('/api/role-check').then(r => r.json()).catch(()=>null);
-  console.log('1. Session:', me?.role || 'NO SESSION — please log in first');
-  if (!me?.role) return;
+  // 1. Confirm session — /api/session returns current session via cookie.
+  // (NOT /api/role-check — that one requires ?email= and is used during
+  // OAuth pre-check, not for current-session lookup.)
+  const me = await fetch('/api/session', { credentials: 'same-origin' })
+    .then(r => r.json()).catch(()=>null);
+  console.log('1. Session:', me?.success ? `${me.email} (${me.role})` : 'NO SESSION — please log in first');
+  if (!me?.success) return;
 
   // 2. Show current thresholds
-  const t = await fetch('/api/alerts/thresholds').then(r => r.json());
+  const t = await fetch('/api/alerts/thresholds', { credentials: 'same-origin' }).then(r => r.json());
   console.log('2. Current thresholds:');
   console.table(Object.entries(t.thresholds).map(([k, v]) => ({
     key: k, enabled: v.enabled, severity: v.severity,
@@ -50,7 +53,7 @@ Paste this whole block. It will:
   })));
 
   // 3. Read active alerts (currently active in DB)
-  const active = await fetch('/api/alerts/active').then(r => r.json());
+  const active = await fetch('/api/alerts/active', { credentials: 'same-origin' }).then(r => r.json());
   console.log('3. Currently active alerts:', active.counts);
   console.table(active.alerts.map(a => ({
     id: a.id, key: a.key, severity: a.severity,
@@ -61,6 +64,7 @@ Paste this whole block. It will:
   if (me.role === 'admin') {
     const fire = await fetch('/api/admin/alerts/test', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         key: 'stuck_call',
@@ -76,7 +80,7 @@ Paste this whole block. It will:
 
   // 5. Manual poll to confirm round-trip
   setTimeout(async () => {
-    const recheck = await fetch('/api/alerts/active').then(r => r.json());
+    const recheck = await fetch('/api/alerts/active', { credentials: 'same-origin' }).then(r => r.json());
     console.log('5. Post-fire count:', recheck.counts);
     const testRows = recheck.alerts.filter(a => a.body.includes('Live test'));
     console.log('   Test alerts visible:', testRows.length);
