@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var KEEP_STYLE_IDS = { 'auth-gate-css': true };
+  var KEEP_STYLE_IDS = { 'auth-gate-css': true, 'ui-engine-css': true };
   var KEEP_HREF_FRAGMENTS = [
     'fonts.googleapis.com',
     'fonts.gstatic.com',

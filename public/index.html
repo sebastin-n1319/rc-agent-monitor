@@ -22575,8 +22575,10 @@ input:focus, textarea:focus, select:focus {
 // child insertion.
 (function() {
   // Allowlist: our own fixed elements that must survive
-  const SAFE_IDS = new Set(['toast','loginScreen','weekend-announce-overlay']);
-  const SAFE_CLASSES = ['toast'];
+  const SAFE_IDS = new Set(['toast','loginScreen','weekend-announce-overlay',
+    'status-bar','scroll-progress-wrap','cmd-overlay','toast-wrap',
+    'kbd-overlay','focus-hud']);
+  const SAFE_CLASSES = ['toast', 'adit-toast'];
 
   const isRogue = el => {
     if (!el || el.nodeType !== 1) return false;
@@ -22898,3 +22900,660 @@ function laFormatAnalysis(rec) {
 <!-- ADIT THEME — External CSS loaded absolutely last, wins all cascade conflicts -->
 <!-- Root cause fix: CSS vars cannot use !important; this external file redefines them correctly -->
 <link rel="stylesheet" href="/adit-theme.css" id="adit-theme-link">
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     WORLD-CLASS UI ENGINE v2.0
+     Motion.dev spring physics · Command Palette · Toast System
+     3D Tilt Cards · Magnetic Buttons · Animated Counters
+     Focus Mode · Keyboard Shortcuts · Live Status Bar
+     Scroll Progress · InView Stagger · Page Slide Transitions
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- Scroll Progress -->
+<div id="scroll-progress-wrap"><div id="scroll-progress-bar"></div></div>
+
+<!-- Command Palette -->
+<div id="cmd-overlay" onclick="closeCmdPalette()">
+  <div id="cmd-palette" onclick="event.stopPropagation()">
+    <div class="cmd-search-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;opacity:.4;color:#94a3b8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="cmd-input" placeholder="Search tabs and actions…" autocomplete="off" spellcheck="false">
+      <kbd class="cmd-esc-key" onclick="closeCmdPalette()">ESC</kbd>
+    </div>
+    <div id="cmd-results"></div>
+    <div class="cmd-footer">
+      <span><kbd>↵</kbd> Open</span>
+      <span><kbd>↑↓</kbd> Navigate</span>
+      <span><kbd>Esc</kbd> Close</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-wrap"></div>
+
+<!-- Keyboard Shortcuts Modal -->
+<div id="kbd-overlay" onclick="closeKbdModal()">
+  <div id="kbd-modal" onclick="event.stopPropagation()">
+    <div class="kbd-title">⌨️ Keyboard Shortcuts</div>
+    <div class="kbd-grid">
+      <div class="kbd-row"><kbd>⌘K</kbd><span>Command Palette</span></div>
+      <div class="kbd-row"><kbd>/</kbd><span>Quick Search</span></div>
+      <div class="kbd-row"><kbd>?</kbd><span>Show Shortcuts</span></div>
+      <div class="kbd-row"><kbd>F</kbd><span>Focus Mode</span></div>
+      <div class="kbd-row"><kbd>1</kbd><span>Live Dashboard</span></div>
+      <div class="kbd-row"><kbd>2</kbd><span>Reports</span></div>
+      <div class="kbd-row"><kbd>3</kbd><span>Manage Agents</span></div>
+      <div class="kbd-row"><kbd>4</kbd><span>Access Control</span></div>
+      <div class="kbd-row"><kbd>5</kbd><span>Break Tracker</span></div>
+      <div class="kbd-row"><kbd>6</kbd><span>Call Logs</span></div>
+      <div class="kbd-row"><kbd>7</kbd><span>Tickets</span></div>
+      <div class="kbd-row"><kbd>8</kbd><span>AI Agent</span></div>
+      <div class="kbd-row"><kbd>R</kbd><span>Refresh Data</span></div>
+      <div class="kbd-row"><kbd>Esc</kbd><span>Close / Cancel</span></div>
+    </div>
+    <button class="kbd-close" onclick="closeKbdModal()">Close</button>
+  </div>
+</div>
+
+<!-- Focus Mode HUD -->
+<div id="focus-hud">
+  <div class="fhud-dot"></div>
+  <div id="fhud-clock">--:--:--</div>
+  <div id="fhud-status">Focus Mode</div>
+  <button class="fhud-exit" onclick="toggleFocusMode()">✕ Exit</button>
+</div>
+
+<!-- Status Bar -->
+<div id="status-bar">
+  <div class="sb-left">
+    <span class="sb-live-dot"></span>
+    <span class="sb-live-label">Live</span>
+    <span class="sb-sep">·</span>
+    <span id="sb-clock" class="sb-clock">--:--:--</span>
+  </div>
+  <button class="sb-cmd-trigger" onclick="openCmdPalette()">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+    <span>Search & Commands</span>
+    <kbd>⌘K</kbd>
+  </button>
+  <div class="sb-right">
+    <button class="sb-btn" onclick="showKbdModal()" title="Keyboard shortcuts">⌨️</button>
+    <button class="sb-btn" onclick="toggleFocusMode()" title="Focus mode">🎯</button>
+    <button class="sb-btn" onclick="if(typeof refresh==='function')refresh();showToast('Data refreshed','success')" title="Refresh data">↻</button>
+  </div>
+</div>
+
+<style id="ui-engine-css">
+/* ── Scroll Progress ───────────────────────────────────────────── */
+#scroll-progress-wrap{position:fixed;top:0;left:0;right:0;height:2px;z-index:200000;pointer-events:none;}
+#scroll-progress-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--orange) 0%,#ff9e50 50%,var(--teal) 100%);transition:width .08s linear;box-shadow:0 0 10px rgba(244,137,31,.6);}
+
+/* ── Command Palette ───────────────────────────────────────────── */
+#cmd-overlay{position:fixed;inset:0;z-index:100100;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;align-items:flex-start;justify-content:center;padding-top:14vh;}
+#cmd-palette{width:560px;max-width:92vw;background:rgba(6,12,26,.97);border:1px solid rgba(255,255,255,.1);border-radius:18px;box-shadow:0 40px 100px rgba(0,0,0,.8),0 0 0 1px rgba(244,137,31,.08),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;}
+.cmd-search-row{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.06);}
+#cmd-input{flex:1;background:transparent;border:none;outline:none;font-size:15px;font-weight:500;color:#f0f4f8;font-family:'Poppins',sans-serif;caret-color:var(--orange);}
+#cmd-input::placeholder{color:rgba(148,163,184,.45);}
+.cmd-esc-key{padding:3px 7px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:5px;font-size:9px;color:rgba(148,163,184,.4);font-family:'JetBrains Mono',monospace;cursor:pointer;transition:background .15s;flex-shrink:0;}
+.cmd-esc-key:hover{background:rgba(255,255,255,.09);}
+#cmd-results{max-height:340px;overflow-y:auto;padding:8px;}
+#cmd-results::-webkit-scrollbar{width:4px;}
+#cmd-results::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+.cmd-sec-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(148,163,184,.35);padding:8px 10px 4px;}
+.cmd-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .1s,box-shadow .1s;border:1px solid transparent;}
+.cmd-item:hover,.cmd-item.selected{background:rgba(244,137,31,.07);border-color:rgba(244,137,31,.12);}
+.cmd-item-ico{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:8px;flex-shrink:0;}
+.cmd-item-body{flex:1;min-width:0;}
+.cmd-item-name{font-size:13px;font-weight:600;color:#f0f4f8;line-height:1.2;}
+.cmd-item-hint{font-size:10.5px;color:rgba(148,163,184,.55);margin-top:1px;}
+.cmd-item-arrow{font-size:10px;color:rgba(148,163,184,.3);}
+.cmd-empty{text-align:center;padding:32px 16px;color:rgba(148,163,184,.35);font-size:13px;}
+.cmd-footer{display:flex;gap:18px;padding:10px 18px;border-top:1px solid rgba(255,255,255,.05);font-size:10px;color:rgba(148,163,184,.3);}
+.cmd-footer kbd{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:4px;padding:1px 5px;font-size:9px;margin-right:4px;font-family:'JetBrains Mono',monospace;}
+
+/* ── Toasts ────────────────────────────────────────────────────── */
+#toast-wrap{position:fixed;top:66px;right:18px;z-index:100050;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:320px;}
+.adit-toast{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:13px;font-size:12px;font-weight:500;font-family:'Poppins',sans-serif;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 8px 32px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06);pointer-events:all;position:relative;overflow:hidden;}
+.adit-toast::before{content:'';position:absolute;inset:0;background:linear-gradient(105deg,rgba(255,255,255,.04) 0%,transparent 60%);pointer-events:none;}
+.toast-success{background:rgba(45,220,150,.1);border:1px solid rgba(45,220,150,.28);color:#2ddc96;}
+.toast-error{background:rgba(237,102,107,.1);border:1px solid rgba(237,102,107,.28);color:#ed666b;}
+.toast-warning{background:rgba(251,200,75,.1);border:1px solid rgba(251,200,75,.28);color:#fbc84b;}
+.toast-info{background:rgba(33,170,224,.1);border:1px solid rgba(33,170,224,.28);color:#21aae0;}
+.toast-ico{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border-radius:50%;background:currentColor;color:white;flex-shrink:0;}
+.toast-success .toast-ico{background:rgba(45,220,150,.2);color:#2ddc96;}
+.toast-error   .toast-ico{background:rgba(237,102,107,.2);color:#ed666b;}
+.toast-warning .toast-ico{background:rgba(251,200,75,.2);color:#fbc84b;}
+.toast-info    .toast-ico{background:rgba(33,170,224,.2);color:#21aae0;}
+.toast-msg{flex:1;line-height:1.4;}
+.toast-x{background:none;border:none;color:inherit;opacity:.4;cursor:pointer;font-size:15px;line-height:1;padding:0;flex-shrink:0;transition:opacity .15s;}
+.toast-x:hover{opacity:.9;}
+@keyframes toastIn{from{opacity:0;transform:translateX(32px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes toastOut{from{opacity:1;transform:none}to{opacity:0;transform:translateX(32px) scale(.92)}}
+
+/* ── Keyboard Shortcuts Modal ──────────────────────────────────── */
+#kbd-overlay{position:fixed;inset:0;z-index:100080;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;}
+#kbd-modal{background:rgba(6,12,26,.97);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:28px 30px;width:440px;max-width:92vw;box-shadow:0 40px 100px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);}
+.kbd-title{font-size:16px;font-weight:700;color:#f0f4f8;margin-bottom:20px;}
+.kbd-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:20px;}
+.kbd-row{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:8px;}
+.kbd-row kbd{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:24px;padding:0 6px;background:rgba(244,137,31,.1);border:1px solid rgba(244,137,31,.22);border-radius:5px;font-size:10px;font-weight:700;color:var(--orange);font-family:'JetBrains Mono',monospace;flex-shrink:0;}
+.kbd-row span{font-size:11.5px;color:rgba(148,163,184,.75);}
+.kbd-close{width:100%;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(255,255,255,.03);color:rgba(148,163,184,.6);font-size:12px;font-weight:500;cursor:pointer;font-family:'Poppins',sans-serif;transition:background .15s,color .15s,border-color .15s;}
+.kbd-close:hover{background:rgba(255,255,255,.07);color:#f0f4f8;border-color:rgba(255,255,255,.14);}
+
+/* ── Focus Mode HUD ────────────────────────────────────────────── */
+#focus-hud{position:fixed;bottom:48px;left:50%;transform:translateX(-50%);z-index:100010;display:none;align-items:center;gap:14px;padding:10px 20px;background:rgba(4,8,18,.95);border:1px solid rgba(244,137,31,.18);border-radius:50px;box-shadow:0 12px 40px rgba(0,0,0,.6),0 0 0 1px rgba(244,137,31,.04);}
+.fhud-dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 8px var(--orange);animation:livePulse 2.4s ease-in-out infinite;}
+#fhud-clock{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#f0f4f8;letter-spacing:.05em;}
+#fhud-status{font-size:11px;color:rgba(148,163,184,.55);font-weight:500;}
+.fhud-exit{padding:4px 13px;border:1px solid rgba(237,102,107,.3);border-radius:20px;background:rgba(237,102,107,.07);color:var(--red);font-size:10.5px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;}
+.fhud-exit:hover{background:rgba(237,102,107,.14);}
+
+/* ── Status Bar ────────────────────────────────────────────────── */
+#status-bar{position:fixed;bottom:0;left:0;right:0;z-index:100000;height:34px;background:rgba(3,6,14,.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.045);display:flex;align-items:center;justify-content:space-between;padding:0 14px;}
+.sb-left{display:flex;align-items:center;gap:6px;color:rgba(148,163,184,.5);}
+.sb-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:livePulse 2.4s ease-in-out infinite;flex-shrink:0;}
+.sb-live-label{font-size:10px;font-weight:600;color:var(--green);}
+.sb-sep{opacity:.25;}
+.sb-clock{font-family:'JetBrains Mono',monospace;font-size:10px;}
+.sb-cmd-trigger{display:flex;align-items:center;gap:7px;padding:4px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:7px;color:rgba(148,163,184,.45);font-size:10px;font-weight:500;font-family:'Poppins',sans-serif;cursor:pointer;transition:all .15s;position:absolute;left:50%;transform:translateX(-50%);}
+.sb-cmd-trigger:hover{background:rgba(244,137,31,.07);border-color:rgba(244,137,31,.18);color:rgba(244,137,31,.8);}
+.sb-cmd-trigger kbd{padding:1px 5px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:4px;font-size:9px;font-family:'JetBrains Mono',monospace;color:rgba(148,163,184,.35);}
+.sb-right{display:flex;align-items:center;gap:2px;}
+.sb-btn{padding:3px 9px;background:transparent;border:1px solid transparent;border-radius:5px;color:rgba(148,163,184,.4);font-size:11px;cursor:pointer;transition:all .15s;font-family:'Poppins',sans-serif;}
+.sb-btn:hover{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.07);color:rgba(148,163,184,.75);}
+
+/* ── Focus Mode body class ─────────────────────────────────────── */
+body.focus-mode header .hdr-right>*:not(#darkModeBtn){opacity:.12;pointer-events:none;transition:opacity .3s;}
+body.focus-mode .nav{opacity:.08;pointer-events:none;transition:opacity .3s;}
+body.focus-mode #adit-admin-sidebar{opacity:.05;pointer-events:none;}
+#focus-hud{transition:opacity .25s;}
+
+/* ── Enhanced page transition ──────────────────────────────────── */
+.page.active{animation:pageReveal .28s cubic-bezier(.22,1,.36,1) both;}
+@keyframes pageReveal{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+
+/* ── Nav tab ripple ────────────────────────────────────────────── */
+.nav-tab{overflow:hidden;position:relative;}
+.nav-ripple{position:absolute;border-radius:50%;background:rgba(244,137,31,.25);transform:scale(0);animation:navRipple .5s ease-out forwards;pointer-events:none;}
+@keyframes navRipple{to{transform:scale(4);opacity:0}}
+
+/* ── Button shimmer ────────────────────────────────────────────── */
+.btn-primary{position:relative;overflow:hidden;}
+.btn-primary::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.12) 50%,transparent 65%);background-size:200% 100%;animation:shimmer 2.5s ease-in-out infinite;border-radius:inherit;pointer-events:none;}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+
+/* ── Metric bar pulse ──────────────────────────────────────────── */
+.metric::before{animation:barPulse 3s ease-in-out infinite;}
+@keyframes barPulse{0%,100%{opacity:.75}50%{opacity:1;box-shadow:0 0 14px var(--bar-c,var(--orange));}}
+
+/* ── KPI accent pulse ──────────────────────────────────────────── */
+.ld-kpi::before{animation:barPulse 3s ease-in-out 1s infinite;}
+
+/* ── 3D tilt transition helper ─────────────────────────────────── */
+.tilt-card{transition:transform .12s ease,box-shadow .12s ease;}
+.tilt-card:not(:hover){transition:transform .45s cubic-bezier(.22,1,.36,1),box-shadow .45s cubic-bezier(.22,1,.36,1);}
+
+/* ── Animated counter flash ────────────────────────────────────── */
+@keyframes counterFlash{0%{color:var(--orange);text-shadow:0 0 14px rgba(244,137,31,.6)}100%{color:inherit;text-shadow:none}}
+.counter-tick{animation:counterFlash .6s cubic-bezier(.22,1,.36,1) both;}
+
+/* ── Scroll animations for cards ───────────────────────────────── */
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.scroll-reveal{opacity:0;animation:fadeSlideUp .5s cubic-bezier(.22,1,.36,1) forwards;}
+</style>
+
+<script id="ui-engine-js">
+/* ═══════════════════════════════════════════════════════════════
+   WORLD-CLASS UI ENGINE v2.0
+   All features wrapped in IIFE to avoid global namespace pollution
+   ═══════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* ── Motion.dev global detection ── */
+  const ML = window.Motion || window.motion || {};
+  const MA = ML.animate  || null;
+  const MI = ML.inView   || null;
+  const MS = ML.stagger  || null;
+
+  /* Helper: spring-like ease strings */
+  const E = {
+    snappy: 'cubic-bezier(0.22,1,0.36,1)',
+    bouncy: 'cubic-bezier(0.34,1.56,0.64,1)',
+    gentle: 'cubic-bezier(0.25,0.46,0.45,0.94)'
+  };
+
+  /* ── 1. SCROLL PROGRESS ─────────────────────────────── */
+  const _spBar = document.getElementById('scroll-progress-bar');
+  window.addEventListener('scroll', function(){
+    if(!_spBar) return;
+    const pct = Math.min((window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight)) * 100, 100);
+    _spBar.style.width = pct + '%';
+  }, { passive: true });
+
+  /* ── 2. LIVE CLOCK ──────────────────────────────────── */
+  function tickClock(){
+    const c = document.getElementById('sb-clock');
+    const f = document.getElementById('fhud-clock');
+    const now = new Date();
+    const t = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    if(c) c.textContent = t;
+    if(f) f.textContent = t;
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  /* ── 3. TOAST SYSTEM ────────────────────────────────── */
+  window.showToast = function(msg, type, dur){
+    type = type || 'info';
+    dur  = dur  || 3500;
+    const wrap = document.getElementById('toast-wrap');
+    if(!wrap) return;
+    const id = 'toast-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+    const icons = { success:'✓', error:'✕', warning:'!', info:'i' };
+    const el = document.createElement('div');
+    el.className = 'adit-toast toast-' + type;
+    el.id = id;
+    el.innerHTML =
+      '<span class="toast-ico">' + (icons[type]||'i') + '</span>' +
+      '<span class="toast-msg">' + (typeof esc==='function' ? esc(String(msg)) : String(msg).replace(/</g,'&lt;')) + '</span>' +
+      '<button class="toast-x" onclick="dismissToast(\'' + id + '\')" title="Dismiss">×</button>';
+    el.style.cssText = 'animation:toastIn .4s cubic-bezier(0.22,1,0.36,1) both;';
+    wrap.appendChild(el);
+    setTimeout(function(){ dismissToast(id); }, dur);
+  };
+
+  window.dismissToast = function(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.style.animation = 'toastOut .3s cubic-bezier(0.25,0.46,0.45,0.94) forwards';
+    setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 320);
+  };
+
+  /* ── 4. COMMAND PALETTE ─────────────────────────────── */
+  const CMD_ITEMS = [
+    { ico:'⚡', name:'Live Dashboard',   hint:'Real-time call center metrics',  type:'nav', tab:'live' },
+    { ico:'📊', name:'Reports',          hint:'Daily analytics & trend data',   type:'nav', tab:'reports' },
+    { ico:'👥', name:'Manage Agents',    hint:'Agent roster, status & settings',type:'nav', tab:'agents' },
+    { ico:'🔐', name:'Access Control',   hint:'Roles & permissions management', type:'nav', tab:'access' },
+    { ico:'📋', name:'Login Logs',       hint:'Session & login history',        type:'nav', tab:'loginlogs' },
+    { ico:'⏱️', name:'Break Tracker',    hint:'Break & AUX time tracking',      type:'nav', tab:'breaks' },
+    { ico:'🎁', name:'Bonus Guide',      hint:'Bonus structure & guidelines',   type:'nav', tab:'bonus' },
+    { ico:'📞', name:'Call Logs',        hint:'Detailed inbound call records',  type:'nav', tab:'calllogs' },
+    { ico:'🗂️', name:'Audit Log',        hint:'System activity audit trail',    type:'nav', tab:'auditlog' },
+    { ico:'🎫', name:'Tickets',          hint:'Support ticket management',      type:'nav', tab:'tickets' },
+    { ico:'🤖', name:'AI Agent',         hint:'AI-powered learning & insights', type:'nav', tab:'ai-agent' },
+    { ico:'🔄', name:'Refresh Data',     hint:'Force a full data reload',       type:'action', fn:function(){ if(typeof refresh==='function') refresh(); showToast('Data refreshed','success',2500); } },
+    { ico:'🌙', name:'Toggle Dark Mode', hint:'Switch light / dark theme',      type:'action', fn:function(){ var b=document.getElementById('darkModeBtn'); if(b) b.click(); } },
+    { ico:'⌨️', name:'Keyboard Shortcuts',hint:'View all keyboard shortcuts',   type:'action', fn:function(){ closeCmdPalette(); showKbdModal(); } },
+    { ico:'🎯', name:'Focus Mode',       hint:'Distraction-free agent view',    type:'action', fn:function(){ closeCmdPalette(); toggleFocusMode(); } },
+    { ico:'🔍', name:'Debug Panel',      hint:'Dev diagnostics & raw data',     type:'nav', tab:'debug' },
+  ];
+
+  var _cmdOpen = false;
+  var _cmdSelected = 0;
+
+  window.openCmdPalette = function(){
+    var overlay = document.getElementById('cmd-overlay');
+    var inp = document.getElementById('cmd-input');
+    if(!overlay) return;
+    overlay.style.display = 'flex';
+    _cmdOpen = true;
+    _cmdSelected = 0;
+    renderCmd('');
+    if(MA){
+      MA(overlay,{opacity:[0,1]},{duration:0.15});
+      MA(document.getElementById('cmd-palette'),{opacity:[0,1],y:[-18,0],scale:[0.95,1]},{duration:0.22,easing:E.snappy});
+    } else {
+      overlay.style.opacity = '1';
+    }
+    setTimeout(function(){ if(inp) inp.focus(); }, 60);
+  };
+
+  window.closeCmdPalette = function(){
+    var overlay = document.getElementById('cmd-overlay');
+    if(!overlay || !_cmdOpen) return;
+    _cmdOpen = false;
+    var inp = document.getElementById('cmd-input');
+    if(inp) inp.value = '';
+    if(MA){
+      MA(overlay,{opacity:[1,0]},{duration:0.14}).finished.then(function(){ overlay.style.display='none'; });
+    } else {
+      overlay.style.display = 'none';
+    }
+  };
+
+  function renderCmd(q){
+    var res = document.getElementById('cmd-results');
+    if(!res) return;
+    var query = (q||'').toLowerCase().trim();
+    var filtered = CMD_ITEMS.filter(function(it){
+      return !query || it.name.toLowerCase().includes(query) || (it.hint||'').toLowerCase().includes(query);
+    });
+    if(!filtered.length){
+      res.innerHTML = '<div class="cmd-empty">No results for "<strong>' + (typeof esc==='function'?esc(q):q) + '</strong>"</div>';
+      return;
+    }
+    var nav = filtered.filter(function(i){return i.type==='nav';});
+    var act = filtered.filter(function(i){return i.type==='action';});
+    var html = '';
+    if(nav.length){
+      html += '<div class="cmd-sec-lbl">Navigate</div>';
+      nav.forEach(function(item){
+        var gi = CMD_ITEMS.indexOf(item);
+        html += '<div class="cmd-item" onclick="cmdRun(' + gi + ')" tabindex="0">'
+          + '<span class="cmd-item-ico">' + item.ico + '</span>'
+          + '<div class="cmd-item-body"><div class="cmd-item-name">' + (typeof esc==='function'?esc(item.name):item.name) + '</div>'
+          + '<div class="cmd-item-hint">' + (typeof esc==='function'?esc(item.hint||''):item.hint||'') + '</div></div>'
+          + '<span class="cmd-item-arrow">↵</span></div>';
+      });
+    }
+    if(act.length){
+      html += '<div class="cmd-sec-lbl">Actions</div>';
+      act.forEach(function(item){
+        var gi = CMD_ITEMS.indexOf(item);
+        html += '<div class="cmd-item" onclick="cmdRun(' + gi + ')" tabindex="0">'
+          + '<span class="cmd-item-ico">' + item.ico + '</span>'
+          + '<div class="cmd-item-body"><div class="cmd-item-name">' + (typeof esc==='function'?esc(item.name):item.name) + '</div>'
+          + '<div class="cmd-item-hint">' + (typeof esc==='function'?esc(item.hint||''):item.hint||'') + '</div></div>'
+          + '<span class="cmd-item-arrow">↵</span></div>';
+      });
+    }
+    res.innerHTML = html;
+    /* stagger entrance */
+    if(MA){
+      var items = res.querySelectorAll('.cmd-item');
+      items.forEach(function(item, i){
+        item.style.opacity = '0';
+        MA(item,{opacity:[0,1],y:[8,0]},{duration:0.2,delay:i*0.03,easing:E.snappy});
+      });
+    }
+  }
+
+  window.cmdRun = function(idx){
+    var item = CMD_ITEMS[idx];
+    if(!item) return;
+    closeCmdPalette();
+    if(item.type === 'nav'){
+      var btn = document.querySelector('.nav-tab[data-tab="' + item.tab + '"]');
+      if(btn && typeof switchTab === 'function') switchTab(item.tab, btn);
+    } else if(item.type === 'action' && item.fn){
+      setTimeout(item.fn, 80);
+    }
+  };
+
+  /* cmd input wiring */
+  document.addEventListener('DOMContentLoaded', function(){
+    var inp = document.getElementById('cmd-input');
+    if(inp){
+      inp.addEventListener('input', function(){ renderCmd(this.value); _cmdSelected = 0; });
+      inp.addEventListener('keydown', function(e){
+        if(e.key==='Escape'){ closeCmdPalette(); return; }
+        if(e.key==='Enter'){
+          var first = document.querySelector('#cmd-results .cmd-item');
+          if(first) first.click();
+        }
+        if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+          e.preventDefault();
+          var items = Array.from(document.querySelectorAll('#cmd-results .cmd-item'));
+          if(!items.length) return;
+          items.forEach(function(i){ i.classList.remove('selected'); });
+          _cmdSelected = e.key==='ArrowDown'
+            ? Math.min(_cmdSelected+1, items.length-1)
+            : Math.max(_cmdSelected-1, 0);
+          items[_cmdSelected].classList.add('selected');
+          items[_cmdSelected].scrollIntoView({block:'nearest'});
+        }
+      });
+    }
+    /* overlay click-outside already handled by onclick on the overlay element */
+  });
+
+  /* ── 5. KEYBOARD SHORTCUTS MODAL ────────────────────── */
+  window.showKbdModal = function(){
+    var el = document.getElementById('kbd-overlay');
+    if(!el) return;
+    el.style.display = 'flex';
+    if(MA){
+      MA(el,{opacity:[0,1]},{duration:0.15});
+      MA(document.getElementById('kbd-modal'),{opacity:[0,1],scale:[0.94,1],y:[-12,0]},{duration:0.25,easing:E.snappy});
+    }
+  };
+  window.closeKbdModal = function(){
+    var el = document.getElementById('kbd-overlay');
+    if(!el) return;
+    if(MA){
+      MA(el,{opacity:[1,0]},{duration:0.15}).finished.then(function(){ el.style.display='none'; });
+    } else {
+      el.style.display = 'none';
+    }
+  };
+
+  /* ── 6. FOCUS MODE ───────────────────────────────────── */
+  var _focusOn = false;
+  window.toggleFocusMode = function(){
+    _focusOn = !_focusOn;
+    document.body.classList.toggle('focus-mode', _focusOn);
+    var hud = document.getElementById('focus-hud');
+    if(hud){
+      if(_focusOn){
+        hud.style.display = 'flex';
+        if(MA) MA(hud,{opacity:[0,1],scale:[0.88,1]},{duration:0.3,easing:E.bouncy});
+      } else {
+        if(MA){
+          MA(hud,{opacity:[1,0]},{duration:0.2}).finished.then(function(){ hud.style.display='none'; });
+        } else {
+          hud.style.display = 'none';
+        }
+      }
+      /* Update focus status text */
+      var activeTab = document.querySelector('.nav-tab.active');
+      var fs = document.getElementById('fhud-status');
+      if(fs && activeTab) fs.textContent = activeTab.textContent.trim() || 'Focus Mode';
+    }
+    showToast(_focusOn ? 'Focus mode ON — press F to exit' : 'Focus mode OFF', 'info', 2200);
+  };
+
+  /* ── 7. KEYBOARD SHORTCUTS ───────────────────────────── */
+  var KBD_TABS = {'1':'live','2':'reports','3':'agents','4':'access','5':'breaks','6':'calllogs','7':'tickets','8':'ai-agent'};
+
+  document.addEventListener('keydown', function(e){
+    var tag = e.target ? e.target.tagName.toUpperCase() : '';
+    var isInput = tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||e.target.isContentEditable;
+
+    /* ⌘K / Ctrl+K — command palette */
+    if((e.metaKey||e.ctrlKey) && e.key==='k'){
+      e.preventDefault();
+      _cmdOpen ? closeCmdPalette() : openCmdPalette();
+      return;
+    }
+    /* Escape */
+    if(e.key==='Escape'){
+      if(_cmdOpen){ closeCmdPalette(); return; }
+      var ko = document.getElementById('kbd-overlay');
+      if(ko && ko.style.display!=='none'){ closeKbdModal(); return; }
+      if(_focusOn){ toggleFocusMode(); return; }
+    }
+    if(isInput) return;
+
+    /* / or ? */
+    if(e.key==='/'){ e.preventDefault(); openCmdPalette(); return; }
+    if(e.key==='?'){ showKbdModal(); return; }
+    /* F — focus mode */
+    if(e.key==='f'||e.key==='F'){ toggleFocusMode(); return; }
+    /* R — refresh */
+    if(e.key==='r'||e.key==='R'){
+      if(typeof refresh==='function') refresh();
+      showToast('Data refreshed','success',2000);
+      return;
+    }
+    /* 1-8 — tab nav */
+    if(KBD_TABS[e.key] && !e.metaKey && !e.ctrlKey && !e.altKey){
+      var tabId = KBD_TABS[e.key];
+      var btn = document.querySelector('.nav-tab[data-tab="' + tabId + '"]');
+      if(btn && typeof switchTab==='function') switchTab(tabId, btn);
+      return;
+    }
+  });
+
+  /* ── 8. NAV TAB RIPPLE EFFECT ───────────────────────── */
+  document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.nav-tab').forEach(function(tab){
+      tab.addEventListener('click', function(e){
+        var ripple = document.createElement('span');
+        ripple.className = 'nav-ripple';
+        var rect = tab.getBoundingClientRect();
+        var size = Math.max(rect.width, rect.height);
+        ripple.style.cssText = 'width:' + size + 'px;height:' + size + 'px;top:' + (e.clientY-rect.top-size/2) + 'px;left:' + (e.clientX-rect.left-size/2) + 'px;';
+        tab.appendChild(ripple);
+        setTimeout(function(){ if(ripple.parentNode) ripple.parentNode.removeChild(ripple); }, 600);
+      });
+    });
+  });
+
+  /* ── 9. 3D TILT CARDS ────────────────────────────────── */
+  function applyTilt(el){
+    if(el.dataset.tilt) return;
+    el.dataset.tilt = '1';
+    el.classList.add('tilt-card');
+    el.addEventListener('mousemove', function(e){
+      var r = el.getBoundingClientRect();
+      var cx = r.left + r.width/2, cy = r.top + r.height/2;
+      var dx = (e.clientX-cx)/(r.width/2), dy = (e.clientY-cy)/(r.height/2);
+      el.style.transform = 'perspective(700px) rotateX(' + (-dy*5) + 'deg) rotateY(' + (dx*5) + 'deg) translateY(-2px)';
+    });
+    el.addEventListener('mouseleave', function(){
+      el.style.transform = '';
+    });
+  }
+  function initTilt(){
+    document.querySelectorAll('.metric,.ld-kpi,.rpt-stat,.viz-card,.role-stat').forEach(applyTilt);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    initTilt();
+    setInterval(initTilt, 4000);
+  });
+
+  /* ── 10. MAGNETIC PRIMARY BUTTONS ───────────────────── */
+  function applyMagnet(el){
+    if(el.dataset.magnet) return;
+    el.dataset.magnet = '1';
+    el.addEventListener('mousemove', function(e){
+      var r = el.getBoundingClientRect();
+      var dx = (e.clientX - (r.left + r.width/2))  * 0.22;
+      var dy = (e.clientY - (r.top  + r.height/2)) * 0.22;
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    });
+    el.addEventListener('mouseleave', function(){
+      el.style.transform = '';
+      el.style.transition = 'transform .5s cubic-bezier(0.22,1,0.36,1)';
+    });
+  }
+  function initMagnets(){
+    document.querySelectorAll('.google-btn,.google-fallback-btn').forEach(applyMagnet);
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    initMagnets();
+    setInterval(initMagnets, 3000);
+  });
+
+  /* ── 11. ANIMATED COUNTERS ──────────────────────────── */
+  window.animCount = function(el, from, to, ms, suffix){
+    if(!el) return;
+    ms = ms || 700;
+    suffix = suffix || '';
+    var start = performance.now();
+    var diff = to - from;
+    function tick(now){
+      var t = Math.min((now-start)/ms, 1);
+      var ease = 1 - Math.pow(1-t, 3);
+      var val = Math.round(from + diff*ease);
+      el.textContent = val.toLocaleString() + suffix;
+      if(t < 1) requestAnimationFrame(tick);
+      else el.classList.add('counter-tick');
+    }
+    requestAnimationFrame(tick);
+  };
+
+  /* ── 12. INVIEW STAGGER (Motion.dev) ─────────────────── */
+  function initInView(){
+    if(!MI) return;
+    document.querySelectorAll('.ld-kpi:not([data-iv])').forEach(function(el,i){
+      el.dataset.iv = '1';
+      el.style.opacity = '0';
+      MI(el, function(){
+        if(MA) MA(el,{opacity:[0,1],y:[22,0]},{duration:0.4,delay:i*0.06,easing:E.snappy});
+        else el.style.opacity = '1';
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(initInView, 600);
+    setInterval(initInView, 6000);
+  });
+
+  /* ── 13. BREAK BOT ACTION TOAST ─────────────────────── */
+  document.addEventListener('DOMContentLoaded', function(){
+    var orig = window.sendBreakAction;
+    if(typeof orig !== 'function') return;
+    var labels = {
+      LOGGED_IN:'Shift started — you\'re live!',
+      LOGGED_OUT:'Shift ended — great work!',
+      BRB_OUT:'BRB timer started',
+      BRB_IN:'Back from BRB',
+      BREAK_OUT:'Break started — enjoy!',
+      BREAK_IN:'Welcome back from break',
+      TRAINING_OUT:'Training AUX started',
+      TRAINING_IN:'Training AUX closed',
+      QA_SESSION_OUT:'QA AUX started',
+      QA_SESSION_IN:'QA AUX closed',
+      INTERNAL_CALL_OUT:'Internal call started',
+      INTERNAL_CALL_IN:'Internal call ended'
+    };
+    window.sendBreakAction = function(action, btn){
+      var result = orig.call(this, action, btn);
+      if(labels[action]) showToast(labels[action], 'success', 2400);
+      return result;
+    };
+  });
+
+  /* ── 14. PAGE SLIDE TRANSITIONS (Motion.dev) ─────────── */
+  var TAB_ORDER = ['live','reports','agents','access','loginlogs','breaks','hall','bonus','calllogs','auditlog','tickets','debug','ai-agent'];
+  var _lastTabIdx = 0;
+
+  document.addEventListener('DOMContentLoaded', function(){
+    var origSwitch = window.switchTab;
+    if(typeof origSwitch !== 'function') return;
+    window.switchTab = function(tab, el){
+      var newIdx = TAB_ORDER.indexOf(tab);
+      var dir = (newIdx > _lastTabIdx) ? 1 : -1;
+      var prevPage = document.querySelector('.page.active');
+      origSwitch.call(this, tab, el);
+      var nextPage = document.getElementById('tab-' + tab);
+      if(MA && prevPage && nextPage && prevPage !== nextPage){
+        MA(prevPage, {opacity:[1,0], x:[0, dir*-16]}, {duration:0.14, easing:E.gentle});
+        MA(nextPage, {opacity:[0,1], x:[dir*16, 0]}, {duration:0.24, easing:E.snappy});
+      }
+      if(newIdx >= 0) _lastTabIdx = newIdx;
+      /* Update focus HUD status if focus mode is on */
+      if(_focusOn && el){
+        var fs = document.getElementById('fhud-status');
+        if(fs) fs.textContent = el.textContent.trim() || 'Focus Mode';
+      }
+    };
+  });
+
+  /* ── 15. WELCOME TOAST ──────────────────────────────── */
+  document.addEventListener('DOMContentLoaded', function(){
+    /* Only show on fresh load (not every navigation) */
+    if(document.documentElement.classList.contains('app-authenticated')){
+      setTimeout(function(){
+        showToast('Press ⌘K for command palette · ? for shortcuts', 'info', 5000);
+      }, 1800);
+    }
+  });
+
+})();
+</script>
