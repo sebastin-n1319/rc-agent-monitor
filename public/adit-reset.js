@@ -19,6 +19,7 @@
     'schedule-admin.css',
     'anomaly-center.css',
     'offline-bridge.css',
+    'bulk-actions.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

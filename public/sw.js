@@ -16,7 +16,7 @@
  *     open clients. The client owns the IDB queue & drains it.
  *   • 'message' event with {type:'drain'} is the manual-trigger path.
  */
-const CACHE_VERSION = 'adit-v1.5.0';
+const CACHE_VERSION = 'adit-v1.6.0';  // bump → forces shell refresh after Session 10 deploy
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
@@ -36,6 +36,11 @@ const PRECACHE_URLS = [
   '/schedule-admin.js',
   '/anomaly-center.css',
   '/anomaly-center.js',
+  '/offline-bridge.css',
+  '/offline-bridge.js',
+  '/bulk-actions.css',
+  '/bulk-actions.js',
+  '/a11y-focus-trap.js',
   '/adit-logo-dark.png',
   '/adit-logo-light.png',
   '/break-bot-avatar.svg',

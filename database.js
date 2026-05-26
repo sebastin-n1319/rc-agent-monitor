@@ -1288,6 +1288,13 @@ function deleteAppSession(token){
   return run(`DELETE FROM app_sessions WHERE token=?`, [token]);
 }
 
+/** Session 10 bulk-action helper — force-logout an agent by wiping all their
+ *  active server-side sessions. They'll need to re-auth via Google on next page load. */
+function deleteSessionsForEmail(email){
+  if (!email) return Promise.resolve();
+  return run(`DELETE FROM app_sessions WHERE lower(email)=lower(?)`, [String(email).trim()]);
+}
+
 /** Look up the most recent Google profile picture URL for an email address */
 async function getPictureForEmail(email){
   if(!email) return null;
@@ -1864,7 +1871,7 @@ module.exports={
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
-  createAppSession,getAppSession,deleteAppSession,pruneExpiredSessions,getPictureForEmail,
+  createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,

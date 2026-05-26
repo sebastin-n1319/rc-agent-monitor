@@ -1,0 +1,360 @@
+/*
+ * bulk-actions.css — UI styles for Bulk Admin Actions (Session 10).
+ * Namespaced under `.ba-*`. Loaded after adit-theme.css.
+ */
+
+/* ── Multi-select toolbar (fixed, bottom-right) ───────────────────────── */
+.ba-toolbar {
+  position: fixed;
+  bottom: 50px;
+  right: 18px;
+  z-index: 100050;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 18px;
+  background: var(--card, #FFFFFF);
+  border: 1px solid var(--border-strong, #C8D0DC);
+  border-radius: 100px;
+  box-shadow: 0 12px 36px rgba(7, 43, 64, 0.18);
+  animation: baToolbarIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes baToolbarIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+.ba-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange, #F4891F);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+/* ── Checkbox columns on existing tables ──────────────────────────────── */
+.ba-th, .ba-td {
+  width: 28px;
+  padding: 0 4px;
+  text-align: center;
+}
+.ba-th-cb, .ba-checkbox {
+  cursor: pointer;
+  accent-color: var(--orange, #F4891F);
+  width: 14px; height: 14px;
+}
+
+/* ── Overlay + modal shell ────────────────────────────────────────────── */
+.ba-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100280;
+  background: rgba(7, 13, 30, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8vh;
+}
+.ba-modal {
+  width: 680px;
+  max-width: 94vw;
+  max-height: 88vh;
+  background: var(--card, #FFFFFF);
+  border: 1px solid var(--border, #E6ECF4);
+  border-radius: 20px;
+  box-shadow: 0 40px 100px rgba(7, 43, 64, 0.25),
+              inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ba-modal-result { width: 620px; }
+
+.ba-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border, #E6ECF4);
+  background: linear-gradient(180deg, rgba(244, 137, 31, 0.04), transparent);
+}
+.ba-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--t1, #072B40);
+  letter-spacing: -0.01em;
+}
+.ba-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  background: var(--orange-lo, rgba(244, 137, 31, 0.1));
+  color: var(--orange, #F4891F);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.ba-chip-success  { background: rgba(45, 220, 150, 0.12); color: var(--green, #2DDC96); }
+.ba-chip-warning  { background: rgba(251, 200, 75, 0.15); color: #8a5a00; }
+.ba-chip-critical { background: rgba(237, 102, 107, 0.12); color: var(--red, #ED666B); }
+
+.ba-modal-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 22px;
+  border-top: 1px solid var(--border, #E6ECF4);
+  background: var(--card2, #F7F8F8);
+}
+.ba-foot-hint {
+  font-size: 11px;
+  color: var(--t3, #6B849A);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Steps ────────────────────────────────────────────────────────────── */
+.ba-step {
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--border, #E6ECF4);
+}
+.ba-step:last-of-type { border-bottom: none; }
+.ba-step h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--t3, #6B849A);
+}
+
+/* Action picker */
+.ba-action-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ba-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--card2, #F7F8F8);
+  border: 1px solid var(--border, #E6ECF4);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.ba-action:hover { background: white; border-color: var(--border-strong, #C8D0DC); }
+.ba-action.is-selected {
+  background: var(--orange-lo, rgba(244, 137, 31, 0.06));
+  border-color: rgba(244, 137, 31, 0.3);
+}
+.ba-action input { accent-color: var(--orange, #F4891F); cursor: pointer; }
+.ba-action strong {
+  display: block;
+  font-size: 13px;
+  color: var(--t1, #072B40);
+}
+.ba-action-key {
+  display: block;
+  font-size: 10px;
+  color: var(--t3, #6B849A);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+
+/* Payload form */
+.ba-payload-form { display: flex; flex-direction: column; gap: 10px; }
+.ba-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--t3, #6B849A);
+}
+.ba-field small {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--t4, #9BAFC0);
+  font-size: 10px;
+}
+.ba-field input, .ba-field select, .ba-field textarea {
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid var(--border, #E6ECF4);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--t1, #072B40);
+  font-family: 'Poppins', sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  outline: none;
+  resize: vertical;
+}
+.ba-field input:focus, .ba-field select:focus, .ba-field textarea:focus {
+  border-color: var(--orange, #F4891F);
+  box-shadow: 0 0 0 3px rgba(244, 137, 31, 0.12);
+}
+.ba-field-info {
+  padding: 10px 14px;
+  background: rgba(33, 170, 224, 0.07);
+  border: 1px solid rgba(33, 170, 224, 0.22);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--t1, #072B40);
+  line-height: 1.55;
+}
+.ba-field-warn {
+  background: rgba(237, 102, 107, 0.07);
+  border-color: rgba(237, 102, 107, 0.25);
+}
+
+/* Preview */
+.ba-preview { background: var(--card2, #F7F8F8); }
+.ba-preview-line {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--t1, #072B40);
+  margin-bottom: 8px;
+}
+.ba-preview-emails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--t3, #6B849A);
+}
+.ba-preview-emails code {
+  background: white;
+  border: 1px solid var(--border, #E6ECF4);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--t2, #3A5068);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.ba-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .12s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .15s;
+}
+.ba-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.ba-btn:active { transform: translateY(0); }
+.ba-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ba-btn:focus-visible { outline: 2px solid var(--orange, #F4891F); outline-offset: 2px; }
+.ba-btn-primary {
+  background: var(--orange, #F4891F);
+  color: white;
+  box-shadow: 0 3px 10px rgba(244, 137, 31, 0.25);
+}
+.ba-btn-primary:hover:not(:disabled) { background: #FF9A3D; box-shadow: 0 6px 18px rgba(244, 137, 31, 0.35); }
+.ba-btn-ghost {
+  background: transparent;
+  color: var(--t2, #3A5068);
+  border-color: var(--border, #E6ECF4);
+}
+.ba-btn-ghost:hover:not(:disabled) {
+  background: var(--card2, #F7F8F8);
+  border-color: var(--border-strong, #C8D0DC);
+  color: var(--t1, #072B40);
+}
+.ba-btn-close {
+  width: 32px; height: 32px;
+  padding: 0;
+  background: transparent;
+  color: var(--t3, #6B849A);
+  border: 1px solid var(--border, #E6ECF4);
+  font-size: 14px;
+  border-radius: 8px;
+}
+.ba-btn-close:hover { background: var(--card2, #F7F8F8); color: var(--t1, #072B40); }
+
+/* ── Result modal ─────────────────────────────────────────────────────── */
+.ba-result-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ba-result-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--card2, #F7F8F8);
+  border: 1px solid var(--border, #E6ECF4);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.ba-result-row.is-ok { border-left: 3px solid var(--green, #2DDC96); }
+.ba-result-row.is-fail { border-left: 3px solid var(--red, #ED666B); }
+.ba-result-ico {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 14px;
+}
+.ba-result-row.is-ok .ba-result-ico { color: var(--green, #2DDC96); }
+.ba-result-row.is-fail .ba-result-ico { color: var(--red, #ED666B); }
+.ba-result-row code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--t1, #072B40);
+  background: transparent;
+}
+.ba-result-err {
+  font-size: 11px;
+  color: var(--red, #ED666B);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .ba-overlay { padding-top: 0; align-items: flex-end; }
+  .ba-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92vh;
+    border-radius: 24px 24px 0 0;
+  }
+  .ba-toolbar {
+    right: 12px;
+    left: 12px;
+    bottom: 50px;
+    justify-content: space-between;
+  }
+  .ba-result-row { grid-template-columns: 20px 1fr; }
+  .ba-result-err { grid-column: 1 / -1; }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .ba-btn { transition: none; }
+  .ba-modal, .ba-toolbar { animation: none; }
+}

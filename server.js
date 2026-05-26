@@ -3725,6 +3725,223 @@ app.post('/api/admin/anomalies/test', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ══════════════════════════════════════════════════════════════════════════════
+// BULK ADMIN ACTIONS (#15 Session 10) — proper multi-agent operations
+// Replaces the rough Session 1 stub (prompt() + toast, no backend).
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── In-memory idempotency cache (24h TTL) ──────────────────────────────
+// Same requestId from a client retry → return cached result, don't re-execute
+const _bulkIdempo = new Map();  // requestId → { at, result }
+const BULK_IDEMPO_TTL_MS = 24 * 60 * 60 * 1000;
+
+function bulkIdempoGet(id) {
+  const entry = _bulkIdempo.get(id);
+  if (!entry) return null;
+  if (Date.now() - entry.at > BULK_IDEMPO_TTL_MS) { _bulkIdempo.delete(id); return null; }
+  return entry.result;
+}
+function bulkIdempoSet(id, result) {
+  _bulkIdempo.set(id, { at: Date.now(), result });
+  // Cleanup old entries opportunistically — keep memory bounded
+  if (_bulkIdempo.size > 1000) {
+    const cutoff = Date.now() - BULK_IDEMPO_TTL_MS;
+    for (const [k, v] of _bulkIdempo) if (v.at < cutoff) _bulkIdempo.delete(k);
+  }
+}
+
+// ─── Per-action handlers (pure-ish — return {ok, error?}) ────────────────
+const BULK_ACTIONS = {
+  /**
+   * Send a Google Chat notification to a single agent.
+   * Reuses the existing webhook plumbing — no new credentials needed.
+   */
+  notify: {
+    validatePayload(p) {
+      if (!p || typeof p.message !== 'string') return 'message (string) required';
+      if (!p.message.trim()) return 'message cannot be empty';
+      if (p.message.length > 500) return 'message must be ≤500 chars';
+      return null;
+    },
+    async run(email, payload, actorEmail) {
+      if (!GOOGLE_CHAT_WEBHOOK_URL) {
+        return { ok: false, error: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
+      }
+      const text = `📢 From ${actorEmail}\nTo: ${email}\n\n${payload.message}`;
+      try {
+        const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+          body: JSON.stringify({ text })
+        });
+        if (!resp.ok) return { ok: false, error: `chat webhook returned ${resp.status}` };
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    }
+  },
+
+  /**
+   * Toggle whether an agent sees the Break Bot UI.
+   * Reuses setBreakbotEnabled() — already validates the email lives in app_roles.
+   */
+  set_breakbot_enabled: {
+    validatePayload(p) {
+      if (!p || typeof p.enabled !== 'boolean') return 'enabled (boolean) required';
+      return null;
+    },
+    async run(email, payload, actorEmail) {
+      try {
+        await setBreakbotEnabled(email, payload.enabled, actorEmail);
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    }
+  },
+
+  /**
+   * Force-logout an agent. Deletes their server-side app_sessions rows
+   * (could be multiple if they had multiple devices). Reversible — they
+   * just need to sign in again.
+   */
+  clear_session: {
+    validatePayload(_p) { return null; },
+    async run(email) {
+      try {
+        // app_sessions doesn't have a "delete by email" helper, so we use the
+        // raw db handle. Safe because email is parameterized.
+        const dbMod = require('./database');
+        if (typeof dbMod.deleteSessionsForEmail === 'function') {
+          await dbMod.deleteSessionsForEmail(email);
+        } else {
+          // Fallback: not all DB modules expose this. Add it in the next session.
+          return { ok: false, error: 'deleteSessionsForEmail not exported' };
+        }
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    }
+  },
+
+  /**
+   * Promote/demote between 'agent' and 'admin'. SAFETY: server refuses to let
+   * the requester demote THEMSELVES (would lock them out of admin endpoints).
+   */
+  set_role: {
+    validatePayload(p) {
+      if (!p || !['agent', 'admin'].includes(p.role)) return "role must be 'agent' or 'admin'";
+      return null;
+    },
+    async run(email, payload, actorEmail) {
+      if (email.toLowerCase() === actorEmail.toLowerCase() && payload.role !== 'admin') {
+        return { ok: false, error: 'cannot demote yourself' };
+      }
+      try {
+        await setRole(email, payload.role, actorEmail);
+        return { ok: true };
+      } catch (e) {
+        return { ok: false, error: e.message };
+      }
+    }
+  }
+};
+
+const BULK_ACTION_KEYS = Object.freeze(Object.keys(BULK_ACTIONS));
+
+// ─── Endpoint ───────────────────────────────────────────────────────────
+app.post('/api/admin/bulk-actions', requireAdmin, async (req, res) => {
+  const body = req.body || {};
+  const { action, payload, emails, requestId } = body;
+
+  // ─── Validation ───────────────────────────────────────────────────────
+  if (!action || !BULK_ACTIONS[action]) {
+    return res.status(400).json({ success: false, code: 'unknown_action', error: 'unknown action: ' + action, validActions: BULK_ACTION_KEYS });
+  }
+  if (!Array.isArray(emails) || emails.length === 0) {
+    return res.status(404).json({ success: false, code: 'empty_emails', error: 'emails array required, non-empty' });
+  }
+  if (emails.length > 200) {
+    return res.status(400).json({ success: false, code: 'batch_too_large', error: 'max 200 agents per batch' });
+  }
+  // Email format check — soft, just catches obvious typos
+  for (const e of emails) {
+    if (typeof e !== 'string' || !e.includes('@')) {
+      return res.status(400).json({ success: false, code: 'bad_email', error: 'invalid email in list: ' + e });
+    }
+  }
+  const handler = BULK_ACTIONS[action];
+  const payloadError = handler.validatePayload(payload);
+  if (payloadError) {
+    return res.status(400).json({ success: false, code: 'bad_payload', error: payloadError });
+  }
+
+  // ─── Idempotency ──────────────────────────────────────────────────────
+  if (requestId && typeof requestId === 'string') {
+    const cached = bulkIdempoGet(requestId);
+    if (cached) {
+      log.info('bulk_action_replayed', { action, requestId, by: req.session.email });
+      return res.status(200).json({ ...cached, replayed: true });
+    }
+  }
+
+  // ─── Execute per-agent ────────────────────────────────────────────────
+  const actorEmail = req.session.email;
+  const results = [];
+  let ok = 0, failed = 0;
+
+  for (const email of emails) {
+    const r = await handler.run(email, payload, actorEmail);
+    results.push({ email, ...r });
+    if (r.ok) ok++; else failed++;
+    // Per-agent audit row (best effort — don't let an audit failure abort the batch)
+    insertAuditLog(actorEmail, `bulk_${action}`, email,
+      r.ok ? 'ok' : `error: ${(r.error || '').slice(0, 200)}`).catch(()=>{});
+  }
+
+  // ─── Summary audit row ────────────────────────────────────────────────
+  insertAuditLog(actorEmail, `bulk_${action}_summary`, '',
+    `total=${emails.length} ok=${ok} failed=${failed}`).catch(()=>{});
+
+  // ─── Structured log ───────────────────────────────────────────────────
+  log.info('bulk_action_complete', {
+    action, by: actorEmail, total: emails.length, ok, failed,
+    requestId: requestId || null
+  });
+
+  const response = {
+    success: true,
+    action,
+    requestId: requestId || null,
+    summary: { total: emails.length, ok, failed },
+    results
+  };
+
+  // Cache for idempotent replay
+  if (requestId) bulkIdempoSet(requestId, response);
+
+  res.json(response);
+});
+
+// ─── Helper endpoint: list available actions (for UI to render dynamically) ─
+app.get('/api/admin/bulk-actions/list', requireAdmin, (req, res) => {
+  res.json({
+    success: true,
+    actions: BULK_ACTION_KEYS.map(key => ({
+      key,
+      // Sanitized metadata for the UI — no handler refs leaked
+      label: ({
+        notify: 'Send chat notification',
+        set_breakbot_enabled: 'Toggle Break Bot UI',
+        clear_session: 'Force logout',
+        set_role: 'Change role'
+      })[key] || key
+    }))
+  });
+});
+
 app.use(errorTracker());
 
 async function start() {
