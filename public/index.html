@@ -28,6 +28,43 @@
 <script src="/schedule-admin.js" defer></script>
 <script src="/anomaly-center.js" defer></script>
 <script src="/offline-bridge.js" defer></script>
+<!-- Session 9: a11y focus-trap for modals -->
+<script src="/a11y-focus-trap.js" defer></script>
+<style id="a11y-css">
+/* Skip-to-content link — visible only when keyboard-focused */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 8px;
+  z-index: 200000;
+  padding: 10px 16px;
+  background: #F4891F;
+  color: white;
+  border-radius: 8px;
+  font-family: Poppins, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(7,43,64,0.3);
+  transition: top 0.15s cubic-bezier(0.22,1,0.36,1);
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 8px;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+/* Screen reader only — visually hidden but announced */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- V5 Animation Engine — anime.js + Motion.dev -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -8798,6 +8835,8 @@ tbody tr:hover td{
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
+<!-- Session 9: a11y — first focusable element, keyboard-only visible -->
+<a href="#mainApp" class="skip-link">Skip to main content</a>
 
 <!-- Logout loading overlay -->
 <div id="logoutOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(7,43,64,.95);flex-direction:column;align-items:center;justify-content:center;gap:20px;font-family:'Poppins',sans-serif;">

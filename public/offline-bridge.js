@@ -235,7 +235,13 @@
     pill.id = 'offline-pill';
     pill.className = 'offline-pill';
     pill.style.display = 'none';
-    pill.innerHTML = '<span class="op-ico">📡</span><span class="op-state">offline</span><span class="op-count" id="op-count">0</span><button class="op-sync" id="op-sync" title="Try syncing now">Sync now</button>';
+    pill.setAttribute('role', 'status');
+    pill.setAttribute('aria-live', 'polite');
+    pill.setAttribute('aria-label', 'Network status: offline. Queued actions will sync when reconnected.');
+    pill.innerHTML = '<span class="op-ico" aria-hidden="true">📡</span>' +
+                     '<span class="op-state">offline</span>' +
+                     '<span class="op-count" id="op-count" aria-label="Queued actions count">0</span>' +
+                     '<button class="op-sync" id="op-sync" type="button" title="Try syncing queued actions now" aria-label="Sync queued actions now">Sync now</button>';
     sbLeft.appendChild(pill);
     pill.querySelector('#op-sync').addEventListener('click', async () => {
       const btn = pill.querySelector('#op-sync');

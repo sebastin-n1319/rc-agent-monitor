@@ -67,6 +67,39 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Session 9: baseline security headers — applied to ALL responses.
+// Permissive CSP because the app inlines a lot of script; we'll tighten
+// once we extract them to external files (Session 10+ refactor).
+app.use((req, res, next) => {
+  // Force HTTPS for any future cross-origin request
+  res.setHeader('Strict-Transport-Security', 'max-age=15552000; includeSubDomains');
+  // Block clickjacking
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  // Stop MIME-type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Don't leak the full referer to other origins
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Cross-origin only sends opener for safe operations
+  res.setHeader('X-XSS-Protection', '0');
+  // Permissions policy — explicitly opt out of features we don't use
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+  // CSP — permissive baseline (allows inline scripts/styles which we use
+  // heavily; the existing app would break with strict CSP). Lock down
+  // external sources to known good origins.
+  res.setHeader('Content-Security-Policy', [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "img-src 'self' data: blob: https:",
+    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com",
+    "frame-src 'self' https://accounts.google.com",
+    "object-src 'none'",
+    "base-uri 'self'"
+  ].join('; '));
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: true,
@@ -300,13 +333,9 @@ function escapeHtml(str) {
     .replace(/'/g, '&#x27;');
 }
 
-// ── Global process error handlers — prevent silent crashes ────────────────────
-process.on('unhandledRejection', (reason) => {
-  console.error('❌ Unhandled rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught exception:', err.message, err.stack);
-});
+// Process error handlers are owned by installProcessGuards() in lib/logger.js
+// (called at the top of this file). The legacy console.error duplicates were
+// removed in Session 9 hardening — structured JSON logs now win.
 
 initDB().then(async () => {
   console.log('DB ready');
@@ -314,7 +343,7 @@ initDB().then(async () => {
   try {
     const r = await pruneOldData();
     console.log('🧹 Startup prune+vacuum:', JSON.stringify(r));
-  } catch(e) { console.error('❌ startup prune:', e.message); }
+  } catch(e) { log.error('startup_prune_failed', e); }
 });
 
 liveEvents.on('update', payload => broadcastLiveEvent(payload));
@@ -478,7 +507,7 @@ app.post('/api/rc-webhook', async (req, res) => {
   }
 
   res.status(200).json({ ok: true });
-  handleWebhookNotification(req.body).catch(e => console.error('❌ webhook handler:', e.message));
+  handleWebhookNotification(req.body).catch(e => log.error('webhook_handler_failed', e));
 });
 
 app.post('/api/refresh', requireAdmin, rateLimit(5, 60000), async (req, res) => {
@@ -2279,7 +2308,7 @@ ${callNotes.trim().slice(0, 2000)}`;
 });
 
 async function startScheduler() {
-  setInterval(() => { fetchPresenceForAll().catch(e => console.error('❌ presence sync:', e.message)); }, getFallbackSyncMs());
+  setInterval(() => { fetchPresenceForAll().catch(e => log.error('presence_sync_failed', e)); }, getFallbackSyncMs());
   cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });
   // Prune call logs older than 7 days at 1am IST daily
   cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });

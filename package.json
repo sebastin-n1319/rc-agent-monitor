@@ -14,7 +14,12 @@
     "lint": "echo 'TODO: add eslint'",
     "ci": "npm run test && npm run test:e2e"
   },
-  "keywords": ["adit", "ringcentral", "call-center", "productivity"],
+  "keywords": [
+    "adit",
+    "ringcentral",
+    "call-center",
+    "productivity"
+  ],
   "author": "Adit",
   "license": "UNLICENSED",
   "type": "commonjs",
@@ -31,8 +36,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
-    "@vitest/coverage-v8": "^2.1.0",
+    "@vitest/coverage-v8": "^3.2.4",
     "nodemon": "^3.1.14",
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.4"
   }
 }
