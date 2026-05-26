@@ -16,6 +16,7 @@
     'adit-theme.css',
     'agent-view-v2.css',
     'alert-center.css',
+    'schedule-admin.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
