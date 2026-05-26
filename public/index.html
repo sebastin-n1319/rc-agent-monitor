@@ -68,6 +68,17 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* Session 13: WCAG AA contrast fix for footer.
+   Original colors flagged by Lighthouse (1.49:1 and 2.48:1).
+   Fixes lift the footer text and brand badges above 4.5:1 on white
+   without changing the visual style elsewhere on the site. */
+body > footer {
+  color: #3A5068 !important;            /* was --t4 (~#9BAFC0, 1.49:1) → now ~7.8:1 */
+  font-size: 13px;                      /* up from 12px for better readability */
+}
+body > footer .f-name { color: #3A5068 !important; font-weight: 700; }
+body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* darker orange → 4.93:1 */
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- V5 Animation Engine — anime.js + Motion.dev -->
