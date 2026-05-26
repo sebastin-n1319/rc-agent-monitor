@@ -581,7 +581,16 @@ async function initDB() {
     `ALTER TABLE break_events ADD COLUMN notify_status TEXT`,
     `ALTER TABLE break_events ADD COLUMN notify_response TEXT`,
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
+    // #21 Session 8 — PWA offline queue idempotency
+    `ALTER TABLE break_events ADD COLUMN idempotency_key TEXT`,
   ]) { try { await run(sql); } catch(e) {} }
+
+  // Unique index — silent failure if column already exists from a prior boot
+  try {
+    await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_break_events_idempo
+               ON break_events(idempotency_key)
+               WHERE idempotency_key IS NOT NULL`);
+  } catch(e) { /* SQLite versions vary on partial index support — non-critical */ }
 
   // ── Performance indexes on high-query columns (added SEC/PERF audit) ─────────
   for (const sql of [
@@ -926,6 +935,22 @@ async function insertBreakEvent({ username, email, role, action, note, timestamp
     note,
     createdAt
   });
+}
+
+/** PWA offline queue (Session 8): look up an existing break_event by its
+ *  idempotency key. Returns null if not found. Used by the server to make
+ *  POST /api/break-events idempotent under retry. */
+async function getBreakEventByIdempoKey(key){
+  if (!key || typeof key !== 'string') return null;
+  return get(`SELECT * FROM break_events WHERE idempotency_key=? LIMIT 1`, [key]);
+}
+
+/** Stamp an idempotency key onto a freshly-inserted break_event row. */
+async function setBreakEventIdempoKey(id, key){
+  if (!id || !key) return;
+  // UNIQUE constraint will throw if the same key was inserted in a race —
+  // caller should catch and serve the prior row instead.
+  return run(`UPDATE break_events SET idempotency_key=? WHERE id=? AND idempotency_key IS NULL`, [key, id]);
 }
 
 function updateBreakEventNotification(id, notified, notifyStatus, notifyResponse){
@@ -1825,6 +1850,8 @@ module.exports={
   getAlertThresholds, updateAlertThreshold,
   isAlertInCooldown, insertAlertEvent,
   getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
+  // #21 Session 8 — PWA offline queue idempotency
+  getBreakEventByIdempoKey, setBreakEventIdempoKey,
   // #14 Session 4 — schedule adherence
   getSchedulesForAgent, getAllSchedules, getScheduleHistory,
   insertScheduleVersion, endDatePriorSchedule, deleteAllSchedulesForAgent,

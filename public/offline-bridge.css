@@ -1,0 +1,74 @@
+/*
+ * offline-bridge.css — PWA offline pill in the status bar (Session 8).
+ * Minimal — lives inside .sb-left between the live dot and the clock.
+ */
+
+.offline-pill {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(251, 200, 75, 0.15);
+  color: #8a5a00;
+  border: 1px solid rgba(251, 200, 75, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  animation: offlinePillPulse 2.2s ease-in-out infinite;
+}
+.offline-pill[data-state="queued"] {
+  background: rgba(33, 170, 224, 0.12);
+  color: #0F6B91;
+  border-color: rgba(33, 170, 224, 0.4);
+  animation: none;
+}
+
+@keyframes offlinePillPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 200, 75, 0); }
+  50%      { box-shadow: 0 0 0 6px rgba(251, 200, 75, 0); }
+}
+
+.offline-pill .op-ico { font-size: 12px; line-height: 1; }
+.offline-pill .op-state { letter-spacing: 0.07em; }
+
+.offline-pill .op-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.offline-pill .op-sync {
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 99px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.offline-pill .op-sync:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.08);
+}
+.offline-pill .op-sync:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .offline-pill { animation: none; }
+}

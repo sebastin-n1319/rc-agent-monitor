@@ -18,6 +18,7 @@
     'alert-center.css',
     'schedule-admin.css',
     'anomaly-center.css',
+    'offline-bridge.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

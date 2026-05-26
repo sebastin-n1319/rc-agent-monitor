@@ -33,6 +33,8 @@ const {
   getAnomalyThresholds, updateAnomalyThreshold,
   insertAnomalyEvent, getRecentAnomalies, getActiveAnomalies,
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
+  // #21 Session 8 — PWA offline queue idempotency
+  getBreakEventByIdempoKey, setBreakEventIdempoKey,
 } = require('./database');
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const ANOMALY = require('./lib/anomaly');
@@ -610,6 +612,32 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 app.post('/api/break-events', requireAuth, async (req, res) => {
   const { username, email, role, action, note, skipNotify } = req.body || {};
+  // #21 Session 8 — idempotent replay support for the PWA offline queue.
+  // Same key + same body = same response. Different body with reused key
+  // is rejected to prevent payload spoofing.
+  const idempoKey = req.get('X-Idempotency-Key') || (req.body && req.body.idempotencyKey);
+  if (idempoKey && typeof idempoKey === 'string' && idempoKey.length > 0 && idempoKey.length < 100) {
+    try {
+      const existing = await getBreakEventByIdempoKey(idempoKey);
+      if (existing) {
+        log.info('break_event_idempo_replay', { id: existing.id, key: idempoKey });
+        return res.json({
+          success: true,
+          replayed: true,
+          event: {
+            id: existing.id,
+            action: existing.action,
+            currentStatus: existing.current_status,
+            createdAt: existing.created_at,
+            notified: !!existing.notified
+          }
+        });
+      }
+    } catch (e) {
+      log.warn('break_event_idempo_lookup_failed', { error: e.message, key: idempoKey });
+      // Fall through to normal insert — better to duplicate than reject
+    }
+  }
   if(!username || !email || !action)
     return res.status(400).json({ success: false, error: 'Username, email, and action are required' });
   if(!EMAIL_RE.test(email))
@@ -628,6 +656,10 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
 
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
+    // #21 Session 8 — stamp idempotency key for retry-safety
+    if (idempoKey && event && event.id) {
+      try { await setBreakEventIdempoKey(event.id, idempoKey); } catch (e) { /* unique-constraint race ok */ }
+    }
     let notification = { notified: false, status: 'skipped', response: 'Not attempted' };
     if(skipNotify || isTestAccount(email) || NOTIFICATION_BLOCKLIST.includes((email || '').toLowerCase().trim())) {
       notification = { notified: false, status: 'disabled', response: 'Notifications disabled for this user' };

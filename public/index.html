@@ -22,10 +22,12 @@
 <link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
 <link rel="stylesheet" href="/schedule-admin.css" id="schedule-admin-link">
 <link rel="stylesheet" href="/anomaly-center.css" id="anomaly-center-link">
+<link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
 <script src="/agent-view-v2.js" defer></script>
 <script src="/alert-center.js" defer></script>
 <script src="/schedule-admin.js" defer></script>
 <script src="/anomaly-center.js" defer></script>
+<script src="/offline-bridge.js" defer></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <!-- V5 Animation Engine — anime.js + Motion.dev -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
@@ -23815,6 +23817,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       predictiveAbandonment: false,
       scheduleAdherence: false,     // legacy stub flag, kept for compatibility
       scheduleAdherenceV2: false,   // Session 4 — real engine; default off until validated
+      anomalyDetectionV2: false,    // Session 7 — anomaly dashboard
+      offlineQueueV2: false,        // Session 8 — PWA offline queue + sync
       bulkActions: false,
       moduleLoader: false,
       websocketDiff: false
