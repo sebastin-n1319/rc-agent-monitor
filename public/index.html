@@ -22953,15 +22953,38 @@ input:focus, textarea:focus, select:focus {
     if (!el || el.nodeType !== 1) return false;
     if (SAFE_IDS.has(el.id)) return false;
     if (SAFE_CLASSES.some(c => el.classList && el.classList.contains(c))) return false;
+    // Session 15.2: never nuke modal/popup overlays. The popup pattern is
+    // position:fixed;inset:0 covering the full viewport at z-index >= 4000.
+    // Our previous heuristic ("bottom-right quadrant") matched every full-
+    // screen overlay because its rect spans the whole viewport — causing
+    // BRB reason picker, IC reason, duplicate-ticket warning, etc. to
+    // flash for ~150ms and disappear. These are legitimate UI, not rogue
+    // third-party widgets, so we exclude them by:
+    //   • z-index ≥ 4000   → modals/popups always sit above app chrome
+    //   • >50% viewport    → real rogue badges are tiny (50–80px); modals
+    //                         span the entire screen via inset:0
+    //   • role="dialog"    → ARIA-tagged modals
+    //   • known modal IDs  → covers ticket modals, etc.
     try {
       const cs = window.getComputedStyle(el);
       if (cs.position !== 'fixed') return false;
-      const rect = el.getBoundingClientRect();
-      // Must be visible and in the bottom-right quadrant of the viewport
       if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return false;
       const vw = window.innerWidth, vh = window.innerHeight;
-      // Bottom-right: element sits in the right 40% and bottom 40% of screen
+      // Skip if this looks like a modal overlay
+      const z = parseInt(cs.zIndex, 10);
+      if (!isNaN(z) && z >= 4000) return false;
+      if (el.getAttribute('role') === 'dialog') return false;
+      const idStr = el.id || '';
+      if (/modal|overlay|popup|dialog|backdrop/i.test(idStr)) return false;
+      const clsStr = (typeof el.className === 'string') ? el.className : '';
+      if (/modal|overlay|popup|dialog|backdrop|break-reason/i.test(clsStr)) return false;
+      // Full-viewport coverage means it's almost certainly a modal — not a
+      // small bottom-right badge.
+      const areaCovered = (rect.width * rect.height) / (vw * vh);
+      if (areaCovered > 0.5) return false;
+      // Bottom-right small-widget heuristic stays for actual rogue badges
       if (rect.right > vw * 0.6 && rect.bottom > vh * 0.6) return true;
     } catch(e) {}
     return false;
