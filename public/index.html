@@ -10932,7 +10932,7 @@ tbody tr:hover td{
           <span>Agent Dashboard · Live</span>
         </div>
         <h1 class="av2-hero-title">Good day, <span class="av2-hero-title-accent" id="av2-hero-name">there</span></h1>
-        <p class="av2-hero-sub" id="av2-hero-sub">Here's how your team is performing right now. Data refreshes live, with a 30-second safety net.</p>
+        <p class="av2-hero-sub" id="av2-hero-sub">Live team presence and call activity &mdash; refreshing every 30 seconds.</p>
       </div>
       <div class="av2-hero-right">
         <div class="av2-shift-state" data-state="offline" aria-live="polite" title="Your current shift state">
@@ -17278,11 +17278,12 @@ async function loadAgentStatuses(){
       });
       const at=document.getElementById('agent-view-table');
       if(at)at.innerHTML=agentRows.length?agentRows.join(''):'<tr><td colspan="12" class="no-data">No agents</td></tr>';
-      document.getElementById('ag-avail').textContent=totAvail;
-      document.getElementById('ag-unavail').textContent=totUnavail;
-      document.getElementById('ag-oncall').textContent=totOncall;
-      document.getElementById('ag-inbound').textContent=totIn;
-      document.getElementById('ag-outbound').textContent=totOut;
+      // Session 15.7: smooth count-up animation on stat changes
+      aditCountTo('ag-avail',   totAvail);
+      aditCountTo('ag-unavail', totUnavail);
+      aditCountTo('ag-oncall',  totOncall);
+      aditCountTo('ag-inbound', totIn);
+      aditCountTo('ag-outbound',totOut);
       document.getElementById('agent-view-count').textContent=agents.length+' agents';
       document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
       // Agent self-stats (UI-4)
@@ -23506,9 +23507,44 @@ body{padding-bottom:40px;}
    subtext render ON TOP of the next sibling (.av2-stat-grid). Symptom:
    "Good day, Sebastin" overlapping the AVAILABLE/UNAVAILABLE cards.
    Fix: drop flex entirely on the hero container; use block layout with
-   the right-side controls absolutely positioned within. */
-#agent-section-dashboard .av2-hero{display:block!important;position:relative!important;padding:24px 0 22px!important;border-bottom:1px solid rgba(7,43,64,.08)!important;margin:0 0 24px!important;min-height:auto!important;height:auto!important;}
-#agent-section-dashboard .av2-hero-left{display:block!important;flex:none!important;min-width:0;width:auto!important;padding-right:240px;}
+   the right-side controls absolutely positioned within.
+   Session 15.7: + entrance animation. */
+#agent-section-dashboard .av2-hero{display:block!important;position:relative!important;padding:28px 0 24px!important;border-bottom:1px solid rgba(7,43,64,.08)!important;margin:0 0 28px!important;min-height:auto!important;height:auto!important;animation:adit-hero-in .55s cubic-bezier(.22,1,.36,1) both;}
+#agent-section-dashboard .av2-hero-left{display:block!important;flex:none!important;min-width:0;width:auto!important;padding-right:180px;}
+@keyframes adit-hero-in{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
+@keyframes adit-fade-up{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+@keyframes adit-pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(45,220,150,.5);}50%{box-shadow:0 0 0 6px rgba(45,220,150,0);}}
+@keyframes adit-shimmer{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+
+/* Hero overline polish — animated dot + cleaner spacing */
+#agent-section-dashboard .av2-hero-overline-dot{animation:adit-pulse-soft 2.2s ease-out infinite;}
+
+/* Stat-grid entrance + hover-lift */
+#agent-section-dashboard .av2-stat-grid{animation:adit-fade-up .55s cubic-bezier(.22,1,.36,1) .12s both;}
+#agent-section-dashboard .av2-stat{transition:transform .25s cubic-bezier(.22,1,.36,1),box-shadow .25s,border-color .25s!important;will-change:transform;}
+#agent-section-dashboard .av2-stat:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(7,43,64,.10),0 4px 12px rgba(7,43,64,.06)!important;border-color:rgba(244,137,31,.25)!important;}
+#agent-section-dashboard .av2-stat-value-number{display:inline-block;transition:color .3s,transform .25s;}
+#agent-section-dashboard .av2-stat:hover .av2-stat-ico{transform:scale(1.06) rotate(-3deg);}
+#agent-section-dashboard .av2-stat-ico{transition:transform .35s cubic-bezier(.22,1,.36,1);}
+
+/* Team Status panel entrance */
+#agent-section-dashboard .av2-panel{animation:adit-fade-up .55s cubic-bezier(.22,1,.36,1) .22s both;}
+
+/* Subtle shimmer on "Sebastin" accent so the greeting feels alive */
+#agent-section-dashboard .av2-hero-title-accent{background:linear-gradient(90deg,#F4891F 0%,#FBC84B 25%,#F4891F 50%,#F28820 75%,#F4891F 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:adit-shimmer 6s linear infinite;}
+
+/* Refresh / Break buttons in hero-right — friendlier hover */
+#agent-section-dashboard .av2-hero-right .av2-btn,
+#agent-section-dashboard .av2-hero-right button{transition:transform .2s,box-shadow .2s,background .2s!important;}
+#agent-section-dashboard .av2-hero-right button:hover{transform:translateY(-1px);}
+
+@media(prefers-reduced-motion:reduce){
+  #agent-section-dashboard .av2-hero,
+  #agent-section-dashboard .av2-stat-grid,
+  #agent-section-dashboard .av2-panel,
+  #agent-section-dashboard .av2-hero-title-accent,
+  #agent-section-dashboard .av2-hero-overline-dot{animation:none!important;}
+}
 #agent-section-dashboard .av2-hero-overline{display:inline-flex!important;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#6B849A!important;margin:0 0 8px;font-family:'Poppins',sans-serif;}
 #agent-section-dashboard .av2-hero-overline-dot{width:6px;height:6px;border-radius:50%;background:#2DDC96;box-shadow:0 0 0 0 rgba(45,220,150,.4);animation:av2HeroPulse 2.4s ease-out infinite;display:inline-block;}
 #agent-section-dashboard .av2-hero-title{font-size:30px!important;font-weight:800!important;letter-spacing:-.02em;line-height:1.15!important;color:#072B40!important;margin:0 0 10px!important;font-family:'Poppins',sans-serif;}
@@ -23745,6 +23781,28 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   }
   setInterval(tickClock, 1000);
   tickClock();
+
+  /* ── Session 15.7: Smooth count-up for stat numbers ─────────────── */
+  window.aditCountTo = function(id, target){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const t = parseInt(target,10) || 0;
+    const start = parseInt(el.textContent,10);
+    const from = isNaN(start) ? 0 : start;
+    if(from === t){ el.textContent = t; return; }
+    if(el._countAnim) cancelAnimationFrame(el._countAnim);
+    const dur = 520; // ms — fast enough to feel snappy
+    const t0 = performance.now();
+    const ease = x => 1 - Math.pow(1-x, 3); // ease-out cubic
+    function tick(now){
+      const k = Math.min(1, (now - t0) / dur);
+      const v = Math.round(from + (t - from) * ease(k));
+      el.textContent = v;
+      if(k < 1) el._countAnim = requestAnimationFrame(tick);
+      else { el._countAnim = null; el.textContent = t; }
+    }
+    el._countAnim = requestAnimationFrame(tick);
+  };
 
   /* ── Session 15.3: Status bar auto-hide, pin, background-tab indicator ── */
   (function(){

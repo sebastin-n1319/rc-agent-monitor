@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.8.9';  // Session 15.6: background detection adds window blur/focus + 4s poll
+const CACHE_VERSION = 'adit-v1.9.0';  // Session 15.7: agent home polish — entrance anims, count-up, hover-lift, shimmer name
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
