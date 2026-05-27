@@ -1,471 +1,537 @@
 /**
- * Roster Admin (Session 16) — public/roster-admin.js
+ * Roster Admin (Session 16 — v2 redesign, 2026-05-27)
  *
- * Replaces the standalone "T1 CS Team Roster" xlsx. Admins land here from
- * the sidebar to view + edit daily attendance status per agent per day.
+ * Replaces the standalone "T1 CS Team Roster" xlsx. Admin lands here from
+ * the sidebar to see and edit daily attendance for the team.
  *
- * UX:
- *   • Month picker at top (defaults to current month)
- *   • Grid of agents × days, click any cell to cycle through status codes
- *     (P → OFF → PL → UPL → WFH → On Duty → SL → Holiday → clear).
- *   • Header row colors weekend cells differently.
- *   • Bottom: totals per agent + audit log.
+ * Layout (top → bottom):
+ *   1. KPI strip — Active agents · Present today · On leave today · Coverage %
+ *   2. Toolbar  — month picker, prev/next, today, agent search, +Agent,
+ *                 Audit log, Export CSV, "Show relieved" toggle
+ *   3. Legend   — color-coded status palette
+ *   4. Grid     — agent × day matrix; click cell for status palette popover
+ *   5. Footer   — save state + selection count
  *
- * Data layer:
- *   GET /api/roster/month/:yyyymm  — fetch grid for a month
- *   POST /api/roster/day           — set a single cell
- *   POST /api/roster/bulk          — set many cells at once
- *   GET /api/roster/agents         — list agents (for adding new)
- *   POST /api/roster/agents        — add/update an agent
- *   GET /api/roster/audit          — recent changes
+ * Interactions:
+ *   • Cell click   → small popover with all status options + a "Clear" button
+ *   • Cell shift-click → quick clear without opening popover
+ *   • Bulk saves debounced 600ms via POST /api/roster/bulk
+ *   • Agent search filters rows live
  */
 (function(){
   'use strict';
 
-  const STATUS_ORDER = ['', 'present', 'off', 'pl', 'hd_pl', 'upl', 'sl', 'hd_sl', 'wfh', 'on_duty', 'holiday', 'ncns', 'absent'];
   const STATUS_LABELS = {
     '': '—',
-    present: 'P', off: 'OFF', pl: 'PL', hd_pl: '½PL', upl: 'UPL', hd_upl: '½UPL',
-    sl: 'SL', hd_sl: '½SL', wfh: 'WFH', on_duty: 'OD', holiday: 'HOL',
-    ncns: 'NCNS', relieved: 'REL', absent: 'A', na: 'N/A'
+    present: 'P',  off: 'OFF', pl: 'PL', hd_pl: '½PL',
+    upl: 'UPL', hd_upl: '½UPL', sl: 'SL', hd_sl: '½SL',
+    wfh: 'WFH', on_duty: 'OD', holiday: 'HOL',
+    ncns: 'NCNS', relieved: 'REL', absent: 'A', na: 'N/A',
   };
   const STATUS_LONG = {
-    '': 'Clear', present: 'Present', off: 'Weekly Off', pl: 'Paid Leave',
+    present: 'Present', off: 'Weekly Off', pl: 'Paid Leave',
     hd_pl: 'Half-day Paid', upl: 'Unpaid Leave', hd_upl: 'Half-day Unpaid',
     sl: 'Sick Leave', hd_sl: 'Half-day Sick', wfh: 'Work From Home',
     on_duty: 'On Duty', holiday: 'Holiday', ncns: 'No Call No Show',
-    relieved: 'Relieved', absent: 'Absent', na: 'N/A'
+    relieved: 'Relieved', absent: 'Absent', na: 'N/A',
+  };
+  // Order used in the palette popover and legend
+  const PALETTE_ORDER = [
+    'present','wfh','on_duty','off','holiday',
+    'pl','hd_pl','upl','hd_upl','sl','hd_sl',
+    'ncns','absent'
+  ];
+
+  let _state = {
+    month: null,                  // 'YYYY-MM'
+    data: null,                   // { dates, agents, grid }
+    showRelieved: false,
+    agentSearch: '',
+    pendingSaves: new Map(),
+    saveTimer: null,
   };
 
-  let _currentMonth = null;
-  let _data = null;          // { month, dates, agents, grid }
-  let _pendingSaves = new Map(); // key → {date, emp_id, status} — debounced bulk writer
-  let _saveTimer = null;
-
-  function currentMonthIso() {
+  // ─── Helpers ────────────────────────────────────────────────────────────
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
+  const todayIso = () => {
     const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-  }
-
-  function todayIso() {
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  };
+  const currentMonthIso = () => {
     const d = new Date();
-    return d.toISOString().slice(0, 10);
-  }
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  };
+  const monthLabel = (yyyymm) => {
+    const [y, m] = yyyymm.split('-').map(Number);
+    return new Date(y, m-1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  };
+  const dowLetter = (date) => 'SMTWTFS'[new Date(date+'T00:00:00').getDay()];
+  const isWeekend = (date) => {
+    const d = new Date(date+'T00:00:00').getDay();
+    return d === 0 || d === 6;
+  };
 
+  // ─── Data loading ────────────────────────────────────────────────────────
   async function loadMonth(yyyymm) {
-    _currentMonth = yyyymm;
-    const res = await fetch('/api/roster/month/' + yyyymm, { credentials: 'include' });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error('Failed to load month: ' + t);
-    }
-    _data = await res.json();
-    return _data;
+    _state.month = yyyymm;
+    const r = await fetch('/api/roster/month/' + yyyymm, { credentials: 'include' });
+    if (!r.ok) throw new Error('Could not load roster: ' + r.status);
+    _state.data = await r.json();
+    return _state.data;
   }
 
-  function render() {
-    const root = document.getElementById('roster-admin-root');
+  async function callSeed() {
+    const r = await fetch('/api/admin/roster/reseed', { method:'POST', credentials:'include' });
+    return r.json();
+  }
+
+  // ─── Top-level entry point ───────────────────────────────────────────────
+  window.openRosterAdmin = async function openRosterAdmin() {
+    const root = $('#roster-admin-root');
     if (!root) return;
-    if (!_data) { root.innerHTML = '<div class="ra-loading">Loading roster…</div>'; return; }
-
-    const { dates, agents, grid } = _data;
-
-    // Session 16.3: empty-state escape hatch — on first deploy the DB may be
-    // empty before the seed runs. Show a clear CTA to import the history.
-    if (!agents || agents.length === 0) {
-      root.innerHTML = `
-        <div class="ra-empty" style="padding:48px 36px;max-width:560px;margin:32px auto;background:#FFFFFF;border:1px solid #E6ECF4;border-radius:18px;box-shadow:0 12px 40px rgba(7,43,64,.08);">
-          <div style="font-size:48px;margin-bottom:14px;line-height:1;">📋</div>
-          <div style="font-size:18px;font-weight:800;color:#072B40;margin-bottom:6px;">No roster data yet</div>
-          <div style="font-size:13px;color:#6B849A;margin-bottom:24px;line-height:1.55;">
-            The history snapshot (53 agents · 30 months from Aug 2023) ships with the
-            app but hasn't been loaded into this database. Click below to import it,
-            or add agents one at a time.
-          </div>
-          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-            <button class="ra-btn ra-btn-primary" id="ra-seed-btn">Import history snapshot</button>
-            <button class="ra-btn" id="ra-add-agent-empty">+ Add agent manually</button>
-          </div>
-          <div id="ra-seed-status" style="margin-top:16px;font-size:12px;color:#6B849A;"></div>
-        </div>
-      `;
-      const seedBtn = document.getElementById('ra-seed-btn');
-      const addBtn  = document.getElementById('ra-add-agent-empty');
-      const stEl    = document.getElementById('ra-seed-status');
-      if (seedBtn) seedBtn.onclick = async () => {
-        seedBtn.disabled = true; seedBtn.textContent = 'Importing…';
-        if (stEl) { stEl.style.color='#1A6FA0'; stEl.textContent='Loading 30 months of history into the database…'; }
-        try {
-          const res = await fetch('/api/admin/roster/reseed', { method:'POST', credentials:'include' });
-          const j = await res.json();
-          if (!j.success) throw new Error(j.error || 'Import failed');
-          if (stEl) { stEl.style.color='#0F6F46'; stEl.textContent = `Imported ${j.agentsInserted} agents and ${j.daysInserted} day-records. Reloading…`; }
-          await loadMonth(_currentMonth || currentMonthIso());
-          render();
-        } catch (e) {
-          seedBtn.disabled = false; seedBtn.textContent = 'Retry import';
-          if (stEl) { stEl.style.color='#B33438'; stEl.textContent = 'Import failed: ' + e.message; }
-        }
-      };
-      if (addBtn) addBtn.onclick = openAddAgent;
-      return;
+    root.innerHTML = `<div class="rx-loading"><div class="rx-spinner"></div>Loading roster…</div>`;
+    try {
+      await loadMonth(_state.month || currentMonthIso());
+      render();
+    } catch (e) {
+      root.innerHTML = `<div class="rx-error">Failed to load roster: ${escape(e.message)}</div>`;
     }
+  };
 
-    // Filter to active agents by default but keep relieved at bottom
-    const active = agents.filter(a => a.status !== 'relieved');
-    const relieved = agents.filter(a => a.status === 'relieved');
-    const showAll = root.querySelector('#ra-show-relieved')?.checked;
-    const visibleAgents = showAll ? agents : active;
+  function escape(s) { return String(s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+  function render() {
+    const root = $('#roster-admin-root');
+    if (!_state.data) return;
+    const { dates, agents, grid } = _state.data;
+
+    if (!agents || agents.length === 0) { renderEmpty(root); return; }
 
     const today = todayIso();
+    const todayInMonth = today.startsWith(_state.month);
 
-    let html = `
-      <div class="ra-toolbar">
-        <div class="ra-toolbar-left">
-          <button class="ra-btn ra-btn-ico" id="ra-prev-month" title="Previous month">‹</button>
-          <input type="month" id="ra-month-picker" value="${_currentMonth}" class="ra-month-input">
-          <button class="ra-btn ra-btn-ico" id="ra-next-month" title="Next month">›</button>
-          <button class="ra-btn" id="ra-today-btn">Today</button>
+    // Filter agents by relieved toggle + search
+    const search = _state.agentSearch.toLowerCase();
+    let visible = agents.filter(a => _state.showRelieved || a.status !== 'relieved');
+    if (search) {
+      visible = visible.filter(a =>
+        (a.pseudo||'').toLowerCase().includes(search) ||
+        (a.full_name||'').toLowerCase().includes(search) ||
+        (a.emp_id||'').toLowerCase().includes(search) ||
+        (a.email||'').toLowerCase().includes(search)
+      );
+    }
+
+    // KPI calculations — for today (only if current month visible)
+    let presentToday = 0, onLeaveToday = 0;
+    if (todayInMonth) {
+      for (const a of visible) {
+        const s = (grid[a.emp_id]||{})[today]?.status;
+        if (s === 'present' || s === 'wfh' || s === 'on_duty') presentToday++;
+        else if (s === 'pl' || s === 'hd_pl' || s === 'upl' || s === 'hd_upl' || s === 'sl' || s === 'hd_sl') onLeaveToday++;
+      }
+    }
+    const activeCount = visible.length;
+    const coverage = activeCount ? Math.round((presentToday / activeCount) * 100) : 0;
+    const relievedCount = agents.filter(a => a.status === 'relieved').length;
+
+    root.innerHTML = `
+      <div class="rx-wrap">
+        <!-- KPI strip -->
+        <div class="rx-kpis">
+          <div class="rx-kpi">
+            <div class="rx-kpi-lbl">Active agents</div>
+            <div class="rx-kpi-val">${activeCount}</div>
+            <div class="rx-kpi-sub">${relievedCount} relieved</div>
+          </div>
+          <div class="rx-kpi rx-kpi-green">
+            <div class="rx-kpi-lbl">Present today</div>
+            <div class="rx-kpi-val">${todayInMonth ? presentToday : '—'}</div>
+            <div class="rx-kpi-sub">${todayInMonth ? 'P · WFH · OD' : 'past month'}</div>
+          </div>
+          <div class="rx-kpi rx-kpi-amber">
+            <div class="rx-kpi-lbl">On leave today</div>
+            <div class="rx-kpi-val">${todayInMonth ? onLeaveToday : '—'}</div>
+            <div class="rx-kpi-sub">${todayInMonth ? 'PL · UPL · SL' : 'past month'}</div>
+          </div>
+          <div class="rx-kpi rx-kpi-teal">
+            <div class="rx-kpi-lbl">Coverage today</div>
+            <div class="rx-kpi-val">${todayInMonth ? coverage + '%' : '—'}</div>
+            <div class="rx-kpi-sub">${todayInMonth ? `${presentToday}/${activeCount} live` : ''}</div>
+          </div>
         </div>
-        <div class="ra-toolbar-right">
-          <label class="ra-switch"><input type="checkbox" id="ra-show-relieved" ${showAll?'checked':''}> Show relieved (${relieved.length})</label>
-          <button class="ra-btn ra-btn-ghost" id="ra-show-audit">Audit log</button>
-          <button class="ra-btn ra-btn-ghost" id="ra-add-agent">+ Agent</button>
-          <button class="ra-btn ra-btn-primary" id="ra-export-month">Export CSV</button>
+
+        <!-- Toolbar -->
+        <div class="rx-toolbar">
+          <div class="rx-tb-group">
+            <button class="rx-icon-btn" id="rx-prev" title="Previous month">‹</button>
+            <div class="rx-month-display">
+              <input type="month" id="rx-month-input" value="${_state.month}">
+              <span class="rx-month-label">${monthLabel(_state.month)}</span>
+            </div>
+            <button class="rx-icon-btn" id="rx-next" title="Next month">›</button>
+            <button class="rx-pill" id="rx-today-btn">Today</button>
+          </div>
+          <div class="rx-tb-group rx-tb-grow">
+            <div class="rx-search">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="rx-search-ico"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+              <input type="text" id="rx-search" placeholder="Search agents…" value="${escape(_state.agentSearch)}">
+            </div>
+          </div>
+          <div class="rx-tb-group">
+            <label class="rx-switch"><input type="checkbox" id="rx-show-relieved" ${_state.showRelieved?'checked':''}> Show relieved (${relievedCount})</label>
+            <button class="rx-pill" id="rx-audit">Audit log</button>
+            <button class="rx-pill" id="rx-add">+ Agent</button>
+            <button class="rx-pill rx-pill-primary" id="rx-export">Export CSV</button>
+          </div>
         </div>
-      </div>
 
-      <div class="ra-legend">
-        ${['present','off','pl','hd_pl','upl','sl','wfh','on_duty','holiday','ncns'].map(s =>
-          `<span class="ra-legend-item ra-st-${s}"><span class="ra-st-dot"></span>${STATUS_LABELS[s]} · ${STATUS_LONG[s]}</span>`
-        ).join('')}
-        <span class="ra-legend-tip">Click any cell to cycle status. Shift-click clears.</span>
-      </div>
+        <!-- Legend -->
+        <div class="rx-legend">
+          ${PALETTE_ORDER.map(s => `<span class="rx-lg rx-st-${s}"><span class="rx-lg-code">${STATUS_LABELS[s]}</span><span class="rx-lg-name">${STATUS_LONG[s]}</span></span>`).join('')}
+          <span class="rx-lg-tip">Click any cell to choose a status. Shift-click clears it.</span>
+        </div>
 
-      <div class="ra-grid-wrap">
-        <table class="ra-grid">
-          <thead>
-            <tr>
-              <th class="ra-th-sticky ra-th-name">Agent</th>
-              ${dates.map(d => {
-                const day = new Date(d + 'T00:00:00');
-                const dow = day.getDay();
-                const isWeekend = dow === 0 || dow === 6;
-                const isToday = d === today;
-                return `<th class="ra-th-day ${isWeekend?'ra-weekend':''} ${isToday?'ra-today':''}" title="${day.toDateString()}">
-                  <div class="ra-th-dow">${['S','M','T','W','T','F','S'][dow]}</div>
-                  <div class="ra-th-num">${d.slice(-2)}</div>
-                </th>`;
-              }).join('')}
-              <th class="ra-th-tot">P</th>
-              <th class="ra-th-tot">OFF</th>
-              <th class="ra-th-tot">PL</th>
-              <th class="ra-th-tot">UPL</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${visibleAgents.map(a => renderAgentRow(a, dates, grid, today)).join('')}
-          </tbody>
-        </table>
-      </div>
+        <!-- Grid -->
+        <div class="rx-grid-wrap">
+          <table class="rx-grid">
+            <thead>
+              <tr>
+                <th class="rx-th rx-th-name">Agent</th>
+                ${dates.map(d => {
+                  const isW = isWeekend(d);
+                  const isT = d === today;
+                  return `<th class="rx-th rx-th-day ${isW?'rx-w':''} ${isT?'rx-t':''}">
+                    <div class="rx-th-dow">${dowLetter(d)}</div>
+                    <div class="rx-th-num">${d.slice(-2)}</div>
+                  </th>`;
+                }).join('')}
+                <th class="rx-th rx-th-tot">P</th>
+                <th class="rx-th rx-th-tot">OFF</th>
+                <th class="rx-th rx-th-tot">PL</th>
+                <th class="rx-th rx-th-tot">UPL</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${visible.length === 0
+                ? `<tr><td colspan="${dates.length+5}" class="rx-no-rows">No agents match your search</td></tr>`
+                : visible.map(a => renderAgentRow(a, dates, grid, today)).join('')}
+            </tbody>
+          </table>
+        </div>
 
-      <div class="ra-footer-bar">
-        <span class="ra-stat">${visibleAgents.length} agents</span>
-        <span class="ra-stat">${dates.length} days</span>
-        <span class="ra-stat-flex"></span>
-        <span class="ra-save-state" id="ra-save-state"></span>
+        <!-- Footer -->
+        <div class="rx-footer">
+          <span class="rx-foot-stat">${visible.length} of ${agents.length} agents</span>
+          <span class="rx-foot-stat">${dates.length} days · ${monthLabel(_state.month)}</span>
+          <span class="rx-foot-flex"></span>
+          <span class="rx-save-state" id="rx-save-state"></span>
+        </div>
       </div>
     `;
-
-    root.innerHTML = html;
-    wireEvents(root);
+    wire(root);
   }
 
-  function renderAgentRow(agent, dates, grid, today) {
-    const row = grid[agent.emp_id] || {};
+  function renderAgentRow(a, dates, grid, today) {
+    const row = grid[a.emp_id] || {};
     let p=0, off=0, pl=0, upl=0;
     const cells = dates.map(d => {
-      const cell = row[d] || { status: '' };
-      if (cell.status === 'present' || cell.status === 'wfh') p++;
-      else if (cell.status === 'off') off++;
-      else if (cell.status === 'pl' || cell.status === 'hd_pl') pl++;
-      else if (cell.status === 'upl' || cell.status === 'hd_upl') upl++;
-      const day = new Date(d + 'T00:00:00');
-      const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-      const isToday = d === today;
-      const label = STATUS_LABELS[cell.status] || '';
-      return `<td class="ra-cell ra-st-${cell.status||'empty'} ${isWeekend?'ra-weekend':''} ${isToday?'ra-today':''}"
-                  data-date="${d}" data-emp="${agent.emp_id}" data-status="${cell.status||''}"
-                  title="${agent.pseudo||agent.full_name||agent.emp_id} · ${day.toDateString()}${cell.status?(' · '+STATUS_LONG[cell.status]):''}">${label}</td>`;
+      const s = (row[d]?.status) || '';
+      if (s === 'present' || s === 'wfh' || s === 'on_duty') p++;
+      else if (s === 'off') off++;
+      else if (s === 'pl' || s === 'hd_pl') pl++;
+      else if (s === 'upl' || s === 'hd_upl') upl++;
+      const isW = isWeekend(d);
+      const isT = d === today;
+      const lbl = STATUS_LABELS[s] || '';
+      const titleTxt = `${a.pseudo || a.full_name || a.emp_id} · ${new Date(d+'T00:00:00').toDateString()}${s?(' · '+STATUS_LONG[s]):''}`;
+      return `<td class="rx-cell rx-st-${s||'empty'} ${isW?'rx-w':''} ${isT?'rx-t':''}" data-date="${d}" data-emp="${a.emp_id}" data-status="${s}" title="${escape(titleTxt)}">${lbl}</td>`;
     }).join('');
-
-    return `<tr class="ra-row ${agent.status==='relieved'?'ra-row-relieved':''}">
-      <td class="ra-td-name ra-th-sticky">
-        <div class="ra-agent-pseudo">${agent.pseudo || agent.full_name || agent.emp_id}</div>
-        <div class="ra-agent-meta">${agent.emp_id}${agent.shift?' · '+agent.shift:''}</div>
+    return `<tr class="rx-row ${a.status==='relieved'?'rx-row-relieved':''}">
+      <td class="rx-td-name">
+        <div class="rx-name">${escape(a.pseudo || a.full_name || a.emp_id)}</div>
+        <div class="rx-meta">${escape(a.emp_id)}${a.shift?' · '+escape(a.shift):''}</div>
       </td>
       ${cells}
-      <td class="ra-td-tot">${p}</td>
-      <td class="ra-td-tot">${off}</td>
-      <td class="ra-td-tot">${pl}</td>
-      <td class="ra-td-tot">${upl}</td>
+      <td class="rx-td-tot rx-tot-p">${p}</td>
+      <td class="rx-td-tot">${off}</td>
+      <td class="rx-td-tot rx-tot-pl">${pl}</td>
+      <td class="rx-td-tot rx-tot-upl">${upl}</td>
     </tr>`;
   }
 
-  function wireEvents(root) {
-    // Month nav
-    root.querySelector('#ra-prev-month')?.addEventListener('click', () => shiftMonth(-1));
-    root.querySelector('#ra-next-month')?.addEventListener('click', () => shiftMonth(+1));
-    root.querySelector('#ra-month-picker')?.addEventListener('change', e => {
-      loadMonth(e.target.value).then(render).catch(showError);
-    });
-    root.querySelector('#ra-today-btn')?.addEventListener('click', () => {
-      loadMonth(currentMonthIso()).then(render).catch(showError);
-    });
-    root.querySelector('#ra-show-relieved')?.addEventListener('change', render);
-    root.querySelector('#ra-add-agent')?.addEventListener('click', openAddAgent);
-    root.querySelector('#ra-show-audit')?.addEventListener('click', openAuditLog);
-    root.querySelector('#ra-export-month')?.addEventListener('click', exportCsv);
+  function renderEmpty(root) {
+    root.innerHTML = `
+      <div class="rx-empty-card">
+        <div class="rx-empty-ico">📋</div>
+        <div class="rx-empty-title">No roster data yet</div>
+        <div class="rx-empty-sub">Import the history snapshot (29 agents · 30 months from Aug 2023) bundled with the app, or add agents one at a time.</div>
+        <div class="rx-empty-actions">
+          <button class="rx-pill rx-pill-primary" id="rx-seed">Import history snapshot</button>
+          <button class="rx-pill" id="rx-add-empty">+ Add agent manually</button>
+        </div>
+        <div class="rx-empty-status" id="rx-seed-status"></div>
+      </div>
+    `;
+    $('#rx-seed').onclick = async () => {
+      const btn = $('#rx-seed'); const st = $('#rx-seed-status');
+      btn.disabled = true; btn.textContent = 'Importing…';
+      st.style.color = '#1A6FA0'; st.textContent = 'Loading 30 months of history…';
+      try {
+        const j = await callSeed();
+        if (!j.success) throw new Error(j.error || 'Import failed');
+        st.style.color = '#0F6F46'; st.textContent = `Loaded ${j.agentsInserted} agents and ${j.daysInserted} day records. Reloading…`;
+        await loadMonth(_state.month || currentMonthIso()); render();
+      } catch(e) {
+        btn.disabled = false; btn.textContent = 'Retry import';
+        st.style.color = '#B33438'; st.textContent = 'Import failed: ' + e.message;
+      }
+    };
+    $('#rx-add-empty').onclick = openAddAgent;
+  }
 
-    // Cell clicks
-    root.querySelectorAll('.ra-cell').forEach(cell => {
-      cell.addEventListener('click', e => onCellClick(cell, e));
-    });
+  // ─── Wire-up ─────────────────────────────────────────────────────────────
+  function wire(root) {
+    $('#rx-prev').onclick = () => shiftMonth(-1);
+    $('#rx-next').onclick = () => shiftMonth(+1);
+    $('#rx-today-btn').onclick = () => loadMonth(currentMonthIso()).then(render);
+    $('#rx-month-input').onchange = e => loadMonth(e.target.value).then(render);
+    $('#rx-show-relieved').onchange = e => { _state.showRelieved = e.target.checked; render(); };
+    $('#rx-search').oninput = e => {
+      _state.agentSearch = e.target.value;
+      // Re-render but preserve cursor focus on the search input
+      const wasFocused = document.activeElement?.id === 'rx-search';
+      const caret = wasFocused ? e.target.selectionStart : null;
+      render();
+      if (wasFocused) {
+        const el = $('#rx-search'); if (el) { el.focus(); if (caret != null) el.setSelectionRange(caret, caret); }
+      }
+    };
+    $('#rx-add').onclick = openAddAgent;
+    $('#rx-audit').onclick = openAuditLog;
+    $('#rx-export').onclick = exportCsv;
+
+    // Cell clicks → popover
+    $$('.rx-cell', root).forEach(c => c.onclick = ev => onCellClick(c, ev));
   }
 
   function shiftMonth(delta) {
-    if (!_currentMonth) return;
-    const [y, m] = _currentMonth.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    const next = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    loadMonth(next).then(render).catch(showError);
+    const [y, m] = _state.month.split('-').map(Number);
+    const d = new Date(y, m-1+delta, 1);
+    const next = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    loadMonth(next).then(render);
   }
 
+  // ─── Cell interaction: popover palette ──────────────────────────────────
   function onCellClick(cell, ev) {
-    const cur = cell.dataset.status || '';
-    let next;
-    if (ev.shiftKey) {
-      next = '';
-    } else {
-      const idx = STATUS_ORDER.indexOf(cur);
-      next = STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
-    }
-    cell.dataset.status = next;
-    cell.className = cell.className.replace(/ra-st-\S+/g, '').trim() + ' ra-st-' + (next || 'empty');
-    // weekend/today flags still apply
+    if (ev.shiftKey) { setCell(cell, ''); return; }
+    closeAnyPopover();
+    const rect = cell.getBoundingClientRect();
+    const pop = document.createElement('div');
+    pop.className = 'rx-popover';
+    pop.innerHTML = `
+      <div class="rx-pop-head">${escape(cell.title.split(' · ').slice(0,2).join(' · '))}</div>
+      <div class="rx-pop-grid">
+        ${PALETTE_ORDER.map(s =>
+          `<button class="rx-pop-opt rx-st-${s}" data-s="${s}" title="${STATUS_LONG[s]}">
+            <span class="rx-pop-code">${STATUS_LABELS[s]}</span>
+            <span class="rx-pop-name">${STATUS_LONG[s]}</span>
+          </button>`
+        ).join('')}
+      </div>
+      <div class="rx-pop-foot">
+        <button class="rx-pill rx-pill-ghost" data-s="">Clear</button>
+        <button class="rx-pill" id="rx-pop-close">Close</button>
+      </div>
+    `;
+    document.body.appendChild(pop);
+    // Position above cell if there's no room below
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const popH = 280;
+    let top = rect.bottom + 6;
+    if (top + popH > vh) top = Math.max(8, rect.top - popH - 6);
+    let left = rect.left + rect.width/2 - 150;
+    if (left + 300 > vw) left = vw - 308;
+    if (left < 8) left = 8;
+    pop.style.top = top + 'px';
+    pop.style.left = left + 'px';
+
+    pop.querySelectorAll('.rx-pop-opt,.rx-pill-ghost').forEach(b => {
+      b.onclick = () => { setCell(cell, b.dataset.s); pop.remove(); };
+    });
+    $('#rx-pop-close').onclick = () => pop.remove();
+    setTimeout(() => {
+      const dismiss = e => {
+        if (!pop.contains(e.target) && e.target !== cell) { pop.remove(); document.removeEventListener('click', dismiss); }
+      };
+      document.addEventListener('click', dismiss);
+    }, 50);
+  }
+  function closeAnyPopover() { document.querySelectorAll('.rx-popover').forEach(p => p.remove()); }
+
+  function setCell(cell, status) {
     const date = cell.dataset.date;
-    const day = new Date(date + 'T00:00:00');
-    if (day.getDay() === 0 || day.getDay() === 6) cell.classList.add('ra-weekend');
-    if (date === todayIso()) cell.classList.add('ra-today');
-    cell.textContent = STATUS_LABELS[next] || '';
+    const emp = cell.dataset.emp;
+    cell.dataset.status = status;
+    cell.className = cell.className.replace(/rx-st-\S+/g, '').trim() + ' rx-st-' + (status || 'empty');
+    if (isWeekend(date)) cell.classList.add('rx-w');
+    if (date === todayIso()) cell.classList.add('rx-t');
+    cell.textContent = STATUS_LABELS[status] || '';
 
-    // Update grid in-memory + recompute totals on this row
-    const empId = cell.dataset.emp;
-    if (!_data.grid[empId]) _data.grid[empId] = {};
-    if (next) _data.grid[empId][date] = { status: next, note: null };
-    else delete _data.grid[empId][date];
-    recomputeRowTotals(cell.parentElement, empId);
+    if (!_state.data.grid[emp]) _state.data.grid[emp] = {};
+    if (status) _state.data.grid[emp][date] = { status, note: null };
+    else delete _state.data.grid[emp][date];
+    recalcRow(cell.closest('tr'), emp);
 
-    // Queue save
-    _pendingSaves.set(date + '|' + empId, { date, emp_id: empId, status: next });
+    _state.pendingSaves.set(date + '|' + emp, { date, emp_id: emp, status });
     scheduleSave();
   }
 
-  function recomputeRowTotals(tr, empId) {
+  function recalcRow(tr, emp) {
     if (!tr) return;
-    const row = _data.grid[empId] || {};
+    const row = _state.data.grid[emp] || {};
     let p=0, off=0, pl=0, upl=0;
-    for (const d of _data.dates) {
+    for (const d of _state.data.dates) {
       const s = row[d]?.status;
-      if (s === 'present' || s === 'wfh') p++;
+      if (s === 'present' || s === 'wfh' || s === 'on_duty') p++;
       else if (s === 'off') off++;
       else if (s === 'pl' || s === 'hd_pl') pl++;
       else if (s === 'upl' || s === 'hd_upl') upl++;
     }
-    const tots = tr.querySelectorAll('.ra-td-tot');
-    if (tots.length >= 4) {
-      tots[0].textContent = p; tots[1].textContent = off;
-      tots[2].textContent = pl; tots[3].textContent = upl;
-    }
+    const tds = tr.querySelectorAll('.rx-td-tot');
+    if (tds[0]) tds[0].textContent = p;
+    if (tds[1]) tds[1].textContent = off;
+    if (tds[2]) tds[2].textContent = pl;
+    if (tds[3]) tds[3].textContent = upl;
   }
 
   function scheduleSave() {
     setSaveState('saving', 'Saving…');
-    clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(flushSaves, 650);
+    clearTimeout(_state.saveTimer);
+    _state.saveTimer = setTimeout(flushSaves, 600);
   }
-
   async function flushSaves() {
-    if (_pendingSaves.size === 0) return;
-    const updates = Array.from(_pendingSaves.values());
-    _pendingSaves.clear();
+    if (_state.pendingSaves.size === 0) return;
+    const updates = Array.from(_state.pendingSaves.values());
+    _state.pendingSaves.clear();
     try {
-      const res = await fetch('/api/roster/bulk', {
+      const r = await fetch('/api/roster/bulk', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ updates })
       });
-      const j = await res.json();
+      const j = await r.json();
       if (!j.success) throw new Error(j.error || 'Save failed');
       setSaveState('ok', `Saved ${updates.length} change${updates.length===1?'':'s'} · ${new Date().toLocaleTimeString()}`);
-    } catch (e) {
+    } catch(e) {
       console.error('roster save failed', e);
-      setSaveState('err', 'Save failed — ' + e.message);
+      setSaveState('err', 'Save failed: ' + e.message);
     }
   }
-
   function setSaveState(kind, msg) {
-    const el = document.getElementById('ra-save-state');
-    if (!el) return;
-    el.className = 'ra-save-state ra-save-' + kind;
+    const el = $('#rx-save-state'); if (!el) return;
+    el.className = 'rx-save-state rx-save-' + kind;
     el.textContent = msg;
   }
 
+  // ─── Add / Edit Agent modal ─────────────────────────────────────────────
   function openAddAgent() {
     const html = `
-      <div class="ra-modal-backdrop" id="ra-add-backdrop">
-        <div class="ra-modal">
-          <div class="ra-modal-head">
-            <div class="ra-modal-title">Add / Edit Agent</div>
-            <button class="ra-modal-close" id="ra-add-close">×</button>
-          </div>
-          <div class="ra-modal-body">
-            <div class="ra-form-row"><label>Emp ID</label><input id="ra-f-emp_id" placeholder="AD0xxx"></div>
-            <div class="ra-form-row"><label>Pseudo Name</label><input id="ra-f-pseudo" placeholder="Display name"></div>
-            <div class="ra-form-row"><label>Full Name</label><input id="ra-f-full_name"></div>
-            <div class="ra-form-row"><label>Email</label><input id="ra-f-email" type="email"></div>
-            <div class="ra-form-row"><label>Designation</label><input id="ra-f-designation"></div>
-            <div class="ra-form-row"><label>DOJ</label><input id="ra-f-doj" type="date"></div>
-            <div class="ra-form-row"><label>Shift</label><input id="ra-f-shift" placeholder="e.g. 8.30 PM - 5.30 AM"></div>
-            <div class="ra-form-row"><label>Status</label>
-              <select id="ra-f-status"><option value="active">Active</option><option value="relieved">Relieved</option><option value="on_leave">On Leave</option></select>
+      <div class="rx-modal-bg" id="rx-add-bg">
+        <div class="rx-modal">
+          <div class="rx-modal-head"><div class="rx-modal-title">Add Agent</div><button class="rx-modal-x">×</button></div>
+          <div class="rx-modal-body">
+            <div class="rx-form"><label>Emp ID</label><input id="rx-f-emp_id" placeholder="AD0xxx"></div>
+            <div class="rx-form"><label>Pseudo</label><input id="rx-f-pseudo" placeholder="Display name"></div>
+            <div class="rx-form"><label>Full Name</label><input id="rx-f-full_name"></div>
+            <div class="rx-form"><label>Email</label><input id="rx-f-email" type="email"></div>
+            <div class="rx-form"><label>Designation</label><input id="rx-f-designation"></div>
+            <div class="rx-form"><label>DOJ</label><input id="rx-f-doj" type="date"></div>
+            <div class="rx-form"><label>Shift</label><input id="rx-f-shift" placeholder="e.g. 8.30 PM - 5.30 AM"></div>
+            <div class="rx-form"><label>Status</label>
+              <select id="rx-f-status"><option value="active">Active</option><option value="relieved">Relieved</option><option value="on_leave">On Leave</option></select>
             </div>
-            <div class="ra-form-row"><label>Notes</label><textarea id="ra-f-notes" rows="2"></textarea></div>
           </div>
-          <div class="ra-modal-foot">
-            <button class="ra-btn" id="ra-add-cancel">Cancel</button>
-            <button class="ra-btn ra-btn-primary" id="ra-add-save">Save Agent</button>
+          <div class="rx-modal-foot">
+            <button class="rx-pill" id="rx-add-cancel">Cancel</button>
+            <button class="rx-pill rx-pill-primary" id="rx-add-save">Save</button>
           </div>
         </div>
-      </div>
-    `;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = html;
+      </div>`;
+    const wrap = document.createElement('div'); wrap.innerHTML = html;
     document.body.appendChild(wrap.firstElementChild);
-    document.getElementById('ra-add-close').onclick =
-      document.getElementById('ra-add-cancel').onclick = () => document.getElementById('ra-add-backdrop').remove();
-    document.getElementById('ra-add-save').onclick = async () => {
+    const close = () => $('#rx-add-bg').remove();
+    $('.rx-modal-x').onclick = close;
+    $('#rx-add-cancel').onclick = close;
+    $('#rx-add-save').onclick = async () => {
       const body = {
-        emp_id: document.getElementById('ra-f-emp_id').value.trim(),
-        pseudo: document.getElementById('ra-f-pseudo').value.trim() || null,
-        full_name: document.getElementById('ra-f-full_name').value.trim() || null,
-        email: document.getElementById('ra-f-email').value.trim().toLowerCase() || null,
-        designation: document.getElementById('ra-f-designation').value.trim() || null,
-        doj: document.getElementById('ra-f-doj').value || null,
-        shift: document.getElementById('ra-f-shift').value.trim() || null,
-        status: document.getElementById('ra-f-status').value,
-        notes: document.getElementById('ra-f-notes').value.trim() || null,
+        emp_id: $('#rx-f-emp_id').value.trim(),
+        pseudo: $('#rx-f-pseudo').value.trim() || null,
+        full_name: $('#rx-f-full_name').value.trim() || null,
+        email: ($('#rx-f-email').value.trim().toLowerCase()) || null,
+        designation: $('#rx-f-designation').value.trim() || null,
+        doj: $('#rx-f-doj').value || null,
+        shift: $('#rx-f-shift').value.trim() || null,
+        status: $('#rx-f-status').value,
       };
       if (!body.emp_id) { alert('Emp ID is required'); return; }
       try {
-        const res = await fetch('/api/roster/agents', {
-          method: 'POST', credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-        const j = await res.json();
+        const r = await fetch('/api/roster/agents', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        const j = await r.json();
         if (!j.success) throw new Error(j.error);
-        document.getElementById('ra-add-backdrop').remove();
-        await loadMonth(_currentMonth);
-        render();
-      } catch (e) { alert('Save failed: ' + e.message); }
+        close();
+        await loadMonth(_state.month); render();
+      } catch(e) { alert('Save failed: ' + e.message); }
     };
   }
 
+  // ─── Audit log modal ────────────────────────────────────────────────────
   async function openAuditLog() {
     let events = [];
     try {
-      const r = await fetch('/api/roster/audit?limit=80', { credentials: 'include' });
-      const j = await r.json();
-      events = j.events || [];
+      const r = await fetch('/api/roster/audit?limit=80', { credentials:'include' });
+      const j = await r.json(); events = j.events || [];
     } catch(e) { return alert('Could not load audit log'); }
-
-    const html = `
-      <div class="ra-modal-backdrop" id="ra-audit-backdrop">
-        <div class="ra-modal ra-modal-wide">
-          <div class="ra-modal-head">
-            <div class="ra-modal-title">Recent Changes (${events.length})</div>
-            <button class="ra-modal-close" id="ra-audit-close">×</button>
-          </div>
-          <div class="ra-modal-body">
-            ${events.length === 0 ? '<div class="ra-empty">No changes yet.</div>' :
-              `<table class="ra-audit-tbl">
-                <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Agent</th><th>Date</th><th>From → To</th></tr></thead>
-                <tbody>
-                  ${events.map(e => `<tr>
-                    <td>${e.ts || ''}</td>
-                    <td>${e.actor_name || e.actor_email || '—'}</td>
-                    <td>${e.action}</td>
-                    <td>${e.emp_id || '—'}</td>
-                    <td>${e.date || '—'}</td>
-                    <td>${(e.prev_status||'∅')} → ${(e.new_status||'∅')}</td>
-                  </tr>`).join('')}
-                </tbody>
-              </table>`}
-          </div>
-        </div>
-      </div>
-    `;
-    const wrap = document.createElement('div');
-    wrap.innerHTML = html;
+    const rows = events.length === 0 ? '<div class="rx-empty-sub">No changes yet.</div>' : `
+      <table class="rx-audit-tbl">
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Agent</th><th>Date</th><th>From → To</th></tr></thead>
+        <tbody>${events.map(e => `<tr>
+          <td>${escape(e.ts||'')}</td>
+          <td>${escape(e.actor_name || e.actor_email || '—')}</td>
+          <td>${escape(e.action)}</td>
+          <td>${escape(e.emp_id || '—')}</td>
+          <td>${escape(e.date || '—')}</td>
+          <td>${escape(e.prev_status || '∅')} → ${escape(e.new_status || '∅')}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+    const html = `<div class="rx-modal-bg" id="rx-audit-bg">
+      <div class="rx-modal rx-modal-wide">
+        <div class="rx-modal-head"><div class="rx-modal-title">Recent Changes (${events.length})</div><button class="rx-modal-x">×</button></div>
+        <div class="rx-modal-body">${rows}</div>
+      </div></div>`;
+    const wrap = document.createElement('div'); wrap.innerHTML = html;
     document.body.appendChild(wrap.firstElementChild);
-    document.getElementById('ra-audit-close').onclick = () => document.getElementById('ra-audit-backdrop').remove();
+    $('.rx-modal-x').onclick = () => $('#rx-audit-bg').remove();
   }
 
+  // ─── Export ──────────────────────────────────────────────────────────────
   function exportCsv() {
-    if (!_data) return;
-    const { dates, agents, grid } = _data;
-    const header = ['Emp ID','Pseudo','Full Name','Email','Designation','Shift', ...dates];
-    const lines = [header.join(',')];
+    if (!_state.data) return;
+    const { dates, agents, grid } = _state.data;
+    const head = ['Emp ID','Pseudo','Full Name','Email','Designation','Shift', ...dates];
+    const lines = [head.join(',')];
     for (const a of agents) {
       const row = grid[a.emp_id] || {};
-      const cells = [
-        a.emp_id, csv(a.pseudo), csv(a.full_name), csv(a.email),
-        csv(a.designation), csv(a.shift),
-        ...dates.map(d => STATUS_LABELS[row[d]?.status || ''] || '')
-      ];
+      const cells = [a.emp_id, csv(a.pseudo), csv(a.full_name), csv(a.email), csv(a.designation), csv(a.shift),
+        ...dates.map(d => STATUS_LABELS[row[d]?.status || ''] || '')];
       lines.push(cells.join(','));
     }
-    const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    const blob = new Blob([lines.join('\n')], { type:'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `roster-${_currentMonth}.csv`;
-    a.click();
+    const link = document.createElement('a'); link.href = url; link.download = `roster-${_state.month}.csv`; link.click();
     URL.revokeObjectURL(url);
-    function csv(v) {
-      if (v == null) return '';
-      const s = String(v);
-      return (s.includes(',') || s.includes('"')) ? '"' + s.replace(/"/g,'""') + '"' : s;
-    }
+    function csv(v) { if (v == null) return ''; const s = String(v); return (s.includes(',')||s.includes('"')) ? '"'+s.replace(/"/g,'""')+'"' : s; }
   }
-
-  function showError(e) {
-    const root = document.getElementById('roster-admin-root');
-    if (root) root.innerHTML = `<div class="ra-error">${e.message || e}</div>`;
-    console.error('[Roster]', e);
-  }
-
-  // Entry point — called from index.html when admin opens the Roster tab
-  window.openRosterAdmin = async function openRosterAdmin() {
-    const root = document.getElementById('roster-admin-root');
-    if (!root) return;
-    root.innerHTML = '<div class="ra-loading">Loading roster…</div>';
-    try {
-      await loadMonth(_currentMonth || currentMonthIso());
-      render();
-    } catch (e) {
-      showError(e);
-    }
-  };
 })();
