@@ -23574,8 +23574,9 @@ html.hc-mode #cmd-palette,html.hc-mode #kbd-modal,html.hc-mode .adit-toast{borde
 .lg-abandon{background:#ed666b;}
 
 /* ── #28: Bug FAB ─────────────────────────────────────────────── */
-#bug-fab{position:fixed;bottom:46px;left:14px;z-index:100015;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(148,163,184,.5);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);}
-#bug-fab:hover{background:rgba(244,137,31,.12);border-color:rgba(244,137,31,.3);color:var(--orange);transform:scale(1.1);}
+#bug-fab{position:fixed;bottom:50px;right:16px;z-index:100015;width:32px;height:32px;border-radius:50%;background:rgba(7,43,64,.85);border:1px solid rgba(244,137,31,.25);font-size:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);opacity:.55;}
+#bug-fab::before{content:"";width:14px;height:14px;background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F4891F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v4M12 16v.5'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;}
+#bug-fab:hover{opacity:1;border-color:rgba(244,137,31,.6);transform:scale(1.08);}
 
 /* ── #27: Audit search bar ────────────────────────────────────── */
 .audit-search-bar{animation:fadeSlideUp .3s ease both;}
@@ -24468,18 +24469,15 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   /* ── #8: Break budget tracker ─────────────────────────────────── */
   window.BREAK_BUDGET_MINUTES = 60; /* default policy */
   window.renderBreakBudget = function(){
-    /* Inject a budget ring near the break-self timers */
+    /* Session 15: Budget ring DISABLED — replaced by bbn-budget-section bars
+       which show BRB/Break/Training/QA budgets without overlapping the
+       SINCE/WATCH meta row. Remove any stale ring DOM left from prior loads. */
     var statusCard = document.querySelector('.bbn-status-card');
-    if (!statusCard || statusCard.querySelector('.budget-ring')) return;
-    var ring = document.createElement('div');
-    ring.className = 'budget-ring';
-    ring.innerHTML =
-      '<svg width="56" height="56" viewBox="0 0 56 56">' +
-      '<circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="4"/>' +
-      '<circle cx="28" cy="28" r="22" fill="none" stroke="#2ddc96" stroke-width="4" stroke-dasharray="138" stroke-dashoffset="0" class="budget-ring-fg" transform="rotate(-90 28 28)" stroke-linecap="round"/>' +
-      '</svg>' +
-      '<div class="budget-ring-txt"><span id="budget-remaining">--</span><small>min left</small></div>';
-    statusCard.appendChild(ring);
+    if (statusCard) {
+      var stale = statusCard.querySelector('.budget-ring');
+      if (stale) stale.remove();
+    }
+    return;
   };
   window.updateBreakBudget = function(usedMin){
     var bg = document.getElementById('budget-remaining');
@@ -24663,7 +24661,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     var fab = document.createElement('button');
     fab.id = 'bug-fab';
     fab.title = 'Report a bug';
-    fab.innerHTML = '🐛';
+    fab.innerHTML = '';  // icon comes from ::before pseudo-element
     fab.onclick = window.reportBug;
     document.body.appendChild(fab);
   });
