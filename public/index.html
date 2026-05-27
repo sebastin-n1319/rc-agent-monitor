@@ -23497,6 +23497,37 @@ body{padding-bottom:40px;}
 .bbn-budget-fill.warn{background:#FBC84B;}
 .bbn-budget-fill.over{background:#ED666B;}
 
+/* ── Session 15.4: Hero defensive styling + visual polish ───────────
+   The agent home hero ("Good day, <name>") relies on agent-view-v2.css
+   tokens. When that file lags behind a deploy or a theme override flips
+   --t1 to dark, the title can collapse to invisible. Hardcoded fallback
+   values guarantee the hero always renders boldly. */
+#agent-section-dashboard .av2-hero{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:24px!important;padding:28px 0 24px!important;border-bottom:1px solid rgba(7,43,64,.08)!important;margin:0 0 28px!important;flex-wrap:wrap;}
+#agent-section-dashboard .av2-hero-left{flex:1 1 320px;min-width:0;}
+#agent-section-dashboard .av2-hero-overline{display:inline-flex!important;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#6B849A!important;margin:0 0 8px;font-family:'Poppins',sans-serif;}
+#agent-section-dashboard .av2-hero-overline-dot{width:6px;height:6px;border-radius:50%;background:#2DDC96;box-shadow:0 0 0 0 rgba(45,220,150,.4);animation:av2HeroPulse 2.4s ease-out infinite;display:inline-block;}
+#agent-section-dashboard .av2-hero-title{font-size:30px!important;font-weight:800!important;letter-spacing:-.02em;line-height:1.15!important;color:#072B40!important;margin:0 0 10px!important;font-family:'Poppins',sans-serif;}
+#agent-section-dashboard .av2-hero-title-accent{color:#F4891F!important;font-weight:800;}
+#agent-section-dashboard .av2-hero-sub{font-size:13.5px!important;line-height:1.55!important;color:#3A5068!important;margin:0!important;max-width:620px;font-family:'Poppins',sans-serif;}
+#agent-section-dashboard .av2-hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+/* Dark theme hero overrides */
+html[data-theme="dark"] #agent-section-dashboard .av2-hero{border-bottom-color:rgba(255,255,255,.08)!important;}
+html[data-theme="dark"] #agent-section-dashboard .av2-hero-title{color:#eef6ff!important;}
+html[data-theme="dark"] #agent-section-dashboard .av2-hero-sub{color:rgba(155,176,199,.85)!important;}
+html[data-theme="dark"] #agent-section-dashboard .av2-hero-overline{color:rgba(155,176,199,.7)!important;}
+@media(max-width:760px){
+  #agent-section-dashboard .av2-hero{flex-direction:column;align-items:flex-start!important;padding:18px 0 16px!important;margin-bottom:20px!important;}
+  #agent-section-dashboard .av2-hero-title{font-size:24px!important;}
+  #agent-section-dashboard .av2-hero-right{width:100%;justify-content:flex-start;}
+}
+
+/* Tighten the announcement ticker so it stops dominating the top of the
+   agent home. Was 36-44px tall, now a compact 30px with subtler colors. */
+#agentTicker{height:30px!important;background:linear-gradient(90deg,rgba(7,43,64,.92),rgba(13,61,92,.94) 40%,rgba(13,61,92,.94) 60%,rgba(7,43,64,.92))!important;border-bottom:1px solid rgba(244,137,31,.18)!important;}
+#agentTicker .at-item{font-size:11px!important;color:rgba(232,238,255,.78)!important;}
+#agentTicker .at-item strong{color:#FBC84B!important;}
+#agentTicker .at-close{font-size:12px!important;padding:0 12px!important;}
+
 /* ── Session 15: Dashboard "My Shift" enhanced card ─────────────── */
 .asc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .asc-quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}

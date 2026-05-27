@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.8.6';  // Session 15.3: popup text legible + status bar auto-hide + bg-tab indicator
+const CACHE_VERSION = 'adit-v1.8.7';  // Session 15.4: defensive hero CSS so title always renders + tighter ticker
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
