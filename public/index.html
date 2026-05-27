@@ -9538,6 +9538,24 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span class="sb-label">Breaks</span>
   </div>
+  <!-- Session 5: Schedule Adherence — admin can edit shifts + view exceptions -->
+  <div class="sb-item" id="sb-schedules" title="Schedule Adherence (T)"
+       onclick="openScheduleAdmin(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h3M13 14h3M8 17h3"/></svg>
+    <span class="sb-label">Schedule</span>
+  </div>
+  <!-- Session 7: Anomaly Center — z-score detection drill-down -->
+  <div class="sb-item" id="sb-anomalies" title="Anomaly Center (N)"
+       onclick="openAnomalyCenter(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-5 4 4 5-7 5 9"/><circle cx="7" cy="12" r="1.5" fill="currentColor"/><circle cx="11" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="9" r="1.5" fill="currentColor"/></svg>
+    <span class="sb-label">Anomalies</span>
+  </div>
+  <!-- Session 12: Predict Center — forecast + backtest -->
+  <div class="sb-item" id="sb-forecast" title="Predictive Abandonment (Y)"
+       onclick="openPredictCenter(this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-7 7-7 9 0s6 7 9 0"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="21" cy="12" r="1.5" fill="currentColor"/><path d="M12 4v2M12 18v2"/></svg>
+    <span class="sb-label">Forecast</span>
+  </div>
   <div class="sb-item" id="sb-calllogs" title="Call Logs"
        onclick="sbAdmin('calllogs',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C9.6 21 3 14.4 3 6c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
@@ -12078,7 +12096,7 @@ tbody tr:hover td{
   </div>
 </div>
 
-<footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v" id="build-version">ADIT-OPS-v4.14.1 (Session 14 · 2026-05-27 · SW v1.8.1)</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
+<footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v" id="build-version">ADIT-OPS-v4.14.2 (Session 14 · 2026-05-27 · SW v1.8.2)</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
 </div>
 
 <div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
@@ -16587,6 +16605,53 @@ function sbAgent(section, sbEl){
     setTimeout(initTlTooltips, 80);
     loadMyTicketsFromSheet();
   }
+}
+
+// ── Session 14: sidebar bridge to modal-based features ─────────────────
+// Sessions 5/7/12 ship Schedule / Anomaly / Predict centers as modal
+// overlays — give them proper sidebar entries instead of burying them
+// as emoji in the bottom status bar. We highlight the sidebar item while
+// the modal is open; clicking another sidebar item closes via natural
+// navigation (or the modal's own close button).
+function _flashSidebarActive(sbEl){
+  if(!sbEl) return;
+  document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
+  sbEl.classList.add('active');
+}
+// Session 14: ensure the feature flag is ON before opening. Existing
+// users have these flags stored as `false` in localStorage from before
+// the v4.14.2 default flip, so we force-enable here. setFlag persists
+// to localStorage so the toggle stays on across reloads.
+function _ensureFlagOn(name){
+  try {
+    if (typeof window.setFlag === 'function') { window.setFlag(name, true); return; }
+    // Fallback: write directly into the flag store. The canonical key is
+    // 'aditFlags' (confirmed at runtime; rcFeatureFlags doesn't exist).
+    var raw = localStorage.getItem('aditFlags') || '{}';
+    var f = JSON.parse(raw); f[name] = true;
+    localStorage.setItem('aditFlags', JSON.stringify(f));
+  } catch(e){}
+}
+function openScheduleAdmin(sbEl){
+  _flashSidebarActive(sbEl);
+  _ensureFlagOn('scheduleAdherenceV2');
+  try { if(window.ScheduleAdmin && typeof ScheduleAdmin.open === 'function') ScheduleAdmin.open();
+        else showToast('Schedule center is still loading…','warning'); }
+  catch(e){ console.error('Schedule open failed', e); showToast('Could not open Schedule Center','error'); }
+}
+function openAnomalyCenter(sbEl){
+  _flashSidebarActive(sbEl);
+  _ensureFlagOn('anomalyDetectionV2');
+  try { if(window.AnomalyCenter && typeof AnomalyCenter.open === 'function') AnomalyCenter.open();
+        else showToast('Anomaly center is still loading…','warning'); }
+  catch(e){ console.error('Anomaly open failed', e); showToast('Could not open Anomaly Center','error'); }
+}
+function openPredictCenter(sbEl){
+  _flashSidebarActive(sbEl);
+  _ensureFlagOn('predictiveAbandonmentV2');
+  try { if(window.PredictCenter && typeof PredictCenter.open === 'function') PredictCenter.open();
+        else showToast('Forecast center is still loading…','warning'); }
+  catch(e){ console.error('Predict open failed', e); showToast('Could not open Forecast Center','error'); }
 }
 
 // ── Ticket type hover tooltip (JS-driven — CSS ::after gets clipped by parent) ──
@@ -23218,6 +23283,12 @@ function laFormatAnalysis(rec) {
 
 /* ── Status Bar ────────────────────────────────────────────────── */
 #status-bar{position:fixed;bottom:0;left:0;right:0;z-index:100000;height:34px;background:rgba(3,6,14,.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.045);display:flex;align-items:center;justify-content:space-between;padding:0 14px;}
+/* Session 14: keep the footer above the fixed status-bar. Without this
+   the footer (in normal flow) sits underneath the 34px ribbon and the
+   build-version tag becomes invisible. 40px = ribbon height + breathing
+   room so the footer text isn't flush against the top of the ribbon. */
+body{padding-bottom:40px;}
+body > footer{margin-bottom:6px;}
 .sb-left{display:flex;align-items:center;gap:6px;color:rgba(148,163,184,.5);}
 .sb-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:livePulse 2.4s ease-in-out infinite;flex-shrink:0;}
 .sb-live-label{font-size:10px;font-weight:600;color:var(--green);}
@@ -23888,13 +23959,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       callCorrelation: false,
       virtualScroll: false,
       predictiveAbandonment: false,    // legacy stub flag, kept for compatibility
-      predictiveAbandonmentV2: false,  // Session 11 — real logistic regression
+      // Session 14: flipped these from false → true. They've been "preview"
+      // since Sessions 4-12 but the engines + tests have been stable and
+      // admins were complaining the features weren't reachable from the UI.
+      // Sidebar entries (sb-schedules/anomalies/forecast) need the modal
+      // to actually open, not just toast. Per-user override still works
+      // via setFlag(name, false) in DevTools.
+      predictiveAbandonmentV2: true,   // Session 11 — real logistic regression
       scheduleAdherence: false,     // legacy stub flag, kept for compatibility
-      scheduleAdherenceV2: false,   // Session 4 — real engine; default off until validated
-      anomalyDetectionV2: false,    // Session 7 — anomaly dashboard
-      offlineQueueV2: false,        // Session 8 — PWA offline queue + sync
+      scheduleAdherenceV2: true,    // Session 4 — real engine
+      anomalyDetectionV2: true,     // Session 7 — anomaly dashboard
+      offlineQueueV2: true,         // Session 8 — PWA offline queue + sync
       bulkActions: false,           // legacy stub (removed in Session 10), kept for compat
-      bulkActionsV2: false,         // Session 10 — proper bulk admin actions
+      bulkActionsV2: true,          // Session 10 — proper bulk admin actions
       moduleLoader: false,
       websocketDiff: false
     };

@@ -719,9 +719,10 @@
       id: 'sa-bar-btn', class: 'sb-btn',
       title: 'Schedule Adherence (T)',
       'aria-label': 'Open schedule adherence',
-      onClick: open,
-      text: '📅'
+      onClick: open
     });
+    // Session 14: inline SVG matching the design system (replaces 📅 emoji)
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>';
     // Insert before the bell if present
     const bell = document.getElementById('ac-bell');
     if (bell) sbRight.insertBefore(btn, bell);

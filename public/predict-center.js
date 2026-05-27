@@ -438,9 +438,10 @@
       class: 'sb-btn',
       title: 'Predictive Abandonment (Y)',
       'aria-label': 'Open prediction dashboard',
-      onClick: open,
-      text: '🔮'
+      onClick: open
     });
+    // Session 14: inline SVG matching the design system (replaces 🔮 emoji)
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><path d="M3 12c3-7 7-7 9 0s6 7 9 0"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="21" cy="12" r="1.5" fill="currentColor"/></svg>';
     // Insert before the anomaly button if present, else before schedule, else first
     const an = document.getElementById('an-bar-btn');
     const sa = document.getElementById('sa-bar-btn');

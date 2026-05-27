@@ -558,9 +558,10 @@
       class: 'sb-btn',
       title: 'Anomaly Center (N)',
       'aria-label': 'Open anomaly center',
-      onClick: open,
-      text: '📈'
+      onClick: open
     });
+    // Session 14: inline SVG matching the design system (replaces 📈 emoji)
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><path d="M3 17l4-5 4 4 5-7 5 9"/><circle cx="11" cy="16" r="1.5" fill="currentColor"/></svg>';
     // Insert before the schedule button if present, else before bell
     const sa = document.getElementById('sa-bar-btn');
     const bell = document.getElementById('ac-bell');

@@ -91,10 +91,13 @@
       title: 'Alert Center',
       'aria-label': 'Open alert center',
       onClick: openModal
-    }, [
-      el('span', { class: 'ac-bell-ico', 'aria-hidden': 'true', text: '🔔' }),
-      el('span', { id: 'ac-bell-badge', class: 'ac-bell-badge', text: '0' })
-    ]);
+    });
+    // Session 14: replace emoji with inline SVG so the icon matches the
+    // design system (stroke 1.5, currentColor) and renders consistently
+    // across OSes/fonts. The badge still floats over the bell.
+    bell.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:14px;height:14px"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>' +
+      '<span id="ac-bell-badge" class="ac-bell-badge">0</span>';
     sbRight.insertBefore(bell, sbRight.firstChild);
     return bell;
   }
