@@ -10948,6 +10948,21 @@ tbody tr:hover td{
         </div>
         <h1 class="av2-hero-title">Good day, <span class="av2-hero-title-accent" id="av2-hero-name">there</span></h1>
         <p class="av2-hero-sub" id="av2-hero-sub">Live team presence and call activity &mdash; refreshing every 30 seconds.</p>
+        <!-- Session 16.1: Contextual chips row (date, live status, team count). Populated by JS. -->
+        <div class="av2-hero-chips">
+          <span class="av2-hero-chip" id="av2-hero-chip-date">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span id="av2-hero-date-str">&mdash;</span>
+          </span>
+          <span class="av2-hero-chip av2-hero-chip-live">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+            <span>Live</span><strong id="av2-hero-clock">--:--</strong>
+          </span>
+          <span class="av2-hero-chip" id="av2-hero-chip-team" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <strong id="av2-hero-team-count">0</strong><span>agents</span>
+          </span>
+        </div>
       </div>
       <div class="av2-hero-right">
         <div class="av2-shift-state" data-state="offline" aria-live="polite" title="Your current shift state">
@@ -17301,6 +17316,11 @@ async function loadAgentStatuses(){
       aditCountTo('ag-inbound', totIn);
       aditCountTo('ag-outbound',totOut);
       document.getElementById('agent-view-count').textContent=agents.length+' agents';
+      // Session 16.1: keep the hero chip in sync with the live team size
+      const heroTeamCount = document.getElementById('av2-hero-team-count');
+      const heroTeamChip  = document.getElementById('av2-hero-chip-team');
+      if (heroTeamCount) heroTeamCount.textContent = agents.length;
+      if (heroTeamChip)  heroTeamChip.style.display = agents.length > 0 ? '' : 'none';
       document.getElementById('agent-last-update').textContent='Updated: '+nowTZ()+' '+currentTZ;
       // Agent self-stats (UI-4)
       if(currentRole!=='admin' && currentEmail){
@@ -23516,17 +23536,39 @@ body{padding-bottom:40px;}
 .bbn-budget-fill.warn{background:#FBC84B;}
 .bbn-budget-fill.over{background:#ED666B;}
 
-/* ── Session 15.5: Hero — rewritten as block layout ─────────────────
-   The flex hero from agent-view-v2.css collapses on narrow viewports:
-   align-items:flex-end + flex-wrap keeps the hero box at the height
-   of the .av2-hero-right buttons (~48px), and the overflowing title +
-   subtext render ON TOP of the next sibling (.av2-stat-grid). Symptom:
-   "Good day, Sebastin" overlapping the AVAILABLE/UNAVAILABLE cards.
-   Fix: drop flex entirely on the hero container; use block layout with
-   the right-side controls absolutely positioned within.
-   Session 15.7: + entrance animation. */
-#agent-section-dashboard .av2-hero{display:block!important;position:relative!important;padding:28px 0 24px!important;border-bottom:1px solid rgba(7,43,64,.08)!important;margin:0 0 28px!important;min-height:auto!important;height:auto!important;animation:adit-hero-in .55s cubic-bezier(.22,1,.36,1) both;}
-#agent-section-dashboard .av2-hero-left{display:block!important;flex:none!important;min-width:0;width:auto!important;padding-right:180px;}
+/* ── Session 16.1: Hero — full card redesign ───────────────────────
+   Previous version was a plain block with a thin border-bottom — too
+   bare. New design: a self-contained card with gradient background,
+   subtle pattern overlay, visual accent strip, and integrated stat
+   chips for the date/time/shift. Buttons on the right get a proper
+   pill design instead of stacked plain buttons. */
+#agent-section-dashboard .av2-hero{
+  display:block!important;position:relative!important;
+  padding:24px 28px!important; margin:0 0 28px!important;
+  min-height:auto!important; height:auto!important;
+  background:linear-gradient(135deg,#FFFFFF 0%,#FAFBFC 100%)!important;
+  border:1px solid #E6ECF4!important; border-radius:16px!important;
+  box-shadow:0 1px 3px rgba(7,43,64,.04),0 10px 32px rgba(7,43,64,.05)!important;
+  overflow:hidden;
+  animation:adit-hero-in .55s cubic-bezier(.22,1,.36,1) both;
+}
+/* Decorative accent strip — orange→teal gradient bar across the top */
+#agent-section-dashboard .av2-hero::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,#F4891F 0%,#FBC84B 35%,#2DDC96 70%,#21AAE0 100%);
+}
+/* Subtle dot pattern on right side, behind buttons */
+#agent-section-dashboard .av2-hero::after{
+  content:""; position:absolute; top:0; right:0; width:280px; height:100%;
+  background-image:radial-gradient(circle at 1px 1px,rgba(244,137,31,.08) 1px,transparent 0);
+  background-size:14px 14px; pointer-events:none; opacity:.6;
+  mask-image:linear-gradient(90deg,transparent,#000 60%);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 60%);
+}
+#agent-section-dashboard .av2-hero-left{
+  display:block!important; flex:none!important; min-width:0;
+  width:auto!important; padding-right:200px; position:relative; z-index:1;
+}
 @keyframes adit-hero-in{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:none;}}
 @keyframes adit-fade-up{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
 @keyframes adit-pulse-soft{0%,100%{box-shadow:0 0 0 0 rgba(45,220,150,.5);}50%{box-shadow:0 0 0 6px rgba(45,220,150,0);}}
@@ -23566,7 +23608,61 @@ body{padding-bottom:40px;}
 #agent-section-dashboard .av2-hero-title{font-size:30px!important;font-weight:800!important;letter-spacing:-.02em;line-height:1.15!important;color:#072B40!important;margin:0 0 10px!important;font-family:'Poppins',sans-serif;}
 #agent-section-dashboard .av2-hero-title-accent{color:#F4891F!important;font-weight:800;}
 #agent-section-dashboard .av2-hero-sub{font-size:13.5px!important;line-height:1.55!important;color:#3A5068!important;margin:0!important;max-width:620px;font-family:'Poppins',sans-serif;}
-#agent-section-dashboard .av2-hero-right{position:absolute!important;top:24px!important;right:0!important;display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:8px!important;flex-wrap:nowrap!important;width:auto!important;}
+#agent-section-dashboard .av2-hero-right{
+  position:absolute!important; top:22px!important; right:24px!important;
+  display:flex!important; flex-direction:column!important;
+  align-items:flex-end!important; gap:9px!important;
+  flex-wrap:nowrap!important; width:auto!important; z-index:2;
+}
+/* Style the Break / Refresh buttons inside the new card */
+#agent-section-dashboard .av2-hero-right .av2-btn,
+#agent-section-dashboard .av2-hero-right button{
+  padding:8px 16px!important;
+  border-radius:50px!important;
+  font-size:12.5px!important; font-weight:700!important;
+  font-family:'Poppins',sans-serif!important;
+  background:#FFFFFF!important; border:1px solid #DEE1E6!important;
+  color:#3A5068!important;
+  box-shadow:0 1px 2px rgba(7,43,64,.05)!important;
+  display:inline-flex!important; align-items:center; gap:6px;
+  cursor:pointer; transition:all .15s ease;
+  min-width:108px; justify-content:center;
+}
+#agent-section-dashboard .av2-hero-right button:hover{
+  transform:translateY(-1px); box-shadow:0 6px 18px rgba(7,43,64,.10)!important;
+  border-color:#F4891F!important; color:#F4891F!important;
+}
+#agent-section-dashboard .av2-hero-right button:first-child{
+  background:linear-gradient(135deg,#FBC84B,#F4891F)!important;
+  border:none!important; color:#FFFFFF!important;
+  box-shadow:0 4px 14px rgba(244,137,31,.32)!important;
+}
+#agent-section-dashboard .av2-hero-right button:first-child:hover{
+  color:#FFFFFF!important; transform:translateY(-1px);
+  box-shadow:0 8px 22px rgba(244,137,31,.42)!important;
+}
+
+/* Date / shift info chip injected by JS below the subtext */
+#agent-section-dashboard .av2-hero-chips{
+  display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;
+}
+#agent-section-dashboard .av2-hero-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 12px; background:#F0F3F6; border:1px solid #E6ECF4;
+  border-radius:50px; font-size:11px; font-weight:600;
+  color:#3A5068; font-family:'Poppins',sans-serif;
+}
+#agent-section-dashboard .av2-hero-chip svg{
+  width:11px; height:11px; flex-shrink:0; opacity:.7;
+}
+#agent-section-dashboard .av2-hero-chip strong{
+  color:#072B40; font-weight:700; font-family:'JetBrains Mono',monospace; font-size:11px;
+}
+#agent-section-dashboard .av2-hero-chip-live{
+  background:rgba(45,220,150,.10); border-color:rgba(45,220,150,.28); color:#0F6F46;
+}
+#agent-section-dashboard .av2-hero-chip-live strong{ color:#0F6F46; }
+#agent-section-dashboard .av2-hero-chip-live svg{ color:#2DDC96; opacity:1; }
 /* Dark theme hero overrides */
 html[data-theme="dark"] #agent-section-dashboard .av2-hero{border-bottom-color:rgba(255,255,255,.08)!important;}
 html[data-theme="dark"] #agent-section-dashboard .av2-hero-title{color:#eef6ff!important;}
@@ -23797,6 +23893,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   }
   setInterval(tickClock, 1000);
   tickClock();
+
+  /* ── Session 16.1: keep the new hero chips in sync ──────────────── */
+  function tickHeroChips(){
+    const dEl = document.getElementById('av2-hero-date-str');
+    const cEl = document.getElementById('av2-hero-clock');
+    if (dEl) {
+      const now = new Date();
+      dEl.textContent = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    if (cEl) {
+      const now = new Date();
+      cEl.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+  }
+  setInterval(tickHeroChips, 30 * 1000);
+  tickHeroChips();
 
   /* ── Session 15.7: Smooth count-up for stat numbers ─────────────── */
   window.aditCountTo = function(id, target){
