@@ -354,7 +354,7 @@ initDB().then(async () => {
     // Auto-seed once if the table is empty and the seed file exists
     const cnt = await new Promise((res,rej) =>
       db.get('SELECT COUNT(*) AS n FROM roster_agents', [], (e, row) => e ? rej(e) : res(row.n)));
-    const seedPath = path.join(__dirname, 'data', 'roster-seed.json');
+    const seedPath = path.join(__dirname, 'lib', 'roster-seed.json');
     if (cnt === 0 && require('fs').existsSync(seedPath)) {
       const result = await roster.seedFromFile(seedPath);
       console.log('📋 Roster auto-seeded:', JSON.stringify(result));
@@ -4185,7 +4185,7 @@ app.get('/api/roster/summary', requireAuth, async (req, res) => {
 
 app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
   try {
-    const seedPath = path.join(__dirname, 'data', 'roster-seed.json');
+    const seedPath = path.join(__dirname, 'lib', 'roster-seed.json');
     const result = await roster.seedFromFile(seedPath);
     res.json({ success: true, ...result });
   } catch(e) { res.status(500).json({ success:false, error: e.message }); }
