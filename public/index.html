@@ -9620,8 +9620,10 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
+  <!-- Session 15.5: HOF sidebar item hidden until Q2 redesign. Page itself
+       remains in DOM (#agent-section-hall) so deep-links still resolve. -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
-       onclick="sbAgent('hall',this)">
+       onclick="sbAgent('hall',this)" style="display:none!important;" data-hidden-until="Q2-2026">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
     <span class="sb-label">HOF</span>
   </div>
@@ -23497,19 +23499,22 @@ body{padding-bottom:40px;}
 .bbn-budget-fill.warn{background:#FBC84B;}
 .bbn-budget-fill.over{background:#ED666B;}
 
-/* ── Session 15.4: Hero defensive styling + visual polish ───────────
-   The agent home hero ("Good day, <name>") relies on agent-view-v2.css
-   tokens. When that file lags behind a deploy or a theme override flips
-   --t1 to dark, the title can collapse to invisible. Hardcoded fallback
-   values guarantee the hero always renders boldly. */
-#agent-section-dashboard .av2-hero{display:flex!important;align-items:flex-end!important;justify-content:space-between!important;gap:24px!important;padding:28px 0 24px!important;border-bottom:1px solid rgba(7,43,64,.08)!important;margin:0 0 28px!important;flex-wrap:wrap;}
-#agent-section-dashboard .av2-hero-left{flex:1 1 320px;min-width:0;}
+/* ── Session 15.5: Hero — rewritten as block layout ─────────────────
+   The flex hero from agent-view-v2.css collapses on narrow viewports:
+   align-items:flex-end + flex-wrap keeps the hero box at the height
+   of the .av2-hero-right buttons (~48px), and the overflowing title +
+   subtext render ON TOP of the next sibling (.av2-stat-grid). Symptom:
+   "Good day, Sebastin" overlapping the AVAILABLE/UNAVAILABLE cards.
+   Fix: drop flex entirely on the hero container; use block layout with
+   the right-side controls absolutely positioned within. */
+#agent-section-dashboard .av2-hero{display:block!important;position:relative!important;padding:24px 0 22px!important;border-bottom:1px solid rgba(7,43,64,.08)!important;margin:0 0 24px!important;min-height:auto!important;height:auto!important;}
+#agent-section-dashboard .av2-hero-left{display:block!important;flex:none!important;min-width:0;width:auto!important;padding-right:240px;}
 #agent-section-dashboard .av2-hero-overline{display:inline-flex!important;align-items:center;gap:6px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#6B849A!important;margin:0 0 8px;font-family:'Poppins',sans-serif;}
 #agent-section-dashboard .av2-hero-overline-dot{width:6px;height:6px;border-radius:50%;background:#2DDC96;box-shadow:0 0 0 0 rgba(45,220,150,.4);animation:av2HeroPulse 2.4s ease-out infinite;display:inline-block;}
 #agent-section-dashboard .av2-hero-title{font-size:30px!important;font-weight:800!important;letter-spacing:-.02em;line-height:1.15!important;color:#072B40!important;margin:0 0 10px!important;font-family:'Poppins',sans-serif;}
 #agent-section-dashboard .av2-hero-title-accent{color:#F4891F!important;font-weight:800;}
 #agent-section-dashboard .av2-hero-sub{font-size:13.5px!important;line-height:1.55!important;color:#3A5068!important;margin:0!important;max-width:620px;font-family:'Poppins',sans-serif;}
-#agent-section-dashboard .av2-hero-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+#agent-section-dashboard .av2-hero-right{position:absolute!important;top:24px!important;right:0!important;display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:8px!important;flex-wrap:nowrap!important;width:auto!important;}
 /* Dark theme hero overrides */
 html[data-theme="dark"] #agent-section-dashboard .av2-hero{border-bottom-color:rgba(255,255,255,.08)!important;}
 html[data-theme="dark"] #agent-section-dashboard .av2-hero-title{color:#eef6ff!important;}
