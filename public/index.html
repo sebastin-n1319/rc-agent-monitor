@@ -11981,6 +11981,37 @@ tbody tr:hover td{
                   <button class="tl-mt-chip tl-mt-chip-period" data-val="week" onclick="tlMtSetFilter('period','week')" style="">This Week</button>
                   <button class="tl-mt-chip tl-mt-chip-period" data-val="month" onclick="tlMtSetFilter('period','month')" style="">This Month</button>
                 </div>
+                <div style="width:1px;height:18px;background:rgb(222,225,230);flex-shrink:0;"></div>
+                <!-- Session 16.2: Type filter -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <span style="font-size:10px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.05em;margin-right:2px;">Type</span>
+                  <button class="tl-mt-chip tl-mt-chip-type active" data-val="" onclick="tlMtSetFilter('type','')">All</button>
+                  <button class="tl-mt-chip tl-mt-chip-type" data-val="New Ticket" onclick="tlMtSetFilter('type','New Ticket')">New</button>
+                  <button class="tl-mt-chip tl-mt-chip-type" data-val="Follow-up Ticket" onclick="tlMtSetFilter('type','Follow-up Ticket')">Follow-up</button>
+                  <button class="tl-mt-chip tl-mt-chip-type" data-val="Transfer-In Ticket" onclick="tlMtSetFilter('type','Transfer-In Ticket')">Transfer-In</button>
+                  <button class="tl-mt-chip tl-mt-chip-type" data-val="Reopened" onclick="tlMtSetFilter('type','Reopened')">Reopened</button>
+                  <button class="tl-mt-chip tl-mt-chip-type" data-val="Merged Ticket" onclick="tlMtSetFilter('type','Merged Ticket')">Merged</button>
+                </div>
+                <div style="width:1px;height:18px;background:rgb(222,225,230);flex-shrink:0;"></div>
+                <!-- Session 16.2: Flag filter -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <span style="font-size:10px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.05em;margin-right:2px;">Flag</span>
+                  <button class="tl-mt-chip tl-mt-chip-flag active" data-val="" onclick="tlMtSetFilter('flag','')">All</button>
+                  <button class="tl-mt-chip tl-mt-chip-flag" data-val="NONE" onclick="tlMtSetFilter('flag','NONE')">Clean</button>
+                  <button class="tl-mt-chip tl-mt-chip-flag" data-val="DUPLICATE" onclick="tlMtSetFilter('flag','DUPLICATE')">Duplicate</button>
+                  <button class="tl-mt-chip tl-mt-chip-flag" data-val="BACKLOG" onclick="tlMtSetFilter('flag','BACKLOG')">Backlog</button>
+                </div>
+                <div style="width:1px;height:18px;background:rgb(222,225,230);flex-shrink:0;"></div>
+                <!-- Session 16.2: Sort -->
+                <div style="display:flex;gap:4px;align-items:center;">
+                  <span style="font-size:10px;font-weight:600;color:#9BAFC0;text-transform:uppercase;letter-spacing:.05em;margin-right:2px;">Sort</span>
+                  <select id="tl-mt-sort" onchange="tlMtSetFilter('sort',this.value)" style="padding:4px 8px;border:1px solid #DEE1E6;border-radius:50px;background:#FFFFFF;font-size:11px;font-weight:600;color:#3A5068;font-family:'Poppins',sans-serif;cursor:pointer;outline:none;">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                    <option value="channel">By channel</option>
+                    <option value="type">By type</option>
+                  </select>
+                </div>
                 <!-- Clear filters -->
                 <button id="tl-mt-clear-filters" onclick="tlMtClearFilters()" style="display:none;margin-left:4px;padding:3px 9px;background:rgba(237,102,107,.08);border:1px solid rgba(237,102,107,.2);border-radius:50px;font-size:10px;font-weight:600;color:#ED666B;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;" onmouseover="this.style.background='rgba(237,102,107,.16)'" onmouseout="this.style.background='rgba(237,102,107,.08)'">✕ Clear filters</button>
               </div>
@@ -13556,17 +13587,26 @@ let tlMyTicketsData = [];   // cached rows for client-side filter
 let tlMtFilterChannel = ''; // '' = All
 let tlMtFilterQueue   = ''; // '' = All
 let tlMtFilterPeriod  = ''; // '' = All | 'today' | 'week' | 'month'
+// Session 16.2: extra filters + sort
+let tlMtFilterType    = ''; // '' = All | matches ticketType
+let tlMtFilterFlag    = ''; // '' = All | 'NONE' | 'DUPLICATE' | 'BACKLOG'
+let tlMtSort          = 'newest'; // newest | oldest | channel | type
 
 function tlMtSetFilter(type, val) {
   if (type === 'channel') tlMtFilterChannel = val;
   else if (type === 'queue') tlMtFilterQueue = val;
   else if (type === 'period') tlMtFilterPeriod = val;
+  else if (type === 'type')   tlMtFilterType = val;
+  else if (type === 'flag')   tlMtFilterFlag = val;
+  else if (type === 'sort')   { tlMtSort = val; tlFilterMyTickets(); return; }
   // Update active chip
   document.querySelectorAll('.tl-mt-chip-' + type).forEach(b => {
     b.classList.toggle('active', b.dataset.val === val);
   });
   // Show/hide clear-filters button
-  const hasFilter = tlMtFilterChannel || tlMtFilterQueue || tlMtFilterPeriod || (document.getElementById('tl-mt-search')||{}).value;
+  const hasFilter = tlMtFilterChannel || tlMtFilterQueue || tlMtFilterPeriod ||
+                    tlMtFilterType || tlMtFilterFlag ||
+                    (document.getElementById('tl-mt-search')||{}).value;
   const clearBtn = document.getElementById('tl-mt-clear-filters');
   if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
   tlFilterMyTickets();
@@ -13576,14 +13616,63 @@ function tlMtClearFilters() {
   tlMtFilterChannel = '';
   tlMtFilterQueue   = '';
   tlMtFilterPeriod  = '';
+  tlMtFilterType    = '';
+  tlMtFilterFlag    = '';
+  tlMtSort          = 'newest';
   const searchEl = document.getElementById('tl-mt-search');
   if (searchEl) searchEl.value = '';
+  const sortEl = document.getElementById('tl-mt-sort');
+  if (sortEl) sortEl.value = 'newest';
   document.querySelectorAll('.tl-mt-chip').forEach(b => {
     b.classList.toggle('active', b.dataset.val === '');
   });
   const clearBtn = document.getElementById('tl-mt-clear-filters');
   if (clearBtn) clearBtn.style.display = 'none';
   tlFilterMyTickets();
+}
+
+// ── Session 16.2: Ripple effect on channel/mode/chip buttons ────────────────
+document.addEventListener('click', function(e){
+  const btn = e.target.closest(
+    '#agent-section-tickets .tl-ch-btn, ' +
+    '#agent-section-tickets .tl-mode-btn, ' +
+    '#agent-section-tickets [data-group="channel"], ' +
+    '#agent-section-tickets .tt-chip'
+  );
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  const ripple = document.createElement('span');
+  ripple.className = 'tt-ripple';
+  ripple.style.width  = size + 'px';
+  ripple.style.height = size + 'px';
+  ripple.style.left   = (e.clientX - rect.left - size/2) + 'px';
+  ripple.style.top    = (e.clientY - rect.top  - size/2) + 'px';
+  btn.style.position = btn.style.position || 'relative';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+});
+
+// ── Session 16.2: Tiny success burst when a ticket is logged ─────────────
+function tlTriggerSuccessBurst(){
+  const wrap = document.createElement('div');
+  wrap.className = 'tt-success-burst';
+  const colors = ['#F4891F','#FBC84B','#2DDC96','#21AAE0','#ED666B'];
+  for (let i = 0; i < 14; i++){
+    const ang = (i / 14) * Math.PI * 2;
+    const dist = 50 + Math.random() * 30;
+    const dx = Math.cos(ang) * dist + 'px';
+    const dy = Math.sin(ang) * dist + 'px';
+    const s = document.createElement('span');
+    s.className = 'tt-spark';
+    s.style.background = colors[i % colors.length];
+    s.style.setProperty('--dx', dx);
+    s.style.setProperty('--dy', dy);
+    s.style.animationDelay = (i * 12) + 'ms';
+    wrap.appendChild(s);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 1000);
 }
 
 async function tlLoadMyTickets() {
@@ -13638,7 +13727,6 @@ function tlFilterMyTickets() {
       const d = parseTlDate(t.date, t.month);
       if (!d || isNaN(d.getTime())) return false;
       if (tlMtFilterPeriod === 'today') {
-        // Compare year/month/day individually to avoid timezone edge cases
         return d.getFullYear() === todayCST.getFullYear() &&
                d.getMonth()    === todayCST.getMonth()    &&
                d.getDate()     === todayCST.getDate();
@@ -13649,8 +13737,33 @@ function tlFilterMyTickets() {
     });
   }
 
+  // Session 16.2: type filter
+  if (tlMtFilterType) rows = rows.filter(t => (t.ticketType||'') === tlMtFilterType);
+
+  // Session 16.2: flag filter (Clean = no notes; Duplicate / Backlog = exact match)
+  if (tlMtFilterFlag === 'NONE')        rows = rows.filter(t => !t.notes || (t.notes !== 'DUPLICATE' && t.notes !== 'BACKLOG'));
+  else if (tlMtFilterFlag === 'DUPLICATE') rows = rows.filter(t => t.notes === 'DUPLICATE');
+  else if (tlMtFilterFlag === 'BACKLOG')   rows = rows.filter(t => t.notes === 'BACKLOG');
+
+  // Session 16.2: sort
+  rows = [...rows]; // don't mutate cached
+  if (tlMtSort === 'newest' || tlMtSort === 'oldest') {
+    rows.sort((a,b) => {
+      const da = parseTlDate(a.date, a.month);
+      const db = parseTlDate(b.date, b.month);
+      if (!da && !db) return 0;
+      if (!da) return 1; if (!db) return -1;
+      return tlMtSort === 'newest' ? (db - da) : (da - db);
+    });
+  } else if (tlMtSort === 'channel') {
+    rows.sort((a,b) => (a.channel||'').localeCompare(b.channel||''));
+  } else if (tlMtSort === 'type') {
+    rows.sort((a,b) => (a.ticketType||'').localeCompare(b.ticketType||''));
+  }
+
   // Update clear-filters button visibility
-  const hasFilter = tlMtFilterChannel || tlMtFilterQueue || tlMtFilterPeriod || q;
+  const hasFilter = tlMtFilterChannel || tlMtFilterQueue || tlMtFilterPeriod ||
+                    tlMtFilterType || tlMtFilterFlag || q;
   const clearBtn = document.getElementById('tl-mt-clear-filters');
   if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
 
@@ -14785,6 +14898,8 @@ function showTicketSuccessPopup(ticketId) {
   const card  = document.getElementById('tl-success-card');
   if (!popup) return;
   if (idEl) idEl.textContent = ticketId;
+  // Session 16.2: confetti spark burst behind the success card
+  try { if (typeof tlTriggerSuccessBurst === 'function') tlTriggerSuccessBurst(); } catch(e){}
   // Reset
   if (bar) { bar.style.transition = 'none'; bar.style.width = '100%'; }
   if (card) card.classList.remove('tl-success-exit');
@@ -23663,6 +23778,188 @@ body{padding-bottom:40px;}
 }
 #agent-section-dashboard .av2-hero-chip-live strong{ color:#0F6F46; }
 #agent-section-dashboard .av2-hero-chip-live svg{ color:#2DDC96; opacity:1; }
+
+/* ════════════════════════════════════════════════════════════════════
+   Session 16.2: Tickets tab redesign + new filters + motion
+   ════════════════════════════════════════════════════════════════════
+   Scoped to #agent-section-tickets so dashboard/admin views are untouched.
+   Goals: hero card with gradient + animated background, better mode
+   toggle, ripple-on-click for channels, more filters (type / flag /
+   sort), count-up totals, smooth section entrances.
+*/
+
+/* Section-level background pattern — floating dots that drift slowly */
+#agent-section-tickets{
+  position:relative;
+  background:
+    radial-gradient(circle at 18% 12%,rgba(244,137,31,.05) 0,transparent 28%),
+    radial-gradient(circle at 82% 88%,rgba(33,170,224,.04) 0,transparent 32%),
+    #F7F9FB;
+}
+#agent-section-tickets::before{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+  background-image:radial-gradient(circle at 1px 1px,rgba(7,43,64,.05) 1px,transparent 0);
+  background-size:22px 22px;
+  mask-image:radial-gradient(ellipse at center,#000 30%,transparent 70%);
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 70%);
+  animation:tt-drift 60s linear infinite;
+}
+@keyframes tt-drift{0%{background-position:0 0}100%{background-position:22px 22px}}
+#agent-section-tickets .tl-page,
+#agent-section-tickets > * { position:relative; z-index:1; }
+
+/* Entrance choreography */
+@keyframes tt-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes tt-fade{from{opacity:0}to{opacity:1}}
+@keyframes tt-pulse-orange{0%,100%{box-shadow:0 4px 14px rgba(244,137,31,.32)}50%{box-shadow:0 4px 22px rgba(244,137,31,.5)}}
+@keyframes tt-ripple{from{transform:scale(0);opacity:.55}to{transform:scale(3);opacity:0}}
+@keyframes tt-confetti-pop{from{transform:scale(.6);opacity:0}50%{transform:scale(1.1);opacity:1}to{transform:scale(1);opacity:1}}
+
+/* Stagger the major blocks (hero, form, my-tickets panel) */
+#agent-section-tickets .tl-page > *{ animation:tt-rise .55s cubic-bezier(.22,1,.36,1) both; }
+#agent-section-tickets .tl-page > *:nth-child(2){ animation-delay:.08s; }
+#agent-section-tickets .tl-page > *:nth-child(3){ animation-delay:.16s; }
+
+/* ── Header / hero card ── */
+#agent-section-tickets .tl-page > div:first-child > div:first-child{
+  background:linear-gradient(135deg,#FFFFFF 0%,#FAFBFC 100%)!important;
+  border:1px solid #E6ECF4!important; border-radius:18px!important;
+  padding:22px 26px!important;
+  box-shadow:0 1px 3px rgba(7,43,64,.04),0 12px 32px rgba(7,43,64,.06)!important;
+  position:relative; overflow:hidden;
+}
+#agent-section-tickets .tl-page > div:first-child > div:first-child::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg,#F4891F 0%,#FBC84B 35%,#2DDC96 70%,#21AAE0 100%);
+}
+/* Animated shine on the ticket-icon badge */
+#agent-section-tickets .tl-page > div:first-child > div:first-child > div:first-child > div:first-child{
+  position:relative; overflow:hidden;
+}
+#agent-section-tickets .tl-page > div:first-child > div:first-child > div:first-child > div:first-child::after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(125deg,transparent 30%,rgba(255,255,255,.45) 50%,transparent 70%);
+  animation:tt-shine 4.5s ease-in-out infinite;
+}
+@keyframes tt-shine{0%,55%{transform:translateX(-100%)}80%,100%{transform:translateX(100%)}}
+
+/* ── Mode toggle buttons (Single / Bulk / My Tickets) ── */
+#agent-section-tickets .tl-mode-btn{
+  position:relative; overflow:hidden;
+  transition:transform .15s cubic-bezier(.22,1,.36,1),box-shadow .2s,background .2s,color .2s,border-color .2s!important;
+}
+#agent-section-tickets .tl-mode-btn:hover{ transform:translateY(-1px); }
+#agent-section-tickets .tl-mode-btn.active{
+  background:linear-gradient(135deg,#F4891F,#F28820)!important;
+  color:#FFFFFF!important; border-color:transparent!important;
+  box-shadow:0 4px 14px rgba(244,137,31,.32)!important;
+}
+
+/* ── Channel buttons (Email/Chat/Phone/Web) ripple-on-click ── */
+#agent-section-tickets .tl-card button[data-group="channel"],
+#agent-section-tickets .tl-card .tl-ch-btn{
+  position:relative; overflow:hidden;
+  transition:transform .18s cubic-bezier(.22,1,.36,1),box-shadow .2s,border-color .2s!important;
+}
+#agent-section-tickets .tl-card button[data-group="channel"]:hover,
+#agent-section-tickets .tl-card .tl-ch-btn:hover{ transform:translateY(-2px); }
+#agent-section-tickets .tl-card button[data-group="channel"].active,
+#agent-section-tickets .tl-card .tl-ch-btn.active{
+  border-color:#F4891F!important;
+  box-shadow:0 6px 18px rgba(244,137,31,.18)!important;
+}
+.tt-ripple{
+  position:absolute; border-radius:50%;
+  background:rgba(244,137,31,.35); pointer-events:none;
+  animation:tt-ripple .55s ease-out forwards;
+}
+
+/* ── My Tickets — new filter chip rail ── */
+.tt-filters-bar{
+  display:flex; gap:18px; flex-wrap:wrap; align-items:center;
+  padding:14px 18px; margin:14px 0;
+  background:linear-gradient(135deg,rgba(244,137,31,.04),rgba(33,170,224,.03));
+  border:1px solid rgba(244,137,31,.12); border-radius:12px;
+  animation:tt-fade .4s ease both;
+}
+.tt-filter-group{ display:flex; align-items:center; gap:8px; }
+.tt-filter-label{
+  font-size:10px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.08em; color:#6B849A;
+}
+.tt-filter-chips{ display:flex; gap:5px; flex-wrap:wrap; }
+.tt-chip{
+  padding:5px 12px; background:#FFFFFF; border:1px solid #DEE1E6;
+  border-radius:50px; font-size:11.5px; font-weight:600; color:#3A5068;
+  cursor:pointer; font-family:'Poppins',sans-serif; transition:all .15s;
+  white-space:nowrap;
+}
+.tt-chip:hover{ border-color:#F4891F; color:#F4891F; }
+.tt-chip.active{
+  background:linear-gradient(135deg,#F4891F,#F28820); color:#FFFFFF;
+  border-color:transparent;
+  box-shadow:0 3px 10px rgba(244,137,31,.28);
+}
+.tt-clear-filters{
+  margin-left:auto; padding:5px 12px;
+  background:rgba(237,102,107,.08); border:1px solid rgba(237,102,107,.22);
+  border-radius:50px; font-size:11px; font-weight:700; color:#ED666B;
+  cursor:pointer; font-family:'Poppins',sans-serif; transition:all .15s;
+}
+.tt-clear-filters:hover{ background:rgba(237,102,107,.16); }
+
+/* Count-up daily-total badge */
+.tt-today-tally{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 14px; margin-left:10px;
+  background:linear-gradient(135deg,rgba(45,220,150,.12),rgba(33,170,224,.10));
+  border:1px solid rgba(45,220,150,.3); border-radius:50px;
+  font-size:12px; font-weight:700; color:#0F6F46;
+  font-family:'Poppins',sans-serif;
+  animation:tt-confetti-pop .5s cubic-bezier(.22,1,.36,1) both;
+}
+.tt-today-tally strong{ font-family:'JetBrains Mono',monospace; font-size:13px; }
+.tt-today-tally svg{ width:13px; height:13px; }
+
+/* Refresh button glow when fetching */
+#agent-section-tickets .tl-page button[onclick*="tlLoadMyTickets"]:active{
+  transform:scale(.96);
+}
+
+/* ── Success burst on ticket logged (mini fireworks) ── */
+.tt-success-burst{
+  position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+  z-index:99999; pointer-events:none;
+  width:120px; height:120px;
+}
+.tt-success-burst .tt-spark{
+  position:absolute; left:50%; top:50%; width:6px; height:6px;
+  border-radius:50%; background:#F4891F;
+  animation:tt-spark .9s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes tt-spark{
+  from{transform:translate(-50%,-50%) translate(0,0) scale(1);opacity:1}
+  to{transform:translate(-50%,-50%) translate(var(--dx,40px),var(--dy,40px)) scale(0);opacity:0}
+}
+
+/* Improve "No tickets found" empty state */
+#agent-section-tickets .tt-empty-state{
+  padding:48px 24px; text-align:center;
+  background:rgba(7,43,64,.02); border:1px dashed rgba(7,43,64,.12);
+  border-radius:14px; color:#6B849A;
+  animation:tt-fade .4s ease both;
+}
+#agent-section-tickets .tt-empty-state .tt-empty-ico{
+  font-size:38px; margin-bottom:8px; opacity:.5;
+  animation:tt-float 3.5s ease-in-out infinite;
+}
+@keyframes tt-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#agent-section-tickets .tt-empty-state .tt-empty-title{
+  font-size:14px; font-weight:700; color:#072B40; margin-bottom:4px;
+}
+#agent-section-tickets .tt-empty-state .tt-empty-sub{
+  font-size:12px; color:#9BAFC0;
+}
 /* Dark theme hero overrides */
 html[data-theme="dark"] #agent-section-dashboard .av2-hero{border-bottom-color:rgba(255,255,255,.08)!important;}
 html[data-theme="dark"] #agent-section-dashboard .av2-hero-title{color:#eef6ff!important;}
