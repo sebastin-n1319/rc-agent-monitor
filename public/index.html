@@ -12078,7 +12078,7 @@ tbody tr:hover td{
   </div>
 </div>
 
-<footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v" id="build-version">ADIT-OPS-v4.14 (Session 14 · 2026-05-27 · SW v1.8.0)</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
+<footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v" id="build-version">ADIT-OPS-v4.14.1 (Session 14 · 2026-05-27 · SW v1.8.1)</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
 </div>
 
 <div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
@@ -12548,12 +12548,23 @@ function breakbotTabEnabled(){
   return !!currentBreakbotEnabled;
 }
 
-function breakbotPreviewAvailable(){
-  return currentRole==='admin' && !currentBreakbotEnabled;
+// Role compare is case-insensitive — older rcSession caches store
+// 'Admin' (capitalised) while fresh server responses use 'admin'.
+function isAdminRole(){
+  return typeof currentRole === 'string' && currentRole.toLowerCase() === 'admin';
 }
 
+function breakbotPreviewAvailable(){
+  return isAdminRole() && !currentBreakbotEnabled;
+}
+
+// Admins must NEVER be locked out of Break Bot regardless of the cached
+// breakbotEnabled flag — that flag is for per-agent toggles set by other
+// admins, not for self-locking. Production P0 (Session 14) was caused by
+// stale rcSession entries lacking the breakbotEnabled field, which the
+// session-restore code was coercing to '0' (see fix at line 15152).
 function breakbotVisibleInAgentView(){
-  return breakbotTabEnabled() || currentBreakbotPreviewMode;
+  return isAdminRole() || breakbotTabEnabled() || currentBreakbotPreviewMode;
 }
 
 function configureAgentBreakbotAccess(){
@@ -15149,7 +15160,11 @@ async function loadSession(){
       sessionStorage.setItem('rcRole', cached.role);
       sessionStorage.setItem('rcEmail', cached.email);
       sessionStorage.setItem('rcPicture', cached.picture || '');
-      sessionStorage.setItem('rcBreakbotEnabled', cached.breakbotEnabled ? '1' : '0');
+      // P0 fix (Session 14): default to enabled ('1') when the field is
+      // missing from the cached session. Older rcSession blobs predate the
+      // breakbotEnabled field; coercing undefined to '0' silently locked
+      // users out of the Break Bot. !== false treats missing as enabled.
+      sessionStorage.setItem('rcBreakbotEnabled', cached.breakbotEnabled !== false ? '1' : '0');
       try{
         startApp(cached.name, cached.role, cached.picture, cached.breakbotEnabled !== false);
         // Background: validate with server and refresh cookie

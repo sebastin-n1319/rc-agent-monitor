@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.8.0';  // P0 hotfix — forced SW reset, Session 14 (2026-05-27)
+const CACHE_VERSION = 'adit-v1.8.1';  // P0 hotfix #2 — break-bot flag coercion fix, Session 14
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
