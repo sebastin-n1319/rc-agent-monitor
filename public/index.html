@@ -9620,6 +9620,11 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
+  <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
+       onclick="sbAgent('hall',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+    <span class="sb-label">HOF</span>
+  </div>
 </nav>
 
 <!-- APP -->
@@ -10924,8 +10929,8 @@ tbody tr:hover td{
           <span class="av2-hero-overline-dot" aria-hidden="true"></span>
           <span>Agent Dashboard · Live</span>
         </div>
-        <h1 class="av2-hero-title">Good day, <span class="av2-hero-title-accent">there</span></h1>
-        <p class="av2-hero-sub">Here's how your team is performing right now. Data refreshes live, with a 30-second safety net.</p>
+        <h1 class="av2-hero-title">Good day, <span class="av2-hero-title-accent" id="av2-hero-name">there</span></h1>
+        <p class="av2-hero-sub" id="av2-hero-sub">Here's how your team is performing right now. Data refreshes live, with a 30-second safety net.</p>
       </div>
       <div class="av2-hero-right">
         <div class="av2-shift-state" data-state="offline" aria-live="polite" title="Your current shift state">
@@ -10941,7 +10946,8 @@ tbody tr:hover td{
 
     <!-- ═══ PERSONAL CARD (admin/agent view) ═══════════════════════════ -->
     <div id="agent-self-card" class="av2-panel" style="display:none;margin-bottom:var(--av2-s6);padding:var(--av2-s5) var(--av2-s6);">
-      <div style="display:flex;align-items:center;gap:var(--av2-s5);flex-wrap:wrap;">
+      <!-- Row 1: call stats + score -->
+      <div style="display:flex;align-items:center;gap:var(--av2-s5);flex-wrap:wrap;margin-bottom:12px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:var(--av2-t-xs);font-weight:var(--av2-w-sb);color:var(--av2-t3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:var(--av2-s2);">Your Performance Today</div>
           <div style="display:flex;align-items:center;gap:var(--av2-s4);flex-wrap:wrap;">
@@ -10955,6 +10961,33 @@ tbody tr:hover td{
         <div style="text-align:center;padding-left:var(--av2-s5);border-left:1px solid var(--av2-border);">
           <div style="font-size:var(--av2-t-xs);font-weight:var(--av2-w-sb);color:var(--av2-t3);text-transform:uppercase;letter-spacing:.09em;margin-bottom:var(--av2-s2);">Score</div>
           <span id="self-score" style="font-size:var(--av2-t-xl);font-weight:var(--av2-w-eb);color:var(--av2-t1);font-family:'JetBrains Mono',monospace;">--</span>
+        </div>
+      </div>
+      <!-- Row 2: break budget bars + quick actions -->
+      <div class="asc-quick-grid">
+        <div class="asc-budget-wrap">
+          <div class="asc-budget-label">Break Budget Today</div>
+          <div class="asc-bgt-row"><span class="asc-bgt-name">BRB</span><span class="asc-bgt-time" id="asc-brb-val">0m</span></div>
+          <div class="asc-bgt-bar"><div class="asc-bgt-fill" id="asc-brb-fill" style="width:0%"></div></div>
+          <div class="asc-bgt-row"><span class="asc-bgt-name">Break</span><span class="asc-bgt-time" id="asc-break-val">0m</span></div>
+          <div class="asc-bgt-bar"><div class="asc-bgt-fill" id="asc-break-fill" style="width:0%"></div></div>
+          <div class="asc-bgt-row" style="margin-top:2px;"><span class="asc-bgt-name">Training</span><span class="asc-bgt-time" id="asc-train-val">0m</span></div>
+          <div class="asc-bgt-bar"><div class="asc-bgt-fill" id="asc-train-fill" style="width:0%;background:#A98FFF"></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--av2-t3);">Quick Actions</div>
+          <button class="asc-quick-btn" onclick="sbAgent('breakbot',document.getElementById('sb-agent-breakbot'))">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#F4891F"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>
+            Open Break Bot
+          </button>
+          <button class="asc-quick-btn" onclick="sbAgent('tickets',document.getElementById('sb-agent-tickets'))">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#21AAE0"><path d="M10 3v1.5M10 7.5v1.5M10 12v1.5M3 3h10a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 0 0 3v2A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 0 0-3v-2A1.5 1.5 0 0 1 3 3z"/></svg>
+            Log a Ticket
+          </button>
+          <button class="asc-quick-btn" onclick="sbAgent('writer',document.getElementById('sb-agent-writer'))">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#6366f1"><path d="M11 2.5a2.5 2.5 0 0 1 0 3.5L5 12l-3 1 1-3z"/></svg>
+            AI Writer
+          </button>
         </div>
       </div>
     </div>
@@ -11066,7 +11099,7 @@ tbody tr:hover td{
     </section>
    </div>
   </div>
-  </div>
+  <!-- agentView remains open — breakbot/hall/bonus/writer/tickets are siblings inside it -->
   <div class="agent-shell-page" id="agent-section-breakbot">
     <!-- Preview banner -->
     <div class="bbn-preview" id="break-preview-note" style="display:none;">
@@ -11125,6 +11158,40 @@ tbody tr:hover td{
             <div class="bbn-timer"><span>Training</span><strong id="break-self-training">0s</strong></div>
             <div class="bbn-timer"><span>QA AUX</span><strong id="break-self-qa">0s</strong></div>
             <div class="bbn-timer"><span>Internal</span><strong id="break-self-internal">0s</strong></div>
+          </div>
+          <!-- Session 15: break budget progress bars -->
+          <div class="bbn-budget-section">
+            <div class="bbn-budget-title">Today's Break Budget</div>
+            <div class="bbn-budget-grid">
+              <div class="bbn-budget-item">
+                <div class="bbn-budget-row">
+                  <span class="bbn-budget-lbl">BRB</span>
+                  <span class="bbn-budget-val" id="bbn-brb-pct">0 / 10m</span>
+                </div>
+                <div class="bbn-budget-bar"><div class="bbn-budget-fill" id="bbn-brb-fill" style="width:0%"></div></div>
+              </div>
+              <div class="bbn-budget-item">
+                <div class="bbn-budget-row">
+                  <span class="bbn-budget-lbl">Break</span>
+                  <span class="bbn-budget-val" id="bbn-break-pct">0 / 30m</span>
+                </div>
+                <div class="bbn-budget-bar"><div class="bbn-budget-fill" id="bbn-break-fill" style="width:0%"></div></div>
+              </div>
+              <div class="bbn-budget-item">
+                <div class="bbn-budget-row">
+                  <span class="bbn-budget-lbl">Training</span>
+                  <span class="bbn-budget-val" id="bbn-train-pct">0m</span>
+                </div>
+                <div class="bbn-budget-bar"><div class="bbn-budget-fill" id="bbn-train-fill" style="width:0%;background:#A98FFF"></div></div>
+              </div>
+              <div class="bbn-budget-item">
+                <div class="bbn-budget-row">
+                  <span class="bbn-budget-lbl">QA / Internal</span>
+                  <span class="bbn-budget-val" id="bbn-aux-pct">0m</span>
+                </div>
+                <div class="bbn-budget-bar"><div class="bbn-budget-fill" id="bbn-aux-fill" style="width:0%;background:#21AAE0"></div></div>
+              </div>
+            </div>
           </div>
           <!-- Watch copy hidden (needed by JS) -->
           <div id="break-self-since-copy" style="display:none"></div>
@@ -12096,7 +12163,7 @@ tbody tr:hover td{
   </div>
 </div>
 
-<footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v" id="build-version">ADIT-OPS-v4.14.2 (Session 14 · 2026-05-27 · SW v1.8.2)</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
+<footer>Built with &#10084; by <span class="f-name">Sabari Nagarajan</span> &nbsp;&middot;&nbsp; <span class="f-v" id="build-version">ADIT-OPS-v4.15.0 (Session 15 · 2026-05-27 · SW v1.8.3)</span> &nbsp;&middot;&nbsp; T1 CS Stars &mdash; Adit.com</footer>
 </div>
 
 <div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
@@ -12610,6 +12677,11 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   // Pre-populate header & views before animation starts
   document.getElementById('userLabel').textContent=username.split(' ')[0];
   document.getElementById('roleLabel').textContent=role==='admin'?'Admin':'Agent';
+  // Session 15: personalize hero greeting
+  const heroName=document.getElementById('av2-hero-name');
+  if(heroName) heroName.textContent=username.split(' ')[0];
+  const heroSub=document.getElementById('av2-hero-sub');
+  if(heroSub && role!=='admin') heroSub.textContent="Your shift, your calls, your breaks — all in one place.";
   document.getElementById('userRoleTag').textContent=role.toUpperCase();
   document.getElementById('userRoleTag').className='role-pill '+(role==='admin'?'role-admin':'role-agent');
   setAvatar(picture);
@@ -16401,6 +16473,71 @@ function renderBreakAgentView(){
   if(watchLines.length && watchEl) watchEl.closest('.break-stat')?.classList.add('alert');
   if(logChip) logChip.textContent = (self.events || []).length + ' events';
   if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
+  // Session 15: update budget bars in Break Bot + Dashboard card
+  _updateBudgetBars(self);
+}
+
+// Session 15: helper to fill break budget progress bars
+function _updateBudgetBars(self){
+  const BRB_LIMIT=600, BREAK_LIMIT=1800; // 10m, 30m in seconds
+  const fmtM=s=>s<60?Math.round(s)+'s':Math.floor(s/60)+'m'+(s%60?String(Math.floor(s%60)).padStart(2,'0')+'s':'');
+  function setBar(fillId,labelId,used,limit,labelSuffix){
+    const fill=document.getElementById(fillId);
+    const lbl=document.getElementById(labelId);
+    if(!fill) return;
+    const pct=Math.min(100,Math.round((used/limit)*100));
+    fill.style.width=pct+'%';
+    fill.classList.toggle('warn',pct>=70&&pct<100);
+    fill.classList.toggle('over',pct>=100);
+    if(lbl) lbl.textContent=fmtM(used)+(labelSuffix?' / '+labelSuffix:'');
+  }
+  const brb=self?(self.brbSeconds||0):0;
+  const brk=self?(self.breakSeconds||0):0;
+  const trn=self?(self.trainingSeconds||0):0;
+  const qa=self?((self.qaSeconds||0)+(self.internalCallSeconds||0)):0;
+  // Break Bot bars
+  setBar('bbn-brb-fill','bbn-brb-pct',brb,BRB_LIMIT,'10m');
+  setBar('bbn-break-fill','bbn-break-pct',brk,BREAK_LIMIT,'30m');
+  const bbnTrainFill=document.getElementById('bbn-train-fill');
+  const bbnTrainPct=document.getElementById('bbn-train-pct');
+  if(bbnTrainFill){bbnTrainFill.style.width=Math.min(100,Math.round((trn/3600)*100))+'%';}
+  if(bbnTrainPct) bbnTrainPct.textContent=fmtM(trn);
+  const bbnAuxFill=document.getElementById('bbn-aux-fill');
+  const bbnAuxPct=document.getElementById('bbn-aux-pct');
+  if(bbnAuxFill){bbnAuxFill.style.width=Math.min(100,Math.round((qa/3600)*100))+'%';}
+  if(bbnAuxPct) bbnAuxPct.textContent=fmtM(qa);
+  // Dashboard card bars (light theme)
+  const ascBrbFill=document.getElementById('asc-brb-fill');
+  const ascBrbVal=document.getElementById('asc-brb-val');
+  const ascBreakFill=document.getElementById('asc-break-fill');
+  const ascBreakVal=document.getElementById('asc-break-val');
+  const ascTrainFill=document.getElementById('asc-train-fill');
+  const ascTrainVal=document.getElementById('asc-train-val');
+  if(ascBrbFill){
+    const p=Math.min(100,Math.round((brb/BRB_LIMIT)*100));
+    ascBrbFill.style.width=p+'%';
+    ascBrbFill.classList.toggle('warn',p>=70&&p<100);
+    ascBrbFill.classList.toggle('over',p>=100);
+  }
+  if(ascBrbVal) ascBrbVal.textContent=fmtM(brb);
+  if(ascBreakFill){
+    const p=Math.min(100,Math.round((brk/BREAK_LIMIT)*100));
+    ascBreakFill.style.width=p+'%';
+    ascBreakFill.classList.toggle('warn',p>=70&&p<100);
+    ascBreakFill.classList.toggle('over',p>=100);
+  }
+  if(ascBreakVal) ascBreakVal.textContent=fmtM(brk);
+  if(ascTrainFill) ascTrainFill.style.width=Math.min(100,Math.round((trn/3600)*100))+'%';
+  if(ascTrainVal) ascTrainVal.textContent=fmtM(trn);
+  // Wire hero shift-state to live break status
+  const heroState=document.querySelector('.av2-shift-state');
+  if(heroState && self){
+    const st=self.currentStatus||'Logged Out';
+    const stateKey=st.replace(/[^a-zA-Z]/g,'').toLowerCase();
+    heroState.dataset.state=stateKey==='loggedin'?'online':stateKey==='loggedout'?'offline':'away';
+    const lbl=heroState.querySelector('.av2-state-label');
+    if(lbl) lbl.textContent=st;
+  }
 }
 
 async function loadBreakTracker(){
@@ -17143,8 +17280,9 @@ async function loadAgentStatuses(){
       if(currentRole!=='admin' && currentEmail){
         const selfData=sortedAdminOps.find(op=>op.agent&&op.agent.email&&op.agent.email.toLowerCase()===currentEmail.toLowerCase());
         const card=document.getElementById('agent-self-card');
+        // Session 15: always show the card for agents; populate when data arrives
+        if(card) card.style.display='block';
         if(card&&selfData){
-          card.style.display='flex';
           const {sum,status}=selfData;
           const inC=sum.inboundCalls||0,outC=sum.outboundCalls||0,missed=sum.missedCalls||0;
           const ahtIn=inC>0?Math.round((sum.ahtInbound||0)/60)+'m':'—';
@@ -23288,6 +23426,35 @@ function laFormatAnalysis(rec) {
    build-version tag becomes invisible. 40px = ribbon height + breathing
    room so the footer text isn't flush against the top of the ribbon. */
 body{padding-bottom:40px;}
+
+/* ── Session 15: Break budget bars (Break Bot + Dashboard card) ──── */
+.bbn-budget-section{padding:12px 14px;border-top:1px solid rgba(255,255,255,.07);}
+.bbn-budget-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(148,163,184,.45);margin-bottom:8px;}
+.bbn-budget-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.bbn-budget-item{}
+.bbn-budget-row{display:flex;justify-content:space-between;margin-bottom:3px;}
+.bbn-budget-lbl{font-size:10px;font-weight:600;color:rgba(148,163,184,.7);}
+.bbn-budget-val{font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:rgba(148,163,184,.9);}
+.bbn-budget-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden;}
+.bbn-budget-fill{height:100%;border-radius:3px;background:#2DDC96;transition:width .5s ease,background .3s;}
+.bbn-budget-fill.warn{background:#FBC84B;}
+.bbn-budget-fill.over{background:#ED666B;}
+
+/* ── Session 15: Dashboard "My Shift" enhanced card ─────────────── */
+.asc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.asc-quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.asc-budget-wrap{background:rgba(244,137,31,.06);border:1px solid rgba(244,137,31,.15);border-radius:10px;padding:10px 12px;}
+.asc-budget-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#F4891F;margin-bottom:6px;}
+.asc-bgt-row{display:flex;justify-content:space-between;margin-bottom:3px;}
+.asc-bgt-name{font-size:11px;color:#6B849A;font-weight:600;}
+.asc-bgt-time{font-size:11px;font-family:'JetBrains Mono',monospace;color:#3A5068;font-weight:700;}
+.asc-bgt-bar{height:5px;border-radius:3px;background:#EDF0F3;overflow:hidden;margin-bottom:6px;}
+.asc-bgt-fill{height:100%;border-radius:3px;background:#2DDC96;transition:width .5s ease,background .3s;}
+.asc-bgt-fill.warn{background:#FBC84B;}
+.asc-bgt-fill.over{background:#ED666B;}
+.asc-quick-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;background:#F7F8F8;border:1px solid #DEE1E6;border-radius:9px;font-size:11px;font-weight:700;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;text-align:center;}
+.asc-quick-btn:hover{background:#F0F3F6;border-color:#C5CFD8;}
+.asc-quick-btn svg{flex-shrink:0;}
 body > footer{margin-bottom:6px;}
 .sb-left{display:flex;align-items:center;gap:6px;color:rgba(148,163,184,.5);}
 .sb-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:livePulse 2.4s ease-in-out infinite;flex-shrink:0;}
