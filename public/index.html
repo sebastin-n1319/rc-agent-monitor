@@ -24090,71 +24090,117 @@ body{padding-bottom:40px;}
   to{transform:translate(-50%,-50%) translate(var(--dx,40px),var(--dy,40px)) scale(0);opacity:0}
 }
 
-/* Session 16.4: My Tickets toolbar row — search / date / refresh */
+/* Session 16.4 + 16.5: My Tickets toolbar — bulletproof search / date / refresh
+   The previous rules were getting outranked by inline styles + ambient
+   adit-theme rules. All critical layout uses !important so the toolbar
+   sits identically regardless of theme load order. */
 #agent-section-tickets .tt-tools{
-  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  display:flex!important; align-items:center!important; gap:10px!important;
+  flex-wrap:wrap!important;
 }
+
+/* ─── Search ─── */
 #agent-section-tickets .tt-search-wrap{
-  position:relative; display:flex; align-items:center;
+  position:relative!important; display:inline-flex!important;
+  align-items:center!important; height:36px!important;
+  background:#FFFFFF!important; border:1px solid #DEE1E6!important;
+  border-radius:10px!important;
+  box-shadow:0 1px 2px rgba(7,43,64,.04)!important;
+  transition:border-color .15s,box-shadow .15s!important;
+}
+#agent-section-tickets .tt-search-wrap:focus-within{
+  border-color:#F4891F!important;
+  box-shadow:0 0 0 3px rgba(244,137,31,.14)!important;
 }
 #agent-section-tickets .tt-search-ico{
-  position:absolute; left:11px; top:50%; transform:translateY(-50%);
-  width:13px; height:13px; color:#9BAFC0; pointer-events:none;
-  transition:color .15s;
+  width:14px!important; height:14px!important; flex-shrink:0!important;
+  color:#9BAFC0!important;
+  margin-left:12px!important; margin-right:8px!important;
+  pointer-events:none!important;
+  transition:color .15s!important;
 }
-#agent-section-tickets .tt-search-wrap:focus-within .tt-search-ico{ color:#F4891F; }
+#agent-section-tickets .tt-search-wrap:focus-within .tt-search-ico{
+  color:#F4891F!important;
+}
 #agent-section-tickets .tt-search-input{
-  height:32px; padding:0 12px 0 34px;
-  border:1px solid #DEE1E6; border-radius:8px;
-  font-size:12.5px; font-weight:500; font-family:'Poppins',sans-serif;
-  color:#072B40; background:#FFFFFF; outline:none; width:200px;
-  transition:border-color .15s,box-shadow .15s;
+  border:none!important; outline:none!important; background:transparent!important;
+  height:100%!important;
+  padding:0 14px 0 0!important;
+  font-size:13px!important; font-weight:500!important;
+  font-family:'Poppins',sans-serif!important;
+  color:#072B40!important; width:220px!important;
+  box-shadow:none!important;
 }
-#agent-section-tickets .tt-search-input::placeholder{ color:#9BAFC0; }
-#agent-section-tickets .tt-search-input:focus{
-  border-color:#F4891F; box-shadow:0 0 0 3px rgba(244,137,31,.12);
-}
+#agent-section-tickets .tt-search-input::placeholder{ color:#9BAFC0!important; }
+
+/* ─── Date picker ─── */
 #agent-section-tickets .tt-date-wrap{
-  position:relative; display:flex; align-items:center;
-  background:#FFFFFF; border:1px solid #DEE1E6; border-radius:8px;
-  padding:0 8px 0 11px; height:32px; transition:border-color .15s;
+  position:relative!important; display:inline-flex!important;
+  align-items:center!important; height:36px!important;
+  background:#FFFFFF!important; border:1px solid #DEE1E6!important;
+  border-radius:10px!important;
+  padding:0 10px 0 12px!important;
+  box-shadow:0 1px 2px rgba(7,43,64,.04)!important;
+  transition:border-color .15s,box-shadow .15s!important;
 }
 #agent-section-tickets .tt-date-wrap:hover,
-#agent-section-tickets .tt-date-wrap:focus-within{ border-color:#F4891F; }
+#agent-section-tickets .tt-date-wrap:focus-within{
+  border-color:#F4891F!important;
+  box-shadow:0 0 0 3px rgba(244,137,31,.14)!important;
+}
 #agent-section-tickets .tt-date-ico{
-  width:13px; height:13px; color:#F4891F; margin-right:6px; flex-shrink:0;
+  width:14px!important; height:14px!important; flex-shrink:0!important;
+  color:#F4891F!important; margin-right:8px!important;
 }
 #agent-section-tickets .tt-date-input{
-  border:none; outline:none; background:transparent; font-family:'Poppins',sans-serif;
-  font-size:12.5px; font-weight:600; color:#072B40; padding:0; cursor:pointer;
-  min-width:120px;
+  border:none!important; outline:none!important; background:transparent!important;
+  font-family:'Poppins',sans-serif!important;
+  font-size:13px!important; font-weight:600!important; color:#072B40!important;
+  padding:0!important; cursor:pointer!important;
+  min-width:130px!important; height:100%!important; box-shadow:none!important;
 }
 #agent-section-tickets .tt-date-input::-webkit-calendar-picker-indicator{
-  cursor:pointer; opacity:.55; transition:opacity .15s;
+  cursor:pointer; opacity:.6; transition:opacity .15s; filter:invert(45%) sepia(95%) saturate(420%) hue-rotate(355deg);
 }
 #agent-section-tickets .tt-date-input::-webkit-calendar-picker-indicator:hover{ opacity:1; }
 #agent-section-tickets .tt-date-clear{
-  width:18px; height:18px; border-radius:50%; background:rgba(237,102,107,.12);
-  border:none; color:#ED666B; font-size:14px; line-height:1; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; margin-left:4px;
-  transition:background .15s,transform .15s; font-weight:700;
+  width:20px!important; height:20px!important; border-radius:50%!important;
+  background:rgba(237,102,107,.14)!important; border:none!important;
+  color:#ED666B!important; font-size:14px!important; line-height:1!important;
+  cursor:pointer!important; display:inline-flex!important;
+  align-items:center!important; justify-content:center!important;
+  margin-left:6px!important; padding:0!important; font-weight:700!important;
+  transition:background .15s,transform .15s!important;
 }
 #agent-section-tickets .tt-date-clear:hover{
-  background:rgba(237,102,107,.22); transform:scale(1.1);
+  background:rgba(237,102,107,.24)!important; transform:scale(1.1)!important;
 }
+
+/* ─── Refresh button ─── */
 #agent-section-tickets .tt-refresh-btn{
-  height:32px; padding:0 14px;
-  background:linear-gradient(135deg,#F7F8F8,#FFFFFF);
-  border:1px solid #DEE1E6; border-radius:8px;
-  font-size:12px; font-weight:700; color:#3A5068;
-  cursor:pointer; font-family:'Poppins',sans-serif;
-  display:inline-flex; align-items:center; gap:6px;
-  transition:all .15s;
+  height:36px!important; padding:0 16px!important;
+  background:linear-gradient(135deg,#F4891F,#F28820)!important;
+  border:none!important; border-radius:10px!important;
+  font-size:12.5px!important; font-weight:700!important;
+  color:#FFFFFF!important;
+  cursor:pointer!important; font-family:'Poppins',sans-serif!important;
+  display:inline-flex!important; align-items:center!important; gap:7px!important;
+  box-shadow:0 4px 12px rgba(244,137,31,.28)!important;
+  transition:transform .15s,box-shadow .2s,filter .15s!important;
+  letter-spacing:.02em!important;
 }
 #agent-section-tickets .tt-refresh-btn:hover{
-  background:linear-gradient(135deg,#F4891F,#F28820); color:#FFFFFF;
-  border-color:transparent; transform:translateY(-1px);
-  box-shadow:0 4px 12px rgba(244,137,31,.28);
+  transform:translateY(-1px)!important;
+  box-shadow:0 6px 18px rgba(244,137,31,.4)!important;
+  filter:brightness(1.04)!important;
+}
+#agent-section-tickets .tt-refresh-btn:active{
+  transform:translateY(0)!important;
+  box-shadow:0 2px 6px rgba(244,137,31,.3)!important;
+}
+#agent-section-tickets .tt-refresh-btn svg{
+  width:13px!important; height:13px!important; flex-shrink:0!important;
+  color:#FFFFFF!important;
 }
 #agent-section-tickets .tt-refresh-btn:hover svg{ animation:tt-spin .6s ease; }
 @keyframes tt-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
