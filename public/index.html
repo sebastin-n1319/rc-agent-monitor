@@ -23840,17 +23840,34 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       if(typeof showToast === 'function') showToast(isPinned ? 'Status bar pinned' : 'Status bar auto-hide on', 'info', 1800);
     };
 
-    // Background-tab indicator — flip Live → Working when the tool is
-    // not the active foreground app.
+    // Background / idle indicator — flip Live → Working when the agent
+    // is not actively engaging with this tool.
     //
-    // Detection: combine BOTH signals — visibilityState (catches tab
-    // switches inside the same window) AND document.hasFocus() (catches
-    // window switches / multi-monitor cases where visibilityState stays
-    // 'visible' but the window itself is in the background).
+    // "Active" means ALL three of:
+    //   1. tab is visible (document.visibilityState === 'visible')
+    //   2. window owns OS focus (document.hasFocus() === true)
+    //   3. user has interacted within the last 45s (mouse/key/scroll/touch)
+    //
+    // If ANY of those fails, we show "Working" — the dot turns amber and
+    // the document title gets a "⚙ Working —" prefix so the OS taskbar
+    // reflects it too. This catches:
+    //   • tab switched away
+    //   • window switched away (multi-monitor or alt-tab)
+    //   • tab visible but agent has been working in another app
+    //     (no interaction for 45s+)
+    const IDLE_MS = 45 * 1000; // 45s of inactivity → Working
+    let _lastInteraction = Date.now();
+    function bumpActivity(){ _lastInteraction = Date.now(); }
+    // Listen passively so we don't add scroll lag
+    ['mousemove','mousedown','keydown','wheel','touchstart','touchmove'].forEach(ev => {
+      window.addEventListener(ev, bumpActivity, { passive: true, capture: true });
+    });
+
     function isBackground(){
       try{
         if(document.visibilityState === 'hidden') return true;
         if(typeof document.hasFocus === 'function' && !document.hasFocus()) return true;
+        if(Date.now() - _lastInteraction > IDLE_MS) return true;
       }catch(e){}
       return false;
     }
@@ -23859,24 +23876,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       const bg = isBackground();
       if(bg){
         bar.classList.add('sb-bg');
-        if(lbl){ lbl.textContent = 'Working'; lbl.title = 'Adit Monitor is active in this background tab — data still syncing'; }
+        if(lbl){ lbl.textContent = 'Working'; lbl.title = 'Adit Monitor is running in the background — still syncing your status'; }
       } else {
         bar.classList.remove('sb-bg');
         if(lbl){ lbl.textContent = 'Live'; lbl.title = ''; }
       }
-      // Reflect in document title so taskbar / tab strip also shows it
       const baseTitle = 'Adit Agent Monitor';
       try{ document.title = bg ? '⚙ Working — ' + baseTitle : baseTitle; }catch(e){}
     }
     document.addEventListener('visibilitychange', syncTabState);
     window.addEventListener('blur',  syncTabState);
-    window.addEventListener('focus', syncTabState);
+    window.addEventListener('focus', () => { bumpActivity(); syncTabState(); });
     window.addEventListener('pageshow', syncTabState);
     window.addEventListener('pagehide', syncTabState);
-    // Belt-and-suspenders: re-evaluate every 4s in case the above events
-    // miss on some browsers / OS combos (e.g. some Linux WMs don't fire
-    // focus/blur on the window when an OS-level overlay appears).
-    setInterval(syncTabState, 4000);
+    // Re-evaluate every 5s so the idle flip happens shortly after the
+    // 45s threshold is crossed without us having to listen for "idle".
+    setInterval(syncTabState, 5000);
     syncTabState();
   })();
 
