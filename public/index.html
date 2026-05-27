@@ -23782,22 +23782,43 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       if(typeof showToast === 'function') showToast(isPinned ? 'Status bar pinned' : 'Status bar auto-hide on', 'info', 1800);
     };
 
-    // Background-tab indicator — flip Live → Working when tab is hidden
+    // Background-tab indicator — flip Live → Working when the tool is
+    // not the active foreground app.
+    //
+    // Detection: combine BOTH signals — visibilityState (catches tab
+    // switches inside the same window) AND document.hasFocus() (catches
+    // window switches / multi-monitor cases where visibilityState stays
+    // 'visible' but the window itself is in the background).
+    function isBackground(){
+      try{
+        if(document.visibilityState === 'hidden') return true;
+        if(typeof document.hasFocus === 'function' && !document.hasFocus()) return true;
+      }catch(e){}
+      return false;
+    }
     function syncTabState(){
       const lbl = document.getElementById('sb-live-label');
-      if(document.hidden){
+      const bg = isBackground();
+      if(bg){
         bar.classList.add('sb-bg');
-        if(lbl) lbl.textContent = 'Working';
-        if(lbl) lbl.title = 'Adit Monitor is active in this background tab — data still syncing';
+        if(lbl){ lbl.textContent = 'Working'; lbl.title = 'Adit Monitor is active in this background tab — data still syncing'; }
       } else {
         bar.classList.remove('sb-bg');
         if(lbl){ lbl.textContent = 'Live'; lbl.title = ''; }
       }
-      // Reflect in document title so taskbar also shows the state
+      // Reflect in document title so taskbar / tab strip also shows it
       const baseTitle = 'Adit Agent Monitor';
-      try{ document.title = document.hidden ? '⚙ Working — ' + baseTitle : baseTitle; }catch(e){}
+      try{ document.title = bg ? '⚙ Working — ' + baseTitle : baseTitle; }catch(e){}
     }
     document.addEventListener('visibilitychange', syncTabState);
+    window.addEventListener('blur',  syncTabState);
+    window.addEventListener('focus', syncTabState);
+    window.addEventListener('pageshow', syncTabState);
+    window.addEventListener('pagehide', syncTabState);
+    // Belt-and-suspenders: re-evaluate every 4s in case the above events
+    // miss on some browsers / OS combos (e.g. some Linux WMs don't fire
+    // focus/blur on the window when an OS-level overlay appears).
+    setInterval(syncTabState, 4000);
     syncTabState();
   })();
 
