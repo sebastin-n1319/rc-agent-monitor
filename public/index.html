@@ -25,6 +25,8 @@
 <link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
 <link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
 <link rel="stylesheet" href="/predict-center.css" id="predict-center-link">
+<!-- Session 16: Roster admin (T1 CS Team Roster replacement) -->
+<link rel="stylesheet" href="/roster-admin.css" id="roster-admin-link">
 <script src="/agent-view-v2.js" defer></script>
 <script src="/alert-center.js" defer></script>
 <script src="/schedule-admin.js" defer></script>
@@ -32,6 +34,7 @@
 <script src="/offline-bridge.js" defer></script>
 <script src="/bulk-actions.js" defer></script>
 <script src="/predict-center.js" defer></script>
+<script src="/roster-admin.js" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js" defer></script>
 <style id="a11y-css">
@@ -9586,6 +9589,12 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
+  <!-- Session 16: Roster (replaces the standalone T1 CS Team Roster xlsx) -->
+  <div class="sb-item" id="sb-roster" title="Roster Management"
+       onclick="sbAdmin('roster',this);if(typeof openRosterAdmin==='function')openRosterAdmin();">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h2M8 18h.01M12 18h2"/></svg>
+    <span class="sb-label">Roster</span>
+  </div>
   <div class="sb-item" id="sb-debug" title="Debug / Logs"
        onclick="sbAdmin('debug',this);loadDebugPanel()">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 8v4"/><path d="M12 16h.01"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
@@ -10306,6 +10315,12 @@ tbody tr:hover td{
         </table>
       </div>
     </div>
+  </div>
+
+  <!-- ROSTER (Session 16) — admin daily-attendance grid. Replaces the
+       standalone "T1 CS Team Roster" xlsx. JS lives in /roster-admin.js. -->
+  <div class="page" id="tab-roster">
+    <div id="roster-admin-root"></div>
   </div>
 
   <!-- TICKET REPORT (Admin) -->
@@ -16861,6 +16876,7 @@ function switchTab(tab,el){
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
   if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); }
+  if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='ai-agent') laLoadStats();
   if(tab==='debug') loadDebugPanel();
   // Remember the active tab so refresh restores it

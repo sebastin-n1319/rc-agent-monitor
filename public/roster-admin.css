@@ -1,0 +1,201 @@
+/**
+ * Roster Admin styles (Session 16) — public/roster-admin.css
+ *
+ * Owns everything under #roster-admin-root and the modal overlays the
+ * module spawns. Designed to fit alongside the existing admin tabs.
+ */
+
+#roster-admin-root { padding: 18px 22px; font-family: 'Poppins', system-ui, sans-serif; color: #072B40; min-height: 60vh; }
+
+.ra-loading,
+.ra-error,
+.ra-empty {
+  padding: 32px; text-align: center; color: #6B849A; font-size: 13px;
+  background: #F7F8F8; border: 1px dashed #DEE1E6; border-radius: 12px;
+}
+.ra-error { color: #ED666B; background: rgba(237,102,107,.06); border-color: rgba(237,102,107,.3); }
+
+/* ── Toolbar ─────────────────────────────────────────────────────── */
+.ra-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.ra-toolbar-left, .ra-toolbar-right { display: flex; gap: 8px; align-items: center; }
+.ra-month-input {
+  padding: 7px 11px; border: 1px solid #DEE1E6; border-radius: 8px;
+  font-size: 12.5px; font-weight: 600; color: #072B40;
+  background: #FFFFFF; cursor: pointer; font-family: inherit;
+}
+.ra-btn {
+  padding: 7px 13px; background: #F7F8F8; border: 1px solid #DEE1E6;
+  border-radius: 8px; font-size: 12.5px; font-weight: 600; color: #3A5068;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.ra-btn:hover { background: #F0F3F6; border-color: #C5CFD8; }
+.ra-btn-ico { padding: 6px 11px; font-size: 16px; line-height: 1; }
+.ra-btn-primary {
+  background: linear-gradient(135deg,#F4891F,#F28820);
+  color: #FFFFFF; border-color: transparent;
+  box-shadow: 0 4px 14px rgba(244,137,31,.25);
+}
+.ra-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(244,137,31,.32); }
+.ra-btn-ghost { background: transparent; border-color: #DEE1E6; }
+
+.ra-switch {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #6B849A; cursor: pointer;
+}
+.ra-switch input { accent-color: #F4891F; cursor: pointer; }
+
+/* ── Legend ──────────────────────────────────────────────────────── */
+.ra-legend {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 12px; padding: 10px 13px;
+  background: #F7F8F8; border: 1px solid #E6ECF4; border-radius: 10px;
+  font-size: 11px;
+}
+.ra-legend-item { display: inline-flex; align-items: center; gap: 5px; color: #3A5068; font-weight: 500; }
+.ra-st-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.ra-legend-item.ra-st-present  .ra-st-dot { background: #2DDC96; }
+.ra-legend-item.ra-st-off      .ra-st-dot { background: #94A3B8; }
+.ra-legend-item.ra-st-pl       .ra-st-dot { background: #21AAE0; }
+.ra-legend-item.ra-st-hd_pl    .ra-st-dot { background: #6BC4E8; }
+.ra-legend-item.ra-st-upl      .ra-st-dot { background: #ED666B; }
+.ra-legend-item.ra-st-sl       .ra-st-dot { background: #FBC84B; }
+.ra-legend-item.ra-st-wfh      .ra-st-dot { background: #9B59B6; }
+.ra-legend-item.ra-st-on_duty  .ra-st-dot { background: #F4891F; }
+.ra-legend-item.ra-st-holiday  .ra-st-dot { background: #F472B6; }
+.ra-legend-item.ra-st-ncns     .ra-st-dot { background: #DC2626; }
+.ra-legend-tip { color: #9BAFC0; margin-left: auto; font-size: 10.5px; font-style: italic; }
+
+/* ── Grid ────────────────────────────────────────────────────────── */
+.ra-grid-wrap {
+  border: 1px solid #E6ECF4; border-radius: 12px; background: #FFFFFF;
+  overflow: auto; max-height: 64vh; box-shadow: 0 1px 3px rgba(7,43,64,.04);
+}
+.ra-grid { border-collapse: separate; border-spacing: 0; font-size: 11px; min-width: 100%; }
+
+.ra-grid thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: #F0F3F6; color: #6B849A; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em;
+  border-bottom: 2px solid #DEE1E6; padding: 6px 4px; text-align: center;
+}
+.ra-th-sticky { position: sticky; left: 0; z-index: 7; }
+.ra-th-name { background: #F0F3F6 !important; text-align: left !important; padding-left: 14px !important; min-width: 220px; }
+.ra-th-day { min-width: 30px; max-width: 30px; }
+.ra-th-day.ra-weekend { background: #FDE7D6; color: #B25C0E; }
+.ra-th-day.ra-today { background: #2DDC96; color: #06301D; box-shadow: inset 0 -3px 0 rgba(6,48,29,.4); }
+.ra-th-dow { font-size: 9px; font-weight: 600; opacity: .7; }
+.ra-th-num { font-size: 12px; font-weight: 700; margin-top: 1px; font-family: 'JetBrains Mono', monospace; }
+.ra-th-tot { background: #072B40 !important; color: #FFFFFF !important; font-size: 9.5px; min-width: 38px; }
+
+.ra-row { transition: background .15s; }
+.ra-row:hover { background: rgba(244,137,31,.04); }
+.ra-row-relieved { opacity: .55; }
+
+.ra-td-name {
+  background: #FFFFFF; border-bottom: 1px solid #F0F3F6;
+  border-right: 1px solid #E6ECF4; padding: 9px 14px; vertical-align: middle;
+  position: sticky; left: 0; z-index: 4;
+}
+.ra-row:hover .ra-td-name { background: #FFF7EF; }
+.ra-agent-pseudo { font-weight: 600; font-size: 12.5px; color: #072B40; line-height: 1.2; }
+.ra-agent-meta { font-size: 10px; color: #9BAFC0; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+.ra-cell {
+  width: 30px; height: 28px; text-align: center; vertical-align: middle;
+  border-bottom: 1px solid #F0F3F6; border-right: 1px solid #F4F5F7;
+  font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  cursor: pointer; user-select: none; transition: background .12s, transform .12s;
+  color: #3A5068; padding: 0;
+}
+.ra-cell:hover { transform: scale(1.15); z-index: 2; position: relative; box-shadow: 0 0 0 2px rgba(244,137,31,.5); }
+.ra-cell.ra-weekend { background: #FFF8F0; }
+.ra-cell.ra-today { box-shadow: inset 0 -2px 0 #2DDC96; }
+
+.ra-st-empty { background: #FFFFFF; color: #C5CFD8; }
+.ra-st-present { background: rgba(45,220,150,.16); color: #0F6F46; }
+.ra-st-off { background: rgba(148,163,184,.16); color: #475569; }
+.ra-st-pl { background: rgba(33,170,224,.16); color: #1A6FA0; }
+.ra-st-hd_pl { background: rgba(107,196,232,.18); color: #1A6FA0; }
+.ra-st-upl { background: rgba(237,102,107,.16); color: #B33438; }
+.ra-st-hd_upl { background: rgba(237,102,107,.10); color: #B33438; }
+.ra-st-sl { background: rgba(251,200,75,.18); color: #8C5800; }
+.ra-st-hd_sl { background: rgba(251,200,75,.10); color: #8C5800; }
+.ra-st-wfh { background: rgba(155,89,182,.16); color: #6D2D8A; }
+.ra-st-on_duty { background: rgba(244,137,31,.16); color: #B25C0E; }
+.ra-st-holiday { background: rgba(244,114,182,.16); color: #A1265B; }
+.ra-st-ncns { background: rgba(220,38,38,.20); color: #FFFFFF; background-color: #DC2626; }
+.ra-st-relieved { background: rgba(100,116,139,.16); color: #475569; text-decoration: line-through; }
+.ra-st-absent { background: rgba(220,38,38,.12); color: #B33438; }
+.ra-st-na { background: #F0F3F6; color: #9BAFC0; }
+
+.ra-td-tot {
+  background: #FAFBFC; color: #072B40; font-weight: 700; font-size: 12px;
+  text-align: center; border-bottom: 1px solid #F0F3F6;
+  border-right: 1px solid #E6ECF4; font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Footer bar (save state) ─────────────────────────────────────── */
+.ra-footer-bar {
+  display: flex; align-items: center; gap: 14px; padding: 10px 0; margin-top: 10px;
+  font-size: 11.5px; color: #6B849A;
+}
+.ra-stat { padding: 3px 9px; background: #F0F3F6; border-radius: 50px; }
+.ra-stat-flex { flex: 1; }
+.ra-save-state { font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 50px; }
+.ra-save-state.ra-save-saving { background: rgba(33,170,224,.14); color: #1A6FA0; }
+.ra-save-state.ra-save-ok { background: rgba(45,220,150,.14); color: #0F6F46; }
+.ra-save-state.ra-save-err { background: rgba(237,102,107,.14); color: #B33438; }
+
+/* ── Modal ───────────────────────────────────────────────────────── */
+.ra-modal-backdrop {
+  position: fixed; inset: 0; z-index: 9500;
+  background: rgba(7,43,64,.55); backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: ra-fade-in .18s ease;
+}
+@keyframes ra-fade-in { from { opacity:0; } to { opacity:1; } }
+.ra-modal {
+  background: #FFFFFF; border-radius: 16px; width: 100%;
+  max-width: 460px; box-shadow: 0 24px 64px rgba(0,0,0,.3);
+  font-family: 'Poppins', sans-serif; overflow: hidden;
+  animation: ra-pop .22s cubic-bezier(.22,1,.36,1);
+}
+.ra-modal-wide { max-width: 760px; }
+@keyframes ra-pop { from { opacity:0; transform: translateY(8px) scale(.97); } to { opacity:1; transform: none; } }
+.ra-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; background: linear-gradient(135deg,#072B40,#0D3D5C); color: #FFFFFF;
+}
+.ra-modal-title { font-size: 15px; font-weight: 700; }
+.ra-modal-close {
+  background: rgba(255,255,255,.1); border: none; color: #FFFFFF;
+  width: 28px; height: 28px; border-radius: 50%; font-size: 18px; cursor: pointer;
+  line-height: 1; transition: background .15s;
+}
+.ra-modal-close:hover { background: rgba(255,255,255,.2); }
+.ra-modal-body { padding: 18px 22px; max-height: 60vh; overflow-y: auto; }
+.ra-modal-foot {
+  padding: 14px 22px; background: #F7F8F8; display: flex; gap: 8px; justify-content: flex-end;
+  border-top: 1px solid #E6ECF4;
+}
+
+.ra-form-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.ra-form-row label { flex: 0 0 110px; font-size: 12px; font-weight: 600; color: #3A5068; }
+.ra-form-row input,
+.ra-form-row select,
+.ra-form-row textarea {
+  flex: 1; padding: 7px 10px; border: 1px solid #DEE1E6; border-radius: 7px;
+  font-size: 12px; color: #072B40; font-family: inherit; outline: none;
+  transition: border-color .15s;
+}
+.ra-form-row input:focus,
+.ra-form-row select:focus,
+.ra-form-row textarea:focus { border-color: #F4891F; }
+
+.ra-audit-tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.ra-audit-tbl th { text-align: left; padding: 6px 10px; background: #F7F8F8; color: #6B849A; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; font-size: 10px; border-bottom: 1px solid #E6ECF4; }
+.ra-audit-tbl td { padding: 8px 10px; border-bottom: 1px solid #F4F5F7; color: #3A5068; }
+.ra-audit-tbl tr:hover td { background: #FFF8F0; }

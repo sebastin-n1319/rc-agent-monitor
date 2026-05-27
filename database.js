@@ -1912,6 +1912,7 @@ async function getAlertCounts(){
 }
 
 module.exports={
+  db,  // Session 16: roster.js needs the raw handle to share the same connection
   createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
   upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
   createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,

@@ -344,6 +344,24 @@ initDB().then(async () => {
     const r = await pruneOldData();
     console.log('🧹 Startup prune+vacuum:', JSON.stringify(r));
   } catch(e) { log.error('startup_prune_failed', e); }
+  // Session 16: roster module bootstrap. Shares the sqlite handle so it
+  // sits in the same db file with the rest of the app.
+  try {
+    const { db } = require('./database');
+    const roster = require('./lib/roster');
+    roster.setDB(db);
+    await roster.initSchema();
+    // Auto-seed once if the table is empty and the seed file exists
+    const cnt = await new Promise((res,rej) =>
+      db.get('SELECT COUNT(*) AS n FROM roster_agents', [], (e, row) => e ? rej(e) : res(row.n)));
+    const seedPath = path.join(__dirname, 'data', 'roster-seed.json');
+    if (cnt === 0 && require('fs').existsSync(seedPath)) {
+      const result = await roster.seedFromFile(seedPath);
+      console.log('📋 Roster auto-seeded:', JSON.stringify(result));
+    } else {
+      console.log(`📋 Roster ready — ${cnt} agents already loaded`);
+    }
+  } catch(e) { log.error('roster_init_failed', e); console.error('roster_init_failed', e); }
 });
 
 liveEvents.on('update', payload => broadcastLiveEvent(payload));
@@ -4102,6 +4120,75 @@ app.get('/api/admin/bulk-actions/list', requireAdmin, (req, res) => {
       })[key] || key
     }))
   });
+});
+
+// ── Session 16: Roster management ─────────────────────────────────────────────
+const roster = require('./lib/roster');
+
+app.get('/api/roster/agents', requireAuth, async (req, res) => {
+  try {
+    const rows = await roster.listAgents({ includeRelieved: true });
+    res.json({ success: true, agents: rows });
+  } catch(e) { res.status(500).json({ success:false, error: e.message }); }
+});
+
+app.post('/api/roster/agents', requireAdmin, async (req, res) => {
+  try {
+    const { emp_id, ...fields } = req.body || {};
+    if (!emp_id) return res.status(400).json({ success:false, error:'emp_id required' });
+    const actor = { email: req.session?.email, name: req.session?.user };
+    const a = await roster.upsertAgent(emp_id, fields, actor);
+    res.json({ success: true, agent: a });
+  } catch(e) { res.status(500).json({ success:false, error: e.message }); }
+});
+
+app.get('/api/roster/month/:yyyymm', requireAuth, async (req, res) => {
+  try {
+    const data = await roster.getMonth(req.params.yyyymm);
+    res.json({ success: true, ...data });
+  } catch(e) { res.status(400).json({ success:false, error: e.message }); }
+});
+
+app.post('/api/roster/day', requireAdmin, async (req, res) => {
+  try {
+    const actor = { email: req.session?.email, name: req.session?.user };
+    const out = await roster.setDay(req.body || {}, actor);
+    res.json({ success: true, ...out });
+  } catch(e) { res.status(400).json({ success:false, error: e.message }); }
+});
+
+app.post('/api/roster/bulk', requireAdmin, async (req, res) => {
+  try {
+    const actor = { email: req.session?.email, name: req.session?.user };
+    const updates = req.body?.updates || [];
+    const results = await roster.bulkSet(updates, actor);
+    res.json({ success: true, results, count: results.length });
+  } catch(e) { res.status(400).json({ success:false, error: e.message }); }
+});
+
+app.get('/api/roster/audit', requireAuth, async (req, res) => {
+  try {
+    const rows = await roster.getAudit({
+      limit: req.query.limit,
+      emp_id: req.query.emp_id || null,
+    });
+    res.json({ success: true, events: rows });
+  } catch(e) { res.status(500).json({ success:false, error: e.message }); }
+});
+
+app.get('/api/roster/summary', requireAuth, async (req, res) => {
+  try {
+    const out = await roster.summary({ from: req.query.from, to: req.query.to });
+    res.json({ success: true, ...out });
+  } catch(e) { res.status(500).json({ success:false, error: e.message }); }
+});
+
+app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
+  try {
+    const seedPath = path.join(__dirname, 'data', 'roster-seed.json');
+    const result = await roster.seedFromFile(seedPath);
+    res.json({ success: true, ...result });
+  } catch(e) { res.status(500).json({ success:false, error: e.message }); }
 });
 
 app.use(errorTracker());
