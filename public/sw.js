@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.10.2';  // Session 16.2: Tickets tab — animated bg, ripples, type/flag/sort filters, success burst
+const CACHE_VERSION = 'adit-v1.10.3';  // Session 16.3: Roster — inline CSS so it always renders + empty-state import CTA
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;

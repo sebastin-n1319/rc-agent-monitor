@@ -70,6 +70,47 @@
 
     const { dates, agents, grid } = _data;
 
+    // Session 16.3: empty-state escape hatch — on first deploy the DB may be
+    // empty before the seed runs. Show a clear CTA to import the history.
+    if (!agents || agents.length === 0) {
+      root.innerHTML = `
+        <div class="ra-empty" style="padding:48px 36px;max-width:560px;margin:32px auto;background:#FFFFFF;border:1px solid #E6ECF4;border-radius:18px;box-shadow:0 12px 40px rgba(7,43,64,.08);">
+          <div style="font-size:48px;margin-bottom:14px;line-height:1;">📋</div>
+          <div style="font-size:18px;font-weight:800;color:#072B40;margin-bottom:6px;">No roster data yet</div>
+          <div style="font-size:13px;color:#6B849A;margin-bottom:24px;line-height:1.55;">
+            The history snapshot (53 agents · 30 months from Aug 2023) ships with the
+            app but hasn't been loaded into this database. Click below to import it,
+            or add agents one at a time.
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="ra-btn ra-btn-primary" id="ra-seed-btn">Import history snapshot</button>
+            <button class="ra-btn" id="ra-add-agent-empty">+ Add agent manually</button>
+          </div>
+          <div id="ra-seed-status" style="margin-top:16px;font-size:12px;color:#6B849A;"></div>
+        </div>
+      `;
+      const seedBtn = document.getElementById('ra-seed-btn');
+      const addBtn  = document.getElementById('ra-add-agent-empty');
+      const stEl    = document.getElementById('ra-seed-status');
+      if (seedBtn) seedBtn.onclick = async () => {
+        seedBtn.disabled = true; seedBtn.textContent = 'Importing…';
+        if (stEl) { stEl.style.color='#1A6FA0'; stEl.textContent='Loading 30 months of history into the database…'; }
+        try {
+          const res = await fetch('/api/admin/roster/reseed', { method:'POST', credentials:'include' });
+          const j = await res.json();
+          if (!j.success) throw new Error(j.error || 'Import failed');
+          if (stEl) { stEl.style.color='#0F6F46'; stEl.textContent = `Imported ${j.agentsInserted} agents and ${j.daysInserted} day-records. Reloading…`; }
+          await loadMonth(_currentMonth || currentMonthIso());
+          render();
+        } catch (e) {
+          seedBtn.disabled = false; seedBtn.textContent = 'Retry import';
+          if (stEl) { stEl.style.color='#B33438'; stEl.textContent = 'Import failed: ' + e.message; }
+        }
+      };
+      if (addBtn) addBtn.onclick = openAddAgent;
+      return;
+    }
+
     // Filter to active agents by default but keep relieved at bottom
     const active = agents.filter(a => a.status !== 'relieved');
     const relieved = agents.filter(a => a.status === 'relieved');
