@@ -1,12 +1,14 @@
 /**
- * Adit Agent Monitor — Service Worker v1.5.0 (PWA hardened)
+ * Adit Agent Monitor — Service Worker v1.8.0 (P0 cache-bust)
  *
  * Strategies:
  *   • Shell (HTML/CSS/JS) → stale-while-revalidate from `shell-vN` cache
  *   • Assets (fonts/imgs) → cache-first from `assets-vN`
  *   • API GET            → network-first w/ stale fallback from `api-vN`
  *   • API non-GET        → never cached; offline → 503 (client queues via IDB)
- *   • Navigation         → network with /index.html fallback
+ *   • Navigation         → network-FIRST with /index.html fallback (no SWR
+ *     for navigations — v1.8 changed from stale-while-revalidate to prevent
+ *     stuck old shells reported by agents on 2026-05-27)
  *
  * On activate, every cache NOT in CURRENT_CACHES is deleted, so version
  * bumps cleanly migrate users without leaving stale caches around.
@@ -15,8 +17,15 @@
  *   • 'sync' event with tag 'adit-drain' triggers a drain message to ALL
  *     open clients. The client owns the IDB queue & drains it.
  *   • 'message' event with {type:'drain'} is the manual-trigger path.
+ *
+ * P0 (Session 14 hotfix — 2026-05-27):
+ *   Agents reported "agent view collapsed, pop-up not working, can't use
+ *   break bot or log tickets" after v1.7 rolled out. Repo bytes matched
+ *   production bytes exactly → root cause was stale SW cache holding an
+ *   old shell that no longer matched the deployed modules. v1.8 forces a
+ *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.7.0';  // bump → forces shell refresh after Session 12 deploy
+const CACHE_VERSION = 'adit-v1.8.0';  // P0 hotfix — forced SW reset, Session 14 (2026-05-27)
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
