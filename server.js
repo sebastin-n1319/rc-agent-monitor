@@ -2902,8 +2902,8 @@ app.post('/api/handoff/:id/ack', requireAuth, async (req, res) => {
 app.post('/api/wellness', requireAuth, async (req, res) => {
   try {
     const { mood, note, date } = req.body || {};
-    if (!['great','ok','rough'].includes(mood)) {
-      return res.status(400).json({ success: false, error: 'mood must be great|ok|rough' });
+    if (!['great','ok','rough','skip'].includes(mood)) {
+      return res.status(400).json({ success: false, error: 'mood must be great|ok|rough|skip' });
     }
     const today = date || new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
     await upsertWellness(req.session.email, today, mood, note);

@@ -25611,7 +25611,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
         '<button class="wellness-opt" data-mood="ok">😐<span>OK</span></button>' +
         '<button class="wellness-opt" data-mood="rough">😩<span>Rough</span></button>' +
       '</div>' +
-      '<button class="wellness-skip" onclick="document.getElementById(\'wellness-modal\').remove()">Skip for today</button>' +
+      '<button class="wellness-skip" onclick="wellnessSkip()">Skip for today</button>' +
       '</div>';
     document.body.appendChild(modal);
     modal.querySelectorAll('.wellness-opt').forEach(function(b){
@@ -25624,6 +25624,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
         modal.remove();
       };
     });
+  };
+  window.wellnessSkip = function(){
+    var modal = document.getElementById('wellness-modal');
+    if (modal) modal.remove();
+    // Record skip so popup doesn't reappear today
+    fetch('/api/wellness', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ mood:'skip' }) }).catch(()=>{});
   };
   window.checkWellnessNeeded = function(){
     fetch('/api/wellness/today').then(r => r.json()).then(j => {
