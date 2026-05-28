@@ -259,6 +259,31 @@
 .rx-agent-ctx-item.rx-ctx-success:hover{background:rgba(45,220,150,.1)!important;color:#0F6F46!important}
 .rx-agent-ctx-icon{font-size:14px!important;width:20px!important;text-align:center!important;flex-shrink:0!important}
 .rx-agent-ctx-sep{height:1px!important;background:#F0F3F6!important;margin:4px 0!important}
+/* Quick-pick bar (left-click on cell) */
+.rx-qp{position:fixed!important;z-index:9750!important;background:#fff!important;border:1px solid #E2E8F0!important;border-radius:12px!important;box-shadow:0 8px 28px rgba(7,43,64,.18)!important;display:flex!important;align-items:center!important;gap:3px!important;padding:6px!important;font-family:'Poppins',sans-serif!important;animation:rx-pop-in .1s ease-out!important}
+.rx-qp-btn{display:flex!important;flex-direction:column!important;align-items:center!important;gap:2px!important;padding:6px 8px!important;border:1px solid #E6ECF4!important;border-radius:8px!important;background:#fff!important;cursor:pointer!important;min-width:42px!important;font-family:inherit!important;transition:all .1s!important}
+.rx-qp-btn:hover{transform:translateY(-2px)!important;box-shadow:0 4px 10px rgba(7,43,64,.1)!important;border-color:#F4891F!important}
+.rx-qp-btn.rx-qp-active{border-color:#F4891F!important;box-shadow:0 0 0 2px rgba(244,137,31,.2)!important}
+.rx-qp-code{font-family:'JetBrains Mono',monospace!important;font-weight:800!important;font-size:10px!important;padding:2px 5px!important;border-radius:4px!important;display:block!important}
+.rx-qp-lbl{font-size:8.5px!important;color:#9BAFC0!important;white-space:nowrap!important}
+.rx-qp-sep{width:1px!important;height:36px!important;background:#F0F3F6!important;margin:0 2px!important}
+.rx-qp-clear{display:flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;border:1px solid rgba(237,102,107,.3)!important;border-radius:8px!important;background:transparent!important;cursor:pointer!important;color:#ED666B!important;font-size:14px!important;font-weight:700!important;font-family:inherit!important;transition:all .1s!important}
+.rx-qp-clear:hover{background:rgba(237,102,107,.08)!important}
+.rx-qp-btn.rx-st-present .rx-qp-code{background:rgba(45,220,150,.22)!important;color:#0F6F46!important}
+.rx-qp-btn.rx-st-wfh .rx-qp-code{background:rgba(155,89,182,.22)!important;color:#6D2D8A!important}
+.rx-qp-btn.rx-st-on_duty .rx-qp-code{background:rgba(244,137,31,.22)!important;color:#B25C0E!important}
+.rx-qp-btn.rx-st-off .rx-qp-code{background:rgba(148,163,184,.24)!important;color:#475569!important}
+.rx-qp-btn.rx-st-pl .rx-qp-code{background:rgba(33,170,224,.22)!important;color:#1A6FA0!important}
+.rx-qp-btn.rx-st-upl .rx-qp-code{background:rgba(237,102,107,.22)!important;color:#B33438!important}
+.rx-qp-btn.rx-st-sl .rx-qp-code{background:rgba(251,200,75,.26)!important;color:#8C5800!important}
+.rx-qp-btn.rx-st-ncns .rx-qp-code{background:#DC2626!important;color:#fff!important}
+.rx-qp-btn.rx-st-holiday .rx-qp-code{background:rgba(244,114,182,.22)!important;color:#A1265B!important}
+/* Table alignment fixes */
+#roster-admin-root .rx-name{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:180px!important}
+#roster-admin-root .rx-meta{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:180px!important}
+#roster-admin-root .rx-avatar{min-width:30px!important}
+#roster-admin-root .rx-td-tot{vertical-align:middle!important;text-align:center!important}
+#roster-admin-root .rx-grid tbody tr{height:40px!important}
 `;
     document.head.appendChild(s);
   })();
@@ -290,8 +315,35 @@
     { label: 'Issues', statuses: ['ncns', 'absent'] },
   ];
 
-  // Left-click cycle: P → WFH → OFF → clear
-  const CYCLE = ['present', 'wfh', 'off', ''];
+  // Quick-pick statuses (left-click on cell) — ordered by frequency
+  const QUICK_PICK = [
+    { s: 'present',  label: 'P',    name: 'Present'    },
+    { s: 'wfh',      label: 'WFH',  name: 'WFH'        },
+    { s: 'on_duty',  label: 'OD',   name: 'On Duty'    },
+    { s: 'off',      label: 'OFF',  name: 'Week Off'   },
+    { s: 'holiday',  label: 'HOL',  name: 'Holiday'    },
+    { s: 'pl',       label: 'PL',   name: 'Paid Leave' },
+    { s: 'sl',       label: 'SL',   name: 'Sick Leave' },
+    { s: 'upl',      label: 'UPL',  name: 'Unpaid'     },
+    { s: 'ncns',     label: 'NCNS', name: 'No Show'    },
+  ];
+
+  // Predefined shift options (all IST, 9 hours each)
+  const SHIFT_OPTIONS = [
+    { group: 'IST Morning (CST Overnight)', shifts: [
+      '6:30 AM - 3:30 PM',
+      '7:30 AM - 4:30 PM',
+      '8:30 AM - 5:30 PM',
+      '9:30 AM - 6:30 PM',
+    ]},
+    { group: 'IST Evening (CST Business Day)', shifts: [
+      '5:30 PM - 2:30 AM',
+      '6:30 PM - 3:30 AM',
+      '7:30 PM - 4:30 AM',
+      '8:30 PM - 5:30 AM',
+      '9:30 PM - 6:30 AM',
+    ]},
+  ];
 
   /* ══════════════════════════════════════════════════════════
      STATE
@@ -601,7 +653,7 @@
     ${PALETTE_GROUPS.map(g => g.statuses.map(s =>
       `<span class="rx-lg rx-st-${s}"><span class="rx-lg-code">${STATUS_LABEL[s]}</span><span class="rx-lg-name">${STATUS_LONG[s]}</span></span>`
     ).join('')).join('')}
-    <span class="rx-lg-tip">Left-click cycles P→WFH→OFF→clear · Right-click cell for full palette · Right-click agent name for status actions · Click date header to fill column</span>
+    <span class="rx-lg-tip">Click cell → quick-pick all statuses · Right-click cell → full palette · Right-click agent name → status actions · Click date header → fill column</span>
   </div>
 
   <!-- GRID -->
@@ -756,7 +808,7 @@
 
     // Cell left-click: cycle, right-click: palette
     $$('.rx-cell', root).forEach(cell => {
-      cell.addEventListener('click', ev => { ev.preventDefault(); cycleCell(cell); });
+      cell.addEventListener('click', ev => { ev.preventDefault(); openQuickPick(cell, ev); });
       cell.addEventListener('contextmenu', ev => { ev.preventDefault(); openPalette(cell, ev); });
     });
 
@@ -803,11 +855,49 @@
   /* ══════════════════════════════════════════════════════════
      CELL INTERACTIONS
   ══════════════════════════════════════════════════════════ */
-  function cycleCell(cell) {
-    const cur = cell.dataset.status || '';
-    const idx = CYCLE.indexOf(cur);
-    const next = CYCLE[(idx + 1) % CYCLE.length];
-    applyCell(cell, next);
+  function openQuickPick(cell, ev) {
+    // Remove any existing quick-pick
+    const old = document.getElementById('rx-qp');
+    if (old) { old.remove(); return; }
+
+    const curStatus = cell.dataset.status || '';
+    const qp = document.createElement('div');
+    qp.className = 'rx-qp';
+    qp.id = 'rx-qp';
+
+    const batchBtns = QUICK_PICK.map(({ s, label, name }) => `
+      <button class="rx-qp-btn rx-st-${s} ${s === curStatus ? 'rx-qp-active' : ''}" data-s="${s}" title="${name}">
+        <span class="rx-qp-code">${label}</span>
+        <span class="rx-qp-lbl">${name}</span>
+      </button>`).join('');
+
+    qp.innerHTML = `${batchBtns}<div class="rx-qp-sep"></div><button class="rx-qp-clear" data-s="" title="Clear">✕</button>`;
+    document.body.appendChild(qp);
+
+    // Position below cell, inside viewport
+    const rect = cell.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const qpW = qp.offsetWidth || 480, qpH = qp.offsetHeight || 70;
+    let top = rect.bottom + 4;
+    let left = rect.left + rect.width / 2 - qpW / 2;
+    if (top + qpH > vh) top = rect.top - qpH - 4;
+    if (left + qpW > vw - 8) left = vw - qpW - 8;
+    if (left < 8) left = 8;
+    qp.style.cssText = `top:${top}px;left:${left}px`;
+
+    qp.querySelectorAll('[data-s]').forEach(btn => {
+      btn.onclick = e => { e.stopPropagation(); applyCell(cell, btn.dataset.s); qp.remove(); };
+    });
+
+    // Dismiss on outside click or Escape
+    const dismiss = e => {
+      if (!qp.contains(e.target) && e.target !== cell) { qp.remove(); document.removeEventListener('mousedown', dismiss); }
+    };
+    const keyDismiss = e => { if (e.key === 'Escape') { qp.remove(); document.removeEventListener('keydown', keyDismiss); } };
+    setTimeout(() => {
+      document.addEventListener('mousedown', dismiss);
+      document.addEventListener('keydown', keyDismiss);
+    }, 50);
   }
 
   function applyCell(cell, status) {
@@ -1125,7 +1215,18 @@
       <div class="rx-form"><label>Email</label><input id="rx-f-email" type="email" value="${esc(a.email || '')}"></div>
       <div class="rx-form"><label>Designation</label><input id="rx-f-designation" value="${esc(a.designation || '')}"></div>
       <div class="rx-form"><label>Date of Join</label><input id="rx-f-doj" type="date" value="${esc(a.doj || '')}"></div>
-      <div class="rx-form"><label>Shift</label><input id="rx-f-shift" placeholder="e.g. 8:30 AM – 5:30 PM" value="${esc(a.shift || '')}"></div>
+      <div class="rx-form"><label>Shift (IST)</label>
+        <select id="rx-f-shift">
+          <option value="">— Select shift —</option>
+          ${SHIFT_OPTIONS.map(g => `<optgroup label="${g.group}">
+            ${g.shifts.map(sh => `<option value="${sh}" ${(a.shift || '').replace(/\./g,':').replace(/\s+/g,' ').trim() === sh ? 'selected' : ''}>${sh} IST (9 hrs)</option>`).join('')}
+          </optgroup>`).join('')}
+          <option value="__custom__" ${a.shift && !SHIFT_OPTIONS.flatMap(g=>g.shifts).includes((a.shift||'').replace(/\./g,':').replace(/\s+/g,' ').trim()) ? 'selected' : ''}>Other / Custom…</option>
+        </select>
+      </div>
+      <div class="rx-form" id="rx-shift-custom-row" style="display:${a.shift && !SHIFT_OPTIONS.flatMap(g=>g.shifts).includes((a.shift||'').replace(/\./g,':').replace(/\s+/g,' ').trim()) ? 'flex' : 'none'}">
+        <label>Custom shift</label><input id="rx-f-shift-custom" placeholder="e.g. 10:30 PM – 7:30 AM" value="${esc(a.shift || '')}">
+      </div>
       <div class="rx-form"><label>Status</label>
         <select id="rx-f-status">
           <option value="active" ${a.status === 'active' || !a.status ? 'selected' : ''}>Active</option>
@@ -1167,7 +1268,11 @@
         email: $('#rx-f-email').value.trim().toLowerCase() || null,
         designation: $('#rx-f-designation').value.trim() || null,
         doj: $('#rx-f-doj').value || null,
-        shift: $('#rx-f-shift').value.trim() || null,
+        shift: (() => {
+          const sel = $('#rx-f-shift').value;
+          if (!sel || sel === '__custom__') return ($('#rx-f-shift-custom')?.value || '').trim() || null;
+          return sel;
+        })(),
         status: $('#rx-f-status').value,
       };
       if (!body.emp_id) { alert('Emp ID is required'); return; }
@@ -1183,6 +1288,14 @@
         await loadMonth(_s.month); render();
       } catch (e) { alert('Save failed: ' + e.message); }
     };
+    // Show/hide custom shift row
+    const shiftSel = $('#rx-f-shift');
+    if (shiftSel) {
+      shiftSel.onchange = () => {
+        const row = document.getElementById('rx-shift-custom-row');
+        if (row) row.style.display = shiftSel.value === '__custom__' ? 'flex' : 'none';
+      };
+    }
   }
 
   /* ══════════════════════════════════════════════════════════

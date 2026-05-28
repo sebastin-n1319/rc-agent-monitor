@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.16.0';  // Session 17.4: Roster grid polish — avatars, stat pills, today highlight
+const CACHE_VERSION = 'adit-v1.17.0';  // Session 17.5: Quick-pick popup, shift dropdown, alignment fixes
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
