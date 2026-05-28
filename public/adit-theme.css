@@ -7413,7 +7413,6 @@ input:focus, select:focus, textarea:focus {
 
 /* ── Sidebar / header — glassy shimmer edge ──────────────────── */
 #mainApp header {
-  position: relative;
   overflow: hidden;
 }
 #mainApp header::after {
