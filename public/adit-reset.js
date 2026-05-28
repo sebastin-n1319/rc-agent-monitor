@@ -9,7 +9,7 @@
 (function () {
   'use strict';
 
-  var KEEP_STYLE_IDS = { 'auth-gate-css': true, 'ui-engine-css': true, 'a11y-css': true };
+  var KEEP_STYLE_IDS = { 'auth-gate-css': true, 'ui-engine-css': true, 'a11y-css': true, 'rx-injected-css': true };
   var KEEP_HREF_FRAGMENTS = [
     'fonts.googleapis.com',
     'fonts.gstatic.com',
@@ -21,6 +21,7 @@
     'offline-bridge.css',
     'bulk-actions.css',
     'predict-center.css',
+    'roster-admin.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
