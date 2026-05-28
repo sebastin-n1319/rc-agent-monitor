@@ -211,6 +211,38 @@
 .rx-audit-tbl{width:100%!important;border-collapse:collapse!important;font-size:11.5px!important}
 .rx-audit-tbl th{text-align:left!important;padding:9px 12px!important;background:#F7F9FB!important;color:#6B849A!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.04em!important;font-size:9.5px!important;border-bottom:1px solid #E6ECF4!important}
 .rx-audit-tbl td{padding:9px 12px!important;border-bottom:1px solid #F4F5F7!important;color:#3A5068!important}
+/* Avatar + name row */
+#roster-admin-root .rx-name-row{display:flex!important;align-items:center!important;gap:9px!important}
+#roster-admin-root .rx-avatar{width:30px!important;height:30px!important;border-radius:50%!important;flex-shrink:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:10.5px!important;font-weight:800!important;color:#fff!important;letter-spacing:.02em!important;text-shadow:0 1px 2px rgba(0,0,0,.2)!important}
+#roster-admin-root .rx-name-info{min-width:0!important}
+#roster-admin-root .rx-name-dot{display:inline-block!important;width:7px!important;height:7px!important;border-radius:50%!important;margin-right:5px!important;vertical-align:middle!important;flex-shrink:0!important}
+#roster-admin-root .rx-dot-leave{background:#FBC84B!important}
+#roster-admin-root .rx-dot-rel{background:#94A3B8!important}
+/* On-leave row tint */
+#roster-admin-root .rx-row-leave{background:rgba(251,200,75,.04)!important}
+#roster-admin-root .rx-row-leave .rx-td-name{border-left:3px solid #FBC84B!important}
+/* Today column — full column highlight */
+#roster-admin-root .rx-cell.rx-t{background:rgba(33,170,224,.08)!important;box-shadow:inset 0 -3px 0 #21AAE0!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-present{background:rgba(45,220,150,.22)!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-wfh{background:rgba(155,89,182,.18)!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-off{background:rgba(148,163,184,.18)!important}
+/* Taller cells */
+#roster-admin-root .rx-cell{height:36px!important}
+#roster-admin-root .rx-td-name{padding:10px 14px!important}
+/* Stat pill badges */
+#roster-admin-root .rx-stat-nil{color:#C8D4DF!important;font-size:11px!important}
+#roster-admin-root .rx-stat-p,#roster-admin-root .rx-stat-wfh,#roster-admin-root .rx-stat-od,#roster-admin-root .rx-stat-off,#roster-admin-root .rx-stat-pl,#roster-admin-root .rx-stat-upl,#roster-admin-root .rx-stat-sl,#roster-admin-root .rx-stat-ncns{display:inline-block!important;min-width:22px!important;padding:1px 5px!important;border-radius:5px!important;font-weight:800!important;font-size:10.5px!important;font-family:'JetBrains Mono',monospace!important;text-align:center!important}
+#roster-admin-root .rx-stat-p{background:rgba(45,220,150,.18)!important;color:#0F6F46!important}
+#roster-admin-root .rx-stat-wfh{background:rgba(155,89,182,.16)!important;color:#6D2D8A!important}
+#roster-admin-root .rx-stat-od{background:rgba(244,137,31,.16)!important;color:#B25C0E!important}
+#roster-admin-root .rx-stat-off{background:rgba(148,163,184,.16)!important;color:#475569!important}
+#roster-admin-root .rx-stat-pl{background:rgba(33,170,224,.16)!important;color:#1A6FA0!important}
+#roster-admin-root .rx-stat-upl{background:rgba(237,102,107,.16)!important;color:#B33438!important}
+#roster-admin-root .rx-stat-sl{background:rgba(251,200,75,.22)!important;color:#8C5800!important}
+#roster-admin-root .rx-stat-ncns{background:#DC2626!important;color:#fff!important}
+/* Wider name column */
+#roster-admin-root .rx-th-name{min-width:260px!important}
+#roster-admin-root .rx-td-name{min-width:260px!important}
 @media(max-width:900px){#roster-admin-root .rx-kpis{grid-template-columns:repeat(2,1fr)!important}#roster-admin-root .rx-toolbar{flex-direction:column!important;align-items:stretch!important}}
 .rx-agent-ctx{position:fixed!important;z-index:9800!important;background:#fff!important;border:1px solid #E2E8F0!important;border-radius:12px!important;box-shadow:0 12px 40px rgba(7,43,64,.18)!important;min-width:220px!important;overflow:hidden!important;animation:rx-pop-in .12s ease-out!important;font-family:'Poppins',sans-serif!important}
 .rx-agent-ctx-header{padding:10px 14px 8px!important;border-bottom:1px solid #F0F3F6!important;background:#F7F9FB!important}
@@ -456,8 +488,13 @@
     // Coverage summary row
     let covRowHtml = `<tr class="rx-cov-row">
       <td class="rx-td-name rx-cov-label">
-        <div class="rx-name" style="font-size:11px;color:#6B849A;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Coverage</div>
-        <div class="rx-meta">P · WFH · OD per day</div>
+        <div class="rx-name-row">
+          <div class="rx-avatar" style="background:#1A4F6E;font-size:9px;">📊</div>
+          <div class="rx-name-info">
+            <div class="rx-name" style="font-size:11px;color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Coverage</div>
+            <div class="rx-meta" style="color:rgba(255,255,255,.4)">P · WFH · OD per day</div>
+          </div>
+        </div>
       </td>`;
     for (const d of dates) {
       const c = dayCov[d] || {};
@@ -633,20 +670,34 @@
       ? `<span class="rx-att-pct ${stats.pct >= 70 ? 'rx-att-good' : stats.pct >= 40 ? 'rx-att-mid' : 'rx-att-low'}">${stats.pct}%</span>`
       : '—';
 
-    return `<tr class="rx-row ${a.status === 'relieved' ? 'rx-row-relieved' : ''}" data-emp="${esc(a.emp_id)}">
+    // Avatar initials + color
+    const displayName = a.pseudo || a.full_name || a.emp_id;
+    const initials = displayName.split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+    const avatarHue = Math.abs([...a.emp_id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
+    const avatarBg = `hsl(${avatarHue},52%,42%)`;
+    const statusDot = a.status === 'on_leave' ? '<span class="rx-name-dot rx-dot-leave" title="On Extended Leave"></span>'
+                    : a.status === 'relieved'  ? '<span class="rx-name-dot rx-dot-rel" title="Relieved"></span>'
+                    : '';
+
+    return `<tr class="rx-row ${a.status === 'relieved' ? 'rx-row-relieved' : ''} ${a.status === 'on_leave' ? 'rx-row-leave' : ''}" data-emp="${esc(a.emp_id)}">
       <td class="rx-td-name" title="Double-click to edit · Right-click for quick actions">
-        <div class="rx-name">${esc(a.pseudo || a.full_name || a.emp_id)}</div>
-        <div class="rx-meta">${esc(a.emp_id)}${a.designation ? ' · ' + esc(a.designation.replace('Technical Support Representative','TSR').replace('Technical Support','TS')) : ''}${a.shift ? ' · <em>' + esc(a.shift) + '</em>' : ''}</div>
+        <div class="rx-name-row">
+          <div class="rx-avatar" style="background:${avatarBg}">${initials}</div>
+          <div class="rx-name-info">
+            <div class="rx-name">${statusDot}${esc(displayName)}</div>
+            <div class="rx-meta">${esc(a.emp_id)}${a.designation ? ' · ' + esc(a.designation.replace('Technical Support Representative','TSR').replace('Technical Support','TS')) : ''}${a.shift ? ' · <em>' + esc(a.shift) + '</em>' : ''}</div>
+          </div>
+        </div>
       </td>
       ${cells}
-      <td class="rx-td-tot rx-tot-p">${stats.p || '—'}</td>
-      <td class="rx-td-tot rx-tot-wfh">${stats.wfh || '—'}</td>
-      <td class="rx-td-tot rx-tot-od">${stats.od || '—'}</td>
-      <td class="rx-td-tot">${stats.off || '—'}</td>
-      <td class="rx-td-tot rx-tot-pl">${stats.pl || '—'}</td>
-      <td class="rx-td-tot rx-tot-upl">${stats.upl || '—'}</td>
-      <td class="rx-td-tot rx-tot-sl">${stats.sl || '—'}</td>
-      <td class="rx-td-tot rx-tot-ncns">${stats.ncns || '—'}</td>
+      <td class="rx-td-tot rx-tot-p">${stats.p ? `<span class="rx-stat-p">${stats.p}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot rx-tot-wfh">${stats.wfh ? `<span class="rx-stat-wfh">${stats.wfh}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot rx-tot-od">${stats.od ? `<span class="rx-stat-od">${stats.od}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot">${stats.off ? `<span class="rx-stat-off">${stats.off}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot rx-tot-pl">${stats.pl ? `<span class="rx-stat-pl">${stats.pl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot rx-tot-upl">${stats.upl ? `<span class="rx-stat-upl">${stats.upl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot rx-tot-sl">${stats.sl ? `<span class="rx-stat-sl">${stats.sl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+      <td class="rx-td-tot rx-tot-ncns">${stats.ncns ? `<span class="rx-stat-ncns">${stats.ncns}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
       <td class="rx-td-tot rx-td-att">${attHtml}</td>
     </tr>`;
   }
