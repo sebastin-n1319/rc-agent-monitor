@@ -212,6 +212,21 @@
 .rx-audit-tbl th{text-align:left!important;padding:9px 12px!important;background:#F7F9FB!important;color:#6B849A!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.04em!important;font-size:9.5px!important;border-bottom:1px solid #E6ECF4!important}
 .rx-audit-tbl td{padding:9px 12px!important;border-bottom:1px solid #F4F5F7!important;color:#3A5068!important}
 @media(max-width:900px){#roster-admin-root .rx-kpis{grid-template-columns:repeat(2,1fr)!important}#roster-admin-root .rx-toolbar{flex-direction:column!important;align-items:stretch!important}}
+.rx-agent-ctx{position:fixed!important;z-index:9800!important;background:#fff!important;border:1px solid #E2E8F0!important;border-radius:12px!important;box-shadow:0 12px 40px rgba(7,43,64,.18)!important;min-width:220px!important;overflow:hidden!important;animation:rx-pop-in .12s ease-out!important;font-family:'Poppins',sans-serif!important}
+.rx-agent-ctx-header{padding:10px 14px 8px!important;border-bottom:1px solid #F0F3F6!important;background:#F7F9FB!important}
+.rx-agent-ctx-name{font-size:12px!important;font-weight:700!important;color:#072B40!important;display:block!important}
+.rx-agent-ctx-id{font-size:10px!important;color:#9BAFC0!important;font-family:'JetBrains Mono',monospace!important;display:block!important;margin-top:1px!important}
+.rx-agent-ctx-status{display:inline-block!important;padding:1px 7px!important;border-radius:50px!important;font-size:9.5px!important;font-weight:700!important;margin-top:4px!important}
+.rx-agent-ctx-status.s-active{background:rgba(45,220,150,.18)!important;color:#0F6F46!important}
+.rx-agent-ctx-status.s-relieved{background:rgba(148,163,184,.2)!important;color:#475569!important}
+.rx-agent-ctx-status.s-on_leave{background:rgba(251,200,75,.22)!important;color:#8C5800!important}
+.rx-agent-ctx-body{padding:6px!important}
+.rx-agent-ctx-item{display:flex!important;align-items:center!important;gap:10px!important;padding:8px 10px!important;border-radius:8px!important;cursor:pointer!important;font-size:12.5px!important;color:#3A5068!important;border:none!important;background:transparent!important;width:100%!important;text-align:left!important;font-family:inherit!important;transition:background .1s!important}
+.rx-agent-ctx-item:hover{background:#F4F7FA!important;color:#072B40!important}
+.rx-agent-ctx-item.rx-ctx-danger:hover{background:rgba(237,102,107,.08)!important;color:#B33438!important}
+.rx-agent-ctx-item.rx-ctx-success:hover{background:rgba(45,220,150,.1)!important;color:#0F6F46!important}
+.rx-agent-ctx-icon{font-size:14px!important;width:20px!important;text-align:center!important;flex-shrink:0!important}
+.rx-agent-ctx-sep{height:1px!important;background:#F0F3F6!important;margin:4px 0!important}
 `;
     document.head.appendChild(s);
   })();
@@ -549,7 +564,7 @@
     ${PALETTE_GROUPS.map(g => g.statuses.map(s =>
       `<span class="rx-lg rx-st-${s}"><span class="rx-lg-code">${STATUS_LABEL[s]}</span><span class="rx-lg-name">${STATUS_LONG[s]}</span></span>`
     ).join('')).join('')}
-    <span class="rx-lg-tip">Left-click cycles P→WFH→OFF→clear · Right-click for full palette · Click date header to fill column</span>
+    <span class="rx-lg-tip">Left-click cycles P→WFH→OFF→clear · Right-click cell for full palette · Right-click agent name for status actions · Click date header to fill column</span>
   </div>
 
   <!-- GRID -->
@@ -619,7 +634,7 @@
       : '—';
 
     return `<tr class="rx-row ${a.status === 'relieved' ? 'rx-row-relieved' : ''}" data-emp="${esc(a.emp_id)}">
-      <td class="rx-td-name" title="Double-click to edit">
+      <td class="rx-td-name" title="Double-click to edit · Right-click for quick actions">
         <div class="rx-name">${esc(a.pseudo || a.full_name || a.emp_id)}</div>
         <div class="rx-meta">${esc(a.emp_id)}${a.designation ? ' · ' + esc(a.designation.replace('Technical Support Representative','TSR').replace('Technical Support','TS')) : ''}${a.shift ? ' · <em>' + esc(a.shift) + '</em>' : ''}</div>
       </td>
@@ -701,13 +716,20 @@
       });
     });
 
-    // Double-click agent name: edit
+    // Double-click agent name: edit | Right-click: context menu
     $$('.rx-td-name', root).forEach(td => {
       td.addEventListener('dblclick', () => {
         const empId = td.closest('tr')?.dataset?.emp;
         if (empId && _s.data) {
           const agent = _s.data.agents.find(a => a.emp_id === empId);
           if (agent) openEditAgent(agent);
+        }
+      });
+      td.addEventListener('contextmenu', ev => {
+        const empId = td.closest('tr')?.dataset?.emp;
+        if (empId && _s.data) {
+          const agent = _s.data.agents.find(a => a.emp_id === empId);
+          if (agent) openAgentCtx(agent, ev);
         }
       });
     });
@@ -936,6 +958,108 @@
     const el = $('#rx-save-state'); if (!el) return;
     el.className = 'rx-save-state rx-save-' + kind;
     el.textContent = msg;
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     AGENT CONTEXT MENU (right-click on agent name)
+  ══════════════════════════════════════════════════════════ */
+  function openAgentCtx(agent, ev) {
+    ev.preventDefault();
+    // Remove any existing context menu
+    const old = document.getElementById('rx-agent-ctx');
+    if (old) old.remove();
+
+    const status = agent.status || 'active';
+    const statusLabel = { active: 'Active', relieved: 'Relieved', on_leave: 'On Leave' }[status] || status;
+    const statusCls = `s-${status}`;
+    const isActive = status === 'active' || status === '';
+    const isRelieved = status === 'relieved';
+    const isOnLeave = status === 'on_leave';
+
+    const ctx = document.createElement('div');
+    ctx.className = 'rx-agent-ctx';
+    ctx.id = 'rx-agent-ctx';
+    ctx.innerHTML = `
+      <div class="rx-agent-ctx-header">
+        <span class="rx-agent-ctx-name">${esc(agent.pseudo || agent.full_name || agent.emp_id)}</span>
+        <span class="rx-agent-ctx-id">${esc(agent.emp_id)}${agent.designation ? ' · ' + esc(agent.designation.replace('Technical Support Representative','TSR')) : ''}</span>
+        <span class="rx-agent-ctx-status ${statusCls}">${statusLabel}</span>
+      </div>
+      <div class="rx-agent-ctx-body">
+        ${!isRelieved ? `<button class="rx-agent-ctx-item rx-ctx-danger" data-action="relieved">
+          <span class="rx-agent-ctx-icon">🚫</span> Mark as Relieved
+        </button>` : ''}
+        ${!isOnLeave ? `<button class="rx-agent-ctx-item" data-action="on_leave">
+          <span class="rx-agent-ctx-icon">🏖️</span> Mark on Extended Leave
+        </button>` : ''}
+        ${!isActive ? `<button class="rx-agent-ctx-item rx-ctx-success" data-action="active">
+          <span class="rx-agent-ctx-icon">✅</span> Reactivate
+        </button>` : ''}
+        <div class="rx-agent-ctx-sep"></div>
+        <button class="rx-agent-ctx-item" data-action="edit">
+          <span class="rx-agent-ctx-icon">✏️</span> Edit Details
+        </button>
+      </div>`;
+
+    document.body.appendChild(ctx);
+
+    // Position near cursor, keep inside viewport
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let x = ev.clientX + 4, y = ev.clientY + 4;
+    const ctxW = 224, ctxH = ctx.offsetHeight || 180;
+    if (x + ctxW > vw) x = ev.clientX - ctxW - 4;
+    if (y + ctxH > vh) y = ev.clientY - ctxH - 4;
+    ctx.style.cssText = `left:${Math.max(8, x)}px;top:${Math.max(8, y)}px`;
+
+    ctx.querySelectorAll('[data-action]').forEach(btn => {
+      btn.onclick = async () => {
+        const action = btn.dataset.action;
+        ctx.remove();
+        if (action === 'edit') { openEditAgent(agent); return; }
+        await quickSetStatus(agent, action);
+      };
+    });
+
+    // Dismiss on outside click
+    setTimeout(() => {
+      const dismiss = e => {
+        if (!ctx.contains(e.target)) { ctx.remove(); document.removeEventListener('mousedown', dismiss); }
+      };
+      document.addEventListener('mousedown', dismiss);
+    }, 50);
+  }
+
+  async function quickSetStatus(agent, newStatus) {
+    // Optimistic update in _s.data
+    if (_s.data) {
+      const a = _s.data.agents.find(x => x.emp_id === agent.emp_id);
+      if (a) a.status = newStatus;
+    }
+    render();
+
+    try {
+      const r = await fetch('/api/roster/agents', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emp_id: agent.emp_id, status: newStatus }),
+      });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.error || 'Update failed');
+      // Sync back from server
+      if (j.agent && _s.data) {
+        const idx = _s.data.agents.findIndex(x => x.emp_id === agent.emp_id);
+        if (idx !== -1) _s.data.agents[idx] = { ..._s.data.agents[idx], ...j.agent };
+      }
+      setSaveState('ok', `✅ ${agent.pseudo || agent.emp_id} → ${newStatus}`);
+    } catch(e) {
+      // Rollback
+      if (_s.data) {
+        const a = _s.data.agents.find(x => x.emp_id === agent.emp_id);
+        if (a) a.status = agent.status;
+      }
+      render();
+      setSaveState('err', '❌ ' + e.message);
+    }
   }
 
   /* ══════════════════════════════════════════════════════════
