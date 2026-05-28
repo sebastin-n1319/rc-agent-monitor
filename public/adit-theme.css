@@ -7250,3 +7250,278 @@ html.dark-mode select {
 }
 html.dark-mode ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); }
 
+
+/* ════════════════════════════════════════════════════════════════
+   FUTURISTIC ANIMATIONS & TRANSITIONS — v1.18.0
+   Scan lines · glows · slide-ins · stagger reveals · pulse rings
+════════════════════════════════════════════════════════════════ */
+
+/* ── Keyframes ────────────────────────────────────────────────── */
+@keyframes fx-fadeUp   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fx-fadeIn   { from{opacity:0} to{opacity:1} }
+@keyframes fx-scaleIn  { from{opacity:0;transform:scale(.92)} to{opacity:1;transform:scale(1)} }
+@keyframes fx-slideRight{ from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes fx-slideLeft { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+
+@keyframes fx-pulseRing {
+  0%   { box-shadow:0 0 0 0 rgba(244,137,31,.45); }
+  70%  { box-shadow:0 0 0 10px rgba(244,137,31,0); }
+  100% { box-shadow:0 0 0 0 rgba(244,137,31,0); }
+}
+@keyframes fx-tealPulse {
+  0%   { box-shadow:0 0 0 0 rgba(33,170,224,.45); }
+  70%  { box-shadow:0 0 0 10px rgba(33,170,224,0); }
+  100% { box-shadow:0 0 0 0 rgba(33,170,224,0); }
+}
+@keyframes fx-scan {
+  0%   { transform:translateY(-100%); }
+  100% { transform:translateY(100vh); }
+}
+@keyframes fx-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+@keyframes fx-borderGlow {
+  0%,100% { border-color:rgba(244,137,31,.3); box-shadow:0 0 0 rgba(244,137,31,0); }
+  50%     { border-color:rgba(244,137,31,.8); box-shadow:0 0 12px rgba(244,137,31,.25); }
+}
+@keyframes fx-iconSpin {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+@keyframes fx-countUp {
+  from { opacity:0; transform:translateY(10px) scale(.85); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes fx-tabIndicator {
+  from { transform:scaleX(0); }
+  to   { transform:scaleX(1); }
+}
+@keyframes fx-statusBlink {
+  0%,100% { opacity:1; }
+  50%     { opacity:.4; }
+}
+@keyframes fx-orbPulse {
+  0%,100% { transform:scale(1);   opacity:.7; }
+  50%     { transform:scale(1.15);opacity:1; }
+}
+
+/* ── Tab switching — smooth slide ─────────────────────────────── */
+.tab-content-panel, [id$="-panel"], .section-panel {
+  animation: fx-fadeUp .32s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Nav tab underline — animated from center */
+.nav-tab::after {
+  transform-origin: center !important;
+  transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s !important;
+}
+.nav-tab:not(.active)::after { transform:scaleX(0) !important; opacity:0; }
+.nav-tab.active::after       { transform:scaleX(1) !important; opacity:1; }
+
+/* Tab button active bar slides in */
+.tab-btn {
+  transition: color .2s, border-color .28s cubic-bezier(.22,1,.36,1) !important;
+  position: relative;
+}
+.tab-btn::after {
+  content:'';
+  position:absolute;
+  bottom:-1px; left:50%; right:50%;
+  height:2px;
+  background:#F4891F;
+  border-radius:2px;
+  transition: left .28s cubic-bezier(.22,1,.36,1), right .28s cubic-bezier(.22,1,.36,1);
+}
+.tab-btn.active::after { left:0; right:0; }
+
+/* ── Cards — entrance + hover lift ───────────────────────────── */
+.card, .metric, .kpi-card, .stat-card, [class*="card-"] {
+  transition:
+    transform .22s cubic-bezier(.22,1,.36,1),
+    box-shadow .22s cubic-bezier(.22,1,.36,1) !important;
+}
+.card:hover, .metric:hover, .kpi-card:hover, .stat-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 10px 32px rgba(7,43,64,.14) !important;
+}
+
+/* ── Buttons — micro-press + glow ────────────────────────────── */
+button, .btn, [class*="btn-"] {
+  transition:
+    background .18s, color .18s, border-color .18s,
+    transform .14s cubic-bezier(.22,1,.36,1),
+    box-shadow .18s !important;
+}
+button:active, .btn:active {
+  transform: scale(.95) !important;
+}
+
+/* Primary action buttons — orange pulse ring on hover */
+.btn-primary, [class*="btn-orange"], button.primary {
+  position:relative;
+}
+.btn-primary:focus-visible {
+  animation: fx-pulseRing .8s ease-out;
+}
+
+/* ── Status badges / pills — live blink when "active" ─────────── */
+.status-dot[data-status="available"],
+.status-dot[data-status="online"],
+.agent-status-dot.green,
+span.dot-green {
+  animation: fx-statusBlink 2.4s ease-in-out infinite;
+}
+
+/* ── Live counter numbers — count-up reveal ──────────────────── */
+.metric-value, .kpi-num, .stat-num, .count-val {
+  animation: fx-countUp .45s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Table rows — staggered entrance ─────────────────────────── */
+table tbody tr {
+  animation: fx-fadeUp .28s cubic-bezier(.22,1,.36,1) both;
+  transition: background .15s !important;
+}
+table tbody tr:nth-child(1)  { animation-delay:.02s }
+table tbody tr:nth-child(2)  { animation-delay:.04s }
+table tbody tr:nth-child(3)  { animation-delay:.06s }
+table tbody tr:nth-child(4)  { animation-delay:.08s }
+table tbody tr:nth-child(5)  { animation-delay:.10s }
+table tbody tr:nth-child(6)  { animation-delay:.12s }
+table tbody tr:nth-child(7)  { animation-delay:.14s }
+table tbody tr:nth-child(8)  { animation-delay:.16s }
+table tbody tr:nth-child(9)  { animation-delay:.18s }
+table tbody tr:nth-child(10) { animation-delay:.20s }
+table tbody tr:nth-child(n+11) { animation-delay:.22s }
+
+/* ── Modal / dialog entrance ─────────────────────────────────── */
+.modal, .dialog, [class*="modal-"], [role="dialog"] {
+  animation: fx-scaleIn .28s cubic-bezier(.22,1,.36,1) both !important;
+}
+.modal-backdrop, .overlay, [class*="overlay-"] {
+  animation: fx-fadeIn .2s ease both !important;
+}
+
+/* ── Input focus — teal glow ──────────────────────────────────── */
+input:focus, select:focus, textarea:focus {
+  box-shadow: 0 0 0 3px rgba(33,170,224,.18), 0 0 12px rgba(33,170,224,.1) !important;
+  border-color: rgba(33,170,224,.6) !important;
+  transition: box-shadow .2s, border-color .2s !important;
+  outline: none !important;
+}
+
+/* ── Sidebar / header — glassy shimmer edge ──────────────────── */
+#mainApp header {
+  position: relative;
+  overflow: hidden;
+}
+#mainApp header::after {
+  content:'';
+  position:absolute;
+  top:0; left:-100%; width:60%; height:100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.04), transparent);
+  animation: fx-shimmer 6s ease-in-out infinite;
+  pointer-events:none;
+}
+
+/* ── Roster avatar — hover pulse ring ────────────────────────── */
+.rx-avatar:hover {
+  animation: fx-pulseRing .6s ease-out;
+  cursor: pointer;
+}
+
+/* ── Quick-pick popup entrance ───────────────────────────────── */
+#rx-qp-popup, .rx-qp-popup {
+  animation: fx-scaleIn .18s cubic-bezier(.22,1,.36,1) both !important;
+  transform-origin: top left;
+}
+
+/* ── Context menu entrance ────────────────────────────────────── */
+.rx-ctx-menu {
+  animation: fx-fadeUp .16s cubic-bezier(.22,1,.36,1) both !important;
+}
+
+/* ── Bulk action bar — slide-down reveal ─────────────────────── */
+.rx-bulk-bar[style*="flex"] {
+  animation: fx-fadeUp .22s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Alert / toast entrance ──────────────────────────────────── */
+.toast, .alert-toast, [class*="toast-"] {
+  animation: fx-slideLeft .3s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Progress fill — smooth width ───────────────────────────── */
+[class*="prog-fill"], .bar-fill, .progress-fill {
+  transition: width 1.2s cubic-bezier(.22,1,.36,1) !important;
+}
+
+/* ── Shimmer skeleton loader ─────────────────────────────────── */
+.skeleton, [class*="skel-"] {
+  background: linear-gradient(90deg,
+    rgba(200,208,220,.4) 25%,
+    rgba(220,228,236,.7) 50%,
+    rgba(200,208,220,.4) 75%);
+  background-size: 200% 100%;
+  animation: fx-shimmer 1.6s infinite;
+  border-radius:6px;
+}
+
+/* ── Scrollbar — teal accent ─────────────────────────────────── */
+::-webkit-scrollbar       { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb {
+  background:rgba(33,170,224,.35);
+  border-radius:6px;
+  transition:background .2s;
+}
+::-webkit-scrollbar-thumb:hover { background:rgba(33,170,224,.65); }
+
+/* ── Futuristic nav tab — scan-line underline glow ───────────── */
+.nav-tab.active {
+  text-shadow: 0 0 14px rgba(244,137,31,.45) !important;
+}
+
+/* ── Sidebar items — slide-in stagger ───────────────────────── */
+.sidebar-item, .side-nav a, [class*="sidebar-"] a {
+  animation: fx-slideRight .3s cubic-bezier(.22,1,.36,1) both;
+  transition: background .18s, color .18s, transform .18s !important;
+}
+.sidebar-item:nth-child(1)  { animation-delay:.04s }
+.sidebar-item:nth-child(2)  { animation-delay:.08s }
+.sidebar-item:nth-child(3)  { animation-delay:.12s }
+.sidebar-item:nth-child(4)  { animation-delay:.16s }
+.sidebar-item:nth-child(5)  { animation-delay:.20s }
+.sidebar-item:nth-child(6)  { animation-delay:.24s }
+.sidebar-item:hover {
+  transform: translateX(3px) !important;
+}
+
+/* ── Section headers — slide-in from left ────────────────────── */
+.section-title, .page-title, h2, h3 {
+  animation: fx-slideRight .35s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* ── Futuristic border glow on focused cards ────────────────── */
+.card:focus-within {
+  animation: fx-borderGlow 2s ease-in-out infinite;
+}
+
+/* ── Dark mode — extra glow sharpness ──────────────────────── */
+html.dark-mode .metric:hover,
+html.dark-mode .card:hover {
+  box-shadow: 0 10px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(244,137,31,.15) !important;
+}
+html.dark-mode input:focus,
+html.dark-mode select:focus {
+  box-shadow: 0 0 0 3px rgba(33,170,224,.22), 0 0 20px rgba(33,170,224,.12) !important;
+}
+
+/* ── Reduce motion — respect prefers-reduced-motion ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

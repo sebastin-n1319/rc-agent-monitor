@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A1F30"/>
+      <stop offset="100%" stop-color="#061828"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F4891F"/>
+      <stop offset="50%" stop-color="#21AAE0"/>
+      <stop offset="100%" stop-color="#F4891F"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4891F"/>
+      <stop offset="100%" stop-color="#E07010"/>
+    </linearGradient>
+    <linearGradient id="tealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#21AAE0"/>
+      <stop offset="100%" stop-color="#0E85B8"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="strongGlow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="roundRect">
+      <rect width="512" height="512" rx="108" ry="108"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" ry="108" fill="url(#bg)"/>
+
+  <!-- Circuit grid lines -->
+  <g opacity="0.07" stroke="#21AAE0" stroke-width="1" fill="none">
+    <!-- Horizontal -->
+    <line x1="0" y1="128" x2="512" y2="128"/>
+    <line x1="0" y1="256" x2="512" y2="256"/>
+    <line x1="0" y1="384" x2="512" y2="384"/>
+    <!-- Vertical -->
+    <line x1="128" y1="0" x2="128" y2="512"/>
+    <line x1="256" y1="0" x2="256" y2="512"/>
+    <line x1="384" y1="0" x2="384" y2="512"/>
+  </g>
+
+  <!-- Corner circuit nodes -->
+  <g fill="#21AAE0" opacity="0.25">
+    <circle cx="128" cy="128" r="4"/>
+    <circle cx="384" cy="128" r="4"/>
+    <circle cx="128" cy="384" r="4"/>
+    <circle cx="384" cy="384" r="4"/>
+    <circle cx="256" cy="128" r="3"/>
+    <circle cx="128" cy="256" r="3"/>
+    <circle cx="384" cy="256" r="3"/>
+    <circle cx="256" cy="384" r="3"/>
+  </g>
+
+  <!-- Outer ring — teal pulse ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="#21AAE0" stroke-width="1.5" opacity="0.2"/>
+  <!-- Inner ring -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#F4891F" stroke-width="1" opacity="0.15"/>
+
+  <!-- Scan arc — teal quarter ring top right -->
+  <path d="M256,56 A200,200 0 0,1 456,256" fill="none" stroke="#21AAE0" stroke-width="3" stroke-linecap="round" opacity="0.5" filter="url(#glow)"/>
+  <!-- Bottom-left quarter -->
+  <path d="M256,456 A200,200 0 0,1 56,256" fill="none" stroke="#F4891F" stroke-width="2" stroke-linecap="round" opacity="0.4" filter="url(#glow)"/>
+
+  <!-- Heartbeat / pulse line across middle -->
+  <polyline
+    points="56,256 110,256 130,210 152,305 175,220 200,290 222,256 290,256 310,200 330,312 350,230 372,256 456,256"
+    fill="none" stroke="url(#pulse)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"
+    filter="url(#strongGlow)" opacity="0.9"/>
+
+  <!-- Central hexagon frame -->
+  <polygon points="256,136 332,178 332,262 256,304 180,262 180,178"
+    fill="rgba(10,31,48,0.9)" stroke="#F4891F" stroke-width="3" opacity="0.95" filter="url(#glow)"/>
+
+  <!-- "A" letterform — bold futuristic -->
+  <g filter="url(#glow)">
+    <!-- Main A shape -->
+    <path d="M214,270 L256,166 L298,270 Z" fill="none" stroke="url(#orangeGrad)" stroke-width="14" stroke-linejoin="round" stroke-linecap="round"/>
+    <!-- Crossbar -->
+    <line x1="233" y1="235" x2="279" y2="235" stroke="url(#tealGrad)" stroke-width="10" stroke-linecap="round"/>
+    <!-- Top dot / node -->
+    <circle cx="256" cy="165" r="7" fill="#21AAE0" filter="url(#strongGlow)"/>
+    <!-- Foot nodes -->
+    <circle cx="213" cy="270" r="5" fill="#F4891F" filter="url(#glow)"/>
+    <circle cx="299" cy="270" r="5" fill="#F4891F" filter="url(#glow)"/>
+  </g>
+
+  <!-- Corner micro-circuit traces -->
+  <g stroke="#F4891F" stroke-width="2" fill="none" opacity="0.3" stroke-linecap="round">
+    <polyline points="60,60 60,90 90,90"/>
+    <polyline points="452,60 452,90 422,90"/>
+    <polyline points="60,452 60,422 90,422"/>
+    <polyline points="452,452 452,422 422,422"/>
+  </g>
+  <!-- Corner dots -->
+  <g fill="#F4891F" opacity="0.5">
+    <circle cx="60" cy="60" r="4"/>
+    <circle cx="452" cy="60" r="4"/>
+    <circle cx="60" cy="452" r="4"/>
+    <circle cx="452" cy="452" r="4"/>
+  </g>
+
+  <!-- Status dots row — bottom of hex -->
+  <g filter="url(#glow)">
+    <circle cx="228" cy="288" r="5" fill="#2DDC96"/>
+    <circle cx="244" cy="288" r="5" fill="#F4891F"/>
+    <circle cx="260" cy="288" r="5" fill="#21AAE0"/>
+    <circle cx="276" cy="288" r="5" fill="#ED666B"/>
+    <circle cx="292" cy="288" r="5" fill="#FBC84B"/>
+  </g>
+
+  <!-- "MONITOR" micro text at bottom -->
+  <text x="256" y="380" text-anchor="middle" font-family="'Courier New',monospace" font-size="22" font-weight="700" letter-spacing="8" fill="#21AAE0" opacity="0.55">MONITOR</text>
+</svg>

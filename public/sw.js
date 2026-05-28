@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.18.0';  // Session 18: Stat columns → summary section, agent multi-select + bulk actions
+const CACHE_VERSION = 'adit-v1.19.0';  // Session 19: Futuristic icon + animations overhaul
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
@@ -56,6 +56,9 @@ const PRECACHE_URLS = [
   '/a11y-focus-trap.js',
   '/adit-logo-dark.png',
   '/adit-logo-light.png',
+  '/adit-icon.svg',
+  '/adit-icon-32.png',
+  '/adit-icon-192.png',
   '/break-bot-avatar.svg',
   '/manifest.webmanifest'
 ];

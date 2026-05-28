@@ -10,13 +10,19 @@
   "background_color": "#072B40",
   "icons": [
     {
-      "src": "/adit-logo-dark.png",
-      "sizes": "128x128",
+      "src": "/adit-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/adit-icon-32.png",
+      "sizes": "32x32",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/adit-logo-dark.png",
+      "src": "/adit-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
