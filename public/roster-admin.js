@@ -211,6 +211,35 @@
 .rx-audit-tbl{width:100%!important;border-collapse:collapse!important;font-size:11.5px!important}
 .rx-audit-tbl th{text-align:left!important;padding:9px 12px!important;background:#F7F9FB!important;color:#6B849A!important;font-weight:700!important;text-transform:uppercase!important;letter-spacing:.04em!important;font-size:9.5px!important;border-bottom:1px solid #E6ECF4!important}
 .rx-audit-tbl td{padding:9px 12px!important;border-bottom:1px solid #F4F5F7!important;color:#3A5068!important}
+/* Bulk action bar */
+#roster-admin-root .rx-bulk-bar{display:flex!important;align-items:center!important;gap:10px!important;padding:10px 16px!important;background:linear-gradient(135deg,#072B40,#0D3D5C)!important;border-radius:12px!important;flex-wrap:wrap!important}
+#roster-admin-root .rx-bulk-count{color:#fff!important;font-weight:700!important;font-size:12.5px!important;white-space:nowrap!important;flex-shrink:0!important}
+#roster-admin-root .rx-bulk-actions{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;flex:1!important}
+#roster-admin-root .rx-bulk-sel{height:32px!important;padding:0 10px!important;border:1px solid rgba(255,255,255,.25)!important;border-radius:8px!important;background:rgba(255,255,255,.1)!important;color:#fff!important;font-size:12px!important;font-family:'Poppins',sans-serif!important;outline:none!important;cursor:pointer!important}
+#roster-admin-root .rx-bulk-sel option{background:#072B40!important;color:#fff!important}
+#roster-admin-root .rx-bulk-date{height:32px!important;padding:0 10px!important;border:1px solid rgba(255,255,255,.25)!important;border-radius:8px!important;background:rgba(255,255,255,.1)!important;color:#fff!important;font-size:12px!important;font-family:'Poppins',sans-serif!important;outline:none!important;cursor:pointer!important;color-scheme:dark!important}
+#roster-admin-root .rx-bulk-btn{height:32px!important;padding:0 14px!important;border-radius:8px!important;border:1px solid rgba(255,255,255,.3)!important;background:rgba(255,255,255,.12)!important;color:#fff!important;font-size:12px!important;font-weight:700!important;cursor:pointer!important;font-family:inherit!important;white-space:nowrap!important;transition:all .15s!important}
+#roster-admin-root .rx-bulk-btn:hover{background:rgba(255,255,255,.22)!important}
+#roster-admin-root .rx-bulk-btn-primary{background:#F4891F!important;border-color:#F4891F!important}
+#roster-admin-root .rx-bulk-btn-primary:hover{background:#e07a17!important}
+#roster-admin-root .rx-bulk-btn-danger{background:rgba(237,102,107,.3)!important;border-color:rgba(237,102,107,.5)!important}
+#roster-admin-root .rx-bulk-btn-danger:hover{background:rgba(237,102,107,.5)!important}
+#roster-admin-root .rx-bulk-sep{width:1px!important;height:24px!important;background:rgba(255,255,255,.2)!important;flex-shrink:0!important}
+/* Summary section */
+#roster-admin-root .rx-summary-wrap{background:#fff!important;border:1px solid #E2E8F0!important;border-radius:14px!important;overflow:hidden!important;box-shadow:0 2px 8px rgba(7,43,64,.06)!important}
+#roster-admin-root .rx-summary-toggle{display:flex!important;align-items:center!important;gap:8px!important;padding:13px 18px!important;font-size:13px!important;font-weight:700!important;color:#3A5068!important;cursor:pointer!important;list-style:none!important;border-bottom:1px solid transparent!important;transition:background .12s!important}
+#roster-admin-root .rx-summary-wrap[open] .rx-summary-toggle{border-bottom-color:#E2E8F0!important;background:#F7F9FB!important}
+#roster-admin-root .rx-summary-toggle::-webkit-details-marker{display:none!important}
+#roster-admin-root .rx-summary-scroll{overflow-x:auto!important;max-height:360px!important;overflow-y:auto!important}
+#roster-admin-root .rx-summary-tbl{width:100%!important;border-collapse:separate!important;border-spacing:0!important;font-size:12px!important}
+#roster-admin-root .rx-sth{position:sticky!important;top:0!important;background:#F7F9FB!important;padding:8px 10px!important;font-size:9.5px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.06em!important;color:#6B849A!important;border-bottom:2px solid #E2E8F0!important;text-align:center!important;white-space:nowrap!important}
+#roster-admin-root .rx-sth-name{text-align:left!important;position:sticky!important;left:0!important;z-index:4!important;min-width:220px!important}
+#roster-admin-root .rx-srow:nth-child(even){background:#F9FAFB!important}
+#roster-admin-root .rx-srow:hover{background:rgba(244,137,31,.05)!important}
+#roster-admin-root .rx-std-name{position:sticky!important;left:0!important;background:#fff!important;padding:8px 14px!important;border-bottom:1px solid #F0F3F6!important;z-index:2!important}
+#roster-admin-root .rx-srow:nth-child(even) .rx-std-name{background:#F9FAFB!important}
+#roster-admin-root .rx-std{text-align:center!important;padding:8px 6px!important;border-bottom:1px solid #F0F3F6!important;vertical-align:middle!important}
+#roster-admin-root .rx-avatar-sm{width:24px!important;height:24px!important;font-size:8.5px!important}
 /* Avatar + name row */
 #roster-admin-root .rx-name-row{display:flex!important;align-items:center!important;gap:9px!important}
 #roster-admin-root .rx-avatar{width:30px!important;height:30px!important;border-radius:50%!important;flex-shrink:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:10.5px!important;font-weight:800!important;color:#fff!important;letter-spacing:.02em!important;text-shadow:0 1px 2px rgba(0,0,0,.2)!important}
@@ -561,7 +590,7 @@
         ${pct !== null ? `<span class="rx-cov-pct">${pct}%</span>` : ''}
       </td>`;
     }
-    covRowHtml += `<td class="rx-td-tot" colspan="8"></td></tr>`;
+    covRowHtml += `<td class="rx-cov-cell rx-cov-none"><span class="rx-cov-num"></span></td></tr>`;
 
     // Date headers
     const dateHeadersHtml = dates.map((d, idx) => {
@@ -656,6 +685,27 @@
     <span class="rx-lg-tip">Click cell → quick-pick all statuses · Right-click cell → full palette · Right-click agent name → status actions · Click date header → fill column</span>
   </div>
 
+  <!-- BULK ACTION BAR (hidden until agents selected) -->
+  <div class="rx-bulk-bar" id="rx-bulk-bar" style="display:none">
+    <span class="rx-bulk-count" id="rx-bulk-count">0 agents selected</span>
+    <div class="rx-bulk-actions">
+      <select class="rx-bulk-sel" id="rx-bulk-status-val" title="Status to apply">
+        <option value="">— Pick status —</option>
+        ${QUICK_PICK.map(q => `<option value="${q.s}">${q.label} — ${q.name}</option>`).join('')}
+      </select>
+      <input type="date" class="rx-bulk-date" id="rx-bulk-date" title="Apply to this date" value="${today}">
+      <button class="rx-bulk-btn rx-bulk-btn-primary" id="rx-bulk-apply">✓ Apply to Date</button>
+      <div class="rx-bulk-sep"></div>
+      <select class="rx-bulk-sel" id="rx-bulk-shift-val" title="Shift to assign">
+        <option value="">— Pick shift —</option>
+        ${SHIFT_OPTIONS.map(g => `<optgroup label="${g.group}">${g.shifts.map(sh => `<option value="${sh}">${sh}</option>`).join('')}</optgroup>`).join('')}
+      </select>
+      <button class="rx-bulk-btn" id="rx-bulk-shift-apply">✓ Change Shift</button>
+      <div class="rx-bulk-sep"></div>
+      <button class="rx-bulk-btn rx-bulk-btn-danger" id="rx-bulk-clear">✕ Deselect All</button>
+    </div>
+  </div>
+
   <!-- GRID -->
   <div class="rx-grid-wrap">
     <table class="rx-grid" id="rx-grid-table">
@@ -663,20 +713,13 @@
         <tr>
           <th class="rx-th rx-th-name">
             <div style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="rx-sel-all" title="Select / deselect all" style="accent-color:#F4891F;cursor:pointer;width:14px;height:14px;">
               <span>Agent</span>
               <span style="font-size:9px;opacity:.6;font-weight:500;">${visible.length} shown</span>
             </div>
           </th>
           ${dateHeadersHtml}
-          <th class="rx-th rx-th-tot" title="Present days">P</th>
-          <th class="rx-th rx-th-tot" title="Work From Home">WFH</th>
-          <th class="rx-th rx-th-tot" title="On Duty">OD</th>
-          <th class="rx-th rx-th-tot" title="Weekly Off">OFF</th>
-          <th class="rx-th rx-th-tot" title="Paid Leave">PL</th>
-          <th class="rx-th rx-th-tot" title="Unpaid Leave">UPL</th>
-          <th class="rx-th rx-th-tot" title="Sick Leave">SL</th>
-          <th class="rx-th rx-th-tot" title="No Call No Show / Absent">NCNS</th>
-          <th class="rx-th rx-th-tot rx-th-att" title="Attendance %  = (P+WFH+OD) / filled days">Att%</th>
+          <th class="rx-th rx-th-att" title="Attendance % = (P+WFH+OD) / filled days">Att%</th>
         </tr>
       </thead>
       <tbody>
@@ -685,6 +728,56 @@
       </tbody>
     </table>
   </div>
+
+  <!-- ATTENDANCE SUMMARY -->
+  <details class="rx-summary-wrap" id="rx-summary-panel">
+    <summary class="rx-summary-toggle">📊 Monthly Attendance Summary — ${monthLabel(_s.month)}</summary>
+    <div class="rx-summary-scroll">
+      <table class="rx-summary-tbl">
+        <thead>
+          <tr>
+            <th class="rx-sth rx-sth-name">Agent</th>
+            <th class="rx-sth rx-sth-p" title="Present">P</th>
+            <th class="rx-sth rx-sth-wfh" title="Work From Home">WFH</th>
+            <th class="rx-sth rx-sth-od" title="On Duty">OD</th>
+            <th class="rx-sth" title="Weekly Off">OFF</th>
+            <th class="rx-sth rx-sth-pl" title="Paid Leave">PL</th>
+            <th class="rx-sth rx-sth-upl" title="Unpaid Leave">UPL</th>
+            <th class="rx-sth rx-sth-sl" title="Sick Leave">SL</th>
+            <th class="rx-sth rx-sth-ncns" title="No Call No Show / Absent">NCNS</th>
+            <th class="rx-sth rx-sth-att" title="Attendance %">Att%</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${visible.map(a => {
+            const st = agentStats(a.emp_id, dates, grid);
+            const attCls = st.pct === null ? '' : st.pct >= 70 ? 'rx-att-good' : st.pct >= 40 ? 'rx-att-mid' : 'rx-att-low';
+            const avatarHue = Math.abs([...a.emp_id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0)) % 360;
+            return `<tr class="rx-srow">
+              <td class="rx-std-name">
+                <div class="rx-name-row">
+                  <div class="rx-avatar rx-avatar-sm" style="background:hsl(${avatarHue},52%,42%)">${(a.pseudo||a.emp_id).split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('')}</div>
+                  <div class="rx-name-info">
+                    <div class="rx-name">${esc(a.pseudo||a.full_name||a.emp_id)}</div>
+                    <div class="rx-meta">${esc(a.emp_id)}${a.shift ? ' · <em>'+esc(a.shift)+'</em>' : ''}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="rx-std">${st.p ? `<span class="rx-stat-p">${st.p}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.wfh ? `<span class="rx-stat-wfh">${st.wfh}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.od ? `<span class="rx-stat-od">${st.od}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.off ? `<span class="rx-stat-off">${st.off}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.pl ? `<span class="rx-stat-pl">${st.pl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.upl ? `<span class="rx-stat-upl">${st.upl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.sl ? `<span class="rx-stat-sl">${st.sl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.ncns ? `<span class="rx-stat-ncns">${st.ncns}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
+              <td class="rx-std">${st.pct !== null ? `<span class="rx-att-pct ${attCls}">${st.pct}%</span>` : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </details>
 
   <!-- FOOTER -->
   <div class="rx-footer">
@@ -734,6 +827,7 @@
     return `<tr class="rx-row ${a.status === 'relieved' ? 'rx-row-relieved' : ''} ${a.status === 'on_leave' ? 'rx-row-leave' : ''}" data-emp="${esc(a.emp_id)}">
       <td class="rx-td-name" title="Double-click to edit · Right-click for quick actions">
         <div class="rx-name-row">
+          <input type="checkbox" class="rx-row-chk" data-emp="${esc(a.emp_id)}" style="accent-color:#F4891F;cursor:pointer;width:13px;height:13px;flex-shrink:0;" title="Select agent">
           <div class="rx-avatar" style="background:${avatarBg}">${initials}</div>
           <div class="rx-name-info">
             <div class="rx-name">${statusDot}${esc(displayName)}</div>
@@ -742,14 +836,6 @@
         </div>
       </td>
       ${cells}
-      <td class="rx-td-tot rx-tot-p">${stats.p ? `<span class="rx-stat-p">${stats.p}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot rx-tot-wfh">${stats.wfh ? `<span class="rx-stat-wfh">${stats.wfh}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot rx-tot-od">${stats.od ? `<span class="rx-stat-od">${stats.od}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot">${stats.off ? `<span class="rx-stat-off">${stats.off}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot rx-tot-pl">${stats.pl ? `<span class="rx-stat-pl">${stats.pl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot rx-tot-upl">${stats.upl ? `<span class="rx-stat-upl">${stats.upl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot rx-tot-sl">${stats.sl ? `<span class="rx-stat-sl">${stats.sl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-      <td class="rx-td-tot rx-tot-ncns">${stats.ncns ? `<span class="rx-stat-ncns">${stats.ncns}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
       <td class="rx-td-tot rx-td-att">${attHtml}</td>
     </tr>`;
   }
@@ -805,6 +891,89 @@
     $('#rx-add').onclick = openAddAgent;
     $('#rx-audit').onclick = openAuditLog;
     $('#rx-export').onclick = exportCsv;
+
+    // Multi-select checkboxes
+    const selAllChk = $('#rx-sel-all');
+    const rowChks = $$('.rx-row-chk', root);
+    const bulkBar = $('#rx-bulk-bar');
+    const bulkCount = $('#rx-bulk-count');
+
+    function updateBulkBar() {
+      const checked = $$('.rx-row-chk:checked', root);
+      const n = checked.length;
+      if (n > 0) {
+        bulkBar.style.display = 'flex';
+        bulkCount.textContent = `${n} agent${n > 1 ? 's' : ''} selected`;
+      } else {
+        bulkBar.style.display = 'none';
+      }
+      if (selAllChk) selAllChk.indeterminate = n > 0 && n < rowChks.length;
+      if (selAllChk) selAllChk.checked = n === rowChks.length && n > 0;
+    }
+
+    rowChks.forEach(chk => {
+      chk.addEventListener('change', updateBulkBar);
+      chk.addEventListener('click', e => e.stopPropagation()); // don't trigger row dblclick
+    });
+
+    if (selAllChk) {
+      selAllChk.onchange = () => {
+        rowChks.forEach(c => c.checked = selAllChk.checked);
+        updateBulkBar();
+      };
+    }
+
+    // Bulk: apply status to a specific date
+    $('#rx-bulk-apply')?.addEventListener('click', async () => {
+      const checked = $$('.rx-row-chk:checked', root);
+      const status = $('#rx-bulk-status-val').value;
+      const date = $('#rx-bulk-date').value;
+      if (!status) { alert('Please pick a status to apply'); return; }
+      if (!date) { alert('Please pick a date'); return; }
+      const empIds = checked.map(c => c.dataset.emp);
+      // Apply to DOM cells immediately
+      empIds.forEach(emp => {
+        const cell = root.querySelector(`.rx-cell[data-emp="${emp}"][data-date="${date}"]`);
+        if (cell) applyCell(cell, status);
+      });
+      setSaveState('saving', `⏳ Applying to ${empIds.length} agents…`);
+    });
+
+    // Bulk: change shift for selected agents
+    $('#rx-bulk-shift-apply')?.addEventListener('click', async () => {
+      const checked = $$('.rx-row-chk:checked', root);
+      const shift = $('#rx-bulk-shift-val').value;
+      if (!shift) { alert('Please pick a shift'); return; }
+      const empIds = checked.map(c => c.dataset.emp);
+      setSaveState('saving', `⏳ Updating shift for ${empIds.length} agents…`);
+      let ok = 0;
+      for (const emp of empIds) {
+        try {
+          const r = await fetch('/api/roster/agents', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emp_id: emp, shift }),
+          });
+          const j = await r.json();
+          if (j.success) {
+            ok++;
+            if (_s.data) {
+              const a = _s.data.agents.find(x => x.emp_id === emp);
+              if (a) a.shift = shift;
+            }
+          }
+        } catch (e) {}
+      }
+      setSaveState('ok', `✅ Shift updated for ${ok} agent${ok !== 1 ? 's' : ''}`);
+      render();
+    });
+
+    // Bulk: deselect all
+    $('#rx-bulk-clear')?.addEventListener('click', () => {
+      rowChks.forEach(c => c.checked = false);
+      if (selAllChk) selAllChk.checked = false;
+      updateBulkBar();
+    });
 
     // Cell left-click: cycle, right-click: palette
     $$('.rx-cell', root).forEach(cell => {
