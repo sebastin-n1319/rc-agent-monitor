@@ -7524,3 +7524,207 @@ html.dark-mode select:focus {
     transition-duration: .01ms !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   LOGO + ICON + BUTTON UPGRADES — v1.19.2
+════════════════════════════════════════════════════════════════ */
+
+/* ── Header logo — futuristic glow treatment ── */
+.hdr-logo-adit {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  object-fit: contain !important;
+  padding: 4px !important;
+  background: linear-gradient(135deg, #0D3D5C, #072B40) !important;
+  box-shadow:
+    0 0 0 1px rgba(244,137,31,.35),
+    0 0 12px rgba(244,137,31,.2),
+    0 4px 16px rgba(7,43,64,.4) !important;
+  transition: box-shadow .22s, transform .22s !important;
+  flex-shrink: 0 !important;
+}
+.hdr-logo-adit:hover {
+  box-shadow:
+    0 0 0 1px rgba(244,137,31,.7),
+    0 0 20px rgba(244,137,31,.35),
+    0 6px 20px rgba(7,43,64,.5) !important;
+  transform: scale(1.06) !important;
+}
+
+/* ── All icon buttons — futuristic pill style ── */
+.hdr-chip,
+.btn,
+.role-toggle-btn,
+.break-toolbar-btn,
+button.primary,
+.nav-tab {
+  transition:
+    background .18s,
+    color .18s,
+    box-shadow .18s,
+    transform .14s cubic-bezier(.22,1,.36,1),
+    border-color .18s !important;
+}
+.hdr-chip {
+  border-radius: 20px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  letter-spacing: .01em !important;
+  backdrop-filter: blur(8px) !important;
+}
+.hdr-chip:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(7,43,64,.15) !important;
+}
+
+/* Logout button — danger glow on hover */
+.logout-btn:hover {
+  box-shadow: 0 0 0 2px rgba(237,102,107,.4), 0 4px 14px rgba(237,102,107,.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Switch-to-agent-view / test buttons — teal glow */
+button[onclick*="switchToAgent"],
+button[onclick*="switchAgent"],
+.switch-agent-btn,
+.test-btn {
+  border-radius: 20px !important;
+}
+
+/* ── Modern icon set for toolbar buttons ── */
+/* Replace text-only pill buttons with icon-forward style */
+.rx-pill {
+  border-radius: 10px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: .01em !important;
+  transition: all .18s cubic-bezier(.22,1,.36,1) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+.rx-pill::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent) !important;
+  background-size: 200% 100% !important;
+  opacity: 0 !important;
+  transition: opacity .2s !important;
+}
+.rx-pill:hover::after {
+  opacity: 1 !important;
+  animation: rx-kpi-shimmer 1s ease-in-out !important;
+}
+.rx-pill:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(7,43,64,.12) !important;
+}
+.rx-pill.rx-pill-primary {
+  box-shadow: 0 4px 14px rgba(244,137,31,.28) !important;
+  letter-spacing: .02em !important;
+}
+.rx-pill.rx-pill-primary:hover {
+  box-shadow: 0 6px 18px rgba(244,137,31,.38) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Icon buttons — circular glow */
+.rx-icon-btn {
+  border-radius: 10px !important;
+  transition: all .18s cubic-bezier(.22,1,.36,1) !important;
+}
+.rx-icon-btn:hover {
+  transform: translateY(-1px) scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(244,137,31,.25) !important;
+}
+.rx-icon-btn:active {
+  transform: scale(.93) !important;
+}
+
+/* Month display picker */
+.rx-month-display {
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(7,43,64,.2) !important;
+  transition: box-shadow .18s, transform .18s !important;
+}
+.rx-month-display:hover {
+  box-shadow: 0 4px 14px rgba(7,43,64,.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Bulk action bar buttons */
+.rx-bulk-btn {
+  border-radius: 10px !important;
+  transition: all .18s cubic-bezier(.22,1,.36,1) !important;
+  font-size: 11.5px !important;
+}
+.rx-bulk-btn:hover {
+  transform: translateY(-1px) !important;
+}
+.rx-bulk-btn:active {
+  transform: scale(.94) !important;
+}
+.rx-bulk-btn-primary {
+  box-shadow: 0 3px 10px rgba(244,137,31,.3) !important;
+}
+.rx-bulk-btn-primary:hover {
+  box-shadow: 0 5px 16px rgba(244,137,31,.4) !important;
+}
+
+/* ── Modal button polish ── */
+.rx-modal-x {
+  transition: background .18s, transform .18s !important;
+}
+.rx-modal-x:hover {
+  background: rgba(255,255,255,.22) !important;
+  transform: rotate(90deg) scale(1.1) !important;
+}
+
+/* ── Pop-up option hover glow ── */
+.rx-qp-btn {
+  transition: all .16s cubic-bezier(.22,1,.36,1) !important;
+}
+.rx-qp-btn:hover {
+  transform: translateY(-3px) scale(1.04) !important;
+  box-shadow: 0 6px 14px rgba(7,43,64,.12) !important;
+}
+.rx-qp-btn:active {
+  transform: scale(.95) !important;
+}
+
+/* Context menu item hover */
+.rx-agent-ctx-item {
+  transition: background .15s, color .15s, transform .15s !important;
+  border-radius: 8px !important;
+}
+.rx-agent-ctx-item:hover {
+  transform: translateX(3px) !important;
+}
+
+/* ── Search input futuristic focus ── */
+.rx-search:focus-within {
+  border-color: #21AAE0 !important;
+  box-shadow: 0 0 0 3px rgba(33,170,224,.15), 0 0 16px rgba(33,170,224,.08) !important;
+  background: #fff !important;
+}
+
+/* ── KPI bar fill — shimmer animation ── */
+.rx-kpi-bar-fill {
+  position: relative !important;
+  overflow: hidden !important;
+}
+.rx-kpi-bar-fill::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent) !important;
+  animation: rx-kpi-shimmer 2s ease-in-out infinite !important;
+}
+
+/* ── Attendance % — micro progress bar per row ── */
+#roster-admin-root .rx-att-pct {
+  min-width: 44px !important;
+  text-align: center !important;
+}
+

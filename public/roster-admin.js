@@ -313,6 +313,280 @@
 #roster-admin-root .rx-avatar{min-width:30px!important}
 #roster-admin-root .rx-td-tot{vertical-align:middle!important;text-align:center!important}
 #roster-admin-root .rx-grid tbody tr{height:40px!important}
+
+/* ── FUTURISTIC VISUAL UPGRADES v1.19 ───────────────────────────────── */
+
+/* Keyframes */
+@keyframes rx-row-in{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes rx-cell-pop{0%{transform:scale(0.6);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes rx-kpi-shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes rx-today-pulse{0%,100%{box-shadow:inset 0 0 0 1px rgba(33,170,224,.4)}50%{box-shadow:inset 0 0 0 1px rgba(33,170,224,.9),0 0 12px rgba(33,170,224,.2)}}
+@keyframes rx-glow-border{0%,100%{border-color:rgba(244,137,31,.25)}50%{border-color:rgba(244,137,31,.7)}}
+@keyframes rx-avatar-in{from{transform:scale(0.5) rotate(-15deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes rx-badge-in{from{transform:scale(0.4);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ── Grid wrapper — frosted glass with subtle glow ── */
+#roster-admin-root .rx-grid-wrap{
+  border:1px solid rgba(33,170,224,.15)!important;
+  box-shadow:0 4px 24px rgba(7,43,64,.09),0 0 0 1px rgba(244,137,31,.04)!important;
+  border-radius:16px!important;
+}
+
+/* ── Row entrance animation — stagger each row ── */
+#roster-admin-root .rx-grid tbody .rx-row{
+  animation:rx-row-in .32s cubic-bezier(.22,1,.36,1) both!important;
+}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(1){animation-delay:.02s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(2){animation-delay:.05s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(3){animation-delay:.08s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(4){animation-delay:.11s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(5){animation-delay:.14s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(6){animation-delay:.17s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(7){animation-delay:.20s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(8){animation-delay:.23s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(9){animation-delay:.26s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(10){animation-delay:.29s!important}
+#roster-admin-root .rx-grid tbody .rx-row:nth-child(n+11){animation-delay:.32s!important}
+
+/* ── Taller, more breathable rows ── */
+#roster-admin-root .rx-cell{
+  height:40px!important;
+  transition:background .18s,box-shadow .18s!important;
+}
+
+/* ── Cell hover — glowing ring, no jarring scale ── */
+#roster-admin-root .rx-cell:hover{
+  transform:none!important;
+  background:rgba(244,137,31,.10)!important;
+  box-shadow:inset 0 0 0 2px #F4891F,inset 0 0 8px rgba(244,137,31,.18)!important;
+  border-radius:6px!important;
+  z-index:3!important;
+  position:relative!important;
+}
+
+/* ── Status cell — soft inner glow matching status color ── */
+#roster-admin-root .rx-st-present{
+  background:rgba(45,220,150,.18)!important;
+  box-shadow:inset 0 0 0 1px rgba(45,220,150,.35)!important;
+}
+#roster-admin-root .rx-st-wfh{
+  background:rgba(155,89,182,.16)!important;
+  box-shadow:inset 0 0 0 1px rgba(155,89,182,.3)!important;
+}
+#roster-admin-root .rx-st-on_duty{
+  background:rgba(244,137,31,.16)!important;
+  box-shadow:inset 0 0 0 1px rgba(244,137,31,.3)!important;
+}
+#roster-admin-root .rx-st-pl{
+  background:rgba(33,170,224,.16)!important;
+  box-shadow:inset 0 0 0 1px rgba(33,170,224,.3)!important;
+}
+#roster-admin-root .rx-st-sl{
+  background:rgba(251,200,75,.18)!important;
+  box-shadow:inset 0 0 0 1px rgba(251,200,75,.35)!important;
+}
+#roster-admin-root .rx-st-upl{
+  background:rgba(237,102,107,.16)!important;
+  box-shadow:inset 0 0 0 1px rgba(237,102,107,.3)!important;
+}
+#roster-admin-root .rx-st-ncns{
+  background:#DC2626!important;
+  box-shadow:inset 0 0 0 1px #B91C1C,0 0 8px rgba(220,38,38,.3)!important;
+}
+#roster-admin-root .rx-st-off{
+  background:rgba(148,163,184,.16)!important;
+  box-shadow:inset 0 0 0 1px rgba(148,163,184,.3)!important;
+}
+
+/* ── Today column — pulsing teal accent ── */
+#roster-admin-root .rx-cell.rx-t{
+  background:rgba(33,170,224,.10)!important;
+  animation:rx-today-pulse 3s ease-in-out infinite!important;
+}
+#roster-admin-root .rx-cell.rx-t:hover{
+  animation:none!important;
+  background:rgba(244,137,31,.10)!important;
+  box-shadow:inset 0 0 0 2px #F4891F!important;
+}
+/* Override: today + status keep status color */
+#roster-admin-root .rx-cell.rx-t.rx-st-present{background:rgba(45,220,150,.25)!important;animation:none!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-wfh{background:rgba(155,89,182,.22)!important;animation:none!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-off{background:rgba(148,163,184,.22)!important;animation:none!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-pl{background:rgba(33,170,224,.24)!important;animation:none!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-sl{background:rgba(251,200,75,.24)!important;animation:none!important}
+#roster-admin-root .rx-cell.rx-t.rx-st-ncns{background:#DC2626!important;animation:none!important}
+
+/* ── Weekend column warmth ── */
+#roster-admin-root .rx-cell.rx-w{
+  background:rgba(178,92,14,.07)!important;
+}
+
+/* ── Row hover — full-row orange wash + name highlight ── */
+#roster-admin-root .rx-row:hover{
+  background:rgba(244,137,31,.05)!important;
+}
+#roster-admin-root .rx-row:hover .rx-td-name{
+  background:linear-gradient(135deg,rgba(244,137,31,.06),rgba(244,137,31,.02))!important;
+  border-left:3px solid #F4891F!important;
+}
+
+/* ── Avatar — bigger, with ring + entrance animation ── */
+#roster-admin-root .rx-avatar{
+  width:34px!important;height:34px!important;
+  font-size:11px!important;
+  box-shadow:0 0 0 2px rgba(255,255,255,.9),0 2px 8px rgba(0,0,0,.15)!important;
+  animation:rx-avatar-in .35s cubic-bezier(.22,1,.36,1) both!important;
+  transition:box-shadow .18s,transform .18s!important;
+}
+#roster-admin-root .rx-row:hover .rx-avatar{
+  box-shadow:0 0 0 2px #F4891F,0 4px 12px rgba(244,137,31,.25)!important;
+  transform:scale(1.08)!important;
+}
+
+/* ── Agent name — more weight ── */
+#roster-admin-root .rx-name{
+  font-size:12.5px!important;
+  font-weight:700!important;
+  letter-spacing:-.01em!important;
+}
+#roster-admin-root .rx-meta{
+  font-size:9px!important;
+  letter-spacing:.01em!important;
+  opacity:.75!important;
+}
+
+/* ── ATT% badge — animated progress pill ── */
+#roster-admin-root .rx-att-pct{
+  position:relative!important;
+  overflow:hidden!important;
+  transition:box-shadow .18s,transform .18s!important;
+}
+#roster-admin-root .rx-att-pct::after{
+  content:''!important;position:absolute!important;
+  inset:0!important;
+  background:linear-gradient(90deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%)!important;
+  background-size:200% 100%!important;
+  animation:rx-kpi-shimmer 2.4s ease-in-out infinite!important;
+  pointer-events:none!important;
+}
+#roster-admin-root .rx-row:hover .rx-att-pct{
+  transform:scale(1.07)!important;
+  box-shadow:0 0 0 2px currentColor!important;
+}
+
+/* ── KPI cards — hover glow + animated left accent bar ── */
+#roster-admin-root .rx-kpi{
+  transition:transform .22s cubic-bezier(.22,1,.36,1),box-shadow .22s!important;
+}
+#roster-admin-root .rx-kpi:hover{
+  transform:translateY(-4px)!important;
+  box-shadow:0 12px 32px rgba(7,43,64,.12)!important;
+}
+#roster-admin-root .rx-kpi::after{
+  content:''!important;position:absolute!important;
+  inset:0!important;border-radius:14px!important;
+  background:linear-gradient(90deg,transparent 60%,rgba(255,255,255,.5) 80%,transparent 100%)!important;
+  background-size:200% 100%!important;
+  animation:rx-kpi-shimmer 3.5s ease-in-out infinite!important;
+  pointer-events:none!important;opacity:.6!important;
+}
+
+/* KPI value pop-in */
+#roster-admin-root .rx-kpi-val{
+  animation:rx-cell-pop .4s cubic-bezier(.22,1,.36,1) both!important;
+  animation-delay:.1s!important;
+}
+
+/* ── Header row — sharper with gradient ── */
+#roster-admin-root .rx-grid thead .rx-th{
+  background:linear-gradient(180deg,#0D3D5C,#072B40)!important;
+  font-size:9px!important;
+  letter-spacing:.06em!important;
+}
+#roster-admin-root .rx-th-day:hover{
+  background:rgba(244,137,31,.25)!important;
+  transition:background .15s!important;
+}
+
+/* ── Day header today — glowing teal top border ── */
+#roster-admin-root .rx-th-day.rx-t{
+  background:rgba(33,170,224,.18)!important;
+  border-top:2px solid #21AAE0!important;
+  box-shadow:0 0 12px rgba(33,170,224,.2)!important;
+}
+
+/* ── Toolbar — subtle gradient surface ── */
+#roster-admin-root .rx-toolbar{
+  background:linear-gradient(135deg,#ffffff,#F9FAFB)!important;
+  border-color:rgba(33,170,224,.12)!important;
+}
+
+/* ── Legend — airy ── */
+#roster-admin-root .rx-legend{
+  border-color:rgba(33,170,224,.1)!important;
+  background:linear-gradient(135deg,#fff,#F9FBFC)!important;
+}
+
+/* ── Shift header divider — glowing line ── */
+#roster-admin-root .rx-shift-header{
+  background:linear-gradient(90deg,#EEF1F5,#F4F7FA)!important;
+  border-top:1px solid rgba(33,170,224,.15)!important;
+  border-bottom:1px solid rgba(33,170,224,.08)!important;
+  letter-spacing:.1em!important;
+}
+
+/* ── Coverage row — deeper dark with glow ── */
+#roster-admin-root .rx-cov-row{
+  background:linear-gradient(135deg,#072B40,#082332)!important;
+}
+#roster-admin-root .rx-cov-cell.rx-cov-good .rx-cov-num{
+  text-shadow:0 0 10px rgba(45,220,150,.5)!important;
+}
+#roster-admin-root .rx-cov-cell.rx-cov-low .rx-cov-num{
+  text-shadow:0 0 10px rgba(237,102,107,.5)!important;
+}
+
+/* ── Cell status pop-in (class applied dynamically) ── */
+#roster-admin-root .rx-cell.rx-just-set{
+  animation:rx-cell-pop .28s cubic-bezier(.22,1,.36,1) both!important;
+}
+
+/* ── Bulk bar — animated reveal with glow ── */
+#roster-admin-root .rx-bulk-bar{
+  box-shadow:0 8px 24px rgba(7,43,64,.25),0 0 0 1px rgba(244,137,31,.3)!important;
+  animation:rx-row-in .24s cubic-bezier(.22,1,.36,1) both!important;
+}
+
+/* ── Quick-pick popup — larger, more polished ── */
+.rx-qp{
+  box-shadow:0 12px 40px rgba(7,43,64,.22),0 0 0 1px rgba(33,170,224,.15)!important;
+  border-radius:14px!important;
+  padding:8px!important;
+}
+.rx-qp-btn:hover{
+  transform:translateY(-3px) scale(1.05)!important;
+  box-shadow:0 6px 16px rgba(7,43,64,.12)!important;
+  border-color:#F4891F!important;
+}
+
+/* ── Summary panel ── */
+#roster-admin-root .rx-summary-wrap{
+  border-color:rgba(33,170,224,.12)!important;
+  box-shadow:0 2px 12px rgba(7,43,64,.07),0 0 0 1px rgba(244,137,31,.04)!important;
+}
+
+/* Accessibility — honour prefers-reduced-motion */
+@media(prefers-reduced-motion:reduce){
+  #roster-admin-root .rx-grid tbody .rx-row,
+  #roster-admin-root .rx-kpi-val,
+  #roster-admin-root .rx-avatar,
+  #roster-admin-root .rx-cell.rx-t,
+  #roster-admin-root .rx-att-pct::after,
+  #roster-admin-root .rx-kpi::after{
+    animation:none!important;
+    transition:none!important;
+  }
+}
 `;
     document.head.appendChild(s);
   })();
@@ -1082,6 +1356,11 @@
     classes.push('rx-st-' + (status || 'empty'));
     cell.className = classes.join(' ');
     cell.textContent = STATUS_LABEL[status] || '';
+    // Pop-in animation on status change
+    if (status) {
+      cell.classList.add('rx-just-set');
+      setTimeout(() => cell.classList.remove('rx-just-set'), 350);
+    }
 
     // Update data model
     if (!_s.data.grid[emp]) _s.data.grid[emp] = {};
