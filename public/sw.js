@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.8';  // Force-update SW on deploy + query-string cache busting
+const CACHE_VERSION = 'adit-v1.19.9';  // Navigation no-store + HTML logo + meta no-cache
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
@@ -124,7 +124,9 @@ self.addEventListener('fetch', (event) => {
 
 async function navigationStrategy(req) {
   try {
-    const res = await fetch(req);
+    // Always bypass all caches for HTML navigation so new deployments
+    // are picked up immediately without needing a hard refresh
+    const res = await fetch(req, { cache: 'no-store' });
     return res;
   } catch (e) {
     const cached = await caches.match('/index.html');
