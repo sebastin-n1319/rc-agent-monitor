@@ -7025,7 +7025,7 @@ header{
 ───────────────────────────────────────────── */
 #mainApp{
   padding-top:var(--lyt-hdr-h) !important;
-  background:transparent !important;
+  background:var(--bg,#F7F8F8) !important;
   min-height:100vh !important;
   display:flex !important;
   flex-direction:column !important;
@@ -9644,9 +9644,22 @@ tbody tr:hover td{
 <div id="mainApp">
 <header>
   <div class="hdr-left">
-    <img class="hdr-logo-adit" src="/adit-logo-dark.svg" alt="Adit Agent Monitor">
+    <!-- Inline SVG logo — immune to all CSS width/height overrides on .hdr-logo-adit img -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 48" style="height:34px;width:auto;flex-shrink:0;display:block;" aria-label="Adit Agent Monitor">
+      <defs>
+        <linearGradient id="hIconBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F4891F"/><stop offset="100%" stop-color="#E07010"/></linearGradient>
+        <linearGradient id="hPulse" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#21AAE0" stop-opacity=".9"/><stop offset="100%" stop-color="#F4891F" stop-opacity=".9"/></linearGradient>
+      </defs>
+      <rect x="0" y="4" width="40" height="40" rx="9" fill="#072B40"/>
+      <rect x="0" y="4" width="40" height="40" rx="9" fill="url(#hIconBg)" opacity=".2"/>
+      <polyline points="4,24 9,24 13,16 17,32 21,20 25,28 29,24 36,24" fill="none" stroke="url(#hPulse)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M13,33 L20,15 L27,33" fill="none" stroke="#F4891F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="15.5" y1="27" x2="24.5" y2="27" stroke="#21AAE0" stroke-width="2.2" stroke-linecap="round"/>
+      <text x="50" y="21" font-family="'Poppins','Inter',system-ui,sans-serif" font-size="16" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5">Adit</text>
+      <text x="50" y="35" font-family="'Poppins','Inter',system-ui,sans-serif" font-size="9.5" font-weight="600" fill="rgba(178,219,240,.65)" letter-spacing="0.5">AGENT MONITOR</text>
+    </svg>
     <div class="hdr-sep"></div>
-    <div class="hdr-sub" style="font-size:11px;color:var(--t3,#6B849A)">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
+    <div class="hdr-sub" style="font-size:11px;color:rgba(178,219,240,.55)">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
   </div>
   <div class="hdr-right">
     <button class="hdr-chip" onclick="toggleTZ()">
