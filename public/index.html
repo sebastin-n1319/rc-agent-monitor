@@ -10698,7 +10698,7 @@ tbody tr:hover td{
           <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;">Any weekend shift counts as <strong style="color:#fde68a">overtime</strong> under our existing policy</span>
         </div>
         <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px 12px;">
-          <span style="font-size:16px;flex-shrink:0;margin-top:1px">📋</span>
+          <span style="flex-shrink:0;margin-top:1px;display:flex;align-items:center;"><svg viewBox="0 0 16 16" fill="none" stroke="#93c5fd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg></span>
           <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;">Just reply with your preferred shift window <strong style="color:#93c5fd">when Ronnie pings you Fridays</strong></span>
         </div>
       </div>
@@ -12988,7 +12988,7 @@ const AW_CONFIG = {
     modes: [
       { id:'email_reply',    label:'Email Reply',      icon:'↩' },
       { id:'email_followup', label:'Follow-up Email',  icon:'→' },
-      { id:'ticket_note',    label:'Ticket Note',      icon:'📋' },
+      { id:'ticket_note',    label:'Ticket Note',      icon:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M3 4h8M3 7h6M3 10h4"/><rect x="1" y="1" width="12" height="13" rx="2"/></svg>' },
       { id:'ticket_resolution', label:'Resolution',   icon:'✓'  },
     ],
     templates: [
@@ -13015,7 +13015,7 @@ const AW_CONFIG = {
   chat: {
     color: '#9B59B6',
     modes: [
-      { id:'chat_reply',      label:'Chat Reply',      icon:'💬' },
+      { id:'chat_reply',      label:'Chat Reply',      icon:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 8.5a1 1 0 0 1-1 1H4l-3 3V3a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v5.5z"/></svg>' },
       { id:'chat_summary',    label:'Chat Summary',    icon:'📄' },
       { id:'chat_escalation', label:'Escalation Note', icon:'⚠' },
     ],
@@ -14395,7 +14395,7 @@ function renderAIPanelSide(ai, t) {
 
   const tags = [
     ai.sentiment  ? `<span style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">${sc.icon} ${ai.sentiment}</span>` : '',
-    ai.urgency    ? `<span style="background:${uc.bg};color:${uc.color};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">⚡ ${ai.urgency} Urgency</span>` : '',
+    ai.urgency    ? `<span style="background:${uc.bg};color:${uc.color};padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 10 10" fill="currentColor" style="width:8px;height:8px"><path d="M6 1L1 6h3.5L3 10 9 4H5.5z"/></svg>${ai.urgency} Urgency</span>` : '',
     ai.issue_category ? `<span style="background:rgba(108,71,208,.08);color:#6c47d0;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;">${ai.issue_category}</span>` : '',
   ].filter(Boolean).join('');
 
@@ -14438,7 +14438,7 @@ function renderAIPanelSide(ai, t) {
   // Suggested action
   if (ai.suggested_action) {
     sections.push(`<div style="background:rgba(33,170,224,.06);border-left:3px solid #21AAE0;border-radius:0 8px 8px 0;padding:8px 10px;margin-bottom:10px;">
-      <div style="font-size:9.5px;font-weight:800;color:#21AAE0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">⚡ Suggested Action</div>
+      <div style="font-size:9.5px;font-weight:800;color:#21AAE0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 12 12" fill="#21AAE0" style="width:9px;height:9px;flex-shrink:0"><path d="M7 1L2 7h4l-1 4 5-6H6z"/></svg> Suggested Action</div>
       <div style="font-size:11.5px;color:#1A3D5C;line-height:1.5;">${esc(ai.suggested_action)}</div>
     </div>`);
   }
@@ -14510,7 +14510,7 @@ function renderAIPanel(ai, t) {
         <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:${sc.bg};border:1px solid ${sc.border};color:${sc.color};"
           title="${ai.sentiment_reason||''}">${sc.icon} ${ai.sentiment}</span>
         <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:${uc.bg};color:${uc.color};border:1px solid ${uc.color}22;"
-          title="${ai.urgency_reason||''}">⚡ ${ai.urgency} Urgency</span>
+          title="${ai.urgency_reason||''}"><svg viewBox="0 0 10 10" fill="currentColor" style="width:8px;height:8px"><path d="M6 1L1 6h3.5L3 10 9 4H5.5z"/></svg>${ai.urgency} Urgency</span>
         ${ai.issue_category?`<span style="padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(139,92,246,.1);color:#7C3AED;border:1px solid rgba(139,92,246,.2);">${ai.issue_category}</span>`:''}
         ${ai.escalation_needed?`<span style="padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:800;background:rgba(220,38,38,.1);color:#DC2626;border:1px solid rgba(220,38,38,.25);animation:livePulse 1.5s infinite;">🔺 Escalate</span>`:''}
         ${ai.duplicate_risk?`<span style="padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;background:rgba(217,119,6,.1);color:#D97706;border:1px solid rgba(217,119,6,.2);">⚠ Possible Duplicate</span>`:''}
@@ -14531,7 +14531,7 @@ function renderAIPanel(ai, t) {
       <!-- Suggested Action -->
       ${ai.suggested_action ? `
       <div style="padding:8px 10px;background:rgba(0,192,125,.07);border:1px solid rgba(0,192,125,.2);border-radius:8px;">
-        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#059669;margin-bottom:3px;">💡 Suggested Action</div>
+        <div style="font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#059669;margin-bottom:3px;display:flex;align-items:center;gap:4px;"><svg viewBox="0 0 12 12" fill="none" stroke="#059669" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:9px;flex-shrink:0"><circle cx="6" cy="5" r="3"/><path d="M4.5 9.5h3M6 8v1.5"/></svg> Suggested Action</div>
         <div style="font-size:12px;color:#065F46;line-height:1.45;">${ai.suggested_action}</div>
       </div>` : ''}
 
@@ -18242,11 +18242,11 @@ function setRoleFilter(mode, btn){
 }
 
 const AUX_LABELS = {
-  'BRB':           { label:'BRB (Quick Away)',       icon:'🟠' },
-  'BREAK':         { label:'Break',                   icon:'🍵' },
-  'TRAINING':      { label:'Training / Coaching',     icon:'🎯' },
-  'QA_SESSION':    { label:'QA Session AUX',          icon:'🧪' },
-  'INTERNAL_CALL': { label:'Internal Calls AUX',      icon:'📞' },
+  'BRB':           { label:'BRB (Quick Away)',       icon:'◉' },
+  'BREAK':         { label:'Break',                   icon:'◈' },
+  'TRAINING':      { label:'Training / Coaching',     icon:'▸' },
+  'QA_SESSION':    { label:'QA Session AUX',          icon:'◆' },
+  'INTERNAL_CALL': { label:'Internal Calls AUX',      icon:'◎' },
 };
 
 async function loadBreakThresholds(){
@@ -18256,7 +18256,7 @@ async function loadBreakThresholds(){
     const j = await fetch(BACKEND+'/api/break-thresholds',{credentials:'include'}).then(r=>r.json());
     if(!j.success){ wrap.innerHTML='<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Failed to load</div>'; return; }
     const rows = (j.data||[]).map(t=>{
-      const meta = AUX_LABELS[t.aux_type] || { label: t.aux_type, icon:'⏱️' };
+      const meta = AUX_LABELS[t.aux_type] || { label: t.aux_type, icon:'◎' };
       const singleVal = t.single_limit_minutes != null ? t.single_limit_minutes : '';
       const dailyVal  = t.daily_limit_minutes  != null ? t.daily_limit_minutes  : '';
       const inp = `background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;text-align:center;outline:none;padding:7px 10px;width:100px;`;
@@ -19743,7 +19743,7 @@ window.addEventListener('load', async () => {
     var section = document.getElementById('agent-section-breakbot');
     if(!section || section._ficons) return;
     section._ficons = true;
-    var icons = ['⚡','🔄','📊','⏱','🎯','💡','🔔','📡'];
+    var icons = ['◈','◉','▸','◎','◆','◇','▪','▫'];
     var positions = [
       {top:'12%',left:'8%',dur:'9s',delay:'0s'},
       {top:'25%',left:'85%',dur:'11s',delay:'-3s'},
@@ -23482,7 +23482,7 @@ function laFormatAnalysis(rec) {
 
   if (rec.summary) {
     sections.push(`<div style="background:rgba(244,137,31,.07);border-left:3px solid #F4891F;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:700;color:#F4891F;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">📊 Analysis Summary</div>
+      <div style="font-size:11px;font-weight:700;color:#F4891F;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 16 16" fill="none" stroke="#F4891F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0"><rect x="2" y="10" width="3" height="4" rx="1"/><rect x="6.5" y="6" width="3" height="8" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg> Analysis Summary</div>
       <div style="font-size:13px;color:#3A5068;line-height:1.6;">${esc(rec.summary)}</div>
     </div>`);
   }
@@ -23495,7 +23495,7 @@ function laFormatAnalysis(rec) {
         ${r.confidence ? `<div style="font-size:11px;color:#F4891F;margin-top:4px;font-weight:600;">Confidence: ${esc(String(r.confidence))}</div>` : ''}
       </div>`).join('');
     sections.push(`<div style="margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:700;color:#072B40;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">🎯 Suggested Rule Improvements</div>
+      <div style="font-size:12px;font-weight:700;color:#072B40;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px;"><svg viewBox="0 0 16 16" fill="none" stroke="#072B40" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.6 3.5L8 10l-3.1 1.5.6-3.5L3 5.5 6.5 5z"/></svg> Suggested Rule Improvements</div>
       ${items}
     </div>`);
   }
@@ -24538,22 +24538,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
 
   /* ── 4. COMMAND PALETTE ─────────────────────────────── */
   const CMD_ITEMS = [
-    { ico:'⚡', name:'Live Dashboard',   hint:'Real-time call center metrics',  type:'nav', tab:'live' },
-    { ico:'📊', name:'Reports',          hint:'Daily analytics & trend data',   type:'nav', tab:'reports' },
-    { ico:'👥', name:'Manage Agents',    hint:'Agent roster, status & settings',type:'nav', tab:'agents' },
-    { ico:'🔐', name:'Access Control',   hint:'Roles & permissions management', type:'nav', tab:'access' },
-    { ico:'📋', name:'Login Logs',       hint:'Session & login history',        type:'nav', tab:'loginlogs' },
-    { ico:'⏱️', name:'Break Tracker',    hint:'Break & AUX time tracking',      type:'nav', tab:'breaks' },
-    { ico:'🎁', name:'Bonus Guide',      hint:'Bonus structure & guidelines',   type:'nav', tab:'bonus' },
-    { ico:'📞', name:'Call Logs',        hint:'Detailed inbound call records',  type:'nav', tab:'calllogs' },
-    { ico:'🗂️', name:'Audit Log',        hint:'System activity audit trail',    type:'nav', tab:'auditlog' },
-    { ico:'🎫', name:'Tickets',          hint:'Support ticket management',      type:'nav', tab:'tickets' },
-    { ico:'🤖', name:'AI Agent',         hint:'AI-powered learning & insights', type:'nav', tab:'ai-agent' },
-    { ico:'🔄', name:'Refresh Data',     hint:'Force a full data reload',       type:'action', fn:function(){ if(typeof refresh==='function') refresh(); showToast('Data refreshed','success',2500); } },
-    { ico:'🌙', name:'Toggle Dark Mode', hint:'Switch light / dark theme',      type:'action', fn:function(){ var b=document.getElementById('darkModeBtn'); if(b) b.click(); } },
-    { ico:'⌨️', name:'Keyboard Shortcuts',hint:'View all keyboard shortcuts',   type:'action', fn:function(){ closeCmdPalette(); showKbdModal(); } },
-    { ico:'🎯', name:'Focus Mode',       hint:'Distraction-free agent view',    type:'action', fn:function(){ closeCmdPalette(); toggleFocusMode(); } },
-    { ico:'🔍', name:'Debug Panel',      hint:'Dev diagnostics & raw data',     type:'nav', tab:'debug' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M8 2v4l2.5 2.5"/><circle cx="8" cy="8" r="6"/></svg>', name:'Live Dashboard',   hint:'Real-time call center metrics',  type:'nav', tab:'live' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="2" y="10" width="3" height="4" rx="1"/><rect x="6.5" y="6" width="3" height="8" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg>', name:'Reports',          hint:'Daily analytics & trend data',   type:'nav', tab:'reports' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="6" cy="5" r="3"/><path d="M1 13c0-2.76 2.24-4 5-4s5 1.24 5 4"/><path d="M11 7l2 2 3-3"/></svg>', name:'Manage Agents',    hint:'Agent roster, status & settings',type:'nav', tab:'agents' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 11h4M5 5h3"/></svg>', name:'Access Control',   hint:'Roles & permissions management', type:'nav', tab:'access' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M4 6h8M4 9h6M4 12h4"/><rect x="2" y="2" width="12" height="14" rx="2"/></svg>', name:'Login Logs',       hint:'Session & login history',        type:'nav', tab:'loginlogs' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>', name:'Break Tracker',    hint:'Break & AUX time tracking',      type:'nav', tab:'breaks' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.6 3.5L8 10l-3.1 1.5.6-3.5L3 5.5 6.5 5z"/></svg>', name:'Bonus Guide',      hint:'Bonus structure & guidelines',   type:'nav', tab:'bonus' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4z"/><path d="M6 8h.5a1.5 1.5 0 0 1 0 3H6v-3z"/><path d="M10 11V8h1.5"/><path d="M10 9.5h1"/></svg>', name:'Call Logs',        hint:'Detailed inbound call records',  type:'nav', tab:'calllogs' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M4 6h8M4 9h6M4 12h4"/><rect x="2" y="2" width="12" height="14" rx="2"/></svg>', name:'Audit Log',        hint:'System activity audit trail',    type:'nav', tab:'auditlog' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M2 6h12"/><path d="M6 3v3M10 3v3"/></svg>', name:'Tickets',          hint:'Support ticket management',      type:'nav', tab:'tickets' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="8" cy="6" r="3"/><path d="M4 13s.5-3 4-3 4 3 4 3"/><path d="M11 2l1 1-1 1"/></svg>', name:'AI Agent',         hint:'AI-powered learning & insights', type:'nav', tab:'ai-agent' },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c2.1 0 3.9 1.2 4.9 2.9"/><path d="M10 5.5h3.5V2"/></svg>', name:'Refresh Data',     hint:'Force a full data reload',       type:'action', fn:function(){ if(typeof refresh==='function') refresh(); showToast('Data refreshed','success',2500); } },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M8 3a5 5 0 1 0 5 5"/><path d="M13 3v5h-5"/></svg>', name:'Toggle Dark Mode', hint:'Switch light / dark theme',      type:'action', fn:function(){ var b=document.getElementById('darkModeBtn'); if(b) b.click(); } },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="2" y="4" width="4" height="4" rx="1"/><rect x="2" y="10" width="4" height="4" rx="1"/><rect x="8" y="4" width="4" height="4" rx="1"/><rect x="8" y="10" width="4" height="4" rx="1"/></svg>', name:'Keyboard Shortcuts',hint:'View all keyboard shortcuts',   type:'action', fn:function(){ closeCmdPalette(); showKbdModal(); } },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="8" cy="8" r="6"/><path d="M8 5v3"/><circle cx="8" cy="11" r=".5" fill="currentColor"/></svg>', name:'Focus Mode',       hint:'Distraction-free agent view',    type:'action', fn:function(){ closeCmdPalette(); toggleFocusMode(); } },
+    { ico:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>', name:'Debug Panel',      hint:'Dev diagnostics & raw data',     type:'nav', tab:'debug' },
   ];
 
   var _cmdOpen = false;
@@ -25109,7 +25109,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     var bar = document.createElement('div');
     bar.className = 'audit-search-bar';
     bar.innerHTML =
-      '<input type="text" id="audit-search-input" placeholder="🔍 Search audit log..." style="flex:1;min-width:200px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;padding:8px 12px;color:var(--t1);font-size:12px;outline:none;">' +
+      '<input type="text" id="audit-search-input" placeholder="Search audit log..." style="flex:1;min-width:200px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;padding:8px 12px;color:var(--t1);font-size:12px;outline:none;">' +
       '<button onclick="exportAuditCSV()" class="btn btn-sm btn-primary" style="white-space:nowrap;">📥 Export CSV</button>';
     bar.style.cssText = 'display:flex;gap:8px;margin-bottom:12px;align-items:center;';
     var firstCard = page.querySelector('.card');
@@ -25499,7 +25499,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     var json = JSON.stringify(report, null, 2);
     if (navigator.clipboard) {
       navigator.clipboard.writeText(json).then(function(){
-        showToast('📋 Bug report copied to clipboard — paste in Slack', 'success', 5000);
+        showToast('Bug report copied to clipboard — paste in Slack', 'success', 5000);
       }).catch(function(){
         console.log('Bug Report:\n' + json);
         showToast('Bug report logged to console', 'info', 4000);
