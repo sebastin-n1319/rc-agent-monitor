@@ -109,6 +109,9 @@ app.use(express.static(path.join(__dirname, 'public'), {
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       res.setHeader('Surrogate-Control', 'no-store');
+      // Force-wipe browser cache, SW registrations, and cookies on every HTML load
+      // This guarantees stale service workers and cached assets are cleared on deploy
+      res.setHeader('Clear-Site-Data', '"cache", "storage"');
     }
   }
 }));

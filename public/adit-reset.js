@@ -1,4 +1,40 @@
 /**
+ * ── NUCLEAR SW CACHE BUSTER ──────────────────────────────────────────────────
+ * Runs on every fresh load of this versioned file. If the stored version
+ * doesn't match, unregisters all service workers + deletes all caches then
+ * reloads once. This guarantees stale SWs never survive a deployment.
+ */
+(function () {
+  var TARGET = 'adit-v1.19.9';
+  var KEY = 'adit-cache-bust';
+  if (typeof localStorage !== 'undefined' && localStorage.getItem(KEY) === TARGET) return;
+  if (!('serviceWorker' in navigator) && !('caches' in window)) {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(KEY, TARGET);
+    return;
+  }
+  var cleared = false;
+  function finish() {
+    if (cleared) return; cleared = true;
+    if (typeof localStorage !== 'undefined') localStorage.setItem(KEY, TARGET);
+    window.location.reload(true);
+  }
+  Promise.all([
+    navigator.serviceWorker.getRegistrations
+      ? navigator.serviceWorker.getRegistrations().then(function(regs) {
+          return Promise.all(regs.map(function(r) { return r.unregister(); }));
+        })
+      : Promise.resolve(),
+    window.caches && window.caches.keys
+      ? window.caches.keys().then(function(keys) {
+          return Promise.all(keys.map(function(k) { return window.caches.delete(k); }));
+        })
+      : Promise.resolve()
+  ]).then(finish).catch(finish);
+  // Fallback if promise takes too long
+  setTimeout(finish, 3000);
+})();
+
+/**
  * adit-reset.js
  * Nuclear CSS reset — disables ALL inline <style> blocks (except auth-gate-css)
  * and ALL external stylesheets (except Google Fonts, Chart.js, adit-theme.css).
