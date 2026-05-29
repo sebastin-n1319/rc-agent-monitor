@@ -17,9 +17,9 @@
 <!-- Poppins font — Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js"></script>
-<link rel="stylesheet" href="/adit-theme.css" id="adit-theme-link">
-<link rel="stylesheet" href="/agent-view-v2.css" id="agent-view-v2-link">
+<script src="/adit-reset.js?v=1.19.7"></script>
+<link rel="stylesheet" href="/adit-theme.css?v=1.19.7" id="adit-theme-link">
+<link rel="stylesheet" href="/agent-view-v2.css?v=1.19.7" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
 <link rel="stylesheet" href="/schedule-admin.css" id="schedule-admin-link">
 <link rel="stylesheet" href="/anomaly-center.css" id="anomaly-center-link">
@@ -27,17 +27,17 @@
 <link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
 <link rel="stylesheet" href="/predict-center.css" id="predict-center-link">
 <!-- Session 16: Roster admin (T1 CS Team Roster replacement) -->
-<link rel="stylesheet" href="/roster-admin.css" id="roster-admin-link">
-<script src="/agent-view-v2.js" defer></script>
-<script src="/alert-center.js" defer></script>
-<script src="/schedule-admin.js" defer></script>
-<script src="/anomaly-center.js" defer></script>
-<script src="/offline-bridge.js" defer></script>
-<script src="/bulk-actions.js" defer></script>
-<script src="/predict-center.js" defer></script>
-<script src="/roster-admin.js" defer></script>
+<link rel="stylesheet" href="/roster-admin.css?v=1.19.7" id="roster-admin-link">
+<script src="/agent-view-v2.js?v=1.19.7" defer></script>
+<script src="/alert-center.js?v=1.19.7" defer></script>
+<script src="/schedule-admin.js?v=1.19.7" defer></script>
+<script src="/anomaly-center.js?v=1.19.7" defer></script>
+<script src="/offline-bridge.js?v=1.19.7" defer></script>
+<script src="/bulk-actions.js?v=1.19.7" defer></script>
+<script src="/predict-center.js?v=1.19.7" defer></script>
+<script src="/roster-admin.js?v=1.19.7" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
-<script src="/a11y-focus-trap.js" defer></script>
+<script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
 <style id="a11y-css">
 /* Skip-to-content link — visible only when keyboard-focused */
 .skip-link {
@@ -25541,7 +25541,27 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function(){
       navigator.serviceWorker.register('/sw.js')
-        .then(function(reg){ console.log('[SW] registered scope:', reg.scope); })
+        .then(function(reg){
+          console.log('[SW] registered scope:', reg.scope);
+          // Force new SW to activate immediately — no waiting for tab close
+          reg.addEventListener('updatefound', function(){
+            var newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', function(){
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // New SW installed, tell it to skip waiting then reload
+                newWorker.postMessage({ type: 'skip-waiting' });
+              }
+            });
+          });
+          // When SW takes control, reload once to pick up new assets
+          var refreshed = false;
+          navigator.serviceWorker.addEventListener('controllerchange', function(){
+            if (!refreshed) { refreshed = true; window.location.reload(); }
+          });
+          // Also check for updates immediately (catches deployments)
+          reg.update().catch(function(){});
+        })
         .catch(function(err){ console.warn('[SW] register failed:', err); });
     });
   }
