@@ -7728,3 +7728,15 @@ button[onclick*="switchAgent"],
   text-align: center !important;
 }
 
+
+/* ── Footer — no dead space below ── */
+body > footer,
+#mainApp > footer,
+footer {
+  margin-bottom: 0 !important;
+  padding-bottom: 10px !important;
+}
+/* Remove extra body padding that creates space below footer */
+#mainApp {
+  padding-bottom: 0 !important;
+}
