@@ -6047,7 +6047,7 @@ body::after{
 }
 
 #mainApp{
-  background: transparent !important;
+  background: var(--bg, #F7F8F8) !important;
 }
 
 .page,
@@ -9091,8 +9091,8 @@ tbody tr:hover td{
   padding-bottom:22px;border-bottom:1px solid rgba(255,255,255,.08);
 }
 #loginScreen .adit-brand img{
-  width:42px;height:42px;object-fit:contain;border-radius:11px;
-  box-shadow:0 4px 14px rgba(0,0,0,.3);
+  height:38px;width:auto;max-width:160px;object-fit:contain;border-radius:0;
+  box-shadow:none;
 }
 #loginScreen .adit-brand-name{font-size:16px;font-weight:800;color:#FFFFFF;letter-spacing:-.025em;}
 #loginScreen .adit-brand-sub{
@@ -9332,7 +9332,7 @@ tbody tr:hover td{
     <div class="l5-right-orb"></div>
     <div class="adit-login-card" id="l5RightCard">
       <div class="adit-brand">
-        <img src="/adit-logo-dark.png" alt="Adit" onerror="this.style.display='none'">
+        <img src="/adit-logo-light.svg" alt="Adit" class="login-brand-logo" onerror="this.style.display='none'">
         <div>
           <div class="adit-brand-name">Adit Agent Monitor</div>
           <div class="adit-brand-sub">T1 CS Stars · Operations Hub</div>
@@ -9670,7 +9670,8 @@ tbody tr:hover td{
     </button>
     <!-- Missed Call Alert test button (admin only) -->
     <button id="test-missed-call-btn" onclick="testMissedCallAlert()" title="Trigger missed call poll and send test notification to Google Chat" style="background:rgba(245,130,31,.08);border:1px solid rgba(245,130,31,.25);border-radius:6px;color:#F5821F;font-size:11px;font-weight:600;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
-      🔔 Test Alert
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0"><path d="M10 2a6 6 0 0 1 6 6c0 3.5 1.5 5 1.5 5h-15S4 11.5 4 8a6 6 0 0 1 6-6z"/><path d="M8.7 17a1.4 1.4 0 0 0 2.6 0"/></svg>
+      Test Alert
     </button>
     <!-- Dark mode toggle -->
     <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark mode"
@@ -9701,7 +9702,7 @@ tbody tr:hover td{
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
     <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
     <button class="nav-tab" data-tab="tickets" onclick="switchTab('tickets',this)">Tickets</button>
-    <button class="nav-tab" data-tab="debug" onclick="switchTab('debug',this);loadDebugPanel()">🔍 Debug</button>
+    <button class="nav-tab" data-tab="debug" onclick="switchTab('debug',this);loadDebugPanel()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:4px;vertical-align:-1px"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/></svg>Debug</button>
     <button class="nav-tab" data-tab="ai-agent" onclick="switchTab('ai-agent',this)">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;margin-right:4px;vertical-align:-2px"><circle cx="8" cy="5" r="3"/><path d="M2 13c0-3.314 2.686-5 6-5s6 1.686 6 5"/><path d="M8 10v3M6 12h4"/></svg>
       AI Agent
@@ -10144,9 +10145,9 @@ tbody tr:hover td{
       </div>
       <div class="btk-command-right">
         <div class="break-toolbar-group">
-          <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)">← Prev</button>
+          <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(-1)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M10 3L5 8l5 5"/></svg> Prev</button>
           <input type="date" id="break-admin-date" class="break-date-input" onchange="setBreakTrackerDate(this.value)">
-          <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next →</button>
+          <button class="break-toolbar-btn" onclick="shiftBreakTrackerWindow(1)">Next <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M6 3l5 5-5 5"/></svg></button>
           <button class="break-toolbar-btn primary" onclick="jumpBreakTrackerToday()">Today</button>
           <span class="break-history-chip" id="break-admin-history-chip">Today</span>
           <button class="break-toolbar-btn" onclick="downloadBreakReport()" title="Download PDF report" style="display:flex;align-items:center;gap:5px;">
@@ -10248,7 +10249,7 @@ tbody tr:hover td{
           </select>
           <input type="text" id="cl-search" placeholder="Search agent, number…" oninput="clApplyFilters()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;width:180px;">
           <button class="btn btn-primary btn-sm" onclick="loadCallLogs()">&#8635; Refresh</button>
-          <button class="btn btn-sm" onclick="exportCallLogsCSV()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);" title="Export as CSV">⬇ CSV</button>
+          <button class="btn btn-sm" onclick="exportCallLogsCSV()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);" title="Export as CSV"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;vertical-align:-1px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> CSV</button>
         </div>
       </div>
       <!-- Summary chips -->
@@ -10278,8 +10279,8 @@ tbody tr:hover td{
       <div id="cl-pagination" style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-top:1px solid var(--border);background:var(--card);border-radius:0 0 var(--r) var(--r);">
         <span id="cl-page-info" style="font-size:12px;color:var(--t3)"></span>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-sm" id="cl-prev-btn" onclick="clChangePage(-1)" disabled>← Prev</button>
-          <button class="btn btn-sm" id="cl-next-btn" onclick="clChangePage(1)" disabled>Next →</button>
+          <button class="btn btn-sm" id="cl-prev-btn" onclick="clChangePage(-1)" disabled><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M10 3L5 8l5 5"/></svg> Prev</button>
+          <button class="btn btn-sm" id="cl-next-btn" onclick="clChangePage(1)" disabled>Next <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M6 3l5 5-5 5"/></svg></button>
         </div>
       </div>
     </div>
@@ -10297,7 +10298,7 @@ tbody tr:hover td{
           Clean &amp; VACUUM DB
         </button>
         <button onclick="runDbCleanup(true)" title="Archive old data to Google Sheets then delete from DB" style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.25);border-radius:7px;color:rgba(52,211,153,.8);font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;">📤 Archive → Sheets</button>
-        <button onclick="checkDbStats()" id="db-stats-btn" title="Check database size and row counts" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t3);font-size:11px;padding:4px 10px;cursor:pointer;">📊 DB Stats</button>
+        <button onclick="checkDbStats()" id="db-stats-btn" title="Check database size and row counts" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:7px;color:var(--t3);font-size:11px;padding:4px 10px;cursor:pointer;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;vertical-align:-1px"><rect x="2" y="10" width="3" height="4" rx="1"/><rect x="6.5" y="6" width="3" height="8" rx="1"/><rect x="11" y="2" width="3" height="12" rx="1"/></svg> DB Stats</button>
       </div>
       <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -10466,12 +10467,12 @@ tbody tr:hover td{
     <!-- Table -->
     <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:10px;overflow:hidden;box-shadow:rgba(0,0,0,0.05) 0px 2px 12px;">
       <div style="display:grid;grid-template-columns:110px 1fr 90px 70px 1fr 90px 80px;gap:6px 12px;padding:10px 16px;background:rgb(247,248,248);border-bottom:1px solid rgb(222,225,230);">
-        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('ticketId')">Ticket ID ⇅</span>
-        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('agentName')">Agent ⇅</span>
+        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('ticketId')">Ticket ID <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
+        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('agentName')">Agent <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;">Channel</span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;">Queue</span>
-        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('ticketType')">Type ⇅</span>
-        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('date')">Date ⇅</span>
+        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('ticketType')">Type <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
+        <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('date')">Date <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;">Flag</span>
       </div>
       <div id="tkt-admin-list" style="max-height:580px;overflow-y:auto;">
@@ -10505,7 +10506,7 @@ tbody tr:hover td{
       <!-- ── ROW 1: Config + Status ── -->
       <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
-          <span style="font-size:12px;font-weight:700;color:#072B40;">⚙️ Notifier Config</span>
+          <span style="font-size:12px;font-weight:700;color:#072B40;display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg> Notifier Config</span>
           <span style="font-size:10px;color:#9BAFC0;">Loaded from Railway env vars at server start</span>
         </div>
         <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px 24px;">
@@ -10543,10 +10544,10 @@ tbody tr:hover td{
       <!-- ── ROW 2: Poll Log ── -->
       <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
-          <span style="font-size:12px;font-weight:700;color:#072B40;">📋 Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:10.5px;margin-left:4px;">(last 30 runs)</span></span>
+          <span style="font-size:12px;font-weight:700;color:#072B40;display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0"><path d="M4 6h8M4 9h6M4 12h4"/><rect x="2" y="2" width="12" height="14" rx="2"/></svg> Poll Log <span id="dbg-poll-count" style="font-weight:400;color:#9BAFC0;font-size:10.5px;margin-left:4px;">(last 30 runs)</span></span>
           <div style="display:flex;gap:7px;flex-wrap:wrap;">
-            <button id="dbg-poll-copy-btn" onclick="_dbgCopyJSON('poll')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy JSON</button>
-            <button id="dbg-poll-dl-btn" onclick="_dbgDownloadJSON('poll','poll-log')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">⬇ Download</button>
+            <button id="dbg-poll-copy-btn" onclick="_dbgCopyJSON('poll')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg> Copy JSON</button>
+            <button id="dbg-poll-dl-btn" onclick="_dbgDownloadJSON('poll','poll-log')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;vertical-align:-1px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> Download</button>
             <button onclick="clearDebugPollLog()" style="font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#6b7280;cursor:pointer;">🗑 Clear</button>
           </div>
         </div>
@@ -10585,10 +10586,10 @@ tbody tr:hover td{
               <option value="30">Last 30 min</option>
               <option value="60">Last 60 min</option>
             </select>
-            <button onclick="loadDebugRaw(false)" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;" title="Load from last poll cache — no RC API call">📋 From last poll</button>
-            <button onclick="loadDebugRaw(true)" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;" title="Make a live RC API call (may be rate-limited)">🔄 Fetch live from RC</button>
-            <button id="dbg-raw-copy-btn" onclick="_dbgCopyJSON('raw')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy JSON</button>
-            <button id="dbg-raw-dl-btn" onclick="_dbgDownloadJSON('raw','rc-raw-calls')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">⬇ Download</button>
+            <button onclick="loadDebugRaw(false)" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;" title="Load from last poll cache — no RC API call"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg> From last poll</button>
+            <button onclick="loadDebugRaw(true)" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;" title="Make a live RC API call (may be rate-limited)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c2.1 0 3.9 1.2 4.9 2.9"/><path d="M10 5.5h3.5V2"/></svg> Fetch live from RC</button>
+            <button id="dbg-raw-copy-btn" onclick="_dbgCopyJSON('raw')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg> Copy JSON</button>
+            <button id="dbg-raw-dl-btn" onclick="_dbgDownloadJSON('raw','rc-raw-calls')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;vertical-align:-1px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> Download</button>
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -10620,8 +10621,8 @@ tbody tr:hover td{
         <!-- Notified Call IDs -->
         <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
-            <span style="font-size:12px;font-weight:700;color:#072B40;">🔔 Notified Call ID Cache</span>
-            <button id="dbg-ids-copy-btn" onclick="_dbgCopyJSON('ids')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;">📋 Copy</button>
+            <span style="font-size:12px;font-weight:700;color:#072B40;display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0"><path d="M10 2a6 6 0 0 1 6 6c0 3.5 1.5 5 1.5 5h-15S4 11.5 4 8a6 6 0 0 1 6-6z"/><path d="M8.7 17a1.4 1.4 0 0 0 2.6 0"/></svg> Notified Call ID Cache</span>
+            <button id="dbg-ids-copy-btn" onclick="_dbgCopyJSON('ids')" style="display:none;font-size:10.5px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid #DEE1E6;background:#FFFFFF;color:#3A5068;cursor:pointer;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg> Copy</button>
           </div>
           <div style="padding:14px 16px;">
             <div style="font-size:10px;color:#9BAFC0;margin-bottom:8px;">These call IDs won't trigger another alert until the server restarts.</div>
@@ -10632,7 +10633,7 @@ tbody tr:hover td{
         <!-- DOM Fixed-Element Scanner -->
         <div style="background:#FFFFFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05);">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:11px 16px;background:#F7F8F8;border-bottom:1px solid #DEE1E6;">
-            <span style="font-size:12px;font-weight:700;color:#072B40;">🔍 DOM Element Scanner</span>
+            <span style="font-size:12px;font-weight:700;color:#072B40;display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3 3"/></svg> DOM Element Scanner</span>
             <div style="display:flex;gap:7px;">
               <button onclick="runDbgScanFixed()" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(245,130,31,.4);background:rgba(245,130,31,.08);color:#c2470a;cursor:pointer;">Scan</button>
               <button onclick="_dbgKillFixed()" style="font-size:10.5px;font-weight:600;padding:5px 12px;border-radius:6px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.06);color:#dc2626;cursor:pointer;">Kill rogue</button>
@@ -12247,7 +12248,7 @@ const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
 const ADIT_LOGO_DARK='/adit-logo-dark.svg';
-const ADIT_LOGO_LIGHT='/adit-logo-dark.svg';
+const ADIT_LOGO_LIGHT='/adit-logo-light.svg';
 
 // ── XSS-safe HTML escaper — use esc() on ALL user-supplied strings in innerHTML ──
 function esc(str){
@@ -16275,7 +16276,7 @@ function applyAditBranding(){
     node.alt = 'Adit';
   });
   document.querySelectorAll('.login-brand-logo').forEach(node => {
-    node.src = ADIT_LOGO_DARK;
+    node.src = ADIT_LOGO_LIGHT;
     node.alt = 'Adit';
   });
   document.querySelectorAll('.hdr-logo-adit').forEach(node => {
@@ -17732,7 +17733,7 @@ async function testMissedCallAlert(){
   } catch(e){
     showToast('Error: '+e.message,'error');
   } finally {
-    if(btn){ btn.disabled=false; btn.textContent='🔔 Test Missed Call Alert'; }
+    if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0"><path d="M10 2a6 6 0 0 1 6 6c0 3.5 1.5 5 1.5 5h-15S4 11.5 4 8a6 6 0 0 1 6-6z"/><path d="M8.7 17a1.4 1.4 0 0 0 2.6 0"/></svg> Test Alert'; }
   }
 }
 

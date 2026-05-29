@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.4';  // Logo SVG + dead space fix + icon polish
+const CACHE_VERSION = 'adit-v1.19.5';  // Light logo SVG + login brand fix + icon replacements
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
@@ -55,6 +55,7 @@ const PRECACHE_URLS = [
   '/roster-admin.js',
   '/a11y-focus-trap.js',
   '/adit-logo-dark.svg',
+  '/adit-logo-light.svg',
   '/adit-logo-dark.png',
   '/adit-logo-light.png',
   '/adit-icon.svg',
