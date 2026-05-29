@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 48" width="160" height="48">
+  <defs>
+    <linearGradient id="iconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F4891F"/>
+      <stop offset="100%" stop-color="#E07010"/>
+    </linearGradient>
+    <linearGradient id="pulse" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#21AAE0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#F4891F" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Icon mark — rounded square -->
+  <rect x="0" y="4" width="40" height="40" rx="9" fill="#072B40"/>
+  <rect x="0" y="4" width="40" height="40" rx="9" fill="url(#iconBg)" opacity="0.15"/>
+
+  <!-- Pulse line -->
+  <polyline points="4,24 9,24 13,16 17,32 21,20 25,28 29,24 36,24"
+    fill="none" stroke="url(#pulse)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- A letterform -->
+  <path d="M13,33 L20,15 L27,33" fill="none" stroke="#F4891F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="15.5" y1="27" x2="24.5" y2="27" stroke="#21AAE0" stroke-width="2.2" stroke-linecap="round"/>
+
+  <!-- "Adit" wordmark -->
+  <text x="50" y="20" font-family="'Poppins','Inter',system-ui,sans-serif" font-size="16" font-weight="800" fill="#072B40" letter-spacing="-0.5">Adit</text>
+
+  <!-- "Agent Monitor" sub-label -->
+  <text x="50" y="35" font-family="'Poppins','Inter',system-ui,sans-serif" font-size="9.5" font-weight="600" fill="#6B849A" letter-spacing="0.5">AGENT MONITOR</text>
+</svg>

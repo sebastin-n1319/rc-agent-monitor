@@ -439,7 +439,8 @@ body::before,body::after{display:none;}
 /* ══════════════════════════════════════════════════════════════════════════
    MAIN APP WRAPPER
 ══════════════════════════════════════════════════════════════════════════ */
-#mainApp{display:none;flex-direction:column;min-height:100vh;position:relative;z-index:5;padding-top:54px;}
+#mainApp{display:none;flex-direction:column;min-height:100vh;position:relative;z-index:5;padding-top:54px;background:var(--bg,#F7F8F8);}
+#mainApp > footer{flex-shrink:0;margin-top:auto;}
 
 /* ══════════════════════════════════════════════════════════════════════════
    HEADER
@@ -9643,14 +9644,9 @@ tbody tr:hover td{
 <div id="mainApp">
 <header>
   <div class="hdr-left">
-    <span class="hdr-logo-rc" style="display:none"></span>
+    <img class="hdr-logo-adit" src="/adit-logo-dark.svg" alt="Adit Agent Monitor">
     <div class="hdr-sep"></div>
-    <img class="hdr-logo-adit" src="/adit-icon.svg" alt="Adit">
-    <div class="hdr-sep"></div>
-    <div>
-      <div class="hdr-title">Adit Agent Monitor</div>
-      <div class="hdr-sub">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
-    </div>
+    <div class="hdr-sub" style="font-size:11px;color:var(--t3,#6B849A)">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
   </div>
   <div class="hdr-right">
     <button class="hdr-chip" onclick="toggleTZ()">
@@ -12250,8 +12246,8 @@ const TZ={CST:'America/Chicago',IST:'Asia/Kolkata'};
 const DOMAIN='adit.com';
 const CORE_ADMINS=['sebastin.n@adit.com','ronnie@adit.com','imran@adit.com'];
 
-const ADIT_LOGO_DARK='/adit-logo-dark.png';
-const ADIT_LOGO_LIGHT='/adit-logo-light.png';
+const ADIT_LOGO_DARK='/adit-logo-dark.svg';
+const ADIT_LOGO_LIGHT='/adit-logo-dark.svg';
 
 // ── XSS-safe HTML escaper — use esc() on ALL user-supplied strings in innerHTML ──
 function esc(str){

@@ -7740,3 +7740,40 @@ footer {
 #mainApp {
   padding-bottom: 0 !important;
 }
+
+/* ── Logo wordmark — proper sizing ── */
+.hdr-logo-adit {
+  height: 36px !important;
+  width: auto !important;
+  max-width: 180px !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  object-fit: contain !important;
+  transition: opacity .2s, transform .2s !important;
+}
+.hdr-logo-adit:hover {
+  opacity: .85 !important;
+  transform: scale(1.03) !important;
+  box-shadow: none !important;
+}
+
+/* Login page brand logo */
+.adit-brand img,
+.login-brand-logo {
+  height: 40px !important;
+  width: auto !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Dead space fix — push footer to bottom but no overflow */
+#mainApp {
+  background: var(--bg, #F7F8F8) !important;
+}
+body {
+  background: var(--bg, #F7F8F8) !important;
+}
