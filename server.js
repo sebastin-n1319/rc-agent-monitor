@@ -1321,45 +1321,63 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
-    // PRIMARY STRATEGY: /tickets/search with searchStr (correct Zoho Desk v1 param)
-    // Replaces all previous strategies that used invalid params (isNumber, ticketNumber, word)
-    // which returned 422 UNPROCESSABLE_ENTITY
+    // STRATEGY 1: Scan open tickets — proven: GET /tickets?limit=100&from=N
     try {
-      const r0 = await fetch(`${ZOHO_API_BASE}/tickets/search?searchStr=${encodeURIComponent(rawId)}&limit=50`, { headers });
-      if (r0.ok) {
-        const d0 = await r0.json();
-        const list0 = d0.data || (Array.isArray(d0) ? d0 : []);
-        const found0 = Array.isArray(list0) ? list0.find(t => String(t.ticketNumber) === rawId) : null;
-        if (found0) ticket = found0;
-      } else {
-        console.log(`⚠️  searchStr strategy HTTP ${r0.status}: ${await r0.text().catch(()=>'').then(t=>t.slice(0,200))}`);
+      const r1 = await fetch(`${ZOHO_API_BASE}/tickets?limit=100&from=0`, { headers });
+      if (r1.ok) {
+        const d1 = await r1.json();
+        const found1 = (d1.data||[]).find(t => String(t.ticketNumber) === rawId);
+        if (found1) ticket = found1;
       }
-    } catch(e) { console.log('searchStr strategy error:', e.message); }
+    } catch(e) {}
 
-    // FALLBACK A: try with subject search using # prefix
+    // STRATEGY 2: Scan CLOSED tickets — proven: GET /tickets?status=closed&limit=100
+    // Uses smart offset estimation so we only scan ~7 pages instead of all
     if (!ticket) {
       try {
-        const rA = await fetch(`${ZOHO_API_BASE}/tickets/search?searchStr=${encodeURIComponent('#'+rawId)}&limit=50`, { headers });
-        if (rA.ok) {
-          const dA = await rA.json();
-          const listA = dA.data || (Array.isArray(dA) ? dA : []);
-          const foundA = Array.isArray(listA) ? listA.find(t => String(t.ticketNumber) === rawId) : null;
-          if (foundA) ticket = foundA;
+        const rc0 = await fetch(`${ZOHO_API_BASE}/tickets?status=closed&limit=100`, { headers });
+        if (rc0.ok) {
+          const dc0 = await rc0.json();
+          const lc0 = dc0.data || [];
+          const fc0 = lc0.find(t => String(t.ticketNumber) === rawId);
+          if (fc0) {
+            ticket = fc0;
+          } else if (lc0.length > 0) {
+            // Estimate page: newest closed # - target # ≈ offset in closed list
+            const newestNum = parseInt(lc0[0].ticketNumber, 10);
+            const targetNum = parseInt(rawId, 10);
+            if (!isNaN(newestNum) && !isNaN(targetNum)) {
+              const estOffset = Math.max(100, newestNum - targetNum - 50);
+              const offsets = [];
+              for (let o = Math.max(0, estOffset-300); o <= estOffset+400 && o <= 30000; o += 100) offsets.push(o);
+              for (const from of offsets) {
+                if (ticket) break;
+                try {
+                  const rc = await fetch(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`, { headers });
+                  if (!rc.ok) break;
+                  const dc = await rc.json();
+                  const lc = dc.data || [];
+                  if (!lc.length) break;
+                  const fc = lc.find(t => String(t.ticketNumber) === rawId);
+                  if (fc) { ticket = fc; break; }
+                } catch(e) { break; }
+              }
+            }
+          }
         }
-      } catch(e) { /* try next */ }
+      } catch(e) { console.log('closed scan error:', e.message); }
     }
 
-    // FALLBACK B: global search endpoint
+    // STRATEGY 3: Scan onhold tickets
     if (!ticket) {
       try {
-        const rC = await fetch(`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=50`, { headers });
-        if (rC.ok) {
-          const dC = await rC.json();
-          const listC = dC.data || (Array.isArray(dC) ? dC : []);
-          const foundC = listC.find(t => String(t.ticketNumber) === rawId);
-          if (foundC) ticket = foundC;
+        const rh = await fetch(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100`, { headers });
+        if (rh.ok) {
+          const dh = await rh.json();
+          const fh = (dh.data||[]).find(t => String(t.ticketNumber) === rawId);
+          if (fh) ticket = fh;
         }
-      } catch(e) { /* try next */ }
+      } catch(e) {}
     }
 
     // Strategy D: smart paginated scan — estimate offset from most-recent ticket number,
