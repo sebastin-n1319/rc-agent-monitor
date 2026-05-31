@@ -7939,3 +7939,39 @@ body {
   background: #FFFFFF !important;
 }
 .evt-group.open .evt-body { display: flex !important; }
+
+/* ── Status pill classes (p-avail/p-unavail/p-oncall) — inline block disabled ── */
+.p-avail  { background: var(--green-lo) !important; color: var(--green) !important; border: 1px solid rgba(45,220,150,.22) !important; }
+.p-unavail{ background: var(--red-lo)   !important; color: var(--red)   !important; border: 1px solid rgba(237,102,107,.22) !important; }
+.p-oncall { background: var(--blue-lo)  !important; color: var(--blue2) !important; border: 1px solid rgba(33,170,224,.22) !important; }
+.p-avail .dot  { background: var(--green) !important; box-shadow: 0 0 4px var(--green) !important; }
+.p-unavail .dot{ background: var(--red)   !important; box-shadow: 0 0 4px var(--red)   !important; }
+.p-oncall .dot { background: var(--blue2) !important; box-shadow: 0 0 4px var(--blue2) !important; }
+
+/* ── Status Change Log — override all dark V5 rules ────────────────── */
+#event-log .evt-group {
+  background: #FFFFFF !important;
+  border: 1px solid rgb(222,225,230) !important;
+  border-radius: 10px !important;
+  margin-bottom: 4px !important;
+  animation: none !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04) !important;
+}
+#event-log .evt-hdr {
+  background: #F7F8F8 !important;
+  min-height: 44px !important;
+  padding: 10px 14px !important;
+  border-bottom: none !important;
+  animation: none !important;
+}
+#event-log .evt-hdr > span:first-child {
+  color: #072B40 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+}
+#event-log .evt-body {
+  background: #FFFFFF !important;
+  border-top: 1px solid rgb(222,225,230) !important;
+  padding: 8px 12px 10px !important;
+  animation: none !important;
+}
