@@ -1900,29 +1900,37 @@ app.post('/api/ticket/weekend-log', requireAuth, async (req, res) => {
 
     const sheets = getTicketSheetsClient();
 
-    // Discover the actual tab name (handles "Data", "Sheet1", or any custom name)
-    let tabName = WEEKEND_SHEET_TAB; // default from env
-    try {
-      const meta = await sheets.spreadsheets.get({ spreadsheetId: WEEKEND_SHEET_ID, fields: 'sheets.properties' });
-      const sheetsList = meta.data.sheets || [];
-      // Prefer "Data" if it exists, otherwise use the first sheet
-      const dataSheet = sheetsList.find(s => s.properties.title === 'Data');
-      tabName = dataSheet ? 'Data' : (sheetsList[0]?.properties?.title || WEEKEND_SHEET_TAB);
-      console.log(`📋 Weekend sheet tab resolved: "${tabName}" (from ${sheetsList.length} sheets)`);
-    } catch(e2) {
-      console.warn('Could not detect weekend sheet tab, using default:', e2.message);
+    // Try multiple range strategies to find the right tab
+    const rangeOptions = ['A:H', "'Data'!A:H", "'Sheet1'!A:H", "'Tickets'!A:H"];
+    let appendSuccess = false;
+    let lastErr = null;
+    let usedRange = null;
+
+    for (const range of rangeOptions) {
+      try {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: WEEKEND_SHEET_ID,
+          range,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          requestBody: { values: [row] },
+        });
+        appendSuccess = true;
+        usedRange = range;
+        console.log(`✅ Weekend ticket appended with range: ${range}`);
+        break;
+      } catch(e2) {
+        console.warn(`❌ Weekend append failed for range "${range}":`, e2.message);
+        lastErr = e2;
+      }
     }
 
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: WEEKEND_SHEET_ID,
-      range: `'${tabName}'!A:H`,
-      valueInputOption: 'USER_ENTERED',
-      insertDataOption: 'INSERT_ROWS',
-      requestBody: { values: [row] },
-    });
+    if (!appendSuccess) {
+      throw new Error(`All ranges failed. Last error: ${lastErr?.message}`);
+    }
 
     insertAuditLog(session.email, 'weekend_ticket', ticketId, `${department}|${priority}|${transferred}|${source}`).catch(()=>{});
-    res.json({ success: true, message: 'Weekend ticket logged', data: { ticketId, dateLabel, department, priority, tabName } });
+    res.json({ success: true, message: 'Weekend ticket logged', data: { ticketId, dateLabel, department, priority, range: usedRange } });
   } catch(e) {
     console.error('❌ weekend ticket log error:', e.message);
     res.status(500).json({ success: false, error: e.message });
