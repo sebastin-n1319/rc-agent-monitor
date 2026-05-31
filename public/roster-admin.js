@@ -1363,14 +1363,14 @@
         const emp = btn.dataset.emp;
         const agent = (_s.data?.agents || []).find(a => a.emp_id === emp);
         if (!agent) return;
-        if (!confirm(\`Remove \${agent.pseudo || agent.emp_id} from this roster?\n\nThis only removes them from the monitoring roster, not from RingCentral.\`)) return;
+        if (!confirm(`Remove ${agent.pseudo || agent.emp_id} from this roster?\n\nThis only removes them from the monitoring roster, not from RingCentral.`)) return;
         try {
           const r = await fetch('/api/roster/agent/' + encodeURIComponent(emp), { method: 'DELETE', credentials: 'include' });
           const j = await r.json();
           if (!j.success) throw new Error(j.error || 'Delete failed');
           if (_s.data) _s.data.agents = _s.data.agents.filter(a => a.emp_id !== emp);
           go(_s.month);
-          setSaveState('ok', \`Removed \${agent.pseudo || emp}\`);
+          setSaveState('ok', `Removed ${agent.pseudo || emp}`);
         } catch(e) {
           setSaveState('err', '❌ ' + e.message);
         }
