@@ -620,15 +620,19 @@
 
   // Quick-pick statuses (left-click on cell) — ordered by frequency
   const QUICK_PICK = [
-    { s: 'present',  label: 'P',    name: 'Present'    },
-    { s: 'wfh',      label: 'WFH',  name: 'WFH'        },
-    { s: 'on_duty',  label: 'OD',   name: 'On Duty'    },
-    { s: 'off',      label: 'OFF',  name: 'Week Off'   },
-    { s: 'holiday',  label: 'HOL',  name: 'Holiday'    },
-    { s: 'pl',       label: 'PL',   name: 'Paid Leave' },
-    { s: 'sl',       label: 'SL',   name: 'Sick Leave' },
-    { s: 'upl',      label: 'UPL',  name: 'Unpaid'     },
-    { s: 'ncns',     label: 'NCNS', name: 'No Show'    },
+    { s: 'present',    label: 'P',    name: 'Present',       group: 'work' },
+    { s: 'wfh',        label: 'WFH',  name: 'Work From Home', group: 'work' },
+    { s: 'on_duty',    label: 'OD',   name: 'On Duty',       group: 'work' },
+    { s: 'off',        label: 'OFF',  name: 'Week Off',      group: 'off'  },
+    { s: 'holiday',    label: 'HOL',  name: 'Holiday',       group: 'off'  },
+    { s: 'pl',         label: 'PL',   name: 'Paid Leave',    group: 'leave'},
+    { s: 'hd_pl',      label: '½PL',  name: 'Half-Day PL',   group: 'leave'},
+    { s: 'sl',         label: 'SL',   name: 'Sick Leave',    group: 'leave'},
+    { s: 'hd_sl',      label: '½SL',  name: 'Half-Day SL',   group: 'leave'},
+    { s: 'upl',        label: 'UPL',  name: 'Unpaid Leave',  group: 'leave'},
+    { s: 'hd_upl',     label: '½UPL', name: 'Half-Day UPL',  group: 'leave'},
+    { s: 'absent',     label: 'A',    name: 'Absent',        group: 'issue'},
+    { s: 'ncns',       label: 'NCNS', name: 'No Call No Show', group: 'issue'},
   ];
 
   // Predefined shift options (all IST, 9 hours each)
@@ -1318,13 +1322,32 @@
     qp.className = 'rx-qp';
     qp.id = 'rx-qp';
 
-    const batchBtns = QUICK_PICK.map(({ s, label, name }) => `
-      <button class="rx-qp-btn rx-st-${s} ${s === curStatus ? 'rx-qp-active' : ''}" data-s="${s}" title="${name}">
-        <span class="rx-qp-code">${label}</span>
-        <span class="rx-qp-lbl">${name}</span>
-      </button>`).join('');
+    // Group statuses
+    const groups = [
+      { key: 'work',  label: 'Work',  items: QUICK_PICK.filter(q=>q.group==='work')  },
+      { key: 'off',   label: 'Off',   items: QUICK_PICK.filter(q=>q.group==='off')   },
+      { key: 'leave', label: 'Leave', items: QUICK_PICK.filter(q=>q.group==='leave') },
+      { key: 'issue', label: 'Issues',items: QUICK_PICK.filter(q=>q.group==='issue') },
+    ];
 
-    qp.innerHTML = `${batchBtns}<div class="rx-qp-sep"></div><button class="rx-qp-clear" data-s="" title="Clear">✕</button>`;
+    const groupHTML = groups.map(g => `
+      <div class="rx-qp-group">
+        <div class="rx-qp-glabel">${g.label}</div>
+        <div class="rx-qp-grow">
+          ${g.items.map(({s, label, name}) => `
+            <button class="rx-qp-btn rx-st-${s} ${s === curStatus ? 'rx-qp-active' : ''}" data-s="${s}" title="${name}">
+              <span class="rx-qp-code">${label}</span>
+              <span class="rx-qp-lbl">${name}</span>
+            </button>`).join('')}
+        </div>
+      </div>`).join('<div class="rx-qp-vsep"></div>');
+
+    qp.innerHTML = `
+      <div class="rx-qp-header">
+        <span class="rx-qp-title">Set Status</span>
+        <button class="rx-qp-clear" data-s="" title="Clear status"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:10px;height:10px"><path d="M2 2l8 8M10 2L2 10"/></svg></button>
+      </div>
+      <div class="rx-qp-body">${groupHTML}</div>`;
     document.body.appendChild(qp);
 
     // Position below cell, inside viewport

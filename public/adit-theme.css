@@ -8225,3 +8225,165 @@ body {
   flex-wrap: wrap !important;
   align-items: center !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROSTER QUICK-PICK POPUP — grouped, modern redesign
+═══════════════════════════════════════════════════════════════════ */
+#roster-admin-root .rx-qp {
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 12px 40px rgba(7,43,64,.18), 0 2px 8px rgba(7,43,64,.1) !important;
+  border: 1px solid #E2E8F0 !important;
+  min-width: 340px !important;
+  overflow: hidden !important;
+  animation: rx-qp-enter .15s cubic-bezier(.34,1.56,.64,1) !important;
+}
+@keyframes rx-qp-enter {
+  from { opacity:0; transform: scale(.92) translateY(-6px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+
+/* Header */
+#roster-admin-root .rx-qp-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 14px 8px !important;
+  border-bottom: 1px solid #F0F3F6 !important;
+  background: #F7F9FB !important;
+}
+#roster-admin-root .rx-qp-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #3A5068 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+}
+#roster-admin-root .rx-qp-clear {
+  width: 24px !important;
+  height: 24px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(237,102,107,.3) !important;
+  background: transparent !important;
+  color: #ED666B !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: background .12s !important;
+}
+#roster-admin-root .rx-qp-clear:hover {
+  background: rgba(237,102,107,.1) !important;
+}
+
+/* Body — horizontal groups */
+#roster-admin-root .rx-qp-body {
+  display: flex !important;
+  gap: 0 !important;
+  padding: 10px !important;
+  align-items: flex-start !important;
+}
+#roster-admin-root .rx-qp-vsep {
+  width: 1px !important;
+  background: #F0F3F6 !important;
+  align-self: stretch !important;
+  margin: 0 8px !important;
+  flex-shrink: 0 !important;
+}
+#roster-admin-root .rx-qp-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+#roster-admin-root .rx-qp-glabel {
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  color: #9BAFC0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+  padding: 0 2px !important;
+}
+#roster-admin-root .rx-qp-grow {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+}
+
+/* Buttons — more compact and modern */
+#roster-admin-root .rx-qp-btn {
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 6px 7px !important;
+  border-radius: 8px !important;
+  border: 1px solid #EEF0F5 !important;
+  background: #FAFBFC !important;
+  min-width: 38px !important;
+  cursor: pointer !important;
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s, border-color .1s !important;
+}
+#roster-admin-root .rx-qp-btn:hover {
+  transform: translateY(-2px) scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(7,43,64,.12) !important;
+  border-color: #D0D9E8 !important;
+  background: #FFFFFF !important;
+}
+#roster-admin-root .rx-qp-btn.rx-qp-active {
+  border-color: #F4891F !important;
+  box-shadow: 0 0 0 2px rgba(244,137,31,.15) !important;
+  background: rgba(244,137,31,.04) !important;
+}
+#roster-admin-root .rx-qp-code {
+  font-size: 9.5px !important;
+  padding: 2px 5px !important;
+  border-radius: 5px !important;
+  font-weight: 800 !important;
+}
+#roster-admin-root .rx-qp-lbl {
+  font-size: 7.5px !important;
+  color: #6B849A !important;
+  white-space: nowrap !important;
+  max-width: 52px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-align: center !important;
+}
+
+/* Half-day status codes — add tinted colors */
+#roster-admin-root .rx-qp-btn.rx-st-hd_pl .rx-qp-code  { background: rgba(33,170,224,.15) !important; color: #1A6FA0 !important; }
+#roster-admin-root .rx-qp-btn.rx-st-hd_sl .rx-qp-code  { background: rgba(251,200,75,.2)  !important; color: #8C5800 !important; }
+#roster-admin-root .rx-qp-btn.rx-st-hd_upl .rx-qp-code { background: rgba(237,102,107,.15)!important; color: #B33438 !important; }
+#roster-admin-root .rx-qp-btn.rx-st-absent .rx-qp-code   { background: rgba(100,116,139,.2) !important; color: #334155 !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROSTER GRID — modernized table
+═══════════════════════════════════════════════════════════════════ */
+#roster-admin-root .rx-grid-wrap {
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  border: 1px solid #E8EAED !important;
+  box-shadow: 0 2px 8px rgba(7,43,64,.06) !important;
+}
+#roster-admin-root .rx-grid thead th {
+  background: #F0F4FA !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: .04em !important;
+}
+/* Agent name column — cleaner */
+#roster-admin-root .rx-grid tbody tr {
+  border-bottom: 1px solid #F4F5F7 !important;
+  transition: background .12s !important;
+}
+#roster-admin-root .rx-grid tbody tr:hover {
+  background: rgba(244,137,31,.03) !important;
+}
+/* Today column highlight */
+#roster-admin-root .rx-t-col {
+  background: rgba(244,137,31,.06) !important;
+}
