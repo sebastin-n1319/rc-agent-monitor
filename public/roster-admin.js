@@ -669,6 +669,8 @@
     showRelieved: false,
     groupByShift: false,
     agentSearch: '',
+    designationFilter: '',
+    statusFilter: '',
     pendingSaves: new Map(),
     saveTimer: null,
   };
@@ -797,9 +799,32 @@
         (a.designation || '').toLowerCase().includes(search)
       );
     }
+    // Designation filter
+    if (_s.designationFilter) {
+      visible = visible.filter(a => {
+        const d = (a.designation || '').toLowerCase();
+        return d.includes(_s.designationFilter.toLowerCase());
+      });
+    }
+    // Today status filter
+    if (_s.statusFilter && todayInMonth) {
+      visible = visible.filter(a => {
+        const s = (grid[a.emp_id] || {})[today]?.status || 'empty';
+        if (_s.statusFilter === 'present') return ['present','wfh','on_duty'].includes(s);
+        if (_s.statusFilter === 'leave')   return ['pl','hd_pl','upl','hd_upl','sl','hd_sl','holiday'].includes(s);
+        if (_s.statusFilter === 'absent')  return ['ncns','absent'].includes(s);
+        if (_s.statusFilter === 'off')     return s === 'off';
+        if (_s.statusFilter === 'empty')   return !s || s === '';
+        return s === _s.statusFilter;
+      });
+    }
 
     const relievedCount = agents.filter(a => a.status === 'relieved').length;
     const activeAgents = agents.filter(a => a.status !== 'relieved');
+    // Collect unique designations for filter
+    const designations = [...new Set(agents
+      .map(a => (a.designation || '').replace('Technical Support Representative','TSR').replace('Technical Support Specialist','TS Specialist').trim())
+      .filter(Boolean))].sort();
 
     // KPI for today
     let presentToday = 0, leaveToday = 0, ncnsToday = 0;
@@ -943,7 +968,7 @@
     </div>
   </div>
 
-  <!-- TOOLBAR -->
+  <!-- TOOLBAR ROW 1: Navigation + Search + Actions -->
   <div class="rx-toolbar">
     <div class="rx-tb-group">
       <button class="rx-icon-btn" id="rx-prev" title="Previous month">&#8249;</button>
@@ -957,7 +982,7 @@
 
     <div class="rx-search rx-tb-grow">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="rx-search-ico"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
-      <input type="text" id="rx-search" placeholder="Search agent, shift, designation…" value="${esc(_s.agentSearch)}">
+      <input type="text" id="rx-search" placeholder="Search by name, ID, shift…" value="${esc(_s.agentSearch)}">
     </div>
 
     <div class="rx-tb-group">
@@ -971,6 +996,48 @@
       <button class="rx-pill" id="rx-add" title="Add new agent"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M8 3v10M3 8h10"/></svg> Agent</button>
       <button class="rx-pill rx-pill-primary" id="rx-export" title="Download CSV"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> Export</button>
     </div>
+  </div>
+
+  <!-- FILTER BAR ROW 2: Designation + Status filters -->
+  <div class="rx-filter-bar" id="rx-filter-bar">
+    <!-- Designation filter -->
+    <div class="rx-filter-group">
+      <span class="rx-filter-label">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:11px;height:11px"><circle cx="6" cy="5" r="2.5"/><path d="M1 12c0-2.76 2.24-4 5-4s5 1.24 5 4"/></svg>
+        Role
+      </span>
+      <button class="rx-filter-chip ${!_s.designationFilter ? 'active' : ''}" data-desg="">All</button>
+      ${designations.map(d => `<button class="rx-filter-chip ${_s.designationFilter === d ? 'active' : ''}" data-desg="${esc(d)}">${esc(d)}</button>`).join('')}
+    </div>
+    <div class="rx-filter-sep"></div>
+    <!-- Today status filter -->
+    <div class="rx-filter-group">
+      <span class="rx-filter-label">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:11px;height:11px"><rect x="1" y="2" width="12" height="11" rx="1.5"/><path d="M1 6h12M4 1v2M10 1v2"/></svg>
+        Today
+      </span>
+      <button class="rx-filter-chip ${!_s.statusFilter ? 'active' : ''}" data-sf="">All</button>
+      <button class="rx-filter-chip rx-sf-present ${_s.statusFilter==='present'?'active':''}" data-sf="present">
+        <span class="rx-fc-dot" style="background:#2DDC96"></span>Present
+      </button>
+      <button class="rx-filter-chip rx-sf-leave ${_s.statusFilter==='leave'?'active':''}" data-sf="leave">
+        <span class="rx-fc-dot" style="background:#21AAE0"></span>On Leave
+      </button>
+      <button class="rx-filter-chip rx-sf-off ${_s.statusFilter==='off'?'active':''}" data-sf="off">
+        <span class="rx-fc-dot" style="background:#9BAFC0"></span>Day Off
+      </button>
+      <button class="rx-filter-chip rx-sf-absent ${_s.statusFilter==='absent'?'active':''}" data-sf="absent">
+        <span class="rx-fc-dot" style="background:#ED666B"></span>Absent
+      </button>
+      <button class="rx-filter-chip rx-sf-empty ${_s.statusFilter==='empty'?'active':''}" data-sf="empty">
+        <span class="rx-fc-dot" style="background:#E2E8F0"></span>No Entry
+      </button>
+    </div>
+    ${(_s.designationFilter || _s.statusFilter) ? `
+    <button class="rx-filter-clear" id="rx-filter-clear">
+      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:10px;height:10px"><path d="M2 2l8 8M10 2L2 10"/></svg>
+      Clear filters
+    </button>` : ''}
   </div>
 
   <!-- LEGEND -->
@@ -1176,6 +1243,18 @@
     $('#rx-next').onclick = () => shiftMonth(+1);
     $('#rx-today-btn').onclick = () => go(nowMonthIso());
     $('#rx-month-input').onchange = e => go(e.target.value);
+    // Filter bar — designation chips
+    root.querySelectorAll('[data-desg]').forEach(btn => {
+      btn.onclick = () => { _s.designationFilter = btn.dataset.desg; go(_s.month); };
+    });
+    // Filter bar — today status chips
+    root.querySelectorAll('[data-sf]').forEach(btn => {
+      btn.onclick = () => { _s.statusFilter = btn.dataset.sf; go(_s.month); };
+    });
+    // Clear all filters
+    const clearBtn = $('#rx-filter-clear');
+    if (clearBtn) clearBtn.onclick = () => { _s.designationFilter = ''; _s.statusFilter = ''; go(_s.month); };
+
     $('#rx-search').oninput = e => {
       _s.agentSearch = e.target.value;
       const caret = document.activeElement?.id === 'rx-search' ? e.target.selectionStart : null;

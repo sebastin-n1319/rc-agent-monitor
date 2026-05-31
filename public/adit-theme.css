@@ -8465,3 +8465,95 @@ body {
 html.app-authenticated #mainApp {
   transition: opacity .22s cubic-bezier(.4,0,.2,1) !important;
 }
+
+/* ── Roster filter bar ───────────────────────────────────────────── */
+#roster-admin-root .rx-filter-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0 !important;
+  padding: 8px 12px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #EEF0F5 !important;
+  border-radius: 10px !important;
+  flex-wrap: wrap !important;
+  row-gap: 6px !important;
+}
+#roster-admin-root .rx-filter-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  flex-wrap: wrap !important;
+}
+#roster-admin-root .rx-filter-label {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #9BAFC0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .07em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  margin-right: 2px !important;
+}
+#roster-admin-root .rx-filter-sep {
+  width: 1px !important;
+  height: 22px !important;
+  background: #E8EAED !important;
+  margin: 0 10px !important;
+  flex-shrink: 0 !important;
+}
+#roster-admin-root .rx-filter-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 10px !important;
+  border-radius: 20px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border: 1.5px solid #E8EAED !important;
+  background: #F7F8F8 !important;
+  color: #6B849A !important;
+  cursor: pointer !important;
+  transition: all .14s !important;
+  white-space: nowrap !important;
+  font-family: inherit !important;
+}
+#roster-admin-root .rx-filter-chip:hover {
+  border-color: #F4891F !important;
+  color: #F4891F !important;
+  background: rgba(244,137,31,.06) !important;
+}
+#roster-admin-root .rx-filter-chip.active {
+  background: rgba(244,137,31,.1) !important;
+  border-color: rgba(244,137,31,.4) !important;
+  color: #C45A0A !important;
+  font-weight: 700 !important;
+}
+#roster-admin-root .rx-fc-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  display: inline-block !important;
+  flex-shrink: 0 !important;
+}
+#roster-admin-root .rx-filter-clear {
+  margin-left: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 3px 10px !important;
+  border-radius: 20px !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  border: 1px solid rgba(237,102,107,.25) !important;
+  background: rgba(237,102,107,.06) !important;
+  color: #C8333A !important;
+  cursor: pointer !important;
+  transition: all .14s !important;
+  font-family: inherit !important;
+}
+#roster-admin-root .rx-filter-clear:hover {
+  background: rgba(237,102,107,.14) !important;
+  border-color: rgba(237,102,107,.4) !important;
+}
