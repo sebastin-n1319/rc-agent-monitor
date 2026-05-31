@@ -9647,23 +9647,20 @@ tbody tr:hover td{
 <div id="mainApp">
 <header>
   <div class="hdr-left">
-    <!-- Logo: HTML elements — immune to .hdr-logo-adit CSS and SVG text rendering issues -->
-    <div style="display:flex;align-items:center;gap:9px;flex-shrink:0;text-decoration:none;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" style="width:34px;height:34px;flex-shrink:0;display:block;">
-        <defs>
-          <linearGradient id="hIcBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F4891F"/><stop offset="100%" stop-color="#E07010"/></linearGradient>
-          <linearGradient id="hPls" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#21AAE0" stop-opacity=".9"/><stop offset="100%" stop-color="#F4891F" stop-opacity=".9"/></linearGradient>
-        </defs>
-        <rect x="0" y="0" width="40" height="40" rx="9" fill="#072B40"/>
-        <rect x="0" y="0" width="40" height="40" rx="9" fill="url(#hIcBg)" opacity=".22"/>
-        <polyline points="4,20 9,20 13,12 17,28 21,16 25,24 29,20 36,20" fill="none" stroke="url(#hPls)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M13,29 L20,11 L27,29" fill="none" stroke="#F4891F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-        <line x1="15.5" y1="23" x2="24.5" y2="23" stroke="#21AAE0" stroke-width="2.2" stroke-linecap="round"/>
-      </svg>
-      <div style="display:flex;flex-direction:column;gap:1px;line-height:1;">
-        <span style="font-family:'Poppins','Inter',system-ui,sans-serif;font-size:15px;font-weight:800;color:#FFFFFF;letter-spacing:-.03em;">Adit</span>
-        <span style="font-family:'Poppins','Inter',system-ui,sans-serif;font-size:8.5px;font-weight:600;color:rgba(178,219,240,.6);letter-spacing:.06em;text-transform:uppercase;">Agent Monitor</span>
-      </div>
+    <!-- Adit wordmark — actual brand logo: "ad" orange, "it" blue, person figure on i/t -->
+    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;line-height:1;">
+      <span style="font-family:'Arial Rounded MT Bold','Arial Black','Helvetica Neue',Arial,sans-serif;font-size:28px;font-weight:900;color:#F4891F;letter-spacing:-.01em;">ad</span>
+      <span style="position:relative;display:inline-flex;flex-direction:column;align-items:center;">
+        <!-- Person head (replaces i dot) -->
+        <span style="width:10px;height:10px;border-radius:50%;background:#21AAE0;display:block;margin-bottom:0;"></span>
+        <!-- i stem -->
+        <span style="font-family:'Arial Rounded MT Bold','Arial Black','Helvetica Neue',Arial,sans-serif;font-size:28px;font-weight:900;color:#21AAE0;letter-spacing:-.01em;line-height:.85;">ı</span>
+      </span>
+      <span style="position:relative;display:inline-flex;flex-direction:column;align-items:flex-start;">
+        <!-- t crossbar (also the person arms) -->
+        <span style="display:block;height:10px;width:36px;background:#21AAE0;border-radius:5px;margin-left:-8px;margin-bottom:0;"></span>
+        <span style="font-family:'Arial Rounded MT Bold','Arial Black','Helvetica Neue',Arial,sans-serif;font-size:28px;font-weight:900;color:#21AAE0;letter-spacing:-.01em;line-height:.85;margin-top:-2px;">t</span>
+      </span>
     </div>
     <div class="hdr-sep"></div>
     <div class="hdr-sub" style="font-size:11px;color:rgba(178,219,240,.55)">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
