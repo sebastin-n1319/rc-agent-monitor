@@ -104,14 +104,37 @@ html.app-authenticated #mainApp{display:flex!important;visibility:visible!import
 
 /* Hidden until next quarter — beats class-level display rules */
 [data-hidden-until] { display: none !important; }
+
+/* ── Tab restore: show the stored tab BEFORE JS runs — no live-dashboard flash ── */
+/* When authenticated with a stored tab, show that tab's page directly */
+html.app-authenticated[data-restore-tab] .page { display:none!important; }
+html.app-authenticated[data-restore-tab="live"]      #tab-live      { display:block!important; }
+html.app-authenticated[data-restore-tab="reports"]   #tab-reports   { display:block!important; }
+html.app-authenticated[data-restore-tab="agents"]    #tab-agents    { display:block!important; }
+html.app-authenticated[data-restore-tab="access"]    #tab-access    { display:block!important; }
+html.app-authenticated[data-restore-tab="loginlogs"] #tab-loginlogs { display:block!important; }
+html.app-authenticated[data-restore-tab="breaks"]    #tab-breaks    { display:block!important; }
+html.app-authenticated[data-restore-tab="bonus"]     #tab-bonus     { display:block!important; }
+html.app-authenticated[data-restore-tab="calllogs"]  #tab-calllogs  { display:block!important; }
+html.app-authenticated[data-restore-tab="auditlog"]  #tab-auditlog  { display:block!important; }
+html.app-authenticated[data-restore-tab="tickets"]   #tab-tickets   { display:block!important; }
+html.app-authenticated[data-restore-tab="roster"]    #tab-live      { display:block!important; } /* roster uses live page backdrop */
+html.app-authenticated[data-restore-tab="schedules"] #tab-live      { display:block!important; }
+html.app-authenticated[data-restore-tab="anomalies"] #tab-live      { display:block!important; }
+html.app-authenticated[data-restore-tab="forecast"]  #tab-live      { display:block!important; }
+html.app-authenticated[data-restore-tab="ai-agent"]  #tab-ai-agent  { display:block!important; }
+html.app-authenticated[data-restore-tab="debug"]     #tab-debug     { display:block!important; }
 </style>
-<!-- Inline session + dark mode restore: runs before first paint, no flash -->
+<!-- Inline session + dark mode + tab restore: runs before first paint, no flash -->
 <script>
 (function(){
   try{
     var s=JSON.parse(localStorage.getItem('rcSession')||'null');
     if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
       document.documentElement.classList.add('app-authenticated');
+      // Pre-activate stored tab — CSS below shows the correct .page before JS runs
+      var tab=localStorage.getItem('rcActiveTab')||'live';
+      document.documentElement.setAttribute('data-restore-tab',tab);
     }
   }catch(e){}
   try{
@@ -9721,7 +9744,7 @@ tbody tr:hover td{
   </div>
 
   <!-- LIVE -->
-  <div class="page active" id="tab-live">
+  <div class="page" id="tab-live">
 
     <!-- ── Command Strip ───────────────────────────────────────────────── -->
     <div class="ld-strip">
