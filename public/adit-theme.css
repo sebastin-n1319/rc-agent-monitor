@@ -7817,3 +7817,125 @@ body {
 .adit-sidebar.sort-mode .sb-item {
   cursor: grab !important;
 }
+
+/* ── Abandon Radar — proper layout fixes ──────────────────────────── */
+.abandon-board {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+.abandon-row {
+  display: grid !important;
+  grid-template-columns: 40px 1fr auto !important;
+  gap: 12px !important;
+  align-items: center !important;
+  padding: 12px 14px !important;
+  border-radius: 10px !important;
+  background: #FFFFFF !important;
+  border: 1px solid rgb(222,225,230) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04) !important;
+}
+.abandon-rank {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: #F7F8F8 !important;
+  border: 1px solid rgb(222,225,230) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #072B40 !important;
+  flex-shrink: 0 !important;
+}
+.abandon-main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+}
+.abandon-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  color: #072B40 !important;
+  flex-wrap: wrap !important;
+}
+.abandon-meta {
+  display: flex !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+.abandon-meta span {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  background: #F7F8F8 !important;
+  border: 1px solid rgb(222,225,230) !important;
+  font-size: 10px !important;
+  color: #3A5068 !important;
+  white-space: nowrap !important;
+}
+.abandon-time {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+}
+.abandon-time .abandon-ring {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  color: #072B40 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+.abandon-time .abandon-band {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  background: rgba(237,102,107,.1) !important;
+  color: #ED666B !important;
+  border: none !important;
+}
+.abandon-time .abandon-band::before { display: none !important; }
+
+/* ── Status Change Log — proper group card styling ────────────────── */
+.evt-group {
+  background: #FFFFFF !important;
+  border: 1px solid rgb(222,225,230) !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  margin-bottom: 4px !important;
+  animation: none !important;
+}
+.evt-hdr {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  min-height: 44px !important;
+  cursor: pointer !important;
+  background: #F7F8F8 !important;
+  user-select: none !important;
+  transition: background .15s !important;
+  animation: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+.evt-hdr:hover { background: #F0F2F5 !important; }
+.evt-group.open .evt-hdr { background: #EEF1F5 !important; }
+.evt-body {
+  display: none !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  padding: 8px 12px 10px !important;
+  border-top: 1px solid rgb(222,225,230) !important;
+  background: #FFFFFF !important;
+}
+.evt-group.open .evt-body { display: flex !important; }
