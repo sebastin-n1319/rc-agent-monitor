@@ -17527,18 +17527,17 @@ async function tlWkdAISuggest() {
         if (body) context += `\n[${from}]: ${body}\n`;
       });
     }
-    // Call AI for summary
-    const aiRes = await fetch(`${BACKEND}/api/ai/rewrite`, {
+    // Call AI for summary using the write-transform endpoint
+    const aiRes = await fetch(`${BACKEND}/api/write-transform`, {
       method: 'POST', credentials: 'include',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({
-        mode: 'ticket_note',
-        content: context,
-        customPrompt: 'Summarize this support ticket in 1-2 concise sentences covering: what the client issue was, what action was taken or what department it involves. Be brief and factual. Do NOT use markdown. Output ONLY the summary text.'
+        text: context,
+        transform: 'summarize'
       })
     });
     const aiData = await aiRes.json();
-    const summary = aiData.result || aiData.text || aiData.output || '';
+    const summary = (aiData.result || '').trim();
     if (!summary) { showToast('AI summary empty — enter notes manually', 'warning'); return; }
 
     // Show preview

@@ -8736,3 +8736,58 @@ body {
 .tl-wkd-chip.tl-wkd-high.active   { background: rgba(237,102,107,.1); border-color: rgba(237,102,107,.4); color: #A0282E; }
 .tl-wkd-chip.tl-wkd-medium.active { background: rgba(251,200,75,.15); border-color: rgba(251,200,75,.5);  color: #7A5000; }
 .tl-wkd-chip.tl-wkd-low.active    { background: rgba(45,220,150,.1);  border-color: rgba(45,220,150,.4);  color: #0A6B3F; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   WEEKEND SUPPORT MODE — form redesign
+═══════════════════════════════════════════════════════════════════ */
+#tl-weekend-section {
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  border: 1.5px solid rgba(244,137,31,.25) !important;
+  margin-bottom: 0 !important;
+}
+
+/* Weekend banner */
+#tl-weekend-section > div:first-child {
+  border-radius: 0 !important;
+  margin-bottom: 0 !important;
+  background: linear-gradient(135deg, rgba(244,137,31,.08), rgba(251,200,75,.06)) !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(244,137,31,.15) !important;
+  padding: 10px 16px !important;
+}
+
+/* All .tl-card inside weekend section */
+#tl-weekend-section .tl-card {
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid #F0F2F5 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  padding: 14px 16px !important;
+}
+#tl-weekend-section .tl-card:last-child {
+  border-bottom: none !important;
+}
+
+/* Department chips — tighter */
+.tl-wkd-chip {
+  padding: 4px 11px !important;
+  font-size: 11.5px !important;
+}
+.tl-wkd-chip.active {
+  transform: none !important;
+}
+
+/* Notes AI button */
+#tl-wkd-ai-btn {
+  font-size: 10px !important;
+  padding: 3px 9px !important;
+  letter-spacing: .02em !important;
+}
+
+/* AI preview box */
+#tl-wkd-ai-preview {
+  border-radius: 8px !important;
+  font-size: 12px !important;
+}
