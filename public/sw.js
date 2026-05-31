@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.58'; // Fix: scan first 3000 closed tickets not bad estimate
+const CACHE_VERSION = 'adit-v1.19.59'; // Fix /full endpoint lookup + ticket 361445 now works
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;

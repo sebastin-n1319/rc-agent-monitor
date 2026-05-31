@@ -1600,27 +1600,29 @@ app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (r
     const token = await getZohoAccessToken();
     const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
 
-    // Find ticket — same strategy as /api/zoho/ticket/:id (Strategy B is most reliable)
+    // Find ticket — use same proven strategy: status=closed + pagination
     let ticket = null;
+    // Strategy 1: open tickets (first page)
     try {
-      const r = await fetch(`${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`, { headers });
-      if (r.ok) {
-        const d = await r.json();
-        const candidate = d.data ? (Array.isArray(d.data) ? d.data[0] : d.data) : (d.id ? d : null);
-        if (candidate && String(candidate.ticketNumber) === rawId) ticket = candidate;
-      }
+      const r1 = await fetch(`${ZOHO_API_BASE}/tickets?limit=100&from=0`, { headers });
+      if (r1.ok) { const d = await r1.json(); ticket = (d.data||[]).find(t => String(t.ticketNumber) === rawId) || null; }
     } catch(e) {}
-
+    // Strategy 2: closed tickets scan (up to 3000)
     if (!ticket) {
-      for (const sp of ['', '&status=all', '&status=closed']) {
-        const r = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=10${sp}`, { headers });
-        if (r.ok) {
-          const d = await r.json();
-          const list = d.data || (Array.isArray(d) ? d : []);
-          ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
-          if (ticket) break;
+      try {
+        const targetNum = parseInt(rawId, 10);
+        for (let from = 0; from <= 3000 && !ticket; from += 100) {
+          const rc = await fetch(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`, { headers });
+          if (!rc.ok) break;
+          const dc = await rc.json();
+          const lc = dc.data || [];
+          if (!lc.length) break;
+          const fc = lc.find(t => String(t.ticketNumber) === rawId);
+          if (fc) { ticket = fc; break; }
+          const nums = lc.map(t => parseInt(t.ticketNumber,10)).filter(n=>!isNaN(n));
+          if (nums.length && Math.max(...nums) < targetNum - 5000) break;
         }
-      }
+      } catch(e) {}
     }
 
     if (!ticket) return res.json({ success: true, found: false });
