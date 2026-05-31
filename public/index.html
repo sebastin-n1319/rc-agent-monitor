@@ -9605,6 +9605,10 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 8v4"/><path d="M12 16h.01"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg>
     <span class="sb-label">Debug</span>
   </div>
+  <!-- Sidebar sort toggle -->
+  <button class="sb-sort-btn" id="sb-sort-btn" title="Reorder sidebar — drag to rearrange" onclick="toggleSidebarSortMode()">
+    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 5h12M3 9h8M3 13h5"/><path d="M14 11l2 2-2 2"/></svg>
+  </button>
 </nav>
 
 <!-- AGENT SIDEBAR — 70px dark navy, icon-only navigation -->
@@ -20260,6 +20264,109 @@ async function deleteNote(id){
 }
 </script>
 
+<script>
+/* ── Sidebar drag-to-reorder ─────────────────────────────────────── */
+(function(){
+  var STORE_KEY = 'adit-sidebar-order';
+  var sortMode = false;
+  var dragSrc = null;
+
+  function getSidebar(){ return document.getElementById('adit-admin-sidebar'); }
+
+  function getItems(){
+    return Array.from(getSidebar().querySelectorAll('.sb-item'));
+  }
+
+  function saveOrder(){
+    var order = getItems().map(function(el){ return el.id; });
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify(order)); }catch(e){}
+  }
+
+  function restoreOrder(){
+    var raw; try{ raw = localStorage.getItem(STORE_KEY); }catch(e){}
+    if(!raw) return;
+    var order; try{ order = JSON.parse(raw); }catch(e){ return; }
+    var sb = getSidebar();
+    var sortBtn = document.getElementById('sb-sort-btn');
+    order.forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.parentNode === sb) sb.insertBefore(el, sortBtn);
+    });
+  }
+
+  function enableDrag(el){
+    el.setAttribute('draggable','true');
+    el.addEventListener('dragstart', onDragStart);
+    el.addEventListener('dragover',  onDragOver);
+    el.addEventListener('dragleave', onDragLeave);
+    el.addEventListener('drop',      onDrop);
+    el.addEventListener('dragend',   onDragEnd);
+  }
+
+  function disableDrag(el){
+    el.removeAttribute('draggable');
+    el.removeEventListener('dragstart', onDragStart);
+    el.removeEventListener('dragover',  onDragOver);
+    el.removeEventListener('dragleave', onDragLeave);
+    el.removeEventListener('drop',      onDrop);
+    el.removeEventListener('dragend',   onDragEnd);
+  }
+
+  function onDragStart(e){
+    dragSrc = this;
+    this.classList.add('sb-dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function onDragOver(e){
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if(this !== dragSrc) this.classList.add('sb-drag-over');
+    return false;
+  }
+  function onDragLeave(){ this.classList.remove('sb-drag-over'); }
+  function onDrop(e){
+    e.stopPropagation();
+    if(this !== dragSrc){
+      var sb = getSidebar();
+      var items = getItems();
+      var fromIdx = items.indexOf(dragSrc);
+      var toIdx   = items.indexOf(this);
+      if(fromIdx < toIdx) sb.insertBefore(dragSrc, this.nextSibling);
+      else                sb.insertBefore(dragSrc, this);
+      saveOrder();
+    }
+    this.classList.remove('sb-drag-over');
+    return false;
+  }
+  function onDragEnd(){
+    getItems().forEach(function(el){ el.classList.remove('sb-dragging','sb-drag-over'); });
+    dragSrc = null;
+  }
+
+  window.toggleSidebarSortMode = function(){
+    var sb = getSidebar();
+    var btn = document.getElementById('sb-sort-btn');
+    sortMode = !sortMode;
+    if(sortMode){
+      sb.classList.add('sort-mode');
+      btn && btn.classList.add('active');
+      btn && (btn.title = 'Done reordering — click to exit');
+      getItems().forEach(enableDrag);
+      if(typeof showToast==='function') showToast('Drag icons to reorder sidebar','info',2500);
+    } else {
+      sb.classList.remove('sort-mode');
+      btn && btn.classList.remove('active');
+      btn && (btn.title = 'Reorder sidebar — drag to rearrange');
+      getItems().forEach(disableDrag);
+    }
+  };
+
+  // Restore saved order on load
+  document.addEventListener('DOMContentLoaded', function(){
+    setTimeout(restoreOrder, 300);
+  });
+})();
+</script>
 </body>
 </html>
 
@@ -23701,7 +23808,7 @@ function laFormatAnalysis(rec) {
    the footer (in normal flow) sits underneath the 34px ribbon and the
    build-version tag becomes invisible. 40px = ribbon height + breathing
    room so the footer text isn't flush against the top of the ribbon. */
-body{padding-bottom:40px;}
+body{padding-bottom:0!important;}
 
 /* ── Session 15: Break budget bars (Break Bot + Dashboard card) ──── */
 .bbn-budget-section{padding:12px 14px;border-top:1px solid rgba(255,255,255,.07);}

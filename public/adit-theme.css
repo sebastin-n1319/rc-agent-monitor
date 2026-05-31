@@ -7777,3 +7777,43 @@ footer {
 body {
   background: var(--bg, #F7F8F8) !important;
 }
+
+/* ── Sidebar drag-to-reorder ───────────────────────────────────────── */
+.sb-item.sb-dragging {
+  opacity: .45 !important;
+  transform: scale(.95) !important;
+  cursor: grabbing !important;
+}
+.sb-item.sb-drag-over {
+  background: rgba(245,137,31,.12) !important;
+  border: 1.5px dashed rgba(245,137,31,.5) !important;
+  border-radius: 12px !important;
+}
+.sb-item[draggable="true"] {
+  cursor: grab !important;
+}
+/* Sort-mode toggle button at bottom of sidebar */
+.sb-sort-btn {
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  border: 1.5px solid transparent !important;
+  background: transparent !important;
+  color: var(--v5-t3, #6B849A) !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 4px auto 6px !important;
+  transition: all .18s !important;
+  flex-shrink: 0 !important;
+}
+.sb-sort-btn:hover,
+.sb-sort-btn.active {
+  background: rgba(245,137,31,.1) !important;
+  border-color: rgba(245,137,31,.35) !important;
+  color: #F4891F !important;
+}
+.adit-sidebar.sort-mode .sb-item {
+  cursor: grab !important;
+}
