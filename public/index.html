@@ -101,6 +101,8 @@ html.app-authenticated #loginScreen{display:none!important;visibility:hidden!imp
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
 /* Guarantee admin sidebar visible — JS applyView() overrides per role */
 html.app-authenticated #adit-admin-sidebar{display:flex!important;}
+/* Status bar permanently hidden — was causing black block & click-blocking issues */
+#status-bar{display:none!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
 #userAvatar{display:none!important;}
 
