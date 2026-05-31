@@ -17572,7 +17572,11 @@ async function tlWkdAISuggest() {
       });
     }
 
-    context += `\n\nINSTRUCTION: Write a concise 2-3 sentence summary of this ticket for the Notes field. Cover: (1) what the client's issue was, (2) what actions were taken or what department handled it, (3) current status or resolution. Be factual. No markdown.`;
+    context += `\n\nINSTRUCTION: Write a structured 3-bullet summary for this support ticket Notes field. Each bullet must be concise and specific:
+• Issue: [exact client problem in 1 sentence]
+• Action: [what was done or which team/person handled it]  
+• Status: [current state - resolved/escalated/pending/closed and why]
+Use professional CS language. No markdown symbols except the bullet points above. Output only the 3 bullets.`;
 
     // Send to AI
     const aiRes = await fetch(`${BACKEND}/api/write-transform`, {
