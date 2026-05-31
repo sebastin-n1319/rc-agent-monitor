@@ -17429,75 +17429,76 @@ function tlGetWkdField(group) {
 // Hook into the submit flow to also post to weekend sheet
 const _origSubmitTicketLog = window.submitTicketLog;
 window.submitTicketLog = async function() {
+  // WEEKEND MODE: capture all values BEFORE the original submit clears the form
+  const isWkd = isWeekendCST();
+  let wkdPayload = null;
+
+  if (isWkd) {
+    const ticketId = (document.getElementById('tl-ticket-id')?.value || '').trim();
+    const dept       = tlGetWkdField('wkd-dept');
+    const priority   = tlGetWkdField('wkd-priority');
+    const transferred= tlGetWkdField('wkd-transferred');
+    const source     = tlGetWkdField('wkd-source');
+    const notes      = (document.getElementById('tl-wkd-notes')?.value || '').trim();
+    const logDate    = document.getElementById('tl-log-date')?.value || '';
+
+    // Validate weekend fields BEFORE submitting main ticket
+    let wkdValid = true;
+    const highlightErr = (sel) => document.querySelectorAll(sel).forEach(b => { b.style.outline='2px solid #ED666B'; setTimeout(()=>b.style.outline='',2500); });
+    if (!dept)        { showToast('Weekend: Department is required', 'warning'); highlightErr('[data-group="wkd-dept"]'); wkdValid=false; }
+    if (!priority)    { showToast('Weekend: Priority is required', 'warning'); highlightErr('[data-group="wkd-priority"]'); wkdValid=false; }
+    if (!transferred) { showToast('Weekend: Transferred is required', 'warning'); highlightErr('[data-group="wkd-transferred"]'); wkdValid=false; }
+    if (!source)      { showToast('Weekend: Source is required', 'warning'); highlightErr('[data-group="wkd-source"]'); wkdValid=false; }
+    if (!notes) {
+      showToast('Weekend: Notes are required', 'warning');
+      const notesEl2 = document.getElementById('tl-wkd-notes');
+      const notesErr = document.getElementById('tl-wkd-notes-err');
+      if (notesEl2) { notesEl2.style.borderColor='#ED666B'; setTimeout(()=>notesEl2.style.borderColor='#DEE1E6',2500); }
+      if (notesErr) { notesErr.style.display='block'; setTimeout(()=>notesErr.style.display='none',3000); }
+      wkdValid = false;
+    }
+    if (!wkdValid) return; // Stop — don't submit either sheet until weekend fields are valid
+
+    // Store payload before form is cleared by main submit
+    wkdPayload = { ticketId, department: dept, priority, transferred, source, notes, date: logDate };
+  }
+
+  // Submit to main Ticket Productivity sheet
   const result = await _origSubmitTicketLog.call(this);
-  // After normal submit succeeds, also log to weekend sheet if it's weekend
-  if (isWeekendCST()) {
-    await tlPostWeekendLog();
+
+  // If weekend, also submit to Weekend Support sheet
+  if (isWkd && wkdPayload) {
+    await tlPostWeekendLog(wkdPayload);
   }
   return result;
 };
 
-async function tlPostWeekendLog() {
-  const ticketId = (document.getElementById('tl-ticket-id')?.value || '').trim();
-  if (!ticketId) return;
-  const dept = tlGetWkdField('wkd-dept');
-  const priority = tlGetWkdField('wkd-priority');
-  const transferred = tlGetWkdField('wkd-transferred');
-  const source = tlGetWkdField('wkd-source');
-  const notes = (document.getElementById('tl-wkd-notes')?.value || '').trim();
-  const logDate = document.getElementById('tl-log-date')?.value || '';
-
-  // Validate all weekend-required fields with inline error highlighting
-  let wkdValid = true;
-  if (!dept) {
-    showToast('Weekend mode: Department is required', 'warning');
-    document.querySelectorAll('[data-group="wkd-dept"]').forEach(b => { b.style.outline = '2px solid #ED666B'; setTimeout(()=>b.style.outline='',2000); });
-    wkdValid = false;
-  }
-  if (!priority) {
-    showToast('Weekend mode: Priority is required', 'warning');
-    document.querySelectorAll('[data-group="wkd-priority"]').forEach(b => { b.style.outline = '2px solid #ED666B'; setTimeout(()=>b.style.outline='',2000); });
-    wkdValid = false;
-  }
-  if (!transferred) {
-    showToast('Weekend mode: Transferred is required', 'warning');
-    document.querySelectorAll('[data-group="wkd-transferred"]').forEach(b => { b.style.outline = '2px solid #ED666B'; setTimeout(()=>b.style.outline='',2000); });
-    wkdValid = false;
-  }
-  if (!source) {
-    showToast('Weekend mode: Source is required', 'warning');
-    document.querySelectorAll('[data-group="wkd-source"]').forEach(b => { b.style.outline = '2px solid #ED666B'; setTimeout(()=>b.style.outline='',2000); });
-    wkdValid = false;
-  }
-  if (!notes) {
-    showToast('Weekend mode: Notes are required', 'warning');
-    const notesEl2 = document.getElementById('tl-wkd-notes');
-    const notesErr = document.getElementById('tl-wkd-notes-err');
-    if (notesEl2) { notesEl2.style.borderColor='#ED666B'; setTimeout(()=>notesEl2.style.borderColor='#DEE1E6',2000); }
-    if (notesErr) { notesErr.style.display='block'; setTimeout(()=>notesErr.style.display='none',3000); }
-    wkdValid = false;
-  }
-  if (!wkdValid) return;
-
+async function tlPostWeekendLog(payload) {
+  if (!payload || !payload.ticketId) return;
   try {
     const r = await fetch(BACKEND + '/api/ticket/weekend-log', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticketId, department: dept, priority, transferred, source, notes, date: logDate }),
+      body: JSON.stringify(payload),
     });
     const j = await r.json();
     if (j.success) {
-      showToast('Weekend ticket also logged to Weekend Support sheet ✓', 'success', 3500);
+      // Show dual-sheet success notification
+      setTimeout(() => {
+        showToast('✅ Logged to 2 sheets: Ticket Productivity + Weekend Support', 'success', 5000);
+      }, 600); // slight delay so it shows after the main success toast fades
       // Clear weekend fields
       document.querySelectorAll('[data-group^="wkd-"]').forEach(b => b.classList.remove('active'));
       const notesEl = document.getElementById('tl-wkd-notes');
       if (notesEl) notesEl.value = '';
+      const aiPreview = document.getElementById('tl-wkd-ai-preview');
+      if (aiPreview) aiPreview.style.display = 'none';
     } else {
-      showToast('Weekend sheet: ' + (j.error || 'Log failed'), 'error', 4000);
+      showToast('⚠ Weekend sheet failed: ' + (j.error || 'Unknown error') + ' — main sheet was saved', 'error', 6000);
     }
   } catch(e) {
-    showToast('Weekend sheet error: ' + e.message, 'error', 4000);
+    showToast('⚠ Weekend sheet error: ' + e.message + ' — main sheet was saved', 'error', 6000);
   }
 }
 
