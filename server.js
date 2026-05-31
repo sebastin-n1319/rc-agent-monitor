@@ -1297,8 +1297,9 @@ app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
     res.json({ rawId, strategies: {
       isNumber:  await test('isNumber',  `${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`),
       filter:    await test('filter',    `${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
-      searchNum: await test('searchNum', `${ZOHO_API_BASE}/tickets/search?word=${encodeURIComponent(rawId)}&limit=10`),
-      searchHash:await test('searchHash',`${ZOHO_API_BASE}/tickets/search?word=%23${encodeURIComponent(rawId)}&limit=10`),
+      searchStr:   await test('searchStr',   `${ZOHO_API_BASE}/tickets/search?searchStr=${encodeURIComponent(rawId)}&limit=10`),
+      searchStrHash:await test('searchStrHash',`${ZOHO_API_BASE}/tickets/search?searchStr=%23${encodeURIComponent(rawId)}&limit=10`),
+      globalSearch: await test('globalSearch',`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=10`),
     }});
   } catch(e) { res.json({ error: e.message }); }
 });
