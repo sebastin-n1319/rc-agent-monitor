@@ -98,7 +98,8 @@ body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* dark
      This beats every other CSS rule because it's the last stylesheet and uses element+class on html. -->
 <style id="auth-gate-css">
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
-html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
+html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;}
+html.app-authenticated #adminView,html.app-authenticated #agentView{pointer-events:auto!important;}
 /* Guarantee admin sidebar visible — JS applyView() overrides per role */
 html.app-authenticated #adit-admin-sidebar{display:flex!important;}
 /* Status bar permanently hidden — was causing black block & click-blocking issues */
@@ -24315,7 +24316,7 @@ function laFormatAnalysis(rec) {
 #status-bar.sb-autohide.sb-collapsed:hover,#status-bar.sb-autohide.sb-collapsed.sb-peek{transform:translateY(0);opacity:1;pointer-events:auto;}
 #status-bar.sb-pinned{transform:none!important;opacity:1!important;}
 .sb-hover-zone{position:absolute;left:0;right:0;bottom:0;height:14px;pointer-events:auto;}
-#status-bar.sb-autohide.sb-collapsed::after{content:"";position:fixed;left:50%;bottom:6px;width:40px;height:4px;border-radius:4px;background:rgba(244,137,31,.5);transform:translateX(-50%);box-shadow:0 0 8px rgba(244,137,31,.35);pointer-events:auto;z-index:100001;cursor:pointer;}
+#status-bar.sb-autohide.sb-collapsed::after{display:none!important;}
 .sb-pin-btn svg{transition:transform .2s,color .2s;}
 #status-bar.sb-pinned .sb-pin-btn{color:var(--orange)!important;background:rgba(244,137,31,.14)!important;}
 #status-bar.sb-pinned .sb-pin-btn svg{transform:rotate(45deg);}
@@ -24919,7 +24920,7 @@ html.hc-mode #cmd-palette,html.hc-mode #kbd-modal,html.hc-mode .adit-toast{borde
 .lg-abandon{background:#ed666b;}
 
 /* ── #28: Bug FAB ─────────────────────────────────────────────── */
-#bug-fab{position:fixed;bottom:50px;right:16px;z-index:100015;width:32px;height:32px;border-radius:50%;background:rgba(7,43,64,.85);border:1px solid rgba(244,137,31,.25);font-size:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;backdrop-filter:blur(8px);opacity:.55;}
+#bug-fab{display:none!important;}
 #bug-fab::before{content:"";width:14px;height:14px;background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F4891F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 8v4M12 16v.5'/%3E%3C/svg%3E");background-size:contain;background-repeat:no-repeat;}
 #bug-fab:hover{opacity:1;border-color:rgba(244,137,31,.6);transform:scale(1.08);}
 
