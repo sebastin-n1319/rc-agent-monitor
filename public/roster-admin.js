@@ -889,31 +889,31 @@
   <!-- KPI STRIP -->
   <div class="rx-kpis">
     <div class="rx-kpi">
-      <div class="rx-kpi-icon">👥</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#F4891F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><circle cx="8" cy="6" r="3"/><path d="M2 18c0-3.31 2.69-5 6-5s6 1.69 6 5"/><circle cx="15" cy="7" r="2.5"/><path d="M18 18c0-2.76-1.5-4-3.5-4.5"/></svg></div>
       <div class="rx-kpi-lbl">Active Agents</div>
       <div class="rx-kpi-val">${activeAgents.length}</div>
       <div class="rx-kpi-sub">${relievedCount} relieved · ${agents.length} total</div>
     </div>
     <div class="rx-kpi rx-kpi-green">
-      <div class="rx-kpi-icon">✅</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#2DDC96" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><circle cx="10" cy="10" r="8"/><path d="M6.5 10.5l2.5 2.5 5-5"/></svg></div>
       <div class="rx-kpi-lbl">Present Today</div>
       <div class="rx-kpi-val">${todayInMonth ? presentToday : '—'}</div>
       <div class="rx-kpi-sub">${todayInMonth ? 'P · WFH · OD' : 'viewing past month'}</div>
     </div>
     <div class="rx-kpi rx-kpi-amber">
-      <div class="rx-kpi-icon">🏖️</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#FBC84B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><circle cx="10" cy="7" r="3"/><path d="M4 17s1-6 6-6 6 6 6 6"/><path d="M2 17h16"/></svg></div>
       <div class="rx-kpi-lbl">On Leave Today</div>
       <div class="rx-kpi-val">${todayInMonth ? leaveToday : '—'}</div>
       <div class="rx-kpi-sub">${todayInMonth ? 'PL · UPL · SL' : ''}</div>
     </div>
     <div class="rx-kpi rx-kpi-red">
-      <div class="rx-kpi-icon">🚨</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#ED666B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M10 2l8 14H2L10 2z"/><path d="M10 9v4"/><circle cx="10" cy="15" r=".5" fill="#ED666B"/></svg></div>
       <div class="rx-kpi-lbl">Issues Today</div>
       <div class="rx-kpi-val">${todayInMonth ? ncnsToday : '—'}</div>
       <div class="rx-kpi-sub">${todayInMonth ? 'NCNS · Absent' : ''}</div>
     </div>
     <div class="rx-kpi rx-kpi-teal">
-      <div class="rx-kpi-icon">📊</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#21AAE0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><rect x="2" y="13" width="4" height="5" rx="1"/><rect x="8" y="8" width="4" height="10" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/></svg></div>
       <div class="rx-kpi-lbl">Coverage Today</div>
       <div class="rx-kpi-val">${todayInMonth ? coveragePct + '%' : '—'}</div>
       <div class="rx-kpi-sub">${todayInMonth ? `${presentToday} of ${activeAgents.length} live` : ''}</div>
@@ -945,9 +945,9 @@
       <label class="rx-switch" title="Show relieved agents">
         <input type="checkbox" id="rx-show-relieved" ${_s.showRelieved ? 'checked' : ''}> Relieved (${relievedCount})
       </label>
-      <button class="rx-pill" id="rx-audit" title="View recent changes">📋 Audit</button>
-      <button class="rx-pill" id="rx-add" title="Add new agent">＋ Agent</button>
-      <button class="rx-pill rx-pill-primary" id="rx-export" title="Download CSV">⬇ Export</button>
+      <button class="rx-pill" id="rx-audit" title="View recent changes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M4 4h8M4 7h6M4 10h4"/><rect x="2" y="1" width="12" height="14" rx="2"/></svg> Audit</button>
+      <button class="rx-pill" id="rx-add" title="Add new agent"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M8 3v10M3 8h10"/></svg> Agent</button>
+      <button class="rx-pill rx-pill-primary" id="rx-export" title="Download CSV"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> Export</button>
     </div>
   </div>
 
@@ -968,15 +968,15 @@
         ${QUICK_PICK.map(q => `<option value="${q.s}">${q.label} — ${q.name}</option>`).join('')}
       </select>
       <input type="date" class="rx-bulk-date" id="rx-bulk-date" title="Apply to this date" value="${today}">
-      <button class="rx-bulk-btn rx-bulk-btn-primary" id="rx-bulk-apply">✓ Apply to Date</button>
+      <button class="rx-bulk-btn rx-bulk-btn-primary" id="rx-bulk-apply"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M2 7l3.5 3.5L12 3"/></svg> Apply</button>
       <div class="rx-bulk-sep"></div>
       <select class="rx-bulk-sel" id="rx-bulk-shift-val" title="Shift to assign">
         <option value="">— Pick shift —</option>
         ${SHIFT_OPTIONS.map(g => `<optgroup label="${g.group}">${g.shifts.map(sh => `<option value="${sh}">${sh}</option>`).join('')}</optgroup>`).join('')}
       </select>
-      <button class="rx-bulk-btn" id="rx-bulk-shift-apply">✓ Change Shift</button>
+      <button class="rx-bulk-btn" id="rx-bulk-shift-apply"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M2 7l3.5 3.5L12 3"/></svg> Change Shift</button>
       <div class="rx-bulk-sep"></div>
-      <button class="rx-bulk-btn rx-bulk-btn-danger" id="rx-bulk-clear">✕ Deselect All</button>
+      <button class="rx-bulk-btn rx-bulk-btn-danger" id="rx-bulk-clear"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M2 2l10 10M12 2L2 12"/></svg> Deselect All</button>
     </div>
   </div>
 
