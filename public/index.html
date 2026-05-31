@@ -17329,13 +17329,13 @@ function restoreLastTab(){
 
 /* ── Adit Loader — NProgress-style top bar ──────────────────────────── */
 window.AditLoader = (function(){
-  var _bar = null, _wrap = null, _t = null, _cur = 0, _done = false;
+  var _bar = null, _wrap = null, _t = null, _safety = null, _cur = 0, _done = false;
 
   function _el(){ _bar = _bar || document.getElementById('adit-loader-bar'); return _bar; }
   function _wr(){ _wrap = _wrap || document.getElementById('adit-loader'); return _wrap; }
 
   function set(n){
-    _cur = Math.max(_cur, Math.min(n, 99.9));
+    _cur = Math.max(_cur, Math.min(n, 99.4));
     var el = _el(), wr = _wr();
     if(!el || !wr) return;
     wr.classList.add('active');
@@ -17343,31 +17343,35 @@ window.AditLoader = (function(){
   }
 
   function inc(){
-    // Trickle: each tick advances less as we approach 100
-    var step = _cur < 20 ? 8 : _cur < 50 ? 5 : _cur < 70 ? 3 : _cur < 90 ? 1.5 : 0.5;
+    var step = _cur < 20 ? 7 : _cur < 50 ? 4 : _cur < 75 ? 2 : _cur < 90 ? 0.8 : 0.2;
     set(_cur + step);
   }
 
+  function _hide(){
+    var wr = _wr(), el = _el();
+    if(wr) wr.classList.remove('active');
+    setTimeout(function(){ if(el){ el.style.width='0%'; } _cur=0; }, 250);
+  }
+
   function start(){
+    if(_t) clearInterval(_t);
+    if(_safety) clearTimeout(_safety);
     _cur = 0; _done = false;
-    set(8); // start at 8% immediately
-    clearInterval(_t);
-    _t = setInterval(inc, 220);
+    set(6);
+    _t = setInterval(inc, 250);
+    // Safety: auto-complete after 12s max so bar never stays stuck
+    _safety = setTimeout(function(){ done(); }, 12000);
   }
 
   function done(){
     if(_done) return; _done = true;
-    clearInterval(_t);
-    set(100);
-    var wr = _wr();
-    setTimeout(function(){
-      if(wr){ wr.classList.remove('active'); }
-      setTimeout(function(){
-        var el = _el();
-        if(el){ el.style.width = '0%'; }
-        _cur = 0;
-      }, 220);
-    }, 280);
+    clearInterval(_t); _t = null;
+    clearTimeout(_safety); _safety = null;
+    // Jump to 100% then hide
+    var el = _el(), wr = _wr();
+    if(el) el.style.width = '100%';
+    if(wr) wr.classList.add('active');
+    setTimeout(_hide, 300);
   }
 
   return { start: start, done: done, set: set };
@@ -19506,8 +19510,8 @@ async function refresh(){
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
   const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
 
-  // Done — hide indicators
-  AditLoader && AditLoader.done();
+  // Done — hide indicators (always, even if some awaits failed)
+  if(window.AditLoader) AditLoader.done();
   if(ri) ri.classList.remove('visible');
 
   // Restore scroll after all DOM updates settle
@@ -26205,12 +26209,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
               }
             });
           });
-          // When SW takes control, reload once to pick up new assets
-          var refreshed = false;
-          navigator.serviceWorker.addEventListener('controllerchange', function(){
-            if (!refreshed) { refreshed = true; window.location.reload(); }
-          });
-          // Also check for updates immediately (catches deployments)
+          // Note: removed controllerchange auto-reload — it caused unwanted refresh loops.
+          // New SW versions are picked up naturally on next navigation (no-store on HTML).
           reg.update().catch(function(){});
         })
         .catch(function(err){ console.warn('[SW] register failed:', err); });
