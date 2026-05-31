@@ -10210,3 +10210,8 @@ body {
 #roster-admin-root .rx-grid tbody tr {
   animation: rx-row-in .18s ease both !important;
 }
+
+/* ── ATT inner wrapper ─────────────────────────────────────────── */
+#roster-admin-root .rx-td-att-inner {
+  padding: 0 !important;
+}
