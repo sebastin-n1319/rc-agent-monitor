@@ -1684,6 +1684,33 @@ app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (r
   }
 });
 
+// GET /api/weekend-sheet/ping — test access to weekend support sheet (admin)
+app.get('/api/weekend-sheet/ping', requireAdmin, async (req, res) => {
+  try {
+    const sheets = getTicketSheetsClient();
+    // Try to read spreadsheet metadata
+    const meta = await sheets.spreadsheets.get({
+      spreadsheetId: WEEKEND_SHEET_ID,
+      fields: 'spreadsheetId,properties.title,sheets.properties'
+    });
+    const sheetNames = (meta.data.sheets || []).map(s => s.properties.title);
+    res.json({
+      ok: true,
+      spreadsheetId: WEEKEND_SHEET_ID,
+      title: meta.data.properties?.title,
+      sheets: sheetNames,
+      serviceAccountHint: 'rc-monitor-db@rc-agent-monitor.iam.gserviceaccount.com'
+    });
+  } catch(e) {
+    res.json({
+      ok: false,
+      error: e.message,
+      spreadsheetId: WEEKEND_SHEET_ID,
+      fix: 'Share the Weekend Support sheet with rc-monitor-db@rc-agent-monitor.iam.gserviceaccount.com as Editor'
+    });
+  }
+});
+
 // GET /api/agent-learning/stats — accuracy stats per rule
 app.get('/api/agent-learning/stats', requireAdmin, async (req, res) => {
   try {
