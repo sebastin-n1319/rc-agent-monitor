@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.26'; // Quick-pick complete statuses + grouped popup redesign + grid polish
+const CACHE_VERSION = 'adit-v1.19.27'; // Fix restoreLastTab for roster+modal tabs + view persistence
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;

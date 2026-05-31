@@ -12891,6 +12891,8 @@ function dismissAgentTicker(){
   try{sessionStorage.setItem('agent_ticker_dismissed','1');}catch(e){}
 }
 function applyView(view){
+  // Persist view so F5 restores it
+  try{ localStorage.setItem('rcActiveView', view); }catch(e){}
   currentViewMode=view;
   const isAdmin=view==='admin';
   document.getElementById('adminView').style.display=isAdmin?'block':'none';
@@ -17129,26 +17131,40 @@ function setAvatar(url){
 
 function restoreLastTab(){
   try{
-    const tab = localStorage.getItem('rcActiveTab');
-    const savedScroll = parseInt(localStorage.getItem('rcScroll_' + (tab||'live')) || '0', 10);
+    const tab = localStorage.getItem('rcActiveTab') || 'live';
+    const view = localStorage.getItem('rcActiveView') || null;
+    const savedScroll = parseInt(localStorage.getItem('rcScroll_' + tab) || '0', 10);
+
+    // Restore admin vs agent view first
+    if(view && view !== currentViewMode){
+      applyView(view);
+    }
+
     if(!tab || tab === 'live'){
-      // Still restore scroll on live tab
-      if(savedScroll > 0){
-        setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 120);
-      }
+      if(savedScroll > 0) setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 150);
       return;
     }
-    const btns = document.querySelectorAll('.nav-tab');
-    for(const btn of btns){
-      const oc = btn.getAttribute('onclick') || '';
-      if(oc.includes("'" + tab + "'")){
-        switchTab(tab, btn);
-        // Restore scroll after tab content loads
-        setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 300);
-        break;
-      }
+
+    // Special tabs that open modals / use sbAdmin directly
+    const specialTabs = {
+      'roster':    ()=>{ sbAdmin('roster', document.getElementById('sb-roster')); if(typeof openRosterAdmin==='function') setTimeout(openRosterAdmin, 100); },
+      'schedules': ()=>{ if(typeof openScheduleAdmin==='function') setTimeout(openScheduleAdmin, 100); },
+      'anomalies': ()=>{ if(typeof openAnomalyCenter==='function') setTimeout(openAnomalyCenter, 100); },
+      'forecast':  ()=>{ if(typeof openPredictCenter==='function') setTimeout(openPredictCenter, 100); },
+    };
+
+    if(specialTabs[tab]){
+      specialTabs[tab]();
+      setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 350);
+      return;
     }
-  }catch(e){}
+
+    // Standard tabs — find the nav-tab or use switchTab directly
+    const sbItem = document.getElementById('sb-' + tab);
+    if(sbItem) sbItem.classList.add('active');
+    switchTab(tab, document.querySelector('.nav-tab[data-tab="'+tab+'"]'));
+    setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 350);
+  }catch(e){ console.warn('restoreLastTab error', e); }
 }
 
 // Save scroll position continuously so F5 can restore it
