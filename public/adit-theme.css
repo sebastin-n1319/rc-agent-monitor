@@ -8462,9 +8462,7 @@ body {
 }
 
 /* app-ready fade-in — smooth entry from opacity:0 */
-html.app-authenticated #mainApp {
-  transition: opacity .22s cubic-bezier(.4,0,.2,1) !important;
-}
+/* app opacity gate removed — mainApp always visible when authenticated */
 
 /* ── Roster filter bar ───────────────────────────────────────────── */
 #roster-admin-root .rx-filter-bar {

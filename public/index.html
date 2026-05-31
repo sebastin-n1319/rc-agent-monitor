@@ -98,8 +98,7 @@ body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* dark
      This beats every other CSS rule because it's the last stylesheet and uses element+class on html. -->
 <style id="auth-gate-css">
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
-html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:0;transition:opacity .15s ease;}
-html.app-authenticated.app-ready #mainApp{opacity:1!important;}
+html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
 #userAvatar{display:none!important;}
 
@@ -12925,7 +12924,6 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       appEl.style.setProperty('pointer-events','auto','important');
     }
     document.documentElement.classList.add('app-authenticated');
-    document.documentElement.classList.add('app-ready');
     document.body.classList.add('app-authenticated');
   };
 
@@ -12946,8 +12944,6 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       const sbItem = document.getElementById('sb-'+storedTab);
       if(sbItem) sbItem.classList.add('active');
     }catch(e){}
-    // Fade in mainApp after correct tab is pre-activated — no tab flash
-    document.documentElement.classList.add('app-ready');
     forceAppVisible();
     setupLiveStream();
     refresh();
@@ -24308,11 +24304,11 @@ function laFormatAnalysis(rec) {
 /* Session 15.3: status bar auto-hides — slides off-screen ~3s after the
    cursor leaves it. A 14px hover-zone strip stays clickable so users can
    pull it back up. Pin button locks it visible (saved to localStorage). */
-#status-bar.sb-autohide.sb-collapsed{transform:translateY(calc(100% - 4px));opacity:.55;}
-#status-bar.sb-autohide.sb-collapsed:hover{transform:translateY(0);opacity:1;}
+#status-bar.sb-autohide.sb-collapsed{transform:translateY(100%);opacity:0;pointer-events:none;}
+#status-bar.sb-autohide.sb-collapsed:hover,#status-bar.sb-autohide.sb-collapsed.sb-peek{transform:translateY(0);opacity:1;pointer-events:auto;}
 #status-bar.sb-pinned{transform:none!important;opacity:1!important;}
 .sb-hover-zone{position:absolute;left:0;right:0;bottom:0;height:14px;pointer-events:auto;}
-#status-bar.sb-collapsed::after{content:"";position:absolute;left:50%;bottom:1px;width:36px;height:3px;border-radius:2px;background:rgba(244,137,31,.45);transform:translateX(-50%);box-shadow:0 0 8px rgba(244,137,31,.4);}
+#status-bar.sb-autohide.sb-collapsed::after{content:"";position:fixed;left:50%;bottom:6px;width:40px;height:4px;border-radius:4px;background:rgba(244,137,31,.5);transform:translateX(-50%);box-shadow:0 0 8px rgba(244,137,31,.35);pointer-events:auto;z-index:100001;cursor:pointer;}
 .sb-pin-btn svg{transition:transform .2s,color .2s;}
 #status-bar.sb-pinned .sb-pin-btn{color:var(--orange)!important;background:rgba(244,137,31,.14)!important;}
 #status-bar.sb-pinned .sb-pin-btn svg{transform:rotate(45deg);}
@@ -25528,9 +25524,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   document.addEventListener('DOMContentLoaded', function(){
     /* Only show on fresh load (not every navigation) */
     if(document.documentElement.classList.contains('app-authenticated')){
-      setTimeout(function(){
-        showToast('Press ⌘K for command palette · ? for shortcuts', 'info', 5000);
-      }, 1800);
+      try{
+        var _hintKey='adit-hint-v2';var _hintShown=false;try{_hintShown=!!localStorage.getItem(_hintKey);}catch(e){} if(!_hintShown){
+          try{localStorage.setItem(_hintKey,'1');}catch(e){};
+          setTimeout(function(){
+            showToast('Press ⌘K for command palette · ? for shortcuts', 'info', 4000);
+          }, 2000);
+        }
+      }catch(e){}
     }
   });
 
