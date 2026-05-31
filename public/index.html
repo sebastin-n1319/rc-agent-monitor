@@ -17518,21 +17518,13 @@ async function tlWkdAISuggest() {
     }
     const t = data.ticket;
     // Build conversation context
-    let context = `Ticket: #${ticketId}
-Subject: ${t.subject || 'N/A'}
-Status: ${t.status || 'N/A'}
-Channel: ${t.channel || 'N/A'}
-`;
+    let context = `Ticket: #${ticketId}\nSubject: ${t.subject || 'N/A'}\nStatus: ${t.status || 'N/A'}\nChannel: ${t.channel || 'N/A'}\n`;
     if (t.threads && t.threads.length) {
-      context += '
-Conversation:
-';
+      context += '\nConversation:\n';
       t.threads.slice(0, 6).forEach(th => {
         const from = th.fromEmailAddress || th.from || 'Unknown';
         const body = (th.content || th.body || '').replace(/<[^>]+>/g,'').trim().slice(0, 300);
-        if (body) context += `
-[${from}]: ${body}
-`;
+        if (body) context += `\n[${from}]: ${body}\n`;
       });
     }
     // Call AI for summary
