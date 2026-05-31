@@ -2351,7 +2351,7 @@ async function startScheduler() {
 
 // ── Health endpoint — required for Railway healthchecks ───────────────────────
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', ts: Date.now() });
+  res.json({ status: 'ok', ts: Date.now(), deploy: 'v1.19.11', built: new Date().toISOString() });
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
