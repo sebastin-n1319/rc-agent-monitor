@@ -100,6 +100,8 @@ body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* dark
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;}
 html.app-authenticated #adminView,html.app-authenticated #agentView{pointer-events:auto!important;}
+/* Toast: only visible when .show class present — prevents stuck dark block at bottom-right */
+#toast:not(.show){display:none!important;}
 /* Guarantee admin sidebar visible — JS applyView() overrides per role */
 html.app-authenticated #adit-admin-sidebar{display:flex!important;}
 /* Status bar permanently hidden — was causing black block & click-blocking issues */
@@ -12429,6 +12431,7 @@ function initConfetti(){
 
 let _toastTimer = null;
 function showToast(msg,type='info',dur=3000){
+  if(!msg && msg !== 0) return; // guard: never show empty toast
   const icons={info:'ℹ',success:'✔',error:'✖',warning:'⚠'};
   const t=document.getElementById('toast');
   if(!t) return;
@@ -12448,10 +12451,14 @@ function showToast(msg,type='info',dur=3000){
     _toastTimer=null;
   }, Math.max(dur,1000));
 }
-// Safety: force-hide toast on page load in case it got stuck from a prior page session
+// Safety: force-hide toast on page load AND bfcache restore
 (function(){
-  const t=document.getElementById('toast');
-  if(t){ t.classList.remove('show'); t.style.setProperty('display','none','important'); }
+  function forceHideToast(){
+    const t=document.getElementById('toast');
+    if(t){ t.classList.remove('show'); t.style.setProperty('display','none','important'); }
+  }
+  forceHideToast();
+  window.addEventListener('pageshow', function(e){ if(e.persisted) forceHideToast(); });
 })();
 
 function scheduleRefresh(delay=150){
