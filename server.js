@@ -1260,24 +1260,47 @@ function mapZohoType(ticket) {
   return 'New Ticket';
 }
 
-// GET /api/zoho/ping — test Zoho connectivity using tickets scope (admin only)
+// GET /api/zoho/ping — test Zoho connectivity + diagnose response format
 app.get('/api/zoho/ping', requireAdmin, async (req, res) => {
   try {
-    if (!ZOHO_CLIENT_ID)     return res.json({ ok:false, step:'config', error:'ZOHO_CLIENT_ID not set' });
-    if (!ZOHO_REFRESH_TOKEN) return res.json({ ok:false, step:'config', error:'ZOHO_REFRESH_TOKEN not set' });
-    if (!ZOHO_DESK_ORG_ID)  return res.json({ ok:false, step:'config', error:'ZOHO_DESK_ORG_ID not set' });
-    // Step 1: get access token
+    if (!ZOHO_CLIENT_ID)     return res.json({ ok:false, error:'ZOHO_CLIENT_ID not set' });
+    if (!ZOHO_REFRESH_TOKEN) return res.json({ ok:false, error:'ZOHO_REFRESH_TOKEN not set' });
+    if (!ZOHO_DESK_ORG_ID)  return res.json({ ok:false, error:'ZOHO_DESK_ORG_ID not set' });
     const token = await getZohoAccessToken();
-    // Step 2: test with /tickets (within our Desk.tickets.ALL scope)
-    const r = await fetch(`${ZOHO_API_BASE}/tickets?limit=1`, {
-      headers: { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID }
-    });
+    const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
+    const r = await fetch(`${ZOHO_API_BASE}/tickets?limit=3`, { headers });
     const body = await r.json();
-    if (!r.ok) return res.json({ ok:false, step:'api', status:r.status, body });
-    res.json({ ok:true, step:'success', status:r.status, ticketCount: body.count, token_preview: token.slice(0,20)+'...' });
-  } catch(e) {
-    res.json({ ok: false, step:'exception', error: e.message });
-  }
+    const firstTicket = body.data?.[0] || body.tickets?.[0] || (Array.isArray(body) ? body[0] : null);
+    res.json({
+      ok: r.ok, status: r.status, token_preview: token.slice(0,20)+'...',
+      org_id: ZOHO_DESK_ORG_ID, responseKeys: Object.keys(body),
+      count: body.count ?? body.total_records ?? 'N/A',
+      dataKey: body.data ? 'data' : (body.tickets ? 'tickets' : 'other'),
+      firstTicketNumber: firstTicket?.ticketNumber ?? 'N/A',
+      firstTicketId: firstTicket?.id ?? 'N/A',
+    });
+  } catch(e) { res.json({ ok:false, error: e.message }); }
+});
+
+// GET /api/zoho/ticket-raw/:id — show exactly what Zoho returns for each search strategy (admin)
+app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
+  try {
+    const rawId = req.params.id.replace(/^#/,'').trim();
+    const token = await getZohoAccessToken();
+    const H = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
+    const test = async (name, url) => {
+      const r = await fetch(url, { headers: H });
+      const t = await r.text();
+      let p; try { p = JSON.parse(t); } catch(e) { p = t.slice(0,300); }
+      return { status: r.status, keys: typeof p==='object'?Object.keys(p):[], sample: JSON.stringify(p).slice(0,400) };
+    };
+    res.json({ rawId, strategies: {
+      isNumber:  await test('isNumber',  `${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`),
+      filter:    await test('filter',    `${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
+      searchNum: await test('searchNum', `${ZOHO_API_BASE}/tickets/search?word=${encodeURIComponent(rawId)}&limit=10`),
+      searchHash:await test('searchHash',`${ZOHO_API_BASE}/tickets/search?word=%23${encodeURIComponent(rawId)}&limit=10`),
+    }});
+  } catch(e) { res.json({ error: e.message }); }
 });
 
 // GET /api/zoho/ticket/:id — fetch a Zoho Desk ticket and return structured data
