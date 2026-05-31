@@ -92,33 +92,33 @@
 #roster-admin-root .rx-th-day.rx-w .rx-th-dow{color:#D7DDE0!important}
 #roster-admin-root .rx-th-day.rx-w .rx-th-num{color:#D7DDE0!important}
 #roster-admin-root .rx-th-day.rx-t .rx-th-dow{color:#F4891F!important}
-#roster-admin-root .rx-th-day.rx-t .rx-th-num{color:#F4891F!important;font-weight:800!important}
+#roster-admin-root .rx-th-day.rx-t .rx-th-dow{color:#F4891F!important} #roster-admin-root .rx-th-day.rx-t .rx-th-num{color:#F4891F!important;font-weight:800!important}
 #roster-admin-root .rx-th-day.rx-week-end{border-right:1px solid #ECEFF1!important}
-#roster-admin-root .rx-th-dow{font-size:9px!important;font-weight:700!important;color:#B0BEC5!important;display:block!important;opacity:1!important;letter-spacing:.06em!important;margin-bottom:2px!important;text-transform:uppercase!important}
-#roster-admin-root .rx-th-num{font-size:12px!important;font-weight:500!important;color:#607D8B!important;display:block!important;font-family:'Poppins',sans-serif!important;line-height:1!important}
+#roster-admin-root .rx-th-dow{font-size:8px!important;font-weight:700!important;color:#8FA8B8!important;display:block!important;opacity:1!important;letter-spacing:.05em!important;margin-bottom:3px!important;text-transform:uppercase!important}
+#roster-admin-root .rx-th-num{font-size:13px!important;font-weight:600!important;color:#546E7A!important;display:block!important;font-family:'Poppins',sans-serif!important;line-height:1!important}
 #roster-admin-root .rx-th-cov{display:none!important}
 #roster-admin-root .rx-th-tot{background:#fff!important;color:#B0BEC5!important;font-size:9px!important;min-width:36px!important;padding:6px 3px!important;border-bottom:1.5px solid #ECEFF1!important}
 #roster-admin-root .rx-th-att{background:#fff!important;color:#B0BEC5!important;font-size:9px!important;min-width:44px!important;padding:6px 4px!important;border-bottom:1.5px solid #ECEFF1!important}
-#roster-admin-root .rx-row{height:48px!important;transition:background .1s!important;border-bottom:1px solid #F5F6F8!important;background:#fff!important}
+#roster-admin-root .rx-row{height:44px!important;transition:background .1s!important;border-bottom:1px solid #F0F2F4!important;background:#fff!important}
 #roster-admin-root .rx-row:nth-child(even){background:#FAFBFC!important}
 #roster-admin-root .rx-row:hover{background:#FFF8F2!important}
 #roster-admin-root .rx-row-relieved{opacity:.5!important}
 #roster-admin-root .rx-no-rows{padding:44px!important;text-align:center!important;color:#9BAFC0!important;font-size:13px!important}
-#roster-admin-root .rx-td-name{background:inherit!important;border-bottom:none!important;border-right:1px solid #F0F2F4!important;padding:0 14px!important;vertical-align:middle!important;position:sticky!important;left:0!important;z-index:4!important;cursor:pointer!important}
+#roster-admin-root .rx-td-name{background:inherit!important;border-bottom:none!important;border-right:1.5px solid #EDF0F3!important;padding:0 12px!important;vertical-align:middle!important;position:sticky!important;left:0!important;z-index:4!important;cursor:pointer!important}
 #roster-admin-root .rx-row:nth-child(even) .rx-td-name{background:#FAFBFC!important}
 #roster-admin-root .rx-row:hover .rx-td-name{background:#FFF8F2!important}
-#roster-admin-root .rx-name{font-weight:600!important;font-size:13px!important;color:#263238!important;line-height:1.3!important;display:block!important;letter-spacing:0!important}
-#roster-admin-root .rx-meta{font-size:9px!important;color:#90A4AE!important;margin-top:1px!important;font-family:'Poppins',sans-serif!important;display:block!important}
+#roster-admin-root .rx-name{font-weight:600!important;font-size:13px!important;color:#263238!important;line-height:1.25!important;display:block!important;letter-spacing:-.01em!important}
+#roster-admin-root .rx-meta{font-size:9px!important;color:#AABBC6!important;margin-top:2px!important;font-family:'Poppins',sans-serif!important;display:block!important}
 #roster-admin-root .rx-meta em{font-style:normal!important;color:#B0BEC5!important}
-#roster-admin-root .rx-cell{width:38px!important;height:48px!important;text-align:center!important;vertical-align:middle!important;border:none!important;font-size:0!important;cursor:pointer!important;user-select:none!important;padding:0!important;background:transparent!important;transition:none!important;position:relative!important}
+#roster-admin-root .rx-cell{width:36px!important;height:44px!important;text-align:center!important;vertical-align:middle!important;border:none!important;font-size:0!important;cursor:pointer!important;user-select:none!important;padding:0!important;background:transparent!important;transition:none!important;position:relative!important}
 #roster-admin-root .rx-cell::before,#roster-admin-root .rx-cell::after{display:none!important;content:none!important}
 #roster-admin-root .rx-cell:hover .rx-day-num{transform:scale(1.12)!important}
 #roster-admin-root .rx-cell:hover .rx-day-empty{background:rgba(244,137,31,.1)!important;border:2px solid rgba(244,137,31,.4)!important;color:#F4891F!important}
-#roster-admin-root .rx-cell.rx-w{background:rgba(245,158,11,.04)!important}
+#roster-admin-root .rx-cell.rx-w{background:rgba(0,0,0,.025)!important}
 #roster-admin-root .rx-cell.rx-t{background:rgba(244,137,31,.06)!important}
 #roster-admin-root .rx-cell.rx-week-end{border-right:1px solid #ECEFF1!important}
-#roster-admin-root .rx-day-num{display:flex!important;align-items:center!important;justify-content:center!important;width:32px!important;height:32px!important;border-radius:50%!important;margin:0 auto!important;font-size:12.5px!important;font-weight:700!important;font-family:'Poppins',sans-serif!important;color:#fff!important;transition:transform .12s cubic-bezier(.34,1.56,.64,1)!important;box-shadow:0 2px 8px rgba(0,0,0,.15)!important}
-#roster-admin-root .rx-day-empty{background:transparent!important;color:#B0BEC5!important;font-weight:500!important;font-size:12px!important;box-shadow:none!important}
+#roster-admin-root .rx-day-num{display:flex!important;align-items:center!important;justify-content:center!important;width:30px!important;height:30px!important;border-radius:50%!important;margin:0 auto!important;font-size:12.5px!important;font-weight:700!important;font-family:'Poppins',sans-serif!important;color:#fff!important;transition:transform .12s cubic-bezier(.34,1.56,.64,1)!important;box-shadow:0 2px 8px rgba(0,0,0,.15)!important}
+#roster-admin-root .rx-day-empty{background:transparent!important;color:#CBD5DC!important;font-weight:400!important;font-size:11.5px!important;box-shadow:none!important}
 #roster-admin-root .rx-cell.rx-t .rx-day-empty{color:#F4891F!important;font-weight:800!important;border:2px solid rgba(244,137,31,.5)!important;background:rgba(244,137,31,.06)!important}
 #roster-admin-root .rx-cell.rx-w .rx-day-empty{color:#D0D8DD!important}
 #roster-admin-root .rx-cell.rx-t .rx-day-num{box-shadow:0 0 0 2.5px #fff,0 0 0 4.5px #F4891F,0 3px 10px rgba(244,137,31,.4)!important}
@@ -248,7 +248,7 @@
 #roster-admin-root .rx-avatar-sm{width:24px!important;height:24px!important;font-size:8.5px!important}
 /* Avatar + name row */
 #roster-admin-root .rx-name-row{display:flex!important;align-items:center!important;gap:9px!important}
-#roster-admin-root .rx-avatar{width:30px!important;height:30px!important;border-radius:50%!important;flex-shrink:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:10.5px!important;font-weight:800!important;color:#fff!important;letter-spacing:.02em!important;text-shadow:0 1px 2px rgba(0,0,0,.2)!important}
+#roster-admin-root .rx-avatar{width:32px!important;height:32px!important;border-radius:50%!important;flex-shrink:0!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:10.5px!important;font-weight:800!important;color:#fff!important;letter-spacing:.02em!important;text-shadow:0 1px 2px rgba(0,0,0,.2)!important}
 #roster-admin-root .rx-name-info{min-width:0!important}
 #roster-admin-root .rx-name-dot{display:inline-block!important;width:7px!important;height:7px!important;border-radius:50%!important;margin-right:5px!important;vertical-align:middle!important;flex-shrink:0!important}
 #roster-admin-root .rx-dot-leave{background:#FBC84B!important}
@@ -261,9 +261,9 @@
 #roster-admin-root .rx-cell.rx-t.rx-st-present{background:rgba(45,220,150,.22)!important}
 #roster-admin-root .rx-cell.rx-t.rx-st-wfh{background:rgba(155,89,182,.18)!important}
 #roster-admin-root .rx-cell.rx-t.rx-st-off{background:rgba(148,163,184,.18)!important}
-/* Taller cells */
-#roster-admin-root .rx-cell{height:36px!important}
-#roster-admin-root .rx-td-name{padding:10px 14px!important}
+/* Cell height — match row */
+#roster-admin-root .rx-cell{height:44px!important}
+#roster-admin-root .rx-td-name{padding:0 12px!important}
 /* Stat pill badges */
 #roster-admin-root .rx-stat-nil{color:#C8D4DF!important;font-size:11px!important}
 #roster-admin-root .rx-stat-p,#roster-admin-root .rx-stat-wfh,#roster-admin-root .rx-stat-od,#roster-admin-root .rx-stat-off,#roster-admin-root .rx-stat-pl,#roster-admin-root .rx-stat-upl,#roster-admin-root .rx-stat-sl,#roster-admin-root .rx-stat-ncns{display:inline-block!important;min-width:22px!important;padding:1px 5px!important;border-radius:5px!important;font-weight:800!important;font-size:10.5px!important;font-family:'JetBrains Mono',monospace!important;text-align:center!important}
