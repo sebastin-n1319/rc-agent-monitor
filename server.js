@@ -1567,6 +1567,77 @@ app.post('/api/ticket-feedback', requireAuth, rateLimit(120, 60000), async (req,
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// GET /api/zoho/ticket/:id/full — full ticket context for AI summary
+// Fetches threads (all), private notes, attachments, and activity history
+app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const rawId = req.params.id.replace(/^#/, '').trim();
+    if (!rawId) return res.status(400).json({ success: false, error: 'No ticket ID' });
+
+    // Find ticket by number
+    const search = await zohoDesk('/tickets/search', { ticketNumber: rawId, limit: 1 });
+    const found = search?.data?.[0];
+    if (!found) return res.json({ success: true, found: false });
+
+    const tid = found.id;
+
+    // Fetch everything in parallel
+    const [threadsData, attachmentsData, activitiesData] = await Promise.all([
+      zohoDesk(`/tickets/${tid}/threads`, { limit: 50, sortBy: 'createdTime', order: 'asc' }).catch(() => ({})),
+      zohoDesk(`/tickets/${tid}/attachments`, { limit: 50 }).catch(() => ({})),
+      zohoDesk(`/tickets/${tid}/activities`, { limit: 50 }).catch(() => ({})),
+    ]);
+
+    const threads = (threadsData?.data || []).map(th => ({
+      type:     th.type || 'email',
+      isNote:   (th.type || '').toLowerCase().includes('note') || th.isPrivate,
+      from:     th.fromEmailAddress || th.author?.name || th.author?.email || 'Unknown',
+      fromName: th.author?.name || null,
+      content:  th.content
+                  ? th.content.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 1200)
+                  : null,
+      created:  th.createdTime,
+    })).filter(t => t.content);
+
+    const attachments = (attachmentsData?.data || []).map(a => ({
+      name: a.fileName || a.name,
+      type: a.fileType || a.mimeType || 'unknown',
+      size: a.fileSize ? Math.round(a.fileSize / 1024) + 'KB' : null,
+    }));
+
+    const activities = (activitiesData?.data || []).slice(0, 20).map(a => ({
+      action:  a.activity || a.type,
+      by:      a.performer?.name || a.by || null,
+      time:    a.time || a.createdTime,
+      detail:  a.description || a.detail || null,
+    }));
+
+    res.json({
+      success: true,
+      found: true,
+      ticket: {
+        id: tid,
+        number: found.ticketNumber,
+        subject: found.subject,
+        status: found.status,
+        channel: found.channel,
+        priority: found.priority,
+        createdTime: found.createdTime,
+        modifiedTime: found.modifiedTime,
+        contact: found.contact?.name || null,
+        account: found.account?.accountName || null,
+        assignee: found.assignee?.name || null,
+      },
+      threads,
+      attachments,
+      activities,
+    });
+  } catch(e) {
+    console.error('ticket/full error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/agent-learning/stats — accuracy stats per rule
 app.get('/api/agent-learning/stats', requireAdmin, async (req, res) => {
   try {

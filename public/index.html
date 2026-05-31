@@ -17509,32 +17509,68 @@ async function tlWkdAISuggest() {
   btn.disabled = true;
 
   try {
-    // Fetch Zoho ticket data
-    const res = await fetch(`${BACKEND}/api/zoho/ticket/${encodeURIComponent(ticketId)}`, { credentials:'include' });
+    // Fetch FULL ticket context: all threads, private notes, attachments, activity
+    const res = await fetch(`${BACKEND}/api/zoho/ticket/${encodeURIComponent(ticketId)}/full`, { credentials:'include' });
     const data = await res.json();
     if (!data.success || !data.found) {
       showToast('Could not find Zoho ticket — enter details manually', 'warning');
       return;
     }
-    const t = data.ticket;
-    // Build conversation context
-    let context = `Ticket: #${ticketId}\nSubject: ${t.subject || 'N/A'}\nStatus: ${t.status || 'N/A'}\nChannel: ${t.channel || 'N/A'}\n`;
-    if (t.threads && t.threads.length) {
-      context += '\nConversation:\n';
-      t.threads.slice(0, 6).forEach(th => {
-        const from = th.fromEmailAddress || th.from || 'Unknown';
-        const body = (th.content || th.body || '').replace(/<[^>]+>/g,'').trim().slice(0, 300);
-        if (body) context += `\n[${from}]: ${body}\n`;
+    const { ticket: t, threads, attachments, activities } = data;
+
+    // Build comprehensive context
+    let context = `TICKET SUMMARY REQUEST\n`;
+    context += `Ticket: #${ticketId}\n`;
+    context += `Subject: ${t.subject || 'N/A'}\n`;
+    context += `Status: ${t.status || 'N/A'} | Priority: ${t.priority || 'N/A'} | Channel: ${t.channel || 'N/A'}\n`;
+    if (t.contact) context += `Contact: ${t.contact}\n`;
+    if (t.account) context += `Account: ${t.account}\n`;
+    if (t.assignee) context += `Assigned to: ${t.assignee}\n`;
+    context += `Created: ${t.createdTime || 'N/A'}\n\n`;
+
+    // All conversation threads (customer + agent replies)
+    const pubThreads = threads.filter(th => !th.isNote);
+    if (pubThreads.length) {
+      context += `--- CONVERSATION (${pubThreads.length} messages) ---\n`;
+      pubThreads.forEach(th => {
+        const sender = th.fromName || th.from || 'Unknown';
+        context += `\n[${sender}]: ${th.content}\n`;
       });
     }
-    // Call AI for summary using the write-transform endpoint
+
+    // Private/internal notes (agent notes)
+    const privNotes = threads.filter(th => th.isNote);
+    if (privNotes.length) {
+      context += `\n--- INTERNAL NOTES (${privNotes.length}) ---\n`;
+      privNotes.forEach(th => {
+        const sender = th.fromName || th.from || 'Agent';
+        context += `\n[NOTE by ${sender}]: ${th.content}\n`;
+      });
+    }
+
+    // Attachments
+    if (attachments && attachments.length) {
+      context += `\n--- ATTACHMENTS (${attachments.length}) ---\n`;
+      attachments.forEach(a => context += `- ${a.name} (${a.type}${a.size ? ', '+a.size : ''})\n`);
+    }
+
+    // Activity history (status changes, assignments, etc.)
+    if (activities && activities.length) {
+      context += `\n--- ACTIVITY HISTORY ---\n`;
+      activities.slice(0, 15).forEach(a => {
+        const who = a.by ? ` by ${a.by}` : '';
+        const detail = a.detail ? `: ${a.detail}` : '';
+        context += `- ${a.action}${who}${detail} (${a.time || ''})\n`;
+      });
+    }
+
+    context += `\n\nINSTRUCTION: Write a concise 2-3 sentence summary of this ticket for the Notes field. Cover: (1) what the client's issue was, (2) what actions were taken or what department handled it, (3) current status or resolution. Be factual. No markdown.`;
+
+    // Send to AI
     const aiRes = await fetch(`${BACKEND}/api/write-transform`, {
       method: 'POST', credentials: 'include',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        text: context,
-        transform: 'summarize'
-      })
+      body: JSON.stringify({ text: context, transform: 'summarize' })
     });
     const aiData = await aiRes.json();
     const summary = (aiData.result || '').trim();
