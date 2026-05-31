@@ -18015,20 +18015,21 @@ async function loadEventLog(){
         </div>`;
       }).join('');
 
-      return `<div style="border:1.5px solid #E8EAED;border-radius:12px;overflow:hidden;background:#FFFFFF;margin-bottom:6px;">
-        <div onclick="evtToggle(this)" class="evt-hdr" style="display:flex;align-items:center;gap:12px;padding:11px 16px;cursor:pointer;user-select:none;background:#FFFFFF;">
-          <div style="width:38px;height:38px;border-radius:10px;background:${av};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#FFFFFF;flex-shrink:0;letter-spacing:-0.5px;">${ini}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13.5px;font-weight:700;color:#072B40;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${agent}</div>
-            <div style="font-size:10px;color:#6B849A;margin-top:1px;">${evts.length} events &middot; ${toggles} toggles &middot; last at ${toTime(last.timestamp)}</div>
+      return `<div style="border:1.5px solid #DEE1E6;border-radius:12px;overflow:visible;background:#FFFFFF;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.04);">
+        <div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='flex'?'none':'flex';this.querySelector('.elog-arr').style.transform=this.nextElementSibling.style.display==='flex'?'rotate(180deg)':'rotate(0deg)';"
+          style="display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;user-select:none;background:#FFFFFF;border-radius:12px;">
+          <div style="width:40px;height:40px;min-width:40px;border-radius:10px;background:${av};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#FFFFFF;letter-spacing:-0.5px;">${ini}</div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+            <div style="font-size:13px;font-weight:700;color:#072B40 !important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${agent}</div>
+            <div style="font-size:10.5px;color:#6B849A;font-weight:500;">${evts.length} events &nbsp;&middot;&nbsp; ${toggles} toggles &nbsp;&middot;&nbsp; last at ${toTime(last.timestamp)}</div>
           </div>
-          <div style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:20px;background:${sm.bg};border:1.5px solid ${sm.bdr};flex-shrink:0;">
-            <div style="width:7px;height:7px;border-radius:50%;background:${sm.dot};"></div>
-            <span style="font-size:11px;font-weight:700;color:${sm.color};">${last.status}</span>
+          <div style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;background:${sm.bg};border:1.5px solid ${sm.bdr};flex-shrink:0;margin-right:8px;">
+            <div style="width:7px;height:7px;min-width:7px;border-radius:50%;background:${sm.dot};"></div>
+            <span style="font-size:11px;font-weight:700;color:${sm.color};white-space:nowrap;">${last.status}</span>
           </div>
-          <svg viewBox="0 0 12 12" fill="none" stroke="#9BAFC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="evt-arr" style="width:12px;height:12px;flex-shrink:0;transition:transform .2s;"><path d="M2 4l4 4 4-4"/></svg>
+          <svg class="elog-arr" viewBox="0 0 12 12" fill="none" stroke="#9BAFC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;min-width:12px;flex-shrink:0;transition:transform .2s;"><path d="M2 4l4 4 4-4"/></svg>
         </div>
-        <div class="evt-body" style="display:none;flex-direction:column;padding:8px 16px 12px 50px;border-top:1px solid #E8EAED;background:#FAFBFC;">${timelineRows}</div>
+        <div style="display:none;flex-direction:column;padding:6px 16px 14px 68px;border-top:1px solid #F0F2F5;background:#FAFBFC;border-radius:0 0 12px 12px;">${timelineRows}</div>
       </div>`;
     }).join('');
   }catch(e){console.error('loadEventLog',e);}
