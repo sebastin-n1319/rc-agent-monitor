@@ -1259,10 +1259,15 @@
       const isT = d === today;
       const isWeekEnd = isSunday(d);
       const lbl = STATUS_LABEL[s] || '';
+      const dayNum = d.slice(-2).replace(/^0/, ''); // day number without leading zero
       const tip = `${esc(a.pseudo || a.emp_id)} · ${d}${s ? ' · ' + STATUS_LONG[s] : ''}`;
+      // Render day number in a span + status label — CSS uses these to build circular cells
+      const inner = s
+        ? `<span class="rx-day-num">${dayNum}</span>`
+        : `<span class="rx-day-num rx-day-empty">${dayNum}</span>`;
       return `<td class="rx-cell rx-st-${s || 'empty'} ${isW ? 'rx-w' : ''} ${isT ? 'rx-t' : ''} ${isWeekEnd ? 'rx-week-end' : ''}"
         data-date="${d}" data-emp="${esc(a.emp_id)}" data-status="${s}"
-        title="${tip}">${lbl}</td>`;
+        title="${tip}">${inner}</td>`;
     }).join('');
 
     const attHtml = stats.pct !== null
@@ -1613,7 +1618,14 @@
     if (isSunday(date)) classes.push('rx-week-end');
     classes.push('rx-st-' + (status || 'empty'));
     cell.className = classes.join(' ');
-    cell.textContent = STATUS_LABEL[status] || '';
+    // Preserve day number span, update status content
+    const daySpan = cell.querySelector('.rx-day-num');
+    const dayN = cell.dataset.date ? cell.dataset.date.slice(-2).replace(/^0/,'') : '';
+    if (status) {
+      cell.innerHTML = `<span class="rx-day-num">${dayN}</span>`;
+    } else {
+      cell.innerHTML = `<span class="rx-day-num rx-day-empty">${dayN}</span>`;
+    }
     // Pop-in animation on status change
     if (status) {
       cell.classList.add('rx-just-set');

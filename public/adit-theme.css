@@ -9751,3 +9751,208 @@ body {
 #roster-admin-root .rx-grid tbody tr:nth-child(5) { animation-delay: .11s !important; }
 #roster-admin-root .rx-grid tbody tr:nth-child(6) { animation-delay: .13s !important; }
 #roster-admin-root .rx-grid tbody tr:nth-child(n+7) { animation-delay: .15s !important; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROSTER GRID v4 — CIRCULAR CALENDAR (reference design)
+   Date number inside colored circles, spacious layout
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Cell: circular container ── */
+#roster-admin-root .rx-cell {
+  width: 38px !important;
+  height: 54px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 4px 3px !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  box-shadow: none !important;
+  font-size: 0 !important; /* hide raw text, use spans */
+  position: relative !important;
+  transition: none !important;
+}
+/* Remove row backgrounds that fight with circular cells */
+#roster-admin-root .rx-row { background: transparent !important; }
+#roster-admin-root .rx-row:nth-child(even) { background: transparent !important; }
+#roster-admin-root .rx-row:hover { background: transparent !important; }
+
+/* Weekend column background on cells */
+#roster-admin-root .rx-cell.rx-w { background: rgba(245,158,11,.05) !important; }
+#roster-admin-root .rx-cell.rx-week-end { border-right: 1.5px solid #EEF0F5 !important; }
+
+/* ── Day number span — this IS the circle ── */
+#roster-admin-root .rx-day-num {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  margin: 0 auto !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  font-family: 'Poppins', sans-serif !important;
+  color: #fff !important;
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1) !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+/* Empty day — plain number, no circle */
+#roster-admin-root .rx-day-empty {
+  background: transparent !important;
+  color: #B0BEC5 !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+}
+/* Today — outline ring on empty cells */
+#roster-admin-root .rx-cell.rx-t .rx-day-empty {
+  background: transparent !important;
+  color: #F4891F !important;
+  font-weight: 800 !important;
+  border: 2px solid #F4891F !important;
+}
+/* Weekend empty — more muted */
+#roster-admin-root .rx-cell.rx-w .rx-day-empty {
+  color: #CFD8DC !important;
+}
+
+/* Cell hover — spring the circle */
+#roster-admin-root .rx-cell:hover .rx-day-num {
+  transform: scale(1.15) !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,.2) !important;
+}
+#roster-admin-root .rx-cell:hover .rx-day-empty {
+  background: rgba(244,137,31,.12) !important;
+  color: #F4891F !important;
+  border: 2px solid rgba(244,137,31,.4) !important;
+}
+
+/* ── Status circle colors — vivid solid fills ── */
+#roster-admin-root .rx-cell.rx-st-present   .rx-day-num { background: #F59E0B !important; }
+#roster-admin-root .rx-cell.rx-st-wfh        .rx-day-num { background: #8B5CF6 !important; }
+#roster-admin-root .rx-cell.rx-st-on_duty    .rx-day-num { background: #F59E0B !important; }
+#roster-admin-root .rx-cell.rx-st-off        .rx-day-num { background: #F59E0B !important; }
+#roster-admin-root .rx-cell.rx-st-holiday    .rx-day-num { background: #10B981 !important; }
+#roster-admin-root .rx-cell.rx-st-pl         .rx-day-num { background: #06B6D4 !important; }
+#roster-admin-root .rx-cell.rx-st-hd_pl      .rx-day-num { background: #67E8F9 !important; color: #0E7490 !important; }
+#roster-admin-root .rx-cell.rx-st-upl        .rx-day-num { background: #6B7280 !important; }
+#roster-admin-root .rx-cell.rx-st-hd_upl     .rx-day-num { background: #9CA3AF !important; }
+#roster-admin-root .rx-cell.rx-st-sl         .rx-day-num { background: #EF4444 !important; }
+#roster-admin-root .rx-cell.rx-st-hd_sl      .rx-day-num { background: #FCA5A5 !important; color: #991B1B !important; }
+#roster-admin-root .rx-cell.rx-st-ncns       .rx-day-num { background: #DC2626 !important; box-shadow: 0 2px 8px rgba(220,38,38,.5) !important; }
+#roster-admin-root .rx-cell.rx-st-absent     .rx-day-num { background: #374151 !important; }
+/* Today + status — orange ring */
+#roster-admin-root .rx-cell.rx-t .rx-day-num {
+  box-shadow: 0 0 0 2.5px #fff, 0 0 0 4.5px #F4891F !important;
+}
+
+/* ── Header — clean, minimal ── */
+#roster-admin-root .rx-grid thead .rx-th {
+  background: #fff !important;
+  border-bottom: 1px solid #E8EAED !important;
+  padding: 6px 2px !important;
+}
+#roster-admin-root .rx-th-name {
+  background: #fff !important;
+  padding-left: 16px !important;
+  border-bottom: 1px solid #E8EAED !important;
+}
+#roster-admin-root .rx-th-dow {
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  color: #B0BEC5 !important;
+  letter-spacing: .06em !important;
+  display: block !important;
+  opacity: 1 !important;
+  margin-bottom: 2px !important;
+}
+#roster-admin-root .rx-th-num {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #78909C !important;
+  font-family: 'Poppins', sans-serif !important;
+  display: block !important;
+  line-height: 1 !important;
+}
+/* Today header num */
+#roster-admin-root .rx-th-day.rx-t .rx-th-num { color: #F4891F !important; font-weight: 800 !important; }
+/* Weekend header */
+#roster-admin-root .rx-th-day.rx-w .rx-th-dow,
+#roster-admin-root .rx-th-day.rx-w .rx-th-num { color: #CFD8DC !important; }
+#roster-admin-root .rx-th-day.rx-week-end { border-right: 1.5px solid #EEF0F5 !important; }
+/* Dot indicators under day numbers */
+#roster-admin-root .rx-th-cov { margin: 3px auto 0 !important; }
+
+/* ── Grid container ── */
+#roster-admin-root .rx-grid-wrap {
+  border: 1px solid #F0F2F5 !important;
+  border-radius: 16px !important;
+  overflow: auto !important;
+  max-height: 72vh !important;
+  box-shadow: 0 2px 16px rgba(7,43,64,.06) !important;
+  background: #fff !important;
+}
+
+/* ── Agent column — modern card sidebar ── */
+#roster-admin-root .rx-td-name {
+  padding: 8px 14px !important;
+  border-bottom: 1px solid #F4F5F8 !important;
+  border-right: 1px solid #F4F5F8 !important;
+  background: #fff !important;
+  min-width: 220px !important;
+}
+#roster-admin-root .rx-row:hover .rx-td-name {
+  background: #FFFBF7 !important;
+}
+#roster-admin-root .rx-row { height: 54px !important; }
+
+/* ── Avatar ── */
+#roster-admin-root .rx-avatar {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 50% !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12) !important;
+  flex-shrink: 0 !important;
+  color: #fff !important;
+}
+
+/* ── Agent text ── */
+#roster-admin-root .rx-name {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #263238 !important;
+  letter-spacing: 0 !important;
+}
+#roster-admin-root .rx-meta {
+  font-size: 9.5px !important;
+  color: #90A4AE !important;
+  margin-top: 1px !important;
+  font-family: 'Poppins', sans-serif !important;
+}
+
+/* ── ATT% column ── */
+#roster-admin-root .rx-td-att {
+  background: transparent !important;
+  border-left: 1px solid #F4F5F8 !important;
+  padding: 6px 8px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+#roster-admin-root .rx-att-pct {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  font-family: 'Poppins', sans-serif !important;
+  color: #10B981 !important;
+  display: block !important;
+}
+#roster-admin-root .rx-att-bar {
+  height: 3px !important;
+  border-radius: 99px !important;
+  margin: 3px auto 0 !important;
+  background: linear-gradient(90deg,#10B981,#6EE7B7) !important;
+  max-width: 32px !important;
+}
