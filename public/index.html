@@ -7,7 +7,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Adit Agent Monitor</title>
-<link rel="icon" type="image/svg+xml" href="/adit-icon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/adit-icon-32.png?v=2">
+<link rel="icon" type="image/webp" href="/adit-icon.webp?v=2">
 <link rel="icon" type="image/png" sizes="32x32" href="/adit-icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/adit-icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="/adit-logo-dark.png">
@@ -9335,16 +9336,8 @@ tbody tr:hover td{
     <div class="l5-right-orb"></div>
     <div class="adit-login-card" id="l5RightCard">
       <div class="adit-brand">
-        <!-- Adit wordmark on dark login bg — Poppins 800 -->
-        <div style="display:inline-flex;align-items:flex-end;gap:0;line-height:1;padding-top:14px;position:relative;">
-          <span style="font-family:'Poppins',sans-serif;font-size:36px;font-weight:800;color:#F4891F;letter-spacing:-1px;">ad</span>
-          <span style="font-family:'Poppins',sans-serif;font-size:36px;font-weight:800;color:#25A8E0;letter-spacing:-1px;">i</span>
-          <span style="font-family:'Poppins',sans-serif;font-size:36px;font-weight:800;color:#25A8E0;letter-spacing:-1px;">t</span>
-          <!-- person head -->
-          <span style="position:absolute;top:0;left:69%;transform:translateX(-50%);width:11px;height:11px;border-radius:50%;background:#25A8E0;display:block;"></span>
-          <!-- arms / t crossbar -->
-          <span style="position:absolute;top:12px;left:57%;right:-2px;height:7px;background:#25A8E0;border-radius:4px;display:block;"></span>
-        </div>
+        <!-- Actual Adit logo PNG — white background version looks fine on dark card too -->
+        <img src="/adit-logo.png" alt="Adit" style="height:44px;width:auto;border-radius:8px;padding:6px 10px;background:rgba(255,255,255,.08);">
         <div>
           <div class="adit-brand-name">Adit Agent Monitor</div>
           <div class="adit-brand-sub">T1 CS Stars · Operations Hub</div>
@@ -9660,21 +9653,8 @@ tbody tr:hover td{
 <div id="mainApp">
 <header>
   <div class="hdr-left">
-    <!-- Adit wordmark — Poppins 800, exact brand colors, person figure on i/t -->
-    <div style="display:inline-flex;align-items:flex-end;gap:0;flex-shrink:0;line-height:1;padding-top:10px;position:relative;">
-      <span style="font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;color:#F4891F;letter-spacing:-1px;">ad</span>
-      <!-- "i" — no dot (person head is the dot) -->
-      <span style="font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;color:#25A8E0;letter-spacing:-1px;line-height:1;">i</span>
-      <!-- "t" -->
-      <span style="font-family:'Poppins',sans-serif;font-size:26px;font-weight:800;color:#25A8E0;letter-spacing:-1px;line-height:1;">t</span>
-      <!-- Person figure overlay: head + arms -->
-      <span style="position:absolute;top:-2px;left:0;right:0;bottom:0;pointer-events:none;display:block;">
-        <!-- head: centered above "i" (roughly 70% from left of "adit") -->
-        <span style="position:absolute;top:0px;left:69%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#25A8E0;display:block;"></span>
-        <!-- arms: t-crossbar, from ~60% to right edge -->
-        <span style="position:absolute;top:9px;left:57%;right:-2px;height:5px;background:#25A8E0;border-radius:3px;display:block;"></span>
-      </span>
-    </div>
+    <!-- Actual Adit logo PNG -->
+    <img src="/adit-logo.png" alt="Adit" style="height:32px;width:auto;flex-shrink:0;display:block;">
     <div class="hdr-sep"></div>
     <div class="hdr-sub" style="font-size:11px;color:rgba(178,219,240,.55)">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
   </div>
