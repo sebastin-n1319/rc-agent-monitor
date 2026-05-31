@@ -9087,3 +9087,213 @@ body {
   margin-bottom: 10px !important;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROSTER GRID — FUTURISTIC REDESIGN
+   Cleaner rows, better cells, modern header, beautiful ATT% bar
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* Grid wrapper */
+#roster-admin-root .rx-grid-wrap {
+  border-radius: 16px !important;
+  border: 1px solid #E2E8F0 !important;
+  box-shadow: 0 4px 24px rgba(7,43,64,.08), 0 1px 4px rgba(7,43,64,.04) !important;
+  max-height: 65vh !important;
+}
+
+/* Header row — richer dark */
+#roster-admin-root .rx-grid thead .rx-th {
+  background: #072B40 !important;
+  border-bottom: none !important;
+  padding: 10px 3px !important;
+}
+#roster-admin-root .rx-th-name {
+  background: #072B40 !important;
+  padding-left: 18px !important;
+}
+#roster-admin-root .rx-th-dow {
+  font-size: 8px !important;
+  opacity: .5 !important;
+  letter-spacing: .04em !important;
+}
+#roster-admin-root .rx-th-num {
+  font-size: 13px !important;
+}
+/* Weekend header tint */
+#roster-admin-root .rx-th-day.rx-w {
+  background: rgba(139,69,19,.35) !important;
+}
+/* Today header */
+#roster-admin-root .rx-th-day.rx-t {
+  background: #0E5C38 !important;
+  position: relative !important;
+}
+#roster-admin-root .rx-th-day.rx-t::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: 0; left: 50%; transform: translateX(-50%) !important;
+  width: 4px; height: 4px; border-radius: 50% !important;
+  background: #2DDC96 !important;
+}
+/* Coverage bar in header */
+#roster-admin-root .rx-th-cov {
+  height: 3px !important;
+  border-radius: 9px !important;
+  margin: 4px auto 0 !important;
+  opacity: .85 !important;
+}
+
+/* Agent name column — sticky, clean */
+#roster-admin-root .rx-td-name {
+  padding: 11px 16px !important;
+  border-right: 2px solid #EEF0F5 !important;
+  border-bottom: 1px solid #F2F4F7 !important;
+  background: #fff !important;
+  min-width: 260px !important;
+}
+#roster-admin-root .rx-row:nth-child(even) .rx-td-name {
+  background: #FAFBFD !important;
+}
+#roster-admin-root .rx-row:hover .rx-td-name {
+  background: linear-gradient(90deg, rgba(244,137,31,.06), rgba(244,137,31,.02)) !important;
+}
+
+/* Avatar — upgraded */
+#roster-admin-root .rx-avatar {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15) !important;
+  flex-shrink: 0 !important;
+  animation: rx-avatar-in .3s cubic-bezier(.34,1.56,.64,1) !important;
+}
+#roster-admin-root .rx-row:hover .rx-avatar {
+  transform: scale(1.08) !important;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1) !important;
+}
+
+/* Agent name + meta */
+#roster-admin-root .rx-name {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #072B40 !important;
+  letter-spacing: -.01em !important;
+}
+#roster-admin-root .rx-meta {
+  font-size: 9px !important;
+  color: #9BAFC0 !important;
+  margin-top: 2px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  letter-spacing: .01em !important;
+}
+
+/* Row */
+#roster-admin-root .rx-row {
+  border-bottom: 1px solid #F4F5F8 !important;
+  transition: background .1s !important;
+}
+#roster-admin-root .rx-row:nth-child(even) {
+  background: #FAFBFD !important;
+}
+#roster-admin-root .rx-row:hover {
+  background: rgba(244,137,31,.04) !important;
+}
+
+/* Calendar cells — tighter, cleaner */
+#roster-admin-root .rx-cell {
+  width: 34px !important;
+  height: 32px !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  border-bottom: 1px solid #F2F4F7 !important;
+  border-right: 1px solid #F2F4F7 !important;
+  cursor: pointer !important;
+  transition: transform .14s cubic-bezier(.34,1.56,.64,1), box-shadow .14s !important;
+  color: #3A5068 !important;
+  letter-spacing: .02em !important;
+}
+#roster-admin-root .rx-cell:hover {
+  transform: scale(1.35) !important;
+  z-index: 3 !important;
+  position: relative !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 0 2px #F4891F, 0 4px 12px rgba(244,137,31,.35) !important;
+}
+/* Empty cell dash */
+#roster-admin-root .rx-cell.rx-st-empty {
+  color: rgba(155,175,192,.35) !important;
+}
+/* Weekend cell */
+#roster-admin-root .rx-cell.rx-w {
+  background: rgba(139,92,46,.05) !important;
+}
+/* Today cell */
+#roster-admin-root .rx-cell.rx-t {
+  box-shadow: inset 0 -2px 0 #2DDC96 !important;
+  background: rgba(45,220,150,.04) !important;
+}
+/* Week end separator */
+#roster-admin-root .rx-cell.rx-week-end {
+  border-right: 2px solid #DEE1E6 !important;
+}
+
+/* Status cell colors — more vivid */
+#roster-admin-root .rx-cell.rx-st-present   { background: rgba(45,220,150,.18) !important; color: #0A6B3F !important; }
+#roster-admin-root .rx-cell.rx-st-wfh        { background: rgba(155,89,182,.18) !important; color: #6D2D8A !important; }
+#roster-admin-root .rx-cell.rx-st-on_duty    { background: rgba(244,137,31,.18) !important; color: #A84F0A !important; }
+#roster-admin-root .rx-cell.rx-st-off        { background: rgba(148,163,184,.15) !important; color: #3D5166 !important; }
+#roster-admin-root .rx-cell.rx-st-holiday    { background: rgba(244,114,182,.18) !important; color: #962060 !important; }
+#roster-admin-root .rx-cell.rx-st-pl         { background: rgba(33,170,224,.18) !important; color: #0D6090 !important; }
+#roster-admin-root .rx-cell.rx-st-upl        { background: rgba(237,102,107,.18) !important; color: #A0282E !important; }
+#roster-admin-root .rx-cell.rx-st-sl         { background: rgba(251,200,75,.22) !important; color: #7A5000 !important; }
+#roster-admin-root .rx-cell.rx-st-ncns       { background: #DC2626 !important; color: #fff !important; border-radius: 3px !important; }
+#roster-admin-root .rx-cell.rx-st-absent     { background: rgba(100,116,139,.2) !important; color: #2D3F52 !important; }
+
+/* ATT% column */
+#roster-admin-root .rx-td-att {
+  background: rgba(33,170,224,.05) !important;
+  border-left: 2px solid rgba(33,170,224,.15) !important;
+  padding: 0 8px !important;
+  min-width: 52px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+#roster-admin-root .rx-att-pct {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  border-radius: 20px !important;
+  padding: 2px 8px !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+/* ATT% bars - the blue lines */
+#roster-admin-root .rx-att-bar {
+  height: 3px !important;
+  border-radius: 9px !important;
+  background: #21AAE0 !important;
+  margin: 3px auto 0 !important;
+  transition: width .5s cubic-bezier(.4,0,.2,1) !important;
+  box-shadow: 0 0 6px rgba(33,170,224,.5) !important;
+}
+
+/* Summary row */
+#roster-admin-root .rx-summary-wrap {
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  border: 1px solid #E8EAED !important;
+  box-shadow: 0 2px 8px rgba(7,43,64,.05) !important;
+}
+
+/* Row entrance animation */
+#roster-admin-root .rx-grid tbody tr {
+  animation: rx-row-in .25s cubic-bezier(.22,1,.36,1) both !important;
+}
+#roster-admin-root .rx-grid tbody tr:nth-child(2) { animation-delay: .03s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(3) { animation-delay: .06s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(4) { animation-delay: .09s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(5) { animation-delay: .12s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(6) { animation-delay: .14s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(7) { animation-delay: .16s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(8) { animation-delay: .18s !important; }
+#roster-admin-root .rx-grid tbody tr:nth-child(n+9) { animation-delay: .2s !important; }
