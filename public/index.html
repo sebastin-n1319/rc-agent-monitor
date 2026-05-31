@@ -9951,6 +9951,11 @@ tbody tr:hover td{
           <span style="font-size:10.5px;font-weight:600;color:#0A7A4A;">Live</span>
         </span>
         <span style="font-size:10.5px;color:#9BAFC0;font-weight:500;">30s fallback</span>
+        <!-- Refresh in-progress indicator -->
+        <span id="adit-refresh-indicator">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:11px;height:11px;"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c2.1 0 3.9 1.2 4.9 2.9"/><path d="M10 5.5h3.5V2"/></svg>
+          Refreshing…
+        </span>
       </div>
       <div style="display:flex;align-items:center;gap:14px;">
         <span style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:#6B849A;font-weight:500;">
@@ -17143,6 +17148,8 @@ function switchTab(tab,el){
   try{
     localStorage.setItem('rcActiveTab', tab);
     const savedScroll = parseInt(localStorage.getItem('rcScroll_' + tab) || '0', 10);
+    // Quick bar flash on tab switch
+    if(window.AditLoader){ AditLoader.start(); setTimeout(()=>AditLoader.done(), 350); }
     // Restore scroll after DOM settles
     requestAnimationFrame(()=>{
       window.scrollTo({ top: savedScroll, behavior: 'instant' });
@@ -17210,6 +17217,52 @@ function restoreLastTab(){
       }catch(e){}
     }, 150);
   }, { passive: true });
+})();
+
+/* ── Adit Loader — NProgress-style top bar ──────────────────────────── */
+window.AditLoader = (function(){
+  var _bar = null, _wrap = null, _t = null, _cur = 0, _done = false;
+
+  function _el(){ _bar = _bar || document.getElementById('adit-loader-bar'); return _bar; }
+  function _wr(){ _wrap = _wrap || document.getElementById('adit-loader'); return _wrap; }
+
+  function set(n){
+    _cur = Math.max(_cur, Math.min(n, 99.9));
+    var el = _el(), wr = _wr();
+    if(!el || !wr) return;
+    wr.classList.add('active');
+    el.style.width = _cur + '%';
+  }
+
+  function inc(){
+    // Trickle: each tick advances less as we approach 100
+    var step = _cur < 20 ? 8 : _cur < 50 ? 5 : _cur < 70 ? 3 : _cur < 90 ? 1.5 : 0.5;
+    set(_cur + step);
+  }
+
+  function start(){
+    _cur = 0; _done = false;
+    set(8); // start at 8% immediately
+    clearInterval(_t);
+    _t = setInterval(inc, 220);
+  }
+
+  function done(){
+    if(_done) return; _done = true;
+    clearInterval(_t);
+    set(100);
+    var wr = _wr();
+    setTimeout(function(){
+      if(wr){ wr.classList.remove('active'); }
+      setTimeout(function(){
+        var el = _el();
+        if(el){ el.style.width = '0%'; }
+        _cur = 0;
+      }, 220);
+    }, 280);
+  }
+
+  return { start: start, done: done, set: set };
 })();
 
 // Restore agent section (Breaks/Bonus/Tickets etc.)
@@ -19085,9 +19138,19 @@ async function refresh(){
   // Preserve scroll position across DOM rebuilds
   const scrollY = window.scrollY || window.pageYOffset || 0;
 
+  // Show loading indicator
+  if(window.AditLoader) AditLoader.start();
+
+  // Show refresh indicator in status bar
+  const ri = document.getElementById('adit-refresh-indicator');
+  if(ri) ri.classList.add('visible');
+
   await loadTodaySummary();
+  AditLoader && AditLoader.set(40);
   await loadBreakTracker();
+  AditLoader && AditLoader.set(60);
   await loadAgentStatuses();
+  AditLoader && AditLoader.set(80);
   if(currentRole==='admin')await loadEventLog();
   loadCallSyncStatus();
   loadCallVolumeChart();
@@ -19095,6 +19158,10 @@ async function refresh(){
   updateStaleBanner();
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
   const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
+
+  // Done — hide indicators
+  AditLoader && AditLoader.done();
+  if(ri) ri.classList.remove('visible');
 
   // Restore scroll after all DOM updates settle
   requestAnimationFrame(()=>{
@@ -23777,6 +23844,8 @@ function laFormatAnalysis(rec) {
 
 <!-- Scroll Progress -->
 <div id="scroll-progress-wrap"><div id="scroll-progress-bar"></div></div>
+<!-- Premium loading bar — NProgress style -->
+<div id="adit-loader"><div id="adit-loader-bar"></div></div>
 
 <!-- Command Palette -->
 <div id="cmd-overlay" onclick="closeCmdPalette()">
