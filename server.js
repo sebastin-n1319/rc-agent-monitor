@@ -1313,69 +1313,45 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
-    // Strategy 0: Zoho's dedicated word search — fastest for any ticket number
+    // PRIMARY STRATEGY: /tickets/search with searchStr (correct Zoho Desk v1 param)
+    // Replaces all previous strategies that used invalid params (isNumber, ticketNumber, word)
+    // which returned 422 UNPROCESSABLE_ENTITY
     try {
-      const r0 = await fetch(`${ZOHO_API_BASE}/tickets/search?word=${encodeURIComponent(rawId)}&limit=50`, { headers });
+      const r0 = await fetch(`${ZOHO_API_BASE}/tickets/search?searchStr=${encodeURIComponent(rawId)}&limit=50`, { headers });
       if (r0.ok) {
         const d0 = await r0.json();
         const list0 = d0.data || (Array.isArray(d0) ? d0 : []);
         const found0 = Array.isArray(list0) ? list0.find(t => String(t.ticketNumber) === rawId) : null;
         if (found0) ticket = found0;
       } else {
-        console.log(`⚠️  Strategy 0 HTTP ${r0.status}: ${await r0.text().catch(()=>'')}`);
+        console.log(`⚠️  searchStr strategy HTTP ${r0.status}: ${await r0.text().catch(()=>'').then(t=>t.slice(0,200))}`);
       }
-    } catch(e) { console.log('Strategy 0 error:', e.message); }
+    } catch(e) { console.log('searchStr strategy error:', e.message); }
 
-    // Strategy A: fetch directly by ticketNumber using isNumber=true param
-    // Zoho Desk supports GET /tickets/{ticketNumber}?isNumber=true
-    try {
-      const rA = await fetch(`${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`, { headers });
-      if (rA.ok) {
-        const text = await rA.text();
-        if (text && text.trim() && text.trim() !== 'null') {
-          const d = JSON.parse(text);
-          // Could return a single object or a data array
-          const candidate = d.data ? (Array.isArray(d.data) ? d.data[0] : d.data) : (d.id ? d : null);
-          if (candidate && String(candidate.ticketNumber) === rawId) ticket = candidate;
-        }
-      }
-    } catch(e) { /* try next */ }
-
-    // Strategy B: direct ticketNumber filter (most reliable — scope to exact number)
+    // FALLBACK A: try with subject search using # prefix
     if (!ticket) {
       try {
-        const rB = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
-        if (rB.ok) {
-          const text = await rB.text();
-          if (text && text.trim() && text.trim() !== 'null') {
-            const d = JSON.parse(text);
-            const list = d.data || (Array.isArray(d) ? d : []);
-            const found = Array.isArray(list)
-              ? list.find(t => t.ticketNumber && String(t.ticketNumber) === rawId)
-              : (d.ticketNumber && String(d.ticketNumber) === rawId ? d : null);
-            if (found) ticket = found;
-          }
+        const rA = await fetch(`${ZOHO_API_BASE}/tickets/search?searchStr=${encodeURIComponent('#'+rawId)}&limit=50`, { headers });
+        if (rA.ok) {
+          const dA = await rA.json();
+          const listA = dA.data || (Array.isArray(dA) ? dA : []);
+          const foundA = Array.isArray(listA) ? listA.find(t => String(t.ticketNumber) === rawId) : null;
+          if (foundA) ticket = foundA;
         }
       } catch(e) { /* try next */ }
     }
 
-    // Strategy C: Zoho /search endpoint — fulltext search, catches tickets Strategy B misses
+    // FALLBACK B: global search endpoint
     if (!ticket) {
-      for (const url of [
-        `${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=50`,
-        `${ZOHO_API_BASE}/search?searchStr=${encodeURIComponent(rawId)}&limit=50`,
-      ]) {
-        try {
-          const sr   = await fetch(url, { headers });
-          const text = await sr.text();
-          if (text && text.trim() && text.trim() !== 'null') {
-            const sd = JSON.parse(text);
-            const list = sd.data || (Array.isArray(sd) ? sd : []);
-            const found = list.find(t => t.ticketNumber && String(t.ticketNumber) === rawId);
-            if (found) { ticket = found; break; }
-          }
-        } catch(e) { /* try next */ }
-      }
+      try {
+        const rC = await fetch(`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=50`, { headers });
+        if (rC.ok) {
+          const dC = await rC.json();
+          const listC = dC.data || (Array.isArray(dC) ? dC : []);
+          const foundC = listC.find(t => String(t.ticketNumber) === rawId);
+          if (foundC) ticket = foundC;
+        }
+      } catch(e) { /* try next */ }
     }
 
     // Strategy D: smart paginated scan — estimate offset from most-recent ticket number,
@@ -1627,11 +1603,14 @@ app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (r
     } catch(e) {}
 
     if (!ticket) {
-      const r = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
-      if (r.ok) {
-        const d = await r.json();
-        const list = d.data || (Array.isArray(d) ? d : []);
-        ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+      for (const sp of ['', '&status=all', '&status=closed']) {
+        const r = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=10${sp}`, { headers });
+        if (r.ok) {
+          const d = await r.json();
+          const list = d.data || (Array.isArray(d) ? d : []);
+          ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+          if (ticket) break;
+        }
       }
     }
 
