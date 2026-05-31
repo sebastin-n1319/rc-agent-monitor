@@ -14405,8 +14405,9 @@ async function zohoLookupTicket(id) {
     if (!data.found) {
       card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#ED666B;background:rgba(237,102,107,.05);display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
         <svg viewBox="0 0 16 16" fill="none" stroke="#ED666B" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
-        <span><strong>#${esc(id)}</strong> not found in Zoho Desk — double-check the ticket number.</span>
+        <span><strong>#${esc(id)}</strong> not found in Zoho Desk.</span>
         <button onclick="zohoLookupTicket('${esc(id)}')" style="padding:2px 9px;background:rgba(237,102,107,.08);border:1px solid rgba(237,102,107,.2);border-radius:6px;font-size:11px;font-weight:600;color:#C82B30;cursor:pointer;font-family:'Poppins',sans-serif;">Retry</button>
+        ${data.debug ? '<span style="font-size:10px;color:#9BAFC0;display:block;width:100%;margin-top:4px;">'+esc(data.debug)+'</span>' : ''}
       </div>`;
       card.style.display = '';
       return;

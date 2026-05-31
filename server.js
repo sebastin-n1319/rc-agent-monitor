@@ -1290,6 +1290,19 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
+    // Strategy 0: Zoho's dedicated word search — fastest for any ticket number
+    try {
+      const r0 = await fetch(`${ZOHO_API_BASE}/tickets/search?word=${encodeURIComponent(rawId)}&limit=50`, { headers });
+      if (r0.ok) {
+        const d0 = await r0.json();
+        const list0 = d0.data || (Array.isArray(d0) ? d0 : []);
+        const found0 = Array.isArray(list0) ? list0.find(t => String(t.ticketNumber) === rawId) : null;
+        if (found0) ticket = found0;
+      } else {
+        console.log(`⚠️  Strategy 0 HTTP ${r0.status}: ${await r0.text().catch(()=>'')}`);
+      }
+    } catch(e) { console.log('Strategy 0 error:', e.message); }
+
     // Strategy A: fetch directly by ticketNumber using isNumber=true param
     // Zoho Desk supports GET /tickets/{ticketNumber}?isNumber=true
     try {
@@ -1388,7 +1401,8 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     if (!ticket) {
       console.log(`⚠️  Ticket #${rawId} not found after all strategies`);
-      return res.json({ success: true, found: false });
+      // Return not-found with diagnostic info visible in client error
+      return res.json({ success: true, found: false, debug: `Checked all strategies for #${rawId} — ticket may not exist, be in a different org, or the number may be wrong.` });
     }
 
     // Debug: log raw Zoho fields to diagnose spam false-positives and custom field names
