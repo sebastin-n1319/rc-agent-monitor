@@ -17080,6 +17080,12 @@ function initTlTooltips(){
 }
 
 function switchTab(tab,el){
+  // Save scroll position of the page we're LEAVING
+  try{
+    const curTab = localStorage.getItem('rcActiveTab') || 'live';
+    localStorage.setItem('rcScroll_' + curTab, String(window.scrollY || window.pageYOffset || 0));
+  }catch(e){}
+
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   // Sync admin sidebar active state
@@ -17100,8 +17106,15 @@ function switchTab(tab,el){
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='ai-agent') laLoadStats();
   if(tab==='debug') loadDebugPanel();
-  // Remember the active tab so refresh restores it
-  try{ localStorage.setItem('rcActiveTab', tab); }catch(e){}
+  // Remember the active tab and restore its saved scroll position
+  try{
+    localStorage.setItem('rcActiveTab', tab);
+    const savedScroll = parseInt(localStorage.getItem('rcScroll_' + tab) || '0', 10);
+    // Restore scroll after DOM settles
+    requestAnimationFrame(()=>{
+      window.scrollTo({ top: savedScroll, behavior: 'instant' });
+    });
+  }catch(e){}
 }
 
 function setAvatar(url){
@@ -17117,17 +17130,40 @@ function setAvatar(url){
 function restoreLastTab(){
   try{
     const tab = localStorage.getItem('rcActiveTab');
-    if(!tab || tab === 'live') return;
+    const savedScroll = parseInt(localStorage.getItem('rcScroll_' + (tab||'live')) || '0', 10);
+    if(!tab || tab === 'live'){
+      // Still restore scroll on live tab
+      if(savedScroll > 0){
+        setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 120);
+      }
+      return;
+    }
     const btns = document.querySelectorAll('.nav-tab');
     for(const btn of btns){
       const oc = btn.getAttribute('onclick') || '';
       if(oc.includes("'" + tab + "'")){
         switchTab(tab, btn);
+        // Restore scroll after tab content loads
+        setTimeout(()=>window.scrollTo({ top: savedScroll, behavior: 'instant' }), 300);
         break;
       }
     }
   }catch(e){}
 }
+
+// Save scroll position continuously so F5 can restore it
+(function(){
+  var _scrollSaveTimer;
+  window.addEventListener('scroll', function(){
+    clearTimeout(_scrollSaveTimer);
+    _scrollSaveTimer = setTimeout(function(){
+      try{
+        var tab = localStorage.getItem('rcActiveTab') || 'live';
+        localStorage.setItem('rcScroll_' + tab, String(window.scrollY || window.pageYOffset || 0));
+      }catch(e){}
+    }, 150);
+  }, { passive: true });
+})();
 
 // Restore agent section (Breaks/Bonus/Tickets etc.)
 function restoreLastAgentSection(){
@@ -18999,6 +19035,9 @@ setInterval(updateStaleBanner, 30000);
 // ──────────────────────────────────────────────────────────────────────────────
 
 async function refresh(){
+  // Preserve scroll position across DOM rebuilds
+  const scrollY = window.scrollY || window.pageYOffset || 0;
+
   await loadTodaySummary();
   await loadBreakTracker();
   await loadAgentStatuses();
@@ -19009,6 +19048,11 @@ async function refresh(){
   updateStaleBanner();
   const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
   const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
+
+  // Restore scroll after all DOM updates settle
+  requestAnimationFrame(()=>{
+    window.scrollTo({ top: scrollY, behavior: 'instant' });
+  });
 }
 
 // ── UI-2: Agent quick-search ──────────────────────────────────────────────────
