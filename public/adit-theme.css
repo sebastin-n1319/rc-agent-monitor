@@ -8707,3 +8707,34 @@ html.app-authenticated #mainApp {
 }
 #roster-admin-root .rx-alist-edit:hover  { border-color: #F4891F !important; color: #F4891F !important; background: rgba(244,137,31,.08) !important; }
 #roster-admin-root .rx-alist-delete:hover{ border-color: #ED666B !important; color: #ED666B !important; background: rgba(237,102,107,.08) !important; }
+
+/* ── Weekend mode chips ──────────────────────────────────────────── */
+.tl-wkd-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid #E8EAED;
+  background: #F7F8F8;
+  color: #6B849A;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+}
+.tl-wkd-chip:hover {
+  border-color: #F4891F;
+  color: #F4891F;
+  background: rgba(244,137,31,.06);
+}
+.tl-wkd-chip.active {
+  background: rgba(244,137,31,.12);
+  border-color: rgba(244,137,31,.5);
+  color: #C45A0A;
+  font-weight: 700;
+}
+.tl-wkd-chip.tl-wkd-high.active   { background: rgba(237,102,107,.1); border-color: rgba(237,102,107,.4); color: #A0282E; }
+.tl-wkd-chip.tl-wkd-medium.active { background: rgba(251,200,75,.15); border-color: rgba(251,200,75,.5);  color: #7A5000; }
+.tl-wkd-chip.tl-wkd-low.active    { background: rgba(45,220,150,.1);  border-color: rgba(45,220,150,.4);  color: #0A6B3F; }

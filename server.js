@@ -119,6 +119,9 @@ const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
 const TICKET_SHEET_ID = process.env.TICKET_SHEET_ID || '105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y';
 const TICKET_SHEET_TAB = 'Working';
+// Weekend support tracker sheet (T1 Customer Support Transfer Metrics Report)
+const WEEKEND_SHEET_ID  = process.env.WEEKEND_SHEET_ID  || '1dKx2qS5JGICs94cAvd34sVPS6q1Y0xlCZe0K3lclI90';
+const WEEKEND_SHEET_TAB = process.env.WEEKEND_SHEET_TAB || 'Data';
 const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const NOTIFICATION_BLOCKLIST = (process.env.NOTIFICATION_BLOCKLIST || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 // Test/demo accounts — always blocked from notifications and break tracking display
@@ -1745,6 +1748,52 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
     res.json({ success: true, message: 'Ticket logged successfully', data: { ticketId: ticketId.trim(), agentName, channel, pickedFromQueue: pickedFromQueue || '', ticketType, date: fmtTicketDate(now), month: fmtTicketMonth(now) } });
   } catch(e) {
     console.error('❌ ticket log error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ── Weekend Ticket Log ─────────────────────────────────────────────────────
+// Appends a row to the Weekend Support - Tickets sheet (Data tab, row 4+)
+// Columns: A=Date, B=Ticket, C=Department, D=Priority, E=Transferred, F=Source, G=Status, H=Notes
+app.post('/api/ticket/weekend-log', requireAuth, async (req, res) => {
+  try {
+    const session = req.session;
+    const { ticketId, department, priority, transferred, source, notes, ticketStatus, date } = req.body;
+    if (!ticketId) return res.status(400).json({ success: false, error: 'ticketId required' });
+    if (!WEEKEND_SHEET_ID) return res.status(503).json({ success: false, error: 'Weekend sheet not configured' });
+
+    // Format date like "30th May"
+    const now = date ? new Date(date) : new Date();
+    const day  = now.getDate();
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const Mfull = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const suffix = day === 1||day===21||day===31 ? 'st' : day===2||day===22?'nd' : day===3||day===23?'rd' : 'th';
+    const dateLabel = `${day}${suffix} ${Mfull[now.getMonth()]}`;
+
+    const row = [
+      dateLabel,
+      ticketId.startsWith('#') ? ticketId : `#${ticketId}`,
+      department || '',
+      priority   || '',
+      transferred || '',
+      source     || '',
+      ticketStatus || '',
+      notes      || '',
+    ];
+
+    const sheets = getTicketSheetsClient();
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: WEEKEND_SHEET_ID,
+      range: `'${WEEKEND_SHEET_TAB}'!A:H`,
+      valueInputOption: 'USER_ENTERED',
+      insertDataOption: 'INSERT_ROWS',
+      requestBody: { values: [row] },
+    });
+
+    insertAuditLog(session.email, 'weekend_ticket', ticketId, `${department}|${priority}|${transferred}|${source}`).catch(()=>{});
+    res.json({ success: true, message: 'Weekend ticket logged', data: { ticketId, dateLabel, department, priority } });
+  } catch(e) {
+    console.error('❌ weekend ticket log error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });

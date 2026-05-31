@@ -11946,6 +11946,78 @@ tbody tr:hover td{
           </div>
         </div>
 
+        <!-- ── WEEKEND MODE EXTRA FIELDS ──────────────────────────────── -->
+        <div id="tl-weekend-section" style="display:none;">
+          <!-- Weekend banner -->
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(244,137,31,.1),rgba(251,200,75,.08));border:1.5px solid rgba(244,137,31,.3);border-radius:12px;margin-bottom:4px;">
+            <svg viewBox="0 0 20 20" fill="none" stroke="#F4891F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
+            <div>
+              <div style="font-size:12px;font-weight:800;color:#C45A0A;letter-spacing:.02em;">🗓 Weekend Support Mode</div>
+              <div style="font-size:10.5px;color:#9B6A00;margin-top:1px;">Fill these extra fields — your ticket will also log to the Weekend Support sheet.</div>
+            </div>
+          </div>
+
+          <!-- Department -->
+          <div class="tl-card">
+            <div class="tl-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Department <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+              ${['CSM','VoIP','T1 CS','OB','Tech OB','RCM','Tech CSM','Sales/Upgrades','Adit Pay/Financing'].map(d =>
+                `<button class="tl-wkd-chip" data-group="wkd-dept" data-val="${d}" onclick="tlWkdSelect(this,'wkd-dept')">${d}</button>`
+              ).join('')}
+            </div>
+          </div>
+
+          <!-- Priority -->
+          <div class="tl-card">
+            <div class="tl-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Priority <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button class="tl-wkd-chip tl-wkd-high"   data-group="wkd-priority" data-val="High"   onclick="tlWkdSelect(this,'wkd-priority')">🔴 High</button>
+              <button class="tl-wkd-chip tl-wkd-medium" data-group="wkd-priority" data-val="Medium" onclick="tlWkdSelect(this,'wkd-priority')">🟡 Medium</button>
+              <button class="tl-wkd-chip tl-wkd-low"    data-group="wkd-priority" data-val="Low"    onclick="tlWkdSelect(this,'wkd-priority')">🟢 Low</button>
+            </div>
+          </div>
+
+          <!-- Transferred + Source (side by side) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div class="tl-card">
+              <div class="tl-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/><polyline points="8 7 3 12 8 17"/></svg>
+                Transferred? <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:4px;">
+                <button class="tl-wkd-chip" data-group="wkd-transferred" data-val="Yes" onclick="tlWkdSelect(this,'wkd-transferred')">Yes</button>
+                <button class="tl-wkd-chip" data-group="wkd-transferred" data-val="No"  onclick="tlWkdSelect(this,'wkd-transferred')">No</button>
+              </div>
+            </div>
+            <div class="tl-card">
+              <div class="tl-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Source <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+              </div>
+              <div style="display:flex;gap:6px;margin-top:4px;">
+                <button class="tl-wkd-chip" data-group="wkd-source" data-val="Email" onclick="tlWkdSelect(this,'wkd-source')">Email</button>
+                <button class="tl-wkd-chip" data-group="wkd-source" data-val="Call"  onclick="tlWkdSelect(this,'wkd-source')">Call</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="tl-card">
+            <div class="tl-card-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Notes
+            </div>
+            <textarea id="tl-wkd-notes" rows="2" placeholder="Brief description of the issue or action taken…" style="width:100%;margin-top:6px;padding:9px 12px;border:1px solid #DEE1E6;border-radius:9px;font-size:12.5px;font-family:'Poppins',sans-serif;color:#072B40;resize:vertical;outline:none;background:#fff;box-sizing:border-box;" onfocus="this.style.borderColor='#F4891F'" onblur="this.style.borderColor='#DEE1E6'"></textarea>
+          </div>
+        </div>
+        <!-- ── END WEEKEND FIELDS ─────────────────────────────────────── -->
+
         <!-- SINGLE entry submit -->
         <div id="tl-single-panel">
         <button class="tl-submit-btn" id="tl-submit-btn" onclick="submitTicketLog()">
@@ -17140,7 +17212,7 @@ function switchTab(tab,el){
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
-  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); }
+  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); setTimeout(tlInitWeekendMode, 200); }
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='ai-agent') laLoadStats();
   if(tab==='debug') loadDebugPanel();
@@ -17264,6 +17336,110 @@ window.AditLoader = (function(){
 
   return { start: start, done: done, set: set };
 })();
+
+/* ── Weekend Mode ──────────────────────────────────────────────────────────── */
+function isWeekendCST() {
+  // Check if it's currently Saturday or Sunday in CST/CDT
+  const now = new Date();
+  // CST = UTC-6, CDT = UTC-5
+  const cstOffset = -6 * 60; // use CST (conservative)
+  const cstTime = new Date(now.getTime() + (now.getTimezoneOffset() + (-cstOffset)) * 60000);
+  // Actually use the existing activeTimeZone() / nowTZ() approach
+  // Simpler: get the day in the user's stored timezone context
+  try {
+    const tzStr = (typeof currentTZ !== 'undefined' && currentTZ) ? 'America/Chicago' : 'America/Chicago';
+    const day = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tzStr }).format(now);
+    return day === 'Sat' || day === 'Sun';
+  } catch(e) {
+    // fallback: use local day
+    const d = new Date().getDay();
+    return d === 0 || d === 6;
+  }
+}
+
+function tlInitWeekendMode() {
+  const section = document.getElementById('tl-weekend-section');
+  if (!section) return;
+  if (isWeekendCST()) {
+    section.style.display = 'block';
+    // Animate in
+    section.style.opacity = '0';
+    section.style.transform = 'translateY(8px)';
+    requestAnimationFrame(() => {
+      section.style.transition = 'opacity .3s ease, transform .3s ease';
+      section.style.opacity = '1';
+      section.style.transform = 'translateY(0)';
+    });
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+function tlWkdSelect(btn, group) {
+  document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function tlGetWkdField(group) {
+  const active = document.querySelector(`[data-group="${group}"].active`);
+  return active ? active.dataset.val : '';
+}
+
+// Hook into the submit flow to also post to weekend sheet
+const _origSubmitTicketLog = window.submitTicketLog;
+window.submitTicketLog = async function() {
+  const result = await _origSubmitTicketLog.call(this);
+  // After normal submit succeeds, also log to weekend sheet if it's weekend
+  if (isWeekendCST()) {
+    await tlPostWeekendLog();
+  }
+  return result;
+};
+
+async function tlPostWeekendLog() {
+  const ticketId = (document.getElementById('tl-ticket-id')?.value || '').trim();
+  if (!ticketId) return;
+  const dept = tlGetWkdField('wkd-dept');
+  const priority = tlGetWkdField('wkd-priority');
+  const transferred = tlGetWkdField('wkd-transferred');
+  const source = tlGetWkdField('wkd-source');
+  const notes = (document.getElementById('tl-wkd-notes')?.value || '').trim();
+  const logDate = document.getElementById('tl-log-date')?.value || '';
+
+  // Validate weekend-required fields
+  if (!dept)        { showToast('Weekend mode: please select a Department', 'warning'); return; }
+  if (!priority)    { showToast('Weekend mode: please select Priority', 'warning'); return; }
+  if (!transferred) { showToast('Weekend mode: please select Transferred', 'warning'); return; }
+  if (!source)      { showToast('Weekend mode: please select Source', 'warning'); return; }
+
+  try {
+    const r = await fetch(BACKEND + '/api/ticket/weekend-log', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketId, department: dept, priority, transferred, source, notes, date: logDate }),
+    });
+    const j = await r.json();
+    if (j.success) {
+      showToast('Weekend ticket also logged to Weekend Support sheet ✓', 'success', 3500);
+      // Clear weekend fields
+      document.querySelectorAll('[data-group^="wkd-"]').forEach(b => b.classList.remove('active'));
+      const notesEl = document.getElementById('tl-wkd-notes');
+      if (notesEl) notesEl.value = '';
+    } else {
+      showToast('Weekend sheet: ' + (j.error || 'Log failed'), 'error', 4000);
+    }
+  } catch(e) {
+    showToast('Weekend sheet error: ' + e.message, 'error', 4000);
+  }
+}
+
+// Initialize weekend mode when the ticket tab is opened
+document.addEventListener('DOMContentLoaded', () => {
+  // Re-check every minute in case day rolls over
+  setInterval(tlInitWeekendMode, 60000);
+});
+
 
 // Restore agent section (Breaks/Bonus/Tickets etc.)
 function restoreLastAgentSection(){
