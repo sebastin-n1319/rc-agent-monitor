@@ -14383,7 +14383,10 @@ function tlOnTicketIdInput() {
 }
 
 async function zohoLookupTicket(id) {
+  _zohoLastId = id; // ensure stale guard passes for Retry clicks
   const card = document.getElementById('tl-zoho-card');
+  // Show loading state
+  if(card){ card.style.display=''; card.innerHTML='<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px;animation:adit-spin .7s linear infinite"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c2.1 0 3.9 1.2 4.9 2.9"/><path d="M10 5.5h3.5V2"/></svg> Looking up ticket…</div>'; }
   try {
     const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include' });
     const data = await res.json();
@@ -17513,7 +17516,7 @@ async function tlWkdAISuggest() {
     const res = await fetch(`${BACKEND}/api/zoho/ticket/${encodeURIComponent(ticketId)}/full`, { credentials:'include' });
     const data = await res.json();
     if (!data.success || !data.found) {
-      showToast('Could not find Zoho ticket — enter details manually', 'warning');
+      showToast('Ticket not found in Zoho — check ticket number and retry', 'warning');
       return;
     }
     const { ticket: t, threads, attachments, activities } = data;
