@@ -1568,69 +1568,88 @@ app.post('/api/ticket-feedback', requireAuth, rateLimit(120, 60000), async (req,
 });
 
 // GET /api/zoho/ticket/:id/full — full ticket context for AI summary
-// Fetches threads (all), private notes, attachments, and activity history
+// Uses same robust multi-strategy lookup as the existing /ticket/:id endpoint
 app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
+    if (!ZOHO_CLIENT_ID) return res.status(503).json({ success: false, error: 'Zoho not configured' });
     const rawId = req.params.id.replace(/^#/, '').trim();
     if (!rawId) return res.status(400).json({ success: false, error: 'No ticket ID' });
 
-    // Find ticket by number
-    const search = await zohoDesk('/tickets/search', { ticketNumber: rawId, limit: 1 });
-    const found = search?.data?.[0];
-    if (!found) return res.json({ success: true, found: false });
+    const token = await getZohoAccessToken();
+    const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
 
-    const tid = found.id;
+    // Find ticket — same strategy as /api/zoho/ticket/:id (Strategy B is most reliable)
+    let ticket = null;
+    try {
+      const r = await fetch(`${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`, { headers });
+      if (r.ok) {
+        const d = await r.json();
+        const candidate = d.data ? (Array.isArray(d.data) ? d.data[0] : d.data) : (d.id ? d : null);
+        if (candidate && String(candidate.ticketNumber) === rawId) ticket = candidate;
+      }
+    } catch(e) {}
 
-    // Fetch everything in parallel
+    if (!ticket) {
+      const r = await fetch(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`, { headers });
+      if (r.ok) {
+        const d = await r.json();
+        const list = d.data || (Array.isArray(d) ? d : []);
+        ticket = list.find(t => String(t.ticketNumber) === rawId) || null;
+      }
+    }
+
+    if (!ticket) return res.json({ success: true, found: false });
+    const tid = ticket.id;
+
+    // Fetch threads, attachments, activities in parallel
+    const zohoGet = async (path) => {
+      try {
+        const r = await fetch(`${ZOHO_API_BASE}${path}`, { headers });
+        return r.ok ? await r.json() : {};
+      } catch(e) { return {}; }
+    };
+
     const [threadsData, attachmentsData, activitiesData] = await Promise.all([
-      zohoDesk(`/tickets/${tid}/threads`, { limit: 50, sortBy: 'createdTime', order: 'asc' }).catch(() => ({})),
-      zohoDesk(`/tickets/${tid}/attachments`, { limit: 50 }).catch(() => ({})),
-      zohoDesk(`/tickets/${tid}/activities`, { limit: 50 }).catch(() => ({})),
+      zohoGet(`/tickets/${tid}/threads?limit=50&sortBy=createdTime&order=asc`),
+      zohoGet(`/tickets/${tid}/attachments?limit=50`),
+      zohoGet(`/tickets/${tid}/activities?limit=30`),
     ]);
 
+    const clean = (html) => html ? html.replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s{2,}/g,' ').trim().slice(0,1200) : null;
+
     const threads = (threadsData?.data || []).map(th => ({
-      type:     th.type || 'email',
-      isNote:   (th.type || '').toLowerCase().includes('note') || th.isPrivate,
-      from:     th.fromEmailAddress || th.author?.name || th.author?.email || 'Unknown',
-      fromName: th.author?.name || null,
-      content:  th.content
-                  ? th.content.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s{2,}/g, ' ').trim().slice(0, 1200)
-                  : null,
-      created:  th.createdTime,
+      type:    th.type || 'email',
+      isNote:  !!(th.isPrivate || (th.type||'').toLowerCase().includes('note')),
+      from:    th.fromEmailAddress || th.author?.name || 'Unknown',
+      fromName:th.author?.name || null,
+      content: clean(th.content || th.body || ''),
+      created: th.createdTime,
     })).filter(t => t.content);
 
     const attachments = (attachmentsData?.data || []).map(a => ({
-      name: a.fileName || a.name,
+      name: a.fileName || a.name || 'file',
       type: a.fileType || a.mimeType || 'unknown',
-      size: a.fileSize ? Math.round(a.fileSize / 1024) + 'KB' : null,
+      size: a.fileSize ? Math.round(a.fileSize/1024) + 'KB' : null,
     }));
 
-    const activities = (activitiesData?.data || []).slice(0, 20).map(a => ({
-      action:  a.activity || a.type,
-      by:      a.performer?.name || a.by || null,
-      time:    a.time || a.createdTime,
-      detail:  a.description || a.detail || null,
+    const activities = (activitiesData?.data || []).slice(0,20).map(a => ({
+      action: a.activity || a.type || '',
+      by:     a.performer?.name || a.by || null,
+      time:   a.time || a.createdTime || '',
+      detail: a.description || a.detail || null,
     }));
 
     res.json({
-      success: true,
-      found: true,
+      success: true, found: true,
       ticket: {
-        id: tid,
-        number: found.ticketNumber,
-        subject: found.subject,
-        status: found.status,
-        channel: found.channel,
-        priority: found.priority,
-        createdTime: found.createdTime,
-        modifiedTime: found.modifiedTime,
-        contact: found.contact?.name || null,
-        account: found.account?.accountName || null,
-        assignee: found.assignee?.name || null,
+        number: ticket.ticketNumber, subject: ticket.subject, status: ticket.status,
+        channel: ticket.channel, priority: ticket.priority,
+        createdTime: ticket.createdTime, modifiedTime: ticket.modifiedTime,
+        contact: ticket.contact?.name || null,
+        account: ticket.account?.accountName || ticket.account?.name || null,
+        assignee: ticket.assignee?.name || null,
       },
-      threads,
-      attachments,
-      activities,
+      threads, attachments, activities,
     });
   } catch(e) {
     console.error('ticket/full error:', e.message);
