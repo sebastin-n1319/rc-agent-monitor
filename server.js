@@ -120,7 +120,7 @@ const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat spa
 const TICKET_SHEET_ID = process.env.TICKET_SHEET_ID || '105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y';
 const TICKET_SHEET_TAB = 'Working';
 // Weekend support tracker sheet (T1 Customer Support Transfer Metrics Report)
-const WEEKEND_SHEET_ID  = process.env.WEEKEND_SHEET_ID  || '1dKx2qS5JGICs94cAvd34sVPS6q1Y0xlCZe0K3lclI90';
+const WEEKEND_SHEET_ID  = process.env.WEEKEND_SHEET_ID  || '1dKx2qS5JGICs94cAvd34sVPS6q1Y0xlCZe0K3IcIt90';
 const WEEKEND_SHEET_TAB = process.env.WEEKEND_SHEET_TAB || 'Data';
 const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const NOTIFICATION_BLOCKLIST = (process.env.NOTIFICATION_BLOCKLIST || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
