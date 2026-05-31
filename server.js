@@ -1295,11 +1295,18 @@ app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
       return { status: r.status, keys: typeof p==='object'?Object.keys(p):[], sample: JSON.stringify(p).slice(0,400) };
     };
     res.json({ rawId, strategies: {
-      isNumber:  await test('isNumber',  `${ZOHO_API_BASE}/tickets/${encodeURIComponent(rawId)}?isNumber=true`),
-      filter:    await test('filter',    `${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
-      searchStr:   await test('searchStr',   `${ZOHO_API_BASE}/tickets/search?searchStr=${encodeURIComponent(rawId)}&limit=10`),
-      searchStrHash:await test('searchStrHash',`${ZOHO_API_BASE}/tickets/search?searchStr=%23${encodeURIComponent(rawId)}&limit=10`),
-      globalSearch: await test('globalSearch',`${ZOHO_API_BASE}/search?module=Tickets&searchStr=${encodeURIComponent(rawId)}&limit=10`),
+      // Test what params the /tickets endpoint accepts
+      statusClosed:   await test('statusClosed',   `${ZOHO_API_BASE}/tickets?status=closed&limit=5`),
+      statusAll:      await test('statusAll',       `${ZOHO_API_BASE}/tickets?status=all&limit=5`),
+      sortDesc:       await test('sortDesc',         `${ZOHO_API_BASE}/tickets?sortBy=modifiedTime&order=desc&limit=5`),
+      fromParam:      await test('fromParam',        `${ZOHO_API_BASE}/tickets?from=0&limit=5`),
+      // Test search with different param names
+      keyword:        await test('keyword',         `${ZOHO_API_BASE}/tickets/search?keyword=${encodeURIComponent(rawId)}&limit=10`),
+      query:          await test('query',           `${ZOHO_API_BASE}/tickets/search?query=${encodeURIComponent(rawId)}&limit=10`),
+      searchNoParams: await test('searchNoParams',  `${ZOHO_API_BASE}/tickets/search?limit=5`),
+      // View-based search
+      viewSearch:     await test('viewSearch',      `${ZOHO_API_BASE}/views/tickets?limit=5`),
+      globalTicket:   await test('globalTicket',    `${ZOHO_API_BASE}/search?module=ticket&limit=5&searchStr=${encodeURIComponent(rawId)}`),
     }});
   } catch(e) { res.json({ error: e.message }); }
 });
