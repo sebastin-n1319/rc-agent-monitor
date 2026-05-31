@@ -1331,39 +1331,22 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       }
     } catch(e) {}
 
-    // STRATEGY 2: Scan CLOSED tickets — proven: GET /tickets?status=closed&limit=100
-    // Uses smart offset estimation so we only scan ~7 pages instead of all
+    // STRATEGY 2: Scan CLOSED tickets — newest-first, stop when ticket numbers go below target
+    // Scans up to 3000 closed tickets (30 pages × 100) stopping early if we pass the target
     if (!ticket) {
       try {
-        const rc0 = await fetch(`${ZOHO_API_BASE}/tickets?status=closed&limit=100`, { headers });
-        if (rc0.ok) {
-          const dc0 = await rc0.json();
-          const lc0 = dc0.data || [];
-          const fc0 = lc0.find(t => String(t.ticketNumber) === rawId);
-          if (fc0) {
-            ticket = fc0;
-          } else if (lc0.length > 0) {
-            // Estimate page: newest closed # - target # ≈ offset in closed list
-            const newestNum = parseInt(lc0[0].ticketNumber, 10);
-            const targetNum = parseInt(rawId, 10);
-            if (!isNaN(newestNum) && !isNaN(targetNum)) {
-              const estOffset = Math.max(100, newestNum - targetNum - 50);
-              const offsets = [];
-              for (let o = Math.max(0, estOffset-300); o <= estOffset+400 && o <= 30000; o += 100) offsets.push(o);
-              for (const from of offsets) {
-                if (ticket) break;
-                try {
-                  const rc = await fetch(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`, { headers });
-                  if (!rc.ok) break;
-                  const dc = await rc.json();
-                  const lc = dc.data || [];
-                  if (!lc.length) break;
-                  const fc = lc.find(t => String(t.ticketNumber) === rawId);
-                  if (fc) { ticket = fc; break; }
-                } catch(e) { break; }
-              }
-            }
-          }
+        const targetNum = parseInt(rawId, 10);
+        for (let from = 0; from <= 3000 && !ticket; from += 100) {
+          const rc = await fetch(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`, { headers });
+          if (!rc.ok) break;
+          const dc = await rc.json();
+          const lc = dc.data || [];
+          if (!lc.length) break;
+          const fc = lc.find(t => String(t.ticketNumber) === rawId);
+          if (fc) { ticket = fc; break; }
+          // Stop early: if all tickets on this page have lower numbers, ticket is not in closed list
+          const nums = lc.map(t => parseInt(t.ticketNumber, 10)).filter(n => !isNaN(n));
+          if (nums.length && Math.max(...nums) < targetNum - 5000) break;
         }
       } catch(e) { console.log('closed scan error:', e.message); }
     }
