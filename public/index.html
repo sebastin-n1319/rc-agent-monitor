@@ -12827,11 +12827,26 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
 
   // skipAnimation = called from quick-boot where CSS gate already hid login/showed app
   if(skipAnimation){
+    // Apply stored tab/view SYNCHRONOUSLY before forceAppVisible() paints the screen
+    // This prevents the "live dashboard flash" before the correct page restores
+    try{
+      const storedView = localStorage.getItem('rcActiveView');
+      const storedTab  = localStorage.getItem('rcActiveTab') || 'live';
+      // Switch view silently (no scroll reset)
+      if(storedView && storedView !== currentViewMode) applyView(storedView);
+      // Pre-activate the correct tab without triggering data loads yet
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
+      const targetPage = document.getElementById('tab-'+storedTab);
+      if(targetPage) targetPage.classList.add('active');
+      const sbItem = document.getElementById('sb-'+storedTab);
+      if(sbItem) sbItem.classList.add('active');
+    }catch(e){}
     forceAppVisible();
     setupLiveStream();
     refresh();
     setTimeout(firstLoadSync,2000);
-    setTimeout(restoreLastTab, 0);          // restore admin tab
+    setTimeout(restoreLastTab, 0);          // restore admin tab (triggers data load)
     setTimeout(restoreLastAgentSection, 50); // restore agent section
     return;
   }
@@ -12855,11 +12870,23 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     // (1,0,0), so its display:none !important wins the cascade.
     loginEl.classList.add('login-gone');
     loginEl.classList.remove('login-exiting');
+
+    // Pre-activate the correct tab/view BEFORE app becomes visible
+    try{
+      const storedView = localStorage.getItem('rcActiveView');
+      const storedTab  = localStorage.getItem('rcActiveTab') || 'live';
+      if(storedView && storedView !== currentViewMode) applyView(storedView);
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
+      const targetPage = document.getElementById('tab-'+storedTab);
+      if(targetPage) targetPage.classList.add('active');
+      const sbItem = document.getElementById('sb-'+storedTab);
+      if(sbItem) sbItem.classList.add('active');
+    }catch(e){}
+
     forceAppVisible();
 
     // Fade in the app: add transition class, then double-rAF to change opacity.
-    // Double-rAF is the standard browser pattern to guarantee the 'transition'
-    // property is registered by the engine before the value change is seen.
     appEl.classList.add('app-revealing');
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
@@ -12867,11 +12894,9 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       });
     });
 
-    window.scrollTo({top:0,behavior:'instant'});
-
     setTimeout(()=>{
       appEl.classList.remove('app-revealing');
-      appEl.style.opacity=''; // hand off to CSS; app stays fully visible
+      appEl.style.opacity='';
       appEl.style.setProperty('opacity','1','important');
     }, 600);
 
