@@ -12874,6 +12874,9 @@ function configureAgentBreakbotAccess(){
 }
 
 function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false){
+  // Clear stale view state — always start in the user's actual role view
+  // This prevents agent-view bleeding into admin sessions across refreshes
+  try{ localStorage.removeItem('rcActiveView'); }catch(e){}
   currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
   hideSessionDebug();
   applyAditBranding();
@@ -12934,8 +12937,11 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     try{
       const storedView = localStorage.getItem('rcActiveView');
       const storedTab  = localStorage.getItem('rcActiveTab') || 'live';
-      // Switch view silently (no scroll reset)
-      if(storedView && storedView !== currentViewMode) applyView(storedView);
+      // Only restore stored view if user is admin (can toggle views)
+      // Never switch an admin to 'agent' view on load — use their role as default
+      if(storedView && storedView !== currentViewMode && currentRole === 'admin' && storedView === 'agent'){
+        applyView(storedView);
+      }
       // Pre-activate the correct tab without triggering data loads yet
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
       document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
@@ -12977,7 +12983,9 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     try{
       const storedView = localStorage.getItem('rcActiveView');
       const storedTab  = localStorage.getItem('rcActiveTab') || 'live';
-      if(storedView && storedView !== currentViewMode) applyView(storedView);
+      if(storedView && storedView !== currentViewMode && currentRole === 'admin' && storedView === 'agent'){
+        applyView(storedView);
+      }
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
       document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
       const targetPage = document.getElementById('tab-'+storedTab);
@@ -24300,11 +24308,12 @@ function laFormatAnalysis(rec) {
 .fhud-exit:hover{background:rgba(237,102,107,.14);}
 
 /* ── Status Bar ────────────────────────────────────────────────── */
-#status-bar{position:fixed;bottom:0;left:0;right:0;z-index:100000;height:34px;background:rgba(3,6,14,.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.045);display:flex;align-items:center;justify-content:space-between;padding:0 14px;transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .25s ease;}
+#loginScreen ~ #status-bar, html:not(.app-authenticated) #status-bar{display:none!important;}
+#status-bar{position:fixed;bottom:-34px;left:0;right:0;z-index:100000;height:34px;background:rgba(3,6,14,.96);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.045);display:flex;align-items:center;justify-content:space-between;padding:0 14px;transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .25s ease;}
 /* Session 15.3: status bar auto-hides — slides off-screen ~3s after the
    cursor leaves it. A 14px hover-zone strip stays clickable so users can
    pull it back up. Pin button locks it visible (saved to localStorage). */
-#status-bar.sb-autohide.sb-collapsed{transform:translateY(100%);opacity:0;pointer-events:none;}
+#status-bar.sb-autohide.sb-collapsed,#status-bar.sb-collapsed{transform:translateY(100%)!important;opacity:0!important;pointer-events:none!important;}
 #status-bar.sb-autohide.sb-collapsed:hover,#status-bar.sb-autohide.sb-collapsed.sb-peek{transform:translateY(0);opacity:1;pointer-events:auto;}
 #status-bar.sb-pinned{transform:none!important;opacity:1!important;}
 .sb-hover-zone{position:absolute;left:0;right:0;bottom:0;height:14px;pointer-events:auto;}
@@ -25528,7 +25537,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
         var _hintKey='adit-hint-v2';var _hintShown=false;try{_hintShown=!!localStorage.getItem(_hintKey);}catch(e){} if(!_hintShown){
           try{localStorage.setItem(_hintKey,'1');}catch(e){};
           setTimeout(function(){
-            showToast('Press ⌘K for command palette · ? for shortcuts', 'info', 4000);
+            /* welcome toast permanently removed */
           }, 2000);
         }
       }catch(e){}
