@@ -889,35 +889,45 @@
   <!-- KPI STRIP -->
   <div class="rx-kpis">
     <div class="rx-kpi">
-      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#F4891F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><circle cx="8" cy="6" r="3"/><path d="M2 18c0-3.31 2.69-5 6-5s6 1.69 6 5"/><circle cx="15" cy="7" r="2.5"/><path d="M18 18c0-2.76-1.5-4-3.5-4.5"/></svg></div>
-      <div class="rx-kpi-lbl">Active Agents</div>
-      <div class="rx-kpi-val">${activeAgents.length}</div>
-      <div class="rx-kpi-sub">${relievedCount} relieved · ${agents.length} total</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#F4891F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="8" cy="6" r="3"/><path d="M2 18c0-3.31 2.69-5 6-5s6 1.69 6 5"/><circle cx="15" cy="7" r="2.5"/><path d="M18 18c0-2.76-1.5-4-3.5-4.5"/></svg></div>
+      <div class="rx-kpi-text">
+        <div class="rx-kpi-lbl">Active Agents</div>
+        <div class="rx-kpi-val">${activeAgents.length}</div>
+        <div class="rx-kpi-sub">${relievedCount} relieved · ${agents.length} total</div>
+      </div>
     </div>
     <div class="rx-kpi rx-kpi-green">
-      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#2DDC96" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><circle cx="10" cy="10" r="8"/><path d="M6.5 10.5l2.5 2.5 5-5"/></svg></div>
-      <div class="rx-kpi-lbl">Present Today</div>
-      <div class="rx-kpi-val">${todayInMonth ? presentToday : '—'}</div>
-      <div class="rx-kpi-sub">${todayInMonth ? 'P · WFH · OD' : 'viewing past month'}</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#2DDC96" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="10" cy="10" r="8"/><path d="M6.5 10.5l2.5 2.5 5-5"/></svg></div>
+      <div class="rx-kpi-text">
+        <div class="rx-kpi-lbl">Present Today</div>
+        <div class="rx-kpi-val">${todayInMonth ? presentToday : '—'}</div>
+        <div class="rx-kpi-sub">${todayInMonth ? 'P · WFH · OD' : 'viewing past month'}</div>
+      </div>
     </div>
     <div class="rx-kpi rx-kpi-amber">
-      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#FBC84B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><circle cx="10" cy="7" r="3"/><path d="M4 17s1-6 6-6 6 6 6 6"/><path d="M2 17h16"/></svg></div>
-      <div class="rx-kpi-lbl">On Leave Today</div>
-      <div class="rx-kpi-val">${todayInMonth ? leaveToday : '—'}</div>
-      <div class="rx-kpi-sub">${todayInMonth ? 'PL · UPL · SL' : ''}</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#FBC84B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="10" cy="7" r="3"/><path d="M4 17s1-6 6-6 6 6 6 6"/><path d="M2 17h16"/></svg></div>
+      <div class="rx-kpi-text">
+        <div class="rx-kpi-lbl">On Leave Today</div>
+        <div class="rx-kpi-val">${todayInMonth ? leaveToday : '—'}</div>
+        <div class="rx-kpi-sub">${todayInMonth ? 'PL · UPL · SL' : ''}</div>
+      </div>
     </div>
     <div class="rx-kpi rx-kpi-red">
-      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#ED666B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M10 2l8 14H2L10 2z"/><path d="M10 9v4"/><circle cx="10" cy="15" r=".5" fill="#ED666B"/></svg></div>
-      <div class="rx-kpi-lbl">Issues Today</div>
-      <div class="rx-kpi-val">${todayInMonth ? ncnsToday : '—'}</div>
-      <div class="rx-kpi-sub">${todayInMonth ? 'NCNS · Absent' : ''}</div>
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#ED666B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M10 2l8 14H2L10 2z"/><path d="M10 9v4"/><circle cx="10" cy="15" r=".5" fill="#ED666B"/></svg></div>
+      <div class="rx-kpi-text">
+        <div class="rx-kpi-lbl">Issues Today</div>
+        <div class="rx-kpi-val">${todayInMonth ? ncnsToday : '—'}</div>
+        <div class="rx-kpi-sub">${todayInMonth ? 'NCNS · Absent' : ''}</div>
+      </div>
     </div>
     <div class="rx-kpi rx-kpi-teal">
-      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#21AAE0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><rect x="2" y="13" width="4" height="5" rx="1"/><rect x="8" y="8" width="4" height="10" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/></svg></div>
-      <div class="rx-kpi-lbl">Coverage Today</div>
-      <div class="rx-kpi-val">${todayInMonth ? coveragePct + '%' : '—'}</div>
-      <div class="rx-kpi-sub">${todayInMonth ? `${presentToday} of ${activeAgents.length} live` : ''}</div>
-      ${todayInMonth ? `<div class="rx-kpi-bar"><div class="rx-kpi-bar-fill ${coverageClass(coveragePct)}" style="width:${coveragePct}%"></div></div>` : ''}
+      <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#21AAE0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="2" y="13" width="4" height="5" rx="1"/><rect x="8" y="8" width="4" height="10" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/></svg></div>
+      <div class="rx-kpi-text">
+        <div class="rx-kpi-lbl">Coverage Today</div>
+        <div class="rx-kpi-val">${todayInMonth ? coveragePct + '%' : '—'}</div>
+        <div class="rx-kpi-sub">${todayInMonth ? `${presentToday} of ${activeAgents.length} live` : ''}</div>
+        ${todayInMonth ? `<div class="rx-kpi-bar"><div class="rx-kpi-bar-fill ${coverageClass(coveragePct)}" style="width:${coveragePct}%"></div></div>` : ''}
+      </div>
     </div>
   </div>
 
