@@ -25595,7 +25595,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       highContrast: false,       // off by default (opt-in), but works
       breakSuggestions: true,
       alerts: true,
-      bugCapture: true,
+      bugCapture: false, /* disabled — was causing black floating button */
       wellnessCheckin: true,
       handoffNotes: true,
       coachMode: true,
@@ -26134,17 +26134,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     }
   };
 
-  /* Add a floating bug-report button (bottom-left, above status bar) */
-  document.addEventListener('DOMContentLoaded', function(){
-    if (!flag('bugCapture')) return;
-    if (document.getElementById('bug-fab')) return;
-    var fab = document.createElement('button');
-    fab.id = 'bug-fab';
-    fab.title = 'Report a bug';
-    fab.innerHTML = '';  // icon comes from ::before pseudo-element
-    fab.onclick = window.reportBug;
-    document.body.appendChild(fab);
-  });
+  /* bug-fab removed — was causing black block at bottom-right */
 
   /* ── Wire keyboard shortcut H for High Contrast ───────────────── */
   document.addEventListener('keydown', function(e){
