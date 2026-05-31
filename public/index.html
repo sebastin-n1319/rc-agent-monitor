@@ -19488,36 +19488,32 @@ setInterval(updateStaleBanner, 30000);
 async function refresh(){
   // Preserve scroll position across DOM rebuilds
   const scrollY = window.scrollY || window.pageYOffset || 0;
-
-  // Show loading indicator
-  if(window.AditLoader) AditLoader.start();
-
-  // Show refresh indicator in status bar
   const ri = document.getElementById('adit-refresh-indicator');
+
+  // Show loading indicator — use try/finally so done() ALWAYS fires
+  if(window.AditLoader) AditLoader.start();
   if(ri) ri.classList.add('visible');
 
-  await loadTodaySummary();
-  AditLoader && AditLoader.set(40);
-  await loadBreakTracker();
-  AditLoader && AditLoader.set(60);
-  await loadAgentStatuses();
-  AditLoader && AditLoader.set(80);
-  if(currentRole==='admin')await loadEventLog();
-  loadCallSyncStatus();
-  loadCallVolumeChart();
-  _lastRefreshAt = Date.now();
-  updateStaleBanner();
-  const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
-  const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
-
-  // Done — hide indicators (always, even if some awaits failed)
-  if(window.AditLoader) AditLoader.done();
-  if(ri) ri.classList.remove('visible');
-
-  // Restore scroll after all DOM updates settle
-  requestAnimationFrame(()=>{
-    window.scrollTo({ top: scrollY, behavior: 'instant' });
-  });
+  try {
+    await loadTodaySummary();
+    AditLoader && AditLoader.set(40);
+    await loadBreakTracker();
+    AditLoader && AditLoader.set(60);
+    await loadAgentStatuses();
+    AditLoader && AditLoader.set(80);
+    if(currentRole==='admin') await loadEventLog();
+    loadCallSyncStatus();
+    loadCallVolumeChart();
+    _lastRefreshAt = Date.now();
+    updateStaleBanner();
+    const lu=document.getElementById('last-update');if(lu)lu.textContent='Updated '+nowTZ()+' '+currentTZ;
+    const td=document.getElementById('tz-display');if(td)td.textContent=currentTZ+' ('+TZ[currentTZ]+')';
+  } finally {
+    // Guaranteed to run even if any await throws
+    if(window.AditLoader) AditLoader.done();
+    if(ri) ri.classList.remove('visible');
+    requestAnimationFrame(()=>{ window.scrollTo({ top: scrollY, behavior: 'instant' }); });
+  }
 }
 
 // ── UI-2: Agent quick-search ──────────────────────────────────────────────────
