@@ -671,6 +671,8 @@
     agentSearch: '',
     designationFilter: '',
     statusFilter: '',
+    view: 'calendar',   // 'calendar' | 'agents'
+    agentListSearch: '',
     pendingSaves: new Map(),
     saveTimer: null,
   };
@@ -1040,8 +1042,21 @@
     </button>` : ''}
   </div>
 
-  <!-- LEGEND -->
-  <div class="rx-legend">
+  <!-- VIEW TABS -->
+  <div class="rx-view-tabs">
+    <button class="rx-view-tab ${_s.view==='calendar'?'active':''}" id="rx-view-cal">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:13px;height:13px"><rect x="1" y="2" width="14" height="13" rx="1.5"/><path d="M1 6h14M5 1v2M11 1v2"/></svg>
+      Calendar
+    </button>
+    <button class="rx-view-tab ${_s.view==='agents'?'active':''}" id="rx-view-agents">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:13px;height:13px"><circle cx="6" cy="5" r="2.5"/><path d="M1 14c0-2.76 2.24-4 5-4s5 1.24 5 4"/><path d="M11 7l2 2 3-3"/></svg>
+      Agents List
+    </button>
+    <span class="rx-view-count">${visible.length} ${visible.length===1?'agent':'agents'}</span>
+  </div>
+
+  <!-- LEGEND (calendar view only) -->
+  <div class="rx-legend" ${_s.view==='agents'?'style="display:none"':''}>
     ${PALETTE_GROUPS.map(g => g.statuses.map(s =>
       `<span class="rx-lg rx-st-${s}"><span class="rx-lg-code">${STATUS_LABEL[s]}</span><span class="rx-lg-name">${STATUS_LONG[s]}</span></span>`
     ).join('')).join('')}
@@ -1069,7 +1084,8 @@
     </div>
   </div>
 
-  <!-- GRID -->
+  <!-- CALENDAR VIEW -->
+  <div id="rx-calendar-view" ${_s.view==='agents'?'style="display:none"':''}>
   <div class="rx-grid-wrap">
     <table class="rx-grid" id="rx-grid-table">
       <thead>
@@ -1093,6 +1109,81 @@
   </div>
 
   <!-- ATTENDANCE SUMMARY -->
+  </div><!-- end calendar view -->
+
+  <!-- AGENTS LIST VIEW -->
+  <div id="rx-agents-view" ${_s.view==='calendar'?'style="display:none"':''}>
+    <div class="rx-agents-toolbar">
+      <div class="rx-search" style="max-width:320px">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" class="rx-search-ico"><circle cx="7" cy="7" r="4.5"/><path d="M11 11l3 3"/></svg>
+        <input type="text" id="rx-alist-search" placeholder="Search agents…" value="${esc(_s.agentListSearch)}">
+      </div>
+      <button class="rx-pill rx-pill-primary" id="rx-alist-add">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px"><path d="M8 3v10M3 8h10"/></svg> Add Agent
+      </button>
+    </div>
+    <div class="rx-agents-table-wrap">
+      <table class="rx-agents-tbl">
+        <thead>
+          <tr>
+            <th style="width:44px"></th>
+            <th>Name</th>
+            <th>Emp ID</th>
+            <th>Designation</th>
+            <th>Shift (IST)</th>
+            <th>Joined</th>
+            <th>Status</th>
+            <th style="width:80px">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rx-alist-body">
+          ${(() => {
+            const q = (_s.agentListSearch || '').toLowerCase();
+            const rows = (_s.data?.agents || []).filter(a =>
+              !q || (a.pseudo||a.full_name||''). toLowerCase().includes(q) ||
+              (a.emp_id||''). toLowerCase().includes(q) ||
+              (a.designation||''). toLowerCase().includes(q)
+            );
+            if (!rows.length) return '<tr><td colspan="8" style="text-align:center;padding:40px;color:#9BAFC0;font-size:13px;">No agents found</td></tr>';
+            const palette = ['#F4891F','#21AAE0','#2DDC96','#8B5CF6','#F43F5E','#F59E0B','#06B6D4'];
+            return rows.map((a,i) => {
+              const ini = ((a.pseudo||a.full_name||'?').trim().split(/\s+/).map(p=>p[0]||''). join(''). toUpperCase()).slice(0,2);
+              const av = palette[i % palette.length];
+              const desg = (a.designation||''). replace('Technical Support Representative','TSR'). replace('Technical Support Specialist','TS Specialist');
+              const statusBadge = a.status==='relieved'
+                ? '<span class="rx-badge rx-badge-grey">Relieved</span>'
+                : a.status==='on_leave'
+                  ? '<span class="rx-badge rx-badge-blue">On Leave</span>'
+                  : '<span class="rx-badge rx-badge-green">Active</span>';
+              return `<tr class="rx-alist-row">
+                <td><div class="rx-alist-avatar" style="background:${av}">${ini}</div></td>
+                <td>
+                  <div class="rx-alist-name">${esc(a.pseudo||a.full_name||'—')}</div>
+                  ${a.full_name && a.pseudo && a.full_name!==a.pseudo ? '<div class="rx-alist-sub">'+esc(a.full_name)+'</div>' : ''}
+                </td>
+                <td><span class="rx-mono">${esc(a.emp_id||'—')}</span></td>
+                <td>${esc(desg||'—')}</td>
+                <td class="rx-alist-shift">${esc(a.shift||'—')}</td>
+                <td>${esc(a.doj||'—')}</td>
+                <td>${statusBadge}</td>
+                <td>
+                  <div class="rx-alist-actions">
+                    <button class="rx-alist-btn rx-alist-edit" data-emp="${esc(a.emp_id)}" title="Edit">
+                      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M10 2l2 2-7 7H3V9l7-7z"/></svg>
+                    </button>
+                    <button class="rx-alist-btn rx-alist-delete" data-emp="${esc(a.emp_id)}" title="Remove">
+                      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M2 4h10M5 4V2h4v2M5.5 7v4M8.5 7v4M3 4l.8 8h6.4L11 4"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>`;
+            }).join('');
+          })()}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <details class="rx-summary-wrap" id="rx-summary-panel">
     <summary class="rx-summary-toggle">📊 Monthly Attendance Summary — ${monthLabel(_s.month)}</summary>
     <div class="rx-summary-scroll">
@@ -1243,6 +1334,49 @@
     $('#rx-next').onclick = () => shiftMonth(+1);
     $('#rx-today-btn').onclick = () => go(nowMonthIso());
     $('#rx-month-input').onchange = e => go(e.target.value);
+    // View tab switcher
+    const viewCal = $('#rx-view-cal'), viewAgents = $('#rx-view-agents');
+    const calView = root.querySelector('#rx-calendar-view'), agentsView = root.querySelector('#rx-agents-view');
+    if (viewCal) viewCal.onclick = () => { _s.view = 'calendar'; go(_s.month); };
+    if (viewAgents) viewAgents.onclick = () => { _s.view = 'agents'; go(_s.month); };
+
+    // Agents list: search
+    const alistSearch = $('#rx-alist-search');
+    if (alistSearch) alistSearch.oninput = e => { _s.agentListSearch = e.target.value; go(_s.month); };
+
+    // Agents list: add
+    const alistAdd = $('#rx-alist-add');
+    if (alistAdd) alistAdd.onclick = openAddAgent;
+
+    // Agents list: edit buttons
+    root.querySelectorAll('.rx-alist-edit').forEach(btn => {
+      btn.onclick = () => {
+        const emp = btn.dataset.emp;
+        const agent = (_s.data?.agents || []).find(a => a.emp_id === emp);
+        if (agent) openEditAgent(agent);
+      };
+    });
+
+    // Agents list: delete buttons
+    root.querySelectorAll('.rx-alist-delete').forEach(btn => {
+      btn.onclick = async () => {
+        const emp = btn.dataset.emp;
+        const agent = (_s.data?.agents || []).find(a => a.emp_id === emp);
+        if (!agent) return;
+        if (!confirm(\`Remove \${agent.pseudo || agent.emp_id} from this roster?\n\nThis only removes them from the monitoring roster, not from RingCentral.\`)) return;
+        try {
+          const r = await fetch('/api/roster/agent/' + encodeURIComponent(emp), { method: 'DELETE', credentials: 'include' });
+          const j = await r.json();
+          if (!j.success) throw new Error(j.error || 'Delete failed');
+          if (_s.data) _s.data.agents = _s.data.agents.filter(a => a.emp_id !== emp);
+          go(_s.month);
+          setSaveState('ok', \`Removed \${agent.pseudo || emp}\`);
+        } catch(e) {
+          setSaveState('err', '❌ ' + e.message);
+        }
+      };
+    });
+
     // Filter bar — designation chips
     root.querySelectorAll('[data-desg]').forEach(btn => {
       btn.onclick = () => { _s.designationFilter = btn.dataset.desg; go(_s.month); };
