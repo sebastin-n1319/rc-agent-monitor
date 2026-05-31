@@ -98,32 +98,14 @@ body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* dark
      This beats every other CSS rule because it's the last stylesheet and uses element+class on html. -->
 <style id="auth-gate-css">
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
-html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;}
+html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:0;transition:opacity .15s ease;}
+html.app-authenticated.app-ready #mainApp{opacity:1!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
 #userAvatar{display:none!important;}
 
 /* Hidden until next quarter — beats class-level display rules */
 [data-hidden-until] { display: none !important; }
 
-/* ── Tab restore: show the stored tab BEFORE JS runs — no live-dashboard flash ── */
-/* When authenticated with a stored tab, show that tab's page directly */
-html.app-authenticated[data-restore-tab] .page { display:none!important; }
-html.app-authenticated[data-restore-tab="live"]      #tab-live      { display:block!important; }
-html.app-authenticated[data-restore-tab="reports"]   #tab-reports   { display:block!important; }
-html.app-authenticated[data-restore-tab="agents"]    #tab-agents    { display:block!important; }
-html.app-authenticated[data-restore-tab="access"]    #tab-access    { display:block!important; }
-html.app-authenticated[data-restore-tab="loginlogs"] #tab-loginlogs { display:block!important; }
-html.app-authenticated[data-restore-tab="breaks"]    #tab-breaks    { display:block!important; }
-html.app-authenticated[data-restore-tab="bonus"]     #tab-bonus     { display:block!important; }
-html.app-authenticated[data-restore-tab="calllogs"]  #tab-calllogs  { display:block!important; }
-html.app-authenticated[data-restore-tab="auditlog"]  #tab-auditlog  { display:block!important; }
-html.app-authenticated[data-restore-tab="tickets"]   #tab-tickets   { display:block!important; }
-html.app-authenticated[data-restore-tab="roster"]    #tab-live      { display:block!important; } /* roster uses live page backdrop */
-html.app-authenticated[data-restore-tab="schedules"] #tab-live      { display:block!important; }
-html.app-authenticated[data-restore-tab="anomalies"] #tab-live      { display:block!important; }
-html.app-authenticated[data-restore-tab="forecast"]  #tab-live      { display:block!important; }
-html.app-authenticated[data-restore-tab="ai-agent"]  #tab-ai-agent  { display:block!important; }
-html.app-authenticated[data-restore-tab="debug"]     #tab-debug     { display:block!important; }
 </style>
 <!-- Inline session + dark mode + tab restore: runs before first paint, no flash -->
 <script>
@@ -132,9 +114,7 @@ html.app-authenticated[data-restore-tab="debug"]     #tab-debug     { display:bl
     var s=JSON.parse(localStorage.getItem('rcSession')||'null');
     if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
       document.documentElement.classList.add('app-authenticated');
-      // Pre-activate stored tab — CSS below shows the correct .page before JS runs
-      var tab=localStorage.getItem('rcActiveTab')||'live';
-      document.documentElement.setAttribute('data-restore-tab',tab);
+
     }
   }catch(e){}
   try{
@@ -9744,7 +9724,7 @@ tbody tr:hover td{
   </div>
 
   <!-- LIVE -->
-  <div class="page" id="tab-live">
+  <div class="page active" id="tab-live">
 
     <!-- ── Command Strip ───────────────────────────────────────────────── -->
     <div class="ld-strip">
@@ -12845,6 +12825,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       appEl.style.setProperty('pointer-events','auto','important');
     }
     document.documentElement.classList.add('app-authenticated');
+    document.documentElement.classList.add('app-ready');
     document.body.classList.add('app-authenticated');
   };
 
@@ -12865,6 +12846,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       const sbItem = document.getElementById('sb-'+storedTab);
       if(sbItem) sbItem.classList.add('active');
     }catch(e){}
+    // Fade in mainApp after correct tab is pre-activated — no tab flash
+    document.documentElement.classList.add('app-ready');
     forceAppVisible();
     setupLiveStream();
     refresh();
