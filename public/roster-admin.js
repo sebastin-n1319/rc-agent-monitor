@@ -213,19 +213,19 @@
 
 /* === PAGE WRAPPER — compact === */
 #roster-admin-root { background: #F6F7F9 !important; font-family: 'Poppins', system-ui, sans-serif !important; }
-#roster-admin-root .rx-wrap { max-width: 1400px !important; margin: 0 auto !important; padding: 16px 20px 60px !important; }
+#roster-admin-root .rx-wrap { max-width: 1400px !important; margin: 0 auto !important; padding: 10px 18px 40px !important; }
 
 /* === KPI CARDS — clean horizontal like Keka === */
-#roster-admin-root .rx-kpis { display: grid !important; grid-template-columns: repeat(5,1fr) !important; gap: 10px !important; margin-bottom: 12px !important; }
-#roster-admin-root .rx-kpi { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 12px !important; padding: 14px 16px !important; box-shadow: 0 1px 3px rgba(16,24,40,.04) !important; display: flex !important; align-items: center !important; gap: 12px !important; transition: box-shadow .2s !important; position: relative !important; overflow: hidden !important; }
+#roster-admin-root .rx-kpis { display: grid !important; grid-template-columns: repeat(5,1fr) !important; gap: 8px !important; margin-bottom: 6px !important; }
+#roster-admin-root .rx-kpi { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 12px !important; padding: 11px 14px !important; box-shadow: 0 1px 3px rgba(16,24,40,.04) !important; display: flex !important; align-items: center !important; gap: 10px !important; transition: box-shadow .2s !important; position: relative !important; overflow: hidden !important; }
 #roster-admin-root .rx-kpi:hover { box-shadow: 0 4px 12px rgba(16,24,40,.08) !important; }
 /* Kill ALL pseudo-elements on KPI cards — no left borders, no shimmer */
 #roster-admin-root .rx-kpi::before, #roster-admin-root .rx-kpi::after { display: none !important; content: none !important; width: 0 !important; height: 0 !important; background: none !important; }
-#roster-admin-root .rx-kpi-icon { width: 36px !important; height: 36px !important; min-width: 36px !important; border-radius: 10px !important; display: flex !important; align-items: center !important; justify-content: center !important; background: #F9FAFB !important; flex-shrink: 0 !important; }
+#roster-admin-root .rx-kpi-icon { width: 32px !important; height: 32px !important; min-width: 32px !important; border-radius: 9px !important; display: flex !important; align-items: center !important; justify-content: center !important; background: #F9FAFB !important; flex-shrink: 0 !important; }
 #roster-admin-root .rx-kpi-text { flex: 1 !important; min-width: 0 !important; }
-#roster-admin-root .rx-kpi-lbl { font-size: 10px !important; font-weight: 600 !important; color: #9AA3AF !important; letter-spacing: .04em !important; text-transform: uppercase !important; margin: 0 0 4px !important; }
-#roster-admin-root .rx-kpi-val { font-size: 22px !important; font-weight: 700 !important; letter-spacing: -0.03em !important; color: #1A1D21 !important; line-height: 1 !important; margin: 0 0 3px !important; }
-#roster-admin-root .rx-kpi-sub { font-size: 10px !important; color: #9AA3AF !important; font-weight: 400 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+#roster-admin-root .rx-kpi-lbl { font-size: 10px !important; font-weight: 600 !important; color: #9AA3AF !important; letter-spacing: .04em !important; text-transform: uppercase !important; margin: 0 0 2px !important; }
+#roster-admin-root .rx-kpi-val { font-size: 20px !important; font-weight: 700 !important; letter-spacing: -0.03em !important; color: #1A1D21 !important; line-height: 1 !important; margin: 0 0 3px !important; }
+#roster-admin-root .rx-kpi-sub { font-size: 10px !important; color: #9AA3AF !important; font-weight: 400 !important; margin-top: 1px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
 #roster-admin-root .rx-kpi-bar { height: 4px !important; border-radius: 99px !important; background: #EEF0F3 !important; margin-top: 8px !important; overflow: hidden !important; }
 #roster-admin-root .rx-kpi-bar-fill { height: 100% !important; border-radius: 99px !important; background: linear-gradient(90deg,#F59E0B,#F97316) !important; }
 #roster-admin-root .rx-kpi.rx-kpi-green .rx-kpi-icon { background: rgba(16,185,129,.08) !important; }
@@ -253,7 +253,7 @@
 #roster-admin-root .rx-tb-grow { flex: 1 1 auto !important; }
 
 /* === FILTER BAR — compact one line each === */
-#roster-admin-root .rx-filter-bar { display: flex !important; align-items: center !important; gap: 0 !important; padding: 6px 12px !important; background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 12px !important; flex-wrap: wrap !important; row-gap: 5px !important; margin-bottom: 8px !important; }
+#roster-admin-root .rx-filter-bar { display: flex !important; align-items: center !important; gap: 0 !important; padding: 6px 12px !important; background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 12px !important; flex-wrap: wrap !important; row-gap: 4px !important; margin-bottom: 6px !important; }
 #roster-admin-root .rx-filter-group { display: flex !important; align-items: center !important; gap: 5px !important; flex-wrap: wrap !important; }
 #roster-admin-root .rx-filter-label { font-size: 9.5px !important; font-weight: 700 !important; color: #9AA3AF !important; text-transform: uppercase !important; letter-spacing: .06em !important; display: inline-flex !important; align-items: center !important; gap: 3px !important; white-space: nowrap !important; margin-right: 4px !important; }
 #roster-admin-root .rx-filter-sep { width: 1px !important; height: 18px !important; background: #E8EAED !important; margin: 0 8px !important; flex-shrink: 0 !important; }
@@ -264,21 +264,21 @@
 #roster-admin-root .rx-filter-clear { margin-left: auto !important; display: inline-flex !important; align-items: center !important; gap: 4px !important; padding: 2px 9px !important; border-radius: 99px !important; font-size: 10.5px !important; font-weight: 600 !important; border: 1px solid rgba(239,68,68,.25) !important; background: rgba(239,68,68,.06) !important; color: #DC2626 !important; cursor: pointer !important; font-family: 'Poppins',sans-serif !important; }
 
 /* === VIEW TABS — compact === */
-#roster-admin-root .rx-view-tabs { display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 8px !important; }
+#roster-admin-root .rx-view-tabs { display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 6px !important; }
 #roster-admin-root .rx-view-tab { display: inline-flex !important; align-items: center !important; gap: 5px !important; padding: 6px 14px !important; border-radius: 8px !important; font-size: 12.5px !important; font-weight: 500 !important; border: 1.5px solid #E8EAED !important; background: #fff !important; color: #5B6470 !important; cursor: pointer !important; transition: all .12s !important; font-family: 'Poppins',sans-serif !important; }
 #roster-admin-root .rx-view-tab:hover { border-color: #F97316 !important; color: #F97316 !important; }
 #roster-admin-root .rx-view-tab.active { background: rgba(249,115,22,.1) !important; border-color: rgba(249,115,22,.4) !important; color: #F97316 !important; font-weight: 600 !important; }
 #roster-admin-root .rx-view-count { margin-left: auto !important; font-size: 11.5px !important; font-weight: 500 !important; color: #9AA3AF !important; }
 
 /* === LEGEND — compact single line === */
-#roster-admin-root .rx-legend { display: flex !important; flex-wrap: wrap !important; gap: 4px 14px !important; padding: 10px 2px !important; align-items: center !important; }
+#roster-admin-root .rx-legend { display: flex !important; flex-wrap: wrap !important; gap: 3px 12px !important; padding: 6px 2px !important; align-items: center !important; }
 #roster-admin-root .rx-lg { display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 11px !important; color: #5B6470 !important; font-weight: 400 !important; }
 #roster-admin-root .rx-lg-code { font-weight: 700 !important; font-size: 9px !important; padding: 1px 5px !important; border-radius: 4px !important; }
 #roster-admin-root .rx-lg-name { font-size: 11px !important; }
 #roster-admin-root .rx-lg-tip { margin-left: auto !important; font-size: 9.5px !important; color: #B0B8C4 !important; font-style: italic !important; }
 
 /* === GRID CARD === */
-#roster-admin-root .rx-grid-wrap { border-radius: 12px !important; box-shadow: 0 1px 3px rgba(16,24,40,.05) !important; border: 1px solid #E8EAED !important; background: #fff !important; max-height: 68vh !important; overflow: auto !important; }
+#roster-admin-root .rx-grid-wrap { border-radius: 12px !important; box-shadow: 0 1px 3px rgba(16,24,40,.05) !important; border: 1px solid #E8EAED !important; background: #fff !important; max-height: 72vh !important; overflow: auto !important; }
 
 /* === BULK BAR — compact floating === */
 #roster-admin-root .rx-bulk-bar { background: #1A1D21 !important; border-radius: 12px !important; padding: 8px 12px !important; box-shadow: 0 12px 32px rgba(16,24,40,.2) !important; align-items: center !important; gap: 10px !important; flex-wrap: nowrap !important; min-height: 44px !important; border: none !important; }
