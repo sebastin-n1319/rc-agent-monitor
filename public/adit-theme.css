@@ -10262,3 +10262,10 @@ body {
 /* Remove top padding on roster page — content starts immediately */
 #tab-roster.page.active,
 #tab-roster.page { padding-top: 6px !important; padding-bottom: 0 !important; }
+
+/* Remove ALL gaps between roster sections */
+#roster-admin-root .rx-kpis     { margin-bottom: 4px !important; }
+#roster-admin-root .rx-toolbar  { margin-bottom: 4px !important; }
+#roster-admin-root .rx-filter-bar { margin-bottom: 4px !important; }
+#roster-admin-root .rx-view-tabs  { margin-bottom: 4px !important; }
+#roster-admin-root .rx-legend     { padding-top: 4px !important; padding-bottom: 2px !important; }
