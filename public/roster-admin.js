@@ -210,6 +210,127 @@
 #roster-admin-root .rx-att-mid .rx-att-bar i { background: #F59E0B !important; }
 #roster-admin-root .rx-att-low .rx-att-pct { color: #EF4444 !important; }
 #roster-admin-root .rx-att-low .rx-att-bar i { background: #EF4444 !important; }
+
+/* === PAGE WRAPPER === */
+#roster-admin-root { background: #FAFAFA !important; font-family: 'Poppins', system-ui, sans-serif !important; }
+#roster-admin-root .rx-wrap { max-width: 1320px !important; margin: 0 auto !important; padding: 24px 24px 80px !important; }
+
+/* === KPI CARDS === */
+#roster-admin-root .rx-kpis { display: grid !important; grid-template-columns: repeat(5,1fr) !important; gap: 14px !important; margin-bottom: 20px !important; }
+#roster-admin-root .rx-kpi { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 16px !important; padding: 16px 18px !important; box-shadow: 0 1px 2px rgba(16,24,40,.05) !important; position: relative !important; overflow: hidden !important; display: flex !important; flex-direction: column !important; gap: 0 !important; }
+#roster-admin-root .rx-kpi::before { display: none !important; }
+#roster-admin-root .rx-kpi-icon { width: 32px !important; height: 32px !important; border-radius: 8px !important; display: flex !important; align-items: center !important; justify-content: center !important; margin-bottom: 10px !important; background: #F9FAFB !important; }
+#roster-admin-root .rx-kpi-text { flex: 1 !important; }
+#roster-admin-root .rx-kpi-lbl { font-size: 11px !important; font-weight: 500 !important; color: #5B6470 !important; letter-spacing: .01em !important; display: flex !important; align-items: center !important; gap: 6px !important; margin: 0 0 8px !important; }
+#roster-admin-root .rx-kpi-val { font-size: 30px !important; font-weight: 700 !important; letter-spacing: -0.03em !important; color: #1A1D21 !important; line-height: 1 !important; margin: 0 0 7px !important; }
+#roster-admin-root .rx-kpi-sub { font-size: 11px !important; color: #9AA3AF !important; font-weight: 400 !important; }
+#roster-admin-root .rx-kpi-bar { height: 6px !important; border-radius: 99px !important; background: #EEF0F3 !important; margin-top: 10px !important; overflow: hidden !important; }
+#roster-admin-root .rx-kpi-bar-fill { height: 100% !important; border-radius: 99px !important; background: linear-gradient(90deg,#F59E0B,#F97316) !important; transition: width .6s ease !important; }
+#roster-admin-root .rx-kpi.rx-kpi-green .rx-kpi-icon { background: rgba(16,185,129,.08) !important; }
+#roster-admin-root .rx-kpi.rx-kpi-amber .rx-kpi-icon { background: rgba(245,158,11,.08) !important; }
+#roster-admin-root .rx-kpi.rx-kpi-red   .rx-kpi-icon { background: rgba(239,68,68,.08) !important; }
+#roster-admin-root .rx-kpi.rx-kpi-teal  .rx-kpi-icon { background: rgba(6,182,212,.08) !important; }
+#roster-admin-root .rx-kpi:hover { transform: translateY(-2px) !important; box-shadow: 0 6px 20px rgba(16,24,40,.10) !important; transition: all .2s ease !important; }
+
+/* === TOOLBAR === */
+#roster-admin-root .rx-toolbar { display: flex !important; align-items: center !important; gap: 10px !important; flex-wrap: wrap !important; background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 16px !important; padding: 10px 14px !important; box-shadow: 0 1px 2px rgba(16,24,40,.05) !important; margin-bottom: 12px !important; }
+#roster-admin-root .rx-month-display { display: flex !important; align-items: center !important; gap: 0 !important; }
+#roster-admin-root .rx-month-display span { font-size: 14px !important; font-weight: 600 !important; min-width: 104px !important; text-align: center !important; letter-spacing: -0.01em !important; color: #1A1D21 !important; }
+#roster-admin-root .rx-month-display input[type=month] { position: absolute !important; opacity: 0 !important; width: 100% !important; height: 100% !important; cursor: pointer !important; }
+#roster-admin-root .rx-icon-btn { width: 32px !important; height: 32px !important; border-radius: 9px !important; border: 1px solid #DDE1E6 !important; background: #fff !important; color: #5B6470 !important; cursor: pointer !important; display: grid !important; place-items: center !important; font-size: 15px !important; transition: all .15s ease !important; flex-shrink: 0 !important; }
+#roster-admin-root .rx-icon-btn:hover { background: #FFF3EA !important; border-color: #F97316 !important; color: #F97316 !important; }
+#roster-admin-root .rx-pill { height: 32px !important; padding: 0 12px !important; border-radius: 9px !important; border: 1px solid #DDE1E6 !important; background: #fff !important; color: #1A1D21 !important; font-family: 'Poppins',sans-serif !important; font-size: 12.5px !important; font-weight: 500 !important; cursor: pointer !important; display: inline-flex !important; align-items: center !important; gap: 6px !important; transition: all .15s ease !important; white-space: nowrap !important; }
+#roster-admin-root .rx-pill:hover { background: #F6F7F9 !important; }
+#roster-admin-root .rx-pill-primary { background: #F97316 !important; border-color: #F97316 !important; color: #fff !important; font-weight: 600 !important; }
+#roster-admin-root .rx-pill-primary:hover { filter: brightness(1.05) !important; }
+#roster-admin-root .rx-search { display: flex !important; align-items: center !important; gap: 8px !important; height: 32px !important; padding: 0 11px !important; border: 1px solid #DDE1E6 !important; border-radius: 9px !important; background: #fff !important; flex: 1 !important; min-width: 180px !important; }
+#roster-admin-root .rx-search input { border: none !important; outline: none !important; font-family: 'Poppins',sans-serif !important; font-size: 12.5px !important; width: 100% !important; color: #1A1D21 !important; background: transparent !important; }
+#roster-admin-root .rx-search input::placeholder { color: #9AA3AF !important; }
+#roster-admin-root .rx-switch { display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 12px !important; color: #5B6470 !important; cursor: pointer !important; padding: 5px 9px !important; background: #F9FAFB !important; border-radius: 50px !important; border: 1px solid #E8EAED !important; user-select: none !important; }
+#roster-admin-root .rx-switch input { accent-color: #F97316 !important; cursor: pointer !important; }
+
+/* === FILTER BAR === */
+#roster-admin-root .rx-filter-bar { display: flex !important; align-items: center !important; gap: 0 !important; padding: 8px 14px !important; background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 10px !important; flex-wrap: wrap !important; row-gap: 6px !important; margin-bottom: 10px !important; }
+#roster-admin-root .rx-filter-label { font-size: 10px !important; font-weight: 700 !important; color: #9AA3AF !important; text-transform: uppercase !important; letter-spacing: .07em !important; display: inline-flex !important; align-items: center !important; gap: 4px !important; white-space: nowrap !important; margin-right: 6px !important; }
+#roster-admin-root .rx-filter-sep { width: 1px !important; height: 22px !important; background: #E8EAED !important; margin: 0 10px !important; flex-shrink: 0 !important; }
+#roster-admin-root .rx-filter-chip { display: inline-flex !important; align-items: center !important; gap: 4px !important; padding: 3px 10px !important; border-radius: 20px !important; font-size: 11.5px !important; font-weight: 500 !important; border: 1.5px solid transparent !important; background: #F1F2F4 !important; color: #5B6470 !important; cursor: pointer !important; transition: all .12s !important; font-family: 'Poppins',sans-serif !important; }
+#roster-admin-root .rx-filter-chip:hover { border-color: #F97316 !important; color: #F97316 !important; background: #FFF3EA !important; }
+#roster-admin-root .rx-filter-chip.active { background: #F97316 !important; border-color: #F97316 !important; color: #fff !important; font-weight: 600 !important; }
+#roster-admin-root .rx-fc-dot { width: 6px !important; height: 6px !important; border-radius: 50% !important; display: inline-block !important; flex-shrink: 0 !important; }
+#roster-admin-root .rx-filter-clear { margin-left: auto !important; display: inline-flex !important; align-items: center !important; gap: 4px !important; padding: 3px 10px !important; border-radius: 20px !important; font-size: 10.5px !important; font-weight: 600 !important; border: 1px solid rgba(239,68,68,.25) !important; background: rgba(239,68,68,.06) !important; color: #DC2626 !important; cursor: pointer !important; font-family: 'Poppins',sans-serif !important; }
+
+/* === VIEW TABS === */
+#roster-admin-root .rx-view-tabs { display: flex !important; align-items: center !important; gap: 6px !important; margin-bottom: 12px !important; }
+#roster-admin-root .rx-view-tab { display: inline-flex !important; align-items: center !important; gap: 5px !important; padding: 7px 16px !important; border-radius: 10px !important; font-size: 13px !important; font-weight: 500 !important; border: 1.5px solid #E8EAED !important; background: #fff !important; color: #5B6470 !important; cursor: pointer !important; transition: all .15s !important; font-family: 'Poppins',sans-serif !important; }
+#roster-admin-root .rx-view-tab:hover { border-color: #F97316 !important; color: #F97316 !important; }
+#roster-admin-root .rx-view-tab.active { background: rgba(249,115,22,.1) !important; border-color: rgba(249,115,22,.4) !important; color: #F97316 !important; font-weight: 600 !important; }
+#roster-admin-root .rx-view-count { margin-left: auto !important; font-size: 12px !important; font-weight: 500 !important; color: #9AA3AF !important; }
+
+/* === LEGEND === */
+#roster-admin-root .rx-legend { display: flex !important; flex-wrap: wrap !important; gap: 6px 18px !important; padding: 14px 4px 0 !important; align-items: center !important; }
+#roster-admin-root .rx-lg { display: inline-flex !important; align-items: center !important; gap: 7px !important; font-size: 11.5px !important; color: #5B6470 !important; font-weight: 400 !important; cursor: default !important; }
+#roster-admin-root .rx-lg-code { font-weight: 700 !important; font-size: 9.5px !important; padding: 2px 6px !important; border-radius: 5px !important; letter-spacing: .03em !important; }
+#roster-admin-root .rx-lg-name { font-size: 11.5px !important; color: #5B6470 !important; }
+#roster-admin-root .rx-lg-tip { margin-left: auto !important; font-size: 10px !important; font-style: italic !important; color: #9AA3AF !important; }
+
+/* === BULK ACTION BAR === */
+#roster-admin-root .rx-bulk-bar { background: #1A1D21 !important; border-radius: 16px !important; padding: 10px 14px !important; box-shadow: 0 18px 48px rgba(16,24,40,.18) !important; display: flex !important; align-items: center !important; gap: 12px !important; flex-wrap: nowrap !important; min-height: 48px !important; border: none !important; }
+#roster-admin-root .rx-bulk-count { color: #fff !important; font-size: 12px !important; font-weight: 600 !important; white-space: nowrap !important; background: rgba(255,255,255,.1) !important; padding: 3px 10px !important; border-radius: 20px !important; border: 1px solid rgba(255,255,255,.15) !important; }
+#roster-admin-root .rx-bulk-sel { height: 30px !important; font-size: 12px !important; padding: 0 8px !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.2) !important; background: rgba(255,255,255,.07) !important; color: #fff !important; }
+#roster-admin-root .rx-bulk-date { height: 30px !important; font-size: 12px !important; padding: 0 8px !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.2) !important; background: rgba(255,255,255,.07) !important; color: #fff !important; max-width: 140px !important; }
+#roster-admin-root .rx-bulk-btn { height: 30px !important; padding: 0 14px !important; border-radius: 8px !important; border: 1px solid rgba(255,255,255,.2) !important; background: rgba(255,255,255,.1) !important; color: #fff !important; font-size: 12px !important; font-weight: 600 !important; cursor: pointer !important; font-family: 'Poppins',sans-serif !important; transition: all .15s !important; }
+#roster-admin-root .rx-bulk-btn:hover { background: rgba(255,255,255,.18) !important; }
+#roster-admin-root .rx-bulk-btn-primary { background: #F97316 !important; border-color: #F97316 !important; }
+#roster-admin-root .rx-bulk-btn-primary:hover { filter: brightness(1.07) !important; }
+#roster-admin-root .rx-bulk-btn-danger { background: rgba(239,68,68,.25) !important; border-color: rgba(239,68,68,.4) !important; }
+#roster-admin-root .rx-bulk-sep { width: 1px !important; height: 20px !important; background: rgba(255,255,255,.18) !important; flex-shrink: 0 !important; }
+
+/* === SORT BUTTON === */
+#roster-admin-root .rx-sort-btn { display: inline-flex !important; align-items: center !important; gap: 5px !important; height: 32px !important; padding: 0 12px !important; border-radius: 9px !important; border: 1px solid #DDE1E6 !important; background: #fff !important; color: #5B6470 !important; font-size: 12.5px !important; font-weight: 500 !important; cursor: pointer !important; font-family: 'Poppins',sans-serif !important; transition: all .15s !important; }
+#roster-admin-root .rx-sort-btn:hover { background: #FFF3EA !important; border-color: #F97316 !important; color: #F97316 !important; }
+
+/* === AGENTS LIST (when in list view) === */
+#roster-admin-root .rx-agents-toolbar { display: flex !important; align-items: center !important; gap: 10px !important; margin-bottom: 12px !important; }
+#roster-admin-root .rx-agents-table-wrap { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 14px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(16,24,40,.05) !important; }
+#roster-admin-root .rx-agents-tbl { width: 100% !important; border-collapse: collapse !important; }
+#roster-admin-root .rx-agents-tbl thead th { background: #F9FAFB !important; padding: 10px 14px !important; font-size: 10px !important; font-weight: 700 !important; color: #5B6470 !important; text-transform: uppercase !important; letter-spacing: .06em !important; border-bottom: 1.5px solid #E8EAED !important; text-align: left !important; }
+#roster-admin-root .rx-alist-row { border-bottom: 1px solid #F1F2F4 !important; transition: background .1s !important; }
+#roster-admin-root .rx-alist-row:hover { background: rgba(249,115,22,.03) !important; }
+#roster-admin-root .rx-agents-tbl td { padding: 10px 14px !important; color: #3A5068 !important; vertical-align: middle !important; }
+#roster-admin-root .rx-alist-avatar { width: 32px !important; height: 32px !important; border-radius: 50% !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 12px !important; font-weight: 800 !important; color: #fff !important; }
+#roster-admin-root .rx-alist-name { font-weight: 700 !important; color: #1A1D21 !important; font-size: 13px !important; }
+#roster-admin-root .rx-alist-sub { font-size: 10.5px !important; color: #9AA3AF !important; margin-top: 1px !important; }
+#roster-admin-root .rx-mono { font-family: 'JetBrains Mono',monospace !important; font-size: 11.5px !important; font-weight: 600 !important; background: #F1F2F4 !important; padding: 2px 7px !important; border-radius: 5px !important; }
+#roster-admin-root .rx-badge { display: inline-flex !important; align-items: center !important; padding: 2px 9px !important; border-radius: 20px !important; font-size: 10.5px !important; font-weight: 700 !important; }
+#roster-admin-root .rx-badge-green  { background: rgba(16,185,129,.12) !important; color: #0A7A4A !important; border: 1px solid rgba(16,185,129,.25) !important; }
+#roster-admin-root .rx-badge-blue   { background: rgba(6,182,212,.12) !important; color: #0D6090 !important; border: 1px solid rgba(6,182,212,.25) !important; }
+#roster-admin-root .rx-badge-grey   { background: rgba(107,114,128,.1) !important; color: #3A5068 !important; border: 1px solid rgba(107,114,128,.2) !important; }
+#roster-admin-root .rx-alist-actions { display: flex !important; gap: 4px !important; align-items: center !important; }
+#roster-admin-root .rx-alist-btn { width: 28px !important; height: 28px !important; border-radius: 7px !important; border: 1px solid #E8EAED !important; background: #F9FAFB !important; color: #5B6470 !important; cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important; transition: all .12s !important; }
+#roster-admin-root .rx-alist-edit:hover  { border-color: #F97316 !important; color: #F97316 !important; background: rgba(249,115,22,.08) !important; }
+#roster-admin-root .rx-alist-delete:hover{ border-color: #EF4444 !important; color: #EF4444 !important; background: rgba(239,68,68,.08) !important; }
+
+/* === SUMMARY === */
+#roster-admin-root .rx-summary-wrap { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 14px !important; overflow: hidden !important; box-shadow: 0 1px 2px rgba(16,24,40,.05) !important; }
+#roster-admin-root .rx-summary-toggle { display: flex !important; align-items: center !important; gap: 8px !important; padding: 13px 18px !important; font-size: 13px !important; font-weight: 600 !important; color: #3A5068 !important; cursor: pointer !important; list-style: none !important; transition: background .12s !important; }
+#roster-admin-root .rx-summary-toggle:hover { background: #F9FAFB !important; }
+
+/* === QUICK-PICK POPUP === */
+#roster-admin-root .rx-qp { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 14px !important; box-shadow: 0 12px 40px rgba(16,24,40,.16),0 2px 8px rgba(16,24,40,.08) !important; animation: rx-qp-enter .15s cubic-bezier(.34,1.56,.64,1) !important; min-width: 340px !important; padding: 0 !important; flex-direction: column !important; align-items: stretch !important; }
+@keyframes rx-qp-enter { from { opacity:0; transform: scale(.92) translateY(-6px); } to { opacity:1; transform: scale(1) translateY(0); } }
+#roster-admin-root .rx-qp-header { display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 9px 12px 7px !important; border-bottom: 1px solid #F1F2F4 !important; background: #F9FAFB !important; }
+#roster-admin-root .rx-qp-title { font-size: 10px !important; font-weight: 700 !important; color: #5B6470 !important; text-transform: uppercase !important; letter-spacing: .09em !important; }
+#roster-admin-root .rx-qp-body { display: flex !important; flex-direction: row !important; padding: 10px !important; gap: 0 !important; }
+#roster-admin-root .rx-qp-group { display: flex !important; flex-direction: column !important; gap: 5px !important; }
+#roster-admin-root .rx-qp-glabel { font-size: 8.5px !important; font-weight: 700 !important; color: #9AA3AF !important; text-transform: uppercase !important; letter-spacing: .09em !important; padding: 0 2px 2px !important; }
+#roster-admin-root .rx-qp-grow { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
+#roster-admin-root .rx-qp-vsep { width: 1px !important; background: #EEF0F5 !important; align-self: stretch !important; margin: 0 8px !important; }
+#roster-admin-root .rx-qp-btn { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 2px !important; padding: 6px 7px !important; border-radius: 8px !important; border: 1.5px solid #EEF0F5 !important; background: #F9FAFB !important; cursor: pointer !important; min-width: 44px !important; font-family: 'Poppins',sans-serif !important; transition: all .13s cubic-bezier(.34,1.56,.64,1) !important; }
+#roster-admin-root .rx-qp-btn:hover { transform: translateY(-2px) scale(1.05) !important; box-shadow: 0 4px 12px rgba(0,0,0,.1) !important; }
+#roster-admin-root .rx-qp-code { font-family: 'JetBrains Mono',monospace !important; font-weight: 800 !important; font-size: 9.5px !important; padding: 2px 5px !important; border-radius: 5px !important; display: block !important; }
+#roster-admin-root .rx-qp-lbl { font-size: 7.5px !important; color: #5B6470 !important; white-space: nowrap !important; text-align: center !important; }
+#roster-admin-root .rx-qp-clear { display: flex !important; align-items: center !important; justify-content: center !important; width: 22px !important; height: 22px !important; border-radius: 6px !important; border: 1px solid rgba(239,68,68,.3) !important; background: transparent !important; cursor: pointer !important; color: #EF4444 !important; transition: background .12s !important; }
+#roster-admin-root .rx-qp-clear:hover { background: rgba(239,68,68,.1) !important; }
 `;
     document.head.appendChild(s);
   })();
