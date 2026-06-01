@@ -10230,3 +10230,31 @@ body {
   background: transparent !important;
   position: static !important;
 }
+
+/* ── FINAL OVERRIDES: fix cell hover box + month text visibility ── */
+
+/* Remove the box around the cell on hover — only scale the inner circle */
+#roster-admin-root .rx-cell:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  z-index: auto !important;
+}
+/* The circle scales instead */
+#roster-admin-root .rx-cell:hover .rx-day-num {
+  transform: scale(1.14) !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.22), 0 4px 12px rgba(249,115,22,.30) !important;
+  z-index: 3 !important;
+}
+#roster-admin-root .rx-cell:hover .rx-day-empty {
+  background: rgba(249,115,22,.1) !important;
+  border: 2px solid rgba(249,115,22,.4) !important;
+  color: #F97316 !important;
+  transform: scale(1.1) !important;
+}
+
+/* Month button: white text on dark background */
+#roster-admin-root .rx-month-display span {
+  color: #fff !important;
+  text-shadow: none !important;
+}
