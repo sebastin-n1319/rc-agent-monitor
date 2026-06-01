@@ -10215,3 +10215,18 @@ body {
 #roster-admin-root .rx-td-att-inner {
   padding: 0 !important;
 }
+
+/* ── Kill KPI left-border accents from all previous versions ── */
+#roster-admin-root .rx-kpi::before,
+#roster-admin-root .rx-kpi::after,
+#roster-admin-root .rx-kpi.rx-kpi-green::before,
+#roster-admin-root .rx-kpi.rx-kpi-amber::before,
+#roster-admin-root .rx-kpi.rx-kpi-red::before,
+#roster-admin-root .rx-kpi.rx-kpi-teal::before {
+  display: none !important;
+  content: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+  position: static !important;
+}

@@ -215,10 +215,12 @@
 #roster-admin-root { background: #F6F7F9 !important; font-family: 'Poppins', system-ui, sans-serif !important; }
 #roster-admin-root .rx-wrap { max-width: 1400px !important; margin: 0 auto !important; padding: 16px 20px 60px !important; }
 
-/* === KPI CARDS — horizontal compact === */
+/* === KPI CARDS — clean horizontal like Keka === */
 #roster-admin-root .rx-kpis { display: grid !important; grid-template-columns: repeat(5,1fr) !important; gap: 10px !important; margin-bottom: 12px !important; }
-#roster-admin-root .rx-kpi { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 12px !important; padding: 14px 16px !important; box-shadow: 0 1px 3px rgba(16,24,40,.04) !important; display: flex !important; align-items: center !important; gap: 12px !important; transition: box-shadow .2s !important; }
+#roster-admin-root .rx-kpi { background: #fff !important; border: 1px solid #E8EAED !important; border-radius: 12px !important; padding: 14px 16px !important; box-shadow: 0 1px 3px rgba(16,24,40,.04) !important; display: flex !important; align-items: center !important; gap: 12px !important; transition: box-shadow .2s !important; position: relative !important; overflow: hidden !important; }
 #roster-admin-root .rx-kpi:hover { box-shadow: 0 4px 12px rgba(16,24,40,.08) !important; }
+/* Kill ALL pseudo-elements on KPI cards — no left borders, no shimmer */
+#roster-admin-root .rx-kpi::before, #roster-admin-root .rx-kpi::after { display: none !important; content: none !important; width: 0 !important; height: 0 !important; background: none !important; }
 #roster-admin-root .rx-kpi-icon { width: 36px !important; height: 36px !important; min-width: 36px !important; border-radius: 10px !important; display: flex !important; align-items: center !important; justify-content: center !important; background: #F9FAFB !important; flex-shrink: 0 !important; }
 #roster-admin-root .rx-kpi-text { flex: 1 !important; min-width: 0 !important; }
 #roster-admin-root .rx-kpi-lbl { font-size: 10px !important; font-weight: 600 !important; color: #9AA3AF !important; letter-spacing: .04em !important; text-transform: uppercase !important; margin: 0 0 4px !important; }
