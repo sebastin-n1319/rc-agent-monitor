@@ -213,7 +213,7 @@
 
 /* === PAGE WRAPPER — compact === */
 #roster-admin-root { background: #F6F7F9 !important; font-family: 'Poppins', system-ui, sans-serif !important; }
-#roster-admin-root .rx-wrap { max-width: 1400px !important; margin: 0 auto !important; padding: 10px 18px 40px !important; }
+#roster-admin-root .rx-wrap { width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 10px 14px 40px !important; box-sizing: border-box !important; }
 
 /* === KPI CARDS — clean horizontal like Keka === */
 #roster-admin-root .rx-kpis { display: grid !important; grid-template-columns: repeat(5,1fr) !important; gap: 8px !important; margin-bottom: 6px !important; }
