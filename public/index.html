@@ -13701,6 +13701,8 @@ function tlUpdateDateMode() {
   if (badge) badge.style.display = isBack ? 'inline-flex' : 'none';
   if (bar)   bar.style.background = isBack ? 'rgba(251,200,75,.08)' : 'rgba(244,137,31,.04)';
   if (bar)   bar.style.borderColor = isBack ? 'rgba(251,200,75,.3)' : 'rgba(244,137,31,.15)';
+  // Re-evaluate weekend section based on newly selected date
+  tlInitWeekendMode();
 }
 
 function tlResetDate() {
@@ -17379,21 +17381,20 @@ window.AditLoader = (function(){
 })();
 
 /* ── Weekend Mode ──────────────────────────────────────────────────────────── */
-function isWeekendCST() {
-  // Check if it's currently Saturday or Sunday in CST/CDT
-  const now = new Date();
-  // CST = UTC-6, CDT = UTC-5
-  const cstOffset = -6 * 60; // use CST (conservative)
-  const cstTime = new Date(now.getTime() + (now.getTimezoneOffset() + (-cstOffset)) * 60000);
-  // Actually use the existing activeTimeZone() / nowTZ() approach
-  // Simpler: get the day in the user's stored timezone context
+function isWeekendCST(dateStr) {
+  // If dateStr provided (YYYY-MM-DD), check that date; otherwise check today in CST
   try {
-    const tzStr = (typeof currentTZ !== 'undefined' && currentTZ) ? 'America/Chicago' : 'America/Chicago';
-    const day = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: tzStr }).format(now);
+    let checkDate;
+    if (dateStr) {
+      // Parse as local noon to avoid timezone shifts flipping the day
+      checkDate = new Date(dateStr + 'T12:00:00');
+    } else {
+      checkDate = new Date();
+    }
+    const day = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Chicago' }).format(checkDate);
     return day === 'Sat' || day === 'Sun';
   } catch(e) {
-    // fallback: use local day
-    const d = new Date().getDay();
+    const d = dateStr ? new Date(dateStr + 'T12:00:00').getDay() : new Date().getDay();
     return d === 0 || d === 6;
   }
 }
@@ -17401,7 +17402,9 @@ function isWeekendCST() {
 function tlInitWeekendMode() {
   const section = document.getElementById('tl-weekend-section');
   if (!section) return;
-  if (isWeekendCST()) {
+  // Check the SELECTED date (backlog mode), not just today
+  const selectedDate = document.getElementById('tl-log-date')?.value || '';
+  if (isWeekendCST(selectedDate)) {
     section.style.display = 'block';
     // Animate in
     section.style.opacity = '0';
@@ -17430,7 +17433,8 @@ function tlGetWkdField(group) {
 const _origSubmitTicketLog = window.submitTicketLog;
 window.submitTicketLog = async function() {
   // WEEKEND MODE: capture all values BEFORE the original submit clears the form
-  const isWkd = isWeekendCST();
+  const _logDate = document.getElementById('tl-log-date')?.value || '';
+  const isWkd = isWeekendCST(_logDate);
   let wkdPayload = null;
 
   if (isWkd) {

@@ -1321,15 +1321,33 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     let ticket = null;
 
-    // STRATEGY 1: Scan open tickets — proven: GET /tickets?limit=100&from=N
+    // STRATEGY 1: Scan open tickets (first 500 — covers recent open tickets)
     try {
-      const r1 = await fetch(`${ZOHO_API_BASE}/tickets?limit=100&from=0`, { headers });
-      if (r1.ok) {
+      for (let from = 0; from <= 400 && !ticket; from += 100) {
+        const r1 = await fetch(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=${from}`, { headers });
+        if (!r1.ok) break;
         const d1 = await r1.json();
-        const found1 = (d1.data||[]).find(t => String(t.ticketNumber) === rawId);
-        if (found1) ticket = found1;
+        const list1 = d1.data || [];
+        if (!list1.length) break;
+        const found1 = list1.find(t => String(t.ticketNumber) === rawId);
+        if (found1) { ticket = found1; break; }
+        // Stop early if ticket numbers are way below target
+        const nums1 = list1.map(t => parseInt(t.ticketNumber, 10)).filter(n => !isNaN(n));
+        if (nums1.length && Math.max(...nums1) < parseInt(rawId, 10) - 10000) break;
       }
     } catch(e) {}
+
+    // STRATEGY 1b: Scan all statuses page 0 (catches tickets in any state)
+    if (!ticket) {
+      try {
+        const r1b = await fetch(`${ZOHO_API_BASE}/tickets?limit=100&from=0`, { headers });
+        if (r1b.ok) {
+          const d1b = await r1b.json();
+          const f1b = (d1b.data||[]).find(t => String(t.ticketNumber) === rawId);
+          if (f1b) ticket = f1b;
+        }
+      } catch(e) {}
+    }
 
     // STRATEGY 2: Scan CLOSED tickets — newest-first, stop when ticket numbers go below target
     // Scans up to 3000 closed tickets (30 pages × 100) stopping early if we pass the target
