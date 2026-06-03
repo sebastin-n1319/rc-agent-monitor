@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.124'; // Fix Brain NEURAL_PATTERN undefined ReferenceError
+const CACHE_VERSION = 'adit-v1.19.125'; // Brain: real images wired — logo, avatar, widget, illustrations
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
@@ -54,6 +54,14 @@ const PRECACHE_URLS = [
   '/roster-admin.css',
   '/roster-admin.js',
   '/brain.js',
+  '/brain-logo.png',
+  '/brain-avatar.png',
+  '/brain-widget.png',
+  '/brain-thinking.png',
+  '/brain-search.png',
+  '/brain-success.png',
+  '/brain-error.png',
+  '/brain-learning.png',
   '/a11y-focus-trap.js',
   '/adit-logo-dark.svg',
   '/adit-logo-light.svg',
