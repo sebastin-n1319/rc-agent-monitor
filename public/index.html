@@ -20991,7 +20991,7 @@ async function deleteNote(id){
 <div id="brain-fab-wrap">
   <div id="brain-bubble" style="display:none;background:#fff;border-radius:18px 18px 4px 18px;padding:12px 40px 12px 46px;box-shadow:0 8px 28px rgba(26,31,60,.15);max-width:270px;font-size:12.5px;color:#1A1F3C;line-height:1.55;border:1.5px solid #F0F2F5;position:relative;animation:brain-bub-in .4s cubic-bezier(.34,1.56,.64,1) both;">
     <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#FF8C00,#F97316);display:flex;align-items:center;justify-content:center;">
-      <svg viewBox="0 0 80 80" width="20" height="20"><rect x="16" y="23" width="48" height="40" rx="12" fill="#1A1F3C"/><circle cx="30" cy="39" r="5" fill="#fff"/><circle cx="50" cy="39" r="5" fill="#fff"/><circle cx="32" cy="40" r="2.5" fill="#1A1F3C"/><circle cx="52" cy="40" r="2.5" fill="#1A1F3C"/><path d="M30 52 Q40 59 50 52" stroke="#F97316" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 100 110" width="22" height="24"><defs><linearGradient id="bbg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFB347"/><stop offset="100%" stop-color="#E8620A"/></linearGradient></defs><line x1="35" y1="8" x2="40" y2="22" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="50" y1="4" x2="50" y2="22" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="65" y1="8" x2="60" y2="22" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="35" cy="7" r="4" fill="#fff"/><circle cx="50" cy="4" r="4" fill="#fff"/><circle cx="65" cy="7" r="4" fill="#fff"/><rect x="8" y="20" width="84" height="78" rx="18" fill="url(#bbg2)"/><rect x="2" y="38" width="12" height="22" rx="6" fill="#F97316"/><rect x="86" y="38" width="12" height="22" rx="6" fill="#F97316"/><rect x="16" y="27" width="68" height="56" rx="12" fill="#1A1F3C"/><rect x="24" y="42" width="20" height="20" rx="4" fill="#fff"/><rect x="28" y="46" width="9" height="9" rx="2" fill="#1A1F3C"/><rect x="56" y="42" width="20" height="20" rx="4" fill="#fff"/><rect x="60" y="46" width="9" height="9" rx="2" fill="#1A1F3C"/><path d="M32 70 Q50 83 68 70" stroke="#FFB347" stroke-width="4" fill="none" stroke-linecap="round"/></svg>
     </div>
     <div id="brain-bubble-text"></div>
     <button onclick="Brain.dismissBubble()" style="position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;color:#9BA3B2;font-size:14px;padding:2px;">&#x2715;</button>
@@ -20999,25 +20999,33 @@ async function deleteNote(id){
   <button id="brain-fab" onclick="Brain.toggle()" title="Brain — AI Assistant" style="width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;outline:none;background:linear-gradient(135deg,#FF8C00,#F97316);box-shadow:0 8px 28px rgba(249,115,22,.5);padding:0;">
     <div style="position:absolute;inset:-6px;border-radius:50%;border:2.5px solid rgba(249,115,22,.5);animation:brain-pulse-ring 2s ease-out infinite;pointer-events:none;"></div>
     <div style="position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(249,115,22,.25);animation:brain-pulse-ring 2s ease-out .6s infinite;pointer-events:none;"></div>
-    <svg viewBox="0 0 80 80" width="38" height="38" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:2;">
-      <circle cx="28" cy="8" r="4" fill="rgba(255,255,255,.9)"/>
-      <circle cx="40" cy="4" r="4" fill="rgba(255,255,255,.9)"/>
-      <circle cx="52" cy="8" r="4" fill="rgba(255,255,255,.9)"/>
-      <line x1="28" y1="12" x2="34" y2="20" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="40" y1="8" x2="40" y2="20" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="52" y1="12" x2="46" y2="20" stroke="rgba(255,255,255,.9)" stroke-width="2.5" stroke-linecap="round"/>
-      <rect x="10" y="18" width="60" height="52" rx="16" fill="rgba(255,255,255,.2)"/>
-      <rect x="4" y="28" width="10" height="18" rx="5" fill="rgba(255,255,255,.2)"/>
-      <rect x="66" y="28" width="10" height="18" rx="5" fill="rgba(255,255,255,.2)"/>
-      <rect x="16" y="23" width="48" height="40" rx="12" fill="#1A1F3C"/>
-      <circle cx="30" cy="39" r="6" fill="#fff"/><circle cx="50" cy="39" r="6" fill="#fff"/>
-      <circle cx="32" cy="40" r="3" fill="#1A1F3C"/><circle cx="52" cy="40" r="3" fill="#1A1F3C"/>
-      <path d="M30 52 Q40 60 50 52" stroke="#F97316" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <svg viewBox="0 0 100 110" width="38" height="42" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:2;">
+      <defs><linearGradient id="fabg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity=".9"/><stop offset="100%" stop-color="#fff" stop-opacity=".6"/></linearGradient></defs>
+      <!-- Antennae -->
+      <line x1="35" y1="8" x2="40" y2="22" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="50" y1="4" x2="50" y2="22" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/>
+      <line x1="65" y1="8" x2="60" y2="22" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="35" cy="7" r="5" fill="rgba(255,255,255,.9)"/>
+      <circle cx="50" cy="4" r="5" fill="rgba(255,255,255,.9)"/>
+      <circle cx="65" cy="7" r="5" fill="rgba(255,255,255,.9)"/>
+      <!-- Body -->
+      <rect x="8" y="20" width="84" height="78" rx="18" fill="rgba(255,255,255,.18)"/>
+      <rect x="2" y="38" width="12" height="22" rx="6" fill="rgba(255,255,255,.18)"/>
+      <rect x="86" y="38" width="12" height="22" rx="6" fill="rgba(255,255,255,.18)"/>
+      <!-- Face -->
+      <rect x="16" y="27" width="68" height="56" rx="12" fill="#1A1F3C"/>
+      <!-- Square pixel eyes -->
+      <rect x="24" y="42" width="20" height="20" rx="4" fill="#fff"/>
+      <rect x="28" y="46" width="9" height="9" rx="2" fill="#1A1F3C"/>
+      <rect x="56" y="42" width="20" height="20" rx="4" fill="#fff"/>
+      <rect x="60" y="46" width="9" height="9" rx="2" fill="#1A1F3C"/>
+      <!-- Smile -->
+      <path d="M32 70 Q50 83 68 70" stroke="#FFB347" stroke-width="4" fill="none" stroke-linecap="round"/>
     </svg>
   </button>
   <div id="brain-panel" class="brain-panel" style="display:none;"></div>
 </div>
-<script src="/brain.js?v=1.19.121" defer></script>
+<script src="/brain.js?v=1.19.122" defer></script>
 </body>
 </html>
 

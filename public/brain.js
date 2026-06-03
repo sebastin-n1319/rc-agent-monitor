@@ -12,88 +12,105 @@
   var lastPage = '';
   var sessionGreeted = false;
 
-  /* ── Brand SVGs (robot character from design system) ─────── */
-  // Main robot avatar SVG — orange body, dark face, antenna dots
-  var ROBOT_SVG = function(w, h, extras) {
+  /* ── Brand SVGs — pixel-perfect from design system ───────── */
+  var ROBOT_SVG = function(w, h) {
     w = w||40; h = h||40;
-    return '<svg viewBox="0 0 80 80" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">' +
-      // Antenna nodes
-      '<circle cx="28" cy="8" r="4" fill="#F97316"/>' +
-      '<circle cx="40" cy="4" r="4" fill="#F97316"/>' +
-      '<circle cx="52" cy="8" r="4" fill="#F97316"/>' +
-      '<line x1="28" y1="12" x2="34" y2="20" stroke="#F97316" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<line x1="40" y1="8" x2="40" y2="20" stroke="#F97316" stroke-width="2.5" stroke-linecap="round"/>' +
-      '<line x1="52" y1="12" x2="46" y2="20" stroke="#F97316" stroke-width="2.5" stroke-linecap="round"/>' +
-      // Orange outer body
-      '<rect x="10" y="18" width="60" height="52" rx="16" fill="#F97316"/>' +
-      // Orange ears/sides
-      '<rect x="4" y="28" width="10" height="18" rx="5" fill="#F97316"/>' +
-      '<rect x="66" y="28" width="10" height="18" rx="5" fill="#F97316"/>' +
-      // Dark face screen
-      '<rect x="16" y="23" width="48" height="40" rx="12" fill="#1A1F3C"/>' +
-      // Eyes
-      '<circle cx="30" cy="39" r="6" fill="#fff"/>' +
-      '<circle cx="50" cy="39" r="6" fill="#fff"/>' +
-      '<circle cx="32" cy="40" r="3" fill="#1A1F3C"/>' +
-      '<circle cx="52" cy="40" r="3" fill="#1A1F3C"/>' +
-      // Smile
-      '<path d="M30 52 Q40 60 50 52" stroke="#F97316" stroke-width="3" fill="none" stroke-linecap="round"/>' +
-      (extras||'') +
+    return '<svg viewBox="0 0 100 110" width="'+w+'" height="'+h+'" xmlns="http://www.w3.org/2000/svg">' +
+      // Antenna lines
+      '<line x1="35" y1="8" x2="40" y2="22" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+      '<line x1="50" y1="4" x2="50" y2="22" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+      '<line x1="65" y1="8" x2="60" y2="22" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+      // Antenna nodes (circles)
+      '<circle cx="35" cy="7" r="5" fill="#FFB347" stroke="#F97316" stroke-width="1.5"/>' +
+      '<circle cx="35" cy="7" r="2.5" fill="#fff" opacity=".6"/>' +
+      '<circle cx="50" cy="4" r="5" fill="#FFB347" stroke="#F97316" stroke-width="1.5"/>' +
+      '<circle cx="50" cy="4" r="2.5" fill="#fff" opacity=".6"/>' +
+      '<circle cx="65" cy="7" r="5" fill="#FFB347" stroke="#F97316" stroke-width="1.5"/>' +
+      '<circle cx="65" cy="7" r="2.5" fill="#fff" opacity=".6"/>' +
+      // Orange outer body with gradient
+      '<defs>' +
+        '<linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="#FFB347"/>' +
+          '<stop offset="100%" stop-color="#E8620A"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="faceGrad" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0%" stop-color="#1E2547"/>' +
+          '<stop offset="100%" stop-color="#141A35"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      '<rect x="8" y="20" width="84" height="78" rx="18" fill="url(#bodyGrad)"/>' +
+      // Side ears
+      '<rect x="2" y="38" width="12" height="22" rx="6" fill="#F97316"/>' +
+      '<rect x="86" y="38" width="12" height="22" rx="6" fill="#F97316"/>' +
+      // Dark face/screen inset
+      '<rect x="16" y="27" width="68" height="56" rx="12" fill="url(#faceGrad)"/>' +
+      // Screen shine/glare
+      '<rect x="18" y="29" width="64" height="8" rx="4" fill="rgba(255,255,255,.06)"/>' +
+      // Square pixel eyes - LEFT
+      '<rect x="26" y="44" width="16" height="16" rx="3" fill="#fff"/>' +
+      '<rect x="29" y="47" width="7" height="7" rx="1.5" fill="#1A1F3C"/>' +
+      // Square pixel eyes - RIGHT
+      '<rect x="58" y="44" width="16" height="16" rx="3" fill="#fff"/>' +
+      '<rect x="61" y="47" width="7" height="7" rx="1.5" fill="#1A1F3C"/>' +
+      // Smile arc
+      '<path d="M34 68 Q50 80 66 68" stroke="#F97316" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
+      // Bottom chin shine
+      '<rect x="30" y="88" width="40" height="5" rx="2.5" fill="rgba(255,255,255,.12)"/>' +
     '</svg>';
   };
 
-  // Small robot for chat bubbles
-  var ROBOT_XS = ROBOT_SVG(26, 26);
-
-  // Robot with speech bubble (welcome)
-  var ROBOT_HI = '<svg viewBox="0 0 120 100" width="100" height="84" xmlns="http://www.w3.org/2000/svg">' +
-    // Speech bubble
-    '<rect x="58" y="4" width="56" height="30" rx="10" fill="#FFF3E0" stroke="#F97316" stroke-width="1.5"/>' +
-    '<text x="86" y="24" text-anchor="middle" font-size="14" font-weight="800" fill="#F97316" font-family="sans-serif">Hi!</text>' +
-    '<path d="M70 34 L62 44 L78 34Z" fill="#FFF3E0" stroke="#F97316" stroke-width="1.5" stroke-linejoin="round"/>' +
-    // Body
-    '<circle cx="28" cy="8" r="4" fill="#F97316" transform="translate(10,40)"/>' +
-    '<circle cx="38" cy="4" r="4" fill="#F97316" transform="translate(10,40)"/>' +
-    '<circle cx="48" cy="8" r="4" fill="#F97316" transform="translate(10,40)"/>' +
-    '<line x1="28" y1="12" x2="33" y2="19" stroke="#F97316" stroke-width="2" stroke-linecap="round" transform="translate(10,40)"/>' +
-    '<line x1="38" y1="8" x2="38" y2="19" stroke="#F97316" stroke-width="2" stroke-linecap="round" transform="translate(10,40)"/>' +
-    '<line x1="48" y1="12" x2="43" y2="19" stroke="#F97316" stroke-width="2" stroke-linecap="round" transform="translate(10,40)"/>' +
-    '<rect x="20" y="59" width="56" height="48" rx="14" fill="#F97316"/>' +
-    '<rect x="14" y="69" width="9" height="16" rx="4.5" fill="#F97316"/>' +
-    '<rect x="63" y="69" width="9" height="16" rx="4.5" fill="#F97316"/>' +
-    '<rect x="25" y="64" width="45" height="37" rx="10" fill="#1A1F3C"/>' +
-    '<circle cx="37" cy="78" r="5" fill="#fff"/><circle cx="51" cy="78" r="5" fill="#fff"/>' +
-    '<circle cx="38.5" cy="79" r="2.5" fill="#1A1F3C"/><circle cx="52.5" cy="79" r="2.5" fill="#1A1F3C"/>' +
-    '<path d="M34 90 Q44 97 54 90" stroke="#F97316" stroke-width="2.5" fill="none" stroke-linecap="round"/>' +
+  var ROBOT_XS = '<svg viewBox="0 0 100 110" width="28" height="30" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><linearGradient id="bxg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFB347"/><stop offset="100%" stop-color="#E8620A"/></linearGradient></defs>' +
+    '<line x1="35" y1="8" x2="40" y2="22" stroke="#F97316" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<line x1="50" y1="4" x2="50" y2="22" stroke="#F97316" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<line x1="65" y1="8" x2="60" y2="22" stroke="#F97316" stroke-width="3.5" stroke-linecap="round"/>' +
+    '<circle cx="35" cy="7" r="5" fill="#FFB347"/><circle cx="50" cy="4" r="5" fill="#FFB347"/><circle cx="65" cy="7" r="5" fill="#FFB347"/>' +
+    '<rect x="8" y="20" width="84" height="78" rx="18" fill="url(#bxg)"/>' +
+    '<rect x="2" y="38" width="12" height="22" rx="6" fill="#F97316"/><rect x="86" y="38" width="12" height="22" rx="6" fill="#F97316"/>' +
+    '<rect x="16" y="27" width="68" height="56" rx="12" fill="#1A1F3C"/>' +
+    '<rect x="26" y="44" width="16" height="16" rx="3" fill="#fff"/><rect x="29" y="47" width="7" height="7" rx="1.5" fill="#1A1F3C"/>' +
+    '<rect x="58" y="44" width="16" height="16" rx="3" fill="#fff"/><rect x="61" y="47" width="7" height="7" rx="1.5" fill="#1A1F3C"/>' +
+    '<path d="M34 68 Q50 80 66 68" stroke="#F97316" stroke-width="3.5" fill="none" stroke-linecap="round"/>' +
   '</svg>';
 
-  // Neural network pattern SVG (brand element)
-  var NEURAL_PATTERN = '<svg viewBox="0 0 200 120" width="200" height="120" xmlns="http://www.w3.org/2000/svg" opacity=".12">' +
-    '<circle cx="20" cy="20" r="3" fill="#F97316"/><circle cx="60" cy="40" r="3" fill="#F97316"/>' +
-    '<circle cx="100" cy="20" r="3" fill="#F97316"/><circle cx="140" cy="40" r="3" fill="#F97316"/>' +
-    '<circle cx="180" cy="20" r="3" fill="#F97316"/><circle cx="40" cy="70" r="3" fill="#F97316"/>' +
-    '<circle cx="80" cy="90" r="3" fill="#F97316"/><circle cx="120" cy="70" r="3" fill="#F97316"/>' +
-    '<circle cx="160" cy="90" r="3" fill="#F97316"/><circle cx="20" cy="110" r="3" fill="#F97316"/>' +
-    '<circle cx="100" cy="110" r="3" fill="#F97316"/><circle cx="180" cy="110" r="3" fill="#F97316"/>' +
-    '<line x1="20" y1="20" x2="60" y2="40" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="60" y1="40" x2="100" y2="20" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="100" y1="20" x2="140" y2="40" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="140" y1="40" x2="180" y2="20" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="40" y1="70" x2="80" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="80" y1="90" x2="120" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="120" y1="70" x2="160" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="20" y1="20" x2="40" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="60" y1="40" x2="40" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="60" y1="40" x2="80" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="100" y1="20" x2="80" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="100" y1="20" x2="120" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="140" y1="40" x2="120" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="140" y1="40" x2="160" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="180" y1="20" x2="160" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="20" y1="110" x2="40" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="100" y1="110" x2="80" y2="90" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="100" y1="110" x2="120" y2="70" stroke="#F97316" stroke-width=".8"/>' +
-    '<line x1="180" y1="110" x2="160" y2="90" stroke="#F97316" stroke-width=".8"/>' +
+  var ROBOT_HI = '<svg viewBox="0 0 180 160" width="160" height="142" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs>' +
+      '<linearGradient id="rhg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFB347"/><stop offset="100%" stop-color="#E8620A"/></linearGradient>' +
+      '<filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feComposite in="SourceGraphic" in2="blur" operator="over"/></filter>' +
+    '</defs>' +
+    // Glow aura behind robot
+    '<circle cx="75" cy="100" r="55" fill="rgba(249,115,22,.08)"/>' +
+    // Speech bubble
+    '<rect x="95" y="8" width="78" height="44" rx="14" fill="#fff" stroke="#F97316" stroke-width="2"/>' +
+    '<text x="134" y="26" text-anchor="middle" font-size="11" font-weight="800" fill="#1A1F3C" font-family="Poppins,sans-serif">Good</text>' +
+    '<text x="134" y="42" text-anchor="middle" font-size="11" font-weight="800" fill="#F97316" font-family="Poppins,sans-serif">Morning!</text>' +
+    '<polygon points="102,52 92,66 118,52" fill="#fff" stroke="#F97316" stroke-width="2" stroke-linejoin="round"/>' +
+    // Antennae
+    '<line x1="50" y1="22" x2="55" y2="44" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+    '<line x1="75" y1="16" x2="75" y2="44" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+    '<line x1="100" y1="22" x2="95" y2="44" stroke="#F97316" stroke-width="3" stroke-linecap="round"/>' +
+    '<circle cx="50" cy="20" r="7" fill="#FFB347" stroke="#F97316" stroke-width="1.5"/><circle cx="50" cy="20" r="3.5" fill="#fff" opacity=".7"/>' +
+    '<circle cx="75" cy="14" r="7" fill="#FFB347" stroke="#F97316" stroke-width="1.5"/><circle cx="75" cy="14" r="3.5" fill="#fff" opacity=".7"/>' +
+    '<circle cx="100" cy="20" r="7" fill="#FFB347" stroke="#F97316" stroke-width="1.5"/><circle cx="100" cy="20" r="3.5" fill="#fff" opacity=".7"/>' +
+    // Body
+    '<rect x="22" y="42" width="106" height="100" rx="22" fill="url(#rhg)"/>' +
+    '<rect x="14" y="62" width="14" height="28" rx="7" fill="#F97316"/>' +
+    '<rect x="122" y="62" width="14" height="28" rx="7" fill="#F97316"/>' +
+    // Face
+    '<rect x="30" y="50" width="90" height="72" rx="14" fill="#1A1F3C"/>' +
+    '<rect x="32" y="52" width="86" height="10" rx="5" fill="rgba(255,255,255,.06)"/>' +
+    // Eyes (square pixels)
+    '<rect x="40" y="66" width="22" height="22" rx="4" fill="#fff"/><rect x="44" y="70" width="10" height="10" rx="2" fill="#1A1F3C"/>' +
+    '<rect x="88" y="66" width="22" height="22" rx="4" fill="#fff"/><rect x="92" y="70" width="10" height="10" rx="2" fill="#1A1F3C"/>' +
+    // Smile
+    '<path d="M48 98 Q75 114 102 98" stroke="#F97316" stroke-width="4" fill="none" stroke-linecap="round"/>' +
+    // Shine
+    '<rect x="44" y="128" width="62" height="6" rx="3" fill="rgba(255,255,255,.12)"/>' +
+    // Sparkles around robot
+    '<circle cx="18" cy="55" r="3" fill="#F97316" opacity=".6"/>' +
+    '<circle cx="132" cy="48" r="2" fill="#FFB347" opacity=".7"/>' +
+    '<circle cx="140" cy="100" r="2.5" fill="#F97316" opacity=".5"/>' +
+    '<circle cx="20" cy="115" r="2" fill="#FFB347" opacity=".6"/>' +
   '</svg>';
 
   /* ── CSS Injection ─────────────────────────────────────── */
