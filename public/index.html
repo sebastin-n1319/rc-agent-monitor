@@ -14423,9 +14423,13 @@ async function zohoLookupTicket(id) {
   _zohoLastId = id; // ensure stale guard passes for Retry clicks
   const card = document.getElementById('tl-zoho-card');
   // Show loading state
-  if(card){ card.style.display=''; card.innerHTML='<div class="tl-lookup-loading"><div class="tl-lookup-loading-top"><div class="tl-lookup-spinner"></div><div><div class="tl-lookup-loading-text">Looking up ticket #'+id+'…</div><div class="tl-lookup-loading-sub">Searching Zoho Desk — this takes a moment</div></div></div><div class="tl-lookup-progress"><div class="tl-lookup-progress-bar"></div></div></div>'; }
+  if(card){ card.style.display=''; card.innerHTML='<div class="tl-lookup-loading"><div class="tl-lookup-loading-top"><div class="tl-lookup-spinner"></div><div><div class="tl-lookup-loading-text">Looking up ticket #'+id+'…</div><div class="tl-lookup-loading-sub">Searching Zoho Desk across all statuses in parallel</div></div></div><div class="tl-lookup-progress"><div class="tl-lookup-progress-bar"></div></div></div>'; }
   try {
-    const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include' });
+    // 25 second timeout — parallel search is fast but give enough runway
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include', signal: controller.signal });
+    clearTimeout(timeout);
     const data = await res.json();
     if (!card) return;
     // Stale-response guard: if the ticket ID was cleared/changed since this lookup started, discard
@@ -14543,9 +14547,11 @@ async function zohoLookupTicket(id) {
 
   } catch(e) {
     if (card) {
-      card.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span>⚠ Zoho lookup unavailable — log manually.</span>
-        <button onclick="zohoLookupTicket('${esc(id)}')" style="padding:2px 9px;background:rgba(244,137,31,.08);border:1px solid rgba(244,137,31,.2);border-radius:6px;font-size:11px;font-weight:600;color:#C26510;cursor:pointer;font-family:'Poppins',sans-serif;">Retry</button>
+      const isTimeout = e.name === 'AbortError';
+      card.innerHTML = `<div style="padding:12px 16px;font-size:12px;color:#64748B;background:#FFF8F4;border:1px solid rgba(244,137,31,.2);border-radius:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" style="width:16px;height:16px;flex-shrink:0"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
+        <span style="flex:1;">${isTimeout ? 'Lookup timed out — Zoho may be slow right now.' : 'Zoho lookup unavailable — you can still log manually.'}</span>
+        <button onclick="zohoLookupTicket('${esc(id)}')" style="padding:5px 14px;background:#F4891F;border:none;border-radius:999px;font-size:11px;font-weight:700;color:#fff;cursor:pointer;font-family:'Poppins',sans-serif;">Retry</button>
       </div>`;
       card.style.display = '';
     }
