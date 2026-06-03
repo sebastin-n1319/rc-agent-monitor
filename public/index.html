@@ -9652,11 +9652,6 @@ tbody tr:hover td{
   </div>
   <!-- Session 15.5: HOF sidebar item hidden until Q2 redesign. Page itself
        remains in DOM (#agent-section-hall) so deep-links still resolve. -->
-  <div class="sb-item" id="sb-agent-brain" title="Brain — AI Assistant"
-       onclick="sbAgent('brain',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
-    <span class="sb-label">Brain</span>
-  </div>
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
        onclick="sbAgent('hall',this)" style="display:none!important;" data-hidden-until="Q2-2026">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
@@ -11183,11 +11178,6 @@ tbody tr:hover td{
     </section>
    </div>
   </div>
-  <!-- BRAIN AI ASSISTANT SECTION -->
-  <div class="agent-shell-page" id="agent-section-brain">
-    <div id="brain-root"></div>
-  </div>
-
   <!-- agentView remains open — breakbot/hall/bonus/writer/tickets are siblings inside it -->
   <div class="agent-shell-page" id="agent-section-breakbot">
     <!-- Preview banner -->
@@ -20986,7 +20976,28 @@ async function deleteNote(id){
   });
 })();
 </script>
-<script src="/brain.js?v=1.19.97" defer></script>
+<!-- BRAIN FLOATING WIDGET -->
+<div id="brain-fab-wrap">
+  <div id="brain-bubble" class="brain-bubble" style="display:none;">
+    <div id="brain-bubble-text"></div>
+    <button class="brain-bubble-dismiss" onclick="Brain.dismissBubble()">&#x2715;</button>
+  </div>
+  <button id="brain-fab" class="brain-fab" onclick="Brain.toggle()" title="Brain">
+    <div class="brain-fab-rings">
+      <div class="brain-fab-ring r1"></div>
+      <div class="brain-fab-ring r2"></div>
+      <div class="brain-fab-ring r3"></div>
+    </div>
+    <div class="brain-fab-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" style="width:24px;height:24px"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+    </div>
+    <div class="brain-fab-badge">Brain is Braining</div>
+  </button>
+  <div id="brain-panel" class="brain-panel">
+    <div id="brain-root"></div>
+  </div>
+</div>
+<script src="/brain.js?v=1.19.98" defer></script>
 </body>
 </html>
 
