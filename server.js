@@ -2255,6 +2255,69 @@ app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ── BRAIN — AI Tool Assistant ────────────────────────────────────────────────
+app.post('/api/brain/chat', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const { messages, context } = req.body || {};
+    if (!messages?.length) return res.status(400).json({ success: false, error: 'No messages' });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(503).json({ success: false, error: 'AI not configured' });
+
+    const systemPrompt = `You are Brain — the AI assistant built into the Adit Agent Monitor tool.
+Your personality: sharp, helpful, fast. You use brief, clear answers with specific next steps.
+Your job: (1) Be a tool guide — explain every feature of Adit Agent Monitor, (2) help users troubleshoot bugs and issues, (3) clarify any doubts about how the tool works.
+
+About Adit Agent Monitor — you know every feature in detail:
+- LIVE DASHBOARD: Real-time agent status, break tracking, active call monitoring, queue health
+- BREAKS: Break Bot for agents — start/end breaks, track break time, supervisor visibility
+- TICKETS: Log tickets to Google Sheets (Ticket Productivity sheet), Zoho Desk lookup, weekend support mode logs to a second sheet, AI-assisted note summarization
+- ROSTER: Monthly attendance calendar — click cells to set P/WFH/OD/OFF/PL/UPL/SL/NCNS/Absent. Bulk fill, export CSV, filter by role/status, ATT% bar per agent
+- REPORTS: Productivity and attendance analytics
+- SCHEDULE: Shift schedule management
+- AI WRITE: AI-powered email/message writer with transforms (formal, shorter, empathetic, bullets, etc.)
+- ANOMALIES: Auto-detected attendance and productivity anomalies
+- FORECAST: Staffing predictions
+- BONUS: Bonus calculation guide
+- BRAIN (you): AI assistant for help, guidance, and self-healing
+
+When users report a bug or issue:
+1. Ask for the specific error message or screenshot (what they see vs what they expect)
+2. Identify the likely cause based on the feature
+3. Give clear step-by-step resolution instructions
+4. If it's a known issue, explain the workaround immediately
+
+Common issues you know how to resolve:
+- Ticket not found in Zoho: The lookup scans open/closed/onhold queues. Ticket may be very old (>10k back), in a different Zoho org, or have an unusual status
+- Weekend fields not showing: Must select a Saturday or Sunday date in the date picker (not just today being a weekend)
+- Roster not saving: Check internet connection; auto-saves after 600ms of inactivity
+- Flash of wrong page on refresh: Fixed in v1.19.89+; clear browser cache if still occurring
+- Breaks not tracking: Agent must be in Agent View (not Admin View), Break Bot must be enabled
+- Dark mode toggle: Click the moon icon in the top header
+
+Always be concise. Use bullet points for step-by-step. End with "Anything else?" if the answer is complete.
+Context: ${context || 'Agent view'}`;
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.slice(-12) // keep last 12 messages for context
+        ],
+        max_tokens: 600,
+        temperature: 0.4,
+        stream: false
+      })
+    });
+    const data = await resp.json();
+    const reply = data.choices?.[0]?.message?.content?.trim() || '';
+    if (!reply) throw new Error('No AI response');
+    res.json({ success: true, reply });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // ── AI Writing Assistant ─────────────────────────────────────────────────────
 // ── AI Writer — Enhanced Prompts & Multi-Feature Endpoints ───────────────────
 

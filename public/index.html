@@ -9652,6 +9652,11 @@ tbody tr:hover td{
   </div>
   <!-- Session 15.5: HOF sidebar item hidden until Q2 redesign. Page itself
        remains in DOM (#agent-section-hall) so deep-links still resolve. -->
+  <div class="sb-item" id="sb-agent-brain" title="Brain — AI Assistant"
+       onclick="sbAgent('brain',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+    <span class="sb-label">Brain</span>
+  </div>
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
        onclick="sbAgent('hall',this)" style="display:none!important;" data-hidden-until="Q2-2026">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
@@ -11178,6 +11183,11 @@ tbody tr:hover td{
     </section>
    </div>
   </div>
+  <!-- BRAIN AI ASSISTANT SECTION -->
+  <div class="agent-shell-page" id="agent-section-brain">
+    <div id="brain-root"></div>
+  </div>
+
   <!-- agentView remains open — breakbot/hall/bonus/writer/tickets are siblings inside it -->
   <div class="agent-shell-page" id="agent-section-breakbot">
     <!-- Preview banner -->
@@ -17677,6 +17687,305 @@ function restoreLastAgentSection(){
 }
 
 // Note: localStorage save added directly into switchAgentSection at line 11663
+
+
+// ═══════════════════════════════════════════════════════════
+// BRAIN — AI Tool Assistant
+// ═══════════════════════════════════════════════════════════
+const Brain = (() => {
+  let _messages = []; // { role, content, time }
+  let _busy = false;
+  let _guideOpen = false;
+
+  const QUICK_PROMPTS = [
+    { icon: '🐛', label: 'Report a bug', msg: "I found a bug in the tool. Let me describe what's happening:" },
+    { icon: '📖', label: 'How to log a ticket', msg: "How do I log a ticket using the Tickets page?" },
+    { icon: '📅', label: 'Roster help', msg: "How do I use the Roster page to mark attendance?" },
+    { icon: '⏰', label: 'Break Bot help', msg: "How does the Break Bot work for agents?" },
+    { icon: '🌙', label: 'Weekend mode', msg: "How does Weekend Support Mode work in the ticket logger?" },
+    { icon: '🔍', label: 'Ticket not found', msg: "My ticket number is not being found in Zoho Desk. What should I do?" },
+  ];
+
+  const GUIDE_FEATURES = [
+    { icon: '📊', name: 'Live Dashboard', color: 'rgba(249,115,22,.1)', desc: 'Real-time agent status, active calls, break monitoring, queue health at a glance' },
+    { icon: '⏰', name: 'Break Bot', color: 'rgba(33,170,224,.1)', desc: 'Start/end breaks as an agent. Supervisor sees all break activity live. Shift-aware.' },
+    { icon: '🎫', name: 'Ticket Logger', color: 'rgba(139,92,246,.1)', desc: 'Log tickets to Google Sheets with Zoho lookup. Weekend mode logs to a second sheet automatically.' },
+    { icon: '📅', name: 'Roster / Attendance', color: 'rgba(16,185,129,.1)', desc: 'Monthly calendar. Left-click = cycle status. Right-click = full palette. Bulk fill by column.' },
+    { icon: '📈', name: 'Reports', color: 'rgba(245,158,11,.1)', desc: 'Productivity analytics, attendance trends, ticket volume charts by agent and channel.' },
+    { icon: '✍️', name: 'AI Writer', color: 'rgba(99,102,241,.1)', desc: 'Draft emails & messages. Transforms: formal, shorter, empathetic, bullets, subject lines.' },
+    { icon: '🗓️', name: 'Schedule', color: 'rgba(6,182,212,.1)', desc: 'View and manage agent shift schedules. Set shift times, days off, and schedule changes.' },
+    { icon: '🧠', name: 'Brain (you're here)', color: 'rgba(249,115,22,.1)', desc: 'Ask anything about the tool. Report bugs. Get step-by-step guidance. Available 24/7.' },
+  ];
+
+  function _ts() {
+    return new Intl.DateTimeFormat('en-US', { hour:'numeric', minute:'2-digit', hour12:true }).format(new Date());
+  }
+
+  function _escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function _mdToHtml(text) {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n/g, '<br>')
+      .replace(/
+/g, '<br>');
+  }
+
+  function render() {
+    const root = document.getElementById('brain-root');
+    if (!root) return;
+
+    root.innerHTML = `
+      <div class="brain-header">
+        <div class="brain-avatar">
+          <div class="brain-avatar-pulse"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px">
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+          </svg>
+        </div>
+        <div class="brain-header-text">
+          <div class="brain-title">Brain</div>
+          <div class="brain-tag"><span class="brain-tag-dot"></span>Brain is Braining</div>
+        </div>
+        <button class="brain-guide-btn" onclick="Brain.toggleGuide()">📖 Tool Guide</button>
+      </div>
+
+      <div class="brain-quick">
+        ${QUICK_PROMPTS.map(q => `<button class="brain-quick-btn" onclick="Brain.quickSend(${JSON.stringify(q.msg)})">${q.icon} ${q.label}</button>`).join('')}
+      </div>
+
+      <div class="brain-messages" id="brain-msgs">
+        ${_messages.length === 0 ? _welcomeHTML() : _messages.map(_renderMsg).join('')}
+      </div>
+
+      <div class="brain-input-wrap">
+        <textarea class="brain-input" id="brain-input" rows="1"
+          placeholder="Ask anything about the tool, report a bug, or describe an issue…"
+          onkeydown="Brain.onKey(event)"
+          oninput="Brain.autoResize(this)"></textarea>
+        <button class="brain-send" id="brain-send" onclick="Brain.send()" title="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+
+      ${_guideOpen ? _renderGuide() : ''}
+    `;
+    _scrollBottom();
+  }
+
+  function _welcomeHTML() {
+    return `
+      <div class="brain-msg" style="flex-direction:column;align-items:center;padding:30px 0 10px;">
+        <div style="width:60px;height:60px;border-radius:18px;background:linear-gradient(135deg,#F97316,#FB923C);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(249,115,22,.3);margin-bottom:14px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" style="width:30px;height:30px"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+        </div>
+        <div style="font-size:18px;font-weight:800;color:#0F172A;margin-bottom:6px;">Hey, I'm Brain 👋</div>
+        <div style="font-size:13px;color:#64748B;text-align:center;max-width:340px;line-height:1.6;">
+          I know everything about this tool. Ask me how something works, report a bug, or describe any issue — I'll help you fix it.
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
+          <div style="padding:5px 12px;background:#FFF7ED;border:1px solid rgba(249,115,22,.25);border-radius:99px;font-size:11px;font-weight:600;color:#C2410C;">🔍 Diagnose issues</div>
+          <div style="padding:5px 12px;background:#EFF6FF;border:1px solid rgba(33,170,224,.25);border-radius:99px;font-size:11px;font-weight:600;color:#1D4ED8;">📖 Tool guide</div>
+          <div style="padding:5px 12px;background:#F0FDF4;border:1px solid rgba(16,185,129,.25);border-radius:99px;font-size:11px;font-weight:600;color:#065F46;">✅ Step-by-step help</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderMsg(m) {
+    const isAI = m.role === 'assistant';
+    return `
+      <div class="brain-msg ${isAI ? '' : 'brain-msg-user'}">
+        <div class="brain-msg-avatar ${isAI ? 'brain-msg-avatar-ai' : 'brain-msg-avatar-user'}">
+          ${isAI ? `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>` : ''}
+        </div>
+        <div>
+          <div class="brain-msg-bubble ${isAI ? 'brain-msg-bubble-ai' : 'brain-msg-bubble-user'}">${isAI ? _mdToHtml(m.content) : _escHtml(m.content)}</div>
+          <div class="brain-msg-time">${m.time || ''}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _renderTyping() {
+    const msgs = document.getElementById('brain-msgs');
+    if (!msgs) return;
+    const el = document.createElement('div');
+    el.className = 'brain-msg';
+    el.id = 'brain-typing-indicator';
+    el.innerHTML = `
+      <div class="brain-msg-avatar brain-msg-avatar-ai">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+      </div>
+      <div class="brain-msg-bubble brain-msg-bubble-ai brain-typing"><span></span><span></span><span></span></div>
+    `;
+    msgs.appendChild(el);
+    _scrollBottom();
+  }
+
+  function _removeTyping() {
+    document.getElementById('brain-typing-indicator')?.remove();
+  }
+
+  function _renderGuide() {
+    return `
+      <div class="brain-guide-panel" id="brain-guide">
+        <div class="brain-guide-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" style="width:18px;height:18px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span class="brain-guide-title">Adit Agent Monitor — Tool Guide</span>
+          <button class="brain-guide-close" onclick="Brain.toggleGuide()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="brain-guide-body">
+          <div class="brain-guide-section">
+            <div class="brain-guide-section-title">Features</div>
+            ${GUIDE_FEATURES.map(f => `
+              <div class="brain-feature" onclick="Brain.askAbout('${f.name}')">
+                <div class="brain-feature-icon" style="background:${f.color}">${f.icon}</div>
+                <div>
+                  <div class="brain-feature-name">${f.name}</div>
+                  <div class="brain-feature-desc">${f.desc}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="brain-guide-section">
+            <div class="brain-guide-section-title">Quick Tips</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              ${[
+                ['Left-click a roster cell', 'Cycles P → WFH → OFF → clear'],
+                ['Right-click a roster cell', 'Opens full status palette (PL, UPL, SL, NCNS, etc.)'],
+                ['Click date header in roster', 'Bulk-fill all empty cells in that column'],
+                ['Weekend date in ticket logger', 'Automatically shows weekend fields + logs to 2 sheets'],
+                ['AI Suggest in ticket notes', 'Fetches Zoho ticket conversation and generates a summary'],
+                ['Ctrl+Shift+R', 'Hard refresh — clears cache and loads latest version'],
+                ['Brain tag "Brain is Braining"', 'Brain is active and monitoring for issues'],
+              ].map(([tip, desc]) => `
+                <div style="display:flex;gap:10px;padding:9px 12px;background:#F8FAFC;border:1px solid #E5E9F0;border-radius:10px;">
+                  <div style="font-size:12px;font-weight:700;color:#F97316;min-width:160px;flex-shrink:0;">${tip}</div>
+                  <div style="font-size:12px;color:#475569;">${desc}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          <div class="brain-guide-section">
+            <div class="brain-guide-section-title">Common Issues</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              ${[
+                ['Ticket not found in Zoho', 'Check the ticket number is correct. Ticket may be very old or in a different Zoho org. Try Retry button.'],
+                ['Weekend fields not showing', 'Select a Saturday or Sunday date in the date picker — today's date must be a weekend.'],
+                ['Wrong page after refresh', 'Hard refresh (Ctrl+Shift+R). Clears cached service worker.'],
+                ['Roster not saving', 'Changes auto-save after 600ms. Check your internet connection.'],
+              ].map(([issue, fix]) => `
+                <div style="padding:10px 14px;background:#FFF8F4;border:1px solid rgba(249,115,22,.2);border-radius:10px;cursor:pointer;" onclick="Brain.askAbout('${issue}')">
+                  <div style="font-size:12px;font-weight:700;color:#C2410C;margin-bottom:3px;">⚠ ${issue}</div>
+                  <div style="font-size:11.5px;color:#92400E;">${fix}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function _scrollBottom() {
+    setTimeout(() => {
+      const msgs = document.getElementById('brain-msgs');
+      if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    }, 50);
+  }
+
+  async function _callAI(userMsg) {
+    _messages.push({ role: 'user', content: userMsg, time: _ts() });
+    _busy = true;
+    render();
+    _renderTyping();
+
+    const sendBtn = document.getElementById('brain-send');
+    if (sendBtn) sendBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/brain/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          messages: _messages.map(m => ({ role: m.role, content: m.content })),
+          context: `User: ${(typeof currentUser !== 'undefined' ? currentUser : 'unknown')}, Role: ${(typeof currentRole !== 'undefined' ? currentRole : 'unknown')}, View: ${(typeof currentViewMode !== 'undefined' ? currentViewMode : 'unknown')}`
+        })
+      });
+      const data = await res.json();
+      _removeTyping();
+      if (data.success) {
+        _messages.push({ role: 'assistant', content: data.reply, time: _ts() });
+      } else {
+        _messages.push({ role: 'assistant', content: "Sorry, I'm having trouble connecting right now. Please try again in a moment.", time: _ts() });
+      }
+    } catch(e) {
+      _removeTyping();
+      _messages.push({ role: 'assistant', content: "Connection issue — please check your internet and try again.", time: _ts() });
+    }
+    _busy = false;
+    render();
+    if (sendBtn) sendBtn.disabled = false;
+  }
+
+  return {
+    init() {
+      render();
+    },
+    send() {
+      if (_busy) return;
+      const inp = document.getElementById('brain-input');
+      const msg = (inp?.value || '').trim();
+      if (!msg) return;
+      inp.value = '';
+      inp.style.height = '';
+      _callAI(msg);
+    },
+    quickSend(msg) {
+      if (_busy) return;
+      _callAI(msg);
+    },
+    askAbout(topic) {
+      _guideOpen = false;
+      render();
+      setTimeout(() => _callAI(`Tell me about the ${topic} feature — how does it work and what can I do with it?`), 100);
+    },
+    onKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.send();
+      }
+    },
+    autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    },
+    toggleGuide() {
+      _guideOpen = !_guideOpen;
+      render();
+    },
+  };
+})();
+
+// Hook Brain into the switchAgentSection routing
+const _origSwitchAgentSection = window.switchAgentSection || function(){};
+window.switchAgentSection = function(section, el) {
+  _origSwitchAgentSection.call(this, section, el);
+  if (section === 'brain') {
+    setTimeout(() => Brain.init(), 80);
+  }
+};
+
 
 // ── CALL LOGS ──────────────────────────────────────────────────────────
 let clAllRows=[]; // full dataset for client-side filtering
@@ -25151,6 +25460,221 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   85%  { width: 88%; }
   100% { width: 92%; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   BRAIN — AI Tool Assistant
+══════════════════════════════════════════════════════════ */
+#agent-section-brain { display:flex; flex-direction:column; height:100%; background:#F4F6FA; }
+#brain-root { display:flex; flex-direction:column; height:100%; max-height:calc(100vh - 120px); }
+
+/* Header */
+.brain-header {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #0F2744 100%);
+  padding: 18px 24px 16px;
+  display: flex; align-items: center; gap: 14px;
+  flex-shrink: 0;
+  position: relative; overflow: hidden;
+}
+.brain-header::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 70% 50%, rgba(249,115,22,.12), transparent 60%);
+  pointer-events: none;
+}
+.brain-avatar {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: linear-gradient(135deg, #F97316, #FB923C);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(249,115,22,.40);
+  position: relative;
+}
+.brain-avatar-pulse {
+  position: absolute; inset: -4px; border-radius: 18px;
+  border: 2px solid rgba(249,115,22,.35);
+  animation: brain-pulse 2.2s ease-in-out infinite;
+}
+@keyframes brain-pulse {
+  0%, 100% { opacity: .6; transform: scale(1); }
+  50% { opacity: 0; transform: scale(1.12); }
+}
+.brain-header-text { flex: 1; }
+.brain-title { font-size: 17px; font-weight: 800; color: #fff; letter-spacing: -.02em; line-height: 1; }
+.brain-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 4px; padding: 2px 9px;
+  background: rgba(249,115,22,.18); border: 1px solid rgba(249,115,22,.35);
+  border-radius: 99px; font-size: 9.5px; font-weight: 700;
+  color: #FB923C; letter-spacing: .06em; text-transform: uppercase;
+}
+.brain-tag-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #F97316;
+  animation: brain-blink 1.4s ease-in-out infinite;
+}
+@keyframes brain-blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+.brain-guide-btn {
+  padding: 6px 14px; border-radius: 8px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+  color: rgba(255,255,255,.85); font-size: 11.5px; font-weight: 600;
+  cursor: pointer; font-family: 'Poppins',sans-serif;
+  transition: all .15s;
+}
+.brain-guide-btn:hover { background: rgba(255,255,255,.18); }
+
+/* Quick actions */
+.brain-quick {
+  display: flex; gap: 6px; padding: 12px 16px 8px; flex-wrap: wrap;
+  background: #fff; border-bottom: 1px solid #E5E9F0; flex-shrink: 0;
+}
+.brain-quick-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 999px;
+  border: 1.5px solid #E5E9F0; background: #F8FAFC;
+  color: #475569; font-size: 11px; font-weight: 500;
+  cursor: pointer; font-family: 'Poppins',sans-serif;
+  transition: all .14s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap;
+}
+.brain-quick-btn:hover {
+  border-color: #F97316; color: #F97316;
+  background: rgba(249,115,22,.06);
+  transform: translateY(-1px);
+}
+
+/* Messages */
+.brain-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+  scroll-behavior: smooth;
+}
+.brain-messages::-webkit-scrollbar { width: 5px; }
+.brain-messages::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+
+.brain-msg { display: flex; gap: 10px; animation: brain-msg-in .22s ease both; }
+@keyframes brain-msg-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+.brain-msg-user { flex-direction: row-reverse; }
+.brain-msg-avatar {
+  width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.brain-msg-avatar-ai { background: linear-gradient(135deg,#F97316,#FB923C); color:#fff; }
+.brain-msg-avatar-user { background: #E2E8F0; color: #475569; font-size: 11px; }
+
+.brain-msg-bubble {
+  max-width: 82%; padding: 10px 14px; border-radius: 14px;
+  font-size: 13px; line-height: 1.6; font-family: 'Poppins',sans-serif;
+}
+.brain-msg-bubble-ai {
+  background: #fff; border: 1px solid #E5E9F0;
+  color: #0F172A; border-radius: 4px 14px 14px 14px;
+  box-shadow: 0 1px 4px rgba(15,23,42,.06);
+}
+.brain-msg-bubble-user {
+  background: linear-gradient(135deg,#F97316,#FB923C);
+  color: #fff; border-radius: 14px 4px 14px 14px;
+  box-shadow: 0 2px 8px rgba(249,115,22,.25);
+}
+.brain-msg-bubble ul { margin: 6px 0 2px 16px; padding: 0; }
+.brain-msg-bubble li { margin-bottom: 3px; }
+.brain-msg-bubble strong { font-weight: 700; }
+.brain-msg-bubble code {
+  background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 4px;
+  font-family: monospace; font-size: 11.5px;
+}
+.brain-msg-time { font-size: 9.5px; color: #94A3B8; margin-top: 3px; text-align: right; }
+
+/* Typing indicator */
+.brain-typing { display: flex; gap: 4px; align-items: center; padding: 10px 14px; }
+.brain-typing span {
+  width: 7px; height: 7px; border-radius: 50%; background: #CBD5E1;
+  animation: brain-type .9s ease-in-out infinite;
+}
+.brain-typing span:nth-child(2) { animation-delay: .15s; }
+.brain-typing span:nth-child(3) { animation-delay: .30s; }
+@keyframes brain-type { 0%,60%,100%{transform:translateY(0);background:#CBD5E1} 30%{transform:translateY(-6px);background:#F97316} }
+
+/* Input */
+.brain-input-wrap {
+  display: flex; gap: 8px; padding: 12px 16px;
+  background: #fff; border-top: 1px solid #E5E9F0; flex-shrink: 0;
+  align-items: flex-end;
+}
+.brain-input {
+  flex: 1; padding: 10px 14px; border-radius: 12px;
+  border: 1.5px solid #E5E9F0; background: #F8FAFC;
+  font-size: 13px; font-family: 'Poppins',sans-serif; color: #0F172A;
+  outline: none; resize: none; max-height: 120px; min-height: 40px;
+  transition: border-color .15s, box-shadow .15s;
+  line-height: 1.5;
+}
+.brain-input:focus {
+  border-color: #F97316;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.12);
+  background: #fff;
+}
+.brain-input::placeholder { color: #94A3B8; }
+.brain-send {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: linear-gradient(135deg,#F97316,#FB923C);
+  border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(249,115,22,.30);
+  transition: all .15s;
+}
+.brain-send:hover { filter: brightness(1.08); transform: scale(1.05); }
+.brain-send:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.brain-send svg { color: #fff; }
+
+/* Guide panel */
+.brain-guide-panel {
+  position: absolute; inset: 0; background: #fff; z-index: 10;
+  display: flex; flex-direction: column;
+  animation: brain-guide-in .25s ease both;
+}
+@keyframes brain-guide-in { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+.brain-guide-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 20px; border-bottom: 1px solid #E5E9F0;
+  background: #F8FAFC;
+}
+.brain-guide-title { font-size: 15px; font-weight: 800; color: #0F172A; flex: 1; }
+.brain-guide-close {
+  width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid #E5E9F0; background: #fff;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #64748B; transition: all .14s;
+}
+.brain-guide-close:hover { background: #F1F5F9; }
+.brain-guide-body { flex: 1; overflow-y: auto; padding: 20px; }
+.brain-guide-section { margin-bottom: 24px; }
+.brain-guide-section-title {
+  font-size: 11px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: #F97316; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 8px;
+}
+.brain-guide-section-title::after {
+  content: ''; flex: 1; height: 1px; background: rgba(249,115,22,.2);
+}
+.brain-feature {
+  display: flex; gap: 12px; padding: 10px 14px;
+  background: #F8FAFC; border: 1px solid #E5E9F0;
+  border-radius: 10px; margin-bottom: 7px; cursor: pointer;
+  transition: all .15s;
+}
+.brain-feature:hover {
+  border-color: #F97316; background: rgba(249,115,22,.04);
+  transform: translateX(2px);
+}
+.brain-feature-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 16px;
+}
+.brain-feature-name { font-size: 13px; font-weight: 600; color: #0F172A; }
+.brain-feature-desc { font-size: 11.5px; color: #64748B; margin-top: 1px; line-height: 1.4; }
+
 </style>
 
 <script id="ui-engine-js">
