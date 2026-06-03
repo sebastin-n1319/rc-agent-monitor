@@ -1294,19 +1294,27 @@ app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
       let p; try { p = JSON.parse(t); } catch(e) { p = t.slice(0,300); }
       return { status: r.status, keys: typeof p==='object'?Object.keys(p):[], sample: JSON.stringify(p).slice(0,400) };
     };
-    res.json({ rawId, strategies: {
+    // Also fetch page0 to show actual ticket numbers for calibration
+    const page0 = await fetch(`${ZOHO_API_BASE}/tickets?from=0&limit=10`, { headers: H });
+    const page0Data = await page0.json().catch(()=>({}));
+    const page0Numbers = (page0Data.data||[]).map(t=>t.ticketNumber);
+    const newestNum = page0Numbers[0] ? parseInt(page0Numbers[0], 10) : 0;
+    const estimatedOffset = Math.max(0, newestNum - parseInt(rawId,10) - 50);
+
+    res.json({ rawId, newestTicketNum: newestNum, estimatedOffset, page0TicketNumbers: page0Numbers, strategies: {
       // Test what params the /tickets endpoint accepts
       statusClosed:   await test('statusClosed',   `${ZOHO_API_BASE}/tickets?status=closed&limit=5`),
       statusAll:      await test('statusAll',       `${ZOHO_API_BASE}/tickets?status=all&limit=5`),
-      sortDesc:       await test('sortDesc',         `${ZOHO_API_BASE}/tickets?sortBy=modifiedTime&order=desc&limit=5`),
       fromParam:      await test('fromParam',        `${ZOHO_API_BASE}/tickets?from=0&limit=5`),
-      // Test search with different param names
+      fromEstimated:  await test('fromEstimated',   `${ZOHO_API_BASE}/tickets?from=${estimatedOffset}&limit=10`),
+      // Test search endpoints
       keyword:        await test('keyword',         `${ZOHO_API_BASE}/tickets/search?keyword=${encodeURIComponent(rawId)}&limit=10`),
+      searchTicketNum:await test('searchTicketNum', `${ZOHO_API_BASE}/tickets/search?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
       query:          await test('query',           `${ZOHO_API_BASE}/tickets/search?query=${encodeURIComponent(rawId)}&limit=10`),
       searchNoParams: await test('searchNoParams',  `${ZOHO_API_BASE}/tickets/search?limit=5`),
-      // View-based search
-      viewSearch:     await test('viewSearch',      `${ZOHO_API_BASE}/views/tickets?limit=5`),
       globalTicket:   await test('globalTicket',    `${ZOHO_API_BASE}/search?module=ticket&limit=5&searchStr=${encodeURIComponent(rawId)}`),
+      // Direct by internal ticketNumber param
+      directTicketNum:await test('directTicketNum', `${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
     }});
   } catch(e) { res.json({ error: e.message }); }
 });
@@ -1328,9 +1336,23 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
         const r = await fetch(url, { headers });
         if (!r.ok) return null;
         const d = await r.json();
-        return (d.data || []).find(t => String(t.ticketNumber) === rawId) || null;
+        // Handle both list and search result shapes
+        const list = d.data || d.tickets || (Array.isArray(d) ? d : []);
+        return list.find(t => String(t.ticketNumber) === rawId) || null;
       } catch(e) { return null; }
     };
+
+    // STRATEGY 0: Try Zoho search endpoints first — instant if they work
+    try {
+      const searchResults = await Promise.all([
+        checkPage(`${ZOHO_API_BASE}/tickets/search?keyword=${encodeURIComponent(rawId)}&limit=10`),
+        checkPage(`${ZOHO_API_BASE}/tickets/search?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
+        checkPage(`${ZOHO_API_BASE}/search?module=ticket&searchStr=${encodeURIComponent(rawId)}&limit=10`),
+        checkPage(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
+      ]);
+      ticket = searchResults.find(t => t != null) || null;
+      if (ticket) console.log(`✅ Zoho #${rawId} found via search endpoint`);
+    } catch(e) { /* search not available */ }
 
     // Helper: fetch page and return { ticket, newestNum, list }
     const fetchPage = async (url) => {
