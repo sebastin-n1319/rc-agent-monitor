@@ -190,6 +190,7 @@
     if (!root) { console.warn('[Brain] brain-panel not found'); return; }
     root.style.display = 'flex';
     root.style.flexDirection = 'column';
+    root.style.color = '#fff'; /* ensure text visible regardless of CSS class state */
 
     var chipsHTML = CHIPS.map(function(c) {
       return '<button class="brain-chip" onclick="Brain.quick(' + JSON.stringify(c.m) + ')">' + c.e + ' ' + c.l + '</button>';
@@ -324,6 +325,8 @@
 
   /* ── Open/close ─────────────────────────────────────── */
   function openPanel() {
+    // Don't open on login screen
+    if (document.documentElement.classList.contains('app-authenticated') === false && !document.getElementById('mainApp')) return;
     isOpen = true;
     var panel = document.getElementById('brain-panel');
     var fab   = document.getElementById('brain-fab');
