@@ -1313,8 +1313,13 @@ app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
       query:          await test('query',           `${ZOHO_API_BASE}/tickets/search?query=${encodeURIComponent(rawId)}&limit=10`),
       searchNoParams: await test('searchNoParams',  `${ZOHO_API_BASE}/tickets/search?limit=5`),
       globalTicket:   await test('globalTicket',    `${ZOHO_API_BASE}/search?module=ticket&limit=5&searchStr=${encodeURIComponent(rawId)}`),
-      // Direct by internal ticketNumber param
       directTicketNum:await test('directTicketNum', `${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
+      // List all departments — ticket might be in a different dept not returned by default
+      departments:    await test('departments',     `${ZOHO_API_BASE}/departments?limit=50`),
+      // Try open status explicitly
+      openPage0:      await test('openPage0',        `${ZOHO_API_BASE}/tickets?status=open&limit=5&from=0`),
+      // Try views
+      myOpenTickets:  await test('myOpenTickets',   `${ZOHO_API_BASE}/tickets/myopencount`),
     }});
   } catch(e) { res.json({ error: e.message }); }
 });
@@ -1342,7 +1347,28 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       } catch(e) { return null; }
     };
 
-    // STRATEGY 0A: Direct internal ID lookup using linear interpolation
+    // STRATEGY 0A: Fetch all departments and try department-scoped ticket lists
+    // Tickets in different Zoho departments are NOT returned by the default /tickets endpoint
+    if (!ticket) {
+      try {
+        const deptR = await fetch(`${ZOHO_API_BASE}/departments?limit=50`, { headers });
+        if (deptR.ok) {
+          const deptData = await deptR.json();
+          const depts = (deptData.data || []).map(d => d.id).filter(Boolean);
+          console.log(`🔍 Zoho #${rawId} — found ${depts.length} departments, searching each`);
+          // For each department, check first page of open + closed tickets
+          const deptResults = await Promise.all(depts.flatMap(deptId => [
+            checkPage(`${ZOHO_API_BASE}/tickets?status=open&departmentId=${deptId}&limit=100&from=0`),
+            checkPage(`${ZOHO_API_BASE}/tickets?status=closed&departmentId=${deptId}&limit=100&from=0`),
+            checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&departmentId=${deptId}&limit=100&from=0`),
+          ]));
+          ticket = deptResults.find(t => t != null) || null;
+          if (ticket) console.log(`✅ Found #${rawId} via department-scoped search`);
+        }
+      } catch(e) { console.log('dept search error:', e.message); }
+    }
+
+    // STRATEGY 0B: Direct internal ID lookup using linear interpolation
     // Known mappings from debug: ticket# → Zoho internal ID (both sorted roughly linearly)
     // Known A: ticketNumber 293746 → id 197800000322132001
     // Known B: ticketNumber 366188 → id 197800000422516911
@@ -1353,9 +1379,10 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
         const slope = (knownBId - knownAId) / (knownBTNum - knownATNum); // BigInt division
         const targetBig = BigInt(targetNum);
         const estId = knownAId + slope * (targetBig - knownATNum);
-        // Try estimate ± range in parallel — one direct GET per ID (O(1) lookup)
+        // Try estimate ± wide range in parallel — one direct GET per ID (O(1) lookup)
         const offsets = [0n,500n,-500n,1000n,-1000n,2000n,-2000n,5000n,-5000n,
-                         10000n,-10000n,20000n,-20000n,50000n,-50000n,100000n,-100000n];
+                         10000n,-10000n,20000n,-20000n,50000n,-50000n,100000n,-100000n,
+                         200000n,-200000n,500000n,-500000n];
         const directResults = await Promise.all(offsets.map(async (o) => {
           try {
             const r = await fetch(`${ZOHO_API_BASE}/tickets/${String(estId + o)}`, { headers });
