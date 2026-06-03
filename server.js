@@ -1367,69 +1367,67 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       } catch(e) { return { ticket: null, newestNum: 0, list: [] }; }
     };
 
-    // ── PHASE 1: Get page-0 of ALL status types simultaneously ──────────
-    // This gives us: (a) ticket if it's near the top, (b) newest numbers for calibration
-    // CRITICAL: each status type has its own independent sort order and offset space
-    console.log(`🔍 Zoho lookup #${rawId} — Phase 1 parallel head-fetch`);
-    const [closedHead, openHead, onholdHead] = await Promise.all([
+    // ── PHASE 1: Parallel first-page of all status queues ────────────────
+    // Also fetches newest ticket number for calibration (closed only — it's reliably sorted newest-first)
+    console.log(`🔍 Zoho lookup #${rawId} — Phase 1`);
+    const [closedHead, openHead] = await Promise.all([
       fetchPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=0`),
       fetchPage(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=0`),
-      fetchPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=0`),
     ]);
+    // Onhold: scan first 3000 tickets exhaustively in parallel —
+    // onhold sort order is UNKNOWN so offset math is unreliable; queues are small enough to brute-force
+    const onholdPages = Array.from({length:30}, (_,i) => i * 100); // from=0 to from=2900
+    const onholdResults = await Promise.all(
+      onholdPages.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=${from}`))
+    );
+    const onholdTicket = onholdResults.find(t => t != null) || null;
+
     if (closedHead.ticket) ticket = closedHead.ticket;
     else if (openHead.ticket) ticket = openHead.ticket;
-    else if (onholdHead.ticket) ticket = onholdHead.ticket;
+    else if (onholdTicket) ticket = onholdTicket;
 
-    // ── PHASE 2: Calibrated parallel scan across ALL 3 status queues ─────
-    // Each queue (closed/open/onhold) has its own newest ticket number
-    // and its own offset space — must calibrate each independently
+    // ── PHASE 2: Calibrated closed + open fan-out ─────────────────────────
+    // ONLY closed is calibrated (confirmed newest-first sort by ticketNumber).
+    // Open is also scanned exhaustively — typically small queue.
     if (!ticket) {
-      const makeFan = (newestNum, center) => {
-        if (newestNum <= 0) return [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000];
-        const s = new Set();
-        // ±1000 tickets around estimate in steps of 100 — covers gaps/deletions
-        for (let o = Math.max(100, center - 1000); o <= center + 1100; o += 100) s.add(o);
-        [100, 200, 300, 400, 500].forEach(o => s.add(o)); // safety net
-        return [...s].sort((a, b) => a - b);
-      };
+      const newestClosed = closedHead.newestNum || 0;
+      const closedEst    = Math.max(0, newestClosed - targetNum - 50);
 
-      const closedEst  = Math.max(0, (closedHead.newestNum  || 0) - targetNum - 50);
-      const openEst    = Math.max(0, (openHead.newestNum    || 0) - targetNum - 50);
-      const onholdEst  = Math.max(0, (onholdHead.newestNum  || 0) - targetNum - 50);
+      // Fan: ±1500 tickets around estimate in steps of 100
+      const closedFan = new Set();
+      for (let o = Math.max(0, closedEst - 1500); o <= closedEst + 1600; o += 100) closedFan.add(o);
+      [0,100,200,300,400,500].forEach(o => closedFan.add(o)); // safety net
+      closedFan.delete(0); // already done in Phase 1
 
-      const closedFan  = makeFan(closedHead.newestNum,  closedEst);
-      const openFan    = makeFan(openHead.newestNum,    openEst).slice(0, 10);
-      const onholdFan  = makeFan(onholdHead.newestNum,  onholdEst); // full fan — tickets can be here!
+      // Open: scan up to 2000 tickets (20 pages) exhaustively — open queues are typically small
+      const openFan = Array.from({length:19}, (_,i) => (i+1) * 100); // from=100 to from=1900
 
-      console.log(`🔍 Zoho #${rawId} — closed est=${closedEst}(${closedFan.length}pg) open est=${openEst}(${openFan.length}pg) onhold est=${onholdEst}(${onholdFan.length}pg)`);
+      console.log(`🔍 Zoho #${rawId} — newestClosed=${newestClosed} closedEst=${closedEst} fan=${[...closedFan].length}pg`);
 
-      // Fire every page of every status in parallel
       const phase2 = await Promise.all([
-        ...closedFan.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)),
-        ...openFan.map(from   => checkPage(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=${from}`)),
-        ...onholdFan.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=${from}`)),
+        ...[...closedFan].sort((a,b)=>a-b).map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)),
+        ...openFan.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=${from}`)),
       ]);
       ticket = phase2.find(t => t != null) || null;
     }
 
-    // ── PHASE 3: Wider deep scan if still not found ───────────────────────
+    // ── PHASE 3: Wide closed deep scan (if ticket is very old) ────────────
     if (!ticket) {
-      const closedEst = Math.max(0, (closedHead.newestNum || 0) - targetNum - 50);
-      const onholdEst = Math.max(0, (onholdHead.newestNum || 0) - targetNum - 50);
+      const newestClosed = closedHead.newestNum || 0;
+      const closedEst = Math.max(0, newestClosed - targetNum - 50);
+      const phase2Start = Math.max(0, closedEst - 1500);
+      const phase2End   = closedEst + 1600;
+      // Scan ±6000 beyond Phase 2 range
       const deepOffsets = new Set();
-      // ±4000 around each estimate
-      for (const center of [closedEst, onholdEst]) {
-        for (let o = Math.max(0, center - 4000); o <= center + 4500; o += 100) deepOffsets.add(o);
-      }
-      // Remove Phase 2 covered range (±1000 around each estimate)
-      for (const center of [closedEst, onholdEst]) {
-        for (let o = center - 1000; o <= center + 1100; o += 100) deepOffsets.delete(o);
-      }
-      const deep = [...deepOffsets].sort((a,b)=>a-b);
-      console.log(`🔍 Zoho #${rawId} — Phase 3 deep: ${deep.length} additional pages`);
+      for (let o = Math.max(0, closedEst - 6000); o < phase2Start; o += 100) deepOffsets.add(o);
+      for (let o = phase2End + 100; o <= closedEst + 6500; o += 100) deepOffsets.add(o);
+      // Also scan onhold pages 3000-6000 (in case queue is large)
+      const deepOnhold = Array.from({length:30}, (_,i) => (i+30) * 100);
+
+      console.log(`🔍 Zoho #${rawId} — Phase 3: ${deepOffsets.size} closed + ${deepOnhold.length} onhold pages`);
       const phase3 = await Promise.all([
-        ...deep.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)),
-        ...deep.slice(0,20).map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=${from}`)),
+        ...[...deepOffsets].sort((a,b)=>a-b).map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)),
+        ...deepOnhold.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=${from}`)),
       ]);
       ticket = phase3.find(t => t != null) || null;
     }
