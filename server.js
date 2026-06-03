@@ -1396,7 +1396,27 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       } catch(e) { console.log('direct ID lookup error:', e.message); }
     }
 
-    // STRATEGY 0B: Search endpoints (most return 422 but worth trying)
+    // ════════════════════════════════════════════════════════════════
+    // KEY DISCOVERY from debug: GET /tickets (no status) sorts by LAST MODIFIED DESC
+    // Ticket #363470 appears at position 8 of page 0 of the no-status list!
+    // This means recently-active tickets (just handled, on-hold, replied-to) are near the top.
+    // This is the MOST RELIABLE strategy — scan first ~1000 of the no-status last-modified list.
+    // ════════════════════════════════════════════════════════════════
+
+    // STRATEGY 1: No-status last-modified-DESC scan (fastest for recently active tickets)
+    if (!ticket) {
+      try {
+        const noStatusPages = await Promise.all(
+          [0, 100, 200, 300, 400, 500, 600, 700, 800, 900].map(from =>
+            checkPage(`${ZOHO_API_BASE}/tickets?limit=100&from=${from}`)
+          )
+        );
+        ticket = noStatusPages.find(t => t != null) || null;
+        if (ticket) console.log(`✅ Zoho #${rawId} found in no-status last-modified list`);
+      } catch(e) {}
+    }
+
+    // STRATEGY 2: Search endpoints (most return 422 but worth trying)
     if (!ticket) {
       try {
         const searchResults = await Promise.all([
