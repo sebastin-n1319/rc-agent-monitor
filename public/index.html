@@ -10699,122 +10699,7 @@ tbody tr:hover td{
     </div><!-- /#debug-panel -->
   </div><!-- /#tab-debug -->
 
-</div><!-- /#adminView -->
 
-<!-- Bonus Results Notification -->
-<!-- Weekend Support Announcement — shown for 10 days from May 1 2026 -->
-<div id="weekend-announce-overlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
-  <div style="max-width:480px;width:100%;background:#0b1221;border:1px solid rgba(99,179,237,.25);border-radius:20px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.8);margin:auto;">
-    <!-- Blue accent bar -->
-    <div style="height:3px;background:linear-gradient(90deg,transparent,#3b82f6,#60a5fa,#3b82f6,transparent);"></div>
-    <div style="padding:26px 26px 22px;">
-      <!-- Header -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
-        <div style="width:42px;height:42px;border-radius:12px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📣</div>
-        <div>
-          <div style="font-size:13px;font-weight:800;color:#93c5fd;letter-spacing:.01em;">Team Announcement</div>
-          <div style="font-size:11px;color:rgba(148,163,184,.6);margin-top:1px">From Ronnie · Starting this week</div>
-        </div>
-        <button onclick="closeWeekendAnnounce()" style="margin-left:auto;background:none;border:none;color:rgba(148,163,184,.5);font-size:20px;cursor:pointer;line-height:1;padding:4px 6px;flex-shrink:0;">×</button>
-      </div>
-
-      <!-- Greeting -->
-      <p style="font-size:14px;color:rgba(226,232,240,.9);line-height:1.65;margin-bottom:16px;">
-        Hey team 👋 Starting this week, every <strong style="color:#93c5fd;">Friday</strong>, Ronnie will check in to see who's available for <strong style="color:#93c5fd;">weekend support</strong> (Saturday or Sunday, anytime between <strong style="color:#93c5fd;">7 AM – 7 PM CST</strong>).
-      </p>
-
-      <!-- Key points -->
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
-        <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 12px;">
-          <span style="font-size:16px;flex-shrink:0;margin-top:1px">✅</span>
-          <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;"><strong style="color:#86efac">Completely voluntary</strong> — no pressure at all</span>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 12px;">
-          <span style="font-size:16px;flex-shrink:0;margin-top:1px">💰</span>
-          <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;">Any weekend shift counts as <strong style="color:#fde68a">overtime</strong> under our existing policy</span>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px 12px;">
-          <span style="flex-shrink:0;margin-top:1px;display:flex;align-items:center;"><svg viewBox="0 0 16 16" fill="none" stroke="#93c5fd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg></span>
-          <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;">Just reply with your preferred shift window <strong style="color:#93c5fd">when Ronnie pings you Fridays</strong></span>
-        </div>
-      </div>
-
-      <!-- Note -->
-      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;margin-bottom:18px;border-left:3px solid rgba(248,113,113,.5);">
-        <p style="font-size:12px;color:rgba(226,232,240,.7);line-height:1.6;margin:0;">
-          We'll only call people in if there's a <strong style="color:#fca5a5">volume spike</strong> that weekend. If it's normal, no one gets called in.<br><br>
-          If we don't get enough volunteers, 2 agents will be assigned on <strong style="color:#fca5a5">rotation</strong> to ensure coverage — fair and tracked so the same people aren't picked repeatedly.
-        </p>
-      </div>
-
-      <!-- CTA -->
-      <div style="background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(99,179,237,.08));border:1px solid rgba(59,130,246,.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;text-align:center;">
-        <p style="font-size:13px;color:#93c5fd;font-weight:700;margin:0;">🙂 Volunteering ahead = you pick your window<br><span style="font-size:11px;font-weight:400;color:rgba(147,197,253,.7)">vs. being assigned a shift. Always the better option!</span></p>
-      </div>
-
-      <button onclick="closeWeekendAnnounce()" style="width:100%;padding:11px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.35);border-radius:10px;color:#93c5fd;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Got it, thanks! 👍</button>
-    </div>
-  </div>
-</div>
-
-<!-- Break Report Modal -->
-<div id="break-report-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.6);overflow-y:auto;padding:40px 20px;">
-  <div style="max-width:720px;margin:0 auto;background:var(--card1,#0d1525);border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;">
-    <!-- Header -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);">
-      <div>
-        <div style="font-size:16px;font-weight:700;color:var(--t1)">📧 Send Break Report</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:2px">Generate and send a break activity summary</div>
-      </div>
-      <button onclick="closeBreakReportModal()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;">×</button>
-    </div>
-    <!-- Config -->
-    <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.06);">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-        <div>
-          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Report Period</label>
-          <select id="rpt-period" onchange="onReportPeriodChange()" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;cursor:pointer;">
-            <option value="daily">Daily — today</option>
-            <option value="yesterday">Daily — yesterday</option>
-            <option value="weekly">Weekly — last 7 days</option>
-            <option value="custom">Custom date range</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Send To</label>
-          <select id="rpt-target" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;cursor:pointer;">
-            <option value="chat">Google Chat (team space)</option>
-            <option value="preview">Preview only (no send)</option>
-          </select>
-        </div>
-      </div>
-      <div id="rpt-custom-dates" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-        <div>
-          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Start Date</label>
-          <input type="date" id="rpt-start" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;outline:none;">
-        </div>
-        <div>
-          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">End Date</label>
-          <input type="date" id="rpt-end" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;outline:none;">
-        </div>
-      </div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="previewBreakReport()" style="padding:9px 18px;background:rgba(255,255,255,.06);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;flex:1;">👁 Preview</button>
-        <button onclick="sendBreakReport()" id="rpt-send-btn" style="padding:9px 18px;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.35);border-radius:8px;color:#f5821f;font-size:13px;font-weight:600;cursor:pointer;flex:1;">📤 Generate &amp; Send</button>
-      </div>
-    </div>
-    <!-- Preview area -->
-    <div id="rpt-preview" style="padding:20px 24px;display:none;">
-      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Report Preview</div>
-      <div id="rpt-preview-content"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════════════════════════════════════════════════
-     AI LEARNING AGENT — Admin Tab
-     Shows rule accuracy, wrong patterns, and GPT-4o analysis
-     ══════════════════════════════════════════════════════════════════════════ -->
 <div class="page" id="tab-ai-agent">
 
   <!-- Header -->
@@ -10958,6 +10843,123 @@ tbody tr:hover td{
 </div>
 
 <!-- AGENT VIEW -->
+
+</div><!-- /#adminView -->
+
+<!-- Bonus Results Notification -->
+<!-- Weekend Support Announcement — shown for 10 days from May 1 2026 -->
+<div id="weekend-announce-overlay" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px;overflow-y:auto;">
+  <div style="max-width:480px;width:100%;background:#0b1221;border:1px solid rgba(99,179,237,.25);border-radius:20px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.8);margin:auto;">
+    <!-- Blue accent bar -->
+    <div style="height:3px;background:linear-gradient(90deg,transparent,#3b82f6,#60a5fa,#3b82f6,transparent);"></div>
+    <div style="padding:26px 26px 22px;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📣</div>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#93c5fd;letter-spacing:.01em;">Team Announcement</div>
+          <div style="font-size:11px;color:rgba(148,163,184,.6);margin-top:1px">From Ronnie · Starting this week</div>
+        </div>
+        <button onclick="closeWeekendAnnounce()" style="margin-left:auto;background:none;border:none;color:rgba(148,163,184,.5);font-size:20px;cursor:pointer;line-height:1;padding:4px 6px;flex-shrink:0;">×</button>
+      </div>
+
+      <!-- Greeting -->
+      <p style="font-size:14px;color:rgba(226,232,240,.9);line-height:1.65;margin-bottom:16px;">
+        Hey team 👋 Starting this week, every <strong style="color:#93c5fd;">Friday</strong>, Ronnie will check in to see who's available for <strong style="color:#93c5fd;">weekend support</strong> (Saturday or Sunday, anytime between <strong style="color:#93c5fd;">7 AM – 7 PM CST</strong>).
+      </p>
+
+      <!-- Key points -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+        <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:10px 12px;">
+          <span style="font-size:16px;flex-shrink:0;margin-top:1px">✅</span>
+          <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;"><strong style="color:#86efac">Completely voluntary</strong> — no pressure at all</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:10px 12px;">
+          <span style="font-size:16px;flex-shrink:0;margin-top:1px">💰</span>
+          <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;">Any weekend shift counts as <strong style="color:#fde68a">overtime</strong> under our existing policy</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:10px 12px;">
+          <span style="flex-shrink:0;margin-top:1px;display:flex;align-items:center;"><svg viewBox="0 0 16 16" fill="none" stroke="#93c5fd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="5" y="2" width="9" height="11" rx="1.5"/><path d="M3 5H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1"/></svg></span>
+          <span style="font-size:12.5px;color:rgba(226,232,240,.85);line-height:1.5;">Just reply with your preferred shift window <strong style="color:#93c5fd">when Ronnie pings you Fridays</strong></span>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div style="background:rgba(255,255,255,.04);border-radius:10px;padding:12px 14px;margin-bottom:18px;border-left:3px solid rgba(248,113,113,.5);">
+        <p style="font-size:12px;color:rgba(226,232,240,.7);line-height:1.6;margin:0;">
+          We'll only call people in if there's a <strong style="color:#fca5a5">volume spike</strong> that weekend. If it's normal, no one gets called in.<br><br>
+          If we don't get enough volunteers, 2 agents will be assigned on <strong style="color:#fca5a5">rotation</strong> to ensure coverage — fair and tracked so the same people aren't picked repeatedly.
+        </p>
+      </div>
+
+      <!-- CTA -->
+      <div style="background:linear-gradient(135deg,rgba(59,130,246,.12),rgba(99,179,237,.08));border:1px solid rgba(59,130,246,.3);border-radius:10px;padding:12px 14px;margin-bottom:16px;text-align:center;">
+        <p style="font-size:13px;color:#93c5fd;font-weight:700;margin:0;">🙂 Volunteering ahead = you pick your window<br><span style="font-size:11px;font-weight:400;color:rgba(147,197,253,.7)">vs. being assigned a shift. Always the better option!</span></p>
+      </div>
+
+      <button onclick="closeWeekendAnnounce()" style="width:100%;padding:11px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.35);border-radius:10px;color:#93c5fd;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;">Got it, thanks! 👍</button>
+    </div>
+  </div>
+</div>
+
+<!-- Break Report Modal -->
+<div id="break-report-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.6);overflow-y:auto;padding:40px 20px;">
+  <div style="max-width:720px;margin:0 auto;background:var(--card1,#0d1525);border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.08);">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--t1)">📧 Send Break Report</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:2px">Generate and send a break activity summary</div>
+      </div>
+      <button onclick="closeBreakReportModal()" style="background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer;padding:4px 8px;line-height:1;">×</button>
+    </div>
+    <!-- Config -->
+    <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.06);">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Report Period</label>
+          <select id="rpt-period" onchange="onReportPeriodChange()" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;cursor:pointer;">
+            <option value="daily">Daily — today</option>
+            <option value="yesterday">Daily — yesterday</option>
+            <option value="weekly">Weekly — last 7 days</option>
+            <option value="custom">Custom date range</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Send To</label>
+          <select id="rpt-target" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;cursor:pointer;">
+            <option value="chat">Google Chat (team space)</option>
+            <option value="preview">Preview only (no send)</option>
+          </select>
+        </div>
+      </div>
+      <div id="rpt-custom-dates" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">Start Date</label>
+          <input type="date" id="rpt-start" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:6px;">End Date</label>
+          <input type="date" id="rpt-end" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;outline:none;">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="previewBreakReport()" style="padding:9px 18px;background:rgba(255,255,255,.06);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;font-weight:600;cursor:pointer;flex:1;">👁 Preview</button>
+        <button onclick="sendBreakReport()" id="rpt-send-btn" style="padding:9px 18px;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.35);border-radius:8px;color:#f5821f;font-size:13px;font-weight:600;cursor:pointer;flex:1;">📤 Generate &amp; Send</button>
+      </div>
+    </div>
+    <!-- Preview area -->
+    <div id="rpt-preview" style="padding:20px 24px;display:none;">
+      <div style="font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Report Preview</div>
+      <div id="rpt-preview-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     AI LEARNING AGENT — Admin Tab
+     Shows rule accuracy, wrong patterns, and GPT-4o analysis
+     ══════════════════════════════════════════════════════════════════════════ -->
 <div id="agentView" style="display:none;">
   <div class="agent-shell-nav">
     <button class="agent-shell-btn active" id="agent-tab-dashboard" onclick="switchAgentSection('dashboard',this)">
@@ -13074,9 +13076,6 @@ function applyView(view){
   const isAdmin=view==='admin';
   document.getElementById('adminView').style.display=isAdmin?'block':'none';
   document.getElementById('agentView').style.display=isAdmin?'none':'block';
-  // tab-ai-agent lives OUTSIDE #adminView in the DOM — must hide it explicitly
-  var aiAgentPage = document.getElementById('tab-ai-agent');
-  if(aiAgentPage) aiAgentPage.style.display = isAdmin ? '' : 'none';
   // Explicitly reset all admin pages when switching to agent view — prevents bleed-through
   if(!isAdmin){
     document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
