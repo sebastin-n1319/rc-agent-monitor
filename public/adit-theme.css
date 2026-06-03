@@ -7974,3 +7974,8 @@ button[onclick*="switchAgent"],
 }
 .brain-send-btn:hover{transform:scale(1.1);box-shadow:0 6px 16px rgba(249,115,22,.5);}
 .brain-send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* Brain root fix — must be flex column full height so inner flex:1 works */
+#brain-root { display:flex!important; flex-direction:column!important; height:100%!important; overflow:hidden!important; }
+/* Brain panel must be positioned relative for drag */
+#brain-fab-wrap { position:fixed!important; bottom:28px!important; right:28px!important; }
