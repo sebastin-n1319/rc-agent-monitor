@@ -9658,7 +9658,7 @@ tbody tr:hover td{
   <!-- Session 15.5: HOF sidebar item hidden until Q2 redesign. Page itself
        remains in DOM (#agent-section-hall) so deep-links still resolve. -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
-       onclick="sbAgent('hall',this)" style="display:none!important;" data-hidden-until="Q2-2026">
+       onclick="sbAgent('hall',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
     <span class="sb-label">HOF</span>
   </div>
@@ -9722,7 +9722,7 @@ tbody tr:hover td{
     <button class="nav-tab" data-tab="access" onclick="switchTab('access',this)">Access Control</button>
     <button class="nav-tab" data-tab="loginlogs" onclick="switchTab('loginlogs',this)">Login Logs</button>
     <button class="nav-tab" data-tab="breaks" onclick="switchTab('breaks',this)">Break Tracker</button>
-    <button class="nav-tab" data-tab="hall" onclick="switchTab('hall',this)" style="display:none" data-hidden-until="Q2-2026">Hall of Fame</button>
+    <button class="nav-tab" data-tab="hall" onclick="switchTab('hall',this)">Hall of Fame</button>
     <button class="nav-tab" data-tab="bonus" onclick="switchTab('bonus',this)">Bonus Guide</button>
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
     <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
@@ -10815,7 +10815,7 @@ tbody tr:hover td{
      AI LEARNING AGENT — Admin Tab
      Shows rule accuracy, wrong patterns, and GPT-4o analysis
      ══════════════════════════════════════════════════════════════════════════ -->
-<div class="page" id="tab-ai-agent" style="display:none;">
+<div class="page" id="tab-ai-agent">
 
   <!-- Header -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
@@ -25813,9 +25813,17 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     /* 1-8 — tab nav */
     if(KBD_TABS[e.key] && !e.metaKey && !e.ctrlKey && !e.altKey){
       var tabId = KBD_TABS[e.key];
+      var sbItem = document.getElementById('sb-' + tabId);
+      if(sbItem && typeof sbAdmin==='function') { sbAdmin(tabId, sbItem); return; }
       var btn = document.querySelector('.nav-tab[data-tab="' + tabId + '"]');
       if(btn && typeof switchTab==='function') switchTab(tabId, btn);
       return;
+    }
+    /* T/N/Y — modal shortcuts (Schedule / Anomaly / Forecast) */
+    if(!e.metaKey && !e.ctrlKey && !e.altKey && currentViewMode==='admin'){
+      if(e.key==='T' && typeof openScheduleAdmin==='function'){ openScheduleAdmin(); return; }
+      if(e.key==='N' && typeof openAnomalyCenter==='function'){ openAnomalyCenter(); return; }
+      if(e.key==='Y' && typeof openPredictCenter==='function'){ openPredictCenter(); return; }
     }
   });
 

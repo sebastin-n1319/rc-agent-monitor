@@ -4503,6 +4503,25 @@ app.post('/api/roster/agents', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success:false, error: e.message }); }
 });
 
+app.delete('/api/roster/agent/:emp_id', requireAdmin, async (req, res) => {
+  try {
+    const emp_id = decodeURIComponent(req.params.emp_id);
+    if (!emp_id) return res.status(400).json({ success:false, error:'emp_id required' });
+    await new Promise((resolve, reject) => {
+      db.run('DELETE FROM roster_agents WHERE emp_id = ?', [emp_id], function(err) {
+        if (err) reject(err); else resolve(this.changes);
+      });
+    });
+    await new Promise((resolve, reject) => {
+      db.run('DELETE FROM roster_days WHERE emp_id = ?', [emp_id], function(err) {
+        if (err) reject(err); else resolve();
+      });
+    });
+    insertAuditLog(req.session?.email, 'roster_delete_agent', emp_id, '').catch(()=>{});
+    res.json({ success: true, deleted: emp_id });
+  } catch(e) { res.status(500).json({ success:false, error: e.message }); }
+});
+
 app.get('/api/roster/month/:yyyymm', requireAuth, async (req, res) => {
   try {
     const data = await roster.getMonth(req.params.yyyymm);
