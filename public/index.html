@@ -20994,14 +20994,15 @@ async function deleteNote(id){
     <div id="brain-bubble-text"></div>
     <button onclick="Brain.dismissBubble()" style="position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;color:#9BA3B2;font-size:14px;padding:2px;">&#x2715;</button>
   </div>
-  <button id="brain-fab" onclick="Brain.toggle()" title="Brain — AI Assistant" style="width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;outline:none;background:transparent;box-shadow:none;padding:0;">
-    <div style="position:absolute;inset:-6px;border-radius:50%;border:2.5px solid rgba(249,115,22,.5);animation:brain-pulse-ring 2s ease-out infinite;pointer-events:none;"></div>
-    <div style="position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(249,115,22,.25);animation:brain-pulse-ring 2s ease-out .6s infinite;pointer-events:none;"></div>
-    <img src="/brain-widget.png" width="46" height="46" style="position:relative;z-index:2;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3));" alt="Brain"/>
+  <button id="brain-fab" onclick="Brain.toggle()" title="Brain — AI Assistant" style="width:64px;height:64px;border-radius:18px;border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;outline:none;background:transparent;box-shadow:0 8px 28px rgba(249,115,22,.4);padding:0;overflow:hidden;">
+    <!-- Pulse rings matching rounded square shape -->
+    <div style="position:absolute;inset:-7px;border-radius:24px;border:2.5px solid rgba(249,115,22,.5);animation:brain-pulse-ring 2s ease-out infinite;pointer-events:none;"></div>
+    <div style="position:absolute;inset:-14px;border-radius:28px;border:1.5px solid rgba(249,115,22,.25);animation:brain-pulse-ring 2s ease-out .7s infinite;pointer-events:none;"></div>
+    <img src="/brain-widget.png" width="64" height="64" style="position:relative;z-index:2;object-fit:cover;border-radius:18px;display:block;" alt="Brain"/>
   </button>
   <div id="brain-panel" class="brain-panel" style="display:none;"></div>
 </div>
-<script src="/brain.js?v=1.19.125" defer></script>
+<script src="/brain.js?v=1.19.126" defer></script>
 </body>
 </html>
 
