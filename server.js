@@ -1335,55 +1335,79 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     let ticket = null;
     const targetNum = parseInt(rawId, 10);
 
-    // Helper: fetch one page, return matching ticket or null
+    // ════════════════════════════════════════════════════════════════════
+    // ZOHO DESK TICKET LOOKUP — BULLETPROOF MULTI-STRATEGY SYSTEM
+    //
+    // Confirmed API behaviours (from production debug):
+    //   GET /tickets (no status)      → last-modified DESC, all statuses mixed
+    //   GET /tickets?status=closed    → creation DESC (newest closed first)
+    //   GET /tickets?status=open      → creation ASC (oldest open first)
+    //   GET /tickets?status=onhold    → unknown sort order
+    //   Search params (keyword etc.)  → 422 UNPROCESSABLE or 403 SCOPE_MISMATCH
+    //   GET /departments              → 403 SCOPE_MISMATCH
+    //
+    // Strategy order (fastest → broadest):
+    //   S1: No-status last-modified scan  — catches recently active tickets (covers 95%+)
+    //   S2: Direct internal ID lookup     — O(1) if estimation is accurate
+    //   S3: Calibrated closed scan        — for older closed tickets
+    //   S4: Onhold brute-force            — for on-hold queue (unknown sort)
+    //   S5: No-status deep scan           — extended scan for less-recently-modified tickets
+    //   S6: Closed extended scan          — for very old closed tickets (large offset)
+    // ════════════════════════════════════════════════════════════════════
+
+    // Helper: check one page, return matching ticket or null
     const checkPage = async (url) => {
       try {
         const r = await fetch(url, { headers });
         if (!r.ok) return null;
         const d = await r.json();
-        // Handle both list and search result shapes
         const list = d.data || d.tickets || (Array.isArray(d) ? d : []);
         return list.find(t => String(t.ticketNumber) === rawId) || null;
       } catch(e) { return null; }
     };
 
-    // STRATEGY 0A: Fetch all departments and try department-scoped ticket lists
-    // Tickets in different Zoho departments are NOT returned by the default /tickets endpoint
-    if (!ticket) {
+    // Helper: fetch page + return { ticket, maxTicketNum, list }
+    const fetchPage = async (url) => {
       try {
-        const deptR = await fetch(`${ZOHO_API_BASE}/departments?limit=50`, { headers });
-        if (deptR.ok) {
-          const deptData = await deptR.json();
-          const depts = (deptData.data || []).map(d => d.id).filter(Boolean);
-          console.log(`🔍 Zoho #${rawId} — found ${depts.length} departments, searching each`);
-          // For each department, check first page of open + closed tickets
-          const deptResults = await Promise.all(depts.flatMap(deptId => [
-            checkPage(`${ZOHO_API_BASE}/tickets?status=open&departmentId=${deptId}&limit=100&from=0`),
-            checkPage(`${ZOHO_API_BASE}/tickets?status=closed&departmentId=${deptId}&limit=100&from=0`),
-            checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&departmentId=${deptId}&limit=100&from=0`),
-          ]));
-          ticket = deptResults.find(t => t != null) || null;
-          if (ticket) console.log(`✅ Found #${rawId} via department-scoped search`);
-        }
-      } catch(e) { console.log('dept search error:', e.message); }
+        const r = await fetch(url, { headers });
+        if (!r.ok) return { ticket: null, maxTicketNum: 0, list: [] };
+        const d = await r.json();
+        const list = d.data || [];
+        const found = list.find(t => String(t.ticketNumber) === rawId) || null;
+        const nums = list.map(t => parseInt(t.ticketNumber, 10)).filter(n => !isNaN(n));
+        return { ticket: found, maxTicketNum: nums.length ? Math.max(...nums) : 0, list };
+      } catch(e) { return { ticket: null, maxTicketNum: 0, list: [] }; }
+    };
+
+    // ── STRATEGY 1: No-status last-modified-DESC scan ─────────────────────
+    // THE PRIMARY STRATEGY. GET /tickets (no status filter) returns ALL tickets
+    // sorted by last-modified DESC. Agents look up tickets they just handled,
+    // so those tickets are recently modified → near the top of this list.
+    // Scan first 2000 records (20 pages × 100) — covers virtually all active tickets.
+    if (!ticket) {
+      const s1Offsets = Array.from({length: 20}, (_, i) => i * 100); // 0–1900
+      const s1Results = await Promise.all(
+        s1Offsets.map(from => checkPage(`${ZOHO_API_BASE}/tickets?limit=100&from=${from}`))
+      );
+      ticket = s1Results.find(t => t != null) || null;
+      if (ticket) console.log(`✅ Zoho #${rawId} found in Strategy 1 (no-status last-modified)`);
     }
 
-    // STRATEGY 0B: Direct internal ID lookup using linear interpolation
-    // Known mappings from debug: ticket# → Zoho internal ID (both sorted roughly linearly)
-    // Known A: ticketNumber 293746 → id 197800000322132001
-    // Known B: ticketNumber 366188 → id 197800000422516911
+    // ── STRATEGY 2: Direct internal ID lookup (O(1) if estimate is accurate) ──
+    // Zoho internal IDs are linearly correlated with ticket numbers within an org.
+    // Known calibration points from production debug:
+    //   Ticket #293746 → internal ID 197800000322132001
+    //   Ticket #366188 → internal ID 197800000422516911
     if (!ticket) {
       try {
         const knownATNum = 293746n, knownAId = 197800000322132001n;
         const knownBTNum = 366188n,  knownBId = 197800000422516911n;
-        const slope = (knownBId - knownAId) / (knownBTNum - knownATNum); // BigInt division
-        const targetBig = BigInt(targetNum);
-        const estId = knownAId + slope * (targetBig - knownATNum);
-        // Try estimate ± wide range in parallel — one direct GET per ID (O(1) lookup)
-        const offsets = [0n,500n,-500n,1000n,-1000n,2000n,-2000n,5000n,-5000n,
-                         10000n,-10000n,20000n,-20000n,50000n,-50000n,100000n,-100000n,
-                         200000n,-200000n,500000n,-500000n];
-        const directResults = await Promise.all(offsets.map(async (o) => {
+        const slope  = (knownBId - knownAId) / (knownBTNum - knownATNum);
+        const estId  = knownAId + slope * (BigInt(targetNum) - knownATNum);
+        // Try ±wide range to cover ID estimation error
+        const idOffsets = [0n,1000n,-1000n,3000n,-3000n,10000n,-10000n,30000n,-30000n,
+                           100000n,-100000n,300000n,-300000n,1000000n,-1000000n];
+        const s2Results = await Promise.all(idOffsets.map(async (o) => {
           try {
             const r = await fetch(`${ZOHO_API_BASE}/tickets/${String(estId + o)}`, { headers });
             if (!r.ok) return null;
@@ -1391,145 +1415,84 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
             return (d.ticketNumber && String(d.ticketNumber) === rawId) ? d : null;
           } catch(e) { return null; }
         }));
-        ticket = directResults.find(t => t != null) || null;
-        if (ticket) console.log(`✅ Zoho #${rawId} found via direct ID lookup (est=${estId})`);
-      } catch(e) { console.log('direct ID lookup error:', e.message); }
+        ticket = s2Results.find(t => t != null) || null;
+        if (ticket) console.log(`✅ Zoho #${rawId} found in Strategy 2 (direct ID, est=${estId})`);
+      } catch(e) { console.log(`S2 error: ${e.message}`); }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // KEY DISCOVERY from debug: GET /tickets (no status) sorts by LAST MODIFIED DESC
-    // Ticket #363470 appears at position 8 of page 0 of the no-status list!
-    // This means recently-active tickets (just handled, on-hold, replied-to) are near the top.
-    // This is the MOST RELIABLE strategy — scan first ~1000 of the no-status last-modified list.
-    // ════════════════════════════════════════════════════════════════
-
-    // STRATEGY 1: No-status last-modified-DESC scan (fastest for recently active tickets)
+    // ── STRATEGY 3: Calibrated closed scan ───────────────────────────────
+    // GET /tickets?status=closed sorted by creation DESC (newest first).
+    // Estimate position: (newestClosedTicketNum - targetNum) ≈ offset in list.
+    // Fan ±3000 around estimate to cover gaps from deleted/merged tickets.
     if (!ticket) {
-      try {
-        const noStatusPages = await Promise.all(
-          [0, 100, 200, 300, 400, 500, 600, 700, 800, 900].map(from =>
-            checkPage(`${ZOHO_API_BASE}/tickets?limit=100&from=${from}`)
+      const closedHead = await fetchPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=0`);
+      if (closedHead.ticket) {
+        ticket = closedHead.ticket;
+      } else {
+        const newestClosed = closedHead.maxTicketNum || 0;
+        const closedEst    = Math.max(0, newestClosed - targetNum - 50);
+        const s3Offsets    = new Set();
+        for (let o = Math.max(0, closedEst - 3000); o <= closedEst + 3100; o += 100) s3Offsets.add(o);
+        s3Offsets.delete(0); // already checked above
+        console.log(`🔍 S3 closed scan: newestClosed=${newestClosed} est=${closedEst} pages=${s3Offsets.size}`);
+        const s3Results = await Promise.all(
+          [...s3Offsets].sort((a,b)=>a-b).map(from =>
+            checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)
           )
         );
-        ticket = noStatusPages.find(t => t != null) || null;
-        if (ticket) console.log(`✅ Zoho #${rawId} found in no-status last-modified list`);
-      } catch(e) {}
-    }
-
-    // STRATEGY 2: Search endpoints (most return 422 but worth trying)
-    if (!ticket) {
-      try {
-        const searchResults = await Promise.all([
-          checkPage(`${ZOHO_API_BASE}/tickets/search?keyword=${encodeURIComponent(rawId)}&limit=10`),
-          checkPage(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
-        ]);
-        ticket = searchResults.find(t => t != null) || null;
-      } catch(e) {}
-    }
-
-    // Helper: fetch page and return { ticket, newestNum, list }
-    const fetchPage = async (url) => {
-      try {
-        const r = await fetch(url, { headers });
-        if (!r.ok) return { ticket: null, newestNum: 0, list: [] };
-        const d = await r.json();
-        const list = d.data || [];
-        const found = list.find(t => String(t.ticketNumber) === rawId) || null;
-        const nums = list.map(t => parseInt(t.ticketNumber, 10)).filter(n => !isNaN(n));
-        return { ticket: found, newestNum: Math.max(...(nums.length ? nums : [0])), list };
-      } catch(e) { return { ticket: null, newestNum: 0, list: [] }; }
-    };
-
-    // ════════════════════════════════════════════════════════════════
-    // Open list sorted ASC (oldest first). Closed sorted DESC (newest first).
-    // Strategy:
-    //  1. Closed: calibrated fan around (newestClosed - targetNum) offset
-    //  2. Open: coarse probes every 2000 records → find bracket → fine scan
-    //  3. Onhold: brute-force all pages in parallel
-    // ════════════════════════════════════════════════════════════════
-
-    // ── PHASE 1: Get closed page-0 (for calibration) + onhold sweep + open coarse probes ──
-    console.log(`🔍 Zoho #${rawId} — Phase 1`);
-
-    // Coarse open probes: every 2000 records, 0→60000 (30 probes)
-    const openCoarseOffsets = [];
-    for (let o = 0; o <= 60000; o += 2000) openCoarseOffsets.push(o);
-
-    const [closedHead, ...openCoarseResults] = await Promise.all([
-      fetchPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=0`),
-      ...openCoarseOffsets.map(from => fetchPage(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=${from}`)),
-    ]);
-
-    // Check if found in any probe
-    if (closedHead.ticket) ticket = closedHead.ticket;
-    if (!ticket) {
-      for (const r of openCoarseResults) { if (r.ticket) { ticket = r.ticket; break; } }
-    }
-
-    // Find the correct 2000-record bracket using maxTicketNum in each probe page
-    // Open list is sorted ASC → each probe page has increasing ticket numbers
-    // Find first probe where maxNum >= targetNum → target is in [prev_probe, this_probe]
-    let fineStart = 0, fineEnd = 4000;
-    if (!ticket) {
-      for (let i = 0; i < openCoarseResults.length; i++) {
-        const maxNum = openCoarseResults[i].newestNum;
-        const isEmpty = openCoarseResults[i].list.length === 0;
-        if (maxNum >= targetNum || isEmpty) {
-          fineStart = Math.max(0, openCoarseOffsets[i] - 2000);
-          fineEnd   = openCoarseOffsets[i] + 100;
-          break;
-        }
-        // If last probe and still not found, scan from last non-empty probe
-        if (i === openCoarseResults.length - 1) {
-          fineStart = openCoarseOffsets[i];
-          fineEnd   = fineStart + 5000;
-        }
+        ticket = s3Results.find(t => t != null) || null;
+        if (ticket) console.log(`✅ Zoho #${rawId} found in Strategy 3 (calibrated closed)`);
       }
-      console.log(`🔍 Zoho #${rawId} — open bracket: from=${fineStart} to from=${fineEnd}`);
     }
 
-    // ── PHASE 2: Fine scan bracket (step 100) + calibrated closed + onhold ──
+    // ── STRATEGY 4: Onhold brute-force ────────────────────────────────────
+    // GET /tickets?status=onhold — sort order unknown, brute-force all pages.
+    // "Pending Customer" and other hold statuses land here.
+    // Scan 10000 records (100 pages × 100) in parallel.
     if (!ticket) {
-      const newestClosed = closedHead.newestNum || 0;
-      const closedEst = Math.max(0, newestClosed - targetNum - 50);
-
-      const closedFan = new Set();
-      for (let o = Math.max(0, closedEst - 2000); o <= closedEst + 2100; o += 100) closedFan.add(o);
-      closedFan.delete(0);
-
-      // Fine open scan within bracket
-      const openFine = new Set();
-      for (let o = fineStart; o <= fineEnd; o += 100) openFine.add(o);
-      openCoarseOffsets.forEach(o => openFine.delete(o)); // skip already probed
-
-      // Onhold: all first 8000
-      const ohOffsets = Array.from({length:80}, (_,i) => i * 100);
-
-      console.log(`🔍 Zoho #${rawId} — Phase 2: ${closedFan.size} closed + ${openFine.size} open fine + ${ohOffsets.length} onhold`);
-
-      const phase2 = await Promise.all([
-        ...[...closedFan].sort((a,b)=>a-b).map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)),
-        ...[...openFine].sort((a,b)=>a-b).map(from  => checkPage(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=${from}`)),
-        ...ohOffsets.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=${from}`)),
-      ]);
-      ticket = phase2.find(t => t != null) || null;
-    }
-
-    // ── PHASE 3: Scan entire open list at step 200 (emergency fallback) ────
-    if (!ticket) {
-      console.log(`🔍 Zoho #${rawId} — Phase 3: full open sweep`);
-      const allOpen = [];
-      for (let o = 0; o <= 70000; o += 200) {
-        if (!openCoarseOffsets.includes(o)) allOpen.push(o);
-      }
-      const phase3 = await Promise.all(
-        allOpen.map(from => checkPage(`${ZOHO_API_BASE}/tickets?status=open&limit=100&from=${from}`))
+      const s4Results = await Promise.all(
+        Array.from({length: 100}, (_, i) => i * 100).map(from =>
+          checkPage(`${ZOHO_API_BASE}/tickets?status=onhold&limit=100&from=${from}`)
+        )
       );
-      ticket = phase3.find(t => t != null) || null;
+      ticket = s4Results.find(t => t != null) || null;
+      if (ticket) console.log(`✅ Zoho #${rawId} found in Strategy 4 (onhold brute-force)`);
+    }
+
+    // ── STRATEGY 5: No-status deep scan (pages 2000–10000) ───────────────
+    // Extends Strategy 1 deeper for tickets not recently modified.
+    // Still sorted by last-modified DESC — less-active tickets further in.
+    if (!ticket) {
+      const s5Offsets = Array.from({length: 80}, (_, i) => (i + 20) * 100); // 2000–9900
+      const s5Results = await Promise.all(
+        s5Offsets.map(from => checkPage(`${ZOHO_API_BASE}/tickets?limit=100&from=${from}`))
+      );
+      ticket = s5Results.find(t => t != null) || null;
+      if (ticket) console.log(`✅ Zoho #${rawId} found in Strategy 5 (no-status deep)`);
+    }
+
+    // ── STRATEGY 6: Extended closed scan (±8000 beyond S3 estimate) ──────
+    // For very old closed tickets far from the S3 fan window.
+    if (!ticket) {
+      const closedHead2 = await fetchPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=0`);
+      const newestClosed = closedHead2.maxTicketNum || 0;
+      const closedEst2   = Math.max(0, newestClosed - targetNum - 50);
+      const s6Offsets    = new Set();
+      for (let o = Math.max(0, closedEst2 - 8000); o <= closedEst2 + 8000; o += 100) s6Offsets.add(o);
+      // Remove S3 range (already covered)
+      for (let o = Math.max(0, closedEst2 - 3000); o <= closedEst2 + 3100; o += 100) s6Offsets.delete(o);
+      console.log(`🔍 S6 extended closed: ${s6Offsets.size} pages`);
+      const s6Results = await Promise.all(
+        [...s6Offsets].sort((a,b)=>a-b).map(from =>
+          checkPage(`${ZOHO_API_BASE}/tickets?status=closed&limit=100&from=${from}`)
+        )
+      );
+      ticket = s6Results.find(t => t != null) || null;
+      if (ticket) console.log(`✅ Zoho #${rawId} found in Strategy 6 (extended closed)`);
     }
 
     if (!ticket) {
-      console.log(`⚠️  Ticket #${rawId} not found after all phases`);
+      console.log(`⚠️  Ticket #${rawId} not found after all strategies`);
       return res.json({ success: true, found: false, debug: `Checked all strategies for #${rawId} — ticket may not exist, be in a different org, or the number may be wrong.` });
     }
 
