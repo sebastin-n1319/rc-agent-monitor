@@ -11953,23 +11953,27 @@ tbody tr:hover td{
         </div>
 
         <!-- ── WEEKEND MODE EXTRA FIELDS ──────────────────────────────── -->
-        <div id="tl-weekend-section" style="display:none;">
-          <!-- Weekend banner -->
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(244,137,31,.1),rgba(251,200,75,.08));border:1.5px solid rgba(244,137,31,.3);border-radius:12px;margin-bottom:4px;">
-            <svg viewBox="0 0 20 20" fill="none" stroke="#F4891F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 2"/></svg>
-            <div>
-              <div style="font-size:12px;font-weight:800;color:#C45A0A;letter-spacing:.02em;">🗓 Weekend Support Mode</div>
-              <div style="font-size:10.5px;color:#9B6A00;margin-top:1px;">Fill these extra fields — your ticket will also log to the Weekend Support sheet.</div>
+        <div id="tl-weekend-section" style="display:none;margin-top:8px;">
+
+          <!-- Banner -->
+          <div class="tl-wkd-banner">
+            <div class="tl-wkd-banner-icon">
+              <svg viewBox="0 0 20 20" fill="none" stroke="#F4891F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="2" y="4" width="16" height="14" rx="2.5"/><path d="M2 8h16M7 2v4M13 2v4"/></svg>
             </div>
+            <div>
+              <div class="tl-wkd-banner-title">Weekend Support Mode</div>
+              <div class="tl-wkd-banner-sub">These extra fields log your ticket to the Weekend Support sheet too.</div>
+            </div>
+            <svg viewBox="0 0 20 20" fill="none" stroke="rgba(244,137,31,.4)" stroke-width="1.5" style="width:16px;height:16px;margin-left:auto;flex-shrink:0"><path d="M10 3v14M3 10h14"/></svg>
           </div>
 
           <!-- Department -->
-          <div class="tl-card">
-            <div class="tl-card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              Department <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+          <div class="tl-wkd-card">
+            <div class="tl-wkd-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Department <span class="tl-wkd-required">*</span>
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;">
+            <div class="tl-wkd-chips">
               <button class="tl-wkd-chip" data-group="wkd-dept" data-val="CSM" onclick="tlWkdSelect(this,'wkd-dept')">CSM</button>
               <button class="tl-wkd-chip" data-group="wkd-dept" data-val="VoIP" onclick="tlWkdSelect(this,'wkd-dept')">VoIP</button>
               <button class="tl-wkd-chip" data-group="wkd-dept" data-val="T1 CS" onclick="tlWkdSelect(this,'wkd-dept')">T1 CS</button>
@@ -11983,66 +11987,71 @@ tbody tr:hover td{
           </div>
 
           <!-- Priority -->
-          <div class="tl-card">
-            <div class="tl-card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              Priority <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+          <div class="tl-wkd-card">
+            <div class="tl-wkd-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Priority <span class="tl-wkd-required">*</span>
             </div>
-            <div style="display:flex;gap:8px;margin-top:4px;">
+            <div class="tl-wkd-chips">
               <button class="tl-wkd-chip tl-wkd-high"   data-group="wkd-priority" data-val="High"   onclick="tlWkdSelect(this,'wkd-priority')">🔴 High</button>
               <button class="tl-wkd-chip tl-wkd-medium" data-group="wkd-priority" data-val="Medium" onclick="tlWkdSelect(this,'wkd-priority')">🟡 Medium</button>
               <button class="tl-wkd-chip tl-wkd-low"    data-group="wkd-priority" data-val="Low"    onclick="tlWkdSelect(this,'wkd-priority')">🟢 Low</button>
             </div>
           </div>
 
-          <!-- Transferred + Source (side by side) -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="tl-card">
-              <div class="tl-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/><polyline points="8 7 3 12 8 17"/></svg>
-                Transferred? <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+          <!-- Transferred + Source side by side -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0;">
+            <div class="tl-wkd-card" style="margin-bottom:0;">
+              <div class="tl-wkd-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/><polyline points="8 7 3 12 8 17"/></svg>
+                Transferred? <span class="tl-wkd-required">*</span>
               </div>
-              <div style="display:flex;gap:6px;margin-top:4px;">
+              <div class="tl-wkd-chips">
                 <button class="tl-wkd-chip" data-group="wkd-transferred" data-val="Yes" onclick="tlWkdSelect(this,'wkd-transferred')">Yes</button>
                 <button class="tl-wkd-chip" data-group="wkd-transferred" data-val="No"  onclick="tlWkdSelect(this,'wkd-transferred')">No</button>
               </div>
             </div>
-            <div class="tl-card">
-              <div class="tl-card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                Source <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+            <div class="tl-wkd-card" style="margin-bottom:0;">
+              <div class="tl-wkd-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                Source <span class="tl-wkd-required">*</span>
               </div>
-              <div style="display:flex;gap:6px;margin-top:4px;">
-                <button class="tl-wkd-chip" data-group="wkd-source" data-val="Email" onclick="tlWkdSelect(this,'wkd-source')">Email</button>
-                <button class="tl-wkd-chip" data-group="wkd-source" data-val="Call"  onclick="tlWkdSelect(this,'wkd-source')">Call</button>
+              <div class="tl-wkd-chips">
+                <button class="tl-wkd-chip" data-group="wkd-source" data-val="Email" onclick="tlWkdSelect(this,'wkd-source')">📧 Email</button>
+                <button class="tl-wkd-chip" data-group="wkd-source" data-val="Call"  onclick="tlWkdSelect(this,'wkd-source')">📞 Call</button>
               </div>
             </div>
           </div>
 
-          <!-- Notes — mandatory + AI suggest -->
-          <div class="tl-card">
-            <div class="tl-card-title" style="justify-content:space-between;">
-              <span style="display:inline-flex;align-items:center;gap:6px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Notes <span style="color:#ED666B;margin-left:2px;font-size:11px;">*</span>
+          <!-- Notes -->
+          <div class="tl-wkd-card" style="margin-top:8px;">
+            <div class="tl-wkd-label" style="justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span style="display:inline-flex;align-items:center;gap:7px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Notes <span class="tl-wkd-required">*</span>
               </span>
-              <button id="tl-wkd-ai-btn" onclick="tlWkdAISuggest()" title="Generate AI summary from Zoho ticket conversation"
-                style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;border:1.5px solid rgba(139,92,246,.3);background:rgba(139,92,246,.06);color:#6D28D9;font-size:10.5px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:11px;height:11px"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z"/><path d="M13 10l.8 1.8L15.6 12.6l-1.8.8L13 15.2l-.8-1.8L10.4 12.6l1.8-.8L13 10z"/></svg>
-                ✨ AI Suggest
+              <button id="tl-wkd-ai-btn" onclick="tlWkdAISuggest()" title="Generate AI summary from Zoho ticket"
+                style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;border:1.5px solid rgba(139,92,246,.3);background:rgba(139,92,246,.06);color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .16s;text-transform:none;letter-spacing:0;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px"><path d="M8 1l1.5 3.5L13 6l-3.5 1.5L8 11l-1.5-3.5L3 6l3.5-1.5L8 1z"/><path d="M13 10l.7 1.8 1.8.7-1.8.7L13 15l-.7-1.8L10.5 12.5l1.8-.7z"/></svg>
+                AI Suggest
               </button>
             </div>
-            <!-- AI suggestion preview box -->
-            <div id="tl-wkd-ai-preview" style="display:none;margin-top:8px;padding:10px 12px;background:rgba(139,92,246,.05);border:1.5px solid rgba(139,92,246,.2);border-radius:9px;font-size:12px;color:#3A5068;line-height:1.6;">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                <span style="font-size:10px;font-weight:700;color:#6D28D9;text-transform:uppercase;letter-spacing:.06em;">✨ AI Summary Suggestion</span>
-                <button onclick="tlWkdApplyAI()" style="margin-left:auto;padding:3px 10px;border-radius:20px;background:#6D28D9;color:#fff;border:none;font-size:10.5px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;">Use This</button>
-                <button onclick="document.getElementById('tl-wkd-ai-preview').style.display='none'" style="padding:3px 8px;border-radius:20px;background:rgba(107,132,154,.1);color:#6B849A;border:none;font-size:10.5px;cursor:pointer;font-family:'Poppins',sans-serif;">Dismiss</button>
+            <div id="tl-wkd-ai-preview" style="display:none;margin:8px 0;padding:12px 14px;background:linear-gradient(135deg,rgba(139,92,246,.05),rgba(99,102,241,.04));border:1.5px solid rgba(139,92,246,.18);border-radius:10px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:9.5px;font-weight:800;color:#6D28D9;text-transform:uppercase;letter-spacing:.08em;">✨ AI Summary</span>
+                <button onclick="tlWkdApplyAI()" style="margin-left:auto;padding:4px 12px;border-radius:999px;background:#6D28D9;color:#fff;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;">Use This</button>
+                <button onclick="document.getElementById('tl-wkd-ai-preview').style.display='none'" style="padding:4px 10px;border-radius:999px;background:rgba(100,116,139,.1);color:#64748B;border:none;font-size:11px;cursor:pointer;font-family:'Poppins',sans-serif;">Dismiss</button>
               </div>
-              <div id="tl-wkd-ai-text" style="font-size:12px;color:#3A5068;line-height:1.6;white-space:pre-wrap;"></div>
+              <div id="tl-wkd-ai-text" style="font-size:12px;color:#334155;line-height:1.65;white-space:pre-wrap;"></div>
             </div>
-            <textarea id="tl-wkd-notes" rows="3" placeholder="Brief description of the issue or action taken… (required)" style="width:100%;margin-top:8px;padding:9px 12px;border:1px solid #DEE1E6;border-radius:9px;font-size:12.5px;font-family:'Poppins',sans-serif;color:#072B40;resize:vertical;outline:none;background:#fff;box-sizing:border-box;" onfocus="this.style.borderColor='#F4891F'" onblur="this.style.borderColor='#DEE1E6'"></textarea>
-            <div id="tl-wkd-notes-err" style="display:none;font-size:11px;color:#ED666B;margin-top:4px;">Notes are required for weekend ticket logging.</div>
+            <textarea id="tl-wkd-notes" rows="3" placeholder="Brief description of the issue or action taken… (required)"
+              style="width:100%;padding:10px 13px;border:1.5px solid #E5E9F0;border-radius:10px;font-size:12.5px;font-family:'Poppins',sans-serif;color:#0F172A;resize:vertical;outline:none;background:#FAFCFF;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;"
+              onfocus="this.style.borderColor='#F4891F';this.style.boxShadow='0 0 0 3px rgba(244,137,31,.12)'"
+              onblur="this.style.borderColor='#E5E9F0';this.style.boxShadow='none'"></textarea>
+            <div id="tl-wkd-notes-err" style="display:none;font-size:11px;color:#EF4444;margin-top:5px;display:flex;align-items:center;gap:5px;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:12px;height:12px"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
+              Notes are required for weekend ticket logging.
+            </div>
           </div>
         </div>
         <!-- ── END WEEKEND FIELDS ─────────────────────────────────────── -->
@@ -14414,7 +14423,7 @@ async function zohoLookupTicket(id) {
   _zohoLastId = id; // ensure stale guard passes for Retry clicks
   const card = document.getElementById('tl-zoho-card');
   // Show loading state
-  if(card){ card.style.display=''; card.innerHTML='<div style="padding:10px 14px;font-size:12px;color:#9BAFC0;background:#F7F8F8;display:flex;align-items:center;gap:8px;"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px;animation:adit-spin .7s linear infinite"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c2.1 0 3.9 1.2 4.9 2.9"/><path d="M10 5.5h3.5V2"/></svg> Looking up ticket…</div>'; }
+  if(card){ card.style.display=''; card.innerHTML='<div class="tl-lookup-loading"><div class="tl-lookup-loading-top"><div class="tl-lookup-spinner"></div><div><div class="tl-lookup-loading-text">Looking up ticket #'+id+'…</div><div class="tl-lookup-loading-sub">Searching Zoho Desk — this takes a moment</div></div></div><div class="tl-lookup-progress"><div class="tl-lookup-progress-bar"></div></div></div>'; }
   try {
     const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include' });
     const data = await res.json();
@@ -25028,6 +25037,113 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
   .bb-act-name{font-size:14px!important;}
   #status-bar{height:42px!important;padding:0 8px!important;}
   .sb-cmd-trigger{display:none!important;}
+}
+
+/* ══════════════════════════════════════════════════════════
+   WEEKEND FIELDS — Premium redesign
+══════════════════════════════════════════════════════════ */
+.tl-wkd-chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 6px 14px; border-radius: 999px;
+  border: 1.5px solid #E5E9F0;
+  background: #F8FAFC; color: #475569;
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all .16s cubic-bezier(.34,1.56,.64,1);
+  user-select: none; white-space: nowrap;
+}
+.tl-wkd-chip:hover {
+  border-color: #F4891F; color: #F4891F;
+  background: rgba(244,137,31,.06);
+  transform: translateY(-1px);
+}
+.tl-wkd-chip.active {
+  background: #F4891F; border-color: #F4891F;
+  color: #fff; font-weight: 600;
+  box-shadow: 0 3px 10px rgba(244,137,31,.30);
+  transform: translateY(-1px) scale(1.03);
+}
+/* Priority-specific active states */
+.tl-wkd-high.active  { background: #EF4444 !important; border-color: #EF4444 !important; box-shadow: 0 3px 10px rgba(239,68,68,.30) !important; }
+.tl-wkd-medium.active{ background: #F59E0B !important; border-color: #F59E0B !important; box-shadow: 0 3px 10px rgba(245,158,11,.30) !important; }
+.tl-wkd-low.active   { background: #10B981 !important; border-color: #10B981 !important; box-shadow: 0 3px 10px rgba(16,185,129,.30) !important; }
+
+/* Weekend section banner */
+.tl-wkd-banner {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(244,137,31,.08), rgba(251,200,75,.06));
+  border: 1.5px solid rgba(244,137,31,.25);
+  border-radius: 14px; margin-bottom: 10px;
+}
+.tl-wkd-banner-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: rgba(244,137,31,.12);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tl-wkd-banner-title { font-size: 12.5px; font-weight: 800; color: #B45309; letter-spacing: .01em; }
+.tl-wkd-banner-sub   { font-size: 10.5px; color: #92400E; margin-top: 1px; opacity: .85; }
+
+/* Weekend field cards */
+.tl-wkd-card {
+  background: #fff; border: 1px solid #E5E9F0;
+  border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 8px;
+  box-shadow: 0 1px 3px rgba(15,23,42,.05);
+  animation: tl-wkd-in .22s ease both;
+}
+@keyframes tl-wkd-in {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.tl-wkd-card:nth-child(2){ animation-delay:.04s; }
+.tl-wkd-card:nth-child(3){ animation-delay:.08s; }
+.tl-wkd-card:nth-child(4){ animation-delay:.12s; }
+.tl-wkd-card:nth-child(5){ animation-delay:.16s; }
+
+.tl-wkd-label {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 10px; font-weight: 800; color: #64748B;
+  text-transform: uppercase; letter-spacing: .07em;
+  margin-bottom: 10px;
+}
+.tl-wkd-label svg { flex-shrink: 0; }
+.tl-wkd-required { color: #EF4444; margin-left: 2px; }
+.tl-wkd-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+/* Ticket lookup — premium loading state */
+.tl-lookup-loading {
+  display: flex; flex-direction: column;
+  background: #F8FAFC; border-radius: 12px;
+  padding: 16px; gap: 10px;
+  border: 1px solid #E5E9F0;
+}
+.tl-lookup-loading-top {
+  display: flex; align-items: center; gap: 10px;
+}
+.tl-lookup-spinner {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  border: 2.5px solid rgba(244,137,31,.2);
+  border-top-color: #F4891F;
+  animation: tl-spin .75s linear infinite;
+}
+@keyframes tl-spin { to { transform: rotate(360deg); } }
+.tl-lookup-loading-text { font-size: 12.5px; font-weight: 600; color: #475569; }
+.tl-lookup-loading-sub  { font-size: 11px; color: #94A3B8; }
+.tl-lookup-progress {
+  height: 3px; border-radius: 99px; background: #EEF1F6; overflow: hidden;
+}
+.tl-lookup-progress-bar {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, #F4891F, #FBB040);
+  animation: tl-progress 3.5s ease-in-out infinite;
+  transform-origin: left;
+}
+@keyframes tl-progress {
+  0%   { width: 0%; }
+  30%  { width: 45%; }
+  60%  { width: 72%; }
+  85%  { width: 88%; }
+  100% { width: 92%; }
 }
 </style>
 
