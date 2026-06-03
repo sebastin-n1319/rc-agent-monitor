@@ -159,14 +159,17 @@
     var n=fn(), g=greet(), h=hr();
     var emoji = h<12?'🌅':h<17?'☀️':'🌙';
     return '<div style="display:flex;flex-direction:column;align-items:center;padding:16px 20px 8px;text-align:center;">' +
-      // Logo
-      '<img src="'+IMG.logo+'" style="width:180px;height:auto;object-fit:contain;margin-bottom:12px;" alt="Brain"/>' +
+      // Title brand
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
+        '<img src="'+IMG.avatar+'" width="36" height="36" style="border-radius:10px;object-fit:cover;" alt="Brain"/>' +
+        '<div style="text-align:left;"><div style="font-size:18px;font-weight:900;color:#1A1F3C;letter-spacing:-.02em;">Brain</div><div style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain is Braining</div></div>' +
+      '</div>' +
       // Thinking illustration
       '<div style="position:relative;margin-bottom:10px;">' +
         stateImg(IMG.thinking, 'Brain working', 180, 140, 'filter:drop-shadow(0 6px 20px rgba(249,115,22,.25));') +
       '</div>' +
-      '<div style="font-size:16px;font-weight:800;color:#1A1F3C;letter-spacing:-.01em;margin-bottom:4px;">' + emoji + ' ' + g + ', ' + esc(n) + '!</div>' +
-      '<div style="font-size:11.5px;color:#6B7280;line-height:1.6;max-width:280px;margin-bottom:14px;">I watch your session and help with bugs, features, and anything about Adit Monitor.</div>' +
+      '<div style="font-size:15px;font-weight:800;color:#1A1F3C;margin-bottom:3px;">' + emoji + ' ' + g + ', ' + esc(n) + '!</div>' +
+      '<div style="font-size:11px;color:#6B7280;line-height:1.5;max-width:280px;margin-bottom:12px;">Your AI co-pilot for Adit Agent Monitor. Ask me anything.</div>' +
       // Capability pills using image icons
       '<div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;">' +
         '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#FFF3E0;border:1.5px solid rgba(249,115,22,.25);border-radius:99px;font-size:10px;font-weight:700;color:#F97316;">' +
@@ -191,20 +194,19 @@
     var msgsHTML = msgs.length === 0 ? welcomeHTML() : msgs.map(msgHTML).join('');
 
     panel.innerHTML =
-      // Header - dark navy brand
-      '<div style="background:linear-gradient(135deg,#1A1F3C 0%,#2D3561 100%);padding:16px;display:flex;align-items:center;gap:12px;flex-shrink:0;cursor:grab;position:relative;overflow:hidden;" id="brain-drag-h">' +
-        // Neural network decoration
-        '<div style="position:absolute;right:0;top:0;bottom:0;width:160px;opacity:.15;background:radial-gradient(circle at 80% 50%,rgba(249,115,22,.6) 0%,transparent 70%);pointer-events:none;"></div>' +
-        // Robot avatar
-        '<img src="'+IMG.avatar+'" width="44" height="44" style="border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 4px 14px rgba(249,115,22,.4);" alt="Brain"/>' +
-        '<div style="position:relative;z-index:1;">' +
-          '<img src="'+IMG.logo+'" height="28" style="object-fit:contain;filter:brightness(0) invert(1);" alt="Brain"/>' +
+      // ── Header ─────────────────────────────────────────
+      '<div style="background:linear-gradient(135deg,#1A1F3C 0%,#2D3561 100%);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;cursor:grab;position:relative;overflow:hidden;" id="brain-drag-h">' +
+        '<div style="position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(249,115,22,.08);pointer-events:none;"></div>' +
+        // Avatar
+        '<img src="'+IMG.avatar+'" width="42" height="42" style="border-radius:12px;object-fit:cover;flex-shrink:0;box-shadow:0 3px 12px rgba(249,115,22,.4);position:relative;z-index:1;" alt="Brain"/>' +
+        '<div style="position:relative;z-index:1;flex:1;">' +
+          '<div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.01em;line-height:1;">Brain</div>' +
           '<div style="display:flex;align-items:center;gap:5px;margin-top:3px;">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#F97316;box-shadow:0 0 8px #F97316;animation:brain-dot-bounce .8s ease-in-out infinite;"></div>' +
-            '<span style="font-size:9px;font-weight:800;color:rgba(249,115,22,.9);text-transform:uppercase;letter-spacing:.1em;">Brain is Braining</span>' +
+            '<div style="width:6px;height:6px;border-radius:50%;background:#F97316;box-shadow:0 0 6px #F97316;flex-shrink:0;animation:brain-dot-bounce 1.4s ease-in-out infinite;"></div>' +
+            '<span style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain is Braining</span>' +
           '</div>' +
         '</div>' +
-        '<button style="margin-left:auto;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;z-index:1;" onclick="Brain.close()">&#8722;</button>' +
+        '<button style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1;" onclick="Brain.close()">&#8722;</button>' +
       '</div>' +
       // Quick chips
       '<div style="display:flex;gap:6px;padding:10px 14px 8px;flex-wrap:wrap;flex-shrink:0;border-bottom:1.5px solid #F0F2F5;background:#FAFBFC;">' + chipsHTML + '</div>' +
