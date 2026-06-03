@@ -9613,7 +9613,7 @@ tbody tr:hover td{
     <span class="sb-label">Roster</span>
   </div>
   <div class="sb-item" id="sb-ai-agent" title="AI Learning Agent"
-       onclick="sbAdmin('ai-agent',this);laLoadStats();">
+       onclick="sbAdmin('ai-agent',this);">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M9 11.5C5.5 12.5 3 15 3 18h18c0-3-2.5-5.5-6-6.5"/><circle cx="17" cy="17" r="3"/><path d="M17 15v2l1.5 1.5"/></svg>
     <span class="sb-label">AI Agent</span>
   </div>
@@ -9658,7 +9658,7 @@ tbody tr:hover td{
   <!-- Session 15.5: HOF sidebar item hidden until Q2 redesign. Page itself
        remains in DOM (#agent-section-hall) so deep-links still resolve. -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
-       onclick="sbAgent('hall',this)">
+       onclick="sbAgent('hall',this)" style="display:none!important;" data-hidden-until="on-request">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
     <span class="sb-label">HOF</span>
   </div>
@@ -24063,6 +24063,12 @@ let _laLoaded = false;
 async function laLoadStats() {
   const btn = document.getElementById('la-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Loading…'; }
+  // Show loading state in KPIs so page doesn't look blank
+  ['la-kpi-total','la-kpi-correct','la-kpi-wrong','la-kpi-accuracy','la-kpi-patterns'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.textContent = '…';
+  });
+  const tbody = document.getElementById('la-rule-tbody');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:#9BAFC0;">Loading…</td></tr>';
   try {
     const r = await fetch(BACKEND + '/api/agent-learning/stats');
     const j = await r.json();

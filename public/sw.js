@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.114'; // Fix AI Agent tab, add DELETE roster, fix keyboard shortcuts, un-gate HOF
+const CACHE_VERSION = 'adit-v1.19.115'; // Fix AI Agent double-load race + HOF re-gated
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
