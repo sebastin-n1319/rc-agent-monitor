@@ -120,6 +120,11 @@
   function render() {
     var root = document.getElementById('brain-root');
     if (!root) { console.warn('[Brain] brain-root not found'); return; }
+    // Force layout inline — CSS might be cached/missing
+    root.style.cssText = 'display:flex!important;flex-direction:column!important;height:100%!important;overflow:hidden!important;box-sizing:border-box!important;';
+    // Also ensure the panel itself is flex column
+    var panel = document.getElementById('brain-panel');
+    if (panel) panel.style.cssText = panel.style.cssText + 'display:flex!important;flex-direction:column!important;';
 
     var chipsHTML = CHIPS.map(function(c) {
       return '<button class="brain-chip" onclick="Brain.quick(' + JSON.stringify(c.m) + ')">' + c.e + ' ' + c.l + '</button>';
