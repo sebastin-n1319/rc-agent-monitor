@@ -373,7 +373,11 @@
   function openPanel(){
     isOpen=true;
     var p=document.getElementById('brain-panel'),f=document.getElementById('brain-fab'),b=document.getElementById('brain-bubble');
-    if(p) p.classList.add('bopen');
+    if(p){
+      p.style.display='flex'; // override inline display:none
+      p.style.flexDirection='column';
+      requestAnimationFrame(function(){ p.classList.add('bopen'); });
+    }
     if(f){f.style.transform='scale(.88)';f.style.boxShadow='0 4px 16px rgba(249,115,22,.4)';}
     if(b) b.style.display='none';
     render();
@@ -389,7 +393,10 @@
   function closePanel(){
     isOpen=false;
     var p=document.getElementById('brain-panel'),f=document.getElementById('brain-fab');
-    if(p) p.classList.remove('bopen');
+    if(p){
+      p.classList.remove('bopen');
+      setTimeout(function(){ if(!isOpen) p.style.display='none'; }, 420); // after animation
+    }
     if(f){f.style.transform='';f.style.boxShadow='';}
   }
 
