@@ -1342,17 +1342,43 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       } catch(e) { return null; }
     };
 
-    // STRATEGY 0: Try Zoho search endpoints first — instant if they work
-    try {
-      const searchResults = await Promise.all([
-        checkPage(`${ZOHO_API_BASE}/tickets/search?keyword=${encodeURIComponent(rawId)}&limit=10`),
-        checkPage(`${ZOHO_API_BASE}/tickets/search?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
-        checkPage(`${ZOHO_API_BASE}/search?module=ticket&searchStr=${encodeURIComponent(rawId)}&limit=10`),
-        checkPage(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
-      ]);
-      ticket = searchResults.find(t => t != null) || null;
-      if (ticket) console.log(`✅ Zoho #${rawId} found via search endpoint`);
-    } catch(e) { /* search not available */ }
+    // STRATEGY 0A: Direct internal ID lookup using linear interpolation
+    // Known mappings from debug: ticket# → Zoho internal ID (both sorted roughly linearly)
+    // Known A: ticketNumber 293746 → id 197800000322132001
+    // Known B: ticketNumber 366188 → id 197800000422516911
+    if (!ticket) {
+      try {
+        const knownATNum = 293746n, knownAId = 197800000322132001n;
+        const knownBTNum = 366188n,  knownBId = 197800000422516911n;
+        const slope = (knownBId - knownAId) / (knownBTNum - knownATNum); // BigInt division
+        const targetBig = BigInt(targetNum);
+        const estId = knownAId + slope * (targetBig - knownATNum);
+        // Try estimate ± range in parallel — one direct GET per ID (O(1) lookup)
+        const offsets = [0n,500n,-500n,1000n,-1000n,2000n,-2000n,5000n,-5000n,
+                         10000n,-10000n,20000n,-20000n,50000n,-50000n,100000n,-100000n];
+        const directResults = await Promise.all(offsets.map(async (o) => {
+          try {
+            const r = await fetch(`${ZOHO_API_BASE}/tickets/${String(estId + o)}`, { headers });
+            if (!r.ok) return null;
+            const d = await r.json();
+            return (d.ticketNumber && String(d.ticketNumber) === rawId) ? d : null;
+          } catch(e) { return null; }
+        }));
+        ticket = directResults.find(t => t != null) || null;
+        if (ticket) console.log(`✅ Zoho #${rawId} found via direct ID lookup (est=${estId})`);
+      } catch(e) { console.log('direct ID lookup error:', e.message); }
+    }
+
+    // STRATEGY 0B: Search endpoints (most return 422 but worth trying)
+    if (!ticket) {
+      try {
+        const searchResults = await Promise.all([
+          checkPage(`${ZOHO_API_BASE}/tickets/search?keyword=${encodeURIComponent(rawId)}&limit=10`),
+          checkPage(`${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
+        ]);
+        ticket = searchResults.find(t => t != null) || null;
+      } catch(e) {}
+    }
 
     // Helper: fetch page and return { ticket, newestNum, list }
     const fetchPage = async (url) => {
