@@ -13074,9 +13074,12 @@ function applyView(view){
   const isAdmin=view==='admin';
   document.getElementById('adminView').style.display=isAdmin?'block':'none';
   document.getElementById('agentView').style.display=isAdmin?'none':'block';
+  // tab-ai-agent lives OUTSIDE #adminView in the DOM — must hide it explicitly
+  var aiAgentPage = document.getElementById('tab-ai-agent');
+  if(aiAgentPage) aiAgentPage.style.display = isAdmin ? '' : 'none';
   // Explicitly reset all admin pages when switching to agent view — prevents bleed-through
   if(!isAdmin){
-    document.querySelectorAll('#adminView .page').forEach(function(p){ p.classList.remove('active'); });
+    document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
   }
   // Show correct sidebar — must use setProperty('important') to beat CSS !important
   const adminSb=document.getElementById('adit-admin-sidebar');
