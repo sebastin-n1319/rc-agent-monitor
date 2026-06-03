@@ -113,6 +113,26 @@
     '<circle cx="20" cy="115" r="2" fill="#FFB347" opacity=".6"/>' +
   '</svg>';
 
+
+  var NEURAL_PATTERN = '<svg viewBox="0 0 200 120" width="200" height="120" xmlns="http://www.w3.org/2000/svg" opacity=".5">' +
+    '<circle cx="20" cy="20" r="3" fill="#F97316"/><circle cx="60" cy="40" r="3" fill="#F97316"/>' +
+    '<circle cx="100" cy="20" r="3" fill="#F97316"/><circle cx="140" cy="40" r="3" fill="#F97316"/>' +
+    '<circle cx="180" cy="20" r="3" fill="#F97316"/><circle cx="40" cy="70" r="3" fill="#F97316"/>' +
+    '<circle cx="80" cy="90" r="3" fill="#F97316"/><circle cx="120" cy="70" r="3" fill="#F97316"/>' +
+    '<circle cx="160" cy="90" r="3" fill="#F97316"/>' +
+    '<line x1="20" y1="20" x2="60" y2="40" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="60" y1="40" x2="100" y2="20" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="100" y1="20" x2="140" y2="40" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="140" y1="40" x2="180" y2="20" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="40" y1="70" x2="80" y2="90" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="80" y1="90" x2="120" y2="70" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="120" y1="70" x2="160" y2="90" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="20" y1="20" x2="40" y2="70" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="60" y1="40" x2="80" y2="90" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="100" y1="20" x2="120" y2="70" stroke="#F97316" stroke-width=".8"/>' +
+    '<line x1="140" y1="40" x2="160" y2="90" stroke="#F97316" stroke-width=".8"/>' +
+  '</svg>';
+
   /* ── CSS Injection ─────────────────────────────────────── */
   function injectCSS() {
     if (document.getElementById('brain-injected-css')) return;
