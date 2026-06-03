@@ -12886,9 +12886,15 @@ function configureAgentBreakbotAccess(){
 }
 
 function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false){
-  // Clear stale view state — always start in the user's actual role view
-  // This prevents agent-view bleeding into admin sessions across refreshes
-  try{ localStorage.removeItem('rcActiveView'); }catch(e){}
+  // DO NOT clear rcActiveView here — agents need it to restore their last page.
+  // We only override it if the stored view doesn't match the user's role
+  // (e.g. admin logged in, last session was agent view — keep admin default).
+  try{
+    const stored = localStorage.getItem('rcActiveView');
+    // If agent: stored must be 'agent'. Force-set so applyView reads correctly.
+    // If admin: they can be in 'admin' or 'agent' — keep whatever was stored.
+    if(role !== 'admin' && stored !== 'agent') localStorage.setItem('rcActiveView','agent');
+  }catch(e){}
   currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
   hideSessionDebug();
   applyAditBranding();
@@ -12959,12 +12965,20 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       const sbItem = document.getElementById('sb-'+storedTab);
       if(sbItem) sbItem.classList.add('active');
     }catch(e){}
+    // Restore agent section SYNCHRONOUSLY before screen becomes visible — no flash
+    try{
+      if(role !== 'admin'){
+        const agentSection = localStorage.getItem('rcActiveAgentSection') || 'dashboard';
+        const btnEl = document.getElementById('agent-tab-'+agentSection) || document.getElementById('agent-breakbot-tab');
+        if(btnEl) switchAgentSection(agentSection, btnEl);
+      }
+    }catch(e){}
     forceAppVisible();
     setupLiveStream();
     refresh();
     setTimeout(firstLoadSync,2000);
     setTimeout(restoreLastTab, 0);          // restore admin tab (triggers data load)
-    setTimeout(restoreLastAgentSection, 50); // restore agent section
+    setTimeout(restoreLastAgentSection, 50); // agent section safety re-apply
     return;
   }
 
@@ -13000,6 +13014,14 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
       if(sbItem) sbItem.classList.add('active');
     }catch(e){}
 
+    // Restore agent section before screen becomes visible — prevents flash to wrong page
+    try{
+      if(role !== 'admin'){
+        const agentSection = localStorage.getItem('rcActiveAgentSection') || 'dashboard';
+        const btnEl = document.getElementById('agent-tab-'+agentSection) || document.getElementById('agent-breakbot-tab');
+        if(btnEl) switchAgentSection(agentSection, btnEl);
+      }
+    }catch(e){}
     forceAppVisible();
 
     // Fade in the app: add transition class, then double-rAF to change opacity.
@@ -13048,14 +13070,18 @@ function applyView(view){
   // Always scroll to top when switching views — setTimeout ensures DOM reflow first
   setTimeout(()=>window.scrollTo({top:0,behavior:'instant'}),0);
   configureAgentBreakbotAccess();
-  // Default agent landing: Break Bot if available, else Dashboard
+  // Agent landing page is handled by restoreLastAgentSection() after startApp.
+  // Only fall back to breakbot/dashboard if there's no stored section at all.
   if(!isAdmin){
-    requestAnimationFrame(()=>{
-      const bbBtn=document.getElementById('agent-breakbot-tab');
-      const dbBtn=document.getElementById('agent-tab-dashboard');
-      if(bbBtn && breakbotVisibleInAgentView()) switchAgentSection('breakbot',bbBtn);
-      else if(dbBtn) switchAgentSection('dashboard',dbBtn);
-    });
+    const storedSection = (() => { try{ return localStorage.getItem('rcActiveAgentSection'); }catch(e){ return null; } })();
+    if(!storedSection){
+      requestAnimationFrame(()=>{
+        const bbBtn=document.getElementById('agent-breakbot-tab');
+        const dbBtn=document.getElementById('agent-tab-dashboard');
+        if(bbBtn && breakbotVisibleInAgentView()) switchAgentSection('breakbot',bbBtn);
+        else if(dbBtn) switchAgentSection('dashboard',dbBtn);
+      });
+    }
   }
   // Announcement ticker — expiry driven by server env var ANNOUNCEMENT_EXPIRY (ISO date)
   // Falls back to 90 days from now so ticker is always live unless explicitly expired
