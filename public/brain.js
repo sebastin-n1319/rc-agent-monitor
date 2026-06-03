@@ -5,6 +5,74 @@
 (function() {
   'use strict';
 
+
+  /* ── Inject Brain CSS so it works even if adit-theme.css is cached ── */
+  function injectBrainCSS() {
+    if (document.getElementById('brain-injected-css')) return;
+    var s = document.createElement('style');
+    s.id = 'brain-injected-css';
+    s.textContent = [
+      '#brain-fab-wrap{position:fixed;bottom:28px;right:28px;z-index:99999;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none;}',
+      '#brain-fab-wrap>*{pointer-events:auto;}',
+      '.brain-fab{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#F97316,#EA580C);border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(249,115,22,.45);transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;outline:none;}',
+      '.brain-fab:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 16px 48px rgba(249,115,22,.55);}',
+      '.brain-fab.open{background:linear-gradient(135deg,#1E293B,#0F172A);box-shadow:0 8px 32px rgba(15,23,42,.5);}',
+      '.brain-fab-icon{position:relative;z-index:2;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}',
+      '.brain-fab.open .brain-fab-icon{transform:rotate(15deg) scale(.88);}',
+      '.brain-fab-rings{position:absolute;inset:0;border-radius:50%;}',
+      '.brain-fab-ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(249,115,22,.5);animation:brain-ring-pulse 2.4s ease-out infinite;}',
+      '.brain-fab-ring.r2{animation-delay:.8s;}.brain-fab-ring.r3{animation-delay:1.6s;}',
+      '.brain-fab.open .brain-fab-ring{animation:none;opacity:0;}',
+      '@keyframes brain-ring-pulse{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}',
+      '.brain-fab-badge{position:absolute;right:calc(100% + 10px);top:50%;transform:translateY(-50%) translateX(6px) scale(.95);background:#0F172A;color:#fff;font-size:10px;font-weight:700;white-space:nowrap;padding:4px 10px;border-radius:999px;letter-spacing:.04em;opacity:0;transition:all .2s cubic-bezier(.34,1.56,.64,1);pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.3);}',
+      '.brain-fab-badge::after{content:"";position:absolute;right:-5px;top:50%;transform:translateY(-50%);border:5px solid transparent;border-left-color:#0F172A;border-right:0;}',
+      '.brain-fab:hover .brain-fab-badge{opacity:1;transform:translateY(-50%) translateX(0) scale(1);}',
+      '.brain-bubble{background:#fff;border-radius:16px 16px 4px 16px;padding:12px 36px 12px 14px;position:relative;box-shadow:0 8px 32px rgba(15,23,42,.15);max-width:260px;font-size:12.5px;color:#0F172A;line-height:1.5;border:1px solid #E5E9F0;animation:brain-bubble-in .4s cubic-bezier(.34,1.56,.64,1) both;}',
+      '@keyframes brain-bubble-in{from{opacity:0;transform:scale(.8) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}',
+      '.brain-bubble::before{content:"🧠";position:absolute;top:-8px;left:12px;font-size:14px;}',
+      '.brain-bubble-dismiss{position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;color:#94A3B8;font-size:14px;padding:2px;}',
+      '.brain-panel{width:380px;height:560px;background:rgba(15,23,42,.97);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.1);box-shadow:0 32px 80px rgba(0,0,0,.45),0 8px 24px rgba(0,0,0,.3);display:none;flex-direction:column;transform-origin:bottom right;}',
+      '.brain-panel.open{display:flex;animation:brain-panel-in .38s cubic-bezier(.34,1.56,.64,1) both;}',
+      '@keyframes brain-panel-in{from{opacity:0;transform:scale(.6) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}',
+      '.brain-ph{padding:14px 16px 10px;background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(249,115,22,.05));border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:12px;flex-shrink:0;cursor:grab;}',
+      '.brain-ph-avatar{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#F97316,#EA580C);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(249,115,22,.4);position:relative;}',
+      '.brain-ph-avatar-glow{position:absolute;inset:-3px;border-radius:15px;border:1.5px solid rgba(249,115,22,.4);animation:brain-glow-ring 2s ease-in-out infinite;}',
+      '@keyframes brain-glow-ring{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:0;transform:scale(1.15)}}',
+      '.brain-ph-title{font-size:15px;font-weight:800;color:#fff;line-height:1;}',
+      '.brain-ph-status{display:inline-flex;align-items:center;gap:5px;font-size:9.5px;font-weight:700;color:rgba(249,115,22,.9);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;}',
+      '.brain-ph-dot{width:6px;height:6px;border-radius:50%;background:#F97316;animation:brain-dot-blink 1.4s ease-in-out infinite;}',
+      '@keyframes brain-dot-blink{0%,100%{opacity:1}50%{opacity:.3}}',
+      '.brain-ph-close{margin-left:auto;width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;transition:all .15s;}',
+      '.brain-ph-close:hover{background:rgba(255,255,255,.16);color:#fff;}',
+      '.brain-chips{display:flex;gap:6px;padding:10px 12px 8px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.05);}',
+      '.brain-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:10.5px;font-weight:600;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;font-family:"Poppins",sans-serif;transition:all .16s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;}',
+      '.brain-chip:hover{background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.5);color:#fff;transform:translateY(-1px);}',
+      '.brain-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;scroll-behavior:smooth;}',
+      '.brain-msgs::-webkit-scrollbar{width:4px;}.brain-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:99px;}',
+      '.brain-msg{display:flex;gap:8px;animation:brain-msg-slide .24s cubic-bezier(.34,1.56,.64,1) both;}',
+      '@keyframes brain-msg-slide{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}',
+      '.brain-msg-u{flex-direction:row-reverse;}',
+      '.brain-msg-av{width:26px;height:26px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}',
+      '.brain-msg-av-ai{background:linear-gradient(135deg,#F97316,#EA580C);color:#fff;}',
+      '.brain-msg-av-u{background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);}',
+      '.brain-msg-bub{max-width:78%;padding:9px 13px;border-radius:14px;font-size:12.5px;line-height:1.6;font-family:"Poppins",sans-serif;}',
+      '.brain-msg-bub-ai{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.9);border-radius:4px 14px 14px 14px;}',
+      '.brain-msg-bub-u{background:linear-gradient(135deg,rgba(249,115,22,.9),rgba(234,88,12,.9));color:#fff;border-radius:14px 4px 14px 14px;}',
+      '.brain-msg-time{font-size:9px;color:rgba(255,255,255,.25);margin-top:3px;text-align:right;}',
+      '.brain-typing{display:flex;gap:4px;align-items:center;padding:8px 12px;}',
+      '.brain-typing span{width:6px;height:6px;border-radius:50%;background:rgba(249,115,22,.6);animation:brain-type .9s ease-in-out infinite;}',
+      '.brain-typing span:nth-child(2){animation-delay:.2s;}.brain-typing span:nth-child(3){animation-delay:.4s;}',
+      '@keyframes brain-type{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1;background:#F97316}}',
+      '.brain-input-row{display:flex;gap:8px;padding:10px 12px;background:rgba(0,0,0,.2);border-top:1px solid rgba(255,255,255,.06);flex-shrink:0;align-items:flex-end;}',
+      '.brain-input-txt{flex:1;padding:9px 13px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:12.5px;font-family:"Poppins",sans-serif;outline:none;resize:none;max-height:100px;min-height:36px;transition:border-color .15s,box-shadow .15s;line-height:1.5;}',
+      '.brain-input-txt:focus{border-color:rgba(249,115,22,.6);box-shadow:0 0 0 3px rgba(249,115,22,.12);background:rgba(255,255,255,.09);}',
+      '.brain-input-txt::placeholder{color:rgba(255,255,255,.25);}',
+      '.brain-send-btn{width:36px;height:36px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,#F97316,#EA580C);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(249,115,22,.4);transition:all .2s cubic-bezier(.34,1.56,.64,1);}',
+      '.brain-send-btn:hover{transform:scale(1.1);}.brain-send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}',
+    ].join('');
+    document.head.appendChild(s);
+  }
+
   var msgs = [];
   var busy = false;
   var isOpen = false;
@@ -137,7 +205,7 @@
         '</div>' +
         '<div><div class="brain-ph-title">Brain</div>' +
           '<div class="brain-ph-status"><span class="brain-ph-dot"></span>Brain is Braining</div></div>' +
-        '<button class="brain-ph-close" id="brain-close-btn" style="pointer-events:all;z-index:10;" title="Minimize">&#8722;</button>' +
+        '<button class="brain-ph-close" onclick="Brain.close()" style="pointer-events:all;z-index:10;cursor:pointer;" title="Minimize">&#8722;</button>' +
       '</div>' +
       // CHIPS
       '<div class="brain-chips">' + chipsHTML + '</div>' +
@@ -153,11 +221,6 @@
       '</div>';
 
     scrollBottom();
-    // Attach close button event (onclick in HTML unreliable inside innerHTML)
-    var closeBtn = document.getElementById('brain-close-btn');
-    if (closeBtn) {
-      closeBtn.onclick = function(e) { e.stopPropagation(); Brain.close(); };
-    }
     // Attach drag
     attachDrag();
   }
@@ -265,7 +328,7 @@
     var panel = document.getElementById('brain-panel');
     var fab   = document.getElementById('brain-fab');
     var bubble = document.getElementById('brain-bubble');
-    if (panel) { panel.classList.add('open'); panel.style.display = 'flex'; }
+    if (panel) { panel.classList.add('open'); }
     if (fab)   fab.classList.add('open');
     if (bubble) bubble.style.display = 'none';
     smartPosition();
@@ -335,6 +398,7 @@
 
   /* ── Init ───────────────────────────────────────────── */
   function init() {
+    injectBrainCSS();
     // Ensure panel is hidden initially
     var panel = document.getElementById('brain-panel');
     if (panel) { panel.classList.remove('open'); }
