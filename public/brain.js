@@ -112,14 +112,22 @@
     {e:'📖',l:'Full guide',  m:'Give me a full overview of this tool and all its features.'},
   ];
 
-  /* ── Build message HTML ─────────────────────────────────── */
+  /* ── Build message HTML with contextual state images ─── */
   function msgHTML(m) {
     var isAI = m.role === 'assistant';
     if (isAI) {
+      // Detect message context for appropriate illustration
+      var content = m.content || '';
+      var contextImg = '';
+      if (m.showImg === 'success' || /✅|found|success|done|fixed|resolved/i.test(content.slice(0,60))) {
+        contextImg = '<img src="'+IMG.success+'" width="80" height="70" style="object-fit:contain;margin:6px 0 4px;display:block;filter:drop-shadow(0 4px 10px rgba(16,185,129,.2));" alt=""/>';
+      } else if (m.showImg === 'error' || /❌|error|not found|failed|issue|broken/i.test(content.slice(0,60))) {
+        contextImg = '<img src="'+IMG.error+'" width="80" height="70" style="object-fit:contain;margin:6px 0 4px;display:block;filter:drop-shadow(0 4px 10px rgba(239,68,68,.2));" alt=""/>';
+      } else if (m.showImg === 'search' || /search|lookup|scan|looking|checking/i.test(content.slice(0,60))) {
+        contextImg = '<img src="'+IMG.search+'" width="80" height="70" style="object-fit:contain;margin:6px 0 4px;display:block;" alt=""/>';
+      }
       return '<div class="brain-msg-row" style="display:flex;gap:8px;align-items:flex-start;">' +
-        '<div style="width:30px;height:30px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#FF8C00,#F97316);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(249,115,22,.3);">' +
-          ROBOT_XS +
-        '</div>' +
+        '<img src="'+IMG.avatar+'" width="30" height="30" style="border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(249,115,22,.3);" alt="Brain"/>' +
         '<div style="max-width:80%;">' +
           '<div style="background:#F8F9FC;border:1.5px solid #F0F2F5;border-radius:4px 16px 16px 16px;padding:10px 14px;font-size:12.5px;line-height:1.65;color:#1A1F3C;">' +
             md(m.content) +
@@ -142,22 +150,31 @@
     }
   }
 
+  /* ── State illustrations ─────────────────────────────── */
+  function stateImg(src, alt, w, h, extra) {
+    return '<img src="'+src+'" width="'+(w||120)+'" height="'+(h||100)+'" alt="'+(alt||'Brain')+'" style="object-fit:contain;'+(extra||'')+'">';
+  }
+
   function welcomeHTML() {
     var n=fn(), g=greet(), h=hr();
-    var tagline = h<12 ? 'Ready for your shift!' : h<17 ? 'Midshift check-in!' : 'Late shift, still here!';
-    return '<div style="display:flex;flex-direction:column;align-items:center;padding:20px 20px 8px;text-align:center;">' +
-      // Robot illustration with neural network background
-      '<div style="position:relative;margin-bottom:12px;">' +
-        '<div style="position:absolute;inset:-10px;opacity:.12;background:radial-gradient(circle at 50% 50%,rgba(249,115,22,.4) 0%,transparent 70%);pointer-events:none;"></div>' +
-        '<div style="position:relative;z-index:1;">' + ROBOT_HI + '</div>' +
+    var emoji = h<12?'🌅':h<17?'☀️':'🌙';
+    return '<div style="display:flex;flex-direction:column;align-items:center;padding:16px 20px 8px;text-align:center;">' +
+      // Logo
+      '<img src="'+IMG.logo+'" style="width:180px;height:auto;object-fit:contain;margin-bottom:12px;" alt="Brain"/>' +
+      // Thinking illustration
+      '<div style="position:relative;margin-bottom:10px;">' +
+        stateImg(IMG.thinking, 'Brain working', 180, 140, 'filter:drop-shadow(0 6px 20px rgba(249,115,22,.25));') +
       '</div>' +
-      '<div style="font-size:20px;font-weight:800;color:#1A1F3C;letter-spacing:-.02em;margin-bottom:3px;">' + g + ', ' + esc(n) + '!</div>' +
-      '<div style="font-size:11.5px;color:#6B7280;margin-bottom:4px;">' + tagline + ' I\'m Brain — your AI co-pilot.</div>' +
-      '<div style="font-size:11px;color:#9BA3B2;margin-bottom:16px;">Ask me anything about this tool, report a bug, or get step-by-step help.</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;">' +
-        '<span style="padding:4px 11px;background:#FFF3E0;border:1.5px solid rgba(249,115,22,.25);border-radius:99px;font-size:10px;font-weight:700;color:#F97316;">🔍 Diagnose issues</span>' +
-        '<span style="padding:4px 11px;background:#EEF2FF;border:1.5px solid rgba(99,102,241,.2);border-radius:99px;font-size:10px;font-weight:700;color:#6366F1;">📖 Feature guide</span>' +
-        '<span style="padding:4px 11px;background:#ECFDF5;border:1.5px solid rgba(16,185,129,.2);border-radius:99px;font-size:10px;font-weight:700;color:#059669;">⚡ Instant fixes</span>' +
+      '<div style="font-size:16px;font-weight:800;color:#1A1F3C;letter-spacing:-.01em;margin-bottom:4px;">' + emoji + ' ' + g + ', ' + esc(n) + '!</div>' +
+      '<div style="font-size:11.5px;color:#6B7280;line-height:1.6;max-width:280px;margin-bottom:14px;">I watch your session and help with bugs, features, and anything about Adit Monitor.</div>' +
+      // Capability pills using image icons
+      '<div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;">' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#FFF3E0;border:1.5px solid rgba(249,115,22,.25);border-radius:99px;font-size:10px;font-weight:700;color:#F97316;">' +
+          '<img src="'+IMG.search+'" width="14" height="14" style="border-radius:3px;object-fit:cover;">Diagnose issues</span>' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#ECFDF5;border:1.5px solid rgba(16,185,129,.25);border-radius:99px;font-size:10px;font-weight:700;color:#059669;">' +
+          '<img src="'+IMG.success+'" width="14" height="14" style="border-radius:3px;object-fit:cover;">Instant fixes</span>' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#EEF2FF;border:1.5px solid rgba(99,102,241,.2);border-radius:99px;font-size:10px;font-weight:700;color:#6366F1;">' +
+          '<img src="'+IMG.learning+'" width="14" height="14" style="border-radius:3px;object-fit:cover;">AI Learning</span>' +
       '</div>' +
     '</div>';
   }
@@ -179,11 +196,9 @@
         // Neural network decoration
         '<div style="position:absolute;right:0;top:0;bottom:0;width:160px;opacity:.15;background:radial-gradient(circle at 80% 50%,rgba(249,115,22,.6) 0%,transparent 70%);pointer-events:none;"></div>' +
         // Robot avatar
-        '<div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#FF8C00,#F97316);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 14px rgba(249,115,22,.4);position:relative;">' +
-          ROBOT_SVG(32, 32) +
-        '</div>' +
+        '<img src="'+IMG.avatar+'" width="44" height="44" style="border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 4px 14px rgba(249,115,22,.4);" alt="Brain"/>' +
         '<div style="position:relative;z-index:1;">' +
-          '<div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.01em;line-height:1;">Brain</div>' +
+          '<img src="'+IMG.logo+'" height="28" style="object-fit:contain;filter:brightness(0) invert(1);" alt="Brain"/>' +
           '<div style="display:flex;align-items:center;gap:5px;margin-top:3px;">' +
             '<div style="width:6px;height:6px;border-radius:50%;background:#F97316;box-shadow:0 0 8px #F97316;animation:brain-dot-bounce .8s ease-in-out infinite;"></div>' +
             '<span style="font-size:9px;font-weight:800;color:rgba(249,115,22,.9);text-transform:uppercase;letter-spacing:.1em;">Brain is Braining</span>' +
