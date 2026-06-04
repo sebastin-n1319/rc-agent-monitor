@@ -54,8 +54,8 @@
   --rx-shadow-md: 0 4px 20px rgba(15,23,42,.10);
   --rx-radius: 16px;
   --rx-radius-sm: 10px;
-  --rx-row-h: 52px;
-  --rx-cell-w: 42px;
+  --rx-row-h: 46px;
+  --rx-cell-w: 38px;
   --rx-agent-w: 300px;
   --rx-att-w: 100px;
   --rx-spring: cubic-bezier(.34,1.56,.64,1);
@@ -284,7 +284,7 @@
 }
 #roster-admin-root .rx-cell::before, #roster-admin-root .rx-cell::after { display: none !important; content: none !important; }
 #roster-admin-root .rx-cell.rx-w { background: rgba(139,92,246,.04) !important; }
-#roster-admin-root .rx-cell.rx-t { background: var(--rx-today-bg) !important; }
+#roster-admin-root .rx-cell.rx-t { background: rgba(249,115,22,.04) !important; }
 #roster-admin-root .rx-cell.rx-week-end { border-left: 1px solid #F1F5F9 !important; }
 
 /* Status circles — premium redesign */
@@ -296,7 +296,11 @@
 }
 #roster-admin-root .rx-day-empty { background: transparent !important; color: var(--rx-ink4) !important; font-weight: 400 !important; font-size: 12px !important; }
 #roster-admin-root .rx-cell.rx-w .rx-day-empty { color: #D8D8E5 !important; }
-#roster-admin-root .rx-cell.rx-t .rx-day-empty { color: var(--rx-accent) !important; font-weight: 700 !important; box-shadow: 0 0 0 2px var(--rx-accent) !important; }
+#roster-admin-root .rx-cell.rx-t .rx-day-empty {
+  color: var(--rx-accent) !important; font-weight: 800 !important;
+  box-shadow: 0 0 0 2px var(--rx-accent) !important;
+  background: rgba(249,115,22,.08) !important; border-radius: 50% !important;
+}
 #roster-admin-root .rx-cell.rx-t .rx-day-num:not(.rx-day-empty) { box-shadow: 0 0 0 2.5px var(--rx-accent), 0 0 0 5px var(--rx-accent-glow) !important; }
 #roster-admin-root .rx-cell:hover .rx-day-num { transform: scale(1.2) !important; z-index: 3 !important; }
 
@@ -372,7 +376,7 @@
 }
 #roster-admin-root .rx-name-info { flex: 1 !important; min-width: 0 !important; }
 #roster-admin-root .rx-avatar {
-  width: 32px !important; height: 32px !important; min-width: 32px !important;
+  width: 30px !important; height: 30px !important; min-width: 30px !important;
   border-radius: 50% !important; flex-shrink: 0 !important;
   font-size: 11px !important; font-weight: 700 !important; color: #fff !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
@@ -381,7 +385,7 @@
 #roster-admin-root .rx-row-chk { flex-shrink: 0 !important; }
 
 /* ── Row height — compact ────────────────────────────────── */
-#roster-admin-root { --rx-row-h: 54px !important; }
+#roster-admin-root { --rx-row-h: 46px !important; }
 
 /* ── TD-name must be flex to center content ─────────────── */
 #roster-admin-root .rx-td-name {
@@ -408,14 +412,10 @@
 
 /* ── Today column — stronger visual ─────────────────────── */
 #roster-admin-root .rx-cell.rx-t {
-  background: rgba(249,115,22,.07) !important;
-  border-left: 2px solid rgba(249,115,22,.4) !important;
-  border-right: 2px solid rgba(249,115,22,.4) !important;
+  background: rgba(249,115,22,.05) !important;
 }
 #roster-admin-root .rx-th-day.rx-t {
-  background: rgba(249,115,22,.3) !important;
-  border-left: 2px solid rgba(249,115,22,.5) !important;
-  border-right: 2px solid rgba(249,115,22,.5) !important;
+  background: rgba(249,115,22,.25) !important;
 }
 
 /* ── Weekend columns — subtle lavender ───────────────────── */
