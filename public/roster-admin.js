@@ -289,10 +289,11 @@
 
 /* Status circles — premium redesign */
 #roster-admin-root .rx-day-num {
-  width: 34px !important; height: 34px !important; border-radius: 50% !important;
+  width: 32px !important; height: 32px !important; border-radius: 50% !important;
   margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: center !important;
-  font-size: 12px !important; font-weight: 700 !important;
-  transition: transform .22s var(--rx-spring), box-shadow .22s var(--rx-ease) !important;
+  font-size: 12px !important; font-weight: 600 !important;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1) !important;
+  box-shadow: none !important;
 }
 #roster-admin-root .rx-day-empty { background: transparent !important; color: var(--rx-ink4) !important; font-weight: 400 !important; font-size: 12px !important; }
 #roster-admin-root .rx-cell.rx-w .rx-day-empty { color: #D8D8E5 !important; }
@@ -302,22 +303,22 @@
   background: rgba(249,115,22,.08) !important; border-radius: 50% !important;
 }
 #roster-admin-root .rx-cell.rx-t .rx-day-num:not(.rx-day-empty) { box-shadow: 0 0 0 2.5px var(--rx-accent), 0 0 0 5px var(--rx-accent-glow) !important; }
-#roster-admin-root .rx-cell:hover .rx-day-num { transform: scale(1.2) !important; z-index: 3 !important; }
+#roster-admin-root .rx-cell:hover .rx-day-num { transform: scale(1.15) !important; z-index: 3 !important; }
 
-/* Status colors — vivid & distinct */
-#roster-admin-root .rx-st-present .rx-day-num  { background: linear-gradient(135deg,#059669,#10B981) !important; color: #fff !important; box-shadow: 0 3px 8px rgba(5,150,105,.35) !important; }
-#roster-admin-root .rx-st-wfh     .rx-day-num  { background: linear-gradient(135deg,#7C3AED,#8B5CF6) !important; color: #fff !important; box-shadow: 0 3px 8px rgba(124,58,237,.35) !important; }
-#roster-admin-root .rx-st-on_duty .rx-day-num  { background: linear-gradient(135deg,#F97316,#FB923C) !important; color: #fff !important; box-shadow: 0 3px 8px rgba(249,115,22,.35) !important; }
-#roster-admin-root .rx-st-off     .rx-day-num  { background: linear-gradient(135deg,#475569,#64748B) !important; color: #fff !important; }
-#roster-admin-root .rx-st-holiday .rx-day-num  { background: linear-gradient(135deg,#0891B2,#06B6D4) !important; color: #fff !important; }
-#roster-admin-root .rx-st-pl      .rx-day-num  { background: linear-gradient(135deg,#2563EB,#3B82F6) !important; color: #fff !important; }
-#roster-admin-root .rx-st-hd_pl   .rx-day-num  { background: #BFDBFE !important; color: #1E40AF !important; }
-#roster-admin-root .rx-st-upl     .rx-day-num  { background: linear-gradient(135deg,#6B7280,#9CA3AF) !important; color: #fff !important; }
-#roster-admin-root .rx-st-hd_upl  .rx-day-num  { background: #E5E7EB !important; color: #374151 !important; }
-#roster-admin-root .rx-st-sl      .rx-day-num  { background: linear-gradient(135deg,#DC2626,#EF4444) !important; color: #fff !important; box-shadow: 0 3px 8px rgba(220,38,38,.35) !important; }
-#roster-admin-root .rx-st-hd_sl   .rx-day-num  { background: #FCA5A5 !important; color: #7F1D1D !important; }
-#roster-admin-root .rx-st-ncns    .rx-day-num  { background: linear-gradient(135deg,#7F1D1D,#991B1B) !important; color: #fff !important; box-shadow: 0 0 0 3px rgba(153,27,27,.25), 0 3px 10px rgba(153,27,27,.45) !important; }
-#roster-admin-root .rx-st-absent  .rx-day-num  { background: linear-gradient(135deg,#1E293B,#334155) !important; color: #fff !important; }
+/* Status colors — clean flat circles matching reference design */
+#roster-admin-root .rx-st-present .rx-day-num  { background: #F4B942 !important; color: #fff !important; }
+#roster-admin-root .rx-st-wfh     .rx-day-num  { background: #A78BFA !important; color: #fff !important; }
+#roster-admin-root .rx-st-on_duty .rx-day-num  { background: #F97316 !important; color: #fff !important; }
+#roster-admin-root .rx-st-off     .rx-day-num  { background: #94A3B8 !important; color: #fff !important; }
+#roster-admin-root .rx-st-holiday .rx-day-num  { background: #38BDF8 !important; color: #fff !important; }
+#roster-admin-root .rx-st-pl      .rx-day-num  { background: #60A5FA !important; color: #fff !important; }
+#roster-admin-root .rx-st-hd_pl   .rx-day-num  { background: #BAE6FD !important; color: #0C4A6E !important; }
+#roster-admin-root .rx-st-upl     .rx-day-num  { background: #CBD5E1 !important; color: #334155 !important; }
+#roster-admin-root .rx-st-hd_upl  .rx-day-num  { background: #E2E8F0 !important; color: #475569 !important; }
+#roster-admin-root .rx-st-sl      .rx-day-num  { background: #F87171 !important; color: #fff !important; }
+#roster-admin-root .rx-st-hd_sl   .rx-day-num  { background: #FECACA !important; color: #991B1B !important; }
+#roster-admin-root .rx-st-ncns    .rx-day-num  { background: #DC2626 !important; color: #fff !important; }
+#roster-admin-root .rx-st-absent  .rx-day-num  { background: #475569 !important; color: #fff !important; }
 
 /* ATT% */
 #roster-admin-root .rx-td-tot { display: none !important; }
