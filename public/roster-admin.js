@@ -364,6 +364,93 @@
 #roster-admin-root .rx-qp-clear { display: flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 8px !important; border: 1.5px solid rgba(220,38,38,.30) !important; background: rgba(220,38,38,.06) !important; cursor: pointer !important; color: #DC2626 !important; transition: all .14s !important; font-size: 14px !important; }
 #roster-admin-root .rx-qp-clear:hover { background: rgba(220,38,38,.12) !important; border-color: #DC2626 !important; }
 
+
+/* ── CRITICAL: Name row layout (flex horizontal) ────────── */
+#roster-admin-root .rx-name-row {
+  display: flex !important; align-items: center !important; gap: 10px !important;
+  padding-right: 8px !important;
+}
+#roster-admin-root .rx-name-info { flex: 1 !important; min-width: 0 !important; }
+#roster-admin-root .rx-avatar {
+  width: 32px !important; height: 32px !important; min-width: 32px !important;
+  border-radius: 50% !important; flex-shrink: 0 !important;
+  font-size: 11px !important; font-weight: 700 !important; color: #fff !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.2) !important;
+}
+#roster-admin-root .rx-row-chk { flex-shrink: 0 !important; }
+
+/* ── Row height — compact ────────────────────────────────── */
+#roster-admin-root { --rx-row-h: 54px !important; }
+
+/* ── TD-name must be flex to center content ─────────────── */
+#roster-admin-root .rx-td-name {
+  position: sticky !important; left: 0 !important; z-index: 4 !important;
+  background: var(--rx-surface) !important; border-right: 1px solid var(--rx-border) !important;
+  padding: 0 0 0 12px !important; vertical-align: middle !important;
+  min-width: var(--rx-agent-w) !important; width: var(--rx-agent-w) !important;
+  cursor: pointer !important;
+}
+
+/* ── Name & meta compact styling ────────────────────────── */
+#roster-admin-root .rx-name {
+  font-size: 12.5px !important; font-weight: 600 !important; color: var(--rx-ink) !important;
+  line-height: 1.2 !important; display: block !important;
+  white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important;
+  max-width: 185px !important;
+}
+#roster-admin-root .rx-meta {
+  font-size: 9.5px !important; color: var(--rx-ink3) !important; margin-top: 1px !important;
+  display: block !important; white-space: nowrap !important; overflow: hidden !important;
+  text-overflow: ellipsis !important; max-width: 185px !important;
+}
+#roster-admin-root .rx-meta em { font-style: normal !important; color: var(--rx-ink2) !important; }
+
+/* ── Today column — stronger visual ─────────────────────── */
+#roster-admin-root .rx-cell.rx-t {
+  background: rgba(249,115,22,.07) !important;
+  border-left: 2px solid rgba(249,115,22,.4) !important;
+  border-right: 2px solid rgba(249,115,22,.4) !important;
+}
+#roster-admin-root .rx-th-day.rx-t {
+  background: rgba(249,115,22,.3) !important;
+  border-left: 2px solid rgba(249,115,22,.5) !important;
+  border-right: 2px solid rgba(249,115,22,.5) !important;
+}
+
+/* ── Weekend columns — subtle lavender ───────────────────── */
+#roster-admin-root .rx-cell.rx-w { background: rgba(139,92,246,.04) !important; }
+#roster-admin-root .rx-th-day.rx-w { background: rgba(139,92,246,.18) !important; }
+
+/* ── Empty date cell numbers ─────────────────────────────── */
+#roster-admin-root .rx-day-empty {
+  background: transparent !important; color: #D1D5DB !important;
+  font-weight: 400 !important; font-size: 12px !important;
+}
+#roster-admin-root .rx-cell.rx-w .rx-day-empty { color: #C4B5FD !important; opacity: .5 !important; }
+
+/* ── Row hover with left stripe ──────────────────────────── */
+#roster-admin-root .rx-row:hover .rx-td-name {
+  background: rgba(249,115,22,.04) !important;
+  box-shadow: inset 3px 0 0 var(--rx-accent) !important;
+}
+#roster-admin-root .rx-row:nth-child(even) .rx-td-name { background: #FAFBFD !important; }
+#roster-admin-root .rx-row:nth-child(even):hover .rx-td-name { background: rgba(249,115,22,.04) !important; box-shadow: inset 3px 0 0 var(--rx-accent) !important; }
+
+/* ── ATT% sticky column ──────────────────────────────────── */
+#roster-admin-root .rx-td-att {
+  position: sticky !important; right: 0 !important; z-index: 2 !important;
+  background: var(--rx-surface) !important; border-left: 1px solid var(--rx-border) !important;
+  padding: 0 12px !important; width: var(--rx-att-w) !important; min-width: var(--rx-att-w) !important;
+  vertical-align: middle !important;
+}
+#roster-admin-root .rx-row:nth-child(even) .rx-td-att { background: #FAFBFD !important; }
+
+/* ── Status dot indicators ───────────────────────────────── */
+#roster-admin-root .rx-name-dot { display: inline-block !important; width: 6px !important; height: 6px !important; border-radius: 50% !important; margin-right: 4px !important; vertical-align: middle !important; }
+#roster-admin-root .rx-dot-leave { background: #3B82F6 !important; }
+#roster-admin-root .rx-dot-rel { background: #94A3B8 !important; }
+
 /* Animations */
 @keyframes rx-fade-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 #roster-admin-root .rx-kpis { animation: rx-fade-in .28s ease both !important; }
