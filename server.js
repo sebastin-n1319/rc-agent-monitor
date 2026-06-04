@@ -93,7 +93,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com",
+    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://nominatim.openstreetmap.org https://desk.zoho.com https://accounts.zoho.com",
     "frame-src 'self' https://accounts.google.com",
     "object-src 'none'",
     "base-uri 'self'"
