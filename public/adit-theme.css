@@ -7979,3 +7979,51 @@ button[onclick*="switchAgent"],
 #brain-root { display:flex!important; flex-direction:column!important; height:100%!important; overflow:hidden!important; }
 /* Brain panel must be positioned relative for drag */
 #brain-fab-wrap { position:fixed!important; bottom:28px!important; right:28px!important; }
+
+/* ══════════════════════════════════════════════════════════
+   SMOOTH PAGE TRANSITIONS & MICRO-ANIMATIONS
+══════════════════════════════════════════════════════════ */
+/* Smooth view switching */
+#adminView, #agentView {
+  transition: opacity .18s ease !important;
+}
+/* Page tabs animate in */
+.page.active {
+  animation: pageSlideIn .22s cubic-bezier(.4,0,.2,1) both !important;
+}
+@keyframes pageSlideIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+/* Agent sections animate in */
+.agent-shell-page.active {
+  animation: pageSlideIn .22s cubic-bezier(.4,0,.2,1) both !important;
+}
+/* Sidebar item transitions */
+.sb-item { transition: background .15s, color .15s, transform .15s !important; }
+.sb-item:active { transform: scale(.95) !important; }
+/* Button micro-interactions */
+button, .nav-tab, .agent-shell-btn {
+  transition: background .15s, color .15s, box-shadow .15s, transform .15s, border-color .15s !important;
+}
+button:active { transform: scale(.97) !important; }
+/* Card hover lifts */
+.metric, .kpi-card, .card, [class*="-card"] {
+  transition: box-shadow .2s, transform .2s !important;
+}
+/* Smooth mainApp appearance */
+#mainApp {
+  transition: opacity .3s ease !important;
+}
+/* Agent view smooth entrance */
+#agentView.visible, #adminView.visible {
+  animation: fadeInView .25s ease both !important;
+}
+@keyframes fadeInView {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+/* Refresh bar smooth animation */
+#adit-progress-bar {
+  transition: width .4s cubic-bezier(.4,0,.2,1), opacity .3s !important;
+}

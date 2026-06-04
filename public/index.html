@@ -100,6 +100,9 @@ body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* dark
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;}
 html.app-authenticated #adminView,html.app-authenticated #agentView{pointer-events:auto!important;}
+/* Prevent admin page flash for agents — adminView hidden until applyView() explicitly shows it */
+#adminView{display:none;}
+#agentView{display:none;}
 /* Toast: only visible when .show class present — prevents stuck dark block at bottom-right */
 #toast:not(.show){display:none!important;}
 /* Guarantee admin sidebar visible — JS applyView() overrides per role */

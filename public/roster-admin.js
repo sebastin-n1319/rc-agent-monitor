@@ -662,6 +662,10 @@
       </label>
       <button class="rx-pill" id="rx-audit" title="View recent changes"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M4 4h8M4 7h6M4 10h4"/><rect x="2" y="1" width="12" height="14" rx="2"/></svg> Audit</button>
       <button class="rx-pill" id="rx-add" title="Add new agent"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M8 3v10M3 8h10"/></svg> Agent</button>
+      <button id="rx-weekend-fill" class="rx-pill" title="Auto-fill all empty weekends as Weekly Off" style="gap:5px;">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:12px;height:12px;display:inline;vertical-align:-1px"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 2v12M11 2v12M2 7h12"/></svg>
+        Fill Weekends
+      </button>
       <button class="rx-pill rx-pill-primary" id="rx-export" title="Download CSV"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:-1px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> Export</button>
     </div>
   </div>
@@ -1159,11 +1163,43 @@
       updateBulkBar();
     });
 
-    // Cell left-click: cycle, right-click: palette
+    // Auto-fill weekends as OFF for all agents
+    const wkndBtn = $('#rx-weekend-fill', root);
+    if (wkndBtn) wkndBtn.addEventListener('click', async () => {
+      if (!confirm('Mark all weekend dates (Sat/Sun) as Weekly Off for ALL agents?')) return;
+      const cells = $$('.rx-cell.rx-w:not(.rx-cov-cell)', root);
+      const promises = [];
+      cells.forEach(cell => {
+        if (cell.dataset.status === '' || !cell.dataset.status) {
+          promises.push(applyCell(cell, 'off'));
+        }
+      });
+      await Promise.all(promises.map(p => p instanceof Promise ? p : Promise.resolve()));
+      showToast('✅ Weekend dates filled with Weekly Off', 'success', 3000);
+    });
+
+    // Cell left-click: quick-pick, right-click: palette
     $$('.rx-cell', root).forEach(cell => {
       cell.addEventListener('click', ev => { ev.preventDefault(); openQuickPick(cell, ev); });
       cell.addEventListener('contextmenu', ev => { ev.preventDefault(); openPalette(cell, ev); });
     });
+
+    // Keyboard shortcuts when hovering over a cell
+    const KEYBOARD_STATUS = { 'p':'present','w':'wfh','o':'off','d':'on_duty','h':'holiday','l':'pl','u':'upl','s':'sl','a':'absent','n':'ncns' };
+    let _hovCell = null;
+    $$('.rx-cell', root).forEach(cell => {
+      cell.addEventListener('mouseenter', () => { _hovCell = cell; });
+      cell.addEventListener('mouseleave', () => { if (_hovCell===cell) _hovCell=null; });
+    });
+    // Remove old keyboard listener to avoid duplicates
+    if (root._kbListener) document.removeEventListener('keydown', root._kbListener);
+    root._kbListener = (e) => {
+      if (!_hovCell || e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable) return;
+      if (e.key==='Delete'||e.key==='Backspace') { e.preventDefault(); applyCell(_hovCell,''); return; }
+      const s = KEYBOARD_STATUS[e.key.toLowerCase()];
+      if (s) { e.preventDefault(); applyCell(_hovCell,s); }
+    };
+    document.addEventListener('keydown', root._kbListener);
 
     // Date header click: bulk fill column
     $$('.rx-th-day[data-col-date]', root).forEach(th => {
@@ -1238,10 +1274,11 @@
         </div>
       </div>`).join('<div class="rx-qp-vsep"></div>');
 
+    const hasStatus = curStatus && curStatus !== 'empty';
     qp.innerHTML = `
       <div class="rx-qp-header">
-        <span class="rx-qp-title">Set Status</span>
-        <button class="rx-qp-clear" data-s="" title="Clear status"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:10px;height:10px"><path d="M2 2l8 8M10 2L2 10"/></svg></button>
+        <span class="rx-qp-title">${hasStatus ? 'Change Status · <em style="color:#F97316;font-style:normal;">' + (STATUS_LONG[curStatus]||curStatus) + '</em>' : 'Set Status'}</span>
+        ${hasStatus ? '<button class="rx-qp-clear" data-s="" title="Remove status" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;width:auto;border-radius:6px;font-size:10px;font-weight:700;">✕ Remove</button>' : '<button class="rx-qp-close-btn" style="width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,.05);border:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;color:#94A3B8;">×</button>'}
       </div>
       <div class="rx-qp-body">${groupHTML}</div>`;
     document.body.appendChild(qp);
@@ -1264,6 +1301,8 @@
     qp.querySelectorAll('[data-s]').forEach(btn => {
       btn.onclick = e => { e.stopPropagation(); applyCell(cell, btn.dataset.s); qp.remove(); };
     });
+    const closeBtn = qp.querySelector('.rx-qp-close-btn');
+    if (closeBtn) closeBtn.onclick = e => { e.stopPropagation(); qp.remove(); };
 
     // Dismiss on outside click or Escape
     const dismiss = e => {
