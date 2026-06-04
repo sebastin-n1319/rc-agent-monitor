@@ -256,7 +256,7 @@
 }
 #roster-admin-root .rx-cell:hover { transform: scale(1.3) !important; z-index: 3 !important; position: relative !important; box-shadow: 0 0 0 2px #F4891F, 0 4px 10px rgba(244,137,31,.3) !important; border-radius: 5px !important; }
 #roster-admin-root .rx-cell.rx-w { background: rgba(178,92,14,.06) !important; }
-#roster-admin-root .rx-cell.rx-t { box-shadow: inset 0 -3px 0 #2DDC96 !important; }
+#roster-admin-root .rx-cell.rx-t { box-shadow: none !important; }
 #roster-admin-root .rx-cell.rx-week-end { border-right: 2px solid #DEE1E6 !important; }
 
 #roster-admin-root .rx-st-empty   { background: #FFFFFF !important; color: #D0D8E2 !important; }
