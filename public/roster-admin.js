@@ -353,21 +353,21 @@
 #roster-admin-root .rx-bulk-sep { width: 1px !important; height: 20px !important; background: rgba(255,255,255,.18) !important; flex-shrink: 0 !important; }
 
 /* Quick-pick popup */
-#roster-admin-root .rx-qp { background: var(--rx-surface) !important; border: 1px solid var(--rx-border) !important; border-radius: 18px !important; box-shadow: 0 20px 60px rgba(15,23,42,.18),0 4px 12px rgba(15,23,42,.08) !important; animation: rx-qp-enter .18s var(--rx-spring) both !important; min-width: 340px !important; padding: 0 !important; flex-direction: column !important; align-items: stretch !important; }
+#rx-qp { position: fixed !important; z-index: 99999 !important; display: flex !important; flex-direction: column !important; align-items: stretch !important; background: #fff !important; border: 1px solid #E5E9F0 !important; border-radius: 18px !important; box-shadow: 0 20px 60px rgba(15,23,42,.18),0 4px 12px rgba(15,23,42,.08) !important; animation: rx-qp-enter .18s cubic-bezier(.34,1.56,.64,1) both !important; min-width: 340px !important; padding: 0 !important; }
 @keyframes rx-qp-enter { from { opacity:0; transform: scale(.88) translateY(-8px); } to { opacity:1; transform: scale(1) translateY(0); } }
-#roster-admin-root .rx-qp-header { display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 11px 14px 9px !important; border-bottom: 1px solid var(--rx-border2) !important; background: var(--rx-surface2) !important; border-radius: 18px 18px 0 0 !important; }
-#roster-admin-root .rx-qp-title { font-size: 10px !important; font-weight: 800 !important; color: var(--rx-ink2) !important; text-transform: uppercase !important; letter-spacing: .10em !important; }
-#roster-admin-root .rx-qp-body { display: flex !important; flex-direction: row !important; padding: 12px !important; gap: 0 !important; }
-#roster-admin-root .rx-qp-group { display: flex !important; flex-direction: column !important; gap: 6px !important; }
-#roster-admin-root .rx-qp-glabel { font-size: 8.5px !important; font-weight: 800 !important; color: var(--rx-ink3) !important; text-transform: uppercase !important; letter-spacing: .10em !important; padding: 0 2px 3px !important; }
-#roster-admin-root .rx-qp-grow { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; }
-#roster-admin-root .rx-qp-vsep { width: 1px !important; background: var(--rx-border2) !important; align-self: stretch !important; margin: 0 10px !important; }
-#roster-admin-root .rx-qp-btn { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 3px !important; padding: 8px 9px !important; border-radius: 11px !important; border: 1.5px solid var(--rx-border2) !important; background: var(--rx-surface2) !important; cursor: pointer !important; min-width: 48px !important; font-family: 'Poppins',sans-serif !important; transition: all .16s var(--rx-spring) !important; }
-#roster-admin-root .rx-qp-btn:hover { transform: translateY(-3px) scale(1.06) !important; box-shadow: 0 6px 16px rgba(0,0,0,.1) !important; border-color: transparent !important; }
-#roster-admin-root .rx-qp-code { font-weight: 800 !important; font-size: 9.5px !important; padding: 2px 6px !important; border-radius: 6px !important; display: block !important; }
-#roster-admin-root .rx-qp-lbl { font-size: 7.5px !important; color: var(--rx-ink2) !important; white-space: nowrap !important; text-align: center !important; font-weight: 500 !important; }
-#roster-admin-root .rx-qp-clear { display: flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 8px !important; border: 1.5px solid rgba(220,38,38,.30) !important; background: rgba(220,38,38,.06) !important; cursor: pointer !important; color: #DC2626 !important; transition: all .14s !important; font-size: 14px !important; }
-#roster-admin-root .rx-qp-clear:hover { background: rgba(220,38,38,.12) !important; border-color: #DC2626 !important; }
+#rx-qp .rx-qp-header { display: flex !important; align-items: center !important; justify-content: space-between !important; padding: 11px 14px 9px !important; border-bottom: 1px solid var(--rx-border2) !important; background: var(--rx-surface2) !important; border-radius: 18px 18px 0 0 !important; }
+#rx-qp .rx-qp-title { font-size: 10px !important; font-weight: 800 !important; color: var(--rx-ink2) !important; text-transform: uppercase !important; letter-spacing: .10em !important; }
+#rx-qp .rx-qp-body { display: flex !important; flex-direction: row !important; padding: 12px !important; gap: 0 !important; }
+#rx-qp .rx-qp-group { display: flex !important; flex-direction: column !important; gap: 6px !important; }
+#rx-qp .rx-qp-glabel { font-size: 8.5px !important; font-weight: 800 !important; color: var(--rx-ink3) !important; text-transform: uppercase !important; letter-spacing: .10em !important; padding: 0 2px 3px !important; }
+#rx-qp .rx-qp-grow { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; }
+#rx-qp .rx-qp-vsep { width: 1px !important; background: var(--rx-border2) !important; align-self: stretch !important; margin: 0 10px !important; }
+#rx-qp .rx-qp-btn { display: flex !important; flex-direction: column !important; align-items: center !important; gap: 3px !important; padding: 8px 9px !important; border-radius: 11px !important; border: 1.5px solid var(--rx-border2) !important; background: var(--rx-surface2) !important; cursor: pointer !important; min-width: 48px !important; font-family: 'Poppins',sans-serif !important; transition: all .16s var(--rx-spring) !important; }
+#rx-qp .rx-qp-btn:hover { transform: translateY(-3px) scale(1.06) !important; box-shadow: 0 6px 16px rgba(0,0,0,.1) !important; border-color: transparent !important; }
+#rx-qp .rx-qp-code { font-weight: 800 !important; font-size: 9.5px !important; padding: 2px 6px !important; border-radius: 6px !important; display: block !important; }
+#rx-qp .rx-qp-lbl { font-size: 7.5px !important; color: var(--rx-ink2) !important; white-space: nowrap !important; text-align: center !important; font-weight: 500 !important; }
+#rx-qp .rx-qp-clear { display: flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; border-radius: 8px !important; border: 1.5px solid rgba(220,38,38,.30) !important; background: rgba(220,38,38,.06) !important; cursor: pointer !important; color: #DC2626 !important; transition: all .14s !important; font-size: 14px !important; }
+#rx-qp .rx-qp-clear:hover { background: rgba(220,38,38,.12) !important; border-color: #DC2626 !important; }
 
 
 /* ── CRITICAL: Name row layout (flex horizontal) ────────── */
