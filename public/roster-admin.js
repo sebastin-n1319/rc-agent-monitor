@@ -261,6 +261,24 @@
 #roster-admin-root .rx-view-tabs { animation:rx-fade-in .28s ease .07s both!important; }
 #roster-admin-root .rx-legend { animation:rx-fade-in .28s ease .09s both!important; }
 #roster-admin-root .rx-grid-wrap { animation:rx-fade-in .32s ease .11s both!important; }
+
+/* Pop animation when status set */
+#roster-admin-root .rx-just-set .rx-day-num {
+  animation: rx-pop-in .3s cubic-bezier(.34,1.56,.64,1) both !important;
+}
+@keyframes rx-pop-in {
+  0%   { transform: scale(0); opacity:0; }
+  70%  { transform: scale(1.2); }
+  100% { transform: scale(1); opacity:1; }
+}
+/* Multi-select highlight */
+#roster-admin-root .rx-row.rx-selected .rx-td-name { background: rgba(249,115,22,.08) !important; box-shadow: inset 3px 0 0 var(--rx-accent) !important; }
+#roster-admin-root .rx-row.rx-selected { background: rgba(249,115,22,.04) !important; }
+/* Bulk status bar */
+#rx-bulk-status-bar { position:fixed!important; bottom:20px!important; left:50%!important; transform:translateX(-50%)!important; z-index:9999!important; background:#1E293B!important; border-radius:14px!important; padding:10px 16px!important; box-shadow:0 8px 32px rgba(15,24,36,.3)!important; display:flex!important; align-items:center!important; gap:10px!important; color:#fff!important; font-family:'Poppins',sans-serif!important; font-size:12.5px!important; font-weight:600!important; animation:rx-slide-up .25s cubic-bezier(.34,1.56,.64,1) both!important; }
+@keyframes rx-slide-up { from{opacity:0;transform:translateX(-50%) translateY(20px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+#rx-bulk-status-bar select { height:30px!important; font-size:12px!important; padding:0 10px!important; border-radius:8px!important; border:1px solid rgba(255,255,255,.2)!important; background:rgba(255,255,255,.1)!important; color:#fff!important; cursor:pointer!important; }
+#rx-bulk-status-bar button { height:30px!important; padding:0 14px!important; border-radius:8px!important; border:none!important; cursor:pointer!important; font-size:12px!important; font-weight:700!important; font-family:'Poppins',sans-serif!important; }
 `;
     document.head.appendChild(s);
   })();

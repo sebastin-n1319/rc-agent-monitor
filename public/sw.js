@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.139'; // Roster: clear status, keyboard shortcuts, weekend fill; fix admin flash; smooth transitions
+const CACHE_VERSION = 'adit-v1.19.140'; // Roster: multi-select bulk apply, pop animation, admin flash fix
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 const API_CACHE    = `api-${CACHE_VERSION}`;
