@@ -97,7 +97,20 @@ body > footer .f-v    { color: #B85F00 !important; font-weight: 700; }   /* dark
 <!-- Session-restore CSS: adding .app-authenticated to <html> permanently hides login, shows app.
      This beats every other CSS rule because it's the last stylesheet and uses element+class on html. -->
 <style id="auth-gate-css">
+/* Anti-flash: solid cover during auth check (<300ms, imperceptible) */
+html:not(.app-authenticated):not(.login-ready) body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 99998;
+  background: #040C18;
+  pointer-events: none;
+}
+/* Mark body when login is ready to show */
+
 html.app-authenticated #loginScreen{display:none!important;visibility:hidden!important;pointer-events:none!important;opacity:0!important;z-index:-1!important;}
+/* Login screen always on top until explicitly hidden */
+#loginScreen:not(.login-gone){z-index:9999!important;}
+/* MainApp starts transparent during auth phase — JS fades it in */
+#mainApp{transition:opacity .28s ease !important;}
 html.app-authenticated #mainApp{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;}
 html.app-authenticated #adminView,html.app-authenticated #agentView{pointer-events:auto!important;}
 /* Prevent admin page flash for agents — adminView hidden until applyView() explicitly shows it */
@@ -22339,24 +22352,27 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     }
     if(appEl){
       appEl.style.setProperty('display','flex','important');
-      appEl.style.setProperty('opacity','1','important');
+      appEl.style.setProperty('opacity','0','important');
       appEl.style.setProperty('visibility','visible','important');
       appEl.style.setProperty('pointer-events','auto','important');
     }
     document.documentElement.classList.add('app-authenticated');
     document.body.classList.add('app-authenticated');
+    // Fade mainApp in after a frame (prevents flash of wrong content)
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if(appEl) appEl.style.setProperty('opacity','1','important');
+    }));
   };
 
   // skipAnimation = called from quick-boot where CSS gate already hid login/showed app
   if(skipAnimation){
-    // Apply stored tab/view SYNCHRONOUSLY before forceAppVisible() paints the screen
-    // This prevents the "live dashboard flash" before the correct page restores
+    // CRITICAL: Apply view + restore section BEFORE forceAppVisible to prevent any flash
+    // Step 1: Apply the correct view first (admin vs agent)
+    applyView(role);
+    // Step 2: THEN apply stored tab/view SYNCHRONOUSLY
     try{
       const storedView = localStorage.getItem('rcActiveView');
       const storedTab  = localStorage.getItem('rcActiveTab') || 'live';
-      // Only restore stored view if user is admin (can toggle views)
-      // Never switch an admin to 'agent' view on load — use their role as default
-      // Pre-activate the correct tab without triggering data loads yet
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
       document.querySelectorAll('#adit-admin-sidebar .sb-item').forEach(i=>i.classList.remove('active'));
       const targetPage = document.getElementById('tab-'+storedTab);
