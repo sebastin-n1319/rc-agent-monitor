@@ -8027,3 +8027,269 @@ button:active { transform: scale(.97) !important; }
 #adit-progress-bar {
   transition: width .4s cubic-bezier(.4,0,.2,1), opacity .3s !important;
 }
+
+/* ══════════════════════════════════════════════════════════
+   LOGIN PAGE — FUTURISTIC REDESIGN vX
+══════════════════════════════════════════════════════════ */
+#loginScreen {
+  min-height: 100vh;
+  display: flex;
+  position: relative;
+  z-index: 10;
+  overflow: hidden;
+  background: #040C18;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* ── Background ────────────────────────────────────────── */
+.lx-bg { position: absolute; inset: 0; pointer-events: none; }
+
+.lx-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(249,115,22,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(249,115,22,.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: lxGridDrift 30s linear infinite;
+}
+@keyframes lxGridDrift { 0%{background-position:0 0} 100%{background-position:60px 60px} }
+
+.lx-orb { position: absolute; border-radius: 50%; filter: blur(100px); animation: lxOrbFloat ease-in-out infinite; }
+.lx-orb1 { width: 600px; height: 600px; background: rgba(249,115,22,.12); top: -200px; left: -100px; animation-duration: 18s; }
+.lx-orb2 { width: 500px; height: 500px; background: rgba(6,182,212,.08); bottom: -150px; right: -100px; animation-duration: 22s; animation-delay: 5s; }
+.lx-orb3 { width: 350px; height: 350px; background: rgba(139,92,246,.08); top: 40%; left: 40%; animation-duration: 26s; animation-delay: 10s; }
+@keyframes lxOrbFloat {
+  0%,100%{ transform: translate(0,0) scale(1); }
+  33%{ transform: translate(30px,-40px) scale(1.08); }
+  66%{ transform: translate(-20px,30px) scale(.94); }
+}
+
+.lx-particles-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.lx-scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+  pointer-events: none;
+}
+
+/* ── Layout ─────────────────────────────────────────────── */
+.lx-layout {
+  position: relative; z-index: 2;
+  display: flex; width: 100%; min-height: 100vh;
+}
+
+/* ── LEFT PANEL ──────────────────────────────────────────── */
+.lx-left {
+  flex: 1.2;
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 52px;
+  border-right: 1px solid rgba(255,255,255,.06);
+  background: linear-gradient(135deg, rgba(249,115,22,.04) 0%, rgba(6,182,212,.03) 100%);
+}
+.lx-left-inner { max-width: 520px; width: 100%; }
+
+.lx-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+.lx-brand-logo { height: 40px; width: auto; border-radius: 8px; padding: 5px 8px; background: rgba(255,255,255,.07); }
+.lx-live-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 99px;
+  background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.25);
+  color: #34D399; font-size: 11px; font-weight: 700; letter-spacing: .05em;
+}
+.lx-live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #10B981;
+  animation: lxPulse 1.4s ease-in-out infinite;
+}
+@keyframes lxPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+
+.lx-hero-tag {
+  font-size: 11px; font-weight: 700; color: rgba(249,115,22,.8);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 14px;
+}
+.lx-hero-title {
+  font-size: clamp(32px, 3.5vw, 52px);
+  font-weight: 900; color: #fff;
+  letter-spacing: -.03em; line-height: 1.1;
+  margin: 0 0 16px;
+}
+.lx-highlight {
+  background: linear-gradient(135deg, #F97316, #FB923C);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.lx-hero-sub {
+  font-size: 14px; color: rgba(255,255,255,.45);
+  line-height: 1.7; margin-bottom: 32px; max-width: 420px;
+}
+
+.lx-features { display: flex; flex-direction: column; gap: 12px; margin-bottom: 36px; }
+.lx-feat {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 16px; border-radius: 12px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06);
+  color: rgba(255,255,255,.7); font-size: 13px;
+  transition: all .2s;
+  animation: lxFeatIn .4s ease both;
+}
+.lx-feat:nth-child(1){animation-delay:.1s} .lx-feat:nth-child(2){animation-delay:.2s}
+.lx-feat:nth-child(3){animation-delay:.3s} .lx-feat:nth-child(4){animation-delay:.4s}
+@keyframes lxFeatIn { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+.lx-feat:hover { background: rgba(249,115,22,.08); border-color: rgba(249,115,22,.2); color: #fff; }
+.lx-feat-icon { font-size: 18px; flex-shrink: 0; }
+
+.lx-stats {
+  display: flex; align-items: center; gap: 0;
+  padding: 16px 20px; border-radius: 14px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 24px;
+}
+.lx-stat { flex: 1; text-align: center; }
+.lx-stat-n { font-size: 24px; font-weight: 800; color: #F97316; letter-spacing: -.02em; line-height: 1; }
+.lx-stat-l { font-size: 10px; color: rgba(255,255,255,.4); font-weight: 500; margin-top: 3px; letter-spacing: .03em; }
+.lx-stat-div { width: 1px; height: 36px; background: rgba(255,255,255,.1); }
+
+.lx-footer-text { font-size: 11px; color: rgba(255,255,255,.2); text-align: center; letter-spacing: .04em; }
+
+/* ── RIGHT PANEL — Auth card ───────────────────────────── */
+.lx-right {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 44px;
+  background: rgba(4,12,24,.4);
+}
+
+.lx-card {
+  position: relative; width: 100%; max-width: 420px;
+  padding: 40px 36px;
+  background: rgba(15,23,42,.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 28px;
+  box-shadow: 0 32px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(249,115,22,.08), inset 0 1px 0 rgba(255,255,255,.06);
+  animation: lxCardIn .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes lxCardIn {
+  from { opacity:0; transform: translateY(32px) scale(.95); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+
+.lx-card-glow {
+  position: absolute; inset: -1px; border-radius: 28px; pointer-events: none;
+  background: linear-gradient(135deg, rgba(249,115,22,.15), transparent 50%, rgba(6,182,212,.1));
+  z-index: -1;
+}
+
+/* Brain mascot */
+.lx-mascot {
+  position: relative; width: 72px; height: 72px;
+  margin: 0 auto 24px; display: flex; align-items: center; justify-content: center;
+}
+.lx-mascot-img { width: 68px; height: 68px; border-radius: 18px; object-fit: cover; position: relative; z-index: 1; }
+.lx-mascot-ring {
+  position: absolute; inset: -6px; border-radius: 24px;
+  background: conic-gradient(from 0deg, #F97316, #FB923C, #FCD34D, #F97316);
+  animation: lxSpin 3s linear infinite; z-index: 0;
+}
+.lx-mascot-ring::before {
+  content: ''; position: absolute; inset: 3px;
+  background: rgba(15,23,42,.9); border-radius: 20px;
+}
+@keyframes lxSpin { to { transform: rotate(360deg); } }
+
+.lx-card-title {
+  font-size: 28px; font-weight: 800; color: #fff;
+  letter-spacing: -.02em; text-align: center; margin-bottom: 8px;
+}
+.lx-card-sub {
+  font-size: 13px; color: rgba(255,255,255,.45);
+  text-align: center; line-height: 1.6; margin-bottom: 28px;
+}
+
+/* Google button */
+.lx-google-wrap { margin-bottom: 16px; }
+.google-btn-host { min-height: 52px; }
+.lx-google-fallback {
+  width: 100%; min-height: 52px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: #fff; color: #1E293B;
+  border: none; border-radius: 14px;
+  font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.2), 0 1px 4px rgba(0,0,0,.1);
+  transition: all .2s cubic-bezier(.34,1.56,.64,1);
+}
+.lx-google-fallback:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0,0,0,.3);
+}
+.lx-google-fallback:active { transform: scale(.97); }
+
+.lx-msg {
+  padding: 10px 14px; border-radius: 10px;
+  background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.25);
+  color: #FCA5A5; font-size: 12.5px; text-align: center;
+  margin-bottom: 14px;
+}
+
+.lx-restrict {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11.5px; color: rgba(255,255,255,.3);
+  text-align: center; justify-content: center;
+  padding: 10px; border-radius: 8px;
+  background: rgba(255,255,255,.03);
+  margin-bottom: 20px;
+}
+
+.lx-divider {
+  text-align: center; position: relative; margin-bottom: 14px;
+}
+.lx-divider::before {
+  content: ''; position: absolute; top: 50%; left: 0; right: 0;
+  height: 1px; background: rgba(255,255,255,.08);
+}
+.lx-divider span {
+  position: relative; padding: 0 12px;
+  font-size: 10.5px; color: rgba(255,255,255,.25); font-weight: 500;
+  background: rgba(15,23,42,.8);
+}
+
+.lx-powered {
+  display: flex; justify-content: center; gap: 16px;
+}
+.lx-pow-item { font-size: 10.5px; color: rgba(255,255,255,.3); font-weight: 600; }
+
+/* Quick sign-in */
+.adit-quick-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer; transition: all .18s;
+  margin-bottom: 10px;
+}
+.adit-quick-card:hover { background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.3); }
+.adit-quick-name { font-size: 13px; font-weight: 700; color: #fff; }
+.adit-quick-email { font-size: 11px; color: rgba(255,255,255,.4); }
+.adit-quick-arrow { color: rgba(255,255,255,.4); font-size: 16px; }
+.adit-quick-label { font-size: 11px; color: rgba(255,255,255,.3); font-weight: 600; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+.lx-switch-btn {
+  width: 100%; padding: 8px; background: transparent; border: none;
+  color: rgba(255,255,255,.3); font-size: 12px; cursor: pointer;
+  font-family: 'Poppins', sans-serif; text-decoration: underline;
+  transition: color .15s;
+}
+.lx-switch-btn:hover { color: rgba(255,255,255,.6); }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .lx-layout { flex-direction: column; }
+  .lx-left { border-right: none; border-bottom: 1px solid rgba(255,255,255,.06); padding: 40px 24px; }
+  .lx-right { padding: 32px 20px; }
+  .lx-hero-title { font-size: 32px; }
+  .lx-features { display: none; }
+}
+@media (max-width: 480px) {
+  .lx-card { padding: 28px 20px; }
+  .lx-stats { flex-wrap: wrap; }
+}
