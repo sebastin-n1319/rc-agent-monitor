@@ -46,23 +46,33 @@ function dbRun(db, sql, params = []) {
 }
 
 // ── Disk usage check ─────────────────────────────────────────────────────────
+// IMPORTANT: measure ALL files on the volume mount, not just the SQLite page
+// count. SQLite's PRAGMA page_count only reflects the .db file; it ignores the
+// WAL file (.db-wal) which can be hundreds of MB while the DB is in WAL mode.
+// Railway's volume usage (shown in the dashboard) includes the WAL, so using
+// PRAGMA caused the archive to never trigger even though the volume was at 93%.
 async function getDbSizeMB() {
+  // Sum all SQLite-related files: .db, .db-wal, .db-shm
+  const paths = [DB_PATH, DB_PATH + '-wal', DB_PATH + '-shm'];
+  let totalBytes = 0;
+  for (const p of paths) {
+    try { totalBytes += fs.statSync(p).size; } catch { /* file may not exist */ }
+  }
+  if (totalBytes > 0) return totalBytes / (1024 * 1024);
+  // Last-resort fallback: SQLite page count
   try {
     const db = await openDb();
     const pageSize  = await new Promise(r => db.get('PRAGMA page_size',  [], (e,v) => r(v)));
     const pageCount = await new Promise(r => db.get('PRAGMA page_count', [], (e,v) => r(v)));
     db.close();
     return (pageSize.page_size * pageCount.page_count) / (1024 * 1024);
-  } catch(e) {
-    // Fallback: check file size
-    try { return fs.statSync(DB_PATH).size / (1024 * 1024); } catch { return 0; }
-  }
+  } catch(e) { return 0; }
 }
 
 async function isAboveThreshold() {
   const usedMB = await getDbSizeMB();
   const pct    = usedMB / VOLUME_SIZE;
-  console.log(`📊 DB usage: ${usedMB.toFixed(1)}MB / ${VOLUME_SIZE}MB (${(pct*100).toFixed(1)}%)`);
+  console.log(`📊 DB+WAL usage: ${usedMB.toFixed(1)}MB / ${VOLUME_SIZE}MB (${(pct*100).toFixed(1)}%)`);
   return pct >= THRESHOLD_PCT;
 }
 
@@ -112,7 +122,10 @@ async function appendRows(sheets, tabName, rows) {
 }
 
 // ── Archive each table ───────────────────────────────────────────────────────
-async function archivePresenceEvents(db, sheets, cutoffDays = 14) {
+async function archivePresenceEvents(db, sheets, cutoffDays = 7) {
+  // cutoffDays reduced from 14→7 to match pruneOldData retention window.
+  // Archive always runs BEFORE pruneOldData, so presence events ≥7 days old
+  // are saved to Sheets first and no data is ever deleted without being backed up.
   const rows = await dbAll(db,
     `SELECT agent_id, status, timestamp, queue_status FROM presence_events
      WHERE datetime(timestamp) < datetime('now',?) ORDER BY timestamp ASC`,
@@ -190,7 +203,7 @@ async function runArchive(force = false) {
   const db = await openDb();
   const results = {};
   try {
-    results.presence_events = await archivePresenceEvents(db, sheets, 14);
+    results.presence_events = await archivePresenceEvents(db, sheets, 7);   // matches pruneOldData
     results.break_events    = await archiveBreakEvents(db, sheets, 60);
     results.call_logs       = await archiveCallLogs(db, sheets, 7);
     results.login_logs      = await archiveLoginLogs(db, sheets, 30);
