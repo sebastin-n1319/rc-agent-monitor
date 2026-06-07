@@ -1010,7 +1010,43 @@ async function ensureRealtimeSubscription() {
   if (subscriptionInfo && subscriptionInfo.id) return;
   const eventFilters = getSubscriptionFilters();
   try {
-    console.log(`🔗 Ensuring realtime subscription at ${address}`);
+    // ── Step 1: Check existing RC subscriptions before creating a new one ────
+    // RingCentral enforces a hard cap on concurrent subscriptions per account.
+    // Always list first: reuse an active matching subscription, or purge stale
+    // ones to free up a slot. This prevents the "Subscriptions limit exceeded"
+    // error that occurs when previous deployments leave orphaned subscriptions.
+    try {
+      const listResp = await platform.get('/restapi/v1.0/subscription');
+      const listData = await listResp.json();
+      const existing = listData.records || [];
+      if (existing.length > 0) {
+        // Look for an active subscription already pointing at our webhook URL
+        const live = existing.find(s =>
+          s.deliveryMode?.address === address && s.status === 'Active'
+        );
+        if (live) {
+          console.log(`♻️ Reusing existing RC subscription: ${live.id}`);
+          subscriptionInfo = live;
+          if (subscriptionRetryTimer) { clearTimeout(subscriptionRetryTimer); subscriptionRetryTimer = null; }
+          scheduleSubscriptionRenewal();
+          return;
+        }
+        // No usable match — delete all stale/orphaned subscriptions to free slots
+        console.log(`🗑️ Purging ${existing.length} stale RC subscription(s) before registering fresh one...`);
+        await Promise.allSettled(
+          existing.map(s => platform.delete(`/restapi/v1.0/subscription/${s.id}`)
+            .then(() => console.log(`   ✓ Deleted stale subscription ${s.id}`))
+            .catch(err => console.warn(`   ⚠️ Could not delete ${s.id}: ${err.message}`))
+          )
+        );
+      }
+    } catch (listErr) {
+      // Non-fatal — if listing fails we still try to create (may still hit the limit)
+      console.warn('⚠️ Could not list existing subscriptions:', listErr.message);
+    }
+
+    // ── Step 2: Register fresh webhook subscription ───────────────────────────
+    console.log(`🔗 Registering realtime subscription at ${address}`);
     const resp = await platform.post('/restapi/v1.0/subscription', {
       eventFilters,
       deliveryMode: { transportType: 'WebHook', address },

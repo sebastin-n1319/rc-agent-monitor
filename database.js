@@ -1396,8 +1396,9 @@ async function pruneOldData() {
   const results = {};
 
   // Presence events — BIGGEST table, poll every 2min × 13 agents = ~5MB/day.
-  // Keep 14 days: covers 7-day trend charts + 2 weeks of Reports tab history.
-  const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-14 days')`);
+  // Reduced from 14→7 days: 7-day trend charts still work; saves ~35MB on the
+  // 500MB Railway volume that was at 93% capacity and caused the SIGTERM crash.
+  const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-7 days')`);
   results.presence_events = pe.changes;
 
   // Call logs — keep 7 days
@@ -1419,6 +1420,40 @@ async function pruneOldData() {
   // Expired sessions
   const as = await run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
   results.app_sessions = as.changes;
+
+  // Alert events — keep 30 days (were never pruned; could grow unboundedly)
+  try {
+    const ae = await run(`DELETE FROM alert_events WHERE datetime(created_at) < datetime('now','-30 days')`);
+    results.alert_events = ae.changes;
+  } catch(e) { results.alert_events = 0; }
+
+  // Anomaly events — keep 30 days (were never pruned)
+  try {
+    const ano = await run(`DELETE FROM anomaly_events WHERE datetime(created_at) < datetime('now','-30 days')`);
+    results.anomaly_events = ano.changes;
+  } catch(e) { results.anomaly_events = 0; }
+
+  // Wellness check-ins — keep 90 days (were never pruned)
+  try {
+    const wl = await run(`DELETE FROM wellness_checkin WHERE datetime(created_at) < datetime('now','-90 days')`);
+    results.wellness_checkin = wl.changes;
+  } catch(e) { results.wellness_checkin = 0; }
+
+  // Shift handoffs — keep 30 days (were never pruned)
+  try {
+    const sh = await run(`DELETE FROM shift_handoff WHERE datetime(created_at) < datetime('now','-30 days')`);
+    results.shift_handoff = sh.changes;
+  } catch(e) { results.shift_handoff = 0; }
+
+  // Coach flags — keep 60 days (were never pruned)
+  try {
+    const cf = await run(`DELETE FROM coach_flag WHERE datetime(created_at) < datetime('now','-60 days')`);
+    results.coach_flag = cf.changes;
+  } catch(e) { results.coach_flag = 0; }
+
+  // Checkpoint WAL before VACUUM so SQLite flushes the write-ahead log back
+  // into the main db file — otherwise VACUUM won't reclaim WAL-held pages.
+  try { await run(`PRAGMA wal_checkpoint(TRUNCATE)`); } catch(e) { /* non-fatal */ }
 
   // VACUUM — physically reclaims disk space (DELETE only marks pages free)
   await run(`VACUUM`);

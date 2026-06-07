@@ -2725,8 +2725,9 @@ async function startScheduler() {
   cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
-  // Every 6 hours: check volume, archive to Google Sheets if >90%, then prune
-  cron.schedule('0 */6 * * *', async () => {
+  // Every 2 hours: check volume, archive to Google Sheets if >90%, then prune
+  // Reduced from 6h→2h to keep the 500MB Railway volume below critical threshold.
+  cron.schedule('0 */2 * * *', async () => {
     try {
       // 1. Try to archive old data to Google Sheets if above 90%
       const archiveResult = await runArchive();
