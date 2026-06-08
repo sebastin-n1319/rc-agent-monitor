@@ -1584,32 +1584,52 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   }
 
   // ── Secondary leg fetch ──────────────────────────────────────────────────────
-  // The queue extension call log often returns 0 legs for internal-extension callers
-  // (RC doesn't embed agent routing legs in the queue's own log view for these calls).
-  // Fix: for ANY missed call with 0 legs and > 8s ring time, fetch the full call
-  // record from the account-level call log, which always includes routing legs.
+  // The queue extension call log returns 0 legs for internal-extension callers
+  // (RC doesn't embed agent routing legs in the queue's log for these calls).
+  // Fix: for ANY missed call with 0 legs and >8s ring time, search the account-level
+  // call log by sessionId to find the full call record with all routing legs.
   const noLegMissed = records.filter(c =>
     (c.legs || []).length === 0 &&
     (c.duration || 0) > 8
   );
   if (noLegMissed.length > 0) {
-    console.log(`📞 [secondary-fetch] ${noLegMissed.length} record(s) with 0 legs + ring>8s — fetching account-level records for agent routing data`);
+    console.log(`📞 [secondary-fetch] ${noLegMissed.length} record(s) with 0 legs + ring>8s`);
     for (const call of noLegMissed) {
       try {
-        // GET /account/~/call-log/{id}?view=Detailed returns the single record with all legs
-        const full = await rcGet(`/restapi/v1.0/account/~/call-log/${call.id}`, { view: 'Detailed' });
-        const legCount = (full?.legs || []).length;
-        console.log(`📞 [secondary-fetch] id=${call.id} account log legs=${legCount} (from.ext=${call.from?.extensionNumber||'?'} from.ph=${call.from?.phoneNumber||'none'})`);
-        if (legCount > 0) {
-          call.legs = full.legs; // replace empty legs with full routing data
+        const callStart = new Date(call.startTime);
+        const windowFrom = new Date(callStart.getTime() - 10 * 1000).toISOString(); // 10s before
+        const windowTo   = new Date(callStart.getTime() + 5 * 60 * 1000).toISOString(); // 5min after
+
+        // Fetch account-level call log for the narrow time window around the missed call.
+        // The account-level log includes full routing legs even for internal-extension callers.
+        const acctData = await rcGet('/restapi/v1.0/account/~/call-log', {
+          dateFrom: windowFrom,
+          dateTo:   windowTo,
+          type:     'Voice',
+          view:     'Detailed',
+          direction: 'Inbound',
+          perPage:  50,
+        });
+        const acctRecords = acctData?.records || [];
+
+        // Match by sessionId (most reliable) or by call.id
+        const match = acctRecords.find(r =>
+          (call.sessionId && r.sessionId === call.sessionId) ||
+          r.id === call.id
+        );
+
+        const legCount = (match?.legs || []).length;
+        console.log(`📞 [secondary-fetch] id=${call.id} session=${call.sessionId||'?'} acctRecords=${acctRecords.length} match=${!!match} matchLegs=${legCount} from.ext=${call.from?.extensionNumber||'?'}`);
+
+        if (match && legCount > 0) {
+          call.legs = match.legs; // replace empty legs with full routing data
         }
       } catch(e) {
         console.warn(`📞 [secondary-fetch] id=${call.id} failed: ${e.message}`);
       }
     }
   } else {
-    // Log how many legs each record has so we can spot missing data
-    const legSummary = records.slice(0, 6).map(c => `id=${c.id} legs=${(c.legs||[]).length}`).join(', ');
+    const legSummary = records.slice(0, 4).map(c => `id=${c.id} legs=${(c.legs||[]).length}`).join(', ');
     if (legSummary) console.log(`📞 [legs-check] ${legSummary}`);
   }
 
