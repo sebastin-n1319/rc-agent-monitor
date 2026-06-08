@@ -489,25 +489,38 @@ app.put('/api/agents/:extension/chat-id', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// Auto-lookup Google Chat user ID from email via Admin Directory API
+// Auto-lookup Google Chat user ID from email via People API (directory search)
+// Uses any Google Workspace user for impersonation — no org-admin role needed.
 app.post('/api/agents/:extension/lookup-chat-id', requireAdmin, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, error: 'Email required' });
   const keyRaw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!keyRaw) return res.status(503).json({ success: false, error: 'GOOGLE_SERVICE_ACCOUNT_KEY not configured' });
-  const adminEmail = process.env.GOOGLE_ADMIN_EMAIL;
-  if (!adminEmail) return res.status(503).json({ success: false, error: 'GOOGLE_ADMIN_EMAIL env var not set — add an admin Google Workspace email' });
+  const subjectEmail = process.env.GOOGLE_ADMIN_EMAIL;
+  if (!subjectEmail) return res.status(503).json({ success: false, error: 'GOOGLE_ADMIN_EMAIL not set — add any @adit.com email (e.g. your own)' });
   try {
     const { google: _g } = require('googleapis');
     const auth = new _g.auth.GoogleAuth({
       credentials: JSON.parse(keyRaw),
-      scopes: ['https://www.googleapis.com/auth/admin.directory.user.readonly'],
-      clientOptions: { subject: adminEmail },
+      scopes: ['https://www.googleapis.com/auth/directory.readonly'],
+      clientOptions: { subject: subjectEmail },
     });
-    const adminSdk = _g.admin({ version: 'directory_v1', auth });
-    const result = await adminSdk.users.get({ userKey: email });
-    const chatId = String(result.data.id || '');
-    if (!chatId) return res.status(404).json({ success: false, error: 'No Google user ID found for that email' });
+    const people = _g.people({ version: 'v1', auth });
+    const result = await people.people.searchDirectoryPeople({
+      query: email,
+      readMask: 'emailAddresses,names,metadata',
+      sources: ['DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'],
+    });
+    const matches = result.data.people || [];
+    // Find the entry whose email matches exactly
+    const person = matches.find(p =>
+      (p.emailAddresses || []).some(e => e.value?.toLowerCase() === email.toLowerCase())
+    ) || matches[0];
+    if (!person) return res.status(404).json({ success: false, error: 'No directory entry found for ' + email });
+    // Resource name is like "people/1234567890123456789" — the numeric part is the Chat user ID
+    const resourceName = person.resourceName || '';
+    const chatId = resourceName.replace('people/', '').trim();
+    if (!chatId) return res.status(404).json({ success: false, error: 'Could not extract user ID from directory entry' });
     // Auto-save to DB
     await updateAgentChatId(req.params.extension, chatId);
     _cache.delete('agents:list');
@@ -515,9 +528,8 @@ app.post('/api/agents/:extension/lookup-chat-id', requireAdmin, async (req, res)
     res.json({ success: true, chatId });
   } catch(e) {
     const msg = e.message || String(e);
-    // Friendly messages for common errors
     if (msg.includes('invalid_grant') || msg.includes('unauthorized_client')) {
-      return res.status(403).json({ success: false, error: 'Service account needs domain-wide delegation. See setup instructions.' });
+      return res.status(403).json({ success: false, error: 'Domain-wide delegation not configured for this service account. Authorize scope: https://www.googleapis.com/auth/directory.readonly' });
     }
     res.status(500).json({ success: false, error: msg });
   }
