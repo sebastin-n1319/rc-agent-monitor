@@ -1583,33 +1583,34 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     console.log(`  · id=${call.id} from.ext=${call.from?.extensionNumber||'—'} from.ph=${call.from?.phoneNumber||'—'} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
   }
 
-  // ── Secondary leg fetch for internal calls ───────────────────────────────────
-  // When the queue extension call log returns 0 legs (e.g. when the caller is an
-  // internal RC extension rather than an external phone), the agent routing data
-  // is NOT embedded in the queue's call log view.  We fix this by fetching the
-  // account-level call record (which includes all routing legs) for any record that:
-  //   • has 0 legs, AND
-  //   • has a significant ring time (> 8 s), AND
-  //   • came from an internal extension (from.extensionNumber set, no phoneNumber)
+  // ── Secondary leg fetch ──────────────────────────────────────────────────────
+  // The queue extension call log often returns 0 legs for internal-extension callers
+  // (RC doesn't embed agent routing legs in the queue's own log view for these calls).
+  // Fix: for ANY missed call with 0 legs and > 8s ring time, fetch the full call
+  // record from the account-level call log, which always includes routing legs.
   const noLegMissed = records.filter(c =>
     (c.legs || []).length === 0 &&
-    (c.duration || 0) > 8 &&
-    c.from?.extensionNumber &&
-    !c.from?.phoneNumber
+    (c.duration || 0) > 8
   );
   if (noLegMissed.length > 0) {
-    console.log(`📞 [secondary-fetch] ${noLegMissed.length} internal call(s) with no legs — fetching account-level records for agent routing data`);
+    console.log(`📞 [secondary-fetch] ${noLegMissed.length} record(s) with 0 legs + ring>8s — fetching account-level records for agent routing data`);
     for (const call of noLegMissed) {
       try {
+        // GET /account/~/call-log/{id}?view=Detailed returns the single record with all legs
         const full = await rcGet(`/restapi/v1.0/account/~/call-log/${call.id}`, { view: 'Detailed' });
-        if (full && (full.legs || []).length > 0) {
-          console.log(`📞 [secondary-fetch] id=${call.id} got ${full.legs.length} legs from account log`);
+        const legCount = (full?.legs || []).length;
+        console.log(`📞 [secondary-fetch] id=${call.id} account log legs=${legCount} (from.ext=${call.from?.extensionNumber||'?'} from.ph=${call.from?.phoneNumber||'none'})`);
+        if (legCount > 0) {
           call.legs = full.legs; // replace empty legs with full routing data
         }
       } catch(e) {
         console.warn(`📞 [secondary-fetch] id=${call.id} failed: ${e.message}`);
       }
     }
+  } else {
+    // Log how many legs each record has so we can spot missing data
+    const legSummary = records.slice(0, 6).map(c => `id=${c.id} legs=${(c.legs||[]).length}`).join(', ');
+    if (legSummary) console.log(`📞 [legs-check] ${legSummary}`);
   }
 
   const queueExtStr  = queueExtFilter ? String(queueExtFilter) : null;
