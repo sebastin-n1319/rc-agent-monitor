@@ -600,6 +600,8 @@ async function initDB() {
     `ALTER TABLE break_events ADD COLUMN idempotency_key TEXT`,
     // Google Chat user ID for @mention notifications
     `ALTER TABLE monitored_agents ADD COLUMN chat_id TEXT`,
+    // Google account subject ID (from OAuth JWT) — captured at login
+    `ALTER TABLE app_sessions ADD COLUMN google_sub TEXT`,
   ]) { try { await run(sql); } catch(e) {} }
 
   // Unique index — silent failure if column already exists from a prior boot
@@ -1282,12 +1284,20 @@ async function deleteAgentNote(id) {
 // APP SESSIONS — DB-backed tokens (no shared secret; survives server restarts)
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
-function createAppSession(token, email, name, picture){
+function createAppSession(token, email, name, picture, googleSub){
   const expiresAt = Date.now() + SESSION_TTL_MS;
   return run(
-    `INSERT OR REPLACE INTO app_sessions (token, email, name, picture, expires_at) VALUES (?,?,?,?,?)`,
-    [token, email, name || '', picture || '', expiresAt]
+    `INSERT OR REPLACE INTO app_sessions (token, email, name, picture, google_sub, expires_at) VALUES (?,?,?,?,?,?)`,
+    [token, email, name || '', picture || '', googleSub || null, expiresAt]
   );
+}
+
+// Return the most recently stored google_sub for a given email
+function getGoogleSubForEmail(email){
+  return get(
+    `SELECT google_sub FROM app_sessions WHERE email=? AND google_sub IS NOT NULL ORDER BY expires_at DESC LIMIT 1`,
+    [email]
+  ).then(r => r?.google_sub || null);
 }
 
 async function getAppSession(token){
@@ -1974,7 +1984,7 @@ module.exports={
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
-  createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,
+  createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,

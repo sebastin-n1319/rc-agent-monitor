@@ -9,7 +9,7 @@ const cron = require('node-cron');
 const path = require('path');
 const {
   db: _sharedDb,
-  initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents, updateAgentChatId,
+  initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents, updateAgentChatId, getGoogleSubForEmail,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
@@ -489,6 +489,24 @@ app.put('/api/agents/:extension/chat-id', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Backfill chat_id for all agents who have already logged in (their google_sub is in app_sessions)
+app.post('/api/agents/backfill-chat-ids', requireAdmin, async (req, res) => {
+  try {
+    const agents = await getMonitoredAgents();
+    let filled = 0, skipped = 0;
+    for (const agent of agents) {
+      if (agent.chat_id || !agent.email) { skipped++; continue; }
+      const sub = await getGoogleSubForEmail(agent.email);
+      if (sub) {
+        await updateAgentChatId(agent.extension, sub);
+        filled++;
+      } else { skipped++; }
+    }
+    _cache.delete('agents:list');
+    res.json({ success: true, filled, skipped });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // Auto-lookup Google Chat user ID from email via People API (directory search)
 // Uses any Google Workspace user for impersonation — no org-admin role needed.
 app.post('/api/agents/:extension/lookup-chat-id', requireAdmin, async (req, res) => {
@@ -917,7 +935,7 @@ function setCookieToken(res, token) {
 
 // POST /api/session — called after Google sign-in; creates DB session + sets cookie
 app.post('/api/session', async (req, res) => {
-  const { email, name, picture } = req.body || {};
+  const { email, name, picture, googleSub } = req.body || {};
   if (!email) return res.status(400).json({ success: false, error: 'email required' });
   const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || 'adit.com';
   if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
@@ -925,8 +943,18 @@ app.post('/api/session', async (req, res) => {
   }
   try {
     const token = crypto.randomBytes(32).toString('hex');
-    await createAppSession(token, email, name || '', picture || '');
+    await createAppSession(token, email, name || '', picture || '', googleSub || null);
     setCookieToken(res, token);
+    // If this email belongs to a monitored agent with no chat_id yet, auto-fill from google_sub
+    if (googleSub) {
+      getMonitoredAgents().then(agents => {
+        const agent = agents.find(a => a.email && a.email.toLowerCase() === email.toLowerCase());
+        if (agent && !agent.chat_id) {
+          updateAgentChatId(agent.extension, googleSub).catch(() => {});
+          _cache.delete('agents:list');
+        }
+      }).catch(() => {});
+    }
     // Look up role — default to 'agent' if not in app_roles yet
     const settings = await getRoleSettingsForEmail(email).catch(() => null);
     const role = settings?.role || 'agent';

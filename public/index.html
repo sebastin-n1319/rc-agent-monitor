@@ -22330,7 +22330,7 @@ async function handleGoogleCredential(response){
   let p;
   try{ p=parseJwt(response.credential); }
   catch(e){ showLoginMsg('Sign-in failed — could not read credential. Please try again.'); return; }
-  const{email,name,picture}=p;
+  const{email,name,picture,sub:googleSub}=p;
   if(!email||!email.endsWith('@'+DOMAIN)){showLoginMsg('Access denied. Only @'+DOMAIN+' accounts are allowed.');return;}
   showLoginMsg('');
   let role='agent';
@@ -22355,6 +22355,8 @@ async function handleGoogleCredential(response){
     });
   }catch(e){}
   fetch(BACKEND+'/api/login-log',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
+  // Save session to server — include googleSub so agent Chat IDs can be auto-populated
+  fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,picture:picture||'',googleSub:googleSub||''})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
   localStorage.setItem('rcLastUser',JSON.stringify({
     name,role,email,picture:picture||'',breakbotEnabled
@@ -28454,7 +28456,19 @@ async function lookupChatId(ext, email){
 async function lookupAllChatIds(){
   const rows=document.querySelectorAll('.agent-auto-btn');
   if(!rows.length){showToast('No agents with email addresses to look up','error');return;}
-  showToast('Looking up '+rows.length+' agent(s)…','');
+  showToast('Checking login history…','');
+  // First try: backfill from stored google_sub (login sessions — no admin needed)
+  try{
+    const bf=await fetch(BACKEND+'/api/agents/backfill-chat-ids',{method:'POST',credentials:'include'});
+    const bj=await bf.json();
+    if(bj.success && bj.filled>0){
+      showToast(bj.filled+' Chat ID(s) filled from login history ✔','success');
+      loadAgents();
+      return;
+    }
+  }catch(e){}
+  // Fallback: People API (requires domain-wide delegation setup)
+  showToast('Looking up '+rows.length+' agent(s) via Google directory…','');
   let ok=0,fail=0;
   for(const btn of rows){
     const ext=btn.id.replace('auto-btn-','');
