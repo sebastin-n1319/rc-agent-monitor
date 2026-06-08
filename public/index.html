@@ -8810,36 +8810,201 @@ tbody tr:hover td{
   padding:7px 10px !important;
 }
 
-/* Manage agents + access — table redesign */
+/* ═══════════════════════════════════════════════════════════════
+   AGENTS PAGE — FUTURISTIC REDESIGN v2
+   Glassmorphism rows · neon status pulses · icon action buttons
+═══════════════════════════════════════════════════════════════ */
 #agentGrid.agent-grid{display:block !important;}
-.agent-table{width:100%;border-collapse:collapse;}
-.agent-table thead tr{border-bottom:2px solid var(--b1);}
-.agent-table th{padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);text-align:left;white-space:nowrap;}
-.agent-table tbody tr{border-bottom:1px solid var(--b1);transition:background .15s;}
-.agent-table tbody tr:last-child{border-bottom:none;}
-.agent-table tbody tr:hover{background:var(--card3);}
-.agent-table td{padding:11px 14px;vertical-align:middle;}
-.agent-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--teal));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:.02em;}
-.agent-name-cell{display:flex;align-items:center;gap:10px;}
-.agent-name-primary{font-weight:700;color:var(--t1);font-size:13px;}
-.agent-name-email{font-size:11px;color:var(--t3);margin-top:1px;}
-.agent-ext-badge{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--card2);border:1px solid var(--b1);border-radius:6px;padding:2px 8px;color:var(--t2);}
-.agent-sync-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;}
+
+/* Search panel */
+.agent-search-wrap{position:relative;}
+.agent-search-wrap::before{
+  content:'';position:absolute;inset:-1px;border-radius:13px;
+  background:linear-gradient(135deg,rgba(255,130,60,.35),rgba(45,220,150,.25));
+  z-index:0;pointer-events:none;opacity:0;transition:opacity .3s;
+}
+.agent-search-wrap:focus-within::before{opacity:1;}
+.agent-search-wrap input{position:relative;z-index:1;}
+
+/* Main table */
+.agent-table{width:100%;border-collapse:separate;border-spacing:0 5px;}
+.agent-table thead tr th{
+  padding:7px 16px;font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--t3);text-align:left;white-space:nowrap;
+  border-bottom:1px solid var(--b1);
+}
+.agent-table tbody tr{
+  background:transparent;transition:all .2s;
+}
+.agent-table tbody tr td{
+  padding:10px 16px;vertical-align:middle;
+  border-top:1px solid transparent;border-bottom:1px solid transparent;
+  transition:all .2s;
+}
+.agent-table tbody tr td:first-child{
+  border-left:1px solid transparent;border-radius:12px 0 0 12px;
+}
+.agent-table tbody tr td:last-child{
+  border-right:1px solid transparent;border-radius:0 12px 12px 0;
+}
+.agent-table tbody tr:hover td{
+  background:var(--card2);
+  border-color:var(--b1);
+}
+.agent-table tbody tr:hover td:first-child{
+  border-left-color:rgba(255,130,60,.35);
+}
+
+/* Avatar with ring glow */
+.agent-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--orange) 0%,var(--teal) 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;flex-shrink:0;
+  letter-spacing:.02em;position:relative;
+  box-shadow:0 0 0 2px var(--card2),0 0 0 3px rgba(255,130,60,.2);
+  transition:box-shadow .25s;
+}
+.agent-table tbody tr:hover .agent-avatar{
+  box-shadow:0 0 0 2px var(--card2),0 0 0 3px rgba(255,130,60,.6),0 0 14px rgba(255,130,60,.25);
+}
+.agent-name-cell{display:flex;align-items:center;gap:11px;min-width:0;}
+.agent-name-primary{font-weight:700;color:var(--t1);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.agent-name-email{font-size:10.5px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+
+/* Extension badge — cyber terminal */
+.agent-ext-badge{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  background:linear-gradient(135deg,rgba(45,220,150,.08),rgba(45,220,150,.04));
+  border:1px solid rgba(45,220,150,.25);border-radius:7px;
+  padding:3px 9px;color:var(--teal);white-space:nowrap;letter-spacing:.03em;
+}
+.agent-ext-badge::before{content:'[';opacity:.5;margin-right:1px;}
+.agent-ext-badge::after{content:']';opacity:.5;margin-left:1px;}
+
+/* Status pulse indicator */
+.agent-sync-dot{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:11px;font-weight:600;white-space:nowrap;
+}
+.agent-sync-dot .dot-ring{
+  width:9px;height:9px;border-radius:50%;position:relative;flex-shrink:0;
+}
+.agent-sync-dot.synced .dot-ring{background:var(--green);box-shadow:0 0 0 0 rgba(63,215,162,.7);}
+.agent-sync-dot.synced .dot-ring::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  border:1.5px solid rgba(63,215,162,.5);
+  animation:agentPulse 2s ease-out infinite;
+}
 .agent-sync-dot.synced{color:var(--green);}
+.agent-sync-dot.pending .dot-ring{background:var(--t3);}
 .agent-sync-dot.pending{color:var(--t3);}
-.agent-sync-dot::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;}
-.agent-chat-row{display:flex;align-items:center;gap:6px;}
-.agent-chat-input{font-size:12px;padding:5px 9px;border:1px solid var(--b1);border-radius:6px;background:var(--card2);color:var(--t1);width:160px;transition:border-color .15s;font-family:inherit;}
-.agent-chat-input:focus{outline:none;border-color:var(--orange);}
-.agent-chat-input.has-value{border-color:rgba(45,220,150,.5);background:rgba(45,220,150,.06);}
-.agent-save-btn{font-size:11px;padding:5px 12px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid var(--b1);background:var(--card2);color:var(--t2);transition:all .15s;white-space:nowrap;}
-.agent-save-btn:hover{background:var(--orange);border-color:var(--orange);color:#fff;}
-.agent-remove-btn{font-size:11px;padding:5px 12px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--t3);transition:all .15s;white-space:nowrap;}
-.agent-remove-btn:hover{background:rgba(237,102,107,.1);border-color:rgba(237,102,107,.35);color:var(--red);}
-.agent-table-empty{padding:36px;text-align:center;color:var(--t3);font-size:13px;}
-.agent-auto-btn{font-size:11px;padding:5px 10px;font-weight:700;border-radius:8px;cursor:pointer;border:1px solid var(--b1);background:var(--card2);color:var(--teal);transition:all .15s;white-space:nowrap;}
-.agent-auto-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff;}
-.agent-auto-btn:disabled{opacity:.5;cursor:wait;}
+@keyframes agentPulse{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(2.2);}}
+
+/* Chat ID row */
+.agent-chat-row{display:flex;align-items:center;gap:5px;}
+.agent-chat-input{
+  font-size:11.5px;padding:6px 10px;
+  border:1px solid var(--b1);border-radius:8px;
+  background:var(--card2);color:var(--t1);
+  width:155px;transition:border-color .2s,box-shadow .2s,background .2s;
+  font-family:'JetBrains Mono',monospace;
+}
+.agent-chat-input::placeholder{font-family:inherit;font-size:10.5px;color:var(--t3);}
+.agent-chat-input:focus{
+  outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,130,60,.12);
+  background:rgba(255,130,60,.04);
+}
+.agent-chat-input.has-value{
+  border-color:rgba(45,220,150,.45);
+  background:rgba(45,220,150,.05);
+  box-shadow:0 0 0 2px rgba(45,220,150,.08);
+}
+.agent-chat-input.scanning{
+  border-color:var(--teal) !important;
+  animation:agentScan 1.2s ease-in-out infinite;
+}
+@keyframes agentScan{0%,100%{box-shadow:0 0 0 2px rgba(45,220,150,.15);}50%{box-shadow:0 0 0 4px rgba(45,220,150,.35),0 0 12px rgba(45,220,150,.2);}}
+
+/* Icon action buttons */
+.agent-icon-btn{
+  width:30px;height:30px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--b1);background:var(--card2);
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .18s;flex-shrink:0;padding:0;
+}
+.agent-icon-btn svg{width:14px;height:14px;transition:all .18s;}
+
+/* Save button */
+.agent-save-btn{color:var(--t2);}
+.agent-save-btn:hover{
+  background:rgba(255,130,60,.12);border-color:rgba(255,130,60,.5);
+  color:var(--orange);box-shadow:0 0 8px rgba(255,130,60,.2);
+}
+/* Auto button */
+.agent-auto-btn{color:var(--teal);}
+.agent-auto-btn:hover{
+  background:rgba(45,220,150,.12);border-color:rgba(45,220,150,.5);
+  color:var(--teal);box-shadow:0 0 8px rgba(45,220,150,.2);
+}
+.agent-auto-btn:disabled{opacity:.4;cursor:wait;pointer-events:none;}
+/* Remove button */
+.agent-remove-btn{color:var(--t3);}
+.agent-remove-btn:hover{
+  background:rgba(237,102,107,.1);border-color:rgba(237,102,107,.4);
+  color:var(--red);box-shadow:0 0 8px rgba(237,102,107,.15);
+}
+/* Button tooltip */
+.agent-icon-btn{position:relative;}
+.agent-icon-btn::after{
+  content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;
+  font-size:10px;padding:3px 7px;border-radius:5px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:10;
+}
+.agent-icon-btn:hover::after{opacity:1;}
+
+/* Header action buttons */
+.agent-hdr-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;padding:6px 13px;border-radius:8px;
+  cursor:pointer;transition:all .18s;border:1px solid;white-space:nowrap;
+}
+.agent-hdr-btn svg{width:13px;height:13px;flex-shrink:0;}
+.agent-hdr-btn-auto{
+  background:rgba(45,220,150,.08);border-color:rgba(45,220,150,.3);
+  color:var(--teal);
+}
+.agent-hdr-btn-auto:hover{
+  background:rgba(45,220,150,.18);border-color:rgba(45,220,150,.6);
+  box-shadow:0 0 10px rgba(45,220,150,.2);
+}
+.agent-hdr-btn-sync{
+  background:rgba(255,130,60,.08);border-color:rgba(255,130,60,.3);
+  color:var(--orange);
+}
+.agent-hdr-btn-sync:hover{
+  background:rgba(255,130,60,.18);border-color:rgba(255,130,60,.6);
+  box-shadow:0 0 10px rgba(255,130,60,.2);
+}
+
+/* Count badge */
+.agent-count-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:22px;height:20px;padding:0 6px;
+  background:rgba(255,130,60,.15);border:1px solid rgba(255,130,60,.3);
+  border-radius:10px;font-size:11px;font-weight:700;color:var(--orange);
+  margin-left:6px;
+}
+
+/* Empty state */
+.agent-table-empty{
+  padding:48px;text-align:center;
+  background:radial-gradient(ellipse at 50% 50%,rgba(255,130,60,.04),transparent 70%);
+}
+.agent-table-empty-icon{font-size:28px;opacity:.3;margin-bottom:8px;}
+.agent-table-empty-text{color:var(--t3);font-size:13px;}
 .agent-card button,.role-toggle-btn,.role-remove-btn{border-radius:12px !important;}
 
 /* Break bot: neutralize the noisy futuristic overlay */
@@ -18210,36 +18375,201 @@ tbody tr:hover td{
   padding:7px 10px !important;
 }
 
-/* Manage agents + access — table redesign */
+/* ═══════════════════════════════════════════════════════════════
+   AGENTS PAGE — FUTURISTIC REDESIGN v2
+   Glassmorphism rows · neon status pulses · icon action buttons
+═══════════════════════════════════════════════════════════════ */
 #agentGrid.agent-grid{display:block !important;}
-.agent-table{width:100%;border-collapse:collapse;}
-.agent-table thead tr{border-bottom:2px solid var(--b1);}
-.agent-table th{padding:9px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);text-align:left;white-space:nowrap;}
-.agent-table tbody tr{border-bottom:1px solid var(--b1);transition:background .15s;}
-.agent-table tbody tr:last-child{border-bottom:none;}
-.agent-table tbody tr:hover{background:var(--card3);}
-.agent-table td{padding:11px 14px;vertical-align:middle;}
-.agent-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--teal));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:.02em;}
-.agent-name-cell{display:flex;align-items:center;gap:10px;}
-.agent-name-primary{font-weight:700;color:var(--t1);font-size:13px;}
-.agent-name-email{font-size:11px;color:var(--t3);margin-top:1px;}
-.agent-ext-badge{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--card2);border:1px solid var(--b1);border-radius:6px;padding:2px 8px;color:var(--t2);}
-.agent-sync-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;}
+
+/* Search panel */
+.agent-search-wrap{position:relative;}
+.agent-search-wrap::before{
+  content:'';position:absolute;inset:-1px;border-radius:13px;
+  background:linear-gradient(135deg,rgba(255,130,60,.35),rgba(45,220,150,.25));
+  z-index:0;pointer-events:none;opacity:0;transition:opacity .3s;
+}
+.agent-search-wrap:focus-within::before{opacity:1;}
+.agent-search-wrap input{position:relative;z-index:1;}
+
+/* Main table */
+.agent-table{width:100%;border-collapse:separate;border-spacing:0 5px;}
+.agent-table thead tr th{
+  padding:7px 16px;font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.09em;color:var(--t3);text-align:left;white-space:nowrap;
+  border-bottom:1px solid var(--b1);
+}
+.agent-table tbody tr{
+  background:transparent;transition:all .2s;
+}
+.agent-table tbody tr td{
+  padding:10px 16px;vertical-align:middle;
+  border-top:1px solid transparent;border-bottom:1px solid transparent;
+  transition:all .2s;
+}
+.agent-table tbody tr td:first-child{
+  border-left:1px solid transparent;border-radius:12px 0 0 12px;
+}
+.agent-table tbody tr td:last-child{
+  border-right:1px solid transparent;border-radius:0 12px 12px 0;
+}
+.agent-table tbody tr:hover td{
+  background:var(--card2);
+  border-color:var(--b1);
+}
+.agent-table tbody tr:hover td:first-child{
+  border-left-color:rgba(255,130,60,.35);
+}
+
+/* Avatar with ring glow */
+.agent-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--orange) 0%,var(--teal) 100%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;flex-shrink:0;
+  letter-spacing:.02em;position:relative;
+  box-shadow:0 0 0 2px var(--card2),0 0 0 3px rgba(255,130,60,.2);
+  transition:box-shadow .25s;
+}
+.agent-table tbody tr:hover .agent-avatar{
+  box-shadow:0 0 0 2px var(--card2),0 0 0 3px rgba(255,130,60,.6),0 0 14px rgba(255,130,60,.25);
+}
+.agent-name-cell{display:flex;align-items:center;gap:11px;min-width:0;}
+.agent-name-primary{font-weight:700;color:var(--t1);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.agent-name-email{font-size:10.5px;color:var(--t3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
+
+/* Extension badge — cyber terminal */
+.agent-ext-badge{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  background:linear-gradient(135deg,rgba(45,220,150,.08),rgba(45,220,150,.04));
+  border:1px solid rgba(45,220,150,.25);border-radius:7px;
+  padding:3px 9px;color:var(--teal);white-space:nowrap;letter-spacing:.03em;
+}
+.agent-ext-badge::before{content:'[';opacity:.5;margin-right:1px;}
+.agent-ext-badge::after{content:']';opacity:.5;margin-left:1px;}
+
+/* Status pulse indicator */
+.agent-sync-dot{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:11px;font-weight:600;white-space:nowrap;
+}
+.agent-sync-dot .dot-ring{
+  width:9px;height:9px;border-radius:50%;position:relative;flex-shrink:0;
+}
+.agent-sync-dot.synced .dot-ring{background:var(--green);box-shadow:0 0 0 0 rgba(63,215,162,.7);}
+.agent-sync-dot.synced .dot-ring::after{
+  content:'';position:absolute;inset:-3px;border-radius:50%;
+  border:1.5px solid rgba(63,215,162,.5);
+  animation:agentPulse 2s ease-out infinite;
+}
 .agent-sync-dot.synced{color:var(--green);}
+.agent-sync-dot.pending .dot-ring{background:var(--t3);}
 .agent-sync-dot.pending{color:var(--t3);}
-.agent-sync-dot::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;}
-.agent-chat-row{display:flex;align-items:center;gap:6px;}
-.agent-chat-input{font-size:12px;padding:5px 9px;border:1px solid var(--b1);border-radius:6px;background:var(--card2);color:var(--t1);width:160px;transition:border-color .15s;font-family:inherit;}
-.agent-chat-input:focus{outline:none;border-color:var(--orange);}
-.agent-chat-input.has-value{border-color:rgba(45,220,150,.5);background:rgba(45,220,150,.06);}
-.agent-save-btn{font-size:11px;padding:5px 12px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid var(--b1);background:var(--card2);color:var(--t2);transition:all .15s;white-space:nowrap;}
-.agent-save-btn:hover{background:var(--orange);border-color:var(--orange);color:#fff;}
-.agent-remove-btn{font-size:11px;padding:5px 12px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--t3);transition:all .15s;white-space:nowrap;}
-.agent-remove-btn:hover{background:rgba(237,102,107,.1);border-color:rgba(237,102,107,.35);color:var(--red);}
-.agent-table-empty{padding:36px;text-align:center;color:var(--t3);font-size:13px;}
-.agent-auto-btn{font-size:11px;padding:5px 10px;font-weight:700;border-radius:8px;cursor:pointer;border:1px solid var(--b1);background:var(--card2);color:var(--teal);transition:all .15s;white-space:nowrap;}
-.agent-auto-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff;}
-.agent-auto-btn:disabled{opacity:.5;cursor:wait;}
+@keyframes agentPulse{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(2.2);}}
+
+/* Chat ID row */
+.agent-chat-row{display:flex;align-items:center;gap:5px;}
+.agent-chat-input{
+  font-size:11.5px;padding:6px 10px;
+  border:1px solid var(--b1);border-radius:8px;
+  background:var(--card2);color:var(--t1);
+  width:155px;transition:border-color .2s,box-shadow .2s,background .2s;
+  font-family:'JetBrains Mono',monospace;
+}
+.agent-chat-input::placeholder{font-family:inherit;font-size:10.5px;color:var(--t3);}
+.agent-chat-input:focus{
+  outline:none;border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(255,130,60,.12);
+  background:rgba(255,130,60,.04);
+}
+.agent-chat-input.has-value{
+  border-color:rgba(45,220,150,.45);
+  background:rgba(45,220,150,.05);
+  box-shadow:0 0 0 2px rgba(45,220,150,.08);
+}
+.agent-chat-input.scanning{
+  border-color:var(--teal) !important;
+  animation:agentScan 1.2s ease-in-out infinite;
+}
+@keyframes agentScan{0%,100%{box-shadow:0 0 0 2px rgba(45,220,150,.15);}50%{box-shadow:0 0 0 4px rgba(45,220,150,.35),0 0 12px rgba(45,220,150,.2);}}
+
+/* Icon action buttons */
+.agent-icon-btn{
+  width:30px;height:30px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--b1);background:var(--card2);
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .18s;flex-shrink:0;padding:0;
+}
+.agent-icon-btn svg{width:14px;height:14px;transition:all .18s;}
+
+/* Save button */
+.agent-save-btn{color:var(--t2);}
+.agent-save-btn:hover{
+  background:rgba(255,130,60,.12);border-color:rgba(255,130,60,.5);
+  color:var(--orange);box-shadow:0 0 8px rgba(255,130,60,.2);
+}
+/* Auto button */
+.agent-auto-btn{color:var(--teal);}
+.agent-auto-btn:hover{
+  background:rgba(45,220,150,.12);border-color:rgba(45,220,150,.5);
+  color:var(--teal);box-shadow:0 0 8px rgba(45,220,150,.2);
+}
+.agent-auto-btn:disabled{opacity:.4;cursor:wait;pointer-events:none;}
+/* Remove button */
+.agent-remove-btn{color:var(--t3);}
+.agent-remove-btn:hover{
+  background:rgba(237,102,107,.1);border-color:rgba(237,102,107,.4);
+  color:var(--red);box-shadow:0 0 8px rgba(237,102,107,.15);
+}
+/* Button tooltip */
+.agent-icon-btn{position:relative;}
+.agent-icon-btn::after{
+  content:attr(title);position:absolute;bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;
+  font-size:10px;padding:3px 7px;border-radius:5px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;z-index:10;
+}
+.agent-icon-btn:hover::after{opacity:1;}
+
+/* Header action buttons */
+.agent-hdr-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:11px;font-weight:600;padding:6px 13px;border-radius:8px;
+  cursor:pointer;transition:all .18s;border:1px solid;white-space:nowrap;
+}
+.agent-hdr-btn svg{width:13px;height:13px;flex-shrink:0;}
+.agent-hdr-btn-auto{
+  background:rgba(45,220,150,.08);border-color:rgba(45,220,150,.3);
+  color:var(--teal);
+}
+.agent-hdr-btn-auto:hover{
+  background:rgba(45,220,150,.18);border-color:rgba(45,220,150,.6);
+  box-shadow:0 0 10px rgba(45,220,150,.2);
+}
+.agent-hdr-btn-sync{
+  background:rgba(255,130,60,.08);border-color:rgba(255,130,60,.3);
+  color:var(--orange);
+}
+.agent-hdr-btn-sync:hover{
+  background:rgba(255,130,60,.18);border-color:rgba(255,130,60,.6);
+  box-shadow:0 0 10px rgba(255,130,60,.2);
+}
+
+/* Count badge */
+.agent-count-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:22px;height:20px;padding:0 6px;
+  background:rgba(255,130,60,.15);border:1px solid rgba(255,130,60,.3);
+  border-radius:10px;font-size:11px;font-weight:700;color:var(--orange);
+  margin-left:6px;
+}
+
+/* Empty state */
+.agent-table-empty{
+  padding:48px;text-align:center;
+  background:radial-gradient(ellipse at 50% 50%,rgba(255,130,60,.04),transparent 70%);
+}
+.agent-table-empty-icon{font-size:28px;opacity:.3;margin-bottom:8px;}
+.agent-table-empty-text{color:var(--t3);font-size:13px;}
 .agent-card button,.role-toggle-btn,.role-remove-btn{border-radius:12px !important;}
 
 /* Break bot: neutralize the noisy futuristic overlay */
@@ -19499,10 +19829,19 @@ tbody tr:hover td{
     </div>
     <div class="card">
       <div class="card-hdr">
-        <span class="card-title">Monitored Agents (<span id="agentCount">0</span>)</span>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <button class="btn btn-sm" style="font-size:11px;" onclick="lookupAllChatIds()" title="Auto-detect Google Chat IDs for all agents using their email">&#9889; Auto-detect Chat IDs</button>
-          <button class="btn btn-success btn-sm" onclick="doRefresh()">&#8635; Sync All</button>
+        <div style="display:flex;align-items:center;gap:2px;">
+          <span class="card-title">Monitored Agents</span>
+          <span class="agent-count-badge" id="agentCount">0</span>
+        </div>
+        <div style="display:flex;gap:7px;align-items:center;">
+          <button class="agent-hdr-btn agent-hdr-btn-auto" onclick="lookupAllChatIds()" title="Auto-detect Google Chat IDs from login history">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2a6 6 0 0 1 5.5 3.6M8 14a6 6 0 0 1-5.5-3.6M14.5 3l-1 2.6-2.5-1M1.5 13l1-2.6 2.5 1"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+            Auto-detect IDs
+          </button>
+          <button class="agent-hdr-btn agent-hdr-btn-sync" onclick="doRefresh()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.5 8A5.5 5.5 0 0 1 3 11.2M2.5 8A5.5 5.5 0 0 1 13 4.8M2 12v-3h3M14 4v3h-3"/></svg>
+            Sync All
+          </button>
         </div>
       </div>
       <div id="agentGrid" class="agent-grid"><div class="no-data">No agents yet.</div></div>
@@ -28376,23 +28715,32 @@ async function addSelectedAgents(){
 }
 
 async function loadAgents(){
+  const icoSave='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 7,12 13,4"/></svg>';
+  const icoAuto='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.5 1.5 6 7h4.5L7.5 14.5l6.5-8H9.5z"/></svg>';
+  const icoRemove='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
   try{
     const res=await fetch(BACKEND+'/api/agents');
     const json=await res.json();
     const agents=json.data||[];
-    document.getElementById('agentCount').textContent=agents.length;
+    const badge=document.getElementById('agentCount');
+    if(badge) badge.textContent=agents.length;
     if(!agents.length){
-      document.getElementById('agentGrid').innerHTML='<div class="no-data">No agents yet. Search above to add agents.</div>';
+      document.getElementById('agentGrid').innerHTML=
+        '<div class="agent-table-empty">'+
+        '<div class="agent-table-empty-icon">&#128100;</div>'+
+        '<div class="agent-table-empty-text">No agents monitored yet. Search above to add agents.</div>'+
+        '</div>';
       return;
     }
     const _initials=n=>n.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase()||'?';
+    const _grad=n=>{const h=(n+n).split('').reduce((a,c)=>a*31+c.charCodeAt(0)|0,0);const hues=[[25,170],[180,120],[280,160],[330,200],[60,140]];const[h1,h2]=hues[Math.abs(h)%hues.length];return 'hsl('+h1+',85%,60%),hsl('+h2+',75%,52%)';};
     document.getElementById('agentGrid').innerHTML=
       '<table class="agent-table">'+
         '<thead><tr>'+
           '<th>Agent</th>'+
           '<th>Extension</th>'+
           '<th>RC Status</th>'+
-          '<th>Google Chat ID <span style="font-weight:400;font-size:9px;opacity:.6;text-transform:none;">for @mentions</span></th>'+
+          '<th colspan="2">Google Chat ID <span style="font-weight:400;font-size:9px;opacity:.5;text-transform:none;letter-spacing:0">for @mentions</span></th>'+
           '<th></th>'+
         '</tr></thead>'+
         '<tbody>'+
@@ -28403,27 +28751,29 @@ async function loadAgents(){
           const synced=!!a.rc_id;
           const hasChat=!!chatIdVal;
           const chatCls='agent-chat-input'+(hasChat?' has-value':'');
+          const grad=_grad(a.name||extSafe);
           const inp='<input type="text" class="'+chatCls+'" id="chat-id-'+extSafe+'"'+
-            ' value="'+esc(chatIdVal)+'" placeholder="auto-detect or enter manually"'+
+            ' value="'+esc(chatIdVal)+'" placeholder="ID auto-fills on login…"'+
             ' onkeydown="if(event.key===\'Enter\')saveChatId(\''+extSafe+'\',this)"'+
             ' oninput="this.classList.toggle(\'has-value\',this.value.trim().length>0)">';
           const autoBtn=a.email
-            ? '<button class="agent-auto-btn" id="auto-btn-'+extSafe+'" onclick="lookupChatId(\''+extSafe+'\',\''+emailSafe+'\')" title="Look up Google ID from email automatically">&#9889; Auto</button>'
+            ? '<button class="agent-icon-btn agent-auto-btn" id="auto-btn-'+extSafe+'" onclick="lookupChatId(\''+extSafe+'\',\''+emailSafe+'\')" title="Auto-detect Chat ID">'+icoAuto+'</button>'
             : '';
+          const statusDot='<span class="agent-sync-dot '+(synced?'synced':'pending')+'"><span class="dot-ring"></span>'+(synced?'Synced':'Pending')+'</span>';
           return '<tr>'+
             '<td><div class="agent-name-cell">'+
-              '<div class="agent-avatar">'+_initials(a.name)+'</div>'+
-              '<div><div class="agent-name-primary">'+esc(a.name)+'</div>'+
+              '<div class="agent-avatar" style="background:linear-gradient(135deg,'+grad+')">'+_initials(a.name)+'</div>'+
+              '<div style="min-width:0;"><div class="agent-name-primary">'+esc(a.name)+'</div>'+
               (a.email?'<div class="agent-name-email">'+esc(a.email)+'</div>':'')+
               '</div></div></td>'+
             '<td><span class="agent-ext-badge">'+esc(a.extension)+'</span></td>'+
-            '<td><span class="agent-sync-dot '+(synced?'synced':'pending')+'">'+(synced?'Synced':'Pending sync')+'</span></td>'+
-            '<td><div class="agent-chat-row">'+
+            '<td>'+statusDot+'</td>'+
+            '<td colspan="2"><div class="agent-chat-row">'+
               inp+
               autoBtn+
-              '<button class="agent-save-btn" onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))">Save</button>'+
+              '<button class="agent-icon-btn agent-save-btn" onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))" title="Save Chat ID">'+icoSave+'</button>'+
             '</div></td>'+
-            '<td><button class="agent-remove-btn" data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)">&#10005; Remove</button></td>'+
+            '<td><button class="agent-icon-btn agent-remove-btn" data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)" title="Remove agent">'+icoRemove+'</button></td>'+
           '</tr>';
         }).join('')+
         '</tbody></table>';
