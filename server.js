@@ -2945,9 +2945,12 @@ function _buildGoogleChatCard(call) {
     ? (isDirect ? 'Voicemail — Direct' : 'Voicemail Left')
     : (isDirect ? 'Missed Call — Direct' : (inQ ? 'Queue Abandoned' : 'Missed Call'));
 
-  const callerName   = call.from.name || '';
+  const callerName   = call.from.name   || '';
   const callerNumber = call.from.number || '';
-  const callerLine   = callerName ? `${callerName}  ·  ${callerNumber}` : callerNumber;
+  // For internal callers (ext-to-queue), phoneNumber is empty — show name only or fallback to ext
+  const callerLine = callerName
+    ? (callerNumber ? `${callerName}  ·  ${callerNumber}` : callerName)
+    : (callerNumber || call.from.extNumber || '—');
 
   // If ring time > 10s and a specific agent is identified, highlight them in the subtitle
   const effectiveRingSecs = call.agentRingSecs || call.totalSecs || 0;
@@ -3056,11 +3059,14 @@ async function _sendMissedCallNotification(call) {
         ? (call.directAgent ? [{ extNumber: call.directAgent.extNumber, name: call.directAgent.name }] : [])
         : (call.agentDetails || []);
 
-      if (ringingAgents.length > 0) {
-        const callerInfo = call.from.name
-          ? `${call.from.name} (${call.from.number})`
-          : call.from.number;
+      // callerInfo: use name if available; skip number when blank (internal ext callers)
+      const _mkCallerInfo = (f) =>
+        f.name
+          ? (f.number ? `${f.name} (${f.number})` : f.name)
+          : (f.number || f.extNumber || '—');
+      const callerInfo = _mkCallerInfo(call.from);
 
+      if (ringingAgents.length > 0) {
         const mentionParts = ringingAgents.map(a => {
           const chatId = _agentChatIds[String(a.extNumber)];
           // If a Google Chat user ID is configured for this extension, use a real @mention.
@@ -3073,9 +3079,6 @@ async function _sendMissedCallNotification(call) {
         body.text = `📞 Missed call — ${mentionParts.join(', ')} please call back: ${callerInfo}`;
       } else {
         // Agent ring time > 10s but RC didn't return individual agent legs — still flag it
-        const callerInfo = call.from.name
-          ? `${call.from.name} (${call.from.number})`
-          : call.from.number;
         body.text = `📞 Missed call from ${callerInfo} — rang for ${_fmtSecs(effectiveRingSecs)}, please check and call back.`;
       }
     }

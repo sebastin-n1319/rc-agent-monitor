@@ -1676,13 +1676,16 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     // Direct agent calls never count as "in queue" even if they somehow matched a leg
     const wasInQueue = !isDirect && (wasInQueueFromLegs || wasInQueueFromName);
 
-    // Agent ring legs: legs that rang a specific extension (not the queue ext itself)
+    // Agent ring legs: legs that rang a specific extension (not the queue ext itself).
+    // For external callers RC puts the agent extension in l.extension.extensionNumber.
+    // For INTERNAL callers (ext-to-queue) RC puts it in l.to.extensionNumber instead —
+    // so we fall back to l.to when l.extension is absent or has no extensionNumber.
     const agentRingLegs = legs.filter(l => {
       const a      = (l.action || '').toLowerCase();
-      const extNum = String(l.extension?.extensionNumber || '');
+      const extNum = String(l.extension?.extensionNumber || l.to?.extensionNumber || '');
       const isQueueExt = queueExtStr && extNum === queueExtStr;
       return (a === 'phone call' || a === 'ring') &&
-             l.extension && extNum &&
+             extNum &&
              !a.includes('queue') &&
              !isQueueExt;
     });
@@ -1696,20 +1699,23 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     const totalSecs     = call.duration || 0;
     const agentRingSecs = agentRingLegs.reduce((s, l) => s + (l.duration || 0), 0);
 
-    // Rich agent details: deduplicated by extension number
+    // Rich agent details: deduplicated by extension number.
+    // Prefer l.extension for the ext/name/id, fall back to l.to for internal calls.
     const agentDetails = [...new Map(
       agentRingLegs
-        .filter(l => l.extension?.extensionNumber)
         .map(l => {
-          const extNum = String(l.extension.extensionNumber);
+          const extNum = String(l.extension?.extensionNumber || l.to?.extensionNumber || '');
+          if (!extNum) return null;
           const agent  = extToAgent[extNum];
+          const name   = agent?.name || l.extension?.name || l.to?.name || `Ext ${extNum}`;
           return [extNum, {
             extNumber: extNum,
-            name:      agent?.name || l.extension.name || `Ext ${extNum}`,
-            rcId:      String(l.extension.id || agent?.rc_id || ''),
+            name,
+            rcId:      String(l.extension?.id || agent?.rc_id || ''),
             duration:  l.duration || 0,
           }];
         })
+        .filter(Boolean)
     ).values()];
 
     // Try to get voicemail transcript (only if VM, non-blocking)
@@ -1743,8 +1749,10 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
         rcId:      String(destAgent?.rc_id || ''),
       } : null,
       from: {
-        name:   call.from?.name        || '',
-        number: call.from?.phoneNumber || '',
+        name:   call.from?.name                || '',
+        number: call.from?.phoneNumber         || '',
+        // For internal callers (ext-to-queue) phoneNumber is blank — capture the ext instead
+        extNumber: call.from?.extensionNumber  || '',
       },
       to: {
         name:   call.to?.name               || '',
