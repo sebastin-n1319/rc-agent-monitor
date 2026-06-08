@@ -1580,7 +1580,36 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
 
   // Debug: log first few records so we can verify filter results in Railway logs
   for (const call of records.slice(0, 8)) {
-    console.log(`  · id=${call.id} from=${call.from?.phoneNumber} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" to.phone=${call.to?.phoneNumber || '—'} legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
+    console.log(`  · id=${call.id} from.ext=${call.from?.extensionNumber||'—'} from.ph=${call.from?.phoneNumber||'—'} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
+  }
+
+  // ── Secondary leg fetch for internal calls ───────────────────────────────────
+  // When the queue extension call log returns 0 legs (e.g. when the caller is an
+  // internal RC extension rather than an external phone), the agent routing data
+  // is NOT embedded in the queue's call log view.  We fix this by fetching the
+  // account-level call record (which includes all routing legs) for any record that:
+  //   • has 0 legs, AND
+  //   • has a significant ring time (> 8 s), AND
+  //   • came from an internal extension (from.extensionNumber set, no phoneNumber)
+  const noLegMissed = records.filter(c =>
+    (c.legs || []).length === 0 &&
+    (c.duration || 0) > 8 &&
+    c.from?.extensionNumber &&
+    !c.from?.phoneNumber
+  );
+  if (noLegMissed.length > 0) {
+    console.log(`📞 [secondary-fetch] ${noLegMissed.length} internal call(s) with no legs — fetching account-level records for agent routing data`);
+    for (const call of noLegMissed) {
+      try {
+        const full = await rcGet(`/restapi/v1.0/account/~/call-log/${call.id}`, { view: 'Detailed' });
+        if (full && (full.legs || []).length > 0) {
+          console.log(`📞 [secondary-fetch] id=${call.id} got ${full.legs.length} legs from account log`);
+          call.legs = full.legs; // replace empty legs with full routing data
+        }
+      } catch(e) {
+        console.warn(`📞 [secondary-fetch] id=${call.id} failed: ${e.message}`);
+      }
+    }
   }
 
   const queueExtStr  = queueExtFilter ? String(queueExtFilter) : null;
