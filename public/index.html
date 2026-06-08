@@ -28343,13 +28343,22 @@ async function loadAgents(){
     document.getElementById('agentGrid').innerHTML=agents.map(a=>{
       const vCls=a.rc_id?'verified':'pending';
       const vTxt=a.rc_id?'&#10003; Synced':'&#8987; Pending sync';
-      return '<div class="agent-card">'+
-        '<div>'+
-          '<div class="agent-card-name">'+esc(a.name)+'</div>'+
-          '<div class="agent-card-meta">Ext '+esc(a.extension)+(a.email?' &middot; '+esc(a.email):'')+
-          ' &middot; <span class="'+vCls+'">'+vTxt+'</span></div>'+
+      const chatIdVal=a.chat_id||'';
+      const extSafe=esc(a.extension);
+      return '<div class="agent-card" style="flex-direction:column;align-items:stretch;gap:8px;">'+
+        '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">'+
+          '<div>'+
+            '<div class="agent-card-name">'+esc(a.name)+'</div>'+
+            '<div class="agent-card-meta">Ext '+esc(a.extension)+(a.email?' &middot; '+esc(a.email):'')+
+            ' &middot; <span class="'+vCls+'">'+vTxt+'</span></div>'+
+          '</div>'+
+          '<button class="btn btn-danger btn-sm" data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)">&#10005; Remove</button>'+
         '</div>'+
-        '<button class="btn btn-danger btn-sm" data-ext="'+esc(a.extension)+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)">&#10005; Remove</button>'+
+        '<div style="display:flex;align-items:center;gap:6px;">'+
+          '<label style="font-size:12px;color:var(--text-muted);white-space:nowrap;margin:0;">Google Chat ID:</label>'+
+          '<input type="text" id="chat-id-'+extSafe+'" value="'+esc(chatIdVal)+'" placeholder="e.g. 123456789012" style="flex:1;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);" onkeydown="if(event.key===\'Enter\')saveChatId(\''+extSafe+'\',this)">'+
+          '<button class="btn btn-sm" style="font-size:12px;padding:4px 10px;" onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))">Save</button>'+
+        '</div>'+
       '</div>';
     }).join('');
   }catch(e){showToast('Error loading agents','error');}
@@ -28368,6 +28377,33 @@ function removeAgentBtn(btn){
       else{showToast('Error: '+j.error,'error');btn.disabled=false;btn.textContent='&#10005; Remove';}
     })
     .catch(()=>{showToast('Network error','error');btn.disabled=false;btn.textContent='&#10005; Remove';});
+}
+
+async function saveChatId(ext, inputEl){
+  const chatId=(inputEl.value||'').trim();
+  const origVal=inputEl.value;
+  inputEl.disabled=true;
+  try{
+    const res=await fetch(BACKEND+'/api/agents/'+ext+'/chat-id',{
+      method:'PUT',
+      credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chatId:chatId||null})
+    });
+    const json=await res.json();
+    if(json.success){
+      showToast(chatId?'Chat ID saved':'Chat ID cleared','success');
+      inputEl.value=chatId;
+    } else {
+      showToast('Error: '+(json.error||'unknown'),'error');
+      inputEl.value=origVal;
+    }
+  }catch(e){
+    showToast('Network error saving Chat ID','error');
+    inputEl.value=origVal;
+  } finally {
+    inputEl.disabled=false;
+  }
 }
 
 // ROLES

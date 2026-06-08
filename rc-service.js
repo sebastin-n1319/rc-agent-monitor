@@ -1820,6 +1820,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
             extNumber: extNum,
             name,
             rcId:      String(l.extension?.id || agent?.rc_id || ''),
+            chatId:    agent?.chat_id || '',   // Google Chat user ID for @mentions
             duration:  l.duration || 0,
           }];
         })

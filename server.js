@@ -9,7 +9,7 @@ const cron = require('node-cron');
 const path = require('path');
 const {
   db: _sharedDb,
-  initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents,
+  initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents, updateAgentChatId,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
@@ -476,6 +476,17 @@ app.delete('/api/agents/:extension', requireAdmin, async (req, res) => {
     res.json({ success: true });
   }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Update Google Chat user ID for @mention notifications
+app.put('/api/agents/:extension/chat-id', requireAdmin, async (req, res) => {
+  const { chatId } = req.body;
+  _cache.delete('agents:list');
+  try {
+    await updateAgentChatId(req.params.extension, chatId ? String(chatId).trim() : null);
+    insertAuditLog(req.session.email, 'agent_chat_id_updated', req.params.extension, `chatId:${chatId||'cleared'}`).catch(()=>{});
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) => {
@@ -3071,8 +3082,9 @@ async function _sendMissedCallNotification(call) {
 
       if (ringingAgents.length > 0) {
         const mentionParts = ringingAgents.map(a => {
-          const chatId = _agentChatIds[String(a.extNumber)];
-          // If a Google Chat user ID is configured for this extension, use a real @mention.
+          // Prefer chatId stored in DB (set via admin UI); fall back to AGENT_CHAT_IDS env var.
+          const chatId = a.chatId || _agentChatIds[String(a.extNumber)];
+          // If a Google Chat user ID is configured, use a real @mention that pings them.
           // Otherwise fall back to bold name + extension so it's still visually prominent.
           return chatId
             ? `<users/${chatId}>`

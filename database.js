@@ -598,6 +598,8 @@ async function initDB() {
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
     // #21 Session 8 — PWA offline queue idempotency
     `ALTER TABLE break_events ADD COLUMN idempotency_key TEXT`,
+    // Google Chat user ID for @mention notifications
+    `ALTER TABLE monitored_agents ADD COLUMN chat_id TEXT`,
   ]) { try { await run(sql); } catch(e) {} }
 
   // Unique index — silent failure if column already exists from a prior boot
@@ -626,6 +628,7 @@ function addAgent(n,ext,email){return run(`INSERT OR IGNORE INTO monitored_agent
 function removeAgent(ext){return run(`DELETE FROM monitored_agents WHERE extension=?`,[ext]);}
 function getMonitoredAgents(){return all(`SELECT * FROM monitored_agents ORDER BY name ASC`);}
 function updateAgentRcId(ext,rcId){return run(`UPDATE monitored_agents SET rc_id=? WHERE extension=?`,[rcId,ext]);}
+function updateAgentChatId(ext,chatId){return run(`UPDATE monitored_agents SET chat_id=? WHERE extension=?`,[chatId||null,ext]);}
 
 // PRESENCE
 function insertPresenceEvent(agentId,agentName,status,queueStatus,timestamp){
@@ -1966,7 +1969,7 @@ module.exports={
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
   // #16 Session 11 — predictive abandonment
   savePredictModel, loadPredictModel,
-  initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,
+  initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
