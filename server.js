@@ -2768,6 +2768,20 @@ const MISSED_CALL_WEBHOOK_URL  = process.env.MISSED_CALL_WEBHOOK_URL || '';
 // RC doesn't populate to.extensionNumber (happens for quick hang-ups on the DID).
 const MISSED_CALL_DID          = (process.env.MISSED_CALL_DID || '').replace(/\D/g, '');
 
+// Optional: JSON map of RC extension number → Google Chat numeric user ID.
+// When configured, agents who missed a call with ring time > 10s will be @mentioned
+// in the Google Chat space so they get a notification and can call back.
+// Example: AGENT_CHAT_IDS={"1234":"123456789012345678","5678":"876543210987654321"}
+// To find a user's Google Chat ID: open Google Chat, click their profile → their URL
+// contains the user ID, or ask your Google Workspace admin.
+let _agentChatIds = {};
+try {
+  const _rawChatIds = process.env.AGENT_CHAT_IDS || '{}';
+  _agentChatIds = JSON.parse(_rawChatIds);
+} catch(e) {
+  console.warn('⚠ AGENT_CHAT_IDS is not valid JSON — agent @mentions disabled');
+}
+
 const _notifiedCallIds = new Set();
 
 // ── Debug / observability ring buffer ────────────────────────────────────────
@@ -2801,6 +2815,13 @@ function _buildGoogleChatCard(call) {
   const callerName   = call.from.name || '';
   const callerNumber = call.from.number || '';
   const callerLine   = callerName ? `${callerName}  ·  ${callerNumber}` : callerNumber;
+
+  // If ring time > 10s and a specific agent is identified, highlight them in the subtitle
+  const effectiveRingSecs = call.agentRingSecs || call.totalSecs || 0;
+  const ringingAgents = !isDirect ? (call.agentDetails || []) : [];
+  const subtitleAgentSuffix = !isVM && effectiveRingSecs > 10 && ringingAgents.length === 1
+    ? `  ·  Agent: ${ringingAgents[0].name} (Ext ${ringingAgents[0].extNumber})`
+    : '';
 
   const timeStr = new Date(call.startTime).toLocaleString('en-US', {
     timeZone: 'America/Chicago',
@@ -2873,7 +2894,7 @@ function _buildGoogleChatCard(call) {
     cardsV2: [{
       cardId: `rc-missed-${call.id}`,
       card: {
-        header: { title: `${icon} ${label}`, subtitle: callerLine },
+        header: { title: `${icon} ${label}`, subtitle: `${callerLine}${subtitleAgentSuffix}` },
         sections: [{ widgets }],
       },
     }],
@@ -2889,6 +2910,43 @@ async function _sendMissedCallNotification(call) {
   }
   try {
     const body = _buildGoogleChatCard(call);
+
+    // When ring time > 10s the call reached a specific agent — add a @mention text
+    // so the agent is notified in Google Chat and can call the customer back.
+    // Ring time check: use agentRingSecs if available (agent actually rang), else totalSecs.
+    const effectiveRingSecs = call.agentRingSecs || call.totalSecs || 0;
+    const shouldMention = !call.isVoicemail && effectiveRingSecs > 10;
+
+    if (shouldMention) {
+      // Gather the agents that rang: for direct calls it's directAgent; for queue it's agentDetails
+      const ringingAgents = call.isDirect
+        ? (call.directAgent ? [{ extNumber: call.directAgent.extNumber, name: call.directAgent.name }] : [])
+        : (call.agentDetails || []);
+
+      if (ringingAgents.length > 0) {
+        const callerInfo = call.from.name
+          ? `${call.from.name} (${call.from.number})`
+          : call.from.number;
+
+        const mentionParts = ringingAgents.map(a => {
+          const chatId = _agentChatIds[String(a.extNumber)];
+          // If a Google Chat user ID is configured for this extension, use a real @mention.
+          // Otherwise fall back to bold name + extension so it's still visually prominent.
+          return chatId
+            ? `<users/${chatId}>`
+            : `*${a.name}* (Ext ${a.extNumber})`;
+        });
+
+        body.text = `📞 Missed call — ${mentionParts.join(', ')} please call back: ${callerInfo}`;
+      } else {
+        // Agent ring time > 10s but RC didn't return individual agent legs — still flag it
+        const callerInfo = call.from.name
+          ? `${call.from.name} (${call.from.number})`
+          : call.from.number;
+        body.text = `📞 Missed call from ${callerInfo} — rang for ${_fmtSecs(effectiveRingSecs)}, please check and call back.`;
+      }
+    }
+
     const r = await fetch(url, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
