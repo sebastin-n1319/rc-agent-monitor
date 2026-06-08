@@ -28390,6 +28390,11 @@ async function loadAgents(){
           const chatIdVal=a.chat_id||'';
           const synced=!!a.rc_id;
           const hasChat=!!chatIdVal;
+          const chatCls='agent-chat-input'+(hasChat?' has-value':'');
+          const inp='<input type="text" class="'+chatCls+'" id="chat-id-'+extSafe+'"'+
+            ' value="'+esc(chatIdVal)+'" placeholder="e.g. 123456789012"'+
+            ' onkeydown="if(event.key===\'Enter\')saveChatId(\''+extSafe+'\',this)"'+
+            ' oninput="this.classList.toggle(\'has-value\',this.value.trim().length>0)">';
           return '<tr>'+
             '<td><div class="agent-name-cell">'+
               '<div class="agent-avatar">'+_initials(a.name)+'</div>'+
@@ -28399,7 +28404,7 @@ async function loadAgents(){
             '<td><span class="agent-ext-badge">'+esc(a.extension)+'</span></td>'+
             '<td><span class="agent-sync-dot '+(synced?'synced':'pending')+'">'+(synced?'Synced':'Pending sync')+'</span></td>'+
             '<td><div class="agent-chat-row">'+
-              '<input type="text" class="agent-chat-input'+(hasChat?' has-value':'')+" id=\"chat-id-"+extSafe+"\" value=\""+esc(chatIdVal)+"\" placeholder=\"e.g. 123456789012\" onkeydown=\"if(event.key==='Enter')saveChatId('"+extSafe+"',this)\" oninput=\"this.classList.toggle('has-value',this.value.trim().length>0)\">'+
+              inp+
               '<button class="agent-save-btn" onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))">Save</button>'+
             '</div></td>'+
             '<td><button class="agent-remove-btn" data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)">&#10005; Remove</button></td>'+
