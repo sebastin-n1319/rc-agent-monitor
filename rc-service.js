@@ -1680,15 +1680,37 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     // For external callers RC puts the agent extension in l.extension.extensionNumber.
     // For INTERNAL callers (ext-to-queue) RC puts it in l.to.extensionNumber instead —
     // so we fall back to l.to when l.extension is absent or has no extensionNumber.
-    const agentRingLegs = legs.filter(l => {
-      const a      = (l.action || '').toLowerCase();
+    const _excludedActions = new Set(['voicemail', 'vmgreeting', 'holdabandon', 'hold abandon', 'faxreceive']);
+    const _agentExtFromLeg = (l) => {
       const extNum = String(l.extension?.extensionNumber || l.to?.extensionNumber || '');
       const isQueueExt = queueExtStr && extNum === queueExtStr;
-      return (a === 'phone call' || a === 'ring') &&
-             extNum &&
-             !a.includes('queue') &&
-             !isQueueExt;
+      return extNum && !isQueueExt ? extNum : '';
+    };
+
+    // Primary: legs with action explicitly indicating ringing/calling
+    let agentRingLegs = legs.filter(l => {
+      const a = (l.action || '').toLowerCase();
+      return (a === 'phone call' || a === 'ring') && _agentExtFromLeg(l);
     });
+
+    // Fallback: if primary yields nothing, accept any leg with a non-queue extension
+    // (excluding voicemail/hold legs). This handles calls where RC uses unexpected action types.
+    if (agentRingLegs.length === 0 && legs.length > 0) {
+      agentRingLegs = legs.filter(l => {
+        const a = (l.action || '').toLowerCase();
+        return _agentExtFromLeg(l) && !_excludedActions.has(a);
+      });
+      if (agentRingLegs.length > 0) {
+        const legSummary = legs.map(l => `action="${l.action}" ext=${l.extension?.extensionNumber||l.to?.extensionNumber||'?'}`).join(' | ');
+        console.log(`📞 [agent-legs-fallback] id=${call.id} strict filter found 0, fallback found ${agentRingLegs.length}. Legs: ${legSummary}`);
+      }
+    }
+
+    // Debug: always log legs when agent detection yields nothing (helps diagnose new edge cases)
+    if (agentRingLegs.length === 0 && legs.length > 0) {
+      const legSummary = legs.map(l => `action="${l.action}" ext=${l.extension?.extensionNumber||l.to?.extensionNumber||'?'} dur=${l.duration||0}s`).join(' | ');
+      console.log(`📞 [agent-legs-none] id=${call.id} duration=${call.duration}s legs(${legs.length}): ${legSummary}`);
+    }
 
     // Voicemail: call.result or any leg action indicates VM
     const isVoicemail = call.result === 'Voicemail' ||

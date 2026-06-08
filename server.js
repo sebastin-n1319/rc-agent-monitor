@@ -2954,7 +2954,10 @@ function _buildGoogleChatCard(call) {
 
   // If ring time > 10s and a specific agent is identified, highlight them in the subtitle
   const effectiveRingSecs = call.agentRingSecs || call.totalSecs || 0;
+  // For queue calls show agent details; for direct calls the header itself is the agent destination
   const ringingAgents = !isDirect ? (call.agentDetails || []) : [];
+  // Show agent suffix for queue calls with exactly one identified agent.
+  // Also show for the "Missed direct" fallback (not in queue, not isDirect) so the agent is visible.
   const subtitleAgentSuffix = !isVM && effectiveRingSecs > 10 && ringingAgents.length === 1
     ? `  ·  Agent: ${ringingAgents[0].name} (Ext ${ringingAgents[0].extNumber})`
     : '';
