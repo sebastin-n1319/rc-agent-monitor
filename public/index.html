@@ -19833,13 +19833,19 @@ tbody tr:hover td{
           <span class="card-title">Monitored Agents</span>
           <span class="agent-count-badge" id="agentCount">0</span>
         </div>
-        <div style="display:flex;gap:7px;align-items:center;">
-          <button class="agent-hdr-btn agent-hdr-btn-auto" onclick="lookupAllChatIds()" title="Auto-detect Google Chat IDs from login history">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2a6 6 0 0 1 5.5 3.6M8 14a6 6 0 0 1-5.5-3.6M14.5 3l-1 2.6-2.5-1M1.5 13l1-2.6 2.5 1"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="lookupAllChatIds()" title="Auto-detect Google Chat IDs from login history"
+            style="display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;border:1px solid rgba(45,220,150,.35);background:rgba(45,220,150,.08);color:#2BDEA4;transition:all .18s;white-space:nowrap;"
+            onmouseenter="this.style.background='rgba(45,220,150,.18)';this.style.borderColor='rgba(45,220,150,.6)';this.style.boxShadow='0 0 10px rgba(45,220,150,.2)'"
+            onmouseleave="this.style.background='rgba(45,220,150,.08)';this.style.borderColor='rgba(45,220,150,.35)';this.style.boxShadow=''">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2a6 6 0 0 1 5.5 3.6M8 14a6 6 0 0 1-5.5-3.6M14.5 3l-1 2.6-2.5-1M1.5 13l1-2.6 2.5 1"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/></svg>
             Auto-detect IDs
           </button>
-          <button class="agent-hdr-btn agent-hdr-btn-sync" onclick="doRefresh()">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.5 8A5.5 5.5 0 0 1 3 11.2M2.5 8A5.5 5.5 0 0 1 13 4.8M2 12v-3h3M14 4v3h-3"/></svg>
+          <button onclick="doRefresh()"
+            style="display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;border:1px solid rgba(255,130,60,.35);background:rgba(255,130,60,.08);color:var(--orange);transition:all .18s;white-space:nowrap;"
+            onmouseenter="this.style.background='rgba(255,130,60,.18)';this.style.borderColor='rgba(255,130,60,.6)';this.style.boxShadow='0 0 10px rgba(255,130,60,.2)'"
+            onmouseleave="this.style.background='rgba(255,130,60,.08)';this.style.borderColor='rgba(255,130,60,.35)';this.style.boxShadow=''">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13.5 8A5.5 5.5 0 0 1 3 11.2M2.5 8A5.5 5.5 0 0 1 13 4.8M2 12v-3h3M14 4v3h-3"/></svg>
             Sync All
           </button>
         </div>
@@ -28715,9 +28721,10 @@ async function addSelectedAgents(){
 }
 
 async function loadAgents(){
-  const icoSave='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 7,12 13,4"/></svg>';
-  const icoAuto='<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8.5 1.5 6 7h4.5L7.5 14.5l6.5-8H9.5z"/></svg>';
-  const icoRemove='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
+  // SVG icons — explicit width/height so they never default to 300px
+  const icoSave='<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,8 7,12 13,4"/></svg>';
+  const icoAuto='<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8.5 1.5 6 7h4.5L7.5 14.5l6.5-8H9.5z"/></svg>';
+  const icoRemove='<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
   try{
     const res=await fetch(BACKEND+'/api/agents');
     const json=await res.json();
@@ -28726,22 +28733,20 @@ async function loadAgents(){
     if(badge) badge.textContent=agents.length;
     if(!agents.length){
       document.getElementById('agentGrid').innerHTML=
-        '<div class="agent-table-empty">'+
-        '<div class="agent-table-empty-icon">&#128100;</div>'+
-        '<div class="agent-table-empty-text">No agents monitored yet. Search above to add agents.</div>'+
-        '</div>';
+        '<div style="padding:52px;text-align:center;"><div style="font-size:28px;opacity:.25;margin-bottom:10px">&#128100;</div><div style="color:var(--t3);font-size:13px;">No agents monitored yet. Search above to add agents.</div></div>';
       return;
     }
-    const _initials=n=>n.split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase()||'?';
-    const _grad=n=>{const h=(n+n).split('').reduce((a,c)=>a*31+c.charCodeAt(0)|0,0);const hues=[[25,170],[180,120],[280,160],[330,200],[60,140]];const[h1,h2]=hues[Math.abs(h)%hues.length];return 'hsl('+h1+',85%,60%),hsl('+h2+',75%,52%)';};
+    const _initials=n=>(n||'?').split(' ').map(p=>p[0]||'').slice(0,2).join('').toUpperCase()||'?';
+    // Unique gradient per agent — 5 palette pairs
+    const _col=n=>{const h=(n+'!').split('').reduce((a,c)=>((a<<5)-a+c.charCodeAt(0))|0,0);const pairs=[['#FF823C','#2BDEA4'],['#A78BFA','#38BDF8'],['#F472B6','#34D399'],['#FBBF24','#60A5FA'],['#F87171','#A3E635']];return pairs[((h%5)+5)%5];};
     document.getElementById('agentGrid').innerHTML=
-      '<table class="agent-table">'+
-        '<thead><tr>'+
-          '<th>Agent</th>'+
-          '<th>Extension</th>'+
-          '<th>RC Status</th>'+
-          '<th colspan="2">Google Chat ID <span style="font-weight:400;font-size:9px;opacity:.5;text-transform:none;letter-spacing:0">for @mentions</span></th>'+
-          '<th></th>'+
+      '<table style="width:100%;border-collapse:separate;border-spacing:0 4px;">'+
+        '<thead><tr style="border-bottom:none">'+
+          '<th style="padding:6px 14px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);text-align:left;white-space:nowrap;">Agent</th>'+
+          '<th style="padding:6px 14px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);text-align:left;white-space:nowrap;">Extension</th>'+
+          '<th style="padding:6px 14px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);text-align:left;white-space:nowrap;">RC Status</th>'+
+          '<th style="padding:6px 14px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);text-align:left;white-space:nowrap;" colspan="2">Google Chat ID <span style="font-weight:400;font-size:9px;opacity:.5;text-transform:none;letter-spacing:0">for @mentions</span></th>'+
+          '<th style="padding:6px 14px 10px;"></th>'+
         '</tr></thead>'+
         '<tbody>'+
         agents.map(a=>{
@@ -28750,34 +28755,57 @@ async function loadAgents(){
           const chatIdVal=a.chat_id||'';
           const synced=!!a.rc_id;
           const hasChat=!!chatIdVal;
-          const chatCls='agent-chat-input'+(hasChat?' has-value':'');
-          const grad=_grad(a.name||extSafe);
-          const inp='<input type="text" class="'+chatCls+'" id="chat-id-'+extSafe+'"'+
-            ' value="'+esc(chatIdVal)+'" placeholder="ID auto-fills on login…"'+
+          const [c1,c2]=_col(a.name||extSafe);
+          // Avatar — fully inline so it's not affected by CSS cascade
+          const avStyle='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,'+c1+','+c2+');display:flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:.03em;box-shadow:0 0 0 2px var(--card1,#fff),0 0 0 3.5px '+c1+'55';
+          const avatar='<div style="'+avStyle+'">'+_initials(a.name)+'</div>';
+          // Extension badge
+          const extBadge='<span style="font-family:JetBrains Mono,monospace;font-size:11px;background:rgba(45,220,150,.08);border:1px solid rgba(45,220,150,.28);border-radius:7px;padding:3px 9px;color:#2BDEA4;white-space:nowrap;">[&thinsp;'+esc(a.extension)+'&thinsp;]</span>';
+          // Status dot with pulse
+          const dotColor=synced?'#3FD7A2':'#888';
+          const dotLabel=synced?'Synced':'Pending';
+          const dotPulse=synced?'<span class="agent-sync-ring" style="position:absolute;inset:-3px;border-radius:50%;border:1.5px solid '+dotColor+'4D;animation:agentPulse 2s ease-out infinite;"></span>':'';
+          const statusDot='<span style="display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;color:'+dotColor+';">'+
+            '<span style="position:relative;width:9px;height:9px;border-radius:50%;background:'+dotColor+';flex-shrink:0;">'+dotPulse+'</span>'+dotLabel+'</span>';
+          // Chat ID input
+          const inpStyle='font-size:11.5px;padding:6px 11px;border:1px solid '+(hasChat?'rgba(45,220,150,.45)':'var(--b1)')+';border-radius:8px;background:'+(hasChat?'rgba(45,220,150,.05)':'var(--card2)')+';color:var(--t1);width:168px;font-family:JetBrains Mono,monospace;box-shadow:none;transition:border-color .2s,box-shadow .2s;';
+          const inp='<input type="text" id="chat-id-'+extSafe+'" value="'+esc(chatIdVal)+'" placeholder="ID auto-fills on login…"'+
+            ' style="'+inpStyle+'"'+
             ' onkeydown="if(event.key===\'Enter\')saveChatId(\''+extSafe+'\',this)"'+
-            ' oninput="this.classList.toggle(\'has-value\',this.value.trim().length>0)">';
+            ' onfocus="this.style.boxShadow=\'0 0 0 3px rgba(255,130,60,.15)\';this.style.borderColor=\'var(--orange)\'"'+
+            ' onblur="this.style.boxShadow=\'\'"'+
+            ' oninput="const v=this.value.trim().length>0;this.style.borderColor=v?\'rgba(45,220,150,.45)\':\'\';this.style.background=v?\'rgba(45,220,150,.05)\':\'\';">';
+          // Icon button base style
+          const iBtnBase='width:30px;height:30px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .18s;flex-shrink:0;border:1px solid;';
           const autoBtn=a.email
-            ? '<button class="agent-icon-btn agent-auto-btn" id="auto-btn-'+extSafe+'" onclick="lookupChatId(\''+extSafe+'\',\''+emailSafe+'\')" title="Auto-detect Chat ID">'+icoAuto+'</button>'
+            ? '<button id="auto-btn-'+extSafe+'" onclick="lookupChatId(\''+extSafe+'\',\''+emailSafe+'\')" title="Auto-detect Chat ID"'+
+              ' style="'+iBtnBase+'background:rgba(45,220,150,.08);border-color:rgba(45,220,150,.3);color:#2BDEA4;">'+icoAuto+'</button>'
             : '';
-          const statusDot='<span class="agent-sync-dot '+(synced?'synced':'pending')+'"><span class="dot-ring"></span>'+(synced?'Synced':'Pending')+'</span>';
+          const saveBtn='<button onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))" title="Save Chat ID"'+
+            ' style="'+iBtnBase+'background:rgba(255,130,60,.08);border-color:rgba(255,130,60,.3);color:var(--orange);">'+icoSave+'</button>';
+          const removeBtn='<button data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)" title="Remove agent"'+
+            ' style="'+iBtnBase+'background:transparent;border-color:transparent;color:var(--t3);"'+
+            ' onmouseenter="this.style.background=\'rgba(237,102,107,.12)\';this.style.borderColor=\'rgba(237,102,107,.4)\';this.style.color=\'var(--red)\'"'+
+            ' onmouseleave="this.style.background=\'transparent\';this.style.borderColor=\'transparent\';this.style.color=\'var(--t3)\'">'+icoRemove+'</button>';
           return '<tr>'+
-            '<td><div class="agent-name-cell">'+
-              '<div class="agent-avatar" style="background:linear-gradient(135deg,'+grad+')">'+_initials(a.name)+'</div>'+
-              '<div style="min-width:0;"><div class="agent-name-primary">'+esc(a.name)+'</div>'+
-              (a.email?'<div class="agent-name-email">'+esc(a.email)+'</div>':'')+
-              '</div></div></td>'+
-            '<td><span class="agent-ext-badge">'+esc(a.extension)+'</span></td>'+
-            '<td>'+statusDot+'</td>'+
-            '<td colspan="2"><div class="agent-chat-row">'+
-              inp+
-              autoBtn+
-              '<button class="agent-icon-btn agent-save-btn" onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))" title="Save Chat ID">'+icoSave+'</button>'+
-            '</div></td>'+
-            '<td><button class="agent-icon-btn agent-remove-btn" data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)" title="Remove agent">'+icoRemove+'</button></td>'+
+            '<td style="padding:8px 14px;vertical-align:middle;border-top:1px solid transparent;border-bottom:1px solid transparent;border-radius:12px 0 0 12px;transition:all .2s;" onmouseenter="this.style.background=\'var(--card2)\';this.style.borderColor=\'var(--b1)\'" onmouseleave="this.style.background=\'\';this.style.borderColor=\'transparent\'">'+
+              '<div style="display:flex;flex-direction:row;align-items:center;gap:11px;min-width:0;">'+
+                avatar+
+                '<div style="min-width:0;"><div style="font-weight:700;color:var(--t1);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+esc(a.name)+'</div>'+
+                (a.email?'<div style="font-size:10.5px;color:var(--t3);margin-top:1px;">'+esc(a.email)+'</div>':'')+
+                '</div>'+
+              '</div>'+
+            '</td>'+
+            '<td style="padding:8px 14px;vertical-align:middle;border-top:1px solid transparent;border-bottom:1px solid transparent;white-space:nowrap;" onmouseenter="this.style.background=\'var(--card2)\';this.style.borderColor=\'var(--b1)\'" onmouseleave="this.style.background=\'\';this.style.borderColor=\'transparent\'">'+extBadge+'</td>'+
+            '<td style="padding:8px 14px;vertical-align:middle;border-top:1px solid transparent;border-bottom:1px solid transparent;white-space:nowrap;" onmouseenter="this.style.background=\'var(--card2)\';this.style.borderColor=\'var(--b1)\'" onmouseleave="this.style.background=\'\';this.style.borderColor=\'transparent\'">'+statusDot+'</td>'+
+            '<td style="padding:8px 14px;vertical-align:middle;border-top:1px solid transparent;border-bottom:1px solid transparent;" colspan="2" onmouseenter="this.style.background=\'var(--card2)\';this.style.borderColor=\'var(--b1)\'" onmouseleave="this.style.background=\'\';this.style.borderColor=\'transparent\'">'+
+              '<div style="display:flex;flex-direction:row;align-items:center;gap:5px;">'+inp+autoBtn+saveBtn+'</div>'+
+            '</td>'+
+            '<td style="padding:8px 14px;vertical-align:middle;border-top:1px solid transparent;border-bottom:1px solid transparent;border-radius:0 12px 12px 0;" onmouseenter="this.style.background=\'var(--card2)\';this.style.borderColor=\'var(--b1)\'" onmouseleave="this.style.background=\'\';this.style.borderColor=\'transparent\'">'+removeBtn+'</td>'+
           '</tr>';
         }).join('')+
         '</tbody></table>';
-  }catch(e){showToast('Error loading agents','error');}
+  }catch(e){console.error('loadAgents',e);showToast('Error loading agents','error');}
 }
 
 async function lookupChatId(ext, email){
