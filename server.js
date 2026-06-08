@@ -489,6 +489,40 @@ app.put('/api/agents/:extension/chat-id', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Auto-lookup Google Chat user ID from email via Admin Directory API
+app.post('/api/agents/:extension/lookup-chat-id', requireAdmin, async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, error: 'Email required' });
+  const keyRaw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!keyRaw) return res.status(503).json({ success: false, error: 'GOOGLE_SERVICE_ACCOUNT_KEY not configured' });
+  const adminEmail = process.env.GOOGLE_ADMIN_EMAIL;
+  if (!adminEmail) return res.status(503).json({ success: false, error: 'GOOGLE_ADMIN_EMAIL env var not set — add an admin Google Workspace email' });
+  try {
+    const { google: _g } = require('googleapis');
+    const auth = new _g.auth.GoogleAuth({
+      credentials: JSON.parse(keyRaw),
+      scopes: ['https://www.googleapis.com/auth/admin.directory.user.readonly'],
+      clientOptions: { subject: adminEmail },
+    });
+    const adminSdk = _g.admin({ version: 'directory_v1', auth });
+    const result = await adminSdk.users.get({ userKey: email });
+    const chatId = String(result.data.id || '');
+    if (!chatId) return res.status(404).json({ success: false, error: 'No Google user ID found for that email' });
+    // Auto-save to DB
+    await updateAgentChatId(req.params.extension, chatId);
+    _cache.delete('agents:list');
+    insertAuditLog(req.session.email, 'agent_chat_id_auto_lookup', req.params.extension, `email:${email} chatId:${chatId}`).catch(()=>{});
+    res.json({ success: true, chatId });
+  } catch(e) {
+    const msg = e.message || String(e);
+    // Friendly messages for common errors
+    if (msg.includes('invalid_grant') || msg.includes('unauthorized_client')) {
+      return res.status(403).json({ success: false, error: 'Service account needs domain-wide delegation. See setup instructions.' });
+    }
+    res.status(500).json({ success: false, error: msg });
+  }
+});
+
 app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) => {
   const q = req.query.q || '';
   if (q.length < 2) return res.json({ success: true, data: [] });

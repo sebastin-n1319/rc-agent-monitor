@@ -8837,6 +8837,9 @@ tbody tr:hover td{
 .agent-remove-btn{font-size:11px;padding:5px 12px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--t3);transition:all .15s;white-space:nowrap;}
 .agent-remove-btn:hover{background:rgba(237,102,107,.1);border-color:rgba(237,102,107,.35);color:var(--red);}
 .agent-table-empty{padding:36px;text-align:center;color:var(--t3);font-size:13px;}
+.agent-auto-btn{font-size:11px;padding:5px 10px;font-weight:700;border-radius:8px;cursor:pointer;border:1px solid var(--b1);background:var(--card2);color:var(--teal);transition:all .15s;white-space:nowrap;}
+.agent-auto-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff;}
+.agent-auto-btn:disabled{opacity:.5;cursor:wait;}
 .agent-card button,.role-toggle-btn,.role-remove-btn{border-radius:12px !important;}
 
 /* Break bot: neutralize the noisy futuristic overlay */
@@ -18234,6 +18237,9 @@ tbody tr:hover td{
 .agent-remove-btn{font-size:11px;padding:5px 12px;font-weight:600;border-radius:8px;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--t3);transition:all .15s;white-space:nowrap;}
 .agent-remove-btn:hover{background:rgba(237,102,107,.1);border-color:rgba(237,102,107,.35);color:var(--red);}
 .agent-table-empty{padding:36px;text-align:center;color:var(--t3);font-size:13px;}
+.agent-auto-btn{font-size:11px;padding:5px 10px;font-weight:700;border-radius:8px;cursor:pointer;border:1px solid var(--b1);background:var(--card2);color:var(--teal);transition:all .15s;white-space:nowrap;}
+.agent-auto-btn:hover{background:var(--teal);border-color:var(--teal);color:#fff;}
+.agent-auto-btn:disabled{opacity:.5;cursor:wait;}
 .agent-card button,.role-toggle-btn,.role-remove-btn{border-radius:12px !important;}
 
 /* Break bot: neutralize the noisy futuristic overlay */
@@ -19494,7 +19500,10 @@ tbody tr:hover td{
     <div class="card">
       <div class="card-hdr">
         <span class="card-title">Monitored Agents (<span id="agentCount">0</span>)</span>
-        <button class="btn btn-success btn-sm" onclick="doRefresh()">&#8635; Sync All</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-sm" style="font-size:11px;" onclick="lookupAllChatIds()" title="Auto-detect Google Chat IDs for all agents using their email">&#9889; Auto-detect Chat IDs</button>
+          <button class="btn btn-success btn-sm" onclick="doRefresh()">&#8635; Sync All</button>
+        </div>
       </div>
       <div id="agentGrid" class="agent-grid"><div class="no-data">No agents yet.</div></div>
     </div>
@@ -28387,14 +28396,18 @@ async function loadAgents(){
         '<tbody>'+
         agents.map(a=>{
           const extSafe=esc(a.extension);
+          const emailSafe=esc(a.email||'');
           const chatIdVal=a.chat_id||'';
           const synced=!!a.rc_id;
           const hasChat=!!chatIdVal;
           const chatCls='agent-chat-input'+(hasChat?' has-value':'');
           const inp='<input type="text" class="'+chatCls+'" id="chat-id-'+extSafe+'"'+
-            ' value="'+esc(chatIdVal)+'" placeholder="e.g. 123456789012"'+
-            ' onkeydown="if(event.key===\'Enter\')saveChatId(\''+extSafe+'\',this)"'+
-            ' oninput="this.classList.toggle(\'has-value\',this.value.trim().length>0)">';
+            ' value="'+esc(chatIdVal)+'" placeholder="auto-detect or enter manually"'+
+            ' onkeydown="if(event.key==='Enter')saveChatId(''+extSafe+'',this)"'+
+            ' oninput="this.classList.toggle('has-value',this.value.trim().length>0)">';
+          const autoBtn=a.email
+            ? '<button class="agent-auto-btn" id="auto-btn-'+extSafe+'" onclick="lookupChatId(''+extSafe+'',''+emailSafe+'')" title="Look up Google ID from email automatically">&#9889; Auto</button>'
+            : '';
           return '<tr>'+
             '<td><div class="agent-name-cell">'+
               '<div class="agent-avatar">'+_initials(a.name)+'</div>'+
@@ -28405,13 +28418,66 @@ async function loadAgents(){
             '<td><span class="agent-sync-dot '+(synced?'synced':'pending')+'">'+(synced?'Synced':'Pending sync')+'</span></td>'+
             '<td><div class="agent-chat-row">'+
               inp+
-              '<button class="agent-save-btn" onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))">Save</button>'+
+              autoBtn+
+              '<button class="agent-save-btn" onclick="saveChatId(''+extSafe+'',document.getElementById('chat-id-'+extSafe+''))">Save</button>'+
             '</div></td>'+
             '<td><button class="agent-remove-btn" data-ext="'+extSafe+'" data-name="'+esc(a.name)+'" onclick="removeAgentBtn(this)">&#10005; Remove</button></td>'+
           '</tr>';
         }).join('')+
         '</tbody></table>';
   }catch(e){showToast('Error loading agents','error');}
+}
+
+async function lookupChatId(ext, email){
+  if(!email){showToast('No email on this agent','error');return;}
+  const btn=document.getElementById('auto-btn-'+ext);
+  const inp=document.getElementById('chat-id-'+ext);
+  if(btn){btn.disabled=true;btn.textContent='...';}
+  try{
+    const res=await fetch(BACKEND+'/api/agents/'+ext+'/lookup-chat-id',{
+      method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email})
+    });
+    const json=await res.json();
+    if(json.success){
+      inp.value=json.chatId;
+      inp.classList.add('has-value');
+      showToast('Chat ID auto-detected and saved ✔','success');
+    } else {
+      showToast('Lookup failed: '+json.error,'error');
+    }
+  }catch(e){showToast('Network error','error');}
+  finally{if(btn){btn.disabled=false;btn.textContent='⚡ Auto';}}
+}
+
+async function lookupAllChatIds(){
+  const rows=document.querySelectorAll('.agent-auto-btn');
+  if(!rows.length){showToast('No agents with email addresses to look up','error');return;}
+  showToast('Looking up '+rows.length+' agent(s)…','');
+  let ok=0,fail=0;
+  for(const btn of rows){
+    const ext=btn.id.replace('auto-btn-','');
+    const emailEl=document.querySelector('#chat-id-'+ext)?.closest('tr')?.querySelector('.agent-name-email');
+    const email=emailEl?emailEl.textContent.trim():'';
+    if(!email){fail++;continue;}
+    btn.disabled=true;btn.textContent='...';
+    try{
+      const res=await fetch(BACKEND+'/api/agents/'+ext+'/lookup-chat-id',{
+        method:'POST',credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email})
+      });
+      const json=await res.json();
+      if(json.success){
+        const inp=document.getElementById('chat-id-'+ext);
+        if(inp){inp.value=json.chatId;inp.classList.add('has-value');}
+        ok++;
+      } else {fail++;}
+    }catch(e){fail++;}
+    finally{btn.disabled=false;btn.textContent='⚡ Auto';}
+  }
+  showToast(ok+' detected'+(fail?' · '+fail+' failed':''),'success');
 }
 
 // addAgent replaced by addSelectedAgents
