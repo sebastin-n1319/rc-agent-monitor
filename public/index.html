@@ -19790,6 +19790,10 @@ tbody tr:hover td{
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><path d="M2 4h12M2 8h12M2 12h8"/></svg>
             Full Report
           </button>
+          <button id="tkt-view-wkd" onclick="tktSetView('weekend')" style="padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:transparent;color:#6B849A;transition:all .15s;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><rect x="1" y="3" width="14" height="11" rx="2"/><path d="M1 7h14M5 3V1M11 3V1"/></svg>
+            Weekend Report
+          </button>
         </div>
         <button onclick="loadAdminTickets()" style="background:#F4891F;color:#FFF;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:rgba(244,137,31,.35) 0 4px 12px;display:flex;align-items:center;gap:6px;">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px"><path d="M13 2.5A6.5 6.5 0 1 1 8 1.5M8 1.5v4M13 2.5h-4"/></svg>
@@ -19925,6 +19929,69 @@ tbody tr:hover td{
       </div>
     </div>
     </div><!-- /#tkt-report-view -->
+
+    <!-- ── WEEKEND REPORT VIEW ── -->
+    <div id="tkt-weekend-view" style="display:none;">
+      <!-- Controls row -->
+      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:rgba(0,0,0,0.04) 0 1px 8px;">
+        <div style="font-size:12px;font-weight:700;color:#072B40;margin-bottom:12px;display:flex;align-items:center;gap:7px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="#F4891F" stroke-width="1.5" stroke-linecap="round" style="width:14px;height:14px"><rect x="1" y="3" width="14" height="11" rx="2"/><path d="M1 7h14M5 3V1M11 3V1"/></svg>
+          SELECT DATE RANGE
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <!-- Quick filters -->
+          <div style="display:flex;gap:5px;flex-wrap:wrap;">
+            <button class="wkd-qf active" data-qf="last" onclick="wkdQuickFilter('last',this)">Last Weekend</button>
+            <button class="wkd-qf" data-qf="this" onclick="wkdQuickFilter('this',this)">This Weekend</button>
+            <button class="wkd-qf" data-qf="custom" onclick="wkdQuickFilter('custom',this)">Custom</button>
+          </div>
+          <!-- Custom date pickers (hidden by default) -->
+          <div id="wkd-custom-dates" style="display:none;align-items:center;gap:6px;">
+            <label style="font-size:11px;font-weight:600;color:#9BAFC0;">From</label>
+            <input type="date" id="wkd-date-start" style="border:1px solid #DEE1E6;border-radius:7px;padding:5px 8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;">
+            <label style="font-size:11px;font-weight:600;color:#9BAFC0;">To</label>
+            <input type="date" id="wkd-date-end" style="border:1px solid #DEE1E6;border-radius:7px;padding:5px 8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;">
+          </div>
+          <button onclick="wkdGenerate()" id="wkd-gen-btn" style="background:#F4891F;color:#FFF;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:rgba(244,137,31,.35) 0 4px 12px;display:flex;align-items:center;gap:6px;font-family:'Poppins',sans-serif;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px"><path d="M1 8l5 5L15 3"/></svg>
+            Generate Report
+          </button>
+        </div>
+      </div>
+
+      <!-- Report output -->
+      <div id="wkd-report-panel" style="display:none;">
+        <!-- Stats cards -->
+        <div id="wkd-stat-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px;"></div>
+
+        <!-- Day breakdown cards -->
+        <div id="wkd-day-cards" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
+
+        <!-- Google Chat message preview -->
+        <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:12px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0 1px 8px;">
+          <div style="padding:12px 16px;background:rgb(248,250,252);border-bottom:1px solid rgb(222,225,230);display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#6B849A;display:flex;align-items:center;gap:7px;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#21AAE0" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M14 9a2 2 0 0 1-2 2H4l-3 3V3a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v6z"/></svg>
+              Google Chat Message
+            </span>
+            <button onclick="wkdCopyMessage()" id="wkd-copy-btn" style="background:rgba(33,170,224,.1);color:#21AAE0;border:1px solid rgba(33,170,224,.25);border-radius:7px;padding:5px 14px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s;">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="4" y="4" width="10" height="10" rx="1.5"/><path d="M2 11V2h9"/></svg>
+              Copy to Clipboard
+            </button>
+          </div>
+          <div style="padding:14px 16px;">
+            <pre id="wkd-msg-preview" style="font-family:'Poppins',sans-serif;font-size:12px;line-height:1.7;white-space:pre-wrap;color:#072B40;margin:0;background:#F7F8F8;border-radius:8px;padding:14px 16px;border:1px solid #DEE1E6;min-height:60px;"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading/error state -->
+      <div id="wkd-status" style="text-align:center;padding:40px;color:#9BAFC0;font-size:13px;display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:28px;height:28px;margin-bottom:10px;opacity:.4;display:block;margin-inline:auto;animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        Loading...
+      </div>
+    </div><!-- /#tkt-weekend-view -->
+
   </div><!-- /#tab-tickets -->
 
   <!-- DEBUG TAB ─────────────────────────────────────────────────────────── -->
@@ -24664,15 +24731,158 @@ let _tktAutoRefresh = null;
 
 function tktSetView(view) {
   const isDash = view === 'dashboard';
+  const isWkd  = view === 'weekend';
   document.getElementById('tkt-dashboard-view').style.display = isDash ? '' : 'none';
-  document.getElementById('tkt-report-view').style.display    = isDash ? 'none' : '';
-  document.getElementById('tkt-view-dash').style.background   = isDash ? '#F4891F' : 'transparent';
-  document.getElementById('tkt-view-dash').style.color        = isDash ? '#FFF' : '#6B849A';
-  document.getElementById('tkt-view-rpt').style.background    = isDash ? 'transparent' : '#F4891F';
-  document.getElementById('tkt-view-rpt').style.color         = isDash ? '#6B849A' : '#FFF';
-  document.getElementById('tkt-view-title').textContent       = isDash ? "Today's Dashboard" : 'Ticket Report';
-  if (!isDash && allAdminTickets.length === 0) loadAdminTickets();
+  document.getElementById('tkt-report-view').style.display    = (!isDash && !isWkd) ? '' : 'none';
+  document.getElementById('tkt-weekend-view').style.display   = isWkd ? '' : 'none';
+
+  const activeOrange = '#F4891F', inactiveBg = 'transparent', inactiveColor = '#6B849A';
+  document.getElementById('tkt-view-dash').style.background = isDash ? activeOrange : inactiveBg;
+  document.getElementById('tkt-view-dash').style.color      = isDash ? '#FFF' : inactiveColor;
+  document.getElementById('tkt-view-rpt').style.background  = (!isDash && !isWkd) ? activeOrange : inactiveBg;
+  document.getElementById('tkt-view-rpt').style.color       = (!isDash && !isWkd) ? '#FFF' : inactiveColor;
+  document.getElementById('tkt-view-wkd').style.background  = isWkd ? activeOrange : inactiveBg;
+  document.getElementById('tkt-view-wkd').style.color       = isWkd ? '#FFF' : inactiveColor;
+
+  const titles = { dashboard:"Today's Dashboard", report:'Ticket Report', weekend:'Weekend Report' };
+  document.getElementById('tkt-view-title').textContent = titles[view] || "Today's Dashboard";
+  if (view === 'report' && allAdminTickets.length === 0) loadAdminTickets();
+  if (isWkd) wkdInit();
 }
+
+// ── Weekend Report ─────────────────────────────────────────────────────────────
+let _wkdQuickFilter = 'last';
+let _wkdMsgText = '';
+
+function _wkdLastWeekend() {
+  // Returns { start, end } as YYYY-MM-DD — the most recent Sat/Sun pair
+  const now = new Date();
+  const dow = now.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  // daysSinceSunday: days back to last Sunday (if today is Sunday, go to prior week)
+  const daysSinceSun = dow === 0 ? 7 : dow;
+  const lastSun = new Date(now); lastSun.setDate(now.getDate() - daysSinceSun);
+  const lastSat = new Date(lastSun); lastSat.setDate(lastSun.getDate() - 1);
+  return { start: lastSat.toISOString().slice(0,10), end: lastSun.toISOString().slice(0,10) };
+}
+
+function _wkdThisWeekend() {
+  // Returns upcoming/current Sat+Sun
+  const now = new Date();
+  const dow = now.getDay();
+  const daysToSat = dow === 6 ? 0 : (6 - dow);
+  const sat = new Date(now); sat.setDate(now.getDate() + daysToSat);
+  const sun = new Date(sat); sun.setDate(sat.getDate() + 1);
+  return { start: sat.toISOString().slice(0,10), end: sun.toISOString().slice(0,10) };
+}
+
+function wkdInit() {
+  // Pre-fill "Last Weekend" dates
+  const { start, end } = _wkdLastWeekend();
+  document.getElementById('wkd-date-start').value = start;
+  document.getElementById('wkd-date-end').value   = end;
+}
+
+function wkdQuickFilter(qf, btn) {
+  _wkdQuickFilter = qf;
+  document.querySelectorAll('.wkd-qf').forEach(b => b.classList.toggle('active', b===btn));
+  const customDates = document.getElementById('wkd-custom-dates');
+  if (qf === 'custom') {
+    customDates.style.display = 'flex';
+  } else {
+    customDates.style.display = 'none';
+    const { start, end } = qf === 'this' ? _wkdThisWeekend() : _wkdLastWeekend();
+    document.getElementById('wkd-date-start').value = start;
+    document.getElementById('wkd-date-end').value   = end;
+  }
+}
+
+async function wkdGenerate() {
+  const start = document.getElementById('wkd-date-start').value;
+  const end   = document.getElementById('wkd-date-end').value;
+  if (!start || !end) { showToast('Select a date range first', 'warning'); return; }
+
+  document.getElementById('wkd-report-panel').style.display = 'none';
+  const statusEl = document.getElementById('wkd-status');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:28px;height:28px;margin-bottom:10px;opacity:.4;display:block;margin-inline:auto;animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Fetching weekend data…`;
+
+  try {
+    const r = await fetch(`/api/tickets/weekend-summary?start=${start}&end=${end}`);
+    const data = await r.json();
+    if (!data.success) throw new Error(data.error || 'Failed');
+
+    statusEl.style.display = 'none';
+    _wkdMsgText = data.message;
+
+    // Stat cards
+    const cards = document.getElementById('wkd-stat-cards');
+    const totalCalls = data.totalCalls || 0;
+    cards.innerHTML = `
+      <div style="background:#FFF;border:1px solid #DEE1E6;border-radius:10px;padding:14px 16px;box-shadow:rgba(0,0,0,.04) 0 1px 8px;">
+        <div style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Total Tickets</div>
+        <div style="font-size:28px;font-weight:800;color:#072B40;line-height:1;">${data.totalTickets}</div>
+        <div style="font-size:11px;color:#9BAFC0;margin-top:4px;">${data.range.label}</div>
+      </div>
+      <div style="background:#FFF;border:1px solid #DEE1E6;border-radius:10px;padding:14px 16px;box-shadow:rgba(0,0,0,.04) 0 1px 8px;">
+        <div style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Inbound Calls</div>
+        <div style="font-size:28px;font-weight:800;color:#21AAE0;line-height:1;">${totalCalls}</div>
+        <div style="font-size:11px;color:#9BAFC0;margin-top:4px;">From call log DB</div>
+      </div>
+      <div style="background:#FFF;border:1px solid #DEE1E6;border-radius:10px;padding:14px 16px;box-shadow:rgba(0,0,0,.04) 0 1px 8px;">
+        <div style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Days Covered</div>
+        <div style="font-size:28px;font-weight:800;color:#F4891F;line-height:1;">${data.days.length}</div>
+        <div style="font-size:11px;color:#9BAFC0;margin-top:4px;">${start} to ${end}</div>
+      </div>`;
+
+    // Day breakdown cards
+    const dayCards = document.getElementById('wkd-day-cards');
+    dayCards.innerHTML = data.days.map(d => {
+      const deptBars = d.depts.slice(0,8).map(([name,cnt]) => {
+        const pct = d.tickets > 0 ? Math.round(cnt/d.tickets*100) : 0;
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">
+          <div style="width:110px;font-size:11px;font-weight:600;color:#6B849A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${name}">${name}</div>
+          <div style="flex:1;background:#F0F2F5;border-radius:4px;height:7px;overflow:hidden;">
+            <div style="height:100%;background:#F4891F;border-radius:4px;width:${pct}%;transition:width .4s;"></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color:#072B40;min-width:24px;text-align:right;">${cnt}</div>
+        </div>`;
+      }).join('');
+      return `<div style="background:#FFF;border:1px solid #DEE1E6;border-radius:12px;overflow:hidden;box-shadow:rgba(0,0,0,.04) 0 1px 8px;">
+        <div style="padding:12px 16px;background:rgb(248,250,252);border-bottom:1px solid #DEE1E6;display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:800;color:#072B40;">📅 ${d.dateLabel}</span>
+          <span style="font-size:12px;color:#6B849A;font-weight:600;">${d.tickets} Ticket${d.tickets!==1?'s':''} · ${d.calls} Call${d.calls!==1?'s':''}</span>
+        </div>
+        <div style="padding:14px 16px;">${deptBars || '<div style="font-size:12px;color:#9BAFC0;text-align:center;padding:8px 0;">No department data</div>'}</div>
+      </div>`;
+    }).join('');
+
+    // Message preview
+    document.getElementById('wkd-msg-preview').textContent = data.message;
+    document.getElementById('wkd-report-panel').style.display = '';
+
+  } catch(e) {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<div style="color:#ED666B;font-size:13px;">❌ ${e.message}</div>`;
+  }
+}
+
+async function wkdCopyMessage() {
+  if (!_wkdMsgText) return;
+  try {
+    await navigator.clipboard.writeText(_wkdMsgText);
+    const btn = document.getElementById('wkd-copy-btn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:11px;height:11px"><path d="M1 8l5 5L15 3"/></svg> Copied!`;
+    btn.style.background = 'rgba(45,220,150,.15)';
+    btn.style.color = '#2DDC96';
+    btn.style.borderColor = 'rgba(45,220,150,.3)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }, 2000);
+  } catch(e) {
+    showToast('Copy failed — select and copy manually', 'warning');
+  }
+}
+
+// ── End Weekend Report ─────────────────────────────────────────────────────────
 
 function tktDashFilter(period, btn) {
   tktDashPeriod = period;
@@ -34556,6 +34766,19 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
 /* ══════════════════════════════════════════════════════════
    WEEKEND FIELDS — Premium redesign
 ══════════════════════════════════════════════════════════ */
+/* Weekend report quick-filter buttons */
+.wkd-qf {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 6px 14px; border-radius: 8px;
+  border: 1.5px solid #DEE1E6;
+  background: #F7F8F8; color: #6B849A;
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s ease;
+  user-select: none; white-space: nowrap;
+}
+.wkd-qf:hover { border-color: #F4891F; color: #F4891F; background: rgba(244,137,31,.06); }
+.wkd-qf.active { background: #F4891F; border-color: #F4891F; color: #fff; box-shadow: 0 3px 10px rgba(244,137,31,.28); }
+
 .tl-wkd-chip {
   display: inline-flex; align-items: center; justify-content: center;
   padding: 6px 14px; border-radius: 999px;

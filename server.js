@@ -8,6 +8,7 @@ installProcessGuards();
 const cron = require('node-cron');
 const path = require('path');
 const {
+  db: _sharedDb,
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
@@ -2225,6 +2226,138 @@ app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => 
     res.json({ success: true, data: tickets });
   } catch(e) {
     console.error('❌ ticket read error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// GET /api/tickets/weekend-summary — reads the weekend sheet and builds a Google Chat–ready report
+// Query params: start=YYYY-MM-DD  end=YYYY-MM-DD  (both required)
+app.get('/api/tickets/weekend-summary', requireAdmin, async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    if (!start || !end) return res.status(400).json({ success: false, error: 'start and end are required (YYYY-MM-DD)' });
+    if (!WEEKEND_SHEET_ID) return res.status(503).json({ success: false, error: 'Weekend sheet not configured' });
+
+    const startD = new Date(start + 'T00:00:00');
+    const endD   = new Date(end   + 'T23:59:59');
+
+    // Read the full weekend sheet
+    const sheets = getTicketSheetsClient();
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: WEEKEND_SHEET_ID,
+      range: `'${WEEKEND_SHEET_TAB}'!A:H`,
+    });
+    const allRows = (resp.data.values || []);
+    // find header row (row with "Date" or "Ticket" in it, usually row 1-4)
+    let dataStart = 0;
+    for (let i = 0; i < Math.min(allRows.length, 6); i++) {
+      const r = allRows[i];
+      if (r && (String(r[0]||'').toLowerCase().includes('date') || String(r[1]||'').toLowerCase().includes('ticket'))) {
+        dataStart = i + 1; break;
+      }
+    }
+    const dataRows = allRows.slice(dataStart);
+
+    // Parse "30th May" style date → Date object (assume current year, fallback next if past)
+    const MONTH_MAP = { jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11,
+      january:0,february:1,march:2,april:3,june:5,july:6,august:7,september:8,october:9,november:10,december:11 };
+    function parseWkdDate(str) {
+      if (!str) return null;
+      const m = String(str).match(/(\d+)(?:st|nd|rd|th)?\s+([A-Za-z]+)/i);
+      if (!m) return null;
+      const day = parseInt(m[1], 10);
+      const mon = MONTH_MAP[m[2].toLowerCase()];
+      if (mon === undefined || isNaN(day)) return null;
+      const yr = new Date().getFullYear();
+      return new Date(yr, mon, day);
+    }
+
+    // Filter rows to the requested date window
+    const dayMap = {}; // "YYYY-MM-DD" → { date, dateLabel, tickets: [...] }
+    for (const row of dataRows) {
+      if (!row || !row[0]) continue;
+      const d = parseWkdDate(row[0]);
+      if (!d || d < startD || d > endD) continue;
+      const key = d.toISOString().slice(0, 10);
+      const dayName = d.toLocaleDateString('en-US', { weekday: 'long' });
+      const label = String(row[0]).trim(); // e.g. "30th May"
+      if (!dayMap[key]) dayMap[key] = { date: d, dateLabel: `${label} (${dayName})`, tickets: [] };
+      dayMap[key].tickets.push({
+        ticketId:   String(row[1] || '').trim(),
+        department: String(row[2] || '').trim(),
+        priority:   String(row[3] || '').trim(),
+        transferred:String(row[4] || '').trim(),
+        source:     String(row[5] || '').trim(),
+        status:     String(row[6] || '').trim(),
+        notes:      String(row[7] || '').trim(),
+      });
+    }
+
+    // Get inbound call count from the local DB for those dates (best effort)
+    let callsByDay = {};
+    try {
+      const callRows = await new Promise((resolve, reject) => {
+        _sharedDb.all(
+          `SELECT date(start_time) as day, COUNT(*) as cnt
+           FROM call_logs
+           WHERE direction = 'Inbound' AND date(start_time) BETWEEN ? AND ?
+           GROUP BY day`,
+          [start, end],
+          (err, rows) => err ? reject(err) : resolve(rows || [])
+        );
+      });
+      for (const r of callRows) callsByDay[r.day] = r.cnt;
+    } catch(e) { /* DB may not have data for this range — non-fatal */ }
+
+    // Build per-day summaries
+    const days = Object.keys(dayMap).sort();
+    let totalTickets = 0, totalCalls = 0;
+    const daySummaries = days.map(key => {
+      const d = dayMap[key];
+      const count = d.tickets.length;
+      totalTickets += count;
+      const calls = callsByDay[key] || 0;
+      totalCalls += calls;
+
+      // Department counts (skip empty)
+      const deptCounts = {};
+      for (const t of d.tickets) {
+        if (t.department) deptCounts[t.department] = (deptCounts[t.department] || 0) + 1;
+      }
+      const deptsSorted = Object.entries(deptCounts).sort((a,b) => b[1]-a[1]);
+      return { dateLabel: d.dateLabel, tickets: count, calls, depts: deptsSorted };
+    });
+
+    // Build Google Chat–formatted message
+    const startLabel = new Date(start + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    const endLabel   = new Date(end   + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    const rangeLabel = startLabel === endLabel ? startLabel : `${startLabel}–${endLabel}`;
+
+    const lines = [];
+    lines.push(`Hi @Ali Jhaver @Imran ,\n`);
+    lines.push(`Sharing the *Weekend Support Summary* for ${rangeLabel} as we kick off structured weekend coverage.\n`);
+    lines.push(`📊 *Overall: ${totalTickets} Ticket${totalTickets!==1?'s':''} | ${totalCalls} Call${totalCalls!==1?'s':''}*\n`);
+
+    for (const d of daySummaries) {
+      lines.push(`📅 *${d.dateLabel}* - ${d.tickets} Ticket${d.tickets!==1?'s':''} | ${d.calls} Call${d.calls!==1?'s':''}`);
+      if (d.depts.length) {
+        const topDepts = d.depts.slice(0, 6).map(([name, cnt]) => `${name} (${cnt})`).join(', ');
+        const others   = d.depts.slice(6).reduce((s,[,c])=>s+c, 0);
+        lines.push(`Key Departments: ${topDepts}${others ? `, Others (${others})` : ''}`);
+      }
+      lines.push('');
+    }
+    lines.push(`✅ Weekend agents logged in and managed the queue as rostered. Will continue monitoring and sharing weekly summaries as we stabilize the process.`);
+
+    res.json({
+      success: true,
+      range: { start, end, label: rangeLabel },
+      totalTickets, totalCalls,
+      days: daySummaries,
+      message: lines.join('\n'),
+    });
+  } catch(e) {
+    console.error('❌ weekend-summary error:', e.message);
     res.status(500).json({ success: false, error: e.message });
   }
 });
