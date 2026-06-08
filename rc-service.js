@@ -1584,16 +1584,27 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   }
 
   // ── Secondary leg fetch ──────────────────────────────────────────────────────
-  // The queue extension call log returns 0 legs for internal-extension callers
-  // (RC doesn't embed agent routing legs in the queue's log for these calls).
-  // Fix: for ANY missed call with 0 legs and >8s ring time, search the account-level
-  // call log by sessionId to find the full call record with all routing legs.
-  const noLegMissed = records.filter(c =>
-    (c.legs || []).length === 0 &&
-    (c.duration || 0) > 8
-  );
+  // The queue extension call log is missing real agent routing legs for two cases:
+  //   1. Internal-extension callers (ext-to-queue): RC returns 0 legs entirely.
+  //   2. Some queue calls: RC returns legs but ALL legs reference only the queue
+  //      extension itself (e.g. both legs show ext=1025 instead of the ringing agents).
+  //      Confirmed from logs: id=AMZ14zwNvXHTis1A — legs(2) both "ext=1025", [agent-legs-none].
+  // Fix: for ANY missed call with >8s ring time where no agent leg is identifiable,
+  // fetch the account-level call log by sessionId/time-window which has full routing legs.
+  const _queueExtForFilter = queueExtFilter ? String(queueExtFilter) : null;
+  const noLegMissed = records.filter(c => {
+    const legs = c.legs || [];
+    if ((c.duration || 0) <= 8) return false;
+    if (legs.length === 0) return true; // case 1: no legs at all
+    // case 2: has legs but all legs only reference the queue extension (no agent ext)
+    const hasAgentLeg = legs.some(l => {
+      const extNum = String(l.extension?.extensionNumber || l.to?.extensionNumber || '');
+      return extNum && (!_queueExtForFilter || extNum !== _queueExtForFilter);
+    });
+    return !hasAgentLeg;
+  });
   if (noLegMissed.length > 0) {
-    console.log(`📞 [secondary-fetch] ${noLegMissed.length} record(s) with 0 legs + ring>8s`);
+    console.log(`📞 [secondary-fetch] ${noLegMissed.length} record(s) needing account-level leg fetch (0 legs OR all legs are queue-ext only)`);
     for (const call of noLegMissed) {
       try {
         const callStart = new Date(call.startTime);
@@ -1612,17 +1623,42 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
         });
         const acctRecords = acctData?.records || [];
 
-        // Match by sessionId (most reliable) or by call.id
-        const match = acctRecords.find(r =>
-          (call.sessionId && r.sessionId === call.sessionId) ||
-          r.id === call.id
+        // Match by sessionId (most reliable), then by call.id, then by caller+time proximity.
+        // Prefer a match whose legs contain at least one non-queue agent extension.
+        const _hasAgentLeg = (r) => (r.legs || []).some(l => {
+          const extNum = String(l.extension?.extensionNumber || l.to?.extensionNumber || '');
+          return extNum && (!_queueExtForFilter || extNum !== _queueExtForFilter);
+        });
+
+        let match = acctRecords.find(r =>
+          (call.sessionId && r.sessionId === call.sessionId) && _hasAgentLeg(r)
         );
+        if (!match) {
+          match = acctRecords.find(r =>
+            (call.sessionId && r.sessionId === call.sessionId) ||
+            r.id === call.id
+          );
+        }
+        // Last resort: match by caller extension + overlapping time window
+        if (!match && call.from?.extensionNumber) {
+          const callerExt = String(call.from.extensionNumber);
+          const callStartMs = new Date(call.startTime).getTime();
+          match = acctRecords.find(r =>
+            String(r.from?.extensionNumber || '') === callerExt &&
+            Math.abs(new Date(r.startTime).getTime() - callStartMs) < 30000 &&
+            _hasAgentLeg(r)
+          );
+        }
 
         const legCount = (match?.legs || []).length;
-        console.log(`📞 [secondary-fetch] id=${call.id} session=${call.sessionId||'?'} acctRecords=${acctRecords.length} match=${!!match} matchLegs=${legCount} from.ext=${call.from?.extensionNumber||'?'}`);
+        const agentLegsInMatch = match ? (match.legs || []).filter(l => {
+          const extNum = String(l.extension?.extensionNumber || l.to?.extensionNumber || '');
+          return extNum && (!_queueExtForFilter || extNum !== _queueExtForFilter);
+        }).length : 0;
+        console.log(`📞 [secondary-fetch] id=${call.id} session=${call.sessionId||'?'} acctRecords=${acctRecords.length} match=${!!match} matchLegs=${legCount} agentLegs=${agentLegsInMatch} from.ext=${call.from?.extensionNumber||'?'}`);
 
         if (match && legCount > 0) {
-          call.legs = match.legs; // replace empty legs with full routing data
+          call.legs = match.legs; // replace queue-only legs with full routing data
         }
       } catch(e) {
         console.warn(`📞 [secondary-fetch] id=${call.id} failed: ${e.message}`);
