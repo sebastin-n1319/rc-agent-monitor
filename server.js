@@ -2921,7 +2921,7 @@ const _notifiedCallIds = new Set();
 const POLL_LOG_MAX   = 30;
 const _pollLog       = [];          // ring buffer of poll run summaries
 let   _lastPollAt    = null;        // ISO string of last poll start
-const POLL_INTERVAL_SECS = 180;     // 3 min — staggered vs presence sync (2 min)
+const POLL_INTERVAL_SECS = 60;      // 1 min — reduced for faster missed-call notifications
 
 function _pollLogPush(entry) {
   _pollLog.push(entry);
@@ -3113,7 +3113,7 @@ async function runMissedCallPoll() {
       agentExts = agents.filter(a => a.extension).map(a => String(a.extension));
     } catch(e) { /* non-fatal */ }
 
-    const calls = await fetchRecentMissedCalls(6, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID, agentExts);
+    const calls = await fetchRecentMissedCalls(4, MISSED_CALL_QUEUE_EXT, MISSED_CALL_DID, agentExts);
     logEntry.fetched = calls._fetchedRaw ?? calls.length; // raw RC count before filter
     logEntry.matched = calls.length;
 
@@ -4820,10 +4820,10 @@ async function start() {
       // Uses MISSED_CALL_WEBHOOK_URL — separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
       if (MISSED_CALL_WEBHOOK_URL) {
         // Stagger: presence sync fires at 0s and every 2 min.
-        // Missed call poll fires at 75s then every 3 min — offset avoids rate-limit collisions.
-        setTimeout(() => runMissedCallPoll().catch(() => {}), 75000);
-        setInterval(() => runMissedCallPoll().catch(() => {}), 3 * 60 * 1000);
-        console.log(`📞 Missed call notifier started (queue ext ${MISSED_CALL_QUEUE_EXT}, 3-min poll, +75s offset)`);
+        // Missed call poll fires at 30s then every 1 min — offset avoids rate-limit collisions.
+        setTimeout(() => runMissedCallPoll().catch(() => {}), 30000);
+        setInterval(() => runMissedCallPoll().catch(() => {}), 60 * 1000);
+        console.log(`📞 Missed call notifier started (queue ext ${MISSED_CALL_QUEUE_EXT}, 1-min poll, +30s offset)`);
       } else {
         console.log('📞 Missed call notifier disabled — set MISSED_CALL_WEBHOOK_URL to enable');
       }
