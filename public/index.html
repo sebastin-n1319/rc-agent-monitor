@@ -28834,7 +28834,7 @@ async function lookupAllChatIds(){
   const rows=document.querySelectorAll('[id^="auto-btn-"]');
   if(!rows.length){showToast('No agents with email addresses to look up','error');return;}
   showToast('Checking login history…','');
-  // First try: backfill from stored google_sub (login sessions — no admin needed)
+  // First try: backfill from stored google_sub (captured at login — no admin needed)
   try{
     const bf=await fetch(BACKEND+'/api/agents/backfill-chat-ids',{method:'POST',credentials:'include'});
     const bj=await bf.json();
@@ -28843,31 +28843,15 @@ async function lookupAllChatIds(){
       loadAgents();
       return;
     }
-  }catch(e){}
-  // Fallback: People API (requires domain-wide delegation setup)
-  showToast('Looking up '+rows.length+' agent(s) via Google directory…','');
-  let ok=0,fail=0;
-  for(const btn of rows){
-    const ext=btn.id.replace('auto-btn-','');
-    const email=btn.dataset.email||'';
-    if(!email){fail++;continue;}
-    btn.disabled=true;btn.style.opacity='0.4';
-    try{
-      const res=await fetch(BACKEND+'/api/agents/'+ext+'/lookup-chat-id',{
-        method:'POST',credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email})
-      });
-      const json=await res.json();
-      if(json.success){
-        const inp=document.getElementById('chat-id-'+ext);
-        if(inp){inp.value=json.chatId;inp.classList.add('has-value');}
-        ok++;
-      } else {fail++;}
-    }catch(e){fail++;}
-    finally{btn.disabled=false;btn.style.opacity='1';}
+    if(bj.success && bj.filled===0){
+      // No sessions captured yet — agents haven't logged in with the new version
+      showToast('No login history yet. IDs will auto-fill when agents next sign in to this tool.','');
+      return;
+    }
+  }catch(e){
+    showToast('Could not reach server — please try again.','error');
+    return;
   }
-  showToast(ok+' detected'+(fail?' · '+fail+' failed':''),'success');
 }
 
 // addAgent replaced by addSelectedAgents
