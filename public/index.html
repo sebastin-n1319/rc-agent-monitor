@@ -28778,7 +28778,7 @@ async function loadAgents(){
           // Icon button base style
           const iBtnBase='width:30px;height:30px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;transition:all .18s;flex-shrink:0;border:1px solid;';
           const autoBtn=a.email
-            ? '<button id="auto-btn-'+extSafe+'" onclick="lookupChatId(\''+extSafe+'\',\''+emailSafe+'\')" title="Auto-detect Chat ID"'+
+            ? '<button id="auto-btn-'+extSafe+'" data-email="'+emailSafe+'" onclick="lookupChatId(\''+extSafe+'\',\''+emailSafe+'\')" title="Auto-detect Chat ID"'+
               ' style="'+iBtnBase+'background:rgba(45,220,150,.08);border-color:rgba(45,220,150,.3);color:#2BDEA4;">'+icoAuto+'</button>'
             : '';
           const saveBtn='<button onclick="saveChatId(\''+extSafe+'\',document.getElementById(\'chat-id-'+extSafe+'\'))" title="Save Chat ID"'+
@@ -28812,7 +28812,7 @@ async function lookupChatId(ext, email){
   if(!email){showToast('No email on this agent','error');return;}
   const btn=document.getElementById('auto-btn-'+ext);
   const inp=document.getElementById('chat-id-'+ext);
-  if(btn){btn.disabled=true;btn.textContent='...';}
+  if(btn){btn.disabled=true;btn.style.opacity='0.4';}
   try{
     const res=await fetch(BACKEND+'/api/agents/'+ext+'/lookup-chat-id',{
       method:'POST',credentials:'include',
@@ -28821,18 +28821,17 @@ async function lookupChatId(ext, email){
     });
     const json=await res.json();
     if(json.success){
-      inp.value=json.chatId;
-      inp.classList.add('has-value');
+      if(inp){inp.value=json.chatId;inp.style.borderColor='rgba(45,220,150,.45)';inp.style.background='rgba(45,220,150,.05)';}
       showToast('Chat ID auto-detected and saved ✔','success');
     } else {
       showToast('Lookup failed: '+json.error,'error');
     }
   }catch(e){showToast('Network error','error');}
-  finally{if(btn){btn.disabled=false;btn.textContent='⚡ Auto';}}
+  finally{if(btn){btn.disabled=false;btn.style.opacity='1';}}
 }
 
 async function lookupAllChatIds(){
-  const rows=document.querySelectorAll('.agent-auto-btn');
+  const rows=document.querySelectorAll('[id^="auto-btn-"]');
   if(!rows.length){showToast('No agents with email addresses to look up','error');return;}
   showToast('Checking login history…','');
   // First try: backfill from stored google_sub (login sessions — no admin needed)
@@ -28850,10 +28849,9 @@ async function lookupAllChatIds(){
   let ok=0,fail=0;
   for(const btn of rows){
     const ext=btn.id.replace('auto-btn-','');
-    const emailEl=document.querySelector('#chat-id-'+ext)?.closest('tr')?.querySelector('.agent-name-email');
-    const email=emailEl?emailEl.textContent.trim():'';
+    const email=btn.dataset.email||'';
     if(!email){fail++;continue;}
-    btn.disabled=true;btn.textContent='...';
+    btn.disabled=true;btn.style.opacity='0.4';
     try{
       const res=await fetch(BACKEND+'/api/agents/'+ext+'/lookup-chat-id',{
         method:'POST',credentials:'include',
@@ -28867,7 +28865,7 @@ async function lookupAllChatIds(){
         ok++;
       } else {fail++;}
     }catch(e){fail++;}
-    finally{btn.disabled=false;btn.textContent='⚡ Auto';}
+    finally{btn.disabled=false;btn.style.opacity='1';}
   }
   showToast(ok+' detected'+(fail?' · '+fail+' failed':''),'success');
 }
