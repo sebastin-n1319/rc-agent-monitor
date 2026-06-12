@@ -31211,6 +31211,92 @@ async function deleteNote(id){
 })();
 </script>
 
+<!-- ── MOBILE INSTALL BANNER ─────────────────────────────────────── -->
+<div id="pwa-mobile-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:99999;
+  background:linear-gradient(135deg,#072B40,#0d3a56);
+  border-top:1px solid rgba(255,130,60,.4);
+  box-shadow:0 -4px 24px rgba(0,0,0,.35);
+  padding:14px 16px 14px;font-family:inherit;">
+  <div style="display:flex;align-items:flex-start;gap:12px;max-width:480px;margin:0 auto;">
+    <img src="/adit-icon-192.png" style="width:44px;height:44px;border-radius:10px;flex-shrink:0;" onerror="this.style.display='none'">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px;">Install Adit Monitor as an App</div>
+      <div id="pwa-banner-msg" style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.4;"></div>
+      <div id="pwa-ios-steps" style="display:none;margin-top:8px;display:none;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;font-size:12px;color:rgba(255,255,255,.85);">
+          <span style="background:rgba(255,255,255,.12);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">1</span>
+          Tap the <strong style="color:#FF823C;">Share</strong> button
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF823C" stroke-width="2" stroke-linecap="round"><path d="M8 6L12 2L16 6M12 2V15M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3"/></svg>
+          at the bottom of Safari
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.85);">
+          <span style="background:rgba(255,255,255,.12);border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">2</span>
+          Scroll down and tap <strong style="color:#FF823C;">"Add to Home Screen"</strong>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0;align-items:flex-end;">
+      <button id="pwa-install-action" style="display:none;padding:8px 16px;background:#FF823C;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        📲 Install
+      </button>
+      <button onclick="document.getElementById('pwa-mobile-banner').style.display='none';localStorage.setItem('pwaBannerDismissed',Date.now())"
+        style="padding:5px 10px;background:transparent;color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.15);border-radius:7px;font-size:11px;cursor:pointer;white-space:nowrap;">
+        Not now
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Show mobile install banner if: mobile device + not already installed + not recently dismissed
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isStandalone=window.matchMedia('(display-mode:standalone)').matches||window.navigator.standalone===true;
+  const dismissed=parseInt(localStorage.getItem('pwaBannerDismissed')||'0');
+  const daysSinceDismiss=(Date.now()-dismissed)/(1000*60*60*24);
+
+  if(!isMobile||isStandalone||daysSinceDismiss<7) return;
+
+  const banner=document.getElementById('pwa-mobile-banner');
+  const msg=document.getElementById('pwa-banner-msg');
+  const iosSteps=document.getElementById('pwa-ios-steps');
+  const installBtn=document.getElementById('pwa-install-action');
+
+  const isIOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isSafari=/^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  if(isIOS){
+    if(!isSafari){
+      msg.textContent='Open this page in Safari to install it as an app.';
+    } else {
+      msg.textContent='Works offline, loads instantly — no App Store needed.';
+      iosSteps.style.display='block';
+    }
+    // Show banner after short delay
+    setTimeout(()=>{ banner.style.display='block'; }, 3000);
+  } else {
+    // Android — listen for beforeinstallprompt
+    msg.textContent='Works offline, loads instantly — uses mobile data not office WiFi.';
+    installBtn.style.display='block';
+    installBtn.onclick=async function(){
+      if(!window._deferredInstall) return;
+      window._deferredInstall.prompt();
+      const result=await window._deferredInstall.userChoice;
+      if(result.outcome==='accepted'){
+        banner.style.display='none';
+        localStorage.setItem('pwaBannerDismissed', Date.now());
+      }
+      window._deferredInstall=null;
+    };
+    window.addEventListener('beforeinstallprompt',function(e){
+      e.preventDefault();
+      window._deferredInstall=e;
+      setTimeout(()=>{ banner.style.display='block'; }, 2500);
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
 
