@@ -136,9 +136,13 @@ html.app-authenticated #adit-admin-sidebar{display:flex!important;}
     var s=JSON.parse(localStorage.getItem('rcSession')||'null');
     if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
       document.documentElement.classList.add('app-authenticated');
-
+    } else {
+      // Not authenticated — remove the anti-flash overlay so login screen shows
+      document.documentElement.classList.add('login-ready');
     }
-  }catch(e){}
+  }catch(e){
+    document.documentElement.classList.add('login-ready');
+  }
   try{
     if(localStorage.getItem('aditDarkMode')==='1'){
       document.documentElement.classList.add('dark-mode');
@@ -9451,11 +9455,103 @@ tbody tr:hover td{
 /* Keyframes */
 @keyframes aditCardIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 
-/* Responsive */
+/* Responsive — expanded in mobile section below */
+</style>
+<style id="login-mobile-responsive">
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN PAGE — MOBILE RESPONSIVE (phones + tablets)
+═══════════════════════════════════════════════════════════════ */
+
+/* Tablet: hide left panel, full-width right */
 @media(max-width:860px){
   #loginScreen .adit-login-left{display:none!important;}
-  #loginScreen .adit-login-right{width:100%!important;}
+  #loginScreen .adit-login-right{
+    width:100%!important;
+    align-items:center;
+    justify-content:flex-start;
+    padding: 0 !important;
+  }
+  #loginScreen .l5-right-orb{display:none;}
+  #loginScreen .adit-login-card{
+    max-width:440px !important;
+    margin:auto !important;
+    width:calc(100% - 32px) !important;
+  }
 }
+
+/* Phone portrait: full screen card, edge-to-edge feel */
+@media(max-width:540px){
+  #loginScreen{
+    align-items:flex-start !important;
+    overflow-y:auto !important;
+  }
+  #loginScreen .adit-login-right{
+    min-height:100dvh;
+    padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0) 0 !important;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #loginScreen .adit-login-card{
+    width:calc(100% - 24px) !important;
+    max-width:100% !important;
+    padding:32px 20px 28px !important;
+    border-radius:20px !important;
+    margin:20px auto !important;
+  }
+  /* Brand row */
+  #loginScreen .adit-brand{
+    flex-wrap:wrap;
+    gap:10px !important;
+    justify-content:center !important;
+    text-align:center !important;
+    margin-bottom:20px !important;
+  }
+  #loginScreen .adit-brand img{height:36px !important;}
+  #loginScreen .adit-brand > div{text-align:center;}
+  #loginScreen .l5-live-pill{margin-left:0 !important;}
+  /* Welcome text */
+  #loginScreen .adit-welcome{font-size:20px !important;}
+  #loginScreen .adit-welcome-sub{font-size:12px !important;}
+  /* Google button */
+  #loginScreen .v8-google-btn,#loginScreen .adit-google-btn{
+    height:50px !important;
+    font-size:14px !important;
+    border-radius:12px !important;
+  }
+  /* Quick sign-in card */
+  #loginScreen .adit-quick-card{padding:12px 14px !important;}
+  /* Orbs — reduce on small screens for perf */
+  #loginScreen .l5-orb1{width:280px !important;height:280px !important;}
+  #loginScreen .l5-orb2{width:240px !important;height:240px !important;}
+  #loginScreen .l5-orb3{display:none !important;}
+  /* Hide decorative SVG lines on mobile — saves paint */
+  #loginScreen .l5-deco-svg{display:none !important;}
+}
+
+/* Very small phones (320px) */
+@media(max-width:360px){
+  #loginScreen .adit-login-card{
+    padding:24px 16px 20px !important;
+    border-radius:16px !important;
+    width:calc(100% - 16px) !important;
+  }
+  #loginScreen .adit-welcome{font-size:18px !important;}
+  #loginScreen .v8-google-btn{height:46px !important;font-size:13px !important;}
+}
+
+/* ── Main app responsive improvements ─────────────────────────── */
+@media(max-width:600px){
+  /* Nav bar: collapse text labels, show only icons */
+  .nav-item .nav-label{font-size:10px !important;}
+  /* Header: reduce padding */
+  .hdr{padding:0 12px !important;}
+  /* Page content: tighter padding */
+  .page{padding:12px 10px !important;}
+  /* Cards: full width on phone */
+  .metric-card,.dash-card{min-width:0 !important;}
+}
+
 </style>
 
 <div id="loginScreen">
