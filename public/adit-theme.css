@@ -8293,3 +8293,147 @@ button:active { transform: scale(.97) !important; }
   .lx-card { padding: 28px 20px; }
   .lx-stats { flex-wrap: wrap; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE LAYOUT — Sidebar becomes bottom tab bar on phones
+   Breakpoint: ≤640px (phones portrait)
+═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── Header: compact for small screen ───────────────────────────── */
+  .hdr {
+    height: 48px !important;
+    padding: 0 10px !important;
+  }
+  .hdr-logo-text,
+  .hdr-app-name,
+  .hdr-team-name { display: none !important; }
+  /* Keep logo icon, hide long name strings */
+  .hdr-right { gap: 6px !important; }
+  /* Shrink the dual-clock */
+  .dual-clock, #dualClock { font-size: 11px !important; gap: 4px !important; }
+
+  /* ── Left sidebar → bottom tab bar ──────────────────────────────── */
+  .adit-sidebar {
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 58px !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    border-top: 1px solid rgba(255,255,255,.08) !important;
+    border-right: none !important;
+    overflow: hidden !important;
+    /* Safe area for phones with home bar */
+    padding-bottom: env(safe-area-inset-bottom, 0) !important;
+    height: calc(58px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Tab bar items: equal-width horizontal */
+  .adit-sidebar .sb-item {
+    flex: 1 !important;
+    width: auto !important;
+    min-height: 0 !important;
+    height: 58px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    border-left: none !important;
+    border-top: 2px solid transparent !important;
+    padding: 6px 4px !important;
+  }
+  .adit-sidebar .sb-item.active {
+    border-left: none !important;
+    border-top-color: #F4891F !important;
+    background: rgba(244,137,31,.07) !important;
+  }
+  .adit-sidebar .sb-item svg {
+    width: 19px !important;
+    height: 19px !important;
+  }
+  .adit-sidebar .sb-label {
+    font-size: 8.5px !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  /* ── Views: remove left margin, add bottom padding for tab bar ───── */
+  #adminView,
+  #agentView {
+    margin-left: 0 !important;
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px) + 8px) !important;
+  }
+
+  /* ── Main app: full width ─────────────────────────────────────────── */
+  #mainApp {
+    padding-top: 48px !important;
+  }
+
+  /* ── Agent shell pages: less side padding ────────────────────────── */
+  .agent-shell-page { padding: 12px 12px 40px !important; }
+  .page             { padding: 12px !important; }
+
+  /* ── av2 dashboard: single column ───────────────────────────────── */
+  .av2 { padding: 12px !important; }
+  .av2-hero { padding: 18px 16px !important; }
+  .av2-hero-title { font-size: 26px !important; }
+  .av2-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+  .av2-kpi-card { padding: 14px 12px !important; }
+
+  /* ── Hero actions (Logged Out / Refresh buttons): stack vertically ── */
+  .av2-hero-actions {
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  /* ── Dashboard cards: full width ─────────────────────────────────── */
+  .av2-perf-card,
+  .av2-card,
+  .dash-card { width: 100% !important; }
+
+  /* ── Agent-view-v2 hero row: stack vertically on phones ─────────── */
+  .av2-hero-row {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+}
+
+/* Extra small phones (≤380px) */
+@media (max-width: 380px) {
+  .adit-sidebar .sb-label { display: none !important; }
+  .adit-sidebar .sb-item { height: 50px !important; }
+  .adit-sidebar { height: calc(50px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
+/* ── Mobile header: hide non-essential items ────────────────────────── */
+@media (max-width: 640px) {
+  /* Hide: separator, subtitle "T1 CS Stars · Admin", admin-only buttons */
+  .hdr-sep,
+  .hdr-sub,
+  #test-agent-btn,
+  #test-missed-call-btn,
+  #viewToggleBtn { display: none !important; }
+
+  /* Keep user label hidden on very small, show only avatar */
+  #userLabel { display: none !important; }
+  #userRoleTag { display: none !important; }
+
+  /* Compact clock chip */
+  .hdr-chip {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    gap: 4px !important;
+  }
+  /* Compact user area */
+  .hdr-user { gap: 4px !important; }
+  .hdr-avatar { width: 28px !important; height: 28px !important; }
+
+  /* Header flex: logo left, right items right, no overflow */
+  header .hdr-left { gap: 6px !important; }
+  header { padding: 0 10px !important; }
+}
