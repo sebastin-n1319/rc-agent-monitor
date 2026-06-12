@@ -36153,35 +36153,22 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     //   • window switched away (multi-monitor or alt-tab)
     //   • tab visible but agent has been working in another app
     //     (no interaction for 45s+)
-    function isBackground(){
-      try{
-        if(document.visibilityState === 'hidden') return true;
-        // Only mark as background when tab is genuinely hidden — not on idle/blur
-        // (agents watch the screen without clicking; blur fires on any alt-tab)
-      }catch(e){}
-      return false;
-    }
+    // Tab state: only reflect genuinely hidden tabs (switched away).
+    // Do NOT use blur or idle — agents watch the screen without clicking.
     function syncTabState(){
       const lbl = document.getElementById('sb-live-label');
-      const bg = isBackground();
-      if(bg){
+      const hidden = (document.visibilityState === 'hidden');
+      if(hidden){
         bar.classList.add('sb-bg');
-        if(lbl){ lbl.textContent = 'Working'; lbl.title = 'Adit Monitor is running in the background — still syncing your status'; }
+        if(lbl){ lbl.textContent = 'Working'; lbl.title = 'Running in background'; }
+        try{ document.title = '⚙ Working — Adit Agent Monitor'; }catch(e){}
       } else {
         bar.classList.remove('sb-bg');
         if(lbl){ lbl.textContent = 'Live'; lbl.title = ''; }
+        try{ document.title = 'Adit Agent Monitor'; }catch(e){}
       }
-      const baseTitle = 'Adit Agent Monitor';
-      try{ document.title = bg ? '⚙ Working — ' + baseTitle : baseTitle; }catch(e){}
     }
     document.addEventListener('visibilitychange', syncTabState);
-    window.addEventListener('blur',  syncTabState);
-    window.addEventListener('focus', () => { bumpActivity(); syncTabState(); });
-    window.addEventListener('pageshow', syncTabState);
-    window.addEventListener('pagehide', syncTabState);
-    // Re-evaluate every 5s so the idle flip happens shortly after the
-    // 45s threshold is crossed without us having to listen for "idle".
-    setInterval(syncTabState, 5000);
     syncTabState();
   })();
 
