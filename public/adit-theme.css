@@ -8437,3 +8437,12 @@ button:active { transform: scale(.97) !important; }
   header .hdr-left { gap: 6px !important; }
   header { padding: 0 10px !important; }
 }
+
+/* ── Brain FAB: lift above bottom tab bar on mobile ─────────────────── */
+@media (max-width: 640px) {
+  #brain-fab-wrap {
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px) + 10px) !important;
+    right: 14px !important;
+  }
+  .brain-fab { width: 50px !important; height: 50px !important; }
+}

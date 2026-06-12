@@ -665,3 +665,106 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE OVERRIDES ≤640px — compact, native-app feel
+═══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── Container: no horizontal overflow ───────────────────────────── */
+  .av2 { padding: 0 !important; }
+  .av2 .av2-container { padding: 0 12px; }
+
+  /* ── Hero: compact horizontal layout ────────────────────────────── */
+  .av2 .av2-hero {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 14px 0 14px !important;
+    margin-bottom: 14px !important;
+  }
+  .av2 .av2-hero-title {
+    font-size: 22px !important;
+    margin-bottom: 4px !important;
+  }
+  /* Hide verbose subtitle on mobile — chips carry the key info */
+  .av2 .av2-hero-sub { display: none !important; }
+
+  /* Hero right: becomes a horizontal row of pills */
+  .av2 .av2-hero-right {
+    width: 100% !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+  .av2 .av2-shift-state {
+    padding: 5px 12px !important;
+    font-size: 12px !important;
+  }
+  .av2 .av2-btn-sm {
+    padding: 5px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* ── Stat grid: compact 2-col, horizontal card layout ───────────── */
+  .av2 .av2-stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+  }
+
+  /* Stat card: horizontal (icon left + text right), compact */
+  .av2 .av2-stat {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px 12px !important;
+    border-radius: 12px !important;
+  }
+  .av2 .av2-stat-ico {
+    width: 32px !important;
+    height: 32px !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+    border-radius: 8px !important;
+  }
+  .av2 .av2-stat-ico svg { width: 15px !important; height: 15px !important; }
+  /* Group label+value via flex column on the remaining space (no wrapper needed) */
+  .av2 .av2-stat-label {
+    font-size: 9px !important;
+    margin-bottom: 1px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .av2 .av2-stat-value {
+    font-size: 22px !important;
+    line-height: 1 !important;
+  }
+  /* Disable hover lift on touch devices */
+  .av2 .av2-stat:hover { transform: none !important; box-shadow: var(--av2-e1) !important; }
+
+  /* ── Section head: stack search below title ──────────────────────── */
+  .av2 .av2-section-head { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+  .av2 .av2-search { width: 100% !important; max-width: 100% !important; }
+  .av2 .av2-section-title { font-size: 14px !important; }
+
+  /* ── Performance card: compact ───────────────────────────────────── */
+  #agent-self-card { padding: 14px !important; margin-bottom: 14px !important; }
+
+  /* ── Brain widget button: keep but reposition ────────────────────── */
+  .brain-fab { bottom: 70px !important; right: 12px !important; }
+}
+
+/* Stat card: wrap icon + content as flex column on ≤380px */
+@media (max-width: 380px) {
+  .av2 .av2-stat {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 6px !important;
+    padding: 10px !important;
+  }
+  .av2 .av2-stat-value { font-size: 20px !important; }
+}

@@ -29938,7 +29938,7 @@ window.addEventListener('load', async () => {
         const ul=document.getElementById('userLabel'); if(ul) ul.textContent=u.split(' ')[0];
         const rl=document.getElementById('roleLabel'); if(rl) rl.textContent=r==='admin'?'Admin':'Agent';
         const rt=document.getElementById('userRoleTag'); if(rt){rt.textContent=r.toUpperCase();rt.className='role-pill '+(r==='admin'?'role-admin':'role-agent');}
-        const tb=document.getElementById('viewToggleBtn'); if(tb) tb.style.setProperty('display',r==='admin'?'inline-flex':'none','important');
+        const tb=document.getElementById('viewToggleBtn'); if(tb){ const _mob=window.__isMobile||window.__isPWA||window.matchMedia('(max-width:640px)').matches; tb.style.setProperty('display',(!_mob&&r==='admin')?'inline-flex':'none','important'); }
         currentUser=u; currentRole=r; currentEmail=sessionStorage.getItem('rcEmail')||null; currentBreakbotEnabled=be; currentViewMode=r;
       }catch(e){}
       // Now call startApp for full initialization
