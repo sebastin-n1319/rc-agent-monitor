@@ -31394,6 +31394,61 @@ async function deleteNote(id){
 </script>
 
 
+
+<!-- ═══ MOBILE CONTENT PROTECTION ══════════════════════════════════════════ -->
+<style id="mobile-content-lock">
+/* On mobile/PWA: block long-press save, text selection, callout menus */
+@media (pointer: coarse) {
+  html, body {
+    -webkit-touch-callout: none !important;  /* iOS: no "Save Image / Copy" popup  */
+    -webkit-user-select: none !important;
+    -moz-user-select: none !important;
+    user-select: none !important;
+  }
+  /* Allow text selection inside inputs / textareas only */
+  input, textarea, [contenteditable="true"] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+  }
+  /* Prevent images from being long-press saved */
+  img {
+    -webkit-touch-callout: none !important;
+    pointer-events: none;
+  }
+  /* Re-enable pointer events on clickable images (avatars, buttons) */
+  a img, button img, [onclick] img { pointer-events: auto; }
+}
+</style>
+<script>
+(function(){
+  var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+              || window.matchMedia('(pointer: coarse)').matches;
+  if (!isMobile) return;
+
+  // Block right-click / long-press context menu globally on mobile
+  document.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }, true);
+
+  // Block copy keyboard shortcut on mobile (Cmd+C / Ctrl+C)
+  document.addEventListener('copy', function(e){
+    // Allow copy inside input fields
+    var tag = (e.target||document.activeElement||{}).tagName||'';
+    if(tag==='INPUT'||tag==='TEXTAREA') return;
+    e.preventDefault();
+  });
+
+  // Kill drag-to-save on images
+  document.addEventListener('dragstart', function(e){
+    if(e.target && e.target.tagName==='IMG') e.preventDefault();
+  });
+})();
+</script>
+<!-- ════════════════════════════════════════════════════════════════════════ -->
+
 <!-- ═══ MOBILE SECURITY & DATA SAVING ═══════════════════════════════════════ -->
 <div id="autolock-overlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(10,12,20,0.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" onclick="window.__unlockScreen()">
   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" style="margin-bottom:16px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
