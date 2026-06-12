@@ -36153,19 +36153,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
     //   • window switched away (multi-monitor or alt-tab)
     //   • tab visible but agent has been working in another app
     //     (no interaction for 45s+)
-    const IDLE_MS = 45 * 1000; // 45s of inactivity → Working
-    let _lastInteraction = Date.now();
-    function bumpActivity(){ _lastInteraction = Date.now(); }
-    // Listen passively so we don't add scroll lag
-    ['mousemove','mousedown','keydown','wheel','touchstart','touchmove'].forEach(ev => {
-      window.addEventListener(ev, bumpActivity, { passive: true, capture: true });
-    });
-
     function isBackground(){
       try{
         if(document.visibilityState === 'hidden') return true;
-        if(typeof document.hasFocus === 'function' && !document.hasFocus()) return true;
-        if(Date.now() - _lastInteraction > IDLE_MS) return true;
+        // Only mark as background when tab is genuinely hidden — not on idle/blur
+        // (agents watch the screen without clicking; blur fires on any alt-tab)
       }catch(e){}
       return false;
     }
