@@ -31395,6 +31395,95 @@ async function deleteNote(id){
 
 
 
+
+<!-- ═══ PULL-TO-REFRESH (mobile PWA) ════════════════════════════════════════ -->
+<div id="ptr-indicator" style="
+  display:none;position:fixed;top:48px;left:50%;transform:translateX(-50%);
+  z-index:99990;background:rgba(10,18,35,.92);backdrop-filter:blur(12px);
+  border-radius:20px;padding:7px 16px 7px 10px;
+  display:none;align-items:center;gap:8px;
+  border:1px solid rgba(255,255,255,.1);
+  box-shadow:0 4px 20px rgba(0,0,0,.4);
+  font-size:12px;font-weight:600;color:rgba(255,255,255,.7);
+  font-family:'Poppins',sans-serif;
+  transition:opacity .2s;pointer-events:none;
+">
+  <svg id="ptr-spinner" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F4891F" stroke-width="2" stroke-linecap="round">
+    <path d="M8 2a6 6 0 1 0 6 6"/>
+  </svg>
+  <span id="ptr-label">Pull to refresh</span>
+</div>
+<style>
+@keyframes ptrSpin{to{transform:rotate(360deg)}}
+.ptr-spinning #ptr-spinner{animation:ptrSpin .6s linear infinite;}
+</style>
+<script>
+(function(){
+  var isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+              || window.matchMedia('(pointer:coarse)').matches;
+  if(!isMobile) return;
+
+  var ind      = document.getElementById('ptr-indicator');
+  var label    = document.getElementById('ptr-label');
+  var THRESHOLD = 72;   // px of pull needed to trigger refresh
+  var startY   = 0;
+  var pulling  = false;
+  var triggered = false;
+
+  function show(){ ind.style.display='flex'; }
+  function hide(){ ind.style.display='none'; document.body.classList.remove('ptr-spinning'); }
+
+  document.addEventListener('touchstart', function(e){
+    // Only activate if we're scrolled to the very top
+    var scrollEl = document.scrollingElement || document.documentElement;
+    if(scrollEl.scrollTop > 4) return;
+    startY   = e.touches[0].clientY;
+    pulling  = true;
+    triggered = false;
+  }, {passive:true});
+
+  document.addEventListener('touchmove', function(e){
+    if(!pulling) return;
+    var dy = e.touches[0].clientY - startY;
+    if(dy <= 0){ pulling=false; hide(); return; }
+    // Show indicator once pulled a little
+    if(dy > 12){
+      show();
+      if(dy >= THRESHOLD){
+        label.textContent = 'Release to refresh';
+        document.body.classList.add('ptr-spinning');
+        triggered = true;
+      } else {
+        label.textContent = 'Pull to refresh';
+        document.body.classList.remove('ptr-spinning');
+        triggered = false;
+      }
+    }
+  }, {passive:true});
+
+  document.addEventListener('touchend', function(){
+    if(!pulling){ return; }
+    pulling = false;
+    if(triggered){
+      label.textContent = 'Refreshing…';
+      document.body.classList.add('ptr-spinning');
+      // Call the app's refresh function if available, otherwise hard reload
+      setTimeout(function(){
+        if(typeof refresh === 'function' && typeof currentUser !== 'undefined' && currentUser){
+          try{ refresh(); }catch(err){}
+        } else {
+          window.location.reload();
+        }
+        hide();
+      }, 500);
+    } else {
+      hide();
+    }
+  }, {passive:true});
+})();
+</script>
+<!-- ═════════════════════════════════════════════════════════════════════════ -->
+
 <!-- ═══ MOBILE CONTENT PROTECTION ══════════════════════════════════════════ -->
 <style id="mobile-content-lock">
 /* On mobile/PWA: block long-press save, text selection, callout menus */
