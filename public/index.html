@@ -29786,7 +29786,7 @@ function safeBoot(fn,name){
 
 safeBoot(updateClock,'updateClock');
 setInterval(()=>safeBoot(updateClock,'updateClock'),1000);
-setInterval(()=>{if(currentUser)refresh();},30000);
+setInterval(()=>{if(currentUser&&!document.hidden)refresh();},(window.__isPWA||/Mobi|Android/i.test(navigator.userAgent))?90000:30000);
 safeBoot(initParticles,'initParticles');
 safeBoot(initConfetti,'initConfetti');
 safeBoot(initLoginAnimations,'initLoginAnimations');
@@ -31296,6 +31296,78 @@ async function deleteNote(id){
   }
 })();
 </script>
+
+
+<!-- ═══ MOBILE SECURITY & DATA SAVING ═══════════════════════════════════════ -->
+<div id="autolock-overlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(10,12,20,0.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" onclick="window.__unlockScreen()">
+  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" style="margin-bottom:16px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+  <div style="color:rgba(255,255,255,0.7);font-size:15px;font-weight:600;letter-spacing:0.5px;">Screen locked</div>
+  <div style="color:rgba(255,255,255,0.35);font-size:12px;margin-top:6px;">Tap anywhere to continue</div>
+</div>
+<script>
+(function(){
+  var IDLE_LOCK_MS   = 5 * 60 * 1000;   // 5 min → auto-lock
+  var BG_LOGOUT_MS   = 2 * 60 * 60 * 1000; // 2 hr backgrounded → force logout
+  var _idleTimer     = null;
+  var _bgHiddenAt    = null;
+  var _locked        = false;
+
+  window.__isPWA = window.matchMedia('(display-mode:standalone)').matches
+                || window.navigator.standalone === true;
+  window.__isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  // ── Auto-lock ──────────────────────────────────────────────────────────
+  function resetIdle(){
+    if(_locked) return;
+    clearTimeout(_idleTimer);
+    _idleTimer = setTimeout(lockScreen, IDLE_LOCK_MS);
+  }
+  function lockScreen(){
+    _locked = true;
+    var ov = document.getElementById('autolock-overlay');
+    if(ov){ ov.style.display='flex'; }
+  }
+  window.__unlockScreen = function(){
+    _locked = false;
+    var ov = document.getElementById('autolock-overlay');
+    if(ov){ ov.style.display='none'; }
+    resetIdle();
+  };
+
+  // Only activate idle lock on mobile / PWA to avoid annoying desktop users
+  if(window.__isMobile || window.__isPWA){
+    ['touchstart','touchend','click','keydown','scroll','mousemove'].forEach(function(ev){
+      document.addEventListener(ev, resetIdle, {passive:true});
+    });
+    resetIdle();
+  }
+
+  // ── Visibility API: pause polling + background logout ──────────────────
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){
+      _bgHiddenAt = Date.now();
+    } else {
+      // Resuming — check if we were gone too long
+      if(_bgHiddenAt && (Date.now() - _bgHiddenAt) >= BG_LOGOUT_MS){
+        // Force logout: clear session and reload to login screen
+        fetch('/api/logout', {method:'POST', credentials:'include'}).catch(function(){});
+        setTimeout(function(){ window.location.reload(); }, 300);
+        return;
+      }
+      _bgHiddenAt = null;
+      // Re-lock if mobile (resumed after some background time)
+      if((window.__isMobile || window.__isPWA) && !_locked){
+        resetIdle();
+      }
+      // Trigger immediate data refresh on resume
+      if(typeof currentUser !== 'undefined' && currentUser && typeof refresh === 'function'){
+        refresh();
+      }
+    }
+  });
+})();
+</script>
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
 
 </body>
 </html>

@@ -4,7 +4,7 @@
  * Strategies:
  *   • Shell (HTML/CSS/JS) → stale-while-revalidate from `shell-vN` cache
  *   • Assets (fonts/imgs) → cache-first from `assets-vN`
- *   • API GET            → network-first w/ stale fallback from `api-vN`
+ *   • API GET            → network-only (no caching — contains sensitive data)
  *   • API non-GET        → never cached; offline → 503 (client queues via IDB)
  *   • Navigation         → network-FIRST with /index.html fallback (no SWR
  *     for navigations — v1.8 changed from stale-while-revalidate to prevent
@@ -25,11 +25,12 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.142'; // Fix login flash — applyView before show, opacity fade, z-index guard
+const CACHE_VERSION = 'adit-v1.19.143'; // Security: API responses never cached (mobile PWA data protection)
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
-const API_CACHE    = `api-${CACHE_VERSION}`;
-const CURRENT_CACHES = new Set([SHELL_CACHE, ASSETS_CACHE, API_CACHE]);
+// API_CACHE intentionally removed — API responses contain sensitive agent data
+// and must NEVER be stored in the browser cache on personal/mobile devices.
+const CURRENT_CACHES = new Set([SHELL_CACHE, ASSETS_CACHE]);
 
 // Pre-cache on install so the shell works offline from first visit
 const PRECACHE_URLS = [
@@ -74,7 +75,6 @@ const PRECACHE_URLS = [
   '/manifest.webmanifest'
 ];
 
-const API_STALE_TTL_MS = 30 * 60 * 1000;  // 30 min stale tolerance for offline-served APIs
 
 // ─── Install ────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
@@ -119,9 +119,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // /api/* GET → network-first
+  // /api/* GET → network-only (NEVER cache; responses contain sensitive agent data)
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirstAPI(req));
+    // Let the browser handle it — no SW interception, no caching.
     return;
   }
 
@@ -167,47 +167,7 @@ async function cacheFirst(req) {
   }
 }
 
-async function networkFirstAPI(req) {
-  try {
-    const res = await fetch(req);
-    if (res && res.ok) {
-      // Stamp a freshness header so stale-checks work on serve-back
-      const cacheable = new Response(res.clone().body, {
-        status: res.status, statusText: res.statusText,
-        headers: stampHeaders(res.headers, { 'x-cached-at': Date.now().toString() })
-      });
-      caches.open(API_CACHE).then(c => c.put(req, cacheable)).catch(()=>{});
-    }
-    return res;
-  } catch (e) {
-    const cached = await caches.match(req);
-    if (!cached) {
-      return new Response(JSON.stringify({ success: false, offline: true, error: 'Offline — no cached data' }), {
-        status: 503, headers: { 'Content-Type': 'application/json', 'x-served-from': 'sw-offline' }
-      });
-    }
-    // Check staleness
-    const stamp = cached.headers.get('x-cached-at');
-    const ageMs = stamp ? Date.now() - parseInt(stamp) : null;
-    if (ageMs != null && ageMs > API_STALE_TTL_MS) {
-      return new Response(JSON.stringify({ success: false, offline: true, error: 'Cached data too stale', ageMs }), {
-        status: 503, headers: { 'Content-Type': 'application/json', 'x-served-from': 'sw-stale' }
-      });
-    }
-    // Inject offline flag into body so clients can render a banner
-    const body = await cached.clone().text();
-    let parsed;
-    try { parsed = JSON.parse(body); } catch { parsed = body; }
-    if (typeof parsed === 'object' && parsed) {
-      parsed.cached = true;
-      parsed.cachedAgeMs = ageMs;
-    }
-    return new Response(JSON.stringify(parsed), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', 'x-served-from': 'sw-cache', 'x-cache-age-ms': String(ageMs || 0) }
-    });
-  }
-}
+// networkFirstAPI removed — API responses are never cached (security: sensitive agent data)
 
 function stampHeaders(orig, extra) {
   const h = new Headers();
