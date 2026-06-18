@@ -26588,6 +26588,25 @@ function breakAlertMessages(row){
   if(alerts.brbDayExceeded) lines.push('BRB total crossed 20m today');
   return lines;
 }
+// Returns alert objects with { msg, exceededBy } for richer display
+function breakAlertDetails(row){
+  const alerts=row?.alerts||{};
+  const BRB_SINGLE=600, BREAK_DAY=3600, BRB_DAY=1200;
+  const details=[];
+  if(alerts.breakDayExceeded){
+    const over=Math.max(0,(row.breakSeconds||0)-BREAK_DAY);
+    details.push({ msg:'Break total crossed 1h today', exceededBy:over, color:'#f43f5e', icon:'☕' });
+  }
+  if(alerts.brbSingleExceeded){
+    const over=Math.max(0,(row.currentStatus==='BRB'?row.currentLaneSeconds||0:row.brbSeconds||0)-BRB_SINGLE);
+    details.push({ msg:'One BRB crossed 10m', exceededBy:over, color:'#f59e0b', icon:'⏱' });
+  }
+  if(alerts.brbDayExceeded){
+    const over=Math.max(0,(row.brbSeconds||0)-BRB_DAY);
+    details.push({ msg:'BRB total crossed 20m today', exceededBy:over, color:'#f59e0b', icon:'⚠' });
+  }
+  return details;
+}
 
 function breakAlertSummary(row){
   const lines=breakAlertMessages(row);
@@ -26803,20 +26822,26 @@ function buildBtkHealthBar(summary, tracker){
 function buildBtkAlertZone(tracker){
   const alerts = [];
   for(const row of tracker){
-    for(const msg of breakAlertMessages(row)){
-      alerts.push({ name:row.username, msg, status:row.currentStatus, duration:fmt(row.currentLaneSeconds||0), since:row.since });
+    for(const d of breakAlertDetails(row)){
+      alerts.push({ row, name:row.username, msg:d.msg, exceededBy:d.exceededBy, color:d.color, icon:d.icon,
+        status:row.currentStatus, since:row.since });
     }
   }
   if(!alerts.length) return '';
-  const rows = alerts.map(a =>
-    `<div class="btk-alert-row">
-      <span class="btk-alert-icon">⚠</span>
-      <span class="btk-alert-agent">${a.name}</span>
-      <span class="btk-alert-msg">${a.msg}</span>
-      <span class="btk-alert-status">${a.status} · ${a.duration}</span>
-      <span class="btk-alert-since">${a.since ? toTime(a.since) : '--'}</span>
-    </div>`
-  ).join('');
+  const rows = alerts.map(a => {
+    const exceededStr = a.exceededBy>0
+      ? `<span style="color:${a.color};font-weight:700;margin-left:6px;">+${fmt(a.exceededBy)} over limit</span>`
+      : '';
+    const sinceStr = a.since ? toTime(a.since) : '--';
+    const rowKey = encodeURIComponent(a.name);
+    return `<div class="btk-alert-row" style="cursor:pointer;" onclick="openAgentBreakModal('${rowKey}')">
+      <span class="btk-alert-icon" style="color:${a.color}">${a.icon}</span>
+      <span class="btk-alert-agent" style="color:var(--t1);text-decoration:underline dotted;cursor:pointer;">${esc(a.name)}</span>
+      <span class="btk-alert-msg">${a.msg}${exceededStr}</span>
+      <span class="btk-alert-status">${a.status}</span>
+      <span class="btk-alert-since">Logged In · ${sinceStr}</span>
+    </div>`;
+  }).join('');
   return `<div class="btk-alert-zone-hdr">
     <span class="btk-alert-zone-title">🚨 ${alerts.length} Active Alert${alerts.length!==1?'s':''}</span>
     <span class="btk-alert-zone-copy">Agents exceeding BRB or break limits — action needed</span>
@@ -26850,7 +26875,8 @@ function buildBtkAgentTile(row){
     `${m.label} <strong>${fmt(m.val)}</strong></span>`
   ).join('');
 
-  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':''}" style="--tile-accent:${c.border}">
+  const _tileKey = encodeURIComponent(row.username||'');
+  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':''}" style="--tile-accent:${c.border};cursor:pointer;" onclick="openAgentBreakModal('${_tileKey}')">
   <div class="btk-tile-top">
     <div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>
     <div class="btk-tile-info">
@@ -31608,6 +31634,175 @@ async function deleteNote(id){
 })();
 </script>
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- Agent Break Detail Modal ─────────────────────────────────────────────── -->
+<div id="agentBreakModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeAgentBreakModal()">
+  <div style="background:var(--bg-card,#1a1e2b);border:1px solid rgba(255,255,255,.1);border-radius:16px;width:min(560px,100%);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6);">
+    <!-- Header -->
+    <div id="abm-header" style="padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:12px;flex-shrink:0;">
+      <div id="abm-avatar" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0;"></div>
+      <div style="flex:1;min-width:0;">
+        <div id="abm-name" style="font-size:17px;font-weight:700;color:var(--t1,#fff);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="abm-status-line" style="font-size:12px;color:var(--t2,#aaa);margin-top:2px;"></div>
+      </div>
+      <button onclick="closeAgentBreakModal()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;color:var(--t2,#aaa);cursor:pointer;padding:8px 10px;font-size:18px;line-height:1;">✕</button>
+    </div>
+    <!-- Totals bar -->
+    <div id="abm-totals" style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;"></div>
+    <!-- Log header with toggle -->
+    <div style="padding:10px 20px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <span style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--t2,#aaa);">Break Log</span>
+      <button id="abm-toggle-btn" onclick="toggleAbmDate()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--t2,#aaa);cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;">📅 ACTUAL</button>
+    </div>
+    <!-- Scrollable log -->
+    <div id="abm-log" style="overflow-y:auto;padding:0 20px 20px;flex:1;min-height:0;"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  let _abmRelative = false;
+  let _abmRow = null;
+
+  function fmtRelFull(iso){
+    const dt = (typeof parseStamp === 'function') ? parseStamp(iso) : new Date(iso);
+    if(!dt || isNaN(dt.getTime())) return '--';
+    const diffMs = Date.now() - dt.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    if(diffSec < 60) return diffSec + 's ago';
+    if(diffSec < 3600) return Math.floor(diffSec/60) + 'm ' + (diffSec%60) + 's ago';
+    const h = Math.floor(diffSec/3600);
+    const m = Math.floor((diffSec%3600)/60);
+    return h + 'h ' + m + 'm ago';
+  }
+
+  function abmTimeStr(iso){
+    if(_abmRelative) return fmtRelFull(iso);
+    return (typeof toTime === 'function') ? toTime(iso) : '--';
+  }
+
+  function btkStatusCol(s){
+    const map = { 'Logged In':'#2DDC96','Available':'#2DDC96','BRB':'#FBC84B','Break':'#ED666B','Training':'#a855f7','Internal Call':'#3b82f6','QA':'#14b8a6','Logged Out':'#6b7280' };
+    return map[s] || '#6b7280';
+  }
+
+  function abmBar(used, limit, color){
+    const pct = limit > 0 ? Math.min(100, Math.round(used/limit*100)) : 0;
+    const over = used > limit;
+    return `<div style="background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden;margin-top:4px;">
+      <div style="height:100%;width:${pct}%;background:${over?'#f43f5e':color};border-radius:4px;transition:width .3s;"></div>
+    </div>`;
+  }
+
+  function buildAbmTotals(row){
+    const FMT = typeof fmt === 'function' ? fmt : (s=>s+'s');
+    const BRB_SINGLE=600, BREAK_DAY=3600, BRB_DAY=1200;
+    const items = [
+      { label:'Break Today', val:row.breakSeconds||0, limit:BREAK_DAY, color:'#f43f5e', icon:'☕' },
+      { label:'BRB Today', val:row.brbSeconds||0, limit:BRB_DAY, color:'#f59e0b', icon:'⏱' },
+      { label:'Training', val:row.trainingSeconds||0, limit:0, color:'#a855f7', icon:'📚' },
+      { label:'Internal Call', val:row.internalCallSeconds||0, limit:0, color:'#3b82f6', icon:'📞' },
+      { label:'QA', val:row.qaSeconds||0, limit:0, color:'#14b8a6', icon:'🔍' },
+    ].filter(it => it.val > 0 || it.limit > 0);
+
+    return items.map(it => {
+      const over = it.limit > 0 && it.val > it.limit;
+      const overStr = over ? ` <span style="color:#f43f5e;font-size:11px;font-weight:700;">+${FMT(it.val-it.limit)} over</span>` : '';
+      const limitStr = it.limit > 0 ? ` / ${FMT(it.limit)} limit` : '';
+      return `<div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+          <span style="font-size:12px;color:var(--t2,#aaa);">${it.icon} ${it.label}</span>
+          <span style="font-size:13px;font-weight:700;color:${over?'#f43f5e':it.color};">${FMT(it.val)}${limitStr}${overStr}</span>
+        </div>
+        ${it.limit>0 ? abmBar(it.val, it.limit, it.color) : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function buildAbmLog(row){
+    const events = row.events || [];
+    if(!events.length) return '<div style="color:var(--t3,#666);font-size:13px;padding:8px 0;">No events logged today.</div>';
+    const AMETA = typeof BREAK_ACTION_META !== 'undefined' ? BREAK_ACTION_META : {};
+    return events.slice().reverse().map(ev => {
+      const meta = AMETA[ev.action] || { label: ev.actionLabel || ev.action || 'Event', badge: 'LOG', copy: '' };
+      const timeStr = abmTimeStr(ev.createdAt);
+      const dur = ev.linkedDurationSeconds ? ' · ' + (typeof fmt==='function'?fmt(ev.linkedDurationSeconds):ev.linkedDurationSeconds+'s') : '';
+      const badgeColors = { 'BRB':'#f59e0b','BRK':'#f43f5e','END':'#2DDC96','LOG':'#6b7280','TRN':'#a855f7','INT':'#3b82f6','QA':'#14b8a6' };
+      const bc = badgeColors[meta.badge] || '#6b7280';
+      return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);align-items:flex-start;">
+        <div style="min-width:32px;height:20px;border-radius:4px;background:${bc}22;color:${bc};font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:.04em;margin-top:1px;">${meta.badge}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--t1,#fff);">${typeof esc==='function'?esc(meta.label):meta.label}</div>
+          ${meta.copy ? `<div style="font-size:11px;color:var(--t2,#aaa);">${typeof esc==='function'?esc(meta.copy):meta.copy}${dur}</div>` : ''}
+          ${ev.note ? `<div style="font-size:11px;color:var(--t3,#666);font-style:italic;">"${typeof esc==='function'?esc(ev.note):ev.note}"</div>` : ''}
+        </div>
+        <div style="font-size:11px;color:var(--t3,#666);white-space:nowrap;margin-top:2px;" class="abm-time-cell" data-iso="${ev.createdAt||''}">${timeStr}</div>
+      </div>`;
+    }).join('');
+  }
+
+  window.openAgentBreakModal = function(encodedName){
+    const name = decodeURIComponent(encodedName||'');
+    const trackerData = (typeof breakTrackerData !== 'undefined') ? breakTrackerData : {};
+    const tracker = trackerData.tracker || [];
+    const row = tracker.find(r => r.username === name);
+    if(!row){ console.warn('ABM: row not found for', name); return; }
+    _abmRow = row;
+    _abmRelative = false;
+
+    // Avatar + header
+    const initials = (name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    const sc = btkStatusCol(row.currentStatus||'');
+    const FMT = typeof fmt === 'function' ? fmt : (s=>s+'s');
+    document.getElementById('abm-avatar').textContent = initials;
+    document.getElementById('abm-avatar').style.background = sc+'22';
+    document.getElementById('abm-avatar').style.color = sc;
+    document.getElementById('abm-avatar').style.border = '2px solid '+sc;
+    document.getElementById('abm-name').textContent = name;
+    document.getElementById('abm-status-line').textContent =
+      (row.currentStatus||'Unknown') + ' · ' + FMT(row.currentLaneSeconds||0) +
+      (row.since ? ' · since ' + (typeof toTime==='function'?toTime(row.since):'?') : '');
+
+    // Toggle btn state
+    const btn = document.getElementById('abm-toggle-btn');
+    btn.textContent = '📅 ACTUAL';
+    btn.style.color = '';
+
+    // Totals
+    document.getElementById('abm-totals').innerHTML = buildAbmTotals(row);
+
+    // Log
+    document.getElementById('abm-log').innerHTML = buildAbmLog(row);
+
+    // Show modal
+    const modal = document.getElementById('agentBreakModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeAgentBreakModal = function(){
+    document.getElementById('agentBreakModal').style.display = 'none';
+    document.body.style.overflow = '';
+  };
+
+  window.toggleAbmDate = function(){
+    _abmRelative = !_abmRelative;
+    const btn = document.getElementById('abm-toggle-btn');
+    btn.textContent = _abmRelative ? '🕐 RELATIVE' : '📅 ACTUAL';
+    btn.style.color = _abmRelative ? '#F4891F' : '';
+    if(!_abmRow) return;
+    // Rebuild log to reflect new time format
+    document.getElementById('abm-log').innerHTML = buildAbmLog(_abmRow);
+  };
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      const m = document.getElementById('agentBreakModal');
+      if(m && m.style.display !== 'none') closeAgentBreakModal();
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
