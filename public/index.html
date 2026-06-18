@@ -26597,29 +26597,30 @@ function breakAlertMessages(row){
 // Returns alert objects with { msg, exceededBy } for richer display
 function breakAlertDetails(row){
   const alerts=row?.alerts||{};
-  const BRB_SINGLE=600, BRB_SINGLE_BUF=120, BREAK_DAY=3600, BREAK_DAY_BUF=300, BRB_DAY=1200;
+  const FMT=typeof fmt==='function'?fmt:(s=>s+'s');
+  const BRB_SINGLE=600, BREAK_DAY=3600, BRB_DAY=1200;
   const details=[];
-  // Critical (past buffer) → red; Warning (at limit, within buffer) → amber
+  // Break day
   if(alerts.breakDayExceeded){
     const over=Math.max(0,(row.breakSeconds||0)-BREAK_DAY);
-    details.push({ msg:'Break total exceeded 1h limit', exceededBy:over, color:'#f43f5e', icon:'☕', level:'critical' });
+    details.push({ msg:'Break total', actualTime:row.breakSeconds||0, exceededBy:over, color:'#f43f5e', icon:'☕', level:'critical' });
   } else if(alerts.breakDayWarning){
-    const over=Math.max(0,(row.breakSeconds||0)-BREAK_DAY);
-    details.push({ msg:'Break total at 1h limit (5m grace remaining)', exceededBy:over, color:'#f59e0b', icon:'☕', level:'warning' });
+    details.push({ msg:'Break total', actualTime:row.breakSeconds||0, exceededBy:0, color:'#f59e0b', icon:'☕', level:'warning' });
   }
+  // BRB single — use maxBrbInstanceSeconds, not currentLaneSeconds
+  const maxBrb = row.maxBrbInstanceSeconds||0;
   if(alerts.brbSingleExceeded){
-    const over=Math.max(0,(row.currentLaneSeconds||0)-BRB_SINGLE);
-    details.push({ msg:'Single BRB exceeded 10m limit', exceededBy:over, color:'#f43f5e', icon:'⏱', level:'critical' });
+    const over=Math.max(0,maxBrb-BRB_SINGLE);
+    details.push({ msg:'Single BRB', actualTime:maxBrb, exceededBy:over, color:'#f43f5e', icon:'⏱', level:'critical' });
   } else if(alerts.brbSingleWarning){
-    const over=Math.max(0,(row.currentLaneSeconds||0)-BRB_SINGLE);
-    details.push({ msg:'Single BRB at 10m limit (2m grace remaining)', exceededBy:over, color:'#f59e0b', icon:'⏱', level:'warning' });
+    details.push({ msg:'Single BRB', actualTime:maxBrb, exceededBy:0, color:'#f59e0b', icon:'⏱', level:'warning' });
   }
+  // BRB day
   if(alerts.brbDayExceeded){
     const over=Math.max(0,(row.brbSeconds||0)-BRB_DAY);
-    details.push({ msg:'BRB total exceeded 20m today', exceededBy:over, color:'#f43f5e', icon:'⚠', level:'critical' });
+    details.push({ msg:'BRB total today', actualTime:row.brbSeconds||0, exceededBy:over, color:'#f43f5e', icon:'⚠', level:'critical' });
   } else if(alerts.brbDayWarning){
-    const over=Math.max(0,(row.brbSeconds||0)-BRB_DAY);
-    details.push({ msg:'BRB total at 20m today', exceededBy:over, color:'#f59e0b', icon:'⚠', level:'warning' });
+    details.push({ msg:'BRB total today', actualTime:row.brbSeconds||0, exceededBy:0, color:'#f59e0b', icon:'⚠', level:'warning' });
   }
   return details;
 }
@@ -26849,14 +26850,18 @@ function buildBtkAlertZone(tracker){
   const alerts = [];
   for(const row of tracker){
     for(const d of breakAlertDetails(row)){
-      alerts.push({ row, name:row.username, msg:d.msg, exceededBy:d.exceededBy, color:d.color, icon:d.icon,
-        status:row.currentStatus, since:row.since });
+      alerts.push({ row, name:row.username, msg:d.msg, actualTime:d.actualTime, exceededBy:d.exceededBy,
+        color:d.color, icon:d.icon, level:d.level, status:row.currentStatus, since:row.since });
     }
   }
   if(!alerts.length) return '';
   const rows = alerts.map(a => {
-    const exceededStr = a.exceededBy>0
-      ? `<span style="color:${a.color};font-weight:700;margin-left:6px;">+${fmt(a.exceededBy)} over limit</span>`
+    // Warning → show actual time in amber. Critical → show +over in red.
+    const FMT2=typeof fmt==='function'?fmt:(s=>s+'s');
+    const exceededStr = a.level==='critical'
+      ? `<span style="color:${a.color};font-weight:700;margin-left:6px;">+${FMT2(a.exceededBy)} over limit</span>`
+      : a.level==='warning'
+      ? `<span style="color:${a.color};font-weight:700;margin-left:6px;">${FMT2(a.actualTime||0)}</span>`
       : '';
     const sinceStr = a.since ? toTime(a.since) : '--';
     const rowKey = encodeURIComponent(a.name);
@@ -26871,12 +26876,15 @@ function buildBtkAlertZone(tracker){
   const critCount = alerts.filter(a=>a.level==='critical').length;
   const warnCount = alerts.filter(a=>a.level==='warning').length;
   const hdrIcon = critCount ? '🚨' : '⚠️';
-  const hdrMsg = critCount && warnCount ? `${critCount} critical, ${warnCount} warning`
-    : critCount ? `${critCount} critical`
-    : `${warnCount} warning`;
+  const hdrTitle = critCount && warnCount ? `${critCount} critical · ${warnCount} warning`
+    : critCount ? `${critCount} critical alert${critCount!==1?'s':''}`
+    : `${warnCount} warning alert${warnCount!==1?'s':''}`;
+  const hdrCopy = critCount
+    ? 'Agents past break/BRB limits — action needed'
+    : 'Agents at break/BRB limits — monitor closely';
   return `<div class="btk-alert-zone-hdr">
-    <span class="btk-alert-zone-title">${hdrIcon} ${hdrMsg} alert${alerts.length!==1?'s':''}</span>
-    <span class="btk-alert-zone-copy">Agents exceeding BRB or break limits — action needed</span>
+    <span class="btk-alert-zone-title">${hdrIcon} ${hdrTitle}</span>
+    <span class="btk-alert-zone-copy">${hdrCopy}</span>
   </div>${rows}`;
 }
 
