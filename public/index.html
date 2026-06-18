@@ -1230,11 +1230,14 @@ select option{background:#0c1424;color:var(--t1);}
 .btk-agent-tile{background:rgba(255,255,255,.025);border:1px solid var(--b1);border-left:3px solid var(--tile-accent,var(--b2));border-radius:12px;padding:12px 14px;transition:transform .15s,box-shadow .15s;}
 .btk-agent-tile:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.14);}
 .btk-tile-alert{border-color:rgba(244,63,94,.28)!important;background:rgba(244,63,94,.04)!important;}
+.btk-tile-warn{border-color:rgba(251,200,75,.28)!important;background:rgba(251,200,75,.04)!important;}
+.flc-row-warn{background:rgba(251,200,75,.06)!important;}
 .btk-tile-top{display:flex;align-items:center;gap:9px;}
 .btk-tile-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;letter-spacing:-.01em;}
 .btk-tile-info{flex:1;min-width:0;}
 .btk-tile-name{font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .btk-tile-alert-badge{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--red-lo);color:var(--red);border:1px solid rgba(244,63,94,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.btk-tile-warn-badge{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(251,200,75,.15);color:#FBC84B;border:1px solid rgba(251,200,75,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
 .btk-tile-status{display:flex;align-items:center;gap:5px;margin-top:3px;}
 .btk-tile-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .btk-tile-status-label{font-size:11px;font-weight:700;flex:1;}
@@ -10887,11 +10890,14 @@ select option{background:#0c1424;color:var(--t1);}
 .btk-agent-tile{background:rgba(255,255,255,.025);border:1px solid var(--b1);border-left:3px solid var(--tile-accent,var(--b2));border-radius:12px;padding:12px 14px;transition:transform .15s,box-shadow .15s;}
 .btk-agent-tile:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.14);}
 .btk-tile-alert{border-color:rgba(244,63,94,.28)!important;background:rgba(244,63,94,.04)!important;}
+.btk-tile-warn{border-color:rgba(251,200,75,.28)!important;background:rgba(251,200,75,.04)!important;}
+.flc-row-warn{background:rgba(251,200,75,.06)!important;}
 .btk-tile-top{display:flex;align-items:center;gap:9px;}
 .btk-tile-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;letter-spacing:-.01em;}
 .btk-tile-info{flex:1;min-width:0;}
 .btk-tile-name{font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .btk-tile-alert-badge{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--red-lo);color:var(--red);border:1px solid rgba(244,63,94,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+.btk-tile-warn-badge{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(251,200,75,.15);color:#FBC84B;border:1px solid rgba(251,200,75,.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
 .btk-tile-status{display:flex;align-items:center;gap:5px;margin-top:3px;}
 .btk-tile-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
 .btk-tile-status-label{font-size:11px;font-weight:700;flex:1;}
@@ -26591,19 +26597,29 @@ function breakAlertMessages(row){
 // Returns alert objects with { msg, exceededBy } for richer display
 function breakAlertDetails(row){
   const alerts=row?.alerts||{};
-  const BRB_SINGLE=600, BREAK_DAY=3600, BRB_DAY=1200;
+  const BRB_SINGLE=600, BRB_SINGLE_BUF=120, BREAK_DAY=3600, BREAK_DAY_BUF=300, BRB_DAY=1200;
   const details=[];
+  // Critical (past buffer) → red; Warning (at limit, within buffer) → amber
   if(alerts.breakDayExceeded){
     const over=Math.max(0,(row.breakSeconds||0)-BREAK_DAY);
-    details.push({ msg:'Break total crossed 1h today', exceededBy:over, color:'#f43f5e', icon:'☕' });
+    details.push({ msg:'Break total exceeded 1h limit', exceededBy:over, color:'#f43f5e', icon:'☕', level:'critical' });
+  } else if(alerts.breakDayWarning){
+    const over=Math.max(0,(row.breakSeconds||0)-BREAK_DAY);
+    details.push({ msg:'Break total at 1h limit (5m grace remaining)', exceededBy:over, color:'#f59e0b', icon:'☕', level:'warning' });
   }
   if(alerts.brbSingleExceeded){
-    const over=Math.max(0,(row.currentStatus==='BRB'?row.currentLaneSeconds||0:row.brbSeconds||0)-BRB_SINGLE);
-    details.push({ msg:'One BRB crossed 10m', exceededBy:over, color:'#f59e0b', icon:'⏱' });
+    const over=Math.max(0,(row.currentLaneSeconds||0)-BRB_SINGLE);
+    details.push({ msg:'Single BRB exceeded 10m limit', exceededBy:over, color:'#f43f5e', icon:'⏱', level:'critical' });
+  } else if(alerts.brbSingleWarning){
+    const over=Math.max(0,(row.currentLaneSeconds||0)-BRB_SINGLE);
+    details.push({ msg:'Single BRB at 10m limit (2m grace remaining)', exceededBy:over, color:'#f59e0b', icon:'⏱', level:'warning' });
   }
   if(alerts.brbDayExceeded){
     const over=Math.max(0,(row.brbSeconds||0)-BRB_DAY);
-    details.push({ msg:'BRB total crossed 20m today', exceededBy:over, color:'#f59e0b', icon:'⚠' });
+    details.push({ msg:'BRB total exceeded 20m today', exceededBy:over, color:'#f43f5e', icon:'⚠', level:'critical' });
+  } else if(alerts.brbDayWarning){
+    const over=Math.max(0,(row.brbSeconds||0)-BRB_DAY);
+    details.push({ msg:'BRB total at 20m today', exceededBy:over, color:'#f59e0b', icon:'⚠', level:'warning' });
   }
   return details;
 }
@@ -26695,13 +26711,23 @@ function buildFlcAgentRow(row, cls){
   const dur = fmt(row.currentLaneSeconds||0);
   const cfg = FLC[cls]||FLC.avail;
   const init = flcInitials(row.username);
-  const isAlert = row.alerts?.hasAlert;
+  const isCritical = row.alerts?.hasAlert;
+  const isWarning  = !isCritical && row.alerts?.hasWarning;
+  const reasons = (row.alerts?.alertReasons||[]).join(' · ') || '';
   const since = row.since ? toTime(row.since) : '';
-  const tip = since ? `Since ${since} · ${dur}` : dur;
-  return `<div class="flc-row${isAlert?' flc-row-alert':''}" title="${tip}">
-    <div class="flc-row-av" style="background:${isAlert?'rgba(237,102,107,.18)':cfg.bg};color:${isAlert?'#ED666B':cfg.c}">${init}</div>
+  const tipBase = since ? `Since ${since} · ${dur}` : dur;
+  const tip = reasons ? `${tipBase} — ⚠ ${reasons}` : tipBase;
+  const avBg = isCritical ? 'rgba(237,102,107,.22)' : isWarning ? 'rgba(251,200,75,.18)' : cfg.bg;
+  const avCol = isCritical ? '#ED666B' : isWarning ? '#FBC84B' : cfg.c;
+  const badge = isCritical
+    ? `<span class="flc-warn" title="${reasons}" style="background:#ED666B;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-left:6px;cursor:help;">!</span>`
+    : isWarning
+    ? `<span class="flc-warn" title="${reasons}" style="background:#FBC84B;color:#1a1a1a;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-left:6px;cursor:help;">!</span>`
+    : '';
+  return `<div class="flc-row${isCritical?' flc-row-alert':isWarning?' flc-row-warn':''}" title="${tip}">
+    <div class="flc-row-av" style="background:${avBg};color:${avCol}">${init}</div>
     <div class="flc-row-name">${esc(row.username)}</div>
-    <div class="flc-row-time">${dur}${isAlert?'<span class="flc-warn">!</span>':''}</div>
+    <div class="flc-row-time">${dur}${badge}</div>
   </div>`;
 }
 
@@ -26842,8 +26868,14 @@ function buildBtkAlertZone(tracker){
       <span class="btk-alert-since">Logged In · ${sinceStr}</span>
     </div>`;
   }).join('');
+  const critCount = alerts.filter(a=>a.level==='critical').length;
+  const warnCount = alerts.filter(a=>a.level==='warning').length;
+  const hdrIcon = critCount ? '🚨' : '⚠️';
+  const hdrMsg = critCount && warnCount ? `${critCount} critical, ${warnCount} warning`
+    : critCount ? `${critCount} critical`
+    : `${warnCount} warning`;
   return `<div class="btk-alert-zone-hdr">
-    <span class="btk-alert-zone-title">🚨 ${alerts.length} Active Alert${alerts.length!==1?'s':''}</span>
+    <span class="btk-alert-zone-title">${hdrIcon} ${hdrMsg} alert${alerts.length!==1?'s':''}</span>
     <span class="btk-alert-zone-copy">Agents exceeding BRB or break limits — action needed</span>
   </div>${rows}`;
 }
@@ -26851,7 +26883,8 @@ function buildBtkAlertZone(tracker){
 function buildBtkAgentTile(row){
   const status = row.currentStatus || 'Logged Out';
   const alertLines = breakAlertMessages(row);
-  const hasAlert = alertLines.length > 0;
+  const hasAlert = (row.alerts?.hasAlert) || alertLines.length > 0;
+  const hasWarning = !hasAlert && (row.alerts?.hasWarning);
   const initials = (row.username||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const c = btkStatusColor(status);
   const BRB_LIMIT = 600, BREAK_LIMIT = 3600;
@@ -26876,7 +26909,7 @@ function buildBtkAgentTile(row){
   ).join('');
 
   const _tileKey = encodeURIComponent(row.username||'');
-  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':''}" style="--tile-accent:${c.border};cursor:pointer;" onclick="openAgentBreakModal('${_tileKey}')">
+  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':hasWarning?' btk-tile-warn':''}" style="--tile-accent:${c.border};cursor:pointer;" onclick="openAgentBreakModal('${_tileKey}')">
   <div class="btk-tile-top">
     <div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>
     <div class="btk-tile-info">
@@ -26887,7 +26920,7 @@ function buildBtkAgentTile(row){
         <span class="btk-tile-duration">${durationText}</span>
       </div>
     </div>
-    ${hasAlert?`<span class="btk-tile-alert-badge" title="${alertLines.join(' · ')}">⚠</span>`:''}
+    ${hasAlert?`<span class="btk-tile-alert-badge" title="${(row.alerts?.alertReasons||alertLines).join(' · ')}">!</span>`:hasWarning?`<span class="btk-tile-warn-badge" title="${(row.alerts?.alertReasons||[]).join(' · ')}">!</span>`:''}
   </div>
   <div class="btk-tile-since">${row.since?'Since '+toTime(row.since):'No signal yet'}</div>
   ${chips?`<div class="btk-chips">${chips}</div>`:''}
@@ -29329,7 +29362,7 @@ function downloadBreakReport(){
       fmt(row.trainingSeconds || 0),
       fmt(row.qaSeconds || 0)
     ]);
-    if(row.alerts?.hasAlert){
+    if(row.alerts?.hasAlert || row.alerts?.hasWarning){
       rows.push(['Alert',row.username || '--',breakAlertMessages(row).join(' | '),'','','','','','','','']);
     }
   });

@@ -260,12 +260,44 @@ function resolveBreakEventStream(events, endAt){
   if(currentStatus === 'QA Session AUX') maxQaInstanceSeconds = Math.max(maxQaInstanceSeconds, currentLaneSeconds);
   if(currentStatus === 'Internal Calls') maxInternalInstanceSeconds = Math.max(maxInternalInstanceSeconds, currentLaneSeconds);
 
+  // Limits
+  const BREAK_DAY_LIMIT   = 3600;   // 1h
+  const BREAK_DAY_BUFFER  = 300;    // 5-min grace before critical
+  const BRB_SINGLE_LIMIT  = 600;    // 10m
+  const BRB_SINGLE_BUFFER = 120;    // 2-min grace before critical
+  const BRB_DAY_LIMIT     = 1200;   // 20m
+
+  // Warning = at limit, Critical = past limit + buffer
+  const breakDayWarning  = breakSeconds > BREAK_DAY_LIMIT;
+  const breakDayCritical = breakSeconds > (BREAK_DAY_LIMIT + BREAK_DAY_BUFFER);
+  const brbSingleWarning  = maxBrbInstanceSeconds > BRB_SINGLE_LIMIT;
+  const brbSingleCritical = maxBrbInstanceSeconds > (BRB_SINGLE_LIMIT + BRB_SINGLE_BUFFER);
+  const brbDayWarning  = brbSeconds > BRB_DAY_LIMIT;
+  const brbDayCritical = brbSeconds > (BRB_DAY_LIMIT + 120);
+
+  // Build reason strings for each active alert
+  const alertReasons = [];
+  if(breakDayCritical)  alertReasons.push(`Break total ${Math.floor(breakSeconds/60)}m (limit 60m + 5m grace)`);
+  else if(breakDayWarning) alertReasons.push(`Break total ${Math.floor(breakSeconds/60)}m (limit 60m — within 5m grace)`);
+  if(brbSingleCritical) alertReasons.push(`Single BRB ${Math.floor(maxBrbInstanceSeconds/60)}m (limit 10m + 2m grace)`);
+  else if(brbSingleWarning) alertReasons.push(`Single BRB ${Math.floor(maxBrbInstanceSeconds/60)}m (limit 10m — within 2m grace)`);
+  if(brbDayCritical)   alertReasons.push(`BRB total ${Math.floor(brbSeconds/60)}m (limit 20m)`);
+  else if(brbDayWarning) alertReasons.push(`BRB total ${Math.floor(brbSeconds/60)}m (at 20m limit)`);
+
   const alerts = {
-    breakDayExceeded: breakSeconds > 3600,
-    brbSingleExceeded: maxBrbInstanceSeconds > 600,
-    brbDayExceeded: brbSeconds > 1200
+    // Warning level (at limit, within buffer)
+    breakDayWarning,
+    brbSingleWarning,
+    brbDayWarning,
+    // Critical level (past limit + buffer)
+    breakDayExceeded: breakDayCritical,
+    brbSingleExceeded: brbSingleCritical,
+    brbDayExceeded: brbDayCritical,
+    // Convenience
+    hasWarning: breakDayWarning || brbSingleWarning || brbDayWarning,
+    hasAlert: breakDayCritical || brbSingleCritical || brbDayCritical,
+    alertReasons
   };
-  alerts.hasAlert = alerts.breakDayExceeded || alerts.brbSingleExceeded || alerts.brbDayExceeded;
 
   return {
     acceptedEvents: accepted,
