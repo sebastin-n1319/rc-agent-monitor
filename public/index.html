@@ -9074,6 +9074,33 @@ tbody tr:hover td{
   .evt-hdr > span:first-child{flex:1 1 100% !important;}
 }
 </style>
+<style id="flc-enhanced">
+/* === FLC Enhanced v2 === */
+.flc-row-v2 { display:grid; grid-template-columns:38px 1fr auto; gap:8px; align-items:center; padding:6px 10px; border-radius:8px; margin-bottom:4px; transition:background .15s; }
+.flc-row-v2:hover { filter:brightness(1.08); }
+.flc-row-body { min-width:0; }
+.flc-row-right { display:flex; align-items:center; }
+.flc-mini-bar { height:3px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden; margin-top:2px; }
+.flc-mini-fill { height:100%; border-radius:2px; transition:width .4s; }
+.flc-risk-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; white-space:nowrap; }
+.flc-risk-ok { background:rgba(76,175,80,.2); color:#4CAF50; }
+.flc-risk-warning { background:rgba(251,200,75,.25); color:#FBC84B; }
+.flc-risk-critical { background:rgba(237,102,107,.25); color:#ED666B; }
+.flc-search-bar { display:flex; align-items:center; gap:6px; padding:8px 10px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:10px; flex-wrap:wrap; }
+.flc-search-bar input, .flc-search-bar select { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:#e0e0e0; border-radius:6px; padding:4px 8px; font-size:12px; outline:none; }
+.flc-search-bar input::placeholder { color:#666; }
+.flc-compliance-pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px; background:rgba(76,175,80,.2); color:#4CAF50; white-space:nowrap; }
+.flc-alert-banner { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:600; }
+.flc-alert-banner.critical { background:rgba(237,102,107,.18); color:#ED666B; border:1px solid rgba(237,102,107,.3); }
+.flc-alert-banner.warning { background:rgba(251,200,75,.15); color:#FBC84B; border:1px solid rgba(251,200,75,.25); }
+.flc-alert-banner-dismiss { margin-left:auto; cursor:pointer; opacity:.7; font-size:14px; }
+.flc-alert-banner-dismiss:hover { opacity:1; }
+.flc-next-risk { font-size:11px; color:#FBC84B; padding:4px 10px; margin-bottom:8px; opacity:.85; }
+.break-timeline-bar { width:100%; height:14px; border-radius:4px; overflow:hidden; display:flex; margin-bottom:10px; background:rgba(255,255,255,.06); }
+.break-timeline-seg { height:100%; transition:width .3s; }
+.break-timeline-wrap { padding:6px 0; }
+.break-timeline-label { font-size:10px; color:#888; margin-bottom:3px; }
+</style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
@@ -26718,32 +26745,175 @@ function buildFlcAgentRow(row, cls){
   const since = row.since ? toTime(row.since) : '';
   const tipBase = since ? `Since ${since} · ${dur}` : dur;
   const tip = reasons ? `${tipBase} — ⚠ ${reasons}` : tipBase;
+
+  // Progress bar calculation
+  const currentStatus = (row.currentStatus||'').toLowerCase();
+  const isBrb = currentStatus.includes('brb');
+  const isOnBreak = currentStatus.includes('break') && !isBrb;
+  let barPct = 0, barColor = '#4CAF50';
+  const BRB_SINGLE_LIMIT = row.maxBrbInstanceSeconds || 600;
+  const BREAK_DAY_LIMIT = 3600;
+  if(isBrb){
+    barPct = Math.min(100, ((row.currentLaneSeconds||0)/BRB_SINGLE_LIMIT)*100);
+    barColor = barPct >= 100 ? '#ED666B' : '#FBC84B';
+  } else {
+    barPct = Math.min(100, ((row.breakSeconds||0)/BREAK_DAY_LIMIT)*100);
+    barColor = barPct >= 100 ? '#ED666B' : barPct >= 75 ? '#FBC84B' : (isOnBreak ? '#FBC84B' : '#4CAF50');
+  }
+
+  // Risk badge
+  let riskBadge = '';
+  if(isCritical){
+    const overSeconds = isBrb
+      ? Math.max(0,(row.currentLaneSeconds||0)-BRB_SINGLE_LIMIT)
+      : Math.max(0,(row.breakSeconds||0)-BREAK_DAY_LIMIT);
+    const overFmt = overSeconds > 0 ? `+${fmt(overSeconds)} over` : 'Over limit';
+    riskBadge = `<span class="flc-risk-badge flc-risk-critical" title="${reasons}">${overFmt}</span>`;
+  } else if(isWarning){
+    const remaining = isBrb
+      ? Math.max(0,BRB_SINGLE_LIMIT-(row.currentLaneSeconds||0))
+      : Math.max(0,BREAK_DAY_LIMIT-(row.breakSeconds||0));
+    riskBadge = `<span class="flc-risk-badge flc-risk-warning" title="${reasons}">${fmt(remaining)} left</span>`;
+  } else {
+    riskBadge = `<span class="flc-risk-badge flc-risk-ok">Low risk</span>`;
+  }
+
+  // Row tint
+  const rowBg = isCritical ? 'rgba(237,102,107,.13)' : isWarning ? 'rgba(251,200,75,.10)' : '';
+  const rowStyleAttr = rowBg ? `background:${rowBg};` : '';
+
+  // Avatar colors
   const avBg = isCritical ? 'rgba(237,102,107,.22)' : isWarning ? 'rgba(251,200,75,.18)' : cfg.bg;
   const avCol = isCritical ? '#ED666B' : isWarning ? '#FBC84B' : cfg.c;
-  const badge = isCritical
-    ? `<span class="flc-warn" title="${reasons}" style="background:#ED666B;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-left:6px;cursor:help;">!</span>`
-    : isWarning
-    ? `<span class="flc-warn" title="${reasons}" style="background:#FBC84B;color:#1a1a1a;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-left:6px;cursor:help;">!</span>`
-    : '';
-  return `<div class="flc-row${isCritical?' flc-row-alert':isWarning?' flc-row-warn':''}" title="${tip}">
-    <div class="flc-row-av" style="background:${avBg};color:${avCol}">${init}</div>
-    <div class="flc-row-name">${esc(row.username)}</div>
-    <div class="flc-row-time">${dur}${badge}</div>
+  const avBorder = isCritical ? '#ED666B' : isWarning ? '#FBC84B' : cfg.c;
+
+  // Status label
+  const cfgLabel = cfg.label || 'Available';
+  const statusLabel = isBrb ? `BRB · ${dur}` : isOnBreak ? `Break · ${dur}` : `${cfgLabel} · ${dur}`;
+
+  // Encode username for modal
+  const encodedName = encodeURIComponent(row.username);
+
+  return `<div class="flc-row flc-row-v2${isCritical?' flc-row-alert':isWarning?' flc-row-warn':''}" title="${tip}" onclick="openAgentBreakModal('${encodedName}')" style="cursor:pointer;${rowStyleAttr}">
+    <div class="flc-row-av" style="background:${avBg};color:${avCol};border:2px solid ${avBorder}">${init}</div>
+    <div class="flc-row-body">
+      <div class="flc-row-name" style="font-weight:700">${esc(row.username)}</div>
+      <div class="flc-row-status" style="font-size:11px;color:#aaa;margin-bottom:3px">${statusLabel}</div>
+      <div class="flc-mini-bar"><div class="flc-mini-fill" style="width:${barPct.toFixed(1)}%;background:${barColor}"></div></div>
+    </div>
+    <div class="flc-row-right">${riskBadge}</div>
   </div>`;
 }
 
 function buildBreakLaneCard(title, subtitle, cls, rows){ return ''; } // replaced by board builder
 
+var flcSearchState = {q:'', filter:'all', sort:'name', dismissedAlerts: false};
+var flcCurrentTracker = null;
+
+function buildShiftTimeline(events){
+  if(!events||!events.length) return '<div class="break-timeline-wrap"><div class="break-timeline-label">Shift timeline</div><div style="font-size:11px;color:#666;padding:4px">No data</div></div>';
+  const sorted = [...events].sort((a,b)=>new Date(a.createdAt)-new Date(b.createdAt));
+  const actionColor = function(a){
+    const s=(a||'').toLowerCase();
+    if(s.includes('available')||s.includes('login')||s.includes('loggedin')) return '#4CAF50';
+    if(s.includes('brb')) return '#FBC84B';
+    if(s.includes('break')) return '#ED666B';
+    if(s.includes('training')) return '#7C4DFF';
+    return '#555';
+  };
+  const first = new Date(sorted[0].createdAt).getTime();
+  const now = Date.now();
+  const total = Math.max(now - first, 1);
+  let segs = '';
+  for(let i=0;i<sorted.length;i++){
+    const start = new Date(sorted[i].createdAt).getTime();
+    const end = i+1<sorted.length ? new Date(sorted[i+1].createdAt).getTime() : now;
+    const pct = ((end-start)/total*100).toFixed(2);
+    const color = actionColor(sorted[i].action);
+    segs += `<div class="break-timeline-seg" style="width:${pct}%;background:${color}" title="${sorted[i].action||''} (${fmt(Math.round((end-start)/1000))})"></div>`;
+  }
+  return `<div class="break-timeline-wrap"><div class="break-timeline-label">Shift timeline</div><div class="break-timeline-bar">${segs}</div></div>`;
+}
+
 function buildBreakLaneBoard(tracker){
+  flcCurrentTracker = tracker;
   const SKIP = new Set(['test.agent@adit.com']);
   const real = tracker.filter(r => !SKIP.has((r.email||'').toLowerCase()));
 
-  const avail    = real.filter(r => r.currentStatus === 'Logged In');
-  const brb      = real.filter(r => r.currentStatus === 'BRB');
-  const onBreak  = real.filter(r => r.currentStatus === 'Break');
-  const aux      = real.filter(r => r.currentStatus === 'Training / Coaching' || r.currentStatus === 'QA Session AUX');
-  const internal = real.filter(r => r.currentStatus === 'Internal Calls');
+  // Apply search/filter/sort from flcSearchState
+  const q = (flcSearchState.q||'').toLowerCase();
+  let filtered = real;
+  if(q) filtered = filtered.filter(r => (r.username||'').toLowerCase().includes(q));
+  if(flcSearchState.filter === 'alerts') filtered = filtered.filter(r => r.alerts?.hasAlert || r.alerts?.hasWarning);
+  else if(flcSearchState.filter === 'avail') filtered = filtered.filter(r => r.currentStatus === 'Logged In');
+  else if(flcSearchState.filter === 'brb') filtered = filtered.filter(r => r.currentStatus === 'BRB');
+  else if(flcSearchState.filter === 'break') filtered = filtered.filter(r => r.currentStatus === 'Break');
+
+  if(flcSearchState.sort === 'risk'){
+    filtered = [...filtered].sort((a,b) => {
+      const riskScore = r => (r.alerts?.hasAlert ? 2 : r.alerts?.hasWarning ? 1 : 0);
+      return riskScore(b) - riskScore(a);
+    });
+  } else if(flcSearchState.sort === 'breaktime'){
+    filtered = [...filtered].sort((a,b) => (b.breakSeconds||0) - (a.breakSeconds||0));
+  } else {
+    filtered = [...filtered].sort((a,b) => (a.username||'').localeCompare(b.username||''));
+  }
+
+  const avail    = filtered.filter(r => r.currentStatus === 'Logged In');
+  const brb      = filtered.filter(r => r.currentStatus === 'BRB');
+  const onBreak  = filtered.filter(r => r.currentStatus === 'Break');
+  const aux      = filtered.filter(r => r.currentStatus === 'Training / Coaching' || r.currentStatus === 'QA Session AUX');
+  const internal = filtered.filter(r => r.currentStatus === 'Internal Calls');
   const away = [...brb, ...onBreak, ...aux, ...internal];
+
+  // Alert banner
+  const criticalAgents = real.filter(r => r.alerts?.hasAlert);
+  const warningAgents  = real.filter(r => !r.alerts?.hasAlert && r.alerts?.hasWarning);
+  let alertBanner = '';
+  if(criticalAgents.length){
+    alertBanner = `<div class="flc-alert-banner critical"><span>⚠ ${criticalAgents.length} agent${criticalAgents.length>1?'s':''} over limit: ${criticalAgents.map(r=>esc(r.username)).join(', ')}</span><span class="flc-alert-banner-dismiss" onclick="this.closest('.flc-alert-banner').remove()">✕</span></div>`;
+  } else if(warningAgents.length){
+    alertBanner = `<div class="flc-alert-banner warning"><span>⚠ ${warningAgents.length} agent${warningAgents.length>1?'s':''} approaching limit</span><span class="flc-alert-banner-dismiss" onclick="this.closest('.flc-alert-banner').remove()">✕</span></div>`;
+  }
+
+  // Next-risk insight
+  let nextRisk = '';
+  const warningList = real.filter(r => !r.alerts?.hasAlert && r.alerts?.hasWarning);
+  if(warningList.length){
+    const soonest = warningList.reduce((a,b) => {
+      const aRem = Math.max(0, 3600 - (a.breakSeconds||0));
+      const bRem = Math.max(0, 3600 - (b.breakSeconds||0));
+      return aRem < bRem ? a : b;
+    });
+    const rem = Math.max(0, 3600 - (soonest.breakSeconds||0));
+    nextRisk = `<div class="flc-next-risk">⏱ Next alert: ${esc(soonest.username)} in ~${fmt(rem)}</div>`;
+  }
+
+  // Compliance pill
+  const totalReal = real.length;
+  const okCount = totalReal - criticalAgents.length - warningAgents.length;
+  const compPct = totalReal > 0 ? Math.round(okCount/totalReal*100) : 100;
+  const compColor = compPct >= 90 ? '#4CAF50' : compPct >= 70 ? '#FBC84B' : '#ED666B';
+  const compPillHtml = `<span class="flc-compliance-pill" id="flc-compliance-pill" style="background:rgba(76,175,80,.2);color:${compColor}">${compPct}% compliant</span>`;
+
+  // Search bar
+  const searchBar = `<div class="flc-search-bar">
+  <input id="flc-search-input" type="text" placeholder="Search agents…" oninput="flcSearchState.q=this.value;flcRenderBoard()" style="flex:1;min-width:120px" value="${esc(flcSearchState.q)}">
+  <select id="flc-filter-select" onchange="flcSearchState.filter=this.value;flcRenderBoard()">
+    <option value="all"${flcSearchState.filter==='all'?' selected':''}>All</option>
+    <option value="alerts"${flcSearchState.filter==='alerts'?' selected':''}>Alerts only</option>
+    <option value="avail"${flcSearchState.filter==='avail'?' selected':''}>Available</option>
+    <option value="brb"${flcSearchState.filter==='brb'?' selected':''}>BRB</option>
+    <option value="break"${flcSearchState.filter==='break'?' selected':''}>On Break</option>
+  </select>
+  <select id="flc-sort-select" onchange="flcSearchState.sort=this.value;flcRenderBoard()">
+    <option value="name"${flcSearchState.sort==='name'?' selected':''}>Name A–Z</option>
+    <option value="risk"${flcSearchState.sort==='risk'?' selected':''}>Most at risk</option>
+    <option value="breaktime"${flcSearchState.sort==='breaktime'?' selected':''}>Break time ↑</option>
+  </select>
+  ${compPillHtml}
+</div>`;
 
   // Stat pills
   const mkPill = (count, label, color, glow) => count
@@ -26777,7 +26947,7 @@ function buildBreakLaneBoard(tracker){
 
   const awayGroups = mkGroup(brb,'brb') + mkGroup(onBreak,'break') + mkGroup(aux,'aux') + mkGroup(internal,'internal');
 
-  return `${pills}
+  return `${searchBar}${alertBanner}${nextRisk}${pills}
   <div class="flc-board">
     <div class="flc-col flc-col-avail">
       <div class="flc-col-hdr">
@@ -26802,6 +26972,13 @@ function buildBreakLaneBoard(tracker){
       </div>
     </div>
   </div>`;
+}
+
+function flcRenderBoard(){
+  const laneBoard = document.getElementById('break-agent-lane-board');
+  if(!laneBoard) return;
+  const tracker = (typeof breakTrackerData !== 'undefined' && breakTrackerData.tracker) ? breakTrackerData.tracker : [];
+  laneBoard.innerHTML = buildBreakLaneBoard(tracker);
 }
 
 // ── BTK helpers ─────────────────────────────────────────────────────────────
@@ -27077,7 +27254,8 @@ function renderBreakAgentView(){
   if((self.alerts?.brbDayExceeded || self.alerts?.brbSingleExceeded || (self.currentStatus === 'BRB' && (self.currentLaneSeconds || 0) > 600)) && brbEl) brbEl.closest('.break-stat')?.classList.add('alert');
   if(watchLines.length && watchEl) watchEl.closest('.break-stat')?.classList.add('alert');
   if(logChip) logChip.textContent = (self.events || []).length + ' events';
-  if(logList) logList.innerHTML = (self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>';
+  const timelineHtml = buildShiftTimeline(self.events || []);
+  if(logList) logList.innerHTML = timelineHtml + ((self.events || []).length ? self.events.map(event => buildBreakFeedRow(event, true)).join('') : '<div class="break-empty">'+(isHistory ? 'No break events found for '+formatTrackerDate(selectedDate)+'.' : 'No break events yet. Your first tap will appear here.')+'</div>');
   // Session 15: update budget bars in Break Bot + Dashboard card
   _updateBudgetBars(self);
 }
