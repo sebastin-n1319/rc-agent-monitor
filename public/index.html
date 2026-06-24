@@ -9075,31 +9075,46 @@ tbody tr:hover td{
 }
 </style>
 <style id="flc-enhanced">
-/* === FLC Enhanced v2 === */
-.flc-row-v2 { display:grid; grid-template-columns:38px 1fr auto; gap:8px; align-items:center; padding:6px 10px; border-radius:8px; margin-bottom:4px; transition:background .15s; }
-.flc-row-v2:hover { filter:brightness(1.08); }
-.flc-row-body { min-width:0; }
-.flc-row-right { display:flex; align-items:center; }
-.flc-mini-bar { height:3px; background:rgba(255,255,255,.1); border-radius:2px; overflow:hidden; margin-top:2px; }
-.flc-mini-fill { height:100%; border-radius:2px; transition:width .4s; }
-.flc-risk-badge { font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; white-space:nowrap; }
-.flc-risk-ok { background:rgba(76,175,80,.2); color:#4CAF50; }
-.flc-risk-warning { background:rgba(251,200,75,.25); color:#FBC84B; }
-.flc-risk-critical { background:rgba(237,102,107,.25); color:#ED666B; }
-.flc-search-bar { display:flex; align-items:center; gap:6px; padding:8px 10px; background:rgba(255,255,255,.04); border-radius:8px; margin-bottom:10px; flex-wrap:wrap; }
-.flc-search-bar input, .flc-search-bar select { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:#e0e0e0; border-radius:6px; padding:4px 8px; font-size:12px; outline:none; }
-.flc-search-bar input::placeholder { color:#666; }
-.flc-compliance-pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px; background:rgba(76,175,80,.2); color:#4CAF50; white-space:nowrap; }
-.flc-alert-banner { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:8px; margin-bottom:10px; font-size:12px; font-weight:600; }
-.flc-alert-banner.critical { background:rgba(237,102,107,.18); color:#ED666B; border:1px solid rgba(237,102,107,.3); }
-.flc-alert-banner.warning { background:rgba(251,200,75,.15); color:#FBC84B; border:1px solid rgba(251,200,75,.25); }
-.flc-alert-banner-dismiss { margin-left:auto; cursor:pointer; opacity:.7; font-size:14px; }
-.flc-alert-banner-dismiss:hover { opacity:1; }
-.flc-next-risk { font-size:11px; color:#FBC84B; padding:4px 10px; margin-bottom:8px; opacity:.85; }
-.break-timeline-bar { width:100%; height:14px; border-radius:4px; overflow:hidden; display:flex; margin-bottom:10px; background:rgba(255,255,255,.06); }
-.break-timeline-seg { height:100%; transition:width .3s; }
-.break-timeline-wrap { padding:6px 0; }
-.break-timeline-label { font-size:10px; color:#888; margin-bottom:3px; }
+/* FLC Enhanced v2 — light-panel aware */
+.flc-row-v2{display:grid;grid-template-columns:36px 1fr auto;gap:9px;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;transition:background .12s}
+.flc-row-v2:hover{background:rgba(0,0,0,.03)}
+.flc-row-v2.flc-row-alert{background:rgba(220,38,38,.05)!important}
+.flc-row-v2.flc-row-alert:hover{background:rgba(220,38,38,.09)!important}
+.flc-row-v2.flc-row-warn{background:rgba(245,158,11,.05)!important}
+.flc-row-v2.flc-row-warn:hover{background:rgba(245,158,11,.09)!important}
+.flc-row-body{min-width:0}
+.flc-row-right{display:flex;align-items:center;flex-shrink:0}
+.flc-row-name-v2{font-size:13px;font-weight:600;color:#1a2030;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flc-row-status-v2{font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flc-mini-bar{height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;margin-top:4px}
+.flc-mini-fill{height:100%;border-radius:2px;transition:width .5s}
+.flc-risk-badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;letter-spacing:-.01em}
+.flc-risk-ok{background:#E1F5EE;color:#0F6E56}
+.flc-risk-warning{background:#FEF3C7;color:#92400E}
+.flc-risk-critical{background:#FEE2E2;color:#991B1B}
+.flc-search-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:10px 12px 8px;border-bottom:1px solid rgba(0,0,0,.07)}
+.flc-search-bar input{font-size:12px;padding:6px 10px;border:1px solid rgba(0,0,0,.12);border-radius:6px;background:#fff;color:#1a2030;outline:none;grid-column:1/-1}
+.flc-search-bar input:focus{border-color:#F4891F;box-shadow:0 0 0 2px rgba(244,137,31,.15)}
+.flc-search-bar select{font-size:12px;padding:5px 8px;border:1px solid rgba(0,0,0,.12);border-radius:6px;background:#fff;color:#374151;cursor:pointer;outline:none}
+.flc-search-bar select:focus{border-color:#F4891F}
+.flc-compliance-pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.flc-compliance-ok{background:#D1FAE5;color:#065F46}
+.flc-compliance-warn{background:#FEF3C7;color:#92400E}
+.flc-compliance-crit{background:#FEE2E2;color:#991B1B}
+.flc-meta-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 12px 4px;flex-wrap:wrap}
+.flc-alert-banner{display:flex;align-items:center;gap:8px;padding:8px 12px;margin:6px 10px 2px;border-radius:8px;font-size:12px;font-weight:500;border:1px solid}
+.flc-alert-banner.critical{background:#FEF2F2;color:#B91C1C;border-color:#FECACA}
+.flc-alert-banner.warning{background:#FFFBEB;color:#92400E;border-color:#FDE68A}
+.flc-alert-dismiss{margin-left:auto;cursor:pointer;opacity:.6;font-size:15px;line-height:1;flex-shrink:0}
+.flc-alert-dismiss:hover{opacity:1}
+.flc-next-risk{font-size:11px;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:6px;padding:4px 10px;margin:4px 10px 6px;display:flex;align-items:center;gap:5px}
+.break-timeline-wrap{padding:8px 0 4px}
+.break-timeline-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:5px}
+.break-timeline-bar{width:100%;height:10px;border-radius:4px;overflow:hidden;display:flex;background:rgba(0,0,0,.07)}
+.break-timeline-seg{height:100%}
+.break-timeline-legend{display:flex;gap:10px;margin-top:5px;flex-wrap:wrap}
+.break-timeline-li{display:flex;align-items:center;gap:4px;font-size:10px;color:#6b7280}
+.break-timeline-dot{width:8px;height:8px;border-radius:2px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
@@ -26751,7 +26766,7 @@ function buildFlcAgentRow(row, cls){
   const isBrb = currentStatus.includes('brb');
   const isOnBreak = currentStatus.includes('break') && !isBrb;
   let barPct = 0, barColor = '#4CAF50';
-  const BRB_SINGLE_LIMIT = row.maxBrbInstanceSeconds || 600;
+  const BRB_SINGLE_LIMIT = 600; // 10 min fixed limit
   const BREAK_DAY_LIMIT = 3600;
   if(isBrb){
     barPct = Math.min(100, ((row.currentLaneSeconds||0)/BRB_SINGLE_LIMIT)*100);
@@ -26764,16 +26779,17 @@ function buildFlcAgentRow(row, cls){
   // Risk badge
   let riskBadge = '';
   if(isCritical){
-    const overSeconds = isBrb
-      ? Math.max(0,(row.currentLaneSeconds||0)-BRB_SINGLE_LIMIT)
-      : Math.max(0,(row.breakSeconds||0)-BREAK_DAY_LIMIT);
+    const overBrb = Math.max(0,(row.maxBrbInstanceSeconds||0)-BRB_SINGLE_LIMIT);
+    const overBrk = Math.max(0,(row.breakSeconds||0)-BREAK_DAY_LIMIT);
+    const overSeconds = isBrb ? overBrb : overBrk;
     const overFmt = overSeconds > 0 ? `+${fmt(overSeconds)} over` : 'Over limit';
     riskBadge = `<span class="flc-risk-badge flc-risk-critical" title="${reasons}">${overFmt}</span>`;
   } else if(isWarning){
-    const remaining = isBrb
-      ? Math.max(0,BRB_SINGLE_LIMIT-(row.currentLaneSeconds||0))
-      : Math.max(0,BREAK_DAY_LIMIT-(row.breakSeconds||0));
-    riskBadge = `<span class="flc-risk-badge flc-risk-warning" title="${reasons}">${fmt(remaining)} left</span>`;
+    const remBrb = Math.max(0,BRB_SINGLE_LIMIT-(row.maxBrbInstanceSeconds||0));
+    const remBrk = Math.max(0,BREAK_DAY_LIMIT-(row.breakSeconds||0));
+    const remaining = isBrb ? remBrb : remBrk;
+    const remFmt = remaining > 0 ? `${fmt(remaining)} left` : 'At limit';
+    riskBadge = `<span class="flc-risk-badge flc-risk-warning" title="${reasons}">${remFmt}</span>`;
   } else {
     riskBadge = `<span class="flc-risk-badge flc-risk-ok">Low risk</span>`;
   }
@@ -26783,9 +26799,9 @@ function buildFlcAgentRow(row, cls){
   const rowStyleAttr = rowBg ? `background:${rowBg};` : '';
 
   // Avatar colors
-  const avBg = isCritical ? 'rgba(237,102,107,.22)' : isWarning ? 'rgba(251,200,75,.18)' : cfg.bg;
-  const avCol = isCritical ? '#ED666B' : isWarning ? '#FBC84B' : cfg.c;
-  const avBorder = isCritical ? '#ED666B' : isWarning ? '#FBC84B' : cfg.c;
+  const avBg = isCritical ? '#FEE2E2' : isWarning ? '#FEF3C7' : cfg.bg;
+  const avCol = isCritical ? '#B91C1C' : isWarning ? '#92400E' : cfg.c;
+  const avBorder = isCritical ? '#FECACA' : isWarning ? '#FDE68A' : cfg.c;
 
   // Status label
   const cfgLabel = cfg.label || 'Available';
@@ -26794,11 +26810,11 @@ function buildFlcAgentRow(row, cls){
   // Encode username for modal
   const encodedName = encodeURIComponent(row.username);
 
-  return `<div class="flc-row flc-row-v2${isCritical?' flc-row-alert':isWarning?' flc-row-warn':''}" title="${tip}" onclick="openAgentBreakModal('${encodedName}')" style="cursor:pointer;${rowStyleAttr}">
-    <div class="flc-row-av" style="background:${avBg};color:${avCol};border:2px solid ${avBorder}">${init}</div>
+  return `<div class="flc-row-v2${isCritical?' flc-row-alert':isWarning?' flc-row-warn':''}" title="${tip}" onclick="openAgentBreakModal('${encodedName}')">
+    <div class="flc-row-av" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;background:${avBg};color:${avCol};border:2px solid ${avBorder}">${init}</div>
     <div class="flc-row-body">
-      <div class="flc-row-name" style="font-weight:700">${esc(row.username)}</div>
-      <div class="flc-row-status" style="font-size:11px;color:#aaa;margin-bottom:3px">${statusLabel}</div>
+      <div class="flc-row-name-v2">${esc(row.username)}</div>
+      <div class="flc-row-status-v2">${statusLabel}</div>
       <div class="flc-mini-bar"><div class="flc-mini-fill" style="width:${barPct.toFixed(1)}%;background:${barColor}"></div></div>
     </div>
     <div class="flc-row-right">${riskBadge}</div>
@@ -26877,17 +26893,24 @@ function buildBreakLaneBoard(tracker){
     alertBanner = `<div class="flc-alert-banner warning"><span>⚠ ${warningAgents.length} agent${warningAgents.length>1?'s':''} approaching limit</span><span class="flc-alert-banner-dismiss" onclick="this.closest('.flc-alert-banner').remove()">✕</span></div>`;
   }
 
-  // Next-risk insight
+  // Next-risk insight — find who is closest to exceeding a limit
   let nextRisk = '';
-  const warningList = real.filter(r => !r.alerts?.hasAlert && r.alerts?.hasWarning);
-  if(warningList.length){
-    const soonest = warningList.reduce((a,b) => {
-      const aRem = Math.max(0, 3600 - (a.breakSeconds||0));
-      const bRem = Math.max(0, 3600 - (b.breakSeconds||0));
-      return aRem < bRem ? a : b;
-    });
-    const rem = Math.max(0, 3600 - (soonest.breakSeconds||0));
-    nextRisk = `<div class="flc-next-risk">⏱ Next alert: ${esc(soonest.username)} in ~${fmt(rem)}</div>`;
+  const brbAgents = real.filter(r => r.currentStatus==='BRB');
+  const brkAgents = real.filter(r => r.currentStatus==='Break');
+  let nextArr = [];
+  for(const r of brbAgents){
+    const rem = Math.max(0, 600-(r.currentLaneSeconds||0));
+    nextArr.push({ name:r.username, rem, reason:'BRB limit' });
+  }
+  for(const r of brkAgents){
+    const rem = Math.max(0, 3600-(r.breakSeconds||0));
+    nextArr.push({ name:r.username, rem, reason:'break limit' });
+  }
+  nextArr.sort((a,b)=>a.rem-b.rem);
+  if(nextArr.length){
+    const n = nextArr[0];
+    const remStr = n.rem > 0 ? `in ${fmt(n.rem)}` : 'NOW';
+    nextRisk = `<div class="flc-next-risk">⏱ Next at risk: <strong>${esc(n.name)}</strong> — ${n.reason} ${remStr}</div>`;
   }
 
   // Compliance pill
@@ -26895,24 +26918,24 @@ function buildBreakLaneBoard(tracker){
   const okCount = totalReal - criticalAgents.length - warningAgents.length;
   const compPct = totalReal > 0 ? Math.round(okCount/totalReal*100) : 100;
   const compColor = compPct >= 90 ? '#4CAF50' : compPct >= 70 ? '#FBC84B' : '#ED666B';
-  const compPillHtml = `<span class="flc-compliance-pill" id="flc-compliance-pill" style="background:rgba(76,175,80,.2);color:${compColor}">${compPct}% compliant</span>`;
+  const compCls = compPct>=90 ? 'flc-compliance-ok' : compPct>=70 ? 'flc-compliance-warn' : 'flc-compliance-crit';
+  const compPillHtml = totalReal>0 ? `<span class="flc-compliance-pill ${compCls}" id="flc-compliance-pill">${compPct}% compliant</span>` : '';
 
-  // Search bar
+  // Search bar — clean grid layout, light-theme friendly
   const searchBar = `<div class="flc-search-bar">
-  <input id="flc-search-input" type="text" placeholder="Search agents…" oninput="flcSearchState.q=this.value;flcRenderBoard()" style="flex:1;min-width:120px" value="${esc(flcSearchState.q)}">
+  <input id="flc-search-input" type="text" placeholder="🔍  Search agents…" oninput="flcSearchState.q=this.value;flcRenderBoard()" value="${esc(flcSearchState.q)}">
   <select id="flc-filter-select" onchange="flcSearchState.filter=this.value;flcRenderBoard()">
-    <option value="all"${flcSearchState.filter==='all'?' selected':''}>All</option>
-    <option value="alerts"${flcSearchState.filter==='alerts'?' selected':''}>Alerts only</option>
-    <option value="avail"${flcSearchState.filter==='avail'?' selected':''}>Available</option>
-    <option value="brb"${flcSearchState.filter==='brb'?' selected':''}>BRB</option>
-    <option value="break"${flcSearchState.filter==='break'?' selected':''}>On Break</option>
+    <option value="all"${flcSearchState.filter==='all'?' selected':''}>All statuses</option>
+    <option value="alerts"${flcSearchState.filter==='alerts'?' selected':''}>🚨 Alerts only</option>
+    <option value="avail"${flcSearchState.filter==='avail'?' selected':''}>✅ Available</option>
+    <option value="brb"${flcSearchState.filter==='brb'?' selected':''}>⏱ BRB</option>
+    <option value="break"${flcSearchState.filter==='break'?' selected':''}>☕ On Break</option>
   </select>
   <select id="flc-sort-select" onchange="flcSearchState.sort=this.value;flcRenderBoard()">
-    <option value="name"${flcSearchState.sort==='name'?' selected':''}>Name A–Z</option>
-    <option value="risk"${flcSearchState.sort==='risk'?' selected':''}>Most at risk</option>
-    <option value="breaktime"${flcSearchState.sort==='breaktime'?' selected':''}>Break time ↑</option>
+    <option value="name"${flcSearchState.sort==='name'?' selected':''}>Sort: Name A–Z</option>
+    <option value="risk"${flcSearchState.sort==='risk'?' selected':''}>Sort: Most at risk</option>
+    <option value="breaktime"${flcSearchState.sort==='breaktime'?' selected':''}>Sort: Break time</option>
   </select>
-  ${compPillHtml}
 </div>`;
 
   // Stat pills
@@ -26947,7 +26970,7 @@ function buildBreakLaneBoard(tracker){
 
   const awayGroups = mkGroup(brb,'brb') + mkGroup(onBreak,'break') + mkGroup(aux,'aux') + mkGroup(internal,'internal');
 
-  return `${searchBar}${alertBanner}${nextRisk}${pills}
+  return `${searchBar}<div class="flc-meta-bar">${compPillHtml}${nextRisk}</div>${alertBanner}${pills}
   <div class="flc-board">
     <div class="flc-col flc-col-avail">
       <div class="flc-col-hdr">
