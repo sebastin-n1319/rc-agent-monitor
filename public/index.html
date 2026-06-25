@@ -26774,42 +26774,43 @@ function buildFlcAgentRow(row, cls){
   const isCritical = alerts.hasAlert;
   const isWarning  = !isCritical && alerts.hasWarning;
 
-  /* Avatar colour */
+  /* Avatar */
   let avBg, avCol, avBorder;
   if(isCritical){ avBg='#FEE2E2'; avCol='#B91C1C'; avBorder='2px solid #FCA5A5'; }
   else if(isWarning){ avBg='#FEF3C7'; avCol='#92400E'; avBorder='2px solid #FCD34D'; }
   else { avBg=cfg.bg; avCol=cfg.c; avBorder='2px solid transparent'; }
 
-  /* Row background */
-  let rowBg = '';
-  if(isCritical) rowBg='background:rgba(220,38,38,.04);';
-  else if(isWarning) rowBg='background:rgba(245,158,11,.04);';
+  /* Row tint */
+  const rowBg = isCritical ? 'rgba(220,38,38,.03)' : isWarning ? 'rgba(245,158,11,.04)' : 'transparent';
 
   /* Badge */
   let badgeBg='#D1FAE5', badgeCol='#065F46', badgeTxt='Low risk';
   if(isCritical){ badgeBg='#FEE2E2'; badgeCol='#991B1B'; badgeTxt='⚠ Critical'; }
   else if(isWarning){ badgeBg='#FEF3C7'; badgeCol='#B45309'; badgeTxt='• At limit'; }
 
-  /* Progress bar */
+  /* Progress bar — total break+brb vs 1h */
   const pct = Math.min(100,((row.breakSeconds||0)+(row.brbSeconds||0))/3600*100);
-  const barCol = pct>=100?'#ef4444':pct>=80?'#f59e0b':'#22c55e';
+  const barCol = pct>=100?'#f43f5e':pct>=80?'#f59e0b':'#10b981';
 
-  const init = esc((row.username||'?').charAt(0).toUpperCase());
+  const init        = esc((row.username||'?').charAt(0).toUpperCase());
   const statusLabel = cfg.label + ' · ' + dur;
-  const tooltip = (alerts.alertReasons||[]).join(' | ') || statusLabel;
+  const tooltip     = (alerts.alertReasons||[]).join(' | ') || statusLabel;
 
-  return `<div style="display:flex!important;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;${rowBg}transition:background .12s;"
-    onclick="openAgentBreakModal('${encodedName}')"
-    title="${esc(tooltip)}"
-    onmouseenter="this.style.opacity='.85'"
-    onmouseleave="this.style.opacity='1'">
-    <div style="width:34px;height:34px;min-width:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${avBg};color:${avCol};border:${avBorder};flex-shrink:0;">${init}</div>
-    <div style="flex:1;min-width:0;overflow:hidden;">
-      <div style="font-size:13px;font-weight:600;color:#0f1724;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(row.username)}</div>
-      <div style="font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(statusLabel)}</div>
-      <div style="height:3px;background:rgba(0,0,0,.07);border-radius:2px;overflow:hidden;margin-top:5px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${barCol};border-radius:2px;opacity:.75;transition:width .4s;"></div></div>
+  /* Two-level row: top flex + bottom bar */
+  return `<div style="background:${rowBg};border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;transition:background .12s;"
+    onclick="openAgentBreakModal('${encodedName}')" title="${esc(tooltip)}"
+    onmouseenter="this.style.filter='brightness(.97)'" onmouseleave="this.style.filter=''">
+    <div style="display:flex!important;align-items:center;gap:10px;padding:9px 14px 7px;">
+      <div style="width:34px;height:34px;min-width:34px;border-radius:50%;display:flex!important;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${avBg};color:${avCol};border:${avBorder};flex-shrink:0;">${init}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:#0f1724;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${esc(row.username)}</div>
+        <div style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3;">${esc(statusLabel)}</div>
+      </div>
+      <div style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;background:${badgeBg};color:${badgeCol};">${badgeTxt}</div>
     </div>
-    <div style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;background:${badgeBg};color:${badgeCol};">${badgeTxt}</div>
+    <div style="height:2px;margin:0 14px 7px;background:rgba(0,0,0,.06);border-radius:2px;overflow:hidden;">
+      <div style="height:100%;width:${pct.toFixed(1)}%;background:${barCol};border-radius:2px;"></div>
+    </div>
   </div>`;
 }
 
