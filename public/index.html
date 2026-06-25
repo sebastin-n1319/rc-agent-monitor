@@ -26774,39 +26774,42 @@ function buildFlcAgentRow(row, cls){
   const isCritical = alerts.hasAlert;
   const isWarning  = !isCritical && alerts.hasWarning;
 
-  /* Avatar styling */
+  /* Avatar colour */
   let avBg, avCol, avBorder;
-  if(isCritical){ avBg='#FEE2E2'; avCol='#B91C1C'; avBorder='#FCA5A5'; }
-  else if(isWarning){ avBg='#FEF3C7'; avCol='#92400E'; avBorder='#FCD34D'; }
-  else { avBg=cfg.bg; avCol=cfg.c; avBorder='transparent'; }
+  if(isCritical){ avBg='#FEE2E2'; avCol='#B91C1C'; avBorder='2px solid #FCA5A5'; }
+  else if(isWarning){ avBg='#FEF3C7'; avCol='#92400E'; avBorder='2px solid #FCD34D'; }
+  else { avBg=cfg.bg; avCol=cfg.c; avBorder='2px solid transparent'; }
+
+  /* Row background */
+  let rowBg = '';
+  if(isCritical) rowBg='background:rgba(220,38,38,.04);';
+  else if(isWarning) rowBg='background:rgba(245,158,11,.04);';
+
+  /* Badge */
+  let badgeBg='#D1FAE5', badgeCol='#065F46', badgeTxt='Low risk';
+  if(isCritical){ badgeBg='#FEE2E2'; badgeCol='#991B1B'; badgeTxt='⚠ Critical'; }
+  else if(isWarning){ badgeBg='#FEF3C7'; badgeCol='#B45309'; badgeTxt='• At limit'; }
+
+  /* Progress bar */
+  const pct = Math.min(100,((row.breakSeconds||0)+(row.brbSeconds||0))/3600*100);
+  const barCol = pct>=100?'#ef4444':pct>=80?'#f59e0b':'#22c55e';
+
   const init = esc((row.username||'?').charAt(0).toUpperCase());
-
-  /* Status label */
   const statusLabel = cfg.label + ' · ' + dur;
+  const tooltip = (alerts.alertReasons||[]).join(' | ') || statusLabel;
 
-  /* Risk badge */
-  let badgeClass='flc-badge-ok', badgeLabel='Low risk';
-  if(isCritical){ badgeClass='flc-badge-crit'; badgeLabel='⚠ Critical'; }
-  else if(isWarning){ badgeClass='flc-badge-warn'; badgeLabel='• At limit'; }
-
-  /* Mini progress bar (break+brb out of 1h limit) */
-  const totalBreakSecs = (row.breakSeconds||0)+(row.brbSeconds||0);
-  const barPct  = Math.min(100, (totalBreakSecs/3600)*100);
-  let   barColor = '#22c55e';
-  if(barPct>=100){ barColor='#ef4444'; }
-  else if(barPct>=80){ barColor='#f59e0b'; }
-
-  const rowCls = isCritical ? 'flc-crit' : isWarning ? 'flc-warn' : '';
-  const tooltipText = (alerts.alertReasons||[]).join(' | ') || statusLabel;
-
-  return `<div class="flc-row-enhanced ${rowCls}" onclick="openAgentBreakModal('${encodedName}')" title="${esc(tooltipText)}">
-    <div class="flc-av-e" style="background:${avBg};color:${avCol};border-color:${avBorder}">${init}</div>
-    <div class="flc-body-e">
-      <div class="flc-name-e">${esc(row.username)}</div>
-      <div class="flc-status-e">${esc(statusLabel)}</div>
-      <div class="flc-bar-e"><div class="flc-bar-fill-e" style="width:${barPct.toFixed(1)}%;background:${barColor}"></div></div>
+  return `<div style="display:flex!important;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;${rowBg}transition:background .12s;"
+    onclick="openAgentBreakModal('${encodedName}')"
+    title="${esc(tooltip)}"
+    onmouseenter="this.style.opacity='.85'"
+    onmouseleave="this.style.opacity='1'">
+    <div style="width:34px;height:34px;min-width:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${avBg};color:${avCol};border:${avBorder};flex-shrink:0;">${init}</div>
+    <div style="flex:1;min-width:0;overflow:hidden;">
+      <div style="font-size:13px;font-weight:600;color:#0f1724;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(row.username)}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(statusLabel)}</div>
+      <div style="height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${barCol};border-radius:2px;"></div></div>
     </div>
-    <div class="flc-badge-e ${badgeClass}">${badgeLabel}</div>
+    <div style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;background:${badgeBg};color:${badgeCol};">${badgeTxt}</div>
   </div>`;
 }
 
