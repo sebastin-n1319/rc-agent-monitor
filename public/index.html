@@ -26807,7 +26807,7 @@ function buildFlcAgentRow(row, cls){
     <div style="flex:1;min-width:0;overflow:hidden;">
       <div style="font-size:13px;font-weight:600;color:#0f1724;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(row.username)}</div>
       <div style="font-size:11px;color:#6b7280;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(statusLabel)}</div>
-      <div style="height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;margin-top:4px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${barCol};border-radius:2px;"></div></div>
+      <div style="height:3px;background:rgba(0,0,0,.07);border-radius:2px;overflow:hidden;margin-top:5px;"><div style="height:100%;width:${pct.toFixed(1)}%;background:${barCol};border-radius:2px;opacity:.75;transition:width .4s;"></div></div>
     </div>
     <div style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;flex-shrink:0;background:${badgeBg};color:${badgeCol};">${badgeTxt}</div>
   </div>`;
@@ -26889,20 +26889,24 @@ function buildBreakLaneBoard(tracker){
   const compPillHtml = totalReal>0 ? `<span class="flc-compliance-pill ${compCls}" id="flc-compliance-pill">${compPct}% compliant</span>` : '';
 
   // Search bar — clean grid layout, light-theme friendly
-  const searchBar = `<div class="flc-ctrl-bar">
-  <div class="flc-search-wrap">
-    <span class="flc-search-icon">🔍</span>
-    <input class="flc-search-e" id="flc-search-input" type="text" placeholder="Search agents…" oninput="flcSearchState.q=this.value;flcRenderBoard()" value="${esc(flcSearchState.q)}">
+  const searchBar = `<div style="padding:8px 10px 6px;border-bottom:1px solid rgba(0,0,0,.07);background:#f9fafb;">
+  <div style="position:relative;margin-bottom:6px;">
+    <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:13px;pointer-events:none;">🔍</span>
+    <input id="flc-search-input" type="text" placeholder="Search agents…"
+      style="width:100%;box-sizing:border-box;font-size:12px;padding:6px 10px 6px 30px;border:1px solid rgba(0,0,0,.12);border-radius:6px;background:#fff;color:#111827;outline:none;font-family:inherit;"
+      oninput="flcSearchState.q=this.value;flcRenderBoard()" value="${esc(flcSearchState.q)}">
   </div>
-  <div class="flc-filters-row">
-    <select class="flc-sel-e" id="flc-filter-select" onchange="flcSearchState.filter=this.value;flcRenderBoard()">
+  <div style="display:flex!important;gap:6px;">
+    <select id="flc-filter-select" onchange="flcSearchState.filter=this.value;flcRenderBoard()"
+      style="flex:1;font-size:11px;padding:4px 6px;border:1px solid rgba(0,0,0,.12);border-radius:6px;background:#fff;color:#374151;cursor:pointer;outline:none;font-family:inherit;">
       <option value="all"${flcSearchState.filter==='all'?' selected':''}>All statuses</option>
       <option value="alerts"${flcSearchState.filter==='alerts'?' selected':''}>🚨 Alerts only</option>
       <option value="avail"${flcSearchState.filter==='avail'?' selected':''}>✅ Available</option>
       <option value="brb"${flcSearchState.filter==='brb'?' selected':''}>⏱ BRB</option>
       <option value="break"${flcSearchState.filter==='break'?' selected':''}>☕ On Break</option>
     </select>
-    <select class="flc-sel-e" id="flc-sort-select" onchange="flcSearchState.sort=this.value;flcRenderBoard()">
+    <select id="flc-sort-select" onchange="flcSearchState.sort=this.value;flcRenderBoard()"
+      style="flex:1;font-size:11px;padding:4px 6px;border:1px solid rgba(0,0,0,.12);border-radius:6px;background:#fff;color:#374151;cursor:pointer;outline:none;font-family:inherit;">
       <option value="name"${flcSearchState.sort==='name'?' selected':''}>A–Z</option>
       <option value="risk"${flcSearchState.sort==='risk'?' selected':''}>Most at risk</option>
       <option value="breaktime"${flcSearchState.sort==='breaktime'?' selected':''}>Break time</option>
