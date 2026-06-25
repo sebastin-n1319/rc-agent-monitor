@@ -26811,6 +26811,10 @@ function buildFlcAgentRow(row, cls){
 }
 
 
+// ── FLC search/filter/sort state ───────────────────────────────────────────
+const flcSearchState = { q:'', filter:'all', sort:'name' };
+let flcCurrentTracker = [];
+
 function buildBreakLaneBoard(tracker){
   flcCurrentTracker = tracker;
   const SKIP = new Set(['test.agent@adit.com']);
