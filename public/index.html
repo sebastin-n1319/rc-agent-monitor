@@ -26774,45 +26774,54 @@ function buildFlcAgentRow(row, cls){
   const isCritical = alerts.hasAlert;
   const isWarning  = !isCritical && alerts.hasWarning;
 
-  /* Colours by severity */
-  let avBg, avCol, accentBorder, rowBg, badgeBg, badgeCol, badgeTxt;
+  const usedSecs = (row.breakSeconds||0)+(row.brbSeconds||0);
+  const pct = Math.min(999, Math.round(usedSecs/3600*100));
+
+  let leftCol, rowBg, avBg, avCol, dotCol, badgeBg, badgeCol, badgeTxt;
   if(isCritical){
-    avBg='#FEE2E2'; avCol='#B91C1C';
-    accentBorder='3px solid #f43f5e';
-    rowBg='rgba(244,63,94,.04)';
-    badgeBg='#FEE2E2'; badgeCol='#991B1B'; badgeTxt='⚠ Critical';
+    leftCol='#f43f5e'; rowBg='rgba(244,63,94,.05)';
+    avBg='#FEE2E2'; avCol='#B91C1C'; dotCol='#f43f5e';
+    badgeBg='#FEE2E2'; badgeCol='#991B1B'; badgeTxt='Critical';
   } else if(isWarning){
-    avBg='#FEF3C7'; avCol='#92400E';
-    accentBorder='3px solid #f59e0b';
-    rowBg='rgba(245,158,11,.04)';
-    badgeBg='#FEF3C7'; badgeCol='#B45309'; badgeTxt='• At limit';
+    leftCol='#f59e0b'; rowBg='rgba(245,158,11,.05)';
+    avBg='#FEF3C7'; avCol='#92400E'; dotCol='#f59e0b';
+    badgeBg='#FEF3C7'; badgeCol='#92400E'; badgeTxt='At limit';
   } else {
-    avBg=cfg.bg; avCol=cfg.c;
-    accentBorder='3px solid transparent';
-    rowBg='transparent';
-    badgeBg='#D1FAE5'; badgeCol='#065F46'; badgeTxt='Low risk';
+    leftCol='transparent'; rowBg='transparent';
+    avBg=cfg.bg; avCol=cfg.c; dotCol='#10b981';
+    badgeBg='transparent'; badgeCol='#6b7280'; badgeTxt='';
   }
 
-  /* Break usage % for the status sub-line */
-  const usedSecs = (row.breakSeconds||0) + (row.brbSeconds||0);
-  const pct      = Math.min(999, Math.round(usedSecs / 3600 * 100));
-  const pctColor = pct >= 100 ? '#f43f5e' : pct >= 80 ? '#f59e0b' : '#10b981';
-  const pctLabel = usedSecs > 0 ? ` · <span style="color:${pctColor};font-weight:600;">${pct}%</span>` : '';
+  const tooltip = (alerts.alertReasons||[]).join(' | ');
+  const init    = esc((row.username||'?').charAt(0).toUpperCase());
 
-  const init        = esc((row.username||'?').charAt(0).toUpperCase());
-  const statusLabel = cfg.label + ' · ' + dur;
-  const tooltip     = (alerts.alertReasons||[]).join(' | ') || statusLabel;
+  const badgeHtml = badgeTxt
+    ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${badgeBg};color:${badgeCol};letter-spacing:.03em;">${badgeTxt}</span>`
+    : '';
 
-  return `<div style="border-left:${accentBorder};background:${rowBg};border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;padding:9px 12px 9px 11px;transition:background .12s;"
-    onclick="openAgentBreakModal('${encodedName}')" title="${esc(tooltip)}"
-    onmouseenter="this.style.background='rgba(0,0,0,.025)'" onmouseleave="this.style.background='${rowBg}'">
-    <div style="display:flex!important;align-items:center;gap:10px;">
-      <div style="width:32px;height:32px;min-width:32px;border-radius:50%;display:flex!important;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:${avBg};color:${avCol};flex-shrink:0;">${init}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;color:#0f1724;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;">${esc(row.username)}</div>
-        <div style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35;">${esc(cfg.label + ' · ' + dur)}${pctLabel}</div>
+  const pctHtml = usedSecs>0
+    ? `<span style="font-size:10px;color:${pct>=100?'#f43f5e':pct>=80?'#f59e0b':'#9ca3af'};">${pct}%</span>`
+    : '';
+
+  return `<div style="display:flex!important;align-items:center;gap:0;border-left:3px solid ${leftCol};border-bottom:1px solid rgba(0,0,0,.04);background:${rowBg};cursor:pointer;transition:background .1s;"
+    onclick="openAgentBreakModal('${encodedName}')"
+    ${tooltip ? `title="${esc(tooltip)}"` : ''}
+    onmouseenter="this.style.background='rgba(0,0,0,.03)'" onmouseleave="this.style.background='${rowBg}'">
+    <div style="padding:8px 10px 8px 11px;flex-shrink:0;">
+      <div style="width:30px;height:30px;border-radius:50%;display:flex!important;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:${avBg};color:${avCol};">${init}</div>
+    </div>
+    <div style="flex:1;min-width:0;padding:8px 6px;">
+      <div style="font-size:12.5px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(row.username)}</div>
+      <div style="display:flex!important;align-items:center;gap:5px;margin-top:2px;">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${dotCol};flex-shrink:0;"></span>
+        <span style="font-size:10.5px;color:#6b7280;white-space:nowrap;">${esc(cfg.label)}</span>
+        <span style="font-size:10.5px;color:#9ca3af;">·</span>
+        <span style="font-size:10.5px;color:#374151;font-weight:500;">${esc(dur)}</span>
+        ${pctHtml ? `<span style="font-size:10.5px;color:#d1d5db;">·</span>${pctHtml}` : ''}
       </div>
-      <div style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;background:${badgeBg};color:${badgeCol};">${badgeTxt}</div>
+    </div>
+    <div style="padding:8px 12px;flex-shrink:0;display:flex!important;align-items:center;gap:6px;">
+      ${badgeHtml}
     </div>
   </div>`;
 }
@@ -26950,28 +26959,34 @@ function buildBreakLaneBoard(tracker){
 
   const awayGroups = mkGroup(brb,'brb') + mkGroup(onBreak,'break') + mkGroup(aux,'aux') + mkGroup(internal,'internal');
 
-  return `${searchBar}<div class="flc-meta-e">${compPillHtml}${nextRisk}</div>${alertBanner}${pills}
+  return `${searchBar}
+  <div style="padding:8px 12px 6px;display:flex!important;flex-direction:column;gap:3px;border-bottom:1px solid rgba(0,0,0,.07);">
+    ${compPillHtml ? `<span style="font-size:11px;font-weight:700;color:#374151;">${compPillHtml}</span>` : ''}
+    ${nextRisk}
+    ${alertBanner}
+  </div>
+  ${pills}
   <div class="flc-board">
     <div class="flc-col flc-col-avail">
-      <div class="flc-col-hdr">
-        <span class="flc-col-dot flc-pulse" style="background:#2DDC96;box-shadow:0 0 7px #2DDC96"></span>
-        Available
-        <span class="flc-col-badge" style="background:rgba(45,220,150,.15);color:#2DDC96">${avail.length}</span>
+      <div style="display:flex!important;align-items:center;gap:8px;padding:8px 14px 8px 17px;border-bottom:1px solid rgba(0,0,0,.07);background:#f8fafc;position:sticky;top:0;">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;box-shadow:0 0 0 2px rgba(16,185,129,.2);"></span>
+        <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#374151;">Available</span>
+        <span style="margin-left:auto;font-size:11px;font-weight:700;color:#10b981;">${avail.length}</span>
       </div>
       <div class="flc-col-rows">
         ${avail.length
           ? avail.map(r=>buildFlcAgentRow(r,'avail')).join('')
-          : '<div class="flc-empty-col">No agents available</div>'}
+          : '<div style="padding:16px;text-align:center;font-size:12px;color:#9ca3af;">No agents available</div>'}
       </div>
     </div>
     <div class="flc-col flc-col-away">
-      <div class="flc-col-hdr">
-        <span class="flc-col-dot" style="background:#ED666B"></span>
-        Away
-        <span class="flc-col-badge" style="background:rgba(237,102,107,.12);color:#ED666B">${away.length}</span>
+      <div style="display:flex!important;align-items:center;gap:8px;padding:8px 14px 8px 17px;border-bottom:1px solid rgba(0,0,0,.07);background:#f8fafc;position:sticky;top:0;">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f43f5e;"></span>
+        <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#374151;">Away</span>
+        <span style="margin-left:auto;font-size:11px;font-weight:700;color:#f43f5e;">${away.length}</span>
       </div>
       <div class="flc-col-rows">
-        ${away.length ? awayGroups : '<div class="flc-empty-col">Everyone is on desk</div>'}
+        ${away.length ? awayGroups : '<div style="padding:16px;text-align:center;font-size:12px;color:#9ca3af;">Everyone is on desk 👍</div>'}
       </div>
     </div>
   </div>`;
