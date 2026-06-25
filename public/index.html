@@ -26959,13 +26959,35 @@ function buildBreakLaneBoard(tracker){
 
   const awayGroups = mkGroup(brb,'brb') + mkGroup(onBreak,'break') + mkGroup(aux,'aux') + mkGroup(internal,'internal');
 
-  return `${searchBar}
-  <div style="padding:8px 12px 6px;display:flex!important;flex-direction:column;gap:3px;border-bottom:1px solid rgba(0,0,0,.07);">
-    ${compPillHtml ? `<span style="font-size:11px;font-weight:700;color:#374151;">${compPillHtml}</span>` : ''}
-    ${nextRisk}
-    ${alertBanner}
-  </div>
-  ${pills}
+  /* ── Compliance score card ── */
+  const compCard = totalReal > 0 ? `
+    <div style="display:flex!important;align-items:center;justify-content:space-between;padding:8px 14px;background:#fff;border-bottom:1px solid rgba(0,0,0,.06);">
+      <div style="display:flex!important;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:8px;display:flex!important;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:${compPct>=90?'#059669':compPct>=70?'#d97706':'#dc2626'};background:${compPct>=90?'#D1FAE5':compPct>=70?'#FEF3C7':'#FEE2E2'};">${compPct}</div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#111827;line-height:1.2;">Compliance</div>
+          <div style="font-size:10px;color:#6b7280;line-height:1.2;">${criticalAgents.length?criticalAgents.length+' over limit':warningAgents.length?warningAgents.length+' at limit':'All within limits'}</div>
+        </div>
+      </div>
+      ${nextRisk ? `<div style="font-size:10.5px;color:#6b7280;text-align:right;">${nextRisk}</div>` : ''}
+    </div>` : '';
+
+  /* ── Alert banner ── */
+  const bannerHtml = criticalAgents.length
+    ? `<div style="display:flex!important;align-items:center;gap:8px;padding:7px 14px;background:#FEF2F2;border-bottom:1px solid #FECACA;">
+        <span style="font-size:13px;">🚨</span>
+        <span style="font-size:11px;font-weight:600;color:#B91C1C;flex:1;">${criticalAgents.map(r=>esc(r.username)).join(', ')} — over break limit</span>
+        <span style="font-size:13px;cursor:pointer;color:#F87171;" onclick="this.parentNode.remove()">✕</span>
+       </div>`
+    : warningAgents.length
+    ? `<div style="display:flex!important;align-items:center;gap:8px;padding:7px 14px;background:#FFFBEB;border-bottom:1px solid #FDE68A;">
+        <span style="font-size:13px;">⚠️</span>
+        <span style="font-size:11px;font-weight:600;color:#92400E;flex:1;">${warningAgents.map(r=>esc(r.username)).join(', ')} — approaching limit</span>
+        <span style="font-size:13px;cursor:pointer;color:#FCD34D;" onclick="this.parentNode.remove()">✕</span>
+       </div>`
+    : '';
+
+  return `${searchBar}${compCard}${bannerHtml}${pills}
   <div class="flc-board">
     <div class="flc-col flc-col-avail">
       <div style="display:flex!important;align-items:center;gap:8px;padding:8px 14px 8px 17px;border-bottom:1px solid rgba(0,0,0,.07);background:#f8fafc;position:sticky;top:0;">
@@ -26976,7 +26998,7 @@ function buildBreakLaneBoard(tracker){
       <div class="flc-col-rows">
         ${avail.length
           ? avail.map(r=>buildFlcAgentRow(r,'avail')).join('')
-          : '<div style="padding:16px;text-align:center;font-size:12px;color:#9ca3af;">No agents available</div>'}
+          : '<div style="padding:20px;text-align:center;font-size:12px;color:#9ca3af;">No agents available</div>'}
       </div>
     </div>
     <div class="flc-col flc-col-away">
@@ -26986,7 +27008,7 @@ function buildBreakLaneBoard(tracker){
         <span style="margin-left:auto;font-size:11px;font-weight:700;color:#f43f5e;">${away.length}</span>
       </div>
       <div class="flc-col-rows">
-        ${away.length ? awayGroups : '<div style="padding:16px;text-align:center;font-size:12px;color:#9ca3af;">Everyone is on desk 👍</div>'}
+        ${away.length ? awayGroups : '<div style="padding:20px;text-align:center;font-size:12px;color:#9ca3af;">Everyone is on desk 👍</div>'}
       </div>
     </div>
   </div>`;
