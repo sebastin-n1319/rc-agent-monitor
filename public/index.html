@@ -21971,8 +21971,8 @@ tbody tr:hover td{
           </div>
         </div>
 
-        <!-- ── Weekend Support Mode Manual Toggle ────────────────────── -->
-        <div id="tl-wkd-manual-toggle-wrap" style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+        <!-- ── Weekend Support Mode Manual Toggle (admin only) ──────── -->
+        <div id="tl-wkd-manual-toggle-wrap" style="margin-top:6px;display:none;align-items:center;gap:8px;">
           <button id="tl-wkd-manual-btn"
             onclick="tlToggleWeekendManual()"
             style="display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:8px;border:1.5px solid rgba(244,137,31,.35);background:rgba(244,137,31,.06);color:#B45309;font-size:11.5px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">
@@ -23191,7 +23191,12 @@ function switchAgentSection(section,el){
   configureAgentBreakbotAccess();
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
   if(section==='breakbot')loadBreakTracker();
-  if(section==='tickets'){ setTimeout(initTlTooltips,80); setTimeout(tlInitDate,50); loadMyTicketsFromSheet(); setTimeout(tlInitWeekendMode, 150); }
+  if(section==='tickets'){
+    setTimeout(initTlTooltips,80); setTimeout(tlInitDate,50); loadMyTicketsFromSheet(); setTimeout(tlInitWeekendMode, 150);
+    // Only admins can manually toggle weekend mode
+    const wkdToggleWrap = document.getElementById('tl-wkd-manual-toggle-wrap');
+    if (wkdToggleWrap) wkdToggleWrap.style.display = currentRole === 'admin' ? 'flex' : 'none';
+  }
   if(section==='writer')setTimeout(initAIWriter,50);
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
@@ -27746,7 +27751,10 @@ function switchTab(tab,el){
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
-  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); setTimeout(tlInitWeekendMode, 200); }
+  if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); setTimeout(tlInitWeekendMode, 200);
+    const wkdToggleWrap2 = document.getElementById('tl-wkd-manual-toggle-wrap');
+    if (wkdToggleWrap2) wkdToggleWrap2.style.display = currentRole === 'admin' ? 'flex' : 'none';
+  }
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='ai-agent') laLoadStats();
   if(tab==='debug') loadDebugPanel();
