@@ -20463,7 +20463,7 @@ tbody tr:hover td{
 
     <!-- Table -->
     <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:10px;overflow:hidden;box-shadow:rgba(0,0,0,0.05) 0px 2px 12px;">
-      <div style="display:grid;grid-template-columns:110px 1fr 90px 70px 1fr 90px 80px;gap:6px 12px;padding:10px 16px;background:rgb(247,248,248);border-bottom:1px solid rgb(222,225,230);">
+      <div style="display:grid;grid-template-columns:110px 1fr 90px 70px 1fr 90px 80px 50px;gap:6px 12px;padding:10px 16px;background:rgb(247,248,248);border-bottom:1px solid rgb(222,225,230);">
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('ticketId')">Ticket ID <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('agentName')">Agent <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;">Channel</span>
@@ -20471,6 +20471,7 @@ tbody tr:hover td{
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('ticketType')">Type <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;cursor:pointer;" onclick="tktSort('date')">Date <svg viewBox="0 0 12 14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:9px;height:10px;display:inline;vertical-align:-1px;opacity:.65"><path d="M3 9l-2 2 2 2M1 11h7M9 5l2-2-2-2M11 3H4"/></svg></span>
         <span style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.08em;">Flag</span>
+        <span style="font-size:10px;font-weight:700;color:#F4891F;text-transform:uppercase;letter-spacing:.08em;">Edit</span>
       </div>
       <div id="tkt-admin-list" style="max-height:580px;overflow-y:auto;">
         <div style="text-align:center;padding:40px;color:#9BAFC0;font-size:13px;">Click Tickets tab to load</div>
@@ -25749,7 +25750,8 @@ function renderAdminTicketList(tickets) {
       ? `<span style="background:rgba(251,200,75,.12);color:#D97706;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.05em;">BACKLOG</span>`
       : `<span style="color:#C8D0DC;font-size:11px;">—</span>`;
     const shortType = (t.ticketType||'—').replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New - Transferred','Transferred');
-    return `<div style="display:grid;grid-template-columns:110px 1fr 90px 70px 1fr 90px 80px;gap:6px 12px;padding:10px 16px;border-bottom:1px solid rgb(222,225,230);align-items:center;transition:background .12s;animation:fadeUp .2s ease both;animation-delay:${Math.min(i,20)*0.01}s" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='transparent'">
+    const tJson = JSON.stringify(t).replace(/"/g,'&quot;');
+    return `<div style="display:grid;grid-template-columns:110px 1fr 90px 70px 1fr 90px 80px 50px;gap:6px 12px;padding:10px 16px;border-bottom:1px solid rgb(222,225,230);align-items:center;transition:background .12s;animation:fadeUp .2s ease both;animation-delay:${Math.min(i,20)*0.01}s" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='transparent'">
       <span style="font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${t.ticketId||'—'}</span>
       <span style="font-size:12px;font-weight:600;color:#072B40;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.agentName}">${t.agentName||'—'}</span>
       <span style="background:${chC}22;color:${chC};padding:3px 9px;border-radius:50px;font-size:11px;font-weight:700;display:inline-flex;width:fit-content;">${ch}</span>
@@ -25757,6 +25759,9 @@ function renderAdminTicketList(tickets) {
       <span style="font-size:12px;color:#3A5068;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.ticketType}">${shortType}</span>
       <span style="font-size:11px;color:#9BAFC0;white-space:nowrap;">${t.date||''} <span style="color:#C8D0DC;">${t.month||''}</span></span>
       ${flagBadge}
+      <button onclick="tlOpenEditModal(JSON.parse(this.dataset.t))" data-t="${tJson}" title="Edit ticket"
+        style="padding:4px 10px;border:1px solid rgba(244,137,31,.35);border-radius:6px;background:rgba(244,137,31,.07);color:#C05609;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;white-space:nowrap;transition:all .15s;"
+        onmouseover="this.style.background='rgba(244,137,31,.18)'" onmouseout="this.style.background='rgba(244,137,31,.07)'">✏ Edit</button>
     </div>`;
   }).join('');
 }
