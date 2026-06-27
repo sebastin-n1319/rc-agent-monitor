@@ -21970,6 +21970,17 @@ tbody tr:hover td{
           </div>
         </div>
 
+        <!-- ── Weekend Support Mode Manual Toggle ────────────────────── -->
+        <div id="tl-wkd-manual-toggle-wrap" style="margin-top:6px;display:flex;align-items:center;gap:8px;">
+          <button id="tl-wkd-manual-btn"
+            onclick="tlToggleWeekendManual()"
+            style="display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:8px;border:1.5px solid rgba(244,137,31,.35);background:rgba(244,137,31,.06);color:#B45309;font-size:11.5px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="2" y="4" width="16" height="14" rx="2.5"/><path d="M2 8h16M7 2v4M13 2v4"/></svg>
+            Weekend Support Mode: OFF
+          </button>
+          <span style="font-size:10.5px;color:#9BAFC0;">Toggle for manual/backdated entries</span>
+        </div>
+
         <!-- ── WEEKEND MODE EXTRA FIELDS ──────────────────────────────── -->
         <div id="tl-weekend-section" style="display:none;margin-top:8px;">
 
@@ -22005,6 +22016,7 @@ tbody tr:hover td{
               <button class="tl-wkd-chip" data-group="wkd-dept" data-val="T2 Core" onclick="tlWkdSelect(this,'wkd-dept')">T2 Core</button>
               <button class="tl-wkd-chip" data-group="wkd-dept" data-val="Practice Analytics" onclick="tlWkdSelect(this,'wkd-dept')">Practice Analytics</button>
               <button class="tl-wkd-chip" data-group="wkd-dept" data-val="AI Support" onclick="tlWkdSelect(this,'wkd-dept')">AI Support</button>
+              <button class="tl-wkd-chip" data-group="wkd-dept" data-val="Billing" onclick="tlWkdSelect(this,'wkd-dept')">Billing</button>
             </div>
           </div>
 
@@ -24122,6 +24134,41 @@ function tlFilterMyTickets() {
 
 // ── Edit Modal ─────────────────────────────────────────────────────────────
 let tlEditOriginalId = '';   // original ticketId before any edits
+let tlWkdManualOverride = false; // admin manual weekend mode toggle
+
+function tlToggleWeekendManual() {
+  tlWkdManualOverride = !tlWkdManualOverride;
+  const section = document.getElementById('tl-weekend-section');
+  const btn     = document.getElementById('tl-wkd-manual-btn');
+  if (!section) return;
+  if (tlWkdManualOverride) {
+    section.style.display = 'block';
+    section.style.opacity = '0'; section.style.transform = 'translateY(8px)';
+    requestAnimationFrame(() => {
+      section.style.transition = 'opacity .3s ease, transform .3s ease';
+      section.style.opacity = '1'; section.style.transform = 'translateY(0)';
+    });
+    if (btn) {
+      btn.textContent = '';
+      btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="2" y="4" width="16" height="14" rx="2.5"/><path d="M2 8h16M7 2v4M13 2v4"/></svg> Weekend Support Mode: ON`;
+      btn.style.background = 'rgba(244,137,31,.15)';
+      btn.style.borderColor = 'rgba(244,137,31,.6)';
+      btn.style.color = '#C05609';
+    }
+  } else {
+    // Let date-based check decide; if it's not a weekend date, hide
+    const selectedDate = document.getElementById('tl-log-date')?.value || '';
+    if (!isWeekendCST(selectedDate)) {
+      section.style.display = 'none';
+    }
+    if (btn) {
+      btn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><rect x="2" y="4" width="16" height="14" rx="2.5"/><path d="M2 8h16M7 2v4M13 2v4"/></svg> Weekend Support Mode: OFF`;
+      btn.style.background = 'rgba(244,137,31,.06)';
+      btn.style.borderColor = 'rgba(244,137,31,.35)';
+      btn.style.color = '#B45309';
+    }
+  }
+}
 
 function tlOpenEditModal(t) {
   // t can be a plain object (from pivot) or an escaped JSON string (from onclick attr)
@@ -25065,6 +25112,7 @@ function renderTlTodaySubmissions() {
   }
 
   const chColors = { Email:'#21AAE0', Chat:'#2DDC96', Phone:'#F4891F', Web:'#9B59B6' };
+  const isAdmin = currentRole === 'admin';
   list.innerHTML = `
     <table style="width:100%;border-collapse:collapse;font-size:13px;">
       <thead>
@@ -25073,6 +25121,7 @@ function renderTlTodaySubmissions() {
           <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Type</th>
           <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Channel</th>
           <th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:left;">Queue</th>
+          ${isAdmin ? `<th style="padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9BAFC0;text-align:center;">Edit</th>` : ''}
         </tr>
       </thead>
       <tbody>
@@ -25084,11 +25133,16 @@ function renderTlTodaySubmissions() {
           const qBadge = q === 'Yes' ? `<span style="color:#2DDC96;font-size:11px;font-weight:700;">✓ Yes</span>`
                        : q === 'No'  ? `<span style="color:#ED666B;font-size:11px;font-weight:700;">✗ No</span>`
                        : `<span style="color:#9BAFC0;font-size:11px;">—</span>`;
+          const tJson = JSON.stringify(t).replace(/"/g,'&quot;');
+          const editBtn = isAdmin
+            ? `<td style="padding:6px 12px;text-align:center;"><button onclick="tlOpenEditModal(JSON.parse(this.dataset.t))" data-t="${tJson}" style="padding:4px 10px;border:1px solid rgba(244,137,31,.35);border-radius:6px;background:rgba(244,137,31,.07);color:#C05609;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;" onmouseover="this.style.background='rgba(244,137,31,.15)'" onmouseout="this.style.background='rgba(244,137,31,.07)'">✏ Edit</button></td>`
+            : '';
           return `<tr style="border-bottom:1px solid rgb(222,225,230);transition:background .12s;" onmouseover="this.style.background='#FAFAFA'" onmouseout="this.style.background='transparent'">
             <td style="padding:9px 12px;font-weight:700;color:#21AAE0;">${t.ticketId}</td>
             <td style="padding:9px 12px;color:#3A5068;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortType}</td>
             <td style="padding:9px 12px;"><span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:11px;font-weight:700;">${ch}</span></td>
             <td style="padding:9px 12px;">${qBadge}</td>
+            ${editBtn}
           </tr>`;
         }).join('')}
       </tbody>

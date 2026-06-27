@@ -2315,6 +2315,43 @@ app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => 
   }
 });
 
+// PUT /api/tickets/:ticketId — admin corrects a logged ticket row in the sheet
+app.put('/api/tickets/:ticketId', requireAdmin, async (req, res) => {
+  try {
+    if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
+    const rawId  = decodeURIComponent(req.params.ticketId);
+    const { ticketType, channel, pickedFromQueue } = req.body || {};
+
+    const sheets = getTicketSheetsClient();
+    const resp = await sheets.spreadsheets.values.get({
+      spreadsheetId: TICKET_SHEET_ID,
+      range: `'${TICKET_SHEET_TAB}'!A:E`,
+    });
+    const rows  = resp.data.values || [];
+    // row index 0 = header; find first matching ticketId (col A)
+    const rowIdx = rows.findIndex((r, i) => i > 0 && (r[0]||'').trim() === rawId.trim());
+    if (rowIdx === -1) return res.status(404).json({ success: false, error: 'Ticket not found' });
+
+    const sheetRow = rowIdx + 1; // 1-based sheet row
+    const updates  = [];
+    if (channel        !== undefined) updates.push({ range: `'${TICKET_SHEET_TAB}'!C${sheetRow}`, values: [[channel]] });
+    if (pickedFromQueue !== undefined) updates.push({ range: `'${TICKET_SHEET_TAB}'!D${sheetRow}`, values: [[pickedFromQueue]] });
+    if (ticketType     !== undefined) updates.push({ range: `'${TICKET_SHEET_TAB}'!E${sheetRow}`, values: [[ticketType]] });
+
+    if (updates.length) {
+      await sheets.spreadsheets.values.batchUpdate({
+        spreadsheetId: TICKET_SHEET_ID,
+        requestBody: { valueInputOption: 'RAW', data: updates },
+      });
+    }
+    insertAuditLog(req.session.email, 'ticket_edit', rawId, JSON.stringify({ ticketType, channel, pickedFromQueue })).catch(() => {});
+    res.json({ success: true });
+  } catch(e) {
+    console.error('❌ ticket edit error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // GET /api/tickets/weekend-summary — reads the weekend sheet and builds a Google Chat–ready report
 // Query params: start=YYYY-MM-DD  end=YYYY-MM-DD  (both required)
 app.get('/api/tickets/weekend-summary', requireAdmin, async (req, res) => {
