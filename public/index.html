@@ -21573,7 +21573,7 @@ tbody tr:hover td{
   </div><!-- /#agent-section-breakbot -->
   <div class="agent-shell-page" id="agent-section-hall">
     <div class="card hof-frame-shell">
-      <iframe class="hof-frame" src="/hall-of-fame.html" title="Hall of Fame Agent Section"></iframe>
+      <iframe class="hof-frame" id="agent-hof-frame" src="/hall-of-fame.html" title="Hall of Fame Agent Section"></iframe>
     </div>
   </div>
   <div class="agent-shell-page" id="agent-section-bonus">
@@ -23283,6 +23283,16 @@ function switchAgentSection(section,el){
   if(next)next.classList.add('active');
   if(el)el.classList.add('active');
   configureAgentBreakbotAccess();
+  // Growth Blueprint privacy: pass logged-in agent name so HOF iframe can filter to their card only
+  if(section==='hall' && currentRole!=='admin' && currentUser){
+    const agentHofFrame=document.getElementById('agent-hof-frame');
+    if(agentHofFrame){
+      const desired='/hall-of-fame.html?user='+encodeURIComponent(currentUser);
+      if(!agentHofFrame.src.endsWith(encodeURIComponent(currentUser))){
+        agentHofFrame.src=desired;
+      }
+    }
+  }
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
   if(section==='breakbot')loadBreakTracker();
   if(section==='tickets'){
