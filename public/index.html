@@ -26,20 +26,14 @@
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.100" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.7" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
-<link rel="stylesheet" href="/schedule-admin.css" id="schedule-admin-link">
-<link rel="stylesheet" href="/anomaly-center.css" id="anomaly-center-link">
 <link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
 <link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
-<link rel="stylesheet" href="/predict-center.css" id="predict-center-link">
 <!-- Session 16: Roster admin (T1 CS Team Roster replacement) -->
 <link rel="stylesheet" href="/roster-admin.css?v=1.19.137" id="roster-admin-link">
 <script src="/agent-view-v2.js?v=1.19.7" defer></script>
 <script src="/alert-center.js?v=1.19.7" defer></script>
-<script src="/schedule-admin.js?v=1.19.7" defer></script>
-<script src="/anomaly-center.js?v=1.19.7" defer></script>
 <script src="/offline-bridge.js?v=1.19.7" defer></script>
 <script src="/bulk-actions.js?v=1.19.7" defer></script>
-<script src="/predict-center.js?v=1.19.7" defer></script>
 <script src="/roster-admin.js?v=1.19.85" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
@@ -9761,20 +9755,14 @@ html.dark-mode .flc-row-enhanced{border-bottom-color:rgba(255,255,255,.05)}
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.100" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.7" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
-<link rel="stylesheet" href="/schedule-admin.css" id="schedule-admin-link">
-<link rel="stylesheet" href="/anomaly-center.css" id="anomaly-center-link">
 <link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
 <link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
-<link rel="stylesheet" href="/predict-center.css" id="predict-center-link">
 <!-- Session 16: Roster admin (T1 CS Team Roster replacement) -->
 <link rel="stylesheet" href="/roster-admin.css?v=1.19.137" id="roster-admin-link">
 <script src="/agent-view-v2.js?v=1.19.7" defer></script>
 <script src="/alert-center.js?v=1.19.7" defer></script>
-<script src="/schedule-admin.js?v=1.19.7" defer></script>
-<script src="/anomaly-center.js?v=1.19.7" defer></script>
 <script src="/offline-bridge.js?v=1.19.7" defer></script>
 <script src="/bulk-actions.js?v=1.19.7" defer></script>
-<script src="/predict-center.js?v=1.19.7" defer></script>
 <script src="/roster-admin.js?v=1.19.85" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
@@ -19469,11 +19457,6 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M12 8v4l2.5 2.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
     <span class="sb-label">Live</span>
   </div>
-  <div class="sb-item" id="sb-reports" title="Reports"
-       onclick="sbAdmin('reports',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-    <span class="sb-label">Reports</span>
-  </div>
   <div class="sb-item" id="sb-agents" title="Manage Agents"
        onclick="sbAdmin('agents',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="8" r="2.5"/><path d="M21 20c0-2.8-1.8-5-4-5.4"/></svg>
@@ -19483,24 +19466,6 @@ tbody tr:hover td{
        onclick="sbAdmin('breaks',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
     <span class="sb-label">Breaks</span>
-  </div>
-  <!-- Session 5: Schedule Adherence — admin can edit shifts + view exceptions -->
-  <div class="sb-item" id="sb-schedules" title="Schedule Adherence (T)"
-       onclick="openScheduleAdmin(this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h3M13 14h3M8 17h3"/></svg>
-    <span class="sb-label">Schedule</span>
-  </div>
-  <!-- Session 7: Anomaly Center — z-score detection drill-down -->
-  <div class="sb-item" id="sb-anomalies" title="Anomaly Center (N)"
-       onclick="openAnomalyCenter(this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l4-5 4 4 5-7 5 9"/><circle cx="7" cy="12" r="1.5" fill="currentColor"/><circle cx="11" cy="16" r="1.5" fill="currentColor"/><circle cx="16" cy="9" r="1.5" fill="currentColor"/></svg>
-    <span class="sb-label">Anomalies</span>
-  </div>
-  <!-- Session 12: Predict Center — forecast + backtest -->
-  <div class="sb-item" id="sb-forecast" title="Predictive Abandonment (Y)"
-       onclick="openPredictCenter(this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-7 7-7 9 0s6 7 9 0"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="21" cy="12" r="1.5" fill="currentColor"/><path d="M12 4v2M12 18v2"/></svg>
-    <span class="sb-label">Forecast</span>
   </div>
   <div class="sb-item" id="sb-calllogs" title="Call Logs"
        onclick="sbAdmin('calllogs',this)">
@@ -19648,7 +19613,6 @@ tbody tr:hover td{
 <div id="adminView">
   <div class="nav">
     <button class="nav-tab active" data-tab="live" onclick="switchTab('live',this)">Live Dashboard</button>
-    <button class="nav-tab" data-tab="reports" onclick="switchTab('reports',this)">Reports</button>
     <button class="nav-tab" data-tab="agents" onclick="switchTab('agents',this)">Manage Agents</button>
     <button class="nav-tab" data-tab="access" onclick="switchTab('access',this)">Access Control</button>
     <button class="nav-tab" data-tab="loginlogs" onclick="switchTab('loginlogs',this)">Login Logs</button>
@@ -19912,59 +19876,6 @@ tbody tr:hover td{
     </div>
   </div>
 
-  <!-- REPORTS -->
-  <div class="page" id="tab-reports">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <label style="font-size:11px;color:var(--text2);font-weight:500;">Date</label>
-        <input type="date" id="date-picker" onchange="loadReport()" style="background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:10px;font-size:12px;outline:none;font-family:'Inter',sans-serif;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--orange)'" onblur="this.style.borderColor='var(--border)'">
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-success btn-sm" onclick="downloadCSV()">&#11015; Export CSV</button>
-        <button class="btn btn-snap btn-sm" onclick="downloadSnapshot()">&#128248; PNG Snapshot</button>
-      </div>
-    </div>
-    <div class="rpt-grid">
-      <div class="rpt-stat"><div class="rpt-lbl">Agents</div><div class="rpt-val" id="rs-agents" style="color:var(--orange)">--</div></div>
-      <div class="rpt-stat"><div class="rpt-lbl">Total Available</div><div class="rpt-val" id="rs-avail" style="color:var(--green)">--</div></div>
-      <div class="rpt-stat"><div class="rpt-lbl">Total Unavailable</div><div class="rpt-val" id="rs-unavail" style="color:var(--red)">--</div></div>
-      <div class="rpt-stat"><div class="rpt-lbl">Total Missed</div><div class="rpt-val" id="rs-missed" style="color:var(--red)">--</div></div>
-    </div>
-    <!-- FEAT-7: 7-day trend chart -->
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-hdr">
-        <span class="card-title">7-Day Performance Trend</span>
-        <select id="trend-agent-select" onchange="renderTrendChart()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;color:var(--t1);font-size:12px;padding:4px 8px;cursor:pointer;">
-          <option value="">All agents (avg)</option>
-        </select>
-        <select id="trend-metric-select" onchange="renderTrendChart()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;color:var(--t1);font-size:12px;padding:4px 8px;cursor:pointer;">
-          <option value="inboundCalls">Inbound Calls</option>
-          <option value="outboundCalls">Outbound Calls</option>
-          <option value="missedCalls">Missed Calls</option>
-          <option value="ahtInbound">AHT (min)</option>
-          <option value="score">Score</option>
-        </select>
-        <button onclick="loadTrendData()" style="background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:6px;color:var(--t2);font-size:11px;padding:4px 10px;cursor:pointer;margin-left:auto;">Refresh</button>
-      </div>
-      <div style="position:relative;height:220px;padding:0 4px;">
-        <canvas id="trend-chart" role="img" aria-label="7-day performance trend chart"></canvas>
-      </div>
-      <div id="trend-loading" style="text-align:center;padding:20px;color:var(--t3);font-size:12px;">Loading trend data…</div>
-    </div>
-
-    <div class="card" id="report-card">
-      <div class="card-hdr">
-        <span class="card-title">Agent Performance Breakdown</span>
-        <span class="chip" id="report-date-label">Select a date</span>
-      </div>
-      <div class="tbl-wrap">
-      <table>
-        <thead><tr><th>#</th><th>Agent</th><th>Ext</th><th>Available</th><th>Unavailable</th><th>Avail %</th><th>Toggles</th><th>Inbound</th><th>Outbound</th><th>Missed</th><th>Miss %</th><th>AHT In</th><th>AHT Out</th><th>Score</th></tr></thead>
-        <tbody id="report-table"><tr><td colspan="14" class="no-data">Select a date above</td></tr></tbody>
-      </table>
-      </div>
-    </div>
-  </div>
 
   <!-- AGENTS -->
   <div class="page" id="tab-agents">
@@ -37503,12 +37414,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       callCorrelation: false,
       virtualScroll: false,
       predictiveAbandonment: false,    // legacy stub flag, kept for compatibility
-      // Session 14: flipped these from false → true. They've been "preview"
-      // since Sessions 4-12 but the engines + tests have been stable and
-      // admins were complaining the features weren't reachable from the UI.
-      // Sidebar entries (sb-schedules/anomalies/forecast) need the modal
-      // to actually open, not just toast. Per-user override still works
-      // via setFlag(name, false) in DevTools.
+      // Legacy flags — features removed from UI but kept as stubs for compatibility.
       predictiveAbandonmentV2: true,   // Session 11 — real logistic regression
       scheduleAdherence: false,     // legacy stub flag, kept for compatibility
       scheduleAdherenceV2: true,    // Session 4 — real engine
