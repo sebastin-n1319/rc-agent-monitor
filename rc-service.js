@@ -1,6 +1,6 @@
 const RC = require('@ringcentral/sdk').SDK;
 const { EventEmitter } = require('events');
-const { insertPresenceEvent, replaceCallLogsRange, insertCallLog, getMonitoredAgents, updateAgentRcId } = require('./database');
+const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents, updateAgentRcId } = require('./database');
 require('dotenv').config();
 
 const rcsdk = new RC({
@@ -1924,9 +1924,9 @@ async function fetchRawRecentMissedLog(minutesBack = 15) {
   }));
 }
 
-// Backfill historical call data from RC API into call_logs (INSERT OR IGNORE — safe to re-run).
+// Backfill historical call data DIRECTLY into call_monthly_summary (never touches call_logs).
+// Aggregates in-memory per agent per month, then upserts ~1 row per agent-month into the DB.
 // fromMonth / toMonth are "YYYY-MM" strings, e.g. "2026-04" to "2026-06".
-// Inserts raw logs so refreshMonthlySummary() can aggregate them afterward.
 async function backfillCallHistory(fromMonth, toMonth) {
   const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
   if (!agents.length) return { agents: 0, calls: 0, months: 0, monthsList: [] };
@@ -1941,9 +1941,11 @@ async function backfillCallHistory(fromMonth, toMonth) {
   }
 
   let totalCalls = 0;
+  // results: Map of "agentId::month" -> aggregated metrics object
+  const summaries = [];
+
   for (const month of months) {
     const [y, mo] = month.split('-').map(Number);
-    // Use IST-aligned boundaries: month start at IST midnight, end at next month's IST midnight
     const dateFrom = new Date(`${month}-01T00:00:00+05:30`).toISOString();
     const nextY = mo === 12 ? y + 1 : y;
     const nextMo = mo === 12 ? 1 : mo + 1;
@@ -1955,28 +1957,54 @@ async function backfillCallHistory(fromMonth, toMonth) {
         const calls = await listExtensionCallLogRecords(agent.rc_id, {
           dateFrom, dateTo, perPage: 200, view: 'Detailed'
         });
+
+        // Aggregate in memory — no DB writes for raw records
+        const m = { inbound:0, outbound:0, total:0, missed:0, inboundMissed:0, answeredInbound:0,
+          inboundTalkTime:0, outboundTalkTime:0, totalTalkTime:0,
+          transfers:0, holdTime:0, voicemails:0, ahtSum:0, ahtCount:0, ringSum:0, ringCount:0 };
+
         for (const call of calls) {
           const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
-          await insertCallLog({
-            agentId: agent.rc_id, agentName: agent.name, callId: call.id,
-            sourceCallId: call.sessionId || null,
-            direction: inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null)),
-            result: call.result, duration: call.duration || 0,
-            ringDuration, holdDuration, transferred, isVoicemail,
-            fromNumber: call.from?.phoneNumber || call.from?.extensionNumber || null,
-            toNumber:   call.to?.phoneNumber   || call.to?.extensionNumber   || null,
-            queueName:  call.to?.name || null,
-            startTime:  call.startTime
-          });
+          const dir = inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null));
+          const result = (call.result || '').toLowerCase();
+          const dur = call.duration || 0;
+          const isMissed = ['missed','abandoned'].includes(result);
+          const isVm = isVoicemail || result === 'voicemail';
+          const isAnswered = !isMissed && !isVm && dur > 0;
+
+          m.total++;
+          if (dir === 'Inbound')  m.inbound++;
+          if (dir === 'Outbound') m.outbound++;
+          if (isMissed) m.missed++;
+          if (isMissed && dir === 'Inbound') m.inboundMissed++;
+          if (isVm) m.voicemails++;
+          if (transferred) m.transfers++;
+          m.holdTime += holdDuration || 0;
+          if (isAnswered) {
+            if (dir === 'Inbound')  { m.inboundTalkTime += dur; m.answeredInbound++; }
+            if (dir === 'Outbound')  m.outboundTalkTime += dur;
+            m.totalTalkTime += dur;
+            m.ahtSum += dur; m.ahtCount++;
+          }
+          if ((ringDuration||0) > 0) { m.ringSum += ringDuration; m.ringCount++; }
           totalCalls++;
         }
-        console.log(`📞 Backfill ${month} ${agent.name}: ${calls.length} calls`);
+
+        const aht = m.ahtCount > 0 ? Math.round(m.ahtSum / m.ahtCount) : 0;
+        const avgRing = m.ringCount > 0 ? Math.round(m.ringSum / m.ringCount) : 0;
+        summaries.push({ agentId: agent.rc_id, agentName: agent.name, month,
+          inbound: m.inbound, outbound: m.outbound, total: m.total,
+          missed: m.missed, inboundMissed: m.inboundMissed, answeredInbound: m.answeredInbound,
+          inboundTalkTime: m.inboundTalkTime, outboundTalkTime: m.outboundTalkTime,
+          totalTalkTime: m.totalTalkTime, ahtSeconds: aht,
+          transfers: m.transfers, holdTime: m.holdTime, voicemails: m.voicemails, avgRingTime: avgRing });
+        console.log(`📞 Backfill ${month} ${agent.name}: ${calls.length} calls (in-memory, no call_logs write)`);
       } catch(e) {
         console.error(`❌ Backfill ${month} ${agent.name}:`, e.message);
       }
     }
   }
-  return { agents: agents.length, calls: totalCalls, months: months.length, monthsList: months };
+  return { agents: agents.length, calls: totalCalls, months: months.length, monthsList: months, summaries };
 }
 
 module.exports = {

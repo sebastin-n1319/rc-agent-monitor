@@ -343,6 +343,17 @@ function escapeHtml(str) {
 
 initDB().then(async () => {
   console.log('DB ready');
+  // EMERGENCY: aggressively prune call_logs to 2 days on startup to prevent disk bloat
+  // (historical data is now kept in call_monthly_summary, not call_logs)
+  try {
+    const { db: _edb } = require('./database');
+    await new Promise((rs,rj) => _edb.run(
+      `DELETE FROM call_logs WHERE date(start_time) < date('now','-2 days')`,
+      [], (err) => err ? rj(err) : rs()
+    ));
+    await new Promise((rs,rj) => _edb.run('VACUUM', [], (err) => err ? rj(err) : rs()));
+    console.log('🧹 Emergency startup prune: call_logs trimmed to 2 days + VACUUM done');
+  } catch(e) { console.warn('⚠️ Emergency prune skipped:', e.message); }
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
   try {
     const r = await pruneOldData();
@@ -1214,15 +1225,21 @@ app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
   res.json({ success: true, message: `Backfill started for ${fromMonth} → ${toMonth}. Data will appear within a few minutes.` });
   try {
     const stats = await backfillCallHistory(fromMonth, toMonth);
-    console.log(`✅ Backfill complete:`, stats);
-    // Aggregate each backfilled month into the summary table
+    console.log(`✅ Backfill complete: ${stats.calls} calls across ${stats.months} months`);
+    // Write the in-memory aggregates directly to call_monthly_summary (no call_logs bloat)
     const { db: _db } = require('./database');
-    const months = await new Promise((rs,rj) => _db.all(
-      `SELECT DISTINCT strftime('%Y-%m', start_time) AS m FROM call_logs WHERE agent_name IS NOT NULL`,
-      [], (err,rows) => err?rj(err):rs(rows||[])
+    const upsert = (s) => new Promise((rs,rj) => _db.run(
+      `INSERT OR REPLACE INTO call_monthly_summary
+        (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
+         inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [s.agentId,s.agentName,s.month,s.inbound,s.outbound,s.total,s.missed,s.inboundMissed,s.answeredInbound,
+       s.inboundTalkTime,s.outboundTalkTime,s.totalTalkTime,s.ahtSeconds,s.transfers,s.holdTime,s.voicemails,s.avgRingTime,
+       new Date().toISOString()],
+      (err) => err ? rj(err) : rs()
     ));
-    for (const { m } of months) { await refreshMonthlySummary(m).catch(() => {}); }
-    console.log(`📊 Backfill: refreshed ${months.length} monthly summaries`);
+    for (const s of (stats.summaries || [])) { await upsert(s).catch(e => console.error('upsert err:', e.message)); }
+    console.log(`📊 Backfill: wrote ${(stats.summaries||[]).length} rows to call_monthly_summary`);
   } catch(e) {
     console.error('❌ backfill error:', e.message);
   } finally {
