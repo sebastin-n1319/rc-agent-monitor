@@ -1927,9 +1927,17 @@ async function fetchRawRecentMissedLog(minutesBack = 15) {
 // Backfill historical call data DIRECTLY into call_monthly_summary (never touches call_logs).
 // Aggregates in-memory per agent per month, then upserts ~1 row per agent-month into the DB.
 // fromMonth / toMonth are "YYYY-MM" strings, e.g. "2026-04" to "2026-06".
-async function backfillCallHistory(fromMonth, toMonth) {
+// Helper: fetch with a hard timeout so RC rate-limit 65s waits can't block forever
+function fetchWithTimeout(promise, ms = 20000) {
+  return Promise.race([
+    promise,
+    new Promise((_, rj) => setTimeout(() => rj(new Error(`timeout after ${ms}ms`)), ms))
+  ]);
+}
+
+async function backfillCallHistory(fromMonth, toMonth, onSummary) {
   const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
-  if (!agents.length) return { agents: 0, calls: 0, months: 0, monthsList: [] };
+  if (!agents.length) return { agents: 0, calls: 0, months: 0, monthsList: [], summaries: [] };
 
   // Build ordered month list
   const months = [];
@@ -1941,7 +1949,6 @@ async function backfillCallHistory(fromMonth, toMonth) {
   }
 
   let totalCalls = 0;
-  // results: Map of "agentId::month" -> aggregated metrics object
   const summaries = [];
 
   for (const month of months) {
@@ -1953,12 +1960,34 @@ async function backfillCallHistory(fromMonth, toMonth) {
 
     for (const agent of agents) {
       try {
-        await sleep(1500);
-        const calls = await listExtensionCallLogRecords(agent.rc_id, {
-          dateFrom, dateTo, perPage: 200, view: 'Detailed'
-        });
+        await sleep(500); // shorter sleep — timeout handles rate limit hangs
 
-        // Aggregate in memory — no DB writes for raw records
+        // If RC is rate-limited with >8s remaining, wait it out (max 70s) before calling
+        const rlRemaining = Math.max(0, _rcRateLimitedUntil - Date.now());
+        if (rlRemaining > 0) {
+          const waitMs = Math.min(rlRemaining + 500, 70000);
+          console.log(`⏳ Backfill waiting ${Math.ceil(waitMs/1000)}s for RC rate-limit to clear (${agent.name} ${month})…`);
+          await sleep(waitMs);
+        }
+
+        // Fetch only first 2 pages (500 calls max per agent/month) with 20s timeout
+        const calls = await fetchWithTimeout(
+          (async () => {
+            const recs = [];
+            for (let page = 1; page <= 2; page++) {
+              const data = await rcGet(
+                `/restapi/v1.0/account/~/extension/${agent.rc_id}/call-log`,
+                { dateFrom, dateTo, perPage: 250, view: 'Detailed', page }
+              );
+              recs.push(...(data.records || []));
+              if (!data.navigation?.nextPage || !(data.records||[]).length) break;
+            }
+            return recs;
+          })(),
+          20000
+        );
+
+        // Aggregate in memory
         const m = { inbound:0, outbound:0, total:0, missed:0, inboundMissed:0, answeredInbound:0,
           inboundTalkTime:0, outboundTalkTime:0, totalTalkTime:0,
           transfers:0, holdTime:0, voicemails:0, ahtSum:0, ahtCount:0, ringSum:0, ringCount:0 };
@@ -1983,8 +2012,7 @@ async function backfillCallHistory(fromMonth, toMonth) {
           if (isAnswered) {
             if (dir === 'Inbound')  { m.inboundTalkTime += dur; m.answeredInbound++; }
             if (dir === 'Outbound')  m.outboundTalkTime += dur;
-            m.totalTalkTime += dur;
-            m.ahtSum += dur; m.ahtCount++;
+            m.totalTalkTime += dur; m.ahtSum += dur; m.ahtCount++;
           }
           if ((ringDuration||0) > 0) { m.ringSum += ringDuration; m.ringCount++; }
           totalCalls++;
@@ -1992,15 +2020,18 @@ async function backfillCallHistory(fromMonth, toMonth) {
 
         const aht = m.ahtCount > 0 ? Math.round(m.ahtSum / m.ahtCount) : 0;
         const avgRing = m.ringCount > 0 ? Math.round(m.ringSum / m.ringCount) : 0;
-        summaries.push({ agentId: agent.rc_id, agentName: agent.name, month,
+        const row = { agentId: agent.rc_id, agentName: agent.name, month,
           inbound: m.inbound, outbound: m.outbound, total: m.total,
           missed: m.missed, inboundMissed: m.inboundMissed, answeredInbound: m.answeredInbound,
           inboundTalkTime: m.inboundTalkTime, outboundTalkTime: m.outboundTalkTime,
           totalTalkTime: m.totalTalkTime, ahtSeconds: aht,
-          transfers: m.transfers, holdTime: m.holdTime, voicemails: m.voicemails, avgRingTime: avgRing });
-        console.log(`📞 Backfill ${month} ${agent.name}: ${calls.length} calls (in-memory, no call_logs write)`);
+          transfers: m.transfers, holdTime: m.holdTime, voicemails: m.voicemails, avgRingTime: avgRing };
+        summaries.push(row);
+        // Immediately persist each row as it's computed (don't wait until the end)
+        if (typeof onSummary === 'function') await onSummary(row).catch(e => console.warn('⚠️ onSummary:', e.message));
+        console.log(`📞 Backfill ${month} ${agent.name}: ${calls.length} calls → written to DB`);
       } catch(e) {
-        console.error(`❌ Backfill ${month} ${agent.name}:`, e.message);
+        console.error(`❌ Backfill ${month} ${agent.name}: ${e.message} — skipped`);
       }
     }
   }

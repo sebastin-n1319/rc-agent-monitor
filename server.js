@@ -1223,35 +1223,43 @@ app.get('/api/call-summary', requireAdmin, async (req, res) => {
 // POST /api/call-summary/backfill — fetch historical RC call logs and aggregate into monthly summary
 // Body: { fromMonth: "2026-04", toMonth: "2026-06" }
 let _backfillRunning = false;
+let _backfillProgress = null; // { fromMonth, toMonth, rowsWritten, startedAt, currentAgent, currentMonth }
 app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
-  if (_backfillRunning) return res.status(409).json({ success: false, error: 'Backfill already running — check back in a few minutes.' });
+  if (_backfillRunning) return res.status(409).json({ success: false, error: 'Backfill already running — check back in a few minutes.', progress: _backfillProgress });
   const { fromMonth, toMonth } = req.body || {};
   if (!fromMonth || !toMonth || !/^\d{4}-\d{2}$/.test(fromMonth) || !/^\d{4}-\d{2}$/.test(toMonth)) {
     return res.status(400).json({ success: false, error: 'fromMonth and toMonth required as YYYY-MM' });
   }
   _backfillRunning = true;
-  res.json({ success: true, message: `Backfill started for ${fromMonth} → ${toMonth}. Data will appear within a few minutes.` });
+  _backfillProgress = { fromMonth, toMonth, rowsWritten: 0, startedAt: new Date().toISOString(), currentAgent: null, currentMonth: null };
+  res.json({ success: true, message: `Backfill started for ${fromMonth} → ${toMonth}. Check /api/call-summary/debug for progress.` });
+
+  const { db: _db } = require('./database');
+  const upsert = (s) => new Promise((rs,rj) => _db.run(
+    `INSERT OR REPLACE INTO call_monthly_summary
+      (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
+       inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [s.agentId,s.agentName,s.month,s.inbound,s.outbound,s.total,s.missed,s.inboundMissed,s.answeredInbound,
+     s.inboundTalkTime,s.outboundTalkTime,s.totalTalkTime,s.ahtSeconds,s.transfers,s.holdTime,s.voicemails,s.avgRingTime,
+     new Date().toISOString()],
+    (err) => err ? rj(err) : rs()
+  ));
+
   try {
-    const stats = await backfillCallHistory(fromMonth, toMonth);
-    console.log(`✅ Backfill complete: ${stats.calls} calls across ${stats.months} months`);
-    // Write the in-memory aggregates directly to call_monthly_summary (no call_logs bloat)
-    const { db: _db } = require('./database');
-    const upsert = (s) => new Promise((rs,rj) => _db.run(
-      `INSERT OR REPLACE INTO call_monthly_summary
-        (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
-         inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [s.agentId,s.agentName,s.month,s.inbound,s.outbound,s.total,s.missed,s.inboundMissed,s.answeredInbound,
-       s.inboundTalkTime,s.outboundTalkTime,s.totalTalkTime,s.ahtSeconds,s.transfers,s.holdTime,s.voicemails,s.avgRingTime,
-       new Date().toISOString()],
-      (err) => err ? rj(err) : rs()
-    ));
-    for (const s of (stats.summaries || [])) { await upsert(s).catch(e => console.error('upsert err:', e.message)); }
-    console.log(`📊 Backfill: wrote ${(stats.summaries||[]).length} rows to call_monthly_summary`);
+    const stats = await backfillCallHistory(fromMonth, toMonth, async (row) => {
+      // Called immediately for each agent-month — write to DB right away
+      _backfillProgress.currentAgent = row.agentName;
+      _backfillProgress.currentMonth = row.month;
+      await upsert(row);
+      _backfillProgress.rowsWritten = (_backfillProgress.rowsWritten || 0) + 1;
+    });
+    console.log(`✅ Backfill complete: ${stats.calls} calls, ${_backfillProgress.rowsWritten} rows written`);
   } catch(e) {
     console.error('❌ backfill error:', e.message);
   } finally {
     _backfillRunning = false;
+    if (_backfillProgress) _backfillProgress.completedAt = new Date().toISOString();
   }
 });
 
@@ -1271,6 +1279,7 @@ app.get('/api/call-summary/debug', requireAdmin, async (req, res) => {
       call_logs: { total: clCount[0]?.cnt, by_month: clMonths, recent: clSample },
       call_monthly_summary: { total: csCount[0]?.cnt, rows: csMonths },
       backfill_running: _backfillRunning,
+      backfill_progress: _backfillProgress,
     });
   } catch(e) { res.status(500).json({ error: e.message }); }
 });

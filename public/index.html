@@ -26041,6 +26041,7 @@ function csOpenBackfill(){
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
+let _csBfPollTimer = null;
 async function csRunBackfill(){
   const fromMonth = document.getElementById('cs-bf-from')?.value;
   const toMonth   = document.getElementById('cs-bf-to')?.value;
@@ -26049,7 +26050,7 @@ async function csRunBackfill(){
   const btn = document.getElementById('cs-bf-run-btn');
   const status = document.getElementById('cs-bf-status');
   if (btn) { btn.disabled = true; btn.textContent = 'Running…'; }
-  if (status) status.textContent = 'Fetching from RingCentral… this may take a few minutes.';
+  if (status) status.textContent = 'Starting…';
   try {
     const r = await fetch('/api/call-summary/backfill', {
       method: 'POST', credentials: 'include',
@@ -26058,13 +26059,32 @@ async function csRunBackfill(){
     });
     const d = await r.json();
     if (!d.success) throw new Error(d.error);
-    if (status) status.innerHTML = `<span style="color:#2DDC96;">✓ ${d.message}</span>`;
-    if (btn) { btn.disabled = false; btn.textContent = 'Run Backfill'; }
-    // Auto-refresh data after 5s
-    setTimeout(() => {
-      document.getElementById('cs-backfill-modal')?.remove();
-      csInit();
-    }, 5000);
+    // Start polling for progress every 4 seconds
+    if (_csBfPollTimer) clearInterval(_csBfPollTimer);
+    _csBfPollTimer = setInterval(async () => {
+      try {
+        const dr = await fetch('/api/call-summary/debug', { credentials: 'include' });
+        const dd = await dr.json();
+        const p = dd.backfill_progress;
+        const running = dd.backfill_running;
+        if (p && running) {
+          const rows = p.rowsWritten || 0;
+          const agent = p.currentAgent || '…';
+          const month = p.currentMonth || '…';
+          if (status) status.innerHTML = `<span style="color:#F4891F;">⏳ Running — ${rows} rows written so far<br><small style="color:#aaa;">Processing: ${agent} / ${month}</small></span>`;
+        } else if (!running) {
+          clearInterval(_csBfPollTimer); _csBfPollTimer = null;
+          const rows = p?.rowsWritten || dd.call_monthly_summary?.total || 0;
+          if (status) status.innerHTML = `<span style="color:#2DDC96;">✓ Done! ${rows} rows written to database.</span>`;
+          if (btn) { btn.disabled = false; btn.textContent = 'Run Backfill'; }
+          // Refresh call summary data after 2s
+          setTimeout(() => {
+            document.getElementById('cs-backfill-modal')?.remove();
+            csInit();
+          }, 2000);
+        }
+      } catch(pe) { /* ignore poll errors */ }
+    }, 4000);
   } catch(e) {
     if (status) status.innerHTML = `<span style="color:#ED666B;">✗ ${e.message}</span>`;
     if (btn) { btn.disabled = false; btn.textContent = 'Run Backfill'; }
