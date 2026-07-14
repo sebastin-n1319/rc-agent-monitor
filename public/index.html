@@ -19551,10 +19551,9 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
-  <!-- Session 15.5: HOF sidebar item hidden until Q2 redesign. Page itself
-       remains in DOM (#agent-section-hall) so deep-links still resolve. -->
+  <!-- HOF enabled for Q2 2026 — visible to all agents -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
-       onclick="sbAgent('hall',this)" style="display:none!important;" data-hidden-until="on-request">
+       onclick="sbAgent('hall',this)" data-hof-enabled="Q2-2026">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
     <span class="sb-label">HOF</span>
   </div>
@@ -20888,6 +20887,123 @@ tbody tr:hover td{
   </div>
 </div>
 
+<!-- ── Hall of Fame Announcement Popup ────────────────────────────────────── -->
+<!-- Shows once per day for 3 days from Jul 15–17 2026 (agent view only)    -->
+<div id="hof-announce-modal" style="display:none;position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px;">
+  <div style="max-width:460px;width:100%;background:linear-gradient(135deg,#070d1c 0%,#0c1424 100%);border:1px solid rgba(251,191,36,.25);border-radius:20px;overflow:hidden;box-shadow:0 0 60px rgba(251,191,36,.15),0 32px 64px rgba(0,0,0,.6);position:relative;">
+    <!-- Gold top bar -->
+    <div style="height:3px;background:linear-gradient(90deg,#f28820,#fbbf24,#f28820);"></div>
+    <!-- Confetti-style decorative circles -->
+    <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(251,191,36,.12),transparent 70%);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-20px;left:-20px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(242,136,32,.10),transparent 70%);pointer-events:none;"></div>
+    <!-- Content -->
+    <div style="padding:32px 28px 28px;">
+      <!-- Trophy icon -->
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,rgba(251,191,36,.2),rgba(242,136,32,.12));border:2px solid rgba(251,191,36,.35);font-size:34px;line-height:1;">🏆</div>
+      </div>
+      <!-- Headline -->
+      <div style="text-align:center;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24;font-family:'Poppins',sans-serif;margin-bottom:8px;">New · Q2 2026</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:#eef2ff;font-family:'Poppins',sans-serif;line-height:1.2;">Hall of Fame<br><span style="color:#fbbf24;">is now live!</span></div>
+      </div>
+      <p style="text-align:center;font-size:13px;color:#8892b0;line-height:1.6;margin:14px 0 22px;">Q2 2026 results are in 🎉 See who topped the charts, celebrate our Slab 1 stars, and find your personalised Growth Blueprint for Q3.</p>
+      <!-- Highlights row -->
+      <div style="display:flex;gap:10px;margin-bottom:22px;">
+        <div style="flex:1;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:18px;margin-bottom:4px;">🥇</div>
+          <div style="font-size:11px;font-weight:700;color:#fbbf24;">Star of Q2</div>
+          <div style="font-size:12px;color:#eef2ff;font-weight:600;margin-top:3px;">Debra Horton</div>
+          <div style="font-size:10px;color:#8892b0;">3/3 Slab 1 · 85 avg pts</div>
+        </div>
+        <div style="flex:1;background:rgba(242,136,32,.06);border:1px solid rgba(242,136,32,.15);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:18px;margin-bottom:4px;">📈</div>
+          <div style="font-size:11px;font-weight:700;color:#f28820;">Most Improved</div>
+          <div style="font-size:12px;color:#eef2ff;font-weight:600;margin-top:3px;">Evan Cruz</div>
+          <div style="font-size:10px;color:#8892b0;">35→55→100 pts</div>
+        </div>
+        <div style="flex:1;background:rgba(34,197,94,.05);border:1px solid rgba(34,197,94,.15);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:18px;margin-bottom:4px;">🎯</div>
+          <div style="font-size:11px;font-weight:700;color:#22c55e;">Perfect Scores</div>
+          <div style="font-size:12px;color:#eef2ff;font-weight:600;margin-top:3px;">3 agents</div>
+          <div style="font-size:10px;color:#8892b0;">Hit 100/100 in Q2</div>
+        </div>
+      </div>
+      <!-- Buttons -->
+      <div style="display:flex;gap:10px;">
+        <button onclick="hofAnnounceView()" style="flex:1;padding:13px;background:linear-gradient(135deg,#f28820,#fbbf24);border:none;border-radius:12px;color:#072B40;font-size:13px;font-weight:800;cursor:pointer;font-family:'Poppins',sans-serif;letter-spacing:.02em;transition:opacity .15s;" onmouseenter="this.style.opacity='.88'" onmouseleave="this.style.opacity='1'">
+          🏆 View Hall of Fame
+        </button>
+        <button onclick="hofAnnounceDismiss()" style="padding:13px 18px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;color:#8892b0;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;" onmouseenter="this.style.background='rgba(255,255,255,.09)'" onmouseleave="this.style.background='rgba(255,255,255,.05)'">
+          Later
+        </button>
+      </div>
+      <!-- Day counter -->
+      <div id="hof-announce-day-label" style="text-align:center;font-size:10.5px;color:#4a5270;margin-top:14px;"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  // Show the HOF announcement popup once per day, for 3 days (Jul 15–17 2026)
+  var HOF_START = '2026-07-15';
+  var HOF_END   = '2026-07-17';
+  var KEY_SHOWN = 'hof_q2_shown_dates'; // JSON array of dates already shown
+
+  function todayStr(){
+    var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function shouldShowToday(){
+    var today=todayStr();
+    if(today<HOF_START||today>HOF_END) return false;
+    try{
+      var shown=JSON.parse(localStorage.getItem(KEY_SHOWN)||'[]');
+      return shown.indexOf(today)<0;
+    }catch(e){ return false; }
+  }
+  function markShownToday(){
+    try{
+      var today=todayStr();
+      var shown=JSON.parse(localStorage.getItem(KEY_SHOWN)||'[]');
+      if(shown.indexOf(today)<0) shown.push(today);
+      localStorage.setItem(KEY_SHOWN, JSON.stringify(shown));
+    }catch(e){}
+  }
+  function getDayLabel(){
+    try{
+      var shown=JSON.parse(localStorage.getItem(KEY_SHOWN)||'[]');
+      var n=shown.length; // will include today after markShownToday
+      return 'Day '+(n)+' of 3 · dismisses automatically after today';
+    }catch(e){ return ''; }
+  }
+  window.hofAnnounceView=function(){
+    hofAnnounceDismiss();
+    // Navigate to Hall of Fame — wait for main app to be ready
+    setTimeout(function(){
+      var sbHall=document.getElementById('sb-agent-hall');
+      if(sbHall) sbHall.click();
+    },100);
+  };
+  window.hofAnnounceDismiss=function(){
+    var m=document.getElementById('hof-announce-modal');
+    if(m){ m.style.display='none'; }
+    markShownToday();
+  };
+  window._tryShowHofPopup=function(){
+    // Only show for agent role (not admin)
+    if(window.currentRole==='admin') return;
+    if(!shouldShowToday()) return;
+    var m=document.getElementById('hof-announce-modal');
+    if(!m) return;
+    markShownToday();
+    var lbl=document.getElementById('hof-announce-day-label');
+    if(lbl) lbl.textContent=getDayLabel();
+    m.style.display='flex';
+  };
+})();
+</script>
+<!-- ── End HOF Announcement Popup ──────────────────────────────────────────── -->
+
 <!-- Break Report Modal -->
 <div id="break-report-modal" style="display:none;position:fixed;inset:0;z-index:4000;background:rgba(0,0,0,.6);overflow-y:auto;padding:40px 20px;">
   <div style="max-width:720px;margin:0 auto;background:var(--card1,#0d1525);border:1px solid rgba(255,255,255,.1);border-radius:16px;overflow:hidden;">
@@ -20960,7 +21076,7 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       Preview Break Bot
     </button>
-    <button class="agent-shell-btn" id="agent-tab-hall" onclick="switchAgentSection('hall',this)" style="display:none" data-hidden-until="Q2-2026">
+    <button class="agent-shell-btn" id="agent-tab-hall" onclick="switchAgentSection('hall',this)" data-hof-enabled="Q2-2026">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
       Hall of Fame
     </button>
@@ -23128,6 +23244,10 @@ function applyView(view){
   if(hofTab){
     if(isLive) hofTab.classList.add('hof-glow');
     else hofTab.classList.remove('hof-glow');
+  }
+  // Show HOF announcement popup once per day for 3 days (agent view only)
+  if(!isAdmin && isLive && typeof window._tryShowHofPopup==='function'){
+    setTimeout(window._tryShowHofPopup, 1800); // slight delay so dashboard loads first
   }
 }
 
