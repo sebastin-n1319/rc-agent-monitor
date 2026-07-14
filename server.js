@@ -1141,6 +1141,86 @@ app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// GET /api/call-summary — agent call summary grouped by month (admin only)
+// Query params: month=YYYY-MM (optional, omit for all), agent=name (optional)
+app.get('/api/call-summary', requireAdmin, async (req, res) => {
+  try {
+    const { all: dbAll } = require('./database');
+    const { month, agent } = req.query;
+
+    let where = `WHERE agent_name IS NOT NULL AND agent_name != ''`;
+    const params = [];
+    if (month) {
+      where += ` AND strftime('%Y-%m', start_time) = ?`;
+      params.push(month);
+    }
+    if (agent) {
+      where += ` AND agent_name = ?`;
+      params.push(agent);
+    }
+
+    const rows = await dbAll(`
+      SELECT
+        agent_name,
+        strftime('%Y-%m', start_time)                                              AS month,
+        SUM(CASE WHEN direction='Inbound'  THEN 1 ELSE 0 END)                     AS inbound,
+        SUM(CASE WHEN direction='Outbound' THEN 1 ELSE 0 END)                     AS outbound,
+        COUNT(*)                                                                    AS total,
+        SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned')
+                  THEN 1 ELSE 0 END)                                               AS missed,
+        SUM(CASE WHEN direction='Inbound'
+                  AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+                  AND COALESCE(is_voicemail,0)=0 AND duration>0
+                  THEN duration ELSE 0 END)                                        AS inboundTalkTime,
+        SUM(CASE WHEN direction='Outbound'
+                  AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+                  AND COALESCE(is_voicemail,0)=0 AND duration>0
+                  THEN duration ELSE 0 END)                                        AS outboundTalkTime,
+        SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+                  AND COALESCE(is_voicemail,0)=0 AND duration>0
+                  THEN duration ELSE 0 END)                                        AS totalTalkTime,
+        ROUND(AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+                  AND COALESCE(is_voicemail,0)=0 AND duration>0
+                  THEN duration END))                                              AS aht,
+        SUM(COALESCE(transferred,0))                                               AS transfers,
+        SUM(COALESCE(hold_duration,0))                                             AS holdTime,
+        SUM(CASE WHEN COALESCE(is_voicemail,0)=1
+                  OR lower(COALESCE(result,''))='voicemail'
+                  THEN 1 ELSE 0 END)                                               AS voicemails,
+        ROUND(AVG(CASE WHEN COALESCE(ring_duration,0)>0 THEN ring_duration END))  AS avgRingTime,
+        SUM(CASE WHEN direction='Inbound'
+                  AND lower(COALESCE(result,'')) IN ('missed','abandoned')
+                  THEN 1 ELSE 0 END)                                               AS inboundMissed,
+        COUNT(DISTINCT CASE WHEN direction='Inbound'
+                  AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+                  AND COALESCE(is_voicemail,0)=0
+                  THEN call_id END)                                                AS answeredInbound
+      FROM call_logs
+      ${where}
+      GROUP BY agent_name, month
+      ORDER BY month DESC, agent_name ASC
+    `, params);
+
+    // Add derived metrics
+    const data = rows.map(r => ({
+      ...r,
+      abandonPct: r.inbound > 0 ? Math.round((r.inboundMissed / r.inbound) * 1000) / 10 : 0,
+    }));
+
+    // Available months list for filter dropdown
+    const months = await dbAll(
+      `SELECT DISTINCT strftime('%Y-%m', start_time) AS month FROM call_logs
+       WHERE agent_name IS NOT NULL AND agent_name != '' AND start_time IS NOT NULL
+       ORDER BY month DESC LIMIT 24`
+    );
+
+    res.json({ success: true, data, months: months.map(m => m.month) });
+  } catch(e) {
+    console.error('❌ call-summary error:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // DB stats + manual cleanup endpoints (admin only)
 app.get('/api/db-stats', requireAdmin, async (req, res) => {
   try { res.json({ success: true, data: await getDbStats() }); }

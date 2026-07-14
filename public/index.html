@@ -19507,6 +19507,11 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C9.6 21 3 14.4 3 6c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
     <span class="sb-label">Calls</span>
   </div>
+  <div class="sb-item" id="sb-callsummary" title="Call Summary Report"
+       onclick="sbAdmin('callsummary',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V11M12 17V7M15 17v-5"/></svg>
+    <span class="sb-label">Summary</span>
+  </div>
   <div class="sb-item" id="sb-access" title="Access Control"
        onclick="sbAdmin('access',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9.2 2 7 4.2 7 7v1H5a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-2V7c0-2.8-2.2-5-5-5z"/><circle cx="12" cy="14" r="1.5" fill="currentColor"/><path d="M12 15.5v2"/></svg>
@@ -20217,6 +20222,61 @@ tbody tr:hover td{
   </div>
 
   <!-- CALL LOGS -->
+  <!-- ══════════════════════════════════════════════════════════════════════
+       Call Summary Report — monthly per-agent stats (admin only)
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="page" id="tab-callsummary">
+    <div class="card" style="padding:0;">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--card);flex-wrap:wrap;border-radius:var(--r) var(--r) 0 0;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--orange)"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V11M12 17V7M15 17v-5"/></svg>
+          <span style="font-weight:700;font-size:15px;color:var(--t1)">Agent Call Summary</span>
+          <span id="cs-count-badge" style="font-size:11px;color:var(--t3);background:var(--surface);padding:2px 8px;border-radius:10px;border:1px solid var(--border);"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <select id="cs-month-filter" onchange="csLoad()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;min-width:120px;">
+            <option value="">All Months</option>
+          </select>
+          <select id="cs-agent-filter" onchange="csLoad()" style="background:var(--surface);border:1px solid var(--border);color:var(--t1);border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;min-width:140px;">
+            <option value="">All Agents</option>
+          </select>
+          <button onclick="csLoad()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--orange);border:none;border-radius:7px;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:12px;height:12px"><path d="M2 8a6 6 0 1 0 12 0A6 6 0 0 0 2 8z"/><path d="M14 14l-2.5-2.5"/></svg> Refresh
+          </button>
+          <button onclick="csExportCSV()" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--t2);font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M8 2v8M5 7l3 3 3-3"/><path d="M3 13h10"/></svg> Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI summary bar -->
+      <div id="cs-kpi-bar" style="display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;"></div>
+
+      <!-- Table -->
+      <div style="overflow-x:auto;">
+        <!-- Table header -->
+        <div id="cs-table-header" style="display:grid;grid-template-columns:160px 90px 80px 80px 80px 75px 75px 90px 80px 70px 90px 80px;gap:0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;min-width:1050px;">
+          <div style="padding:9px 14px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);">Agent</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);">Month</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#21AAE0;cursor:pointer;" onclick="csSort('inbound')" title="Sort">Inbound ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#F4891F;cursor:pointer;" onclick="csSort('outbound')" title="Sort">Outbound ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);cursor:pointer;" onclick="csSort('total')" title="Sort">Total ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#ED666B;cursor:pointer;" onclick="csSort('missed')" title="Sort">Missed ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#ED666B;cursor:pointer;" onclick="csSort('abandonPct')" title="Sort">Abn% ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#2DDC96;cursor:pointer;" onclick="csSort('totalTalkTime')" title="Sort">Talk Time ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9B59B6;cursor:pointer;" onclick="csSort('aht')" title="Sort">AHT ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);cursor:pointer;" onclick="csSort('transfers')" title="Sort">Xfers ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);cursor:pointer;" onclick="csSort('holdTime')" title="Sort">Hold Time ⇅</div>
+          <div style="padding:9px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--t3);cursor:pointer;" onclick="csSort('voicemails')" title="Sort">VM ⇅</div>
+        </div>
+        <div id="cs-table-body" style="min-width:1050px;max-height:calc(100vh - 260px);overflow-y:auto;">
+          <div style="padding:48px;text-align:center;color:var(--t3);font-size:13px;">Click a month or refresh to load data…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="page" id="tab-calllogs">
     <div class="card" style="padding:0;">
       <!-- Header bar -->
@@ -25771,6 +25831,175 @@ function renderAdminTicketList(tickets) {
   }).join('');
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Call Summary Report (admin) ───────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+let _csData = [];          // full dataset from API
+let _csFiltered = [];      // after client-side sort
+let _csSortKey = 'agent_name';
+let _csSortDir = 1;
+
+function csFmtDur(secs){
+  if (!secs || secs <= 0) return '—';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+function csFmtPct(v){ return v != null ? v.toFixed(1) + '%' : '—'; }
+
+async function csInit(){
+  // Load month list first, then load data
+  try {
+    const r = await fetch('/api/call-summary', { credentials: 'include' });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    // Populate month dropdown
+    const mSel = document.getElementById('cs-month-filter');
+    const aSel = document.getElementById('cs-agent-filter');
+    if (mSel) {
+      const months = d.months || [];
+      mSel.innerHTML = '<option value="">All Months</option>' +
+        months.map(m => `<option value="${m}">${m}</option>`).join('');
+      // Default to most recent month
+      if (months.length && !mSel.value) mSel.value = months[0];
+    }
+    if (aSel) {
+      const agents = [...new Set((d.data||[]).map(r => r.agent_name).filter(Boolean))].sort();
+      aSel.innerHTML = '<option value="">All Agents</option>' +
+        agents.map(a => `<option value="${a}">${a}</option>`).join('');
+    }
+    _csData = d.data || [];
+    csRender();
+  } catch(e) {
+    const body = document.getElementById('cs-table-body');
+    if (body) body.innerHTML = `<div style="padding:40px;text-align:center;color:#ED666B;">Error: ${e.message}</div>`;
+  }
+}
+
+async function csLoad(){
+  const month = document.getElementById('cs-month-filter')?.value || '';
+  const agent = document.getElementById('cs-agent-filter')?.value || '';
+  const body  = document.getElementById('cs-table-body');
+  if (body) body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--t3);display:flex;align-items:center;justify-content:center;gap:10px;"><div class="adit-spinner" style="width:18px;height:18px;border-width:2px;"></div> Loading…</div>`;
+  try {
+    let url = '/api/call-summary';
+    const params = [];
+    if (month) params.push('month=' + encodeURIComponent(month));
+    if (agent) params.push('agent=' + encodeURIComponent(agent));
+    if (params.length) url += '?' + params.join('&');
+    const r = await fetch(url, { credentials: 'include' });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    _csData = d.data || [];
+    csRender();
+  } catch(e) {
+    if (body) body.innerHTML = `<div style="padding:40px;text-align:center;color:#ED666B;">Error: ${e.message}</div>`;
+  }
+}
+
+function csSort(key){
+  if (_csSortKey === key) { _csSortDir *= -1; } else { _csSortKey = key; _csSortDir = -1; }
+  csRender();
+}
+
+function csRender(){
+  const body   = document.getElementById('cs-table-body');
+  const badge  = document.getElementById('cs-count-badge');
+  const kpiBar = document.getElementById('cs-kpi-bar');
+  if (!body) return;
+
+  const sk = _csSortKey, sd = _csSortDir;
+  _csFiltered = [..._csData].sort((a, b) => {
+    const va = a[sk] ?? 0, vb = b[sk] ?? 0;
+    if (typeof va === 'string') return sd * va.localeCompare(vb);
+    return sd * (va - vb);
+  });
+
+  if (badge) badge.textContent = _csFiltered.length + ' row' + (_csFiltered.length !== 1 ? 's' : '');
+
+  // KPI bar — aggregated totals across shown rows
+  const tot = _csFiltered.reduce((acc, r) => {
+    acc.inbound   += r.inbound   || 0;
+    acc.outbound  += r.outbound  || 0;
+    acc.total     += r.total     || 0;
+    acc.missed    += r.missed    || 0;
+    acc.talkTime  += r.totalTalkTime || 0;
+    acc.holdTime  += r.holdTime  || 0;
+    acc.transfers += r.transfers || 0;
+    acc.voicemails+= r.voicemails|| 0;
+    return acc;
+  }, { inbound:0, outbound:0, total:0, missed:0, talkTime:0, holdTime:0, transfers:0, voicemails:0 });
+  const totalAbandPct = tot.inbound > 0 ? ((tot.missed / tot.inbound) * 100).toFixed(1) : '0.0';
+  const avgAHT = _csFiltered.filter(r => r.aht > 0).length
+    ? Math.round(_csFiltered.filter(r=>r.aht>0).reduce((s,r)=>s+r.aht,0) / _csFiltered.filter(r=>r.aht>0).length)
+    : 0;
+
+  const kpiStyle = 'flex:1;min-width:110px;padding:12px 16px;border-right:1px solid var(--border);';
+  const kpiLabel = 'font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--t3);margin-bottom:4px;';
+  const kpiVal   = (c) => `font-size:20px;font-weight:800;color:${c};font-family:"Poppins",sans-serif;line-height:1.2;`;
+  if (kpiBar) kpiBar.innerHTML = `
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Inbound</div><div style="${kpiVal('#21AAE0')}">${tot.inbound.toLocaleString()}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Outbound</div><div style="${kpiVal('#F4891F')}">${tot.outbound.toLocaleString()}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Total Calls</div><div style="${kpiVal('var(--t1)')}">${tot.total.toLocaleString()}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Missed</div><div style="${kpiVal('#ED666B')}">${tot.missed.toLocaleString()}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Abandon %</div><div style="${kpiVal(parseFloat(totalAbandPct)>15?'#ED666B':parseFloat(totalAbandPct)>8?'#FBC84B':'#2DDC96')}">${totalAbandPct}%</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Total Talk</div><div style="${kpiVal('#2DDC96')}">${csFmtDur(tot.talkTime)}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Avg AHT</div><div style="${kpiVal('#9B59B6')}">${csFmtDur(avgAHT)}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Transfers</div><div style="${kpiVal('var(--t2)')}">${tot.transfers.toLocaleString()}</div></div>
+    <div style="${kpiStyle}"><div style="${kpiLabel}">Hold Time</div><div style="${kpiVal('var(--t2)')}">${csFmtDur(tot.holdTime)}</div></div>
+    <div style="${kpiStyle}border-right:none;"><div style="${kpiLabel}">Voicemails</div><div style="${kpiVal('var(--t2)')}">${tot.voicemails.toLocaleString()}</div></div>
+  `;
+
+  if (!_csFiltered.length) {
+    body.innerHTML = '<div style="padding:48px;text-align:center;color:var(--t3);font-size:13px;">No data for the selected filters.</div>';
+    return;
+  }
+
+  body.innerHTML = _csFiltered.map((r, i) => {
+    const abandPct = r.abandonPct || 0;
+    const abandColor = abandPct > 15 ? '#ED666B' : abandPct > 8 ? '#FBC84B' : '#2DDC96';
+    const ahtSecs = r.aht || 0;
+    const ahtColor = ahtSecs > 480 ? '#ED666B' : ahtSecs > 300 ? '#FBC84B' : 'var(--t1)';
+    return `<div style="display:grid;grid-template-columns:160px 90px 80px 80px 80px 75px 75px 90px 80px 70px 90px 80px;gap:0;padding:10px 0;border-bottom:1px solid var(--border);transition:background .12s;animation:fadeUp .15s ease both;animation-delay:${Math.min(i,30)*.008}s"
+      onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+      <div style="padding:0 14px;font-size:12.5px;font-weight:700;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.agent_name}">${r.agent_name}</div>
+      <div style="padding:0 10px;font-size:12px;color:var(--t3);font-weight:600;">${r.month||'—'}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:700;color:#21AAE0;">${(r.inbound||0).toLocaleString()}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:700;color:#F4891F;">${(r.outbound||0).toLocaleString()}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:600;color:var(--t1);">${(r.total||0).toLocaleString()}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:700;color:#ED666B;">${(r.missed||0).toLocaleString()}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:700;color:${abandColor};">${abandPct.toFixed(1)}%</div>
+      <div style="padding:0 10px;font-size:12px;font-weight:600;color:#2DDC96;">${csFmtDur(r.totalTalkTime||0)}</div>
+      <div style="padding:0 10px;font-size:12px;font-weight:600;color:${ahtColor};">${csFmtDur(ahtSecs)}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:600;color:var(--t2);">${(r.transfers||0).toLocaleString()}</div>
+      <div style="padding:0 10px;font-size:12px;font-weight:600;color:var(--t2);">${csFmtDur(r.holdTime||0)}</div>
+      <div style="padding:0 10px;font-size:13px;font-weight:600;color:var(--t3);">${(r.voicemails||0).toLocaleString()}</div>
+    </div>`;
+  }).join('');
+}
+
+function csExportCSV(){
+  if (!_csFiltered.length) { showToast('No data to export','warning'); return; }
+  const headers = ['Agent','Month','Inbound','Outbound','Total','Missed','Abandon%','Inbound Talk Time (s)','Outbound Talk Time (s)','Total Talk Time (s)','AHT (s)','Transfers','Hold Time (s)','Voicemails','Avg Ring Time (s)'];
+  const rows = _csFiltered.map(r => [
+    r.agent_name||'', r.month||'',
+    r.inbound||0, r.outbound||0, r.total||0, r.missed||0,
+    r.abandonPct||0,
+    r.inboundTalkTime||0, r.outboundTalkTime||0, r.totalTalkTime||0,
+    r.aht||0, r.transfers||0, r.holdTime||0, r.voicemails||0, r.avgRingTime||0
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  const month = document.getElementById('cs-month-filter')?.value || 'all';
+  a.download = `call-summary-${month}.csv`;
+  a.click();
+}
+// ── End Call Summary ──────────────────────────────────────────────────────────
+
 // ── Server-side session helpers ───────────────────────────────────────────
 // Session is stored as a signed HTTP cookie on the server.
 // This survives browser restarts, tab closes, and browser storage clears.
@@ -27751,6 +27980,7 @@ function switchTab(tab,el){
   if(tab==='hall'||tab==='bonus')setTimeout(initEmbeddedFrames,50);
   if(tab==='calllogs'){const dp=document.getElementById('cl-date-picker');if(dp&&!dp.value)dp.value=todayStr();loadCallLogs();}
   if(tab==='auditlog') loadAuditLog();
+  if(tab==='callsummary') csInit();
   if(tab==='tickets')  { loadAdminTickets(); setTimeout(initTlTooltips, 80); setTimeout(()=>tktSetView('dashboard'),100); setTimeout(tlInitWeekendMode, 200);
     const wkdToggleWrap2 = document.getElementById('tl-wkd-manual-toggle-wrap');
     if (wkdToggleWrap2) wkdToggleWrap2.style.display = currentRole === 'admin' ? 'flex' : 'none';
