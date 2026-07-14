@@ -1,6 +1,6 @@
 const RC = require('@ringcentral/sdk').SDK;
 const { EventEmitter } = require('events');
-const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents, updateAgentRcId } = require('./database');
+const { insertPresenceEvent, replaceCallLogsRange, insertCallLog, getMonitoredAgents, updateAgentRcId } = require('./database');
 require('dotenv').config();
 
 const rcsdk = new RC({
@@ -1924,6 +1924,61 @@ async function fetchRawRecentMissedLog(minutesBack = 15) {
   }));
 }
 
+// Backfill historical call data from RC API into call_logs (INSERT OR IGNORE — safe to re-run).
+// fromMonth / toMonth are "YYYY-MM" strings, e.g. "2026-04" to "2026-06".
+// Inserts raw logs so refreshMonthlySummary() can aggregate them afterward.
+async function backfillCallHistory(fromMonth, toMonth) {
+  const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+  if (!agents.length) return { agents: 0, calls: 0, months: 0, monthsList: [] };
+
+  // Build ordered month list
+  const months = [];
+  let [fy, fm] = fromMonth.split('-').map(Number);
+  const [ty, tm] = toMonth.split('-').map(Number);
+  while (fy < ty || (fy === ty && fm <= tm)) {
+    months.push(`${fy}-${String(fm).padStart(2,'0')}`);
+    fm++; if (fm > 12) { fm = 1; fy++; }
+  }
+
+  let totalCalls = 0;
+  for (const month of months) {
+    const [y, mo] = month.split('-').map(Number);
+    // Use IST-aligned boundaries: month start at IST midnight, end at next month's IST midnight
+    const dateFrom = new Date(`${month}-01T00:00:00+05:30`).toISOString();
+    const nextY = mo === 12 ? y + 1 : y;
+    const nextMo = mo === 12 ? 1 : mo + 1;
+    const dateTo = new Date(`${nextY}-${String(nextMo).padStart(2,'0')}-01T00:00:00+05:30`).toISOString();
+
+    for (const agent of agents) {
+      try {
+        await sleep(1500);
+        const calls = await listExtensionCallLogRecords(agent.rc_id, {
+          dateFrom, dateTo, perPage: 200, view: 'Detailed'
+        });
+        for (const call of calls) {
+          const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+          await insertCallLog({
+            agentId: agent.rc_id, agentName: agent.name, callId: call.id,
+            sourceCallId: call.sessionId || null,
+            direction: inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null)),
+            result: call.result, duration: call.duration || 0,
+            ringDuration, holdDuration, transferred, isVoicemail,
+            fromNumber: call.from?.phoneNumber || call.from?.extensionNumber || null,
+            toNumber:   call.to?.phoneNumber   || call.to?.extensionNumber   || null,
+            queueName:  call.to?.name || null,
+            startTime:  call.startTime
+          });
+          totalCalls++;
+        }
+        console.log(`📞 Backfill ${month} ${agent.name}: ${calls.length} calls`);
+      } catch(e) {
+        console.error(`❌ Backfill ${month} ${agent.name}:`, e.message);
+      }
+    }
+  }
+  return { agents: agents.length, calls: totalCalls, months: months.length, monthsList: months };
+}
+
 module.exports = {
   authenticate,
   ensureRealtimeSubscription,
@@ -1940,4 +1995,5 @@ module.exports = {
   fetchRawRecentMissedLog,
   getRcRateLimitState,
   getLastRawRecords,
+  backfillCallHistory,
 };

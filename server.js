@@ -42,7 +42,7 @@ const ANOMALY = require('./lib/anomaly');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
-  fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords,
+  fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords, backfillCallHistory,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 
@@ -1198,6 +1198,35 @@ app.get('/api/call-summary', requireAdmin, async (req, res) => {
   } catch(e) {
     console.error('❌ call-summary error:', e.message);
     res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// POST /api/call-summary/backfill — fetch historical RC call logs and aggregate into monthly summary
+// Body: { fromMonth: "2026-04", toMonth: "2026-06" }
+let _backfillRunning = false;
+app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
+  if (_backfillRunning) return res.status(409).json({ success: false, error: 'Backfill already running — check back in a few minutes.' });
+  const { fromMonth, toMonth } = req.body || {};
+  if (!fromMonth || !toMonth || !/^\d{4}-\d{2}$/.test(fromMonth) || !/^\d{4}-\d{2}$/.test(toMonth)) {
+    return res.status(400).json({ success: false, error: 'fromMonth and toMonth required as YYYY-MM' });
+  }
+  _backfillRunning = true;
+  res.json({ success: true, message: `Backfill started for ${fromMonth} → ${toMonth}. Data will appear within a few minutes.` });
+  try {
+    const stats = await backfillCallHistory(fromMonth, toMonth);
+    console.log(`✅ Backfill complete:`, stats);
+    // Aggregate each backfilled month into the summary table
+    const { db: _db } = require('./database');
+    const months = await new Promise((rs,rj) => _db.all(
+      `SELECT DISTINCT strftime('%Y-%m', start_time) AS m FROM call_logs WHERE agent_name IS NOT NULL`,
+      [], (err,rows) => err?rj(err):rs(rows||[])
+    ));
+    for (const { m } of months) { await refreshMonthlySummary(m).catch(() => {}); }
+    console.log(`📊 Backfill: refreshed ${months.length} monthly summaries`);
+  } catch(e) {
+    console.error('❌ backfill error:', e.message);
+  } finally {
+    _backfillRunning = false;
   }
 });
 
