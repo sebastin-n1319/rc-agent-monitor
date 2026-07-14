@@ -13,7 +13,7 @@ const {
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
-  getCallLogStats, pruneCallLogs, addAgentNote, getAgentNotes, deleteAgentNote,
+  getCallLogStats, pruneCallLogs, refreshMonthlySummary, addAgentNote, getAgentNotes, deleteAgentNote,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   insertAuditLog, getAuditLog,
   getBreakThresholds, setBreakThreshold,
@@ -1142,77 +1142,56 @@ app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
 });
 
 // GET /api/call-summary — agent call summary grouped by month (admin only)
-// Query params: month=YYYY-MM (optional, omit for all), agent=name (optional)
+// Reads from the persistent call_monthly_summary table (survives the 7-day call_logs prune).
+// Always refreshes the CURRENT month from live call_logs before returning.
+// Query params: month=YYYY-MM (optional), agent=name (optional)
 app.get('/api/call-summary', requireAdmin, async (req, res) => {
   try {
     const { db: _db } = require('./database');
-    const dbAll = (sql, params=[]) => new Promise((res,rej) => _db.all(sql, params, (err,rows) => err?rej(err):res(rows||[])));
+    const dbAll = (sql, params=[]) => new Promise((rs,rj) => _db.all(sql, params, (err,rows) => err?rj(err):rs(rows||[])));
     const { month, agent } = req.query;
 
-    let where = `WHERE agent_name IS NOT NULL AND agent_name != ''`;
+    // Always refresh the current month so live data is included
+    const currMonth = new Date().toISOString().slice(0,7);
+    await refreshMonthlySummary(currMonth).catch(e => console.warn('⚠️ monthly summary refresh:', e.message));
+
+    // If a specific past month was requested and it may not be in the summary yet, refresh it too
+    if (month && month !== currMonth) {
+      await refreshMonthlySummary(month).catch(() => {});
+    }
+
+    let where = `WHERE 1=1`;
     const params = [];
-    if (month) {
-      where += ` AND strftime('%Y-%m', start_time) = ?`;
-      params.push(month);
-    }
-    if (agent) {
-      where += ` AND agent_name = ?`;
-      params.push(agent);
-    }
+    if (month) { where += ` AND month = ?`; params.push(month); }
+    if (agent) { where += ` AND agent_name = ?`; params.push(agent); }
 
     const rows = await dbAll(`
       SELECT
-        agent_name,
-        strftime('%Y-%m', start_time)                                              AS month,
-        SUM(CASE WHEN direction='Inbound'  THEN 1 ELSE 0 END)                     AS inbound,
-        SUM(CASE WHEN direction='Outbound' THEN 1 ELSE 0 END)                     AS outbound,
-        COUNT(*)                                                                    AS total,
-        SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned')
-                  THEN 1 ELSE 0 END)                                               AS missed,
-        SUM(CASE WHEN direction='Inbound'
-                  AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
-                  AND COALESCE(is_voicemail,0)=0 AND duration>0
-                  THEN duration ELSE 0 END)                                        AS inboundTalkTime,
-        SUM(CASE WHEN direction='Outbound'
-                  AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
-                  AND COALESCE(is_voicemail,0)=0 AND duration>0
-                  THEN duration ELSE 0 END)                                        AS outboundTalkTime,
-        SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
-                  AND COALESCE(is_voicemail,0)=0 AND duration>0
-                  THEN duration ELSE 0 END)                                        AS totalTalkTime,
-        ROUND(AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
-                  AND COALESCE(is_voicemail,0)=0 AND duration>0
-                  THEN duration END))                                              AS aht,
-        SUM(COALESCE(transferred,0))                                               AS transfers,
-        SUM(COALESCE(hold_duration,0))                                             AS holdTime,
-        SUM(CASE WHEN COALESCE(is_voicemail,0)=1
-                  OR lower(COALESCE(result,''))='voicemail'
-                  THEN 1 ELSE 0 END)                                               AS voicemails,
-        ROUND(AVG(CASE WHEN COALESCE(ring_duration,0)>0 THEN ring_duration END))  AS avgRingTime,
-        SUM(CASE WHEN direction='Inbound'
-                  AND lower(COALESCE(result,'')) IN ('missed','abandoned')
-                  THEN 1 ELSE 0 END)                                               AS inboundMissed,
-        COUNT(DISTINCT CASE WHEN direction='Inbound'
-                  AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
-                  AND COALESCE(is_voicemail,0)=0
-                  THEN call_id END)                                                AS answeredInbound
-      FROM call_logs
+        agent_name, month,
+        inbound, outbound, total, missed,
+        inbound_talk_time   AS inboundTalkTime,
+        outbound_talk_time  AS outboundTalkTime,
+        total_talk_time     AS totalTalkTime,
+        aht_seconds         AS aht,
+        transfers,
+        hold_time           AS holdTime,
+        voicemails,
+        avg_ring_time       AS avgRingTime,
+        inbound_missed      AS inboundMissed,
+        answered_inbound    AS answeredInbound
+      FROM call_monthly_summary
       ${where}
-      GROUP BY agent_name, month
       ORDER BY month DESC, agent_name ASC
     `, params);
 
-    // Add derived metrics
     const data = rows.map(r => ({
       ...r,
       abandonPct: r.inbound > 0 ? Math.round((r.inboundMissed / r.inbound) * 1000) / 10 : 0,
     }));
 
-    // Available months list for filter dropdown
+    // Months list for the dropdown — pulled from summary table (has full history)
     const months = await dbAll(
-      `SELECT DISTINCT strftime('%Y-%m', start_time) AS month FROM call_logs
-       WHERE agent_name IS NOT NULL AND agent_name != '' AND start_time IS NOT NULL
-       ORDER BY month DESC LIMIT 24`
+      `SELECT DISTINCT month FROM call_monthly_summary ORDER BY month DESC LIMIT 24`
     );
 
     res.json({ success: true, data, months: months.map(m => m.month) });
@@ -3056,9 +3035,24 @@ ${callNotes.trim().slice(0, 2000)}`;
 
 async function startScheduler() {
   setInterval(() => { fetchPresenceForAll().catch(e => log.error('presence_sync_failed', e)); }, getFallbackSyncMs());
-  cron.schedule('*/15 * * * *', async () => { fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message)); });
-  // Prune call logs older than 7 days at 1am IST daily
-  cron.schedule('30 19 * * *', async () => { pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message)); });
+  cron.schedule('*/15 * * * *', async () => {
+    fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message));
+    refreshMonthlySummary(new Date().toISOString().slice(0,7)).catch(e => console.error('❌ monthly summary sync:', e.message));
+  });
+  // Aggregate monthly summaries then prune raw call logs older than 7 days (1am IST daily)
+  cron.schedule('30 19 * * *', async () => {
+    try {
+      // Refresh all months present in call_logs before we delete anything
+      const { db: _db } = require('./database');
+      const months = await new Promise((rs,rj) => _db.all(
+        `SELECT DISTINCT strftime('%Y-%m', start_time) AS m FROM call_logs WHERE agent_name IS NOT NULL`,
+        [], (err,rows) => err?rj(err):rs(rows||[])
+      ));
+      for (const { m } of months) { await refreshMonthlySummary(m).catch(() => {}); }
+      console.log(`📊 Refreshed monthly summaries for ${months.length} month(s)`);
+    } catch(e) { console.error('❌ monthly summary refresh:', e.message); }
+    pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message));
+  });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
   // Every 2 hours: check volume, archive to Google Sheets if >90%, then prune

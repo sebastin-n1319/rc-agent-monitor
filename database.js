@@ -356,6 +356,15 @@ async function initDB() {
     is_voicemail INTEGER DEFAULT 0, from_number TEXT, to_number TEXT,
     queue_name TEXT, start_time DATETIME,
     fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE TABLE IF NOT EXISTS call_monthly_summary (
+    agent_id TEXT NOT NULL, agent_name TEXT NOT NULL, month TEXT NOT NULL,
+    inbound INTEGER DEFAULT 0, outbound INTEGER DEFAULT 0, total INTEGER DEFAULT 0,
+    missed INTEGER DEFAULT 0, inbound_missed INTEGER DEFAULT 0, answered_inbound INTEGER DEFAULT 0,
+    inbound_talk_time INTEGER DEFAULT 0, outbound_talk_time INTEGER DEFAULT 0, total_talk_time INTEGER DEFAULT 0,
+    aht_seconds REAL DEFAULT 0, transfers INTEGER DEFAULT 0, hold_time INTEGER DEFAULT 0,
+    voicemails INTEGER DEFAULT 0, avg_ring_time REAL DEFAULT 0,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (agent_id, month))`);
   await run(`CREATE TABLE IF NOT EXISTS login_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT,
     role TEXT, ip TEXT, location TEXT, system_info TEXT,
@@ -743,6 +752,53 @@ async function pruneCallLogs(daysToKeep=7){
   // Remove call logs older than N days to prevent unbounded DB growth
   const cutoff=new Date(Date.now()-daysToKeep*86400000).toISOString();
   return run(`DELETE FROM call_logs WHERE start_time < ?`,[cutoff]);
+}
+
+// Aggregate call_logs for a given YYYY-MM month into the persistent call_monthly_summary table.
+// Safe to call at any time — uses INSERT OR REPLACE so repeated calls are idempotent.
+async function refreshMonthlySummary(month){
+  if(!month) month = new Date().toISOString().slice(0,7);
+  const rows = await all(`
+    SELECT
+      agent_id, agent_name,
+      SUM(CASE WHEN direction='Inbound'  THEN 1 ELSE 0 END)  AS inbound,
+      SUM(CASE WHEN direction='Outbound' THEN 1 ELSE 0 END)  AS outbound,
+      COUNT(*) AS total,
+      SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) AS missed,
+      SUM(CASE WHEN direction='Inbound' AND lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) AS inbound_missed,
+      COUNT(DISTINCT CASE WHEN direction='Inbound'
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND COALESCE(is_voicemail,0)=0 THEN call_id END) AS answered_inbound,
+      SUM(CASE WHEN direction='Inbound'
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS inbound_talk_time,
+      SUM(CASE WHEN direction='Outbound'
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS outbound_talk_time,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS total_talk_time,
+      ROUND(AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END)) AS aht_seconds,
+      SUM(COALESCE(transferred,0)) AS transfers,
+      SUM(COALESCE(hold_duration,0)) AS hold_time,
+      SUM(CASE WHEN COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail' THEN 1 ELSE 0 END) AS voicemails,
+      ROUND(AVG(CASE WHEN COALESCE(ring_duration,0)>0 THEN ring_duration END)) AS avg_ring_time
+    FROM call_logs
+    WHERE strftime('%Y-%m', start_time) = ?
+      AND agent_name IS NOT NULL AND agent_name != ''
+      AND agent_id IS NOT NULL AND agent_id != ''
+    GROUP BY agent_id, agent_name
+  `, [month]);
+  const now = new Date().toISOString();
+  for(const r of rows){
+    await run(`INSERT OR REPLACE INTO call_monthly_summary
+      (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
+       inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [r.agent_id,r.agent_name,month,r.inbound||0,r.outbound||0,r.total||0,r.missed||0,r.inbound_missed||0,r.answered_inbound||0,
+       r.inbound_talk_time||0,r.outbound_talk_time||0,r.total_talk_time||0,r.aht_seconds||0,r.transfers||0,r.hold_time||0,r.voicemails||0,r.avg_ring_time||0,now]);
+  }
+  return rows.length;
 }
 
 // SUMMARY with all new metrics
@@ -2013,7 +2069,7 @@ module.exports={
   savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,getAgentSummary,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,getAgentSummary,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
