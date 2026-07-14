@@ -1230,6 +1230,26 @@ app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/call-summary/debug — quick diagnostic (admin only)
+app.get('/api/call-summary/debug', requireAdmin, async (req, res) => {
+  try {
+    const { db: _db } = require('./database');
+    const q = (sql, p=[]) => new Promise((rs,rj) => _db.all(sql, p, (err,rows) => err?rj(err):rs(rows||[])));
+    const [clCount, clMonths, csCount, csMonths, clSample] = await Promise.all([
+      q(`SELECT COUNT(*) AS cnt FROM call_logs`),
+      q(`SELECT strftime('%Y-%m', start_time) AS m, COUNT(*) AS n FROM call_logs GROUP BY m ORDER BY m DESC`),
+      q(`SELECT COUNT(*) AS cnt FROM call_monthly_summary`),
+      q(`SELECT month, agent_name, total FROM call_monthly_summary ORDER BY month DESC LIMIT 20`),
+      q(`SELECT agent_name, direction, result, start_time FROM call_logs ORDER BY start_time DESC LIMIT 3`),
+    ]);
+    res.json({
+      call_logs: { total: clCount[0]?.cnt, by_month: clMonths, recent: clSample },
+      call_monthly_summary: { total: csCount[0]?.cnt, rows: csMonths },
+      backfill_running: _backfillRunning,
+    });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
 // DB stats + manual cleanup endpoints (admin only)
 app.get('/api/db-stats', requireAdmin, async (req, res) => {
   try { res.json({ success: true, data: await getDbStats() }); }
