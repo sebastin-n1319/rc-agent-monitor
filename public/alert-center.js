@@ -360,7 +360,7 @@
       const n = new Notification(title, {
         body,
         tag: payload.key || 'adit-alert',  // same-key replaces, not stacks
-        icon: '/adit-logo-dark.png',
+        icon: '/adit-logo.png',
         silent: false,
         requireInteraction: payload.severity === 'critical'
       });
