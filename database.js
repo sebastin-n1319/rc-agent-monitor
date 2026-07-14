@@ -356,15 +356,18 @@ async function initDB() {
     is_voicemail INTEGER DEFAULT 0, from_number TEXT, to_number TEXT,
     queue_name TEXT, start_time DATETIME,
     fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-  await run(`CREATE TABLE IF NOT EXISTS call_monthly_summary (
-    agent_id TEXT NOT NULL, agent_name TEXT NOT NULL, month TEXT NOT NULL,
-    inbound INTEGER DEFAULT 0, outbound INTEGER DEFAULT 0, total INTEGER DEFAULT 0,
-    missed INTEGER DEFAULT 0, inbound_missed INTEGER DEFAULT 0, answered_inbound INTEGER DEFAULT 0,
-    inbound_talk_time INTEGER DEFAULT 0, outbound_talk_time INTEGER DEFAULT 0, total_talk_time INTEGER DEFAULT 0,
-    aht_seconds REAL DEFAULT 0, transfers INTEGER DEFAULT 0, hold_time INTEGER DEFAULT 0,
-    voicemails INTEGER DEFAULT 0, avg_ring_time REAL DEFAULT 0,
-    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (agent_id, month))`);
+  // Wrapped separately — disk-full errors here must not abort the rest of initDB
+  try {
+    await run(`CREATE TABLE IF NOT EXISTS call_monthly_summary (
+      agent_id TEXT NOT NULL, agent_name TEXT NOT NULL, month TEXT NOT NULL,
+      inbound INTEGER DEFAULT 0, outbound INTEGER DEFAULT 0, total INTEGER DEFAULT 0,
+      missed INTEGER DEFAULT 0, inbound_missed INTEGER DEFAULT 0, answered_inbound INTEGER DEFAULT 0,
+      inbound_talk_time INTEGER DEFAULT 0, outbound_talk_time INTEGER DEFAULT 0, total_talk_time INTEGER DEFAULT 0,
+      aht_seconds REAL DEFAULT 0, transfers INTEGER DEFAULT 0, hold_time INTEGER DEFAULT 0,
+      voicemails INTEGER DEFAULT 0, avg_ring_time REAL DEFAULT 0,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (agent_id, month))`);
+  } catch(e) { console.warn('⚠️ call_monthly_summary table init skipped (will retry):', e.message); }
   await run(`CREATE TABLE IF NOT EXISTS login_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT,
     role TEXT, ip TEXT, location TEXT, system_info TEXT,

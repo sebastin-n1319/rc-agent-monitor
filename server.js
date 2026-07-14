@@ -341,19 +341,22 @@ function escapeHtml(str) {
 // (called at the top of this file). The legacy console.error duplicates were
 // removed in Session 9 hardening — structured JSON logs now win.
 
+// ── Pre-initDB emergency prune ────────────────────────────────────────────────
+// Runs BEFORE initDB so disk space is freed even if the new call_monthly_summary
+// table creation would otherwise fail due to a full volume.
+(async () => {
+  try {
+    const { db: _preDb } = require('./database');
+    // Delete call_logs older than 2 days without VACUUM (VACUUM needs free space too)
+    await new Promise(rs => _preDb.run(
+      `DELETE FROM call_logs WHERE date(start_time) < date('now','-2 days')`, [], () => rs()
+    ));
+    console.log('🧹 Pre-init prune: old call_logs cleared');
+  } catch(e) { console.warn('⚠️ Pre-init prune error (non-fatal):', e.message); }
+})();
+
 initDB().then(async () => {
   console.log('DB ready');
-  // EMERGENCY: aggressively prune call_logs to 2 days on startup to prevent disk bloat
-  // (historical data is now kept in call_monthly_summary, not call_logs)
-  try {
-    const { db: _edb } = require('./database');
-    await new Promise((rs,rj) => _edb.run(
-      `DELETE FROM call_logs WHERE date(start_time) < date('now','-2 days')`,
-      [], (err) => err ? rj(err) : rs()
-    ));
-    await new Promise((rs,rj) => _edb.run('VACUUM', [], (err) => err ? rj(err) : rs()));
-    console.log('🧹 Emergency startup prune: call_logs trimmed to 2 days + VACUUM done');
-  } catch(e) { console.warn('⚠️ Emergency prune skipped:', e.message); }
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
   try {
     const r = await pruneOldData();
@@ -377,6 +380,11 @@ initDB().then(async () => {
       console.log(`📋 Roster ready — ${cnt} agents already loaded`);
     }
   } catch(e) { log.error('roster_init_failed', e); console.error('roster_init_failed', e); }
+}).catch(e => {
+  // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
+  // Server will still start via start() below; DB-dependent routes may error until
+  // a clean restart, but the process stays alive.
+  console.error('❌ initDB chain failed (non-fatal):', e.message);
 });
 
 liveEvents.on('update', payload => broadcastLiveEvent(payload));
