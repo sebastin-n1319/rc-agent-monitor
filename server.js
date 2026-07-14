@@ -1145,7 +1145,8 @@ app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
 // Query params: month=YYYY-MM (optional, omit for all), agent=name (optional)
 app.get('/api/call-summary', requireAdmin, async (req, res) => {
   try {
-    const { all: dbAll } = require('./database');
+    const { db: _db } = require('./database');
+    const dbAll = (sql, params=[]) => new Promise((res,rej) => _db.all(sql, params, (err,rows) => err?rej(err):res(rows||[])));
     const { month, agent } = req.query;
 
     let where = `WHERE agent_name IS NOT NULL AND agent_name != ''`;
