@@ -2,2039 +2,1181 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>T1 CS Stars · Q2 2026 Hall of Fame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07101f;
-  --bg2:#0c1829;
-  --bg3:#111f35;
-  --t1:#dde6f0;
-  --t2:#6b7fa0;
-  --t3:#374560;
-  --orange:#f59e0b;
-  --gold:#f59e0b;
-  --gold2:#fde68a;
-  --teal:#0ea5e9;
-  --blue:#3b82f6;
-  --green:#10b981;
-  --red:#ef4444;
-  --purple:#8b5cf6;
-  --silver:#94a3b8;
-  --bronze:#d97706;
-  --b1:rgba(255,255,255,.06);
-  --b2:rgba(255,255,255,.1);
-  --r:8px;
-  --neon-cyan:#38bdf8;
-  --neon-gold:#fbbf24;
-  --neon-purple:#a78bfa;
-  --neon-green:#34d399;
-  --neon-orange:#fb923c;
-  --glow-cyan:0 0 12px rgba(56,189,248,.4),0 0 28px rgba(56,189,248,.15);
-  --glow-gold:0 0 12px rgba(245,158,11,.4),0 0 28px rgba(245,158,11,.15);
-  --glow-purple:0 0 12px rgba(167,139,250,.4),0 0 28px rgba(167,139,250,.15);
-  --scanline-color:rgba(56,189,248,.018);
-  --cyber-border:1px solid rgba(56,189,248,.14);
+  --bg:#060d1a;--bg2:#0c1829;--bg3:#111f35;
+  --t1:#f1f5f9;--t2:#94a3b8;--t3:#475569;
+  --blue:#3b82f6;--blue-light:#60a5fa;--blue-dark:#1d4ed8;
+  --orange:#f97316;--orange-light:#fb923c;
+  --gold:#f59e0b;--gold-light:#fde68a;
+  --green:#22c55e;--red:#ef4444;--purple:#a855f7;--teal:#0ea5e9;
+  --silver:#94a3b8;--bronze:#d97706;
+  --border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);
+  --r:10px;--shadow:0 4px 20px rgba(0,0,0,.4);
 }
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes shimmerGold{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes barGrow{from{width:0}to{width:var(--w)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 20px rgba(245,158,11,.2)}50%{box-shadow:0 0 40px rgba(245,158,11,.4),0 0 80px rgba(245,158,11,.1)}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px;scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 35% at 50% 0%,rgba(59,130,246,.06),transparent),radial-gradient(ellipse 40% 25% at 0% 60%,rgba(249,115,22,.04),transparent),radial-gradient(ellipse 40% 25% at 100% 60%,rgba(168,85,247,.03),transparent);pointer-events:none;z-index:0}
+.page-wrap{position:relative;z-index:1;max-width:100%;padding-bottom:40px}
 
-/* ---- ANIMATIONS ---- */
-@keyframes float {
-  0%,100%{transform:translateY(0)}
-  50%{transform:translateY(-8px)}
-}
-@keyframes shimmer {
-  0%{background-position:-200% 0}
-  100%{background-position:200% 0}
-}
-@keyframes pulseGlow {
-  0%,100%{box-shadow:0 0 24px rgba(245,158,11,.2),0 8px 32px rgba(0,0,0,.5)}
-  50%{box-shadow:0 0 48px rgba(245,158,11,.4),0 0 80px rgba(245,158,11,.12),0 8px 32px rgba(0,0,0,.5)}
-}
-@keyframes fadeSlideUp {
-  from{opacity:0;transform:translateY(16px)}
-  to{opacity:1;transform:translateY(0)}
-}
-@keyframes bgPulse {
-  0%{opacity:1;transform:scale(1)}
-  100%{opacity:.7;transform:scale(1.08)}
-}
+/* HERO */
+.hero{text-align:center;padding:32px 20px 24px;position:relative;border-bottom:1px solid var(--border);background:linear-gradient(180deg,rgba(59,130,246,.04) 0%,transparent 100%)}
+.hero-badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-light);background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);padding:4px 14px;border-radius:50px;margin-bottom:16px}
+.hero-icon{width:56px;height:56px;background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(249,115,22,.1));border:1px solid rgba(245,158,11,.3);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--gold);animation:float 3s ease-in-out infinite;box-shadow:0 0 20px rgba(245,158,11,.15)}
+.hero-title{font-family:'Poppins',sans-serif;font-weight:900;font-size:28px;background:linear-gradient(135deg,var(--t1) 30%,var(--gold-light) 70%,var(--orange-light) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px;letter-spacing:-.5px}
+.hero-sub{font-size:12px;color:var(--t2);margin-bottom:20px}
+.hero-stats{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.hstat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 20px;text-align:center;min-width:80px;transition:border-color .2s}
+.hstat:hover{border-color:rgba(59,130,246,.3)}
+.hstat-val{display:block;font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;color:var(--t1);line-height:1}
+.hstat-lbl{font-size:9.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--t2);margin-top:3px;display:block}
 
-@keyframes scanline {
-  0%{transform:translateY(-100%)}
-  100%{transform:translateY(100vh)}
-}
-@keyframes neonFlicker {
-  0%,19%,21%,23%,25%,54%,56%,100%{opacity:1}
-  20%,24%,55%{opacity:.4}
-}
-@keyframes cyberPulse {
-  0%,100%{border-color:rgba(56,189,248,.18);box-shadow:0 0 0 rgba(56,189,248,0)}
-  50%{border-color:rgba(56,189,248,.45);box-shadow:0 0 20px rgba(56,189,248,.12)}
-}
-@keyframes rotateRing {
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
-}
-@keyframes popIn {
-  0%{opacity:0;transform:scale(.88) translateY(12px)}
-  70%{transform:scale(1.03) translateY(-2px)}
-  100%{opacity:1;transform:scale(1) translateY(0)}
-}
-@keyframes hologram {
-  0%,100%{opacity:.9;transform:skewX(0deg)}
-  25%{opacity:.7;transform:skewX(-.3deg)}
-  75%{opacity:.85;transform:skewX(.3deg)}
-}
-@keyframes borderTrace {
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
-@keyframes countUp {
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1;transform:translateY(0)}
-}
-@keyframes typewriter {
-  from{width:0}
-  to{width:100%}
-}
-@keyframes glitch {
-  0%,90%,100%{transform:translate(0)}
-  92%{transform:translate(-2px,1px)}
-  94%{transform:translate(2px,-1px)}
-  96%{transform:translate(-1px,0)}
-}
+/* TAB NAV */
+nav.tab-nav{display:flex;gap:6px;padding:12px 16px;position:sticky;top:0;z-index:10;background:rgba(6,13,26,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border)}
+.tab-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--t2);font-family:'Inter',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:all .2s}
+.tab-btn:hover{border-color:rgba(59,130,246,.3);color:var(--blue-light);background:rgba(59,130,246,.06)}
+.tab-btn.active{border-color:rgba(59,130,246,.5);color:var(--blue-light);background:rgba(59,130,246,.12);box-shadow:0 2px 12px rgba(59,130,246,.15)}
 
-@keyframes rankBarGrow {
-  from{width:0}
-  to{width:var(--bar-w)}
-}
+/* TAB CONTENT */
+.tab-content{display:none;padding:14px 16px 0;animation:fadeUp .3s ease}
+.tab-content.active{display:block}
 
-/* ---- BASE ---- */
-html{scroll-behavior:smooth;font-size:13px}
-body{
-  background:var(--bg);
-  color:var(--t1);
-  font-family:'Inter',sans-serif;
-  font-size:15px;
-  line-height:1.6;
-  min-height:100vh;
-  position:relative;
-  overflow-x:hidden;
-}
-body::after{
-  content:'';
-  position:fixed;
-  inset:0;
-  background-image:
-    linear-gradient(rgba(56,189,248,.022) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(56,189,248,.022) 1px,transparent 1px);
-  background-size:44px 44px;
-  pointer-events:none;
-  z-index:0;
-}
-body::before{
-  content:'';
-  position:fixed;
-  inset:0;
-  background:
-    radial-gradient(ellipse 70% 40% at 50% -10%,rgba(56,189,248,.07),transparent),
-    radial-gradient(ellipse 50% 30% at 0% 50%,rgba(139,92,246,.05),transparent),
-    radial-gradient(ellipse 50% 30% at 100% 50%,rgba(16,185,129,.04),transparent);
-  pointer-events:none;
-  z-index:0;
-}
+/* SECTION LABEL */
+.sec-label{display:flex;align-items:center;gap:8px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-light);margin:24px 0 12px}
+.sec-label svg{opacity:.7}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(59,130,246,.25),transparent)}
 
-/* ---- HERO ---- */
-.hero{
-  text-align:center;
-  padding:28px 20px 22px;
-  position:relative;
-  overflow:hidden;
-}
-.hero::before{
-  content:'';
-  position:absolute;
-  inset:0;
-  background:radial-gradient(ellipse 80% 60% at 50% -20%,rgba(245,158,11,.08),transparent);
-  pointer-events:none;
-}
-.hero::after{
-  content:'';
-  position:absolute;
-  bottom:0;left:10%;right:10%;
-  height:1px;
-  background:linear-gradient(90deg,transparent,rgba(56,189,248,.4),rgba(245,158,11,.4),rgba(56,189,248,.4),transparent);
-}
-.hero-trophy{
-  font-size:0;
-  margin:0 auto 14px;
-  width:60px;height:60px;
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-  animation:float 3s ease-in-out infinite;
-}
-.hero-trophy i{
-  font-size:36px;
-  color:var(--gold);
-  filter:drop-shadow(0 0 12px rgba(251,191,36,.7)) drop-shadow(0 0 28px rgba(251,191,36,.3));
-}
-.hero-trophy::before{
-  content:'';
-  position:absolute;
-  inset:-8px;
-  border-radius:50%;
-  border:1px solid rgba(251,191,36,.3);
-  animation:rotateRing 4s linear infinite;
-  border-top-color:var(--gold);
-  border-right-color:transparent;
-  border-bottom-color:rgba(251,191,36,.3);
-}
-.hero-trophy::after{
-  content:'';
-  position:absolute;
-  inset:-18px;
-  border-radius:50%;
-  border:1px dashed rgba(251,191,36,.12);
-  animation:rotateRing 10s linear infinite reverse;
-}
-.hero-title{
-  font-family:'Poppins',sans-serif;
-  font-weight:900;
-  font-size:30px;
-  background:linear-gradient(135deg,var(--gold) 0%,#fde68a 50%,var(--neon-cyan) 100%);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-  margin-bottom:6px;
-  animation:glitch 8s infinite;
-  letter-spacing:-.5px;
-}
-.hero-sub{
-  font-size:10px;
-  color:var(--t2);
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  margin-bottom:14px;
-  font-weight:600;
-}
-.hero-stats{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  justify-content:center;
-  padding:0 12px;
-  max-width:700px;
-  margin:0 auto;
-}
-.hstat{
-  font-size:9.5px;
-  font-weight:700;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  padding:5px 12px;
-  border-radius:2px;
-  border:1px solid rgba(56,189,248,.2);
-  background:rgba(56,189,248,.05);
-  color:var(--neon-cyan);
-  clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%);
-  transition:all .2s;
-}
-.hstat:hover{
-  background:rgba(56,189,248,.12);
-  box-shadow:var(--glow-cyan);
-}
+/* PODIUM */
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:4px 0 0}
+.pod-slot{display:flex;flex-direction:column;align-items:center;flex:1;max-width:210px}
+.pod-rank{font-family:'Poppins',sans-serif;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px;margin-bottom:6px}
+.pod-rank.gold{background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
+.pod-rank.silver{background:rgba(148,163,184,.1);color:var(--silver);border:1px solid rgba(148,163,184,.25)}
+.pod-rank.bronze{background:rgba(217,119,6,.1);color:var(--bronze);border:1px solid rgba(217,119,6,.25)}
+.pod-star{font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--gold);margin-bottom:4px;opacity:.85}
+.pod-card{width:100%;border-radius:var(--r);padding:16px 14px;text-align:center;position:relative;overflow:hidden;transition:transform .2s}
+.pod-card:hover{transform:translateY(-3px)}
+.pod-1 .pod-card{border:1px solid rgba(245,158,11,.35);background:linear-gradient(160deg,rgba(245,158,11,.1),rgba(245,158,11,.03),var(--bg2));box-shadow:0 0 28px rgba(245,158,11,.15),var(--shadow);animation:pulse 3s ease-in-out infinite}
+.pod-2 .pod-card{border:1px solid rgba(148,163,184,.18);background:linear-gradient(160deg,rgba(148,163,184,.06),var(--bg2));box-shadow:var(--shadow)}
+.pod-3 .pod-card{border:1px solid rgba(217,119,6,.18);background:linear-gradient(160deg,rgba(217,119,6,.06),var(--bg2));box-shadow:var(--shadow)}
+.pod-av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:17px;margin:0 auto 8px}
+.pod-av-gold{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;box-shadow:0 0 16px rgba(245,158,11,.4)}
+.pod-av-silver{background:linear-gradient(135deg,#64748b,#94a3b8);color:#fff}
+.pod-av-bronze{background:linear-gradient(135deg,#92400e,#d97706);color:#fff}
+.pod-name{font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;color:var(--t1);margin-bottom:3px}
+.pod-1 .pod-name{font-size:15px;color:var(--gold-light)}
+.pod-chip{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:50px;margin-bottom:4px}
+.chip-calls{background:rgba(14,165,233,.15);color:var(--teal);border:1px solid rgba(14,165,233,.25)}
+.chip-chat{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.25)}
+.pod-pts{font-family:'Poppins',sans-serif;font-weight:900;font-size:24px;color:var(--gold);line-height:1.1;margin-bottom:2px}
+.pod-1 .pod-pts{font-size:28px}
+.pod-pts span{font-size:12px;font-weight:600;color:var(--t2)}
+.pod-note{font-size:10px;color:var(--t2);font-style:italic;margin-bottom:8px}
+.pod-rows{display:flex;flex-direction:column;gap:3px}
+.pod-row{display:flex;justify-content:space-between;background:rgba(255,255,255,.04);border-radius:5px;padding:3px 8px;font-size:10.5px}
+.pod-row span{color:var(--t2)}
+.pod-row strong{color:var(--t1);font-weight:700}
+.pod-base{width:100%;margin-top:8px;border-radius:5px 5px 0 0}
+.pod-base-gold{height:48px;background:linear-gradient(180deg,rgba(245,158,11,.4),rgba(245,158,11,.1))}
+.pod-base-silver{height:32px;background:linear-gradient(180deg,rgba(148,163,184,.3),rgba(148,163,184,.08))}
+.pod-base-bronze{height:22px;background:linear-gradient(180deg,rgba(217,119,6,.3),rgba(217,119,6,.08))}
 
-/* ---- TAB NAV ---- */
-nav.tab-nav{
-  display:flex;
-  gap:8px;
-  padding:10px 16px;
-  position:sticky;
-  top:0;
-  z-index:10;
-  background:rgba(7,16,31,.95);
-  backdrop-filter:blur(20px);
-  -webkit-backdrop-filter:blur(20px);
-  border-bottom:1px solid rgba(255,255,255,.06);
-  box-shadow:0 1px 0 rgba(56,189,248,.06),0 4px 24px rgba(0,0,0,.4);
-}
-.tab-btn{
-  padding:7px 18px;
-  border-radius:6px;
-  border:1px solid rgba(255,255,255,.08);
-  background:transparent;
-  color:var(--t2);
-  font-family:'Poppins',sans-serif;
-  font-weight:600;
-  font-size:12px;
-  cursor:pointer;
-  transition:all .2s;
-  letter-spacing:.03em;
-  display:flex;align-items:center;gap:6px;
-}
-.tab-btn i{font-size:14px}
-.tab-btn:hover{
-  border-color:rgba(56,189,248,.3);
-  color:var(--neon-cyan);
-  background:rgba(56,189,248,.06);
-}
-.tab-btn.active{
-  background:rgba(56,189,248,.1);
-  border-color:rgba(56,189,248,.35);
-  color:var(--neon-cyan);
-  box-shadow:0 0 12px rgba(56,189,248,.15);
-}
+/* CHAT CHAMPIONS */
+.champ-list{display:flex;flex-direction:column;gap:6px}
+.champ-card{display:grid;grid-template-columns:28px 38px 1fr auto;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;position:relative;overflow:hidden;transition:border-color .18s,background .18s}
+.champ-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--purple),#7c3aed)}
+.champ-card:hover{border-color:rgba(168,85,247,.25);background:rgba(168,85,247,.04)}
+.champ-rank{font-family:'Poppins',sans-serif;font-weight:900;font-size:15px;text-align:center;line-height:1}
+.champ-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:12px;color:#fff;flex-shrink:0}
+.champ-info{min-width:0}
+.champ-name{font-weight:700;font-size:13px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.champ-note{font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.champ-pts{font-family:'Poppins',sans-serif;font-weight:900;font-size:18px;color:var(--gold);white-space:nowrap;text-align:right}
+.champ-pts span{font-size:11px;font-weight:600;color:var(--t2)}
 
-/* ---- PAGE WRAP ---- */
-.page-wrap{max-width:100%;padding-bottom:40px;position:relative;z-index:1}
-
-/* ---- TAB CONTENT ---- */
-.tab-content{display:none;padding:12px 14px 0;animation:fadeSlideUp .3s ease}
-.tab-content.active{
-  display:block;
-}
-
-/* ---- SECTION LABEL ---- */
-.section-label{
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:.15em;
-  text-transform:uppercase;
-  color:var(--neon-cyan);
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin:20px 0 10px;
-  text-shadow:0 0 10px rgba(56,189,248,.4);
-}
-.section-label i{font-size:12px}
-.section-label::after{
-  content:'';
-  flex:1;
-  height:1px;
-  background:linear-gradient(90deg,rgba(56,189,248,.25),transparent);
-}
-
-/* ---- PODIUM ---- */
-.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:4px 0 0}
-.podium-slot{display:flex;flex-direction:column;align-items:center;flex:1;max-width:220px}
-.medal{font-family:'Poppins',sans-serif;font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;text-align:center;padding:4px 12px;border-radius:4px;display:inline-block}
-.medal-gold{background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
-.medal-silver{background:rgba(148,163,184,.1);color:var(--silver);border:1px solid rgba(148,163,184,.25)}
-.medal-bronze{background:rgba(217,119,6,.1);color:var(--bronze);border:1px solid rgba(217,119,6,.25)}
-.podium-card{
-  width:100%;
-  border-radius:var(--r);
-  padding:16px 14px 14px;
-  text-align:center;
-  position:relative;
-  overflow:hidden;
-  transition:transform .2s,box-shadow .2s;
-}
-.podium-card:hover{transform:translateY(-4px)}
-
-/* Gold #1 card */
-.podium-1 .podium-card{
-  border:1px solid rgba(245,158,11,.4);
-  background:linear-gradient(160deg,rgba(245,158,11,.1),rgba(245,158,11,.03),var(--bg2));
-  box-shadow:0 0 32px rgba(245,158,11,.18),0 8px 32px rgba(0,0,0,.5);
-  animation:pulseGlow 3s ease-in-out infinite;
-}
-.podium-1 .podium-card::after{
-  content:'';
-  position:absolute;
-  inset:0;
-  background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.06) 50%,transparent 65%);
-  background-size:200% 100%;
-  animation:shimmer 4s linear infinite;
-  pointer-events:none;
-}
-
-/* Silver #2 card */
-.podium-2 .podium-card{
-  border:1px solid rgba(148,163,184,.2);
-  background:linear-gradient(160deg,rgba(148,163,184,.06),var(--bg2));
-}
-
-/* Bronze #3 card */
-.podium-3 .podium-card{
-  border:1px solid rgba(217,119,6,.2);
-  background:linear-gradient(160deg,rgba(217,119,6,.06),var(--bg2));
-}
-
-/* Star badge */
-.star-badge{
-  position:absolute;
-  top:10px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(251,191,36,.2);
-  border:1px solid rgba(251,191,36,.4);
-  color:var(--gold);
-  font-size:10px;
-  font-weight:700;
-  padding:3px 10px;
-  border-radius:50px;
-  white-space:nowrap;
-  font-family:'Poppins',sans-serif;
-}
-
-/* Avatars */
-.p-avatar{
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  margin:16px auto 10px;
-  font-family:'Poppins',sans-serif;
-  font-weight:700;
-}
-.p-av-gold{
-  width:68px;
-  height:68px;
-  background:linear-gradient(135deg,#f59e0b,#fbbf24);
-  box-shadow:0 0 24px rgba(251,191,36,.6);
-  color:#1a0e00;
-  font-size:20px;
-}
-.p-av-silver{
-  width:56px;
-  height:56px;
-  background:linear-gradient(135deg,#475569,#94a3b8);
-  color:#0f172a;
-  font-size:16px;
-}
-.p-av-bronze{
-  width:56px;
-  height:56px;
-  background:linear-gradient(135deg,#78350f,#d97706);
-  color:#fff;
-  font-size:16px;
-}
-
-.p-name{
-  font-family:'Poppins',sans-serif;
-  font-weight:800;
-  font-size:15px;
-  margin-bottom:4px;
-}
-.podium-1 .p-name{
-  font-size:15px;
-  color:var(--gold);
-}
-.p-score{
-  font-family:'Poppins',sans-serif;
-  font-weight:900;
-  font-size:18px;
-  color:var(--gold);
-}
-.podium-1 .p-score{
-  font-size:22px;
-}
-.p-score span{
-  font-size:14px;
-  font-weight:600;
-  color:var(--t2);
-}
-.p-note{
-  font-size:11px;
-  color:var(--t2);
-  margin:4px 0 10px;
-  font-style:italic;
-}
-.p-stats{
-  display:flex;
-  flex-direction:column;
-  gap:5px;
-}
-.p-stat{
-  display:flex;
-  justify-content:space-between;
-  background:rgba(255,255,255,.04);
-  border-radius:7px;
-  padding:5px 10px;
-  font-size:11px;
-}
-.p-stat span{color:var(--t2)}
-.p-stat strong{color:var(--t1);font-weight:700}
-
-/* Team badge — calls */
-.badge-calls{
-  display:inline-block;
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  padding:3px 10px;
-  border-radius:50px;
-  background:rgba(6,135,190,.18);
-  color:var(--teal);
-  border:1px solid rgba(6,135,190,.25);
-  margin-bottom:6px;
-}
-
-/* Podium bases */
-.podium-base{
-  width:100%;
-  margin-top:10px;
-  border-radius:6px 6px 0 0;
-}
-.pb-gold{
-  height:52px;
-  background:linear-gradient(180deg,rgba(251,191,36,.6),rgba(251,191,36,.2));
-}
-.pb-silver{
-  height:34px;
-  background:linear-gradient(180deg,rgba(148,163,184,.5),rgba(148,163,184,.15));
-}
-.pb-bronze{
-  height:22px;
-  background:linear-gradient(180deg,rgba(205,127,50,.5),rgba(205,127,50,.15));
-}
-
-/* ---- CHAT CHAMPIONS ---- */
-.chat-champs-grid{display:flex;flex-direction:column;gap:8px}
-.cc-card{
-  border-radius:var(--r);
-  border:1px solid var(--b1);
-  background:var(--bg2);
-  padding:12px 16px;
-  display:grid;
-  grid-template-columns:32px 40px 1fr auto;
-  align-items:center;
-  gap:12px;
-  transition:transform .18s,border-color .18s,background .18s;
-  position:relative;
-  overflow:hidden;
-}
-.cc-card::before{
-  content:'';
-  position:absolute;
-  left:0;top:0;bottom:0;
-  width:3px;
-  background:linear-gradient(180deg,var(--purple),var(--neon-purple));
-}
-.cc-card:hover{
-  transform:translateY(-1px);
-  border-color:rgba(139,92,246,.3);
-  background:rgba(139,92,246,.04);
-}
-.cc-rank{
-  font-family:'Poppins',sans-serif;
-  font-weight:900;
-  font-size:16px;
-  color:var(--purple);
-  text-align:center;
-  line-height:1;
-}
-.cc-avatar{
-  width:40px;height:40px;
-  border-radius:50%;
-  background:linear-gradient(135deg,var(--purple),#6d28d9);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;color:#fff;
-  flex-shrink:0;
-}
-.cc-body{min-width:0}
-.cc-name{font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:1px}
-.cc-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:15px;color:var(--gold);line-height:1.2}
-.cc-note{font-size:10px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cc-metrics{font-size:10px;color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cc-tag{display:none}
-
-/* Chat badge */
-.badge-chat{
-  display:inline-block;
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  padding:2px 8px;
-  border-radius:50px;
-  background:rgba(168,85,247,.18);
-  color:var(--purple);
-  border:1px solid rgba(168,85,247,.25);
-}
-
-/* ---- AWARDS GRID ---- */
-.awards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:4px}
-.award-card{
-  border-radius:var(--r);
-  border:1px solid var(--b1);
-  background:var(--bg2);
-  padding:14px;
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-  transition:transform .18s,border-color .18s;
-  position:relative;
-}
+/* AWARDS */
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.award-card{display:flex;gap:12px;align-items:flex-start;border-radius:var(--r);border:1px solid var(--border);background:var(--bg2);padding:14px;transition:transform .18s,border-color .18s}
 .award-card:hover{transform:translateY(-2px)}
-.award-gold{border-left:3px solid var(--gold);background:linear-gradient(135deg,rgba(245,158,11,.05),var(--bg2))}
-.award-green{border-left:3px solid var(--green);background:linear-gradient(135deg,rgba(16,185,129,.05),var(--bg2))}
-.award-purple{border-left:3px solid var(--purple);background:linear-gradient(135deg,rgba(139,92,246,.05),var(--bg2))}
-.award-teal{border-left:3px solid var(--teal);background:linear-gradient(135deg,rgba(14,165,233,.05),var(--bg2))}
-.award-orange{border-left:3px solid var(--orange);background:linear-gradient(135deg,rgba(245,158,11,.04),var(--bg2))}
-.award-blue{border-left:3px solid var(--blue);background:linear-gradient(135deg,rgba(59,130,246,.05),var(--bg2))}
-.aw-icon{font-size:0;flex-shrink:0;width:40px;height:40px;display:flex;align-items:center;justify-content:center}
-.aw-icon i{font-size:28px;filter:drop-shadow(0 0 8px currentColor)}
-.aw-title{
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--t3);
-  margin-bottom:5px;
-}
-.aw-winner{
-  font-family:'Poppins',sans-serif;
-  font-weight:800;
-  font-size:14px;
-  color:var(--t1);
-  margin-bottom:2px;
-}
-.aw-winner-multi{
-  font-family:'Poppins',sans-serif;
-  font-weight:700;
-  font-size:13px;
-  color:var(--t1);
-  line-height:1.5;
-  margin-bottom:2px;
-}
-.aw-desc{
-  font-size:11px;
-  color:var(--t2);
-  line-height:1.55;
-  margin:6px 0 10px;
-}
-.aw-chip{
-  display:inline-block;
-  font-size:11px;
-  font-weight:700;
-  padding:3px 10px;
-  border-radius:50px;
-}
-.chip-gold{
-  background:rgba(251,191,36,.15);
-  color:var(--gold);
-  border:1px solid rgba(251,191,36,.25);
-}
-.chip-green{
-  background:rgba(34,197,94,.12);
-  color:var(--green);
-  border:1px solid rgba(34,197,94,.22);
-}
-.chip-purple{
-  background:rgba(168,85,247,.15);
-  color:var(--purple);
-  border:1px solid rgba(168,85,247,.25);
-}
-.chip-teal{
-  background:rgba(6,135,190,.15);
-  color:var(--teal);
-  border:1px solid rgba(6,135,190,.25);
-}
-.chip-orange{
-  background:rgba(242,136,32,.15);
-  color:var(--orange);
-  border:1px solid rgba(242,136,32,.25);
-}
-.chip-blue{
-  background:rgba(59,130,246,.15);
-  color:var(--blue);
-  border:1px solid rgba(59,130,246,.25);
-}
+.aw-gold{border-left:3px solid var(--gold);background:linear-gradient(135deg,rgba(245,158,11,.05),var(--bg2))}
+.aw-green{border-left:3px solid var(--green);background:linear-gradient(135deg,rgba(34,197,94,.04),var(--bg2))}
+.aw-blue{border-left:3px solid var(--blue);background:linear-gradient(135deg,rgba(59,130,246,.05),var(--bg2))}
+.aw-orange{border-left:3px solid var(--orange);background:linear-gradient(135deg,rgba(249,115,22,.04),var(--bg2))}
+.aw-purple{border-left:3px solid var(--purple);background:linear-gradient(135deg,rgba(168,85,247,.05),var(--bg2))}
+.aw-teal{border-left:3px solid var(--teal);background:linear-gradient(135deg,rgba(14,165,233,.04),var(--bg2))}
+.aw-icon{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:8px;background:rgba(255,255,255,.05)}
+.aw-body{flex:1;min-width:0}
+.aw-title{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:3px}
+.aw-winner{font-family:'Poppins',sans-serif;font-weight:700;font-size:14px;color:var(--t1);margin-bottom:4px}
+.aw-desc{font-size:11px;color:var(--t2);line-height:1.5}
 
-/* ---- SCOREBOARDS ---- */
-.scoreboards-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
-.scoreboard-card{
-  border-radius:var(--r);
-  border:1px solid var(--b1);
-  background:var(--bg2);
-  overflow:hidden;
-  transition:border-color .2s;
-}
-.scoreboard-card:hover{border-color:var(--b2)}
-.sb-head{
-  padding:10px 14px;
-  font-family:'Poppins',sans-serif;
-  font-weight:700;
-  font-size:12px;
-  border-bottom:1px solid var(--b1);
-  background:rgba(255,255,255,.02);
-  letter-spacing:.04em;
-  display:flex;align-items:center;gap:6px;
-}
-.sb-head i{font-size:14px}
-.sb-table{
-  display:flex;
-  flex-direction:column;
-}
-.sb-hrow{
-  display:grid;
-  grid-template-columns:28px 1fr 32px 32px 32px 62px 50px;
-  gap:8px;
-  padding:7px 10px;
-  font-size:9px;
-  font-weight:700;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:var(--t3);
-  border-bottom:1px solid var(--b1);
-  align-items:center;
-}
-.sb-row{
-  display:grid;
-  grid-template-columns:28px 1fr 32px 32px 32px 62px 50px;
-  gap:8px;
-  padding:8px 10px;
-  border-bottom:1px solid rgba(255,255,255,.035);
-  font-size:11.5px;
-  align-items:center;
-  transition:background .15s;
-}
-.sb-row:hover{
-  background:rgba(255,255,255,.02);
-}
-.sb-row:last-child{
-  border-bottom:none;
-}
-.row-1{
-  background:rgba(251,191,36,.04);
-}
-.col-rank{
-  text-align:center;
-  color:var(--t2);
-}
-.col-mo{
-  text-align:center;
-  color:var(--t2);
-}
-.col-name{
-  color:var(--t1);
-  font-family:'Poppins',sans-serif;
-  font-weight:600;
-  font-size:12.5px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-.col-total{
-  display:flex;
-  flex-direction:column;
-  gap:4px;
-}
-.col-elig{
-  text-align:center;
-}
-.total-pts{
-  font-family:'Poppins',sans-serif;
-  font-weight:700;
-  font-size:13px;
-  color:var(--t1);
-}
-.rank-bar{
-  height:4px;
-  border-radius:2px;
-  background:rgba(255,255,255,.06);
-  overflow:hidden;
-}
-.rank-bar-fill{
-  height:100%;
-  border-radius:2px;
-  width:var(--bar-w);
-  animation:rankBarGrow .8s ease forwards;
-}
-.rb-gold{
-  background:linear-gradient(90deg,var(--gold),var(--orange));
-}
-.rb-teal{
-  background:linear-gradient(90deg,var(--teal),var(--blue));
-}
-.rb-purple{
-  background:linear-gradient(90deg,var(--purple),#7c3aed);
-}
-.rank-circle{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  background:rgba(255,255,255,.06);
-  font-size:11px;
-  font-weight:700;
-  color:var(--t2);
-  font-family:'Poppins',sans-serif;
-}
-.rc-gold{
-  background:rgba(251,191,36,.2);
-  color:var(--gold);
-}
-.elig-pill{
-  display:inline-block;
-  font-size:10px;
-  font-weight:700;
-  padding:2px 8px;
-  border-radius:50px;
-  font-family:'Poppins',sans-serif;
-}
-.elig-full{
-  background:rgba(34,197,94,.15);
-  color:var(--green);
-  border:1px solid rgba(34,197,94,.25);
-}
-.elig-part{
-  background:rgba(251,191,36,.12);
-  color:var(--gold);
-  border:1px solid rgba(251,191,36,.2);
-}
-.elig-none{
-  background:rgba(255,255,255,.06);
-  color:var(--t3);
-  border:1px solid var(--b1);
-}
-.sb-footnote{
-  font-size:10.5px;
-  color:var(--t3);
-  padding:8px 14px;
-  border-top:1px solid var(--b1);
-  font-style:italic;
-}
+/* SCOREBOARD */
+.sb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
+.sb-card{border-radius:var(--r);border:1px solid var(--border);background:var(--bg2);overflow:hidden}
+.sb-head{display:flex;align-items:center;gap:7px;padding:10px 14px;font-weight:700;font-size:12px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+.sb-table{display:flex;flex-direction:column}
+.sb-hrow{display:grid;grid-template-columns:28px 1fr 32px 32px 32px 68px 46px;gap:6px;padding:6px 12px;font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);border-bottom:1px solid var(--border)}
+.sb-row{display:grid;grid-template-columns:28px 1fr 32px 32px 32px 68px 46px;gap:6px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.035);font-size:11.5px;align-items:center;transition:background .15s}
+.sb-row:hover{background:rgba(255,255,255,.02)}
+.sb-row:last-child{border-bottom:none}
+.sb-row-1{background:rgba(245,158,11,.03)}
+.sc-r{text-align:center}
+.sc-m{text-align:center;color:var(--t2)}
+.sc-e{text-align:center}
+.sc-t{display:flex;flex-direction:column;gap:3px}
+.sc-total{font-family:'Poppins',sans-serif;font-weight:700;font-size:12px;color:var(--t1)}
+.sc-bar{height:3px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.sc-fill{height:100%;border-radius:2px;width:var(--w);animation:barGrow .8s ease forwards}
+.sf-gold{background:linear-gradient(90deg,var(--gold),var(--orange))}
+.sf-blue{background:linear-gradient(90deg,var(--blue),var(--blue-light))}
+.sf-purple{background:linear-gradient(90deg,var(--purple),#7c3aed)}
+.rank-dot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.06);font-size:10px;font-weight:700;color:var(--t2)}
+.rd-gold{background:rgba(245,158,11,.15);color:var(--gold)}
+.ep{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px}
+.ep-full{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.ep-part{background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.18)}
+.ep-none{background:rgba(255,255,255,.05);color:var(--t3);border:1px solid var(--border)}
 
-/* ---- MOBILE RESPONSIVE ---- */
-@media(max-width:1100px){
-  .scoreboards-wrap{grid-template-columns:1fr}
-  .awards-grid{grid-template-columns:1fr 1fr}
-}
+/* BLUEPRINT BANNER */
+.private-banner{display:none;align-items:center;gap:10px;padding:10px 14px;margin-bottom:12px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px;font-size:12px;color:var(--blue-light)}
+.not-found{display:none;padding:30px;text-align:center;color:var(--t2);font-size:12px}
+.motiv-msg{display:none;align-items:center;gap:8px;padding:8px 12px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);border-radius:7px;font-size:11px;color:var(--green);margin-bottom:10px}
+.bp-filters{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;border:1px solid var(--border);background:var(--bg2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24'%3E%3Cpath fill='%2394a3b8' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;color:var(--t2);font-size:10.5px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:none}
+/* BLUEPRINT CARDS */
+.bp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.bp-card{border-radius:var(--r);border:1px solid var(--border);background:var(--bg2);overflow:hidden;transition:border-color .2s,transform .2s}
+.bp-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.bp-head{display:flex;align-items:center;gap:10px;padding:14px 14px 10px;border-bottom:1px solid var(--border)}
+.bp-av{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.bp-info{flex:1;min-width:0}
+.bp-name{font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;color:var(--t1)}
+.bp-meta{display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap}
+.bp-qtotal{text-align:right;flex-shrink:0}
+.bp-qval{font-family:'Poppins',sans-serif;font-weight:800;font-size:18px;color:var(--gold);line-height:1}
+.bp-qsub{font-size:9px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;display:block;text-align:right}
+/* progress bars */
+.bp-prog{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px}
+.bp-prow{display:grid;grid-template-columns:28px 1fr 32px;align-items:center;gap:6px}
+.bp-mon{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase}
+.bp-bar{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.bp-fill{height:100%;border-radius:3px;width:var(--w);background:var(--c,var(--blue));animation:barGrow .7s ease forwards}
+.bp-pscore{font-family:'Poppins',sans-serif;font-weight:700;font-size:11px;text-align:right;color:var(--t1)}
+/* monthly metric breakdown */
+.bp-months{padding:0 14px 10px;display:flex;flex-direction:column;gap:8px}
+.bp-msec{background:rgba(255,255,255,.025);border-radius:7px;overflow:hidden}
+.bp-mhdr{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.04)}
+.bp-mhdr span:first-child{font-size:10px;font-weight:700;color:var(--t2);text-transform:uppercase;letter-spacing:.08em}
+.bp-mscore-badge{font-family:'Poppins',sans-serif;font-weight:700;font-size:11px}
+.bp-mdetail{padding:5px 10px 6px;display:flex;flex-direction:column;gap:2px}
+.bp-mrow{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:5px;padding:2px 0}
+.bp-mrow span:first-child{font-size:10px;color:var(--t2)}
+.bp-mval{font-size:10px;font-weight:700;color:var(--t1)}
+.tag-ok{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.15);white-space:nowrap}
+.tag-s1{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(245,158,11,.12);color:var(--gold);border:1px solid rgba(245,158,11,.18);white-space:nowrap}
+.tag-s2{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(59,130,246,.12);color:var(--blue-light);border:1px solid rgba(59,130,246,.18);white-space:nowrap}
+.tag-no{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.15);white-space:nowrap}
+/* insight footer */
+.bp-insight{padding:8px 14px;font-size:10.5px;color:var(--t2);line-height:1.55;border-top:1px solid var(--border);background:rgba(255,255,255,.01)}
+/* RESPONSIVE */
+@media(max-width:1100px){.sb-grid{grid-template-columns:1fr}}
 @media(max-width:700px){
-  .scoreboards-wrap{grid-template-columns:1fr}
-  .podium-wrap{flex-direction:column;align-items:center}
-  .podium-slot{max-width:100%;width:100%}
+  .podium{flex-direction:column;align-items:center}
+  .pod-slot{max-width:100%;width:100%}
   .awards-grid{grid-template-columns:1fr}
-  .chat-champs-grid{grid-template-columns:1fr}
   .hero-title{font-size:22px}
-  .sb-hrow,.sb-row{grid-template-columns:24px 1fr 28px 28px 28px 52px 42px;font-size:9px}
-  .ac-month-grid{grid-template-columns:1fr}
-  .ac-header{gap:10px}
+  .sb-hrow,.sb-row{grid-template-columns:24px 1fr 28px 28px 28px 54px 40px}
+  .bp-grid{grid-template-columns:1fr}
 }
-
-/* ── Private Banner ── */
-#private-banner{display:flex;align-items:center;gap:14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.22);border-radius:var(--r);padding:14px 20px;margin-bottom:20px}
-.priv-icon{font-size:24px;flex-shrink:0}
-.priv-text{font-size:13px;color:var(--t1)}
-.priv-text strong{color:var(--gold)}
-
-/* ── Not Found ── */
-.nf-card{text-align:center;padding:48px 24px;border:1px solid var(--b1);border-radius:var(--r);background:var(--bg2);margin-bottom:20px}
-.nf-icon{font-size:40px;margin-bottom:12px}
-.nf-title{font-family:'Poppins',sans-serif;font-weight:700;font-size:18px;color:var(--t1);margin-bottom:8px}
-.nf-body{font-size:13px;color:var(--t2)}
-
-/* ── Motivation msg ── */
-.motiv-msg{display:flex;align-items:center;gap:10px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);border-radius:var(--r);padding:12px 18px;font-size:13px;color:var(--t1);margin-bottom:18px}
-
-/* ── Agent select pills ── */
-.agent-select-wrap{margin-bottom:20px}
-.as-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);display:block;margin-bottom:10px}
-.as-pills{display:flex;flex-wrap:wrap;gap:8px}
-.as-pill{padding:7px 16px;border-radius:50px;border:1px solid var(--b1);background:var(--bg2);font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .2s;font-family:'Poppins',sans-serif}
-.as-pill:hover,.as-pill.active{background:rgba(242,136,32,.12);border-color:var(--orange);color:var(--orange)}
-
-/* ── Agent card wrapper ── */
-.agent-card{border-radius:var(--r);border:1px solid var(--b1);background:var(--bg2);padding:16px;margin-bottom:12px;animation:fadeSlideUp .3s ease}
-.calls-card{border-left:3px solid var(--teal)}
-.chat-card{border-left:3px solid var(--purple)}
-
-/* ── Card header ── */
-.ac-header{display:flex;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap}
-.ac-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;flex-shrink:0}
-.ac-av-calls{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff}
-.ac-av-chat{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff}
-.ac-info{flex:1}
-.ac-name{font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;color:var(--t1);margin-bottom:4px}
-.ac-meta{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.badge-calls-sm{background:rgba(6,135,190,.18);color:var(--teal);border:1px solid rgba(6,135,190,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.05em}
-.badge-chat-sm{background:rgba(168,85,247,.18);color:var(--purple);border:1px solid rgba(168,85,247,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.05em}
-.ac-rank-badge{font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;flex-shrink:0;margin-left:auto}
-.rank-gold{color:var(--gold)}
-.rank-silver{color:var(--silver)}
-.rank-bronze{color:var(--bronze)}
-.rank-neutral{color:var(--t2)}
-
-/* ── Month grid ── */
-.ac-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
-.ac-month{border-radius:10px;border:1px solid var(--b1);background:var(--bg3);padding:10px;position:relative}
-.ac-month.eligible{border-color:rgba(34,197,94,.2)}
-.am-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
-.am-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:20px;color:var(--t1)}
-.am-score.am-perfect{color:var(--gold)}
-.am-score span{font-size:13px;color:var(--t3);font-weight:600}
-.am-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin:6px 0;overflow:hidden}
-.am-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--teal),var(--blue))}
-.am-fill.am-fill-perfect{background:linear-gradient(90deg,var(--gold),var(--orange))}
-
-.am-detail{font-size:10.5px;color:var(--t2);line-height:1.6;margin-bottom:8px}
-.am-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;display:inline-block}
-.badge-elig{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
-.badge-warn{background:rgba(244,63,94,.1);color:#f87171;border:1px solid rgba(244,63,94,.2)}
-.badge-close{background:rgba(251,191,36,.1);color:var(--gold);border:1px solid rgba(251,191,36,.2)}
-.badge-forfeit{background:rgba(148,163,184,.1);color:var(--t2);border:1px solid var(--b1)}
-
-/* ── Month note ── */
-.am-note{font-size:10px;color:var(--t3);font-style:italic;margin-top:6px}
-
-/* ── Insights ── */
-.ac-insights{display:flex;flex-direction:column;gap:8px}
-.ac-insight{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:11.5px;line-height:1.6}
-.ac-insight.strength{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.14)}
-.ac-insight.focus{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.14)}
-.ac-insight.tip{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.14)}
-.ins-icon{font-size:18px;flex-shrink:0;margin-top:1px}
-.ins-body{color:var(--t2)}
-.ins-body strong{color:var(--t1)}
-
-@media(max-width:600px){.ac-month-grid{grid-template-columns:1fr}.ac-header{gap:12px}}
 </style>
 </head>
 <body>
-
-<!-- HERO -->
 <section class="hero">
-  <canvas id="hero-particles" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.5"></canvas>
-  <div class="hero-trophy" style="position:relative;z-index:1">
-      <svg width="38" height="38" viewBox="0 0 24 24" fill="currentColor" style="color:var(--gold);filter:drop-shadow(0 0 10px rgba(245,158,11,.8)) drop-shadow(0 0 24px rgba(245,158,11,.3))"><path d="M13 2v4h-2V2h2zm6 1v3c0 2.76-2.24 5-5 5h-.91c-.52 1.19-1.64 2.04-2.99 2.2L10 20h4v2H10v-2H6v-2h4l-.1-7.8C8.55 10.04 7.43 9.19 6.91 8H7C4.24 8 2 5.76 2 3V3h17zM5 5v1c0 1.65 1.35 3 3 3h.05C8.02 8.67 8 8.34 8 8V5H5zm11 0v3c0 .34-.02.67-.05 1H16c1.65 0 3-1.35 3-3V5h-3z"/></svg>
+  <div class="hero-inner">
+    <div class="hero-badge">Q2 2026 · Apr – Jun · T1 Customer Support</div>
+    <div class="hero-icon">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 21h8M12 17v4M5 3H3v3c0 2.21 1.79 4 4 4h.5M19 3h2v3c0 2.21-1.79 4-4 4h-.5M12 17c-3.31 0-6-2.69-6-6V3h12v8c0 3.31-2.69 6-6 6z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </div>
-  <div class="hero-title">T1 CS Stars</div>
-  <div class="hero-sub">Q2 2026 Hall of Fame · Apr – Jun 2026</div>
-  <div class="hero-stats">
-    <span class="hstat">11 Agents</span>
-    <span class="hstat">255 pts Top Score</span>
-    <span class="hstat">2 × Full Quarter Eligible</span>
-    <span class="hstat">Q2 Apr – Jun 2026</span>
+    <h1 class="hero-title">Hall of Fame</h1>
+    <p class="hero-sub">Recognizing the best performers of Q2 2026</p>
+    <div class="hero-stats">
+      <div class="hstat"><span class="hstat-val">11</span><span class="hstat-lbl">Agents</span></div>
+      <div class="hstat"><span class="hstat-val">255</span><span class="hstat-lbl">Top Score</span></div>
+      <div class="hstat"><span class="hstat-val">2</span><span class="hstat-lbl">3/3 Eligible</span></div>
+      <div class="hstat"><span class="hstat-val">5</span><span class="hstat-lbl">Eligible Months</span></div>
+    </div>
   </div>
 </section>
-
-<!-- TAB NAV -->
 <nav class="tab-nav">
-  <button id="btn-champions" class="tab-btn active" onclick="switchTab('champions',this)"><i class="ri-medal-fill" style="margin-right:6px;vertical-align:-2px"></i>Champions Board</button>
-  <button id="btn-blueprint" class="tab-btn" style="display:none" onclick="switchTab('blueprint',this)"><i class="ri-bar-chart-2-fill" style="margin-right:6px;vertical-align:-2px"></i>Growth Blueprint</button>
+  <button id="btn-champions" class="tab-btn active" onclick="switchTab('champions',this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15c-3.31 0-6-2.69-6-6V3h12v6c0 3.31-2.69 6-6 6zM8 21h8M12 15v6"/><path d="M5 7H3M19 7h2"/></svg>
+    Champions Board
+  </button>
+  <button id="btn-blueprint" class="tab-btn" style="display:none" onclick="switchTab('blueprint',this)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+    Growth Blueprint
+  </button>
 </nav>
-
 <div class="page-wrap">
+  <div class="tab-content active" id="tab-champions">
 
-  <!-- ===== CHAMPIONS TAB ===== -->
-  <div id="tab-champions" class="tab-content active">
-
-    <!-- CALLS TOP 3 PODIUM -->
-    <div class="section-label"><i class="ri-phone-fill"></i>Calls Team · Top 3</div>
-    <div class="podium-wrap">
-
-      <!-- Silver #2 LEFT -->
-      <div class="podium-slot podium-2">
-        <div class="medal medal-silver">2nd</div>
-        <div class="podium-card">
-          <div class="p-avatar p-av-silver">LT</div>
-          <div class="p-name">Lincy Tabita</div>
-          <div class="p-team-badge badge-calls">Calls</div>
-          <div class="p-score">250 <span>pts</span></div>
-          <div class="p-note">Perfect Jun 100/100 · Eligible 3/3</div>
-          <div class="p-stats">
-            <div class="p-stat"><span>Avg Calls</span><strong>12.4/day</strong></div>
-            <div class="p-stat"><span>QA avg</span><strong>89.3%</strong></div>
-            <div class="p-stat"><span>Jun FCR</span><strong>78.4%</strong></div>
-          </div>
-        </div>
-        <div class="podium-base pb-silver"></div>
-      </div>
-
-      <!-- Gold #1 CENTER — tallest -->
-      <div class="podium-slot podium-1">
-        <div class="medal medal-gold">1st</div>
-        <div class="podium-card">
-          <div class="star-badge">★ Star of Q2</div>
-          <div class="p-avatar p-av-gold">DH</div>
-          <div class="p-name">Debra Horton</div>
-          <div class="p-team-badge badge-calls">Calls</div>
-          <div class="p-score">255 <span>pts</span></div>
-          <div class="p-note">Eligible all 3 months</div>
-          <div class="p-stats">
-            <div class="p-stat"><span>Avg Calls</span><strong>12.8/day</strong></div>
-            <div class="p-stat"><span>QA Jun</span><strong>93.8%</strong></div>
-            <div class="p-stat"><span>Jun FCR</span><strong>80.0%</strong></div>
-          </div>
-        </div>
-        <div class="podium-base pb-gold"></div>
-      </div>
-
-      <!-- Bronze #3 RIGHT -->
-      <div class="podium-slot podium-3">
-        <div class="medal medal-bronze">3rd</div>
-        <div class="podium-card">
-          <div class="p-avatar p-av-bronze">HP</div>
-          <div class="p-name">Henry P</div>
-          <div class="p-team-badge badge-calls">Calls</div>
-          <div class="p-score">190 <span>pts</span></div>
-          <div class="p-note">Eligible Jun · FCR 83.7%</div>
-          <div class="p-stats">
-            <div class="p-stat"><span>Avg Calls</span><strong>11.1/day</strong></div>
-            <div class="p-stat"><span>Jun FCR</span><strong>83.7%</strong></div>
-            <div class="p-stat"><span>Jun pts</span><strong>80 pts</strong></div>
-          </div>
-        </div>
-        <div class="podium-base pb-bronze"></div>
-      </div>
-
+    <!-- Calls Podium -->
+    <div class="sec-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+      Calls Team · Top 3
     </div>
-
-    <!-- CHAT CHAMPIONS -->
-    <div class="section-label"><i class="ri-chat-3-fill"></i>Chat Team Champions</div>
-    <div class="chat-champs-grid">
-      <div class="cc-card">
-        <div class="cc-rank">#1</div>
-        <div class="cc-avatar">EC</div>
-        <div class="cc-body">
-          <div class="cc-name">Evan Cruz</div>
-          <div class="cc-score">190 pts</div>
-          <div class="cc-tag badge-chat">Chat</div>
-          <div class="cc-note">Most Improved · Perfect Jun 100/100</div>
-          <div class="cc-metrics">CSAT Jun 86.4% · QA Jun 89.7%</div>
+    <div class="podium">
+      <!-- SILVER #2 — LEFT -->
+      <div class="pod-slot pod-2">
+        <div class="pod-rank silver">2nd</div>
+        <div class="pod-card">
+          <div class="pod-av pod-av-silver">LT</div>
+          <div class="pod-name">Lincy Tabita</div>
+          <div class="pod-chip chip-calls">Calls</div>
+          <div class="pod-pts">250 <span>pts</span></div>
+          <div class="pod-note">Eligible 3/3 · Perfect Jun</div>
+          <div class="pod-rows">
+            <div class="pod-row"><span>Apr</span><strong>75</strong></div>
+            <div class="pod-row"><span>May</span><strong>75</strong></div>
+            <div class="pod-row"><span>Jun</span><strong>100</strong></div>
+          </div>
         </div>
+        <div class="pod-base pod-base-silver"></div>
       </div>
-      <div class="cc-card">
-        <div class="cc-rank">#2</div>
-        <div class="cc-avatar">TS</div>
-        <div class="cc-body">
-          <div class="cc-name">Tabbie Shine</div>
-          <div class="cc-score">170 pts</div>
-          <div class="cc-tag badge-chat">Chat</div>
-          <div class="cc-note">Eligible Jun · FCR Champion</div>
-          <div class="cc-metrics">FCR Jun 88.3% · QA Jun 85.8%</div>
+      <!-- GOLD #1 — CENTER -->
+      <div class="pod-slot pod-1">
+        <div class="pod-star">★ Star of Q2</div>
+        <div class="pod-rank gold">1st</div>
+        <div class="pod-card">
+          <div class="pod-av pod-av-gold">DH</div>
+          <div class="pod-name">Debra Horton</div>
+          <div class="pod-chip chip-calls">Calls</div>
+          <div class="pod-pts">255 <span>pts</span></div>
+          <div class="pod-note">Eligible 3/3 · Only agent all 3 months</div>
+          <div class="pod-rows">
+            <div class="pod-row"><span>Apr</span><strong>75</strong></div>
+            <div class="pod-row"><span>May</span><strong>100</strong></div>
+            <div class="pod-row"><span>Jun</span><strong>80</strong></div>
+          </div>
         </div>
+        <div class="pod-base pod-base-gold"></div>
       </div>
-      <div class="cc-card">
-        <div class="cc-rank">#3</div>
-        <div class="cc-avatar">CL</div>
-        <div class="cc-body">
-          <div class="cc-name">Caroline Lock</div>
-          <div class="cc-score">125 pts</div>
-          <div class="cc-tag badge-chat">Chat</div>
-          <div class="cc-note">Breakthrough Jun · FCR 89.5%</div>
-          <div class="cc-metrics">Jun 70 pts (forfeited) · FCR 89.5%</div>
+      <!-- BRONZE #3 — RIGHT -->
+      <div class="pod-slot pod-3">
+        <div class="pod-rank bronze">3rd</div>
+        <div class="pod-card">
+          <div class="pod-av pod-av-bronze">HP</div>
+          <div class="pod-name">Henry P</div>
+          <div class="pod-chip chip-calls">Calls</div>
+          <div class="pod-pts">190 <span>pts</span></div>
+          <div class="pod-note">Eligible 1/3 · Best FCR Jun 83.7%</div>
+          <div class="pod-rows">
+            <div class="pod-row"><span>Apr</span><strong>55</strong></div>
+            <div class="pod-row"><span>May</span><strong>55</strong></div>
+            <div class="pod-row"><span>Jun</span><strong>80</strong></div>
+          </div>
         </div>
+        <div class="pod-base pod-base-bronze"></div>
       </div>
     </div>
 
-    <!-- AWARD CARDS -->
-    <div class="section-label"><i class="ri-star-fill"></i>Q2 2026 Awards</div>
+    <!-- Chat Team Champions -->
+    <div class="sec-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Chat Team Champions
+    </div>
+    <div class="champ-list">
+      <div class="champ-card">
+        <div class="champ-rank" style="color:var(--gold)">#1</div>
+        <div class="champ-av" style="background:linear-gradient(135deg,#7c3aed,#a855f7)">EC</div>
+        <div class="champ-info">
+          <div class="champ-name">Evan Cruz</div>
+          <div class="champ-note">35 → 55 → 100 pts · Eligible Jun (Slab 2)</div>
+        </div>
+        <div class="champ-pts">190 <span>pts</span></div>
+      </div>
+      <div class="champ-card">
+        <div class="champ-rank" style="color:var(--silver)">#2</div>
+        <div class="champ-av" style="background:linear-gradient(135deg,#6d28d9,#8b5cf6)">TS</div>
+        <div class="champ-info">
+          <div class="champ-name">Tabbie Shine</div>
+          <div class="champ-note">50 → 50 → 70 pts · Eligible Jun (Slab 1)</div>
+        </div>
+        <div class="champ-pts">170 <span>pts</span></div>
+      </div>
+      <div class="champ-card">
+        <div class="champ-rank" style="color:var(--bronze)">#3</div>
+        <div class="champ-av" style="background:linear-gradient(135deg,#5b21b6,#7c3aed)">CL</div>
+        <div class="champ-info">
+          <div class="champ-name">Caroline Lock</div>
+          <div class="champ-note">20 → 35 → 70 pts · Eligible Jun (Slab 1)</div>
+        </div>
+        <div class="champ-pts">125 <span>pts</span></div>
+      </div>
+    </div>
+
+    <!-- Awards -->
+    <div class="sec-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Awards
+    </div>
     <div class="awards-grid">
-
-      <div class="award-card award-gold">
-        <div class="aw-icon"><i class="ri-star-fill" style="color:var(--gold)"></i></div>
+      <div class="award-card aw-gold">
+        <div class="aw-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold)"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
         <div class="aw-body">
           <div class="aw-title">Star of Q2</div>
           <div class="aw-winner">Debra Horton</div>
-          <div class="aw-desc">255 pts · Only agent eligible all 3 months · QA reached 93.8% in Jun</div>
-          <span class="aw-chip chip-gold">255 pts · Calls Team</span>
+          <div class="aw-desc">255 pts · Eligible all 3 months · May 100/100 perfect · Jun QA 93.8%</div>
         </div>
       </div>
-
-      <div class="award-card award-green">
-        <div class="aw-icon"><i class="ri-trending-up-fill" style="color:var(--green)"></i></div>
+      <div class="award-card aw-green">
+        <div class="aw-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--green)"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
         <div class="aw-body">
           <div class="aw-title">Most Improved</div>
           <div class="aw-winner">Evan Cruz</div>
-          <div class="aw-desc">35 → 55 → 100 pts trajectory · Perfect 100/100 in Jun · Best improvement arc on the team</div>
-          <span class="aw-chip chip-green">+65 pts improvement</span>
+          <div class="aw-desc">35 → 55 → 100 trajectory · Perfect 100/100 in Jun (Slab 2)</div>
         </div>
       </div>
-
-      <div class="award-card award-purple">
-        <div class="aw-icon"><i class="ri-focus-3-fill" style="color:var(--purple)"></i></div>
-        <div class="aw-body">
-          <div class="aw-title">Perfect Score Club</div>
-          <div class="aw-winner-multi">Debra Horton · Lincy Tabita · Evan Cruz</div>
-          <div class="aw-desc">100/100 in a single month — Debra (May), Lincy (Jun), Evan (Jun)</div>
-          <span class="aw-chip chip-purple">100 / 100 pts</span>
+      <div class="award-card aw-blue">
+        <div class="aw-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--blue-light)"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
         </div>
-      </div>
-
-      <div class="award-card award-teal">
-        <div class="aw-icon"><i class="ri-fire-fill" style="color:var(--teal)"></i></div>
         <div class="aw-body">
           <div class="aw-title">FCR Excellence</div>
-          <div class="aw-winner-multi">Sky Gibson · Greg Dawson · Caroline Lock</div>
-          <div class="aw-desc">Sky 94.5% · Greg 90.9% · Caroline 89.5% — top FCR performers across both teams in Jun</div>
-          <span class="aw-chip chip-teal">First-Call Resolution Leaders</span>
+          <div class="aw-winner">Sky Gibson &amp; Greg Dawson</div>
+          <div class="aw-desc">Sky FCR 94.5% Jun · Greg FCR 90.9% Jun · Highest resolution rates in team</div>
         </div>
       </div>
-
-      <div class="award-card award-orange">
-        <div class="aw-icon"><i class="ri-medal-fill" style="color:var(--orange)"></i></div>
+      <div class="award-card aw-orange">
+        <div class="aw-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--orange)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
         <div class="aw-body">
           <div class="aw-title">Iron Consistency</div>
-          <div class="aw-winner-multi">Debra Horton · Lincy Tabita</div>
-          <div class="aw-desc">The only 2 agents eligible all 3 months of Q2 — Slab 1 every month</div>
-          <span class="aw-chip chip-orange">Eligible 3 / 3 months</span>
+          <div class="aw-winner">Debra Horton &amp; Lincy Tabita</div>
+          <div class="aw-desc">Only 2 agents eligible all 3 months of Q2 · Unwavering performance Apr–Jun</div>
         </div>
       </div>
-
-      <div class="award-card award-blue">
-        <div class="aw-icon"><i class="ri-flashlight-fill" style="color:var(--blue)"></i></div>
+      <div class="award-card aw-purple">
+        <div class="aw-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--purple)"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
         <div class="aw-body">
-          <div class="aw-title">Breakthrough Moments</div>
-          <div class="aw-winner-multi">Lincy Tabita · Evan Cruz</div>
-          <div class="aw-desc">Both went from 55–75 pts → 100/100 perfect score in Jun. Proof that the ceiling is reachable.</div>
-          <span class="aw-chip chip-blue">100/100 in June</span>
+          <div class="aw-title">Perfect Score Club</div>
+          <div class="aw-winner">Debra · Lincy · Evan</div>
+          <div class="aw-desc">Debra Horton (May 100) · Lincy Tabita (Jun 100) · Evan Cruz (Jun 100)</div>
         </div>
       </div>
-
+      <div class="award-card aw-teal">
+        <div class="aw-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal)"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div class="aw-body">
+          <div class="aw-title">Breakthrough Jun</div>
+          <div class="aw-winner">Caroline · Tabbie · Lincy</div>
+          <div class="aw-desc">Caroline Lock (20→35→70, Slab 1 Jun) · Tabbie Shine &amp; Lincy Tabita reached 70+ in Jun</div>
+        </div>
+      </div>
     </div>
 
-    <!-- SCOREBOARDS -->
-    <div class="section-label"><i class="ri-table-fill"></i>Full Scoreboard</div>
-    <div class="scoreboards-wrap">
-
+    <!-- Full Scoreboard -->
+    <div class="sec-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Full Scoreboard
+    </div>
+    <div class="sb-grid">
       <!-- CALLS -->
-      <div class="scoreboard-card">
-        <div class="sb-head"><i class="ri-phone-fill" style="margin-right:8px;vertical-align:-2px;color:var(--teal)"></i>Calls Team Scoreboard</div>
+      <div class="sb-card">
+        <div class="sb-head">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+          Calls Team
+        </div>
         <div class="sb-table">
           <div class="sb-hrow">
-            <div class="col-rank">#</div>
-            <div class="col-name">Agent</div>
-            <div class="col-mo">Apr</div>
-            <div class="col-mo">May</div>
-            <div class="col-mo">Jun</div>
-            <div class="col-total">Q2 Total</div>
-            <div class="col-elig">Eligible</div>
+            <div class="sc-r">#</div>
+            <div class="sc-n">Agent</div>
+            <div class="sc-m">Apr</div>
+            <div class="sc-m">May</div>
+            <div class="sc-m">Jun</div>
+            <div class="sc-t">Total</div>
+            <div class="sc-e">Elig</div>
           </div>
-          <div class="sb-row row-1">
-            <div class="col-rank"><span class="rank-circle rc-gold">1</span></div>
-            <div class="col-name">Debra Horton</div>
-            <div class="col-mo">75</div>
-            <div class="col-mo">100</div>
-            <div class="col-mo">80</div>
-            <div class="col-total">
-              <span class="total-pts">255</span>
-              <div class="rank-bar"><div class="rank-bar-fill rb-gold" style="--bar-w:100%"></div></div>
+          <div class="sb-row sb-row-1">
+            <div class="sc-r"><span class="rank-dot rd-gold">1</span></div>
+            <div class="sc-n">Debra Horton</div>
+            <div class="sc-m">75</div><div class="sc-m">100</div><div class="sc-m">80</div>
+            <div class="sc-t">
+              <strong class="sc-total">255</strong>
+              <div class="sc-bar"><div class="sc-fill sf-gold" style="--w:100%"></div></div>
             </div>
-            <div class="col-elig"><span class="elig-pill elig-full">3/3</span></div>
+            <div class="sc-e"><span class="ep ep-full">3/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">2</span></div>
-            <div class="col-name">Lincy Tabita</div>
-            <div class="col-mo">75</div><div class="col-mo">75</div><div class="col-mo">100</div>
-            <div class="col-total"><span class="total-pts">250</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:98%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-full">3/3</span></div>
+            <div class="sc-r"><span class="rank-dot">2</span></div>
+            <div class="sc-n">Lincy Tabita</div>
+            <div class="sc-m">75</div><div class="sc-m">75</div><div class="sc-m">100</div>
+            <div class="sc-t">
+              <strong class="sc-total">250</strong>
+              <div class="sc-bar"><div class="sc-fill sf-blue" style="--w:98%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-full">3/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">3</span></div>
-            <div class="col-name">Henry P</div>
-            <div class="col-mo">55</div><div class="col-mo">55</div><div class="col-mo">80</div>
-            <div class="col-total"><span class="total-pts">190</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:74.5%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+            <div class="sc-r"><span class="rank-dot">3</span></div>
+            <div class="sc-n">Henry P</div>
+            <div class="sc-m">55</div><div class="sc-m">55</div><div class="sc-m">80</div>
+            <div class="sc-t">
+              <strong class="sc-total">190</strong>
+              <div class="sc-bar"><div class="sc-fill sf-blue" style="--w:74.5%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-part">1/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">4</span></div>
-            <div class="col-name">Sabrina Quinn</div>
-            <div class="col-mo">55</div><div class="col-mo">75</div><div class="col-mo">55</div>
-            <div class="col-total"><span class="total-pts">185</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:72.5%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+            <div class="sc-r"><span class="rank-dot">4</span></div>
+            <div class="sc-n">Sabrina Quinn</div>
+            <div class="sc-m">55</div><div class="sc-m">75</div><div class="sc-m">55</div>
+            <div class="sc-t">
+              <strong class="sc-total">185</strong>
+              <div class="sc-bar"><div class="sc-fill sf-blue" style="--w:72.5%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-part">1/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">5</span></div>
-            <div class="col-name">Sky Gibson</div>
-            <div class="col-mo">60</div><div class="col-mo">60</div><div class="col-mo">60</div>
-            <div class="col-total"><span class="total-pts">180</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:70.6%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+            <div class="sc-r"><span class="rank-dot">5</span></div>
+            <div class="sc-n">Sky Gibson</div>
+            <div class="sc-m">60</div><div class="sc-m">60</div><div class="sc-m">60</div>
+            <div class="sc-t">
+              <strong class="sc-total">180</strong>
+              <div class="sc-bar"><div class="sc-fill sf-blue" style="--w:70.6%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-none">0/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">6</span></div>
-            <div class="col-name">Greg Dawson</div>
-            <div class="col-mo">55</div><div class="col-mo">60</div><div class="col-mo">60</div>
-            <div class="col-total"><span class="total-pts">175</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:68.6%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+            <div class="sc-r"><span class="rank-dot">6</span></div>
+            <div class="sc-n">Greg Dawson</div>
+            <div class="sc-m">55</div><div class="sc-m">60</div><div class="sc-m">60</div>
+            <div class="sc-t">
+              <strong class="sc-total">175</strong>
+              <div class="sc-bar"><div class="sc-fill sf-blue" style="--w:68.6%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-none">0/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">7</span></div>
-            <div class="col-name">Audrey Miles</div>
-            <div class="col-mo">60</div><div class="col-mo">55</div><div class="col-mo">35</div>
-            <div class="col-total"><span class="total-pts">150</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:58.8%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+            <div class="sc-r"><span class="rank-dot">7</span></div>
+            <div class="sc-n">Audrey Miles</div>
+            <div class="sc-m">60</div><div class="sc-m">55</div><div class="sc-m">35</div>
+            <div class="sc-t">
+              <strong class="sc-total">150</strong>
+              <div class="sc-bar"><div class="sc-fill sf-blue" style="--w:58.8%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-none">0/3</span></div>
           </div>
         </div>
       </div>
-
       <!-- CHAT -->
-      <div class="scoreboard-card">
-        <div class="sb-head"><i class="ri-chat-3-fill" style="margin-right:8px;vertical-align:-2px;color:var(--purple)"></i>Chat Team Scoreboard</div>
+      <div class="sb-card">
+        <div class="sb-head">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Chat Team
+        </div>
         <div class="sb-table">
           <div class="sb-hrow">
-            <div class="col-rank">#</div>
-            <div class="col-name">Agent</div>
-            <div class="col-mo">Apr</div>
-            <div class="col-mo">May</div>
-            <div class="col-mo">Jun</div>
-            <div class="col-total">Q2 Total</div>
-            <div class="col-elig">Eligible</div>
+            <div class="sc-r">#</div>
+            <div class="sc-n">Agent</div>
+            <div class="sc-m">Apr</div>
+            <div class="sc-m">May</div>
+            <div class="sc-m">Jun</div>
+            <div class="sc-t">Total</div>
+            <div class="sc-e">Elig</div>
           </div>
-          <div class="sb-row row-1">
-            <div class="col-rank"><span class="rank-circle rc-gold">1</span></div>
-            <div class="col-name">Evan Cruz</div>
-            <div class="col-mo">35</div><div class="col-mo">55</div><div class="col-mo">100</div>
-            <div class="col-total"><span class="total-pts">190</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:100%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
-          </div>
-          <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">2</span></div>
-            <div class="col-name">Tabbie Shine</div>
-            <div class="col-mo">50</div><div class="col-mo">50</div><div class="col-mo">70</div>
-            <div class="col-total"><span class="total-pts">170</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:89.5%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+          <div class="sb-row sb-row-1">
+            <div class="sc-r"><span class="rank-dot rd-gold">1</span></div>
+            <div class="sc-n">Evan Cruz</div>
+            <div class="sc-m">35</div><div class="sc-m">55</div><div class="sc-m">100</div>
+            <div class="sc-t">
+              <strong class="sc-total">190</strong>
+              <div class="sc-bar"><div class="sc-fill sf-purple" style="--w:100%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-part">1/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">3</span></div>
-            <div class="col-name">Caroline Lock</div>
-            <div class="col-mo">20</div><div class="col-mo">35</div><div class="col-mo">70</div>
-            <div class="col-total"><span class="total-pts">125</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:65.8%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-part">1/3*</span></div>
+            <div class="sc-r"><span class="rank-dot">2</span></div>
+            <div class="sc-n">Tabbie Shine</div>
+            <div class="sc-m">50</div><div class="sc-m">50</div><div class="sc-m">70</div>
+            <div class="sc-t">
+              <strong class="sc-total">170</strong>
+              <div class="sc-bar"><div class="sc-fill sf-purple" style="--w:89.5%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-part">1/3</span></div>
           </div>
           <div class="sb-row">
-            <div class="col-rank"><span class="rank-circle">4</span></div>
-            <div class="col-name">Anold Fernandes</div>
-            <div class="col-mo">35</div><div class="col-mo">35</div><div class="col-mo">50</div>
-            <div class="col-total"><span class="total-pts">120</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:63.2%"></div></div></div>
-            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+            <div class="sc-r"><span class="rank-dot">3</span></div>
+            <div class="sc-n">Caroline Lock</div>
+            <div class="sc-m">20</div><div class="sc-m">35</div><div class="sc-m">70</div>
+            <div class="sc-t">
+              <strong class="sc-total">125</strong>
+              <div class="sc-bar"><div class="sc-fill sf-purple" style="--w:65.8%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-part">1/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="sc-r"><span class="rank-dot">4</span></div>
+            <div class="sc-n">Anold Fernandes</div>
+            <div class="sc-m">35</div><div class="sc-m">35</div><div class="sc-m">50</div>
+            <div class="sc-t">
+              <strong class="sc-total">120</strong>
+              <div class="sc-bar"><div class="sc-fill sf-purple" style="--w:63.2%"></div></div>
+            </div>
+            <div class="sc-e"><span class="ep ep-none">0/3</span></div>
           </div>
         </div>
-        <div class="sb-footnote">* Jun eligibility forfeited due to unplanned leave</div>
       </div>
-
     </div>
 
   </div><!-- /tab-champions -->
-
-  <!-- ═══════════════════════════════ BLUEPRINT TAB ═══════════════════════════════ -->
+  <!-- BLUEPRINT TAB -->
   <div class="tab-content" id="tab-blueprint">
-
-    <!-- Private banner (hidden by default, shown when agent is logged in) -->
-    <div id="private-banner" style="display:none">
-      <div class="priv-icon"><i class="ri-lock-password-fill" style="font-size:24px;color:var(--gold);filter:drop-shadow(0 0 8px rgba(251,191,36,.6))"></i></div>
-      <div class="priv-text">
-        Showing personalized Growth Blueprint for <strong id="private-banner-name"></strong>
-      </div>
+    <div class="private-banner" id="private-banner">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      Showing your personal Growth Blueprint, <strong id="private-banner-name"></strong>
     </div>
-
-    <!-- Not-found message (shown when agent has no card) -->
-    <div id="not-found-card" class="nf-card" style="display:none">
-      <div class="nf-icon"><i class="ri-search-2-fill" style="font-size:40px;color:var(--t3)"></i></div>
-      <div class="nf-title">No Blueprint Found</div>
-      <div class="nf-body">We couldn't find a Growth Blueprint for your account. Please contact your team lead.</div>
+    <div class="motiv-msg" id="motiv-msg">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Use this data to plan your Q3 improvement. Keep pushing!
     </div>
-
-    <!-- Motivation message shown above agent's card when they're logged in -->
-    <div id="motiv-msg" class="motiv-msg" style="display:none">
-      <i class="ri-star-fill" style="font-size:18px;color:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.6))"></i> Your personal Q2 Growth Blueprint — review your strengths and focus areas for Q3.
+    <div class="not-found" id="not-found-card">Your agent profile was not found. Please contact your team lead.</div>
+    <div class="bp-filters">
+      <select id="agent-select" class="bp-pill">
+        <option value="">All Agents</option>
+        <option value="Debra Horton">Debra Horton (Calls)</option>
+        <option value="Lincy Tabita">Lincy Tabita (Calls)</option>
+        <option value="Henry P">Henry P (Calls)</option>
+        <option value="Sabrina Quinn">Sabrina Quinn (Calls)</option>
+        <option value="Sky Gibson">Sky Gibson (Calls)</option>
+        <option value="Greg Dawson">Greg Dawson (Calls)</option>
+        <option value="Audrey Miles">Audrey Miles (Calls)</option>
+        <option value="Evan Cruz">Evan Cruz (Chat)</option>
+        <option value="Tabbie Shine">Tabbie Shine (Chat)</option>
+        <option value="Caroline Lock">Caroline Lock (Chat)</option>
+        <option value="Anold Fernandes">Anold Fernandes (Chat)</option>
+      </select>
     </div>
+    <div class="bp-grid">
 
-    <!-- Admin-only: agent selector -->
-    <div id="agent-select" class="agent-select-wrap" style="display:none">
-      <label class="as-label">View agent blueprint:</label>
-      <div class="as-pills" id="as-pills">
-        <!-- pills injected by JS -->
-      </div>
-    </div>
-
-    <!-- Agent cards container -->
-    <div id="cards-container">
-      <!-- 11 agent cards below -->
-
-      <!-- Card 1 — Debra Horton -->
-      <div class="agent-card calls-card" data-agent="Debra Horton">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">DH</div>
-          <div class="ac-info">
-            <div class="ac-name">Debra Horton</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #1 · 255 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-full">Eligible 3/3 months</span></div>
+      <!-- DEBRA HORTON -->
+      <div class="bp-card" data-agent="Debra Horton">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#f59e0b,#d97706)">DH</div>
+          <div class="bp-info">
+            <div class="bp-name">Debra Horton</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-full">3/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-gold">🥇 #1</div>
+          <div class="bp-qtotal"><div class="bp-qval">255</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month eligible">
-            <div class="am-label">April</div>
-            <div class="am-score">75 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
-            <div class="am-detail">Calls/day 12.1 · Tickets 5.2 · QA 87.5% · FCR 76.2%</div>
-            <span class="am-badge badge-elig">✅ Eligible</span>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:75%;--c:var(--blue-light)"></div></div><span class="bp-pscore">75</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:100%;--c:var(--gold)"></div></div><span class="bp-pscore" style="color:var(--gold)">100</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:80%;--c:var(--green)"></div></div><span class="bp-pscore" style="color:var(--green)">80</span></div>
+        </div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Eligible</span><span class="bp-mscore-badge" style="color:var(--blue-light)">75 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">12.6</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">5.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">89.7%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">65.5%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-month eligible">
-            <div class="am-label">May</div>
-            <div class="am-score am-perfect">100 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill am-fill-perfect" style="width:100%"></div></div>
-            <div class="am-detail">Calls/day 13.5 · Tickets 5.9 · QA 91.2% · FCR 79.8%</div>
-            <span class="am-badge badge-elig">✅ Eligible · ⭐ Perfect Score</span>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Perfect ⭐</span><span class="bp-mscore-badge" style="color:var(--gold)">100 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">13.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.8</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">90.4%</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">75.0%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
-          <div class="ac-month eligible">
-            <div class="am-label">June</div>
-            <div class="am-score">80 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:80%"></div></div>
-            <div class="am-detail">Calls/day 12.8 · Tickets 5.4 · QA 93.8% · FCR 80.0%</div>
-            <span class="am-badge badge-elig">✅ Eligible</span>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Eligible</span><span class="bp-mscore-badge" style="color:var(--green)">80 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">12.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">3.2</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">93.8%</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">80.0%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Most consistent performer in Q2 — the only agent eligible all 3 months. QA improving quarter-on-quarter, reaching 93.8% in Jun.</div>
-          </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Maintain QA above 90% monthly to lock in a perfect 100/100 each month in Q3.</div>
-          </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> You have the baseline — now aim for three consecutive 100/100 months to become the Q3 standout.</div>
-          </div>
-        </div>
+        <div class="bp-insight">💡 Q2 Champion. Only agent eligible all 3 months. May was a perfect 100/100. Jun gap was Tickets/day (3.2 — below threshold). FCR improved Apr→Jun: 65.5% → 75.0% → 80.0%. Keep Tickets above threshold in Q3.</div>
       </div>
 
-      <!-- Card 2 — Lincy Tabita -->
-      <div class="agent-card calls-card" data-agent="Lincy Tabita">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">LT</div>
-          <div class="ac-info">
-            <div class="ac-name">Lincy Tabita</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #2 · 250 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-full">Eligible 3/3 months</span></div>
+      <!-- LINCY TABITA -->
+      <div class="bp-card" data-agent="Lincy Tabita">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#3b82f6,#1d4ed8)">LT</div>
+          <div class="bp-info">
+            <div class="bp-name">Lincy Tabita</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-full">3/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-silver">🥈 #2</div>
+          <div class="bp-qtotal"><div class="bp-qval">250</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month eligible">
-            <div class="am-label">April</div>
-            <div class="am-score">75 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
-            <div class="am-detail">Calls/day 11.8 · Tickets 5.0 · QA 86.2% · FCR 75.4%</div>
-            <span class="am-badge badge-elig">✅ Eligible</span>
-          </div>
-          <div class="ac-month eligible">
-            <div class="am-label">May</div>
-            <div class="am-score">75 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
-            <div class="am-detail">Calls/day 12.0 · Tickets 5.1 · QA 88.5% · FCR 76.9%</div>
-            <span class="am-badge badge-elig">✅ Eligible</span>
-          </div>
-          <div class="ac-month eligible">
-            <div class="am-label">June</div>
-            <div class="am-score am-perfect">100 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill am-fill-perfect" style="width:100%"></div></div>
-            <div class="am-detail">Calls/day 12.4 · Tickets 5.8 · QA 89.3% · FCR 78.4%</div>
-            <span class="am-badge badge-elig">✅ Eligible · ⭐ Perfect Score</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:75%;--c:var(--blue-light)"></div></div><span class="bp-pscore">75</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:75%;--c:var(--blue-light)"></div></div><span class="bp-pscore">75</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:100%;--c:var(--gold)"></div></div><span class="bp-pscore" style="color:var(--gold)">100</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Consistent across all 3 months — the only other agent eligible 3/3. Closed Q2 with a stunning perfect 100/100 in Jun.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Eligible</span><span class="bp-mscore-badge" style="color:var(--blue-light)">75 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">13.6</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.1</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">85.8%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">63.1%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> QA is just below 90% in Apr/May — nudging this to ≥90% would unlock higher potential.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Eligible</span><span class="bp-mscore-badge" style="color:var(--blue-light)">75 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">11.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">4.6</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">91.1%</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">65.5%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> Carry the Jun momentum forward. Aim for QA ≥90% from month 1.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Perfect ⭐</span><span class="bp-mscore-badge" style="color:var(--gold)">100 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">12.0</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">4.8</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">91.0%</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">78.4%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 Runner-up at 250 pts. Only other agent eligible all 3 months. Perfect 100 in Jun. FCR was the gap in Apr–May (63–65%). Jun FCR at 78.4% shows the breakthrough — sustain this in Q3 for Slab 1 consistently.</div>
       </div>
 
-      <!-- Card 3 — Henry P -->
-      <div class="agent-card calls-card" data-agent="Henry P">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">HP</div>
-          <div class="ac-info">
-            <div class="ac-name">Henry P</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #3 · 190 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
+      <!-- HENRY P -->
+      <div class="bp-card" data-agent="Henry P">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">HP</div>
+          <div class="bp-info">
+            <div class="bp-name">Henry P</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-part">1/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-bronze">🥉 #3</div>
+          <div class="bp-qtotal"><div class="bp-qval">190</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Calls/day 10.8 · Tickets 4.4 · QA 81.0% · FCR 71.5%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Calls/day 11.0 · Tickets 4.6 · QA 83.3% · FCR 72.8%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month eligible">
-            <div class="am-label">June</div>
-            <div class="am-score">80 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:80%"></div></div>
-            <div class="am-detail">Calls/day 11.1 · Tickets 5.2 · QA 88.2% · FCR 83.7%</div>
-            <span class="am-badge badge-elig">✅ Eligible · 🎯 Best FCR Jun</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:80%;--c:var(--green)"></div></div><span class="bp-pscore" style="color:var(--green)">80</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Huge Jun improvement. FCR 83.7% was best on the calls team for Jun.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">10.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">7.8</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">75.9%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">58.6%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Tickets/day and QA need to hit threshold every month, not just Jun.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">10.8</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">81.4%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">66.4%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> Replicate Jun's discipline from month 1. Consistent eligibility = way more points.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Eligible</span><span class="bp-mscore-badge" style="color:var(--green)">80 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">12.4</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">4.5</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">71.7%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">83.7%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 Strong Jun finish with FCR 83.7%. QA is the clearest path to multi-month eligibility — it missed all 3 months (75.9–81.4%). Pushing QA above 85% would have unlocked Apr & May too.</div>
       </div>
 
-      <!-- Card 4 — Sabrina Quinn -->
-      <div class="agent-card calls-card" data-agent="Sabrina Quinn">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">SQ</div>
-          <div class="ac-info">
-            <div class="ac-name">Sabrina Quinn</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #4 · 185 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
+      <!-- SABRINA QUINN -->
+      <div class="bp-card" data-agent="Sabrina Quinn">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#a855f7,#7c3aed)">SQ</div>
+          <div class="bp-info">
+            <div class="bp-name">Sabrina Quinn</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-part">1/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-neutral">#4</div>
+          <div class="bp-qtotal"><div class="bp-qval">185</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Calls/day 10.5 · Tickets 4.3 · QA 82.1% · FCR 70.1%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month eligible">
-            <div class="am-label">May</div>
-            <div class="am-score">75 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
-            <div class="am-detail">Calls/day 11.3 · Tickets 5.0 · QA 85.4% · FCR 75.9%</div>
-            <span class="am-badge badge-elig">✅ Eligible</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">June</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Calls/day 10.7 · Tickets 4.5 · QA 81.8% · FCR 71.3%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:75%;--c:var(--green)"></div></div><span class="bp-pscore" style="color:var(--green)">75</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> May eligibility proves you can meet the bar. QA and FCR show capability.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">10.9</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.3</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">82.5%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">42.9%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Inconsistent — strong in May, dipped in Apr/Jun. Consistency is the key unlock.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Eligible</span><span class="bp-mscore-badge" style="color:var(--green)">75 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">13.8</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">5.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">86.3%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">61.2%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> Treat every month like May. Keep Calls/day ≥11 and Tickets/day ≥5 as non-negotiables.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">12.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">3.6</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">86.2%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">53.9%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 FCR is the primary gap — ranged 42.9–61.2% all quarter, consistently missing the threshold. QA is at Slab 2 in May & Jun — a push to 90%+ unlocks more points. FCR coaching is the single biggest lever for Q3.</div>
       </div>
 
-      <!-- Card 5 — Sky Gibson -->
-      <div class="agent-card calls-card" data-agent="Sky Gibson">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">SG</div>
-          <div class="ac-info">
-            <div class="ac-name">Sky Gibson</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #5 · 180 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
+      <!-- SKY GIBSON -->
+      <div class="bp-card" data-agent="Sky Gibson">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#22c55e,#16a34a)">SG</div>
+          <div class="bp-info">
+            <div class="bp-name">Sky Gibson</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-none">0/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-neutral">#5</div>
+          <div class="bp-qtotal"><div class="bp-qval">180</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">60 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
-            <div class="am-detail">Calls/day 11.2 · Tickets 4.7 · QA 83.5% · FCR 94.5%</div>
-            <span class="am-badge badge-close">⚠️ Just below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">60 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
-            <div class="am-detail">Calls/day 11.4 · Tickets 4.8 · QA 84.0% · FCR 90.2%</div>
-            <span class="am-badge badge-close">⚠️ Just below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">June</div>
-            <div class="am-score">60 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
-            <div class="am-detail">Calls/day 11.5 · Tickets 4.9 · QA 84.9% · FCR 91.8%</div>
-            <span class="am-badge badge-close">⚠️ Just below threshold — Close!</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:60%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">60</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:60%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">60</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:60%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">60</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> FCR is exceptional — best on the team (94.5% in Apr). Extremely consistent scoring.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">60 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">7.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">3.2</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">82.4%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">73.1%</span><span class="tag-s2">Slab 2</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Very close to eligibility every month. Tickets/day and QA are the only gaps. Tickets ≥5/day and QA ≥85% would unlock eligibility.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">60 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">8.5</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">3.2</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">77.2%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">75.0%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> You're 1 metric away from eligibility. Focus exclusively on Tickets count and QA each month.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">60 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">9.4</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">2.5</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">77.8%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">94.5%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 FCR improved dramatically — Jun at 94.5% is exceptional. QA missed all 3 months (77.2–82.4%); it's the single blocker. QA above 85% + Tickets above threshold unlocks eligibility. Target: QA first.</div>
       </div>
 
-      <!-- Card 6 — Greg Dawson -->
-      <div class="agent-card calls-card" data-agent="Greg Dawson">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">GD</div>
-          <div class="ac-info">
-            <div class="ac-name">Greg Dawson</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #6 · 175 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
+      <!-- GREG DAWSON -->
+      <div class="bp-card" data-agent="Greg Dawson">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#f97316,#ea580c)">GD</div>
+          <div class="bp-info">
+            <div class="bp-name">Greg Dawson</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-none">0/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-neutral">#6</div>
+          <div class="bp-qtotal"><div class="bp-qval">175</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Calls/day 10.6 · Tickets 4.4 · QA 82.7% · FCR 88.1%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">60 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
-            <div class="am-detail">Calls/day 11.0 · Tickets 4.7 · QA 84.2% · FCR 90.9%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">June</div>
-            <div class="am-score">60 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
-            <div class="am-detail">Calls/day 11.2 · Tickets 4.8 · QA 85.1% · FCR 90.9%</div>
-            <span class="am-badge badge-close">⚠️ Just below threshold</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:60%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">60</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:60%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">60</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> FCR is excellent (90.9% in May/Jun). Steady improvement throughout Q2.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">13.0</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">5.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">81.7%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">62.7%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Tickets/day stuck at 4.4–4.8 — needs to reach ≥5/day. QA approaching but not quite at 85%.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">60 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">7.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">3.0</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">79.6%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">72.9%</span><span class="tag-s2">Slab 2</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> You're improving every month. Push Tickets volume to 5/day and you'll likely hit eligibility in Q3 month 1.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">60 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">8.5</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">2.5</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">84.3%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">90.9%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 FCR excellent in Jun (90.9%). Two blockers: Tickets/day (missed May & Jun) and QA (missed all 3 months). Tickets is a faster fix — focus on ticket logging discipline. QA coaching alongside.</div>
       </div>
 
-      <!-- Card 7 — Audrey Miles -->
-      <div class="agent-card calls-card" data-agent="Audrey Miles">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-calls">AM</div>
-          <div class="ac-info">
-            <div class="ac-name">Audrey Miles</div>
-            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #7 · 150 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
+      <!-- AUDREY MILES -->
+      <div class="bp-card" data-agent="Audrey Miles">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#64748b,#475569)">AM</div>
+          <div class="bp-info">
+            <div class="bp-name">Audrey Miles</div>
+            <div class="bp-meta"><span class="chip-calls">Calls</span><span class="ep ep-none">0/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-neutral">#7</div>
+          <div class="bp-qtotal"><div class="bp-qval">150</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">60 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
-            <div class="am-detail">Calls/day 11.5 · Tickets 4.9 · QA 85.5% · FCR 70.5%</div>
-            <span class="am-badge badge-warn">⚠️ FCR below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Calls/day 10.9 · Tickets 4.6 · QA 83.0% · FCR 68.2%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">June</div>
-            <div class="am-score">35 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
-            <div class="am-detail">Calls/day 9.8 · Tickets 3.9 · QA 79.5% · FCR 62.1%</div>
-            <span class="am-badge badge-warn">⚠️ Declining</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:60%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">60</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:35%;--c:rgba(239,68,68,.6)"></div></div><span class="bp-pscore" style="color:#f87171">35</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Strong Calls volume and QA in Apr. Multiple metrics near the threshold.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">60 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">6.8</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">2.7</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">53.5%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">71.4%</span><span class="tag-s2">Slab 2</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Jun trend is concerning — volume, QA, and FCR all dropped. FCR is the biggest single gap.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">15.5</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">4.9</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">69.5%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">64.1%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> Investigate what changed in Jun. FCR coaching + stabilizing volume will be key for Q3 eligibility.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Not Eligible</span><span class="bp-mscore-badge" style="color:#f87171">35 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Calls/day</span><span class="bp-mval">13.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">3.3</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">77.6%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">69.7%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 Declining trajectory Q2. Call volume is strong (13–15/day in May–Jun) but QA and FCR consistently miss. QA critically low in Apr (53.5%). Needs focused coaching on quality and first-contact resolution before volume.</div>
       </div>
 
-      <!-- Card 8 — Evan Cruz -->
-      <div class="agent-card chat-card" data-agent="Evan Cruz">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-chat">EC</div>
-          <div class="ac-info">
-            <div class="ac-name">Evan Cruz</div>
-            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #1 Chat · 190 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
+      <!-- EVAN CRUZ -->
+      <div class="bp-card" data-agent="Evan Cruz">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)">EC</div>
+          <div class="bp-info">
+            <div class="bp-name">Evan Cruz</div>
+            <div class="bp-meta"><span class="chip-chat">Chat</span><span class="ep ep-part">1/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-gold">🥇 #1 Chat</div>
+          <div class="bp-qtotal"><div class="bp-qval">190</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">35 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
-            <div class="am-detail">Chats/day 9.2 · CSAT 82.3% · Tickets 3.8 · QA 78.5% · FCR 68.2%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">55 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
-            <div class="am-detail">Chats/day 10.4 · CSAT 85.8% · Tickets 4.3 · QA 82.7% · FCR 71.9%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month eligible">
-            <div class="am-label">June</div>
-            <div class="am-score am-perfect">100 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill am-fill-perfect" style="width:100%"></div></div>
-            <div class="am-detail">Chats/day 12.1 · CSAT 86.4% · Tickets 5.2 · QA 89.7% · FCR 78.3%</div>
-            <span class="am-badge badge-elig">✅ Eligible · ⭐ Most Improved</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:35%;--c:rgba(239,68,68,.6)"></div></div><span class="bp-pscore" style="color:#f87171">35</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:55%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">55</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:100%;--c:var(--gold)"></div></div><span class="bp-pscore" style="color:var(--gold)">100</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Most dramatic trajectory in Q2. Went 35→55→100 and hit a perfect score in Jun.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:#f87171">35 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">13.9</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">69.8%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">7.5</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">69.7%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">67.5%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> CSAT is the key lever — needs ≥90% to unlock the full 30 points for Slab 1. Jun was 86.4%.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">55 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">14.8</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">77.8%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">8.4</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">85.8%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">69.7%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> The Jun breakthrough proves you can do it. Start Q3 with Jun's habits from day 1 — aim for CSAT ≥90%.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Eligible (Slab 2)</span><span class="bp-mscore-badge" style="color:var(--gold)">100 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">13.5</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">86.4%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">5.0</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">89.7%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">72.7%</span><span class="tag-s2">Slab 2</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 Most Improved of Q2. Trajectory: 35 → 55 → 100 pts. Jun eligible at Slab 2 — CSAT at 86.4% just misses the Slab 1 threshold (≥90%). One metric away from Slab 1. Push CSAT above 90% and QA above 90% for full Slab 1 eligibility in Q3.</div>
       </div>
 
-      <!-- Card 9 — Tabbie Shine -->
-      <div class="agent-card chat-card" data-agent="Tabbie Shine">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-chat">TS</div>
-          <div class="ac-info">
-            <div class="ac-name">Tabbie Shine</div>
-            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #2 Chat · 170 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
+      <!-- TABBIE SHINE -->
+      <div class="bp-card" data-agent="Tabbie Shine">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#6366f1,#4338ca)">TS</div>
+          <div class="bp-info">
+            <div class="bp-name">Tabbie Shine</div>
+            <div class="bp-meta"><span class="chip-chat">Chat</span><span class="ep ep-part">1/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-silver">🥈 #2 Chat</div>
+          <div class="bp-qtotal"><div class="bp-qval">170</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">50 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:50%"></div></div>
-            <div class="am-detail">Chats/day 10.1 · CSAT 84.5% · Tickets 4.2 · QA 81.3% · FCR 73.2%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">50 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:50%"></div></div>
-            <div class="am-detail">Chats/day 10.3 · CSAT 83.9% · Tickets 4.4 · QA 82.0% · FCR 74.5%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month eligible">
-            <div class="am-label">June</div>
-            <div class="am-score">70 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:70%"></div></div>
-            <div class="am-detail">Chats/day 11.2 · CSAT 85.2% · Tickets 4.8 · QA 85.8% · FCR 88.3%</div>
-            <span class="am-badge badge-elig">✅ Eligible · 🎯 FCR Champion</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:50%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">50</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:50%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">50</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:70%;--c:var(--green)"></div></div><span class="bp-pscore" style="color:var(--green)">70</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Best FCR in the chat team for Jun (88.3%). Achieved eligibility in Jun for the first time.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">50 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">16.6</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">64.1%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">67.0%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">77.4%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> CSAT — the biggest gap. At 83.9–85.2% vs the 90% threshold for Slab 1.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">50 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">14.4</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">60.0%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">7.1</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">79.0%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">81.7%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> FCR is locked in. Shift energy to lifting CSAT above 90% to score 30 pts instead of current Slab 2 (25/30).</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Eligible (Slab 1)</span><span class="bp-mscore-badge" style="color:var(--green)">70 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">14.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">56.1%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">4.3</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">85.8%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">88.3%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 FCR is a genuine strength (77–88% throughout). CSAT is the single critical blocker — consistently 56–64%, well below threshold all quarter. QA improved to Slab 2 in Jun. CSAT focus is the one change that unlocks earlier eligibility.</div>
       </div>
 
-      <!-- Card 10 — Caroline Lock -->
-      <div class="agent-card chat-card" data-agent="Caroline Lock">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-chat">CL</div>
-          <div class="ac-info">
-            <div class="ac-name">Caroline Lock</div>
-            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #3 Chat · 125 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3*</span></div>
+      <!-- CAROLINE LOCK -->
+      <div class="bp-card" data-agent="Caroline Lock">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">CL</div>
+          <div class="bp-info">
+            <div class="bp-name">Caroline Lock</div>
+            <div class="bp-meta"><span class="chip-chat">Chat</span><span class="ep ep-part">1/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-bronze">🥉 #3 Chat</div>
+          <div class="bp-qtotal"><div class="bp-qval">125</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">20 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:20%"></div></div>
-            <div class="am-detail">Chats/day 8.5 · CSAT 79.2% · Tickets 3.0 · QA 72.0% · FCR 61.0%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">35 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
-            <div class="am-detail">Chats/day 9.8 · CSAT 81.4% · Tickets 3.8 · QA 77.5% · FCR 67.3%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">June</div>
-            <div class="am-score">70 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:70%"></div></div>
-            <div class="am-detail">Chats/day 11.8 · CSAT 85.8% · Tickets 5.0 · QA 84.2% · FCR 89.5%</div>
-            <span class="am-badge badge-forfeit">🚫 Forfeited (unplanned leave)</span>
-            <div class="am-note">Jun eligibility was forfeited due to unplanned leave. Best FCR on the chat team in Jun (89.5%).</div>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:20%;--c:rgba(239,68,68,.6)"></div></div><span class="bp-pscore" style="color:#f87171">20</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:35%;--c:rgba(239,68,68,.5)"></div></div><span class="bp-pscore" style="color:var(--t2)">35</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:70%;--c:var(--green)"></div></div><span class="bp-pscore" style="color:var(--green)">70</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Massive improvement throughout Q2 — from 20 pts in Apr to a forfeited 70 pts in Jun. FCR 89.5% was the highest in chat team.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:#f87171">20 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">6.8</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">52.4%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">66.4%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">69.5%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> Attendance/consistency is critical. Great performance doesn't count without meeting the presence threshold.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">35 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">18.7</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">71.4%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">7.5</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">72.5%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">67.6%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> Your Jun numbers show you belong in the top tier. Stay consistent and that 70-pt performance translates to real rewards.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Eligible (Slab 1)</span><span class="bp-mscore-badge" style="color:var(--green)">70 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">16.2</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">70.4%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">4.5</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">85.8%</span><span class="tag-s2">Slab 2</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">89.5%</span><span class="tag-ok">Slab 1</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 Remarkable comeback — 20 → 35 → 70 pts (Slab 1 eligible Jun). FCR hit 89.5% in Jun. CSAT still below threshold (70.4%) — that's the next target. QA at Slab 2 in Jun — keep pushing towards Slab 1 (≥90%).</div>
       </div>
 
-      <!-- Card 11 — Anold Fernandes -->
-      <div class="agent-card chat-card" data-agent="Anold Fernandes">
-        <div class="ac-header">
-          <div class="ac-avatar ac-av-chat">AF</div>
-          <div class="ac-info">
-            <div class="ac-name">Anold Fernandes</div>
-            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #4 Chat · 120 pts</div>
-            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
+      <!-- ANOLD FERNANDES -->
+      <div class="bp-card" data-agent="Anold Fernandes">
+        <div class="bp-head">
+          <div class="bp-av" style="background:linear-gradient(135deg,#94a3b8,#64748b)">AF</div>
+          <div class="bp-info">
+            <div class="bp-name">Anold Fernandes</div>
+            <div class="bp-meta"><span class="chip-chat">Chat</span><span class="ep ep-none">0/3 Eligible</span></div>
           </div>
-          <div class="ac-rank-badge rank-neutral">#4 Chat</div>
+          <div class="bp-qtotal"><div class="bp-qval">120</div><span class="bp-qsub">Q2 Total</span></div>
         </div>
-
-        <div class="ac-month-grid">
-          <div class="ac-month">
-            <div class="am-label">April</div>
-            <div class="am-score">35 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
-            <div class="am-detail">Chats/day 9.5 · CSAT 82.1% · Tickets 3.9 · QA 79.3% · FCR 69.4%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">May</div>
-            <div class="am-score">35 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
-            <div class="am-detail">Chats/day 9.7 · CSAT 81.8% · Tickets 4.0 · QA 80.1% · FCR 70.2%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold</span>
-          </div>
-          <div class="ac-month">
-            <div class="am-label">June</div>
-            <div class="am-score">50 <span>/ 100</span></div>
-            <div class="am-bar"><div class="am-fill" style="width:50%"></div></div>
-            <div class="am-detail">Chats/day 10.2 · CSAT 83.4% · Tickets 4.3 · QA 82.5% · FCR 72.8%</div>
-            <span class="am-badge badge-warn">⚠️ Below threshold — improving</span>
-          </div>
+        <div class="bp-prog">
+          <div class="bp-prow"><span class="bp-mon">Apr</span><div class="bp-bar"><div class="bp-fill" style="--w:35%;--c:rgba(239,68,68,.6)"></div></div><span class="bp-pscore" style="color:var(--t2)">35</span></div>
+          <div class="bp-prow"><span class="bp-mon">May</span><div class="bp-bar"><div class="bp-fill" style="--w:35%;--c:rgba(239,68,68,.6)"></div></div><span class="bp-pscore" style="color:var(--t2)">35</span></div>
+          <div class="bp-prow"><span class="bp-mon">Jun</span><div class="bp-bar"><div class="bp-fill" style="--w:50%;--c:var(--t3)"></div></div><span class="bp-pscore" style="color:var(--t2)">50</span></div>
         </div>
-
-        <div class="ac-insights">
-          <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
-            <div class="ins-body"><strong>Strength:</strong> Steady improvement across Q2. Metrics are moving in the right direction.</div>
+        <div class="bp-months">
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Apr · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">35 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">15.1</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">69.2%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">8.3</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">81.9%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">66.5%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
-            <div class="ins-body"><strong>Focus area:</strong> All metrics need to climb simultaneously — CSAT to ≥85%, Chats/day to ≥11, Tickets/day to ≥5, QA to ≥85%.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>May · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">35 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">12.6</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">65.1%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">6.8</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">77.0%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">67.6%</span><span class="tag-no">Missed</span></div>
+            </div>
           </div>
-          <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
-            <div class="ins-body"><strong>Q3 tip:</strong> Set a specific target per metric — small gains everywhere will add up to eligibility faster than big gains in one area.</div>
+          <div class="bp-msec">
+            <div class="bp-mhdr"><span>Jun · Not Eligible</span><span class="bp-mscore-badge" style="color:var(--t2)">50 pts</span></div>
+            <div class="bp-mdetail">
+              <div class="bp-mrow"><span>Chats/day</span><span class="bp-mval">12.0</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>CSAT</span><span class="bp-mval">61.5%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>Tickets/day</span><span class="bp-mval">5.3</span><span class="tag-ok">Slab 1</span></div>
+              <div class="bp-mrow"><span>QA Score</span><span class="bp-mval">83.6%</span><span class="tag-no">Missed</span></div>
+              <div class="bp-mrow"><span>FCR</span><span class="bp-mval">70.3%</span><span class="tag-s2">Slab 2</span></div>
+            </div>
           </div>
         </div>
+        <div class="bp-insight">💡 Chat volume and Tickets are consistently strong. CSAT (61–69%) is the primary blocker every month — it's consistently the weakest metric. QA also below threshold all quarter. Focus: structured CSAT improvement plan for Q3.</div>
       </div>
 
-    </div><!-- /cards-container -->
-
+    </div><!-- /bp-grid -->
   </div><!-- /tab-blueprint -->
-
 </div><!-- /page-wrap -->
 
 <script>
-(function(){
-  /* ── Elements ── */
-  var privateBanner=document.getElementById('private-banner');
-  var notFoundCard=document.getElementById('not-found-card');
-  var motivMsg=document.getElementById('motiv-msg');
-  var agentSelect=document.getElementById('agent-select');
-  var asPills=document.getElementById('as-pills');
-  var btnBlueprint=document.getElementById('btn-blueprint');
+/* ── TAB SWITCH ── */
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
 
-  /* ── Tab switcher ── */
-  window.switchTab=function(id,btn){
-    document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});
-    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
-    var tab=document.getElementById('tab-'+id);
-    if(tab)tab.classList.add('active');
-    if(btn)btn.classList.add('active');
-  };
-
-  /* ── Helpers ── */
-  function updateSectionVisibility(){
-    var hasCallsCards=Array.from(document.querySelectorAll('.calls-card')).some(function(c){return c.style.display!=='none'});
-    var hasChatCards=Array.from(document.querySelectorAll('.chat-card')).some(function(c){return c.style.display!=='none'});
-    // Champions tab section labels / podium — always show (public)
-  }
-
-  function filterToAgent(name){
-    var cards=document.querySelectorAll('.agent-card');
-    var found=false;
-    cards.forEach(function(c){
-      if(c.getAttribute('data-agent')===name){c.style.display='';found=true;}
-      else{c.style.display='none';}
-    });
-    return found;
-  }
-
-  function showAllCards(){
-    document.querySelectorAll('.agent-card').forEach(function(c){c.style.display='';});
-  }
-
-  /* ── Admin: build agent selector pills ── */
-  function buildAdminPills(){
-    if(!asPills)return;
-    asPills.innerHTML='';
-    var allPill=document.createElement('button');
-    allPill.className='as-pill active';allPill.textContent='All Agents';
-    allPill.onclick=function(){
-      showAllCards();
-      document.querySelectorAll('.as-pill').forEach(function(p){p.classList.remove('active')});
-      this.classList.add('active');
-    };
-    asPills.appendChild(allPill);
-    document.querySelectorAll('.agent-card').forEach(function(c){
-      var n=c.getAttribute('data-agent');
-      var p=document.createElement('button');
-      p.className='as-pill';p.textContent=n;
-      p.onclick=function(){
-        filterToAgent(n);
-        document.querySelectorAll('.as-pill').forEach(function(x){x.classList.remove('active')});
-        this.classList.add('active');
-      };
-      asPills.appendChild(p);
-    });
-  }
-
-  /* ── Core view logic ── */
-  function applyHofView(role,name){
-    var IS_ADMIN=(role==='admin');
-    var AGENT_NAME=(name||'').trim();
-    var IS_AGENT_VIEW=!IS_ADMIN&&AGENT_NAME!=='';
-
-    showAllCards();
-    if(privateBanner)privateBanner.style.display='none';
-    if(notFoundCard)notFoundCard.style.display='none';
-    if(motivMsg)motivMsg.style.display='none';
-    if(agentSelect)agentSelect.style.display='none';
-
-    if(IS_ADMIN){
-      if(btnBlueprint)btnBlueprint.style.display='';
-      if(agentSelect){agentSelect.style.display='';buildAdminPills();}
-    } else if(IS_AGENT_VIEW){
-      if(btnBlueprint)btnBlueprint.style.display='';
-      if(privateBanner){
-        privateBanner.style.display='flex';
-        var bn=document.getElementById('private-banner-name');
-        if(bn)bn.textContent=AGENT_NAME;
-      }
-      var found=filterToAgent(AGENT_NAME);
-      if(!found){
-        if(notFoundCard)notFoundCard.style.display='';
-      } else {
-        if(motivMsg)motivMsg.style.display='flex';
-      }
-    } else {
-      if(btnBlueprint)btnBlueprint.style.display='none';
+/* ── BLUEPRINT PRIVACY ── */
+var _adminPillsBuilt = false;
+function _showAll() {
+  document.querySelectorAll('.bp-card').forEach(function(c){c.style.display=''});
+  var nf = document.getElementById('not-found-card');
+  if (nf) nf.style.display='none';
+}
+function _filterTo(name) {
+  var found = false;
+  document.querySelectorAll('.bp-card').forEach(function(c){
+    if (c.dataset.agent===name){c.style.display='';found=true;}
+    else c.style.display='none';
+  });
+  return found;
+}
+function _buildAdminPills() {
+  if (_adminPillsBuilt) return;
+  _adminPillsBuilt = true;
+  var sel = document.getElementById('agent-select');
+  if (!sel) return;
+  sel.style.display = '';
+  sel.addEventListener('change', function(){
+    if (!this.value) _showAll(); else _filterTo(this.value);
+  });
+}
+function applyHofView(role, name) {
+  var IS_ADMIN = (role==='admin');
+  var AGENT_NAME = (name||'').trim();
+  var IS_AGENT = !IS_ADMIN && AGENT_NAME!=='';
+  var btnBP = document.getElementById('btn-blueprint');
+  var banner = document.getElementById('private-banner');
+  var motiv = document.getElementById('motiv-msg');
+  var nf = document.getElementById('not-found-card');
+  _showAll();
+  if (IS_ADMIN) {
+    if (btnBP) btnBP.style.display='';
+    _buildAdminPills();
+  } else if (IS_AGENT) {
+    if (btnBP) btnBP.style.display='';
+    if (banner) {
+      banner.style.display='flex';
+      var nm = document.getElementById('private-banner-name');
+      if (nm) nm.textContent=AGENT_NAME;
     }
+    var found = _filterTo(AGENT_NAME);
+    if (!found && nf) nf.style.display='';
+    else if (found && motiv) motiv.style.display='flex';
+  } else {
+    if (btnBP) btnBP.style.display='none';
   }
-
-  /* ── postMessage listener (PRIMARY — from parent iframe) ── */
-  window.addEventListener('message',function(e){
-    if(!e.data||typeof e.data!=='object')return;
-    if(e.data.type==='hof-init'){
-      applyHofView(e.data.role||'',e.data.name||'');
-    }
-  });
-
-  /* ── Hero particle canvas ── */
-  (function(){
-    var canvas=document.getElementById('hero-particles');
-    if(!canvas)return;
-    var ctx=canvas.getContext('2d');
-    var W=canvas.offsetWidth||400,H=canvas.offsetHeight||200;
-    canvas.width=W;canvas.height=H;
-    var particles=[];
-    for(var i=0;i<40;i++){
-      particles.push({
-        x:Math.random()*W,y:Math.random()*H,
-        vx:(Math.random()-.5)*.4,vy:-(Math.random()*.6+.2),
-        r:Math.random()*2+.5,
-        color:Math.random()>.5?'rgba(245,158,11,':'rgba(56,189,248,',
-        life:Math.random()
-      });
-    }
-    function tick(){
-      ctx.clearRect(0,0,W,H);
-      particles.forEach(function(p){
-        p.x+=p.vx;p.y+=p.vy;p.life+=.005;
-        if(p.y<0||p.life>1){p.y=H;p.x=Math.random()*W;p.life=0;}
-        var a=Math.sin(p.life*Math.PI)*.8;
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle=p.color+a+')';
-        ctx.fill();
-      });
-      requestAnimationFrame(tick);
-    }
-    tick();
-  })();
-
-  /* ── Intersection Observer: animate cards on scroll ── */
-  var io=new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      if(en.isIntersecting){
-        en.target.style.animation='popIn .5s cubic-bezier(.34,1.56,.64,1) forwards';
-        io.unobserve(en.target);
-      }
-    });
-  },{threshold:.1});
-  document.querySelectorAll('.agent-card,.award-card,.cc-card,.podium-slot,.scoreboard-card').forEach(function(el){
-    el.style.opacity='0';
-    io.observe(el);
-  });
-
-  /* ── Stagger podium slots ── */
-  document.querySelectorAll('.podium-slot').forEach(function(el,i){
-    el.style.animationDelay=(i*.12)+'s';
-  });
-
-  /* ── Hover sound feedback via subtle ring (CSS only, no audio) ── */
-  document.querySelectorAll('.podium-card,.award-card,.cc-card').forEach(function(el){
-    el.addEventListener('mouseenter',function(){
-      this.style.transition='transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,filter .2s';
-    });
-  });
-
-  /* ── Count-up animation for scores in scoreboard ── */
-  function animateCount(el, target, duration){
-    var start=0, step=target/Math.max(1,Math.round(duration/16));
-    var iv=setInterval(function(){
-      start+=step;
-      if(start>=target){start=target;clearInterval(iv);}
-      el.textContent=Math.round(start);
-    },16);
-  }
-  var scoreObs=new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      if(en.isIntersecting){
-        var el=en.target;
-        var val=parseInt(el.dataset.val||el.textContent,10);
-        if(!isNaN(val)){el.dataset.val=el.dataset.val||val;animateCount(el,val,600);}
-        scoreObs.unobserve(el);
-      }
-    });
-  },{threshold:.3});
-  document.querySelectorAll('.total-pts,.p-score').forEach(function(el){
-    var val=parseInt(el.textContent,10);
-    if(!isNaN(val)){el.dataset.val=val;scoreObs.observe(el);}
-  });
-
-  /* ── URL param fallback (fires on load if params present) ── */
-  document.addEventListener('DOMContentLoaded',function(){
-    var params=new URLSearchParams(location.search);
-    if(params.has('admin')){
-      applyHofView('admin','');
-    } else if(params.has('user')){
-      applyHofView('agent',params.get('user')||'');
-    }
-    // Default: no identity — blueprint hidden
-  });
-
-})();
+}
+window.addEventListener('message', function(e){
+  if (!e.data||typeof e.data!=='object') return;
+  if (e.data.type==='hof-init') applyHofView(e.data.role||'', e.data.name||'');
+});
 </script>
 </body>
 </html>
