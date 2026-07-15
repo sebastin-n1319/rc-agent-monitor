@@ -7,9 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
-<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
-<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -20,7 +18,14 @@
   --green:#22c55e; --red:#f43f5e; --purple:#a855f7;
   --silver:#94a3b8; --bronze:#d97706;
   --b1:rgba(255,255,255,.07); --b2:rgba(255,255,255,.12);
-  --r:14px;
+  --r:10px;
+  --neon-cyan:#00e5ff; --neon-gold:#ffe566; --neon-purple:#d966ff;
+  --neon-green:#39ff14; --neon-orange:#ff6a00;
+  --glow-cyan: 0 0 8px rgba(0,229,255,.7), 0 0 24px rgba(0,229,255,.3);
+  --glow-gold: 0 0 8px rgba(255,229,102,.7), 0 0 24px rgba(255,229,102,.3);
+  --glow-purple: 0 0 8px rgba(217,102,255,.7), 0 0 24px rgba(217,102,255,.3);
+  --scanline-color: rgba(0,229,255,.025);
+  --cyber-border: 1px solid rgba(0,229,255,.18);
 }
 
 /* ---- ANIMATIONS ---- */
@@ -107,7 +112,7 @@
 }
 
 /* ---- BASE ---- */
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;font-size:13px}
 body{
   background:var(--bg);
   color:var(--t1);
@@ -147,7 +152,7 @@ body::before{
 /* ---- HERO ---- */
 .hero{
   text-align:center;
-  padding:48px 24px 36px;
+  padding:28px 20px 22px;
   position:relative;
   overflow:hidden;
 }
@@ -172,16 +177,16 @@ body::before{
 }
 .hero-trophy{
   font-size:0;
-  margin:0 auto 20px;
-  width:80px;height:80px;
+  margin:0 auto 14px;
+  width:60px;height:60px;
   display:flex;align-items:center;justify-content:center;
   position:relative;
   animation:float 3s ease-in-out infinite;
 }
 .hero-trophy i{
-  font-size:52px;
+  font-size:36px;
   color:var(--gold);
-  filter:drop-shadow(0 0 16px rgba(251,191,36,.7)) drop-shadow(0 0 40px rgba(251,191,36,.3));
+  filter:drop-shadow(0 0 12px rgba(251,191,36,.7)) drop-shadow(0 0 28px rgba(251,191,36,.3));
 }
 .hero-trophy::before{
   content:'';
@@ -197,7 +202,7 @@ body::before{
 .hero-trophy::after{
   content:'';
   position:absolute;
-  inset:-20px;
+  inset:-18px;
   border-radius:50%;
   border:1px dashed rgba(251,191,36,.12);
   animation:rotateRing 10s linear infinite reverse;
@@ -205,21 +210,21 @@ body::before{
 .hero-title{
   font-family:'Poppins',sans-serif;
   font-weight:900;
-  font-size:42px;
+  font-size:30px;
   background:linear-gradient(135deg,var(--gold) 0%,var(--gold2) 40%,var(--neon-cyan) 100%);
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
-  margin-bottom:8px;
+  margin-bottom:6px;
   animation:glitch 8s infinite;
   letter-spacing:-.5px;
 }
 .hero-sub{
-  font-size:13px;
+  font-size:10px;
   color:var(--t2);
   letter-spacing:.08em;
   text-transform:uppercase;
-  margin-bottom:24px;
+  margin-bottom:14px;
   font-weight:600;
 }
 .hero-stats{
@@ -229,16 +234,16 @@ body::before{
   justify-content:center;
 }
 .hstat{
-  font-size:11px;
+  font-size:9.5px;
   font-weight:700;
-  letter-spacing:.1em;
+  letter-spacing:.08em;
   text-transform:uppercase;
-  padding:6px 16px;
+  padding:5px 12px;
   border-radius:2px;
   border:1px solid rgba(0,229,255,.2);
   background:rgba(0,229,255,.05);
   color:var(--neon-cyan);
-  clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);
+  clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%);
   transition:all .2s;
 }
 .hstat:hover{
@@ -249,25 +254,25 @@ body::before{
 /* ---- TAB NAV ---- */
 nav.tab-nav{
   display:flex;
-  gap:10px;
-  padding:0 20px 20px;
+  gap:8px;
+  padding:10px 16px;
   position:sticky;
   top:0;
   z-index:10;
-  background:rgba(3,7,18,.88);
+  background:rgba(3,7,18,.92);
   backdrop-filter:blur(16px);
   border-bottom:1px solid rgba(0,229,255,.15);
   box-shadow:0 1px 0 rgba(0,229,255,.08), 0 4px 24px rgba(0,0,0,.6);
 }
 .tab-btn{
-  padding:10px 28px;
+  padding:8px 20px;
   border-radius:4px;
   border:1px solid rgba(0,229,255,.2);
   background:rgba(0,229,255,.04);
   color:var(--t2);
   font-family:'Poppins',sans-serif;
   font-weight:700;
-  font-size:13px;
+  font-size:12px;
   cursor:pointer;
   transition:all .25s;
   letter-spacing:.05em;
@@ -297,34 +302,25 @@ nav.tab-nav{
 }
 
 /* ---- PAGE WRAP ---- */
-.page-wrap{
-  max-width:100%;
-  padding-bottom:80px;
-  position:relative;
-  z-index:1;
-}
+.page-wrap{max-width:100%;padding-bottom:40px;position:relative;z-index:1}
 
 /* ---- TAB CONTENT ---- */
-.tab-content{
-  display:none;
-  padding:24px 20px 0;
-  animation:fadeSlideUp .3s ease;
-}
+.tab-content{display:none;padding:16px 16px 0;animation:fadeSlideUp .3s ease}
 .tab-content.active{
   display:block;
 }
 
 /* ---- SECTION LABEL ---- */
 .section-label{
-  font-size:10px;
+  font-size:9.5px;
   font-weight:700;
   letter-spacing:.12em;
   text-transform:uppercase;
   color:var(--neon-cyan);
   display:flex;
   align-items:center;
-  gap:10px;
-  margin:36px 0 18px;
+  gap:8px;
+  margin:22px 0 12px;
   text-shadow:0 0 12px rgba(0,229,255,.5);
 }
 .section-label i{font-size:14px}
@@ -336,29 +332,13 @@ nav.tab-nav{
 }
 
 /* ---- PODIUM ---- */
-.podium-wrap{
-  display:flex;
-  align-items:flex-end;
-  justify-content:center;
-  gap:14px;
-  padding:8px 0 0;
-}
-.podium-slot{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  flex:1;
-  max-width:260px;
-}
-.medal{
-  font-size:38px;
-  margin-bottom:8px;
-  text-align:center;
-}
+.podium-wrap{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:4px 0 0}
+.podium-slot{display:flex;flex-direction:column;align-items:center;flex:1;max-width:220px}
+.medal{font-size:28px;margin-bottom:6px;text-align:center}
 .podium-card{
   width:100%;
   border-radius:6px;
-  padding:22px 18px 18px;
+  padding:16px 14px 14px;
   text-align:center;
   position:relative;
   overflow:hidden;
@@ -424,26 +404,26 @@ nav.tab-nav{
   font-weight:700;
 }
 .p-av-gold{
-  width:88px;
-  height:88px;
+  width:68px;
+  height:68px;
   background:linear-gradient(135deg,#f59e0b,#fbbf24);
   box-shadow:0 0 24px rgba(251,191,36,.6);
   color:#1a0e00;
-  font-size:26px;
+  font-size:20px;
 }
 .p-av-silver{
-  width:70px;
-  height:70px;
+  width:56px;
+  height:56px;
   background:linear-gradient(135deg,#475569,#94a3b8);
   color:#0f172a;
-  font-size:20px;
+  font-size:16px;
 }
 .p-av-bronze{
-  width:70px;
-  height:70px;
+  width:56px;
+  height:56px;
   background:linear-gradient(135deg,#78350f,#d97706);
   color:#fff;
-  font-size:20px;
+  font-size:16px;
 }
 
 .p-name{
@@ -453,17 +433,17 @@ nav.tab-nav{
   margin-bottom:4px;
 }
 .podium-1 .p-name{
-  font-size:18px;
+  font-size:15px;
   color:var(--gold);
 }
 .p-score{
   font-family:'Poppins',sans-serif;
   font-weight:900;
-  font-size:22px;
+  font-size:18px;
   color:var(--gold);
 }
 .podium-1 .p-score{
-  font-size:30px;
+  font-size:22px;
 }
 .p-score span{
   font-size:14px;
@@ -514,30 +494,26 @@ nav.tab-nav{
   border-radius:6px 6px 0 0;
 }
 .pb-gold{
-  height:72px;
+  height:52px;
   background:linear-gradient(180deg,rgba(251,191,36,.6),rgba(251,191,36,.2));
 }
 .pb-silver{
-  height:48px;
+  height:34px;
   background:linear-gradient(180deg,rgba(148,163,184,.5),rgba(148,163,184,.15));
 }
 .pb-bronze{
-  height:32px;
+  height:22px;
   background:linear-gradient(180deg,rgba(205,127,50,.5),rgba(205,127,50,.15));
 }
 
 /* ---- CHAT CHAMPIONS ---- */
-.chat-champs-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
-  gap:14px;
-}
+.chat-champs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
 .cc-card{
   border-radius:var(--r);
   border:1px solid rgba(168,85,247,.25);
   border-left:4px solid var(--purple);
   background:rgba(168,85,247,.06);
-  padding:18px;
+  padding:14px;
   display:flex;
   align-items:center;
   gap:16px;
@@ -549,15 +525,15 @@ nav.tab-nav{
 .cc-rank{
   font-family:'Poppins',sans-serif;
   font-weight:900;
-  font-size:28px;
+  font-size:22px;
   color:var(--purple);
   flex-shrink:0;
   width:48px;
   text-align:center;
 }
 .cc-avatar{
-  width:52px;
-  height:52px;
+  width:42px;
+  height:42px;
   border-radius:50%;
   background:linear-gradient(135deg,var(--purple),#7c3aed);
   display:flex;
@@ -565,7 +541,7 @@ nav.tab-nav{
   justify-content:center;
   font-family:'Poppins',sans-serif;
   font-weight:800;
-  font-size:16px;
+  font-size:13px;
   color:#fff;
   flex-shrink:0;
 }
@@ -575,13 +551,13 @@ nav.tab-nav{
 .cc-name{
   font-family:'Poppins',sans-serif;
   font-weight:700;
-  font-size:15px;
+  font-size:13px;
   margin-bottom:2px;
 }
 .cc-score{
   font-family:'Poppins',sans-serif;
   font-weight:900;
-  font-size:18px;
+  font-size:15px;
   color:var(--gold);
 }
 .cc-tag{
@@ -614,17 +590,12 @@ nav.tab-nav{
 }
 
 /* ---- AWARDS GRID ---- */
-.awards-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
-  gap:14px;
-  margin-top:6px;
-}
+.awards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-top:4px}
 .award-card{
   border-radius:var(--r);
   border:1px solid var(--b1);
   background:var(--bg2);
-  padding:20px;
+  padding:14px;
   display:flex;
   gap:16px;
   align-items:flex-start;
@@ -673,7 +644,7 @@ nav.tab-nav{
 .aw-winner{
   font-family:'Poppins',sans-serif;
   font-weight:800;
-  font-size:16px;
+  font-size:14px;
   color:var(--t1);
   margin-bottom:2px;
 }
@@ -686,7 +657,7 @@ nav.tab-nav{
   margin-bottom:2px;
 }
 .aw-desc{
-  font-size:11.5px;
+  font-size:11px;
   color:var(--t2);
   line-height:1.55;
   margin:6px 0 10px;
@@ -730,12 +701,7 @@ nav.tab-nav{
 }
 
 /* ---- SCOREBOARDS ---- */
-.scoreboards-wrap{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-  margin-top:6px;
-}
+.scoreboards-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px}
 .scoreboard-card{
   border-radius:6px;
   border:1px solid rgba(0,229,255,.15);
@@ -749,7 +715,7 @@ nav.tab-nav{
   box-shadow:0 0 20px rgba(0,229,255,.08);
 }
 .sb-head{
-  padding:14px 18px;
+  padding:10px 14px;
   font-family:'Poppins',sans-serif;
   font-weight:700;
   font-size:13px;
@@ -763,10 +729,10 @@ nav.tab-nav{
 }
 .sb-hrow{
   display:grid;
-  grid-template-columns:36px 1fr 36px 36px 36px 70px 56px;
+  grid-template-columns:28px 1fr 32px 32px 32px 62px 50px;
   gap:8px;
-  padding:8px 14px;
-  font-size:9.5px;
+  padding:7px 10px;
+  font-size:9px;
   font-weight:700;
   letter-spacing:.1em;
   text-transform:uppercase;
@@ -776,11 +742,11 @@ nav.tab-nav{
 }
 .sb-row{
   display:grid;
-  grid-template-columns:36px 1fr 36px 36px 36px 70px 56px;
+  grid-template-columns:28px 1fr 32px 32px 32px 62px 50px;
   gap:8px;
-  padding:11px 14px;
+  padding:8px 10px;
   border-bottom:1px solid rgba(255,255,255,.035);
-  font-size:12.5px;
+  font-size:11.5px;
   align-items:center;
   transition:background .15s;
 }
@@ -894,14 +860,20 @@ nav.tab-nav{
 }
 
 /* ---- MOBILE RESPONSIVE ---- */
+@media(max-width:1100px){
+  .scoreboards-wrap{grid-template-columns:1fr}
+  .awards-grid{grid-template-columns:1fr 1fr}
+}
 @media(max-width:700px){
-  .scoreboards-wrap{grid-template-columns:1fr;}
-  .podium-wrap{flex-direction:column;align-items:center;}
-  .podium-slot{max-width:100%;width:100%;}
-  .awards-grid{grid-template-columns:1fr;}
-  .chat-champs-grid{grid-template-columns:1fr;}
-  .hero-title{font-size:30px;}
-  .sb-hrow,.sb-row{grid-template-columns:28px 1fr 30px 30px 30px 60px 44px;font-size:10.5px;}
+  .scoreboards-wrap{grid-template-columns:1fr}
+  .podium-wrap{flex-direction:column;align-items:center}
+  .podium-slot{max-width:100%;width:100%}
+  .awards-grid{grid-template-columns:1fr}
+  .chat-champs-grid{grid-template-columns:1fr}
+  .hero-title{font-size:22px}
+  .sb-hrow,.sb-row{grid-template-columns:24px 1fr 28px 28px 28px 52px 42px;font-size:9px}
+  .ac-month-grid{grid-template-columns:1fr}
+  .ac-header{gap:10px}
 }
 
 /* ── Private Banner ── */
@@ -927,17 +899,17 @@ nav.tab-nav{
 .as-pill:hover,.as-pill.active{background:rgba(242,136,32,.12);border-color:var(--orange);color:var(--orange)}
 
 /* ── Agent card wrapper ── */
-.agent-card{border-radius:var(--r);border:1px solid var(--b1);background:var(--bg2);padding:24px;margin-bottom:16px;animation:fadeSlideUp .3s ease}
+.agent-card{border-radius:var(--r);border:1px solid var(--b1);background:var(--bg2);padding:16px;margin-bottom:12px;animation:fadeSlideUp .3s ease}
 .calls-card{border-left:4px solid var(--teal)}
 .chat-card{border-left:4px solid var(--purple)}
 
 /* ── Card header ── */
 .ac-header{display:flex;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap}
-.ac-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;flex-shrink:0}
+.ac-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;flex-shrink:0}
 .ac-av-calls{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff}
 .ac-av-chat{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff}
 .ac-info{flex:1}
-.ac-name{font-family:'Poppins',sans-serif;font-weight:800;font-size:18px;color:var(--t1);margin-bottom:4px}
+.ac-name{font-family:'Poppins',sans-serif;font-weight:800;font-size:15px;color:var(--t1);margin-bottom:4px}
 .ac-meta{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .badge-calls-sm{background:rgba(6,135,190,.18);color:var(--teal);border:1px solid rgba(6,135,190,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.05em}
 .badge-chat-sm{background:rgba(168,85,247,.18);color:var(--purple);border:1px solid rgba(168,85,247,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.05em}
@@ -948,11 +920,11 @@ nav.tab-nav{
 .rank-neutral{color:var(--t2)}
 
 /* ── Month grid ── */
-.ac-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-.ac-month{border-radius:10px;border:1px solid var(--b1);background:var(--bg3);padding:14px;position:relative}
+.ac-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.ac-month{border-radius:10px;border:1px solid var(--b1);background:var(--bg3);padding:10px;position:relative}
 .ac-month.eligible{border-color:rgba(34,197,94,.2)}
 .am-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
-.am-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:24px;color:var(--t1)}
+.am-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:20px;color:var(--t1)}
 .am-score.am-perfect{color:var(--gold)}
 .am-score span{font-size:13px;color:var(--t3);font-weight:600}
 .am-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin:6px 0;overflow:hidden}
@@ -969,8 +941,8 @@ nav.tab-nav{
 .am-note{font-size:10px;color:var(--t3);font-style:italic;margin-top:6px}
 
 /* ── Insights ── */
-.ac-insights{display:flex;flex-direction:column;gap:10px}
-.ac-insight{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.6}
+.ac-insights{display:flex;flex-direction:column;gap:8px}
+.ac-insight{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:10px 12px;font-size:11.5px;line-height:1.6}
 .ac-insight.strength{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.14)}
 .ac-insight.focus{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.14)}
 .ac-insight.tip{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.14)}
@@ -986,7 +958,7 @@ nav.tab-nav{
 <!-- HERO -->
 <section class="hero">
   <canvas id="hero-particles" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.5"></canvas>
-  <div class="hero-trophy" style="position:relative;z-index:1"><i class="ph-fill ph-trophy"></i></div>
+  <div class="hero-trophy" style="position:relative;z-index:1"><i class="ri-trophy-fill"></i></div>
   <div class="hero-title">T1 CS Stars</div>
   <div class="hero-sub">Q2 2026 Hall of Fame · Apr – Jun 2026</div>
   <div class="hero-stats">
@@ -999,8 +971,8 @@ nav.tab-nav{
 
 <!-- TAB NAV -->
 <nav class="tab-nav">
-  <button id="btn-champions" class="tab-btn active" onclick="switchTab('champions',this)"><i class="ph-bold ph-medal" style="margin-right:6px;vertical-align:-2px"></i>Champions Board</button>
-  <button id="btn-blueprint" class="tab-btn" style="display:none" onclick="switchTab('blueprint',this)"><i class="ph-bold ph-chart-bar" style="margin-right:6px;vertical-align:-2px"></i>Growth Blueprint</button>
+  <button id="btn-champions" class="tab-btn active" onclick="switchTab('champions',this)"><i class="ri-medal-fill" style="margin-right:6px;vertical-align:-2px"></i>Champions Board</button>
+  <button id="btn-blueprint" class="tab-btn" style="display:none" onclick="switchTab('blueprint',this)"><i class="ri-bar-chart-2-fill" style="margin-right:6px;vertical-align:-2px"></i>Growth Blueprint</button>
 </nav>
 
 <div class="page-wrap">
@@ -1009,7 +981,7 @@ nav.tab-nav{
   <div id="tab-champions" class="tab-content active">
 
     <!-- CALLS TOP 3 PODIUM -->
-    <div class="section-label"><i class="ph-bold ph-phone-call"></i>Calls Team · Top 3</div>
+    <div class="section-label"><i class="ri-phone-fill"></i>Calls Team · Top 3</div>
     <div class="podium-wrap">
 
       <!-- Silver #2 LEFT -->
@@ -1070,7 +1042,7 @@ nav.tab-nav{
     </div>
 
     <!-- CHAT CHAMPIONS -->
-    <div class="section-label"><i class="ph-bold ph-chats"></i>Chat Team Champions</div>
+    <div class="section-label"><i class="ri-chat-3-fill"></i>Chat Team Champions</div>
     <div class="chat-champs-grid">
       <div class="cc-card">
         <div class="cc-rank">#1</div>
@@ -1108,11 +1080,11 @@ nav.tab-nav{
     </div>
 
     <!-- AWARD CARDS -->
-    <div class="section-label"><i class="ph-bold ph-star"></i>Q2 2026 Awards</div>
+    <div class="section-label"><i class="ri-star-fill"></i>Q2 2026 Awards</div>
     <div class="awards-grid">
 
       <div class="award-card award-gold">
-        <div class="aw-icon"><i class="ph-fill ph-star" style="color:var(--gold)"></i></div>
+        <div class="aw-icon"><i class="ri-star-fill" style="color:var(--gold)"></i></div>
         <div class="aw-body">
           <div class="aw-title">Star of Q2</div>
           <div class="aw-winner">Debra Horton</div>
@@ -1122,7 +1094,7 @@ nav.tab-nav{
       </div>
 
       <div class="award-card award-green">
-        <div class="aw-icon"><i class="ph-fill ph-trend-up" style="color:var(--green)"></i></div>
+        <div class="aw-icon"><i class="ri-trending-up-fill" style="color:var(--green)"></i></div>
         <div class="aw-body">
           <div class="aw-title">Most Improved</div>
           <div class="aw-winner">Evan Cruz</div>
@@ -1132,7 +1104,7 @@ nav.tab-nav{
       </div>
 
       <div class="award-card award-purple">
-        <div class="aw-icon"><i class="ph-fill ph-target" style="color:var(--purple)"></i></div>
+        <div class="aw-icon"><i class="ri-focus-3-fill" style="color:var(--purple)"></i></div>
         <div class="aw-body">
           <div class="aw-title">Perfect Score Club</div>
           <div class="aw-winner-multi">Debra Horton · Lincy Tabita · Evan Cruz</div>
@@ -1142,7 +1114,7 @@ nav.tab-nav{
       </div>
 
       <div class="award-card award-teal">
-        <div class="aw-icon"><i class="ph-fill ph-fire" style="color:var(--teal)"></i></div>
+        <div class="aw-icon"><i class="ri-fire-fill" style="color:var(--teal)"></i></div>
         <div class="aw-body">
           <div class="aw-title">FCR Excellence</div>
           <div class="aw-winner-multi">Sky Gibson · Greg Dawson · Caroline Lock</div>
@@ -1152,7 +1124,7 @@ nav.tab-nav{
       </div>
 
       <div class="award-card award-orange">
-        <div class="aw-icon"><i class="ph-fill ph-medal" style="color:var(--orange)"></i></div>
+        <div class="aw-icon"><i class="ri-medal-fill" style="color:var(--orange)"></i></div>
         <div class="aw-body">
           <div class="aw-title">Iron Consistency</div>
           <div class="aw-winner-multi">Debra Horton · Lincy Tabita</div>
@@ -1162,7 +1134,7 @@ nav.tab-nav{
       </div>
 
       <div class="award-card award-blue">
-        <div class="aw-icon"><i class="ph-fill ph-lightning" style="color:var(--blue)"></i></div>
+        <div class="aw-icon"><i class="ri-flashlight-fill" style="color:var(--blue)"></i></div>
         <div class="aw-body">
           <div class="aw-title">Breakthrough Moments</div>
           <div class="aw-winner-multi">Lincy Tabita · Evan Cruz</div>
@@ -1174,12 +1146,12 @@ nav.tab-nav{
     </div>
 
     <!-- SCOREBOARDS -->
-    <div class="section-label"><i class="ph-bold ph-table"></i>Full Scoreboard</div>
+    <div class="section-label"><i class="ri-table-fill"></i>Full Scoreboard</div>
     <div class="scoreboards-wrap">
 
       <!-- CALLS -->
       <div class="scoreboard-card">
-        <div class="sb-head"><i class="ph-bold ph-phone-call" style="margin-right:8px;vertical-align:-2px;color:var(--teal)"></i>Calls Team Scoreboard</div>
+        <div class="sb-head"><i class="ri-phone-fill" style="margin-right:8px;vertical-align:-2px;color:var(--teal)"></i>Calls Team Scoreboard</div>
         <div class="sb-table">
           <div class="sb-hrow">
             <div class="col-rank">#</div>
@@ -1249,7 +1221,7 @@ nav.tab-nav{
 
       <!-- CHAT -->
       <div class="scoreboard-card">
-        <div class="sb-head"><i class="ph-bold ph-chats" style="margin-right:8px;vertical-align:-2px;color:var(--purple)"></i>Chat Team Scoreboard</div>
+        <div class="sb-head"><i class="ri-chat-3-fill" style="margin-right:8px;vertical-align:-2px;color:var(--purple)"></i>Chat Team Scoreboard</div>
         <div class="sb-table">
           <div class="sb-hrow">
             <div class="col-rank">#</div>
@@ -1301,7 +1273,7 @@ nav.tab-nav{
 
     <!-- Private banner (hidden by default, shown when agent is logged in) -->
     <div id="private-banner" style="display:none">
-      <div class="priv-icon"><i class="ph-fill ph-lock-key" style="font-size:24px;color:var(--gold);filter:drop-shadow(0 0 8px rgba(251,191,36,.6))"></i></div>
+      <div class="priv-icon"><i class="ri-lock-password-fill" style="font-size:24px;color:var(--gold);filter:drop-shadow(0 0 8px rgba(251,191,36,.6))"></i></div>
       <div class="priv-text">
         Showing personalized Growth Blueprint for <strong id="private-banner-name"></strong>
       </div>
@@ -1309,14 +1281,14 @@ nav.tab-nav{
 
     <!-- Not-found message (shown when agent has no card) -->
     <div id="not-found-card" class="nf-card" style="display:none">
-      <div class="nf-icon"><i class="ph-fill ph-magnifying-glass" style="font-size:40px;color:var(--t3)"></i></div>
+      <div class="nf-icon"><i class="ri-search-2-fill" style="font-size:40px;color:var(--t3)"></i></div>
       <div class="nf-title">No Blueprint Found</div>
       <div class="nf-body">We couldn't find a Growth Blueprint for your account. Please contact your team lead.</div>
     </div>
 
     <!-- Motivation message shown above agent's card when they're logged in -->
     <div id="motiv-msg" class="motiv-msg" style="display:none">
-      <i class="ph-fill ph-star" style="font-size:18px;color:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.6))"></i> Your personal Q2 Growth Blueprint — review your strengths and focus areas for Q3.
+      <i class="ri-star-fill" style="font-size:18px;color:var(--gold);filter:drop-shadow(0 0 6px rgba(251,191,36,.6))"></i> Your personal Q2 Growth Blueprint — review your strengths and focus areas for Q3.
     </div>
 
     <!-- Admin-only: agent selector -->
@@ -1369,15 +1341,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Most consistent performer in Q2 — the only agent eligible all 3 months. QA improving quarter-on-quarter, reaching 93.8% in Jun.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Maintain QA above 90% monthly to lock in a perfect 100/100 each month in Q3.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> You have the baseline — now aim for three consecutive 100/100 months to become the Q3 standout.</div>
           </div>
         </div>
@@ -1421,15 +1393,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Consistent across all 3 months — the only other agent eligible 3/3. Closed Q2 with a stunning perfect 100/100 in Jun.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> QA is just below 90% in Apr/May — nudging this to ≥90% would unlock higher potential.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> Carry the Jun momentum forward. Aim for QA ≥90% from month 1.</div>
           </div>
         </div>
@@ -1473,15 +1445,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Huge Jun improvement. FCR 83.7% was best on the calls team for Jun.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Tickets/day and QA need to hit threshold every month, not just Jun.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> Replicate Jun's discipline from month 1. Consistent eligibility = way more points.</div>
           </div>
         </div>
@@ -1525,15 +1497,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> May eligibility proves you can meet the bar. QA and FCR show capability.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Inconsistent — strong in May, dipped in Apr/Jun. Consistency is the key unlock.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> Treat every month like May. Keep Calls/day ≥11 and Tickets/day ≥5 as non-negotiables.</div>
           </div>
         </div>
@@ -1577,15 +1549,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> FCR is exceptional — best on the team (94.5% in Apr). Extremely consistent scoring.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Very close to eligibility every month. Tickets/day and QA are the only gaps. Tickets ≥5/day and QA ≥85% would unlock eligibility.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> You're 1 metric away from eligibility. Focus exclusively on Tickets count and QA each month.</div>
           </div>
         </div>
@@ -1629,15 +1601,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> FCR is excellent (90.9% in May/Jun). Steady improvement throughout Q2.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Tickets/day stuck at 4.4–4.8 — needs to reach ≥5/day. QA approaching but not quite at 85%.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> You're improving every month. Push Tickets volume to 5/day and you'll likely hit eligibility in Q3 month 1.</div>
           </div>
         </div>
@@ -1681,15 +1653,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Strong Calls volume and QA in Apr. Multiple metrics near the threshold.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Jun trend is concerning — volume, QA, and FCR all dropped. FCR is the biggest single gap.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> Investigate what changed in Jun. FCR coaching + stabilizing volume will be key for Q3 eligibility.</div>
           </div>
         </div>
@@ -1733,15 +1705,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Most dramatic trajectory in Q2. Went 35→55→100 and hit a perfect score in Jun.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> CSAT is the key lever — needs ≥90% to unlock the full 30 points for Slab 1. Jun was 86.4%.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> The Jun breakthrough proves you can do it. Start Q3 with Jun's habits from day 1 — aim for CSAT ≥90%.</div>
           </div>
         </div>
@@ -1785,15 +1757,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Best FCR in the chat team for Jun (88.3%). Achieved eligibility in Jun for the first time.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> CSAT — the biggest gap. At 83.9–85.2% vs the 90% threshold for Slab 1.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> FCR is locked in. Shift energy to lifting CSAT above 90% to score 30 pts instead of current Slab 2 (25/30).</div>
           </div>
         </div>
@@ -1838,15 +1810,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Massive improvement throughout Q2 — from 20 pts in Apr to a forfeited 70 pts in Jun. FCR 89.5% was the highest in chat team.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> Attendance/consistency is critical. Great performance doesn't count without meeting the presence threshold.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> Your Jun numbers show you belong in the top tier. Stay consistent and that 70-pt performance translates to real rewards.</div>
           </div>
         </div>
@@ -1890,15 +1862,15 @@ nav.tab-nav{
 
         <div class="ac-insights">
           <div class="ac-insight strength">
-            <div class="ins-icon"><i class="ph-fill ph-barbell" style="font-size:18px;color:var(--green)"></i></div>
+            <div class="ins-icon"><i class="ri-boxing-fill" style="font-size:18px;color:var(--green)"></i></div>
             <div class="ins-body"><strong>Strength:</strong> Steady improvement across Q2. Metrics are moving in the right direction.</div>
           </div>
           <div class="ac-insight focus">
-            <div class="ins-icon"><i class="ph-fill ph-target" style="font-size:18px;color:var(--gold)"></i></div>
+            <div class="ins-icon"><i class="ri-focus-3-fill" style="font-size:18px;color:var(--gold)"></i></div>
             <div class="ins-body"><strong>Focus area:</strong> All metrics need to climb simultaneously — CSAT to ≥85%, Chats/day to ≥11, Tickets/day to ≥5, QA to ≥85%.</div>
           </div>
           <div class="ac-insight tip">
-            <div class="ins-icon"><i class="ph-fill ph-lightbulb" style="font-size:18px;color:var(--blue)"></i></div>
+            <div class="ins-icon"><i class="ri-lightbulb-flash-fill" style="font-size:18px;color:var(--blue)"></i></div>
             <div class="ins-body"><strong>Q3 tip:</strong> Set a specific target per metric — small gains everywhere will add up to eligibility faster than big gains in one area.</div>
           </div>
         </div>
