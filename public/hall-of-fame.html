@@ -1177,6 +1177,14 @@ window.addEventListener('message', function(e){
   if (!e.data||typeof e.data!=='object') return;
   if (e.data.type==='hof-init') applyHofView(e.data.role||'', e.data.name||'');
 });
+
+// Auto-init: admin iframe loads with ?admin param; agent iframe gets postMessage instead
+(function(){
+  var params = new URLSearchParams(window.location.search);
+  if (params.has('admin') || params.get('role') === 'admin') {
+    applyHofView('admin', '');
+  }
+})();
 </script>
 </body>
 </html>
