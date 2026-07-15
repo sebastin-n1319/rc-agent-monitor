@@ -27331,8 +27331,20 @@ function buildFlcAgentRow(row, cls){
     ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${badgeBg};color:${badgeCol};letter-spacing:.03em;cursor:default;" data-reasons='${_badgeReasons}' data-level='${_badgeLevel}' onmouseenter="_showAbmTip(this,JSON.parse(this.dataset.reasons||'[]'),this.dataset.level)" onmouseleave="_hideAbmTip()">${badgeTxt}</span>`
     : '';
 
+  const _FMTS = typeof fmt === 'function' ? fmt : (s=>s+'s');
+  const _pctLines = [];
+  _pctLines.push(`Break today: ${_FMTS(row.breakSeconds||0)} / 60m limit`);
+  if((row.brbSeconds||0)>0) _pctLines.push(`BRB today: ${_FMTS(row.brbSeconds||0)} / 20m limit`);
+  if((row.trainingSeconds||0)>0) _pctLines.push(`Training: ${_FMTS(row.trainingSeconds)}`);
+  if((row.internalCallSeconds||0)>0) _pctLines.push(`Internal calls: ${_FMTS(row.internalCallSeconds)}`);
+  _pctLines.push(`${pct >= 100 ? '⚠ Over limit by '+_FMTS(usedSecs-3600) : 'Used '+pct+'% of 60m break allowance'}`);
+  const _pctTipR = JSON.stringify(_pctLines).replace(/'/g,"&#39;");
+  const _pctCol = pct>=100?'#f43f5e':pct>=80?'#f59e0b':'#9ca3af';
   const pctHtml = usedSecs>0
-    ? `<span style="font-size:10px;color:${pct>=100?'#f43f5e':pct>=80?'#f59e0b':'#9ca3af'};">${pct}%</span>`
+    ? `<span style="font-size:10px;font-weight:600;color:${_pctCol};cursor:default;"
+         data-reasons='${_pctTipR}' data-level='info'
+         onmouseenter="_showAbmTip(this,JSON.parse(this.dataset.reasons||'[]'),this.dataset.level,'BREAK USAGE','${_pctCol}')"
+         onmouseleave="_hideAbmTip()">${pct}%</span>`
     : '';
 
   return `<div style="display:flex!important;align-items:center;gap:0;border-left:3px solid ${leftCol};border-bottom:1px solid rgba(0,0,0,.04);background:${rowBg};cursor:pointer;transition:background .1s;"
@@ -32662,17 +32674,28 @@ async function deleteNote(id){
   let _abmRow = null;
 
   // ── Tooltip helpers (also called from buildFlcAgentRow / buildBtkAgentTile) ──
-  window._showAbmTip = function(el, reasons, level){
+  // level: 'critical' | 'warning' | 'info'
+  // optional 4th arg: header override string
+  // optional 5th arg: accent color override
+  window._showAbmTip = function(el, reasons, level, headerOverride, colorOverride){
     const tip = document.getElementById('abm-tip');
     if(!tip || !reasons || !reasons.length) return;
-    const isErr = level === 'critical';
-    const accentColor = isErr ? '#f43f5e' : '#f59e0b';
-    const hdrText = isErr ? 'CRITICAL ALERT' : 'AT LIMIT';
+    let accentColor, hdrText, bulletIcon;
+    if(headerOverride){
+      accentColor = colorOverride || '#64748b';
+      hdrText = headerOverride;
+      bulletIcon = '·';
+    } else {
+      const isErr = level === 'critical';
+      accentColor = isErr ? '#f43f5e' : '#f59e0b';
+      hdrText = isErr ? 'CRITICAL ALERT' : 'AT LIMIT';
+      bulletIcon = '▲';
+    }
     tip.innerHTML =
       `<div style="font-size:9.5px;font-weight:800;letter-spacing:.1em;color:${accentColor};margin-bottom:7px;text-transform:uppercase;">${hdrText}</div>` +
       reasons.map(r =>
         `<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:4px;">`+
-        `<span style="color:${accentColor};flex-shrink:0;font-size:10px;margin-top:1px;">▲</span>`+
+        `<span style="color:${accentColor};flex-shrink:0;font-size:11px;margin-top:1px;">${bulletIcon}</span>`+
         `<span style="font-size:12px;color:#cbd5e1;line-height:1.4;">${r}</span></div>`
       ).join('');
     const rect = el.getBoundingClientRect();
