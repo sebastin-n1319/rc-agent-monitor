@@ -27672,6 +27672,40 @@ function renderBreakAdminView(){
     : '<div class="break-empty">No break events for '+formatTrackerDate(selectedDate)+'.</div>';
 }
 
+/* Build a compact horizontal shift timeline bar from break events */
+function buildShiftTimeline(events){
+  if(!events || events.length === 0) return '';
+  // Map action → colour
+  const ACTION_COLOR = {
+    'logged_in':    '#2DDC96', 'available':  '#2DDC96',
+    'brb':          '#FBC84B', 'brb_return': '#2DDC96',
+    'break':        '#ED666B', 'break_return':'#2DDC96',
+    'training':     '#9B59B6', 'qa': '#21AAE0',
+    'logged_out':   '#64748b', 'offline': '#64748b',
+  };
+  const DEFAULT_COLOR = '#334155';
+
+  // Sort events by time ascending
+  const sorted = [...events].sort((a,b) => new Date(a.createdAt||0) - new Date(b.createdAt||0));
+  if(sorted.length < 2) return '';
+
+  const startMs = new Date(sorted[0].createdAt).getTime();
+  const endMs   = new Date(sorted[sorted.length-1].createdAt).getTime();
+  const spanMs  = Math.max(endMs - startMs, 1);
+
+  // Build segments
+  const segs = sorted.slice(0,-1).map((ev, i) => {
+    const nextEv = sorted[i+1];
+    const segStart = new Date(ev.createdAt).getTime();
+    const segEnd   = new Date(nextEv.createdAt).getTime();
+    const pct = ((segEnd - segStart) / spanMs * 100).toFixed(2);
+    const color = ACTION_COLOR[ev.action] || DEFAULT_COLOR;
+    return '<div style="flex:0 0 '+pct+'%;background:'+color+';height:100%;border-radius:1px" title="'+esc(ev.action)+' ('+fmt(Math.round((segEnd-segStart)/1000))+')"></div>';
+  });
+
+  return '<div style="display:flex;width:100%;height:6px;border-radius:4px;overflow:hidden;background:#1e293b;margin-bottom:8px;gap:1px" title="Shift timeline">' + segs.join('') + '</div>';
+}
+
 function renderBreakAgentView(){
   const self = getSelfBreakRow();
   const tracker = breakTrackerData.tracker || [];
