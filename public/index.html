@@ -26954,12 +26954,14 @@ function buildHallCard(kind,op,maxima){
   // Resolve Google photo for this agent
   const agentEmail = op.agent.email || '';
   const agentPic = (window.av2 && typeof window.av2.getPicture==='function') ? window.av2.getPicture(agentEmail) : null;
+  const _hofIni = esc(initials(op.agent.name));
+  const _hofEmail = esc(agentEmail.toLowerCase());
   const heroAvHtml = agentPic
-    ? '<div class="hof-avatar hero hof-avatar-photo"><img src="'+esc(agentPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.textContent=\''+esc(initials(op.agent.name))+'\'"></div>'
-    : '<div class="hof-avatar hero">'+esc(initials(op.agent.name))+'</div>';
+    ? '<div class="hof-avatar hero hof-avatar-photo" data-email-avatar="'+_hofEmail+'" data-initials="'+_hofIni+'" style="overflow:hidden"><img src="'+esc(agentPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.classList.remove(\'hof-avatar-photo\');this.parentElement.style.overflow=\'\';this.parentElement.textContent=\''+_hofIni+'\'"></div>'
+    : '<div class="hof-avatar hero" data-email-avatar="'+_hofEmail+'" data-initials="'+_hofIni+'">'+_hofIni+'</div>';
   const miniAvHtml = agentPic
-    ? '<div class="hof-avatar mini hof-avatar-photo"><img src="'+esc(agentPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.textContent=\''+esc(initials(op.agent.name))+'\'"></div>'
-    : '<div class="hof-avatar mini">'+esc(initials(op.agent.name))+'</div>';
+    ? '<div class="hof-avatar mini hof-avatar-photo" data-email-avatar="'+_hofEmail+'" data-initials="'+_hofIni+'" style="overflow:hidden"><img src="'+esc(agentPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.classList.remove(\'hof-avatar-photo\');this.parentElement.style.overflow=\'\';this.parentElement.textContent=\''+_hofIni+'\'"></div>'
+    : '<div class="hof-avatar mini" data-email-avatar="'+_hofEmail+'" data-initials="'+_hofIni+'">'+_hofIni+'</div>';
 
   if(kind==='hero'){
     return '<div class="hof-hero-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
@@ -26994,9 +26996,11 @@ function buildHallMiniCard(kind,op,maxima){
   }[kind];
   if(!cfg)return'';
   const miniPic = (window.av2 && typeof window.av2.getPicture==='function') ? window.av2.getPicture(op.agent.email||'') : null;
+  const _miniIni = esc(initials(op.agent.name));
+  const _miniEmail = esc((op.agent.email||'').toLowerCase());
   const miniAv = miniPic
-    ? '<div class="hof-avatar mini hof-avatar-photo"><img src="'+esc(miniPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.textContent=\''+esc(initials(op.agent.name))+'\'"></div>'
-    : '<div class="hof-avatar mini">'+esc(initials(op.agent.name))+'</div>';
+    ? '<div class="hof-avatar mini hof-avatar-photo" data-email-avatar="'+_miniEmail+'" data-initials="'+_miniIni+'" style="overflow:hidden"><img src="'+esc(miniPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.classList.remove(\'hof-avatar-photo\');this.parentElement.style.overflow=\'\';this.parentElement.textContent=\''+_miniIni+'\'"></div>'
+    : '<div class="hof-avatar mini" data-email-avatar="'+_miniEmail+'" data-initials="'+_miniIni+'">'+_miniIni+'</div>';
   return '<div class="hof-mini-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
     '<div class="hof-mini-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
     '<div class="hof-mini-body">'+

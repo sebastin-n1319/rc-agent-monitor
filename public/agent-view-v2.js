@@ -40,11 +40,12 @@
               _profileByName[prof.name.toLowerCase()] = prof.picture;
             }
           }
-          // Refresh any already-rendered avatars
+          // Refresh any already-rendered avatars (covers av2, HOF, and all tagged elements)
           document.querySelectorAll('[data-email-avatar]').forEach(el => {
             const email = el.dataset.emailAvatar;
-            const pic = _profilePics[email?.toLowerCase()]?.picture;
-            if (pic) av2._applyPhotoToAvatar(el, pic);
+            if (!email) return;
+            const pic = _profilePics[email.toLowerCase()]?.picture;
+            if (pic && !el.querySelector('img')) av2._applyPhotoToAvatar(el, pic);
           });
         }
       } catch(e) { /* non-critical */ }
@@ -77,12 +78,20 @@
       '</div>';
     },
 
-    /* Apply a photo URL to an already-rendered avatar element */
+    /* Apply a photo URL to an already-rendered avatar element (works for av2 and hof avatars) */
     _applyPhotoToAvatar(el, picUrl) {
       if (!el || !picUrl) return;
-      el.classList.add('av2-avatar-photo');
-      el.innerHTML = '<img src="' + av2.escape(picUrl) + '" alt="" ' +
-        'onerror="this.parentElement.innerHTML=this.parentElement.dataset.initials||\'?\';this.parentElement.classList.remove(\'av2-avatar-photo\')">';
+      const isHof = el.classList.contains('hof-avatar');
+      if (isHof) {
+        el.classList.add('hof-avatar-photo');
+      } else {
+        el.classList.add('av2-avatar-photo');
+      }
+      el.style.overflow = 'hidden';
+      const fallbackClass = isHof ? 'hof-avatar-photo' : 'av2-avatar-photo';
+      el.innerHTML = '<img src="' + av2.escape(picUrl) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;" ' +
+        'onerror="this.parentElement.classList.remove(\'' + fallbackClass + '\');this.parentElement.style.overflow=\'\';' +
+        'this.parentElement.innerHTML=this.parentElement.dataset.initials||\'?\'">';
     },
 
     /* Animated counter — counts from current value to target */
