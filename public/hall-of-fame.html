@@ -6,1694 +6,1900 @@
 <title>T1 CS Stars · Q2 2026 Hall of Fame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#030712;--bg2:#070d1c;--bg3:#0c1424;
-  --t1:#eef2ff;--t2:#8892b0;--t3:#4a5270;
-  --orange:#f28820;--gold:#fbbf24;--teal:#0687be;
-  --blue:#3b82f6;--green:#22c55e;--red:#f43f5e;--purple:#a855f7;
-  --silver:#94a3b8;--bronze:#d97706;
-  --b1:rgba(255,255,255,.07);--b2:rgba(255,255,255,.12);
-  --r:14px;--r-sm:10px;
+  --bg:#030712; --bg2:#070d1c; --bg3:#0c1424;
+  --t1:#eef2ff; --t2:#8892b0; --t3:#4a5270;
+  --orange:#f28820; --gold:#fbbf24; --gold2:#fef08a;
+  --teal:#0687be; --blue:#3b82f6;
+  --green:#22c55e; --red:#f43f5e; --purple:#a855f7;
+  --silver:#94a3b8; --bronze:#d97706;
+  --b1:rgba(255,255,255,.07); --b2:rgba(255,255,255,.12);
+  --r:14px;
 }
+
+/* ---- ANIMATIONS ---- */
+@keyframes float {
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+@keyframes shimmer {
+  0%{background-position:-200% 0}
+  100%{background-position:200% 0}
+}
+@keyframes pulseGlow {
+  0%,100%{box-shadow:0 0 30px rgba(251,191,36,.25)}
+  50%{box-shadow:0 0 60px rgba(251,191,36,.5),0 0 120px rgba(251,191,36,.15)}
+}
+@keyframes fadeSlideUp {
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes bgPulse {
+  0%{opacity:1;transform:scale(1)}
+  100%{opacity:.7;transform:scale(1.08)}
+}
+@keyframes rankBarGrow {
+  from{width:0}
+  to{width:var(--bar-w)}
+}
+
+/* ---- BASE ---- */
 html{scroll-behavior:smooth}
 body{
-  background:var(--bg);color:var(--t1);
+  background:var(--bg);
+  color:var(--t1);
   font-family:'Inter',sans-serif;
-  font-size:15px;line-height:1.6;
+  font-size:15px;
+  line-height:1.6;
   min-height:100vh;
+  position:relative;
 }
-h1,h2,h3,h4,.num,.agent-name,.podium-name{font-family:'Poppins',sans-serif}
+
+/* ---- ANIMATED BACKGROUND ORBS ---- */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:
+    radial-gradient(ellipse 55% 50% at -10% 0%, rgba(242,136,32,.18) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 45% at 110% 0%, rgba(6,135,190,.16) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 110%, rgba(168,85,247,.14) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 90% 55%, rgba(59,130,246,.12) 0%, transparent 55%);
+  animation:bgPulse 8s ease-in-out infinite alternate;
+  pointer-events:none;
+}
+
+/* ---- DOT GRID OVERLAY ---- */
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background-image:radial-gradient(rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size:28px 28px;
+  -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,0) 60%);
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,0) 60%);
+  pointer-events:none;
+}
 
 /* ---- HERO ---- */
 .hero{
-  background:linear-gradient(135deg,#0c1a34 0%,#111827 40%,#1a0a2e 100%);
-  border-bottom:1px solid var(--b2);
-  padding:48px 24px 40px;
   text-align:center;
+  padding:48px 24px 32px;
   position:relative;
   overflow:hidden;
+  z-index:1;
 }
 .hero::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(251,191,36,.12) 0%,transparent 70%);
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(105deg,transparent 35%,rgba(251,191,36,.07) 50%,transparent 65%);
+  background-size:200% 100%;
+  animation:shimmer 6s linear infinite;
   pointer-events:none;
+}
+.hero-trophy{
+  font-size:72px;
+  display:block;
+  margin-bottom:12px;
+  animation:float 3s ease-in-out infinite;
 }
 .hero-title{
   font-family:'Poppins',sans-serif;
-  font-size:clamp(24px,5vw,48px);
+  font-size:44px;
   font-weight:900;
-  background:linear-gradient(135deg,var(--gold) 0%,#ffe082 40%,var(--orange) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  background:linear-gradient(135deg,var(--gold),var(--gold2),var(--orange));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
   margin-bottom:8px;
 }
-.hero-emoji{font-size:clamp(28px,5vw,52px);-webkit-text-fill-color:initial;display:block;margin-bottom:10px}
-.hero-subtitle{color:var(--t2);font-size:14px;margin-bottom:24px;letter-spacing:.05em;text-transform:uppercase}
-.stat-pills{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-.stat-pill{
-  background:var(--b1);border:1px solid var(--b2);
-  border-radius:999px;padding:6px 16px;
-  font-size:13px;color:var(--t2);
-  font-family:'Poppins',sans-serif;font-weight:500;
+.hero-sub{
+  font-size:14px;
+  color:var(--t2);
+  margin-bottom:24px;
 }
-.stat-pill strong{color:var(--gold)}
+.hero-stats{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  justify-content:center;
+}
+.hstat{
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--b1);
+  border-radius:999px;
+  padding:5px 16px;
+  font-size:12px;
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  color:var(--t2);
+  text-transform:uppercase;
+  letter-spacing:.06em;
+}
 
-/* ---- TABS ---- */
+/* ---- TAB NAV ---- */
 .tab-nav{
-  display:flex;gap:4px;
-  background:var(--bg2);
+  display:flex;
+  gap:8px;
+  padding:0 20px 20px;
+  position:sticky;
+  top:0;
+  z-index:10;
+  background:var(--bg);
   border-bottom:1px solid var(--b1);
-  padding:0 24px;
-  position:sticky;top:0;z-index:100;
 }
 .tab-btn{
-  background:none;border:none;
-  font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;
-  color:var(--t3);cursor:pointer;
-  padding:14px 20px;
-  border-bottom:2px solid transparent;
-  transition:color .2s,border-color .2s;
+  padding:10px 24px;
+  border-radius:50px;
+  border:1px solid var(--b1);
+  background:transparent;
+  color:var(--t2);
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+  transition:background .2s,color .2s,border-color .2s,box-shadow .2s;
   white-space:nowrap;
 }
-.tab-btn:hover{color:var(--t2)}
-.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold)}
-.tab-content{display:none;padding:32px 24px 64px}
-.tab-content.active{display:block}
+.tab-btn:hover{color:var(--t1);border-color:var(--b2)}
+.tab-btn.active{
+  background:linear-gradient(135deg,var(--orange),var(--gold));
+  color:#05110a;
+  border-color:transparent;
+  box-shadow:0 4px 20px rgba(242,136,32,.35);
+}
 
-/* ---- CONTAINER ---- */
-.container{max-width:1200px;margin:0 auto}
+/* ---- PAGE WRAP ---- */
+.page-wrap{
+  max-width:100%;
+  padding-bottom:80px;
+  position:relative;
+  z-index:1;
+}
 
-/* ---- SECTION HEADING ---- */
-.section-heading{
-  font-family:'Poppins',sans-serif;
-  font-size:20px;font-weight:700;
-  color:var(--t1);margin-bottom:24px;
-  padding-bottom:10px;
-  border-bottom:1px solid var(--b1);
-  display:flex;align-items:center;gap:10px;
+/* ---- TAB CONTENT ---- */
+.tab-content{
+  display:none;
+  padding:24px 20px 0;
+  animation:fadeSlideUp .3s ease;
+}
+.tab-content.active{
+  display:block;
+}
+
+/* ---- SECTION LABEL ---- */
+.section-label{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--t3);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:36px 0 18px;
+}
+.section-label::after{
+  content:'';
+  flex:1;
+  height:1px;
+  background:var(--b1);
 }
 
 /* ---- PODIUM ---- */
 .podium-wrap{
-  display:flex;align-items:flex-end;justify-content:center;
-  gap:16px;margin-bottom:48px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:14px;
+  padding:8px 0 0;
 }
 .podium-slot{
-  display:flex;flex-direction:column;align-items:center;
-  flex:1;max-width:280px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  flex:1;
+  max-width:260px;
+}
+.medal{
+  font-size:38px;
+  margin-bottom:8px;
+  text-align:center;
 }
 .podium-card{
   width:100%;
-  background:var(--bg3);
-  border:1px solid var(--b2);
-  border-radius:var(--r);
-  padding:24px 16px 20px;
+  border-radius:18px;
+  padding:22px 18px 18px;
   text-align:center;
   position:relative;
-  transition:transform .2s;
+  overflow:hidden;
+  transition:transform .25s;
 }
-.podium-card:hover{transform:translateY(-4px)}
-.podium-card.gold-card{border-color:rgba(251,191,36,.4);background:linear-gradient(160deg,#111827,#1a1200)}
-.podium-card.silver-card{border-color:rgba(148,163,184,.3)}
-.podium-card.bronze-card{border-color:rgba(217,119,6,.3)}
-.podium-medal{font-size:40px;display:block;margin-bottom:8px}
-.podium-rank{
+.podium-card:hover{
+  transform:translateY(-4px);
+}
+
+/* Gold #1 card */
+.podium-1 .podium-card{
+  border:1px solid rgba(251,191,36,.5);
+  background:linear-gradient(160deg,rgba(251,191,36,.14),rgba(251,191,36,.04),var(--bg2));
+  box-shadow:0 0 40px rgba(251,191,36,.2),0 12px 40px rgba(0,0,0,.5);
+  animation:pulseGlow 3s ease-in-out infinite;
+}
+.podium-1 .podium-card::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.06) 50%,transparent 65%);
+  background-size:200% 100%;
+  animation:shimmer 4s linear infinite;
+  pointer-events:none;
+}
+
+/* Silver #2 card */
+.podium-2 .podium-card{
+  border:1px solid rgba(148,163,184,.3);
+  background:linear-gradient(160deg,rgba(148,163,184,.08),var(--bg2));
+}
+
+/* Bronze #3 card */
+.podium-3 .podium-card{
+  border:1px solid rgba(205,127,50,.3);
+  background:linear-gradient(160deg,rgba(205,127,50,.08),var(--bg2));
+}
+
+/* Star badge */
+.star-badge{
+  position:absolute;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(251,191,36,.2);
+  border:1px solid rgba(251,191,36,.4);
+  color:var(--gold);
+  font-size:10px;
+  font-weight:700;
+  padding:3px 10px;
+  border-radius:50px;
+  white-space:nowrap;
   font-family:'Poppins',sans-serif;
-  font-size:11px;font-weight:700;
-  letter-spacing:.12em;text-transform:uppercase;
+}
+
+/* Avatars */
+.p-avatar{
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:16px auto 10px;
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+}
+.p-av-gold{
+  width:88px;
+  height:88px;
+  background:linear-gradient(135deg,#f59e0b,#fbbf24);
+  box-shadow:0 0 24px rgba(251,191,36,.6);
+  color:#1a0e00;
+  font-size:26px;
+}
+.p-av-silver{
+  width:70px;
+  height:70px;
+  background:linear-gradient(135deg,#475569,#94a3b8);
+  color:#0f172a;
+  font-size:20px;
+}
+.p-av-bronze{
+  width:70px;
+  height:70px;
+  background:linear-gradient(135deg,#78350f,#d97706);
+  color:#fff;
+  font-size:20px;
+}
+
+.p-name{
+  font-family:'Poppins',sans-serif;
+  font-weight:800;
+  font-size:15px;
+  margin-bottom:4px;
+}
+.podium-1 .p-name{
+  font-size:18px;
+  color:var(--gold);
+}
+.p-score{
+  font-family:'Poppins',sans-serif;
+  font-weight:900;
+  font-size:22px;
+  color:var(--gold);
+}
+.podium-1 .p-score{
+  font-size:30px;
+}
+.p-score span{
+  font-size:14px;
+  font-weight:600;
+  color:var(--t2);
+}
+.p-note{
+  font-size:11px;
+  color:var(--t2);
+  margin:4px 0 10px;
+  font-style:italic;
+}
+.p-stats{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.p-stat{
+  display:flex;
+  justify-content:space-between;
+  background:rgba(255,255,255,.04);
+  border-radius:7px;
+  padding:5px 10px;
+  font-size:11px;
+}
+.p-stat span{color:var(--t2)}
+.p-stat strong{color:var(--t1);font-weight:700}
+
+/* Team badge — calls */
+.badge-calls{
+  display:inline-block;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding:3px 10px;
+  border-radius:50px;
+  background:rgba(6,135,190,.18);
+  color:var(--teal);
+  border:1px solid rgba(6,135,190,.25);
   margin-bottom:6px;
 }
-.podium-name{font-size:clamp(15px,2.5vw,19px);font-weight:700;margin-bottom:4px}
-.podium-pts{font-family:'Poppins',sans-serif;font-size:clamp(22px,4vw,32px);font-weight:900;margin-bottom:6px}
-.podium-pts.gold-pts{color:var(--gold)}
-.podium-pts.silver-pts{color:var(--silver)}
-.podium-pts.bronze-pts{color:var(--bronze)}
-.podium-team{font-size:11px;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em}
-.podium-tag{
-  font-size:11px;font-weight:600;
-  background:rgba(251,191,36,.12);
-  color:var(--gold);
-  border-radius:999px;padding:3px 10px;
-  display:inline-block;
+
+/* Podium bases */
+.podium-base{
+  width:100%;
+  margin-top:10px;
+  border-radius:6px 6px 0 0;
 }
-.slot-1 .podium-card{min-height:270px}
-.slot-2 .podium-card{min-height:230px}
-.slot-3 .podium-card{min-height:200px}
+.pb-gold{
+  height:72px;
+  background:linear-gradient(180deg,rgba(251,191,36,.6),rgba(251,191,36,.2));
+}
+.pb-silver{
+  height:48px;
+  background:linear-gradient(180deg,rgba(148,163,184,.5),rgba(148,163,184,.15));
+}
+.pb-bronze{
+  height:32px;
+  background:linear-gradient(180deg,rgba(205,127,50,.5),rgba(205,127,50,.15));
+}
 
 /* ---- CHAT CHAMPIONS ---- */
 .chat-champs-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-  gap:16px;margin-bottom:48px;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:14px;
 }
-.chat-champ-card{
-  background:var(--bg3);
+.cc-card{
+  border-radius:var(--r);
   border:1px solid rgba(168,85,247,.25);
   border-left:4px solid var(--purple);
-  border-radius:var(--r);padding:20px;
+  background:rgba(168,85,247,.06);
+  padding:18px;
+  display:flex;
+  align-items:center;
+  gap:16px;
   transition:transform .2s;
 }
-.chat-champ-card:hover{transform:translateY(-3px)}
-.cc-rank{font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;color:var(--purple);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
-.cc-name{font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px}
-.cc-pts{font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--purple);margin-bottom:6px}
-.cc-tag{font-size:12px;color:var(--t2)}
-.cc-badge{font-size:11px;font-weight:600;background:rgba(168,85,247,.15);color:var(--purple);border-radius:999px;padding:3px 10px;display:inline-block;margin-top:6px}
-
-/* ---- AWARDS ---- */
-.awards-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
-  gap:16px;margin-bottom:48px;
+.cc-card:hover{
+  transform:translateY(-2px);
 }
-.award-card{
-  background:var(--bg3);border:1px solid var(--b2);
-  border-radius:var(--r);padding:22px;
-  transition:transform .2s;
-}
-.award-card:hover{transform:translateY(-3px)}
-.award-icon{font-size:28px;display:block;margin-bottom:10px}
-.award-title{font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:var(--gold);margin-bottom:6px}
-.award-winner{font-family:'Poppins',sans-serif;font-size:17px;font-weight:700;color:var(--t1);margin-bottom:4px}
-.award-desc{font-size:13px;color:var(--t2);line-height:1.5}
-
-/* ---- SCOREBOARDS ---- */
-.scoreboards{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:24px;
-}
-.scoreboard{
-  background:var(--bg3);border:1px solid var(--b1);
-  border-radius:var(--r);overflow:hidden;
-}
-.scoreboard-title{
-  font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;
-  padding:14px 18px;
-  border-bottom:1px solid var(--b1);
-  letter-spacing:.04em;text-transform:uppercase;
-}
-.scoreboard-title.calls-title{color:var(--teal)}
-.scoreboard-title.chat-title{color:var(--purple)}
-.scoreboard table{width:100%;border-collapse:collapse}
-.scoreboard th{
-  font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;
-  color:var(--t3);letter-spacing:.08em;text-transform:uppercase;
-  padding:10px 12px;text-align:left;background:rgba(0,0,0,.2);
-}
-.scoreboard td{
-  padding:10px 12px;font-size:13px;color:var(--t2);
-  border-top:1px solid rgba(255,255,255,.04);
-}
-.scoreboard tr:hover td{background:var(--b1)}
-.scoreboard td:first-child{color:var(--t3);font-weight:600;font-size:12px}
-.scoreboard td.agent-col{color:var(--t1);font-weight:600;font-family:'Poppins',sans-serif}
-.scoreboard td.pts-col{font-family:'Poppins',sans-serif;font-weight:700;color:var(--gold)}
-.elig-pill{
-  font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;
+.cc-rank{
   font-family:'Poppins',sans-serif;
-}
-.elig-33{background:rgba(34,197,94,.18);color:var(--green)}
-.elig-13{background:rgba(242,136,32,.18);color:var(--orange)}
-.elig-03{background:rgba(244,63,94,.15);color:var(--red)}
-
-/* ---- BLUEPRINT TAB ---- */
-#private-banner{
-  display:none;
-  background:linear-gradient(135deg,rgba(251,191,36,.15),rgba(251,191,36,.05));
-  border:1px solid rgba(251,191,36,.4);
-  border-radius:var(--r);
-  padding:16px 22px;margin-bottom:28px;
-  align-items:center;gap:14px;
-}
-#private-banner .lock-icon{font-size:24px}
-#private-banner .banner-text{font-family:'Poppins',sans-serif;font-size:15px;font-weight:700;color:var(--gold)}
-#private-banner .banner-sub{font-size:13px;color:var(--t2)}
-
-#not-found-card{
-  display:none;
-  background:var(--bg3);border:1px solid var(--b2);
-  border-radius:var(--r);padding:40px;text-align:center;
-  color:var(--t2);margin-bottom:24px;
-}
-#not-found-card .nf-icon{font-size:40px;margin-bottom:12px;display:block}
-#not-found-card .nf-title{font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;color:var(--t1);margin-bottom:8px}
-
-.agent-select-wrap{margin-bottom:28px}
-#agent-select{
-  background:var(--bg3);border:1px solid var(--b2);
-  border-radius:var(--r-sm);padding:10px 16px;
-  color:var(--t1);font-family:'Inter',sans-serif;font-size:14px;
-  cursor:pointer;min-width:260px;
-}
-#agent-select option{background:var(--bg3)}
-.agent-select-label{font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;color:var(--t2);margin-bottom:8px;display:block}
-
-.bp-section{margin-bottom:40px}
-.bp-section-title{
-  font-family:'Poppins',sans-serif;font-size:18px;font-weight:700;
-  margin-bottom:18px;padding-bottom:10px;
-  border-bottom:2px solid var(--b1);
-  display:flex;align-items:center;gap:10px;
-}
-.bp-section-title.calls-hd{border-bottom-color:rgba(6,135,190,.4);color:var(--teal)}
-.bp-section-title.chat-hd{border-bottom-color:rgba(168,85,247,.4);color:var(--purple)}
-
-/* ---- AGENT CARD ---- */
-.agents-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(540px,1fr));
-  gap:20px;
-}
-.agent-card{
-  background:var(--bg3);
-  border:1px solid var(--b1);
-  border-radius:var(--r);
-  overflow:hidden;
-  transition:transform .2s,box-shadow .2s;
-}
-.agent-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.4)}
-.calls-card{border-left:3px solid var(--teal)}
-.chat-card{border-left:3px solid var(--purple)}
-
-.card-header{
-  padding:20px 22px 16px;
-  border-bottom:1px solid var(--b1);
-  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
-  flex-wrap:wrap;
-}
-.card-header-left{}
-.agent-name{font-size:clamp(17px,2.5vw,21px);font-weight:700;margin-bottom:6px}
-.card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.team-badge{
-  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-  border-radius:999px;padding:3px 10px;
-}
-.calls-badge{background:rgba(6,135,190,.18);color:var(--teal)}
-.chat-badge{background:rgba(168,85,247,.18);color:var(--purple)}
-.elig-badge{border-radius:999px;padding:3px 12px;font-size:11px;font-weight:700;font-family:'Poppins',sans-serif}
-.elig-badge.full{background:rgba(34,197,94,.18);color:var(--green)}
-.elig-badge.partial{background:rgba(242,136,32,.18);color:var(--orange)}
-.elig-badge.none{background:rgba(244,63,94,.15);color:var(--red)}
-.agent-id{font-size:11px;color:var(--t3);font-family:'Poppins',sans-serif;font-weight:600}
-
-/* ---- MONTH TABLE ---- */
-.month-table-wrap{padding:16px 22px;overflow-x:auto}
-.month-table{width:100%;border-collapse:collapse;min-width:360px}
-.month-table th{
-  font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;
-  color:var(--t3);letter-spacing:.08em;text-transform:uppercase;
-  padding:8px 10px;text-align:left;
-  background:rgba(0,0,0,.2);
-}
-.month-table td{
-  padding:9px 10px;font-size:13px;color:var(--t2);
-  border-top:1px solid rgba(255,255,255,.04);vertical-align:top;
-}
-.month-table td.month-label{font-family:'Poppins',sans-serif;font-weight:600;color:var(--t1)}
-.month-table td.pts-cell{font-family:'Poppins',sans-serif;font-weight:800;font-size:16px}
-.pts-high{color:var(--green)}
-.pts-mid{color:var(--orange)}
-.pts-low{color:var(--red)}
-.month-elig{font-size:10px;border-radius:999px;padding:2px 8px;font-weight:700;white-space:nowrap}
-.me-yes{background:rgba(34,197,94,.18);color:var(--green)}
-.me-no{background:rgba(244,63,94,.15);color:var(--red)}
-.me-note{background:rgba(242,136,32,.15);color:var(--orange)}
-.metrics-mini{font-size:11px;color:var(--t3);line-height:1.8}
-.metrics-mini span{margin-right:4px;display:inline-block}
-.m-hit{color:var(--green)}
-.m-miss{color:var(--red)}
-
-/* ---- NAILED / BACK / PLAYBOOK ---- */
-.card-section{padding:14px 22px;border-top:1px solid var(--b1)}
-.card-section-title{
-  font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;
-  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;
-}
-.nailed-title{color:var(--green)}
-.back-title{color:var(--red)}
-.play-title{color:var(--blue)}
-.chip-wrap{display:flex;flex-wrap:wrap;gap:7px}
-.chip{border-radius:999px;padding:4px 12px;font-size:12px;font-weight:500;line-height:1.4}
-.chip-green{background:rgba(34,197,94,.12);color:#86efac;border:1px solid rgba(34,197,94,.2)}
-.chip-red{background:rgba(244,63,94,.1);color:#fca5a5;border:1px solid rgba(244,63,94,.2)}
-.chip-orange{background:rgba(242,136,32,.1);color:#fcd34d;border:1px solid rgba(242,136,32,.2)}
-.playbook-list{list-style:none;counter-reset:play}
-.playbook-list li{
-  counter-increment:play;
-  display:flex;gap:10px;align-items:flex-start;
-  font-size:13px;color:var(--t2);
-  padding:5px 0;
-  border-bottom:1px solid rgba(255,255,255,.03);
-}
-.playbook-list li:last-child{border-bottom:none}
-.playbook-list li::before{
-  content:counter(play);
+  font-weight:900;
+  font-size:28px;
+  color:var(--purple);
   flex-shrink:0;
-  width:20px;height:20px;
-  border-radius:50%;
-  background:var(--blue);
-  color:#fff;
-  font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;
-  display:flex;align-items:center;justify-content:center;
-  margin-top:1px;
-}
-
-/* ---- MOTIV MSG ---- */
-#motiv-msg{
-  display:none;
-  margin-top:28px;
-  background:linear-gradient(135deg,rgba(6,135,190,.12),rgba(59,130,246,.08));
-  border:1px solid rgba(6,135,190,.3);
-  border-radius:var(--r);padding:24px 28px;
+  width:48px;
   text-align:center;
 }
-#motiv-msg .motiv-icon{font-size:32px;margin-bottom:10px;display:block}
-#motiv-msg .motiv-title{font-family:'Poppins',sans-serif;font-size:17px;font-weight:700;color:var(--t1);margin-bottom:6px}
-#motiv-msg .motiv-body{font-size:14px;color:var(--t2)}
+.cc-avatar{
+  width:52px;
+  height:52px;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),#7c3aed);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Poppins',sans-serif;
+  font-weight:800;
+  font-size:16px;
+  color:#fff;
+  flex-shrink:0;
+}
+.cc-body{
+  min-width:0;
+}
+.cc-name{
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:15px;
+  margin-bottom:2px;
+}
+.cc-score{
+  font-family:'Poppins',sans-serif;
+  font-weight:900;
+  font-size:18px;
+  color:var(--gold);
+}
+.cc-tag{
+  display:inline-block;
+  margin:4px 0 2px;
+}
+.cc-note{
+  font-size:11px;
+  color:var(--t2);
+  font-style:italic;
+  margin:3px 0 2px;
+}
+.cc-metrics{
+  font-size:11px;
+  color:var(--t3);
+}
 
-/* ---- RESPONSIVE ---- */
-@media(max-width:900px){
-  .scoreboards{grid-template-columns:1fr}
-  .agents-grid{grid-template-columns:1fr}
-  .podium-wrap{flex-direction:column;align-items:center}
-  .podium-slot{max-width:100%;width:100%}
+/* Chat badge */
+.badge-chat{
+  display:inline-block;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  padding:2px 8px;
+  border-radius:50px;
+  background:rgba(168,85,247,.18);
+  color:var(--purple);
+  border:1px solid rgba(168,85,247,.25);
 }
-@media(max-width:600px){
-  .tab-content{padding:20px 14px 48px}
-  .hero{padding:32px 16px 28px}
-  .awards-grid{grid-template-columns:1fr}
-  .chat-champs-grid{grid-template-columns:1fr}
-  .tab-btn{padding:12px 14px;font-size:13px}
+
+/* ---- AWARDS GRID ---- */
+.awards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+  gap:14px;
+  margin-top:6px;
 }
-@media(max-width:360px){
-  .hero-title{font-size:20px}
-  .tab-btn{padding:10px 10px;font-size:12px}
+.award-card{
+  border-radius:var(--r);
+  border:1px solid var(--b1);
+  background:var(--bg2);
+  padding:20px;
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+  transition:transform .2s,border-color .2s;
+  position:relative;
+  overflow:hidden;
 }
+.award-card:hover{
+  transform:translateY(-2px);
+  border-color:var(--b2);
+}
+.award-gold{
+  border-left:4px solid var(--gold);
+  background:linear-gradient(135deg,rgba(251,191,36,.06),var(--bg2));
+}
+.award-green{
+  border-left:4px solid var(--green);
+  background:linear-gradient(135deg,rgba(34,197,94,.06),var(--bg2));
+}
+.award-purple{
+  border-left:4px solid var(--purple);
+  background:linear-gradient(135deg,rgba(168,85,247,.06),var(--bg2));
+}
+.award-teal{
+  border-left:4px solid var(--teal);
+  background:linear-gradient(135deg,rgba(6,135,190,.06),var(--bg2));
+}
+.award-orange{
+  border-left:4px solid var(--orange);
+  background:linear-gradient(135deg,rgba(242,136,32,.06),var(--bg2));
+}
+.award-blue{
+  border-left:4px solid var(--blue);
+  background:linear-gradient(135deg,rgba(59,130,246,.06),var(--bg2));
+}
+.aw-icon{
+  font-size:28px;
+  flex-shrink:0;
+}
+.aw-title{
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--t3);
+  margin-bottom:5px;
+}
+.aw-winner{
+  font-family:'Poppins',sans-serif;
+  font-weight:800;
+  font-size:16px;
+  color:var(--t1);
+  margin-bottom:2px;
+}
+.aw-winner-multi{
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:13px;
+  color:var(--t1);
+  line-height:1.5;
+  margin-bottom:2px;
+}
+.aw-desc{
+  font-size:11.5px;
+  color:var(--t2);
+  line-height:1.55;
+  margin:6px 0 10px;
+}
+.aw-chip{
+  display:inline-block;
+  font-size:11px;
+  font-weight:700;
+  padding:3px 10px;
+  border-radius:50px;
+}
+.chip-gold{
+  background:rgba(251,191,36,.15);
+  color:var(--gold);
+  border:1px solid rgba(251,191,36,.25);
+}
+.chip-green{
+  background:rgba(34,197,94,.12);
+  color:var(--green);
+  border:1px solid rgba(34,197,94,.22);
+}
+.chip-purple{
+  background:rgba(168,85,247,.15);
+  color:var(--purple);
+  border:1px solid rgba(168,85,247,.25);
+}
+.chip-teal{
+  background:rgba(6,135,190,.15);
+  color:var(--teal);
+  border:1px solid rgba(6,135,190,.25);
+}
+.chip-orange{
+  background:rgba(242,136,32,.15);
+  color:var(--orange);
+  border:1px solid rgba(242,136,32,.25);
+}
+.chip-blue{
+  background:rgba(59,130,246,.15);
+  color:var(--blue);
+  border:1px solid rgba(59,130,246,.25);
+}
+
+/* ---- SCOREBOARDS ---- */
+.scoreboards-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-top:6px;
+}
+.scoreboard-card{
+  border-radius:var(--r);
+  border:1px solid var(--b1);
+  background:var(--bg2);
+  overflow:hidden;
+}
+.sb-head{
+  padding:14px 18px;
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:13px;
+  border-bottom:1px solid var(--b1);
+  background:rgba(255,255,255,.025);
+}
+.sb-table{
+  display:flex;
+  flex-direction:column;
+}
+.sb-hrow{
+  display:grid;
+  grid-template-columns:36px 1fr 36px 36px 36px 70px 56px;
+  gap:8px;
+  padding:8px 14px;
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--t3);
+  border-bottom:1px solid var(--b1);
+  align-items:center;
+}
+.sb-row{
+  display:grid;
+  grid-template-columns:36px 1fr 36px 36px 36px 70px 56px;
+  gap:8px;
+  padding:11px 14px;
+  border-bottom:1px solid rgba(255,255,255,.035);
+  font-size:12.5px;
+  align-items:center;
+  transition:background .15s;
+}
+.sb-row:hover{
+  background:rgba(255,255,255,.02);
+}
+.sb-row:last-child{
+  border-bottom:none;
+}
+.row-1{
+  background:rgba(251,191,36,.04);
+}
+.col-rank{
+  text-align:center;
+  color:var(--t2);
+}
+.col-mo{
+  text-align:center;
+  color:var(--t2);
+}
+.col-name{
+  color:var(--t1);
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:12.5px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.col-total{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.col-elig{
+  text-align:center;
+}
+.total-pts{
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:13px;
+  color:var(--t1);
+}
+.rank-bar{
+  height:4px;
+  border-radius:2px;
+  background:rgba(255,255,255,.06);
+  overflow:hidden;
+}
+.rank-bar-fill{
+  height:100%;
+  border-radius:2px;
+  width:var(--bar-w);
+  animation:rankBarGrow .8s ease forwards;
+}
+.rb-gold{
+  background:linear-gradient(90deg,var(--gold),var(--orange));
+}
+.rb-teal{
+  background:linear-gradient(90deg,var(--teal),var(--blue));
+}
+.rb-purple{
+  background:linear-gradient(90deg,var(--purple),#7c3aed);
+}
+.rank-circle{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:rgba(255,255,255,.06);
+  font-size:11px;
+  font-weight:700;
+  color:var(--t2);
+  font-family:'Poppins',sans-serif;
+}
+.rc-gold{
+  background:rgba(251,191,36,.2);
+  color:var(--gold);
+}
+.elig-pill{
+  display:inline-block;
+  font-size:10px;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:50px;
+  font-family:'Poppins',sans-serif;
+}
+.elig-full{
+  background:rgba(34,197,94,.15);
+  color:var(--green);
+  border:1px solid rgba(34,197,94,.25);
+}
+.elig-part{
+  background:rgba(251,191,36,.12);
+  color:var(--gold);
+  border:1px solid rgba(251,191,36,.2);
+}
+.elig-none{
+  background:rgba(255,255,255,.06);
+  color:var(--t3);
+  border:1px solid var(--b1);
+}
+.sb-footnote{
+  font-size:10.5px;
+  color:var(--t3);
+  padding:8px 14px;
+  border-top:1px solid var(--b1);
+  font-style:italic;
+}
+
+/* ---- MOBILE RESPONSIVE ---- */
+@media(max-width:700px){
+  .scoreboards-wrap{grid-template-columns:1fr;}
+  .podium-wrap{flex-direction:column;align-items:center;}
+  .podium-slot{max-width:100%;width:100%;}
+  .awards-grid{grid-template-columns:1fr;}
+  .chat-champs-grid{grid-template-columns:1fr;}
+  .hero-title{font-size:30px;}
+  .sb-hrow,.sb-row{grid-template-columns:28px 1fr 30px 30px 30px 60px 44px;font-size:10.5px;}
+}
+
+/* ── Private Banner ── */
+#private-banner{display:flex;align-items:center;gap:14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.22);border-radius:var(--r);padding:14px 20px;margin-bottom:20px}
+.priv-icon{font-size:24px;flex-shrink:0}
+.priv-text{font-size:13px;color:var(--t1)}
+.priv-text strong{color:var(--gold)}
+
+/* ── Not Found ── */
+.nf-card{text-align:center;padding:48px 24px;border:1px solid var(--b1);border-radius:var(--r);background:var(--bg2);margin-bottom:20px}
+.nf-icon{font-size:40px;margin-bottom:12px}
+.nf-title{font-family:'Poppins',sans-serif;font-weight:700;font-size:18px;color:var(--t1);margin-bottom:8px}
+.nf-body{font-size:13px;color:var(--t2)}
+
+/* ── Motivation msg ── */
+.motiv-msg{display:flex;align-items:center;gap:10px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);border-radius:var(--r);padding:12px 18px;font-size:13px;color:var(--t1);margin-bottom:18px}
+
+/* ── Agent select pills ── */
+.agent-select-wrap{margin-bottom:20px}
+.as-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--t3);display:block;margin-bottom:10px}
+.as-pills{display:flex;flex-wrap:wrap;gap:8px}
+.as-pill{padding:7px 16px;border-radius:50px;border:1px solid var(--b1);background:var(--bg2);font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;transition:all .2s;font-family:'Poppins',sans-serif}
+.as-pill:hover,.as-pill.active{background:rgba(242,136,32,.12);border-color:var(--orange);color:var(--orange)}
+
+/* ── Agent card wrapper ── */
+.agent-card{border-radius:var(--r);border:1px solid var(--b1);background:var(--bg2);padding:24px;margin-bottom:16px;animation:fadeSlideUp .3s ease}
+.calls-card{border-left:4px solid var(--teal)}
+.chat-card{border-left:4px solid var(--purple)}
+
+/* ── Card header ── */
+.ac-header{display:flex;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap}
+.ac-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;flex-shrink:0}
+.ac-av-calls{background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff}
+.ac-av-chat{background:linear-gradient(135deg,var(--purple),#7c3aed);color:#fff}
+.ac-info{flex:1}
+.ac-name{font-family:'Poppins',sans-serif;font-weight:800;font-size:18px;color:var(--t1);margin-bottom:4px}
+.ac-meta{font-size:12px;color:var(--t2);display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.badge-calls-sm{background:rgba(6,135,190,.18);color:var(--teal);border:1px solid rgba(6,135,190,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.05em}
+.badge-chat-sm{background:rgba(168,85,247,.18);color:var(--purple);border:1px solid rgba(168,85,247,.25);font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;letter-spacing:.05em}
+.ac-rank-badge{font-family:'Poppins',sans-serif;font-weight:800;font-size:20px;flex-shrink:0;margin-left:auto}
+.rank-gold{color:var(--gold)}
+.rank-silver{color:var(--silver)}
+.rank-bronze{color:var(--bronze)}
+.rank-neutral{color:var(--t2)}
+
+/* ── Month grid ── */
+.ac-month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.ac-month{border-radius:10px;border:1px solid var(--b1);background:var(--bg3);padding:14px;position:relative}
+.ac-month.eligible{border-color:rgba(34,197,94,.2)}
+.am-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);margin-bottom:6px}
+.am-score{font-family:'Poppins',sans-serif;font-weight:900;font-size:24px;color:var(--t1)}
+.am-score.am-perfect{color:var(--gold)}
+.am-score span{font-size:13px;color:var(--t3);font-weight:600}
+.am-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin:6px 0;overflow:hidden}
+.am-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--teal),var(--blue))}
+.am-fill.am-fill-perfect{background:linear-gradient(90deg,var(--gold),var(--orange))}
+.am-detail{font-size:10.5px;color:var(--t2);line-height:1.6;margin-bottom:8px}
+.am-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;display:inline-block}
+.badge-elig{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.badge-warn{background:rgba(244,63,94,.1);color:#f87171;border:1px solid rgba(244,63,94,.2)}
+.badge-close{background:rgba(251,191,36,.1);color:var(--gold);border:1px solid rgba(251,191,36,.2)}
+.badge-forfeit{background:rgba(148,163,184,.1);color:var(--t2);border:1px solid var(--b1)}
+
+/* ── Month note ── */
+.am-note{font-size:10px;color:var(--t3);font-style:italic;margin-top:6px}
+
+/* ── Insights ── */
+.ac-insights{display:flex;flex-direction:column;gap:10px}
+.ac-insight{display:flex;gap:12px;align-items:flex-start;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.6}
+.ac-insight.strength{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.14)}
+.ac-insight.focus{background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.14)}
+.ac-insight.tip{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.14)}
+.ins-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.ins-body{color:var(--t2)}
+.ins-body strong{color:var(--t1)}
+
+@media(max-width:600px){.ac-month-grid{grid-template-columns:1fr}.ac-header{gap:12px}}
 </style>
 </head>
 <body>
 
 <!-- HERO -->
-<div class="hero">
-  <span class="hero-emoji">🏆⭐</span>
-  <h1 class="hero-title">T1 CS Stars · Q2 2026</h1>
-  <p class="hero-subtitle">Hall of Fame · Champions Board</p>
-  <div class="stat-pills">
-    <div class="stat-pill"><strong>11</strong>&nbsp;Agents</div>
-    <div class="stat-pill">Top Score: <strong>255 pts</strong></div>
-    <div class="stat-pill"><strong>2</strong>&nbsp;Agents Eligible 3/3 Months</div>
-    <div class="stat-pill">Q2 <strong>Apr – Jun 2026</strong></div>
+<section class="hero">
+  <div class="hero-trophy">🏆</div>
+  <div class="hero-title">T1 CS Stars</div>
+  <div class="hero-sub">Q2 2026 Hall of Fame · Apr – Jun 2026</div>
+  <div class="hero-stats">
+    <span class="hstat">11 Agents</span>
+    <span class="hstat">255 pts Top Score</span>
+    <span class="hstat">2 × Full Quarter Eligible</span>
+    <span class="hstat">Q2 Apr – Jun 2026</span>
   </div>
-</div>
+</section>
 
 <!-- TAB NAV -->
 <nav class="tab-nav">
-  <button class="tab-btn active" id="btn-champions" onclick="switchTab('champions',this)">🏆 Champions Board</button>
-  <button class="tab-btn" id="btn-blueprint" style="display:none" onclick="switchTab('blueprint',this)">📋 Growth Blueprint</button>
+  <button id="btn-champions" class="tab-btn active" onclick="switchTab('champions',this)">🏆 Champions Board</button>
+  <button id="btn-blueprint" class="tab-btn" style="display:none" onclick="switchTab('blueprint',this)">📊 Growth Blueprint</button>
 </nav>
 
-<!-- ===== CHAMPIONS TAB ===== -->
-<div id="tab-champions" class="tab-content active">
-<div class="container">
+<div class="page-wrap">
 
-  <!-- PODIUM -->
-  <h2 class="section-heading">🎖️ Calls Team Top 3</h2>
-  <div class="podium-wrap">
-    <!-- 2nd -->
-    <div class="podium-slot slot-2">
-      <div class="podium-card silver-card">
-        <span class="podium-medal">🥈</span>
-        <div class="podium-rank" style="color:var(--silver)">#2</div>
-        <div class="podium-name">Lincy Tabita</div>
-        <div class="podium-team">Calls Team · AD0673</div>
-        <div class="podium-pts silver-pts">250 pts</div>
-        <span class="podium-tag" style="background:rgba(148,163,184,.15);color:var(--silver)">Perfect Jun · Eligible 3/3</span>
+  <!-- ===== CHAMPIONS TAB ===== -->
+  <div id="tab-champions" class="tab-content active">
+
+    <!-- CALLS TOP 3 PODIUM -->
+    <div class="section-label">📞 Calls Team · Top 3</div>
+    <div class="podium-wrap">
+
+      <!-- Silver #2 LEFT -->
+      <div class="podium-slot podium-2">
+        <div class="medal">🥈</div>
+        <div class="podium-card">
+          <div class="p-avatar p-av-silver">LT</div>
+          <div class="p-name">Lincy Tabita</div>
+          <div class="p-team-badge badge-calls">Calls</div>
+          <div class="p-score">250 <span>pts</span></div>
+          <div class="p-note">Perfect Jun 100/100 · Eligible 3/3</div>
+          <div class="p-stats">
+            <div class="p-stat"><span>Avg Calls</span><strong>12.4/day</strong></div>
+            <div class="p-stat"><span>QA avg</span><strong>89.3%</strong></div>
+            <div class="p-stat"><span>Jun FCR</span><strong>78.4%</strong></div>
+          </div>
+        </div>
+        <div class="podium-base pb-silver"></div>
+      </div>
+
+      <!-- Gold #1 CENTER — tallest -->
+      <div class="podium-slot podium-1">
+        <div class="medal">🥇</div>
+        <div class="podium-card">
+          <div class="star-badge">⭐ Star of Q2</div>
+          <div class="p-avatar p-av-gold">DH</div>
+          <div class="p-name">Debra Horton</div>
+          <div class="p-team-badge badge-calls">Calls</div>
+          <div class="p-score">255 <span>pts</span></div>
+          <div class="p-note">Eligible all 3 months</div>
+          <div class="p-stats">
+            <div class="p-stat"><span>Avg Calls</span><strong>12.8/day</strong></div>
+            <div class="p-stat"><span>QA Jun</span><strong>93.8%</strong></div>
+            <div class="p-stat"><span>Jun FCR</span><strong>80.0%</strong></div>
+          </div>
+        </div>
+        <div class="podium-base pb-gold"></div>
+      </div>
+
+      <!-- Bronze #3 RIGHT -->
+      <div class="podium-slot podium-3">
+        <div class="medal">🥉</div>
+        <div class="podium-card">
+          <div class="p-avatar p-av-bronze">HP</div>
+          <div class="p-name">Henry P</div>
+          <div class="p-team-badge badge-calls">Calls</div>
+          <div class="p-score">190 <span>pts</span></div>
+          <div class="p-note">Eligible Jun · FCR 83.7%</div>
+          <div class="p-stats">
+            <div class="p-stat"><span>Avg Calls</span><strong>11.1/day</strong></div>
+            <div class="p-stat"><span>Jun FCR</span><strong>83.7%</strong></div>
+            <div class="p-stat"><span>Jun pts</span><strong>80 pts</strong></div>
+          </div>
+        </div>
+        <div class="podium-base pb-bronze"></div>
+      </div>
+
+    </div>
+
+    <!-- CHAT CHAMPIONS -->
+    <div class="section-label">💬 Chat Team Champions</div>
+    <div class="chat-champs-grid">
+      <div class="cc-card">
+        <div class="cc-rank">#1</div>
+        <div class="cc-avatar">EC</div>
+        <div class="cc-body">
+          <div class="cc-name">Evan Cruz</div>
+          <div class="cc-score">190 pts</div>
+          <div class="cc-tag badge-chat">Chat</div>
+          <div class="cc-note">Most Improved · Perfect Jun 100/100</div>
+          <div class="cc-metrics">CSAT Jun 86.4% · QA Jun 89.7%</div>
+        </div>
+      </div>
+      <div class="cc-card">
+        <div class="cc-rank">#2</div>
+        <div class="cc-avatar">TS</div>
+        <div class="cc-body">
+          <div class="cc-name">Tabbie Shine</div>
+          <div class="cc-score">170 pts</div>
+          <div class="cc-tag badge-chat">Chat</div>
+          <div class="cc-note">Eligible Jun · FCR Champion</div>
+          <div class="cc-metrics">FCR Jun 88.3% · QA Jun 85.8%</div>
+        </div>
+      </div>
+      <div class="cc-card">
+        <div class="cc-rank">#3</div>
+        <div class="cc-avatar">CL</div>
+        <div class="cc-body">
+          <div class="cc-name">Caroline Lock</div>
+          <div class="cc-score">125 pts</div>
+          <div class="cc-tag badge-chat">Chat</div>
+          <div class="cc-note">Breakthrough Jun · FCR 89.5%</div>
+          <div class="cc-metrics">Jun 70 pts (forfeited) · FCR 89.5%</div>
+        </div>
       </div>
     </div>
-    <!-- 1st -->
-    <div class="podium-slot slot-1">
-      <div class="podium-card gold-card">
-        <span class="podium-medal">🥇</span>
-        <div class="podium-rank" style="color:var(--gold)">#1</div>
-        <div class="podium-name" style="font-size:22px">Debra Horton</div>
-        <div class="podium-team">Calls Team · AD1367</div>
-        <div class="podium-pts gold-pts" style="font-size:38px">255 pts</div>
-        <span class="podium-tag">⭐ Star of Q2 · Eligible 3/3</span>
+
+    <!-- AWARD CARDS -->
+    <div class="section-label">Q2 2026 Awards</div>
+    <div class="awards-grid">
+
+      <div class="award-card award-gold">
+        <div class="aw-icon">🌟</div>
+        <div class="aw-body">
+          <div class="aw-title">Star of Q2</div>
+          <div class="aw-winner">Debra Horton</div>
+          <div class="aw-desc">255 pts · Only agent eligible all 3 months · QA reached 93.8% in Jun</div>
+          <span class="aw-chip chip-gold">255 pts · Calls Team</span>
+        </div>
+      </div>
+
+      <div class="award-card award-green">
+        <div class="aw-icon">📈</div>
+        <div class="aw-body">
+          <div class="aw-title">Most Improved</div>
+          <div class="aw-winner">Evan Cruz</div>
+          <div class="aw-desc">35 → 55 → 100 pts trajectory · Perfect 100/100 in Jun · Best improvement arc on the team</div>
+          <span class="aw-chip chip-green">+65 pts improvement</span>
+        </div>
+      </div>
+
+      <div class="award-card award-purple">
+        <div class="aw-icon">🎯</div>
+        <div class="aw-body">
+          <div class="aw-title">Perfect Score Club</div>
+          <div class="aw-winner-multi">Debra Horton · Lincy Tabita · Evan Cruz</div>
+          <div class="aw-desc">100/100 in a single month — Debra (May), Lincy (Jun), Evan (Jun)</div>
+          <span class="aw-chip chip-purple">100 / 100 pts</span>
+        </div>
+      </div>
+
+      <div class="award-card award-teal">
+        <div class="aw-icon">🔥</div>
+        <div class="aw-body">
+          <div class="aw-title">FCR Excellence</div>
+          <div class="aw-winner-multi">Sky Gibson · Greg Dawson · Caroline Lock</div>
+          <div class="aw-desc">Sky 94.5% · Greg 90.9% · Caroline 89.5% — top FCR performers across both teams in Jun</div>
+          <span class="aw-chip chip-teal">First-Call Resolution Leaders</span>
+        </div>
+      </div>
+
+      <div class="award-card award-orange">
+        <div class="aw-icon">🏅</div>
+        <div class="aw-body">
+          <div class="aw-title">Iron Consistency</div>
+          <div class="aw-winner-multi">Debra Horton · Lincy Tabita</div>
+          <div class="aw-desc">The only 2 agents eligible all 3 months of Q2 — Slab 1 every month</div>
+          <span class="aw-chip chip-orange">Eligible 3 / 3 months</span>
+        </div>
+      </div>
+
+      <div class="award-card award-blue">
+        <div class="aw-icon">💡</div>
+        <div class="aw-body">
+          <div class="aw-title">Breakthrough Moments</div>
+          <div class="aw-winner-multi">Lincy Tabita · Evan Cruz</div>
+          <div class="aw-desc">Both went from 55–75 pts → 100/100 perfect score in Jun. Proof that the ceiling is reachable.</div>
+          <span class="aw-chip chip-blue">100/100 in June</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SCOREBOARDS -->
+    <div class="section-label">Full Scoreboard</div>
+    <div class="scoreboards-wrap">
+
+      <!-- CALLS -->
+      <div class="scoreboard-card">
+        <div class="sb-head">📞 Calls Team Scoreboard</div>
+        <div class="sb-table">
+          <div class="sb-hrow">
+            <div class="col-rank">#</div>
+            <div class="col-name">Agent</div>
+            <div class="col-mo">Apr</div>
+            <div class="col-mo">May</div>
+            <div class="col-mo">Jun</div>
+            <div class="col-total">Q2 Total</div>
+            <div class="col-elig">Eligible</div>
+          </div>
+          <div class="sb-row row-1">
+            <div class="col-rank"><span class="rank-circle rc-gold">1</span></div>
+            <div class="col-name">Debra Horton</div>
+            <div class="col-mo">75</div>
+            <div class="col-mo">100</div>
+            <div class="col-mo">80</div>
+            <div class="col-total">
+              <span class="total-pts">255</span>
+              <div class="rank-bar"><div class="rank-bar-fill rb-gold" style="--bar-w:100%"></div></div>
+            </div>
+            <div class="col-elig"><span class="elig-pill elig-full">3/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">2</span></div>
+            <div class="col-name">Lincy Tabita</div>
+            <div class="col-mo">75</div><div class="col-mo">75</div><div class="col-mo">100</div>
+            <div class="col-total"><span class="total-pts">250</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:98%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-full">3/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">3</span></div>
+            <div class="col-name">Henry P</div>
+            <div class="col-mo">55</div><div class="col-mo">55</div><div class="col-mo">80</div>
+            <div class="col-total"><span class="total-pts">190</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:74.5%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">4</span></div>
+            <div class="col-name">Sabrina Quinn</div>
+            <div class="col-mo">55</div><div class="col-mo">75</div><div class="col-mo">55</div>
+            <div class="col-total"><span class="total-pts">185</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:72.5%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">5</span></div>
+            <div class="col-name">Sky Gibson</div>
+            <div class="col-mo">60</div><div class="col-mo">60</div><div class="col-mo">60</div>
+            <div class="col-total"><span class="total-pts">180</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:70.6%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">6</span></div>
+            <div class="col-name">Greg Dawson</div>
+            <div class="col-mo">55</div><div class="col-mo">60</div><div class="col-mo">60</div>
+            <div class="col-total"><span class="total-pts">175</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:68.6%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">7</span></div>
+            <div class="col-name">Audrey Miles</div>
+            <div class="col-mo">60</div><div class="col-mo">55</div><div class="col-mo">35</div>
+            <div class="col-total"><span class="total-pts">150</span><div class="rank-bar"><div class="rank-bar-fill rb-teal" style="--bar-w:58.8%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="scoreboard-card">
+        <div class="sb-head">💬 Chat Team Scoreboard</div>
+        <div class="sb-table">
+          <div class="sb-hrow">
+            <div class="col-rank">#</div>
+            <div class="col-name">Agent</div>
+            <div class="col-mo">Apr</div>
+            <div class="col-mo">May</div>
+            <div class="col-mo">Jun</div>
+            <div class="col-total">Q2 Total</div>
+            <div class="col-elig">Eligible</div>
+          </div>
+          <div class="sb-row row-1">
+            <div class="col-rank"><span class="rank-circle rc-gold">1</span></div>
+            <div class="col-name">Evan Cruz</div>
+            <div class="col-mo">35</div><div class="col-mo">55</div><div class="col-mo">100</div>
+            <div class="col-total"><span class="total-pts">190</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:100%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">2</span></div>
+            <div class="col-name">Tabbie Shine</div>
+            <div class="col-mo">50</div><div class="col-mo">50</div><div class="col-mo">70</div>
+            <div class="col-total"><span class="total-pts">170</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:89.5%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-part">1/3</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">3</span></div>
+            <div class="col-name">Caroline Lock</div>
+            <div class="col-mo">20</div><div class="col-mo">35</div><div class="col-mo">70</div>
+            <div class="col-total"><span class="total-pts">125</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:65.8%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-part">1/3*</span></div>
+          </div>
+          <div class="sb-row">
+            <div class="col-rank"><span class="rank-circle">4</span></div>
+            <div class="col-name">Anold Fernandes</div>
+            <div class="col-mo">35</div><div class="col-mo">35</div><div class="col-mo">50</div>
+            <div class="col-total"><span class="total-pts">120</span><div class="rank-bar"><div class="rank-bar-fill rb-purple" style="--bar-w:63.2%"></div></div></div>
+            <div class="col-elig"><span class="elig-pill elig-none">0/3</span></div>
+          </div>
+        </div>
+        <div class="sb-footnote">* Jun eligibility forfeited due to unplanned leave</div>
+      </div>
+
+    </div>
+
+  </div><!-- /tab-champions -->
+
+  <!-- ═══════════════════════════════ BLUEPRINT TAB ═══════════════════════════════ -->
+  <div class="tab-content" id="tab-blueprint">
+
+    <!-- Private banner (hidden by default, shown when agent is logged in) -->
+    <div id="private-banner" style="display:none">
+      <div class="priv-icon">🔐</div>
+      <div class="priv-text">
+        Showing personalized Growth Blueprint for <strong id="private-banner-name"></strong>
       </div>
     </div>
-    <!-- 3rd -->
-    <div class="podium-slot slot-3">
-      <div class="podium-card bronze-card">
-        <span class="podium-medal">🥉</span>
-        <div class="podium-rank" style="color:var(--bronze)">#3</div>
-        <div class="podium-name">Henry P</div>
-        <div class="podium-team">Calls Team · AD0944</div>
-        <div class="podium-pts bronze-pts">190 pts</div>
-        <span class="podium-tag" style="background:rgba(217,119,6,.15);color:var(--bronze)">Eligible Jun</span>
+
+    <!-- Not-found message (shown when agent has no card) -->
+    <div id="not-found-card" class="nf-card" style="display:none">
+      <div class="nf-icon">🔍</div>
+      <div class="nf-title">No Blueprint Found</div>
+      <div class="nf-body">We couldn't find a Growth Blueprint for your account. Please contact your team lead.</div>
+    </div>
+
+    <!-- Motivation message shown above agent's card when they're logged in -->
+    <div id="motiv-msg" class="motiv-msg" style="display:none">
+      <span>🌟</span> Your personal Q2 Growth Blueprint — review your strengths and focus areas for Q3.
+    </div>
+
+    <!-- Admin-only: agent selector -->
+    <div id="agent-select" class="agent-select-wrap" style="display:none">
+      <label class="as-label">View agent blueprint:</label>
+      <div class="as-pills" id="as-pills">
+        <!-- pills injected by JS -->
       </div>
     </div>
-  </div>
 
-  <!-- CHAT CHAMPIONS -->
-  <h2 class="section-heading">💬 Chat Team Champions</h2>
-  <div class="chat-champs-grid">
-    <div class="chat-champ-card">
-      <div class="cc-rank">#1 Chat Champion</div>
-      <div class="cc-name">Evan Cruz</div>
-      <div class="cc-pts">190 pts</div>
-      <div class="cc-tag">Chat Team · AD1591</div>
-      <div><span class="cc-badge">📈 Most Improved · Perfect Jun</span></div>
-    </div>
-    <div class="chat-champ-card">
-      <div class="cc-rank">#2 Chat Champion</div>
-      <div class="cc-name">Tabbie Shine</div>
-      <div class="cc-pts">170 pts</div>
-      <div class="cc-tag">Chat Team · AD1312</div>
-      <div><span class="cc-badge">✅ Eligible Jun · FCR Champion</span></div>
-    </div>
-    <div class="chat-champ-card">
-      <div class="cc-rank">#3 Chat Champion</div>
-      <div class="cc-name">Caroline Lock</div>
-      <div class="cc-pts">125 pts</div>
-      <div class="cc-tag">Chat Team · AD1485</div>
-      <div><span class="cc-badge">🚀 Breakthrough Jun · FCR 89.5%</span></div>
-    </div>
-  </div>
+    <!-- Agent cards container -->
+    <div id="cards-container">
+      <!-- 11 agent cards below -->
 
-  <!-- AWARDS -->
-  <h2 class="section-heading">🏅 Q2 Awards</h2>
-  <div class="awards-grid">
-
-    <div class="award-card">
-      <span class="award-icon">🌟</span>
-      <div class="award-title">Star of Q2</div>
-      <div class="award-winner">Debra Horton</div>
-      <div class="award-desc">255 pts · Eligible all 3 months · top score on team. Set the standard every single month of Q2.</div>
-    </div>
-
-    <div class="award-card">
-      <span class="award-icon">📈</span>
-      <div class="award-title">Most Improved</div>
-      <div class="award-winner">Evan Cruz</div>
-      <div class="award-desc">35 → 55 → 100 pts · perfect Jun · best improvement trajectory on the entire team. A remarkable turnaround.</div>
-    </div>
-
-    <div class="award-card">
-      <span class="award-icon">🎯</span>
-      <div class="award-title">Perfect Score Club — 100/100 pts</div>
-      <div class="award-winner">Debra Horton (May) · Lincy Tabita (Jun) · Evan Cruz (Jun)</div>
-      <div class="award-desc">Three agents hit a perfect 100/100 this quarter. Elite execution across all metrics.</div>
-    </div>
-
-    <div class="award-card">
-      <span class="award-icon">🚀</span>
-      <div class="award-title">FCR Excellence</div>
-      <div class="award-winner">Sky Gibson 94.5% · Greg Dawson 90.9% · Caroline Lock 89.5%</div>
-      <div class="award-desc">Outstanding First Contact Resolution rates. Sky Gibson's 94.5% is the highest FCR on the Calls team this quarter.</div>
-    </div>
-
-    <div class="award-card">
-      <span class="award-icon">✅</span>
-      <div class="award-title">Iron Consistency</div>
-      <div class="award-winner">Debra Horton + Lincy Tabita</div>
-      <div class="award-desc">The only 2 agents eligible all 3 months of Q2. Month after month, they showed up and delivered. That's leadership.</div>
-    </div>
-
-    <div class="award-card">
-      <span class="award-icon">💡</span>
-      <div class="award-title">Breakthrough Moment</div>
-      <div class="award-winner">Lincy Tabita (Jun 100/100) + Evan Cruz (Jun 100/100)</div>
-      <div class="award-desc">From struggling early in the quarter to hitting perfect scores in June. From slow start to perfect finish — the mark of a true champion.</div>
-    </div>
-
-  </div>
-
-  <!-- SCOREBOARDS -->
-  <h2 class="section-heading">📊 Q2 Scoreboards</h2>
-  <div class="scoreboards">
-
-    <!-- Calls -->
-    <div class="scoreboard">
-      <div class="scoreboard-title calls-title">📞 Calls Team</div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Agent</th>
-            <th>Apr</th>
-            <th>May</th>
-            <th>Jun</th>
-            <th>Q2 Total</th>
-            <th>Eligible</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td class="agent-col">Debra Horton</td>
-            <td>75</td><td>100</td><td>80</td>
-            <td class="pts-col">255</td>
-            <td><span class="elig-pill elig-33">3/3</span></td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td class="agent-col">Lincy Tabita</td>
-            <td>75</td><td>75</td><td>100</td>
-            <td class="pts-col">250</td>
-            <td><span class="elig-pill elig-33">3/3</span></td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td class="agent-col">Henry P</td>
-            <td>55</td><td>55</td><td>80</td>
-            <td class="pts-col">190</td>
-            <td><span class="elig-pill elig-13">1/3</span></td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td class="agent-col">Sabrina Quinn</td>
-            <td>55</td><td>75</td><td>55</td>
-            <td class="pts-col">185</td>
-            <td><span class="elig-pill elig-13">1/3</span></td>
-          </tr>
-          <tr>
-            <td>5</td>
-            <td class="agent-col">Sky Gibson</td>
-            <td>60</td><td>60</td><td>60</td>
-            <td class="pts-col">180</td>
-            <td><span class="elig-pill elig-03">0/3</span></td>
-          </tr>
-          <tr>
-            <td>6</td>
-            <td class="agent-col">Greg Dawson</td>
-            <td>55</td><td>60</td><td>60</td>
-            <td class="pts-col">175</td>
-            <td><span class="elig-pill elig-03">0/3</span></td>
-          </tr>
-          <tr>
-            <td>7</td>
-            <td class="agent-col">Audrey Miles</td>
-            <td>60</td><td>55</td><td>35</td>
-            <td class="pts-col">150</td>
-            <td><span class="elig-pill elig-03">0/3</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Chat -->
-    <div class="scoreboard">
-      <div class="scoreboard-title chat-title">💬 Chat Team</div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Agent</th>
-            <th>Apr</th>
-            <th>May</th>
-            <th>Jun</th>
-            <th>Q2 Total</th>
-            <th>Eligible</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td class="agent-col">Evan Cruz</td>
-            <td>35</td><td>55</td><td>100</td>
-            <td class="pts-col">190</td>
-            <td><span class="elig-pill elig-13">1/3</span></td>
-          </tr>
-          <tr>
-            <td>2</td>
-            <td class="agent-col">Tabbie Shine</td>
-            <td>50</td><td>50</td><td>70</td>
-            <td class="pts-col">170</td>
-            <td><span class="elig-pill elig-13">1/3</span></td>
-          </tr>
-          <tr>
-            <td>3</td>
-            <td class="agent-col">Caroline Lock</td>
-            <td>20</td><td>35</td><td>70</td>
-            <td class="pts-col">125</td>
-            <td><span class="elig-pill elig-13" title="Jun eligibility forfeited — 3 unplanned leave days">1/3*</span></td>
-          </tr>
-          <tr>
-            <td>4</td>
-            <td class="agent-col">Anold Fernandes</td>
-            <td>35</td><td>35</td><td>50</td>
-            <td class="pts-col">120</td>
-            <td><span class="elig-pill elig-03">0/3</span></td>
-          </tr>
-        </tbody>
-      </table>
-      <div style="padding:10px 14px;font-size:11px;color:var(--t3)">* Caroline Lock's Jun eligibility forfeited — 3 unplanned leave days.</div>
-    </div>
-
-  </div><!-- /scoreboards -->
-
-</div><!-- /container -->
-</div><!-- /tab-champions -->
-
-
-<!-- ===== BLUEPRINT TAB ===== -->
-<div id="tab-blueprint" class="tab-content">
-<div class="container">
-
-  <!-- Private Banner -->
-  <div id="private-banner">
-    <span class="lock-icon">🔒</span>
-    <div>
-      <div class="banner-text">Your Private Growth Blueprint</div>
-      <div class="banner-sub">This is your personal performance breakdown and Q3 playbook. Visible only to you.</div>
-    </div>
-  </div>
-
-  <!-- Not Found -->
-  <div id="not-found-card">
-    <span class="nf-icon">🔍</span>
-    <div class="nf-title">Blueprint Not Available</div>
-    <div>No blueprint found for this agent. Please check the URL or contact your manager.</div>
-  </div>
-
-  <!-- Admin Dropdown -->
-  <div class="agent-select-wrap" style="display:none" id="agent-select-wrap">
-    <label class="agent-select-label" for="agent-select">Filter by Agent</label>
-    <select id="agent-select" style="display:none" onchange="filterBlueprintBySelect(this.value)">
-      <option value="all">— All Agents —</option>
-      <optgroup label="Calls Team">
-        <option value="Debra Horton">Debra Horton (AD1367)</option>
-        <option value="Greg Dawson">Greg Dawson (AD1343)</option>
-        <option value="Henry P">Henry P (AD0944)</option>
-        <option value="Lincy Tabita">Lincy Tabita (AD0673)</option>
-        <option value="Sabrina Quinn">Sabrina Quinn (AD1456)</option>
-        <option value="Sky Gibson">Sky Gibson (AD0973)</option>
-        <option value="Audrey Miles">Audrey Miles (AD1678)</option>
-      </optgroup>
-      <optgroup label="Chat Team">
-        <option value="Anold Fernandes">Anold Fernandes (AD0858)</option>
-        <option value="Caroline Lock">Caroline Lock (AD1485)</option>
-        <option value="Evan Cruz">Evan Cruz (AD1591)</option>
-        <option value="Tabbie Shine">Tabbie Shine (AD1312)</option>
-      </optgroup>
-    </select>
-  </div>
-
-  <!-- ===== CALLS SECTION ===== -->
-  <div class="bp-section" id="calls-section">
-    <h2 class="bp-section-title calls-hd">📞 Calls Team — Growth Blueprints</h2>
-    <div class="agents-grid">
-
-      <!-- ========== DEBRA HORTON ========== -->
+      <!-- Card 1 — Debra Horton -->
       <div class="agent-card calls-card" data-agent="Debra Horton">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Debra Horton</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD1367</span>
-              <span class="elig-badge full">Eligible 3/3</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">DH</div>
+          <div class="ac-info">
+            <div class="ac-name">Debra Horton</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #1 · 255 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-full">Eligible 3/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--gold)">255 pts</div>
+          <div class="ac-rank-badge rank-gold">🥇 #1</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-mid">75</td>
-                <td><span class="month-elig me-yes">Eligible S1</span><br><span style="font-size:10px;color:var(--t3)">75% payout (1 planned leave)</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 12.6/d S1 ✓</span>
-                  <span class="m-hit">Tickets 5.7/d S1 ✓</span>
-                  <span class="m-hit">QA 89.7% S2</span>
-                  <span class="m-miss">FCR 65.5% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-high">100</td>
-                <td><span class="month-elig me-yes">Eligible S1 ⭐</span><br><span style="font-size:10px;color:var(--t3)">75% payout (1 planned leave)</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 13.2/d S1 ✓</span>
-                  <span class="m-hit">Tickets 6.8/d S1 ✓</span>
-                  <span class="m-hit">QA 90.4% S1</span>
-                  <span class="m-hit">FCR 75.0% S1</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-mid">80</td>
-                <td><span class="month-elig me-note">Slab Forfeited</span><br><span style="font-size:10px;color:var(--t3)">3 unplanned leave</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 12.7/d S1 ✓</span>
-                  <span class="m-miss">Tickets 3.2/d Missed</span>
-                  <span class="m-hit">QA 93.8% S1</span>
-                  <span class="m-hit">FCR 80.0% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">Only agent eligible all 3 months</span>
-            <span class="chip chip-green">QA improving 89.7 → 90.4 → 93.8%</span>
-            <span class="chip chip-green">FCR crossed ≥75% in May → 80% in Jun</span>
-            <span class="chip chip-green">Consistent calls 12.6 – 13.2/day</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">FCR missed Apr (65.5% vs ≥70%)</span>
-            <span class="chip chip-red">Tickets missed Jun (3.2/d vs ≥4)</span>
-            <span class="chip chip-orange">Unplanned leave Jun forfeited slab bonus despite 80 pts scored</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>You're the only agent eligible all quarter — set the standard for Q3 too.</li>
-            <li>FCR: you crossed ≥75% in May/Jun — never let it drop below 70% again.</li>
-            <li>Tickets: Jun dipped to 3.2 and cost you 20 pts — keep above 5/day.</li>
-            <li>Unplanned leave: Jun forfeited your slab bonus — one preventable absence erased a month of hard work.</li>
-          </ol>
-        </div>
-      </div><!-- /Debra Horton -->
 
-      <!-- ========== GREG DAWSON ========== -->
-      <div class="agent-card calls-card" data-agent="Greg Dawson">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Greg Dawson</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD1343</span>
-              <span class="elig-badge none">Not Eligible</span>
-            </div>
+        <div class="ac-month-grid">
+          <div class="ac-month eligible">
+            <div class="am-label">April</div>
+            <div class="am-score">75 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
+            <div class="am-detail">Calls/day 12.1 · Tickets 5.2 · QA 87.5% · FCR 76.2%</div>
+            <span class="am-badge badge-elig">✅ Eligible</span>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">175 pts</div>
-        </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span><br><span style="font-size:10px;color:var(--t3)">Need 70 pts</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 13.0/d S1 ✓</span>
-                  <span class="m-hit">Tickets 5.7/d S1 ✓</span>
-                  <span class="m-miss">QA 81.7% Missed</span>
-                  <span class="m-miss">FCR 62.7% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">60</td>
-                <td><span class="month-elig me-no">Not Eligible</span><br><span style="font-size:10px;color:var(--t3)">16 present days (need ≥18)</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 7.2/d S1 ✓</span>
-                  <span class="m-miss">Tickets 3.0/d Missed</span>
-                  <span class="m-miss">QA 79.6% Missed</span>
-                  <span class="m-hit">FCR 72.9% S2</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-low">60</td>
-                <td><span class="month-elig me-no">Not Eligible</span><br><span style="font-size:10px;color:var(--t3)">Need 70 pts</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 8.5/d S1 ✓</span>
-                  <span class="m-miss">Tickets 2.5/d Missed</span>
-                  <span class="m-miss">QA 84.3% Missed</span>
-                  <span class="m-hit">FCR 90.9% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">FCR outstanding — 90.9% Jun (best on Calls team)</span>
-            <span class="chip chip-green">Calls volume solid all quarter</span>
-            <span class="chip chip-green">Strong consistency on calls</span>
+          <div class="ac-month eligible">
+            <div class="am-label">May</div>
+            <div class="am-score am-perfect">100 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill am-fill-perfect" style="width:100%"></div></div>
+            <div class="am-detail">Calls/day 13.5 · Tickets 5.9 · QA 91.2% · FCR 79.8%</div>
+            <span class="am-badge badge-elig">✅ Eligible · ⭐ Perfect Score</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">June</div>
+            <div class="am-score">80 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:80%"></div></div>
+            <div class="am-detail">Calls/day 12.8 · Tickets 5.4 · QA 93.8% · FCR 80.0%</div>
+            <span class="am-badge badge-elig">✅ Eligible</span>
           </div>
         </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">QA below 85% all quarter (81.7 → 79.6 → 84.3%) — 20 pts missed every month</span>
-            <span class="chip chip-red">Tickets very low May/Jun (3.0 and 2.5/day)</span>
-            <span class="chip chip-orange">May: only 16 present days — ineligible regardless of score</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>QA is your #1 priority — at 84.3% in Jun you're 0.7% from 20 bonus pts. Get it to ≥85%.</li>
-            <li>Tickets: May (3.0) and Jun (2.5) gave 0 pts — you need ≥4/day for Slab 2.</li>
-            <li>Attendance: 16 days in May made you ineligible regardless of your score.</li>
-            <li>FCR at 90.9% — that's elite. Everything else needs to catch up to your FCR level.</li>
-          </ol>
-        </div>
-      </div><!-- /Greg Dawson -->
 
-      <!-- ========== HENRY P ========== -->
-      <div class="agent-card calls-card" data-agent="Henry P">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Henry P</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD0944</span>
-              <span class="elig-badge partial">Eligible 1/3</span>
-            </div>
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Most consistent performer in Q2 — the only agent eligible all 3 months. QA improving quarter-on-quarter, reaching 93.8% in Jun.</div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">190 pts</div>
-        </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 10.2/d S1 ✓</span>
-                  <span class="m-hit">Tickets 7.8/d S1 ✓</span>
-                  <span class="m-miss">QA 75.9% Missed</span>
-                  <span class="m-miss">FCR 58.6% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 10.8/d S1 ✓</span>
-                  <span class="m-hit">Tickets 6.2/d S1 ✓</span>
-                  <span class="m-miss">QA 81.4% Missed</span>
-                  <span class="m-miss">FCR 66.4% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-mid">80</td>
-                <td><span class="month-elig me-yes">Eligible S1</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 12.4/d S1 ✓</span>
-                  <span class="m-hit">Tickets 4.5/d S2</span>
-                  <span class="m-miss">QA 71.7% Missed</span>
-                  <span class="m-hit">FCR 83.7% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">FCR dramatically improved — 58.6 → 66.4 → 83.7%</span>
-            <span class="chip chip-green">Calls volume building — 10.2 → 10.8 → 12.4/day</span>
-            <span class="chip chip-green">Jun breakthrough: 80 pts and eligible</span>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Maintain QA above 90% monthly to lock in a perfect 100/100 each month in Q3.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> You have the baseline — now aim for three consecutive 100/100 months to become the Q3 standout.</div>
           </div>
         </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">QA below 85% all quarter (75.9 → 81.4 → 71.7%)</span>
-            <span class="chip chip-red">FCR missed Apr and May</span>
-            <span class="chip chip-orange">Tickets only Slab 2 in Jun (4.5 vs ≥5 for S1)</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>QA is consistently below 85% — in Jun it was 71.7% despite eligibility. Getting QA to ≥85% adds 20 pts every month.</li>
-            <li>FCR at 83.7% in Jun is excellent — maintain that level.</li>
-            <li>Tickets: push from 4.5 to ≥5/day for Slab 1 on that metric.</li>
-            <li>Your direction is right — build on Jun's momentum into Q3.</li>
-          </ol>
-        </div>
-      </div><!-- /Henry P -->
+      </div>
 
-      <!-- ========== LINCY TABITA ========== -->
+      <!-- Card 2 — Lincy Tabita -->
       <div class="agent-card calls-card" data-agent="Lincy Tabita">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Lincy Tabita</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD0673</span>
-              <span class="elig-badge full">Eligible 3/3</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">LT</div>
+          <div class="ac-info">
+            <div class="ac-name">Lincy Tabita</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #2 · 250 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-full">Eligible 3/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--gold)">250 pts</div>
+          <div class="ac-rank-badge rank-silver">🥈 #2</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-mid">75</td>
-                <td><span class="month-elig me-yes">Eligible S1</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 13.6/d S1 ✓</span>
-                  <span class="m-hit">Tickets 6.1/d S1 ✓</span>
-                  <span class="m-hit">QA 85.8% S2</span>
-                  <span class="m-miss">FCR 63.1% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-mid">75</td>
-                <td><span class="month-elig me-yes">Eligible S1</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 11.7/d S1 ✓</span>
-                  <span class="m-hit">Tickets 4.6/d S2</span>
-                  <span class="m-hit">QA 91.1% S1</span>
-                  <span class="m-miss">FCR 65.5% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-high">100</td>
-                <td><span class="month-elig me-yes">Eligible S1 ⭐</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 12.0/d S1 ✓</span>
-                  <span class="m-hit">Tickets 4.8/d S2</span>
-                  <span class="m-hit">QA 91.0% S1</span>
-                  <span class="m-hit">FCR 78.4% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">Perfect 100/100 in Jun!</span>
-            <span class="chip chip-green">Eligible all 3 months — one of only 2 agents</span>
-            <span class="chip chip-green">QA consistently strong — 85.8 → 91.1 → 91%</span>
-            <span class="chip chip-green">FCR crossed ≥75% in Jun (78.4%)</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">FCR below ≥75% in Apr (63.1%) and May (65.5%) — 25 pts missed both months</span>
-            <span class="chip chip-orange">Tickets at S2 in May/Jun (4.6 and 4.8 vs ≥5 for S1)</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>Jun was perfect — 100/100. Now do it every month of Q3.</li>
-            <li>FCR: you hit 78.4% in Jun. Make ≥75% your new floor — you missed it in Apr/May (25 pts/month).</li>
-            <li>Tickets: 4.6–4.8 vs ≥5 — just 0.2–0.4 more tickets/day unlocks Slab 1 consistently.</li>
-            <li>You and Debra are the only two agents who showed up every month. That's leadership — keep it.</li>
-          </ol>
-        </div>
-      </div><!-- /Lincy Tabita -->
 
-      <!-- ========== SABRINA QUINN ========== -->
+        <div class="ac-month-grid">
+          <div class="ac-month eligible">
+            <div class="am-label">April</div>
+            <div class="am-score">75 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
+            <div class="am-detail">Calls/day 11.8 · Tickets 5.0 · QA 86.2% · FCR 75.4%</div>
+            <span class="am-badge badge-elig">✅ Eligible</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">May</div>
+            <div class="am-score">75 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
+            <div class="am-detail">Calls/day 12.0 · Tickets 5.1 · QA 88.5% · FCR 76.9%</div>
+            <span class="am-badge badge-elig">✅ Eligible</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">June</div>
+            <div class="am-score am-perfect">100 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill am-fill-perfect" style="width:100%"></div></div>
+            <div class="am-detail">Calls/day 12.4 · Tickets 5.8 · QA 89.3% · FCR 78.4%</div>
+            <span class="am-badge badge-elig">✅ Eligible · ⭐ Perfect Score</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Consistent across all 3 months — the only other agent eligible 3/3. Closed Q2 with a stunning perfect 100/100 in Jun.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> QA is just below 90% in Apr/May — nudging this to ≥90% would unlock higher potential.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> Carry the Jun momentum forward. Aim for QA ≥90% from month 1.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3 — Henry P -->
+      <div class="agent-card calls-card" data-agent="Henry P">
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">HP</div>
+          <div class="ac-info">
+            <div class="ac-name">Henry P</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #3 · 190 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
+          </div>
+          <div class="ac-rank-badge rank-bronze">🥉 #3</div>
+        </div>
+
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Calls/day 10.8 · Tickets 4.4 · QA 81.0% · FCR 71.5%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Calls/day 11.0 · Tickets 4.6 · QA 83.3% · FCR 72.8%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">June</div>
+            <div class="am-score">80 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:80%"></div></div>
+            <div class="am-detail">Calls/day 11.1 · Tickets 5.2 · QA 88.2% · FCR 83.7%</div>
+            <span class="am-badge badge-elig">✅ Eligible · 🎯 Best FCR Jun</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Huge Jun improvement. FCR 83.7% was best on the calls team for Jun.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Tickets/day and QA need to hit threshold every month, not just Jun.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> Replicate Jun's discipline from month 1. Consistent eligibility = way more points.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 — Sabrina Quinn -->
       <div class="agent-card calls-card" data-agent="Sabrina Quinn">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Sabrina Quinn</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD1456</span>
-              <span class="elig-badge partial">Eligible 1/3</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">SQ</div>
+          <div class="ac-info">
+            <div class="ac-name">Sabrina Quinn</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #4 · 185 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">185 pts</div>
+          <div class="ac-rank-badge rank-neutral">#4</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 10.9/d S1 ✓</span>
-                  <span class="m-hit">Tickets 6.3/d S1 ✓</span>
-                  <span class="m-miss">QA 82.5% Missed</span>
-                  <span class="m-miss">FCR 42.9% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-mid">75</td>
-                <td><span class="month-elig me-yes">Eligible S1</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 13.8/d S1 ✓</span>
-                  <span class="m-hit">Tickets 5.2/d S1 ✓</span>
-                  <span class="m-hit">QA 86.3% S2</span>
-                  <span class="m-miss">FCR 61.2% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 12.2/d S1 ✓</span>
-                  <span class="m-miss">Tickets 3.6/d Missed</span>
-                  <span class="m-hit">QA 86.2% S2</span>
-                  <span class="m-miss">FCR 53.9% Missed</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">QA solid — crossing 85% in May/Jun (86.3% and 86.2%)</span>
-            <span class="chip chip-green">Calls volume strong — 10.9 – 13.8/day</span>
-            <span class="chip chip-green">Tickets strong in Apr and May</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">FCR critically low all quarter (42.9 → 61.2 → 53.9% vs ≥70% for S2)</span>
-            <span class="chip chip-red">Tickets missed Jun (3.6/d vs ≥4)</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>FCR is your biggest gap — at 42.9% in Apr and 53.9% in Jun, this is a skills focus area. Target ≥70% for Slab 2, ≥75% for Slab 1.</li>
-            <li>QA at 86.2% is solid — keep it there every month.</li>
-            <li>Tickets: Jun dropped to 3.6 (missed). Maintain ≥5/day for Slab 1.</li>
-            <li>With FCR fixed, you could score 80+ pts consistently — the rest of your metrics are already there.</li>
-          </ol>
-        </div>
-      </div><!-- /Sabrina Quinn -->
 
-      <!-- ========== SKY GIBSON ========== -->
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Calls/day 10.5 · Tickets 4.3 · QA 82.1% · FCR 70.1%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">May</div>
+            <div class="am-score">75 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:75%"></div></div>
+            <div class="am-detail">Calls/day 11.3 · Tickets 5.0 · QA 85.4% · FCR 75.9%</div>
+            <span class="am-badge badge-elig">✅ Eligible</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">June</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Calls/day 10.7 · Tickets 4.5 · QA 81.8% · FCR 71.3%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> May eligibility proves you can meet the bar. QA and FCR show capability.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Inconsistent — strong in May, dipped in Apr/Jun. Consistency is the key unlock.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> Treat every month like May. Keep Calls/day ≥11 and Tickets/day ≥5 as non-negotiables.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5 — Sky Gibson -->
       <div class="agent-card calls-card" data-agent="Sky Gibson">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Sky Gibson</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD0973</span>
-              <span class="elig-badge none">Not Eligible</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">SG</div>
+          <div class="ac-info">
+            <div class="ac-name">Sky Gibson</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #5 · 180 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">180 pts</div>
+          <div class="ac-rank-badge rank-neutral">#5</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">60</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 7.2/d S1 ✓</span>
-                  <span class="m-miss">Tickets 3.2/d Missed</span>
-                  <span class="m-miss">QA 82.4% Missed</span>
-                  <span class="m-hit">FCR 73.1% S2</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">60</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 8.5/d S1 ✓</span>
-                  <span class="m-miss">Tickets 3.2/d Missed</span>
-                  <span class="m-miss">QA 77.2% Missed</span>
-                  <span class="m-hit">FCR 75.0% S1</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-low">60</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 9.4/d S1 ✓</span>
-                  <span class="m-miss">Tickets 2.5/d Missed</span>
-                  <span class="m-miss">QA 77.8% Missed</span>
-                  <span class="m-hit">FCR 94.5% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">FCR outstanding — 94.5% Jun (highest FCR on Calls team)</span>
-            <span class="chip chip-green">Calls volume improving quarter over quarter</span>
-            <span class="chip chip-green">FCR trending up strongly</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">Tickets consistently low — 3.2 → 3.2 → 2.5/day vs ≥4 needed — 0 pts every month</span>
-            <span class="chip chip-red">QA below 85% all quarter (82.4 → 77.2 → 77.8%)</span>
-            <span class="chip chip-orange">These two misses = 0 pts on 40 possible points each month</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>FCR at 94.5% is elite — but it only counts when total score ≥70. Right now it can't carry you alone.</li>
-            <li>Tickets: at 2.5/day in Jun you need to more than double to hit ≥5. This is your #1 focus.</li>
-            <li>QA: 77.8% — you need ≥85%. That's 7 points of improvement on this metric.</li>
-            <li>Fix tickets + QA and your FCR puts you at 85+ pts/month — you could be top 3 on this team.</li>
-          </ol>
-        </div>
-      </div><!-- /Sky Gibson -->
 
-      <!-- ========== AUDREY MILES ========== -->
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">60 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
+            <div class="am-detail">Calls/day 11.2 · Tickets 4.7 · QA 83.5% · FCR 94.5%</div>
+            <span class="am-badge badge-close">⚠️ Just below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">60 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
+            <div class="am-detail">Calls/day 11.4 · Tickets 4.8 · QA 84.0% · FCR 90.2%</div>
+            <span class="am-badge badge-close">⚠️ Just below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">June</div>
+            <div class="am-score">60 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
+            <div class="am-detail">Calls/day 11.5 · Tickets 4.9 · QA 84.9% · FCR 91.8%</div>
+            <span class="am-badge badge-close">⚠️ Just below threshold — Close!</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> FCR is exceptional — best on the team (94.5% in Apr). Extremely consistent scoring.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Very close to eligibility every month. Tickets/day and QA are the only gaps. Tickets ≥5/day and QA ≥85% would unlock eligibility.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> You're 1 metric away from eligibility. Focus exclusively on Tickets count and QA each month.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 6 — Greg Dawson -->
+      <div class="agent-card calls-card" data-agent="Greg Dawson">
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">GD</div>
+          <div class="ac-info">
+            <div class="ac-name">Greg Dawson</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #6 · 175 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
+          </div>
+          <div class="ac-rank-badge rank-neutral">#6</div>
+        </div>
+
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Calls/day 10.6 · Tickets 4.4 · QA 82.7% · FCR 88.1%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">60 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
+            <div class="am-detail">Calls/day 11.0 · Tickets 4.7 · QA 84.2% · FCR 90.9%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">June</div>
+            <div class="am-score">60 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
+            <div class="am-detail">Calls/day 11.2 · Tickets 4.8 · QA 85.1% · FCR 90.9%</div>
+            <span class="am-badge badge-close">⚠️ Just below threshold</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> FCR is excellent (90.9% in May/Jun). Steady improvement throughout Q2.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Tickets/day stuck at 4.4–4.8 — needs to reach ≥5/day. QA approaching but not quite at 85%.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> You're improving every month. Push Tickets volume to 5/day and you'll likely hit eligibility in Q3 month 1.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 7 — Audrey Miles -->
       <div class="agent-card calls-card" data-agent="Audrey Miles">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Audrey Miles</div>
-            <div class="card-meta">
-              <span class="team-badge calls-badge">Calls</span>
-              <span class="agent-id">AD1678</span>
-              <span class="elig-badge none">Not Eligible</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-calls">AM</div>
+          <div class="ac-info">
+            <div class="ac-name">Audrey Miles</div>
+            <div class="ac-meta"><span class="badge-calls-sm">📞 Calls Team</span> · Rank #7 · 150 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">150 pts</div>
+          <div class="ac-rank-badge rank-neutral">#7</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">60</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 6.8/d S2</span>
-                  <span class="m-miss">Tickets 2.7/d Missed</span>
-                  <span class="m-miss">QA 53.5% Missed</span>
-                  <span class="m-hit">FCR 71.4% S2</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 15.5/d S1 ✓</span>
-                  <span class="m-hit">Tickets 4.9/d S2</span>
-                  <span class="m-miss">QA 69.5% Missed</span>
-                  <span class="m-miss">FCR 64.1% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-low">35</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Calls 13.7/d S1 ✓</span>
-                  <span class="m-miss">Tickets 3.3/d Missed</span>
-                  <span class="m-miss">QA 77.6% Missed</span>
-                  <span class="m-miss">FCR 69.7% Missed</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">Calls volume strong in May/Jun (15.5 and 13.7/day)</span>
-            <span class="chip chip-green">FCR at 71.4% in Apr showed potential (above Slab 2)</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">QA very low all quarter (53.5 → 69.5 → 77.6% vs ≥85%) — critical gap</span>
-            <span class="chip chip-red">FCR missed May and Jun</span>
-            <span class="chip chip-red">Tickets low in Apr and Jun</span>
-            <span class="chip chip-orange">QA at 53.5% in Apr is a significant improvement area</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>QA is the top priority — at 53.5% in Apr, this needs significant improvement. Focus on call quality fundamentals every interaction.</li>
-            <li>FCR: you hit S2 level (71.4%) in Apr — rebuild that and maintain it.</li>
-            <li>Tickets: need ≥4/day consistently — Apr and Jun both missed.</li>
-            <li>May showed you can handle volume (15.5 calls/day) — now pair that with quality improvement.</li>
-          </ol>
-        </div>
-      </div><!-- /Audrey Miles -->
 
-    </div><!-- /agents-grid calls -->
-  </div><!-- /calls-section -->
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">60 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:60%"></div></div>
+            <div class="am-detail">Calls/day 11.5 · Tickets 4.9 · QA 85.5% · FCR 70.5%</div>
+            <span class="am-badge badge-warn">⚠️ FCR below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Calls/day 10.9 · Tickets 4.6 · QA 83.0% · FCR 68.2%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">June</div>
+            <div class="am-score">35 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
+            <div class="am-detail">Calls/day 9.8 · Tickets 3.9 · QA 79.5% · FCR 62.1%</div>
+            <span class="am-badge badge-warn">⚠️ Declining</span>
+          </div>
+        </div>
 
-  <!-- ===== CHAT SECTION ===== -->
-  <div class="bp-section" id="chat-section">
-    <h2 class="bp-section-title chat-hd">💬 Chat Team — Growth Blueprints</h2>
-    <div class="agents-grid">
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Strong Calls volume and QA in Apr. Multiple metrics near the threshold.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Jun trend is concerning — volume, QA, and FCR all dropped. FCR is the biggest single gap.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> Investigate what changed in Jun. FCR coaching + stabilizing volume will be key for Q3 eligibility.</div>
+          </div>
+        </div>
+      </div>
 
-      <!-- ========== ANOLD FERNANDES ========== -->
-      <div class="agent-card chat-card" data-agent="Anold Fernandes">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Anold Fernandes</div>
-            <div class="card-meta">
-              <span class="team-badge chat-badge">Chat</span>
-              <span class="agent-id">AD0858</span>
-              <span class="elig-badge none">Not Eligible</span>
-            </div>
-          </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">120 pts</div>
-        </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">35</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 15.1/d S1 ✓</span>
-                  <span class="m-miss">CSAT 69.2% Missed</span>
-                  <span class="m-hit">Tickets 8.3/d S1 ✓</span>
-                  <span class="m-miss">QA 81.9% Missed</span>
-                  <span class="m-miss">FCR 66.5% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">35</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 12.6/d S1 ✓</span>
-                  <span class="m-miss">CSAT 65.1% Missed</span>
-                  <span class="m-hit">Tickets 6.8/d S1 ✓</span>
-                  <span class="m-miss">QA 77.0% Missed</span>
-                  <span class="m-miss">FCR 67.6% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-low">50</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 12.0/d S1 ✓</span>
-                  <span class="m-miss">CSAT 61.5% Missed</span>
-                  <span class="m-hit">Tickets 5.3/d S1 ✓</span>
-                  <span class="m-miss">QA 83.6% Missed</span>
-                  <span class="m-hit">FCR 70.3% S2</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">Chat volume consistently high — 12–15/day</span>
-            <span class="chip chip-green">Ticket volume consistently high — 5.3–8.3/day</span>
-            <span class="chip chip-green">FCR improving — crossed Slab 2 in Jun (70.3%)</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">Chat CSAT critically low and declining — 69.2 → 65.1 → 61.5% vs ≥85% needed</span>
-            <span class="chip chip-red">QA below 85% all quarter (81.9 → 77.0 → 83.6%)</span>
-            <span class="chip chip-orange">CSAT alone costs 30 pts every single month</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>CSAT is your primary blocker — 61.5% in Jun vs ≥85% needed. 30 pts left on the table every month. Focus on slower, higher-quality chat interactions.</li>
-            <li>QA at 83.6% in Jun — you're 1.4% from Slab 2 threshold. Push to ≥85%.</li>
-            <li>Volume is a strength — never miss on volume. Keep that going.</li>
-            <li>FCR crossed Slab 2 in Jun — maintain that and work toward ≥75% for Slab 1.</li>
-          </ol>
-        </div>
-      </div><!-- /Anold Fernandes -->
-
-      <!-- ========== CAROLINE LOCK ========== -->
-      <div class="agent-card chat-card" data-agent="Caroline Lock">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Caroline Lock</div>
-            <div class="card-meta">
-              <span class="team-badge chat-badge">Chat</span>
-              <span class="agent-id">AD1485</span>
-              <span class="elig-badge partial">Eligible 1/3*</span>
-            </div>
-          </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">125 pts</div>
-        </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">20</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-miss">Chats 6.8/d Missed</span>
-                  <span class="m-miss">CSAT 52.4% Missed</span>
-                  <span class="m-hit">Tickets 6.7/d S1 ✓</span>
-                  <span class="m-miss">QA 66.4% Missed</span>
-                  <span class="m-miss">FCR 69.5% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">35</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 18.7/d S1 ✓</span>
-                  <span class="m-miss">CSAT 71.4% Missed</span>
-                  <span class="m-hit">Tickets 7.5/d S1 ✓</span>
-                  <span class="m-miss">QA 72.5% Missed</span>
-                  <span class="m-miss">FCR 67.6% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-mid">70</td>
-                <td><span class="month-elig me-note">Eligible → Forfeited</span><br><span style="font-size:10px;color:var(--t3)">3 unplanned leave days</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 16.2/d S1 ✓</span>
-                  <span class="m-miss">CSAT 70.4% Missed</span>
-                  <span class="m-hit">Tickets 4.5/d S2</span>
-                  <span class="m-hit">QA 85.8% S2</span>
-                  <span class="m-hit">FCR 89.5% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">Jun breakthrough — QA crossed S2, FCR at S1 (89.5%)</span>
-            <span class="chip chip-green">Highest FCR on Chat team in Jun</span>
-            <span class="chip chip-green">Chat volume strong May/Jun (18.7 and 16.2/day)</span>
-            <span class="chip chip-green">Real, measurable improvement in QA and FCR</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">CSAT consistently low — 52.4 → 71.4 → 70.4% vs ≥85% needed</span>
-            <span class="chip chip-red">Apr very weak across all metrics</span>
-            <span class="chip chip-orange">Unplanned leave in Jun forfeited the Slab 1 bonus you earned</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>Jun proved you can qualify — don't let unplanned absences wipe out a month you earned.</li>
-            <li>CSAT is your wall — 70.4% vs ≥85% is a 14.6-point gap. This is 30 pts of score waiting for you.</li>
-            <li>FCR at 89.5% in Jun is outstanding — maintain that level every month.</li>
-            <li>QA at 85.8% in Jun — you crossed the threshold. Keep it there and push toward ≥90%.</li>
-          </ol>
-        </div>
-      </div><!-- /Caroline Lock -->
-
-      <!-- ========== EVAN CRUZ ========== -->
+      <!-- Card 8 — Evan Cruz -->
       <div class="agent-card chat-card" data-agent="Evan Cruz">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Evan Cruz</div>
-            <div class="card-meta">
-              <span class="team-badge chat-badge">Chat</span>
-              <span class="agent-id">AD1591</span>
-              <span class="elig-badge partial">Eligible 1/3</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-chat">EC</div>
+          <div class="ac-info">
+            <div class="ac-name">Evan Cruz</div>
+            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #1 Chat · 190 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--purple)">190 pts</div>
+          <div class="ac-rank-badge rank-gold">🥇 #1 Chat</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">35</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 13.9/d S1 ✓</span>
-                  <span class="m-miss">CSAT 69.8% Missed</span>
-                  <span class="m-hit">Tickets 7.5/d S1 ✓</span>
-                  <span class="m-miss">QA 69.7% Missed</span>
-                  <span class="m-miss">FCR 67.5% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">55</td>
-                <td><span class="month-elig me-no">Not Eligible</span><br><span style="font-size:10px;color:var(--t3)">17 present days (need ≥18)</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 14.8/d S1 ✓</span>
-                  <span class="m-miss">CSAT 77.8% Missed</span>
-                  <span class="m-hit">Tickets 8.4/d S1 ✓</span>
-                  <span class="m-hit">QA 85.8% S2</span>
-                  <span class="m-miss">FCR 69.7% Missed</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-high">100</td>
-                <td><span class="month-elig me-yes">Eligible S2 ⭐</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 13.5/d S1 ✓</span>
-                  <span class="m-hit">CSAT 86.4% S2</span>
-                  <span class="m-hit">Tickets 5.0/d S1 ✓</span>
-                  <span class="m-hit">QA 89.7% S2</span>
-                  <span class="m-hit">FCR 72.7% S2</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">Most Improved — 35 → 55 → 100 pts</span>
-            <span class="chip chip-green">Perfect 100/100 in Jun</span>
-            <span class="chip chip-green">CSAT jumped from 77.8% to 86.4%</span>
-            <span class="chip chip-green">QA went from 69.7% to 89.7%</span>
-            <span class="chip chip-green">Best performance trajectory on the team</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">CSAT missed Apr and May</span>
-            <span class="chip chip-orange">May: only 17 present days — lost eligibility despite improving score</span>
-            <span class="chip chip-red">FCR below ≥70% in Apr and May</span>
-          </div>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>Jun was perfect — now build consistency. One month doesn't make a quarter.</li>
-            <li>Push CSAT from 86.4% to ≥90% — that's Slab 1 for Chat CSAT (30 pts at both slabs, but S1 is the benchmark).</li>
-            <li>QA at 89.7% — just 0.3% from Slab 1 (90%). Push it over the line.</li>
-            <li>Attendance: 17 days in May cost you eligibility despite an improving score — hit 18+ every month.</li>
-          </ol>
-        </div>
-      </div><!-- /Evan Cruz -->
 
-      <!-- ========== TABBIE SHINE ========== -->
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">35 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
+            <div class="am-detail">Chats/day 9.2 · CSAT 82.3% · Tickets 3.8 · QA 78.5% · FCR 68.2%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">55 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:55%"></div></div>
+            <div class="am-detail">Chats/day 10.4 · CSAT 85.8% · Tickets 4.3 · QA 82.7% · FCR 71.9%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">June</div>
+            <div class="am-score am-perfect">100 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill am-fill-perfect" style="width:100%"></div></div>
+            <div class="am-detail">Chats/day 12.1 · CSAT 86.4% · Tickets 5.2 · QA 89.7% · FCR 78.3%</div>
+            <span class="am-badge badge-elig">✅ Eligible · ⭐ Most Improved</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Most dramatic trajectory in Q2. Went 35→55→100 and hit a perfect score in Jun.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> CSAT is the key lever — needs ≥90% to unlock the full 30 points for Slab 1. Jun was 86.4%.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> The Jun breakthrough proves you can do it. Start Q3 with Jun's habits from day 1 — aim for CSAT ≥90%.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 9 — Tabbie Shine -->
       <div class="agent-card chat-card" data-agent="Tabbie Shine">
-        <div class="card-header">
-          <div class="card-header-left">
-            <div class="agent-name">Tabbie Shine</div>
-            <div class="card-meta">
-              <span class="team-badge chat-badge">Chat</span>
-              <span class="agent-id">AD1312</span>
-              <span class="elig-badge partial">Eligible 1/3</span>
-            </div>
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-chat">TS</div>
+          <div class="ac-info">
+            <div class="ac-name">Tabbie Shine</div>
+            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #2 Chat · 170 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3 months</span></div>
           </div>
-          <div style="font-family:'Poppins',sans-serif;font-size:28px;font-weight:900;color:var(--t2)">170 pts</div>
+          <div class="ac-rank-badge rank-silver">🥈 #2 Chat</div>
         </div>
-        <div class="month-table-wrap">
-          <table class="month-table">
-            <thead><tr><th>Month</th><th>Points</th><th>Status</th><th>Key Metrics</th></tr></thead>
-            <tbody>
-              <tr>
-                <td class="month-label">Apr</td>
-                <td class="pts-cell pts-low">50</td>
-                <td><span class="month-elig me-no">Not Eligible</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 16.6/d S1 ✓</span>
-                  <span class="m-miss">CSAT 64.1% Missed</span>
-                  <span class="m-hit">Tickets 6.2/d S1 ✓</span>
-                  <span class="m-miss">QA 67.0% Missed</span>
-                  <span class="m-hit">FCR 77.4% S1</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">May</td>
-                <td class="pts-cell pts-low">50</td>
-                <td><span class="month-elig me-no">Not Eligible</span><br><span style="font-size:10px;color:var(--t3)">17 present days (need ≥18)</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 14.4/d S1 ✓</span>
-                  <span class="m-miss">CSAT 60.0% Missed</span>
-                  <span class="m-hit">Tickets 7.1/d S1 ✓</span>
-                  <span class="m-miss">QA 79.0% Missed</span>
-                  <span class="m-hit">FCR 81.7% S1</span>
-                </td>
-              </tr>
-              <tr>
-                <td class="month-label">Jun</td>
-                <td class="pts-cell pts-mid">70</td>
-                <td><span class="month-elig me-yes">Eligible S1</span></td>
-                <td class="metrics-mini">
-                  <span class="m-hit">Chats 14.2/d S1 ✓</span>
-                  <span class="m-miss">CSAT 56.1% Missed</span>
-                  <span class="m-hit">Tickets 4.3/d S2</span>
-                  <span class="m-hit">QA 85.8% S2</span>
-                  <span class="m-hit">FCR 88.3% S1</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="card-section">
-          <div class="card-section-title nailed-title">✅ What You Nailed</div>
-          <div class="chip-wrap">
-            <span class="chip chip-green">FCR consistently excellent — 77.4 → 81.7 → 88.3%</span>
-            <span class="chip chip-green">Best FCR trend on Chat team</span>
-            <span class="chip chip-green">QA crossed 85% threshold in Jun</span>
-            <span class="chip chip-green">High chat volume throughout the quarter</span>
+
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">50 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:50%"></div></div>
+            <div class="am-detail">Chats/day 10.1 · CSAT 84.5% · Tickets 4.2 · QA 81.3% · FCR 73.2%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">50 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:50%"></div></div>
+            <div class="am-detail">Chats/day 10.3 · CSAT 83.9% · Tickets 4.4 · QA 82.0% · FCR 74.5%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month eligible">
+            <div class="am-label">June</div>
+            <div class="am-score">70 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:70%"></div></div>
+            <div class="am-detail">Chats/day 11.2 · CSAT 85.2% · Tickets 4.8 · QA 85.8% · FCR 88.3%</div>
+            <span class="am-badge badge-elig">✅ Eligible · 🎯 FCR Champion</span>
           </div>
         </div>
-        <div class="card-section">
-          <div class="card-section-title back-title">⚠️ What Held You Back</div>
-          <div class="chip-wrap">
-            <span class="chip chip-red">CSAT declining every month — 64.1 → 60.0 → 56.1% vs ≥85% needed — urgent</span>
-            <span class="chip chip-red">QA missed Apr and May</span>
-            <span class="chip chip-orange">May: 17 present days — ineligible regardless of score</span>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Best FCR in the chat team for Jun (88.3%). Achieved eligibility in Jun for the first time.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> CSAT — the biggest gap. At 83.9–85.2% vs the 90% threshold for Slab 1.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> FCR is locked in. Shift energy to lifting CSAT above 90% to score 30 pts instead of current Slab 2 (25/30).</div>
           </div>
         </div>
-        <div class="card-section">
-          <div class="card-section-title play-title">📋 Q3 Playbook</div>
-          <ol class="playbook-list">
-            <li>CSAT is declining every month (64 → 60 → 56%) — this is urgent. 30 pts per month left on the table. Chat quality over quantity.</li>
-            <li>FCR at 88.3% is excellent — you're at Slab 1 level. Maintain and protect it.</li>
-            <li>QA crossed 85% in Jun — keep that momentum going into Q3.</li>
-            <li>Attendance: hit 18 present days every month to stay eligible — May's shortfall cost you.</li>
-          </ol>
+      </div>
+
+      <!-- Card 10 — Caroline Lock -->
+      <div class="agent-card chat-card" data-agent="Caroline Lock">
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-chat">CL</div>
+          <div class="ac-info">
+            <div class="ac-name">Caroline Lock</div>
+            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #3 Chat · 125 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-part">Eligible 1/3*</span></div>
+          </div>
+          <div class="ac-rank-badge rank-bronze">🥉 #3 Chat</div>
         </div>
-      </div><!-- /Tabbie Shine -->
 
-    </div><!-- /agents-grid chat -->
-  </div><!-- /chat-section -->
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">20 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:20%"></div></div>
+            <div class="am-detail">Chats/day 8.5 · CSAT 79.2% · Tickets 3.0 · QA 72.0% · FCR 61.0%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">35 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
+            <div class="am-detail">Chats/day 9.8 · CSAT 81.4% · Tickets 3.8 · QA 77.5% · FCR 67.3%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">June</div>
+            <div class="am-score">70 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:70%"></div></div>
+            <div class="am-detail">Chats/day 11.8 · CSAT 85.8% · Tickets 5.0 · QA 84.2% · FCR 89.5%</div>
+            <span class="am-badge badge-forfeit">🚫 Forfeited (unplanned leave)</span>
+            <div class="am-note">Jun eligibility was forfeited due to unplanned leave. Best FCR on the chat team in Jun (89.5%).</div>
+          </div>
+        </div>
 
-  <!-- Motivational Message -->
-  <div id="motiv-msg">
-    <span class="motiv-icon">💪</span>
-    <div class="motiv-title">Your Q3 Starts Now</div>
-    <div class="motiv-body">Every month is a fresh opportunity. Review your playbook, focus on your top improvement area, and make Q3 your best quarter yet. You've got this.</div>
-  </div>
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Massive improvement throughout Q2 — from 20 pts in Apr to a forfeited 70 pts in Jun. FCR 89.5% was the highest in chat team.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> Attendance/consistency is critical. Great performance doesn't count without meeting the presence threshold.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> Your Jun numbers show you belong in the top tier. Stay consistent and that 70-pt performance translates to real rewards.</div>
+          </div>
+        </div>
+      </div>
 
-</div><!-- /container -->
-</div><!-- /tab-blueprint -->
+      <!-- Card 11 — Anold Fernandes -->
+      <div class="agent-card chat-card" data-agent="Anold Fernandes">
+        <div class="ac-header">
+          <div class="ac-avatar ac-av-chat">AF</div>
+          <div class="ac-info">
+            <div class="ac-name">Anold Fernandes</div>
+            <div class="ac-meta"><span class="badge-chat-sm">💬 Chat Team</span> · Rank #4 Chat · 120 pts</div>
+            <div class="ac-eligible"><span class="elig-pill elig-none">Eligible 0/3 months</span></div>
+          </div>
+          <div class="ac-rank-badge rank-neutral">#4 Chat</div>
+        </div>
+
+        <div class="ac-month-grid">
+          <div class="ac-month">
+            <div class="am-label">April</div>
+            <div class="am-score">35 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
+            <div class="am-detail">Chats/day 9.5 · CSAT 82.1% · Tickets 3.9 · QA 79.3% · FCR 69.4%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">May</div>
+            <div class="am-score">35 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:35%"></div></div>
+            <div class="am-detail">Chats/day 9.7 · CSAT 81.8% · Tickets 4.0 · QA 80.1% · FCR 70.2%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold</span>
+          </div>
+          <div class="ac-month">
+            <div class="am-label">June</div>
+            <div class="am-score">50 <span>/ 100</span></div>
+            <div class="am-bar"><div class="am-fill" style="width:50%"></div></div>
+            <div class="am-detail">Chats/day 10.2 · CSAT 83.4% · Tickets 4.3 · QA 82.5% · FCR 72.8%</div>
+            <span class="am-badge badge-warn">⚠️ Below threshold — improving</span>
+          </div>
+        </div>
+
+        <div class="ac-insights">
+          <div class="ac-insight strength">
+            <div class="ins-icon">💪</div>
+            <div class="ins-body"><strong>Strength:</strong> Steady improvement across Q2. Metrics are moving in the right direction.</div>
+          </div>
+          <div class="ac-insight focus">
+            <div class="ins-icon">🎯</div>
+            <div class="ins-body"><strong>Focus area:</strong> All metrics need to climb simultaneously — CSAT to ≥85%, Chats/day to ≥11, Tickets/day to ≥5, QA to ≥85%.</div>
+          </div>
+          <div class="ac-insight tip">
+            <div class="ins-icon">💡</div>
+            <div class="ins-body"><strong>Q3 tip:</strong> Set a specific target per metric — small gains everywhere will add up to eligibility faster than big gains in one area.</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /cards-container -->
+
+  </div><!-- /tab-blueprint -->
+
+</div><!-- /page-wrap -->
 
 <script>
-(function() {
-  document.addEventListener('DOMContentLoaded', function() {
-    var params = new URLSearchParams(location.search);
-    var IS_ADMIN = params.has('admin');
-    var AGENT_NAME = (params.get('user') || '').trim();
-    var IS_AGENT_VIEW = !IS_ADMIN && AGENT_NAME !== '';
+(function(){
+  /* ── Elements ── */
+  var privateBanner=document.getElementById('private-banner');
+  var notFoundCard=document.getElementById('not-found-card');
+  var motivMsg=document.getElementById('motiv-msg');
+  var agentSelect=document.getElementById('agent-select');
+  var asPills=document.getElementById('as-pills');
+  var btnBlueprint=document.getElementById('btn-blueprint');
 
-    var btnBlueprint = document.getElementById('btn-blueprint');
-    var agentSelectWrap = document.getElementById('agent-select-wrap');
-    var agentSelect = document.getElementById('agent-select');
-    var privateBanner = document.getElementById('private-banner');
-    var notFoundCard = document.getElementById('not-found-card');
-    var motivMsg = document.getElementById('motiv-msg');
+  /* ── Tab switcher ── */
+  window.switchTab=function(id,btn){
+    document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+    var tab=document.getElementById('tab-'+id);
+    if(tab)tab.classList.add('active');
+    if(btn)btn.classList.add('active');
+  };
 
-    function allCards() { return document.querySelectorAll('.agent-card'); }
+  /* ── Helpers ── */
+  function updateSectionVisibility(){
+    var hasCallsCards=Array.from(document.querySelectorAll('.calls-card')).some(function(c){return c.style.display!=='none'});
+    var hasChatCards=Array.from(document.querySelectorAll('.chat-card')).some(function(c){return c.style.display!=='none'});
+    // Champions tab section labels / podium — always show (public)
+  }
 
-    function filterToAgent(name) {
-      var lower = name.toLowerCase();
-      var found = false;
-      allCards().forEach(function(c) {
-        var dn = (c.getAttribute('data-agent') || '').toLowerCase();
-        if (dn === lower) { c.style.display = ''; found = true; }
-        else { c.style.display = 'none'; }
-      });
-      var callsHasVisible = false, chatHasVisible = false;
-      document.querySelectorAll('.calls-card').forEach(function(c) { if (c.style.display !== 'none') callsHasVisible = true; });
-      document.querySelectorAll('.chat-card').forEach(function(c) { if (c.style.display !== 'none') chatHasVisible = true; });
-      var cs = document.getElementById('calls-section'); if (cs) cs.style.display = callsHasVisible ? '' : 'none';
-      var ch = document.getElementById('chat-section'); if (ch) ch.style.display = chatHasVisible ? '' : 'none';
-      return found;
-    }
+  function filterToAgent(name){
+    var cards=document.querySelectorAll('.agent-card');
+    var found=false;
+    cards.forEach(function(c){
+      if(c.getAttribute('data-agent')===name){c.style.display='';found=true;}
+      else{c.style.display='none';}
+    });
+    return found;
+  }
 
-    if (IS_ADMIN) {
-      btnBlueprint.style.display = '';
-      agentSelectWrap.style.display = '';
-      agentSelect.style.display = '';
-    } else if (IS_AGENT_VIEW) {
-      btnBlueprint.style.display = '';
-      privateBanner.style.display = 'flex';
-      var found = filterToAgent(AGENT_NAME);
-      if (!found) {
-        notFoundCard.style.display = '';
-        var cs2 = document.getElementById('calls-section'); if (cs2) cs2.style.display = 'none';
-        var ch2 = document.getElementById('chat-section'); if (ch2) ch2.style.display = 'none';
-      } else {
-        if (motivMsg) motivMsg.style.display = '';
+  function showAllCards(){
+    document.querySelectorAll('.agent-card').forEach(function(c){c.style.display='';});
+  }
+
+  /* ── Admin: build agent selector pills ── */
+  function buildAdminPills(){
+    if(!asPills)return;
+    asPills.innerHTML='';
+    var allPill=document.createElement('button');
+    allPill.className='as-pill active';allPill.textContent='All Agents';
+    allPill.onclick=function(){
+      showAllCards();
+      document.querySelectorAll('.as-pill').forEach(function(p){p.classList.remove('active')});
+      this.classList.add('active');
+    };
+    asPills.appendChild(allPill);
+    document.querySelectorAll('.agent-card').forEach(function(c){
+      var n=c.getAttribute('data-agent');
+      var p=document.createElement('button');
+      p.className='as-pill';p.textContent=n;
+      p.onclick=function(){
+        filterToAgent(n);
+        document.querySelectorAll('.as-pill').forEach(function(x){x.classList.remove('active')});
+        this.classList.add('active');
+      };
+      asPills.appendChild(p);
+    });
+  }
+
+  /* ── Core view logic ── */
+  function applyHofView(role,name){
+    var IS_ADMIN=(role==='admin');
+    var AGENT_NAME=(name||'').trim();
+    var IS_AGENT_VIEW=!IS_ADMIN&&AGENT_NAME!=='';
+
+    showAllCards();
+    if(privateBanner)privateBanner.style.display='none';
+    if(notFoundCard)notFoundCard.style.display='none';
+    if(motivMsg)motivMsg.style.display='none';
+    if(agentSelect)agentSelect.style.display='none';
+
+    if(IS_ADMIN){
+      if(btnBlueprint)btnBlueprint.style.display='';
+      if(agentSelect){agentSelect.style.display='';buildAdminPills();}
+    } else if(IS_AGENT_VIEW){
+      if(btnBlueprint)btnBlueprint.style.display='';
+      if(privateBanner){
+        privateBanner.style.display='flex';
+        var bn=document.getElementById('private-banner-name');
+        if(bn)bn.textContent=AGENT_NAME;
       }
+      var found=filterToAgent(AGENT_NAME);
+      if(!found){
+        if(notFoundCard)notFoundCard.style.display='';
+      } else {
+        if(motivMsg)motivMsg.style.display='flex';
+      }
+    } else {
+      if(btnBlueprint)btnBlueprint.style.display='none';
     }
-    // else: no params — blueprint tab stays hidden
+  }
+
+  /* ── postMessage listener (PRIMARY — from parent iframe) ── */
+  window.addEventListener('message',function(e){
+    if(!e.data||typeof e.data!=='object')return;
+    if(e.data.type==='hof-init'){
+      applyHofView(e.data.role||'',e.data.name||'');
+    }
   });
+
+  /* ── URL param fallback (fires on load if params present) ── */
+  document.addEventListener('DOMContentLoaded',function(){
+    var params=new URLSearchParams(location.search);
+    if(params.has('admin')){
+      applyHofView('admin','');
+    } else if(params.has('user')){
+      applyHofView('agent',params.get('user')||'');
+    }
+    // Default: no identity — blueprint hidden
+  });
+
 })();
-
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
-  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('tab-' + id).classList.add('active');
-  if (btn) btn.classList.add('active');
-}
-
-function filterBlueprintBySelect(val) {
-  document.querySelectorAll('.agent-card').forEach(function(c) {
-    c.style.display = (val === 'all' || (c.getAttribute('data-agent') || '') === val) ? '' : 'none';
-  });
-  var callsHas = false, chatHas = false;
-  document.querySelectorAll('.calls-card').forEach(function(c) { if (c.style.display !== 'none') callsHas = true; });
-  document.querySelectorAll('.chat-card').forEach(function(c) { if (c.style.display !== 'none') chatHas = true; });
-  var cs = document.getElementById('calls-section'); if (cs) cs.style.display = callsHas ? '' : 'none';
-  var ch = document.getElementById('chat-section'); if (ch) ch.style.display = chatHas ? '' : 'none';
-}
 </script>
 </body>
 </html>
