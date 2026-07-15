@@ -22516,6 +22516,28 @@ tbody tr:hover td{
 <div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
 
 <script>
+// ── Force-logout via ?fresh=1 URL param (used by admin to kick all sessions) ──
+(function(){
+  try{
+    const p = new URLSearchParams(window.location.search);
+    if(p.has('fresh') || p.has('forceLogout')){
+      // Wipe all client-side session storage
+      ['rcLastUser','rcSession','rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled',
+       'rcActiveView','rcActiveAgentSection','rcActiveAdminTab'].forEach(function(k){
+        try{localStorage.removeItem(k);}catch(e){}
+        try{sessionStorage.removeItem(k);}catch(e){}
+      });
+      // Clear the session cookie by expiring it
+      document.cookie = 'rc_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      document.cookie = 'rc_sess=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      // Remove the param and reload so Google sign-in shows immediately
+      p.delete('fresh'); p.delete('forceLogout');
+      var newUrl = window.location.pathname + (p.toString() ? '?'+p.toString() : '');
+      window.location.replace(newUrl);
+    }
+  }catch(e){}
+})();
+
 const BACKEND='';
 const GOOGLE_CLIENT_ID='645617655942-jf8rnpassl0pjl40sip6p17vi3uakb5m.apps.googleusercontent.com';
 const TZ={CST:'America/Chicago',IST:'Asia/Kolkata'};
