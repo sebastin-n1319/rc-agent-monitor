@@ -16,6 +16,8 @@
 
   // In-memory cache of email → picture URL (populated by loadUserProfiles)
   const _profilePics = {};
+  // In-memory cache of display name (lower) → picture URL
+  const _profileByName = {};
 
   const av2 = {
     /* Initials avatar — accepts "Sebastin Nathan" → "SN" */
@@ -32,6 +34,12 @@
         const d = await r.json();
         if (d.success && d.data) {
           Object.assign(_profilePics, d.data);
+          // Also build name → picture map for views that only have a display name
+          for (const [, prof] of Object.entries(d.data)) {
+            if (prof.name && prof.picture) {
+              _profileByName[prof.name.toLowerCase()] = prof.picture;
+            }
+          }
           // Refresh any already-rendered avatars
           document.querySelectorAll('[data-email-avatar]').forEach(el => {
             const email = el.dataset.emailAvatar;
@@ -46,6 +54,12 @@
     getPicture(email) {
       if (!email) return null;
       return _profilePics[email.toLowerCase()]?.picture || null;
+    },
+
+    /* Get picture URL for a display name (for views that don't expose email) */
+    getPictureByName(name) {
+      if (!name) return null;
+      return _profileByName[name.toLowerCase()] || null;
     },
 
     /* Build the inner HTML for an avatar — photo if available, initials if not */

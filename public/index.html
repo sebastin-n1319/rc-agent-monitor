@@ -25726,9 +25726,13 @@ function renderAdminDashboard() {
     boardEl.innerHTML = topAgents.map(([name,n],i) => {
       const initials = name.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
       const bg = agColors[i%agColors.length];
+      const _tktPic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(name) : null;
+      const _tktAv = _tktPic
+        ? `<div class="tkt-lb-av" style="overflow:hidden;padding:0;background:none;"><img src="${_tktPic}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"></div>`
+        : `<div class="tkt-lb-av" style="background:${bg}22;color:${bg}">${initials}</div>`;
       return `<div class="tkt-lb-row">
         <div class="tkt-lb-rank${i<3?' top':''}">${i+1}</div>
-        <div class="tkt-lb-av" style="background:${bg}22;color:${bg}">${initials}</div>
+        ${_tktAv}
         <div class="tkt-lb-name" title="${name}">${name}</div>
         <div class="tkt-lb-bar-wrap"><div class="tkt-lb-bar" style="width:${Math.round(n/maxA*100)}%;background:${bg}"></div></div>
         <div class="tkt-lb-count">${n}</div>
@@ -27271,6 +27275,13 @@ function buildFlcAgentRow(row, cls){
 
   const tooltip = (alerts.alertReasons||[]).join(' | ');
   const init    = esc((row.username||'?').charAt(0).toUpperCase());
+  const _flcPic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(row.username||'') : null;
+  const _flcAvStyle = _flcPic
+    ? 'width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;'
+    : `width:30px;height:30px;border-radius:50%;display:flex!important;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:${avBg};color:${avCol};`;
+  const _flcAvInner = _flcPic
+    ? `<img src="${_flcPic}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`
+    : init;
 
   const badgeHtml = badgeTxt
     ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${badgeBg};color:${badgeCol};letter-spacing:.03em;">${badgeTxt}</span>`
@@ -27285,7 +27296,7 @@ function buildFlcAgentRow(row, cls){
     ${tooltip ? `title="${esc(tooltip)}"` : ''}
     onmouseenter="this.style.background='rgba(0,0,0,.03)'" onmouseleave="this.style.background='${rowBg}'">
     <div style="padding:8px 10px 8px 11px;flex-shrink:0;">
-      <div style="width:30px;height:30px;border-radius:50%;display:flex!important;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:${avBg};color:${avCol};">${init}</div>
+      <div style="${_flcAvStyle}">${_flcAvInner}</div>
     </div>
     <div style="flex:1;min-width:0;padding:8px 6px;">
       <div style="font-size:12.5px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(row.username)}</div>
@@ -27589,6 +27600,10 @@ function buildBtkAgentTile(row){
   const hasWarning = !hasAlert && (row.alerts?.hasWarning);
   const initials = (row.username||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const c = btkStatusColor(status);
+  const _btkPic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(row.username||'') : null;
+  const _btkAvEl = _btkPic
+    ? `<div class="btk-tile-avatar" style="overflow:hidden;padding:0;"><img src="${_btkPic}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style='';this.parentElement.textContent='${initials}';this.parentElement.style.background='${c.bg}';this.parentElement.style.color='${c.border}'"></div>`
+    : `<div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>`;
   const BRB_LIMIT = 600, BREAK_LIMIT = 3600;
   const isOvertime = hasAlert && (status==='Break'||status==='BRB');
   const durationText = fmt(row.currentLaneSeconds||0)+(isOvertime?' ▲':'');
@@ -27613,7 +27628,7 @@ function buildBtkAgentTile(row){
   const _tileKey = encodeURIComponent(row.username||'');
   return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':hasWarning?' btk-tile-warn':''}" style="--tile-accent:${c.border};cursor:pointer;" onclick="openAgentBreakModal('${_tileKey}')">
   <div class="btk-tile-top">
-    <div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>
+    ${_btkAvEl}
     <div class="btk-tile-info">
       <div class="btk-tile-name">${esc(row.username||'--')}</div>
       <div class="btk-tile-status" style="color:${c.text}">
@@ -29719,7 +29734,10 @@ async function loadAgents(){
           const [c1,c2]=_col(a.name||extSafe);
           // Avatar — fully inline so it's not affected by CSS cascade
           const avStyle='width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,'+c1+','+c2+');display:flex;flex-direction:row;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;letter-spacing:.03em;box-shadow:0 0 0 2px var(--card1,#fff),0 0 0 3.5px '+c1+'55';
-          const avatar='<div style="'+avStyle+'">'+_initials(a.name)+'</div>';
+          const _agPic = (window.av2 && typeof av2.getPicture==='function') ? av2.getPicture(a.email||'') : null;
+          const avatar = _agPic
+            ? '<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:0 0 0 2px var(--card1,#fff),0 0 0 3.5px '+c1+'55"><img src="'+_agPic+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"></div>'
+            : '<div style="'+avStyle+'">'+_initials(a.name)+'</div>';
           // Extension badge
           const extBadge='<span style="font-family:JetBrains Mono,monospace;font-size:11px;background:rgba(45,220,150,.08);border:1px solid rgba(45,220,150,.28);border-radius:7px;padding:3px 9px;color:#2BDEA4;white-space:nowrap;">[&thinsp;'+esc(a.extension)+'&thinsp;]</span>';
           // Status dot with pulse
@@ -32593,10 +32611,23 @@ async function deleteNote(id){
     const initials = (name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
     const sc = btkStatusCol(row.currentStatus||'');
     const FMT = typeof fmt === 'function' ? fmt : (s=>s+'s');
-    document.getElementById('abm-avatar').textContent = initials;
-    document.getElementById('abm-avatar').style.background = sc+'22';
-    document.getElementById('abm-avatar').style.color = sc;
-    document.getElementById('abm-avatar').style.border = '2px solid '+sc;
+    const _abmPic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(name||'') : null;
+    const abmAvEl = document.getElementById('abm-avatar');
+    abmAvEl.style.border = '2px solid '+sc;
+    if (_abmPic) {
+      abmAvEl.style.background = 'transparent';
+      abmAvEl.style.color = '';
+      abmAvEl.style.overflow = 'hidden';
+      abmAvEl.style.padding = '0';
+      abmAvEl.innerHTML = '<img src="'+_abmPic+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">';
+    } else {
+      abmAvEl.innerHTML = '';
+      abmAvEl.textContent = initials;
+      abmAvEl.style.background = sc+'22';
+      abmAvEl.style.color = sc;
+      abmAvEl.style.overflow = '';
+      abmAvEl.style.padding = '';
+    }
     document.getElementById('abm-name').textContent = name;
     document.getElementById('abm-status-line').textContent =
       (row.currentStatus||'Unknown') + ' · ' + FMT(row.currentLaneSeconds||0) +
