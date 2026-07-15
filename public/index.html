@@ -27316,7 +27316,6 @@ function buildFlcAgentRow(row, cls){
     badgeBg='transparent'; badgeCol='#6b7280'; badgeTxt='';
   }
 
-  const tooltip = (alerts.alertReasons||[]).join(' | ');
   const init    = esc((row.username||'?').charAt(0).toUpperCase());
   const _flcPic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(row.username||'') : null;
   const _flcAvStyle = _flcPic
@@ -27326,8 +27325,10 @@ function buildFlcAgentRow(row, cls){
     ? `<img src="${_flcPic}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`
     : init;
 
+  const _badgeReasons = JSON.stringify(alerts.alertReasons||[]).replace(/'/g,"&#39;");
+  const _badgeLevel = isCritical ? 'critical' : 'warning';
   const badgeHtml = badgeTxt
-    ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${badgeBg};color:${badgeCol};letter-spacing:.03em;">${badgeTxt}</span>`
+    ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:${badgeBg};color:${badgeCol};letter-spacing:.03em;cursor:default;" data-reasons='${_badgeReasons}' data-level='${_badgeLevel}' onmouseenter="_showAbmTip(this,JSON.parse(this.dataset.reasons||'[]'),this.dataset.level)" onmouseleave="_hideAbmTip()">${badgeTxt}</span>`
     : '';
 
   const pctHtml = usedSecs>0
@@ -27336,7 +27337,6 @@ function buildFlcAgentRow(row, cls){
 
   return `<div style="display:flex!important;align-items:center;gap:0;border-left:3px solid ${leftCol};border-bottom:1px solid rgba(0,0,0,.04);background:${rowBg};cursor:pointer;transition:background .1s;"
     onclick="openAgentBreakModal('${encodedName}')"
-    ${tooltip ? `title="${esc(tooltip)}"` : ''}
     onmouseenter="this.style.background='rgba(0,0,0,.03)'" onmouseleave="this.style.background='${rowBg}'">
     <div style="padding:8px 10px 8px 11px;flex-shrink:0;">
       <div style="${_flcAvStyle}">${_flcAvInner}</div>
@@ -27683,7 +27683,7 @@ function buildBtkAgentTile(row){
         <span class="btk-tile-duration" data-btk-base="${row.currentLaneSeconds||0}" data-btk-active="${isTimerActive?'1':'0'}" data-btk-ot="${isOvertime?'1':'0'}">${durationText}</span>
       </div>
     </div>
-    ${hasAlert?`<span class="btk-tile-alert-badge" title="${(row.alerts?.alertReasons||alertLines).join(' · ')}">!</span>`:hasWarning?`<span class="btk-tile-warn-badge" title="${(row.alerts?.alertReasons||[]).join(' · ')}">!</span>`:''}
+    ${hasAlert?(()=>{const _ar=JSON.stringify(row.alerts?.alertReasons||alertLines||[]).replace(/'/g,"&#39;");return`<span class="btk-tile-alert-badge" data-reasons='${_ar}' data-level='critical' onmouseenter="_showAbmTip(this,JSON.parse(this.dataset.reasons||'[]'),this.dataset.level)" onmouseleave="_hideAbmTip()">!</span>`;})():hasWarning?(()=>{const _wr=JSON.stringify(row.alerts?.alertReasons||[]).replace(/'/g,"&#39;");return`<span class="btk-tile-warn-badge" data-reasons='${_wr}' data-level='warning' onmouseenter="_showAbmTip(this,JSON.parse(this.dataset.reasons||'[]'),this.dataset.level)" onmouseleave="_hideAbmTip()">!</span>`;})():''}
   </div>
   <div class="btk-tile-since">${row.since?'Since '+toTime(row.since):'No signal yet'}</div>
   ${chips?`<div class="btk-chips">${chips}</div>`:''}
@@ -32627,112 +32627,181 @@ async function deleteNote(id){
 </script>
 <!-- ══════════════════════════════════════════════════════════════════════════ -->
 <!-- Agent Break Detail Modal ─────────────────────────────────────────────── -->
-<div id="agentBreakModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeAgentBreakModal()">
-  <div style="background:#1e2235;border:1px solid rgba(255,255,255,.2);border-radius:16px;width:min(560px,100%);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6);">
+<div id="agentBreakModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeAgentBreakModal()">
+  <div style="background:linear-gradient(155deg,#0d1929 0%,#111827 60%,#0d1929 100%);border:1px solid rgba(255,255,255,.09);border-radius:22px;width:min(560px,100%);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 32px 80px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.07);">
     <!-- Header -->
-    <div id="abm-header" style="padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:12px;flex-shrink:0;">
-      <div id="abm-avatar" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0;"></div>
-      <div style="flex:1;min-width:0;">
-        <div id="abm-name" style="font-size:20px;font-weight:700;color:#ffffff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-        <div id="abm-status-line" style="font-size:14px;color:#d0d0d0;margin-top:3px;"></div>
+    <div style="padding:22px 22px 16px;display:flex;align-items:flex-start;gap:14px;flex-shrink:0;">
+      <div id="abm-avatar" style="width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex-shrink:0;letter-spacing:-.02em;"></div>
+      <div style="flex:1;min-width:0;padding-top:3px;">
+        <div id="abm-name" style="font-size:19px;font-weight:800;color:#f1f5f9;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+        <div id="abm-status-row" style="display:flex;align-items:center;gap:7px;margin-top:6px;flex-wrap:wrap;"></div>
       </div>
-      <button onclick="closeAgentBreakModal()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;color:var(--t2,#aaa);cursor:pointer;padding:8px 10px;font-size:18px;line-height:1;">✕</button>
+      <button onclick="closeAgentBreakModal()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#475569;cursor:pointer;padding:7px 11px;font-size:15px;line-height:1;flex-shrink:0;margin-top:1px;transition:all .15s;" onmouseenter="this.style.background='rgba(255,255,255,.1)';this.style.color='#94a3b8'" onmouseleave="this.style.background='rgba(255,255,255,.05)';this.style.color='#475569'">✕</button>
     </div>
-    <!-- Totals bar -->
-    <div id="abm-totals" style="padding:16px 20px 12px;border-bottom:1px solid rgba(255,255,255,.12);flex-shrink:0;"></div>
-    <!-- Log header with toggle -->
-    <div style="padding:12px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <span style="font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#d0d0d0;">Break Log</span>
-      <button id="abm-toggle-btn" onclick="toggleAbmDate()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--t2,#aaa);cursor:pointer;padding:5px 12px;font-size:12px;font-weight:600;letter-spacing:.04em;">📅 DATE</button>
+    <!-- Alert banner (filled by JS when agent is over limit) -->
+    <div id="abm-alert" style="margin:0 22px 0;flex-shrink:0;"></div>
+    <!-- Stats -->
+    <div id="abm-totals" style="padding:14px 22px 16px;flex-shrink:0;"></div>
+    <!-- Section divider -->
+    <div style="height:1px;background:rgba(255,255,255,.055);flex-shrink:0;"></div>
+    <!-- Log header -->
+    <div style="padding:14px 22px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <span style="font-size:10px;font-weight:800;letter-spacing:.12em;color:#334155;text-transform:uppercase;">Activity Today</span>
+      <button id="abm-toggle-btn" onclick="toggleAbmDate()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#64748b;cursor:pointer;padding:4px 10px;font-size:11px;font-weight:600;letter-spacing:.04em;transition:all .15s;" onmouseenter="this.style.background='rgba(255,255,255,.09)'" onmouseleave="this.style.background='rgba(255,255,255,.05)'">📅 DATE</button>
     </div>
     <!-- Scrollable log -->
-    <div id="abm-log" style="overflow-y:auto;padding:0 20px 20px;flex:1;min-height:0;"></div>
+    <div id="abm-log" style="overflow-y:auto;padding:0 22px 22px;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:#1e293b transparent;"></div>
   </div>
 </div>
+<!-- Global hover tooltip for Critical/Warning/At-limit badges -->
+<div id="abm-tip" style="position:fixed;z-index:100000;pointer-events:none;background:#0c1a2a;border:1px solid rgba(255,255,255,.1);border-radius:11px;padding:11px 14px;box-shadow:0 10px 32px rgba(0,0,0,.65);opacity:0;transition:opacity .14s;max-width:280px;width:max-content;font-family:inherit;"></div>
 
 <script>
 (function(){
   let _abmRelative = false;
   let _abmRow = null;
 
+  // ── Tooltip helpers (also called from buildFlcAgentRow / buildBtkAgentTile) ──
+  window._showAbmTip = function(el, reasons, level){
+    const tip = document.getElementById('abm-tip');
+    if(!tip || !reasons || !reasons.length) return;
+    const isErr = level === 'critical';
+    const accentColor = isErr ? '#f43f5e' : '#f59e0b';
+    const hdrText = isErr ? 'CRITICAL ALERT' : 'AT LIMIT';
+    tip.innerHTML =
+      `<div style="font-size:9.5px;font-weight:800;letter-spacing:.1em;color:${accentColor};margin-bottom:7px;text-transform:uppercase;">${hdrText}</div>` +
+      reasons.map(r =>
+        `<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:4px;">`+
+        `<span style="color:${accentColor};flex-shrink:0;font-size:10px;margin-top:1px;">▲</span>`+
+        `<span style="font-size:12px;color:#cbd5e1;line-height:1.4;">${r}</span></div>`
+      ).join('');
+    const rect = el.getBoundingClientRect();
+    const tipW = Math.min(280, window.innerWidth - 16);
+    let left = rect.left + rect.width / 2 - tipW / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipW - 8));
+    let top = rect.bottom + 8;
+    if(top + 120 > window.innerHeight) top = rect.top - 130;
+    tip.style.width = tipW + 'px';
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.style.opacity = '1';
+  };
+  window._hideAbmTip = function(){
+    const tip = document.getElementById('abm-tip');
+    if(tip) tip.style.opacity = '0';
+  };
+
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   function fmtRelFull(iso){
     const dt = (typeof parseStamp === 'function') ? parseStamp(iso) : new Date(iso);
     if(!dt || isNaN(dt.getTime())) return '--';
-    const diffMs = Date.now() - dt.getTime();
-    const diffSec = Math.floor(diffMs / 1000);
+    const diffSec = Math.floor((Date.now() - dt.getTime()) / 1000);
     if(diffSec < 60) return diffSec + 's ago';
     if(diffSec < 3600) return Math.floor(diffSec/60) + 'm ' + (diffSec%60) + 's ago';
-    const h = Math.floor(diffSec/3600);
-    const m = Math.floor((diffSec%3600)/60);
+    const h = Math.floor(diffSec/3600), m = Math.floor((diffSec%3600)/60);
     return h + 'h ' + m + 'm ago';
   }
-
   function abmTimeStr(iso){
     if(_abmRelative) return fmtRelFull(iso);
-    // Actual = full date + time so you can compare across days
-    return (typeof toDateTime === 'function') ? toDateTime(iso) : (typeof toTime === 'function' ? toTime(iso) : '--');
+    return (typeof toDateTime==='function') ? toDateTime(iso) : (typeof toTime==='function' ? toTime(iso) : '--');
   }
-
   function btkStatusCol(s){
-    const map = { 'Logged In':'#2DDC96','Available':'#2DDC96','BRB':'#FBC84B','Break':'#ED666B','Training':'#a855f7','Internal Call':'#3b82f6','QA':'#14b8a6','Logged Out':'#6b7280' };
-    return map[s] || '#6b7280';
+    const map = {'Logged In':'#2DDC96','Available':'#2DDC96','BRB':'#FBC84B','Break':'#ED666B','Training / Coaching':'#a855f7','QA Session AUX':'#14b8a6','Internal Calls':'#3b82f6','Logged Out':'#475569'};
+    return map[s] || '#64748b';
   }
 
+  // ── Stat bar ─────────────────────────────────────────────────────────────────
   function abmBar(used, limit, color){
-    const pct = limit > 0 ? Math.min(100, Math.round(used/limit*100)) : 0;
+    const pct = limit > 0 ? Math.min(100, Math.round(used / limit * 100)) : 0;
     const over = used > limit;
-    return `<div style="background:rgba(255,255,255,.15);border-radius:4px;height:8px;overflow:hidden;margin-top:4px;">
-      <div style="height:100%;width:${pct}%;background:${over?'#f43f5e':color};border-radius:4px;transition:width .3s;min-width:${pct>0?'4px':'0'};"></div>
+    const fillColor = over ? '#f43f5e' : color;
+    return `<div style="background:rgba(255,255,255,.08);border-radius:4px;height:6px;overflow:hidden;margin-top:5px;">
+      <div style="height:100%;width:${pct}%;background:${fillColor};border-radius:4px;transition:width .4s cubic-bezier(.22,1,.36,1);min-width:${pct>0?'3px':'0'};"></div>
     </div>`;
   }
 
+  // ── Totals (stat cards) ───────────────────────────────────────────────────────
   function buildAbmTotals(row){
     const FMT = typeof fmt === 'function' ? fmt : (s=>s+'s');
-    const BRB_SINGLE=600, BREAK_DAY=3600, BRB_DAY=1200;
+    const BREAK_DAY = 3600, BRB_DAY = 1200;
     const items = [
       { label:'Break Today', val:row.breakSeconds||0, limit:BREAK_DAY, color:'#f43f5e', icon:'☕' },
-      { label:'BRB Today', val:row.brbSeconds||0, limit:BRB_DAY, color:'#f59e0b', icon:'⏱' },
-      { label:'Training', val:row.trainingSeconds||0, limit:0, color:'#a855f7', icon:'📚' },
-      { label:'Internal Call', val:row.internalCallSeconds||0, limit:0, color:'#3b82f6', icon:'📞' },
-      { label:'QA', val:row.qaSeconds||0, limit:0, color:'#14b8a6', icon:'🔍' },
+      { label:'BRB Today',   val:row.brbSeconds||0,   limit:BRB_DAY,   color:'#f59e0b', icon:'⏱' },
+      { label:'Training',    val:row.trainingSeconds||0,       limit:0, color:'#a855f7', icon:'🎯' },
+      { label:'Internal Call',val:row.internalCallSeconds||0,  limit:0, color:'#3b82f6', icon:'📞' },
+      { label:'QA Session',  val:row.qaSeconds||0,             limit:0, color:'#14b8a6', icon:'✅' },
     ].filter(it => it.val > 0 || it.limit > 0);
 
-    return items.map(it => {
-      const over = it.limit > 0 && it.val > it.limit;
-      const overStr = over ? ` <span style="color:#f43f5e;font-size:12px;font-weight:700;">+${FMT(it.val-it.limit)} over</span>` : '';
-      const limitStr = it.limit > 0 ? ` / ${FMT(it.limit)} limit` : '';
-      return `<div style="margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;">
-          <span style="font-size:14px;color:#c8c8c8;">${it.icon} ${it.label}</span>
-          <span style="font-size:16px;font-weight:700;color:${over?'#f43f5e':it.color};">${FMT(it.val)}${limitStr}${overStr}</span>
-        </div>
-        ${it.limit>0 ? abmBar(it.val, it.limit, it.color) : ''}
-      </div>`;
-    }).join('');
+    if(!items.length) return '<div style="color:#475569;font-size:13px;padding:4px 0 8px;">No AUX time recorded yet.</div>';
+
+    return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">` +
+      items.map(it => {
+        const pct = it.limit > 0 ? Math.min(999, Math.round(it.val / it.limit * 100)) : null;
+        const over = it.limit > 0 && it.val > it.limit;
+        const valColor = over ? '#f43f5e' : (pct !== null && pct >= 80 ? '#f59e0b' : it.color);
+        const pctBadge = pct !== null
+          ? `<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;background:${over?'rgba(244,63,94,.14)':'rgba(255,255,255,.07)'};color:${valColor};">${pct}%</span>`
+          : '';
+        const overBadge = over
+          ? `<div style="font-size:10px;color:#f43f5e;font-weight:600;margin-top:3px;">+${FMT(it.val-it.limit)} over limit</div>`
+          : '';
+        const limitLine = it.limit > 0
+          ? `<span style="font-size:11px;color:#334155;font-weight:500;">/ ${FMT(it.limit)}</span>`
+          : '';
+        return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;">
+          <div style="font-size:10px;color:#475569;font-weight:600;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;">${it.icon} ${it.label}</div>
+          <div style="display:flex;align-items:baseline;gap:5px;flex-wrap:wrap;">
+            <span style="font-size:18px;font-weight:800;color:${valColor};letter-spacing:-.04em;">${FMT(it.val)}</span>
+            ${limitLine}
+            ${pctBadge}
+          </div>
+          ${it.limit > 0 ? abmBar(it.val, it.limit, it.color) : ''}
+          ${overBadge}
+        </div>`;
+      }).join('') +
+    `</div>`;
   }
 
+  // ── Timeline log ─────────────────────────────────────────────────────────────
   function buildAbmLog(row){
     const events = row.events || [];
-    if(!events.length) return '<div style="color:#c0c0c0;font-size:14px;padding:8px 0;">No events logged today.</div>';
+    if(!events.length) return '<div style="color:#334155;font-size:13px;padding:16px 0;text-align:center;">No activity logged today.</div>';
     const AMETA = typeof BREAK_ACTION_META !== 'undefined' ? BREAK_ACTION_META : {};
-    return events.slice().reverse().map(ev => {
-      const meta = AMETA[ev.action] || { label: ev.actionLabel || ev.action || 'Event', badge: 'LOG', copy: '' };
-      const timeStr = abmTimeStr(ev.createdAt);
-      const dur = ev.linkedDurationSeconds ? ' · ' + (typeof fmt==='function'?fmt(ev.linkedDurationSeconds):ev.linkedDurationSeconds+'s') : '';
-      const badgeColors = { 'BRB':'#f59e0b','BRK':'#f43f5e','END':'#2DDC96','LOG':'#6b7280','TRN':'#a855f7','INT':'#3b82f6','QA':'#14b8a6' };
-      const bc = badgeColors[meta.badge] || '#6b7280';
-      return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.08);align-items:flex-start;">
-        <div style="min-width:32px;height:20px;border-radius:4px;background:${bc}22;color:${bc};font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;letter-spacing:.04em;margin-top:1px;">${meta.badge}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:700;color:#ffffff;">${typeof esc==='function'?esc(meta.label):meta.label}</div>
-          ${meta.copy ? `<div style="font-size:13px;color:#c0c0c0;">${typeof esc==='function'?esc(meta.copy):meta.copy}${dur}</div>` : ''}
-          ${ev.note ? `<div style="font-size:13px;color:#b0b0b0;font-style:italic;">"${typeof esc==='function'?esc(ev.note):ev.note}"</div>` : ''}
-        </div>
-        <div style="font-size:13px;color:#d0d0d0;white-space:nowrap;margin-top:2px;" class="abm-time-cell" data-iso="${ev.createdAt||''}">${timeStr}</div>
-      </div>`;
-    }).join('');
+    const dotColors = {'BRB':'#f59e0b','BRK':'#f43f5e','END':'#22c55e','LOG':'#475569','TRN':'#a855f7','INT':'#3b82f6','QA':'#14b8a6'};
+    const evList = events.slice().reverse();
+    return `<div style="position:relative;padding-top:6px;">
+      <div style="position:absolute;left:15px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.06);"></div>` +
+      evList.map((ev, i) => {
+        const meta = AMETA[ev.action] || { label:ev.actionLabel||ev.action||'Event', badge:'LOG', copy:'' };
+        const dc = dotColors[meta.badge] || '#475569';
+        const timeStr = abmTimeStr(ev.createdAt);
+        const dur = ev.linkedDurationSeconds
+          ? `<span style="font-size:11px;color:#64748b;"> · ${typeof fmt==='function'?fmt(ev.linkedDurationSeconds):ev.linkedDurationSeconds+'s'}</span>`
+          : '';
+        const noteLine = ev.note
+          ? `<div style="font-size:11.5px;color:#64748b;font-style:italic;margin-top:2px;">"${typeof esc==='function'?esc(ev.note):ev.note}"</div>`
+          : '';
+        const copyLine = meta.copy && meta.copy !== meta.label
+          ? `<div style="font-size:11.5px;color:#475569;margin-top:1px;">${typeof esc==='function'?esc(meta.copy):meta.copy}${dur}</div>`
+          : (dur ? `<div style="font-size:11.5px;color:#475569;margin-top:1px;">${dur.replace(/<[^>]+>/g,'').trim()}</div>` : '');
+        return `<div style="display:flex;gap:12px;align-items:flex-start;padding:8px 0 8px 0;position:relative;">
+          <div style="width:30px;height:30px;border-radius:50%;background:${dc}18;border:2px solid ${dc};display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1;position:relative;">
+            <div style="width:8px;height:8px;border-radius:50%;background:${dc};"></div>
+          </div>
+          <div style="flex:1;min-width:0;padding-top:5px;">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:13.5px;font-weight:700;color:#e2e8f0;">${typeof esc==='function'?esc(meta.label):meta.label}</span>
+              <span style="font-size:10.5px;color:#334155;white-space:nowrap;">${timeStr}</span>
+            </div>
+            ${copyLine}
+            ${noteLine}
+          </div>
+        </div>`;
+      }).join('') +
+    `</div>`;
   }
 
+  // ── openAgentBreakModal ───────────────────────────────────────────────────────
   window.openAgentBreakModal = function(encodedName){
     const name = decodeURIComponent(encodedName||'');
     const trackerData = (typeof breakTrackerData !== 'undefined') ? breakTrackerData : {};
@@ -32742,46 +32811,67 @@ async function deleteNote(id){
     _abmRow = row;
     _abmRelative = false;
 
-    // Avatar + header
-    const initials = (name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
-    const sc = btkStatusCol(row.currentStatus||'');
     const FMT = typeof fmt === 'function' ? fmt : (s=>s+'s');
-    const _abmPic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(name||'') : null;
+    const sc = btkStatusCol(row.currentStatus||'');
+    const initials = (name||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+
+    // Avatar
+    const _pic = (window.av2 && typeof av2.getPictureByName==='function') ? av2.getPictureByName(name||'') : null;
     const abmAvEl = document.getElementById('abm-avatar');
-    abmAvEl.style.border = '2px solid '+sc;
-    if (_abmPic) {
-      abmAvEl.style.background = 'transparent';
-      abmAvEl.style.color = '';
+    abmAvEl.style.cssText = `width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex-shrink:0;letter-spacing:-.02em;border:2px solid ${sc};`;
+    if(_pic){
       abmAvEl.style.overflow = 'hidden';
       abmAvEl.style.padding = '0';
-      abmAvEl.innerHTML = '<img src="'+_abmPic+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;">';
+      abmAvEl.style.background = 'transparent';
+      abmAvEl.innerHTML = `<img src="${_pic}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:12px;display:block;">`;
     } else {
+      abmAvEl.style.background = sc+'18';
+      abmAvEl.style.color = sc;
       abmAvEl.innerHTML = '';
       abmAvEl.textContent = initials;
-      abmAvEl.style.background = sc+'22';
-      abmAvEl.style.color = sc;
-      abmAvEl.style.overflow = '';
-      abmAvEl.style.padding = '';
     }
-    document.getElementById('abm-name').textContent = name;
-    document.getElementById('abm-status-line').textContent =
-      (row.currentStatus||'Unknown') + ' · ' + FMT(row.currentLaneSeconds||0) +
-      (row.since ? ' · since ' + (typeof toTime==='function'?toTime(row.since):'?') : '');
 
-    // Toggle btn state
+    // Name
+    document.getElementById('abm-name').textContent = name;
+
+    // Status row: colored pill + duration + since
+    const statusRow = document.getElementById('abm-status-row');
+    const sinceStr = row.since ? (typeof toTime==='function' ? toTime(row.since) : '') : '';
+    statusRow.innerHTML =
+      `<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:6px;background:${sc}18;border:1px solid ${sc}44;font-size:11.5px;font-weight:700;color:${sc};">` +
+        `<span style="width:6px;height:6px;border-radius:50%;background:${sc};flex-shrink:0;"></span>` +
+        `${esc(row.currentStatus||'Unknown')}` +
+      `</span>` +
+      `<span style="font-size:12px;color:#475569;font-weight:600;">${FMT(row.currentLaneSeconds||0)}</span>` +
+      (sinceStr ? `<span style="font-size:11px;color:#334155;">since ${sinceStr}</span>` : '');
+
+    // Alert banner
+    const alerts = row.alerts || {};
+    const alertEl = document.getElementById('abm-alert');
+    const reasons = alerts.alertReasons || [];
+    if(reasons.length){
+      const isCrit = alerts.hasAlert;
+      const bColor = isCrit ? '#f43f5e' : '#f59e0b';
+      alertEl.style.marginBottom = '4px';
+      alertEl.innerHTML = `<div style="background:${bColor}0f;border:1px solid ${bColor}33;border-radius:10px;padding:10px 14px;margin-bottom:10px;">` +
+        `<div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:${bColor};text-transform:uppercase;margin-bottom:5px;">${isCrit?'🚨 Critical Alert':'⚠ At Limit'}</div>` +
+        reasons.map(r => `<div style="font-size:12px;color:${bColor}cc;margin-top:2px;">· ${r}</div>`).join('') +
+        `</div>`;
+    } else {
+      alertEl.innerHTML = '';
+      alertEl.style.marginBottom = '0';
+    }
+
+    // Totals + log
+    document.getElementById('abm-totals').innerHTML = buildAbmTotals(row);
+    document.getElementById('abm-log').innerHTML = buildAbmLog(row);
+
+    // Toggle btn
     const btn = document.getElementById('abm-toggle-btn');
     btn.textContent = '📅 DATE';
     btn.style.color = '';
 
-    // Totals
-    document.getElementById('abm-totals').innerHTML = buildAbmTotals(row);
-
-    // Log
-    document.getElementById('abm-log').innerHTML = buildAbmLog(row);
-
-    // Show modal
-    const modal = document.getElementById('agentBreakModal');
-    modal.style.display = 'flex';
+    document.getElementById('agentBreakModal').style.display = 'flex';
     document.body.style.overflow = 'hidden';
   };
 
@@ -32794,9 +32884,8 @@ async function deleteNote(id){
     _abmRelative = !_abmRelative;
     const btn = document.getElementById('abm-toggle-btn');
     btn.textContent = _abmRelative ? '🕐 RELATIVE' : '📅 DATE';
-    btn.style.color = _abmRelative ? '#F4891F' : '';
+    btn.style.color = _abmRelative ? '#f59e0b' : '';
     if(!_abmRow) return;
-    // Rebuild log to reflect new time format
     document.getElementById('abm-log').innerHTML = buildAbmLog(_abmRow);
   };
 
