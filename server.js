@@ -243,10 +243,13 @@ async function buildBreakChatPayload(event){
   const isOut = meta.flow === 'out';
   const directionLabel = isOut ? 'OUT' : 'IN';
 
-  // Use real Google profile picture if available, fallback to initials avatar
+  // Use real Google profile picture if available, fallback to initials avatar.
+  // Google Chat imageUrl MUST be an HTTPS URL — data: URIs or base64 strings
+  // cause the webhook payload to balloon to MBs and return HTTP 400.
   const googlePic = await getPictureForEmail(event.email).catch(() => null);
+  const isValidHttpsUrl = (u) => typeof u === 'string' && u.startsWith('https://') && u.length < 2048;
   const avatarName = encodeURIComponent(event.username || 'Agent');
-  const avatarUrl  = googlePic
+  const avatarUrl  = (isValidHttpsUrl(googlePic) ? googlePic : null)
     || `https://ui-avatars.com/api/?name=${avatarName}&background=072B40&color=ffffff&size=128&bold=true`;
 
   const widgets = [

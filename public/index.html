@@ -1113,6 +1113,9 @@ select option{background:#0c1424;color:var(--t1);}
 .break-log-sub{font-size:10px;color:var(--t3);}
 .break-log-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:50px;font-size:9px;font-weight:700;background:var(--card3);border:1px solid var(--b2);color:var(--t2);margin-left:auto;}
 .break-mini-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:50px;font-size:9.5px;font-weight:600;background:var(--card2);border:1px solid var(--b1);color:var(--t3);}
+.break-mini-chip.ok{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#22c55e;}
+.break-mini-chip.warn{background:rgba(251,200,75,.1);border-color:rgba(251,200,75,.3);color:#f59e0b;}
+.break-mini-chip.err{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.3);color:#f43f5e;}
 
 /* ── Break protocol / signal */
 .break-protocol{display:flex;flex-direction:column;gap:5px;margin:12px 0;}
@@ -10837,6 +10840,9 @@ select option{background:#0c1424;color:var(--t1);}
 .break-log-sub{font-size:10px;color:var(--t3);}
 .break-log-badge{display:inline-flex;align-items:center;padding:1px 7px;border-radius:50px;font-size:9px;font-weight:700;background:var(--card3);border:1px solid var(--b2);color:var(--t2);margin-left:auto;}
 .break-mini-chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:50px;font-size:9.5px;font-weight:600;background:var(--card2);border:1px solid var(--b1);color:var(--t3);}
+.break-mini-chip.ok{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:#22c55e;}
+.break-mini-chip.warn{background:rgba(251,200,75,.1);border-color:rgba(251,200,75,.3);color:#f59e0b;}
+.break-mini-chip.err{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.3);color:#f43f5e;}
 
 /* ── Break protocol / signal */
 .break-protocol{display:flex;flex-direction:column;gap:5px;margin:12px 0;}
@@ -27260,8 +27266,8 @@ function getSelfBreakRow(){
 function buildBreakFeedRow(event, compact=false){
   const meta = BREAK_ACTION_META[event.action] || { label: event.actionLabel || event.action || 'Event', badge: 'LOG', copy: 'Logged event' };
   const durationCopy = event.linkedDurationSeconds ? ' · Duration ' + fmt(event.linkedDurationSeconds) : '';
-  const notifyCls = event.notified ? 'ok' : (event.notifyStatus === 'disabled' ? 'warn' : '');
-  const notifyText = event.notified ? 'Chat posted' : (event.notifyStatus === 'disabled' ? 'Saved locally' : (event.notifyStatus ? event.notifyStatus : 'Pending'));
+  const notifyCls = event.notified ? 'ok' : (event.notifyStatus === 'disabled' ? 'warn' : (event.notifyStatus && event.notifyStatus !== 'skipped' ? 'err' : ''));
+  const notifyText = event.notified ? '✓ Chat posted' : (event.notifyStatus === 'disabled' ? 'Saved locally' : (event.notifyStatus && event.notifyStatus !== 'skipped' ? '✕ '+event.notifyStatus : 'Pending'));
   return '<div class="break-log-row">'+
     '<div class="break-log-badge">'+meta.badge+'</div>'+
     '<div class="break-log-main">'+
