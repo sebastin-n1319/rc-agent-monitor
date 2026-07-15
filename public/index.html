@@ -27299,7 +27299,15 @@ function buildFlcAgentRow(row, cls){
   const isWarning  = !isCritical && alerts.hasWarning;
 
   const usedSecs = (row.breakSeconds||0)+(row.brbSeconds||0);
-  const pct = Math.min(999, Math.round(usedSecs/3600*100));
+  // pct = break-only vs 60m break limit (BRB has its own 20m limit — don't mix them)
+  const breakPct = Math.min(999, Math.round((row.breakSeconds||0)/3600*100));
+  const brbPct   = Math.min(999, Math.round((row.brbSeconds||0)/1200*100));
+  // Show whichever limit is most stressed
+  const pct = (row.breakSeconds||0) > 0 || (row.brbSeconds||0) > 0
+    ? Math.max(breakPct, brbPct)
+    : 0;
+  const _isOverBreak = (row.breakSeconds||0) > 3600;
+  const _isOverBrb   = (row.brbSeconds||0)  > 1200;
 
   let leftCol, rowBg, avBg, avCol, dotCol, badgeBg, badgeCol, badgeTxt;
   if(isCritical){
@@ -27333,13 +27341,16 @@ function buildFlcAgentRow(row, cls){
 
   const _FMTS = typeof fmt === 'function' ? fmt : (s=>s+'s');
   const _pctLines = [];
-  _pctLines.push(`Break today: ${_FMTS(row.breakSeconds||0)} / 60m limit`);
-  if((row.brbSeconds||0)>0) _pctLines.push(`BRB today: ${_FMTS(row.brbSeconds||0)} / 20m limit`);
+  _pctLines.push(`Break today: ${_FMTS(row.breakSeconds||0)} / 60m limit (${breakPct}%)`);
+  if((row.brbSeconds||0)>0) _pctLines.push(`BRB today: ${_FMTS(row.brbSeconds||0)} / 20m limit (${brbPct}%)`);
   if((row.trainingSeconds||0)>0) _pctLines.push(`Training: ${_FMTS(row.trainingSeconds)}`);
   if((row.internalCallSeconds||0)>0) _pctLines.push(`Internal calls: ${_FMTS(row.internalCallSeconds)}`);
-  _pctLines.push(`${pct >= 100 ? '⚠ Over limit by '+_FMTS(usedSecs-3600) : 'Used '+pct+'% of 60m break allowance'}`);
+  if(_isOverBreak) _pctLines.push(`⚠ Break over limit by ${_FMTS((row.breakSeconds||0)-3600)}`);
+  if(_isOverBrb)   _pctLines.push(`⚠ BRB over limit by ${_FMTS((row.brbSeconds||0)-1200)}`);
+  if(!_isOverBreak && !_isOverBrb) _pctLines.push(`✓ Within limits`);
   const _pctTipR = JSON.stringify(_pctLines).replace(/'/g,"&#39;");
-  const _pctCol = pct>=100?'#f43f5e':pct>=80?'#f59e0b':'#9ca3af';
+  // Color: use server-side alert state so it always matches the row badge
+  const _pctCol = isCritical ? '#f43f5e' : isWarning ? '#f59e0b' : '#9ca3af';
   const pctHtml = usedSecs>0
     ? `<span style="font-size:10px;font-weight:600;color:${_pctCol};cursor:default;"
          data-reasons='${_pctTipR}' data-level='info'
