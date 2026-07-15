@@ -1120,6 +1120,10 @@ function switchTab(id, btn) {
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
+  // Update this iframe's own hash (for standalone direct links)
+  try{ window.history.replaceState(null,'','#'+id); }catch(e){}
+  // Notify parent app to update its URL hash (#hall/champions or #hall/blueprint)
+  try{ window.parent.postMessage({type:'hof-nav', tab:id},'*'); }catch(e){}
 }
 
 /* ── BLUEPRINT PRIVACY ── */
@@ -1176,6 +1180,11 @@ function applyHofView(role, name) {
 window.addEventListener('message', function(e){
   if (!e.data||typeof e.data!=='object') return;
   if (e.data.type==='hof-init') applyHofView(e.data.role||'', e.data.name||'');
+  // Parent requests a specific tab (from deep-link URL like #hall/blueprint)
+  if (e.data.type==='hof-goto'){
+    var btn = document.getElementById('btn-'+e.data.tab);
+    if (btn && btn.style.display!=='none') switchTab(e.data.tab, btn);
+  }
 });
 
 // Auto-init: admin iframe loads with ?admin param; agent iframe gets postMessage instead
@@ -1183,6 +1192,12 @@ window.addEventListener('message', function(e){
   var params = new URLSearchParams(window.location.search);
   if (params.has('admin') || params.get('role') === 'admin') {
     applyHofView('admin', '');
+  }
+  // Read own hash for direct standalone access (e.g. /hall-of-fame.html#blueprint)
+  var h = (window.location.hash||'').replace('#','').toLowerCase();
+  if (h === 'blueprint' || h === 'champions') {
+    var btn = document.getElementById('btn-'+h);
+    if (btn && btn.style.display !== 'none') switchTab(h, btn);
   }
 })();
 </script>

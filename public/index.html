@@ -23310,6 +23310,11 @@ function switchAgentSection(section,el){
   window.scrollTo({top:0,behavior:'instant'});
   // Save last active section for restore on return
   try{ localStorage.setItem('rcActiveAgentSection', section); }catch(e){}
+  // ── URL hash routing: update browser URL so tabs are deep-linkable ──
+  (function(){
+    var slug = ({breakbot:'breaks'})[section] || section;
+    try{ history.pushState({section:section},'',location.pathname+'#'+slug); }catch(e){}
+  })();
 }
 
 function resizeHallFrame(frame){
@@ -27994,6 +27999,8 @@ function sbAdmin(tab, sbEl){
   const navEl = document.querySelector('.nav-tab[data-tab="'+tab+'"]') || document.querySelector('.nav-tab');
   switchTab(tab, navEl);
   // switchTab already syncs sidebar via sb-{tab} id
+  // ── URL hash routing for admin tabs ──
+  try{ history.pushState({adminTab:tab},'',location.pathname+'#admin/'+tab); }catch(e){}
 }
 function sbAgent(section, sbEl){
   const btnEl = document.getElementById('agent-tab-'+section) || document.getElementById('agent-breakbot-tab');
@@ -28150,6 +28157,13 @@ function setAvatar(url){
 
 function restoreLastTab(){
   try{
+    // URL hash takes priority for admin tabs too
+    var hash = (window.location.hash || '').replace('#','').toLowerCase().split('?')[0];
+    if(hash.startsWith('admin/')){
+      var adminTab = hash.replace('admin/','');
+      if(adminTab){ sbAdmin(adminTab, document.getElementById('sb-'+adminTab)); return; }
+    }
+
     const tab = localStorage.getItem('rcActiveTab') || 'live';
     const view = localStorage.getItem('rcActiveView') || null;
     const savedScroll = parseInt(localStorage.getItem('rcScroll_' + tab) || '0', 10);
@@ -28499,14 +28513,70 @@ document.addEventListener('DOMContentLoaded', () => {
 // Restore agent section (Breaks/Bonus/Tickets etc.)
 function restoreLastAgentSection(){
   try{
-    const section = localStorage.getItem('rcActiveAgentSection') || 'dashboard';
-    const btn = document.getElementById('sb-agent-'+section) || document.getElementById('agent-tab-'+section);
+    // URL hash takes priority over localStorage — enables shareable deep links
+    var hash = (window.location.hash || '').replace('#','').toLowerCase().split('?')[0];
+    var hashMap = {dashboard:'dashboard', breaks:'breakbot', bonus:'bonus', writer:'writer', tickets:'tickets'};
+    var sectionFromHash = null;
+    if(hash === 'hall' || hash.startsWith('hall/')) sectionFromHash = 'hall';
+    else if(hashMap[hash]) sectionFromHash = hashMap[hash];
+
+    var section = sectionFromHash || localStorage.getItem('rcActiveAgentSection') || 'dashboard';
+    var btn = document.getElementById('sb-agent-'+section) || document.getElementById('agent-tab-'+section);
     if(btn) sbAgent(section, btn);
+
+    // For HOF deep links with sub-tab (#hall/blueprint or #hall/champions)
+    if(sectionFromHash === 'hall' && hash.indexOf('/') !== -1){
+      var hofTab = hash.split('/')[1];
+      if(hofTab === 'blueprint' || hofTab === 'champions'){
+        setTimeout(function(){
+          var f = document.getElementById('agent-hof-frame');
+          if(f && f.contentWindow) f.contentWindow.postMessage({type:'hof-goto', tab:hofTab}, '*');
+        }, 900);
+      }
+    }
   }catch(e){}
 }
 
 // Note: localStorage save added directly into switchAgentSection at line 11663
 
+// ── URL Hash Routing: receive tab changes from HOF iframe ──────────────────
+window.addEventListener('message', function(e){
+  if(!e.data || typeof e.data !== 'object') return;
+  // HOF iframe notifies parent when user switches Champions/Blueprint tabs
+  if(e.data.type === 'hof-nav'){
+    var tab = e.data.tab;
+    try{ history.replaceState({section:'hall', hofTab:tab},'',location.pathname+'#hall/'+tab); }catch(err){}
+  }
+});
+
+// ── Back/Forward button support ────────────────────────────────────────────
+window.addEventListener('popstate', function(e){
+  try{
+    var hash = (window.location.hash||'').replace('#','').toLowerCase().split('?')[0];
+    var hashMap = {dashboard:'dashboard', breaks:'breakbot', bonus:'bonus', writer:'writer', tickets:'tickets'};
+    // Agent sections
+    if(hash === 'hall' || hash.startsWith('hall/')){
+      var btn = document.getElementById('sb-agent-hall') || document.getElementById('agent-tab-hall');
+      if(btn && document.getElementById('agentView') && document.getElementById('agentView').style.display!=='none'){
+        sbAgent('hall', btn);
+        if(hash.indexOf('/')!==-1){
+          var hofTab = hash.split('/')[1];
+          setTimeout(function(){
+            var f = document.getElementById('agent-hof-frame');
+            if(f && f.contentWindow) f.contentWindow.postMessage({type:'hof-goto', tab:hofTab},'*');
+          }, 600);
+        }
+      }
+    } else if(hashMap[hash]){
+      var section = hashMap[hash];
+      var sBtn = document.getElementById('sb-agent-'+section)||document.getElementById('agent-tab-'+section);
+      if(sBtn && document.getElementById('agentView') && document.getElementById('agentView').style.display!=='none') sbAgent(section, sBtn);
+    } else if(hash.startsWith('admin/')){
+      var adminTab = hash.replace('admin/','');
+      if(adminTab) sbAdmin(adminTab, document.getElementById('sb-'+adminTab));
+    }
+  }catch(err){}
+});
 
 // Brain loaded via brain.js
 
