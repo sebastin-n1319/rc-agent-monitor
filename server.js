@@ -1048,6 +1048,75 @@ app.delete('/api/sessions/all', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// POST /api/admin/sync-photos — bulk-capture Google profile photos for all
+// known agents via the Workspace Directory API. No agent sign-in required.
+// Requires GOOGLE_SERVICE_ACCOUNT_KEY + GOOGLE_ADMIN_EMAIL env vars.
+app.post('/api/admin/sync-photos', requireAdmin, async (req, res) => {
+  const keyRaw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!keyRaw) return res.status(503).json({ success: false, error: 'GOOGLE_SERVICE_ACCOUNT_KEY not configured' });
+  const subjectEmail = process.env.GOOGLE_ADMIN_EMAIL;
+  if (!subjectEmail) return res.status(503).json({ success: false, error: 'GOOGLE_ADMIN_EMAIL not set' });
+
+  // All known agent emails (populated once AGENT_SHEET_NAMES is defined below)
+  const allEmails = [
+    'sebastin.n@adit.com', 'ronnie@adit.com', 'imran@adit.com',
+    'anold.fernandes@adit.com', 'audrey.miles@adit.com', 'caroline.lock@adit.com',
+    'debra.horton@adit.com', 'evan.cruz@adit.com', 'greg.dawson@adit.com',
+    'henry.patel@adit.com', 'lincy@adit.com', 'sabrina.quinn@adit.com',
+    'sky.gibson@adit.com', 'tabbie.shine@adit.com', 'michelle.pinto@adit.com',
+    'sam.marshall@adit.com', 'sandy.clark@adit.com',
+  ];
+
+  const captured = [], failed = [], skipped = [];
+  try {
+    const { google: _g } = require('googleapis');
+    const auth = new _g.auth.GoogleAuth({
+      credentials: JSON.parse(keyRaw),
+      scopes: ['https://www.googleapis.com/auth/directory.readonly'],
+      clientOptions: { subject: subjectEmail },
+    });
+    const people = _g.people({ version: 'v1', auth });
+
+    for (const email of allEmails) {
+      try {
+        const result = await people.people.searchDirectoryPeople({
+          query: email,
+          readMask: 'emailAddresses,names,photos',
+          sources: ['DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE'],
+        });
+        const matches = result.data.people || [];
+        const person = matches.find(p =>
+          (p.emailAddresses || []).some(e => e.value?.toLowerCase() === email.toLowerCase())
+        ) || matches[0];
+
+        if (!person) { failed.push({ email, reason: 'Not in directory' }); continue; }
+
+        const name = person.names?.[0]?.displayName || person.names?.[0]?.givenName || '';
+        // Prefer non-default (real) photo; fall back to any photo
+        const photo = (person.photos || []).find(p => !p.default) || person.photos?.[0];
+        const photoUrl = photo?.url || '';
+
+        if (photoUrl) {
+          // Bump to s200 for better quality
+          const hiRes = photoUrl.replace(/=s\d+-c$/, '=s200-c').replace(/\/s\d+-c\//, '/s200-c/');
+          await upsertUserProfile(email, name, hiRes, null);
+          captured.push({ email, name });
+        } else {
+          skipped.push({ email, reason: 'No photo in directory' });
+        }
+      } catch(e) {
+        failed.push({ email, reason: e.message });
+      }
+    }
+
+    const actor = req.session?.email || 'admin';
+    insertAuditLog(actor, 'photos_synced', 'all', `captured:${captured.length} skipped:${skipped.length} failed:${failed.length}`).catch(()=>{});
+    res.json({ success: true, captured, skipped, failed });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // FEAT-4: Audit log endpoint
 app.get('/api/audit-log', requireAdmin, async (req, res) => {
   try {
