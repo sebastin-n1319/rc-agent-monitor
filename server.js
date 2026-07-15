@@ -15,6 +15,7 @@ const {
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, addAgentNote, getAgentNotes, deleteAgentNote,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
+  upsertUserProfile, getAllUserProfiles, getUserProfile,
   insertAuditLog, getAuditLog,
   getBreakThresholds, setBreakThreshold,
   getBreakReportData,
@@ -963,6 +964,10 @@ app.post('/api/session', async (req, res) => {
   try {
     const token = crypto.randomBytes(32).toString('hex');
     await createAppSession(token, email, name || '', picture || '', googleSub || null);
+    // Persist Google profile data so photos survive session expiry
+    if (name || picture) {
+      upsertUserProfile(email, name || '', picture || '', googleSub || null).catch(() => {});
+    }
     setCookieToken(res, token);
     // If this email belongs to a monitored agent with no chat_id yet, auto-fill from google_sub
     if (googleSub) {
@@ -1011,6 +1016,36 @@ app.delete('/api/session', async (req, res) => {
   if (token) await deleteAppSession(token).catch(() => {});
   res.clearCookie(SESSION_COOKIE, { path: '/' });
   res.json({ success: true });
+});
+
+// GET /api/user-profiles — returns all stored Google profile photos (no auth required
+// so the HOF page and agent view can load photos before or without login)
+app.get('/api/user-profiles', async (req, res) => {
+  try {
+    const profiles = await getAllUserProfiles();
+    // Return as an object keyed by email for fast lookup
+    const byEmail = {};
+    for (const p of profiles) byEmail[p.email.toLowerCase()] = { name: p.name, picture: p.picture };
+    res.json({ success: true, data: byEmail });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// DELETE /api/sessions/all — force-logout everyone (admin only)
+// Users will re-auth via Google Sign-In on next page load, capturing fresh photo
+app.delete('/api/sessions/all', requireAdmin, async (req, res) => {
+  try {
+    // Open a direct sqlite connection to wipe all sessions
+    const sqlite3 = require('better-sqlite3');
+    const dbPath  = require('path').join(__dirname, 'productivity.db');
+    const tmpDb   = sqlite3(dbPath);
+    const result  = tmpDb.prepare('DELETE FROM app_sessions').run();
+    tmpDb.close();
+    _cache.clear();
+    const actor = req.session?.email || 'admin';
+    insertAuditLog(actor, 'sessions_cleared', 'all', `${result.changes} sessions removed`).catch(()=>{});
+    res.json({ success: true, cleared: result.changes,
+      message: 'All sessions cleared. Users will be asked to sign in again and their Google photos will be captured.' });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // FEAT-4: Audit log endpoint

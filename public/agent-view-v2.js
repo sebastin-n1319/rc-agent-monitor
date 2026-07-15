@@ -2,7 +2,7 @@
  * agent-view-v2.js — interactive logic for the Agent View V2 design system.
  * - Animates stat counters when values change
  * - Wires the hero "shift state" pill to the user's current Break Bot status
- * - Builds initials avatar from name
+ * - Builds initials/photo avatar from name + Google profile photo
  * - Manages skeleton → data transition
  *
  * Loaded after the page renders. All functions are namespaced under `av2`.
@@ -14,11 +14,61 @@
   const animate = ML.animate || null;
   const inView  = ML.inView  || null;
 
+  // In-memory cache of email → picture URL (populated by loadUserProfiles)
+  const _profilePics = {};
+
   const av2 = {
     /* Initials avatar — accepts "Sebastin Nathan" → "SN" */
     initials(name) {
       if (!name) return '?';
       return name.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
+    },
+
+    /* Load Google profile photos from the server once and cache them */
+    async loadUserProfiles() {
+      try {
+        const r = await fetch('/api/user-profiles');
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.success && d.data) {
+          Object.assign(_profilePics, d.data);
+          // Refresh any already-rendered avatars
+          document.querySelectorAll('[data-email-avatar]').forEach(el => {
+            const email = el.dataset.emailAvatar;
+            const pic = _profilePics[email?.toLowerCase()]?.picture;
+            if (pic) av2._applyPhotoToAvatar(el, pic);
+          });
+        }
+      } catch(e) { /* non-critical */ }
+    },
+
+    /* Get picture URL for an email from cache */
+    getPicture(email) {
+      if (!email) return null;
+      return _profilePics[email.toLowerCase()]?.picture || null;
+    },
+
+    /* Build the inner HTML for an avatar — photo if available, initials if not */
+    avatarHtml(name, email, cssClass) {
+      const cls = cssClass || 'av2-agent-avatar';
+      const pic = email ? av2.getPicture(email) : null;
+      if (pic) {
+        return '<div class="' + cls + ' av2-avatar-photo" data-email-avatar="' + av2.escape((email||'').toLowerCase()) + '">' +
+          '<img src="' + av2.escape(pic) + '" alt="' + av2.escape(name) + '" ' +
+          'onerror="this.parentElement.innerHTML=\'' + av2.escape(av2.initials(name)) + '\';this.parentElement.classList.remove(\'av2-avatar-photo\')">' +
+        '</div>';
+      }
+      return '<div class="' + cls + '" data-email-avatar="' + av2.escape((email||'').toLowerCase()) + '">' +
+        av2.escape(av2.initials(name)) +
+      '</div>';
+    },
+
+    /* Apply a photo URL to an already-rendered avatar element */
+    _applyPhotoToAvatar(el, picUrl) {
+      if (!el || !picUrl) return;
+      el.classList.add('av2-avatar-photo');
+      el.innerHTML = '<img src="' + av2.escape(picUrl) + '" alt="" ' +
+        'onerror="this.parentElement.innerHTML=this.parentElement.dataset.initials||\'?\';this.parentElement.classList.remove(\'av2-avatar-photo\')">';
     },
 
     /* Animated counter — counts from current value to target */
@@ -119,8 +169,9 @@
 
     /* Render an agent row in the v2 team table */
     renderAgentRow(agent, idx) {
-      const name = agent.name || 'Unknown';
-      const ext  = agent.extension || agent.ext || '—';
+      const name  = agent.name || 'Unknown';
+      const email = agent.email || '';
+      const ext   = agent.extension || agent.ext || '—';
       const status = (agent.status || 'offline').toLowerCase();
       const stateMap = {
         available: 'available', avail: 'available', online: 'available',
@@ -135,7 +186,7 @@
       return '<tr data-ext="' + av2.escape(ext) + '" data-name="' + av2.escape(name) + '">' +
         '<td>' + (idx + 1) + '</td>' +
         '<td><div class="av2-agent-cell">' +
-          '<div class="av2-agent-avatar">' + av2.escape(av2.initials(name)) + '</div>' +
+          av2.avatarHtml(name, email) +
           '<div class="av2-agent-meta">' +
             '<div class="av2-agent-name">' + av2.escape(name) + '</div>' +
             '<div class="av2-agent-ext">' + av2.escape(String(ext)) + '</div>' +

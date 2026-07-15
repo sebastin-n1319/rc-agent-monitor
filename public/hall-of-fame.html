@@ -1200,6 +1200,87 @@ window.addEventListener('message', function(e){
     if (btn && btn.style.display !== 'none') switchTab(h, btn);
   }
 })();
+
+/* ── GOOGLE PROFILE PHOTOS ─────────────────────────────────────────────────
+   Fetches stored Google profile photos from /api/user-profiles and replaces
+   initials-based avatars with real photos wherever names match.
+──────────────────────────────────────────────────────────────────────────── */
+(function loadHofPhotos(){
+  // Maps display name variations → email (must match server.js alias table)
+  var NAME_EMAIL = {
+    'debra horton': 'debra.horton@adit.com',
+    'deblina chakraborty': 'debra.horton@adit.com',
+    'debra': 'debra.horton@adit.com',
+    'lincy tabita': 'lincy@adit.com',
+    'lincy': 'lincy@adit.com',
+    'sabrina quinn': 'sabrina.quinn@adit.com',
+    'sabrina': 'sabrina.quinn@adit.com',
+    'henry p': 'henry.patel@adit.com',
+    'henry patel': 'henry.patel@adit.com',
+    'henry': 'henry.patel@adit.com',
+    'evan cruz': 'evan.cruz@adit.com',
+    'evan': 'evan.cruz@adit.com',
+    'sandy clark': 'sandy.clark@adit.com',
+    'sandy': 'sandy.clark@adit.com',
+  };
+
+  function emailForName(name){
+    return NAME_EMAIL[(name||'').toLowerCase().trim()] || null;
+  }
+
+  function applyPhotoToAvatar(avatarEl, picUrl){
+    if (!avatarEl || !picUrl) return;
+    var initials = avatarEl.textContent.trim();
+    avatarEl.dataset.initials = initials;
+    avatarEl.style.padding = '0';
+    avatarEl.style.overflow = 'hidden';
+    avatarEl.innerHTML = '<img src="'+picUrl+'" alt="'+initials+'" '
+      +'style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" '
+      +'onerror="this.parentElement.textContent=this.parentElement.dataset.initials||\'?\'">';
+  }
+
+  function injectPhotos(profiles){
+    // --- Podium avatars (.pod-av) ---
+    document.querySelectorAll('.pod-av').forEach(function(av){
+      var card = av.closest('.pod-card');
+      if (!card) return;
+      var nameEl = card.querySelector('.pod-name');
+      if (!nameEl) return;
+      var email = emailForName(nameEl.textContent);
+      if (!email) return;
+      var pic = profiles[email] && profiles[email].picture;
+      if (pic) applyPhotoToAvatar(av, pic);
+    });
+
+    // --- Chat champion avatars (.champ-av) ---
+    document.querySelectorAll('.champ-av').forEach(function(av){
+      var card = av.closest('.champ-card');
+      if (!card) return;
+      var nameEl = card.querySelector('.champ-name');
+      if (!nameEl) return;
+      var email = emailForName(nameEl.textContent);
+      if (!email) return;
+      var pic = profiles[email] && profiles[email].picture;
+      if (pic) applyPhotoToAvatar(av, pic);
+    });
+
+    // --- Blueprint card avatars (.bp-av) ---
+    document.querySelectorAll('.bp-av').forEach(function(av){
+      var hdr = av.closest('.bp-hdr');
+      if (!hdr) return;
+      var nameEl = hdr.querySelector('.bp-name');
+      if (!nameEl) return;
+      var email = emailForName(nameEl.textContent);
+      if (!email) return;
+      var pic = profiles[email] && profiles[email].picture;
+      if (pic) applyPhotoToAvatar(av, pic);
+    });
+  }
+
+  fetch('/api/user-profiles').then(function(r){ return r.json(); }).then(function(d){
+    if (d.success && d.data) injectPhotos(d.data);
+  }).catch(function(){/* non-critical */});
+})();
 </script>
 </body>
 </html>

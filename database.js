@@ -410,6 +410,14 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_app_sessions_email ON app_sessions(email)`);
 
+  // User profiles — persists Google profile data across session expiry
+  await run(`CREATE TABLE IF NOT EXISTS user_profiles (
+    email TEXT PRIMARY KEY,
+    name TEXT,
+    picture TEXT,
+    google_sub TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+
   // FEAT-4: Audit log table — tracks admin actions
   await run(`CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1417,11 +1425,41 @@ function deleteSessionsForEmail(email){
 /** Look up the most recent Google profile picture URL for an email address */
 async function getPictureForEmail(email){
   if(!email) return null;
+  // First check persistent user_profiles table
+  const profile = await get(`SELECT picture FROM user_profiles WHERE lower(email)=lower(?) AND picture IS NOT NULL AND picture!=''`, [email]);
+  if(profile?.picture) return profile.picture;
+  // Fallback to active sessions
   const row = await get(
     `SELECT picture FROM app_sessions WHERE email=? AND picture IS NOT NULL AND picture!='' ORDER BY expires_at DESC LIMIT 1`,
     [email]
   );
   return row ? row.picture : null;
+}
+
+/** Upsert a user's Google profile data (called on every login) */
+function upsertUserProfile(email, name, picture, googleSub){
+  if(!email) return Promise.resolve();
+  return run(
+    `INSERT INTO user_profiles (email, name, picture, google_sub, updated_at)
+     VALUES (lower(?), ?, ?, ?, CURRENT_TIMESTAMP)
+     ON CONFLICT(email) DO UPDATE SET
+       name = excluded.name,
+       picture = CASE WHEN excluded.picture != '' THEN excluded.picture ELSE user_profiles.picture END,
+       google_sub = COALESCE(excluded.google_sub, user_profiles.google_sub),
+       updated_at = CURRENT_TIMESTAMP`,
+    [email, name || '', picture || '', googleSub || null]
+  );
+}
+
+/** Get all stored user profiles */
+function getAllUserProfiles(){
+  return all(`SELECT email, name, picture, google_sub, updated_at FROM user_profiles ORDER BY email`);
+}
+
+/** Get a single user profile by email */
+async function getUserProfile(email){
+  if(!email) return null;
+  return get(`SELECT email, name, picture, google_sub FROM user_profiles WHERE lower(email)=lower(?)`, [email]);
 }
 
 function pruneExpiredSessions(){
@@ -2076,6 +2114,7 @@ module.exports={
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
+  upsertUserProfile,getAllUserProfiles,getUserProfile,
   insertLoginLog,getLoginLogs,
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,

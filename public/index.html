@@ -1679,6 +1679,7 @@ footer strong{color:var(--orange);}
 /* ── ADDITIONAL MISSING CLASSES ─────────────────────────────────────────── */
 .hof-avatar.hero{width:36px;height:36px;font-size:12px;border:2px solid rgba(251,191,36,.4);box-shadow:0 0 8px rgba(251,191,36,.25);}
 .hof-avatar.mini{width:24px;height:24px;font-size:9px;}
+.hof-avatar.hof-avatar-photo{background:none;border-color:rgba(255,255,255,.2);padding:0;overflow:hidden;}
 .break-lane-chip.more{background:rgba(255,255,255,.04);color:var(--t2);border-color:var(--b1);}
 .role-inline-pill.self{background:rgba(6,135,190,.12);color:var(--teal);border-color:rgba(6,135,190,.25);}
 
@@ -11391,6 +11392,7 @@ footer strong{color:var(--orange);}
 /* ── ADDITIONAL MISSING CLASSES ─────────────────────────────────────────── */
 .hof-avatar.hero{width:36px;height:36px;font-size:12px;border:2px solid rgba(251,191,36,.4);box-shadow:0 0 8px rgba(251,191,36,.25);}
 .hof-avatar.mini{width:24px;height:24px;font-size:9px;}
+.hof-avatar.hof-avatar-photo{background:none;border-color:rgba(255,255,255,.2);padding:0;overflow:hidden;}
 .break-lane-chip.more{background:rgba(255,255,255,.04);color:var(--t2);border-color:var(--b1);}
 .role-inline-pill.self{background:rgba(6,135,190,.12);color:var(--teal);border-color:rgba(6,135,190,.25);}
 
@@ -23046,6 +23048,10 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   document.getElementById('userRoleTag').textContent=role.toUpperCase();
   document.getElementById('userRoleTag').className='role-pill '+(role==='admin'?'role-admin':'role-agent');
   setAvatar(picture);
+  // Load Google profile photos for all agents (used by agent-view-v2 and HOF cards)
+  if(window.av2 && typeof window.av2.loadUserProfiles === 'function'){
+    window.av2.loadUserProfiles().catch(()=>{});
+  }
   const toggleBtn=document.getElementById('viewToggleBtn');
   if(toggleBtn)toggleBtn.style.setProperty('display',role==='admin'?'inline-flex':'none','important');
   applyView(role);
@@ -26919,11 +26925,21 @@ function buildHallCard(kind,op,maxima){
   }[kind];
   if(!cfg)return'';
 
+  // Resolve Google photo for this agent
+  const agentEmail = op.agent.email || '';
+  const agentPic = (window.av2 && typeof window.av2.getPicture==='function') ? window.av2.getPicture(agentEmail) : null;
+  const heroAvHtml = agentPic
+    ? '<div class="hof-avatar hero hof-avatar-photo"><img src="'+esc(agentPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.textContent=\''+esc(initials(op.agent.name))+'\'"></div>'
+    : '<div class="hof-avatar hero">'+esc(initials(op.agent.name))+'</div>';
+  const miniAvHtml = agentPic
+    ? '<div class="hof-avatar mini hof-avatar-photo"><img src="'+esc(agentPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.textContent=\''+esc(initials(op.agent.name))+'\'"></div>'
+    : '<div class="hof-avatar mini">'+esc(initials(op.agent.name))+'</div>';
+
   if(kind==='hero'){
     return '<div class="hof-hero-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
       '<div class="hof-hero-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
       '<div class="hof-hero-main">'+
-        '<div class="hof-avatar hero">'+esc(initials(op.agent.name))+'</div>'+
+        heroAvHtml+
         '<div><div class="hof-overline">'+esc(cfg.title)+'</div><div class="hof-name">'+esc(op.agent.name)+'</div><div class="hof-ext">Ext. '+esc(op.agent.extension||'--')+' &middot; '+esc(op.status)+'</div></div>'+
         '<div class="hof-score-badge"><span>Score</span><strong>'+op.performanceScore.v+'</strong></div>'+
       '</div>'+
@@ -26935,7 +26951,7 @@ function buildHallCard(kind,op,maxima){
   return '<div class="hof-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
     '<div class="hof-card-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
     '<div class="hof-card-body">'+
-      '<div class="hof-avatar mini">'+esc(initials(op.agent.name))+'</div>'+
+      miniAvHtml+
       '<div><div class="hof-overline">'+esc(cfg.title)+'</div><h4>'+esc(op.agent.name)+'</h4><p>'+esc(cfg.copy)+'</p></div>'+
     '</div>'+
     '<div class="hof-stack">'+cfg.stats.map(item=>'<span>'+esc(item)+'</span>').join('')+'</div>'+
@@ -26951,10 +26967,14 @@ function buildHallMiniCard(kind,op,maxima){
     guardian:{label:'Queue', title:'Longest Ready', icon:'&#128737;', tone:'var(--green)', soft:'#58f0b1', copy:`${fmt(op.availableSeconds)} ready &middot; ${op.queueStatus}`, score:'Missed '+op.missedCalls, meter:hofWidth(op.availableSeconds,maxima.ready)}
   }[kind];
   if(!cfg)return'';
+  const miniPic = (window.av2 && typeof window.av2.getPicture==='function') ? window.av2.getPicture(op.agent.email||'') : null;
+  const miniAv = miniPic
+    ? '<div class="hof-avatar mini hof-avatar-photo"><img src="'+esc(miniPic)+'" alt="'+esc(op.agent.name)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" onerror="this.parentElement.textContent=\''+esc(initials(op.agent.name))+'\'"></div>'
+    : '<div class="hof-avatar mini">'+esc(initials(op.agent.name))+'</div>';
   return '<div class="hof-mini-card" style="--hof-tone:'+cfg.tone+';--hof-soft:'+cfg.soft+'">'+
     '<div class="hof-mini-top"><span class="hof-label">'+cfg.label+'</span><span class="hof-icon">'+cfg.icon+'</span></div>'+
     '<div class="hof-mini-body">'+
-      '<div class="hof-avatar mini">'+esc(initials(op.agent.name))+'</div>'+
+      miniAv+
       '<div><div class="hof-overline">'+esc(cfg.title)+'</div><h4>'+esc(op.agent.name)+'</h4><p>'+esc(cfg.copy)+'</p></div>'+
     '</div>'+
     '<div class="hof-mini-score">'+esc(cfg.score)+'</div>'+
