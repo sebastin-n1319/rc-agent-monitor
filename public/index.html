@@ -1188,6 +1188,17 @@ select option{background:#0c1424;color:var(--t1);}
 .btk-stat-alert strong{color:var(--red)!important;}
 .btk-stat-mode{color:var(--t3);font-size:10.5px;}
 .btk-command-right .break-toolbar-group{gap:8px;}
+/* BTK live refresh + filter enhancements */
+.btk-refresh-chip{font-size:10.5px;transition:color .3s;cursor:default;}
+.btk-refresh-chip.live{color:#22c55e;}
+.btk-refresh-chip.fetching{color:#f59e0b;}
+.btk-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.btk-filter-input{flex:1;background:rgba(255,255,255,.055);border:1px solid var(--b1);border-radius:8px;padding:7px 12px 7px 30px;font-size:12px;color:var(--t1);outline:none;transition:border-color .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center;}
+.btk-filter-input:focus{border-color:rgba(255,255,255,.2);}
+.btk-filter-input::placeholder{color:var(--t3);}
+.btk-filter-count{font-size:11px;color:var(--t3);white-space:nowrap;flex-shrink:0;}
+@keyframes btkFlash{0%{box-shadow:0 0 0 2px rgba(96,165,250,.55)}60%{box-shadow:0 0 0 2px rgba(96,165,250,.3)}100%{box-shadow:none}}
+.btk-tile-changed{animation:btkFlash .7s ease forwards;}
 /* Health card */
 .btk-health-card{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px 20px;margin-bottom:14px;}
 .btk-health-label{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--t3);text-transform:uppercase;margin-bottom:10px;}
@@ -10901,6 +10912,17 @@ select option{background:#0c1424;color:var(--t1);}
 .btk-stat-alert strong{color:var(--red)!important;}
 .btk-stat-mode{color:var(--t3);font-size:10.5px;}
 .btk-command-right .break-toolbar-group{gap:8px;}
+/* BTK live refresh + filter enhancements */
+.btk-refresh-chip{font-size:10.5px;transition:color .3s;cursor:default;}
+.btk-refresh-chip.live{color:#22c55e;}
+.btk-refresh-chip.fetching{color:#f59e0b;}
+.btk-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.btk-filter-input{flex:1;background:rgba(255,255,255,.055);border:1px solid var(--b1);border-radius:8px;padding:7px 12px 7px 30px;font-size:12px;color:var(--t1);outline:none;transition:border-color .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:9px center;}
+.btk-filter-input:focus{border-color:rgba(255,255,255,.2);}
+.btk-filter-input::placeholder{color:var(--t3);}
+.btk-filter-count{font-size:11px;color:var(--t3);white-space:nowrap;flex-shrink:0;}
+@keyframes btkFlash{0%{box-shadow:0 0 0 2px rgba(96,165,250,.55)}60%{box-shadow:0 0 0 2px rgba(96,165,250,.3)}100%{box-shadow:none}}
+.btk-tile-changed{animation:btkFlash .7s ease forwards;}
 /* Health card */
 .btk-health-card{background:var(--glass);border:1px solid var(--b1);border-radius:var(--r);padding:16px 20px;margin-bottom:14px;}
 .btk-health-label{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--t3);text-transform:uppercase;margin-bottom:10px;}
@@ -20102,6 +20124,10 @@ tbody tr:hover td{
           <span class="btk-panel-title">Agent Status Grid</span>
           <span class="chip" id="break-board-chip">0 agents</span>
         </div>
+        <div class="btk-filter-bar">
+          <input type="text" class="btk-filter-input" id="btk-search-input" placeholder="Search by name..." oninput="btkSetSearch(this.value)" autocomplete="off">
+          <span class="btk-filter-count" id="btk-filter-count"></span>
+        </div>
         <div class="btk-agent-grid" id="btk-agent-grid">
           <div class="break-empty">Loading agent data...</div>
         </div>
@@ -22559,6 +22585,13 @@ let currentTZ='CST',currentUser=null,currentEmail=null,currentRole=null,currentB
 // refresh timer can't re-enable buttons mid-submit (which caused double-
 // submits, button-size glitches, and missed Chat notifications).
 let _breakActionPending = false;
+let _btkRefreshTimer = null;    // 30-second polling interval
+let _btkTickTimer    = null;    // 1-second live duration tick
+let _btkDataLoadedAt = 0;       // Date.now() when last fetch completed
+let _btkIsLoading    = false;   // prevents concurrent fetches
+let _btkPrevStates   = {};      // username → {status,hasAlert,hasWarn} for smart diffing
+let _btkRefreshCountdown = 30;  // seconds until next auto-refresh
+let _btkSearchTerm   = '';      // current name filter text
 let dashboardSortState={admin:{key:'idx',dir:'asc'},agent:{key:'idx',dir:'asc'}};
 let acTimeout=null,liveTimers={},liveStream=null,refreshDebounce=null;
 
@@ -23326,7 +23359,7 @@ function switchAgentSection(section,el){
     setTimeout(_sendHofInit, 600);
   }
   if(section==='hall'||section==='bonus')setTimeout(initEmbeddedFrames,50);
-  if(section==='breakbot')loadBreakTracker();
+  if(section==='breakbot') startBtkPolling(); else stopBtkPolling();
   if(section==='tickets'){
     setTimeout(initTlTooltips,80); setTimeout(tlInitDate,50); loadMyTicketsFromSheet(); setTimeout(tlInitWeekendMode, 150);
     // Only admins can manually toggle weekend mode
@@ -27610,7 +27643,10 @@ function buildBtkAgentTile(row){
     : `<div class="btk-tile-avatar" style="background:${c.bg};color:${c.border}">${initials}</div>`;
   const BRB_LIMIT = 600, BREAK_LIMIT = 3600;
   const isOvertime = hasAlert && (status==='Break'||status==='BRB');
-  const durationText = fmt(row.currentLaneSeconds||0)+(isOvertime?' ▲':'');
+  // Live timer: count elapsed seconds since last data fetch for active statuses
+  const isTimerActive = status!=='Logged Out' && status!=='Logged In';
+  const elapsedSnap = (isTimerActive && _btkDataLoadedAt) ? Math.floor((Date.now()-_btkDataLoadedAt)/1000) : 0;
+  const durationText = fmt((row.currentLaneSeconds||0)+elapsedSnap)+(isOvertime?' ▲':'');
 
   // Compact metric chips — only show non-zero AUX types
   const brbOver = (row.brbSeconds||0) > BRB_LIMIT;
@@ -27630,7 +27666,7 @@ function buildBtkAgentTile(row){
   ).join('');
 
   const _tileKey = encodeURIComponent(row.username||'');
-  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':hasWarning?' btk-tile-warn':''}" style="--tile-accent:${c.border};cursor:pointer;" onclick="openAgentBreakModal('${_tileKey}')">
+  return `<div class="btk-agent-tile${hasAlert?' btk-tile-alert':hasWarning?' btk-tile-warn':''}" style="--tile-accent:${c.border};cursor:pointer;" data-btk-key="${_tileKey}" onclick="openAgentBreakModal('${_tileKey}')">
   <div class="btk-tile-top">
     ${_btkAvEl}
     <div class="btk-tile-info">
@@ -27638,7 +27674,7 @@ function buildBtkAgentTile(row){
       <div class="btk-tile-status" style="color:${c.text}">
         <span class="btk-tile-dot" style="background:${c.dot};box-shadow:0 0 4px ${c.dot}99"></span>
         <span class="btk-tile-status-label">${status}</span>
-        <span class="btk-tile-duration">${durationText}</span>
+        <span class="btk-tile-duration" data-btk-base="${row.currentLaneSeconds||0}" data-btk-active="${isTimerActive?'1':'0'}" data-btk-ot="${isOvertime?'1':'0'}">${durationText}</span>
       </div>
     </div>
     ${hasAlert?`<span class="btk-tile-alert-badge" title="${(row.alerts?.alertReasons||alertLines).join(' · ')}">!</span>`:hasWarning?`<span class="btk-tile-warn-badge" title="${(row.alerts?.alertReasons||[]).join(' · ')}">!</span>`:''}
@@ -27675,7 +27711,9 @@ function renderBreakAdminView(){
     (loggedOut?`<span class="btk-stat-sep">·</span><span class="btk-stat" style="color:#94a3b8"><strong>${loggedOut}</strong> logged out</span>`:'')+
     (alerts>0?`<span class="btk-stat-sep">·</span><span class="btk-stat btk-stat-alert"><strong>${alerts}</strong> alert${alerts!==1?'s':''}</span>`:'')+
     `<span class="btk-stat-sep">·</span>`+
-    `<span class="btk-stat btk-stat-mode">${isHistory?'📅 History · '+formatTrackerDate(selectedDate):'🔴 Live · '+currentTZ+' · '+breakChatLabel()}</span>`;
+    `<span id="btk-refresh-chip" class="btk-stat btk-stat-mode btk-refresh-chip${!isHistory?' live':''}">` +
+    (isHistory ? '📅 History · '+formatTrackerDate(selectedDate) : '🔴 Live · '+currentTZ+' · '+breakChatLabel()) +
+    `</span>`;
 
   // — Health bar
   const healthEl = document.getElementById('btk-health');
@@ -27693,15 +27731,58 @@ function renderBreakAdminView(){
   const gridEl = document.getElementById('btk-agent-grid');
   if(gridEl){
     const statusOrder = {'Break':0,'BRB':1,'Training / Coaching':2,'QA Session AUX':3,'Internal Calls':4,'Logged In':5};
-    const sorted = [...active].sort((a,b)=>{
+    // Apply name filter
+    let filtered = [...active];
+    if(_btkSearchTerm){
+      const q = _btkSearchTerm.toLowerCase();
+      filtered = filtered.filter(r=>(r.username||'').toLowerCase().includes(q));
+    }
+    const filterCount = document.getElementById('btk-filter-count');
+    if(filterCount) filterCount.textContent = _btkSearchTerm ? filtered.length+' of '+active.length : '';
+    const sorted = filtered.sort((a,b)=>{
       const aA = breakAlertMessages(a).length>0?0:1;
       const bA = breakAlertMessages(b).length>0?0:1;
       if(aA!==bA) return aA-bA;
       return (statusOrder[a.currentStatus]??5)-(statusOrder[b.currentStatus]??5);
     });
-    gridEl.innerHTML = sorted.length
-      ? sorted.map(buildBtkAgentTile).join('')
-      : '<div class="break-empty">No active agents on the floor for '+formatTrackerDate(selectedDate)+'.</div>';
+    // Smart DOM diffing — only rebuild when order/membership changes; otherwise patch changed tiles in-place
+    const newKeys = sorted.map(r=>encodeURIComponent(r.username||''));
+    const existingTiles = [...gridEl.querySelectorAll('[data-btk-key]')];
+    const existingKeys = existingTiles.map(el=>el.dataset.btkKey);
+    const orderChanged = newKeys.join(',') !== existingKeys.join(',');
+    if(orderChanged || !sorted.length){
+      gridEl.innerHTML = sorted.length
+        ? sorted.map(buildBtkAgentTile).join('')
+        : '<div class="break-empty">No active agents on the floor for '+formatTrackerDate(selectedDate)+'.</div>';
+    } else {
+      // In-place update: only replace tiles whose status/alert state changed
+      sorted.forEach(row=>{
+        const key = encodeURIComponent(row.username||'');
+        const prev = _btkPrevStates[row.username]||{};
+        const nowStatus = row.currentStatus||'Logged Out';
+        const nowAlert  = !!(row.alerts?.hasAlert)||breakAlertMessages(row).length>0;
+        const nowWarn   = !nowAlert && !!(row.alerts?.hasWarning);
+        if(prev.status!==nowStatus || prev.hasAlert!==nowAlert || prev.hasWarn!==nowWarn){
+          const tile = gridEl.querySelector('[data-btk-key="'+key+'"]');
+          if(tile){
+            const tmp = document.createElement('div');
+            tmp.innerHTML = buildBtkAgentTile(row);
+            const newTile = tmp.firstElementChild;
+            newTile.classList.add('btk-tile-changed');
+            tile.replaceWith(newTile);
+          }
+        }
+      });
+    }
+    // Store current states for next diff cycle
+    _btkPrevStates = {};
+    sorted.forEach(r=>{
+      _btkPrevStates[r.username] = {
+        status:   r.currentStatus||'Logged Out',
+        hasAlert: !!(r.alerts?.hasAlert)||breakAlertMessages(r).length>0,
+        hasWarn:  !!(r.alerts?.hasWarning)
+      };
+    });
   }
 
   // — Feed
@@ -27894,21 +27975,65 @@ function _updateBudgetBars(self){
 }
 
 async function loadBreakTracker(){
+  if(_btkIsLoading) return;           // prevent concurrent fetches
+  _btkIsLoading = true;
+  _btkRefreshCountdown = 30;
   const selectedDate=getBreakTrackerDate();
   try{
     const res = await fetch(BACKEND+'/api/break-tracker?date='+selectedDate+'&tz='+encodeURIComponent(activeTimeZone()));
     const json = await res.json();
     breakTrackerMeta = json.chat || { enabled: false, target: 'Chat space' };
     breakTrackerData = json.success && json.data ? json.data : { summary:{}, tracker:[], recentLog:[] };
+    _btkDataLoadedAt = Date.now();    // anchor for live timer ticks
+    _btkRefreshCountdown = 30;
   }catch(e){
     breakTrackerMeta = { enabled: false, target: 'Chat space' };
     breakTrackerData = { summary:{}, tracker:[], recentLog:[] };
+  }finally{
+    _btkIsLoading = false;
   }
   if(_timelineVisible) renderBreakTimeline(); // FEAT-6: refresh timeline if open
   syncBreakDateInputs();
   syncBreakActionState();
   renderBreakAdminView();
   renderBreakAgentView();
+}
+
+// ── Break tracker live polling, tick timer, and search ──────────────────────
+function startBtkPolling(){
+  stopBtkPolling();                      // clear any stale timers first
+  loadBreakTracker();                    // immediate load on section enter
+  if(!breakHistoryMode()){
+    _btkRefreshTimer = setInterval(loadBreakTracker, 30000);  // poll every 30s
+    _btkTickTimer    = setInterval(tickBtkTimers,     1000);  // tick every 1s
+  }
+}
+function stopBtkPolling(){
+  if(_btkRefreshTimer){ clearInterval(_btkRefreshTimer); _btkRefreshTimer = null; }
+  if(_btkTickTimer)   { clearInterval(_btkTickTimer);    _btkTickTimer    = null; }
+  _btkDataLoadedAt     = 0;
+  _btkPrevStates       = {};
+  _btkRefreshCountdown = 30;
+}
+function tickBtkTimers(){
+  if(!_btkDataLoadedAt) return;
+  const elapsed = Math.floor((Date.now()-_btkDataLoadedAt)/1000);
+  // Update every active duration span without touching the DOM structure
+  document.querySelectorAll('.btk-tile-duration[data-btk-active="1"]').forEach(el=>{
+    const base = parseInt(el.dataset.btkBase)||0;
+    const isOt = el.dataset.btkOt==='1';
+    el.textContent = fmt(base+elapsed)+(isOt?' ▲':'');
+  });
+  // Update refresh countdown chip
+  _btkRefreshCountdown = Math.max(0, 30-elapsed);
+  const chip = document.getElementById('btk-refresh-chip');
+  if(chip && !breakHistoryMode()){
+    chip.textContent = '🔴 Live · '+currentTZ+' · ⟳ '+_btkRefreshCountdown+'s';
+  }
+}
+function btkSetSearch(val){
+  _btkSearchTerm = (val||'').trim();
+  renderBreakAdminView();
 }
 
 async function sendBreakAction(action, btn){
