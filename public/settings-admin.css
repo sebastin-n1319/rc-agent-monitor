@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════
+   ADIT SETTINGS ADMIN — Session 17
+   Pause controls + background jobs status + system info.
+   Scoped under #settings-admin-root; tokens namespaced --stg-*.
+═══════════════════════════════════════════════════════════════ */
+:root {
+  --stg-bg: #F5F6FA;
+  --stg-surface: #FFFFFF;
+  --stg-surface2: #F8F9FC;
+  --stg-border: #EAECF0;
+  --stg-ink: #0F1824;
+  --stg-ink2: #4B5563;
+  --stg-ink3: #9CA3AF;
+  --stg-accent: #F97316;
+  --stg-green: #10B981;
+  --stg-amber: #F59E0B;
+  --stg-red: #EF4444;
+  --stg-radius: 14px;
+  --stg-radius-sm: 8px;
+  --stg-ease: cubic-bezier(.4,0,.2,1);
+}
+
+#settings-admin-root { background: var(--stg-bg) !important; font-family: 'Poppins', system-ui, sans-serif !important; color: var(--stg-ink) !important; -webkit-font-smoothing: antialiased !important; }
+#settings-admin-root * { box-sizing: border-box !important; }
+#settings-admin-root .stg-wrap { width:100% !important; max-width:920px !important; margin:0 !important; padding:14px 14px 32px !important; }
+
+#settings-admin-root .stg-loading,
+#settings-admin-root .stg-error { display:flex !important; align-items:center !important; gap:10px !important; padding:40px 20px !important; color:var(--stg-ink2) !important; font-size:14px !important; }
+#settings-admin-root .stg-error { color:var(--stg-red) !important; font-weight:600 !important; }
+#settings-admin-root .stg-spinner { width:18px !important; height:18px !important; border-radius:50% !important; border:2.5px solid var(--stg-border) !important; border-top-color:var(--stg-accent) !important; animation: stg-spin .7s linear infinite !important; }
+@keyframes stg-spin { to { transform: rotate(360deg); } }
+
+/* ── Header ─────────────────────────────────────────────────── */
+#settings-admin-root .stg-header { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:12px !important; margin-bottom:16px !important; }
+#settings-admin-root .stg-h1 { font-size:20px !important; font-weight:700 !important; letter-spacing:-.01em !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-h1-sub { font-size:13px !important; color:var(--stg-ink3) !important; margin-top:2px !important; }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+#settings-admin-root .stg-btn { border:none !important; border-radius:var(--stg-radius-sm) !important; padding:9px 16px !important; font-size:13px !important; font-weight:600 !important; font-family:inherit !important; cursor:pointer !important; transition:filter .15s var(--stg-ease), transform .1s var(--stg-ease) !important; white-space:nowrap !important; }
+#settings-admin-root .stg-btn:hover { filter:brightness(0.95) !important; }
+#settings-admin-root .stg-btn:active { transform:scale(0.98) !important; }
+#settings-admin-root .stg-btn:disabled { opacity:.55 !important; cursor:default !important; }
+#settings-admin-root .stg-btn-ghost { background:var(--stg-surface) !important; color:var(--stg-ink2) !important; border:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-btn-light { background:rgba(255,255,255,.9) !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-btn-warning { background:var(--stg-amber) !important; color:#fff !important; }
+#settings-admin-root .stg-btn-danger { background:var(--stg-red) !important; color:#fff !important; }
+
+/* ── Status banner ──────────────────────────────────────────── */
+#settings-admin-root .stg-banner { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:14px !important; padding:14px 18px !important; border-radius:var(--stg-radius) !important; margin-bottom:16px !important; box-shadow:0 1px 3px rgba(15,24,36,.06) !important; }
+#settings-admin-root .stg-banner-main { display:flex !important; align-items:center !important; gap:12px !important; }
+#settings-admin-root .stg-banner-dot { width:12px !important; height:12px !important; min-width:12px !important; border-radius:50% !important; box-shadow:0 0 0 4px rgba(0,0,0,.06) !important; }
+#settings-admin-root .stg-banner-title { font-size:15px !important; font-weight:700 !important; }
+#settings-admin-root .stg-banner-sub { font-size:12.5px !important; opacity:.85 !important; margin-top:2px !important; }
+#settings-admin-root .stg-banner-ok { background:rgba(16,185,129,.08) !important; color:#065F46 !important; }
+#settings-admin-root .stg-banner-ok .stg-banner-dot { background:var(--stg-green) !important; }
+#settings-admin-root .stg-banner-warning { background:rgba(245,158,11,.12) !important; color:#92400E !important; }
+#settings-admin-root .stg-banner-warning .stg-banner-dot { background:var(--stg-amber) !important; animation: stg-pulse 1.6s ease-in-out infinite !important; }
+#settings-admin-root .stg-banner-danger { background:rgba(239,68,68,.12) !important; color:#991B1B !important; }
+#settings-admin-root .stg-banner-danger .stg-banner-dot { background:var(--stg-red) !important; animation: stg-pulse 1.6s ease-in-out infinite !important; }
+@keyframes stg-pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+@media (prefers-reduced-motion: reduce) {
+  #settings-admin-root .stg-banner-dot { animation:none !important; }
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+#settings-admin-root .stg-card { background:var(--stg-surface) !important; border:1px solid var(--stg-border) !important; border-radius:var(--stg-radius) !important; padding:18px 20px !important; margin-bottom:14px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#settings-admin-root .stg-card-title { font-size:14.5px !important; font-weight:700 !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-card-sub { font-size:12.5px !important; color:var(--stg-ink3) !important; margin-top:2px !important; margin-bottom:14px !important; }
+
+/* ── Pause options ──────────────────────────────────────────── */
+#settings-admin-root .stg-pause-actions { display:grid !important; grid-template-columns:1fr 1fr !important; gap:14px !important; }
+#settings-admin-root .stg-pause-option { background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; border-radius:var(--stg-radius-sm) !important; padding:14px !important; display:flex !important; flex-direction:column !important; gap:10px !important; }
+#settings-admin-root .stg-pause-option-title { font-size:13.5px !important; font-weight:700 !important; }
+#settings-admin-root .stg-pause-option-desc { font-size:12px !important; color:var(--stg-ink2) !important; line-height:1.5 !important; flex:1 !important; }
+
+/* ── Inline pause dialog ────────────────────────────────────── */
+#settings-admin-root .stg-pause-dialog { grid-column:1 / -1 !important; margin-top:4px !important; }
+#settings-admin-root .stg-pause-dialog-inner { background:#fff !important; border:1.5px solid var(--stg-accent) !important; border-radius:var(--stg-radius-sm) !important; padding:16px !important; display:flex !important; flex-direction:column !important; gap:12px !important; }
+#settings-admin-root .stg-pause-dialog-title { font-size:13.5px !important; font-weight:700 !important; }
+#settings-admin-root .stg-field-row { display:flex !important; flex-direction:column !important; gap:6px !important; }
+#settings-admin-root .stg-field-row label { font-size:12px !important; font-weight:600 !important; color:var(--stg-ink2) !important; }
+#settings-admin-root .stg-optional { font-weight:400 !important; color:var(--stg-ink3) !important; }
+#settings-admin-root .stg-duration-opts { display:flex !important; gap:8px !important; flex-wrap:wrap !important; }
+#settings-admin-root .stg-dur-btn { border:1px solid var(--stg-border) !important; background:var(--stg-surface2) !important; color:var(--stg-ink2) !important; border-radius:20px !important; padding:6px 14px !important; font-size:12.5px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; transition:all .15s var(--stg-ease) !important; }
+#settings-admin-root .stg-dur-btn:hover { border-color:var(--stg-accent) !important; }
+#settings-admin-root .stg-dur-btn.stg-dur-selected { background:var(--stg-accent) !important; border-color:var(--stg-accent) !important; color:#fff !important; }
+#settings-admin-root .stg-custom-hours,
+#settings-admin-root .stg-reason-input { border:1px solid var(--stg-border) !important; border-radius:var(--stg-radius-sm) !important; padding:8px 12px !important; font-size:13px !important; font-family:inherit !important; color:var(--stg-ink) !important; width:100% !important; }
+#settings-admin-root .stg-custom-hours { max-width:140px !important; }
+#settings-admin-root .stg-custom-hours:focus,
+#settings-admin-root .stg-reason-input:focus { outline:2px solid var(--stg-accent) !important; outline-offset:1px !important; }
+#settings-admin-root .stg-dialog-actions { display:flex !important; justify-content:flex-end !important; gap:10px !important; margin-top:2px !important; }
+
+/* ── Jobs list ──────────────────────────────────────────────── */
+#settings-admin-root .stg-jobs-list { display:flex !important; flex-direction:column !important; gap:2px !important; }
+#settings-admin-root .stg-job-row { display:flex !important; align-items:center !important; gap:12px !important; padding:10px 4px !important; border-bottom:1px solid var(--stg-border) !important; }
+#settings-admin-root .stg-job-row:last-child { border-bottom:none !important; }
+#settings-admin-root .stg-job-dot { width:9px !important; height:9px !important; min-width:9px !important; border-radius:50% !important; }
+#settings-admin-root .stg-job-dot.stg-job-running { background:var(--stg-green) !important; }
+#settings-admin-root .stg-job-dot.stg-job-paused { background:var(--stg-red) !important; }
+#settings-admin-root .stg-job-dot.stg-job-always { background:var(--stg-ink3) !important; }
+#settings-admin-root .stg-job-info { flex:1 !important; min-width:0 !important; }
+#settings-admin-root .stg-job-name { font-size:13px !important; font-weight:600 !important; color:var(--stg-ink) !important; }
+#settings-admin-root .stg-job-desc { font-size:11.5px !important; color:var(--stg-ink3) !important; margin-top:1px !important; }
+#settings-admin-root .stg-job-state { font-size:11.5px !important; font-weight:700 !important; padding:3px 10px !important; border-radius:20px !important; white-space:nowrap !important; }
+#settings-admin-root .stg-job-state.stg-job-running { background:rgba(16,185,129,.12) !important; color:#065F46 !important; }
+#settings-admin-root .stg-job-state.stg-job-paused { background:rgba(239,68,68,.12) !important; color:#991B1B !important; }
+#settings-admin-root .stg-job-state.stg-job-always { background:var(--stg-surface2) !important; color:var(--stg-ink3) !important; }
+
+/* ── System card ────────────────────────────────────────────── */
+#settings-admin-root .stg-sys-grid { display:grid !important; grid-template-columns:1fr 1fr !important; gap:14px !important; }
+#settings-admin-root .stg-sys-label { font-size:11.5px !important; color:var(--stg-ink3) !important; font-weight:600 !important; text-transform:uppercase !important; letter-spacing:.03em !important; }
+#settings-admin-root .stg-sys-value { font-size:14px !important; font-weight:700 !important; color:var(--stg-ink) !important; margin-top:3px !important; word-break:break-word !important; }
+#settings-admin-root .stg-sys-mono { font-family:'SF Mono', Menlo, monospace !important; font-size:11.5px !important; font-weight:500 !important; }
+
+/* ── Focus rings (a11y) ─────────────────────────────────────── */
+#settings-admin-root button:focus-visible { outline:2px solid var(--stg-accent) !important; outline-offset:2px !important; }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  #settings-admin-root .stg-pause-actions { grid-template-columns:1fr !important; }
+  #settings-admin-root .stg-sys-grid { grid-template-columns:1fr !important; }
+  #settings-admin-root .stg-banner { flex-direction:column !important; align-items:flex-start !important; }
+}

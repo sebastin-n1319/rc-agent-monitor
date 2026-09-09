@@ -37,6 +37,8 @@ const {
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
   // #21 Session 8 — PWA offline queue idempotency
   getBreakEventByIdempoKey, setBreakEventIdempoKey,
+  // Session 17 — admin settings (pause controls, etc.)
+  getSetting, setSetting, deleteSetting, getAllSettings,
 } = require('./database');
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const ANOMALY = require('./lib/anomaly');
@@ -3166,8 +3168,15 @@ ${callNotes.trim().slice(0, 2000)}`;
 });
 
 async function startScheduler() {
-  setInterval(() => { fetchPresenceForAll().catch(e => log.error('presence_sync_failed', e)); }, getFallbackSyncMs());
+  setInterval(() => {
+    getPauseStatus().then(p => {
+      if (p.rcSyncPaused) return;
+      return fetchPresenceForAll();
+    }).catch(e => log.error('presence_sync_failed', e));
+  }, getFallbackSyncMs());
   cron.schedule('*/15 * * * *', async () => {
+    const _p = await getPauseStatus().catch(() => ({ rcSyncPaused: false }));
+    if (_p.rcSyncPaused) { log.info('call_log_cron_skipped_paused'); return; }
     fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message));
     refreshMonthlySummary(new Date().toISOString().slice(0,7)).catch(e => console.error('❌ monthly summary sync:', e.message));
   });
@@ -3430,6 +3439,10 @@ async function _sendMissedCallNotification(call) {
 let _pollRunning = false; // concurrency guard — prevent overlapping poll runs
 async function runMissedCallPoll() {
   if (!MISSED_CALL_WEBHOOK_URL) return;
+  try {
+    const _p = await getPauseStatus();
+    if (_p.rcSyncPaused) { log.info('missed_call_poll_skipped_paused'); return; }
+  } catch(e) { /* non-fatal — proceed if settings lookup fails */ }
   if (_pollRunning) {
     console.log('⏭️ Missed call poll already running — skipping overlap');
     return;
@@ -3648,6 +3661,90 @@ app.post('/api/admin/cache-flush', requireAdmin, (req, res) => {
   const n = _cache.size;
   _cache.clear();
   res.json({ success: true, cleared: n });
+});
+
+// ── Session 17: Admin Settings & Pause Controls ───────────────────────────────
+// Server-persisted (DB-backed) pause flags so admins can stop RingCentral API
+// traffic — or all background jobs — without touching env vars or redeploying.
+// 'rc_sync' pause stops presence sync, call-log sync, missed-call polling and
+// the realtime-webhook renewal (the RC-API-consuming loops). 'full' pause
+// additionally stops the alert / anomaly / predict evaluators. Auto-resumes
+// once the stored expiry timestamp passes — no separate clear-flag cron needed.
+async function getPauseStatus() {
+  const now = Date.now();
+  const [rcUntilRaw, fullUntilRaw, rcReason, fullReason] = await Promise.all([
+    getSetting('rc_sync_pause_until'),
+    getSetting('full_pause_until'),
+    getSetting('rc_sync_pause_reason'),
+    getSetting('full_pause_reason'),
+  ]);
+  const rcUntil = rcUntilRaw ? parseInt(rcUntilRaw) : null;
+  const fullUntil = fullUntilRaw ? parseInt(fullUntilRaw) : null;
+  const fullPaused = !!(fullUntil && fullUntil > now);
+  // Full pause implies RC sync is paused too
+  const rcSyncPaused = fullPaused || !!(rcUntil && rcUntil > now);
+  return {
+    rcSyncPaused,
+    rcSyncPauseUntil: (rcUntil && rcUntil > now) ? rcUntil : null,
+    rcSyncPauseReason: rcReason || null,
+    fullPaused,
+    fullPauseUntil: fullPaused ? fullUntil : null,
+    fullPauseReason: fullReason || null,
+  };
+}
+
+app.get('/api/admin/settings', requireAdmin, async (req, res) => {
+  try {
+    const pause = await getPauseStatus();
+    const all = await getAllSettings();
+    res.json({
+      success: true,
+      pause,
+      settings: all,
+      system: {
+        dbSizeMB: (typeof getDbSizeMB === 'function') ? await getDbSizeMB().catch(() => null) : null,
+        rcRateLimit: (typeof getRcRateLimitState === 'function') ? getRcRateLimitState() : null,
+      },
+    });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/settings/pause', requireAdmin, async (req, res) => {
+  try {
+    const mode = (req.body && req.body.mode) === 'full' ? 'full' : 'rc_sync';
+    const hours = Math.min(Math.max(parseFloat(req.body && req.body.hours) || 24, 0.25), 168);
+    const reason = ((req.body && req.body.reason) || '').toString().slice(0, 500);
+    const until = Date.now() + Math.round(hours * 3600 * 1000);
+    const actor = req.session.email;
+    if (mode === 'full') {
+      await setSetting('full_pause_until', until, actor);
+      await setSetting('full_pause_reason', reason, actor);
+    } else {
+      await setSetting('rc_sync_pause_until', until, actor);
+      await setSetting('rc_sync_pause_reason', reason, actor);
+    }
+    log.info('settings_pause_set', { mode, hours, until, actor });
+    insertAuditLog(actor, mode === 'full' ? 'full_pause_set' : 'rc_sync_pause_set', mode,
+      `hours:${hours} until:${new Date(until).toISOString()} reason:${reason || '-'}`).catch(()=>{});
+    res.json({ success: true, pause: await getPauseStatus() });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/settings/resume', requireAdmin, async (req, res) => {
+  try {
+    const mode = (req.body && req.body.mode) === 'full' ? 'full' : 'rc_sync';
+    const actor = req.session.email;
+    if (mode === 'full') {
+      await setSetting('full_pause_until', null, actor);
+      await setSetting('full_pause_reason', null, actor);
+    } else {
+      await setSetting('rc_sync_pause_until', null, actor);
+      await setSetting('rc_sync_pause_reason', null, actor);
+    }
+    log.info('settings_resume', { mode, actor });
+    insertAuditLog(actor, mode === 'full' ? 'full_pause_resumed' : 'rc_sync_pause_resumed', mode, '').catch(()=>{});
+    res.json({ success: true, pause: await getPauseStatus() });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // ─── #25: Enhanced /healthz endpoint ─────────────────────────────────────────
@@ -3978,6 +4075,8 @@ global._startPredictCron = function startPredictCron() {
     const h = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
     const m = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
     if (h === HOUR && Math.abs(m - MIN) < 5) {
+      const _p = await getPauseStatus().catch(() => ({ fullPaused: false }));
+      if (_p.fullPaused) { log.info('predict_cron_skipped_paused'); return; }
       log.info('predict_cron_tick', { hour: HOUR, min: MIN });
       await trainAndPersistPredictModel(30);
     }
@@ -4448,8 +4547,14 @@ global._startAlertCron = function startAlertCron() {
   if (global._alertCronStarted) return;
   global._alertCronStarted = true;
   log.info('alert_cron_started', { intervalMs: ALERT_INTERVAL_MS });
-  setInterval(runAlertEvaluator, ALERT_INTERVAL_MS);
-  setTimeout(runAlertEvaluator, 5000);  // initial run after 5s
+  const _alertTick = () => {
+    getPauseStatus().then(p => {
+      if (p.fullPaused) return;
+      return runAlertEvaluator();
+    }).catch(e => log.error('alert_evaluator_failed', e));
+  };
+  setInterval(_alertTick, ALERT_INTERVAL_MS);
+  setTimeout(_alertTick, 5000);  // initial run after 5s
 };
 
 // ─── Endpoints ─────────────────────────────────────────────────────────────
@@ -4715,6 +4820,8 @@ global._startAnomalyCron = function startAnomalyCron() {
   setInterval(async () => {
     const nowH = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false }).format(new Date());
     if (parseInt(nowH) === ANOMALY_HOUR) {
+      const _p = await getPauseStatus().catch(() => ({ fullPaused: false }));
+      if (_p.fullPaused) { log.info('anomaly_cron_skipped_paused'); return; }
       log.info('anomaly_cron_tick', { hour: ANOMALY_HOUR });
       await runAnomalyEvaluator();
     }
@@ -5142,7 +5249,12 @@ async function start() {
       await fetchPresenceForAll();
       setTimeout(() => { fetchCallLogs().catch(e => console.error('❌ startup call log:', e.message)); }, 20000);
       await startScheduler();
-      setTimeout(() => { ensureRealtimeSubscription().catch(e => console.error('❌ realtime sub:', e.message)); }, 15000);
+      setTimeout(() => {
+        getPauseStatus().then(p => {
+          if (p.rcSyncPaused) { console.log('⏸️ Skipping realtime sub renewal — RC sync paused'); return; }
+          return ensureRealtimeSubscription();
+        }).catch(e => console.error('❌ realtime sub:', e.message));
+      }, 15000);
       // #11 Session 2: real-time alert cron (every 30s by default)
       if (typeof global._startAlertCron === 'function') global._startAlertCron();
       // Session 11: nightly predict-model retraining at 03:30 CST

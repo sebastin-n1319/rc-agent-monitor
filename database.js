@@ -536,6 +536,15 @@ async function initDB() {
     accuracy REAL,
     notes TEXT)`);
 
+  // Session 17: Admin Settings & Pause Controls — generic key/value store used
+  // for the RC-sync / full background-job pause toggles (and future settings)
+  // so admins never have to touch env vars or redeploy to change them.
+  await run(`CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_by TEXT)`);
+
   // #20 Session 6: Anomaly detection — thresholds + event log
   await run(`CREATE TABLE IF NOT EXISTS anomaly_thresholds (
     metric TEXT PRIMARY KEY,
@@ -1655,6 +1664,34 @@ async function getAuditLog(limit = 200) {
   );
 }
 
+// ── Session 17: Generic app settings (key/value) ───────────────────────────────
+// Backs the admin Settings page — RC sync pause, full pause, and any future
+// admin-tunable value that shouldn't require an env var + redeploy to change.
+function getSetting(key) {
+  return get(`SELECT value FROM app_settings WHERE key = ?`, [key])
+    .then(row => (row ? row.value : null));
+}
+
+async function setSetting(key, value, updatedBy) {
+  await run(
+    `INSERT INTO app_settings (key, value, updated_at, updated_by) VALUES (?,?,CURRENT_TIMESTAMP,?)
+     ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at, updated_by=excluded.updated_by`,
+    [key, value == null ? null : String(value), updatedBy || 'admin']
+  );
+  return getSetting(key);
+}
+
+function deleteSetting(key) {
+  return run(`DELETE FROM app_settings WHERE key = ?`, [key]);
+}
+
+async function getAllSettings() {
+  const rows = await all(`SELECT key, value, updated_at, updated_by FROM app_settings`);
+  const out = {};
+  for (const r of rows) out[r.key] = { value: r.value, updatedAt: r.updated_at, updatedBy: r.updated_by };
+  return out;
+}
+
 // ── AI Learning Agent DB functions ────────────────────────────────────────────
 function insertTicketFeedback(ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback, agentEmail) {
   return run(`INSERT INTO ticket_feedback (ticket_number,ticket_subject,zoho_channel,suggested_type,suggested_rule,agent_type,feedback,agent_email) VALUES (?,?,?,?,?,?,?,?)`,
@@ -2119,6 +2156,8 @@ module.exports={
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,
   insertAuditLog,getAuditLog,
+  // Session 17 — admin settings (pause controls, etc.)
+  getSetting,setSetting,deleteSetting,getAllSettings,
   getBreakThresholds,setBreakThreshold,
   getBreakReportData,
   pruneOldData,getDbStats,

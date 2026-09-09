@@ -22,6 +22,7 @@
     'bulk-actions.css',
     'predict-center.css',
     'roster-admin.css',
+    'settings-admin.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
