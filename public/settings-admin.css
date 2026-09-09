@@ -73,6 +73,14 @@
 #settings-admin-root .stg-pause-option-title { font-size:13.5px !important; font-weight:700 !important; }
 #settings-admin-root .stg-pause-option-desc { font-size:12px !important; color:var(--stg-ink2) !important; line-height:1.5 !important; flex:1 !important; }
 
+/* ── Notifications card (row layout: info + toggle button) ────────────── */
+#settings-admin-root .stg-notify-row { background:var(--stg-surface2) !important; border:1px solid var(--stg-border) !important; border-radius:var(--stg-radius-sm) !important; padding:14px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; gap:14px !important; }
+#settings-admin-root .stg-notify-info { flex:1 !important; min-width:0 !important; }
+#settings-admin-root .stg-notify-row .stg-pause-option-desc { flex:none !important; }
+@media (max-width: 760px) {
+  #settings-admin-root .stg-notify-row { flex-direction:column !important; align-items:flex-start !important; }
+}
+
 /* ── Inline pause dialog ────────────────────────────────────── */
 #settings-admin-root .stg-pause-dialog { grid-column:1 / -1 !important; margin-top:4px !important; }
 #settings-admin-root .stg-pause-dialog-inner { background:#fff !important; border:1.5px solid var(--stg-accent) !important; border-radius:var(--stg-radius-sm) !important; padding:16px !important; display:flex !important; flex-direction:column !important; gap:12px !important; }

@@ -749,13 +749,27 @@ function isRateLimitError(err, data) {
   return msg.includes('rate limit') || msg.includes('rate exceeded') || msg.includes('too many requests') || data?.errorCode === 'CMN-301';
 }
 
-// Mark all RC API calls globally paused for `extraMs` ms (default: RC_GLOBAL_PAUSE_MS).
+// RC documents X-Rate-Limit-Window (seconds until the budget resets) and
+// standard Retry-After on 429s. Prefer that over our fixed guess when present —
+// see https://developers.ringcentral.com/guide/basics/rate-limits
+function rateLimitWaitMsFromHeaders(headers) {
+  if (!headers || typeof headers.get !== 'function') return null;
+  const raw = headers.get('X-Rate-Limit-Window') || headers.get('Retry-After');
+  const secs = parseInt(raw, 10);
+  if (!Number.isFinite(secs) || secs <= 0) return null;
+  return (secs * 1000) + 2000; // +2s buffer
+}
+
+// Mark all RC API calls globally paused for `extraMs` ms (default: RC_GLOBAL_PAUSE_MS),
+// or for whatever RC's own response headers say to wait when `headers` is passed.
 // Any subsystem that receives a 429 calls this to protect every other subsystem too.
-function markRcRateLimited(extraMs = RC_GLOBAL_PAUSE_MS) {
-  const until = Date.now() + extraMs;
+function markRcRateLimited(extraMs = RC_GLOBAL_PAUSE_MS, headers = null) {
+  const adaptiveMs = rateLimitWaitMsFromHeaders(headers);
+  const waitMs = adaptiveMs || extraMs;
+  const until = Date.now() + waitMs;
   if (until > _rcRateLimitedUntil) {
     _rcRateLimitedUntil = until;
-    console.warn(`🚫 RC rate limit — GLOBAL pause until ${new Date(_rcRateLimitedUntil).toISOString()} (${Math.round(extraMs / 1000)}s)`);
+    console.warn(`🚫 RC rate limit — GLOBAL pause until ${new Date(_rcRateLimitedUntil).toISOString()} (${Math.round(waitMs / 1000)}s${adaptiveMs ? ', per RC response header' : ', default'})`);
   }
 }
 
@@ -793,14 +807,34 @@ async function rcGet(path, params) {
     if (data.errorCode) {
       const err = new Error(data.message || data.errorCode);
       err.rcData = data;
-      if (isRateLimitError(err, data)) markRcRateLimited();
+      if (isRateLimitError(err, data)) markRcRateLimited(RC_GLOBAL_PAUSE_MS, r.headers);
       throw err;
     }
     return data;
   } catch (e) {
     // Catch SDK-level throws (HTTP 429 etc.) and mark the global pause.
     // isRateLimitError is safe with undefined rcData.
-    if (isRateLimitError(e, e.rcData)) markRcRateLimited();
+    if (isRateLimitError(e, e.rcData)) markRcRateLimited(RC_GLOBAL_PAUSE_MS, e.response && e.response.headers);
+    throw e;
+  }
+}
+
+// Same protection as rcGet() but for POST/PUT/DELETE — used by subscription
+// (webhook) management, which previously called platform.post/put/delete
+// directly and bypassed the shared rate-limit gate entirely. That gap let
+// webhook create/renew/delete fire during an active RC-imposed pause and
+// made an already-throttled window worse instead of backing off from it.
+async function rcCall(method, path, body) {
+  const pause = _rcRateLimitedUntil - Date.now();
+  if (pause > 0) {
+    const tag = String(path).split('/').slice(-2).join('/');
+    console.log(`⏳ rcCall(${method} ${tag}) waiting ${Math.ceil(pause / 1000)}s for global rate-limit pause…`);
+    await sleep(pause);
+  }
+  try {
+    return await platform[method](path, body);
+  } catch (e) {
+    if (isRateLimitError(e, e.rcData)) markRcRateLimited(RC_GLOBAL_PAUSE_MS, e.response && e.response.headers);
     throw e;
   }
 }
@@ -979,7 +1013,7 @@ async function upsertSnapshotEntry(agent, data, queueInfo, fetchedAt, reason = '
 
 async function renewSubscription(subscription) {
   try {
-    const resp = await platform.put(`/restapi/v1.0/subscription/${subscription.id}`, {
+    const resp = await rcCall('put', `/restapi/v1.0/subscription/${subscription.id}`, {
       eventFilters: subscription.eventFilters,
       deliveryMode: subscription.deliveryMode,
       expiresIn: 7 * 24 * 60 * 60
@@ -1016,7 +1050,7 @@ async function ensureRealtimeSubscription() {
     // ones to free up a slot. This prevents the "Subscriptions limit exceeded"
     // error that occurs when previous deployments leave orphaned subscriptions.
     try {
-      const listResp = await platform.get('/restapi/v1.0/subscription');
+      const listResp = await rcCall('get', '/restapi/v1.0/subscription');
       const listData = await listResp.json();
       const existing = listData.records || [];
       if (existing.length > 0) {
@@ -1033,12 +1067,15 @@ async function ensureRealtimeSubscription() {
         }
         // No usable match — delete all stale/orphaned subscriptions to free slots
         console.log(`🗑️ Purging ${existing.length} stale RC subscription(s) before registering fresh one...`);
-        await Promise.allSettled(
-          existing.map(s => platform.delete(`/restapi/v1.0/subscription/${s.id}`)
-            .then(() => console.log(`   ✓ Deleted stale subscription ${s.id}`))
-            .catch(err => console.warn(`   ⚠️ Could not delete ${s.id}: ${err.message}`))
-          )
-        );
+        for (const s of existing) {
+          try {
+            await rcCall('delete', `/restapi/v1.0/subscription/${s.id}`);
+            console.log(`   ✓ Deleted stale subscription ${s.id}`);
+          } catch (err) {
+            console.warn(`   ⚠️ Could not delete ${s.id}: ${err.message}`);
+          }
+          await sleep(300); // stagger deletes — don't burst the limit we may have just tripped
+        }
       }
     } catch (listErr) {
       // Non-fatal — if listing fails we still try to create (may still hit the limit)
@@ -1047,7 +1084,7 @@ async function ensureRealtimeSubscription() {
 
     // ── Step 2: Register fresh webhook subscription ───────────────────────────
     console.log(`🔗 Registering realtime subscription at ${address}`);
-    const resp = await platform.post('/restapi/v1.0/subscription', {
+    const resp = await rcCall('post', '/restapi/v1.0/subscription', {
       eventFilters,
       deliveryMode: { transportType: 'WebHook', address },
       expiresIn: 7 * 24 * 60 * 60

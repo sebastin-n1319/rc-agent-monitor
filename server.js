@@ -58,6 +58,9 @@ const SESSION_MAX_AGE_S = 12 * 60 * 60; // 12 hours in seconds
 // If unset, all origins are permitted (backward-compat for existing deploys).
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .split(',').map(o => o.trim()).filter(Boolean);
+if (ALLOWED_ORIGINS.length === 0) {
+  console.warn('⚠️  ALLOWED_ORIGINS is not set — CORS is open to any origin. Set ALLOWED_ORIGINS in Railway env vars to restrict it (see Settings > System in the admin UI).');
+}
 app.use(cors({
   origin: (origin, cb) => {
     // Non-browser or same-origin requests (no Origin header) always allowed
@@ -3439,10 +3442,15 @@ async function _sendMissedCallNotification(call) {
 let _pollRunning = false; // concurrency guard — prevent overlapping poll runs
 async function runMissedCallPoll() {
   if (!MISSED_CALL_WEBHOOK_URL) return;
+  let notifyEnabled = true;
   try {
     const _p = await getPauseStatus();
     if (_p.rcSyncPaused) { log.info('missed_call_poll_skipped_paused'); return; }
   } catch(e) { /* non-fatal — proceed if settings lookup fails */ }
+  try {
+    const v = await getSetting('missed_call_notify_enabled');
+    notifyEnabled = v === null ? true : v === '1';
+  } catch(e) { /* non-fatal — default to enabled if settings lookup fails */ }
   if (_pollRunning) {
     console.log('⏭️ Missed call poll already running — skipping overlap');
     return;
@@ -3475,14 +3483,18 @@ async function runMissedCallPoll() {
 
       if (isDup) { logEntry.skipped++; continue; }
       _notifiedCallIds.add(call.id);
-      logEntry.notified++;
 
       const tag  = call.isDirect ? 'Direct missed' : 'Queue missed';
       const dest = call.isDirect
         ? `${call.directAgent?.name || call.to.ext} (Ext ${call.to.ext})`
         : `queue ${call.queueExt}`;
       console.log(`📞 ${tag}: ${call.from.number} → ${dest} → ${call.result} (${call.totalSecs}s)`);
-      await _sendMissedCallNotification(call);
+      if (notifyEnabled) {
+        logEntry.notified++;
+        await _sendMissedCallNotification(call);
+      } else {
+        logEntry.skipped++;
+      }
     }
     // Keep dedup set bounded
     if (_notifiedCallIds.size > 500) {
@@ -3697,13 +3709,17 @@ app.get('/api/admin/settings', requireAdmin, async (req, res) => {
   try {
     const pause = await getPauseStatus();
     const all = await getAllSettings();
+    const notifySetting = all['missed_call_notify_enabled'];
+    const missedCallNotifyEnabled = notifySetting ? notifySetting.value === '1' : true;
     res.json({
       success: true,
       pause,
       settings: all,
+      missedCallNotifyEnabled,
       system: {
         dbSizeMB: (typeof getDbSizeMB === 'function') ? await getDbSizeMB().catch(() => null) : null,
         rcRateLimit: (typeof getRcRateLimitState === 'function') ? getRcRateLimitState() : null,
+        corsOpen: ALLOWED_ORIGINS.length === 0,
       },
     });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -3727,6 +3743,17 @@ app.post('/api/admin/settings/pause', requireAdmin, async (req, res) => {
     insertAuditLog(actor, mode === 'full' ? 'full_pause_set' : 'rc_sync_pause_set', mode,
       `hours:${hours} until:${new Date(until).toISOString()} reason:${reason || '-'}`).catch(()=>{});
     res.json({ success: true, pause: await getPauseStatus() });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/settings/notify', requireAdmin, async (req, res) => {
+  try {
+    const enabled = !!(req.body && req.body.enabled);
+    const actor = req.session.email;
+    await setSetting('missed_call_notify_enabled', enabled ? '1' : '0', actor);
+    log.info('settings_notify_toggle', { enabled, actor });
+    insertAuditLog(actor, 'missed_call_notify_toggle', 'missed_call_notify_enabled', String(enabled)).catch(()=>{});
+    res.json({ success: true, missedCallNotifyEnabled: enabled });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

@@ -78,6 +78,17 @@
     return j;
   }
 
+  async function doNotify(enabled) {
+    const r = await fetch('/api/admin/settings/notify', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.success) throw new Error(j.error || ('HTTP ' + r.status));
+    return j;
+  }
+
   async function doResume(mode) {
     const r = await fetch('/api/admin/settings/resume', {
       method: 'POST', credentials: 'include',
@@ -174,6 +185,48 @@
     }
   }
 
+  async function handleNotifyToggle(enabled, btn) {
+    btn.disabled = true;
+    try {
+      await doNotify(enabled);
+      toastSafe(enabled ? '🔔 Missed-call notifications enabled' : '🔕 Missed-call notifications disabled', 'success', 3500);
+      await window.openSettingsAdmin();
+    } catch (e) {
+      toastSafe('❌ ' + e.message, 'error', 5000);
+      btn.disabled = false;
+    }
+  }
+
+  function corsWarningBanner(system) {
+    if (!system || !system.corsOpen) return '';
+    return `
+      <div class="stg-banner stg-banner-warning">
+        <div class="stg-banner-main">
+          <span class="stg-banner-dot"></span>
+          <div>
+            <div class="stg-banner-title">CORS is open to any origin</div>
+            <div class="stg-banner-sub">ALLOWED_ORIGINS is not set in Railway env vars — any website can call this API from a browser. Set it to your app's URL to restrict this.</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function notificationsCard(data) {
+    const enabled = data.missedCallNotifyEnabled !== false;
+    return `
+      <div class="stg-card">
+        <div class="stg-card-title">Notifications</div>
+        <div class="stg-card-sub">Controls the Google Chat missed-call notifier. Turning this off still polls RingCentral for missed calls (so nothing is missed once re-enabled) — it just stops the chat ping.</div>
+        <div class="stg-notify-row">
+          <div class="stg-notify-info">
+            <div class="stg-pause-option-title">Missed-call Google Chat alerts</div>
+            <div class="stg-pause-option-desc">${enabled ? 'Currently sending a chat message for each new missed call.' : 'Currently silent — missed calls are still tracked, just not posted to chat.'}</div>
+          </div>
+          <button type="button" class="stg-btn ${enabled ? 'stg-btn-warning' : 'stg-btn-light'} stg-notify-toggle" data-enabled="${enabled ? '0' : '1'}">${enabled ? 'Turn Off' : 'Turn On'}</button>
+        </div>
+      </div>`;
+  }
+
   function statusBanner(pause) {
     if (pause.fullPaused) {
       return `
@@ -260,6 +313,7 @@
         </div>
 
         ${statusBanner(pause)}
+        ${corsWarningBanner(data.system)}
 
         <div class="stg-card">
           <div class="stg-card-title">Pause Controls</div>
@@ -284,6 +338,8 @@
           ${jobsTable(pause)}
         </div>
 
+        ${notificationsCard(data)}
+
         ${systemCard(data.system)}
       </div>`;
 
@@ -293,6 +349,9 @@
     });
     root.querySelectorAll('.stg-resume-btn').forEach((b) => {
       b.addEventListener('click', () => handleResume(b.dataset.mode, b));
+    });
+    root.querySelectorAll('.stg-notify-toggle').forEach((b) => {
+      b.addEventListener('click', () => handleNotifyToggle(b.dataset.enabled === '1', b));
     });
   }
 
