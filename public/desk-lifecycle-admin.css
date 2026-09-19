@@ -1,0 +1,100 @@
+/* ───────────────────────────────────────────────────────────────────────
+   TICKET LIFECYCLE ADMIN — Session 19
+   Per-agent Zoho Desk ticket stats (replaces manual lifecycle report export).
+   Scoped under #desk-lifecycle-root; tokens namespaced --tkt-*.
+   ─────────────────────────────────────────────────────────────────────── */
+:root {
+  --tkt-bg: #F5F6FA;
+  --tkt-surface: #FFFFFF;
+  --tkt-surface2: #F8F9FC;
+  --tkt-border: #EAECF0;
+  --tkt-ink: #0F1824;
+  --tkt-ink2: #4B5563;
+  --tkt-ink3: #9CA3AF;
+  --tkt-accent: #F97316;
+  --tkt-green: #10B981;
+  --tkt-amber: #F59E0B;
+  --tkt-red: #EF4444;
+  --tkt-blue: #3B82F6;
+  --tkt-radius: 14px;
+  --tkt-radius-sm: 8px;
+  --tkt-ease: cubic-bezier(.4,0,.2,1);
+}
+
+#desk-lifecycle-root { background: var(--tkt-bg) !important; font-family: 'Poppins', system-ui, sans-serif !important; color: var(--tkt-ink) !important; -webkit-font-smoothing: antialiased !important; }
+#desk-lifecycle-root * { box-sizing: border-box !important; }
+#desk-lifecycle-root .tkt-wrap { width:100% !important; max-width:1080px !important; margin:0 !important; padding:14px 14px 32px !important; }
+
+#desk-lifecycle-root .tkt-loading,
+#desk-lifecycle-root .tkt-error { display:flex !important; align-items:center !important; gap:10px !important; padding:40px 20px !important; color:var(--tkt-ink2) !important; font-size:14px !important; }
+#desk-lifecycle-root .tkt-error { color:var(--tkt-red) !important; font-weight:600 !important; }
+#desk-lifecycle-root .tkt-spinner { width:18px !important; height:18px !important; border-radius:50% !important; border:2.5px solid var(--tkt-border) !important; border-top-color:var(--tkt-accent) !important; animation: tkt-spin .7s linear infinite !important; }
+@keyframes tkt-spin { to { transform: rotate(360deg); } }
+
+/* ── Header ── */
+#desk-lifecycle-root .tkt-header { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:12px !important; margin-bottom:16px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-root .tkt-h1 { font-size:20px !important; font-weight:700 !important; letter-spacing:-.01em !important; color:var(--tkt-ink) !important; }
+#desk-lifecycle-root .tkt-h1-sub { font-size:13px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; }
+
+/* ── Buttons ── */
+#desk-lifecycle-root .tkt-btn { border:none !important; border-radius:var(--tkt-radius-sm) !important; padding:9px 16px !important; font-size:13px !important; font-weight:600 !important; font-family:inherit !important; cursor:pointer !important; transition:filter .15s var(--tkt-ease), transform .1s var(--tkt-ease) !important; white-space:nowrap !important; }
+#desk-lifecycle-root .tkt-btn:hover { filter:brightness(0.95) !important; }
+#desk-lifecycle-root .tkt-btn:active { transform:scale(0.98) !important; }
+#desk-lifecycle-root .tkt-btn:disabled { opacity:.55 !important; cursor:default !important; }
+#desk-lifecycle-root .tkt-btn-light { background:rgba(255,255,255,.9) !important; color:var(--tkt-ink) !important; }
+
+/* ── Range picker ── */
+#desk-lifecycle-root .tkt-range-opts { display:flex !important; gap:8px !important; }
+#desk-lifecycle-root .tkt-range-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:20px !important; padding:6px 14px !important; font-size:12.5px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; transition:all .15s var(--tkt-ease) !important; }
+#desk-lifecycle-root .tkt-range-btn:hover { border-color:var(--tkt-accent) !important; }
+#desk-lifecycle-root .tkt-range-btn.tkt-range-selected { background:var(--tkt-accent) !important; border-color:var(--tkt-accent) !important; color:#fff !important; }
+
+/* ── Status banner ── */
+#desk-lifecycle-root .tkt-banner { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:14px !important; padding:14px 18px !important; border-radius:var(--tkt-radius) !important; margin-bottom:16px !important; box-shadow:0 1px 3px rgba(15,24,36,.06) !important; }
+#desk-lifecycle-root .tkt-banner-main { display:flex !important; align-items:center !important; gap:12px !important; }
+#desk-lifecycle-root .tkt-banner-dot { width:12px !important; height:12px !important; min-width:12px !important; border-radius:50% !important; box-shadow:0 0 0 4px rgba(0,0,0,.06) !important; }
+#desk-lifecycle-root .tkt-banner-title { font-size:15px !important; font-weight:700 !important; }
+#desk-lifecycle-root .tkt-banner-sub { font-size:12.5px !important; opacity:.85 !important; margin-top:2px !important; }
+#desk-lifecycle-root .tkt-banner-ok { background:rgba(16,185,129,.08) !important; color:#065F46 !important; }
+#desk-lifecycle-root .tkt-banner-ok .tkt-banner-dot { background:var(--tkt-green) !important; }
+#desk-lifecycle-root .tkt-banner-warning { background:rgba(245,158,11,.12) !important; color:#92400E !important; }
+#desk-lifecycle-root .tkt-banner-warning .tkt-banner-dot { background:var(--tkt-amber) !important; animation: tkt-pulse 1.6s ease-in-out infinite !important; }
+@keyframes tkt-pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+@media (prefers-reduced-motion: reduce) { #desk-lifecycle-root .tkt-banner-dot { animation:none !important; } }
+
+/* ── Cards ── */
+#desk-lifecycle-root .tkt-card { background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:18px 20px !important; margin-bottom:14px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#desk-lifecycle-root .tkt-card-title { font-size:14.5px !important; font-weight:700 !important; color:var(--tkt-ink) !important; }
+#desk-lifecycle-root .tkt-card-sub { font-size:12.5px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; margin-bottom:14px !important; }
+#desk-lifecycle-root .tkt-card code { background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:4px !important; padding:1px 5px !important; font-size:12px !important; }
+
+/* ── Summary table ── */
+#desk-lifecycle-root .tkt-table { display:flex !important; flex-direction:column !important; }
+#desk-lifecycle-root .tkt-row { display:grid !important; grid-template-columns:1.6fr .8fr .8fr .9fr 1fr 1.4fr !important; align-items:center !important; gap:10px !important; padding:10px 4px !important; border-bottom:1px solid var(--tkt-border) !important; }
+#desk-lifecycle-root .tkt-row:last-child { border-bottom:none !important; }
+#desk-lifecycle-root .tkt-row-head { font-size:11.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.03em !important; }
+#desk-lifecycle-root .tkt-row-name { font-size:13px !important; font-weight:600 !important; color:var(--tkt-ink) !important; }
+#desk-lifecycle-root .tkt-row-email { font-size:11.5px !important; color:var(--tkt-ink3) !important; margin-top:1px !important; }
+#desk-lifecycle-root .tkt-row-stat { text-align:center !important; }
+#desk-lifecycle-root .tkt-stat-n { font-size:15px !important; font-weight:700 !important; color:var(--tkt-ink) !important; }
+#desk-lifecycle-root .tkt-stat-l { font-size:10.5px !important; color:var(--tkt-ink3) !important; margin-top:1px !important; }
+#desk-lifecycle-root .tkt-approx { color:var(--tkt-accent) !important; margin-left:2px !important; }
+#desk-lifecycle-root .tkt-row-sentiment { display:flex !important; gap:4px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-root .tkt-sent { font-size:11px !important; font-weight:700 !important; padding:2px 8px !important; border-radius:12px !important; background:var(--tkt-surface2) !important; color:var(--tkt-ink2) !important; }
+#desk-lifecycle-root .tkt-sent-positive { background:rgba(16,185,129,.12) !important; color:#065F46 !important; }
+#desk-lifecycle-root .tkt-sent-neutral { background:rgba(59,130,246,.1) !important; color:#1E40AF !important; }
+#desk-lifecycle-root .tkt-sent-negative { background:rgba(239,68,68,.12) !important; color:#991B1B !important; }
+#desk-lifecycle-root .tkt-sent-none { font-size:12px !important; color:var(--tkt-ink3) !important; }
+#desk-lifecycle-root .tkt-footnote { font-size:11px !important; color:var(--tkt-ink3) !important; margin-top:10px !important; }
+#desk-lifecycle-root .tkt-empty { padding:24px 4px !important; text-align:center !important; color:var(--tkt-ink3) !important; font-size:13px !important; }
+
+/* ── Focus rings (a11y) ── */
+#desk-lifecycle-root button:focus-visible { outline:2px solid var(--tkt-accent) !important; outline-offset:2px !important; }
+
+/* ── Mobile ── */
+@media (max-width: 760px) {
+  #desk-lifecycle-root .tkt-row { grid-template-columns:1fr !important; text-align:left !important; }
+  #desk-lifecycle-root .tkt-row-stat { text-align:left !important; display:flex !important; align-items:center !important; gap:6px !important; }
+  #desk-lifecycle-root .tkt-row-head { display:none !important; }
+  #desk-lifecycle-root .tkt-banner { flex-direction:column !important; align-items:flex-start !important; }
+}

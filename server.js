@@ -389,6 +389,15 @@ initDB().then(async () => {
       console.log(`📋 Roster ready — ${cnt} agents already loaded`);
     }
   } catch(e) { log.error('roster_init_failed', e); console.error('roster_init_failed', e); }
+  // Session 19: ticket lifecycle module bootstrap (Zoho Desk sync).
+  // Fully separate tables/module from roster -- see lib/desk-lifecycle.js.
+  try {
+    const { db } = require('./database');
+    const deskLifecycle = require('./lib/desk-lifecycle');
+    deskLifecycle.setDB(db);
+    await deskLifecycle.initSchema();
+    console.log('🎫 Desk lifecycle schema ready');
+  } catch(e) { log.error('desk_lifecycle_init_failed', e); console.error('desk_lifecycle_init_failed', e); }
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
@@ -3214,6 +3223,10 @@ async function startScheduler() {
       console.log('🧹 Prune+vacuum done:', JSON.stringify(r));
     } catch(e) { console.error('❌ scheduled prune/archive:', e.message); }
   });
+  // Session 19: ticket lifecycle sync -- every 20 min, paged across ticks
+  cron.schedule('*/20 * * * *', async () => {
+    runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
+  });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
@@ -5265,6 +5278,174 @@ app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success:false, error: e.message }); }
 });
 
+// -- Session 19: Ticket Lifecycle (Zoho Desk sync) --------------------------
+// Automated replacement for the manually-exported Zoho Desk "lifecycle report"
+// CSV. Fully isolated from the existing single-ticket Ticket Intelligence
+// feature (getZohoAccessToken()/zohoDesk() above) -- separate OAuth cache,
+// separate rate-limit gate, separate DB tables -- so a bug here can't affect it.
+const deskLifecycle = require('./lib/desk-lifecycle');
+const deskService = require('./lib/desk-service');
+// Optional: comma-separated department IDs to restrict the sync to. When
+// unset (the default), every enabled department is discovered and synced --
+// Support, Onboarding, Insider Support, and any future one -- so the full
+// ticket journey is covered, not just a single team's queue.
+const ZOHO_DESK_DEPARTMENT_IDS = (process.env.ZOHO_DESK_DEPARTMENT_IDS || process.env.ZOHO_DESK_DEPARTMENT_ID || '')
+  .split(',').map(s => s.trim()).filter(Boolean);
+
+let _deskSyncRunning = false;
+let _deskConfigWarned = false;
+let _deskDeptCache = null; // { ids: [...], at: <ms> }
+const DESK_DEPT_CACHE_MS = 60 * 60 * 1000; // re-discover departments hourly
+
+async function getDeskDepartmentIds() {
+  if (ZOHO_DESK_DEPARTMENT_IDS.length) return ZOHO_DESK_DEPARTMENT_IDS;
+  if (_deskDeptCache && (Date.now() - _deskDeptCache.at) < DESK_DEPT_CACHE_MS) return _deskDeptCache.ids;
+  try {
+    const depts = await deskService.fetchDepartments();
+    const ids = depts.map(d => d.id).filter(Boolean);
+    _deskDeptCache = { ids, at: Date.now() };
+    return ids;
+  } catch(e) {
+    console.warn('⚠️ Failed to discover Zoho Desk departments -- will retry next tick:', e.message);
+    return _deskDeptCache ? _deskDeptCache.ids : [];
+  }
+}
+
+async function runDeskLifecycleSync() {
+  if (!deskService.isConfigured()) {
+    if (!_deskConfigWarned) {
+      console.warn('⚠️ Zoho Desk lifecycle sync not configured -- set ZOHO_CLIENT_ID/SECRET/REFRESH_TOKEN and ZOHO_DESK_ORG_ID to enable');
+      _deskConfigWarned = true;
+    }
+    return;
+  }
+  try {
+    const _p = await getPauseStatus();
+    if (_p.rcSyncPaused) { log.info('desk_sync_skipped_paused'); return; }
+  } catch(e) { /* non-fatal -- proceed if settings lookup fails */ }
+  if (_deskSyncRunning) {
+    console.log('⏭️ Desk lifecycle sync already running -- skipping overlap');
+    return;
+  }
+  _deskSyncRunning = true;
+  const startedAt = new Date().toISOString();
+  let ticketsSeen = 0, eventsFetched = 0;
+  try {
+    const departmentIds = await getDeskDepartmentIds();
+    if (!departmentIds.length) {
+      console.warn('⚠️ Desk lifecycle sync: no departments to sync (discovery failed and none configured) -- skipping this run');
+      return;
+    }
+    const pageSize = 50;
+    const maxPages = 8; // cap per department per run -- 400 tickets/dept/run, paged over successive cron ticks
+    for (const departmentId of departmentIds) {
+    let from = 0;
+    for (let page = 0; page < maxPages; page++) {
+      const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize });
+      if (!tickets.length) break;
+      for (const t of tickets) {
+        ticketsSeen++;
+        let assigneeEmail = null, assigneeName = null;
+        if (t.assigneeId) {
+          try {
+            let cached = await deskLifecycle.getCachedAgent(t.assigneeId);
+            if (!cached) {
+              const a = await deskService.fetchAgent(t.assigneeId);
+              assigneeEmail = a.email || null;
+              assigneeName = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || null;
+              await deskLifecycle.cacheAgent(t.assigneeId, { email: assigneeEmail, name: assigneeName });
+            } else {
+              assigneeEmail = cached.email; assigneeName = cached.name;
+            }
+          } catch(e) { /* non-fatal -- leave unresolved, retry next sync */ }
+        }
+        try {
+          await deskLifecycle.upsertTicketSnapshot({
+            ticket_id: t.id, ticket_number: t.ticketNumber, subject: t.subject,
+            status: t.status, status_type: t.statusType, priority: t.priority,
+            channel: t.channel, department_id: t.departmentId,
+            assignee_id: t.assigneeId, assignee_email: assigneeEmail, assignee_name: assigneeName,
+            sentiment: t.sentiment, comment_count: t.commentCount != null ? Number(t.commentCount) : null,
+            thread_count: t.threadCount != null ? Number(t.threadCount) : null,
+            created_time: t.createdTime, closed_time: t.closedTime, onhold_time: t.onholdTime,
+            due_date: t.dueDate, web_url: t.webUrl,
+          });
+        } catch(e) { console.warn(`⚠️ desk snapshot upsert failed for ticket ${t.ticketNumber || t.id}: ${e.message}`); }
+
+        // Incremental history sync -- only walk back to the last watermark.
+        try {
+          const watermark = await deskLifecycle.getWatermark(t.id);
+          const events = [];
+          let hFrom = 0, newestSeen = null, reachedWatermark = false;
+          for (let hp = 0; hp < 4 && !reachedWatermark; hp++) { // cap 200 events/ticket/run
+            const batch = await deskService.fetchTicketHistory(t.id, { from: hFrom, limit: 50 });
+            if (!batch.length) break;
+            for (const ev of batch) {
+              if (watermark && ev.eventTime <= watermark) { reachedWatermark = true; break; }
+              if (!newestSeen) newestSeen = ev.eventTime;
+              for (const info of (ev.eventInfo || [])) {
+                if (info.propertyType === 'ValueTransition') {
+                  events.push({
+                    event_time: ev.eventTime, event_name: ev.eventName,
+                    field_name: info.propertyName,
+                    from_value: info.propertyValue?.previousValue != null ? String(info.propertyValue.previousValue) : null,
+                    to_value: info.propertyValue?.updatedValue != null ? String(info.propertyValue.updatedValue) : null,
+                    actor_id: ev.actor?.id || null, actor_name: ev.actor?.name || null, actor_type: ev.actor?.type || null,
+                  });
+                }
+              }
+            }
+            hFrom += 50;
+            if (batch.length < 50) break;
+          }
+          if (events.length) { await deskLifecycle.insertEvents(t.id, events); eventsFetched += events.length; }
+          if (newestSeen) await deskLifecycle.setWatermark(t.id, newestSeen);
+          else if (!watermark) await deskLifecycle.setWatermark(t.id, startedAt);
+        } catch(e) {
+          console.warn(`⚠️ desk history sync failed for ticket ${t.ticketNumber || t.id}: ${e.message}`);
+        }
+      }
+      from += pageSize;
+      if (tickets.length < pageSize) break;
+    }
+    } // end departmentId loop
+    await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
+    await deskLifecycle.setSyncState('last_error', null);
+    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets, ${eventsFetched} new events`);
+  } catch(e) {
+    console.error('❌ Desk lifecycle sync error:', e.message);
+    await deskLifecycle.setSyncState('last_error', e.message).catch(()=>{});
+  } finally {
+    _deskSyncRunning = false;
+  }
+}
+
+app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const agents = await roster.listAgents({ includeRelieved: false });
+    const emails = agents.map(a => a.email).filter(Boolean);
+    const summary = await deskLifecycle.agentSummary({ from, to, emails });
+    const byEmail = {};
+    for (const a of agents) if (a.email) byEmail[a.email] = a;
+    const out = summary.map(s => ({ ...s, pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
+    res.json({ success: true, from, to, agents: out });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
+  try {
+    const status = await deskLifecycle.syncStatus();
+    res.json({ success: true, configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(), ...status });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/desk-lifecycle/sync-now', requireAdmin, async (req, res) => {
+  runDeskLifecycleSync().catch(e => console.error('❌ manual desk sync trigger:', e.message));
+  res.json({ success: true, message: 'Sync started' });
+});
+
 app.use(errorTracker());
 
 async function start() {
@@ -5299,6 +5480,8 @@ async function start() {
       } else {
         console.log('📞 Missed call notifier disabled — set MISSED_CALL_WEBHOOK_URL to enable');
       }
+      // Session 19: ticket lifecycle sync -- first run shortly after boot
+      setTimeout(() => runDeskLifecycleSync().catch(() => {}), 45000);
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }

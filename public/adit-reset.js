@@ -23,6 +23,7 @@
     'predict-center.css',
     'roster-admin.css',
     'settings-admin.css',
+    'desk-lifecycle-admin.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
