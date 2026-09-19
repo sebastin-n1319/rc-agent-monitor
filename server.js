@@ -14,6 +14,7 @@ const {
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, addAgentNote, getAgentNotes, deleteAgentNote,
+  getAgentCallStatsRange,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   upsertUserProfile, getAllUserProfiles, getUserProfile,
   insertAuditLog, getAuditLog,
@@ -398,6 +399,15 @@ initDB().then(async () => {
     await deskLifecycle.initSchema();
     console.log('🎫 Desk lifecycle schema ready');
   } catch(e) { log.error('desk_lifecycle_init_failed', e); console.error('desk_lifecycle_init_failed', e); }
+  // Session 21: chat (Zoho SalesIQ) lifecycle module bootstrap -- fully
+  // separate tables/module, same pattern as desk-lifecycle.js above.
+  try {
+    const { db } = require('./database');
+    const salesiqLifecycle = require('./lib/salesiq-lifecycle');
+    salesiqLifecycle.setDB(db);
+    await salesiqLifecycle.initSchema();
+    console.log('💬 Chat (SalesIQ) lifecycle schema ready');
+  } catch(e) { log.error('salesiq_lifecycle_init_failed', e); console.error('salesiq_lifecycle_init_failed', e); }
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
@@ -3227,7 +3237,17 @@ async function startScheduler() {
   cron.schedule('*/20 * * * *', async () => {
     runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
     runCsatSync().catch(e => console.error('❌ CSAT sync cron:', e.message));
+    salesiqLifecycle.runChatConversationSync().catch(e => console.error('❌ chat conversation sync cron:', e.message));
   });
+  // Session 21: chat presence has no historical API (see salesiq-lifecycle.js
+  // header) -- poll the live operator status every 45s and log changes,
+  // same fallback-poll pattern as RC presence above.
+  setInterval(() => {
+    getPauseStatus().then(p => {
+      if (p.rcSyncPaused) return;
+      return salesiqLifecycle.syncChatPresenceOnce();
+    }).catch(e => log.error('chat_presence_sync_failed', e));
+  }, Number(process.env.SALESIQ_PRESENCE_POLL_MS || 45000));
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
@@ -5287,6 +5307,8 @@ app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
 const deskLifecycle = require('./lib/desk-lifecycle');
 const deskService = require('./lib/desk-service');
 const analyticsService = require('./lib/analytics-service');
+const salesiqLifecycle = require('./lib/salesiq-lifecycle');
+const salesiqService = require('./lib/salesiq-service');
 // Optional: comma-separated department IDs to restrict the sync to. When
 // unset (the default), every enabled department is discovered and synced --
 // Support, Onboarding, Insider Support, and any future one -- so the full
@@ -5687,8 +5709,44 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     const email = (req.session.email || '').toLowerCase();
     if (!email) return res.status(400).json({ success: false, error: 'No session email' });
     const summary = await deskLifecycle.agentSummary({ from, to, emails: [email] });
-    res.json({ success: true, from, to, email, summary: summary[0] || null });
+
+    // Session 21: RingCentral call stats + SalesIQ chat stats, same
+    // from/to window as the ticket summary above, so all three sections
+    // on "My Stats" cover the same range. Best-effort -- a lookup/API
+    // failure on either one shouldn't take down the ticket numbers.
+    let callStats = null;
+    try {
+      const monitored = await getMonitoredAgents();
+      const match = monitored.find(a => (a.email || '').toLowerCase() === email);
+      if (match) {
+        const agentId = match.rc_id || match.extension;
+        callStats = await getAgentCallStatsRange({ agentId, from, to });
+      }
+    } catch (e) { console.warn('⚠️ call stats lookup failed for my-summary:', e.message); }
+
+    let chatStats = null, chatPresence = null;
+    try {
+      if (salesiqService.isConfigured()) {
+        chatStats = await salesiqLifecycle.agentChatStats({ email, from, to });
+        chatPresence = await salesiqLifecycle.agentChatPresenceStats({ email, from, to });
+      }
+    } catch (e) { console.warn('⚠️ chat stats lookup failed for my-summary:', e.message); }
+
+    res.json({ success: true, from, to, email, summary: summary[0] || null, callStats, chatStats, chatPresence });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/admin/chat-lifecycle/status', requireAdmin, async (req, res) => {
+  try {
+    const status = await salesiqLifecycle.status();
+    res.json({ success: true, ...status });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/chat-lifecycle/sync-now', requireAdmin, async (req, res) => {
+  salesiqLifecycle.runChatConversationSync().catch(e => console.error('❌ manual chat conversation sync:', e.message));
+  salesiqLifecycle.syncChatPresenceOnce().catch(e => console.error('❌ manual chat presence sync:', e.message));
+  res.json({ success: true, message: 'Chat sync started' });
 });
 
 app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {
@@ -5741,6 +5799,10 @@ async function start() {
       // Session 20: CSAT sync -- offset a bit further so it doesn't
       // compete with the desk lifecycle sync's first run.
       setTimeout(() => runCsatSync().catch(() => {}), 60000);
+      // Session 21: chat presence poll + conversation backfill -- offset
+      // past the other first-run syncs above.
+      setTimeout(() => salesiqLifecycle.syncChatPresenceOnce().catch(() => {}), 15000);
+      setTimeout(() => salesiqLifecycle.runChatConversationSync().catch(() => {}), 75000);
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }

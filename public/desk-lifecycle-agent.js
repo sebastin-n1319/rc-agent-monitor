@@ -9,6 +9,11 @@
  * a recent-tickets list, so agents can see their own activity here instead
  * of filling in the manual ticket-logging form.
  *
+ * Session 21: added Call Activity (RingCentral, same date range as the
+ * ticket numbers -- see database.js's getAgentCallStatsRange) and Chat
+ * Activity (Zoho SalesIQ chat count / avg response time / avail-busy
+ * time -- see lib/salesiq-lifecycle.js) cards.
+ *
  * Entry point: window.openDeskLifecycleAgent(), rendering into
  * #desk-lifecycle-agent-root.
  */
@@ -43,6 +48,19 @@
     try {
       return new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' });
     } catch (e) { return iso; }
+  }
+
+  // "1h 23m" / "4m 12s" / "38s" -- matches the existing Summary page's
+  // talk-time formatting style.
+  function fmtDuration(totalSeconds) {
+    if (totalSeconds == null) return '—';
+    const s = Math.max(0, Math.round(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${sec}s`;
+    return `${sec}s`;
   }
 
   function rangeISO(days) {
@@ -109,7 +127,12 @@
           <div class="tkta-pill"><div class="tkta-pill-n">${fcr}</div><div class="tkta-pill-l">FCR${s.fcr_total ? ` (${s.fcr_total} tickets)` : ''}</div></div>
           <div class="tkta-pill"><div class="tkta-pill-n">${csat}</div><div class="tkta-pill-l">CSAT${s.csat_total ? ` (${s.csat_total} surveys)` : ''}</div></div>
         </div>
-      </div>
+      </div>`;
+  }
+
+  function breakdownSection(s) {
+    if (!s) return '';
+    return `
       <div class="tkt-card">
         <div class="tkt-card-title">Breakdown</div>
         <div class="tkta-bd-grid">
@@ -117,6 +140,64 @@
           <div><div class="tkt-bd-group-title">Adit App Module</div>${breakdownChips(s.module)}</div>
           <div><div class="tkt-bd-group-title">Category</div>${breakdownChips(s.category)}</div>
           <div><div class="tkt-bd-group-title">Classification</div>${breakdownChips(s.classification)}</div>
+        </div>
+      </div>`;
+  }
+
+  // Session 21: RingCentral call stats, same range as the ticket numbers
+  // above. Missing entirely (null) means this session email isn't linked
+  // to a monitored RingCentral extension yet, rather than "zero calls".
+  function callStatsSection(c) {
+    if (!c) {
+      return `
+        <div class="tkt-card">
+          <div class="tkt-card-title">Call Activity</div>
+          <div class="tkt-card-sub">RingCentral call stats for this range.</div>
+          <div class="tkt-empty">No RingCentral extension linked to your account yet — ask your admin to add you under Agents.</div>
+        </div>`;
+    }
+    return `
+      <div class="tkt-card">
+        <div class="tkt-card-title">Call Activity</div>
+        <div class="tkt-card-sub">RingCentral calls in this range — same period as the ticket numbers above.</div>
+        <div class="tkta-stat-grid">
+          <div class="tkta-pill"><div class="tkta-pill-n">${c.inboundCalls || 0}</div><div class="tkta-pill-l">Inbound</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${c.outboundCalls || 0}</div><div class="tkta-pill-l">Outbound</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${c.totalCalls || 0}</div><div class="tkta-pill-l">Total calls</div></div>
+          <div class="tkta-pill tkta-pill-warn"><div class="tkta-pill-n">${c.missedCalls || 0}</div><div class="tkta-pill-l">Missed</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${c.voicemails || 0}</div><div class="tkta-pill-l">Voicemails</div></div>
+          <div class="tkta-pill tkta-pill-good"><div class="tkta-pill-n">${fmtDuration(c.totalTalkSeconds)}</div><div class="tkta-pill-l">Total talk time</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${fmtDuration(c.ahtInboundSeconds)}</div><div class="tkta-pill-l">AHT inbound</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${fmtDuration(c.ahtOutboundSeconds)}</div><div class="tkta-pill-l">AHT outbound</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${c.transferCount || 0}</div><div class="tkta-pill-l">Transfers</div></div>
+        </div>
+      </div>`;
+  }
+
+  // Session 21: Zoho SalesIQ chat stats. Chat count / avg response time
+  // are fully historical (synced from SalesIQ's own chat log); avail/busy
+  // time is only tracked from whenever this feature shipped forward (see
+  // lib/salesiq-lifecycle.js -- SalesIQ has no historical presence log),
+  // so it fills in over time rather than covering the whole range at first.
+  function chatStatsSection(cs, cp) {
+    if (!cs && !cp) {
+      return `
+        <div class="tkt-card">
+          <div class="tkt-card-title">Chat Activity</div>
+          <div class="tkt-card-sub">Zoho SalesIQ chat stats for this range.</div>
+          <div class="tkt-empty">Chat stats aren't available for this account.</div>
+        </div>`;
+    }
+    const avgResp = cs && cs.avgResponseSeconds != null ? fmtDuration(cs.avgResponseSeconds) : '—';
+    return `
+      <div class="tkt-card">
+        <div class="tkt-card-title">Chat Activity</div>
+        <div class="tkt-card-sub">Zoho SalesIQ chats in this range. Available/busy time started tracking when this shipped, so it fills in over time rather than covering the full range right away.</div>
+        <div class="tkta-stat-grid">
+          <div class="tkta-pill"><div class="tkta-pill-n">${cs ? (cs.chatCount || 0) : '—'}</div><div class="tkta-pill-l">Chats handled</div></div>
+          <div class="tkta-pill"><div class="tkta-pill-n">${avgResp}</div><div class="tkta-pill-l">Avg response time</div></div>
+          <div class="tkta-pill tkta-pill-good"><div class="tkta-pill-n">${cp ? fmtDuration(cp.availSeconds) : '—'}</div><div class="tkta-pill-l">Chat available</div></div>
+          <div class="tkta-pill tkta-pill-warn"><div class="tkta-pill-n">${cp ? fmtDuration(cp.busySeconds) : '—'}</div><div class="tkta-pill-l">Chat busy</div></div>
         </div>
       </div>`;
   }
@@ -173,6 +254,9 @@
         <div class="tkt-card-sub" style="margin:-6px 0 14px 2px;">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
 
         ${statsSection(summaryJson.summary)}
+        ${callStatsSection(summaryJson.callStats)}
+        ${chatStatsSection(summaryJson.chatStats, summaryJson.chatPresence)}
+        ${breakdownSection(summaryJson.summary)}
 
         <div class="tkt-card">
           <div class="tkt-card-title">Recent tickets</div>

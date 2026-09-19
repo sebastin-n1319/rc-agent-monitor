@@ -938,6 +938,44 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
   return results;
 }
 
+// Session 21: arbitrary-range per-agent call stats (vs. getAgentSummary's
+// single calendar-day window), for the "My Stats" self-service page's new
+// RingCentral Call Activity card. `from`/`to` are ISO strings, same shape
+// as the Ticket Lifecycle date filters, so the agent's ticket and call
+// numbers cover the same window.
+async function getAgentCallStatsRange({ agentId, from, to }) {
+  if (!agentId) return null;
+  const inb = await get(`SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
+      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
+      SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed,
+      SUM(CASE WHEN COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail' THEN 1 ELSE 0 END) as voicemails,
+      SUM(COALESCE(hold_duration,0)) as totalHold
+    FROM call_logs
+    WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`, [agentId, from, to]);
+  const out = await get(`SELECT
+      COUNT(*) as total,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
+      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
+      SUM(COALESCE(hold_duration,0)) as totalHold
+    FROM call_logs
+    WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`, [agentId, from, to]);
+  const xfer = await get(`SELECT SUM(COALESCE(transferred,0)) as total FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`, [agentId, from, to]);
+  return {
+    inboundCalls: inb.total || 0,
+    outboundCalls: out.total || 0,
+    totalCalls: (inb.total || 0) + (out.total || 0),
+    missedCalls: inb.missed || 0,
+    voicemails: inb.voicemails || 0,
+    totalTalkSeconds: Math.round((inb.talkSeconds || 0) + (out.talkSeconds || 0)),
+    ahtInboundSeconds: Math.round(inb.avgDur || 0),
+    ahtOutboundSeconds: Math.round(out.avgDur || 0),
+    totalHoldSeconds: Math.round((inb.totalHold || 0) + (out.totalHold || 0)),
+    transferCount: xfer.total || 0,
+  };
+}
+
 async function getAbandonedCalls(date,timeZone='America/Chicago'){
   const { start, end } = getDateWindow(date,timeZone);
   const callStart = start.toISOString();
@@ -2147,7 +2185,7 @@ module.exports={
   savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,getAgentSummary,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,getAgentSummary,getAgentCallStatsRange,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
