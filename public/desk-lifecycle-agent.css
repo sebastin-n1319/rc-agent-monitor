@@ -1,0 +1,67 @@
+/* ───────────────────────────────────────────────────────────────────────
+   MY TICKET STATS (self-service agent view) — Session 20
+   Reuses the tkt-* visual language from desk-lifecycle-admin.css (loaded
+   alongside this file everywhere it's used) but scopes everything under
+   #desk-lifecycle-agent-root, and adds the agent-only bits: big single-
+   agent stat pills (tkta-*) and the recent-tickets table.
+   ─────────────────────────────────────────────────────────────────────── */
+#desk-lifecycle-agent-root { background: var(--tkt-bg) !important; font-family: 'Poppins', system-ui, sans-serif !important; color: var(--tkt-ink) !important; -webkit-font-smoothing: antialiased !important; }
+#desk-lifecycle-agent-root * { box-sizing: border-box !important; }
+#desk-lifecycle-agent-root .tkt-wrap { width:100% !important; max-width:1080px !important; margin:0 !important; padding:14px 14px 32px !important; }
+
+#desk-lifecycle-agent-root .tkt-loading,
+#desk-lifecycle-agent-root .tkt-error { display:flex !important; align-items:center !important; gap:10px !important; padding:40px 20px !important; color:var(--tkt-ink2) !important; font-size:14px !important; }
+#desk-lifecycle-agent-root .tkt-error { color:var(--tkt-red) !important; font-weight:600 !important; }
+#desk-lifecycle-agent-root .tkt-spinner { width:18px !important; height:18px !important; border-radius:50% !important; border:2.5px solid var(--tkt-border) !important; border-top-color:var(--tkt-accent) !important; animation: tkt-spin .7s linear infinite !important; }
+
+#desk-lifecycle-agent-root .tkt-header { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:12px !important; margin-bottom:4px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-agent-root .tkt-h1 { font-size:20px !important; font-weight:700 !important; letter-spacing:-.01em !important; color:var(--tkt-ink) !important; }
+#desk-lifecycle-agent-root .tkt-h1-sub { font-size:13px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; }
+
+#desk-lifecycle-agent-root .tkt-range-opts { display:flex !important; gap:8px !important; }
+#desk-lifecycle-agent-root .tkt-range-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:20px !important; padding:6px 14px !important; font-size:12.5px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; transition:all .15s var(--tkt-ease) !important; }
+#desk-lifecycle-agent-root .tkt-range-btn:hover { border-color:var(--tkt-accent) !important; }
+#desk-lifecycle-agent-root .tkt-range-btn.tkt-range-selected { background:var(--tkt-accent) !important; border-color:var(--tkt-accent) !important; color:#fff !important; }
+
+#desk-lifecycle-agent-root .tkt-card { background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:18px 20px !important; margin-bottom:14px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#desk-lifecycle-agent-root .tkt-card-title { font-size:14.5px !important; font-weight:700 !important; color:var(--tkt-ink) !important; }
+#desk-lifecycle-agent-root .tkt-card-sub { font-size:12.5px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; margin-bottom:14px !important; }
+#desk-lifecycle-agent-root .tkt-empty { padding:24px 4px !important; text-align:center !important; color:var(--tkt-ink3) !important; font-size:13px !important; }
+
+#desk-lifecycle-agent-root .tkt-bd-group-title { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; margin-bottom:6px !important; }
+#desk-lifecycle-agent-root .tkt-bd-chips { display:flex !important; flex-wrap:wrap !important; gap:5px !important; }
+#desk-lifecycle-agent-root .tkt-bd-chip { font-size:11px !important; font-weight:600 !important; padding:3px 9px !important; border-radius:12px !important; background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; color:var(--tkt-ink2) !important; white-space:nowrap !important; }
+#desk-lifecycle-agent-root .tkt-bd-chip b { color:var(--tkt-ink) !important; }
+#desk-lifecycle-agent-root .tkt-bd-empty { font-size:11.5px !important; color:var(--tkt-ink3) !important; font-style:italic !important; }
+#desk-lifecycle-agent-root .tkta-bd-grid { display:grid !important; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)) !important; gap:16px !important; }
+
+/* ── Big single-agent stat pills ── */
+#desk-lifecycle-agent-root .tkta-stat-grid { display:grid !important; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)) !important; gap:10px !important; }
+#desk-lifecycle-agent-root .tkta-pill { text-align:center !important; padding:14px 8px !important; border-radius:var(--tkt-radius-sm) !important; background:var(--tkt-surface2) !important; }
+#desk-lifecycle-agent-root .tkta-pill-n { font-size:24px !important; font-weight:800 !important; color:var(--tkt-ink) !important; line-height:1.1 !important; }
+#desk-lifecycle-agent-root .tkta-pill-l { font-size:10.5px !important; font-weight:600 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.02em !important; margin-top:4px !important; }
+#desk-lifecycle-agent-root .tkta-pill-live .tkta-pill-n { color:var(--tkt-blue) !important; }
+#desk-lifecycle-agent-root .tkta-pill-warn .tkta-pill-n { color:var(--tkt-amber) !important; }
+#desk-lifecycle-agent-root .tkta-pill-good .tkta-pill-n { color:var(--tkt-green) !important; }
+
+/* ── Recent tickets table ── */
+#desk-lifecycle-agent-root .tkta-table-wrap { overflow-x:auto !important; }
+#desk-lifecycle-agent-root .tkta-table { width:100% !important; border-collapse:collapse !important; font-size:12.5px !important; }
+#desk-lifecycle-agent-root .tkta-table th { text-align:left !important; font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.03em !important; padding:6px 8px !important; border-bottom:1px solid var(--tkt-border) !important; white-space:nowrap !important; }
+#desk-lifecycle-agent-root .tkta-table td { padding:8px !important; border-bottom:1px solid var(--tkt-border) !important; color:var(--tkt-ink2) !important; vertical-align:top !important; }
+#desk-lifecycle-agent-root .tkta-table tr:last-child td { border-bottom:none !important; }
+#desk-lifecycle-agent-root .tkta-table a { color:var(--tkt-accent) !important; text-decoration:none !important; font-weight:600 !important; }
+#desk-lifecycle-agent-root .tkta-table a:hover { text-decoration:underline !important; }
+#desk-lifecycle-agent-root .tkta-subject { max-width:260px !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+#desk-lifecycle-agent-root .tkta-reassign-flag { color:var(--tkt-amber) !important; font-weight:700 !important; }
+
+#desk-lifecycle-agent-root .tkta-status { font-size:10.5px !important; font-weight:700 !important; padding:2px 8px !important; border-radius:10px !important; white-space:nowrap !important; }
+#desk-lifecycle-agent-root .tkta-status-closed { background:rgba(16,185,129,.12) !important; color:#065F46 !important; }
+#desk-lifecycle-agent-root .tkta-status-open { background:rgba(59,130,246,.1) !important; color:#1E40AF !important; }
+#desk-lifecycle-agent-root .tkta-status-hold { background:rgba(245,158,11,.12) !important; color:#92400E !important; }
+#desk-lifecycle-agent-root .tkta-status-default { background:var(--tkt-surface2) !important; color:var(--tkt-ink2) !important; }
+
+@media (max-width: 760px) {
+  #desk-lifecycle-agent-root .tkta-bd-grid { grid-template-columns:1fr !important; }
+  #desk-lifecycle-agent-root .tkta-subject { max-width:140px !important; }
+}

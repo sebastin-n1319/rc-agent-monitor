@@ -34,6 +34,7 @@
 <link rel="stylesheet" href="/settings-admin.css?v=1.0.1" id="settings-admin-link">
 <!-- Session 19: Ticket Lifecycle admin (automated Zoho Desk sync) -->
 <link rel="stylesheet" href="/desk-lifecycle-admin.css?v=1.0.0" id="desk-lifecycle-admin-link">
+<link rel="stylesheet" href="/desk-lifecycle-agent.css?v=1.0.0" id="desk-lifecycle-agent-link">
 <script src="/agent-view-v2.js?v=1.19.7" defer></script>
 <script src="/alert-center.js?v=1.19.7" defer></script>
 <script src="/offline-bridge.js?v=1.19.7" defer></script>
@@ -41,6 +42,7 @@
 <script src="/roster-admin.js?v=1.19.85" defer></script>
 <script src="/settings-admin.js?v=1.0.1" defer></script>
 <script src="/desk-lifecycle-admin.js?v=1.0.0" defer></script>
+<script src="/desk-lifecycle-agent.js?v=1.0.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
 <style id="a11y-css">
@@ -9784,6 +9786,7 @@ html.dark-mode .flc-row-enhanced{border-bottom-color:rgba(255,255,255,.05)}
 <link rel="stylesheet" href="/settings-admin.css?v=1.0.1" id="settings-admin-link">
 <!-- Session 19: Ticket Lifecycle admin (automated Zoho Desk sync) -->
 <link rel="stylesheet" href="/desk-lifecycle-admin.css?v=1.0.0" id="desk-lifecycle-admin-link">
+<link rel="stylesheet" href="/desk-lifecycle-agent.css?v=1.0.0" id="desk-lifecycle-agent-link">
 <script src="/agent-view-v2.js?v=1.19.7" defer></script>
 <script src="/alert-center.js?v=1.19.7" defer></script>
 <script src="/offline-bridge.js?v=1.19.7" defer></script>
@@ -9791,6 +9794,7 @@ html.dark-mode .flc-row-enhanced{border-bottom-color:rgba(255,255,255,.05)}
 <script src="/roster-admin.js?v=1.19.85" defer></script>
 <script src="/settings-admin.js?v=1.0.1" defer></script>
 <script src="/desk-lifecycle-admin.js?v=1.0.0" defer></script>
+<script src="/desk-lifecycle-agent.js?v=1.0.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
 <style id="a11y-css">
@@ -19605,6 +19609,12 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
+  <!-- Session 20: self-service Ticket Lifecycle stats, replaces manual ticket logging over time -->
+  <div class="sb-item" id="sb-agent-mystats" title="My Ticket Stats"
+       onclick="sbAgent('mystats',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+    <span class="sb-label">My Stats</span>
+  </div>
   <!-- HOF enabled for Q2 2026 — visible to all agents -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
        onclick="sbAgent('hall',this)" data-hof-enabled="Q2-2026">
@@ -21160,6 +21170,10 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
       Tickets
     </button>
+    <button class="agent-shell-btn" id="agent-tab-mystats" onclick="switchAgentSection('mystats',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+      My Stats
+    </button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">
@@ -21916,6 +21930,10 @@ tbody tr:hover td{
       </div>
 
     </div>
+  </div>
+  <!-- Session 20: self-service Ticket Lifecycle stats (My Ticket Stats) -->
+  <div class="agent-shell-page" id="agent-section-mystats">
+    <div id="desk-lifecycle-agent-root"></div>
   </div>
   <!-- AGENT TICKET LOGGER -->
   <div class="agent-shell-page" id="agent-section-tickets">
@@ -23406,6 +23424,7 @@ function switchAgentSection(section,el){
     const wkdToggleWrap = document.getElementById('tl-wkd-manual-toggle-wrap');
     if (wkdToggleWrap) wkdToggleWrap.style.display = currentRole === 'admin' ? 'flex' : 'none';
   }
+  if(section==='mystats'){ if(typeof openDeskLifecycleAgent==='function') openDeskLifecycleAgent(); }
   if(section==='writer')setTimeout(initAIWriter,50);
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});

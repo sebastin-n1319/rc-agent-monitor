@@ -1,11 +1,28 @@
 /**
- * Ticket Lifecycle Admin — Session 19
+ * Ticket Lifecycle Admin — Session 20
  *
  * Automated replacement for the manually-exported Zoho Desk "lifecycle
- * report" CSV. Shows per-T1-agent ticket counts (open backlog, closed in
- * range, average handle time) and a sentiment breakdown, kept current by
- * a background sync against the Zoho Desk API (server-side, see
- * lib/desk-service.js + lib/desk-lifecycle.js).
+ * report" CSV, and the eventual replacement for the manual per-ticket
+ * data-entry form agents fill in today (POST /api/tickets → Google Sheet).
+ * Shows per-T1-agent, per-channel ticket stats sourced directly from Zoho
+ * Desk ticket properties: unique tickets, solely-handled vs reassigned,
+ * closed, currently-handling (live), FCR%, and channel / Adit App Module /
+ * category / classification breakdowns. Kept current by a background sync
+ * against the Zoho Desk API (server-side, see lib/desk-service.js +
+ * lib/desk-lifecycle.js).
+ *
+ * CSAT% (Session 20): real per-ticket data, sourced from Zoho Analytics'
+ * own "Survey (Zoho Desk)" table -- the public Desk REST API doesn't
+ * expose this for this org (confirmed by exhausting every plausible
+ * endpoint live), but Analytics' dedicated Desk connector syncs it
+ * separately. See lib/analytics-service.js. Good / (Good+Okay+Bad),
+ * filtered by when the survey was submitted (not ticket closed time),
+ * scoped to whichever agent owned the ticket.
+ *
+ * NPS% is NOT shown here: checked the data warehouse and it's an
+ * account/deal-level relationship survey (collected by CSM/account
+ * staff), not tied to individual Desk tickets or T1 agents -- unlike
+ * CSAT, there's no per-ticket NPS source to attribute to one agent.
  *
  * Entry point: window.openDeskLifecycleAdmin(), rendering into
  * #desk-lifecycle-root.
@@ -29,6 +46,18 @@
     { label: '90 days', days: 90 },
   ];
   let _selectedDays = 30;
+  let _sortKey = 'activity';
+  const _expanded = new Set(); // emails whose breakdown panel is open, survives re-sorts within a render
+
+  const SORT_OPTIONS = [
+    { key: 'activity',  label: 'Total activity',      fn: (a) => (a.unique_tickets || 0) },
+    { key: 'closed',    label: 'Closed',               fn: (a) => (a.closed_count || 0) },
+    { key: 'handling',  label: 'Currently handling',   fn: (a) => (a.currently_handling || 0) },
+    { key: 'fcr',       label: 'FCR %',                fn: (a) => (a.fcr_pct == null ? -1 : a.fcr_pct) },
+    { key: 'csat',      label: 'CSAT %',               fn: (a) => (a.csat_pct == null ? -1 : a.csat_pct) },
+    { key: 'reassigned',label: 'Reassigned',           fn: (a) => (a.reassigned || 0) },
+    { key: 'name',      label: 'Name (A–Z)',           fn: null },
+  ];
 
   function fmtDateTime(iso) {
     if (!iso) return '—';
@@ -100,7 +129,7 @@
     const title = status.lastError ? 'Last sync had an error' : 'Sync running';
     const sub = status.lastError
       ? esc(status.lastError)
-      : `Last synced ${fmtDateTime(status.lastSyncAt)} · ${status.ticketsTracked} tickets tracked · ${status.eventsTracked} events cached`;
+      : `Last synced ${fmtDateTime(status.lastSyncAt)} · ${status.ticketsTracked} tickets tracked · ${status.eventsTracked} agent-ticket links synced`;
     return `
       <div class="tkt-banner ${cls}">
         <div class="tkt-banner-main">
@@ -114,46 +143,85 @@
       </div>`;
   }
 
-  function sentimentChip(sentiment) {
-    const order = ['POSITIVE', 'NEUTRAL', 'NEGATIVE'];
-    const parts = order
-      .filter(k => sentiment[k])
-      .map(k => `<span class="tkt-sent tkt-sent-${k.toLowerCase()}">${sentiment[k]}</span>`);
-    const other = Object.keys(sentiment).filter(k => !order.includes(k));
-    for (const k of other) parts.push(`<span class="tkt-sent">${sentiment[k]}</span>`);
-    return parts.length ? parts.join('') : '<span class="tkt-sent-none">—</span>';
+  // Renders a {label: count} breakdown dict as a sorted, capped chip list.
+  function breakdownChips(dict, cap) {
+    const entries = Object.entries(dict || {}).filter(([k]) => k).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return '<div class="tkt-bd-empty">No data in range</div>';
+    const shown = entries.slice(0, cap || 8);
+    const rest = entries.length - shown.length;
+    let html = '<div class="tkt-bd-chips">' + shown.map(([k, v]) =>
+      `<span class="tkt-bd-chip">${esc(k)} <b>${v}</b></span>`
+    ).join('') + '</div>';
+    if (rest > 0) html += `<div class="tkt-bd-empty" style="margin-top:4px">+${rest} more</div>`;
+    return html;
   }
 
-  function summaryTable(agents) {
+  function agentBreakdownPanel(a) {
+    return `
+      <div>
+        <div class="tkt-bd-group-title">Channel</div>
+        ${breakdownChips(a.channel)}
+      </div>
+      <div>
+        <div class="tkt-bd-group-title">Adit App Module</div>
+        ${breakdownChips(a.module)}
+      </div>
+      <div>
+        <div class="tkt-bd-group-title">Category</div>
+        ${breakdownChips(a.category)}
+      </div>
+      <div>
+        <div class="tkt-bd-group-title">Classification</div>
+        ${breakdownChips(a.classification)}
+      </div>`;
+  }
+
+  function agentCard(a) {
+    const displayName = esc(a.pseudo || a.full_name || a.email);
+    const fcr = a.fcr_pct != null ? `${a.fcr_pct}%` : (a.fcr_total ? '0%' : '—');
+    const csat = a.csat_pct != null ? `${a.csat_pct}%` : (a.csat_total ? '0%' : '—');
+    const avgHandle = a.avg_handle_hours != null ? `${a.avg_handle_hours}h` : '—';
+    const isExpanded = _expanded.has(a.email);
+    return `
+      <div class="tkt-agent-card${isExpanded ? ' tkt-expanded' : ''}" data-email="${esc(a.email)}">
+        <div class="tkt-agent-head">
+          <div class="tkt-agent-id">
+            <div class="tkt-agent-name">${displayName}</div>
+            <div class="tkt-agent-email">${esc(a.email)}</div>
+          </div>
+          <div class="tkt-stat-grid">
+            <div class="tkt-pill"><div class="tkt-pill-n">${a.unique_tickets || 0}</div><div class="tkt-pill-l">Unique</div></div>
+            <div class="tkt-pill tkt-pill-good"><div class="tkt-pill-n">${a.solely_handled || 0}</div><div class="tkt-pill-l">Solely handled</div></div>
+            <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.reassigned || 0}</div><div class="tkt-pill-l">Reassigned</div></div>
+            <div class="tkt-pill"><div class="tkt-pill-n">${a.closed_count || 0}</div><div class="tkt-pill-l">Closed</div></div>
+            <div class="tkt-pill tkt-pill-live"><div class="tkt-pill-n">${a.currently_handling || 0}</div><div class="tkt-pill-l">Handling now</div></div>
+            <div class="tkt-pill"><div class="tkt-pill-n">${avgHandle}</div><div class="tkt-pill-l">Avg handle</div></div>
+            <div class="tkt-pill"><div class="tkt-pill-n">${fcr}</div><div class="tkt-pill-l">FCR${a.fcr_total ? ` (${a.fcr_total})` : ''}</div></div>
+            <div class="tkt-pill"><div class="tkt-pill-n">${csat}</div><div class="tkt-pill-l">CSAT${a.csat_total ? ` (${a.csat_total})` : ''}</div></div>
+          </div>
+          <button type="button" class="tkt-expand-btn">${isExpanded ? 'Hide breakdown ▲' : 'Channel / module / category ▾'}</button>
+        </div>
+        <div class="tkt-agent-breakdown">${agentBreakdownPanel(a)}</div>
+      </div>`;
+  }
+
+  function summaryList(agents) {
     if (!agents.length) {
       return `<div class="tkt-empty">No T1 roster agents with an email on file yet — add emails in Roster to see their ticket stats here.</div>`;
     }
-    const sorted = [...agents].sort((a, b) => (b.closed_count + b.backlog_open) - (a.closed_count + a.backlog_open));
-    const rows = sorted.map(a => `
-      <div class="tkt-row">
-        <div class="tkt-row-agent">
-          <div class="tkt-row-name">${esc(a.pseudo || a.full_name || a.email)}</div>
-          <div class="tkt-row-email">${esc(a.email)}</div>
-        </div>
-        <div class="tkt-row-stat"><div class="tkt-stat-n">${a.backlog_open}</div><div class="tkt-stat-l">Open backlog</div></div>
-        <div class="tkt-row-stat"><div class="tkt-stat-n">${a.closed_count}</div><div class="tkt-stat-l">Closed</div></div>
-        <div class="tkt-row-stat"><div class="tkt-stat-n">${a.avg_handle_hours != null ? a.avg_handle_hours + 'h' : '—'}</div><div class="tkt-stat-l">Avg handle time</div></div>
-        <div class="tkt-row-stat"><div class="tkt-stat-n">${a.reassignment_events}</div><div class="tkt-stat-l">Reassign events<span class="tkt-approx">*</span></div></div>
-        <div class="tkt-row-sentiment">${sentimentChip(a.sentiment)}</div>
-      </div>`).join('');
-    return `
-      <div class="tkt-table">
-        <div class="tkt-row tkt-row-head">
-          <div class="tkt-row-agent">Agent</div>
-          <div class="tkt-row-stat">Open</div>
-          <div class="tkt-row-stat">Closed</div>
-          <div class="tkt-row-stat">Avg handle</div>
-          <div class="tkt-row-stat">Reassigned<span class="tkt-approx">*</span></div>
-          <div class="tkt-row-sentiment">Sentiment (new tickets)</div>
-        </div>
-        ${rows}
-      </div>
-      <div class="tkt-footnote">* Reassignment counts are best-effort — based on assignee-change events Zoho's ticket history reports, not an audited figure.</div>`;
+    const opt = SORT_OPTIONS.find(o => o.key === _sortKey) || SORT_OPTIONS[0];
+    const sorted = [...agents].sort((a, b) => {
+      if (!opt.fn) return String(a.pseudo || a.full_name || a.email).localeCompare(String(b.pseudo || b.full_name || b.email));
+      return opt.fn(b) - opt.fn(a);
+    });
+    const sortRow = `
+      <div class="tkt-sort-opts">
+        <span class="tkt-sort-label">Sort by</span>
+        <select class="tkt-sort-select">
+          ${SORT_OPTIONS.map(o => `<option value="${o.key}" ${o.key === _sortKey ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>
+      </div>`;
+    return sortRow + sorted.map(agentCard).join('');
   }
 
   function render(root, status, summaryData) {
@@ -162,7 +230,7 @@
         <div class="tkt-header">
           <div>
             <div class="tkt-h1">Ticket Lifecycle</div>
-            <div class="tkt-h1-sub">Per-agent ticket stats from Zoho Desk — replaces the manual lifecycle report export.</div>
+            <div class="tkt-h1-sub">Per-agent, per-channel ticket stats sourced from Zoho Desk — replaces the manual lifecycle report export.</div>
           </div>
           <div class="tkt-range-opts">
             ${RANGE_PRESETS.map(p => `<button type="button" class="tkt-range-btn ${p.days === _selectedDays ? 'tkt-range-selected' : ''}" data-days="${p.days}">${p.label}</button>`).join('')}
@@ -174,8 +242,9 @@
         ${status.configured ? `
         <div class="tkt-card">
           <div class="tkt-card-title">Per-agent summary</div>
-          <div class="tkt-card-sub">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)}</div>
-          ${summaryTable(summaryData.agents || [])}
+          <div class="tkt-card-sub">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)} · Unique/solely-handled/reassigned and the breakdowns below are windowed by when the ticket was created; Closed/Avg handle/FCR are windowed by when it closed; Handling now is live, not windowed.</div>
+          <div class="tkt-note">CSAT% now reflects real per-ticket survey ratings (Good/Okay/Bad) from Zoho Analytics, filtered by when the customer submitted the survey. NPS% still isn't shown -- it's an account-level relationship survey (CSM team), not tied to individual tickets or T1 agents.</div>
+          ${summaryList(summaryData.agents || [])}
         </div>` : ''}
       </div>`;
 
@@ -184,6 +253,20 @@
     });
     const syncBtn = $('.tkt-sync-btn', root);
     if (syncBtn) syncBtn.addEventListener('click', () => triggerSync(syncBtn));
+    const sortSel = $('.tkt-sort-select', root);
+    if (sortSel) sortSel.addEventListener('change', () => {
+      _sortKey = sortSel.value;
+      render(root, status, summaryData);
+    });
+    root.querySelectorAll('.tkt-agent-card').forEach((card) => {
+      const btn = $('.tkt-expand-btn', card);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        const email = card.dataset.email;
+        if (_expanded.has(email)) _expanded.delete(email); else _expanded.add(email);
+        render(root, status, summaryData);
+      });
+    });
   }
 
   window.openDeskLifecycleAdmin = async function () {

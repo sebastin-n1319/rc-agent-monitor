@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.146'; // Security: API responses never cached (mobile PWA data protection)
+const CACHE_VERSION = 'adit-v1.19.147'; // Security: API responses never cached (mobile PWA data protection)
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 // API_CACHE intentionally removed — API responses contain sensitive agent data
@@ -58,6 +58,8 @@ const PRECACHE_URLS = [
   '/settings-admin.js',
   '/desk-lifecycle-admin.css',
   '/desk-lifecycle-admin.js',
+  '/desk-lifecycle-agent.css',
+  '/desk-lifecycle-agent.js',
   '/brain.js',
   '/brain-logo.png',
   '/brain-avatar.png',

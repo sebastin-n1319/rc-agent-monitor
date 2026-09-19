@@ -24,6 +24,7 @@
     'roster-admin.css',
     'settings-admin.css',
     'desk-lifecycle-admin.css',
+    'desk-lifecycle-agent.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
