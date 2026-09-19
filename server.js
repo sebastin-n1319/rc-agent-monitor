@@ -5453,8 +5453,17 @@ app.post('/api/admin/desk-lifecycle/sync-now', requireAdmin, async (req, res) =>
 // CSAT is wired in for real.
 app.get('/api/admin/desk-lifecycle/debug-customer-feedback', requireAdmin, async (req, res) => {
   try {
+    // Session 20 diagnostic: pass ?path=/tickets/123/customerHappiness (or
+    // any other Zoho Desk API path) to try a candidate endpoint directly,
+    // without a redeploy per guess. Falls back to the original
+    // ticketId-only /customerFeedback lookup when no path is given.
+    const path = req.query.path;
     const ticketId = req.query.ticketId;
-    if (!ticketId) return res.status(400).json({ success: false, error: 'Pass ?ticketId=<a closed ticket id>' });
+    if (path) {
+      const raw = await deskService.fetchRaw(path);
+      return res.json({ success: true, path, raw });
+    }
+    if (!ticketId) return res.status(400).json({ success: false, error: 'Pass ?ticketId=<a closed ticket id> or ?path=<a Zoho Desk API path>' });
     const raw = await deskService.fetchCustomerFeedback(ticketId);
     res.json({ success: true, ticketId, raw });
   } catch(e) {
