@@ -5467,7 +5467,32 @@ function computeBusinessHours(startIso, endIso) {
 }
 
 const DESK_METRICS_BUDGET_PER_TICK = 250; // cap extra /metrics calls per sync tick, so a busy tick can't blow through the rate limit
+const DESK_PAGE_SIZE = 50;
+const DESK_MAX_PAGES_PER_PHASE = 8; // per department, per phase (top-up or backfill), per tick -- 400 tickets/phase
+const DESK_BACKFILL_FLOOR_DAYS = 730; // how far back the backfill phase walks before marking a department complete (~2 years -- covers every preset the admin UI offers, including "Last year", with margin; safe to push deeper later without losing any already-synced data)
 
+// Session 21 rebuild: the old sync reset `from = 0` and re-queried a fixed
+// rolling `lookbackDays: 100` window every single tick, for every
+// department -- so once a department's most-recently-modified ~400
+// tickets (8 pages x 50) filled that 100-day window, the sync plateaued
+// there forever: the exact same tickets, re-fetched identically tick
+// after tick, regardless of what date range the admin UI actually asked
+// for (live-confirmed stuck at 811 tickets total). Replaced with the same
+// two-phase resumable pattern already proven in salesiq-lifecycle.js's
+// runChatConversationSync(), run independently per department:
+//   - Top-up: walks FORWARD from that department's last synced-through
+//     point up to now. Small and cheap most ticks -- "what's changed
+//     since last time" -- and self-corrects every tick since sortBy is
+//     always -modifiedTime.
+//   - Backfill: walks BACKWARD from wherever it last stopped toward
+//     DESK_BACKFILL_FLOOR_DAYS, shrinking the upper time bound each tick.
+//     Because that upper bound only ever shrinks, this makes real forward
+//     progress every tick no matter how many tickets change at the front
+//     in the meantime -- immune to the "never catches up" failure mode a
+//     single rolling window has. Marked complete per department once it
+//     reaches the floor (or an empty page) and never repeats that work.
+// Both watermarks are namespaced per department in the existing generic
+// desk_sync_state key/value table.
 async function runDeskLifecycleSync() {
   if (!deskService.isConfigured()) {
     if (!_deskConfigWarned) {
@@ -5485,7 +5510,7 @@ async function runDeskLifecycleSync() {
     return;
   }
   _deskSyncRunning = true;
-  let ticketsSeen = 0, metricsRefreshed = 0;
+  let ticketsSeen = 0, metricsRefreshed = 0, metricsErrors = 0, lastMetricsError = null;
   let metricsBudget = DESK_METRICS_BUDGET_PER_TICK;
   try {
     const departmentIds = await getDeskDepartmentIds();
@@ -5493,103 +5518,154 @@ async function runDeskLifecycleSync() {
       console.warn('⚠️ Desk lifecycle sync: no departments to sync (discovery failed and none configured) -- skipping this run');
       return;
     }
-    const pageSize = 50;
-    const maxPages = 8; // cap per department per tick -- 400 tickets/dept, most-recently-modified first (see fetchTicketsPage)
-    _deskSyncProgress = { running: true, totalUnits: departmentIds.length * maxPages, completedUnits: 0 };
-    for (const departmentId of departmentIds) {
-    let from = 0;
-    let pagesUsedThisDept = 0;
-    for (let page = 0; page < maxPages; page++) {
-      const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize, lookbackDays: 100 });
-      pagesUsedThisDept++;
-      _deskSyncProgress.completedUnits++;
-      if (!tickets.length) break;
-      for (const t of tickets) {
-        ticketsSeen++;
-        const cf = t.cf || {};
-        const manual = pickManualCategory(cf);
-        const contactName = t.contact ? [t.contact.firstName, t.contact.lastName].filter(Boolean).join(' ') : null;
-        const contactEmail = t.contact?.email || t.email || null;
-        const accountName = t.contact?.account?.accountName || null;
-        try {
-          await deskLifecycle.upsertTicketSnapshot({
-            ticket_id: t.id, ticket_number: t.ticketNumber, subject: t.subject,
-            contact_name: contactName, contact_email: contactEmail, account_name: accountName,
-            status: t.status, status_type: t.statusType, priority: t.priority,
-            channel: t.channel, department_id: t.departmentId,
-            department_name: t.department?.name || null,
-            team_id: t.teamId || null, team_name: t.team?.name || null,
-            assignee_id: t.assigneeId,
-            assignee_email: t.assignee?.emailId ? t.assignee.emailId.toLowerCase() : null,
-            assignee_name: t.assignee ? [t.assignee.firstName, t.assignee.lastName].filter(Boolean).join(' ') : null,
-            sentiment: t.sentiment, comment_count: t.commentCount != null ? Number(t.commentCount) : null,
-            thread_count: t.threadCount != null ? Number(t.threadCount) : null,
-            created_time: t.createdTime, closed_time: t.closedTime, onhold_time: t.onholdTime,
-            due_date: t.dueDate, web_url: t.webUrl, modified_time: t.modifiedTime,
-            classification: t.classification, category: t.category,
-            module: cf.cf_adit_app_module || null,
-            ai_category: cf.cf_ai_category_by_llm || null,
-            manual_category: manual.value, manual_category_source: manual.source,
-            dept_classification: cf.cf_department_classification || null,
-            fcr_achieved: cf.cf_fcr_achieved || null,
-            resolution_business_hours: computeBusinessHours(t.createdTime, t.closedTime),
-          });
-        } catch(e) { console.warn(`⚠️ desk snapshot upsert failed for ticket ${t.ticketNumber || t.id}: ${e.message}`); }
+    const pageSize = DESK_PAGE_SIZE;
+    const maxPages = DESK_MAX_PAGES_PER_PHASE;
+    // 2 phases (top-up + backfill) per department, each budgeted up to maxPages
+    _deskSyncProgress = { running: true, totalUnits: departmentIds.length * maxPages * 2, completedUnits: 0 };
 
-        // Metrics (reassign/reopen counts + per-agent handling time) are
-        // an extra API call per ticket, so only re-pull when the ticket
-        // has actually changed since our last pull -- and stop once the
-        // per-tick budget runs out (it'll catch up on the next tick).
-        try {
-          const watermark = await deskLifecycle.getStoredMetricsWatermark(t.id);
-          const stale = watermark === undefined || watermark !== t.modifiedTime;
-          if (stale && metricsBudget > 0) {
-            metricsBudget--;
-            const m = await deskService.fetchTicketMetrics(t.id);
-            if (m) {
-              const agentsHandled = [];
-              for (const ah of (m.agentsHandled || [])) {
-                if (!ah.agentId) continue; // Zoho's "Unassigned" placeholder row -- nothing to attribute
-                let cached = await deskLifecycle.getCachedAgent(ah.agentId);
-                if (!cached) {
-                  try {
-                    const a = await deskService.fetchAgent(ah.agentId);
-                    const email = a.email ? a.email.toLowerCase() : null;
-                    const name = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || ah.agentName || null;
-                    await deskLifecycle.cacheAgent(ah.agentId, { email, name });
-                    cached = { email, name };
-                  } catch(e) { cached = { email: null, name: ah.agentName || null }; }
-                }
-                agentsHandled.push({
-                  agentId: ah.agentId, agentName: cached.name || ah.agentName,
-                  agentEmail: cached.email, handlingSeconds: parseHandlingSeconds(ah.handlingTime),
-                });
+    const nowMs = Date.now();
+    const floorMs = nowMs - DESK_BACKFILL_FLOOR_DAYS * 24 * 3600 * 1000;
+
+    async function processTicket(t) {
+      ticketsSeen++;
+      const cf = t.cf || {};
+      const manual = pickManualCategory(cf);
+      const contactName = t.contact ? [t.contact.firstName, t.contact.lastName].filter(Boolean).join(' ') : null;
+      const contactEmail = t.contact?.email || t.email || null;
+      const accountName = t.contact?.account?.accountName || null;
+      try {
+        await deskLifecycle.upsertTicketSnapshot({
+          ticket_id: t.id, ticket_number: t.ticketNumber, subject: t.subject,
+          contact_name: contactName, contact_email: contactEmail, account_name: accountName,
+          status: t.status, status_type: t.statusType, priority: t.priority,
+          channel: t.channel, department_id: t.departmentId,
+          department_name: t.department?.name || null,
+          team_id: t.teamId || null, team_name: t.team?.name || null,
+          assignee_id: t.assigneeId,
+          assignee_email: t.assignee?.emailId ? t.assignee.emailId.toLowerCase() : null,
+          assignee_name: t.assignee ? [t.assignee.firstName, t.assignee.lastName].filter(Boolean).join(' ') : null,
+          sentiment: t.sentiment, comment_count: t.commentCount != null ? Number(t.commentCount) : null,
+          thread_count: t.threadCount != null ? Number(t.threadCount) : null,
+          created_time: t.createdTime, closed_time: t.closedTime, onhold_time: t.onholdTime,
+          due_date: t.dueDate, web_url: t.webUrl, modified_time: t.modifiedTime,
+          classification: t.classification, category: t.category,
+          module: cf.cf_adit_app_module || null,
+          ai_category: cf.cf_ai_category_by_llm || null,
+          manual_category: manual.value, manual_category_source: manual.source,
+          dept_classification: cf.cf_department_classification || null,
+          fcr_achieved: cf.cf_fcr_achieved || null,
+          resolution_business_hours: computeBusinessHours(t.createdTime, t.closedTime),
+        });
+      } catch(e) { console.warn(`⚠️ desk snapshot upsert failed for ticket ${t.ticketNumber || t.id}: ${e.message}`); }
+
+      // Metrics (reassign/reopen counts + per-agent handling time) are an
+      // extra API call per ticket, so only re-pull when the ticket has
+      // actually changed since our last pull -- and stop once the
+      // per-tick budget runs out (it'll catch up on later ticks).
+      try {
+        const watermark = await deskLifecycle.getStoredMetricsWatermark(t.id);
+        const stale = watermark === undefined || watermark !== t.modifiedTime;
+        if (stale && metricsBudget > 0) {
+          metricsBudget--;
+          const m = await deskService.fetchTicketMetrics(t.id);
+          if (m) {
+            const agentsHandled = [];
+            for (const ah of (m.agentsHandled || [])) {
+              if (!ah.agentId) continue; // Zoho's "Unassigned" placeholder row -- nothing to attribute
+              let cached = await deskLifecycle.getCachedAgent(ah.agentId);
+              if (!cached) {
+                try {
+                  const a = await deskService.fetchAgent(ah.agentId);
+                  const email = a.email ? a.email.toLowerCase() : null;
+                  const name = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || ah.agentName || null;
+                  await deskLifecycle.cacheAgent(ah.agentId, { email, name });
+                  cached = { email, name };
+                } catch(e) { cached = { email: null, name: ah.agentName || null }; }
               }
-              await deskLifecycle.replaceTicketAgents(t.id, agentsHandled);
-              const resSecs = parseHandlingSeconds(m.resolutionTime);
-              await deskLifecycle.updateTicketMetrics(t.id, {
-                reassignCount: m.reassignCount != null ? Number(m.reassignCount) : null,
-                reopenCount: m.reopenCount != null ? Number(m.reopenCount) : null,
-                resolutionHours: resSecs != null ? Math.round((resSecs / 3600) * 100) / 100 : null,
-                metricsModifiedTime: t.modifiedTime,
+              agentsHandled.push({
+                agentId: ah.agentId, agentName: cached.name || ah.agentName,
+                agentEmail: cached.email, handlingSeconds: parseHandlingSeconds(ah.handlingTime),
               });
-              metricsRefreshed++;
             }
+            await deskLifecycle.replaceTicketAgents(t.id, agentsHandled);
+            const resSecs = parseHandlingSeconds(m.resolutionTime);
+            await deskLifecycle.updateTicketMetrics(t.id, {
+              reassignCount: m.reassignCount != null ? Number(m.reassignCount) : null,
+              reopenCount: m.reopenCount != null ? Number(m.reopenCount) : null,
+              resolutionHours: resSecs != null ? Math.round((resSecs / 3600) * 100) / 100 : null,
+              metricsModifiedTime: t.modifiedTime,
+            });
+            metricsRefreshed++;
           }
-        } catch(e) {
-          console.warn(`⚠️ desk metrics sync failed for ticket ${t.ticketNumber || t.id}: ${e.message}`);
         }
+      } catch(e) {
+        metricsErrors++;
+        lastMetricsError = `ticket ${t.ticketNumber || t.id}: ${e.message}`;
+        console.warn(`⚠️ desk metrics sync failed for ticket ${t.ticketNumber || t.id}: ${e.message}`);
       }
-      from += pageSize;
-      if (tickets.length < pageSize) break;
     }
-    if (pagesUsedThisDept < maxPages) {
-      _deskSyncProgress.completedUnits += (maxPages - pagesUsedThisDept);
+
+    // One resumable phase: pages forward (offset `from`) through the
+    // given [fromTimeMs, toTimeMs) modifiedTime window, up to maxPages,
+    // processing every ticket seen. Returns the extreme modifiedTime
+    // observed so the caller can advance/shrink its watermark for the
+    // next tick.
+    async function runPhase({ departmentId, fromTimeMs, toTimeMs, trackMax, trackMin }) {
+      let from = 0, pages = 0, more = true, maxSeen = null, minSeen = null;
+      while (more && pages < maxPages) {
+        const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize, fromTimeMs, toTimeMs });
+        pages++;
+        _deskSyncProgress.completedUnits++;
+        if (!tickets.length) { more = false; break; }
+        for (const t of tickets) {
+          await processTicket(t);
+          const mt = t.modifiedTime ? Date.parse(t.modifiedTime) : null;
+          if (mt != null && !Number.isNaN(mt)) {
+            if (trackMax && (maxSeen == null || mt > maxSeen)) maxSeen = mt;
+            if (trackMin && (minSeen == null || mt < minSeen)) minSeen = mt;
+          }
+        }
+        more = tickets.length === pageSize;
+        from += pageSize;
+      }
+      if (pages < maxPages) _deskSyncProgress.completedUnits += (maxPages - pages);
+      return { pages, caughtUp: !more, maxSeen, minSeen };
     }
-    } // end departmentId loop
+
+    for (const departmentId of departmentIds) {
+      // Phase 1: top-up -- forward from last synced-through point to now.
+      const storedThrough = await deskLifecycle.getSyncState(`desk_synced_through_ms:${departmentId}`);
+      const syncedThrough = storedThrough ? Number(storedThrough) : floorMs;
+      const topUp = await runPhase({ departmentId, fromTimeMs: syncedThrough, toTimeMs: nowMs, trackMax: true });
+      if (topUp.caughtUp) {
+        await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(nowMs));
+      } else if (topUp.maxSeen != null) {
+        await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(topUp.maxSeen));
+      }
+
+      // Phase 2: backfill -- backward from wherever it last stopped
+      // toward the floor (skipped once this department has already
+      // reached it).
+      const backfillDone = await deskLifecycle.getSyncState(`desk_backfill_complete:${departmentId}`);
+      if (backfillDone !== '1') {
+        const storedTo = await deskLifecycle.getSyncState(`desk_backfilled_to_ms:${departmentId}`);
+        const toBound = storedTo ? Number(storedTo) : nowMs;
+        const backfill = await runPhase({ departmentId, fromTimeMs: floorMs, toTimeMs: toBound, trackMin: true });
+        if (backfill.minSeen == null || backfill.minSeen - 1 <= floorMs) {
+          await deskLifecycle.setSyncState(`desk_backfill_complete:${departmentId}`, '1');
+        } else {
+          await deskLifecycle.setSyncState(`desk_backfilled_to_ms:${departmentId}`, String(backfill.minSeen - 1));
+        }
+      } else {
+        _deskSyncProgress.completedUnits += maxPages; // nothing left to do for this department's backfill phase
+      }
+    }
+
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('last_error', null);
-    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets seen, ${metricsRefreshed} metrics refreshed (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
+    await deskLifecycle.setSyncState('last_metrics_error', lastMetricsError);
+    await deskLifecycle.setSyncState('last_metrics_error_count', String(metricsErrors));
+    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets seen, ${metricsRefreshed} metrics refreshed, ${metricsErrors} metrics errors (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
   } catch(e) {
     console.error('❌ Desk lifecycle sync error:', e.message);
     await deskLifecycle.setSyncState('last_error', e.message).catch(()=>{});
@@ -5617,14 +5693,30 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
 app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
   try {
     const status = await deskLifecycle.syncStatus();
+    // Kept as "syncProgressPct" for the existing admin UI field name --
+    // this is only THIS tick's own small phase budget, not the real
+    // backlog. See backfillComplete below for genuine completeness.
     const syncProgressPct = _deskSyncProgress.totalUnits > 0
       ? Math.round((_deskSyncProgress.completedUnits / _deskSyncProgress.totalUnits) * 100)
       : (_deskSyncProgress.running ? 0 : null);
+    // Session 21: true only once every department's backfill phase has
+    // walked all the way back to DESK_BACKFILL_FLOOR_DAYS -- i.e. the
+    // sync actually covers its full intended history, not just "this
+    // tick's fixed unit budget was spent" (which is all syncProgressPct
+    // above ever meant, and was being shown as a misleading 100%).
+    let backfillComplete = null;
+    try {
+      const departmentIds = await getDeskDepartmentIds();
+      if (departmentIds.length) {
+        const flags = await Promise.all(departmentIds.map(id => deskLifecycle.getSyncState(`desk_backfill_complete:${id}`)));
+        backfillComplete = flags.every(f => f === '1');
+      }
+    } catch(e) { /* non-fatal -- leave backfillComplete as null (unknown) */ }
     res.json({
       success: true,
       configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(),
       csatConfigured: analyticsService.isConfigured(), csatRateLimit: analyticsService.getRateLimitState(),
-      syncRunning: _deskSyncProgress.running, syncProgressPct,
+      syncRunning: _deskSyncProgress.running, syncProgressPct, backfillComplete,
       ...status,
     });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -5691,6 +5783,27 @@ app.get('/api/admin/desk-lifecycle/debug-customer-feedback', requireAdmin, async
     }
     if (!ticketId) return res.status(400).json({ success: false, error: 'Pass ?ticketId=<a closed ticket id> or ?path=<a Zoho Desk API path>' });
     const raw = await deskService.fetchCustomerFeedback(ticketId);
+    res.json({ success: true, ticketId, raw });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// Session 21 diagnostic (temporary): confirms the real Zoho Desk
+// /tickets/{id}/metrics response through the EXACT same code path the
+// sync itself uses (deskService.fetchTicketMetrics -> deskGet, including
+// its primary-token-then-suite-token-on-403 fallback) -- desk_ticket_agents
+// has been staying empty (eventsTracked: 0) in production despite tickets
+// syncing fine, and this confirms whether that's a metrics-call failure
+// (auth/scope) versus a response-shape mismatch, for a real ticket id,
+// without waiting on a cron tick or guessing from logs. Admin-only,
+// read-only, no data written. Remove once desk_ticket_agents is
+// confirmed populating correctly.
+app.get('/api/admin/desk-lifecycle/debug-metrics', requireAdmin, async (req, res) => {
+  try {
+    const ticketId = req.query.ticketId;
+    if (!ticketId) return res.status(400).json({ success: false, error: 'Pass ?ticketId=<a real ticket id>' });
+    const raw = await deskService.fetchTicketMetrics(ticketId);
     res.json({ success: true, ticketId, raw });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
