@@ -5912,6 +5912,19 @@ app.post('/api/admin/chat-lifecycle/sync-now', requireAdmin, async (req, res) =>
   res.json({ success: true, message: 'Chat sync started' });
 });
 
+// Session 23: one-off reset for the backfill floor increase (90 -> 730
+// days, see lib/salesiq-lifecycle.js) -- clears the sync-state flags so
+// the backfill phase resumes walking backward past wherever it had
+// already stopped, instead of staying permanently marked complete at
+// the old shallower floor. Safe to call again if the floor ever changes.
+app.post('/api/admin/chat-lifecycle/reset-backfill', requireAdmin, async (req, res) => {
+  try {
+    await salesiqLifecycle.setSyncState('backfill_complete', null);
+    await salesiqLifecycle.setSyncState('backfilled_to_ms', null);
+    res.json({ success: true, message: 'Backfill flags reset -- next sync tick resumes walking backward.' });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
