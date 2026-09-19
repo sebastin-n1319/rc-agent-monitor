@@ -5632,40 +5632,56 @@ async function runDeskLifecycleSync() {
       return { pages, caughtUp: !more, maxSeen, minSeen };
     }
 
+    let deptErrors = 0, lastDeptError = null;
     for (const departmentId of departmentIds) {
-      // Phase 1: top-up -- forward from last synced-through point to now.
-      const storedThrough = await deskLifecycle.getSyncState(`desk_synced_through_ms:${departmentId}`);
-      const syncedThrough = storedThrough ? Number(storedThrough) : floorMs;
-      const topUp = await runPhase({ departmentId, fromTimeMs: syncedThrough, toTimeMs: nowMs, trackMax: true });
-      if (topUp.caughtUp) {
-        await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(nowMs));
-      } else if (topUp.maxSeen != null) {
-        await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(topUp.maxSeen));
-      }
-
-      // Phase 2: backfill -- backward from wherever it last stopped
-      // toward the floor (skipped once this department has already
-      // reached it).
-      const backfillDone = await deskLifecycle.getSyncState(`desk_backfill_complete:${departmentId}`);
-      if (backfillDone !== '1') {
-        const storedTo = await deskLifecycle.getSyncState(`desk_backfilled_to_ms:${departmentId}`);
-        const toBound = storedTo ? Number(storedTo) : nowMs;
-        const backfill = await runPhase({ departmentId, fromTimeMs: floorMs, toTimeMs: toBound, trackMin: true });
-        if (backfill.minSeen == null || backfill.minSeen - 1 <= floorMs) {
-          await deskLifecycle.setSyncState(`desk_backfill_complete:${departmentId}`, '1');
-        } else {
-          await deskLifecycle.setSyncState(`desk_backfilled_to_ms:${departmentId}`, String(backfill.minSeen - 1));
+      // Session 21 hardening: an occasional transient failure fetching
+      // one department's page (e.g. a truncated/empty-body response from
+      // Zoho -- "Unexpected end of JSON input" -- observed live after
+      // shipping the two-phase rewrite, since it now makes many more
+      // pagination calls per tick than the old capped version ever did)
+      // used to abort the ENTIRE tick, wasting every department queued
+      // behind the failing one. Isolated per department instead, same
+      // reasoning as the per-ticket try/catch above -- one bad department
+      // just retries next tick from wherever its watermark already is.
+      try {
+        // Phase 1: top-up -- forward from last synced-through point to now.
+        const storedThrough = await deskLifecycle.getSyncState(`desk_synced_through_ms:${departmentId}`);
+        const syncedThrough = storedThrough ? Number(storedThrough) : floorMs;
+        const topUp = await runPhase({ departmentId, fromTimeMs: syncedThrough, toTimeMs: nowMs, trackMax: true });
+        if (topUp.caughtUp) {
+          await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(nowMs));
+        } else if (topUp.maxSeen != null) {
+          await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(topUp.maxSeen));
         }
-      } else {
-        _deskSyncProgress.completedUnits += maxPages; // nothing left to do for this department's backfill phase
+
+        // Phase 2: backfill -- backward from wherever it last stopped
+        // toward the floor (skipped once this department has already
+        // reached it).
+        const backfillDone = await deskLifecycle.getSyncState(`desk_backfill_complete:${departmentId}`);
+        if (backfillDone !== '1') {
+          const storedTo = await deskLifecycle.getSyncState(`desk_backfilled_to_ms:${departmentId}`);
+          const toBound = storedTo ? Number(storedTo) : nowMs;
+          const backfill = await runPhase({ departmentId, fromTimeMs: floorMs, toTimeMs: toBound, trackMin: true });
+          if (backfill.minSeen == null || backfill.minSeen - 1 <= floorMs) {
+            await deskLifecycle.setSyncState(`desk_backfill_complete:${departmentId}`, '1');
+          } else {
+            await deskLifecycle.setSyncState(`desk_backfilled_to_ms:${departmentId}`, String(backfill.minSeen - 1));
+          }
+        } else {
+          _deskSyncProgress.completedUnits += maxPages; // nothing left to do for this department's backfill phase
+        }
+      } catch(e) {
+        deptErrors++;
+        lastDeptError = `department ${departmentId}: ${e.message}`;
+        console.warn(`⚠️ desk sync failed for department ${departmentId} -- skipping to next department this tick: ${e.message}`);
       }
     }
 
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
-    await deskLifecycle.setSyncState('last_error', null);
+    await deskLifecycle.setSyncState('last_error', deptErrors > 0 ? lastDeptError : null);
     await deskLifecycle.setSyncState('last_metrics_error', lastMetricsError);
     await deskLifecycle.setSyncState('last_metrics_error_count', String(metricsErrors));
-    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets seen, ${metricsRefreshed} metrics refreshed, ${metricsErrors} metrics errors (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
+    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets seen, ${metricsRefreshed} metrics refreshed, ${metricsErrors} metrics errors, ${deptErrors} department errors (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
   } catch(e) {
     console.error('❌ Desk lifecycle sync error:', e.message);
     await deskLifecycle.setSyncState('last_error', e.message).catch(()=>{});
