@@ -5703,6 +5703,43 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Session 23: CSV export for the Ticket Lifecycle admin summary --
+// same shape as the JSON /summary route above (same agentSummary() call,
+// same from/to/q filters so the export always matches whatever the admin
+// is currently looking at), following the existing CSV pattern already
+// used for /api/export/break-tracker and /api/export/call-logs.
+app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => {
+  try {
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const q = req.query.q ? String(req.query.q).trim() : null;
+    const agents = await roster.listAgents({ includeRelieved: false });
+    const emails = agents.map(a => a.email).filter(Boolean);
+    const summary = await deskLifecycle.agentSummary({ from, to, emails, q });
+    const byEmail = {};
+    for (const a of agents) if (a.email) byEmail[a.email] = a;
+
+    const header = [
+      'Agent', 'Email', 'Unique Tickets', 'Solely Handled', 'Reassigned',
+      'Closed', 'Avg Handle (hrs)', 'Currently Handling', 'FCR %', 'CSAT %',
+    ];
+    const rows = [header, ...summary.map(s => {
+      const a = byEmail[s.email];
+      return [
+        a?.full_name || a?.pseudo || s.email, s.email,
+        s.unique_tickets || 0, s.solely_handled || 0, s.reassigned || 0,
+        s.closed_count || 0, s.avg_handle_hours ?? '',
+        s.currently_handling || 0, s.fcr_pct ?? '', s.csat_pct ?? '',
+      ];
+    })];
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+    const fromDate = from.slice(0, 10), toDate = to.slice(0, 10);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="ticket-lifecycle-${fromDate}-to-${toDate}.csv"`);
+    res.send(csv);
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
   try {
     const status = await deskLifecycle.syncStatus();

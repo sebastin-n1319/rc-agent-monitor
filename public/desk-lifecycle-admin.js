@@ -452,6 +452,10 @@
           <span class="tkt-filter-label">Customer</span>
           <input type="search" class="tkt-search-input" placeholder="Company, contact name, or email…" value="${esc(_customerQuery || '')}">
         </div>
+        <div class="tkt-filter-group">
+          <span class="tkt-filter-label">&nbsp;</span>
+          <button type="button" class="tkt-btn tkt-btn-light tkt-export-btn">Export CSV</button>
+        </div>
       </div>`;
   }
 
@@ -479,6 +483,13 @@
         _customerQuery = search.value.trim();
         refreshSummary(root, status);
       }, 350);
+    });
+    const exportBtn = $('.tkt-export-btn', root);
+    if (exportBtn) exportBtn.addEventListener('click', () => {
+      const range = currentRange();
+      const params = new URLSearchParams({ from: range.from, to: range.to });
+      if (_customerQuery) params.set('q', _customerQuery);
+      window.open(`/api/desk-lifecycle/summary/export?${params.toString()}`, '_blank');
     });
   }
 

@@ -20,3 +20,35 @@
    itself switches to at its own <=900px breakpoint) so they don't crowd
    the 180px stat-card width. */
 .av2 #desk-lifecycle-agent-root .av2-stat-value { font-size: var(--av2-t-xl); }
+
+/* ── Period filter bar — Session 23 ──────────────────────────────────
+   Brings the same Period options admins already have (desk-lifecycle-
+   admin.css's .tkt-select / .tkt-date-inputs) to My Stats, styled with
+   av2 tokens instead of the admin page's tkt-* variables. */
+.av2 #desk-lifecycle-agent-root .mystats-filterbar {
+  display: flex; align-items: center; gap: var(--av2-s3); flex-wrap: wrap;
+}
+.av2 #desk-lifecycle-agent-root select.mystats-preset-select {
+  border: 1px solid var(--av2-border); border-radius: var(--av2-r-sm);
+  padding: 7px 12px; font-size: var(--av2-t-sm); font-family: inherit;
+  color: var(--av2-t1); background: var(--av2-surface); cursor: pointer;
+}
+.av2 #desk-lifecycle-agent-root select.mystats-preset-select:focus,
+.av2 #desk-lifecycle-agent-root .mystats-date-inputs input[type="date"]:focus {
+  outline: none; border-color: var(--av2-orange);
+}
+.av2 #desk-lifecycle-agent-root .mystats-date-inputs {
+  display: flex; align-items: center; gap: var(--av2-s2); flex-wrap: wrap;
+}
+.av2 #desk-lifecycle-agent-root .mystats-date-inputs input[type="date"] {
+  border: 1px solid var(--av2-border); border-radius: var(--av2-r-sm);
+  padding: 6px 10px; font-size: var(--av2-t-xs); font-family: inherit;
+  color: var(--av2-t1); background: var(--av2-surface);
+}
+.av2 #desk-lifecycle-agent-root .mystats-date-sep { font-size: var(--av2-t-xs); color: var(--av2-t3); }
+
+@media (max-width: 640px) {
+  .av2 #desk-lifecycle-agent-root .av2-section-head { flex-direction: column; align-items: stretch; }
+  .av2 #desk-lifecycle-agent-root .mystats-filterbar { width: 100%; }
+  .av2 #desk-lifecycle-agent-root select.mystats-preset-select { flex: 1 1 auto; }
+}

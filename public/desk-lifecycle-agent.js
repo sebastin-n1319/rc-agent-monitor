@@ -32,12 +32,96 @@
     ));
   }
 
-  const RANGE_PRESETS = [
-    { label: '7 days',  days: 7 },
-    { label: '30 days', days: 30 },
-    { label: '90 days', days: 90 },
-  ];
-  let _selectedDays = 30;
+  // ── Period filter — Session 23: ported from desk-lifecycle-admin.js's
+  // filter bar so agents get the same Period options admins already have
+  // (rolling/calendar/custom, all DST-aware Chicago wall-clock math),
+  // instead of the previous fixed 7/30/90-day buttons. The backend
+  // (/api/desk-lifecycle/my-summary, /my-tickets) already accepted
+  // arbitrary from/to -- this was purely a frontend gap.
+  let _selectedPreset = 'r30';
+  let _customFrom = null; // 'YYYY-MM-DD'
+  let _customTo = null;   // 'YYYY-MM-DD'
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function chicagoOffsetMinutesAt(utcMs) {
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago', hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    });
+    const parts = dtf.formatToParts(new Date(utcMs)).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+    const asIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+    return Math.round((asIfUtc - utcMs) / 60000);
+  }
+  function centralWallTimeToUtcIso(naiveLocalStr) {
+    const m = String(naiveLocalStr).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+    if (!m) return new Date(naiveLocalStr).toISOString();
+    const [y, mo, d, h, mi, s] = m.slice(1).map(Number);
+    const approxUtcMs = Date.UTC(y, mo - 1, d, h, mi, s);
+    const offsetMin = chicagoOffsetMinutesAt(approxUtcMs);
+    return new Date(approxUtcMs - offsetMin * 60000).toISOString();
+  }
+  function dayStartIso(y, m, d) { return centralWallTimeToUtcIso(`${y}-${pad2(m)}-${pad2(d)} 00:00:00`); }
+  function chicagoTodayYMD() {
+    const dtf = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const parts = dtf.formatToParts(new Date()).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+    return { y: +parts.year, m: +parts.month, d: +parts.day };
+  }
+  function addDays(y, m, d, delta) {
+    const dt = new Date(Date.UTC(y, m - 1, d + delta));
+    return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+  }
+  function weekdayOf(y, m, d) { return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); }
+  function mondayOnOrBefore(y, m, d) { const wd = weekdayOf(y, m, d); return addDays(y, m, d, -((wd + 6) % 7)); }
+  function quarterStartMonth(m) { return Math.floor((m - 1) / 3) * 3 + 1; }
+  function seasonStartMonth(m) {
+    if (m === 12 || m === 1 || m === 2) return 12;
+    if (m >= 3 && m <= 5) return 3;
+    if (m >= 6 && m <= 8) return 6;
+    return 9;
+  }
+  function seasonLabel(m) { return { 12: 'Winter', 3: 'Spring', 6: 'Summer', 9: 'Fall' }[seasonStartMonth(m)]; }
+
+  function computeRolling(days) { return { from: new Date(Date.now() - days * 24 * 3600 * 1000).toISOString(), to: new Date().toISOString() }; }
+  function computeToday() { const t = chicagoTodayYMD(); return { from: dayStartIso(t.y, t.m, t.d), to: new Date().toISOString() }; }
+  function computeYesterday() { const t = chicagoTodayYMD(); const y1 = addDays(t.y, t.m, t.d, -1); return { from: dayStartIso(y1.y, y1.m, y1.d), to: dayStartIso(t.y, t.m, t.d) }; }
+  function computeThisWeek() { const t = chicagoTodayYMD(); const mon = mondayOnOrBefore(t.y, t.m, t.d); return { from: dayStartIso(mon.y, mon.m, mon.d), to: new Date().toISOString() }; }
+  function computeLastWeek() { const t = chicagoTodayYMD(); const thisMon = mondayOnOrBefore(t.y, t.m, t.d); const lastMon = addDays(thisMon.y, thisMon.m, thisMon.d, -7); return { from: dayStartIso(lastMon.y, lastMon.m, lastMon.d), to: dayStartIso(thisMon.y, thisMon.m, thisMon.d) }; }
+  function computeThisMonth() { const t = chicagoTodayYMD(); return { from: dayStartIso(t.y, t.m, 1), to: new Date().toISOString() }; }
+  function computeLastMonth() { const t = chicagoTodayYMD(); const pm = t.m === 1 ? { y: t.y - 1, m: 12 } : { y: t.y, m: t.m - 1 }; return { from: dayStartIso(pm.y, pm.m, 1), to: dayStartIso(t.y, t.m, 1) }; }
+  function computeThisQuarter() { const t = chicagoTodayYMD(); const qm = quarterStartMonth(t.m); return { from: dayStartIso(t.y, qm, 1), to: new Date().toISOString() }; }
+  function computeLastQuarter() { const t = chicagoTodayYMD(); const qm = quarterStartMonth(t.m); const pq = qm === 1 ? { y: t.y - 1, m: 10 } : { y: t.y, m: qm - 3 }; return { from: dayStartIso(pq.y, pq.m, 1), to: dayStartIso(t.y, qm, 1) }; }
+  function computeThisSeason() { const t = chicagoTodayYMD(); const sm = seasonStartMonth(t.m); const sy = (sm === 12 && t.m !== 12) ? t.y - 1 : t.y; return { from: dayStartIso(sy, sm, 1), to: new Date().toISOString() }; }
+  function computeThisYear() { const t = chicagoTodayYMD(); return { from: dayStartIso(t.y, 1, 1), to: new Date().toISOString() }; }
+  function computeLastYear() { const t = chicagoTodayYMD(); return { from: dayStartIso(t.y - 1, 1, 1), to: dayStartIso(t.y, 1, 1) }; }
+  function computeCustom() {
+    if (!_customFrom || !_customTo) return computeRolling(30);
+    const [fy, fm, fd] = _customFrom.split('-').map(Number);
+    const [ty, tm, td] = _customTo.split('-').map(Number);
+    const end = addDays(ty, tm, td, 1);
+    return { from: dayStartIso(fy, fm, fd), to: dayStartIso(end.y, end.m, end.d) };
+  }
+  function buildPresets() {
+    return [
+      { key: 'r7',  label: 'Last 7 days',  group: 'Rolling',  compute: () => computeRolling(7) },
+      { key: 'r30', label: 'Last 30 days', group: 'Rolling',  compute: () => computeRolling(30) },
+      { key: 'r90', label: 'Last 90 days', group: 'Rolling',  compute: () => computeRolling(90) },
+      { key: 'today',       label: 'Today',                                            group: 'Calendar', compute: computeToday },
+      { key: 'yesterday',   label: 'Yesterday',                                        group: 'Calendar', compute: computeYesterday },
+      { key: 'thisWeek',    label: 'This week',                                        group: 'Calendar', compute: computeThisWeek },
+      { key: 'lastWeek',    label: 'Last week',                                        group: 'Calendar', compute: computeLastWeek },
+      { key: 'thisMonth',   label: 'This month',                                       group: 'Calendar', compute: computeThisMonth },
+      { key: 'lastMonth',   label: 'Last month',                                       group: 'Calendar', compute: computeLastMonth },
+      { key: 'thisQuarter', label: 'This quarter',                                     group: 'Calendar', compute: computeThisQuarter },
+      { key: 'lastQuarter', label: 'Last quarter',                                     group: 'Calendar', compute: computeLastQuarter },
+      { key: 'thisSeason',  label: `This season (${seasonLabel(chicagoTodayYMD().m)})`, group: 'Calendar', compute: computeThisSeason },
+      { key: 'thisYear',    label: 'This year',                                        group: 'Calendar', compute: computeThisYear },
+      { key: 'lastYear',    label: 'Last year',                                        group: 'Calendar', compute: computeLastYear },
+      { key: 'custom',      label: 'Custom range…',                                    group: 'Custom',   compute: computeCustom },
+    ];
+  }
+  function findPreset(key) { const all = buildPresets(); return all.find(p => p.key === key) || all[1]; }
+  function currentRange() { return findPreset(_selectedPreset).compute(); }
 
   function fmtDateTime(iso) {
     if (!iso) return '—';
@@ -68,14 +152,8 @@
     return `${sec}s`;
   }
 
-  function rangeISO(days) {
-    const to = new Date();
-    const from = new Date(Date.now() - days * 24 * 3600 * 1000);
-    return { from: from.toISOString(), to: to.toISOString() };
-  }
-
-  async function loadMySummary(days) {
-    const { from, to } = rangeISO(days);
+  async function loadMySummary(range) {
+    const { from, to } = range;
     const r = await fetch(`/api/desk-lifecycle/my-summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { credentials: 'include' });
     if (r.status === 401) throw new Error('Not logged in');
     if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -84,8 +162,8 @@
     return j;
   }
 
-  async function loadMyTickets(days) {
-    const { from, to } = rangeISO(days);
+  async function loadMyTickets(range) {
+    const { from, to } = range;
     const r = await fetch(`/api/desk-lifecycle/my-tickets?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { credentials: 'include' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
@@ -279,8 +357,25 @@
             <h2 class="av2-section-title">My Ticket Stats</h2>
             <div class="av2-section-sub">Your own ticket activity, straight from Zoho Desk — no need to log it by hand.</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;">
-            ${RANGE_PRESETS.map(p => `<button type="button" class="av2-btn av2-btn-sm ${p.days === _selectedDays ? 'av2-btn-primary' : 'av2-btn-ghost'}" data-days="${p.days}">${p.label}</button>`).join('')}
+          <div class="mystats-filterbar">
+            ${(() => {
+              const presets = buildPresets();
+              const groups = {};
+              presets.forEach(p => { (groups[p.group] = groups[p.group] || []).push(p); });
+              const groupOrder = ['Rolling', 'Calendar', 'Custom'];
+              return `
+                <select class="mystats-preset-select">
+                  ${groupOrder.map(g => `<optgroup label="${esc(g)}">${(groups[g] || []).map(p =>
+                    `<option value="${p.key}" ${p.key === _selectedPreset ? 'selected' : ''}>${esc(p.label)}</option>`
+                  ).join('')}</optgroup>`).join('')}
+                </select>
+                <div class="mystats-date-inputs"${_selectedPreset === 'custom' ? '' : ' style="display:none"'}>
+                  <input type="date" class="mystats-date-from" value="${esc(_customFrom || '')}">
+                  <span class="mystats-date-sep">to</span>
+                  <input type="date" class="mystats-date-to" value="${esc(_customTo || '')}">
+                  <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-date-apply">Apply</button>
+                </div>`;
+            })()}
           </div>
         </div>
         <div class="av2-section-meta" style="margin-bottom:var(--av2-s5);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
@@ -293,8 +388,21 @@
         ${panel('Recent tickets', 'Most recently created first, up to 200.', ticketsTable(ticketsJson.tickets || []))}
       </div>`;
 
-    root.querySelectorAll('.av2-btn[data-days]').forEach((b) => {
-      b.addEventListener('click', () => { _selectedDays = parseInt(b.dataset.days, 10); window.openDeskLifecycleAgent(); });
+    const presetSel = root.querySelector('.mystats-preset-select');
+    if (presetSel) presetSel.addEventListener('change', () => {
+      _selectedPreset = presetSel.value;
+      const customWrap = root.querySelector('.mystats-date-inputs');
+      if (customWrap) customWrap.style.display = (_selectedPreset === 'custom') ? '' : 'none';
+      if (_selectedPreset !== 'custom' || (_customFrom && _customTo)) window.openDeskLifecycleAgent();
+    });
+    const applyBtn = root.querySelector('.mystats-date-apply');
+    if (applyBtn) applyBtn.addEventListener('click', () => {
+      const f = root.querySelector('.mystats-date-from');
+      const t = root.querySelector('.mystats-date-to');
+      if (!f || !t || !f.value || !t.value) { if (typeof showToast === 'function') showToast('Pick both a start and end date', 'error', 3000); return; }
+      if (f.value > t.value) { if (typeof showToast === 'function') showToast('Start date must be before end date', 'error', 3000); return; }
+      _customFrom = f.value; _customTo = t.value;
+      window.openDeskLifecycleAgent();
     });
 
     // Stagger the ticket rows in, matching the dashboard's row entrance
@@ -325,9 +433,10 @@
     if (!root) return;
     root.innerHTML = skeletonHTML();
     try {
+      const range = currentRange();
       const [summaryJson, ticketsJson] = await Promise.all([
-        loadMySummary(_selectedDays),
-        loadMyTickets(_selectedDays),
+        loadMySummary(range),
+        loadMyTickets(range),
       ]);
       render(root, summaryJson, ticketsJson);
     } catch (e) {
