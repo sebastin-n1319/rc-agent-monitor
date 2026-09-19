@@ -2092,4 +2092,11 @@ module.exports = {
   getRcRateLimitState,
   getLastRawRecords,
   backfillCallHistory,
+  // Session 23 -- exposed so server.js's AditKB-sourced historical call
+  // sync can reuse the exact same call-shape parsing / agent-scoped
+  // direction inference the live poller (fetchCallLogs) already uses,
+  // instead of re-deriving it against a second copy of the logic.
+  parseCallDetails,
+  inferAgentScopedDirection,
+  normalizeRecordedDirection,
 };

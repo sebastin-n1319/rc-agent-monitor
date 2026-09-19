@@ -13,7 +13,8 @@ const {
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
-  getCallLogStats, pruneCallLogs, refreshMonthlySummary, addAgentNote, getAgentNotes, deleteAgentNote,
+  getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
+  addAgentNote, getAgentNotes, deleteAgentNote,
   getAgentCallStatsRange,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   upsertUserProfile, getAllUserProfiles, getUserProfile,
@@ -47,6 +48,7 @@ const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
   fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords, backfillCallHistory,
+  parseCallDetails, inferAgentScopedDirection, normalizeRecordedDirection,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 
@@ -3238,6 +3240,7 @@ async function startScheduler() {
     runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
     runCsatSync().catch(e => console.error('❌ CSAT sync cron:', e.message));
     salesiqLifecycle.runChatConversationSync().catch(e => console.error('❌ chat conversation sync cron:', e.message));
+    runAditkbCallsSync().catch(e => console.error('❌ calls history sync cron:', e.message));
   });
   // Session 21: chat presence has no historical API (see salesiq-lifecycle.js
   // header) -- poll the live operator status every 45s and log changes,
@@ -5307,6 +5310,7 @@ app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
 const deskLifecycle = require('./lib/desk-lifecycle');
 const deskService = require('./lib/desk-service');
 const aditkbService = require('./lib/aditkb-service');
+const aditkbCallsService = require('./lib/aditkb-calls-service');
 const analyticsService = require('./lib/analytics-service');
 const salesiqLifecycle = require('./lib/salesiq-lifecycle');
 const salesiqService = require('./lib/salesiq-service');
@@ -5319,6 +5323,7 @@ const ZOHO_DESK_DEPARTMENT_IDS = (process.env.ZOHO_DESK_DEPARTMENT_IDS || proces
 
 let _deskSyncRunning = false;
 let _deskSyncProgress = { running: false, totalUnits: 0, completedUnits: 0 };
+let _callsSyncRunning = false; // Session 23: AditKB-sourced call_monthly_summary history sync
 let _csatSyncRunning = false;
 let _deskConfigWarned = false;
 let _aditkbConfigWarned = false;
@@ -5923,6 +5928,237 @@ app.post('/api/admin/chat-lifecycle/reset-backfill', requireAdmin, async (req, r
     await salesiqLifecycle.setSyncState('backfilled_to_ms', null);
     res.json({ success: true, message: 'Backfill flags reset -- next sync tick resumes walking backward.' });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// -- Session 23: AditKB-sourced call history sync ---------------------------
+// Replaces the old backfillCallHistory() (rc-service.js) as the source for
+// call_monthly_summary's PAST months -- that function only ever fetched the
+// first 2 pages (500 calls) per agent/month from RC's live call-log API
+// before giving up, silently truncating any agent/month with more calls
+// than that. AditKB's shiv_rc_call_json warehouse table mirrors RC's own
+// call-log records (verified: call_log_json is byte-for-byte the same
+// shape RC's /call-log API returns -- id/to/from/legs/direction/result/
+// startTime/duration/...), so this reuses rc-service.js's own
+// parseCallDetails()/inferAgentScopedDirection() against AditKB rows
+// instead of live RC ones, guaranteeing identical classification logic to
+// what the live poller already uses for today's data -- no page cap, no
+// truncation.
+//
+// The CURRENT month is deliberately left untouched here -- it's already
+// kept live by fetchCallLogs()/refreshMonthlySummary() (see the */15 cron
+// above), and this sync writing to the same call_monthly_summary row every
+// ~20 min would just fight that. Two-phase pattern, same shape as
+// runAditkbSnapshotSync() (tickets) and salesiqLifecycle.runChatConversationSync()
+// (chats): a one-time backfill walking backward month-by-month with
+// progress persisted in calls_sync_state so it resumes correctly across
+// restarts, then steady-state top-ups of the most recently closed month
+// only (AditKB's own replication can lag a call's final result/duration by
+// a little, so re-aggregating last month periodically catches that).
+const CALLS_BACKFILL_FLOOR_MONTHS = 24; // ~2 years of history, matching the SalesIQ chat backfill depth
+const CALLS_MONTHS_PER_TICK = 3; // cap months processed per cron tick -- inbound now needs a full-month org-wide scan too (see fetchAllInboundCallsForMonth), so kept conservative; full 24-month backfill still finishes within a few hours at the existing 20-min cron interval
+const CALLS_PAGE_SIZE = 2000;
+const CALLS_MAX_PAGES_PER_AGENT_MONTH = 20; // safety cap: 20*2000 = 40k calls/agent/month, far beyond anything real
+const CALLS_MAX_INBOUND_PAGES_PER_MONTH = 30; // safety cap: 30*2000 = 60k inbound calls/month org-wide, far beyond anything real (~10k/month observed)
+
+function shiftMonthKey(monthKey, delta) {
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(Date.UTC(y, (m - 1) + delta, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+function monthRangeIso(monthKey) {
+  return { fromIso: `${monthKey}-01T00:00:00.000Z`, toIso: `${shiftMonthKey(monthKey, 1)}-01T00:00:00.000Z` };
+}
+
+async function fetchAllOutboundCallsForAgentMonth(agent, fromIso, toIso) {
+  const calls = [];
+  let offset = 0;
+  for (let page = 0; page < CALLS_MAX_PAGES_PER_AGENT_MONTH; page++) {
+    const { rows } = await aditkbCallsService.fetchExtensionCallsPage({
+      extensionId: agent.rc_id, fromIso, toIso, offset, limit: CALLS_PAGE_SIZE,
+    });
+    if (!rows.length) break;
+    for (const r of rows) {
+      try { calls.push(JSON.parse(r.call_log_json)); } catch(e) { /* skip malformed row */ }
+    }
+    offset += rows.length;
+    if (rows.length < CALLS_PAGE_SIZE) break;
+  }
+  return calls;
+}
+
+/** Inbound calls org-wide for one month -- see fetchInboundCallsPage()'s
+ *  comment in lib/aditkb-calls-service.js for why this can't be scoped to
+ *  one extension server-side. Inbound is a small slice of this table's
+ *  total volume (~8% in a spot check against this org's data), so this
+ *  is a handful of pages per month, not the whole table. */
+async function fetchAllInboundCallsForMonth(fromIso, toIso) {
+  const calls = [];
+  let offset = 0;
+  for (let page = 0; page < CALLS_MAX_INBOUND_PAGES_PER_MONTH; page++) {
+    const { rows } = await aditkbCallsService.fetchInboundCallsPage({ fromIso, toIso, offset, limit: CALLS_PAGE_SIZE });
+    if (!rows.length) break;
+    for (const r of rows) {
+      try { calls.push(JSON.parse(r.call_log_json)); } catch(e) { /* skip malformed row */ }
+    }
+    offset += rows.length;
+    if (rows.length < CALLS_PAGE_SIZE) break;
+  }
+  return calls;
+}
+
+/** Figures out which monitored agent (if any) actually answered an
+ *  inbound call, by walking its legs[] -- RC represents a queue-routed
+ *  inbound call as an Inbound leg from the customer into the account's
+ *  main line/IVR/queue, followed by internal Outbound legs ringing each
+ *  agent the queue tried. A leg with extension.id matching a monitored
+ *  agent and a real (non-zero) duration means that agent's phone actually
+ *  connected -- a zero-duration match is a parallel ring attempt that
+ *  wasn't picked up (e.g. "IP Phone Offline"), not a real handle. When a
+ *  call has more than one such connected leg (bounced between agents),
+ *  the longest-duration one is treated as who actually handled it.
+ */
+function matchInboundCallToAgent(call, agentsByRcId) {
+  const legs = Array.isArray(call.legs) ? call.legs : [];
+  let best = null;
+  for (const leg of legs) {
+    const extId = leg.extension && leg.extension.id != null ? String(leg.extension.id) : null;
+    if (!extId || !agentsByRcId.has(extId)) continue;
+    const duration = leg.duration || 0;
+    if (duration <= 0) continue;
+    if (!best || duration > best.duration) best = { agent: agentsByRcId.get(extId), duration };
+  }
+  return best ? best.agent : null;
+}
+
+/** Mirrors database.js refreshMonthlySummary()'s SQL classification
+ *  exactly, just computed in JS over AditKB-sourced call records instead
+ *  of SQL over the (today-only) call_logs table -- same rules, same
+ *  column meanings, so a historical month and the live current month are
+ *  never inconsistent with each other. */
+function aggregateMonthlyCallRow(agent, month, calls) {
+  let inbound = 0, outbound = 0, missed = 0, inboundMissed = 0, answeredInbound = 0,
+      inboundTalkTime = 0, outboundTalkTime = 0, totalTalkTime = 0, ahtSum = 0, ahtCount = 0,
+      transfers = 0, holdTime = 0, voicemails = 0, ringSum = 0, ringCount = 0;
+
+  for (const call of calls) {
+    const direction = inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null));
+    const duration = call.duration || 0;
+    const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+    const resultLc = String(call.result || '').trim().toLowerCase();
+    const isMissedStyle = resultLc === 'missed' || resultLc === 'abandoned';
+    const isExcludedFromTalk = isMissedStyle || isVoicemail;
+
+    if (direction === 'Inbound') inbound++;
+    else if (direction === 'Outbound') outbound++;
+    if (isMissedStyle) missed++;
+    if (direction === 'Inbound' && isMissedStyle) inboundMissed++;
+    if (direction === 'Inbound' && !isExcludedFromTalk) answeredInbound++;
+    if (direction === 'Inbound' && !isExcludedFromTalk && duration > 0) inboundTalkTime += duration;
+    if (direction === 'Outbound' && !isExcludedFromTalk && duration > 0) outboundTalkTime += duration;
+    if (!isExcludedFromTalk && duration > 0) { totalTalkTime += duration; ahtSum += duration; ahtCount++; }
+    if (transferred) transfers++;
+    holdTime += holdDuration || 0;
+    if (isVoicemail) voicemails++;
+    if (ringDuration > 0) { ringSum += ringDuration; ringCount++; }
+  }
+
+  return {
+    agent_id: agent.rc_id, agent_name: agent.name, month,
+    inbound, outbound, total: calls.length, missed, inbound_missed: inboundMissed, answered_inbound: answeredInbound,
+    inbound_talk_time: inboundTalkTime, outbound_talk_time: outboundTalkTime, total_talk_time: totalTalkTime,
+    aht_seconds: ahtCount ? Math.round(ahtSum / ahtCount) : 0,
+    transfers, hold_time: holdTime, voicemails,
+    avg_ring_time: ringCount ? Math.round(ringSum / ringCount) : 0,
+  };
+}
+
+async function syncOneMonthForAllAgents(month, agents) {
+  const { fromIso, toIso } = monthRangeIso(month);
+  const agentsByRcId = new Map(agents.map(a => [String(a.rc_id), a]));
+  const callsByAgentId = new Map(agents.map(a => [a.rc_id, []]));
+
+  // Outbound: this table's j_extension_id is populated for these, so a
+  // per-agent server-side filter is fast and accurate.
+  for (const agent of agents) {
+    const outboundCalls = await fetchAllOutboundCallsForAgentMonth(agent, fromIso, toIso);
+    callsByAgentId.get(agent.rc_id).push(...outboundCalls);
+  }
+
+  // Inbound: pulled once for the whole month (see fetchAllInboundCallsForMonth),
+  // then matched to whichever monitored agent's leg actually connected.
+  const inboundCalls = await fetchAllInboundCallsForMonth(fromIso, toIso);
+  for (const call of inboundCalls) {
+    const agent = matchInboundCallToAgent(call, agentsByRcId);
+    if (agent) callsByAgentId.get(agent.rc_id).push(call);
+  }
+
+  for (const agent of agents) {
+    const row = aggregateMonthlyCallRow(agent, month, callsByAgentId.get(agent.rc_id));
+    await upsertCallMonthlySummaryRow(row);
+  }
+}
+
+async function runAditkbCallsSync() {
+  if (!aditkbCallsService.isConfigured()) return { skipped: true, reason: 'not configured' };
+  if (_callsSyncRunning) { console.log('⏭️ Calls history sync already running -- skipping overlap'); return { skipped: true, reason: 'already running' }; }
+  const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+  if (!agents.length) return { skipped: true, reason: 'no monitored agents' };
+
+  _callsSyncRunning = true;
+  try {
+    const currMonth = new Date().toISOString().slice(0, 7);
+    const backfillDone = await getCallsSyncState('calls_backfill_complete');
+
+    if (backfillDone !== '1') {
+      const doneMonths = new Set(JSON.parse((await getCallsSyncState('calls_backfill_done_months')) || '[]'));
+      const targetMonths = [];
+      for (let i = 1; i <= CALLS_BACKFILL_FLOOR_MONTHS; i++) targetMonths.push(shiftMonthKey(currMonth, -i));
+
+      let monthsThisTick = 0;
+      for (const month of targetMonths) {
+        if (doneMonths.has(month)) continue;
+        if (monthsThisTick >= CALLS_MONTHS_PER_TICK) break;
+        await syncOneMonthForAllAgents(month, agents);
+        doneMonths.add(month);
+        await setCallsSyncState('calls_backfill_done_months', JSON.stringify([...doneMonths]));
+        monthsThisTick++;
+      }
+      const allDone = targetMonths.every(m => doneMonths.has(m));
+      if (allDone) await setCallsSyncState('calls_backfill_complete', '1');
+      await setCallsSyncState('last_sync_at', new Date().toISOString());
+      console.log(`📞 Calls history backfill: ${monthsThisTick} month(s) this tick, ${doneMonths.size}/${targetMonths.length} done${allDone ? ' (complete)' : ''}`);
+      return { monthsThisTick, backfillComplete: allDone, monthsRemaining: targetMonths.length - doneMonths.size };
+    }
+
+    // Steady state: current month stays live-handled elsewhere; just keep
+    // the most recently closed month fresh against AditKB replication lag.
+    const prevMonth = shiftMonthKey(currMonth, -1);
+    await syncOneMonthForAllAgents(prevMonth, agents);
+    await setCallsSyncState('last_sync_at', new Date().toISOString());
+    return { incrementalMonth: prevMonth };
+  } finally {
+    _callsSyncRunning = false;
+  }
+}
+
+app.get('/api/call-summary/sync-status', requireAdmin, async (req, res) => {
+  try {
+    const backfillComplete = (await getCallsSyncState('calls_backfill_complete')) === '1';
+    const doneMonths = JSON.parse((await getCallsSyncState('calls_backfill_done_months')) || '[]');
+    const lastSyncAt = await getCallsSyncState('last_sync_at');
+    res.json({
+      success: true,
+      configured: aditkbCallsService.isConfigured(),
+      running: _callsSyncRunning,
+      backfillComplete, monthsBackfilled: doneMonths.length, backfillTargetMonths: CALLS_BACKFILL_FLOOR_MONTHS,
+      lastSyncAt,
+    });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/call-summary/sync-now', requireAdmin, async (req, res) => {
+  runAditkbCallsSync().catch(e => console.error('❌ manual calls history sync:', e.message));
+  res.json({ success: true, message: 'Call history sync started' });
 });
 
 app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {

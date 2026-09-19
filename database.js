@@ -368,6 +368,13 @@ async function initDB() {
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (agent_id, month))`);
   } catch(e) { console.warn('⚠️ call_monthly_summary table init skipped (will retry):', e.message); }
+  // Session 23 -- key/value watermark store for the AditKB-sourced
+  // historical call sync (lib/aditkb-calls-service.js + server.js
+  // runAditkbCallsSync()), mirroring desk_sync_state / chat_sync_state.
+  try {
+    await run(`CREATE TABLE IF NOT EXISTS calls_sync_state (
+      key TEXT PRIMARY KEY, value TEXT, updated_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+  } catch(e) { console.warn('⚠️ calls_sync_state table init skipped (will retry):', e.message); }
   await run(`CREATE TABLE IF NOT EXISTS login_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, email TEXT,
     role TEXT, ip TEXT, location TEXT, system_info TEXT,
@@ -809,16 +816,36 @@ async function refreshMonthlySummary(month){
       AND agent_id IS NOT NULL AND agent_id != ''
     GROUP BY agent_id, agent_name
   `, [month]);
-  const now = new Date().toISOString();
   for(const r of rows){
-    await run(`INSERT OR REPLACE INTO call_monthly_summary
-      (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
-       inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [r.agent_id,r.agent_name,month,r.inbound||0,r.outbound||0,r.total||0,r.missed||0,r.inbound_missed||0,r.answered_inbound||0,
-       r.inbound_talk_time||0,r.outbound_talk_time||0,r.total_talk_time||0,r.aht_seconds||0,r.transfers||0,r.hold_time||0,r.voicemails||0,r.avg_ring_time||0,now]);
+    await upsertCallMonthlySummaryRow({ ...r, month });
   }
   return rows.length;
+}
+
+// Shared upsert used by both the live call_logs aggregation above
+// (refreshMonthlySummary) and the AditKB-sourced historical sync
+// (server.js runAditkbCallsSync / lib/aditkb-calls-service.js) -- same
+// table, same shape, single place that owns the SQL.
+async function upsertCallMonthlySummaryRow(r){
+  const now = new Date().toISOString();
+  await run(`INSERT OR REPLACE INTO call_monthly_summary
+    (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
+     inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [r.agent_id,r.agent_name,r.month,r.inbound||0,r.outbound||0,r.total||0,r.missed||0,r.inbound_missed||0,r.answered_inbound||0,
+     r.inbound_talk_time||0,r.outbound_talk_time||0,r.total_talk_time||0,r.aht_seconds||0,r.transfers||0,r.hold_time||0,r.voicemails||0,r.avg_ring_time||0,now]);
+}
+
+async function getCallsSyncState(key){
+  const row = await get(`SELECT value FROM calls_sync_state WHERE key = ?`, [key]);
+  return row ? row.value : null;
+}
+async function setCallsSyncState(key, value){
+  await run(
+    `INSERT INTO calls_sync_state (key, value, updated_at) VALUES (?,?,datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`,
+    [key, value == null ? null : String(value)]
+  );
 }
 
 // SUMMARY with all new metrics
@@ -2185,7 +2212,7 @@ module.exports={
   savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,getAgentSummary,getAgentCallStatsRange,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
