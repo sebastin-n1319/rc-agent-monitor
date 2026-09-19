@@ -3226,6 +3226,7 @@ async function startScheduler() {
   // Session 19: ticket lifecycle sync -- every 20 min, paged across ticks
   cron.schedule('*/20 * * * *', async () => {
     runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
+    runCsatSync().catch(e => console.error('❌ CSAT sync cron:', e.message));
   });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
@@ -5285,6 +5286,7 @@ app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
 // separate rate-limit gate, separate DB tables -- so a bug here can't affect it.
 const deskLifecycle = require('./lib/desk-lifecycle');
 const deskService = require('./lib/desk-service');
+const analyticsService = require('./lib/analytics-service');
 // Optional: comma-separated department IDs to restrict the sync to. When
 // unset (the default), every enabled department is discovered and synced --
 // Support, Onboarding, Insider Support, and any future one -- so the full
@@ -5293,6 +5295,7 @@ const ZOHO_DESK_DEPARTMENT_IDS = (process.env.ZOHO_DESK_DEPARTMENT_IDS || proces
   .split(',').map(s => s.trim()).filter(Boolean);
 
 let _deskSyncRunning = false;
+let _csatSyncRunning = false;
 let _deskConfigWarned = false;
 let _deskDeptCache = null; // { ids: [...], at: <ms> }
 const DESK_DEPT_CACHE_MS = 60 * 60 * 1000; // re-discover departments hourly
@@ -5311,6 +5314,121 @@ async function getDeskDepartmentIds() {
   }
 }
 
+// Session 20: manual, department-specific category fields, tried in
+// priority order -- agents only ever fill in the one relevant to their
+// own department (CS/TS/VoIP/Tech OB/etc.), so most of these are null on
+// any given ticket. Falls back to the always-populated AI category
+// (cf_ai_category_by_llm) below when none of these are set, so every
+// ticket still gets a category rather than showing blank.
+const MANUAL_CATEGORY_FIELDS = [
+  ['cf_cs_category', 'CS Category'],
+  ['cf_ts_category', 'TS Category'],
+  ['cf_vo_ip_category', 'VoIP Category'],
+  ['cf_product_categories', 'Tech OB Category'],
+  ['cf_offboarding_category', 'Offboarding Category'],
+  ['cf_implementation_category', 'Implementation Category'],
+  ['cf_billing_categories', 'Billing Category'],
+  ['cf_patient_forms_category', 'Patient Forms Category'],
+  ['cf_porting_category', 'Porting Category'],
+  ['cf_phone_order_return_category', 'Phone Order/Return Category'],
+  ['cf_csm_category', 'CSM Category'],
+];
+function pickManualCategory(cf) {
+  if (!cf) return { value: null, source: null };
+  for (const [key, label] of MANUAL_CATEGORY_FIELDS) {
+    const v = cf[key];
+    if (v != null && v !== '') return { value: v, source: label };
+  }
+  return { value: null, source: null };
+}
+
+// Zoho returns handling/resolution times from /tickets/{id}/metrics as
+// "HH:MM hrs" strings (and occasionally "-HH:MM hrs" for a negative
+// duration edge case) -- convert to seconds.
+function parseHandlingSeconds(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  const m = raw.match(/(-?\d+):(\d+)/);
+  if (!m) return null;
+  return (parseInt(m[1], 10) * 3600) + (parseInt(m[2], 10) * 60);
+}
+
+// Session 20 FCR correction: Sebastin's FCR formula needs "Resolution
+// Time in Business Hours" (Mon-Fri 7am-7pm Central) rather than raw
+// calendar hours -- Zoho's own `cf_fcr_achieved` custom field turned out
+// to be unreliable (verified against AditKB: essentially always false
+// across the whole ticket base), so this computes it directly from
+// created_time -> closed_time instead of trusting that field.
+//
+// Session 20 DST fix: originally treated "CST" as a fixed UTC-6 offset
+// with no daylight saving. Confirmed wrong while building CSAT -- a Zoho
+// Analytics survey timestamp matched a Zoho Desk ticket's own UTC
+// modifiedTime exactly, 5 hours apart (CDT = UTC-5), for a September
+// date. Adit's business hours really do follow US Central time with
+// real DST, same as every other "CST" spot in this file that already
+// goes through Intl's America/Chicago timeZone (see nowHourCST above,
+// formatBreakTime, etc.) -- this was the one place still using a fixed
+// offset instead. chicagoOffsetMinutesAt/centralWallTimeToUtcIso in
+// lib/analytics-service.js use the identical technique; duplicated here
+// rather than imported, same isolation reasoning as ZOHO_CLIENT_ID being
+// defined separately in server.js and desk-service.js.
+const BUSINESS_HOURS_START = 7;  // 7am Central
+const BUSINESS_HOURS_END   = 19; // 7pm Central
+
+/** Offset (minutes, negative) America/Chicago has from UTC at a given
+ *  UTC instant -- DST-aware. -300 during CDT, -360 during CST. */
+function chicagoOffsetMinutesAt(utcMs) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago', hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+  const parts = dtf.formatToParts(new Date(utcMs)).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  const asIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute, +parts.second);
+  return Math.round((asIfUtc - utcMs) / 60000);
+}
+
+function computeBusinessHours(startIso, endIso) {
+  if (!startIso || !endIso) return null;
+  const startMs = new Date(startIso).getTime();
+  const endMs   = new Date(endIso).getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return null;
+
+  const DAY_MS = 24 * 3600 * 1000;
+  // Chicago local calendar date that `startMs` falls on -- used purely
+  // as a day-stepping cursor (a synthetic UTC-treated date, stepped by
+  // exactly 24h each loop; never itself compared against a real UTC
+  // instant, only used to recover the (year, month, day) each iteration
+  // and to derive that day's own actual DST offset below).
+  const startLocalParts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(startMs)).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  let cursor = Date.UTC(+startLocalParts.year, +startLocalParts.month - 1, +startLocalParts.day);
+
+  let totalMs = 0;
+  while (true) {
+    const y = new Date(cursor).getUTCFullYear();
+    const mo = new Date(cursor).getUTCMonth();
+    const d = new Date(cursor).getUTCDate();
+    // This local day's own actual UTC offset, looked up at local noon so
+    // it's never ambiguous right at a spring-forward/fall-back boundary.
+    const offsetMin = chicagoOffsetMinutesAt(Date.UTC(y, mo, d, 12, 0, 0));
+    const dayStartUtc = Date.UTC(y, mo, d, 0, 0, 0) - offsetMin * 60000; // this local day's 00:00, in real UTC ms
+    if (dayStartUtc > endMs) break;
+    const weekday = new Date(cursor).getUTCDay(); // 0=Sun..6=Sat, from the local calendar date
+    if (weekday >= 1 && weekday <= 5) {
+      const winStart = dayStartUtc + BUSINESS_HOURS_START * 3600 * 1000;
+      const winEnd   = dayStartUtc + BUSINESS_HOURS_END   * 3600 * 1000;
+      const overlapStart = Math.max(winStart, startMs);
+      const overlapEnd   = Math.min(winEnd, endMs);
+      if (overlapEnd > overlapStart) totalMs += (overlapEnd - overlapStart);
+    }
+    cursor += DAY_MS;
+  }
+  return Math.round((totalMs / 3600000) * 100) / 100;
+}
+
+const DESK_METRICS_BUDGET_PER_TICK = 250; // cap extra /metrics calls per sync tick, so a busy tick can't blow through the rate limit
+
 async function runDeskLifecycleSync() {
   if (!deskService.isConfigured()) {
     if (!_deskConfigWarned) {
@@ -5328,8 +5446,8 @@ async function runDeskLifecycleSync() {
     return;
   }
   _deskSyncRunning = true;
-  const startedAt = new Date().toISOString();
-  let ticketsSeen = 0, eventsFetched = 0;
+  let ticketsSeen = 0, metricsRefreshed = 0;
+  let metricsBudget = DESK_METRICS_BUDGET_PER_TICK;
   try {
     const departmentIds = await getDeskDepartmentIds();
     if (!departmentIds.length) {
@@ -5337,72 +5455,82 @@ async function runDeskLifecycleSync() {
       return;
     }
     const pageSize = 50;
-    const maxPages = 8; // cap per department per run -- 400 tickets/dept/run, paged over successive cron ticks
+    const maxPages = 8; // cap per department per tick -- 400 tickets/dept, most-recently-modified first (see fetchTicketsPage)
     for (const departmentId of departmentIds) {
     let from = 0;
     for (let page = 0; page < maxPages; page++) {
-      const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize });
+      const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize, lookbackDays: 100 });
       if (!tickets.length) break;
       for (const t of tickets) {
         ticketsSeen++;
-        let assigneeEmail = null, assigneeName = null;
-        if (t.assigneeId) {
-          try {
-            let cached = await deskLifecycle.getCachedAgent(t.assigneeId);
-            if (!cached) {
-              const a = await deskService.fetchAgent(t.assigneeId);
-              assigneeEmail = a.email || null;
-              assigneeName = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || null;
-              await deskLifecycle.cacheAgent(t.assigneeId, { email: assigneeEmail, name: assigneeName });
-            } else {
-              assigneeEmail = cached.email; assigneeName = cached.name;
-            }
-          } catch(e) { /* non-fatal -- leave unresolved, retry next sync */ }
-        }
+        const cf = t.cf || {};
+        const manual = pickManualCategory(cf);
         try {
           await deskLifecycle.upsertTicketSnapshot({
             ticket_id: t.id, ticket_number: t.ticketNumber, subject: t.subject,
             status: t.status, status_type: t.statusType, priority: t.priority,
             channel: t.channel, department_id: t.departmentId,
-            assignee_id: t.assigneeId, assignee_email: assigneeEmail, assignee_name: assigneeName,
+            department_name: t.department?.name || null,
+            team_id: t.teamId || null, team_name: t.team?.name || null,
+            assignee_id: t.assigneeId,
+            assignee_email: t.assignee?.emailId ? t.assignee.emailId.toLowerCase() : null,
+            assignee_name: t.assignee ? [t.assignee.firstName, t.assignee.lastName].filter(Boolean).join(' ') : null,
             sentiment: t.sentiment, comment_count: t.commentCount != null ? Number(t.commentCount) : null,
             thread_count: t.threadCount != null ? Number(t.threadCount) : null,
             created_time: t.createdTime, closed_time: t.closedTime, onhold_time: t.onholdTime,
-            due_date: t.dueDate, web_url: t.webUrl,
+            due_date: t.dueDate, web_url: t.webUrl, modified_time: t.modifiedTime,
+            classification: t.classification, category: t.category,
+            module: cf.cf_adit_app_module || null,
+            ai_category: cf.cf_ai_category_by_llm || null,
+            manual_category: manual.value, manual_category_source: manual.source,
+            dept_classification: cf.cf_department_classification || null,
+            fcr_achieved: cf.cf_fcr_achieved || null,
+            resolution_business_hours: computeBusinessHours(t.createdTime, t.closedTime),
           });
         } catch(e) { console.warn(`⚠️ desk snapshot upsert failed for ticket ${t.ticketNumber || t.id}: ${e.message}`); }
 
-        // Incremental history sync -- only walk back to the last watermark.
+        // Metrics (reassign/reopen counts + per-agent handling time) are
+        // an extra API call per ticket, so only re-pull when the ticket
+        // has actually changed since our last pull -- and stop once the
+        // per-tick budget runs out (it'll catch up on the next tick).
         try {
-          const watermark = await deskLifecycle.getWatermark(t.id);
-          const events = [];
-          let hFrom = 0, newestSeen = null, reachedWatermark = false;
-          for (let hp = 0; hp < 4 && !reachedWatermark; hp++) { // cap 200 events/ticket/run
-            const batch = await deskService.fetchTicketHistory(t.id, { from: hFrom, limit: 50 });
-            if (!batch.length) break;
-            for (const ev of batch) {
-              if (watermark && ev.eventTime <= watermark) { reachedWatermark = true; break; }
-              if (!newestSeen) newestSeen = ev.eventTime;
-              for (const info of (ev.eventInfo || [])) {
-                if (info.propertyType === 'ValueTransition') {
-                  events.push({
-                    event_time: ev.eventTime, event_name: ev.eventName,
-                    field_name: info.propertyName,
-                    from_value: info.propertyValue?.previousValue != null ? String(info.propertyValue.previousValue) : null,
-                    to_value: info.propertyValue?.updatedValue != null ? String(info.propertyValue.updatedValue) : null,
-                    actor_id: ev.actor?.id || null, actor_name: ev.actor?.name || null, actor_type: ev.actor?.type || null,
-                  });
+          const watermark = await deskLifecycle.getStoredMetricsWatermark(t.id);
+          const stale = watermark === undefined || watermark !== t.modifiedTime;
+          if (stale && metricsBudget > 0) {
+            metricsBudget--;
+            const m = await deskService.fetchTicketMetrics(t.id);
+            if (m) {
+              const agentsHandled = [];
+              for (const ah of (m.agentsHandled || [])) {
+                if (!ah.agentId) continue; // Zoho's "Unassigned" placeholder row -- nothing to attribute
+                let cached = await deskLifecycle.getCachedAgent(ah.agentId);
+                if (!cached) {
+                  try {
+                    const a = await deskService.fetchAgent(ah.agentId);
+                    const email = a.email ? a.email.toLowerCase() : null;
+                    const name = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || ah.agentName || null;
+                    await deskLifecycle.cacheAgent(ah.agentId, { email, name });
+                    cached = { email, name };
+                  } catch(e) { cached = { email: null, name: ah.agentName || null }; }
                 }
+                agentsHandled.push({
+                  agentId: ah.agentId, agentName: cached.name || ah.agentName,
+                  agentEmail: cached.email, handlingSeconds: parseHandlingSeconds(ah.handlingTime),
+                });
               }
+              await deskLifecycle.replaceTicketAgents(t.id, agentsHandled);
+              const resSecs = parseHandlingSeconds(m.resolutionTime);
+              await deskLifecycle.updateTicketMetrics(t.id, {
+                reassignCount: m.reassignCount != null ? Number(m.reassignCount) : null,
+                reopenCount: m.reopenCount != null ? Number(m.reopenCount) : null,
+                resolutionHours: resSecs != null ? Math.round((resSecs / 3600) * 100) / 100 : null,
+                metricsModifiedTime: t.modifiedTime,
+              });
+              metricsRefreshed++;
             }
-            hFrom += 50;
-            if (batch.length < 50) break;
           }
-          if (events.length) { await deskLifecycle.insertEvents(t.id, events); eventsFetched += events.length; }
-          if (newestSeen) await deskLifecycle.setWatermark(t.id, newestSeen);
-          else if (!watermark) await deskLifecycle.setWatermark(t.id, startedAt);
         } catch(e) {
-          console.warn(`⚠️ desk history sync failed for ticket ${t.ticketNumber || t.id}: ${e.message}`);
+          console.warn(`⚠️ desk metrics sync failed for ticket ${t.ticketNumber || t.id}: ${e.message}`);
         }
       }
       from += pageSize;
@@ -5411,7 +5539,7 @@ async function runDeskLifecycleSync() {
     } // end departmentId loop
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('last_error', null);
-    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets, ${eventsFetched} new events`);
+    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets seen, ${metricsRefreshed} metrics refreshed (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
   } catch(e) {
     console.error('❌ Desk lifecycle sync error:', e.message);
     await deskLifecycle.setSyncState('last_error', e.message).catch(()=>{});
@@ -5437,13 +5565,55 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
 app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
   try {
     const status = await deskLifecycle.syncStatus();
-    res.json({ success: true, configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(), ...status });
+    res.json({
+      success: true,
+      configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(),
+      csatConfigured: analyticsService.isConfigured(), csatRateLimit: analyticsService.getRateLimitState(),
+      ...status,
+    });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.post('/api/admin/desk-lifecycle/sync-now', requireAdmin, async (req, res) => {
   runDeskLifecycleSync().catch(e => console.error('❌ manual desk sync trigger:', e.message));
   res.json({ success: true, message: 'Sync started' });
+});
+
+// Session 20 CSAT: pulls new rows from Zoho Analytics' "Survey (Zoho
+// Desk)" table (see lib/analytics-service.js for why -- the public Desk
+// REST API doesn't expose this). Deliberately its own function/flag/
+// try-catch, isolated from runDeskLifecycleSync(), same reasoning as
+// desk-service.js vs analytics-service.js being separate OAuth clients:
+// a bug or an expired token in one sync can't take down the other.
+// Incremental via a stored watermark (max survey_time_utc seen so far),
+// so each tick only asks Analytics for rows newer than last time.
+async function runCsatSync() {
+  if (_csatSyncRunning) return;
+  if (!analyticsService.isConfigured()) return;
+  _csatSyncRunning = true;
+  try {
+    const since = await deskLifecycle.getSyncState('csat_last_survey_time_utc');
+    const rows = await analyticsService.fetchSurveyRows(since || null);
+    let maxTime = since || null;
+    for (const r of rows) {
+      await deskLifecycle.upsertSurveyRow(r);
+      if (r.survey_time_utc && (!maxTime || r.survey_time_utc > maxTime)) maxTime = r.survey_time_utc;
+    }
+    if (maxTime) await deskLifecycle.setSyncState('csat_last_survey_time_utc', maxTime);
+    await deskLifecycle.setSyncState('csat_last_sync_at', new Date().toISOString());
+    await deskLifecycle.setSyncState('csat_last_error', null);
+    console.log(`⭐ CSAT sync: ${rows.length} survey row(s) synced`);
+  } catch(e) {
+    console.error('❌ CSAT sync error:', e.message);
+    await deskLifecycle.setSyncState('csat_last_error', e.message).catch(()=>{});
+  } finally {
+    _csatSyncRunning = false;
+  }
+}
+
+app.post('/api/admin/desk-lifecycle/csat-sync-now', requireAdmin, async (req, res) => {
+  runCsatSync().catch(e => console.error('❌ manual CSAT sync trigger:', e.message));
+  res.json({ success: true, message: 'CSAT sync started', configured: analyticsService.isConfigured() });
 });
 
 // Session 20 diagnostic (temporary): confirms the real Zoho Desk Customer
@@ -5469,6 +5639,33 @@ app.get('/api/admin/desk-lifecycle/debug-customer-feedback', requireAdmin, async
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
   }
+});
+
+// Session 20: self-service Agent View -- every agent (not just admins)
+// can see their OWN ticket lifecycle stats, scoped to their own session
+// email. This is the automated replacement for the manual ticket-logging
+// form (POST /api/tickets above): once this is trusted, agents shouldn't
+// need to log tickets by hand at all.
+app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const email = (req.session.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ success: false, error: 'No session email' });
+    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email] });
+    res.json({ success: true, from, to, email, summary: summary[0] || null });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const email = (req.session.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ success: false, error: 'No session email' });
+    const tickets = await deskLifecycle.agentTicketList({ email, from, to, limit: 200 });
+    res.json({ success: true, from, to, tickets });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.use(errorTracker());
@@ -5507,6 +5704,9 @@ async function start() {
       }
       // Session 19: ticket lifecycle sync -- first run shortly after boot
       setTimeout(() => runDeskLifecycleSync().catch(() => {}), 45000);
+      // Session 20: CSAT sync -- offset a bit further so it doesn't
+      // compete with the desk lifecycle sync's first run.
+      setTimeout(() => runCsatSync().catch(() => {}), 60000);
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }
