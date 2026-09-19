@@ -139,3 +139,40 @@
   #desk-lifecycle-root .tkt-agent-breakdown { grid-template-columns:1fr !important; }
   #desk-lifecycle-root .tkt-agent-head { flex-direction:column !important; align-items:stretch !important; }
 }
+
+/* ───────────────────────────────────────────────────────────────────────
+   Session 21 additions — sync progress bar, relative-date + customer
+   filter bar. Same --tkt-* token / !important convention as above.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ── Syncing banner state ── */
+#desk-lifecycle-root .tkt-banner-syncing { background:rgba(59,130,246,.08) !important; color:#1E40AF !important; align-items:flex-start !important; }
+#desk-lifecycle-root .tkt-banner-dot-syncing { background:var(--tkt-blue) !important; margin-top:3px !important; animation: tkt-pulse 1.4s ease-in-out infinite !important; }
+#desk-lifecycle-root .tkt-progress-track { width:100% !important; max-width:320px !important; height:6px !important; border-radius:6px !important; background:rgba(59,130,246,.15) !important; overflow:hidden !important; margin:7px 0 !important; }
+#desk-lifecycle-root .tkt-progress-fill { height:100% !important; border-radius:6px !important; background:var(--tkt-blue) !important; transition:width .4s var(--tkt-ease) !important; }
+
+/* ── Filter bar ── */
+#desk-lifecycle-root .tkt-filterbar { display:flex !important; align-items:flex-end !important; gap:18px !important; flex-wrap:wrap !important; background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:14px 16px !important; margin-bottom:14px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#desk-lifecycle-root .tkt-filter-group { display:flex !important; flex-direction:column !important; gap:6px !important; }
+#desk-lifecycle-root .tkt-filter-search { flex:1 1 240px !important; min-width:220px !important; }
+#desk-lifecycle-root .tkt-filter-label { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; }
+
+#desk-lifecycle-root select.tkt-select,
+#desk-lifecycle-root select.tkt-sort-select { border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; padding:8px 12px !important; font-size:13px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:var(--tkt-surface) !important; cursor:pointer !important; }
+#desk-lifecycle-root select.tkt-select:focus,
+#desk-lifecycle-root .tkt-search-input:focus,
+#desk-lifecycle-root input[type="date"]:focus { outline:none !important; border-color:var(--tkt-accent) !important; }
+
+#desk-lifecycle-root .tkt-date-inputs { display:flex !important; align-items:center !important; gap:8px !important; margin-top:8px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-root .tkt-date-inputs input[type="date"] { border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; padding:7px 10px !important; font-size:12.5px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:var(--tkt-surface) !important; }
+#desk-lifecycle-root .tkt-date-sep { font-size:12px !important; color:var(--tkt-ink3) !important; }
+#desk-lifecycle-root .tkt-date-apply { padding:7px 14px !important; }
+
+#desk-lifecycle-root .tkt-search-input { width:100% !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; padding:8px 12px !important; font-size:13px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:var(--tkt-surface) !important; }
+#desk-lifecycle-root .tkt-search-input::placeholder { color:var(--tkt-ink3) !important; }
+
+@media (max-width: 760px) {
+  #desk-lifecycle-root .tkt-filterbar { flex-direction:column !important; align-items:stretch !important; }
+  #desk-lifecycle-root .tkt-filter-search { min-width:0 !important; }
+  #desk-lifecycle-root .tkt-progress-track { max-width:none !important; }
+}

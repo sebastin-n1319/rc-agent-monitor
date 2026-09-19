@@ -5295,6 +5295,7 @@ const ZOHO_DESK_DEPARTMENT_IDS = (process.env.ZOHO_DESK_DEPARTMENT_IDS || proces
   .split(',').map(s => s.trim()).filter(Boolean);
 
 let _deskSyncRunning = false;
+let _deskSyncProgress = { running: false, totalUnits: 0, completedUnits: 0 };
 let _csatSyncRunning = false;
 let _deskConfigWarned = false;
 let _deskDeptCache = null; // { ids: [...], at: <ms> }
@@ -5472,18 +5473,26 @@ async function runDeskLifecycleSync() {
     }
     const pageSize = 50;
     const maxPages = 8; // cap per department per tick -- 400 tickets/dept, most-recently-modified first (see fetchTicketsPage)
+    _deskSyncProgress = { running: true, totalUnits: departmentIds.length * maxPages, completedUnits: 0 };
     for (const departmentId of departmentIds) {
     let from = 0;
+    let pagesUsedThisDept = 0;
     for (let page = 0; page < maxPages; page++) {
       const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize, lookbackDays: 100 });
+      pagesUsedThisDept++;
+      _deskSyncProgress.completedUnits++;
       if (!tickets.length) break;
       for (const t of tickets) {
         ticketsSeen++;
         const cf = t.cf || {};
         const manual = pickManualCategory(cf);
+        const contactName = t.contact ? [t.contact.firstName, t.contact.lastName].filter(Boolean).join(' ') : null;
+        const contactEmail = t.contact?.email || t.email || null;
+        const accountName = t.contact?.account?.accountName || null;
         try {
           await deskLifecycle.upsertTicketSnapshot({
             ticket_id: t.id, ticket_number: t.ticketNumber, subject: t.subject,
+            contact_name: contactName, contact_email: contactEmail, account_name: accountName,
             status: t.status, status_type: t.statusType, priority: t.priority,
             channel: t.channel, department_id: t.departmentId,
             department_name: t.department?.name || null,
@@ -5552,6 +5561,9 @@ async function runDeskLifecycleSync() {
       from += pageSize;
       if (tickets.length < pageSize) break;
     }
+    if (pagesUsedThisDept < maxPages) {
+      _deskSyncProgress.completedUnits += (maxPages - pagesUsedThisDept);
+    }
     } // end departmentId loop
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('last_error', null);
@@ -5561,6 +5573,7 @@ async function runDeskLifecycleSync() {
     await deskLifecycle.setSyncState('last_error', e.message).catch(()=>{});
   } finally {
     _deskSyncRunning = false;
+    _deskSyncProgress.running = false;
   }
 }
 
@@ -5568,9 +5581,10 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
     const to = req.query.to || new Date().toISOString();
+    const q = req.query.q ? String(req.query.q).trim() : null;
     const agents = await roster.listAgents({ includeRelieved: false });
     const emails = agents.map(a => a.email).filter(Boolean);
-    const summary = await deskLifecycle.agentSummary({ from, to, emails });
+    const summary = await deskLifecycle.agentSummary({ from, to, emails, q });
     const byEmail = {};
     for (const a of agents) if (a.email) byEmail[a.email] = a;
     const out = summary.map(s => ({ ...s, pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
@@ -5581,10 +5595,14 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
 app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
   try {
     const status = await deskLifecycle.syncStatus();
+    const syncProgressPct = _deskSyncProgress.totalUnits > 0
+      ? Math.round((_deskSyncProgress.completedUnits / _deskSyncProgress.totalUnits) * 100)
+      : (_deskSyncProgress.running ? 0 : null);
     res.json({
       success: true,
       configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(),
       csatConfigured: analyticsService.isConfigured(), csatRateLimit: analyticsService.getRateLimitState(),
+      syncRunning: _deskSyncProgress.running, syncProgressPct,
       ...status,
     });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
