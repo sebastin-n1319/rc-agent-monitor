@@ -5309,7 +5309,23 @@ async function getDeskDepartmentIds() {
     _deskDeptCache = { ids, at: Date.now() };
     return ids;
   } catch(e) {
-    console.warn('⚠️ Failed to discover Zoho Desk departments -- will retry next tick:', e.message);
+    console.warn('⚠️ Primary Desk token failed department discovery, trying suite token:', e.message);
+    // Session 20: the primary Desk token (desk-service.js) was never
+    // granted Desk.basic.READ, only ticket-level scopes -- confirmed via
+    // a live SCOPE_MISMATCH 403. The suite token (analytics-service.js)
+    // was requested with the broader scope and does have it, so this is
+    // a real fallback, not just a cache re-read.
+    try {
+      if (analyticsService.isConfigured()) {
+        const depts = await analyticsService.fetchDeskDepartments();
+        const ids = depts.map(d => d.id).filter(Boolean);
+        _deskDeptCache = { ids, at: Date.now() };
+        console.log(`✅ Department discovery recovered via suite token: ${ids.length} department(s)`);
+        return ids;
+      }
+    } catch(e2) {
+      console.warn('⚠️ Suite-token department discovery also failed -- will retry next tick:', e2.message);
+    }
     return _deskDeptCache ? _deskDeptCache.ids : [];
   }
 }
