@@ -5446,6 +5446,22 @@ app.post('/api/admin/desk-lifecycle/sync-now', requireAdmin, async (req, res) =>
   res.json({ success: true, message: 'Sync started' });
 });
 
+// Session 20 diagnostic (temporary): confirms the real Zoho Desk Customer
+// Feedback / Happiness Rating API response shape for one ticket, so the
+// real CSAT sync can be built against a verified schema instead of a
+// guess. Admin-only, read-only, no data is written anywhere. Remove once
+// CSAT is wired in for real.
+app.get('/api/admin/desk-lifecycle/debug-customer-feedback', requireAdmin, async (req, res) => {
+  try {
+    const ticketId = req.query.ticketId;
+    if (!ticketId) return res.status(400).json({ success: false, error: 'Pass ?ticketId=<a closed ticket id>' });
+    const raw = await deskService.fetchCustomerFeedback(ticketId);
+    res.json({ success: true, ticketId, raw });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 app.use(errorTracker());
 
 async function start() {
