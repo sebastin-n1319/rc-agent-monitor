@@ -5306,6 +5306,7 @@ app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
 // separate rate-limit gate, separate DB tables -- so a bug here can't affect it.
 const deskLifecycle = require('./lib/desk-lifecycle');
 const deskService = require('./lib/desk-service');
+const aditkbService = require('./lib/aditkb-service');
 const analyticsService = require('./lib/analytics-service');
 const salesiqLifecycle = require('./lib/salesiq-lifecycle');
 const salesiqService = require('./lib/salesiq-service');
@@ -5320,6 +5321,7 @@ let _deskSyncRunning = false;
 let _deskSyncProgress = { running: false, totalUnits: 0, completedUnits: 0 };
 let _csatSyncRunning = false;
 let _deskConfigWarned = false;
+let _aditkbConfigWarned = false;
 let _deskDeptCache = null; // { ids: [...], at: <ms> }
 const DESK_DEPT_CACHE_MS = 60 * 60 * 1000; // re-discover departments hourly
 
@@ -5466,38 +5468,184 @@ function computeBusinessHours(startIso, endIso) {
   return Math.round((totalMs / 3600000) * 100) / 100;
 }
 
-const DESK_METRICS_BUDGET_PER_TICK = 250; // cap extra /metrics calls per sync tick, so a busy tick can't blow through the rate limit
-const DESK_PAGE_SIZE = 50;
-const DESK_MAX_PAGES_PER_PHASE = 8; // per department, per phase (top-up or backfill), per tick -- 400 tickets/phase
-const DESK_BACKFILL_FLOOR_DAYS = 730; // how far back the backfill phase walks before marking a department complete (~2 years -- covers every preset the admin UI offers, including "Last year", with margin; safe to push deeper later without losing any already-synced data)
+const DESK_METRICS_BUDGET_PER_TICK = 250; // cap live Zoho /metrics calls per sync tick, so a busy tick can't blow through the rate limit
+const ADITKB_PAGE_SIZE = 2000;
+const ADITKB_MAX_PAGES_PER_TICK = 15; // ~30k tickets/tick during backfill -- the full ~306k-ticket table finishes in roughly 10-11 ticks (a few hours at the existing 20-min cron interval); incremental ticks thereafter only ever see a handful of pages
 
-// Session 21 rebuild: the old sync reset `from = 0` and re-queried a fixed
-// rolling `lookbackDays: 100` window every single tick, for every
-// department -- so once a department's most-recently-modified ~400
-// tickets (8 pages x 50) filled that 100-day window, the sync plateaued
-// there forever: the exact same tickets, re-fetched identically tick
-// after tick, regardless of what date range the admin UI actually asked
-// for (live-confirmed stuck at 811 tickets total). Replaced with the same
-// two-phase resumable pattern already proven in salesiq-lifecycle.js's
-// runChatConversationSync(), run independently per department:
-//   - Top-up: walks FORWARD from that department's last synced-through
-//     point up to now. Small and cheap most ticks -- "what's changed
-//     since last time" -- and self-corrects every tick since sortBy is
-//     always -modifiedTime.
-//   - Backfill: walks BACKWARD from wherever it last stopped toward
-//     DESK_BACKFILL_FLOOR_DAYS, shrinking the upper time bound each tick.
-//     Because that upper bound only ever shrinks, this makes real forward
-//     progress every tick no matter how many tickets change at the front
-//     in the meantime -- immune to the "never catches up" failure mode a
-//     single rolling window has. Marked complete per department once it
-//     reaches the floor (or an empty page) and never repeats that work.
-// Both watermarks are namespaced per department in the existing generic
-// desk_sync_state key/value table.
+// Session 22 rebuild: ticket snapshot data (status, department, dates,
+// category fields, etc.) now comes from AditKB's `desk_tickets` warehouse
+// table instead of live Zoho ticket-search polling -- per Sebastin's
+// explicit instruction ("switch to supabase for all possible things"),
+// after confirming AditKB is a complete, real-time, 100%-accurate mirror
+// (random-sampled against live Zoho) and that our own Zoho-polling sync,
+// even after the Session 21 two-phase fix, was still fundamentally too
+// slow to fully backfill 300k+ tickets in a reasonable time. See
+// lib/aditkb-service.js and runAditkbSnapshotSync() below.
+//
+// Zoho's live /tickets/{id}/metrics call is kept as the ONLY remaining
+// live-Zoho dependency, since per-agent handling-time / reassign / reopen
+// data isn't in AditKB's warehouse at all -- see runMetricsRefreshPhase()
+// below, which now pulls its candidate ticket list straight out of
+// desk_ticket_snapshot (already populated by the AditKB phase) instead of
+// replaying freshly-fetched Zoho ticket pages.
+async function runAditkbSnapshotSync() {
+  let ticketsSeen = 0;
+  const backfillDone = await deskLifecycle.getSyncState('aditkb_backfill_complete');
+  if (backfillDone !== '1') {
+    // One-time full sweep, ordered by `id` (indexed) and paged via a
+    // persisted offset so it resumes exactly where it left off across
+    // restarts and ticks, without ever repeating already-synced rows.
+    let offset = Number((await deskLifecycle.getSyncState('aditkb_backfill_offset')) || 0);
+    let backfillStartedAtMs = Number((await deskLifecycle.getSyncState('aditkb_backfill_started_at_ms')) || 0);
+    if (!backfillStartedAtMs) {
+      backfillStartedAtMs = Date.now();
+      await deskLifecycle.setSyncState('aditkb_backfill_started_at_ms', String(backfillStartedAtMs));
+    }
+    let pages = 0, reachedEnd = false;
+    while (pages < ADITKB_MAX_PAGES_PER_TICK) {
+      const { rows } = await aditkbService.fetchTicketsPage({ offset, limit: ADITKB_PAGE_SIZE });
+      pages++;
+      if (!rows.length) { reachedEnd = true; break; }
+      for (const row of rows) { await upsertAditkbRow(row); ticketsSeen++; }
+      offset += rows.length;
+      await deskLifecycle.setSyncState('aditkb_backfill_offset', String(offset));
+      if (rows.length < ADITKB_PAGE_SIZE) { reachedEnd = true; break; }
+    }
+    if (reachedEnd) {
+      await deskLifecycle.setSyncState('aditkb_backfill_complete', '1');
+      // Watermark the incremental phase from when the backfill STARTED,
+      // not finished -- anything that changed while the sweep was still
+      // running gets safely re-picked-up by the very next incremental
+      // top-up (a little redundant, never missed; upserts are idempotent).
+      await deskLifecycle.setSyncState('aditkb_synced_through_ms', String(backfillStartedAtMs));
+    }
+  } else {
+    // Steady state: only rows AditKB shows as modified since our last
+    // watermark, ordered by modified_time so the watermark can advance
+    // to the latest value actually seen.
+    const storedThrough = await deskLifecycle.getSyncState('aditkb_synced_through_ms');
+    const sinceMs = storedThrough ? Number(storedThrough) : Date.now() - 24 * 3600 * 1000;
+    const sinceIso = new Date(sinceMs).toISOString();
+    let offset = 0, pages = 0, maxSeenMs = sinceMs;
+    while (pages < ADITKB_MAX_PAGES_PER_TICK) {
+      const { rows } = await aditkbService.fetchTicketsPage({ modifiedSinceIso: sinceIso, offset, limit: ADITKB_PAGE_SIZE });
+      pages++;
+      if (!rows.length) break;
+      for (const row of rows) {
+        await upsertAditkbRow(row);
+        ticketsSeen++;
+        const mt = row.modified_time ? Date.parse(row.modified_time) : null;
+        if (mt != null && !Number.isNaN(mt) && mt > maxSeenMs) maxSeenMs = mt;
+      }
+      offset += rows.length;
+      if (rows.length < ADITKB_PAGE_SIZE) break;
+    }
+    if (maxSeenMs > sinceMs) {
+      // +1ms so the row(s) exactly at the watermark aren't re-pulled forever.
+      await deskLifecycle.setSyncState('aditkb_synced_through_ms', String(maxSeenMs + 1));
+    }
+  }
+  return ticketsSeen;
+}
+
+/** Maps one AditKB `desk_tickets` row (flat -- cf_* custom fields are
+ *  already top-level columns, unlike Zoho's own nested `cf` object) onto
+ *  our desk_ticket_snapshot schema and upserts it. `sentiment` isn't
+ *  exposed as a flat warehouse column (see lib/aditkb-service.js) so it's
+ *  left null for AditKB-sourced rows -- not used anywhere in
+ *  agentSummary()'s breakdowns, so this doesn't affect reporting. */
+async function upsertAditkbRow(row) {
+  const manual = pickManualCategory(row); // AditKB's cf_* keys match MANUAL_CATEGORY_FIELDS exactly
+  const contactName = [row.contact_first_name, row.contact_last_name].filter(Boolean).join(' ') || null;
+  try {
+    await deskLifecycle.upsertTicketSnapshot({
+      ticket_id: row.id, ticket_number: row.ticket_number, subject: row.subject,
+      contact_name: contactName, contact_email: row.email || null, account_name: row.contact_account_name || null,
+      status: row.status, status_type: row.status_type, priority: row.priority,
+      channel: row.channel, department_id: row.department_id || row.j_department_id || null,
+      department_name: row.j_department_name || null,
+      team_id: row.j_team_id || null, team_name: row.j_team_name || null,
+      assignee_id: row.j_assignee_id || null,
+      assignee_email: row.assignee_email ? row.assignee_email.toLowerCase() : null,
+      assignee_name: row.assignee_name || null,
+      sentiment: null,
+      comment_count: row.comment_count != null ? Number(row.comment_count) : null,
+      thread_count: row.thread_count != null ? Number(row.thread_count) : null,
+      created_time: row.created_time, closed_time: row.closed_time, onhold_time: row.j_onhold_time,
+      due_date: row.due_date, web_url: row.web_url, modified_time: row.modified_time,
+      classification: row.j_classification, category: row.category,
+      module: row.cf_adit_app_module || null,
+      ai_category: row.cf_ai_category_by_llm || null,
+      manual_category: manual.value, manual_category_source: manual.source,
+      dept_classification: row.cf_department_classification || null,
+      fcr_achieved: row.cf_fcr_achieved != null ? String(row.cf_fcr_achieved) : null,
+      resolution_business_hours: computeBusinessHours(row.created_time, row.closed_time),
+    });
+  } catch(e) { console.warn(`⚠️ desk snapshot upsert (AditKB) failed for ticket ${row.ticket_number || row.id}: ${e.message}`); }
+}
+
+/** Refreshes live-Zoho /tickets/{id}/metrics data (reassign/reopen
+ *  counts, resolution time, per-agent handling time) for whichever
+ *  already-synced tickets need it -- i.e. desk_ticket_snapshot rows
+ *  whose modified_time has moved past the last metrics pull, up to
+ *  `budget` tickets this tick (it'll catch up over later ticks). */
+async function runMetricsRefreshPhase(budget) {
+  let metricsRefreshed = 0, metricsErrors = 0, lastMetricsError = null;
+  if (budget <= 0) return { metricsRefreshed, metricsErrors, lastMetricsError };
+  const candidates = await deskLifecycle.getMetricsRefreshCandidates(budget);
+  for (const t of candidates) {
+    try {
+      const m = await deskService.fetchTicketMetrics(t.ticket_id);
+      if (m) {
+        const agentsHandled = [];
+        for (const ah of (m.agentsHandled || [])) {
+          if (!ah.agentId) continue; // Zoho's "Unassigned" placeholder row -- nothing to attribute
+          let cached = await deskLifecycle.getCachedAgent(ah.agentId);
+          if (!cached) {
+            try {
+              const a = await deskService.fetchAgent(ah.agentId);
+              const email = a.email ? a.email.toLowerCase() : null;
+              const name = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || ah.agentName || null;
+              await deskLifecycle.cacheAgent(ah.agentId, { email, name });
+              cached = { email, name };
+            } catch(e) { cached = { email: null, name: ah.agentName || null }; }
+          }
+          agentsHandled.push({
+            agentId: ah.agentId, agentName: cached.name || ah.agentName,
+            agentEmail: cached.email, handlingSeconds: parseHandlingSeconds(ah.handlingTime),
+          });
+        }
+        await deskLifecycle.replaceTicketAgents(t.ticket_id, agentsHandled);
+        const resSecs = parseHandlingSeconds(m.resolutionTime);
+        await deskLifecycle.updateTicketMetrics(t.ticket_id, {
+          reassignCount: m.reassignCount != null ? Number(m.reassignCount) : null,
+          reopenCount: m.reopenCount != null ? Number(m.reopenCount) : null,
+          resolutionHours: resSecs != null ? Math.round((resSecs / 3600) * 100) / 100 : null,
+          metricsModifiedTime: t.modified_time,
+        });
+        metricsRefreshed++;
+      }
+    } catch(e) {
+      metricsErrors++;
+      lastMetricsError = `ticket ${t.ticket_number || t.ticket_id}: ${e.message}`;
+      console.warn(`⚠️ desk metrics sync failed for ticket ${t.ticket_number || t.ticket_id}: ${e.message}`);
+    }
+  }
+  return { metricsRefreshed, metricsErrors, lastMetricsError };
+}
+
 async function runDeskLifecycleSync() {
   if (!deskService.isConfigured()) {
     if (!_deskConfigWarned) {
       console.warn('⚠️ Zoho Desk lifecycle sync not configured -- set ZOHO_CLIENT_ID/SECRET/REFRESH_TOKEN and ZOHO_DESK_ORG_ID to enable');
       _deskConfigWarned = true;
+    }
+    return;
+  }
+  if (!aditkbService.isConfigured()) {
+    if (!_aditkbConfigWarned) {
+      console.warn('⚠️ AditKB ticket snapshot sync not configured -- set ADITKB_API_KEY to enable');
+      _aditkbConfigWarned = true;
     }
     return;
   }
@@ -5510,178 +5658,27 @@ async function runDeskLifecycleSync() {
     return;
   }
   _deskSyncRunning = true;
-  let ticketsSeen = 0, metricsRefreshed = 0, metricsErrors = 0, lastMetricsError = null;
-  let metricsBudget = DESK_METRICS_BUDGET_PER_TICK;
+  _deskSyncProgress = { running: true, totalUnits: ADITKB_MAX_PAGES_PER_TICK, completedUnits: 0 };
+  let ticketsSeen = 0, metricsRefreshed = 0, metricsErrors = 0, lastMetricsError = null, snapshotError = null;
   try {
-    const departmentIds = await getDeskDepartmentIds();
-    if (!departmentIds.length) {
-      console.warn('⚠️ Desk lifecycle sync: no departments to sync (discovery failed and none configured) -- skipping this run');
-      return;
+    try {
+      ticketsSeen = await runAditkbSnapshotSync();
+    } catch(e) {
+      snapshotError = e.message;
+      console.warn(`⚠️ AditKB snapshot sync failed this tick: ${e.message}`);
     }
-    const pageSize = DESK_PAGE_SIZE;
-    const maxPages = DESK_MAX_PAGES_PER_PHASE;
-    // 2 phases (top-up + backfill) per department, each budgeted up to maxPages
-    _deskSyncProgress = { running: true, totalUnits: departmentIds.length * maxPages * 2, completedUnits: 0 };
+    _deskSyncProgress.completedUnits = ADITKB_MAX_PAGES_PER_TICK;
 
-    const nowMs = Date.now();
-    const floorMs = nowMs - DESK_BACKFILL_FLOOR_DAYS * 24 * 3600 * 1000;
-
-    async function processTicket(t) {
-      ticketsSeen++;
-      const cf = t.cf || {};
-      const manual = pickManualCategory(cf);
-      const contactName = t.contact ? [t.contact.firstName, t.contact.lastName].filter(Boolean).join(' ') : null;
-      const contactEmail = t.contact?.email || t.email || null;
-      const accountName = t.contact?.account?.accountName || null;
-      try {
-        await deskLifecycle.upsertTicketSnapshot({
-          ticket_id: t.id, ticket_number: t.ticketNumber, subject: t.subject,
-          contact_name: contactName, contact_email: contactEmail, account_name: accountName,
-          status: t.status, status_type: t.statusType, priority: t.priority,
-          channel: t.channel, department_id: t.departmentId,
-          department_name: t.department?.name || null,
-          team_id: t.teamId || null, team_name: t.team?.name || null,
-          assignee_id: t.assigneeId,
-          assignee_email: t.assignee?.emailId ? t.assignee.emailId.toLowerCase() : null,
-          assignee_name: t.assignee ? [t.assignee.firstName, t.assignee.lastName].filter(Boolean).join(' ') : null,
-          sentiment: t.sentiment, comment_count: t.commentCount != null ? Number(t.commentCount) : null,
-          thread_count: t.threadCount != null ? Number(t.threadCount) : null,
-          created_time: t.createdTime, closed_time: t.closedTime, onhold_time: t.onholdTime,
-          due_date: t.dueDate, web_url: t.webUrl, modified_time: t.modifiedTime,
-          classification: t.classification, category: t.category,
-          module: cf.cf_adit_app_module || null,
-          ai_category: cf.cf_ai_category_by_llm || null,
-          manual_category: manual.value, manual_category_source: manual.source,
-          dept_classification: cf.cf_department_classification || null,
-          fcr_achieved: cf.cf_fcr_achieved || null,
-          resolution_business_hours: computeBusinessHours(t.createdTime, t.closedTime),
-        });
-      } catch(e) { console.warn(`⚠️ desk snapshot upsert failed for ticket ${t.ticketNumber || t.id}: ${e.message}`); }
-
-      // Metrics (reassign/reopen counts + per-agent handling time) are an
-      // extra API call per ticket, so only re-pull when the ticket has
-      // actually changed since our last pull -- and stop once the
-      // per-tick budget runs out (it'll catch up on later ticks).
-      try {
-        const watermark = await deskLifecycle.getStoredMetricsWatermark(t.id);
-        const stale = watermark === undefined || watermark !== t.modifiedTime;
-        if (stale && metricsBudget > 0) {
-          metricsBudget--;
-          const m = await deskService.fetchTicketMetrics(t.id);
-          if (m) {
-            const agentsHandled = [];
-            for (const ah of (m.agentsHandled || [])) {
-              if (!ah.agentId) continue; // Zoho's "Unassigned" placeholder row -- nothing to attribute
-              let cached = await deskLifecycle.getCachedAgent(ah.agentId);
-              if (!cached) {
-                try {
-                  const a = await deskService.fetchAgent(ah.agentId);
-                  const email = a.email ? a.email.toLowerCase() : null;
-                  const name = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ') || ah.agentName || null;
-                  await deskLifecycle.cacheAgent(ah.agentId, { email, name });
-                  cached = { email, name };
-                } catch(e) { cached = { email: null, name: ah.agentName || null }; }
-              }
-              agentsHandled.push({
-                agentId: ah.agentId, agentName: cached.name || ah.agentName,
-                agentEmail: cached.email, handlingSeconds: parseHandlingSeconds(ah.handlingTime),
-              });
-            }
-            await deskLifecycle.replaceTicketAgents(t.id, agentsHandled);
-            const resSecs = parseHandlingSeconds(m.resolutionTime);
-            await deskLifecycle.updateTicketMetrics(t.id, {
-              reassignCount: m.reassignCount != null ? Number(m.reassignCount) : null,
-              reopenCount: m.reopenCount != null ? Number(m.reopenCount) : null,
-              resolutionHours: resSecs != null ? Math.round((resSecs / 3600) * 100) / 100 : null,
-              metricsModifiedTime: t.modifiedTime,
-            });
-            metricsRefreshed++;
-          }
-        }
-      } catch(e) {
-        metricsErrors++;
-        lastMetricsError = `ticket ${t.ticketNumber || t.id}: ${e.message}`;
-        console.warn(`⚠️ desk metrics sync failed for ticket ${t.ticketNumber || t.id}: ${e.message}`);
-      }
-    }
-
-    // One resumable phase: pages forward (offset `from`) through the
-    // given [fromTimeMs, toTimeMs) modifiedTime window, up to maxPages,
-    // processing every ticket seen. Returns the extreme modifiedTime
-    // observed so the caller can advance/shrink its watermark for the
-    // next tick.
-    async function runPhase({ departmentId, fromTimeMs, toTimeMs, trackMax, trackMin }) {
-      let from = 0, pages = 0, more = true, maxSeen = null, minSeen = null;
-      while (more && pages < maxPages) {
-        const tickets = await deskService.fetchTicketsPage({ departmentId, from, limit: pageSize, fromTimeMs, toTimeMs });
-        pages++;
-        _deskSyncProgress.completedUnits++;
-        if (!tickets.length) { more = false; break; }
-        for (const t of tickets) {
-          await processTicket(t);
-          const mt = t.modifiedTime ? Date.parse(t.modifiedTime) : null;
-          if (mt != null && !Number.isNaN(mt)) {
-            if (trackMax && (maxSeen == null || mt > maxSeen)) maxSeen = mt;
-            if (trackMin && (minSeen == null || mt < minSeen)) minSeen = mt;
-          }
-        }
-        more = tickets.length === pageSize;
-        from += pageSize;
-      }
-      if (pages < maxPages) _deskSyncProgress.completedUnits += (maxPages - pages);
-      return { pages, caughtUp: !more, maxSeen, minSeen };
-    }
-
-    let deptErrors = 0, lastDeptError = null;
-    for (const departmentId of departmentIds) {
-      // Session 21 hardening: an occasional transient failure fetching
-      // one department's page (e.g. a truncated/empty-body response from
-      // Zoho -- "Unexpected end of JSON input" -- observed live after
-      // shipping the two-phase rewrite, since it now makes many more
-      // pagination calls per tick than the old capped version ever did)
-      // used to abort the ENTIRE tick, wasting every department queued
-      // behind the failing one. Isolated per department instead, same
-      // reasoning as the per-ticket try/catch above -- one bad department
-      // just retries next tick from wherever its watermark already is.
-      try {
-        // Phase 1: top-up -- forward from last synced-through point to now.
-        const storedThrough = await deskLifecycle.getSyncState(`desk_synced_through_ms:${departmentId}`);
-        const syncedThrough = storedThrough ? Number(storedThrough) : floorMs;
-        const topUp = await runPhase({ departmentId, fromTimeMs: syncedThrough, toTimeMs: nowMs, trackMax: true });
-        if (topUp.caughtUp) {
-          await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(nowMs));
-        } else if (topUp.maxSeen != null) {
-          await deskLifecycle.setSyncState(`desk_synced_through_ms:${departmentId}`, String(topUp.maxSeen));
-        }
-
-        // Phase 2: backfill -- backward from wherever it last stopped
-        // toward the floor (skipped once this department has already
-        // reached it).
-        const backfillDone = await deskLifecycle.getSyncState(`desk_backfill_complete:${departmentId}`);
-        if (backfillDone !== '1') {
-          const storedTo = await deskLifecycle.getSyncState(`desk_backfilled_to_ms:${departmentId}`);
-          const toBound = storedTo ? Number(storedTo) : nowMs;
-          const backfill = await runPhase({ departmentId, fromTimeMs: floorMs, toTimeMs: toBound, trackMin: true });
-          if (backfill.minSeen == null || backfill.minSeen - 1 <= floorMs) {
-            await deskLifecycle.setSyncState(`desk_backfill_complete:${departmentId}`, '1');
-          } else {
-            await deskLifecycle.setSyncState(`desk_backfilled_to_ms:${departmentId}`, String(backfill.minSeen - 1));
-          }
-        } else {
-          _deskSyncProgress.completedUnits += maxPages; // nothing left to do for this department's backfill phase
-        }
-      } catch(e) {
-        deptErrors++;
-        lastDeptError = `department ${departmentId}: ${e.message}`;
-        console.warn(`⚠️ desk sync failed for department ${departmentId} -- skipping to next department this tick: ${e.message}`);
-      }
-    }
+    const metricsResult = await runMetricsRefreshPhase(DESK_METRICS_BUDGET_PER_TICK);
+    metricsRefreshed = metricsResult.metricsRefreshed;
+    metricsErrors = metricsResult.metricsErrors;
+    lastMetricsError = metricsResult.lastMetricsError;
 
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
-    await deskLifecycle.setSyncState('last_error', deptErrors > 0 ? lastDeptError : null);
+    await deskLifecycle.setSyncState('last_error', snapshotError);
     await deskLifecycle.setSyncState('last_metrics_error', lastMetricsError);
     await deskLifecycle.setSyncState('last_metrics_error_count', String(metricsErrors));
-    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets seen, ${metricsRefreshed} metrics refreshed, ${metricsErrors} metrics errors, ${deptErrors} department errors (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
+    console.log(`🎫 Desk lifecycle sync: ${ticketsSeen} tickets pulled from AditKB, ${metricsRefreshed} metrics refreshed, ${metricsErrors} metrics errors${snapshotError ? `, snapshot error: ${snapshotError}` : ''} (budget ${DESK_METRICS_BUDGET_PER_TICK})`);
   } catch(e) {
     console.error('❌ Desk lifecycle sync error:', e.message);
     await deskLifecycle.setSyncState('last_error', e.message).catch(()=>{});
@@ -5720,17 +5717,17 @@ app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
     // sync actually covers its full intended history, not just "this
     // tick's fixed unit budget was spent" (which is all syncProgressPct
     // above ever meant, and was being shown as a misleading 100%).
+    // Session 22: a single global flag (AditKB's one-time full-table
+    // backfill), not per-department Zoho backfill flags anymore.
     let backfillComplete = null;
     try {
-      const departmentIds = await getDeskDepartmentIds();
-      if (departmentIds.length) {
-        const flags = await Promise.all(departmentIds.map(id => deskLifecycle.getSyncState(`desk_backfill_complete:${id}`)));
-        backfillComplete = flags.every(f => f === '1');
-      }
+      const flag = await deskLifecycle.getSyncState('aditkb_backfill_complete');
+      backfillComplete = flag === '1';
     } catch(e) { /* non-fatal -- leave backfillComplete as null (unknown) */ }
     res.json({
       success: true,
       configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(),
+      aditkbConfigured: aditkbService.isConfigured(),
       csatConfigured: analyticsService.isConfigured(), csatRateLimit: analyticsService.getRateLimitState(),
       syncRunning: _deskSyncProgress.running, syncProgressPct, backfillComplete,
       ...status,
