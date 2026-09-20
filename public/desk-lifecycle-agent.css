@@ -21,6 +21,24 @@
    the 180px stat-card width. */
 .av2 #desk-lifecycle-agent-root .av2-stat-value { font-size: var(--av2-t-xl); }
 
+/* ── Session 29: density pass ─────────────────────────────────────────
+   agent-view-v2.css's default section/panel/stat spacing (32px between
+   sections, 24px panel padding, 16-40px inside a stat card) was designed
+   for Home/Live's handful of hero cards, but this page stacks five
+   sections (My numbers, Call Activity, Chat Activity, Breakdown, Recent
+   tickets) — at the base spacing that's a lot of dead air. Tightened
+   here, scoped to this page only, so Home/Live and other .av2 surfaces
+   are untouched. */
+.av2 #desk-lifecycle-agent-root .av2-section { margin-bottom: var(--av2-s4); }
+.av2 #desk-lifecycle-agent-root .av2-section-head { margin-bottom: var(--av2-s3); }
+.av2 #desk-lifecycle-agent-root .av2-panel { padding: var(--av2-s4) var(--av2-s5); }
+.av2 #desk-lifecycle-agent-root .av2-stat-grid {
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: var(--av2-s3);
+  margin-bottom: 0;
+}
+.av2 #desk-lifecycle-agent-root .av2-stat { padding: var(--av2-s4) var(--av2-s4) var(--av2-s3); }
+
 /* ── Period filter bar — Session 23 ──────────────────────────────────
    Brings the same Period options admins already have (desk-lifecycle-
    admin.css's .tkt-select / .tkt-date-inputs) to My Stats, styled with

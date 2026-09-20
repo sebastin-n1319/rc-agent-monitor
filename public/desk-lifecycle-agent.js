@@ -359,7 +359,7 @@
     if (!s) return '';
     const hasTransfers = s.departments_transferred && Object.keys(s.departments_transferred).length;
     const body = `
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--av2-s5);">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--av2-s3);">
         <div><div class="av2-stat-label" style="margin-bottom:8px;">Channel</div>${breakdownChips(s.channel)}</div>
         <div><div class="av2-stat-label" style="margin-bottom:8px;">Adit App Module</div>${breakdownChips(s.module)}</div>
         <div><div class="av2-stat-label" style="margin-bottom:8px;">Category</div>${breakdownChips(s.category)}</div>
@@ -572,7 +572,7 @@
             })()}
           </div>
         </div>
-        <div class="av2-section-meta" style="margin-bottom:var(--av2-s5);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
+        <div class="av2-section-meta" style="margin-bottom:var(--av2-s3);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
 
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${callStatsSection(summaryJson.callStats)}
