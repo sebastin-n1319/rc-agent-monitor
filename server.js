@@ -5732,7 +5732,7 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
-    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames });
+    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
     const out = summary.map(s => ({ ...s, pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
     res.json({ success: true, from, to, agents: out });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -5749,7 +5749,7 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
-    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames });
+    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
 
     const header = [
       'Agent', 'Email', 'Unique Tickets', 'Solely Handled', 'Reassigned', 'Transferred',
@@ -5933,7 +5933,8 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     const monitored = await getMonitoredAgents();
     const match = monitored.find(a => (a.email || '').toLowerCase() === email);
     const agentNames = match ? { [email]: match.name } : undefined;
-    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email], agentNames, q });
+    const rosterNames = monitored.map(a => a.name).filter(Boolean);
+    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email], agentNames, q, rosterNames });
 
     // Session 21: RingCentral call stats + SalesIQ chat stats, same
     // from/to window as the ticket summary above, so all three sections
