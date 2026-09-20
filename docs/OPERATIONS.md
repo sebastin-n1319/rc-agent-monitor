@@ -19,12 +19,14 @@ feature in production, and how to operate the system day-to-day.
 | Lighthouse SEO | **91/100** |
 | Lighthouse performance | 55/100 (1.3 MB monolith — split scheduled) |
 | npm audit | **0 vulnerabilities** |
-| Test count | **273** (181 unit / 92 E2E) |
+| Test count | **249** (181 unit / 68 E2E) |
 | Service worker | `adit-v1.7.0` (8 assets pre-cached) |
 | Security headers | 6 baseline headers on every response (Session 9) |
 | Logs | Railway dashboard → Deployments → Logs (JSON-line format) |
 | DB | SQLite at `/data/productivity.db` on Railway volume |
 | Always-admin emails | env `CORE_ADMINS=sebastin.n@adit.com,ronnie@adit.com,imran@adit.com` |
+| Google sign-in (**required**) | env `GOOGLE_CLIENT_ID=645617655942-jf8rnpassl0pjl40sip6p17vi3uakb5m.apps.googleusercontent.com` — must match the client_id baked into `public/index.html`. The server verifies every Google sign-in against this ID; without it, **all logins fail closed** (see `POST /api/session` in `server.js`). |
+| Allowed sign-in domain | env `ALLOWED_DOMAIN` (defaults to `adit.com` if unset) — only `@<this domain>` Google accounts can sign in |
 
 ## Feature flag matrix
 
@@ -385,7 +387,7 @@ These are shipped behind flags or as preview-only stubs:
 | 11 | Predictive abandonment v2 (#16): logistic regression + tests | 44 |
 | 12 | Predictions UI: forecast card + backtest chart + retrain | 12 |
 | 13 | Hardening v2: live Lighthouse, coverage floors, contrast fix | (audit-only) |
-| **Total** | **9 UI modules · 6 lib engines · 140+ endpoints** | **273 tests** |
+| **Total** | **9 UI modules · 6 lib engines · 140+ endpoints** | **249 tests** |
 
 ## Emergency rollback
 

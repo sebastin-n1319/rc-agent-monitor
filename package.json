@@ -23,6 +23,9 @@
   "author": "Adit",
   "license": "UNLICENSED",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "@ringcentral/sdk": "^5.0.6",
     "cookie-parser": "^1.4.7",
@@ -30,9 +33,9 @@
     "docx": "^9.7.1",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "google-auth-library": "^10.9.1",
     "googleapis": "^171.4.0",
     "node-cron": "^4.2.1",
-    "sql.js": "^1.14.1",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {

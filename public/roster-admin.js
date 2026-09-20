@@ -359,6 +359,7 @@
     agentListSearch: '',
     pendingSaves: new Map(),
     saveTimer: null,
+    saveFailCount: 0,
   };
 
   /* ══════════════════════════════════════════════════════════
@@ -367,14 +368,13 @@
   const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
-  const todayIso = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-  const nowMonthIso = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  };
+  // Pinned to America/Chicago — NOT the viewer's browser timezone. Agents
+  // here view from IST, so using the browser's local date (as this used to)
+  // made "today" run up to ~11.5 hours ahead of what schedule-admin.js and
+  // the server's own day boundaries consider "today", e.g. the roster's
+  // today-highlight and default-loaded month could silently be one day off.
+  const todayIso = (tz = 'America/Chicago') => new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  const nowMonthIso = (tz = 'America/Chicago') => todayIso(tz).slice(0, 7);
   const monthLabel = yyyymm => {
     const [y, m] = yyyymm.split('-').map(Number);
     return new Date(y, m - 1, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
@@ -1524,8 +1524,12 @@
 
   async function flushSaves() {
     if (!_s.pendingSaves.size) return;
-    const updates = Array.from(_s.pendingSaves.values());
-    _s.pendingSaves.clear();
+    // Snapshot exactly what we're about to send and remove only THOSE keys
+    // from the live queue — not the whole map — so a cell edited by the
+    // user while this request is in flight still gets its own save.
+    const entries = Array.from(_s.pendingSaves.entries());
+    entries.forEach(([key]) => _s.pendingSaves.delete(key));
+    const updates = entries.map(([, v]) => v);
     try {
       const r = await fetch('/api/roster/bulk', {
         method: 'POST', credentials: 'include',
@@ -1534,9 +1538,26 @@
       });
       const j = await r.json();
       if (!j.success) throw new Error(j.error || 'Save failed');
+      _s.saveFailCount = 0;
       setSaveState('ok', `✅ Saved ${updates.length} change${updates.length === 1 ? '' : 's'} · ${new Date().toLocaleTimeString()}`);
     } catch (e) {
-      setSaveState('err', '❌ Save failed: ' + e.message);
+      // applyCell() already updated the grid optimistically, so the cell
+      // LOOKS saved — don't let that be a lie. Put the failed updates back
+      // in the queue (unless a newer edit to the same cell already
+      // replaced them) and keep retrying with backoff instead of silently
+      // dropping the change.
+      entries.forEach(([key, value]) => {
+        if (!_s.pendingSaves.has(key)) _s.pendingSaves.set(key, value);
+      });
+      _s.saveFailCount++;
+      if (_s.saveFailCount >= 5) {
+        setSaveState('err', `❌ Save failed: ${e.message} — ${_s.pendingSaves.size} change(s) not saved yet, still retrying`);
+      } else {
+        setSaveState('err', '❌ Save failed, retrying: ' + e.message);
+      }
+      clearTimeout(_s.saveTimer);
+      const backoffMs = Math.min(600 * Math.pow(2, Math.min(_s.saveFailCount, 5)), 30000);
+      _s.saveTimer = setTimeout(flushSaves, backoffMs);
     }
   }
 
@@ -1689,6 +1710,9 @@
     const bg = document.createElement('div');
     bg.className = 'rx-modal-bg';
     bg.id = 'rx-agent-bg';
+    bg.setAttribute('role', 'dialog');
+    bg.setAttribute('aria-modal', 'true');
+    bg.setAttribute('aria-label', isEdit ? 'Edit agent' : 'Add agent');
     bg.innerHTML = `
       <div class="rx-modal">
         <div class="rx-modal-head">
@@ -1755,6 +1779,9 @@
 
     const bg = document.createElement('div');
     bg.className = 'rx-modal-bg'; bg.id = 'rx-audit-bg';
+    bg.setAttribute('role', 'dialog');
+    bg.setAttribute('aria-modal', 'true');
+    bg.setAttribute('aria-label', 'Roster audit log');
     const rows = events.length === 0
       ? '<div style="padding:24px;text-align:center;color:#9BAFC0;">No changes yet.</div>'
       : `<table class="rx-audit-tbl">

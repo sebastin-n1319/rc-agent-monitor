@@ -1,5 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { log } = require('./lib/logger');
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'productivity.db');
 const db = new sqlite3.Database(dbPath);
 console.log('Using DB at:', dbPath);
@@ -670,7 +671,20 @@ async function initDB() {
     `ALTER TABLE monitored_agents ADD COLUMN chat_id TEXT`,
     // Google account subject ID (from OAuth JWT) — captured at login
     `ALTER TABLE app_sessions ADD COLUMN google_sub TEXT`,
-  ]) { try { await run(sql); } catch(e) {} }
+  ]) {
+    try { await run(sql); }
+    catch(e) {
+      // "duplicate column name" is the EXPECTED case — it just means this
+      // migration already ran on a prior boot. Anything else (a typo'd
+      // column, a locked/corrupt DB, a real syntax error) was previously
+      // swallowed here with zero visibility, so the app could run for a
+      // long time in a partially-migrated state and only surface it later
+      // as a confusing "no such column" error somewhere unrelated.
+      if (!/duplicate column name/i.test(e.message || '')) {
+        log.warn('migration_failed', { sql, error: e.message });
+      }
+    }
+  }
 
   // Unique index — silent failure if column already exists from a prior boot
   try {
@@ -1450,6 +1464,9 @@ async function addAgentNote(agentId, agentName, note, addedBy) {
 async function getAgentNotes(agentId) {
   return all(`SELECT * FROM agent_notes WHERE agent_id=? ORDER BY created_at DESC LIMIT 50`, [agentId]);
 }
+async function getAgentNoteById(id) {
+  return get(`SELECT * FROM agent_notes WHERE id=?`, [id]);
+}
 async function deleteAgentNote(id) {
   return run(`DELETE FROM agent_notes WHERE id=?`, [id]);
 }
@@ -2214,7 +2231,7 @@ module.exports={
   insertPresenceEvent,getPresenceEvents,
   insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
-  addAgentNote,getAgentNotes,deleteAgentNote,
+  addAgentNote,getAgentNotes,getAgentNoteById,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
   upsertUserProfile,getAllUserProfiles,getUserProfile,
   insertLoginLog,getLoginLogs,

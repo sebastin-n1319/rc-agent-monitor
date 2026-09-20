@@ -15,8 +15,14 @@
  *   FocusTrap.release(element)    → manually release a trap
  *
  * Auto-discovers and traps:
- *   - Any `.ac-overlay`, `.sa-overlay`, `.an-overlay` shown with display:flex
- *   - When the modal closes (display:none), the trap auto-releases
+ *   - Any `.ac-overlay`, `.sa-overlay`, `.an-overlay`, `.ba-overlay`,
+ *     `.pc-overlay`, `.rx-modal-bg` that becomes visible
+ *   - When the modal closes, the trap auto-releases. Some of these modules
+ *     toggle an inline display:none/flex on a persistent element; others
+ *     (bulk-actions.js, predict-center.js, roster-admin.js) instead
+ *     append/remove the overlay element itself, with display:flex baked
+ *     into their stylesheet — isVisible() below checks computed style +
+ *     DOM presence so both patterns are detected the same way.
  *
  * Returns focus to the previously-focused element on release.
  */
@@ -24,6 +30,13 @@
   'use strict';
 
   const TRAPS = new WeakMap();
+  // WeakMap keys aren't enumerable, so we also keep a Set of elements with
+  // an active trap — needed to notice when one of them is REMOVED from the
+  // DOM entirely (bulk-actions.js/predict-center.js/roster-admin.js close
+  // their modals with .remove() rather than hiding them), since a detached
+  // element no longer matches any querySelectorAll(sel) for syncAll() to
+  // find and release it through the normal path below.
+  const ACTIVE = new Set();
   const FOCUSABLE_SELECTOR = [
     'a[href]:not([disabled])',
     'button:not([disabled])',
@@ -81,11 +94,13 @@
     const release = () => {
       element.removeEventListener('keydown', handler);
       TRAPS.delete(element);
+      ACTIVE.delete(element);
       if (previousFocus && typeof previousFocus.focus === 'function') {
         try { previousFocus.focus(); } catch (e) {}
       }
     };
     TRAPS.set(element, release);
+    ACTIVE.add(element);
     return release;
   }
 
@@ -94,14 +109,32 @@
     if (fn) fn();
   }
 
-  /* Auto-activate / auto-release based on visibility of overlay modals.
-   * Watches for display:flex (open) vs display:none (closed). */
-  const SELECTORS = ['.ac-overlay', '.sa-overlay', '.an-overlay'];
+  /* Auto-activate / auto-release based on visibility of overlay modals. */
+  const SELECTORS = ['.ac-overlay', '.sa-overlay', '.an-overlay', '.ba-overlay', '.pc-overlay', '.rx-modal-bg'];
+
+  // Works for BOTH: (a) a persistent element toggled via inline
+  // style.display, and (b) an element appended/removed from the DOM with
+  // display:flex coming from its stylesheet class, not inline style — (a)
+  // alone (checking modal.style.display) misses (b) entirely, since its
+  // inline style is never set. offsetParent isn't used here because it's
+  // null for position:fixed elements in some browsers, which every one of
+  // these overlays is.
+  function isVisible(modal) {
+    if (!modal.isConnected) return false;
+    const cs = window.getComputedStyle(modal);
+    return cs.display !== 'none' && cs.visibility !== 'hidden';
+  }
 
   function syncAll() {
+    // Sweep first: a modal closed via .remove() (bulk-actions.js,
+    // predict-center.js, roster-admin.js) is gone from the document by the
+    // time this runs, so it won't be found by the selector query below —
+    // without this, its trap would never release and focus would never be
+    // restored to whatever was focused before it opened.
+    ACTIVE.forEach(modal => { if (!modal.isConnected) release(modal); });
     SELECTORS.forEach(sel => {
       document.querySelectorAll(sel).forEach(modal => {
-        const visible = modal.style.display === 'flex' && modal.offsetParent !== null;
+        const visible = isVisible(modal);
         const has = TRAPS.has(modal);
         if (visible && !has) activate(modal);
         else if (!visible && has) release(modal);

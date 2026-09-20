@@ -14,7 +14,7 @@ const {
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
-  addAgentNote, getAgentNotes, deleteAgentNote,
+  addAgentNote, getAgentNotes, getAgentNoteById, deleteAgentNote,
   getAgentCallStatsRange,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   upsertUserProfile, getAllUserProfiles, getUserProfile,
@@ -51,10 +51,53 @@ const {
   parseCallDetails, inferAgentScopedDirection, normalizeRecordedDirection,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
+const { OAuth2Client } = require('google-auth-library');
 
 const app = express();
 const SESSION_COOKIE = 'rcAuthSession';
 const SESSION_MAX_AGE_S = 12 * 60 * 60; // 12 hours in seconds
+
+// ── Google sign-in verification ──────────────────────────────────────────────
+// GOOGLE_CLIENT_ID must match the client_id the frontend passes to Google
+// Identity Services (see GOOGLE_CLIENT_ID const in public/index.html). Used to
+// verify both the GIS ID-token credential and, as an extra check, the
+// audience on the OAuth2 access-token fallback flow's tokeninfo lookup.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleOAuthClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+if (!GOOGLE_CLIENT_ID) {
+  log.warn('google_client_id_missing', { detail: 'Google sign-in verification will reject all logins until GOOGLE_CLIENT_ID is set' });
+}
+
+// Verifies a Google identity proof supplied by the client and returns the
+// SERVER-TRUSTED profile ({ email, name, picture, googleSub }) — never the
+// client-supplied email/name/picture fields, which are unauthenticated and
+// forgeable. Throws on any failure; callers must catch and respond 401/403.
+async function verifyGoogleIdentity({ credential, accessToken }) {
+  if (credential) {
+    if (!GOOGLE_CLIENT_ID) throw new Error('Google sign-in is not configured on this server');
+    const ticket = await googleOAuthClient.verifyIdToken({ idToken: credential, audience: GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) throw new Error('Google token had no email');
+    if (payload.email_verified === false) throw new Error('Google account email is not verified');
+    return { email: payload.email, name: payload.name || '', picture: payload.picture || '', googleSub: payload.sub || null };
+  }
+  if (accessToken) {
+    // GIS's initTokenClient (OAuth2 implicit flow) yields an opaque access
+    // token, not a JWT, so it can't be verified with verifyIdToken. Instead
+    // we redeem it against Google's own userinfo endpoint SERVER-SIDE — the
+    // token only works if Google itself issued it to a real signed-in user,
+    // so this is just as unforgeable as the ID-token path.
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    });
+    if (!r.ok) throw new Error('Google rejected the access token');
+    const info = await r.json();
+    if (!info.email) throw new Error('Google token had no email');
+    if (info.email_verified === false || info.email_verified === 'false') throw new Error('Google account email is not verified');
+    return { email: info.email, name: info.name || '', picture: info.picture || '', googleSub: info.sub || null };
+  }
+  throw new Error('credential or accessToken required');
+}
 
 // ── CORS — restrict to allowlisted origins when ALLOWED_ORIGINS env var is set ─
 // Set ALLOWED_ORIGINS=https://your-app.up.railway.app in Railway env vars.
@@ -452,8 +495,12 @@ async function requireAdmin(req, res, next) {
 }
 
 app.get('/api/summary', requireAuth, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   try { res.json({ success: true, date, timeZone: tz, data: await getAgentSummary(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -477,22 +524,34 @@ app.get('/api/trend', requireAuth, rateLimit(10, 60000), async (req, res) => {
 });
 
 app.get('/api/presence-events', requireAuth, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   try { res.json({ success: true, date, timeZone: tz, data: await getPresenceEvents(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/abandoned-calls', requireAuth, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   try { res.json({ success: true, date, timeZone: tz, data: await getAbandonedCalls(date, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/queue-dashboard', requireAuth, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   try { res.json({ success: true, date, timeZone: tz, data: await fetchQueueDashboardSummary(date, false, tz) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -670,14 +729,28 @@ app.get('/api/agent-notes/:agentId', requireAuth, async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.post('/api/agent-notes', requireAuth, async (req, res) => {
-  const { agentId, agentName, note, addedBy } = req.body || {};
+  const { agentId, agentName, note } = req.body || {};
   if (!agentId || !note) return res.status(400).json({ success: false, error: 'agentId and note required' });
   if (note.length > 500) return res.status(400).json({ success: false, error: 'Note must be 500 chars or fewer' });
-  try { res.json({ success: true, data: await addAgentNote(agentId, agentName, note.trim(), addedBy) }); }
+  // addedBy is who's AUTHENTICATED, not whatever the client claims — a
+  // client-supplied addedBy would let anyone attribute a note to someone else.
+  try { res.json({ success: true, data: await addAgentNote(agentId, agentName, note.trim(), req.session.email) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 app.delete('/api/agent-notes/:id', requireAuth, async (req, res) => {
-  try { await deleteAgentNote(req.params.id); res.json({ success: true }); }
+  try {
+    const existing = await getAgentNoteById(req.params.id);
+    if (!existing) return res.status(404).json({ success: false, error: 'Note not found' });
+    const isOwner = existing.added_by && existing.added_by.toLowerCase() === req.session.email.toLowerCase();
+    if (!isOwner) {
+      const settings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+      if (!settings || settings.role !== 'admin') {
+        return res.status(403).json({ success: false, error: 'You can only delete your own notes' });
+      }
+    }
+    await deleteAgentNote(req.params.id);
+    res.json({ success: true });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -745,8 +818,12 @@ app.get('/api/login-logs', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/break-events', requireAuth, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   const email = req.query.email || null;
   try {
     res.json({ success: true, date, timeZone: tz, data: await getBreakEvents(date, tz, email) });
@@ -756,8 +833,12 @@ app.get('/api/break-events', requireAuth, async (req, res) => {
 });
 
 app.get('/api/break-tracker', requireAuth, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   const email = req.query.email || null;
   try {
     res.json({
@@ -846,8 +927,8 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
       }
     }
     await updateBreakEventNotification(event.id, notification.notified, notification.status, notification.response);
-    const date = req.body.date || new Date().toISOString().split('T')[0];
     const tz = req.body.tz || 'America/Chicago';
+    const date = req.body.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
     res.json({
       success: true,
       message: `${event.actionLabel} saved`,
@@ -983,10 +1064,26 @@ function setCookieToken(res, token) {
 }
 
 // POST /api/session — called after Google sign-in; creates DB session + sets cookie
+//
+// SECURITY: the caller does NOT get to assert who they are. The client sends
+// a Google-issued proof of identity — either `credential` (an ID-token JWT
+// from Google Identity Services) or `accessToken` (from the OAuth2 fallback
+// flow) — and this handler verifies it directly against Google before
+// trusting any email/name/picture. Previously this endpoint trusted
+// client-supplied `email` outright, so any request to this URL with an
+// arbitrary "@adit.com" email would mint a real, valid session for that
+// email — a full authentication bypass. Do not reintroduce that: never take
+// email/name/picture/googleSub from req.body here.
 app.post('/api/session', async (req, res) => {
-  const { email, name, picture, googleSub } = req.body || {};
-  if (!email) return res.status(400).json({ success: false, error: 'email required' });
+  const { credential, accessToken } = req.body || {};
   const ALLOWED_DOMAIN = process.env.ALLOWED_DOMAIN || 'adit.com';
+  let email, name, picture, googleSub;
+  try {
+    ({ email, name, picture, googleSub } = await verifyGoogleIdentity({ credential, accessToken }));
+  } catch (e) {
+    log.warn('session_google_verify_failed', { error: e.message });
+    return res.status(401).json({ success: false, error: 'Could not verify Google sign-in' });
+  }
   if (!email.endsWith('@' + ALLOWED_DOMAIN)) {
     return res.status(403).json({ success: false, error: 'Not authorised' });
   }
@@ -1194,8 +1291,12 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 
 // FEAT-5: CSV export endpoints
 app.get('/api/export/break-tracker', requireAdmin, async (req, res) => {
-  const date = req.query.date || new Date().toISOString().split('T')[0];
+  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // can be tomorrow's (empty) date in Chicago for several hours every
+  // evening, e.g. omitting ?date= after ~7pm Central used to silently show
+  // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
+  const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
   try {
     const data = await getBreakTracker(date, tz);
     const rows = [['Agent','Email','Action','Note','Created At (UTC)','Duration (min)']];
@@ -6298,9 +6399,11 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
 
 app.use(errorTracker());
 
+let httpServer = null;
+
 async function start() {
   const PORT = process.env.PORT || 8080;
-  app.listen(PORT, async () => {
+  httpServer = app.listen(PORT, async () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
     try {
       await authenticate();
@@ -6342,5 +6445,47 @@ async function start() {
     } catch(e) { console.error('❌ Startup error:', e.message); }
   });
 }
+
+// ── Graceful shutdown ────────────────────────────────────────────────────
+// Railway (and any process manager) sends SIGTERM before killing the
+// process on every deploy/restart. Without a handler, Node's default is to
+// terminate immediately — dropping in-flight HTTP requests and yanking the
+// sqlite connection out from under any write in progress. This lets
+// in-flight requests finish, closes the DB cleanly, and force-exits after a
+// timeout so a shutdown can never hang forever.
+let shuttingDown = false;
+function gracefulShutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  log.info('shutdown_signal_received', { signal });
+  const forceExitTimer = setTimeout(() => {
+    log.warn('shutdown_forced_timeout', { detail: 'server/db did not close within 10s — forcing exit' });
+    process.exit(1);
+  }, 10000);
+  forceExitTimer.unref();
+
+  const closeDb = () => new Promise(resolve => {
+    if (!_sharedDb || typeof _sharedDb.close !== 'function') return resolve();
+    _sharedDb.close(err => {
+      if (err) log.error('db_close_failed', err);
+      else log.info('db_closed');
+      resolve();
+    });
+  });
+
+  if (httpServer) {
+    httpServer.close(async err => {
+      if (err) log.error('http_server_close_failed', err);
+      else log.info('http_server_closed');
+      await closeDb();
+      clearTimeout(forceExitTimer);
+      process.exit(0);
+    });
+  } else {
+    closeDb().then(() => { clearTimeout(forceExitTimer); process.exit(0); });
+  }
+}
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 start();

@@ -77,8 +77,14 @@
   function greet(){var h=hr();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
   function ts(){return new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).format(new Date());}
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  // Assistant replies come verbatim from POST /api/brain/chat's `reply`
+  // field (an LLM completion) and are rendered via innerHTML in msgHTML()
+  // below — so they MUST be HTML-escaped before any markdown-lite
+  // formatting is layered on, exactly like user messages already are via
+  // esc(). Escaping first is safe: none of the patterns below match `&`,
+  // `<`, `>` or `"`, so escaping doesn't interfere with markdown detection.
   function md(t){
-    return t
+    return esc(t)
       .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#F97316;font-weight:700;">$1</strong>')
       .replace(/\n- /g,'<br><span style="color:#F97316;font-weight:700;margin-right:4px;">›</span>')
       .replace(/^- /,'<span style="color:#F97316;font-weight:700;margin-right:4px;">›</span>')

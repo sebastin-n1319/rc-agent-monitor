@@ -25,9 +25,9 @@
 <script src="/adit-reset.js?v=1.19.106"></script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.100" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.7" id="agent-view-v2-link">
-<link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
-<link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
-<link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
+<link rel="stylesheet" href="/alert-center.css?v=1.19.7" id="alert-center-link">
+<link rel="stylesheet" href="/offline-bridge.css?v=1.19.7" id="offline-bridge-link">
+<link rel="stylesheet" href="/bulk-actions.css?v=1.19.7" id="bulk-actions-link">
 <!-- Session 16: Roster admin (T1 CS Team Roster replacement) -->
 <link rel="stylesheet" href="/roster-admin.css?v=1.19.137" id="roster-admin-link">
 <!-- Session 17: Settings admin (pause controls + admin settings) -->
@@ -9779,9 +9779,9 @@ html.dark-mode .flc-row-enhanced{border-bottom-color:rgba(255,255,255,.05)}
 <script src="/adit-reset.js?v=1.19.106"></script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.100" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.7" id="agent-view-v2-link">
-<link rel="stylesheet" href="/alert-center.css" id="alert-center-link">
-<link rel="stylesheet" href="/offline-bridge.css" id="offline-bridge-link">
-<link rel="stylesheet" href="/bulk-actions.css" id="bulk-actions-link">
+<link rel="stylesheet" href="/alert-center.css?v=1.19.7" id="alert-center-link">
+<link rel="stylesheet" href="/offline-bridge.css?v=1.19.7" id="offline-bridge-link">
+<link rel="stylesheet" href="/bulk-actions.css?v=1.19.7" id="bulk-actions-link">
 <!-- Session 16: Roster admin (T1 CS Team Roster replacement) -->
 <link rel="stylesheet" href="/roster-admin.css?v=1.19.137" id="roster-admin-link">
 <!-- Session 17: Settings admin (pause controls + admin settings) -->
@@ -22947,7 +22947,12 @@ async function handleTokenResponse(response){
     localStorage.setItem('rcLastUser', JSON.stringify({
       name, role, email, picture: picture||'', breakbotEnabled
     }));
-    await savePersistedSession(name, role, email, picture, breakbotEnabled);
+    // The server independently redeems response.access_token against
+    // Google's own userinfo endpoint before it will mint a session cookie —
+    // it does not trust the email/name/picture read from that response
+    // above for that. See savePersistedSession() and POST /api/session in
+    // server.js.
+    await savePersistedSession(name, role, email, picture, breakbotEnabled, { accessToken: response.access_token });
     resetLoginBtn();
     startApp(name, role, picture, breakbotEnabled);
   }catch(e){
@@ -23082,13 +23087,15 @@ async function handleGoogleCredential(response){
     });
   }catch(e){}
   fetch(BACKEND+'/api/login-log',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:name,email,role,location,systemInfo})}).catch(()=>{});
-  // Save session to server — include googleSub so agent Chat IDs can be auto-populated
-  fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,name,picture:picture||'',googleSub:googleSub||''})}).catch(()=>{});
   sessionStorage.setItem('rcUser',name);sessionStorage.setItem('rcRole',role);sessionStorage.setItem('rcEmail',email);sessionStorage.setItem('rcPicture',picture||'');sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
   localStorage.setItem('rcLastUser',JSON.stringify({
     name,role,email,picture:picture||'',breakbotEnabled
   }));
-  await savePersistedSession(name, role, email, picture, breakbotEnabled);
+  // The server independently re-verifies response.credential with Google
+  // before it will mint a session cookie — it does not trust the
+  // client-decoded email/name/picture/sub above for that. See
+  // savePersistedSession() and POST /api/session in server.js.
+  await savePersistedSession(name, role, email, picture, breakbotEnabled, { credential: response.credential });
   startApp(name,role,picture,breakbotEnabled);
 }
 
@@ -24848,10 +24855,10 @@ async function zohoLookupTicket(id) {
             <div style="font-size:11px;color:#9BAFC0;">${esc(t.contact?.name||'')} ${t.contact?.email?'· '+esc(t.contact.email):''}</div>
           </div>
           <div style="display:flex;gap:5px;flex-wrap:wrap;flex-shrink:0;">
-            <span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${t.channel}</span>
-            <span style="background:${sC}22;color:${sC};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${t.status}</span>
-            ${t.priority?`<span style="background:rgba(251,200,75,.12);color:#D97706;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${t.priority}</span>`:''}
-            ${t.satisfaction?`<span style="font-size:10px;color:#6B849A;">${{Positive:'⭐ Positive',Neutral:'👍 Neutral',Negative:'⚠ Negative'}[t.satisfaction]||t.satisfaction}</span>`:''}
+            <span style="background:${chC}22;color:${chC};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${esc(t.channel)}</span>
+            <span style="background:${sC}22;color:${sC};padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${esc(t.status)}</span>
+            ${t.priority?`<span style="background:rgba(251,200,75,.12);color:#D97706;padding:2px 8px;border-radius:50px;font-size:10px;font-weight:700;">${esc(t.priority)}</span>`:''}
+            ${t.satisfaction?`<span style="font-size:10px;color:#6B849A;">${esc({Positive:'⭐ Positive',Neutral:'👍 Neutral',Negative:'⚠ Negative'}[t.satisfaction]||t.satisfaction)}</span>`:''}
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:7px;border-top:1px solid rgb(222,225,230);align-items:center;">
@@ -25466,7 +25473,7 @@ function renderTlPivot() {
   });
   if (pivCh) pivCh.innerHTML = Object.entries(chMap).sort((a,b)=>b[1]-a[1]).map(([ch,n]) => `
     <div class="tl-pbar-row">
-      <div class="tl-pbar-label" style="color:${chColors[ch]||'#6B849A'}">${ch}</div>
+      <div class="tl-pbar-label" style="color:${chColors[ch]||'#6B849A'}">${esc(ch)}</div>
       <div class="tl-pbar-track"><div class="tl-pbar-fill" style="width:${(n/total*100).toFixed(0)}%;background:${chColors[ch]||'#6B849A'}"></div></div>
       <div class="tl-pbar-count">${n}</div>
     </div>`).join('');
@@ -25480,7 +25487,7 @@ function renderTlPivot() {
   if (pivType) pivType.innerHTML = Object.entries(typeMap).sort((a,b)=>b[1]-a[1]).map(([tp,n]) => {
     const short = tp.replace(' Ticket','').replace('Auto-Generated/Spam','Spam').replace('New Ticket - Transferred','Transferred');
     return `<div class="tl-pbar-row">
-      <div class="tl-pbar-label">${short}</div>
+      <div class="tl-pbar-label">${esc(short)}</div>
       <div class="tl-pbar-track"><div class="tl-pbar-fill" style="width:${(n/total*100).toFixed(0)}%;background:#F4891F"></div></div>
       <div class="tl-pbar-count">${n}</div>
     </div>`;
@@ -25511,10 +25518,10 @@ function renderTlPivot() {
               const dt  = safe(t.date, '—');
               const tIdx = filtered.length - 1 - filtered.indexOf(t);
               return `<tr style="border-bottom:1px solid rgba(255,255,255,.05);transition:background .12s;" onmouseover="this.style.background='rgba(255,255,255,.04)'" onmouseout="this.style.background='transparent'">
-                <td style="padding:7px 8px;font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${t.ticketId}</td>
-                <td style="padding:7px 8px;font-size:11px;color:rgba(178,219,240,.8);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${shortType}</td>
-                <td style="padding:7px 8px;"><span style="background:${chC}22;color:${chC};padding:2px 7px;border-radius:50px;font-size:10px;font-weight:700;">${ch}</span></td>
-                <td style="padding:7px 8px;font-size:10px;color:rgba(178,219,240,.45);text-align:right;white-space:nowrap;">${dt}</td>
+                <td style="padding:7px 8px;font-size:12px;font-weight:700;color:#21AAE0;white-space:nowrap;">${esc(t.ticketId)}</td>
+                <td style="padding:7px 8px;font-size:11px;color:rgba(178,219,240,.8);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(shortType)}</td>
+                <td style="padding:7px 8px;"><span style="background:${chC}22;color:${chC};padding:2px 7px;border-radius:50px;font-size:10px;font-weight:700;">${esc(ch)}</span></td>
+                <td style="padding:7px 8px;font-size:10px;color:rgba(178,219,240,.45);text-align:right;white-space:nowrap;">${esc(dt)}</td>
                 <td style="padding:7px 4px;text-align:center;">
                   <button onclick="tlOpenEditModal(tlSheetData[${tlSheetData.indexOf(t)}])" title="Edit ticket"
                     style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:6px;width:22px;height:22px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;padding:0;"
@@ -26306,14 +26313,21 @@ async function csRunBackfill(){
 // This survives browser restarts, tab closes, and browser storage clears.
 // localStorage is kept as a fast-restore hint only (no security dependency).
 
-async function savePersistedSession(name, role, email, picture, breakbotEnabled){
-  // Tell the server to create a DB-backed session cookie (survives browser restart)
-  const req = fetch(BACKEND + '/api/session', {
+async function savePersistedSession(name, role, email, picture, breakbotEnabled, authProof){
+  // Tell the server to create a DB-backed session cookie (survives browser
+  // restart). authProof is the Google-issued identity proof to verify
+  // ({credential} from GIS, or {accessToken} from the OAuth2 fallback) — the
+  // server derives email/name/picture from THAT, not from this call's own
+  // name/email/picture args, which are unauthenticated as far as the server
+  // is concerned. Without a fresh authProof the server has nothing to verify
+  // and will reject the request, so callers that only have cached/local
+  // data (no live Google credential) must not call this.
+  const req = authProof ? fetch(BACKEND + '/api/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify({ email, name, picture: picture || '' })
-  }).catch(() => null);
+    body: JSON.stringify(authProof)
+  }).catch(() => null) : Promise.resolve(null);
   // Also save full auth state to localStorage (survives server restarts + Railway deploys)
   try{
     localStorage.setItem('rcLastUser', JSON.stringify({
@@ -26463,9 +26477,14 @@ async function loadSession(){
                 name:s.name||cached.name, role:s.role, email:s.email||cached.email,
                 picture:s.picture||cached.picture||'', breakbotEnabled:s.breakbotEnabled!==false, savedAt:Date.now()
               })); }catch(_){}
-            } else {
-              fetch(BACKEND+'/api/session',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:cached.email,name:cached.name,picture:cached.picture||''})}).catch(()=>{});
             }
+            // else: the server cookie is gone/expired and we have no fresh
+            // Google credential to re-establish it (only stale cached data)
+            // — POSTing that would just be rejected now that the server
+            // verifies identity with Google, so we don't try. The optimistic
+            // UI from the cached rcSession above keeps working locally;
+            // real API calls will 401 and route the user back through
+            // Google sign-in the next time they hit a gated action.
           }).catch(()=>{});
         return;
       }catch(err){ debugLines.push('startApp error: '+err.message); }
@@ -26531,13 +26550,12 @@ async function loadSession(){
       sessionStorage.setItem('rcBreakbotEnabled', breakbotEnabled ? '1' : '0');
       debugLines.push('restoring app from rcLastUser');
       try{ startApp(remembered.name,role,remembered.picture,breakbotEnabled); }catch(err){ debugLines.push('startApp error (recovered): '+err.message); throw err; }
-      fetch(BACKEND+'/api/session',{
-        method:'POST',credentials:'include',
-        credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:remembered.email,name:remembered.name,picture:remembered.picture||''})
-      }).catch(()=>{});
-      debugLines.push('recovered session from rcLastUser');
+      // No fresh Google credential here (only localStorage's rcLastUser), so
+      // we don't POST to /api/session — the server now verifies identity
+      // with Google and would reject it. This is an optimistic client-side
+      // restore only; real API calls will 401 and send the user back
+      // through Google sign-in the next time they hit a gated action.
+      debugLines.push('recovered session from rcLastUser (client-side only, no server cookie)');
       return;
     }
   }catch(e){ debugLines.push('rcLastUser recovery error: '+e.message); }
