@@ -35,6 +35,16 @@
 #desk-lifecycle-root .tkt-spinner { width:18px !important; height:18px !important; border-radius:50% !important; border:2.5px solid var(--tkt-border) !important; border-top-color:var(--tkt-accent) !important; animation: tkt-spin .7s linear infinite !important; }
 @keyframes tkt-spin { to { transform: rotate(360deg); } }
 
+/* ── Sticky top (Session 31): the title, filter bar and sync banner stay
+   pinned as the agent cards below scroll, so Period/Customer/Find-agent
+   and the sync status are always reachable without scrolling back up.
+   top:54px matches the app shell's fixed 54px header (see header{} in
+   index.html) so this sits flush below it instead of being covered by
+   it; background repeats the page bg so cards scrolling underneath
+   don't show through, and the shadow only reads once something is
+   actually scrolled under it (no visible seam at rest). */
+#desk-lifecycle-root .tkt-sticky-top { position:sticky !important; top:54px !important; z-index:30 !important; background:var(--tkt-bg) !important; padding-top:12px !important; margin:-12px -12px 0 !important; padding-left:12px !important; padding-right:12px !important; padding-bottom:10px !important; box-shadow:0 8px 12px -10px rgba(15,24,36,.18) !important; }
+
 /* ── Header ── */
 #desk-lifecycle-root .tkt-header { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:12px !important; margin-bottom:10px !important; flex-wrap:wrap !important; }
 #desk-lifecycle-root .tkt-h1 { font-size:20px !important; font-weight:700 !important; letter-spacing:-.01em !important; color:var(--tkt-ink) !important; }

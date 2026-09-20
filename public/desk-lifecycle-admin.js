@@ -934,16 +934,18 @@
     _lastPrevSummaryData = prevSummaryData;
     root.innerHTML = `
       <div class="tkt-wrap">
-        <div class="tkt-header">
-          <div>
-            <div class="tkt-h1">Ticket Lifecycle</div>
-            <div class="tkt-h1-sub">Per-agent, per-channel ticket stats sourced from Zoho Desk — replaces the manual lifecycle report export.</div>
+        <div class="tkt-sticky-top">
+          <div class="tkt-header">
+            <div>
+              <div class="tkt-h1">Ticket Lifecycle</div>
+              <div class="tkt-h1-sub">Per-agent, per-channel ticket stats sourced from Zoho Desk — replaces the manual lifecycle report export.</div>
+            </div>
           </div>
+
+          ${status.configured ? filterBarHtml() : ''}
+
+          <div class="tkt-banner-host">${status.configured ? statusBanner(status) : notConfiguredCard()}</div>
         </div>
-
-        ${status.configured ? filterBarHtml() : ''}
-
-        <div class="tkt-banner-host">${status.configured ? statusBanner(status) : notConfiguredCard()}</div>
 
         <div class="tkt-results-host">${status.configured ? resultsCardHtml(summaryData, prevSummaryData) : ''}</div>
       </div>`;
