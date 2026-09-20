@@ -188,7 +188,11 @@
 #desk-lifecycle-root .tkt-agent-search-input:focus,
 #desk-lifecycle-root input[type="date"]:focus { outline:none !important; border-color:var(--tkt-accent) !important; }
 
-#desk-lifecycle-root .tkt-date-inputs { display:flex !important; align-items:center !important; gap:8px !important; margin-top:8px !important; flex-wrap:wrap !important; }
+/* Hidden by default; only .tkt-date-inputs-open (Custom range… selected)
+   switches it to flex -- see the Session 30 note on wireFilterBar() in
+   the JS for why this must be a class, not an inline style. */
+#desk-lifecycle-root .tkt-date-inputs { display:none !important; align-items:center !important; gap:8px !important; margin-top:8px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-root .tkt-date-inputs.tkt-date-inputs-open { display:flex !important; }
 #desk-lifecycle-root .tkt-date-inputs input[type="date"] { border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; padding:7px 10px !important; font-size:12.5px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:var(--tkt-surface) !important; }
 #desk-lifecycle-root .tkt-date-sep { font-size:12px !important; color:var(--tkt-ink3) !important; }
 #desk-lifecycle-root .tkt-date-apply { padding:7px 14px !important; }

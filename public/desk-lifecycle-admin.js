@@ -650,8 +650,15 @@
         ).join('')}</optgroup>`).join('')}
       </select>`;
     const showCustom = _selectedPreset === 'custom';
+    // Toggled via a class (not an inline style) so it can't lose a
+    // specificity fight with this file's blanket `!important` convention
+    // -- an inline `style="display:none"` was previously being overridden
+    // by `.tkt-date-inputs { display:flex !important }`, so the custom
+    // date-range picker rendered full-size on EVERY preset, not just
+    // "Custom range…", which is what was eating all the space at the top
+    // of the page.
     const customHtml = `
-      <div class="tkt-date-inputs"${showCustom ? '' : ' style="display:none"'}>
+      <div class="tkt-date-inputs${showCustom ? ' tkt-date-inputs-open' : ''}">
         <input type="date" class="tkt-date-from" value="${esc(_customFrom || '')}">
         <span class="tkt-date-sep">to</span>
         <input type="date" class="tkt-date-to" value="${esc(_customTo || '')}">
@@ -684,7 +691,7 @@
     if (sel) sel.addEventListener('change', () => {
       _selectedPreset = sel.value;
       const customWrap = $('.tkt-date-inputs', root);
-      if (customWrap) customWrap.style.display = (_selectedPreset === 'custom') ? '' : 'none';
+      if (customWrap) customWrap.classList.toggle('tkt-date-inputs-open', _selectedPreset === 'custom');
       if (_selectedPreset !== 'custom' || (_customFrom && _customTo)) refreshSummary(root, status);
     });
     const applyBtn = $('.tkt-date-apply', root);
