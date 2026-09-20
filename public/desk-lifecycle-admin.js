@@ -70,6 +70,7 @@
     { key: 'csat',      label: 'CSAT %',               fn: (a) => (a.csat_pct == null ? -1 : a.csat_pct) },
     { key: 'reassigned',label: 'Reassigned',           fn: (a) => (a.reassigned || 0) },
     { key: 'transferred',label: 'Transferred',          fn: (a) => (a.transferred || 0) },
+    { key: 'handed_off_internal', label: 'Handed off internally', fn: (a) => (a.handed_off_internal || 0) },
     { key: 'name',      label: 'Name (A–Z)',           fn: null },
   ];
 
@@ -396,6 +397,7 @@
             <div class="tkt-pill tkt-pill-good"><div class="tkt-pill-n">${a.solely_handled || 0}</div><div class="tkt-pill-l">Solely handled</div></div>
             <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.reassigned || 0}</div><div class="tkt-pill-l">Reassigned</div></div>
             <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.transferred || 0}</div><div class="tkt-pill-l">Transferred</div></div>
+            <div class="tkt-pill"><div class="tkt-pill-n">${a.handed_off_internal || 0}</div><div class="tkt-pill-l">Handed off (T1)</div></div>
             <div class="tkt-pill"><div class="tkt-pill-n">${a.closed_count || 0}</div><div class="tkt-pill-l">Closed</div></div>
             <div class="tkt-pill tkt-pill-live"><div class="tkt-pill-n">${a.currently_handling || 0}</div><div class="tkt-pill-l">Handling now</div></div>
             <div class="tkt-pill"><div class="tkt-pill-n">${avgHandle}</div><div class="tkt-pill-l">Avg handle</div></div>

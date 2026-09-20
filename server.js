@@ -5753,6 +5753,7 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
 
     const header = [
       'Agent', 'Email', 'Unique Tickets', 'Solely Handled', 'Reassigned', 'Transferred',
+      'Handed Off Internally',
       'Closed', 'Avg Handle (hrs)', 'Currently Handling', 'FCR %', 'CSAT %',
     ];
     const rows = [header, ...summary.map(s => {
@@ -5760,6 +5761,7 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
       return [
         a?.full_name || a?.pseudo || s.email, s.email,
         s.unique_tickets || 0, s.solely_handled || 0, s.reassigned || 0, s.transferred || 0,
+        s.handed_off_internal || 0,
         s.closed_count || 0, s.avg_handle_hours ?? '',
         s.currently_handling || 0, s.fcr_pct ?? '', s.csat_pct ?? '',
       ];
