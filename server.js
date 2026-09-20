@@ -6233,6 +6233,69 @@ app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Session 34: "Verify tickets" drill-down -- a manual count conflicting
+// with a card's number (Sabrina reporting 13 handled vs. the card's 7,
+// against the Google Sheet her team also tracks by hand) needs a way to
+// see the EXACT tickets a metric counted, not just trust the aggregate.
+// One endpoint backs both the admin Ticket Lifecycle page (any monitored
+// agent, via ?agentEmail=) and the agent My Stats page (always the
+// caller's own session email) -- a non-admin passing a different
+// ?agentEmail= is rejected outright rather than silently ignored, so
+// this never becomes a way to see a colleague's numbers without the
+// admin role. See lib/desk-lifecycle.js's agentTicketsForMetric() for
+// why the row count always equals the corresponding card's number.
+app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
+  try {
+    const VALID_METRICS = new Set([
+      'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal',
+      'closed', 'fcr', 'csat', 'currently_handling',
+    ]);
+    const metric = String(req.query.metric || 'unique');
+    if (!VALID_METRICS.has(metric)) return res.status(400).json({ success: false, error: 'Invalid metric' });
+
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const q = req.query.q ? String(req.query.q).trim() : null;
+
+    const sessionEmail = (req.session.email || '').toLowerCase();
+    if (!sessionEmail) return res.status(400).json({ success: false, error: 'No session email' });
+    const callerRole = await getRoleSettingsForEmail(sessionEmail).then(s => s?.role || 'agent').catch(() => 'agent');
+    const isAdminCaller = callerRole === 'admin';
+
+    let targetEmail = sessionEmail;
+    if (req.query.agentEmail) {
+      const requested = String(req.query.agentEmail).toLowerCase();
+      if (requested !== sessionEmail && !isAdminCaller) {
+        return res.status(403).json({ success: false, error: 'Only admins can audit another agent\'s tickets' });
+      }
+      targetEmail = requested;
+    }
+
+    const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+    if (!emails.includes(targetEmail)) {
+      return res.status(400).json({ success: false, error: 'Not a monitored T1 agent' });
+    }
+    const agentName = agentNames[targetEmail];
+    const rosterNames = Object.values(agentNames);
+
+    const tickets = await deskLifecycle.agentTicketsForMetric({
+      metric, from, to, email: targetEmail, agentName, rosterNames, q, limit: 500,
+    });
+
+    res.json({
+      success: true, from, to, metric,
+      agentEmail: targetEmail,
+      agentName: byEmail[targetEmail]?.full_name || agentName || targetEmail,
+      total: tickets.length,
+      tickets,
+      isAdminCaller,
+      monitoredAgents: isAdminCaller
+        ? emails.map(e => ({ email: e, name: byEmail[e]?.full_name || agentNames[e] || e })).sort((a, b) => a.name.localeCompare(b.name))
+        : undefined,
+    });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.use(errorTracker());
 
 async function start() {

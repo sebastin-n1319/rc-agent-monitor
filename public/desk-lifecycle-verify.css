@@ -1,0 +1,158 @@
+/* ───────────────────────────────────────────────────────────────────────
+   "Verify tickets" drill-down overlay — Session 34
+   Opened from either the admin Ticket Lifecycle page or the agent My
+   Stats page (see desk-lifecycle-verify.js) — always wrapped in its own
+   `.av2` element so agent-view-v2.css's tokens resolve regardless of
+   which page's root it's appended next to (the admin page uses its own
+   separate tkt-* token set, not av2).
+   ─────────────────────────────────────────────────────────────────────── */
+.dlv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900000;
+  background: rgba(7, 43, 64, .45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  overflow-y: auto;
+  animation: dlvFadeIn .18s var(--av2-spring-snap, ease);
+}
+@keyframes dlvFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.dlv-panel {
+  width: 100%;
+  max-width: 1120px;
+  background: var(--av2-surface);
+  border-radius: var(--av2-r-lg);
+  box-shadow: var(--av2-e4);
+  padding: var(--av2-s6);
+  margin-bottom: 32px;
+}
+
+.dlv-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--av2-s4);
+  margin-bottom: var(--av2-s5);
+}
+.dlv-title {
+  font-size: var(--av2-t-lg);
+  font-weight: var(--av2-w-b);
+  color: var(--av2-t1);
+  letter-spacing: -0.01em;
+}
+.dlv-sub {
+  font-size: var(--av2-t-sm);
+  color: var(--av2-t3);
+  margin-top: var(--av2-s1);
+  max-width: 640px;
+}
+
+.dlv-controls {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: var(--av2-s3);
+  margin-bottom: var(--av2-s5);
+  padding-bottom: var(--av2-s5);
+  border-bottom: 1px solid var(--av2-border);
+}
+.dlv-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--av2-t-xs);
+  font-weight: 600;
+  color: var(--av2-t3);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.dlv-field-search { min-width: 220px; flex: 1 1 220px; }
+.dlv-field select,
+.dlv-field input[type="search"] {
+  border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-sm);
+  padding: 7px 10px;
+  font-size: var(--av2-t-sm);
+  font-family: inherit;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--av2-t1);
+  background: var(--av2-surface);
+}
+.dlv-field select:focus,
+.dlv-field input[type="search"]:focus { outline: none; border-color: var(--av2-orange); }
+
+.dlv-date-inputs { display: flex; align-items: center; gap: var(--av2-s2); }
+.dlv-date-range {
+  display: flex; align-items: center; border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-sm); background: var(--av2-surface); overflow: hidden;
+}
+.dlv-date-range input[type="date"] {
+  border: none; padding: 6px 9px; font-size: var(--av2-t-xs); font-family: inherit;
+  color: var(--av2-t1); background: transparent; width: 108px;
+}
+.dlv-date-range input[type="date"]:focus { outline: none; }
+.dlv-date-sep {
+  font-size: 10px; font-weight: 600; color: var(--av2-t3); text-transform: uppercase;
+  padding: 0 2px; border-left: 1px solid var(--av2-border); border-right: 1px solid var(--av2-border);
+  align-self: stretch; display: flex; align-items: center; background: var(--av2-bg);
+}
+.dlv-live-note {
+  font-size: var(--av2-t-xs);
+  color: var(--av2-t3);
+  font-weight: 400;
+  text-transform: none;
+  max-width: 320px;
+}
+
+.dlv-loading, .dlv-error { padding: var(--av2-s5) 0; text-align: center; color: var(--av2-t3); font-size: var(--av2-t-sm); }
+.dlv-error { color: var(--av2-red); }
+
+.dlv-total-card {
+  display: flex; align-items: center; gap: var(--av2-s4);
+  background: var(--av2-surface-2); border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-md); padding: var(--av2-s4) var(--av2-s5);
+  margin-bottom: var(--av2-s4);
+}
+.dlv-total-num {
+  font-size: var(--av2-t-2xl); font-weight: var(--av2-w-eb); color: var(--av2-t1);
+  font-variant-numeric: tabular-nums; flex: none;
+}
+.dlv-total-meta { min-width: 0; }
+.dlv-total-label { font-size: var(--av2-t-base); font-weight: var(--av2-w-sb); color: var(--av2-t1); }
+.dlv-total-def { font-size: var(--av2-t-sm); color: var(--av2-t3); margin-top: 2px; }
+.dlv-total-extra { font-size: var(--av2-t-sm); color: var(--av2-t2); font-weight: 600; margin-top: 4px; }
+
+.dlv-chips-bar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: var(--av2-s3); margin-bottom: var(--av2-s3);
+  padding: 8px 10px; border-radius: var(--av2-r-sm); background: var(--av2-surface-2);
+}
+.dlv-chips { display: flex; align-items: center; gap: var(--av2-s3); flex-wrap: wrap; }
+.dlv-chip-field {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--av2-t-xs); font-weight: 600; color: var(--av2-t3);
+}
+.dlv-chip-field select {
+  border: 1px solid var(--av2-border); border-radius: var(--av2-r-sm);
+  padding: 5px 9px; font-size: var(--av2-t-xs); font-family: inherit;
+  color: var(--av2-t1); background: var(--av2-surface); cursor: pointer;
+}
+.dlv-dim { color: var(--av2-t3); font-size: var(--av2-t-xs); }
+
+.dlv-subject {
+  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dlv-ticket-link { color: var(--av2-orange); font-weight: 600; text-decoration: none; }
+.dlv-ticket-link:hover { text-decoration: underline; }
+
+@media (max-width: 760px) {
+  .dlv-panel { padding: var(--av2-s4); }
+  .dlv-controls { flex-direction: column; align-items: stretch; }
+  .dlv-total-card { flex-direction: column; align-items: flex-start; gap: var(--av2-s2); }
+  .dlv-chips-bar { flex-direction: column; align-items: stretch; }
+}

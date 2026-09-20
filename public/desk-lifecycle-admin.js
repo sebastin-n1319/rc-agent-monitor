@@ -500,9 +500,25 @@
       </div>`;
   }
 
+  // Session 34: maps this card's own tipKey naming (unique/solely/
+  // reassigned/transferred/handed_off/closed/handling/avg_handle/fcr/csat)
+  // onto the "Verify tickets" drill-down's metric keys (see desk-
+  // lifecycle-verify.js) -- avg_handle has no metric of its own, so it
+  // opens the same "closed" list its average is computed from.
+  const VERIFY_METRIC_MAP = {
+    unique: 'unique', solely: 'solely_handled', reassigned: 'reassigned',
+    transferred: 'transferred', handed_off: 'handed_off_internal',
+    closed: 'closed', handling: 'currently_handling', avg_handle: 'closed',
+    fcr: 'fcr', csat: 'csat',
+  };
+
   function pillHtml(cls, n, label, tipKey, a) {
     const tip = metricTip(tipKey, a);
-    return `<div class="tkt-pill${cls ? ' ' + cls : ''}" data-tip="${esc(tip)}">
+    const verifyMetric = VERIFY_METRIC_MAP[tipKey];
+    const clickAttrs = verifyMetric
+      ? ` data-verify-metric="${verifyMetric}" data-verify-email="${esc(a.email)}" tabindex="0" role="button"`
+      : '';
+    return `<div class="tkt-pill${cls ? ' ' + cls : ''}${verifyMetric ? ' tkt-pill-clickable' : ''}" data-tip="${esc(tip)}"${clickAttrs}>
         <div class="tkt-pill-n">${n}</div><div class="tkt-pill-l">${esc(label)}</div>
       </div>`;
   }
@@ -835,6 +851,26 @@
         if (_expanded.has(email)) _expanded.delete(email); else _expanded.add(email);
         renderResults(root, status, summaryData, prevSummaryData);
       });
+    });
+    // Session 34: click any pill number to open the "Verify tickets"
+    // drill-down (see desk-lifecycle-verify.js) for that exact agent +
+    // metric, scoped to whatever Period is currently selected here --
+    // this is the concrete answer to "the card and the manual count
+    // disagree, which one's right", started from the number in question.
+    root.querySelectorAll('.tkt-pill-clickable').forEach((pill) => {
+      const open = () => {
+        if (typeof window.openDeskLifecycleVerify !== 'function') return;
+        const email = pill.dataset.verifyEmail;
+        const agent = (summaryData.agents || []).find(a => a.email === email);
+        window.openDeskLifecycleVerify({
+          agentEmail: email,
+          agentName: agent ? (agent.pseudo || agent.full_name || agent.email) : email,
+          isAdmin: true, metric: pill.dataset.verifyMetric,
+          presetKey: _selectedPreset, customFrom: _customFrom, customTo: _customTo,
+        });
+      };
+      pill.addEventListener('click', open);
+      pill.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
     });
     root.querySelectorAll('[data-quick-filter]').forEach((btn) => {
       btn.addEventListener('click', () => {

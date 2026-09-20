@@ -634,6 +634,7 @@
                   <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-date-apply">Apply</button>
                 </div>`;
             })()}
+            <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-verify-btn">Verify my tickets</button>
           </div>
         </div>
         ${metaBarHtml(summaryJson, syncStatus)}
@@ -661,6 +662,29 @@
       if (f.value > t.value) { if (typeof showToast === 'function') showToast('Start date must be before end date', 'error', 3000); return; }
       _customFrom = f.value; _customTo = t.value;
       window.openDeskLifecycleAgent();
+    });
+
+    // Session 34: "Verify tickets" drill-down (see desk-lifecycle-verify.js)
+    // -- opens scoped to this agent's own session email and whatever
+    // Period is currently selected here, so the numbers being questioned
+    // and the ones shown in the drill-down describe the same window.
+    // rcSession is the same localStorage cache index.html already keeps
+    // in sync with the server session (see savePersistedSession()) --
+    // reused here instead of an extra /api/session round-trip.
+    const verifyBtn = root.querySelector('.mystats-verify-btn');
+    if (verifyBtn) verifyBtn.addEventListener('click', () => {
+      if (typeof window.openDeskLifecycleVerify !== 'function') return;
+      let session = null;
+      try { session = JSON.parse(localStorage.getItem('rcSession') || 'null'); } catch (e) { /* ignore */ }
+      if (!session || !session.email) {
+        if (typeof showToast === 'function') showToast('Could not identify your session — try reloading the page', 'error', 3000);
+        return;
+      }
+      window.openDeskLifecycleVerify({
+        agentEmail: session.email, agentName: session.name || session.email,
+        isAdmin: false, metric: 'unique', presetKey: _selectedPreset,
+        customFrom: _customFrom, customTo: _customTo,
+      });
     });
 
     wireTicketsToolbar(root, ticketsJson);
