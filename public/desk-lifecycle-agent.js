@@ -671,6 +671,8 @@
     // rcSession is the same localStorage cache index.html already keeps
     // in sync with the server session (see savePersistedSession()) --
     // reused here instead of an extra /api/session round-trip.
+    // Session 35: renders in place of this same #desk-lifecycle-agent-root
+    // (a real sub-page, not a popup) -- Back re-renders My Stats.
     const verifyBtn = root.querySelector('.mystats-verify-btn');
     if (verifyBtn) verifyBtn.addEventListener('click', () => {
       if (typeof window.openDeskLifecycleVerify !== 'function') return;
@@ -684,6 +686,8 @@
         agentEmail: session.email, agentName: session.name || session.email,
         isAdmin: false, metric: 'unique', presetKey: _selectedPreset,
         customFrom: _customFrom, customTo: _customTo,
+        root, backLabel: '← Back to My Stats',
+        onBack: () => window.openDeskLifecycleAgent(),
       });
     });
 

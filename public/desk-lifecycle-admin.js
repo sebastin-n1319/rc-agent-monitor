@@ -857,6 +857,8 @@
     // metric, scoped to whatever Period is currently selected here --
     // this is the concrete answer to "the card and the manual count
     // disagree, which one's right", started from the number in question.
+    // Session 35: renders in place of this same #desk-lifecycle-root
+    // (a real sub-page, not a popup) -- Back re-renders this summary view.
     root.querySelectorAll('.tkt-pill-clickable').forEach((pill) => {
       const open = () => {
         if (typeof window.openDeskLifecycleVerify !== 'function') return;
@@ -867,6 +869,8 @@
           agentName: agent ? (agent.pseudo || agent.full_name || agent.email) : email,
           isAdmin: true, metric: pill.dataset.verifyMetric,
           presetKey: _selectedPreset, customFrom: _customFrom, customTo: _customTo,
+          root, backLabel: '← Back to Ticket Lifecycle',
+          onBack: () => window.openDeskLifecycleAdmin(),
         });
       };
       pill.addEventListener('click', open);

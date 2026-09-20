@@ -1,17 +1,24 @@
 /**
- * "Verify tickets" drill-down — Session 34.
+ * "Verify tickets" drill-down — Session 34, converted to an in-place
+ * sub-page in Session 35 (was a floating overlay; per feedback it needed
+ * to behave like a real page nested inside the Ticket Lifecycle / My
+ * Stats page, matching the existing Ticket Report page's shape — filter
+ * bar + totals on top, ticket table below — not a modal on top of
+ * everything else).
  *
  * Built after Sabrina Quinn's manually-tracked count (13 tickets handled
  * today, per her team's Google Sheet) conflicted with the Ticket
  * Lifecycle card's number (7) for the same agent/period — with no way to
  * see which tickets the system actually counted, there was no way to
  * tell whether the card was wrong, the manual sheet was wrong, or both
- * were counting different things. This opens a full-screen overlay,
- * launched from either the admin Ticket Lifecycle page (any monitored
- * agent, via a click on one of that agent's pill numbers) or the agent
- * My Stats page (a "Verify my tickets" button, self-scoped), showing the
- * EXACT tickets counted toward one metric for one agent/period, each
- * with a real link into Zoho Desk so it can be checked by hand.
+ * were counting different things. This renders in place of the caller's
+ * page content, launched from either the admin Ticket Lifecycle page
+ * (any monitored agent, via a click on one of that agent's pill numbers)
+ * or the agent My Stats page (a "Verify my tickets" button, self-scoped),
+ * showing the EXACT tickets counted toward one metric for one
+ * agent/period, each with a real link into Zoho Desk so it can be
+ * checked by hand. A "← Back" control at the top hands control back to
+ * the caller, which re-renders its own summary view.
  *
  * Backed by GET /api/desk-lifecycle/verify-tickets (server.js), which
  * calls lib/desk-lifecycle.js's agentTicketsForMetric() — the same
@@ -21,12 +28,20 @@
  * Self-contained IIFE, no shared state with desk-lifecycle-admin.js or
  * desk-lifecycle-agent.js (same convention those two already use with
  * each other) -- exposes exactly one global, window.openDeskLifecycleVerify(opts):
+ *   opts.root        (required) -- the DOM element to render into,
+ *                                  replacing its current content (the
+ *                                  caller's own #desk-lifecycle-root or
+ *                                  #desk-lifecycle-agent-root)
+ *   opts.onBack      (required) -- called when the user clicks Back;
+ *                                  the caller is responsible for
+ *                                  re-rendering its own page into `root`
+ *   opts.backLabel   (optional) -- e.g. "← Back to Ticket Lifecycle"
  *   opts.agentEmail  (required) -- the agent to open scoped to
  *   opts.agentName   (optional) -- shown immediately, before the first fetch resolves
  *   opts.isAdmin     (bool)     -- whether to show the Agent picker + customer search
  *   opts.metric      (optional) -- initial metric key, default 'unique'
  *   opts.presetKey   (optional) -- the caller's own current Period preset key
- *                                  (e.g. 'today'), so the panel opens scoped to
+ *                                  (e.g. 'today'), so the page opens scoped to
  *                                  the same window as the number being checked
  *   opts.customFrom/opts.customTo (optional) -- 'YYYY-MM-DD', used when
  *                                  opts.presetKey === 'custom'
@@ -187,7 +202,7 @@
   const METRIC_ORDER = ['unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
 
   let _state = null;
-  let _overlayEl = null;
+  let _hostEl = null;
 
   function statusPill(status, statusType) {
     const t = (statusType || status || '').toLowerCase();
@@ -390,7 +405,7 @@
   }
 
   function render() {
-    if (!_overlayEl) return;
+    if (!_hostEl) return;
     const s = _state;
     const json = s.lastResponse;
     const agentPicker = s.isAdmin ? `
@@ -407,35 +422,35 @@
         <input type="search" class="dlv-q-input" placeholder="Company, contact, or email…" value="${esc(s.q || '')}">
       </label>` : '';
 
-    _overlayEl.querySelector('.dlv-panel').innerHTML = `
-      <div class="dlv-head">
-        <div>
+    _hostEl.innerHTML = `
+      <div class="av2 dlv-page">
+        <button type="button" class="dlv-back-btn">${esc(s.backLabel || '← Back')}</button>
+        <div class="dlv-head">
           <div class="dlv-title">Verify tickets — ${esc(s.agentName || s.agentEmail)}</div>
           <div class="dlv-sub">Exactly which tickets count toward this number, each linking to the real Zoho Desk ticket to check by hand.</div>
         </div>
-        <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost dlv-close">Close ✕</button>
-      </div>
-      <div class="dlv-controls">
-        <label class="dlv-field">
-          <span>Metric</span>
-          <select class="dlv-metric-select">
-            ${METRIC_ORDER.map(k => `<option value="${k}" ${k === s.metric ? 'selected' : ''}>${esc(METRIC_DEFS[k].label)}</option>`).join('')}
-          </select>
-        </label>
-        ${periodControlsHtml()}
-        ${agentPicker}
-      </div>
-      ${s.loading ? `<div class="dlv-loading">Loading…</div>` : ''}
-      ${s.error ? `<div class="dlv-error">${esc(s.error)}</div>` : ''}
-      ${(!s.loading && !s.error) ? totalCardHtml(json) : ''}
-      ${(!s.loading && !s.error && json) ? `<div class="dlv-table-wrap">${tableHtml(s.metric, json.tickets)}</div>` : ''}
-    `;
+        <div class="dlv-controls">
+          <label class="dlv-field">
+            <span>Metric</span>
+            <select class="dlv-metric-select">
+              ${METRIC_ORDER.map(k => `<option value="${k}" ${k === s.metric ? 'selected' : ''}>${esc(METRIC_DEFS[k].label)}</option>`).join('')}
+            </select>
+          </label>
+          ${periodControlsHtml()}
+          ${agentPicker}
+        </div>
+        ${s.loading ? `<div class="dlv-loading">Loading…</div>` : ''}
+        ${s.error ? `<div class="dlv-error">${esc(s.error)}</div>` : ''}
+        ${(!s.loading && !s.error) ? totalCardHtml(json) : ''}
+        ${(!s.loading && !s.error && json) ? `<div class="dlv-table-wrap">${tableHtml(s.metric, json.tickets)}</div>` : ''}
+      </div>`;
     wireControls();
   }
 
   function wireControls() {
-    const root = _overlayEl;
-    root.querySelector('.dlv-close').addEventListener('click', closeVerify);
+    const root = _hostEl;
+    const backBtn = root.querySelector('.dlv-back-btn');
+    if (backBtn) backBtn.addEventListener('click', goBack);
 
     const metricSel = root.querySelector('.dlv-metric-select');
     if (metricSel) metricSel.addEventListener('change', () => {
@@ -512,17 +527,17 @@
     render();
   }
 
-  function closeVerify() {
-    if (_overlayEl && _overlayEl.parentNode) _overlayEl.parentNode.removeChild(_overlayEl);
-    _overlayEl = null;
-    _state = null;
+  function goBack() {
     document.removeEventListener('keydown', onKeydown);
+    const onBack = _state && _state.onBack;
+    _hostEl = null; _state = null;
+    if (typeof onBack === 'function') onBack();
   }
-  function onKeydown(e) { if (e.key === 'Escape') closeVerify(); }
+  function onKeydown(e) { if (e.key === 'Escape') goBack(); }
 
   function openDeskLifecycleVerify(opts) {
-    if (!opts || !opts.agentEmail) return;
-    if (_overlayEl) closeVerify();
+    if (!opts || !opts.agentEmail || !opts.root) return;
+    if (_hostEl) document.removeEventListener('keydown', onKeydown);
 
     // Session 34: if the caller passes its own currently-selected preset
     // key (e.g. Period="Today" on the page a pill was clicked from), open
@@ -542,6 +557,7 @@
       customTo = opts.to.slice(0, 10);
     }
 
+    _hostEl = opts.root;
     _state = {
       agentEmail: opts.agentEmail,
       agentName: opts.agentName || opts.agentEmail,
@@ -553,14 +569,12 @@
       lastResponse: null,
       loading: true, error: null,
       statusFilter: 'all', channelFilter: 'all', fcrFilter: 'all', ratingFilter: 'all',
+      onBack: opts.onBack,
+      backLabel: opts.backLabel,
     };
 
-    _overlayEl = document.createElement('div');
-    _overlayEl.className = 'av2 dlv-overlay';
-    _overlayEl.innerHTML = '<div class="dlv-panel"></div>';
-    _overlayEl.addEventListener('mousedown', (e) => { if (e.target === _overlayEl) closeVerify(); });
-    document.body.appendChild(_overlayEl);
     document.addEventListener('keydown', onKeydown);
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
 
     fetchAndRender();
   }

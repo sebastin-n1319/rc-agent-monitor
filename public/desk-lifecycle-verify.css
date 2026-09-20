@@ -1,42 +1,40 @@
 /* ───────────────────────────────────────────────────────────────────────
-   "Verify tickets" drill-down overlay — Session 34
-   Opened from either the admin Ticket Lifecycle page or the agent My
-   Stats page (see desk-lifecycle-verify.js) — always wrapped in its own
-   `.av2` element so agent-view-v2.css's tokens resolve regardless of
-   which page's root it's appended next to (the admin page uses its own
-   separate tkt-* token set, not av2).
+   "Verify tickets" drill-down — Session 34, converted to an in-place
+   sub-page in Session 35. Rendered in place of the caller's own page
+   content (either #desk-lifecycle-root on the admin Ticket Lifecycle
+   page, or #desk-lifecycle-agent-root on the agent My Stats page) — see
+   desk-lifecycle-verify.js. Always wrapped in its own `.av2` element so
+   agent-view-v2.css's tokens resolve regardless of which page's root it
+   is rendered into (the admin page uses its own separate tkt-* token
+   set, not av2, and has no .av2 ancestor of its own).
    ─────────────────────────────────────────────────────────────────────── */
-.dlv-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 900000;
-  background: rgba(7, 43, 64, .45);
+.dlv-page {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 32px 16px;
-  overflow-y: auto;
-  animation: dlvFadeIn .18s var(--av2-spring-snap, ease);
+  flex-direction: column;
+  gap: var(--av2-s2);
+  animation: dlvPageIn .18s var(--av2-spring-snap, ease);
 }
-@keyframes dlvFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dlvPageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-.dlv-panel {
-  width: 100%;
-  max-width: 1120px;
-  background: var(--av2-surface);
-  border-radius: var(--av2-r-lg);
-  box-shadow: var(--av2-e4);
-  padding: var(--av2-s6);
-  margin-bottom: 32px;
+.dlv-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--av2-t2);
+  font-size: var(--av2-t-sm);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 4px;
+  margin-bottom: var(--av2-s2);
+  border-radius: var(--av2-r-sm);
 }
+.dlv-back-btn:hover { color: var(--av2-orange); background: var(--av2-surface-2); }
 
-.dlv-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--av2-s4);
-  margin-bottom: var(--av2-s5);
-}
+.dlv-head { margin-bottom: var(--av2-s3); }
 .dlv-title {
   font-size: var(--av2-t-lg);
   font-weight: var(--av2-w-b);
@@ -55,9 +53,12 @@
   align-items: flex-end;
   flex-wrap: wrap;
   gap: var(--av2-s3);
-  margin-bottom: var(--av2-s5);
-  padding-bottom: var(--av2-s5);
-  border-bottom: 1px solid var(--av2-border);
+  background: var(--av2-surface);
+  border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-lg);
+  padding: var(--av2-s4) var(--av2-s5);
+  margin-bottom: var(--av2-s4);
+  box-shadow: 0 1px 3px rgba(15, 24, 36, .05);
 }
 .dlv-field {
   display: flex;
@@ -127,6 +128,12 @@
 .dlv-total-def { font-size: var(--av2-t-sm); color: var(--av2-t3); margin-top: 2px; }
 .dlv-total-extra { font-size: var(--av2-t-sm); color: var(--av2-t2); font-weight: 600; margin-top: 4px; }
 
+.dlv-table-wrap {
+  background: var(--av2-surface); border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-lg); padding: var(--av2-s4) var(--av2-s5) var(--av2-s5);
+  box-shadow: 0 1px 3px rgba(15, 24, 36, .05);
+}
+
 .dlv-chips-bar {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
   gap: var(--av2-s3); margin-bottom: var(--av2-s3);
@@ -151,8 +158,13 @@
 .dlv-ticket-link:hover { text-decoration: underline; }
 
 @media (max-width: 760px) {
-  .dlv-panel { padding: var(--av2-s4); }
   .dlv-controls { flex-direction: column; align-items: stretch; }
+  /* flex-basis is a HEIGHT basis once the container above switches to
+     flex-direction:column -- without this override the 220px basis on
+     .dlv-field-search (meant for its min *width* in the row layout)
+     stretches the Customer field to a 220px-tall box on mobile. */
+  .dlv-field-search { flex: none; min-width: 0; }
+  .dlv-table-wrap { padding: var(--av2-s3); }
   .dlv-total-card { flex-direction: column; align-items: flex-start; gap: var(--av2-s2); }
   .dlv-chips-bar { flex-direction: column; align-items: stretch; }
 }
