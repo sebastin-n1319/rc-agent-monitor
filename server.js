@@ -5585,6 +5585,13 @@ async function upsertAditkbRow(row) {
       dept_classification: row.cf_department_classification || null,
       fcr_achieved: row.cf_fcr_achieved != null ? String(row.cf_fcr_achieved) : null,
       resolution_business_hours: computeBusinessHours(row.created_time, row.closed_time),
+      // Session 24: bulk-synced owner-change audit trail + reopen counter
+      // (see lib/aditkb-service.js SELECT_COLUMNS) -- lets Ticket
+      // Lifecycle's unique/solely-handled/reassigned/transferred fields,
+      // and FCR's reopen check, work for every ticket immediately instead
+      // of waiting on the slow live-Zoho metrics phase below.
+      owner_change_log: row.cf_owner_change_log || null,
+      reopen_count: row.cf_reopen_count != null ? Number(row.cf_reopen_count) : null,
     });
   } catch(e) { console.warn(`⚠️ desk snapshot upsert (AditKB) failed for ticket ${row.ticket_number || row.id}: ${e.message}`); }
 }
@@ -5693,16 +5700,39 @@ async function runDeskLifecycleSync() {
   }
 }
 
+// Session 24: shared agent roster for Ticket Lifecycle views -- the
+// 11-agent RC monitored-agents roster (same list used everywhere else in
+// the app for calls/presence), not the broader T1 CS "Roster"
+// spreadsheet (lib/roster.js), which can include desk-only agents not on
+// the call roster -- the actual cause of agents like Caroline Lock
+// showing up on this page before this change. `agentNames` (email ->
+// Zoho display name) is what agentSummary() needs to attribute
+// owner-change-log entries; `pseudo`/`full_name` are display-only, with
+// pseudo taken from the T1 Roster when set there.
+async function deskLifecycleAgentRoster() {
+  const monitored = await getMonitoredAgents();
+  const rosterAgents = await roster.listAgents({ includeRelieved: true });
+  const rosterByEmail = {};
+  for (const r of rosterAgents) if (r.email) rosterByEmail[r.email.toLowerCase()] = r;
+  const emails = [], agentNames = {}, byEmail = {};
+  for (const a of monitored) {
+    if (!a.email) continue;
+    const email = a.email.toLowerCase();
+    emails.push(email);
+    agentNames[email] = a.name;
+    const r = rosterByEmail[email];
+    byEmail[email] = { pseudo: r?.pseudo || null, full_name: r?.full_name || a.name || null };
+  }
+  return { emails, agentNames, byEmail };
+}
+
 app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
-    const agents = await roster.listAgents({ includeRelieved: false });
-    const emails = agents.map(a => a.email).filter(Boolean);
-    const summary = await deskLifecycle.agentSummary({ from, to, emails, q });
-    const byEmail = {};
-    for (const a of agents) if (a.email) byEmail[a.email] = a;
+    const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames });
     const out = summary.map(s => ({ ...s, pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
     res.json({ success: true, from, to, agents: out });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -5718,21 +5748,18 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
-    const agents = await roster.listAgents({ includeRelieved: false });
-    const emails = agents.map(a => a.email).filter(Boolean);
-    const summary = await deskLifecycle.agentSummary({ from, to, emails, q });
-    const byEmail = {};
-    for (const a of agents) if (a.email) byEmail[a.email] = a;
+    const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames });
 
     const header = [
-      'Agent', 'Email', 'Unique Tickets', 'Solely Handled', 'Reassigned',
+      'Agent', 'Email', 'Unique Tickets', 'Solely Handled', 'Reassigned', 'Transferred',
       'Closed', 'Avg Handle (hrs)', 'Currently Handling', 'FCR %', 'CSAT %',
     ];
     const rows = [header, ...summary.map(s => {
       const a = byEmail[s.email];
       return [
         a?.full_name || a?.pseudo || s.email, s.email,
-        s.unique_tickets || 0, s.solely_handled || 0, s.reassigned || 0,
+        s.unique_tickets || 0, s.solely_handled || 0, s.reassigned || 0, s.transferred || 0,
         s.closed_count || 0, s.avg_handle_hours ?? '',
         s.currently_handling || 0, s.fcr_pct ?? '', s.csat_pct ?? '',
       ];
@@ -5780,6 +5807,28 @@ app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
 app.post('/api/admin/desk-lifecycle/sync-now', requireAdmin, async (req, res) => {
   runDeskLifecycleSync().catch(e => console.error('❌ manual desk sync trigger:', e.message));
   res.json({ success: true, message: 'Sync started' });
+});
+
+// Session 24: the AditKB bulk snapshot sync (runAditkbSnapshotSync) only
+// re-pulls a ticket once it sees that ticket's modified_time move past
+// its own watermark -- correct for keeping already-synced rows current,
+// but it means a newly-added SELECT column (like this session's
+// owner_change_log/reopen_count, added to aditkb-service.js's
+// SELECT_COLUMNS) only reaches the ~306k tickets already synced once
+// each one happens to be touched again in Zoho, which for old closed
+// tickets could be never. Resetting these two watermarks makes the next
+// sync tick treat it as a fresh one-time backfill sweep from the start
+// (offset 0), so every ticket gets re-pulled with the new columns --
+// same idempotent upsert, just re-walking the table once. Safe to call
+// again any time a future SELECT_COLUMNS addition needs the same
+// backfill.
+app.post('/api/admin/desk-lifecycle/reset-backfill', requireAdmin, async (req, res) => {
+  try {
+    await deskLifecycle.setSyncState('aditkb_backfill_complete', null);
+    await deskLifecycle.setSyncState('aditkb_backfill_offset', null);
+    await deskLifecycle.setSyncState('aditkb_backfill_started_at_ms', null);
+    res.json({ success: true, message: 'Backfill flags reset -- next sync tick resumes a full sweep from the start.' });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // Session 20 CSAT: pulls new rows from Zoho Analytics' "Survey (Zoho
@@ -5876,7 +5925,14 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     const to = req.query.to || new Date().toISOString();
     const email = (req.session.email || '').toLowerCase();
     if (!email) return res.status(400).json({ success: false, error: 'No session email' });
-    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email] });
+    // Session 24: agentSummary() needs this agent's Zoho display name to
+    // attribute owner-change-log entries -- see deskLifecycleAgentRoster()
+    // above, which the admin /summary route uses; this self-service route
+    // only ever needs one agent, so it looks itself up directly instead.
+    const monitored = await getMonitoredAgents();
+    const match = monitored.find(a => (a.email || '').toLowerCase() === email);
+    const agentNames = match ? { [email]: match.name } : undefined;
+    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email], agentNames });
 
     // Session 21: RingCentral call stats + SalesIQ chat stats, same
     // from/to window as the ticket summary above, so all three sections
@@ -5884,8 +5940,6 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     // failure on either one shouldn't take down the ticket numbers.
     let callStats = null;
     try {
-      const monitored = await getMonitoredAgents();
-      const match = monitored.find(a => (a.email || '').toLowerCase() === email);
       if (match) {
         const agentId = match.rc_id || match.extension;
         callStats = await getAgentCallStatsRange({ agentId, from, to });

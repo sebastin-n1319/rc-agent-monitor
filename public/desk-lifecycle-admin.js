@@ -69,6 +69,7 @@
     { key: 'fcr',       label: 'FCR %',                fn: (a) => (a.fcr_pct == null ? -1 : a.fcr_pct) },
     { key: 'csat',      label: 'CSAT %',               fn: (a) => (a.csat_pct == null ? -1 : a.csat_pct) },
     { key: 'reassigned',label: 'Reassigned',           fn: (a) => (a.reassigned || 0) },
+    { key: 'transferred',label: 'Transferred',          fn: (a) => (a.transferred || 0) },
     { key: 'name',      label: 'Name (A–Z)',           fn: null },
   ];
 
@@ -370,6 +371,10 @@
       <div>
         <div class="tkt-bd-group-title">Classification</div>
         ${breakdownChips(a.classification)}
+      </div>
+      <div>
+        <div class="tkt-bd-group-title">Departments transferred to</div>
+        ${breakdownChips(a.departments_transferred)}
       </div>`;
   }
 
@@ -390,6 +395,7 @@
             <div class="tkt-pill"><div class="tkt-pill-n">${a.unique_tickets || 0}</div><div class="tkt-pill-l">Unique</div></div>
             <div class="tkt-pill tkt-pill-good"><div class="tkt-pill-n">${a.solely_handled || 0}</div><div class="tkt-pill-l">Solely handled</div></div>
             <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.reassigned || 0}</div><div class="tkt-pill-l">Reassigned</div></div>
+            <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.transferred || 0}</div><div class="tkt-pill-l">Transferred</div></div>
             <div class="tkt-pill"><div class="tkt-pill-n">${a.closed_count || 0}</div><div class="tkt-pill-l">Closed</div></div>
             <div class="tkt-pill tkt-pill-live"><div class="tkt-pill-n">${a.currently_handling || 0}</div><div class="tkt-pill-l">Handling now</div></div>
             <div class="tkt-pill"><div class="tkt-pill-n">${avgHandle}</div><div class="tkt-pill-l">Avg handle</div></div>
@@ -404,7 +410,7 @@
 
   function summaryList(agents) {
     if (!agents.length) {
-      return `<div class="tkt-empty">No T1 roster agents with an email on file yet — add emails in Roster to see their ticket stats here.</div>`;
+      return `<div class="tkt-empty">No monitored agents with an email on file yet — add emails in the Agents admin page to see their ticket stats here.</div>`;
     }
     const opt = SORT_OPTIONS.find(o => o.key === _sortKey) || SORT_OPTIONS[0];
     const sorted = [...agents].sort((a, b) => {
