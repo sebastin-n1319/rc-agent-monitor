@@ -112,6 +112,24 @@
     } catch (e) { return iso; }
   }
 
+  // Session 32: "Last synced <absolute time>" alone doesn't tell anyone
+  // how fresh the data actually is at a glance, or that it's on a timer
+  // at all rather than live -- the direct cause of the Sabrina Quinn
+  // confusion (her tickets were correct in Zoho, just not synced into
+  // this page's local snapshot yet). Pairs with the explicit "syncs
+  // automatically every 20 minutes" note added to statusBanner() below.
+  function minutesAgo(iso) {
+    if (!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    if (!(ms >= 0) || Number.isNaN(ms)) return null;
+    const mins = Math.floor(ms / 60000);
+    if (mins < 1) return 'just now';
+    if (mins === 1) return '1 min ago';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ${mins % 60}m ago`;
+  }
+
   // ── Chicago (Central Time) DST-aware date math ──────────────────────
   // Same conversion pattern as lib/analytics-service.js's
   // centralWallTimeToUtcIso(), ported here so calendar-period filters
@@ -377,9 +395,10 @@
     }
     const cls = status.lastError ? 'tkt-banner-warning' : 'tkt-banner-ok';
     const title = status.lastError ? 'Last sync had an error' : 'Sync running';
+    const ago = minutesAgo(status.lastSyncAt);
     const sub = status.lastError
       ? esc(status.lastError)
-      : `Last synced ${fmtDateTime(status.lastSyncAt)} · ${status.ticketsTracked} tickets tracked · ${status.eventsTracked} agent-ticket links synced`;
+      : `Last synced ${ago ? `${ago} (${fmtDateTime(status.lastSyncAt)})` : fmtDateTime(status.lastSyncAt)} · syncs automatically every 20 min · ${status.ticketsTracked} tickets tracked · ${status.eventsTracked} agent-ticket links synced`;
     return `
       <div class="tkt-banner ${cls}">
         <div class="tkt-banner-main">

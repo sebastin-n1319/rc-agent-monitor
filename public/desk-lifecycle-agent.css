@@ -14,6 +14,15 @@
    ─────────────────────────────────────────────────────────────────────── */
 #desk-lifecycle-agent-root { width: 100%; }
 
+/* Session 32: "Ticket data last synced ..." note under the Range line --
+   same muted small-text treatment as .av2-section-meta, but its own
+   block-level element (not crammed into that inline-flex row) so the
+   two lines actually wrap onto separate lines. */
+.av2 #desk-lifecycle-agent-root .mystats-sync-note {
+  font-size: var(--av2-t-xs);
+  color: var(--av2-t3);
+}
+
 /* My Stats' cards carry longer values than Home's (durations, percentages,
    "1h 23m" rather than a bare count) — step the value down from av2's
    default --av2-t-2xl (40px) to --av2-t-xl (28px, the same token av2

@@ -175,6 +175,23 @@
     } catch (e) { return iso; }
   }
 
+  // Session 32: agents had no visibility at all into how fresh this
+  // page's numbers are -- unlike the admin Ticket Lifecycle page, My
+  // Stats showed no sync status, so there was no way to tell "my ticket
+  // isn't showing up yet" apart from a real bug vs. just not-yet-synced.
+  // Mirrors desk-lifecycle-admin.js's minutesAgo() helper.
+  function minutesAgo(iso) {
+    if (!iso) return null;
+    const ms = Date.now() - new Date(iso).getTime();
+    if (!(ms >= 0) || Number.isNaN(ms)) return null;
+    const mins = Math.floor(ms / 60000);
+    if (mins < 1) return 'just now';
+    if (mins === 1) return '1 min ago';
+    if (mins < 60) return `${mins} min ago`;
+    const hrs = Math.floor(mins / 60);
+    return `${hrs}h ${mins % 60}m ago`;
+  }
+
   // "1h 23m" / "4m 12s" / "38s" -- matches the existing Summary page's
   // talk-time formatting style.
   function fmtDuration(totalSeconds) {
@@ -203,6 +220,20 @@
   // never block or error out the main view, it just means no delta chips.
   async function loadMySummarySafe(range) {
     try { return await loadMySummary(range); } catch (e) { return null; }
+  }
+
+  // Session 32: same status endpoint the admin Ticket Lifecycle page
+  // already uses (requireAuth, not requireAdmin -- agents can read it
+  // too), just for the "last synced" note below. Best-effort like
+  // loadMySummarySafe() above: never blocks or errors out the page if
+  // it's slow or fails, the note just doesn't render.
+  async function loadSyncStatusSafe() {
+    try {
+      const r = await fetch('/api/desk-lifecycle/status', { credentials: 'include' });
+      if (!r.ok) return null;
+      const j = await r.json();
+      return j && j.success ? j : null;
+    } catch (e) { return null; }
   }
 
   async function loadMyTickets(range) {
@@ -543,7 +574,7 @@
       </div>`;
   }
 
-  function render(root, summaryJson, ticketsJson, prevSummaryJson) {
+  function render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus) {
     root.innerHTML = `
       <div class="av2-container">
         <div class="av2-section-head" style="margin-bottom:6px;">
@@ -574,7 +605,8 @@
             })()}
           </div>
         </div>
-        <div class="av2-section-meta" style="margin-bottom:var(--av2-s3);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
+        <div class="av2-section-meta" style="margin-bottom:var(--av2-s2);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
+        ${syncStatus && syncStatus.lastSyncAt ? `<div class="mystats-sync-note" style="margin-bottom:var(--av2-s3);">Ticket data last synced ${minutesAgo(syncStatus.lastSyncAt) ? `${minutesAgo(syncStatus.lastSyncAt)} (${fmtDateTime(syncStatus.lastSyncAt)})` : fmtDateTime(syncStatus.lastSyncAt)} · syncs automatically every 20 min, so a brand-new ticket may take a few minutes to show up here.</div>` : ''}
 
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${callStatsSection(summaryJson.callStats)}
@@ -741,12 +773,13 @@
     try {
       const range = currentRange();
       const prevRange = previousRange(range);
-      const [summaryJson, ticketsJson, prevSummaryJson] = await Promise.all([
+      const [summaryJson, ticketsJson, prevSummaryJson, syncStatus] = await Promise.all([
         loadMySummary(range),
         loadMyTickets(range),
         prevRange ? loadMySummarySafe(prevRange) : Promise.resolve(null),
+        loadSyncStatusSafe(),
       ]);
-      render(root, summaryJson, ticketsJson, prevSummaryJson);
+      render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus);
     } catch (e) {
       root.innerHTML = `
         <div class="av2-container">
