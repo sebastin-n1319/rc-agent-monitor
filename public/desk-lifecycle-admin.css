@@ -19,6 +19,10 @@
   --tkt-radius: 14px;
   --tkt-radius-sm: 8px;
   --tkt-ease: cubic-bezier(.4,0,.2,1);
+  /* Session 28: a slightly overshooting "spring" curve used for hover
+     lifts and the tooltip entrance, instead of the flatter --tkt-ease
+     linear-ish default -- reads as livelier without being distracting. */
+  --tkt-ease-spring: cubic-bezier(.22,1,.36,1);
 }
 
 #desk-lifecycle-root { background: var(--tkt-bg) !important; font-family: 'Poppins', system-ui, sans-serif !important; color: var(--tkt-ink) !important; -webkit-font-smoothing: antialiased !important; }
@@ -63,7 +67,7 @@
 @media (prefers-reduced-motion: reduce) { #desk-lifecycle-root .tkt-banner-dot { animation:none !important; } }
 
 /* ── Cards ── */
-#desk-lifecycle-root .tkt-card { background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:18px 20px !important; margin-bottom:14px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#desk-lifecycle-root .tkt-card { background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:16px 18px !important; margin-bottom:12px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
 #desk-lifecycle-root .tkt-card-title { font-size:14.5px !important; font-weight:700 !important; color:var(--tkt-ink) !important; }
 #desk-lifecycle-root .tkt-card-sub { font-size:12.5px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; margin-bottom:14px !important; }
 #desk-lifecycle-root .tkt-card code { background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:4px !important; padding:1px 5px !important; font-size:12px !important; }
@@ -105,31 +109,42 @@
    classification breakdowns). Agent cards replace the old flat grid row
    table (too many columns now to fit a single row).
    ────────────────────────────────────────────────────────────────────── */
-#desk-lifecycle-root .tkt-agent-card { border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; margin-bottom:12px !important; overflow:hidden !important; background:var(--tkt-surface) !important; transition:box-shadow .18s var(--tkt-ease), border-color .18s var(--tkt-ease) !important; }
-#desk-lifecycle-root .tkt-agent-card:hover { box-shadow:0 4px 16px rgba(15,24,36,.08) !important; border-color:#DDE1E8 !important; }
-#desk-lifecycle-root .tkt-agent-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:12px !important; padding:14px 18px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-root .tkt-agent-card { position:relative !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; margin-bottom:10px !important; overflow:hidden !important; background:var(--tkt-surface) !important; transition:transform .22s var(--tkt-ease-spring, var(--tkt-ease)), box-shadow .22s var(--tkt-ease-spring, var(--tkt-ease)), border-color .22s var(--tkt-ease-spring, var(--tkt-ease)) !important; }
+#desk-lifecycle-root .tkt-agent-card::before { content:'' !important; position:absolute !important; top:0 !important; left:0 !important; right:0 !important; height:2px !important; background:linear-gradient(90deg, var(--tkt-accent), #FBBF6B) !important; transform:scaleX(0) !important; transform-origin:left !important; transition:transform .25s var(--tkt-ease-spring, var(--tkt-ease)) !important; }
+#desk-lifecycle-root .tkt-agent-card:hover { transform:translateY(-2px) !important; box-shadow:0 14px 28px -12px rgba(244,137,31,.22), 0 4px 12px rgba(15,24,36,.06) !important; border-color:#DDE1E8 !important; }
+#desk-lifecycle-root .tkt-agent-card:hover::before { transform:scaleX(1) !important; }
+#desk-lifecycle-root .tkt-agent-head { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:12px !important; padding:13px 18px !important; flex-wrap:wrap !important; }
 #desk-lifecycle-root .tkt-agent-id { display:flex !important; flex-direction:column !important; gap:1px !important; min-width:160px !important; }
 #desk-lifecycle-root .tkt-agent-name { font-size:14px !important; font-weight:700 !important; color:var(--tkt-ink) !important; }
 #desk-lifecycle-root .tkt-agent-email { font-size:11.5px !important; color:var(--tkt-ink3) !important; }
 
-#desk-lifecycle-root .tkt-stat-grid { display:flex !important; gap:14px !important; flex:1 1 auto !important; min-width:280px !important; flex-wrap:wrap !important; align-items:stretch !important; }
-#desk-lifecycle-root .tkt-stat-group { flex:1 1 250px !important; min-width:220px !important; }
-#desk-lifecycle-root .tkt-stat-group-label { font-size:9.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.05em !important; margin-bottom:5px !important; }
-#desk-lifecycle-root .tkt-stat-subgrid { display:grid !important; grid-template-columns:repeat(auto-fit, minmax(76px, 1fr)) !important; gap:6px !important; }
-#desk-lifecycle-root .tkt-stat-divider { width:1px !important; align-self:stretch !important; background:var(--tkt-border) !important; margin:16px 0 2px !important; }
-#desk-lifecycle-root .tkt-pill { text-align:center !important; padding:6px 4px !important; border-radius:10px !important; background:var(--tkt-surface2) !important; cursor:help !important; transition:background .12s var(--tkt-ease) !important; }
-#desk-lifecycle-root .tkt-pill:hover, #desk-lifecycle-root .tkt-pill:focus-visible { background:#EFF1F6 !important; }
-#desk-lifecycle-root .tkt-pill-n { font-size:15px !important; font-weight:700 !important; color:var(--tkt-ink) !important; line-height:1.2 !important; }
-#desk-lifecycle-root .tkt-pill-l { font-size:9.5px !important; font-weight:600 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.02em !important; margin-top:2px !important; border-bottom:1px dotted var(--tkt-ink3) !important; display:inline-block !important; }
+/* Session 28: stat groups stack full-width instead of splitting the card
+   in half -- denser, no more dead space when a group's pill count doesn't
+   evenly fill its column. */
+#desk-lifecycle-root .tkt-stat-groups { display:flex !important; flex-direction:column !important; gap:8px !important; padding:0 18px 13px !important; }
+#desk-lifecycle-root .tkt-stat-group-label { font-size:9.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.06em !important; margin-bottom:5px !important; display:flex !important; align-items:center !important; gap:6px !important; }
+#desk-lifecycle-root .tkt-stat-group-label::before { content:'' !important; width:3px !important; height:10px !important; border-radius:2px !important; background:var(--tkt-accent) !important; opacity:.55 !important; }
+#desk-lifecycle-root .tkt-stat-subgrid { display:grid !important; grid-template-columns:repeat(auto-fill, minmax(92px, 1fr)) !important; gap:6px !important; }
+#desk-lifecycle-root .tkt-pill { position:relative !important; text-align:center !important; padding:7px 4px !important; border-radius:10px !important; background:var(--tkt-surface2) !important; cursor:pointer !important; transition:transform .16s var(--tkt-ease-spring, var(--tkt-ease)), background .16s var(--tkt-ease-spring, var(--tkt-ease)), box-shadow .16s var(--tkt-ease-spring, var(--tkt-ease)) !important; }
+#desk-lifecycle-root .tkt-pill:hover, #desk-lifecycle-root .tkt-pill:focus-visible { background:#EFF1F6 !important; transform:translateY(-1px) !important; box-shadow:0 6px 14px -6px rgba(15,24,36,.18) !important; }
+#desk-lifecycle-root .tkt-pill-n { font-size:15px !important; font-weight:700 !important; color:var(--tkt-ink) !important; line-height:1.2 !important; font-variant-numeric:tabular-nums !important; }
+#desk-lifecycle-root .tkt-pill-l { font-size:9.5px !important; font-weight:600 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.02em !important; margin-top:3px !important; display:inline-flex !important; align-items:center !important; gap:4px !important; }
+/* The old dotted-underline / cursor:help "?" affordance is gone -- a small
+   glowing dot after the label reads as "more info" without borrowing the
+   OS help-cursor glyph Sebastin called out as looking bad. */
+#desk-lifecycle-root .tkt-pill-l::after { content:'' !important; width:4px !important; height:4px !important; border-radius:50% !important; background:var(--tkt-ink3) !important; opacity:.6 !important; transition:background .16s var(--tkt-ease), box-shadow .16s var(--tkt-ease), transform .16s var(--tkt-ease) !important; }
+#desk-lifecycle-root .tkt-pill:hover .tkt-pill-l::after, #desk-lifecycle-root .tkt-pill:focus-visible .tkt-pill-l::after { background:var(--tkt-accent) !important; opacity:1 !important; box-shadow:0 0 0 3px rgba(244,137,31,.18) !important; transform:scale(1.25) !important; }
 #desk-lifecycle-root .tkt-pill-live .tkt-pill-n { color:var(--tkt-blue) !important; }
 #desk-lifecycle-root .tkt-pill-warn .tkt-pill-n { color:var(--tkt-amber) !important; }
 #desk-lifecycle-root .tkt-pill-good .tkt-pill-n { color:var(--tkt-green) !important; }
 
-#desk-lifecycle-root .tkt-expand-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:var(--tkt-radius-sm) !important; padding:7px 12px !important; font-size:12px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; white-space:nowrap !important; }
+#desk-lifecycle-root .tkt-expand-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:var(--tkt-radius-sm) !important; padding:7px 12px !important; font-size:12px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; white-space:nowrap !important; transition:border-color .15s var(--tkt-ease), color .15s var(--tkt-ease) !important; }
 #desk-lifecycle-root .tkt-expand-btn:hover { border-color:var(--tkt-accent) !important; color:var(--tkt-accent) !important; }
 #desk-lifecycle-root .tkt-agent-breakdown { display:none !important; border-top:1px solid var(--tkt-border) !important; background:var(--tkt-surface2) !important; padding:14px 18px !important; }
 #desk-lifecycle-root .tkt-agent-card.tkt-expanded .tkt-agent-breakdown { display:grid !important; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)) !important; gap:16px !important; }
-#desk-lifecycle-root .tkt-bd-group-title { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; margin-bottom:6px !important; cursor:help !important; border-bottom:1px dotted var(--tkt-ink3) !important; display:inline-block !important; }
+#desk-lifecycle-root .tkt-bd-group-title { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; margin-bottom:6px !important; cursor:pointer !important; display:inline-flex !important; align-items:center !important; gap:5px !important; }
+#desk-lifecycle-root .tkt-bd-group-title::after { content:'' !important; width:4px !important; height:4px !important; border-radius:50% !important; background:var(--tkt-ink3) !important; opacity:.6 !important; transition:background .16s var(--tkt-ease), transform .16s var(--tkt-ease) !important; }
+#desk-lifecycle-root .tkt-bd-group-title:hover::after, #desk-lifecycle-root .tkt-bd-group-title:focus-visible::after { background:var(--tkt-accent) !important; opacity:1 !important; transform:scale(1.25) !important; }
 #desk-lifecycle-root .tkt-bd-chips { display:flex !important; flex-wrap:wrap !important; gap:5px !important; }
 #desk-lifecycle-root .tkt-bd-chip { font-size:11px !important; font-weight:600 !important; padding:3px 9px !important; border-radius:12px !important; background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; color:var(--tkt-ink2) !important; white-space:nowrap !important; }
 #desk-lifecycle-root .tkt-bd-chip b { color:var(--tkt-ink) !important; }
@@ -145,7 +160,6 @@
 @media (max-width: 760px) {
   #desk-lifecycle-root .tkt-agent-breakdown { grid-template-columns:1fr !important; }
   #desk-lifecycle-root .tkt-agent-head { flex-direction:column !important; align-items:stretch !important; }
-  #desk-lifecycle-root .tkt-stat-divider { display:none !important; }
   #desk-lifecycle-root .tkt-sort-opts { flex-direction:column !important; align-items:stretch !important; }
   #desk-lifecycle-root .tkt-expand-all-btn { margin-left:0 !important; }
 }
@@ -197,28 +211,50 @@
    --tkt-* token / !important convention as the rest of this file.
    ────────────────────────────────────────────────────────────────────── */
 
-/* ── Team summary strip ── */
-#desk-lifecycle-root .tkt-team-summary { display:flex !important; flex-wrap:wrap !important; gap:0 !important; background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:14px 6px !important; margin-bottom:16px !important; position:relative !important; }
-#desk-lifecycle-root .tkt-team-cell { flex:1 1 130px !important; min-width:118px !important; text-align:center !important; padding:6px 10px !important; cursor:help !important; border-right:1px solid var(--tkt-border) !important; }
+/* ── Team summary strip — Session 28: capped cell width (was flex:1 1 130px
+   with no cap, which stretched every cell to fill the full card width on
+   wide screens and left a lot of visually empty padding around small
+   numbers) plus a denser grid so the strip reads as a compact dashboard
+   row instead of six sparse columns. ── */
+#desk-lifecycle-root .tkt-team-summary { display:flex !important; flex-wrap:wrap !important; gap:0 !important; background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:12px 6px !important; margin-bottom:12px !important; position:relative !important; }
+#desk-lifecycle-root .tkt-team-cell { flex:0 1 150px !important; min-width:118px !important; max-width:190px !important; text-align:center !important; padding:6px 10px !important; cursor:pointer !important; border-right:1px solid var(--tkt-border) !important; transition:background .15s var(--tkt-ease) !important; border-radius:var(--tkt-radius-sm) !important; }
+#desk-lifecycle-root .tkt-team-cell:hover, #desk-lifecycle-root .tkt-team-cell:focus-visible { background:rgba(244,137,31,.06) !important; }
 #desk-lifecycle-root .tkt-team-cell:last-of-type { border-right:none !important; }
-#desk-lifecycle-root .tkt-team-n { font-size:19px !important; font-weight:800 !important; color:var(--tkt-ink) !important; letter-spacing:-.01em !important; display:flex !important; align-items:baseline !important; justify-content:center !important; gap:6px !important; flex-wrap:wrap !important; }
-#desk-lifecycle-root .tkt-team-l { font-size:10.5px !important; font-weight:600 !important; color:var(--tkt-ink3) !important; margin-top:3px !important; border-bottom:1px dotted var(--tkt-ink3) !important; display:inline-block !important; }
+#desk-lifecycle-root .tkt-team-n { font-size:19px !important; font-weight:800 !important; color:var(--tkt-ink) !important; letter-spacing:-.01em !important; display:flex !important; align-items:baseline !important; justify-content:center !important; gap:6px !important; flex-wrap:wrap !important; font-variant-numeric:tabular-nums !important; }
+#desk-lifecycle-root .tkt-team-l { font-size:10.5px !important; font-weight:600 !important; color:var(--tkt-ink3) !important; margin-top:3px !important; display:inline-flex !important; align-items:center !important; gap:4px !important; }
+#desk-lifecycle-root .tkt-team-l::after { content:'' !important; width:4px !important; height:4px !important; border-radius:50% !important; background:var(--tkt-ink3) !important; opacity:.6 !important; transition:background .15s var(--tkt-ease), transform .15s var(--tkt-ease) !important; }
+#desk-lifecycle-root .tkt-team-cell:hover .tkt-team-l::after, #desk-lifecycle-root .tkt-team-cell:focus-visible .tkt-team-l::after { background:var(--tkt-accent) !important; opacity:1 !important; transform:scale(1.25) !important; }
 #desk-lifecycle-root .tkt-team-note { flex-basis:100% !important; font-size:10.5px !important; color:var(--tkt-ink3) !important; font-style:italic !important; text-align:center !important; margin-top:8px !important; }
 
-#desk-lifecycle-root .tkt-delta { font-size:11px !important; font-weight:700 !important; padding:1px 6px !important; border-radius:10px !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; }
+#desk-lifecycle-root .tkt-delta { font-size:11px !important; font-weight:700 !important; padding:1px 6px !important; border-radius:10px !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; font-variant-numeric:tabular-nums !important; }
 #desk-lifecycle-root .tkt-delta-good { background:rgba(16,185,129,.14) !important; color:#065F46 !important; }
 #desk-lifecycle-root .tkt-delta-bad { background:rgba(239,68,68,.14) !important; color:#991B1B !important; }
 #desk-lifecycle-root .tkt-delta-flat { background:var(--tkt-surface) !important; color:var(--tkt-ink3) !important; }
 
 @media (max-width: 760px) {
-  #desk-lifecycle-root .tkt-team-cell { border-right:none !important; border-bottom:1px solid var(--tkt-border) !important; flex-basis:50% !important; }
+  #desk-lifecycle-root .tkt-team-cell { border-right:none !important; border-bottom:1px solid var(--tkt-border) !important; flex:0 1 50% !important; max-width:none !important; }
 }
+
+/* ── Quick-filter chips — Session 28: additional useful filters beyond
+   the date/customer/agent filters above, toggled client-side against the
+   already-loaded per-agent summary (see matchesQuickFilters() in the JS). ── */
+#desk-lifecycle-root .tkt-quick-filters { display:flex !important; align-items:center !important; gap:7px !important; flex-wrap:wrap !important; margin-bottom:12px !important; }
+#desk-lifecycle-root .tkt-quick-filters-label { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; margin-right:2px !important; }
+#desk-lifecycle-root .tkt-chip-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:20px !important; padding:5px 13px !important; font-size:11.5px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; transition:all .15s var(--tkt-ease-spring, var(--tkt-ease)) !important; }
+#desk-lifecycle-root .tkt-chip-btn:hover { border-color:var(--tkt-accent) !important; color:var(--tkt-accent) !important; transform:translateY(-1px) !important; }
+#desk-lifecycle-root .tkt-chip-btn-active { background:var(--tkt-accent) !important; border-color:var(--tkt-accent) !important; color:#fff !important; box-shadow:0 4px 12px -4px rgba(244,137,31,.5) !important; }
+#desk-lifecycle-root .tkt-chip-btn-active:hover { color:#fff !important; }
+#desk-lifecycle-root .tkt-chip-btn-clear { border-style:dashed !important; color:var(--tkt-ink3) !important; }
 
 /* ── Hover/focus tooltip (JS-positioned, appended to <body>) ──
    Deliberately NOT scoped under #desk-lifecycle-root since the element
    is appended directly to <body> so it can escape .tkt-agent-card's
    overflow:hidden — "tkt-" is otherwise exclusive to this feature so
-   there's no collision risk with the rest of the app's CSS. */
+   there's no collision risk with the rest of the app's CSS.
+   Session 28: scale+translate entrance on the spring easing curve (was a
+   flat opacity/translateY(4px) fade), plus a brand-orange top edge so the
+   tooltip reads as this app's own component rather than a generic system
+   bubble — mirrors the agent page's .av2-tkt-tooltip treatment. */
 .tkt-tooltip {
   position: fixed;
   left: 0; top: 0;
@@ -233,14 +269,16 @@
   text-align: left;
   padding: 10px 12px;
   border-radius: 9px;
-  box-shadow: 0 12px 28px rgba(15,24,36,.32);
+  border-top: 2px solid var(--tkt-accent, #F97316);
+  box-shadow: 0 12px 28px rgba(15,24,36,.32), 0 0 0 1px rgba(249,115,22,.12);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(4px);
-  transition: opacity .14s ease, transform .14s ease;
+  transform: translateY(6px) scale(.96);
+  transform-origin: top center;
+  transition: opacity .18s cubic-bezier(.22,1,.36,1), transform .18s cubic-bezier(.22,1,.36,1);
   z-index: 2147483000;
 }
-.tkt-tooltip.tkt-tooltip-below { transform: translateY(-4px); }
-.tkt-tooltip.tkt-tooltip-visible { opacity: 1; visibility: visible; transform: translateY(0); }
+.tkt-tooltip.tkt-tooltip-below { transform: translateY(-6px) scale(.96); transform-origin: bottom center; }
+.tkt-tooltip.tkt-tooltip-visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
 @media (prefers-reduced-motion: reduce) { .tkt-tooltip { transition: none; } }

@@ -75,6 +75,17 @@
   let _searchDebounce = null;
   let _agentQuery = ''; // Session 27: client-side "Find agent" filter, no server round-trip
 
+  // Session 28: quick-filter chips -- client-side toggles on top of the
+  // Find-agent filter, answering "apart from the date filter, think of any
+  // other useful filters" with filters an admin actually reaches for:
+  // agents worth checking in on, not just agents matching a typed name.
+  let _quickFilters = new Set(); // subset of QUICK_FILTERS keys, AND'd together
+  const QUICK_FILTERS = [
+    { key: 'attention', label: 'Needs attention', tip: 'Needs attention\n\nAgents whose FCR% (with at least 3 closed tickets in range) is below the team\'s pooled FCR% for the same agents shown.' },
+    { key: 'reassign',  label: 'High reassignment', tip: 'High reassignment\n\nAgents where Reassigned tickets are at least 25% of their Unique tickets in range (min. 4 unique tickets).' },
+    { key: 'handling',  label: 'Currently handling', tip: 'Currently handling\n\nAgents with at least one ticket open right now. Live, not windowed by the date filter.' },
+  ];
+
   // ── Sync polling state ───────────────────────────────────────────────
   let _pollHandle = null;
   let _wasSyncRunning = false;
@@ -499,6 +510,11 @@
       pillHtml('', csat, `CSAT${a.csat_total ? ` (${a.csat_total})` : ''}`, 'csat', a),
     ].join('');
 
+    // Session 28: stacked full-width pill rows replace the old side-by-side
+    // split (two ~250px-min-width flex halves plus a vertical divider) --
+    // that layout left a lot of dead space on wide screens whenever a
+    // group's pills didn't fill their half evenly. Each group now spans
+    // the full card width in its own dense auto-fill grid.
     return `
       <div class="tkt-agent-card${isExpanded ? ' tkt-expanded' : ''}" data-email="${esc(a.email)}">
         <div class="tkt-agent-head">
@@ -506,18 +522,17 @@
             <div class="tkt-agent-name">${displayName}</div>
             <div class="tkt-agent-email">${esc(a.email)}</div>
           </div>
-          <div class="tkt-stat-grid">
-            <div class="tkt-stat-group">
-              <div class="tkt-stat-group-label">Ticket flow</div>
-              <div class="tkt-stat-subgrid">${flowPills}</div>
-            </div>
-            <div class="tkt-stat-divider" aria-hidden="true"></div>
-            <div class="tkt-stat-group">
-              <div class="tkt-stat-group-label">Outcomes</div>
-              <div class="tkt-stat-subgrid">${outcomePills}</div>
-            </div>
-          </div>
           <button type="button" class="tkt-expand-btn">${isExpanded ? 'Hide breakdown ▲' : 'Channel / module / category ▾'}</button>
+        </div>
+        <div class="tkt-stat-groups">
+          <div class="tkt-stat-group">
+            <div class="tkt-stat-group-label">Ticket flow</div>
+            <div class="tkt-stat-subgrid">${flowPills}</div>
+          </div>
+          <div class="tkt-stat-group">
+            <div class="tkt-stat-group-label">Outcomes</div>
+            <div class="tkt-stat-subgrid">${outcomePills}</div>
+          </div>
         </div>
         <div class="tkt-agent-breakdown">${agentBreakdownPanel(a)}</div>
       </div>`;
@@ -711,6 +726,37 @@
     return hay.includes(needle);
   }
 
+  // Session 28: quick-filter chips, AND'd together with each other and
+  // with the Find-agent text match. `teamFcrPct` is the pooled FCR% of
+  // whichever agents already passed the Find-agent filter, so "Needs
+  // attention" is always relative to the currently-shown roster, not a
+  // stale global average.
+  function matchesQuickFilters(a, teamFcrPct) {
+    for (const key of _quickFilters) {
+      if (key === 'attention') {
+        const total = a.fcr_total || 0;
+        if (total < 3 || teamFcrPct == null || a.fcr_pct == null || a.fcr_pct >= teamFcrPct) return false;
+      } else if (key === 'reassign') {
+        const unique = a.unique_tickets || 0;
+        if (unique < 4 || ((a.reassigned || 0) / unique) < 0.25) return false;
+      } else if (key === 'handling') {
+        if (!(a.currently_handling > 0)) return false;
+      }
+    }
+    return true;
+  }
+
+  function quickFiltersHtml() {
+    return `
+      <div class="tkt-quick-filters">
+        <span class="tkt-quick-filters-label">Quick filters</span>
+        ${QUICK_FILTERS.map(f => `
+          <button type="button" class="tkt-chip-btn${_quickFilters.has(f.key) ? ' tkt-chip-btn-active' : ''}" data-quick-filter="${f.key}" data-tip="${esc(f.tip)}">${esc(f.label)}</button>
+        `).join('')}
+        ${_quickFilters.size ? '<button type="button" class="tkt-chip-btn tkt-chip-btn-clear" data-quick-filter-clear="1">Clear</button>' : ''}
+      </div>`;
+  }
+
   // ── Results ──────────────────────────────────────────────────────────
   // Session 27: keep the last-loaded summary/prev-summary around at
   // module scope so the client-side "Find agent" filter can re-render
@@ -720,7 +766,12 @@
 
   function resultsCardHtml(summaryData, prevSummaryData) {
     const allAgents = summaryData.agents || [];
-    const shownAgents = allAgents.filter(matchesAgentQuery);
+    // Find-agent (text) match first -- this is the baseline "Needs
+    // attention" measures each agent's FCR against, so toggling a quick
+    // filter never shifts the goalposts it's comparing to.
+    const agentMatched = allAgents.filter(matchesAgentQuery);
+    const baseTotals = poolTeamTotals(agentMatched);
+    const shownAgents = agentMatched.filter(a => matchesQuickFilters(a, baseTotals.fcrPct));
     const count = shownAgents.length;
     const prevAgents = prevSummaryData ? prevSummaryData.agents || [] : null;
     return `
@@ -729,6 +780,7 @@
         <div class="tkt-card-sub">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)}${_customerQuery ? ` · Filtered by "${esc(_customerQuery)}"` : ''} · ${count} of ${allAgents.length} agent${allAgents.length === 1 ? '' : 's'} shown<br>Unique/solely-handled/reassigned and the breakdowns below are windowed by when the ticket was created; Closed/Avg handle/FCR are windowed by when it closed; Handling now is live, not windowed.</div>
         <div class="tkt-note">CSAT% now reflects real per-ticket survey ratings (Good/Okay/Bad) from Zoho Analytics, filtered by when the customer submitted the survey. NPS% still isn't shown -- it's an account-level relationship survey (CSM team), not tied to individual tickets or T1 agents. Hover any number for what it means.</div>
         ${teamSummaryHtml(shownAgents, prevAgents)}
+        ${quickFiltersHtml()}
         ${summaryList(shownAgents)}
       </div>`;
   }
@@ -755,6 +807,18 @@
         if (_expanded.has(email)) _expanded.delete(email); else _expanded.add(email);
         renderResults(root, status, summaryData, prevSummaryData);
       });
+    });
+    root.querySelectorAll('[data-quick-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.quickFilter;
+        if (_quickFilters.has(key)) _quickFilters.delete(key); else _quickFilters.add(key);
+        renderResults(root, status, summaryData, prevSummaryData);
+      });
+    });
+    const clearBtn = $('[data-quick-filter-clear]', root);
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      _quickFilters.clear();
+      renderResults(root, status, summaryData, prevSummaryData);
     });
     wireTooltips(root);
   }
