@@ -14,13 +14,64 @@
    ─────────────────────────────────────────────────────────────────────── */
 #desk-lifecycle-agent-root { width: 100%; }
 
-/* Session 32: "Ticket data last synced ..." note under the Range line --
-   same muted small-text treatment as .av2-section-meta, but its own
-   block-level element (not crammed into that inline-flex row) so the
-   two lines actually wrap onto separate lines. */
-.av2 #desk-lifecycle-agent-root .mystats-sync-note {
+/* Session 33 redesign ("this can look better"): the Range line and the
+   "Ticket data last synced ..." note used to be two stacked plain-text
+   rows sitting loose under the header, with no container, icon, or
+   visual weight of their own -- easy to mistake for leftover debug
+   output. Consolidated into one bordered strip (.mystats-meta-bar) with
+   two chip-like segments: a calendar icon + range, and a live dot + short
+   sync-freshness text (the full explanation moves to a hover tooltip via
+   the existing [data-tip] mechanism -- see wireTooltips() in the JS). */
+.av2 #desk-lifecycle-agent-root .mystats-meta-bar {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  margin-bottom: var(--av2-s4);
+  border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-md);
+  background: var(--av2-surface-2);
   font-size: var(--av2-t-xs);
+  color: var(--av2-t2);
+}
+.av2 #desk-lifecycle-agent-root .mystats-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+}
+.av2 #desk-lifecycle-agent-root .mystats-meta-item + .mystats-meta-item {
+  border-left: 1px solid var(--av2-border);
+}
+.av2 #desk-lifecycle-agent-root .mystats-meta-item svg {
+  width: 13px;
+  height: 13px;
+  color: var(--av2-t4);
+  flex-shrink: 0;
+}
+.av2 #desk-lifecycle-agent-root .mystats-meta-arrow {
+  color: var(--av2-t4);
+}
+.av2 #desk-lifecycle-agent-root .mystats-meta-dim {
   color: var(--av2-t3);
+  font-weight: var(--av2-w-rg);
+}
+.av2 #desk-lifecycle-agent-root .mystats-meta-sync {
+  cursor: help;
+}
+.av2 #desk-lifecycle-agent-root .mystats-sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--av2-green);
+  box-shadow: 0 0 0 3px rgba(45, 220, 150, .18);
+}
+@media (max-width: 640px) {
+  .av2 #desk-lifecycle-agent-root .mystats-meta-bar { flex-direction: column; align-items: stretch; }
+  .av2 #desk-lifecycle-agent-root .mystats-meta-item + .mystats-meta-item {
+    border-left: none;
+    border-top: 1px solid var(--av2-border);
+  }
 }
 
 /* My Stats' cards carry longer values than Home's (durations, percentages,

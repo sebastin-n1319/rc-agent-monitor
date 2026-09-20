@@ -192,6 +192,36 @@
     return `${hrs}h ${mins % 60}m ago`;
   }
 
+  // Session 33 redesign ("this can look better"): the Range + sync note
+  // used to render as two stacked plain-text lines directly under the
+  // header, with no container of their own -- easy to mistake for leftover
+  // debug text. Consolidated into one bordered strip with an icon-led
+  // Range segment and a live-dot Sync segment, each a compact chip inside
+  // a shared pill so the pair reads as one deliberate status component.
+  // The sync segment keeps the full "why it might be behind" explanation
+  // as a hover tooltip (see wireTooltips()) rather than inline, since the
+  // short form is all most agents need most of the time.
+  function metaBarHtml(summaryJson, syncStatus) {
+    const rangeItem = `
+      <div class="mystats-meta-item">
+        ${statIcon('calendar')}
+        <span>${esc(fmtDateTime(summaryJson.from))} <span class="mystats-meta-arrow">&rarr;</span> ${esc(fmtDateTime(summaryJson.to))}</span>
+      </div>`;
+    let syncItem = '';
+    if (syncStatus && syncStatus.lastSyncAt) {
+      const ago = minutesAgo(syncStatus.lastSyncAt);
+      const abs = fmtDateTime(syncStatus.lastSyncAt);
+      const shortText = ago ? `Synced ${ago}` : `Synced ${abs}`;
+      const fullText = `Ticket data last synced ${ago ? `${ago} (${abs})` : abs} — syncs automatically every 20 min, so a brand-new ticket may take a few minutes to show up here.`;
+      syncItem = `
+        <div class="mystats-meta-item mystats-meta-sync" data-tip="${esc(fullText)}">
+          <span class="mystats-sync-dot" aria-hidden="true"></span>
+          <span>${esc(shortText)} <span class="mystats-meta-dim">&middot; every 20 min</span></span>
+        </div>`;
+    }
+    return `<div class="mystats-meta-bar">${rangeItem}${syncItem}</div>`;
+  }
+
   // "1h 23m" / "4m 12s" / "38s" -- matches the existing Summary page's
   // talk-time formatting style.
   function fmtDuration(totalSeconds) {
@@ -263,6 +293,7 @@
     swap:     '<path d="M7 7h10M7 7l3-3M7 7l3 3"/><path d="M17 17H7M17 17l-3-3M17 17l-3 3"/>',
     chat:     '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
     pause:    '<circle cx="12" cy="12" r="9"/><path d="M9 9v6M15 9v6"/>',
+    calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   };
   function statIcon(name) {
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[name] || ICON.ticket}</svg>`;
@@ -605,8 +636,7 @@
             })()}
           </div>
         </div>
-        <div class="av2-section-meta" style="margin-bottom:var(--av2-s2);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
-        ${syncStatus && syncStatus.lastSyncAt ? `<div class="mystats-sync-note" style="margin-bottom:var(--av2-s3);">Ticket data last synced ${minutesAgo(syncStatus.lastSyncAt) ? `${minutesAgo(syncStatus.lastSyncAt)} (${fmtDateTime(syncStatus.lastSyncAt)})` : fmtDateTime(syncStatus.lastSyncAt)} · syncs automatically every 20 min, so a brand-new ticket may take a few minutes to show up here.</div>` : ''}
+        ${metaBarHtml(summaryJson, syncStatus)}
 
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${callStatsSection(summaryJson.callStats)}
