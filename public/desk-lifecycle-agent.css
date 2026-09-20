@@ -51,19 +51,33 @@
   padding: 7px 12px; font-size: var(--av2-t-sm); font-family: inherit;
   color: var(--av2-t1); background: var(--av2-surface); cursor: pointer;
 }
-.av2 #desk-lifecycle-agent-root select.mystats-preset-select:focus,
-.av2 #desk-lifecycle-agent-root .mystats-date-inputs input[type="date"]:focus {
-  outline: none; border-color: var(--av2-orange);
-}
+/* Session 31 redesign: the two native date inputs used to float as
+   separate bordered boxes with a bare "to" between them. Merged into one
+   bordered pill (.mystats-date-range) with a fixed, compact input width
+   so it can't stretch edge-to-edge on a narrow viewport the way loose
+   native <input type="date"> elements do, matching the admin page's
+   equivalent redesign. */
 .av2 #desk-lifecycle-agent-root .mystats-date-inputs {
   display: flex; align-items: center; gap: var(--av2-s2); flex-wrap: wrap;
 }
-.av2 #desk-lifecycle-agent-root .mystats-date-inputs input[type="date"] {
-  border: 1px solid var(--av2-border); border-radius: var(--av2-r-sm);
-  padding: 6px 10px; font-size: var(--av2-t-xs); font-family: inherit;
-  color: var(--av2-t1); background: var(--av2-surface);
+.av2 #desk-lifecycle-agent-root .mystats-date-range {
+  display: flex; align-items: center; border: 1px solid var(--av2-border);
+  border-radius: var(--av2-r-sm); background: var(--av2-surface);
+  overflow: hidden; transition: border-color var(--av2-d-fast) var(--av2-spring-soft);
 }
-.av2 #desk-lifecycle-agent-root .mystats-date-sep { font-size: var(--av2-t-xs); color: var(--av2-t3); }
+.av2 #desk-lifecycle-agent-root .mystats-date-range:focus-within { border-color: var(--av2-orange); }
+.av2 #desk-lifecycle-agent-root .mystats-date-inputs input[type="date"] {
+  border: none; border-radius: 0; width: 108px; max-width: 108px;
+  padding: 6px 9px; font-size: var(--av2-t-xs); font-family: inherit;
+  color: var(--av2-t1); background: transparent;
+}
+.av2 #desk-lifecycle-agent-root .mystats-date-inputs input[type="date"]:focus { outline: none; }
+.av2 #desk-lifecycle-agent-root .mystats-date-sep {
+  font-size: 10px; font-weight: 600; color: var(--av2-t3);
+  text-transform: uppercase; letter-spacing: .03em; padding: 0 2px;
+  border-left: 1px solid var(--av2-border); border-right: 1px solid var(--av2-border);
+  align-self: stretch; display: flex; align-items: center; background: var(--av2-bg);
+}
 
 @media (max-width: 640px) {
   .av2 #desk-lifecycle-agent-root .av2-section-head { flex-direction: column; align-items: stretch; }

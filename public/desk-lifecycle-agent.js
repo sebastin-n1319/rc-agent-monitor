@@ -564,9 +564,11 @@
                   ).join('')}</optgroup>`).join('')}
                 </select>
                 <div class="mystats-date-inputs"${_selectedPreset === 'custom' ? '' : ' style="display:none"'}>
-                  <input type="date" class="mystats-date-from" value="${esc(_customFrom || '')}">
-                  <span class="mystats-date-sep">to</span>
-                  <input type="date" class="mystats-date-to" value="${esc(_customTo || '')}">
+                  <div class="mystats-date-range">
+                    <input type="date" class="mystats-date-from" value="${esc(_customFrom || '')}">
+                    <span class="mystats-date-sep">to</span>
+                    <input type="date" class="mystats-date-to" value="${esc(_customTo || '')}">
+                  </div>
                   <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-date-apply">Apply</button>
                 </div>`;
             })()}

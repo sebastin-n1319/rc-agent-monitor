@@ -659,9 +659,11 @@
     // of the page.
     const customHtml = `
       <div class="tkt-date-inputs${showCustom ? ' tkt-date-inputs-open' : ''}">
-        <input type="date" class="tkt-date-from" value="${esc(_customFrom || '')}">
-        <span class="tkt-date-sep">to</span>
-        <input type="date" class="tkt-date-to" value="${esc(_customTo || '')}">
+        <div class="tkt-date-range">
+          <input type="date" class="tkt-date-from" value="${esc(_customFrom || '')}">
+          <span class="tkt-date-sep">to</span>
+          <input type="date" class="tkt-date-to" value="${esc(_customTo || '')}">
+        </div>
         <button type="button" class="tkt-btn tkt-btn-light tkt-date-apply">Apply</button>
       </div>`;
     return `

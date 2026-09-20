@@ -190,11 +190,25 @@
 
 /* Hidden by default; only .tkt-date-inputs-open (Custom range… selected)
    switches it to flex -- see the Session 30 note on wireFilterBar() in
-   the JS for why this must be a class, not an inline style. */
-#desk-lifecycle-root .tkt-date-inputs { display:none !important; align-items:center !important; gap:8px !important; margin-top:8px !important; flex-wrap:wrap !important; }
+   the JS for why this must be a class, not an inline style.
+
+   Session 31 redesign: the two native date inputs used to float as
+   separate bordered boxes with a bare "to" between them, and -- because
+   .tkt-filter-group stretches to fill .tkt-filterbar's width once the
+   760px media query switches the bar to a column -- this whole block
+   used to inherit that full container width with nothing capping the
+   inputs, so each <input type="date"> rendered edge-to-edge and the
+   pair stacked into three separate full-width rows. `align-self` below
+   opts this element out of that stretch regardless of viewport, and the
+   two inputs are now merged into one bordered "pill" (.tkt-date-range)
+   with a fixed, compact width instead of each drawing its own border. */
+#desk-lifecycle-root .tkt-date-inputs { display:none !important; align-items:center !important; align-self:flex-start !important; width:auto !important; gap:8px !important; margin-top:8px !important; flex-wrap:wrap !important; }
 #desk-lifecycle-root .tkt-date-inputs.tkt-date-inputs-open { display:flex !important; }
-#desk-lifecycle-root .tkt-date-inputs input[type="date"] { border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; padding:7px 10px !important; font-size:12.5px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:var(--tkt-surface) !important; }
-#desk-lifecycle-root .tkt-date-sep { font-size:12px !important; color:var(--tkt-ink3) !important; }
+#desk-lifecycle-root .tkt-date-range { display:flex !important; align-items:center !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; background:var(--tkt-surface) !important; overflow:hidden !important; transition:border-color .15s var(--tkt-ease) !important; }
+#desk-lifecycle-root .tkt-date-range:focus-within { border-color:var(--tkt-accent) !important; }
+#desk-lifecycle-root .tkt-date-inputs input[type="date"] { border:none !important; border-radius:0 !important; width:118px !important; max-width:118px !important; padding:7px 9px !important; font-size:12.5px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:transparent !important; }
+#desk-lifecycle-root .tkt-date-inputs input[type="date"]:focus { outline:none !important; }
+#desk-lifecycle-root .tkt-date-sep { font-size:11px !important; font-weight:600 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.03em !important; padding:0 2px !important; border-left:1px solid var(--tkt-border) !important; border-right:1px solid var(--tkt-border) !important; align-self:stretch !important; display:flex !important; align-items:center !important; background:var(--tkt-surface2) !important; }
 #desk-lifecycle-root .tkt-date-apply { padding:7px 14px !important; }
 
 #desk-lifecycle-root .tkt-search-input,
@@ -204,7 +218,13 @@
 
 @media (max-width: 760px) {
   #desk-lifecycle-root .tkt-filterbar { flex-direction:column !important; align-items:stretch !important; }
-  #desk-lifecycle-root .tkt-filter-search { min-width:0 !important; }
+  /* Session 31: flex:1 1 200px was meant to set a minimum WIDTH in the
+     bar's normal row layout; once the rule above switches the bar to a
+     column, the same "200px" becomes a flex-basis on the vertical axis
+     instead, stretching each search field to a 200px-tall box with a
+     large blank gap beneath it. flex-basis:auto keeps the min-width
+     rule below in row layout but drops the accidental height. */
+  #desk-lifecycle-root .tkt-filter-search { flex-basis:auto !important; min-width:0 !important; }
   #desk-lifecycle-root .tkt-progress-track { max-width:none !important; }
 }
 
