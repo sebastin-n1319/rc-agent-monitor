@@ -41,6 +41,12 @@
   let _selectedPreset = 'r30';
   let _customFrom = null; // 'YYYY-MM-DD'
   let _customTo = null;   // 'YYYY-MM-DD'
+  // Session 25: optional customer search (company/contact name/email),
+  // ported from desk-lifecycle-admin.js's tkt-search-input -- narrows
+  // both "My numbers" and "Recent tickets" the same way it narrows the
+  // admin page's per-agent summary.
+  let _customerQuery = '';
+  let _searchDebounce = null;
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function chicagoOffsetMinutesAt(utcMs) {
@@ -154,7 +160,9 @@
 
   async function loadMySummary(range) {
     const { from, to } = range;
-    const r = await fetch(`/api/desk-lifecycle/my-summary?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { credentials: 'include' });
+    const params = new URLSearchParams({ from, to });
+    if (_customerQuery) params.set('q', _customerQuery);
+    const r = await fetch(`/api/desk-lifecycle/my-summary?${params.toString()}`, { credentials: 'include' });
     if (r.status === 401) throw new Error('Not logged in');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
@@ -164,7 +172,9 @@
 
   async function loadMyTickets(range) {
     const { from, to } = range;
-    const r = await fetch(`/api/desk-lifecycle/my-tickets?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, { credentials: 'include' });
+    const params = new URLSearchParams({ from, to });
+    if (_customerQuery) params.set('q', _customerQuery);
+    const r = await fetch(`/api/desk-lifecycle/my-tickets?${params.toString()}`, { credentials: 'include' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     if (!j.success) throw new Error(j.error || 'Failed to load your tickets');
@@ -374,7 +384,8 @@
                   <span class="mystats-date-sep">to</span>
                   <input type="date" class="mystats-date-to" value="${esc(_customTo || '')}">
                   <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-date-apply">Apply</button>
-                </div>`;
+                </div>
+                <input type="search" class="mystats-search-input" placeholder="Company, contact name, or email…" value="${esc(_customerQuery || '')}">`;
             })()}
           </div>
         </div>
@@ -387,6 +398,15 @@
 
         ${panel('Recent tickets', 'Most recently created first, up to 200.', ticketsTable(ticketsJson.tickets || []))}
       </div>`;
+
+    const searchInput = root.querySelector('.mystats-search-input');
+    if (searchInput) searchInput.addEventListener('input', () => {
+      clearTimeout(_searchDebounce);
+      _searchDebounce = setTimeout(() => {
+        _customerQuery = searchInput.value.trim();
+        window.openDeskLifecycleAgent();
+      }, 350);
+    });
 
     const presetSel = root.querySelector('.mystats-preset-select');
     if (presetSel) presetSel.addEventListener('change', () => {
@@ -431,6 +451,9 @@
   window.openDeskLifecycleAgent = async function () {
     const root = document.getElementById('desk-lifecycle-agent-root');
     if (!root) return;
+    const prevSearch = root.querySelector('.mystats-search-input');
+    const hadFocus = !!prevSearch && document.activeElement === prevSearch;
+    const caret = hadFocus ? prevSearch.selectionStart : null;
     root.innerHTML = skeletonHTML();
     try {
       const range = currentRange();
@@ -439,6 +462,13 @@
         loadMyTickets(range),
       ]);
       render(root, summaryJson, ticketsJson);
+      if (hadFocus) {
+        const newSearch = root.querySelector('.mystats-search-input');
+        if (newSearch) {
+          newSearch.focus();
+          if (caret != null) newSearch.setSelectionRange(caret, caret);
+        }
+      }
     } catch (e) {
       root.innerHTML = `
         <div class="av2-container">

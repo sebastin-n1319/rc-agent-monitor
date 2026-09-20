@@ -47,8 +47,23 @@
 }
 .av2 #desk-lifecycle-agent-root .mystats-date-sep { font-size: var(--av2-t-xs); color: var(--av2-t3); }
 
+/* ── Customer search — Session 25 ────────────────────────────────────
+   Ported from desk-lifecycle-admin.js's tkt-search-input the same way
+   the period filter was ported in Session 23, styled with av2 tokens. */
+.av2 #desk-lifecycle-agent-root input.mystats-search-input {
+  border: 1px solid var(--av2-border); border-radius: var(--av2-r-sm);
+  padding: 7px 12px; font-size: var(--av2-t-sm); font-family: inherit;
+  color: var(--av2-t1); background: var(--av2-surface);
+  min-width: 220px; flex: 1 1 220px;
+}
+.av2 #desk-lifecycle-agent-root input.mystats-search-input:focus {
+  outline: none; border-color: var(--av2-orange);
+}
+.av2 #desk-lifecycle-agent-root input.mystats-search-input::placeholder { color: var(--av2-t3); }
+
 @media (max-width: 640px) {
   .av2 #desk-lifecycle-agent-root .av2-section-head { flex-direction: column; align-items: stretch; }
   .av2 #desk-lifecycle-agent-root .mystats-filterbar { width: 100%; }
   .av2 #desk-lifecycle-agent-root select.mystats-preset-select { flex: 1 1 auto; }
+  .av2 #desk-lifecycle-agent-root input.mystats-search-input { flex: 1 1 100%; min-width: 0; }
 }

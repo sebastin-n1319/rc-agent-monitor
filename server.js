@@ -5923,6 +5923,7 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
     const to = req.query.to || new Date().toISOString();
+    const q = req.query.q ? String(req.query.q).trim() : null;
     const email = (req.session.email || '').toLowerCase();
     if (!email) return res.status(400).json({ success: false, error: 'No session email' });
     // Session 24: agentSummary() needs this agent's Zoho display name to
@@ -5932,7 +5933,7 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     const monitored = await getMonitoredAgents();
     const match = monitored.find(a => (a.email || '').toLowerCase() === email);
     const agentNames = match ? { [email]: match.name } : undefined;
-    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email], agentNames });
+    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email], agentNames, q });
 
     // Session 21: RingCentral call stats + SalesIQ chat stats, same
     // from/to window as the ticket summary above, so all three sections
@@ -6219,9 +6220,12 @@ app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
     const to = req.query.to || new Date().toISOString();
+    const q = req.query.q ? String(req.query.q).trim() : null;
     const email = (req.session.email || '').toLowerCase();
     if (!email) return res.status(400).json({ success: false, error: 'No session email' });
-    const tickets = await deskLifecycle.agentTicketList({ email, from, to, limit: 200 });
+    const monitored = await getMonitoredAgents();
+    const match = monitored.find(a => (a.email || '').toLowerCase() === email);
+    const tickets = await deskLifecycle.agentTicketList({ email, from, to, limit: 200, q, agentName: match ? match.name : null });
     res.json({ success: true, from, to, tickets });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
