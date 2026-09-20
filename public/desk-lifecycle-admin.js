@@ -1,5 +1,8 @@
 /**
  * Ticket Lifecycle Admin — Session 20 (+ Session 21 filters/progress)
+ * (+ Session 27: hover tooltips on every metric, a team-summary strip
+ * with previous-period deltas, a client-side agent finder, expand/
+ * collapse-all, and grouped "Ticket flow" / "Outcomes" pill layout.)
  *
  * Automated replacement for the manually-exported Zoho Desk "lifecycle
  * report" CSV, and the eventual replacement for the manual per-ticket
@@ -32,6 +35,19 @@
  * a combined customer search box (company/contact name/email, one
  * field, server-side LIKE match), and a reorganized filter bar.
  *
+ * Session 27: every pill and breakdown-group title now carries a
+ * data-tip explaining exactly what it counts and how it's windowed
+ * (grounded in this file's + lib/desk-lifecycle.js's own definitions,
+ * not paraphrased) -- FCR/CSAT tips show the live numerator/denominator
+ * for that agent, not just the static definition. A "Team summary" strip
+ * sits above the per-agent cards with pooled team totals and, when a
+ * same-length prior period is available, a delta vs. that prior period.
+ * A client-side "Find agent" box narrows the rendered cards instantly
+ * (separate from the server-side Customer search, which searches by
+ * customer, not agent). Pills are grouped into "Ticket flow" (unique /
+ * solely handled / reassigned / transferred / handed off) vs "Outcomes"
+ * (closed / handling now / avg handle / FCR / CSAT) for scannability.
+ *
  * Entry point: window.openDeskLifecycleAdmin(), rendering into
  * #desk-lifecycle-root.
  */
@@ -57,6 +73,7 @@
   let _customTo = null;   // 'YYYY-MM-DD'
   let _customerQuery = '';
   let _searchDebounce = null;
+  let _agentQuery = ''; // Session 27: client-side "Find agent" filter, no server round-trip
 
   // ── Sync polling state ───────────────────────────────────────────────
   let _pollHandle = null;
@@ -233,6 +250,21 @@
   }
   function currentRange() { return findPreset(_selectedPreset).compute(); }
 
+  // Session 27: the same-length period immediately before `range`, used
+  // only for the team-summary "vs prior period" deltas. Not tied to any
+  // preset -- just range.to becomes the new range.from, shifted back by
+  // the same span, so "Last 30 days" compares against the 30 days before
+  // that, "This month" compares against an equal number of days before
+  // the 1st, etc.
+  function previousRange(range) {
+    const spanMs = new Date(range.to).getTime() - new Date(range.from).getTime();
+    if (!(spanMs > 0)) return null;
+    return {
+      from: new Date(new Date(range.from).getTime() - spanMs).toISOString(),
+      to: range.from,
+    };
+  }
+
   // ── Data loading ─────────────────────────────────────────────────────
   async function loadStatus() {
     const r = await fetch('/api/desk-lifecycle/status', { credentials: 'include' });
@@ -251,6 +283,14 @@
     const j = await r.json();
     if (!j.success) throw new Error(j.error || 'Failed to load ticket summary');
     return j;
+  }
+
+  // Session 27: best-effort — a failed/slow previous-period fetch should
+  // never block or error out the main view, it just means no delta chips.
+  async function loadPrevSummarySafe(range, q) {
+    const prev = previousRange(range);
+    if (!prev) return null;
+    try { return await loadSummary(prev, q); } catch (e) { return null; }
   }
 
   async function triggerSync(btn, root) {
@@ -355,27 +395,85 @@
     return html;
   }
 
+  // ── Session 27: tooltip copy ─────────────────────────────────────────
+  // One source of truth for "what does this number mean", grounded in
+  // lib/desk-lifecycle.js's own field definitions (see its module doc
+  // comment) rather than a paraphrase that could drift out of sync.
+  // FCR/CSAT tips are built per-agent so they show that agent's actual
+  // numerator/denominator, not just the abstract formula.
+  function fmtPct(pct) { return (pct == null) ? '—' : `${pct}%`; }
+
+  function metricTip(key, a) {
+    switch (key) {
+      case 'unique':
+        return 'Unique tickets\n\nEvery ticket this agent appears in anywhere in its ownership history — even one hand-off counts, once. Counted by when the ticket was CREATED.';
+      case 'solely':
+        return 'Solely handled\n\nOf the Unique tickets: the ones this agent owned start to finish with no other individual ever touching it, and the ticket is now Closed.';
+      case 'reassigned':
+        return 'Reassigned\n\nTickets that arrived already in progress — a different person owned it immediately before this agent picked it up.';
+      case 'transferred':
+        return 'Transferred\n\nTickets this agent handed off to someone outside the T1 roster (a different team). See "Departments transferred to" below for where they went.';
+      case 'handed_off':
+        return 'Handed off (T1)\n\nTickets this agent handed directly to another monitored T1 agent — stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
+      case 'closed':
+        return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range — credited to whoever is the CURRENT owner, even if it passed through other hands first.';
+      case 'handling':
+        return 'Handling now\n\nTickets this agent currently owns that are still open. A live count — not limited to the selected date range.';
+      case 'avg_handle':
+        return 'Avg handle time\n\nAverage time from ticket creation to closing, across this agent\'s Closed tickets in range. Wall-clock hours (calendar time), not business hours — see FCR for the business-hours definition.';
+      case 'fcr': {
+        const total = a.fcr_total || 0, yes = a.fcr_yes || 0;
+        if (!total) return 'First Contact Resolution (FCR)\n\nNo Closed tickets in this range yet.';
+        return `First Contact Resolution (FCR)\n\n${yes} of ${total} closed tickets resolved within 24 business hours (Mon–Fri, 7am–7pm CST) with zero reopens.\n\n${yes} / ${total} = ${fmtPct(a.fcr_pct)}\n\nCredited to whoever currently owns the ticket, even after a transfer.`;
+      }
+      case 'csat': {
+        const total = a.csat_total || 0, good = a.csat_good || 0;
+        if (!total) return 'Customer Satisfaction (CSAT)\n\nNo survey responses in this range yet.';
+        return `Customer Satisfaction (CSAT)\n\n${good} of ${total} survey responses were rated "Good".\n\n${good} / ${total} = ${fmtPct(a.csat_pct)}\n\nRatings: Good / Okay / Bad. Counted by when the survey was submitted, not when the ticket closed.`;
+      }
+      default: return '';
+    }
+  }
+
+  function breakdownTip(key) {
+    switch (key) {
+      case 'channel': return 'Channel\n\nHow the ticket came in — Phone, Email, Chat, and so on.';
+      case 'module': return 'Adit App Module\n\nWhich Adit product area the ticket relates to (Adit Pay, Adit Voice, Adit AI Agent, EHR/PMS integrations, etc).';
+      case 'category': return 'Category\n\nZoho Desk\'s own ticket category field.';
+      case 'classification': return 'Classification\n\nZoho Desk\'s own ticket classification field.';
+      case 'departments': return 'Departments transferred to\n\nWhere this agent\'s Transferred tickets ended up — the team/role shown in Zoho\'s owner-change log at the point it left T1.';
+      default: return '';
+    }
+  }
+
   function agentBreakdownPanel(a) {
     return `
       <div>
-        <div class="tkt-bd-group-title">Channel</div>
+        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('channel'))}">Channel</div>
         ${breakdownChips(a.channel)}
       </div>
       <div>
-        <div class="tkt-bd-group-title">Adit App Module</div>
+        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('module'))}">Adit App Module</div>
         ${breakdownChips(a.module)}
       </div>
       <div>
-        <div class="tkt-bd-group-title">Category</div>
+        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('category'))}">Category</div>
         ${breakdownChips(a.category)}
       </div>
       <div>
-        <div class="tkt-bd-group-title">Classification</div>
+        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('classification'))}">Classification</div>
         ${breakdownChips(a.classification)}
       </div>
       <div>
-        <div class="tkt-bd-group-title">Departments transferred to</div>
+        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('departments'))}">Departments transferred to</div>
         ${breakdownChips(a.departments_transferred)}
+      </div>`;
+  }
+
+  function pillHtml(cls, n, label, tipKey, a) {
+    const tip = metricTip(tipKey, a);
+    return `<div class="tkt-pill${cls ? ' ' + cls : ''}" data-tip="${esc(tip)}">
+        <div class="tkt-pill-n">${n}</div><div class="tkt-pill-l">${esc(label)}</div>
       </div>`;
   }
 
@@ -385,6 +483,22 @@
     const csat = a.csat_pct != null ? `${a.csat_pct}%` : (a.csat_total ? '0%' : '—');
     const avgHandle = a.avg_handle_hours != null ? `${a.avg_handle_hours}h` : '—';
     const isExpanded = _expanded.has(a.email);
+
+    const flowPills = [
+      pillHtml('', a.unique_tickets || 0, 'Unique', 'unique', a),
+      pillHtml('tkt-pill-good', a.solely_handled || 0, 'Solely handled', 'solely', a),
+      pillHtml('tkt-pill-warn', a.reassigned || 0, 'Reassigned', 'reassigned', a),
+      pillHtml('tkt-pill-warn', a.transferred || 0, 'Transferred', 'transferred', a),
+      pillHtml('', a.handed_off_internal || 0, 'Handed off (T1)', 'handed_off', a),
+    ].join('');
+    const outcomePills = [
+      pillHtml('', a.closed_count || 0, 'Closed', 'closed', a),
+      pillHtml('tkt-pill-live', a.currently_handling || 0, 'Handling now', 'handling', a),
+      pillHtml('', avgHandle, 'Avg handle', 'avg_handle', a),
+      pillHtml('', fcr, `FCR${a.fcr_total ? ` (${a.fcr_total})` : ''}`, 'fcr', a),
+      pillHtml('', csat, `CSAT${a.csat_total ? ` (${a.csat_total})` : ''}`, 'csat', a),
+    ].join('');
+
     return `
       <div class="tkt-agent-card${isExpanded ? ' tkt-expanded' : ''}" data-email="${esc(a.email)}">
         <div class="tkt-agent-head">
@@ -393,16 +507,15 @@
             <div class="tkt-agent-email">${esc(a.email)}</div>
           </div>
           <div class="tkt-stat-grid">
-            <div class="tkt-pill"><div class="tkt-pill-n">${a.unique_tickets || 0}</div><div class="tkt-pill-l">Unique</div></div>
-            <div class="tkt-pill tkt-pill-good"><div class="tkt-pill-n">${a.solely_handled || 0}</div><div class="tkt-pill-l">Solely handled</div></div>
-            <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.reassigned || 0}</div><div class="tkt-pill-l">Reassigned</div></div>
-            <div class="tkt-pill tkt-pill-warn"><div class="tkt-pill-n">${a.transferred || 0}</div><div class="tkt-pill-l">Transferred</div></div>
-            <div class="tkt-pill"><div class="tkt-pill-n">${a.handed_off_internal || 0}</div><div class="tkt-pill-l">Handed off (T1)</div></div>
-            <div class="tkt-pill"><div class="tkt-pill-n">${a.closed_count || 0}</div><div class="tkt-pill-l">Closed</div></div>
-            <div class="tkt-pill tkt-pill-live"><div class="tkt-pill-n">${a.currently_handling || 0}</div><div class="tkt-pill-l">Handling now</div></div>
-            <div class="tkt-pill"><div class="tkt-pill-n">${avgHandle}</div><div class="tkt-pill-l">Avg handle</div></div>
-            <div class="tkt-pill"><div class="tkt-pill-n">${fcr}</div><div class="tkt-pill-l">FCR${a.fcr_total ? ` (${a.fcr_total})` : ''}</div></div>
-            <div class="tkt-pill"><div class="tkt-pill-n">${csat}</div><div class="tkt-pill-l">CSAT${a.csat_total ? ` (${a.csat_total})` : ''}</div></div>
+            <div class="tkt-stat-group">
+              <div class="tkt-stat-group-label">Ticket flow</div>
+              <div class="tkt-stat-subgrid">${flowPills}</div>
+            </div>
+            <div class="tkt-stat-divider" aria-hidden="true"></div>
+            <div class="tkt-stat-group">
+              <div class="tkt-stat-group-label">Outcomes</div>
+              <div class="tkt-stat-subgrid">${outcomePills}</div>
+            </div>
           </div>
           <button type="button" class="tkt-expand-btn">${isExpanded ? 'Hide breakdown ▲' : 'Channel / module / category ▾'}</button>
         </div>
@@ -410,23 +523,103 @@
       </div>`;
   }
 
+  // Session 27: pooled team totals across whichever agents are currently
+  // rendered (post Find-agent filter). FCR/CSAT are pooled sums (Σyes/Σtotal),
+  // not an average of percentages -- correct when agents have very
+  // different ticket volumes, same convention as each agent's own %.
+  function poolTeamTotals(agents) {
+    const t = {
+      count: agents.length, unique: 0, closed: 0, handling: 0,
+      fcrYes: 0, fcrTotal: 0, csatGood: 0, csatTotal: 0,
+    };
+    for (const a of agents) {
+      t.unique += a.unique_tickets || 0;
+      t.closed += a.closed_count || 0;
+      t.handling += a.currently_handling || 0;
+      t.fcrYes += a.fcr_yes || 0;
+      t.fcrTotal += a.fcr_total || 0;
+      t.csatGood += a.csat_good || 0;
+      t.csatTotal += a.csat_total || 0;
+    }
+    t.fcrPct = t.fcrTotal ? Math.round((t.fcrYes / t.fcrTotal) * 1000) / 10 : null;
+    t.csatPct = t.csatTotal ? Math.round((t.csatGood / t.csatTotal) * 1000) / 10 : null;
+    return t;
+  }
+
+  function deltaChip(curr, prev, opts) {
+    opts = opts || {};
+    if (prev == null || curr == null) return '';
+    const diff = curr - prev;
+    if (Math.abs(diff) < (opts.epsilon || 0.05)) return `<span class="tkt-delta tkt-delta-flat">flat</span>`;
+    const up = diff > 0;
+    const good = opts.higherIsBetter == null ? null : (up === opts.higherIsBetter);
+    const cls = good == null ? '' : (good ? ' tkt-delta-good' : ' tkt-delta-bad');
+    const sign = up ? '▲' : '▼';
+    const magnitude = opts.pct ? `${Math.abs(Math.round(diff * 10) / 10)}pt` : Math.abs(Math.round(diff));
+    return `<span class="tkt-delta${cls}">${sign} ${magnitude}</span>`;
+  }
+
+  function teamSummaryHtml(agents, prevAgents) {
+    const t = poolTeamTotals(agents);
+    const prevT = prevAgents ? poolTeamTotals(prevAgents) : null;
+    const cells = [
+      {
+        n: t.count, l: 'Agents shown', tip: 'Agents shown\n\nHow many monitored T1 agents match the current filters (Find agent + Customer search).',
+        delta: '',
+      },
+      {
+        n: t.unique, l: 'Total unique tickets', tip: 'Total unique tickets\n\nSum of every shown agent\'s Unique tickets. A ticket touched by two shown agents is counted once for each of them, so this can exceed the ticket count in Zoho.',
+        delta: prevT ? deltaChip(t.unique, prevT.unique, { higherIsBetter: null }) : '',
+      },
+      {
+        n: t.closed, l: 'Total closed', tip: 'Total closed\n\nSum of every shown agent\'s Closed count for this range.',
+        delta: prevT ? deltaChip(t.closed, prevT.closed, { higherIsBetter: null }) : '',
+      },
+      {
+        n: t.handling, l: 'Handling now', tip: 'Handling now\n\nSum of every shown agent\'s currently-open ticket count. Live, not windowed by date.',
+        delta: '',
+      },
+      {
+        n: fmtPct(t.fcrPct), l: `Team FCR${t.fcrTotal ? ` (${t.fcrYes}/${t.fcrTotal})` : ''}`,
+        tip: t.fcrTotal ? `Team FCR\n\n${t.fcrYes} of ${t.fcrTotal} closed tickets across shown agents resolved within 24 business hours with zero reopens.\n\n${t.fcrYes} / ${t.fcrTotal} = ${fmtPct(t.fcrPct)}` : 'Team FCR\n\nNo closed tickets in this range yet.',
+        delta: (prevT && prevT.fcrPct != null && t.fcrPct != null) ? deltaChip(t.fcrPct, prevT.fcrPct, { higherIsBetter: true, pct: true }) : '',
+      },
+      {
+        n: fmtPct(t.csatPct), l: `Team CSAT${t.csatTotal ? ` (${t.csatGood}/${t.csatTotal})` : ''}`,
+        tip: t.csatTotal ? `Team CSAT\n\n${t.csatGood} of ${t.csatTotal} survey responses across shown agents were rated "Good".\n\n${t.csatGood} / ${t.csatTotal} = ${fmtPct(t.csatPct)}` : 'Team CSAT\n\nNo survey responses in this range yet.',
+        delta: (prevT && prevT.csatPct != null && t.csatPct != null) ? deltaChip(t.csatPct, prevT.csatPct, { higherIsBetter: true, pct: true }) : '',
+      },
+    ];
+    return `
+      <div class="tkt-team-summary">
+        ${cells.map(c => `
+          <div class="tkt-team-cell" data-tip="${esc(c.tip)}">
+            <div class="tkt-team-n">${c.n}${c.delta ? ` ${c.delta}` : ''}</div>
+            <div class="tkt-team-l">${esc(c.l)}</div>
+          </div>`).join('')}
+        ${prevT ? '' : '<div class="tkt-team-note">Deltas need a same-length prior period — not enough history for this range yet.</div>'}
+      </div>`;
+  }
+
   function summaryList(agents) {
     if (!agents.length) {
-      return `<div class="tkt-empty">No monitored agents with an email on file yet — add emails in the Agents admin page to see their ticket stats here.</div>`;
+      return `<div class="tkt-empty">${_agentQuery ? 'No agent name or email matches "' + esc(_agentQuery) + '".' : "No monitored agents with an email on file yet — add emails in the Agents admin page to see their ticket stats here."}</div>`;
     }
     const opt = SORT_OPTIONS.find(o => o.key === _sortKey) || SORT_OPTIONS[0];
     const sorted = [...agents].sort((a, b) => {
       if (!opt.fn) return String(a.pseudo || a.full_name || a.email).localeCompare(String(b.pseudo || b.full_name || b.email));
       return opt.fn(b) - opt.fn(a);
     });
-    const sortRow = `
+    const anyExpanded = sorted.some(a => _expanded.has(a.email));
+    const toolRow = `
       <div class="tkt-sort-opts">
         <span class="tkt-sort-label">Sort by</span>
         <select class="tkt-sort-select">
           ${SORT_OPTIONS.map(o => `<option value="${o.key}" ${o.key === _sortKey ? 'selected' : ''}>${o.label}</option>`).join('')}
         </select>
+        <button type="button" class="tkt-btn tkt-btn-light tkt-expand-all-btn">${anyExpanded ? 'Collapse all' : 'Expand all'}</button>
       </div>`;
-    return sortRow + sorted.map(agentCard).join('');
+    return toolRow + sorted.map(agentCard).join('');
   }
 
   // ── Filter bar ───────────────────────────────────────────────────────
@@ -460,6 +653,10 @@
           <span class="tkt-filter-label">Customer</span>
           <input type="search" class="tkt-search-input" placeholder="Company, contact name, or email…" value="${esc(_customerQuery || '')}">
         </div>
+        <div class="tkt-filter-group tkt-filter-search">
+          <span class="tkt-filter-label">Find agent</span>
+          <input type="search" class="tkt-agent-search-input" placeholder="Filter the cards below…" value="${esc(_agentQuery || '')}">
+        </div>
         <div class="tkt-filter-group">
           <span class="tkt-filter-label">&nbsp;</span>
           <button type="button" class="tkt-btn tkt-btn-light tkt-export-btn">Export CSV</button>
@@ -492,6 +689,11 @@
         refreshSummary(root, status);
       }, 350);
     });
+    const agentSearch = $('.tkt-agent-search-input', root);
+    if (agentSearch) agentSearch.addEventListener('input', () => {
+      _agentQuery = agentSearch.value.trim();
+      renderResults(root, status, _lastSummaryData, _lastPrevSummaryData);
+    });
     const exportBtn = $('.tkt-export-btn', root);
     if (exportBtn) exportBtn.addEventListener('click', () => {
       const range = currentRange();
@@ -501,23 +703,49 @@
     });
   }
 
+  // Client-side "Find agent" match — name or email, case-insensitive.
+  function matchesAgentQuery(a) {
+    if (!_agentQuery) return true;
+    const needle = _agentQuery.toLowerCase();
+    const hay = `${a.pseudo || ''} ${a.full_name || ''} ${a.email || ''}`.toLowerCase();
+    return hay.includes(needle);
+  }
+
   // ── Results ──────────────────────────────────────────────────────────
-  function resultsCardHtml(summaryData) {
-    const count = (summaryData.agents || []).length;
+  // Session 27: keep the last-loaded summary/prev-summary around at
+  // module scope so the client-side "Find agent" filter can re-render
+  // without a network round-trip.
+  let _lastSummaryData = null;
+  let _lastPrevSummaryData = null;
+
+  function resultsCardHtml(summaryData, prevSummaryData) {
+    const allAgents = summaryData.agents || [];
+    const shownAgents = allAgents.filter(matchesAgentQuery);
+    const count = shownAgents.length;
+    const prevAgents = prevSummaryData ? prevSummaryData.agents || [] : null;
     return `
       <div class="tkt-card">
         <div class="tkt-card-title">Per-agent summary</div>
-        <div class="tkt-card-sub">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)}${_customerQuery ? ` · Filtered by "${esc(_customerQuery)}"` : ''} · ${count} agent${count === 1 ? '' : 's'} shown<br>Unique/solely-handled/reassigned and the breakdowns below are windowed by when the ticket was created; Closed/Avg handle/FCR are windowed by when it closed; Handling now is live, not windowed.</div>
-        <div class="tkt-note">CSAT% now reflects real per-ticket survey ratings (Good/Okay/Bad) from Zoho Analytics, filtered by when the customer submitted the survey. NPS% still isn't shown -- it's an account-level relationship survey (CSM team), not tied to individual tickets or T1 agents.</div>
-        ${summaryList(summaryData.agents || [])}
+        <div class="tkt-card-sub">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)}${_customerQuery ? ` · Filtered by "${esc(_customerQuery)}"` : ''} · ${count} of ${allAgents.length} agent${allAgents.length === 1 ? '' : 's'} shown<br>Unique/solely-handled/reassigned and the breakdowns below are windowed by when the ticket was created; Closed/Avg handle/FCR are windowed by when it closed; Handling now is live, not windowed.</div>
+        <div class="tkt-note">CSAT% now reflects real per-ticket survey ratings (Good/Okay/Bad) from Zoho Analytics, filtered by when the customer submitted the survey. NPS% still isn't shown -- it's an account-level relationship survey (CSM team), not tied to individual tickets or T1 agents. Hover any number for what it means.</div>
+        ${teamSummaryHtml(shownAgents, prevAgents)}
+        ${summaryList(shownAgents)}
       </div>`;
   }
 
-  function wireResults(root, status, summaryData) {
+  function wireResults(root, status, summaryData, prevSummaryData) {
     const sortSel = $('.tkt-sort-select', root);
     if (sortSel) sortSel.addEventListener('change', () => {
       _sortKey = sortSel.value;
-      renderResults(root, status, summaryData);
+      renderResults(root, status, summaryData, prevSummaryData);
+    });
+    const expandAllBtn = $('.tkt-expand-all-btn', root);
+    if (expandAllBtn) expandAllBtn.addEventListener('click', () => {
+      const shown = (summaryData.agents || []).filter(matchesAgentQuery);
+      const anyExpanded = shown.some(a => _expanded.has(a.email));
+      if (anyExpanded) shown.forEach(a => _expanded.delete(a.email));
+      else shown.forEach(a => _expanded.add(a.email));
+      renderResults(root, status, summaryData, prevSummaryData);
     });
     root.querySelectorAll('.tkt-agent-card').forEach((card) => {
       const btn = $('.tkt-expand-btn', card);
@@ -525,24 +753,31 @@
       btn.addEventListener('click', () => {
         const email = card.dataset.email;
         if (_expanded.has(email)) _expanded.delete(email); else _expanded.add(email);
-        renderResults(root, status, summaryData);
+        renderResults(root, status, summaryData, prevSummaryData);
       });
     });
+    wireTooltips(root);
   }
 
-  function renderResults(root, status, summaryData) {
+  function renderResults(root, status, summaryData, prevSummaryData) {
     const host = $('.tkt-results-host', root);
     if (!host) return;
-    host.innerHTML = resultsCardHtml(summaryData);
-    wireResults(root, status, summaryData);
+    _lastSummaryData = summaryData;
+    _lastPrevSummaryData = prevSummaryData;
+    host.innerHTML = resultsCardHtml(summaryData, prevSummaryData);
+    wireResults(root, status, summaryData, prevSummaryData);
   }
 
   async function refreshSummary(root, status) {
     const host = $('.tkt-results-host', root);
     if (host) host.style.opacity = '0.55';
     try {
-      const summaryData = await loadSummary(currentRange(), _customerQuery);
-      renderResults(root, status, summaryData);
+      const range = currentRange();
+      const [summaryData, prevSummaryData] = await Promise.all([
+        loadSummary(range, _customerQuery),
+        loadPrevSummarySafe(range, _customerQuery),
+      ]);
+      renderResults(root, status, summaryData, prevSummaryData);
     } catch (e) {
       toastSafe('❌ ' + e.message, 'error', 4000);
     } finally {
@@ -563,8 +798,67 @@
     wireBanner(root);
   }
 
+  // ── Session 27: hover/focus tooltip system ──────────────────────────
+  // One shared floating element per page, positioned via JS (not pure
+  // CSS `content: attr()`) so it can escape .tkt-agent-card's
+  // overflow:hidden (needed for the card's rounded corners) and stay
+  // clamped inside the viewport instead of overflowing off-screen near
+  // the page edges. Content is set via textContent (never innerHTML),
+  // and `white-space:pre-line` in the CSS turns the \n\n in the tip
+  // strings above into paragraph breaks.
+  let _tipEl = null;
+  function ensureTipEl() {
+    if (_tipEl && document.body.contains(_tipEl)) return _tipEl;
+    _tipEl = document.createElement('div');
+    _tipEl.className = 'tkt-tooltip';
+    _tipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(_tipEl);
+    return _tipEl;
+  }
+  function showTip(anchor) {
+    const text = anchor.getAttribute('data-tip');
+    if (!text) return;
+    const tip = ensureTipEl();
+    tip.textContent = text;
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    tip.classList.add('tkt-tooltip-visible');
+    const ar = anchor.getBoundingClientRect();
+    const tr = tip.getBoundingClientRect();
+    let top = ar.top - tr.height - 10;
+    let flipped = false;
+    if (top < 8) { top = ar.bottom + 10; flipped = true; }
+    let left = ar.left + ar.width / 2 - tr.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top = `${Math.round(top)}px`;
+    tip.classList.toggle('tkt-tooltip-below', flipped);
+  }
+  function hideTip() {
+    if (_tipEl) _tipEl.classList.remove('tkt-tooltip-visible');
+  }
+  function wireTooltips(root) {
+    (root || document).querySelectorAll('[data-tip]').forEach((el) => {
+      if (el.__tktTipWired) return;
+      el.__tktTipWired = true;
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+      el.addEventListener('mouseenter', () => showTip(el));
+      el.addEventListener('mouseleave', hideTip);
+      el.addEventListener('focus', () => showTip(el));
+      el.addEventListener('blur', hideTip);
+      el.addEventListener('touchstart', () => showTip(el), { passive: true });
+    });
+  }
+  if (!window.__tktTooltipScrollWired) {
+    window.__tktTooltipScrollWired = true;
+    window.addEventListener('scroll', hideTip, { passive: true, capture: true });
+    window.addEventListener('resize', hideTip, { passive: true });
+  }
+
   // ── Top-level render ─────────────────────────────────────────────────
-  function render(root, status, summaryData) {
+  function render(root, status, summaryData, prevSummaryData) {
+    _lastSummaryData = summaryData;
+    _lastPrevSummaryData = prevSummaryData;
     root.innerHTML = `
       <div class="tkt-wrap">
         <div class="tkt-header">
@@ -578,13 +872,13 @@
 
         <div class="tkt-banner-host">${status.configured ? statusBanner(status) : notConfiguredCard()}</div>
 
-        <div class="tkt-results-host">${status.configured ? resultsCardHtml(summaryData) : ''}</div>
+        <div class="tkt-results-host">${status.configured ? resultsCardHtml(summaryData, prevSummaryData) : ''}</div>
       </div>`;
 
     wireBanner(root);
     if (status.configured) {
       wireFilterBar(root, status);
-      wireResults(root, status, summaryData);
+      wireResults(root, status, summaryData, prevSummaryData);
     }
   }
 
@@ -595,8 +889,11 @@
     root.innerHTML = '<div class="tkt-loading"><div class="tkt-spinner"></div>Loading ticket lifecycle data…</div>';
     try {
       const status = await loadStatus();
-      const summaryData = status.configured ? await loadSummary(currentRange(), _customerQuery) : { agents: [] };
-      render(root, status, summaryData);
+      const range = currentRange();
+      const [summaryData, prevSummaryData] = status.configured
+        ? await Promise.all([loadSummary(range, _customerQuery), loadPrevSummarySafe(range, _customerQuery)])
+        : [{ agents: [] }, null];
+      render(root, status, summaryData, prevSummaryData);
       if (status.configured && status.syncRunning) {
         _wasSyncRunning = true;
         if (!_pollHandle) _pollHandle = setInterval(() => pollStatusOnce(root), 2500);

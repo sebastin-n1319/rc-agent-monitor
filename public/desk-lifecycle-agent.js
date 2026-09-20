@@ -1,5 +1,7 @@
 /**
  * My Ticket Stats — Session 20
+ * (+ Session 27: hover tooltips on every stat, delta-vs-prior-period
+ * chips, a Status filter + sortable columns on the Recent tickets table.)
  *
  * Self-service view of the Ticket Lifecycle report, scoped to the logged-in
  * agent's own session email (no admin access needed). Pulls the same
@@ -19,6 +21,17 @@
  * panels, stat cards, table, pills, buttons, skeleton and motion as
  * Home/Live, and the real adit.com brand orange instead of the old one.
  * Requires `.av2` on the `#agent-section-mystats` shell (see index.html).
+ *
+ * Session 27: every "My numbers" stat card now carries a data-tip
+ * explaining exactly what it counts (same wording/definitions as the
+ * admin page's tooltips, so the two never disagree) -- FCR/CSAT show
+ * this agent's live numerator/denominator, not just the formula. Cards
+ * also show a small delta chip vs. the same-length prior period where
+ * that comparison makes sense (skipped for the two live/non-windowed
+ * numbers: Handling now and Avg handle time isn't skipped -- it IS
+ * windowed by closed date, so it does get a delta). The Recent tickets
+ * table gained a Status filter and click-to-sort Created/Closed columns,
+ * both client-side against the already-loaded up-to-200 rows.
  *
  * Entry point: window.openDeskLifecycleAgent(), rendering into
  * #desk-lifecycle-agent-root.
@@ -47,6 +60,13 @@
   // admin page's per-agent summary.
   let _customerQuery = '';
   let _searchDebounce = null;
+
+  // Session 27: Recent-tickets table state -- client-side only, against
+  // whatever's already been fetched (up to 200 rows), so these never
+  // trigger a network round-trip.
+  let _ticketStatusFilter = 'all';
+  let _ticketSortKey = 'created'; // 'created' | 'closed'
+  let _ticketSortDir = 'desc';    // 'asc' | 'desc'
 
   function pad2(n) { return String(n).padStart(2, '0'); }
   function chicagoOffsetMinutesAt(utcMs) {
@@ -129,6 +149,15 @@
   function findPreset(key) { const all = buildPresets(); return all.find(p => p.key === key) || all[1]; }
   function currentRange() { return findPreset(_selectedPreset).compute(); }
 
+  // Session 27: same-length period immediately before `range`, mirroring
+  // desk-lifecycle-admin.js's previousRange() -- used only for the "My
+  // numbers" delta chips.
+  function previousRange(range) {
+    const spanMs = new Date(range.to).getTime() - new Date(range.from).getTime();
+    if (!(spanMs > 0)) return null;
+    return { from: new Date(new Date(range.from).getTime() - spanMs).toISOString(), to: range.from };
+  }
+
   function fmtDateTime(iso) {
     if (!iso) return '—';
     try {
@@ -170,6 +199,12 @@
     return j;
   }
 
+  // Session 27: best-effort -- a failed/slow previous-period fetch should
+  // never block or error out the main view, it just means no delta chips.
+  async function loadMySummarySafe(range) {
+    try { return await loadMySummary(range); } catch (e) { return null; }
+  }
+
   async function loadMyTickets(range) {
     const { from, to } = range;
     const params = new URLSearchParams({ from, to });
@@ -202,17 +237,66 @@
   function statIcon(name) {
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[name] || ICON.ticket}</svg>`;
   }
-  function stat(icon, tone, value, label) {
+
+  // ── Session 27: tooltip copy — same definitions/wording as
+  // desk-lifecycle-admin.js's metricTip() so the two pages never
+  // disagree about what a number means. FCR/CSAT are built from this
+  // agent's live numerator/denominator.
+  function fmtPct(pct) { return (pct == null) ? '—' : `${pct}%`; }
+  function metricTip(key, s) {
+    switch (key) {
+      case 'unique':
+        return 'Unique tickets\n\nEvery ticket you appear in anywhere in its ownership history — even one hand-off counts, once. Counted by when the ticket was CREATED.';
+      case 'solely':
+        return 'Solely handled\n\nOf your Unique tickets: the ones you owned start to finish with no one else ever touching it, and the ticket is now Closed.';
+      case 'reassigned':
+        return 'Reassigned\n\nTickets that arrived already in progress — someone else owned it immediately before you picked it up.';
+      case 'closed':
+        return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range — credited to whoever is the CURRENT owner, even if it passed through other hands first.';
+      case 'handling':
+        return 'Handling now\n\nTickets you currently own that are still open. A live count — not limited to the selected date range.';
+      case 'avg_handle':
+        return 'Avg handle time\n\nAverage time from ticket creation to closing, across your Closed tickets in range. Wall-clock hours (calendar time), not business hours — see FCR for the business-hours definition.';
+      case 'fcr': {
+        const total = s.fcr_total || 0, yes = s.fcr_yes || 0;
+        if (!total) return 'First Contact Resolution (FCR)\n\nNo Closed tickets in this range yet.';
+        return `First Contact Resolution (FCR)\n\n${yes} of ${total} closed tickets resolved within 24 business hours (Mon–Fri, 7am–7pm CST) with zero reopens.\n\n${yes} / ${total} = ${fmtPct(s.fcr_pct)}\n\nCredited to whoever currently owns the ticket, even after a transfer.`;
+      }
+      case 'csat': {
+        const total = s.csat_total || 0, good = s.csat_good || 0;
+        if (!total) return 'Customer Satisfaction (CSAT)\n\nNo survey responses in this range yet.';
+        return `Customer Satisfaction (CSAT)\n\n${good} of ${total} survey responses were rated "Good".\n\n${good} / ${total} = ${fmtPct(s.csat_pct)}\n\nRatings: Good / Okay / Bad. Counted by when the survey was submitted, not when the ticket closed.`;
+      }
+      default: return '';
+    }
+  }
+
+  function deltaChip(curr, prev, opts) {
+    opts = opts || {};
+    if (prev == null || curr == null) return '';
+    const diff = curr - prev;
+    if (Math.abs(diff) < (opts.epsilon || 0.05)) return `<span class="av2-tkt-delta av2-tkt-delta-flat">flat</span>`;
+    const up = diff > 0;
+    const good = opts.higherIsBetter == null ? null : (up === opts.higherIsBetter);
+    const cls = good == null ? '' : (good ? ' av2-tkt-delta-good' : ' av2-tkt-delta-bad');
+    const sign = up ? '▲' : '▼';
+    const magnitude = opts.pct ? `${Math.abs(Math.round(diff * 10) / 10)}pt` : Math.abs(Math.round(diff * 10) / 10);
+    return `<span class="av2-tkt-delta${cls}">${sign} ${magnitude}</span>`;
+  }
+
+  function stat(icon, tone, value, label, tipKey, s, prevS, deltaOpts) {
+    const tip = tipKey ? metricTip(tipKey, s || {}) : '';
+    const delta = (deltaOpts && prevS) ? deltaChip(deltaOpts.curr, deltaOpts.prev, deltaOpts) : '';
     return `
-      <article class="av2-stat"${tone ? ` data-tone="${tone}"` : ''}>
+      <article class="av2-stat"${tone ? ` data-tone="${tone}"` : ''}${tip ? ` data-tip="${esc(tip)}"` : ''}>
         <div class="av2-stat-ico" aria-hidden="true">${statIcon(icon)}</div>
         <div class="av2-stat-label">${esc(label)}</div>
-        <div class="av2-stat-value">${value}</div>
+        <div class="av2-stat-value">${value}${delta ? ` ${delta}` : ''}</div>
       </article>`;
   }
-  function panel(title, sub, body) {
+  function panel(title, sub, body, sectionId) {
     return `
-      <section class="av2-section">
+      <section class="av2-section"${sectionId ? ` id="${sectionId}"` : ''}>
         <div class="av2-panel">
           <div class="av2-section-head" style="margin-bottom:${sub ? '4px' : '14px'};">
             <div>
@@ -247,23 +331,23 @@
     ));
   }
 
-  function statsSection(s) {
+  function statsSection(s, prevS) {
     if (!s) return noDataPanel();
     const fcr = s.fcr_pct != null ? `${s.fcr_pct}%` : (s.fcr_total ? '0%' : '—');
     const csat = s.csat_pct != null ? `${s.csat_pct}%` : (s.csat_total ? '0%' : '—');
     const avgHandle = s.avg_handle_hours != null ? `${s.avg_handle_hours}h` : '—';
     const body = `
       <div class="av2-stat-grid">
-        ${stat('ticket', null,   s.unique_tickets || 0, 'Unique tickets')}
-        ${stat('check',  'green', s.solely_handled || 0, 'Solely handled')}
-        ${stat('alert',  'red',   s.reassigned || 0, 'Reassigned')}
-        ${stat('check',  'teal',  s.closed_count || 0, 'Closed')}
-        ${stat('pulse',  'blue',  s.currently_handling || 0, 'Handling now')}
-        ${stat('clock',  'purple', avgHandle, 'Avg handle time')}
-        ${stat('target', 'teal',  fcr, `FCR${s.fcr_total ? ` (${s.fcr_total})` : ''}`)}
-        ${stat('star',   'purple', csat, `CSAT${s.csat_total ? ` (${s.csat_total})` : ''}`)}
+        ${stat('ticket', null,   s.unique_tickets || 0, 'Unique tickets', 'unique', s, prevS, { curr: s.unique_tickets || 0, prev: prevS ? (prevS.unique_tickets || 0) : null, higherIsBetter: null })}
+        ${stat('check',  'green', s.solely_handled || 0, 'Solely handled', 'solely', s, prevS, { curr: s.solely_handled || 0, prev: prevS ? (prevS.solely_handled || 0) : null, higherIsBetter: true })}
+        ${stat('alert',  'red',   s.reassigned || 0, 'Reassigned', 'reassigned', s, prevS, { curr: s.reassigned || 0, prev: prevS ? (prevS.reassigned || 0) : null, higherIsBetter: false })}
+        ${stat('check',  'teal',  s.closed_count || 0, 'Closed', 'closed', s, prevS, { curr: s.closed_count || 0, prev: prevS ? (prevS.closed_count || 0) : null, higherIsBetter: null })}
+        ${stat('pulse',  'blue',  s.currently_handling || 0, 'Handling now', 'handling', s, null, null)}
+        ${stat('clock',  'purple', avgHandle, 'Avg handle time', 'avg_handle', s, prevS, (prevS && prevS.avg_handle_hours != null && s.avg_handle_hours != null) ? { curr: s.avg_handle_hours, prev: prevS.avg_handle_hours, higherIsBetter: false } : null)}
+        ${stat('target', 'teal',  fcr, `FCR${s.fcr_total ? ` (${s.fcr_total})` : ''}`, 'fcr', s, prevS, (prevS && prevS.fcr_pct != null && s.fcr_pct != null) ? { curr: s.fcr_pct, prev: prevS.fcr_pct, higherIsBetter: true, pct: true } : null)}
+        ${stat('star',   'purple', csat, `CSAT${s.csat_total ? ` (${s.csat_total})` : ''}`, 'csat', s, prevS, (prevS && prevS.csat_pct != null && s.csat_pct != null) ? { curr: s.csat_pct, prev: prevS.csat_pct, higherIsBetter: true, pct: true } : null)}
       </div>`;
-    return panel('My numbers', 'Unique/solely-handled/reassigned and the breakdowns below count tickets created in this range; Closed/Avg handle/FCR count tickets closed in this range; Handling now is live.', body);
+    return panel('My numbers', 'Unique/solely-handled/reassigned and the breakdowns below count tickets created in this range; Closed/Avg handle/FCR count tickets closed in this range; Handling now is live. Hover any card for what it means, and — where a comparable prior period exists — how it changed.', body);
   }
 
   function breakdownSection(s) {
@@ -331,10 +415,56 @@
     return `<span class="av2-pill" data-state="${state}"><span class="av2-pill-dot"></span>${esc(status || '—')}</span>`;
   }
 
-  function ticketsTable(tickets) {
-    if (!tickets.length) {
+  // Session 27: distinct status_type values present in this ticket set,
+  // for the Status filter dropdown -- built from the data itself rather
+  // than a hardcoded list, so it never drifts from what Zoho actually
+  // returns.
+  function distinctStatuses(tickets) {
+    const set = new Set();
+    tickets.forEach(t => { const v = (t.status_type || t.status || '').trim(); if (v) set.add(v); });
+    return Array.from(set).sort();
+  }
+
+  function sortIndicator(key) {
+    if (_ticketSortKey !== key) return '';
+    return _ticketSortDir === 'asc' ? ' ▲' : ' ▼';
+  }
+
+  function ticketsTable(allTickets) {
+    if (!allTickets.length) {
       return emptyState('No tickets found', 'Nothing in this range yet.');
     }
+    const statuses = distinctStatuses(allTickets);
+    let tickets = _ticketStatusFilter === 'all'
+      ? allTickets
+      : allTickets.filter(t => (t.status_type || t.status || '') === _ticketStatusFilter);
+
+    tickets = [...tickets].sort((a, b) => {
+      const field = _ticketSortKey === 'closed' ? 'closed_time' : 'created_time';
+      const av = a[field] ? new Date(a[field]).getTime() : (_ticketSortDir === 'asc' ? Infinity : -Infinity);
+      const bv = b[field] ? new Date(b[field]).getTime() : (_ticketSortDir === 'asc' ? Infinity : -Infinity);
+      return _ticketSortDir === 'asc' ? av - bv : bv - av;
+    });
+
+    const filterBar = statuses.length > 1 ? `
+      <div class="mystats-ticket-toolbar">
+        <label class="av2-section-meta" style="display:flex;align-items:center;gap:6px;">
+          Status
+          <select class="mystats-status-filter">
+            <option value="all" ${_ticketStatusFilter === 'all' ? 'selected' : ''}>All (${allTickets.length})</option>
+            ${statuses.map(s => {
+              const n = allTickets.filter(t => (t.status_type || t.status || '') === s).length;
+              return `<option value="${esc(s)}" ${s === _ticketStatusFilter ? 'selected' : ''}>${esc(s)} (${n})</option>`;
+            }).join('')}
+          </select>
+        </label>
+        <span class="av2-section-meta">${tickets.length} of ${allTickets.length} shown</span>
+      </div>` : '';
+
+    if (!tickets.length) {
+      return filterBar + emptyState('No tickets match this filter', 'Try a different status.');
+    }
+
     const rows = tickets.map(t => `
       <tr>
         <td>${t.web_url ? `<a href="${esc(t.web_url)}" target="_blank" rel="noopener" style="color:var(--av2-orange);font-weight:600;text-decoration:none;">#${esc(t.ticket_number)}</a>` : `#${esc(t.ticket_number)}`}</td>
@@ -347,19 +477,21 @@
         <td>${fmtDate(t.created_time)}</td>
         <td>${fmtDate(t.closed_time)}</td>
       </tr>`).join('');
-    return `
+    return filterBar + `
       <div style="overflow-x:auto;">
         <table class="av2-table">
           <thead><tr>
             <th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Category</th>
-            <th>Reassigned</th><th>FCR</th><th>Created</th><th>Closed</th>
+            <th>Reassigned</th><th>FCR</th>
+            <th class="mystats-sortable" data-sort-key="created" style="cursor:pointer;">Created${sortIndicator('created')}</th>
+            <th class="mystats-sortable" data-sort-key="closed" style="cursor:pointer;">Closed${sortIndicator('closed')}</th>
           </tr></thead>
           <tbody id="mystats-ticket-rows">${rows}</tbody>
         </table>
       </div>`;
   }
 
-  function render(root, summaryJson, ticketsJson) {
+  function render(root, summaryJson, ticketsJson, prevSummaryJson) {
     root.innerHTML = `
       <div class="av2-container">
         <div class="av2-section-head" style="margin-bottom:6px;">
@@ -391,12 +523,12 @@
         </div>
         <div class="av2-section-meta" style="margin-bottom:var(--av2-s5);">Range: ${fmtDateTime(summaryJson.from)} → ${fmtDateTime(summaryJson.to)}</div>
 
-        ${statsSection(summaryJson.summary)}
+        ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${callStatsSection(summaryJson.callStats)}
         ${chatStatsSection(summaryJson.chatStats, summaryJson.chatPresence)}
         ${breakdownSection(summaryJson.summary)}
 
-        ${panel('Recent tickets', 'Most recently created first, up to 200.', ticketsTable(ticketsJson.tickets || []))}
+        ${panel('Recent tickets', 'Most recently created first by default, up to 200 — click Created or Closed to re-sort, or narrow by Status.', ticketsTable(ticketsJson.tickets || []), 'mystats-tickets-section')}
       </div>`;
 
     const searchInput = root.querySelector('.mystats-search-input');
@@ -425,17 +557,119 @@
       window.openDeskLifecycleAgent();
     });
 
+    // Session 27: Status filter + click-to-sort Created/Closed, both
+    // re-rendering just the tickets table against the already-loaded
+    // data (no network round-trip).
+    const statusSel = root.querySelector('.mystats-status-filter');
+    if (statusSel) statusSel.addEventListener('change', () => {
+      _ticketStatusFilter = statusSel.value;
+      rerenderTicketsTable(root, ticketsJson);
+    });
+    root.querySelectorAll('.mystats-sortable').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (_ticketSortKey === key) _ticketSortDir = _ticketSortDir === 'asc' ? 'desc' : 'asc';
+        else { _ticketSortKey = key; _ticketSortDir = 'desc'; }
+        rerenderTicketsTable(root, ticketsJson);
+      });
+    });
+
+    wireTooltips(root);
+
     // Stagger the ticket rows in, matching the dashboard's row entrance
     // (see agent-view-v2.js) — same Motion One instance, already loaded.
+    animateTicketRows(root);
+  }
+
+  function rerenderTicketsTable(root, ticketsJson) {
+    const ticketsPanel = root.querySelector('#mystats-tickets-section .av2-panel');
+    if (!ticketsPanel) return;
+    // Body is everything after the section-head inside this panel.
+    const head = ticketsPanel.querySelector('.av2-section-head');
+    const body = ticketsTable(ticketsJson.tickets || []);
+    // Remove existing content after head, then insert fresh.
+    while (head && head.nextSibling) ticketsPanel.removeChild(head.nextSibling);
+    ticketsPanel.insertAdjacentHTML('beforeend', body);
+    const statusSel = root.querySelector('.mystats-status-filter');
+    if (statusSel) statusSel.addEventListener('change', () => {
+      _ticketStatusFilter = statusSel.value;
+      rerenderTicketsTable(root, ticketsJson);
+    });
+    root.querySelectorAll('.mystats-sortable').forEach((th) => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sortKey;
+        if (_ticketSortKey === key) _ticketSortDir = _ticketSortDir === 'asc' ? 'desc' : 'asc';
+        else { _ticketSortKey = key; _ticketSortDir = 'desc'; }
+        rerenderTicketsTable(root, ticketsJson);
+      });
+    });
+    animateTicketRows(root);
+  }
+
+  function animateTicketRows(root) {
     const ML = window.Motion || window.motion || {};
     const animate = ML.animate || null;
-    if (animate) {
-      const rows = root.querySelectorAll('#mystats-ticket-rows tr');
-      rows.forEach((tr, i) => {
-        const d = Math.min(i, 24);
-        animate(tr, { opacity: [0, 1], y: [8, 0] }, { duration: 0.28, delay: d * 0.02, easing: [0.22, 1, 0.36, 1] });
-      });
-    }
+    if (!animate) return;
+    const rows = root.querySelectorAll('#mystats-ticket-rows tr');
+    rows.forEach((tr, i) => {
+      const d = Math.min(i, 24);
+      animate(tr, { opacity: [0, 1], y: [8, 0] }, { duration: 0.28, delay: d * 0.02, easing: [0.22, 1, 0.36, 1] });
+    });
+  }
+
+  // ── Session 27: hover/focus tooltip system (mirrors desk-lifecycle-
+  // admin.js's -- see the comment there for why this is JS-positioned
+  // rather than pure CSS). Uses its own element/class so it never
+  // collides with the admin page's tooltip if both scripts are ever
+  // loaded together (they are, per index.html, though only one root is
+  // visible at a time).
+  let _tipEl = null;
+  function ensureTipEl() {
+    if (_tipEl && document.body.contains(_tipEl)) return _tipEl;
+    _tipEl = document.createElement('div');
+    _tipEl.className = 'av2-tkt-tooltip';
+    _tipEl.setAttribute('role', 'tooltip');
+    document.body.appendChild(_tipEl);
+    return _tipEl;
+  }
+  function showTip(anchor) {
+    const text = anchor.getAttribute('data-tip');
+    if (!text) return;
+    const tip = ensureTipEl();
+    tip.textContent = text;
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    tip.classList.add('av2-tkt-tooltip-visible');
+    const ar = anchor.getBoundingClientRect();
+    const tr = tip.getBoundingClientRect();
+    let top = ar.top - tr.height - 10;
+    let flipped = false;
+    if (top < 8) { top = ar.bottom + 10; flipped = true; }
+    let left = ar.left + ar.width / 2 - tr.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top = `${Math.round(top)}px`;
+    tip.classList.toggle('av2-tkt-tooltip-below', flipped);
+  }
+  function hideTip() {
+    if (_tipEl) _tipEl.classList.remove('av2-tkt-tooltip-visible');
+  }
+  function wireTooltips(root) {
+    (root || document).querySelectorAll('[data-tip]').forEach((el) => {
+      if (el.__tktTipWired) return;
+      el.__tktTipWired = true;
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+      el.addEventListener('mouseenter', () => showTip(el));
+      el.addEventListener('mouseleave', hideTip);
+      el.addEventListener('focus', () => showTip(el));
+      el.addEventListener('blur', hideTip);
+      el.addEventListener('touchstart', () => showTip(el), { passive: true });
+    });
+  }
+  if (!window.__av2TktTooltipScrollWired) {
+    window.__av2TktTooltipScrollWired = true;
+    window.addEventListener('scroll', hideTip, { passive: true, capture: true });
+    window.addEventListener('resize', hideTip, { passive: true });
   }
 
   function skeletonHTML() {
@@ -457,11 +691,13 @@
     root.innerHTML = skeletonHTML();
     try {
       const range = currentRange();
-      const [summaryJson, ticketsJson] = await Promise.all([
+      const prevRange = previousRange(range);
+      const [summaryJson, ticketsJson, prevSummaryJson] = await Promise.all([
         loadMySummary(range),
         loadMyTickets(range),
+        prevRange ? loadMySummarySafe(prevRange) : Promise.resolve(null),
       ]);
-      render(root, summaryJson, ticketsJson);
+      render(root, summaryJson, ticketsJson, prevSummaryJson);
       if (hadFocus) {
         const newSearch = root.querySelector('.mystats-search-input');
         if (newSearch) {

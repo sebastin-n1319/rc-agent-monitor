@@ -67,3 +67,65 @@
   .av2 #desk-lifecycle-agent-root select.mystats-preset-select { flex: 1 1 auto; }
   .av2 #desk-lifecycle-agent-root input.mystats-search-input { flex: 1 1 100%; min-width: 0; }
 }
+
+/* ───────────────────────────────────────────────────────────────────────
+   Session 27 additions — hover tooltips on every "My numbers" card,
+   delta-vs-prior-period chips, and the Recent-tickets Status filter /
+   sortable-column toolbar.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* Cards with a tooltip get a help cursor and a faint hover lift so the
+   affordance reads as interactive, matching the admin page's pills. */
+.av2 #desk-lifecycle-agent-root .av2-stat[data-tip] { cursor: help; transition: transform .12s ease, box-shadow .12s ease; }
+.av2 #desk-lifecycle-agent-root .av2-stat[data-tip]:hover,
+.av2 #desk-lifecycle-agent-root .av2-stat[data-tip]:focus-visible { transform: translateY(-1px); box-shadow: var(--av2-e2); }
+.av2 #desk-lifecycle-agent-root .av2-stat-label { border-bottom: 1px dotted transparent; }
+.av2 #desk-lifecycle-agent-root .av2-stat[data-tip] .av2-stat-label { border-bottom-color: var(--av2-t4); display: inline-block; }
+
+.av2-tkt-delta { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: var(--av2-surface-3); color: var(--av2-t2); vertical-align: middle; }
+.av2-tkt-delta-good { background: rgba(45, 220, 150, .16); color: #0E7A54; }
+.av2-tkt-delta-bad { background: rgba(237, 102, 107, .16); color: #A3282D; }
+.av2-tkt-delta-flat { background: var(--av2-surface-3); color: var(--av2-t3); }
+
+/* ── Recent tickets: Status filter + sortable Created/Closed ── */
+.av2 #desk-lifecycle-agent-root .mystats-ticket-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--av2-s3);
+  flex-wrap: wrap; margin-bottom: var(--av2-s3);
+}
+.av2 #desk-lifecycle-agent-root select.mystats-status-filter {
+  border: 1px solid var(--av2-border); border-radius: var(--av2-r-sm);
+  padding: 5px 9px; font-size: var(--av2-t-xs); font-family: inherit;
+  color: var(--av2-t1); background: var(--av2-surface); cursor: pointer;
+}
+.av2 #desk-lifecycle-agent-root select.mystats-status-filter:focus { outline: none; border-color: var(--av2-orange); }
+.av2 #desk-lifecycle-agent-root th.mystats-sortable { user-select: none; white-space: nowrap; }
+.av2 #desk-lifecycle-agent-root th.mystats-sortable:hover { color: var(--av2-orange); }
+
+/* ── Hover/focus tooltip (JS-positioned, appended to <body>) — mirrors
+   desk-lifecycle-admin.css's .tkt-tooltip. Deliberately NOT scoped under
+   #desk-lifecycle-agent-root since it's appended directly to <body>. */
+.av2-tkt-tooltip {
+  position: fixed;
+  left: 0; top: 0;
+  max-width: 260px;
+  background: var(--av2-t1, #072B40);
+  color: #fff;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.55;
+  white-space: pre-line;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: var(--av2-r-sm, 9px);
+  box-shadow: var(--av2-e4, 0 12px 28px rgba(7,43,64,.32));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity .14s ease, transform .14s ease;
+  z-index: 2147483000;
+}
+.av2-tkt-tooltip.av2-tkt-tooltip-below { transform: translateY(-4px); }
+.av2-tkt-tooltip.av2-tkt-tooltip-visible { opacity: 1; visibility: visible; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) { .av2-tkt-tooltip { transition: none; } }
