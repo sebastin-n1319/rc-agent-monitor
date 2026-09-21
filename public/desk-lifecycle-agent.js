@@ -668,22 +668,34 @@
     // -- opens scoped to this agent's own session email and whatever
     // Period is currently selected here, so the numbers being questioned
     // and the ones shown in the drill-down describe the same window.
-    // rcSession is the same localStorage cache index.html already keeps
-    // in sync with the server session (see savePersistedSession()) --
-    // reused here instead of an extra /api/session round-trip.
     // Session 35: renders in place of this same #desk-lifecycle-agent-root
     // (a real sub-page, not a popup) -- Back re-renders My Stats.
+    // Bug fix (reported "same in both views" / always "Not a monitored T1
+    // agent"): this used to read localStorage.rcSession, the PERMANENTLY
+    // persisted real login identity that Test Agent / impersonation mode
+    // deliberately never touches (so exitTestMode() can restore it). That
+    // meant "Verify my tickets" always queried the real logged-in account
+    // instead of whoever is currently being viewed. currentEmail (set in
+    // startApp() from sessionStorage.rcEmail) is the live identity that
+    // DOES reflect Test Agent mode -- use that instead, with the old
+    // rcSession lookup only as a fallback for the (non-test-mode) case
+    // where currentEmail hasn't been set yet.
     const verifyBtn = root.querySelector('.mystats-verify-btn');
     if (verifyBtn) verifyBtn.addEventListener('click', () => {
       if (typeof window.openDeskLifecycleVerify !== 'function') return;
-      let session = null;
-      try { session = JSON.parse(localStorage.getItem('rcSession') || 'null'); } catch (e) { /* ignore */ }
-      if (!session || !session.email) {
+      let email = (typeof currentEmail !== 'undefined' && currentEmail) ? currentEmail : null;
+      let name = (typeof currentUser !== 'undefined' && currentUser) ? currentUser : null;
+      if (!email) {
+        let session = null;
+        try { session = JSON.parse(localStorage.getItem('rcSession') || 'null'); } catch (e) { /* ignore */ }
+        if (session && session.email) { email = session.email; name = name || session.name; }
+      }
+      if (!email) {
         if (typeof showToast === 'function') showToast('Could not identify your session — try reloading the page', 'error', 3000);
         return;
       }
       window.openDeskLifecycleVerify({
-        agentEmail: session.email, agentName: session.name || session.email,
+        agentEmail: email, agentName: name || email,
         isAdmin: false, metric: 'unique', presetKey: _selectedPreset,
         customFrom: _customFrom, customTo: _customTo,
         root, backLabel: '← Back to My Stats',
