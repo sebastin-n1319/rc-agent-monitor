@@ -6641,55 +6641,6 @@ html.dark-mode #mainApp {
 }
 @keyframes v5TipIn { from { opacity:0; transform:translateY(-50%) translateX(-4px); } to { opacity:1; transform:translateY(-50%) translateX(0); } }
 
-/* Sidebar drag-reorder toggle — matches .sb-item sizing/tokens so it reads
-   as an intentional utility control instead of a stray unstyled button. */
-.sb-sort-btn {
-  width: 56px !important;
-  height: 34px !important;
-  margin: 8px 6px 4px !important;
-  border: 1px solid var(--v5-b0) !important;
-  border-radius: 10px !important;
-  background: transparent !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  color: var(--v5-t3) !important;
-  transition: color .15s, background .15s, border-color .15s !important;
-  padding: 0 !important;
-  -webkit-appearance: none !important;
-  appearance: none !important;
-}
-.sb-sort-btn svg {
-  width: 16px !important;
-  height: 16px !important;
-  stroke-width: 1.8 !important;
-}
-.sb-sort-btn:hover {
-  color: var(--v5-t1) !important;
-  background: var(--v5-ac1) !important;
-  border-color: var(--v5-ac2) !important;
-}
-.sb-sort-btn:focus-visible {
-  outline: 2px solid var(--v5-ac) !important;
-  outline-offset: 2px !important;
-}
-.sb-sort-btn.active {
-  color: var(--v5-ac) !important;
-  background: var(--v5-ac1) !important;
-  border-color: var(--v5-ac2) !important;
-  box-shadow: 0 0 0 1px var(--v5-ac2) inset !important;
-}
-.adit-sidebar.sort-mode .sb-item {
-  cursor: grab !important;
-}
-.adit-sidebar.sort-mode .sb-item.sb-dragging {
-  opacity: .45 !important;
-}
-.adit-sidebar.sort-mode .sb-item.sb-drag-over {
-  border: 1px dashed var(--v5-ac) !important;
-}
-
 /* Dark mode sidebar */
 html.dark-mode .adit-sidebar {
   background: rgba(9,31,48,.92) !important;
@@ -6698,9 +6649,6 @@ html.dark-mode .adit-sidebar {
 html.dark-mode .sb-item { color: rgba(178,219,240,.4) !important; }
 html.dark-mode .sb-item:hover { color: #fff !important; background: rgba(245,129,31,.1) !important; }
 html.dark-mode .sb-item.active { color: #F5811F !important; background: rgba(245,129,31,.1) !important; border-color: rgba(245,129,31,.2) !important; }
-html.dark-mode .sb-sort-btn { color: rgba(178,219,240,.4) !important; border-color: rgba(255,255,255,.06) !important; }
-html.dark-mode .sb-sort-btn:hover,
-html.dark-mode .sb-sort-btn.active { color: #F5811F !important; background: rgba(245,129,31,.1) !important; border-color: rgba(245,129,31,.2) !important; }
 
 /* ════════════════════════════════════════════════════════════════
    ADMIN SUB-TABS (.sb-subtabs / .sb-subtab-btn) — merged sidebar pages
