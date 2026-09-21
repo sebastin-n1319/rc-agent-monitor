@@ -122,8 +122,12 @@ html.app-authenticated #adminView,html.app-authenticated #agentView{pointer-even
 #agentView{display:none;}
 /* Toast: only visible when .show class present — prevents stuck dark block at bottom-right */
 #toast:not(.show){display:none!important;}
-/* Guarantee admin sidebar visible — JS applyView() overrides per role */
-html.app-authenticated #adit-admin-sidebar{display:flex!important;}
+/* Guarantee admin sidebar visible for admins before applyView() runs — gated
+   on the role-admin class (set synchronously below from the cached session)
+   so agents don't see the admin sidebar flash on refresh while the rest of
+   the app is still loading (window 'load' can take a few seconds on this
+   page, and that's when applyView() actually corrects it per-role). */
+html.app-authenticated.role-admin #adit-admin-sidebar{display:flex!important;}
 /* Status bar permanently hidden — was causing black block & click-blocking issues */
 #status-bar{display:none!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
@@ -140,6 +144,10 @@ html.app-authenticated #adit-admin-sidebar{display:flex!important;}
     var s=JSON.parse(localStorage.getItem('rcSession')||'null');
     if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
       document.documentElement.classList.add('app-authenticated');
+      // Role class from the cached session, set synchronously (before first
+      // paint) so role-gated CSS like the admin-sidebar guarantee below
+      // never has to guess -- see the auth-gate-css comment above it.
+      document.documentElement.classList.add(s.role==='admin' ? 'role-admin' : 'role-agent');
     } else {
       // Not authenticated — remove the anti-flash overlay so login screen shows
       document.documentElement.classList.add('login-ready');
@@ -9863,8 +9871,12 @@ html.app-authenticated #adminView,html.app-authenticated #agentView{pointer-even
 #agentView{display:none;}
 /* Toast: only visible when .show class present — prevents stuck dark block at bottom-right */
 #toast:not(.show){display:none!important;}
-/* Guarantee admin sidebar visible — JS applyView() overrides per role */
-html.app-authenticated #adit-admin-sidebar{display:flex!important;}
+/* Guarantee admin sidebar visible for admins before applyView() runs — gated
+   on the role-admin class (set synchronously below from the cached session)
+   so agents don't see the admin sidebar flash on refresh while the rest of
+   the app is still loading (window 'load' can take a few seconds on this
+   page, and that's when applyView() actually corrects it per-role). */
+html.app-authenticated.role-admin #adit-admin-sidebar{display:flex!important;}
 /* Status bar permanently hidden — was causing black block & click-blocking issues */
 #status-bar{display:none!important;}
 /* Avatar starts hidden; setAvatar() shows it via inline !important after successful load */
@@ -9881,6 +9893,7 @@ html.app-authenticated #adit-admin-sidebar{display:flex!important;}
     var s=JSON.parse(localStorage.getItem('rcSession')||'null');
     if(s&&s.email&&s.name&&s.role&&(Date.now()-(s.savedAt||0))<86400000){
       document.documentElement.classList.add('app-authenticated');
+      document.documentElement.classList.add(s.role==='admin' ? 'role-admin' : 'role-agent');
 
     }
   }catch(e){}
@@ -23158,6 +23171,12 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     if(role !== 'admin' && stored !== 'agent') localStorage.setItem('rcActiveView','agent');
   }catch(e){}
   currentUser=username;currentEmail=sessionStorage.getItem('rcEmail')||null;currentRole=role;currentBreakbotEnabled=breakbotEnabled!==false;currentBreakbotPreviewMode=false;currentViewMode=role;
+  // Sync the role-gate class with the authoritative role passed in here —
+  // guards the rare case where a demoted/promoted user's cached
+  // localStorage.rcSession.role (used by the synchronous pre-paint script)
+  // is stale by the time the server-confirmed role arrives.
+  document.documentElement.classList.remove('role-admin','role-agent');
+  document.documentElement.classList.add(role==='admin' ? 'role-admin' : 'role-agent');
   hideSessionDebug();
   applyAditBranding();
 
@@ -26394,6 +26413,7 @@ function doLogout(){
   // 3. After 900ms show the login screen, fade out overlay
   setTimeout(function(){
     document.documentElement.classList.remove('app-authenticated');
+    document.documentElement.classList.remove('role-admin','role-agent');
     document.body.classList.remove('app-authenticated');
     const ls = document.getElementById('loginScreen');
     const ma = document.getElementById('mainApp');
