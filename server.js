@@ -3382,6 +3382,11 @@ async function startScheduler() {
     runCsatSync().catch(e => console.error('❌ CSAT sync cron:', e.message));
     salesiqLifecycle.runChatConversationSync().catch(e => console.error('❌ chat conversation sync cron:', e.message));
     runAditkbCallsSync().catch(e => console.error('❌ calls history sync cron:', e.message));
+    // Session 40: Sebastin only needed this daily, but it's windowed/
+    // idempotent and self-gated (_fcrSyncRunning), so riding this existing
+    // 20-min cron instead of adding a separate one finishes the ~2-year
+    // backfill in hours rather than weeks, for free.
+    runFcrAnalyticsSync().catch(e => console.error('❌ FCR Analytics sync cron:', e.message));
   });
   // Session 21: chat presence has no historical API (see salesiq-lifecycle.js
   // header) -- poll the live operator status every 45s and log changes,
@@ -6009,6 +6014,89 @@ async function runCsatSync() {
 app.post('/api/admin/desk-lifecycle/csat-sync-now', requireAdmin, async (req, res) => {
   runCsatSync().catch(e => console.error('❌ manual CSAT sync trigger:', e.message));
   res.json({ success: true, message: 'CSAT sync started', configured: analyticsService.isConfigured() });
+});
+
+// Session 40: pulls Zoho Analytics' own authoritative "Resolution Time in
+// Business Hours" + "Is First Call Resolution" per ticket (see
+// analytics-service.js's fetchTicketFcrRows() and desk-lifecycle.js's FCR
+// query for the full why). Same isolation principle as runCsatSync() right
+// above -- its own flag/try-catch, a bug here can't take down ticket sync.
+//
+// The Analytics export API has no offset/limit pagination and this table
+// has 300k+ rows (confirmed live -- an unfiltered pull crashed on response
+// size during testing), so this walks "Ticket Closed Time" backward in
+// small, bounded windows rather than asking for the whole table or even a
+// whole year at once -- same backfill-then-steady-state shape as
+// runAditkbCallsSync() above, just windowed by days instead of months
+// since a week of org-wide closed tickets is already a meaningful chunk.
+// Sebastin: "daily should be fine, this doesn't need to be real time" --
+// FCR_SYNC_WINDOWS_PER_TICK * FCR_SYNC_WINDOW_DAYS = 4 weeks covered per
+// daily tick, so the ~2-year floor backfills in well under a month.
+const FCR_SYNC_BACKFILL_FLOOR_DAYS = 730; // ~2 years, matching the AditKB calls backfill depth
+const FCR_SYNC_WINDOW_DAYS = 7;
+const FCR_SYNC_WINDOWS_PER_TICK = 4;
+const FCR_SYNC_STEADY_TRAILING_DAYS = 14; // steady-state: re-sync this trailing window each tick
+let _fcrSyncRunning = false;
+
+async function runFcrAnalyticsSync() {
+  if (_fcrSyncRunning) return;
+  if (!analyticsService.isConfigured()) return;
+  _fcrSyncRunning = true;
+  try {
+    const backfillDone = await deskLifecycle.getSyncState('fcr_backfill_complete');
+    const floorUtcMs = Date.now() - FCR_SYNC_BACKFILL_FLOOR_DAYS * 86400000;
+
+    if (backfillDone !== '1') {
+      const storedThrough = await deskLifecycle.getSyncState('fcr_backfill_through_utc');
+      let cursorMs = storedThrough ? new Date(storedThrough).getTime() : Date.now();
+      let windowsThisTick = 0, ticketsThisTick = 0;
+      while (windowsThisTick < FCR_SYNC_WINDOWS_PER_TICK && cursorMs > floorUtcMs) {
+        const windowToMs = cursorMs;
+        const windowFromMs = Math.max(floorUtcMs, cursorMs - FCR_SYNC_WINDOW_DAYS * 86400000);
+        const fromStr = analyticsService.utcIsoToChicagoWallTime(new Date(windowFromMs).toISOString());
+        const toStr = analyticsService.utcIsoToChicagoWallTime(new Date(windowToMs).toISOString());
+        const rows = await analyticsService.fetchTicketFcrRows(fromStr, toStr);
+        for (const r of rows) {
+          if (r.ticket_id) await deskLifecycle.upsertZohoFcrFields(r);
+        }
+        ticketsThisTick += rows.length;
+        cursorMs = windowFromMs;
+        windowsThisTick++;
+        await deskLifecycle.setSyncState('fcr_backfill_through_utc', new Date(cursorMs).toISOString());
+      }
+      const done = cursorMs <= floorUtcMs;
+      if (done) await deskLifecycle.setSyncState('fcr_backfill_complete', '1');
+      await deskLifecycle.setSyncState('fcr_last_sync_at', new Date().toISOString());
+      await deskLifecycle.setSyncState('fcr_last_error', null);
+      console.log(`🎯 FCR Analytics sync: ${windowsThisTick} window(s), ${ticketsThisTick} ticket(s) this tick${done ? ' (backfill complete)' : ''}`);
+      return;
+    }
+
+    // Steady state: FCR fields are observed to stay stable once a ticket
+    // closes (see fetchTicketFcrRows()'s comment on the reopen-timing
+    // example), so a short trailing window catches newly-closed tickets
+    // plus any late Analytics-side correction without re-walking 2 years
+    // of history again.
+    const fromStr = analyticsService.utcIsoToChicagoWallTime(new Date(Date.now() - FCR_SYNC_STEADY_TRAILING_DAYS * 86400000).toISOString());
+    const toStr = analyticsService.utcIsoToChicagoWallTime(new Date().toISOString());
+    const rows = await analyticsService.fetchTicketFcrRows(fromStr, toStr);
+    for (const r of rows) {
+      if (r.ticket_id) await deskLifecycle.upsertZohoFcrFields(r);
+    }
+    await deskLifecycle.setSyncState('fcr_last_sync_at', new Date().toISOString());
+    await deskLifecycle.setSyncState('fcr_last_error', null);
+    console.log(`🎯 FCR Analytics sync (steady state): ${rows.length} ticket(s) synced`);
+  } catch(e) {
+    console.error('❌ FCR Analytics sync error:', e.message);
+    await deskLifecycle.setSyncState('fcr_last_error', e.message).catch(()=>{});
+  } finally {
+    _fcrSyncRunning = false;
+  }
+}
+
+app.post('/api/admin/desk-lifecycle/fcr-sync-now', requireAdmin, async (req, res) => {
+  runFcrAnalyticsSync().catch(e => console.error('❌ manual FCR Analytics sync trigger:', e.message));
+  res.json({ success: true, message: 'FCR Analytics sync started', configured: analyticsService.isConfigured() });
 });
 
 // Session 20 diagnostic (temporary): confirms the real Zoho Desk Customer
