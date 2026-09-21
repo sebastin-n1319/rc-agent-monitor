@@ -6651,6 +6651,42 @@ html.dark-mode .sb-item:hover { color: #fff !important; background: rgba(245,129
 html.dark-mode .sb-item.active { color: #F5811F !important; background: rgba(245,129,31,.1) !important; border-color: rgba(245,129,31,.2) !important; }
 
 /* ════════════════════════════════════════════════════════════════
+   ADMIN SUB-TABS (.sb-subtabs / .sb-subtab-btn) — merged sidebar pages
+════════════════════════════════════════════════════════════════ */
+.sb-subtabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border, rgba(0,0,0,.08));
+  flex-wrap: wrap;
+}
+.sb-subtab-btn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text3, #8a94a6);
+  padding: 9px 14px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .15s, border-color .15s;
+}
+.sb-subtab-btn:hover {
+  color: var(--t1, #1a2331);
+}
+.sb-subtab-btn.active {
+  color: var(--t1, #1a2331);
+  border-bottom-color: var(--orange);
+}
+html.dark-mode .sb-subtabs { border-bottom-color: rgba(255,255,255,.08); }
+html.dark-mode .sb-subtab-btn { color: rgba(178,219,240,.5); }
+html.dark-mode .sb-subtab-btn:hover { color: #fff; }
+html.dark-mode .sb-subtab-btn.active { color: #F5811F; border-bottom-color: #F5811F; }
+
+/* ════════════════════════════════════════════════════════════════
    ADMIN NAV TABS (.nav / .nav-tab)
 ════════════════════════════════════════════════════════════════ */
 /* .nav is hidden by existing CSS (sidebar replaces it) — keep display:none, only style nav-tab */
