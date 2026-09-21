@@ -25,6 +25,7 @@
     'settings-admin.css',
     'desk-lifecycle-admin.css',
     'desk-lifecycle-agent.css',
+    'desk-lifecycle-verify.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
