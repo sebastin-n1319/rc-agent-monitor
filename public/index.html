@@ -30972,8 +30972,39 @@ setInterval(updateStaleBanner, 30000);
 // ──────────────────────────────────────────────────────────────────────────────
 
 async function refresh(){
+  // Session 39: this used to run unconditionally for every logged-in user on
+  // every tick, including agents parked on their own "My Stats" page, which
+  // has no use for any of the admin-dashboard data below (todaySummary,
+  // liveCallData, agent statuses, etc.) — it just burned 6+ admin-only API
+  // calls every 30s in the background. Worse, doing that pointless work
+  // still ran the scroll-preservation code further down, so an agent
+  // scrolling through My Stats got their scroll position silently snapped
+  // back to wherever it was ~30s ago, every ~30s, on every page (reported by
+  // Sebastin as "all the pages are auto scrolling, especially my stats page
+  // of the agents"). Skip the whole cycle outside admin view.
+  if (currentViewMode !== 'admin') return;
+
   // Preserve scroll position across DOM rebuilds
   const scrollY = window.scrollY || window.pageYOffset || 0;
+  // Session 39: if the user scrolls manually while the awaits below are in
+  // flight (their fetches can take a second or more), the old code below
+  // would unconditionally snap them back to `scrollY` once the cycle
+  // finished, discarding that manual scroll — the other half of the
+  // auto-scroll bug, independent of the view-mode guard above. Watch for
+  // actual user-input signals (wheel/touch/keyboard), not the generic
+  // 'scroll' event — our own DOM rebuilds below can reset scrollTop to 0
+  // and fire native scroll events too, and we still want to correct THOSE;
+  // we only want to back off when the person themselves scrolled.
+  let userScrolledDuringRefresh = false;
+  const markUserScroll = () => { userScrolledDuringRefresh = true; };
+  const SCROLL_INPUT_OPTS = { passive: true };
+  const onKeydownScroll = (e) => {
+    if (['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' '].includes(e.key)) markUserScroll();
+  };
+  window.addEventListener('wheel', markUserScroll, SCROLL_INPUT_OPTS);
+  window.addEventListener('touchmove', markUserScroll, SCROLL_INPUT_OPTS);
+  window.addEventListener('keydown', onKeydownScroll, SCROLL_INPUT_OPTS);
+
   const ri = document.getElementById('adit-refresh-indicator');
 
   // Show loading indicator — use try/finally so done() ALWAYS fires
@@ -30998,7 +31029,12 @@ async function refresh(){
     // Guaranteed to run even if any await throws
     if(window.AditLoader) AditLoader.done();
     if(ri) ri.classList.remove('visible');
-    requestAnimationFrame(()=>{ window.scrollTo({ top: scrollY, behavior: 'instant' }); });
+    window.removeEventListener('wheel', markUserScroll);
+    window.removeEventListener('touchmove', markUserScroll);
+    window.removeEventListener('keydown', onKeydownScroll);
+    if (!userScrolledDuringRefresh) {
+      requestAnimationFrame(()=>{ window.scrollTo({ top: scrollY, behavior: 'instant' }); });
+    }
   }
 }
 
@@ -31024,8 +31060,9 @@ document.addEventListener('keydown', function(e){
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable) return;
   if(e.metaKey||e.ctrlKey||e.altKey) return;
   const key = e.key.toLowerCase();
-  // R = refresh
-  if(key==='r' && !e.shiftKey){ e.preventDefault(); refresh(); showToast('Refreshing…','info'); return; }
+  // R = refresh (admin dashboard only — refresh() is now a no-op outside
+  // admin view, see its own comment; skip the misleading toast here too)
+  if(key==='r' && !e.shiftKey && currentViewMode==='admin'){ e.preventDefault(); refresh(); showToast('Refreshing…','info'); return; }
   // T = toggle timezone
   if(key==='t'){ e.preventDefault(); toggleTZ(); return; }
   // Escape = close any open modal/menu
