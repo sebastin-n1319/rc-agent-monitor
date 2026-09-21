@@ -57,6 +57,15 @@ const app = express();
 const SESSION_COOKIE = 'rcAuthSession';
 const SESSION_MAX_AGE_S = 12 * 60 * 60; // 12 hours in seconds
 
+// Session 38: how long raw call_logs rows survive before the nightly prune
+// deletes them (call_monthly_summary keeps the durable aggregate forever,
+// unaffected by this). Must stay >= the longest rolling-range preset the
+// UI offers (currently 90 days, see desk-lifecycle-agent.js /
+// desk-lifecycle-admin.js) or "My Stats" / Ticket Lifecycle's Call
+// Activity card silently undercounts for any range longer than this —
+// exactly the bug this constant fixes (was hardcoded to 7).
+const CALL_LOGS_RETENTION_DAYS = 100;
+
 // ── Google sign-in verification ──────────────────────────────────────────────
 // GOOGLE_CLIENT_ID must match the client_id the frontend passes to Google
 // Identity Services (see GOOGLE_CLIENT_ID const in public/index.html). Used to
@@ -1337,7 +1346,7 @@ app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
 });
 
 // GET /api/call-summary — agent call summary grouped by month (admin only)
-// Reads from the persistent call_monthly_summary table (survives the 7-day call_logs prune).
+// Reads from the persistent call_monthly_summary table (survives the call_logs prune -- see CALL_LOGS_RETENTION_DAYS).
 // Always refreshes the CURRENT month from live call_logs before returning.
 // Query params: month=YYYY-MM (optional), agent=name (optional)
 app.get('/api/call-summary', requireAdmin, async (req, res) => {
@@ -3305,7 +3314,11 @@ async function startScheduler() {
     fetchCallLogs().catch(e => console.error('❌ call log cron:', e.message));
     refreshMonthlySummary(new Date().toISOString().slice(0,7)).catch(e => console.error('❌ monthly summary sync:', e.message));
   });
-  // Aggregate monthly summaries then prune raw call logs older than 7 days (1am IST daily)
+  // Aggregate monthly summaries then prune raw call logs older than
+  // CALL_LOGS_RETENTION_DAYS (1am IST daily). Session 38: raised from 7
+  // days to 100 -- see pruneCallLogs()'s doc comment in database.js for
+  // why 7 days was actively wrong (it silently undercounted "My Stats" /
+  // Ticket Lifecycle Call Activity for any range longer than a week).
   cron.schedule('30 19 * * *', async () => {
     try {
       // Refresh all months present in call_logs before we delete anything
@@ -3317,7 +3330,7 @@ async function startScheduler() {
       for (const { m } of months) { await refreshMonthlySummary(m).catch(() => {}); }
       console.log(`📊 Refreshed monthly summaries for ${months.length} month(s)`);
     } catch(e) { console.error('❌ monthly summary refresh:', e.message); }
-    pruneCallLogs(7).catch(e => console.error('❌ pruneCallLogs:', e.message));
+    pruneCallLogs(CALL_LOGS_RETENTION_DAYS).catch(e => console.error('❌ pruneCallLogs:', e.message));
   });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });

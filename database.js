@@ -789,7 +789,21 @@ async function replaceCallLogsRange(startIso,endIso,logs){
   }
 }
 
-async function pruneCallLogs(daysToKeep=7){
+// Session 38 fix: this used to default to 7 days, which silently broke
+// getAgentCallStatsRange() (the "My Stats" / Ticket Lifecycle "Call
+// Activity" card) for every window longer than a week -- that card reads
+// call_logs directly, with no fallback to call_monthly_summary, so once
+// a day's rows were pruned, that day's calls just vanished from any
+// 30/90-day range, making the card look wildly undercounted next to
+// RingCentral's own reports (reported by Sebastin: Call Activity
+// mismatching Chat/Ticket activity and RC's own numbers on the same
+// page). The default here now comfortably covers the longest rolling
+// preset the UI offers (90 days, see desk-lifecycle-agent.js /
+// desk-lifecycle-admin.js period presets) plus buffer, so every built-in
+// range stays exact. A custom range older than that still falls back to
+// whatever call_monthly_summary has (unaffected by this prune either
+// way) -- see /api/call-summary's comment for that table's own history.
+async function pruneCallLogs(daysToKeep=100){
   // Remove call logs older than N days to prevent unbounded DB growth
   const cutoff=new Date(Date.now()-daysToKeep*86400000).toISOString();
   return run(`DELETE FROM call_logs WHERE start_time < ?`,[cutoff]);
@@ -984,6 +998,15 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
 // RingCentral Call Activity card. `from`/`to` are ISO strings, same shape
 // as the Ticket Lifecycle date filters, so the agent's ticket and call
 // numbers cover the same window.
+//
+// Session 38 note: this reads call_logs directly, which only holds the
+// trailing CALL_LOGS_RETENTION_DAYS (server.js) -- unlike the ticket
+// numbers (AditKB, full history) and chat numbers (SalesIQ sync, full
+// history) it sits alongside on "My Stats", this table gets pruned. Keep
+// the retention constant >= the longest range this gets called with (see
+// its own comment) or this silently undercounts again, same as the bug
+// that prompted this note. A `from` older than the retention window will
+// still undercount -- there's no call_monthly_summary fallback here yet.
 async function getAgentCallStatsRange({ agentId, from, to }) {
   if (!agentId) return null;
   const inb = await get(`SELECT
