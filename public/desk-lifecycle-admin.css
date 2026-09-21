@@ -46,7 +46,7 @@
 #desk-lifecycle-root .tkt-sticky-top { position:sticky !important; top:54px !important; z-index:30 !important; background:var(--tkt-bg) !important; padding-top:12px !important; margin:-12px -12px 0 !important; padding-left:12px !important; padding-right:12px !important; padding-bottom:10px !important; box-shadow:0 8px 12px -10px rgba(15,24,36,.18) !important; }
 
 /* ── Header ── */
-#desk-lifecycle-root .tkt-header { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:12px !important; margin-bottom:10px !important; flex-wrap:wrap !important; }
+#desk-lifecycle-root .tkt-header { display:flex !important; align-items:flex-start !important; justify-content:space-between !important; gap:12px !important; margin-bottom:12px !important; flex-wrap:wrap !important; }
 #desk-lifecycle-root .tkt-h1 { font-size:20px !important; font-weight:700 !important; letter-spacing:-.01em !important; color:var(--tkt-ink) !important; }
 #desk-lifecycle-root .tkt-h1-sub { font-size:13px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; }
 
@@ -64,7 +64,7 @@
 #desk-lifecycle-root .tkt-range-btn.tkt-range-selected { background:var(--tkt-accent) !important; border-color:var(--tkt-accent) !important; color:#fff !important; }
 
 /* ── Status banner ── */
-#desk-lifecycle-root .tkt-banner { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:14px !important; padding:11px 16px !important; border-radius:var(--tkt-radius) !important; margin-bottom:10px !important; box-shadow:0 1px 3px rgba(15,24,36,.06) !important; }
+#desk-lifecycle-root .tkt-banner { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:14px !important; padding:11px 16px !important; border-radius:var(--tkt-radius) !important; margin-bottom:12px !important; box-shadow:0 1px 3px rgba(15,24,36,.06) !important; }
 #desk-lifecycle-root .tkt-banner-main { display:flex !important; align-items:center !important; gap:12px !important; }
 #desk-lifecycle-root .tkt-banner-dot { width:12px !important; height:12px !important; min-width:12px !important; border-radius:50% !important; box-shadow:0 0 0 4px rgba(0,0,0,.06) !important; }
 #desk-lifecycle-root .tkt-banner-title { font-size:15px !important; font-weight:700 !important; }
@@ -77,10 +77,17 @@
 @media (prefers-reduced-motion: reduce) { #desk-lifecycle-root .tkt-banner-dot { animation:none !important; } }
 
 /* ── Cards ── */
-#desk-lifecycle-root .tkt-card { background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:13px 16px !important; margin-bottom:10px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
-#desk-lifecycle-root .tkt-card-title { font-size:14.5px !important; font-weight:700 !important; color:var(--tkt-ink) !important; }
-#desk-lifecycle-root .tkt-card-sub { font-size:12.5px !important; color:var(--tkt-ink3) !important; margin-top:2px !important; margin-bottom:10px !important; }
+#desk-lifecycle-root .tkt-card { background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:18px 20px !important; margin-bottom:14px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#desk-lifecycle-root .tkt-card-title { font-size:16px !important; font-weight:700 !important; color:var(--tkt-ink) !important; margin-bottom:2px !important; }
+#desk-lifecycle-root .tkt-card-sub { font-size:12.5px !important; line-height:1.55 !important; color:var(--tkt-ink3) !important; margin-top:2px !important; margin-bottom:10px !important; }
 #desk-lifecycle-root .tkt-card code { background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:4px !important; padding:1px 5px !important; font-size:12px !important; }
+
+/* Session 36: split the old single "Range: … <br> windowing note" block
+   into two lines with distinct weight — the range/count is what changes
+   run to run and is worth reading first; the windowing methodology is
+   fixed reference text and reads as noise every time otherwise. */
+#desk-lifecycle-root .tkt-card-sub-range { font-size:13px !important; font-weight:600 !important; color:var(--tkt-ink2) !important; margin-top:6px !important; margin-bottom:4px !important; }
+#desk-lifecycle-root .tkt-card-sub-note { font-size:11.5px !important; font-weight:400 !important; color:var(--tkt-ink3) !important; margin-top:0 !important; margin-bottom:12px !important; }
 
 /* ── Summary table ── */
 #desk-lifecycle-root .tkt-table { display:flex !important; flex-direction:column !important; }
@@ -160,12 +167,12 @@
 #desk-lifecycle-root .tkt-bd-chip b { color:var(--tkt-ink) !important; }
 #desk-lifecycle-root .tkt-bd-empty { font-size:11.5px !important; color:var(--tkt-ink3) !important; font-style:italic !important; }
 
-#desk-lifecycle-root .tkt-sort-opts { display:flex !important; gap:8px !important; align-items:center !important; flex-wrap:wrap !important; margin-bottom:8px !important; }
+#desk-lifecycle-root .tkt-sort-opts { display:flex !important; gap:8px !important; align-items:center !important; flex-wrap:wrap !important; margin-bottom:10px !important; padding-top:10px !important; border-top:1px solid var(--tkt-border) !important; }
 #desk-lifecycle-root .tkt-sort-label { font-size:11.5px !important; color:var(--tkt-ink3) !important; font-weight:600 !important; }
 #desk-lifecycle-root select.tkt-sort-select { border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius-sm) !important; padding:6px 10px !important; font-size:12.5px !important; font-family:inherit !important; color:var(--tkt-ink) !important; background:var(--tkt-surface) !important; cursor:pointer !important; }
 #desk-lifecycle-root .tkt-expand-all-btn { padding:6px 12px !important; font-size:12px !important; margin-left:auto !important; }
 
-#desk-lifecycle-root .tkt-note { font-size:11.5px !important; color:var(--tkt-ink3) !important; background:var(--tkt-surface2) !important; border-radius:var(--tkt-radius-sm) !important; padding:8px 12px !important; margin-bottom:8px !important; line-height:1.5 !important; }
+#desk-lifecycle-root .tkt-note { font-size:11.5px !important; color:var(--tkt-ink3) !important; background:var(--tkt-surface2) !important; border-radius:var(--tkt-radius-sm) !important; padding:10px 14px !important; margin-bottom:14px !important; line-height:1.55 !important; }
 
 @media (max-width: 760px) {
   #desk-lifecycle-root .tkt-agent-breakdown { grid-template-columns:1fr !important; }
@@ -186,7 +193,7 @@
 #desk-lifecycle-root .tkt-progress-fill { height:100% !important; border-radius:6px !important; background:var(--tkt-blue) !important; transition:width .4s var(--tkt-ease) !important; }
 
 /* ── Filter bar ── */
-#desk-lifecycle-root .tkt-filterbar { display:flex !important; align-items:flex-end !important; gap:14px !important; flex-wrap:wrap !important; background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:11px 14px !important; margin-bottom:10px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
+#desk-lifecycle-root .tkt-filterbar { display:flex !important; align-items:flex-end !important; gap:14px !important; flex-wrap:wrap !important; background:var(--tkt-surface) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:12px 16px !important; margin-bottom:12px !important; box-shadow:0 1px 3px rgba(15,24,36,.05) !important; }
 #desk-lifecycle-root .tkt-filter-group { display:flex !important; flex-direction:column !important; gap:6px !important; }
 #desk-lifecycle-root .tkt-filter-search { flex:1 1 200px !important; min-width:180px !important; }
 #desk-lifecycle-root .tkt-filter-label { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; }
@@ -250,8 +257,8 @@
    wide screens and left a lot of visually empty padding around small
    numbers) plus a denser grid so the strip reads as a compact dashboard
    row instead of six sparse columns. ── */
-#desk-lifecycle-root .tkt-team-summary { display:flex !important; flex-wrap:wrap !important; gap:0 !important; background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:9px 6px !important; margin-bottom:8px !important; position:relative !important; }
-#desk-lifecycle-root .tkt-team-cell { flex:0 1 150px !important; min-width:118px !important; max-width:190px !important; text-align:center !important; padding:6px 10px !important; cursor:pointer !important; border-right:1px solid var(--tkt-border) !important; transition:background .15s var(--tkt-ease) !important; border-radius:var(--tkt-radius-sm) !important; }
+#desk-lifecycle-root .tkt-team-summary { display:flex !important; flex-wrap:wrap !important; gap:0 !important; background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:var(--tkt-radius) !important; padding:12px 8px !important; margin-bottom:14px !important; position:relative !important; }
+#desk-lifecycle-root .tkt-team-cell { flex:0 1 150px !important; min-width:118px !important; max-width:190px !important; text-align:center !important; padding:8px 14px !important; cursor:pointer !important; border-right:1px solid rgba(15,24,36,.09) !important; transition:background .15s var(--tkt-ease) !important; border-radius:var(--tkt-radius-sm) !important; }
 #desk-lifecycle-root .tkt-team-cell:hover, #desk-lifecycle-root .tkt-team-cell:focus-visible { background:rgba(244,137,31,.06) !important; }
 #desk-lifecycle-root .tkt-team-cell:last-of-type { border-right:none !important; }
 #desk-lifecycle-root .tkt-team-n { font-size:19px !important; font-weight:800 !important; color:var(--tkt-ink) !important; letter-spacing:-.01em !important; display:flex !important; align-items:baseline !important; justify-content:center !important; gap:6px !important; flex-wrap:wrap !important; font-variant-numeric:tabular-nums !important; }
@@ -272,7 +279,7 @@
 /* ── Quick-filter chips — Session 28: additional useful filters beyond
    the date/customer/agent filters above, toggled client-side against the
    already-loaded per-agent summary (see matchesQuickFilters() in the JS). ── */
-#desk-lifecycle-root .tkt-quick-filters { display:flex !important; align-items:center !important; gap:6px !important; flex-wrap:wrap !important; margin-bottom:8px !important; }
+#desk-lifecycle-root .tkt-quick-filters { display:flex !important; align-items:center !important; gap:6px !important; flex-wrap:wrap !important; margin-bottom:12px !important; }
 #desk-lifecycle-root .tkt-quick-filters-label { font-size:10.5px !important; font-weight:700 !important; color:var(--tkt-ink3) !important; text-transform:uppercase !important; letter-spacing:.04em !important; margin-right:2px !important; }
 #desk-lifecycle-root .tkt-chip-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:20px !important; padding:5px 13px !important; font-size:11.5px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; transition:all .15s var(--tkt-ease-spring, var(--tkt-ease)) !important; }
 #desk-lifecycle-root .tkt-chip-btn:hover { border-color:var(--tkt-accent) !important; color:var(--tkt-accent) !important; transform:translateY(-1px) !important; }

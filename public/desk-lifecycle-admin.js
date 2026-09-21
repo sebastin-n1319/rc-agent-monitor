@@ -821,7 +821,8 @@
     return `
       <div class="tkt-card">
         <div class="tkt-card-title">Per-agent summary</div>
-        <div class="tkt-card-sub">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)}${_customerQuery ? ` · Filtered by "${esc(_customerQuery)}"` : ''} · ${count} of ${allAgents.length} agent${allAgents.length === 1 ? '' : 's'} shown<br>Unique/solely-handled/reassigned and the breakdowns below are windowed by when the ticket was created; Closed/Avg handle/FCR are windowed by when it closed; Handling now is live, not windowed.</div>
+        <div class="tkt-card-sub tkt-card-sub-range">Range: ${fmtDateTime(summaryData.from)} → ${fmtDateTime(summaryData.to)}${_customerQuery ? ` · Filtered by "${esc(_customerQuery)}"` : ''} · ${count} of ${allAgents.length} agent${allAgents.length === 1 ? '' : 's'} shown</div>
+        <div class="tkt-card-sub tkt-card-sub-note">Unique/solely-handled/reassigned and the breakdowns below are windowed by when the ticket was created; Closed/Avg handle/FCR are windowed by when it closed; Handling now is live, not windowed.</div>
         <div class="tkt-note">CSAT% now reflects real per-ticket survey ratings (Good/Okay/Bad) from Zoho Analytics, filtered by when the customer submitted the survey. NPS% still isn't shown -- it's an account-level relationship survey (CSM team), not tied to individual tickets or T1 agents. Hover any number for what it means.</div>
         ${teamSummaryHtml(shownAgents, prevAgents)}
         ${quickFiltersHtml()}
