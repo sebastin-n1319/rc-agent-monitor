@@ -9,6 +9,7 @@ const cron = require('node-cron');
 const path = require('path');
 const {
   db: _sharedDb,
+  CALL_LOGS_RETENTION_DAYS,
   initDB, getAgentSummary, addAgent, removeAgent, getMonitoredAgents, updateAgentChatId, getGoogleSubForEmail,
   getPresenceEvents, getAbandonedCalls, insertLoginLog, getLoginLogs,
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
@@ -57,14 +58,12 @@ const app = express();
 const SESSION_COOKIE = 'rcAuthSession';
 const SESSION_MAX_AGE_S = 12 * 60 * 60; // 12 hours in seconds
 
-// Session 38: how long raw call_logs rows survive before the nightly prune
-// deletes them (call_monthly_summary keeps the durable aggregate forever,
-// unaffected by this). Must stay >= the longest rolling-range preset the
-// UI offers (currently 90 days, see desk-lifecycle-agent.js /
-// desk-lifecycle-admin.js) or "My Stats" / Ticket Lifecycle's Call
-// Activity card silently undercounts for any range longer than this —
-// exactly the bug this constant fixes (was hardcoded to 7).
-const CALL_LOGS_RETENTION_DAYS = 100;
+// Session 40: CALL_LOGS_RETENTION_DAYS now lives in database.js (imported
+// above) -- it used to be declared here and only governed the nightly
+// pruneCallLogs() cron, while pruneOldData()'s 2-hourly job and the
+// pre-init emergency prune just below each had their own separate,
+// shorter, hardcoded windows that silently won out. All three now share
+// the one constant. See its comment in database.js for the full story.
 
 // ── Google sign-in verification ──────────────────────────────────────────────
 // GOOGLE_CLIENT_ID must match the client_id the frontend passes to Google
@@ -408,12 +407,18 @@ function escapeHtml(str) {
 // ── Pre-initDB emergency prune ────────────────────────────────────────────────
 // Runs BEFORE initDB so disk space is freed even if the new call_monthly_summary
 // table creation would otherwise fail due to a full volume.
+//
+// Session 40: this used to hardcode "-2 days", completely separate from
+// (and far shorter than) CALL_LOGS_RETENTION_DAYS -- since this runs on
+// EVERY boot, and Railway redeploys restart the process, this alone was
+// enough to wipe call_logs down to ~2 days on every single deploy,
+// regardless of what the "real" retention policy said elsewhere. Now
+// shares the same constant so a deploy doesn't quietly undo it.
 (async () => {
   try {
     const { db: _preDb } = require('./database');
-    // Delete call_logs older than 2 days without VACUUM (VACUUM needs free space too)
     await new Promise(rs => _preDb.run(
-      `DELETE FROM call_logs WHERE date(start_time) < date('now','-2 days')`, [], () => rs()
+      `DELETE FROM call_logs WHERE date(start_time) < date('now', ?)`, [`-${CALL_LOGS_RETENTION_DAYS} days`], () => rs()
     ));
     console.log('🧹 Pre-init prune: old call_logs cleared');
   } catch(e) { console.warn('⚠️ Pre-init prune error (non-fatal):', e.message); }
@@ -462,6 +467,24 @@ initDB().then(async () => {
     await salesiqLifecycle.initSchema();
     console.log('💬 Chat (SalesIQ) lifecycle schema ready');
   } catch(e) { log.error('salesiq_lifecycle_init_failed', e); console.error('salesiq_lifecycle_init_failed', e); }
+  // Session 40: one-time reset so the AditKB calls history backfill
+  // re-walks all CALLS_BACKFILL_FLOOR_MONTHS months and fills in the new
+  // answered_outbound column (added this session) on every existing
+  // call_monthly_summary row -- otherwise those rows would sit at 0
+  // forever (upsertCallMonthlySummaryRow only ever gets called again for
+  // that month, and most months are done and never revisited). Re-running
+  // the backfill is safe/idempotent (INSERT OR REPLACE, same AditKB
+  // source data), just costs a few hours of background cron ticks. Gated
+  // on its own flag so this only fires once, not on every boot.
+  try {
+    const migrated = await getCallsSyncState('answered_outbound_backfilled_v1');
+    if (migrated !== '1') {
+      await setCallsSyncState('calls_backfill_complete', null);
+      await setCallsSyncState('calls_backfill_done_months', null);
+      await setCallsSyncState('answered_outbound_backfilled_v1', '1');
+      console.log('📞 Calls history backfill reset to populate answered_outbound on existing months');
+    }
+  } catch(e) { log.error('answered_outbound_backfill_reset_failed', e); }
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
@@ -475,7 +498,11 @@ liveEvents.on('update', payload => broadcastLiveEvent(payload));
 const SESSION_TTL_H      = 12;          // hours — session lifetime
 const BREAK_BRB_LIMIT_M  = 10;         // minutes — single BRB limit
 const BREAK_DAY_LIMIT_M  = 60;         // minutes — total break per day
-const CALL_LOG_RETAIN_D  = 7;          // days — call log retention
+// Session 40: removed CALL_LOG_RETAIN_D (a dead, never-referenced local
+// constant hardcoded to 7) -- it looked like it might be governing call_logs
+// retention somewhere and cost real time to rule out while diagnosing why
+// Call Activity was still undercounting after Session 38's fix. The one
+// real retention knob is CALL_LOGS_RETENTION_DAYS, imported from database.js.
 
 // ── Auth middleware (SEC-1 + SEC-2) ──────────────────────────────────────────
 // requireAuth: validates session cookie; attaches session to req.session
@@ -6208,7 +6235,7 @@ function matchInboundCallToAgent(call, agentsByRcId) {
  *  column meanings, so a historical month and the live current month are
  *  never inconsistent with each other. */
 function aggregateMonthlyCallRow(agent, month, calls) {
-  let inbound = 0, outbound = 0, missed = 0, inboundMissed = 0, answeredInbound = 0,
+  let inbound = 0, outbound = 0, missed = 0, inboundMissed = 0, answeredInbound = 0, answeredOutbound = 0,
       inboundTalkTime = 0, outboundTalkTime = 0, totalTalkTime = 0, ahtSum = 0, ahtCount = 0,
       transfers = 0, holdTime = 0, voicemails = 0, ringSum = 0, ringCount = 0;
 
@@ -6225,6 +6252,11 @@ function aggregateMonthlyCallRow(agent, month, calls) {
     if (isMissedStyle) missed++;
     if (direction === 'Inbound' && isMissedStyle) inboundMissed++;
     if (direction === 'Inbound' && !isExcludedFromTalk) answeredInbound++;
+    // Session 40: outbound counterpart to answeredInbound above, same
+    // exclusion rule (missed/abandoned/voicemail don't count as answered).
+    // Needed so getAgentCallStatsRange() can blend a correct outbound AHT
+    // across call_logs + call_monthly_summary -- see its own comment.
+    if (direction === 'Outbound' && !isExcludedFromTalk) answeredOutbound++;
     if (direction === 'Inbound' && !isExcludedFromTalk && duration > 0) inboundTalkTime += duration;
     if (direction === 'Outbound' && !isExcludedFromTalk && duration > 0) outboundTalkTime += duration;
     if (!isExcludedFromTalk && duration > 0) { totalTalkTime += duration; ahtSum += duration; ahtCount++; }
@@ -6236,7 +6268,7 @@ function aggregateMonthlyCallRow(agent, month, calls) {
 
   return {
     agent_id: agent.rc_id, agent_name: agent.name, month,
-    inbound, outbound, total: calls.length, missed, inbound_missed: inboundMissed, answered_inbound: answeredInbound,
+    inbound, outbound, total: calls.length, missed, inbound_missed: inboundMissed, answered_inbound: answeredInbound, answered_outbound: answeredOutbound,
     inbound_talk_time: inboundTalkTime, outbound_talk_time: outboundTalkTime, total_talk_time: totalTalkTime,
     aht_seconds: ahtCount ? Math.round(ahtSum / ahtCount) : 0,
     transfers, hold_time: holdTime, voicemails,

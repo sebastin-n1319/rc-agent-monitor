@@ -8,6 +8,25 @@ const run = (sql, params=[]) => new Promise((res,rej) => db.run(sql, params, fun
 const get = (sql, params=[]) => new Promise((res,rej) => db.get(sql, params, (err,row)=>err?rej(err):res(row)));
 const all = (sql, params=[]) => new Promise((res,rej) => db.all(sql, params, (err,rows)=>err?rej(err):res(rows)));
 
+// Session 40: single source of truth for how long raw call_logs rows survive.
+// Previously this lived only in server.js and only governed the nightly
+// pruneCallLogs() cron -- but TWO OTHER, separate prune paths also delete
+// from call_logs on their own hardcoded schedules and never learned about
+// that constant: the every-2-hours pruneOldData() below (hardcoded 7 days)
+// and server.js's pre-initDB emergency disk-space prune (hardcoded 2 days,
+// runs on every boot/deploy). Whichever of the three ran most recently and
+// most aggressively won, silently undoing Session 38's fix -- Sebastin
+// still saw undercounted Call Activity everywhere, not just past 90 days,
+// because call_logs realistically never held more than ~2-7 days no matter
+// what this constant said. All three prune paths now import and use this
+// one value, so they can't drift apart again. Set well past a full
+// calendar month (31 days) + buffer so the *current, in-progress* month's
+// call_monthly_summary aggregate (built live from call_logs -- see
+// refreshMonthlySummary below) always has the whole month's data to sum,
+// not just however many days happened to survive the shortest of the three
+// prune jobs.
+const CALL_LOGS_RETENTION_DAYS = 45;
+
 function toSqliteUtc(date){
   if(!(date instanceof Date)) date = new Date(date);
   return date.toISOString().slice(0,19).replace('T',' ');
@@ -671,6 +690,11 @@ async function initDB() {
     `ALTER TABLE monitored_agents ADD COLUMN chat_id TEXT`,
     // Google account subject ID (from OAuth JWT) — captured at login
     `ALTER TABLE app_sessions ADD COLUMN google_sub TEXT`,
+    // Session 40: outbound counterpart to answered_inbound, needed so
+    // getAgentCallStatsRange() can blend a correct outbound AHT across
+    // call_logs + call_monthly_summary instead of approximating with the
+    // raw outbound total (which includes unanswered/missed outbound calls).
+    `ALTER TABLE call_monthly_summary ADD COLUMN answered_outbound INTEGER DEFAULT 0`,
   ]) {
     try { await run(sql); }
     catch(e) {
@@ -789,21 +813,15 @@ async function replaceCallLogsRange(startIso,endIso,logs){
   }
 }
 
-// Session 38 fix: this used to default to 7 days, which silently broke
-// getAgentCallStatsRange() (the "My Stats" / Ticket Lifecycle "Call
-// Activity" card) for every window longer than a week -- that card reads
-// call_logs directly, with no fallback to call_monthly_summary, so once
-// a day's rows were pruned, that day's calls just vanished from any
-// 30/90-day range, making the card look wildly undercounted next to
-// RingCentral's own reports (reported by Sebastin: Call Activity
-// mismatching Chat/Ticket activity and RC's own numbers on the same
-// page). The default here now comfortably covers the longest rolling
-// preset the UI offers (90 days, see desk-lifecycle-agent.js /
-// desk-lifecycle-admin.js period presets) plus buffer, so every built-in
-// range stays exact. A custom range older than that still falls back to
-// whatever call_monthly_summary has (unaffected by this prune either
-// way) -- see /api/call-summary's comment for that table's own history.
-async function pruneCallLogs(daysToKeep=100){
+// Session 38/40: see CALL_LOGS_RETENTION_DAYS's own comment above for why
+// this now shares that one constant with pruneOldData()'s call_logs line
+// and server.js's pre-init emergency prune, instead of each picking its
+// own number. getAgentCallStatsRange() below no longer depends on this
+// retention window for correctness either way -- it checks call_logs'
+// actual earliest surviving row at query time and falls back to
+// call_monthly_summary for anything older, so it stays correct even if
+// this number changes again in the future.
+async function pruneCallLogs(daysToKeep=CALL_LOGS_RETENTION_DAYS){
   // Remove call logs older than N days to prevent unbounded DB growth
   const cutoff=new Date(Date.now()-daysToKeep*86400000).toISOString();
   return run(`DELETE FROM call_logs WHERE start_time < ?`,[cutoff]);
@@ -824,6 +842,9 @@ async function refreshMonthlySummary(month){
       COUNT(DISTINCT CASE WHEN direction='Inbound'
         AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
         AND COALESCE(is_voicemail,0)=0 THEN call_id END) AS answered_inbound,
+      COUNT(DISTINCT CASE WHEN direction='Outbound'
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND COALESCE(is_voicemail,0)=0 THEN call_id END) AS answered_outbound,
       SUM(CASE WHEN direction='Inbound'
         AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
         AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS inbound_talk_time,
@@ -857,10 +878,10 @@ async function refreshMonthlySummary(month){
 async function upsertCallMonthlySummaryRow(r){
   const now = new Date().toISOString();
   await run(`INSERT OR REPLACE INTO call_monthly_summary
-    (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,
+    (agent_id,agent_name,month,inbound,outbound,total,missed,inbound_missed,answered_inbound,answered_outbound,
      inbound_talk_time,outbound_talk_time,total_talk_time,aht_seconds,transfers,hold_time,voicemails,avg_ring_time,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-    [r.agent_id,r.agent_name,r.month,r.inbound||0,r.outbound||0,r.total||0,r.missed||0,r.inbound_missed||0,r.answered_inbound||0,
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [r.agent_id,r.agent_name,r.month,r.inbound||0,r.outbound||0,r.total||0,r.missed||0,r.inbound_missed||0,r.answered_inbound||0,r.answered_outbound||0,
      r.inbound_talk_time||0,r.outbound_talk_time||0,r.total_talk_time||0,r.aht_seconds||0,r.transfers||0,r.hold_time||0,r.voicemails||0,r.avg_ring_time||0,now]);
 }
 
@@ -999,44 +1020,110 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
 // as the Ticket Lifecycle date filters, so the agent's ticket and call
 // numbers cover the same window.
 //
-// Session 38 note: this reads call_logs directly, which only holds the
-// trailing CALL_LOGS_RETENTION_DAYS (server.js) -- unlike the ticket
-// numbers (AditKB, full history) and chat numbers (SalesIQ sync, full
-// history) it sits alongside on "My Stats", this table gets pruned. Keep
-// the retention constant >= the longest range this gets called with (see
-// its own comment) or this silently undercounts again, same as the bug
-// that prompted this note. A `from` older than the retention window will
-// still undercount -- there's no call_monthly_summary fallback here yet.
+// Session 40: this used to read call_logs alone, which only holds a
+// rolling window (see CALL_LOGS_RETENTION_DAYS) -- any part of the
+// requested range older than that was just silently missing, no matter
+// how generous that retention constant was set (Session 38 raised it to
+// 100 days and it made no real difference, because two OTHER prune jobs
+// were separately clearing call_logs down to 2-7 days on their own
+// schedules -- see that constant's comment). Rather than lean on any
+// retention constant staying in sync across three prune paths, this now
+// checks call_logs' actual earliest surviving row for this agent AT QUERY
+// TIME and only trusts call_logs from there forward; everything older is
+// pulled from call_monthly_summary, which is never pruned and (via
+// server.js's AditKB-backed runAditkbCallsSync) covers the full call
+// history, so "This year", "Last year", and any custom range now return
+// real numbers instead of whatever the last prune left behind.
+// call_monthly_summary only has month-level granularity, so the split
+// happens at the calendar-month boundary containing that floor date, not
+// the exact day -- exact for every built-in preset (all month/quarter/
+// year aligned) and for anything fully inside the surviving call_logs
+// window; a custom range starting mid-month, older than that floor, picks
+// up that whole boundary month rather than only the requested days in it.
 async function getAgentCallStatsRange({ agentId, from, to }) {
   if (!agentId) return null;
-  const inb = await get(`SELECT
+
+  const floorRow = await get(
+    `SELECT MIN(start_time) as floor FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`,
+    [agentId, from, to]
+  );
+  // A quiet agent (zero rows in range) still needs an honest boundary, so
+  // fall back to the table-wide floor rather than treating the whole
+  // range as "recent" (which would silently skip call_monthly_summary).
+  const globalFloorRow = (floorRow && floorRow.floor) ? floorRow : await get(`SELECT MIN(start_time) as floor FROM call_logs`);
+  const logsFloor = (globalFloorRow && globalFloorRow.floor) ? globalFloorRow.floor : to; // no call_logs rows at all -> treat entire range as "old"
+
+  const logsFloorDate = new Date(logsFloor);
+  const boundary = new Date(Date.UTC(logsFloorDate.getUTCFullYear(), logsFloorDate.getUTCMonth(), 1));
+  const boundaryIso = boundary.toISOString();
+
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+  const logsFrom = fromDate < boundary ? boundaryIso : from;
+  const needLogs = toDate > boundary;
+  const needSummary = fromDate < boundary;
+
+  const zeroAgg = { total: 0, talkSeconds: 0, answered: 0, missed: 0, voicemails: 0, totalHold: 0 };
+  const inb = needLogs ? await get(`SELECT
       COUNT(*) as total,
       SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
-      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
       SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed,
       SUM(CASE WHEN COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail' THEN 1 ELSE 0 END) as voicemails,
       SUM(COALESCE(hold_duration,0)) as totalHold
     FROM call_logs
-    WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`, [agentId, from, to]);
-  const out = await get(`SELECT
+    WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`, [agentId, logsFrom, to]) : zeroAgg;
+  const out = needLogs ? await get(`SELECT
       COUNT(*) as total,
       SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
-      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
       SUM(COALESCE(hold_duration,0)) as totalHold
     FROM call_logs
-    WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`, [agentId, from, to]);
-  const xfer = await get(`SELECT SUM(COALESCE(transferred,0)) as total FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`, [agentId, from, to]);
+    WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`, [agentId, logsFrom, to]) : zeroAgg;
+  const xfer = needLogs ? await get(`SELECT SUM(COALESCE(transferred,0)) as total FROM call_logs WHERE agent_id=? AND start_time >= ? AND start_time < ?`, [agentId, logsFrom, to]) : { total: 0 };
+
+  const monthly = { inbound: 0, outbound: 0, missed: 0, voicemails: 0, inbound_talk_time: 0, outbound_talk_time: 0, hold_time: 0, transfers: 0, answered_inbound: 0, answered_outbound: 0 };
+  if (needSummary) {
+    const fromMonth = from.slice(0, 7);
+    const boundaryMonth = boundaryIso.slice(0, 7);
+    const rows = await all(
+      `SELECT * FROM call_monthly_summary WHERE agent_id=? AND month >= ? AND month < ?`,
+      [agentId, fromMonth, boundaryMonth]
+    );
+    for (const r of rows) {
+      monthly.inbound += r.inbound || 0;
+      monthly.outbound += r.outbound || 0;
+      monthly.missed += r.inbound_missed || 0; // matches inb.missed above (inbound-only)
+      monthly.voicemails += r.voicemails || 0;
+      monthly.inbound_talk_time += r.inbound_talk_time || 0;
+      monthly.outbound_talk_time += r.outbound_talk_time || 0;
+      monthly.hold_time += r.hold_time || 0;
+      monthly.transfers += r.transfers || 0;
+      monthly.answered_inbound += r.answered_inbound || 0;
+      monthly.answered_outbound += r.answered_outbound || 0; // Session 40 column -- 0 for any not-yet-recomputed historical row, see server.js's one-time re-backfill trigger
+    }
+  }
+
+  const inboundCalls = (inb.total || 0) + monthly.inbound;
+  const outboundCalls = (out.total || 0) + monthly.outbound;
+  const inboundAnswered = (inb.answered || 0) + monthly.answered_inbound;
+  const outboundAnswered = (out.answered || 0) + monthly.answered_outbound;
+  const inboundTalkSeconds = (inb.talkSeconds || 0) + monthly.inbound_talk_time;
+  const outboundTalkSeconds = (out.talkSeconds || 0) + monthly.outbound_talk_time;
+
   return {
-    inboundCalls: inb.total || 0,
-    outboundCalls: out.total || 0,
-    totalCalls: (inb.total || 0) + (out.total || 0),
-    missedCalls: inb.missed || 0,
-    voicemails: inb.voicemails || 0,
-    totalTalkSeconds: Math.round((inb.talkSeconds || 0) + (out.talkSeconds || 0)),
-    ahtInboundSeconds: Math.round(inb.avgDur || 0),
-    ahtOutboundSeconds: Math.round(out.avgDur || 0),
-    totalHoldSeconds: Math.round((inb.totalHold || 0) + (out.totalHold || 0)),
-    transferCount: xfer.total || 0,
+    inboundCalls,
+    outboundCalls,
+    totalCalls: inboundCalls + outboundCalls,
+    missedCalls: (inb.missed || 0) + monthly.missed,
+    voicemails: (inb.voicemails || 0) + monthly.voicemails,
+    totalTalkSeconds: Math.round(inboundTalkSeconds + outboundTalkSeconds),
+    // Sum/count instead of averaging two averages -- correct whether the
+    // range is pure call_logs, pure call_monthly_summary, or a blend.
+    ahtInboundSeconds: inboundAnswered ? Math.round(inboundTalkSeconds / inboundAnswered) : 0,
+    ahtOutboundSeconds: outboundAnswered ? Math.round(outboundTalkSeconds / outboundAnswered) : 0,
+    totalHoldSeconds: Math.round((inb.totalHold || 0) + (out.totalHold || 0) + monthly.hold_time),
+    transferCount: (xfer.total || 0) + monthly.transfers,
   };
 }
 
@@ -1657,8 +1744,13 @@ async function pruneOldData() {
   const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-7 days')`);
   results.presence_events = pe.changes;
 
-  // Call logs — keep 7 days
-  const cl = await run(`DELETE FROM call_logs WHERE date(start_time) < date('now','-7 days')`);
+  // Call logs — Session 40: was hardcoded to 7 days here, completely
+  // independent of pruneCallLogs()'s own (also-hardcoded, also different)
+  // window -- this runs every 2 hours (see server.js's cron), so it was
+  // the one that actually won and kept call_logs pinned to ~7 days no
+  // matter what the nightly pruneCallLogs() retention said. Now shares
+  // CALL_LOGS_RETENTION_DAYS with every other place that prunes this table.
+  const cl = await pruneCallLogs(CALL_LOGS_RETENTION_DAYS);
   results.call_logs = cl.changes;
 
   // Login logs — keep 30 days
@@ -2232,6 +2324,7 @@ async function getAlertCounts(){
 
 module.exports={
   db,  // Session 16: roster.js needs the raw handle to share the same connection
+  CALL_LOGS_RETENTION_DAYS,
   createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
   upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
   createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,
