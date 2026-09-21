@@ -6422,12 +6422,28 @@ async function runAditkbCallsSync() {
       return { monthsThisTick, backfillComplete: allDone, monthsRemaining: targetMonths.length - doneMonths.size };
     }
 
-    // Steady state: current month stays live-handled elsewhere; just keep
-    // the most recently closed month fresh against AditKB replication lag.
+    // Steady state: keep the most recently closed month fresh against
+    // AditKB replication lag, AND (Session 41, per Sebastin: "I need it
+    // refreshed every 20 minutes and stay updated every moment") also
+    // re-sync the CURRENT, still-open month every tick from AditKB
+    // directly. This used to be left to call_logs' own live refresh
+    // (refreshMonthlySummary(), the */15 cron above) alone -- deliberately,
+    // since AditKB is a full month re-fetch and re-running that for a
+    // still-growing month every 20 min is real, ongoing API load, not a
+    // one-time cost like the closed-month top-up above. But call_logs only
+    // holds a rolling window (see CALL_LOGS_RETENTION_DAYS in database.js),
+    // so if it had already been pruned thin before this session's fix
+    // landed, the live-only current-month number stayed permanently low
+    // until month-end -- exactly the gap Sebastin flagged. Syncing from
+    // AditKB here too closes that gap every cycle regardless of whatever
+    // call_logs currently holds; upsertCallMonthlySummaryRow's INSERT OR
+    // REPLACE means whichever of the two crons ran most recently wins, and
+    // AditKB's full-month pull is always the more complete of the two.
     const prevMonth = shiftMonthKey(currMonth, -1);
     await syncOneMonthForAllAgents(prevMonth, agents);
+    await syncOneMonthForAllAgents(currMonth, agents);
     await setCallsSyncState('last_sync_at', new Date().toISOString());
-    return { incrementalMonth: prevMonth };
+    return { incrementalMonth: prevMonth, currentMonth: currMonth };
   } finally {
     _callsSyncRunning = false;
   }
