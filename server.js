@@ -17,7 +17,7 @@ const {
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
   isMonthWithinCallLogRetention, deleteFaxCallLogs, dedupeCallLogs, // Session 42
   addAgentNote, getAgentNotes, getAgentNoteById, deleteAgentNote,
-  getAgentCallStatsRange, getAgentCallListRange,
+  getAgentCallStatsRange, getAgentCallListRange, getDateWindow,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   upsertUserProfile, getAllUserProfiles, getUserProfile,
   insertAuditLog, getAuditLog,
@@ -6378,6 +6378,24 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     } catch (e) { console.warn('⚠️ chat stats lookup failed for my-summary:', e.message); }
 
     res.json({ success: true, from, to, email, summary: summary[0] || null, callStats, chatStats, chatPresence });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Session 45: live floor (redesigned dashboard) -- today's chat count per
+// monitored agent, for the chat line on each agent card. Same day window
+// as /api/summary so it lines up with the call counts beside it.
+app.get('/api/live-floor/chats-today', requireAuth, async (req, res) => {
+  try {
+    const tz = req.query.tz || 'America/Chicago';
+    const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    if (!salesiqService.isConfigured()) return res.json({ success: true, date, data: {} });
+    const { start, end } = getDateWindow(date, tz);
+    const monitored = await getMonitoredAgents();
+    const emails = monitored.map(a => (a.email || '').toLowerCase()).filter(Boolean);
+    const stats = await salesiqLifecycle.chatStatsForEmails({ emails, from: start.toISOString(), to: end.toISOString() });
+    const data = {};
+    for (const [e, v] of Object.entries(stats)) data[e] = v.chatCount || 0;
+    res.json({ success: true, date, data });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

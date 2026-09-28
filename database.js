@@ -2454,7 +2454,7 @@ module.exports={
   savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAgentCallListRange,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAgentCallListRange,getAbandonedCalls,getDateWindow,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,getAgentNoteById,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
