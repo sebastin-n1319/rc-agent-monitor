@@ -203,7 +203,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
 
 // PERF-4: SSE clients tracked with their role for scoped broadcasting
 const sseClients = new Map(); // res → { role }
-const GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
+// Session 53: webhooks can be overridden from the Alerts page (stored in
+// app_settings 'alert_hooks'); env vars stay as the fallback. `let` so
+// loadAlertHooks() can swap them without a redeploy.
+const ENV_GOOGLE_CHAT_WEBHOOK_URL = process.env.GOOGLE_CHAT_WEBHOOK_URL || '';
+let GOOGLE_CHAT_WEBHOOK_URL = ENV_GOOGLE_CHAT_WEBHOOK_URL;
+let ALERT_HOOKS = {};
 const GOOGLE_CHAT_SPACE_LABEL = process.env.GOOGLE_CHAT_SPACE_LABEL || 'Chat space';
 const TICKET_SHEET_ID = process.env.TICKET_SHEET_ID || '105ML5aHdxEJjCxa87zCniTx7VKH6wI7eBXOWjRg6U7Y';
 const TICKET_SHEET_TAB = 'Working';
@@ -404,7 +409,16 @@ async function buildBreakChatPayload(event){
   };
 }
 
+const BREAK_EVENT_GROUP = { LOGGED_IN: 'shift', LOGGED_OUT: 'shift', BREAK_OUT: 'break', BREAK_IN: 'break', BRB_OUT: 'brb', BRB_IN: 'brb',
+  TRAINING_OUT: 'training', TRAINING_IN: 'training', QA_SESSION_OUT: 'qa', QA_SESSION_IN: 'qa', INTERNAL_CALL_OUT: 'internal', INTERNAL_CALL_IN: 'internal' };
 async function sendBreakChatNotification(event){
+  if(ALERT_HOOKS.breakLogEnabled === false){
+    return { notified: false, status: 'disabled', response: 'Break log alerts are turned off on the Alerts page' };
+  }
+  const grp = BREAK_EVENT_GROUP[event.action];
+  if(grp && Array.isArray(ALERT_HOOKS.breakEvents) && !ALERT_HOOKS.breakEvents.includes(grp)){
+    return { notified: false, status: 'filtered', response: `${grp} events are not posted (Alerts page setting)` };
+  }
   if(!GOOGLE_CHAT_WEBHOOK_URL){
     return { notified: false, status: 'disabled', response: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
   }
@@ -1458,6 +1472,8 @@ function chatReports() {
     agentSummary: (args) => deskLifecycle.agentSummary(args),
     callAndChatStats: (emails, from, to) => callAndChatStatsForAgents(emails, from, to),
     db: dbm, fetchFn: fetch,
+    getWebhook: () => ALERT_HOOKS.summaries || '',
+    isEnabled: () => ALERT_HOOKS.summariesEnabled !== false,
   });
   return _chatReports;
 }
@@ -1624,6 +1640,113 @@ app.get('/api/t1-alerts/queue-debug', requireAdmin, async (req, res) => {
 app.get('/api/t1-alerts/teams', requireAdmin, async (req, res) => {
   try { const r = await require('./lib/desk-service').fetchRaw('/teams'); res.json({ success: true, data: ((r && (r.teams || r.data)) || []).map(t => ({ id: t.id, name: t.name })) }); }
   catch (e) { res.json({ success: true, data: [], note: 'Team list not available with the current Zoho scope' }); }
+});
+
+// ── Session 53: Alerts hub. One place to manage every Google Chat alert:
+//   breakLog  - each break / BRB / AUX / login tap (break bot space)
+//   missed    - missed-call cards (missed-calls space)
+//   summaries - break + productivity summaries and schedules (Chat reports)
+//   liveOps   - call in queue, nobody available, unassigned / unactioned tickets
+// Webhooks set here override the Railway env vars; clearing falls back to env.
+const HOOK_URL_RE = /^https:\/\/chat\.googleapis\.com\/v1\/spaces\/[^\s]+$/;
+async function loadAlertHooks() {
+  let h = {};
+  try { h = JSON.parse((await getSetting('alert_hooks')) || '{}') || {}; } catch (e) { h = {}; }
+  ALERT_HOOKS = h;
+  GOOGLE_CHAT_WEBHOOK_URL = h.breakLog || ENV_GOOGLE_CHAT_WEBHOOK_URL;
+  MISSED_CALL_WEBHOOK_URL = h.missedCall || ENV_MISSED_CALL_WEBHOOK_URL;
+  return h;
+}
+const maskHook = (u) => (u ? String(u).replace(/(spaces\/)([^/]{3})[^/]*/, '$1$2••••').replace(/(key=)[^&]+/, '$1••••').replace(/(token=)[^&]+/, '$1••••') : '');
+const hookSource = (appVal, envVal) => (appVal ? 'app' : envVal ? 'env' : 'none');
+const todaySql = () => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); return d.toISOString().replace('T', ' ').slice(0, 19); };
+
+app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
+  try {
+    const h = await loadAlertHooks();
+    const dbm = require('./database');
+    const one = async (sql, p = []) => { try { return await new Promise((rs, rj) => dbm.db.get(sql, p, (e, r) => e ? rj(e) : rs(r || {}))); } catch (e) { return {}; } };
+    const t1cfg = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+    const missedEnabled = ((await getSetting('missed_call_notify_enabled').catch(() => null)) ?? '1') === '1';
+    const bl = await one(`SELECT SUM(CASE WHEN notified=1 THEN 1 ELSE 0 END) AS sent, SUM(CASE WHEN notify_status NOT IN ('sent','disabled','filtered') AND notified=0 THEN 1 ELSE 0 END) AS failed, MAX(CASE WHEN notified=1 THEN created_at END) AS last FROM break_events WHERE created_at >= ?`, [todaySql()]);
+    const sm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM chat_report_log WHERE created_at >= ?`, [todaySql()]);
+    const sch = await one(`SELECT COUNT(*) AS n, SUM(enabled) AS on_n FROM chat_report_schedule`);
+    const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item'`, [todaySql()]);
+    const missedToday = (_pollLog || []).reduce((n, e) => n + (Number(e && e.notified) || 0), 0);
+    const lastPoll = (_pollLog || []).slice(-1)[0] || null;
+    res.json({ success: true, channels: [
+      { key: 'breakLog', label: 'Break log', desc: 'Every break, BRB, training, QA, internal call and shift start or end tap.', enabled: h.breakLogEnabled !== false,
+        source: hookSource(h.breakLog, ENV_GOOGLE_CHAT_WEBHOOK_URL), masked: maskHook(GOOGLE_CHAT_WEBHOOK_URL), events: Array.isArray(h.breakEvents) ? h.breakEvents : ['shift', 'break', 'brb', 'training', 'qa', 'internal'],
+        sentToday: bl.sent || 0, failedToday: bl.failed || 0, last: bl.last || null },
+      { key: 'missed', label: 'Missed calls', desc: 'A card for each missed or abandoned queue call, tagging the agent it rang when known.', enabled: missedEnabled,
+        source: hookSource(h.missedCall, ENV_MISSED_CALL_WEBHOOK_URL), masked: maskHook(MISSED_CALL_WEBHOOK_URL), sentToday: missedToday, countLabel: 'Sent in the last 30 checks', failedToday: (_pollLog || []).filter(e => e && e.error).length, last: lastPoll ? lastPoll.at : null, lastLabel: 'Last check' },
+      { key: 'summaries', label: 'Break and productivity summaries', desc: 'Summary posts you send from the composer, and scheduled daily, weekly or monthly reports.', enabled: h.summariesEnabled !== false,
+        source: h.summaries ? 'app' : (process.env.REPORTS_CHAT_WEBHOOK_URL ? 'env' : (GOOGLE_CHAT_WEBHOOK_URL ? 'breaklog' : 'none')), masked: maskHook(h.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL),
+        sentToday: sm.sent || 0, failedToday: sm.failed || 0, last: sm.last || null, schedules: sch.n || 0, schedulesOn: sch.on_n || 0 },
+      { key: 'liveOps', label: 'Live ops', desc: 'Caller waiting in queue, nobody available, unassigned tickets and assigned tickets with no action.', enabled: t1cfg.enabled !== false,
+        source: t1cfg.webhookUrl ? 'app' : 'none', masked: maskHook(t1cfg.webhookUrl), sentToday: lo.sent || 0, failedToday: lo.failed || 0, last: lo.last || null,
+        parts: { queue: t1cfg.queue.enabled, coverage: t1cfg.coverage.enabled, tickets: t1cfg.tickets.enabled } },
+    ] });
+  } catch (e) { console.error('alert-hub status:', e.message); res.status(500).json({ success: false, error: 'Could not load alert status' }); }
+});
+
+app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const key = String(b.key || '');
+    if (!['breakLog', 'missed', 'summaries', 'liveOps'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
+    const url = typeof b.webhookUrl === 'string' ? b.webhookUrl.trim() : '';
+    if (url && !HOOK_URL_RE.test(url)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
+    if (key === 'liveOps') {
+      const cur = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+      if (url) cur.webhookUrl = url;
+      if (b.clearWebhook) cur.webhookUrl = '';
+      if (typeof b.enabled === 'boolean') cur.enabled = b.enabled;
+      await setSetting('t1_alerts_config', JSON.stringify(cur), req.session.email);
+      t1Alerts().invalidate();
+    } else if (key === 'missed' && typeof b.enabled === 'boolean' && !url && !b.clearWebhook) {
+      await setSetting('missed_call_notify_enabled', b.enabled ? '1' : '0', req.session.email);
+    } else {
+      const h = await loadAlertHooks();
+      const field = { breakLog: 'breakLog', missed: 'missedCall', summaries: 'summaries' }[key];
+      if (url) h[field] = url;
+      if (b.clearWebhook) delete h[field];
+      if (typeof b.enabled === 'boolean') {
+        if (key === 'breakLog') h.breakLogEnabled = b.enabled;
+        if (key === 'summaries') h.summariesEnabled = b.enabled;
+        if (key === 'missed') await setSetting('missed_call_notify_enabled', b.enabled ? '1' : '0', req.session.email);
+      }
+      if (key === 'breakLog' && Array.isArray(b.events)) h.breakEvents = b.events.filter(e => ['shift', 'break', 'brb', 'training', 'qa', 'internal'].includes(e));
+      await setSetting('alert_hooks', JSON.stringify(h), req.session.email);
+      await loadAlertHooks();
+    }
+    insertAuditLog(req.session.email, 'alert_channel_saved', key, `${url ? 'webhook set' : b.clearWebhook ? 'webhook cleared' : ''} ${typeof b.enabled === 'boolean' ? 'enabled=' + b.enabled : ''}`.trim()).catch(() => {});
+    res.json({ success: true });
+  } catch (e) { console.error('alert-hub save:', e.message); res.status(500).json({ success: false, error: 'Could not save' }); }
+});
+
+app.post('/api/alert-hub/test', requireAdmin, rateLimit(8, 60000), async (req, res) => {
+  const key = String((req.body || {}).key || '');
+  await loadAlertHooks();
+  let url = '';
+  if (key === 'breakLog') url = GOOGLE_CHAT_WEBHOOK_URL;
+  else if (key === 'missed') url = MISSED_CALL_WEBHOOK_URL;
+  else if (key === 'summaries') url = ALERT_HOOKS.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL;
+  else if (key === 'liveOps') url = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null)).webhookUrl;
+  if (!url) return res.json({ success: false, error: 'No webhook set for this alert type' });
+  const label = { breakLog: 'Break log', missed: 'Missed call', summaries: 'Summary', liveOps: 'Live ops' }[key] || 'Alert';
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: `🔔 Test: ${label} alerts from T1 CS Stars will post in this space.` }), signal: AbortSignal.timeout(15000) });
+    res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` });
+  } catch (e) { res.json({ success: false, error: 'Could not reach Google Chat' }); }
+});
+
+app.get('/api/alert-hub/breaklog', requireAdmin, async (req, res) => {
+  try {
+    const dbm = require('./database');
+    const rows = await new Promise((rs, rj) => dbm.db.all(`SELECT username, action_label, note, notified, notify_status, created_at FROM break_events ORDER BY id DESC LIMIT 40`, [], (e, r) => e ? rj(e) : rs(r || [])));
+    res.json({ success: true, data: rows });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // FEAT-5: CSV export endpoints
@@ -3686,7 +3809,8 @@ app.get('/health', (req, res) => {
 // Queue extension to monitor for missed call alerts (default: Customer Service 1025)
 const MISSED_CALL_QUEUE_EXT    = process.env.MISSED_CALL_QUEUE_EXT || '1025';
 // Dedicated webhook: MUST be different from GOOGLE_CHAT_WEBHOOK_URL (break bot)
-const MISSED_CALL_WEBHOOK_URL  = process.env.MISSED_CALL_WEBHOOK_URL || '';
+const ENV_MISSED_CALL_WEBHOOK_URL = process.env.MISSED_CALL_WEBHOOK_URL || '';
+let MISSED_CALL_WEBHOOK_URL  = ENV_MISSED_CALL_WEBHOOK_URL;
 // Optional: main DID that routes to the queue (e.g. "2814681445").
 // When set, any Missed call to this number is treated as a queue call even if
 // RC doesn't populate to.extensionNumber (happens for quick hang-ups on the DID).
@@ -7120,7 +7244,8 @@ async function start() {
       if (typeof global._startAnomalyCron === 'function') global._startAnomalyCron();
       // Start missed-call → Google Chat notifier (every 2 min)
       // Uses MISSED_CALL_WEBHOOK_URL, separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
-      if (MISSED_CALL_WEBHOOK_URL) {
+      await loadAlertHooks().catch(e => console.error('❌ alert hooks load:', e.message));
+      if (true) { // Session 53: always scheduled; runMissedCallPoll() no-ops until a webhook is set
         // Stagger: presence sync fires at 0s and every 2 min.
         // Missed call poll fires at 30s then every 1 min, offset avoids rate-limit collisions.
         setTimeout(() => runMissedCallPoll().catch(() => {}), 30000);

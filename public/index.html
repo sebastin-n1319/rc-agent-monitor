@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.112"></script>
+<script src="/adit-reset.js?v=1.19.113"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -67,7 +67,9 @@
 <link rel="stylesheet" href="/chat-reports.css?v=1.0.1">
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
-<script src="/t1-alerts.js?v=1.0.0" defer></script>
+<script src="/t1-alerts.js?v=1.0.1" defer></script>
+<link rel="stylesheet" href="/alert-hub.css?v=1.0.0">
+<script src="/alert-hub.js?v=1.0.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
 <style id="a11y-css">
@@ -724,11 +726,11 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v1.8a2.7 2.7 0 0 0 0 5.4v1.8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-1.8a2.7 2.7 0 0 0 0-5.4z"/><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v1.8a2.7 2.7 0 0 0 0 5.4v1.8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-1.8a2.7 2.7 0 0 0 0-5.4z"/><path d="M14 5v2.2M14 10.9v2.2M14 16.8V19"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
-  <!-- Session 50: Google Chat reports (compose, preview, schedule) -->
-  <div class="sb-item" id="sb-digest" title="Chat reports: send and schedule productivity and break reports"
-       onclick="sbAdmin('digest',this)">
-    <svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M20.5 12a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/><path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/><path d="M8.5 14.5v-2M12 14.5V9M15.5 14.5v-4"/></svg>
-    <span class="sb-label">Reports</span>
+  <!-- Session 53: Alerts hub (break log, missed calls, summaries, live ops) -->
+  <div class="sb-item" id="sb-alerts" title="Alerts: break log, missed calls, summaries and live ops alerts to Google Chat"
+       onclick="sbAdmin('alerts',this)">
+    <svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M12 3v1.5"/><path d="M19.5 3.5a5 5 0 0 1 1.5 3.5M4.5 3.5A5 5 0 0 0 3 7"/></svg>
+    <span class="sb-label">Alerts</span>
   </div>
   <!-- Session 17: Settings (pause controls + admin settings) -->
   <div class="sb-item" id="sb-settings" title="Settings"
@@ -852,6 +854,9 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <button class="nav-tab" data-tab="bonus" onclick="switchTab('bonus',this)">Bonus Guide</button>
     <button class="nav-tab" data-tab="digest" onclick="switchTab('digest',this)">Chat Reports</button>
     <button class="nav-tab" data-tab="ticket-alerts" onclick="switchTab('ticket-alerts',this)">Ticket Alerts</button>
+    <button class="nav-tab" data-tab="alerts" onclick="switchTab('alerts',this)">Alerts</button>
+    <button class="nav-tab" data-tab="alerts-breaklog" onclick="switchTab('alerts-breaklog',this)">Break log alerts</button>
+    <button class="nav-tab" data-tab="alerts-missed" onclick="switchTab('alerts-missed',this)">Missed call alerts</button>
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
     <button class="nav-tab" data-tab="auditlog" onclick="switchTab('auditlog',this)">Audit Log</button>
     <button class="nav-tab" data-tab="tickets" onclick="switchTab('tickets',this)">Tickets</button>
@@ -1365,6 +1370,11 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
       <iframe class="hof-frame" src="about:blank" data-src="/hall-of-fame.html?admin" title="Hall of Fame Admin Section"></iframe>
     </div>
   </div>
+
+  <!-- ALERTS HUB (Session 53) -->
+  <div class="page" id="tab-alerts"><div id="alert-hub-root"></div></div>
+  <div class="page" id="tab-alerts-breaklog"><div id="alert-breaklog-root"></div></div>
+  <div class="page" id="tab-alerts-missed"><div id="alert-missed-root"></div></div>
 
   <!-- CHAT REPORTS (Session 50) -->
   <div class="page" id="tab-digest"><div id="digest-root"></div></div>
@@ -9698,7 +9708,13 @@ const ADMIN_TAB_GROUPS = [
   { primary: 'tickets', members: [
       { tab: 'tickets',          label: 'Ticket Report' },
       { tab: 'ticket-lifecycle', label: 'Ticket Lifecycle' },
-      { tab: 'ticket-alerts',    label: 'Alerts' },
+  ]},
+  { primary: 'alerts', members: [
+      { tab: 'alerts',          label: 'Overview' },
+      { tab: 'ticket-alerts',   label: 'Live ops' },
+      { tab: 'digest',          label: 'Summaries' },
+      { tab: 'alerts-breaklog', label: 'Break log' },
+      { tab: 'alerts-missed',   label: 'Missed calls' },
   ]},
   { primary: 'ai-agent', members: [
       { tab: 'ai-agent', label: 'AI Learning' },
@@ -9760,6 +9776,9 @@ function switchTab(tab,el){
   if(tab==='ai-agent') laLoadStats();
   if(tab==='digest' && typeof window.openDigest==='function') window.openDigest();
   if(tab==='ticket-alerts' && typeof window.openT1AlertsAdmin==='function') window.openT1AlertsAdmin();
+  if(tab==='alerts' && typeof window.openAlertHub==='function') window.openAlertHub();
+  if(tab==='alerts-breaklog' && typeof window.openAlertBreakLog==='function') window.openAlertBreakLog();
+  if(tab==='alerts-missed' && typeof window.openAlertMissed==='function') window.openAlertMissed();
   if(tab==='debug') loadDebugPanel();
   // Remember the active tab and restore its saved scroll position
   try{
