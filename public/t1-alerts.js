@@ -31,7 +31,7 @@
         <a class="ta-item" href="${esc(t.url || '#')}" target="_blank" rel="noopener">
           <div class="ta-row1"><b>#${esc(t.number)}</b><span class="ta-age">${esc(dur(t.ageSec != null ? t.ageSec : t.idleSec))}</span></div>
           <div class="ta-sub">${esc(t.subject || '(no subject)')}</div>
-          <div class="ta-meta">${withAgent ? `<span class="ta-agent">${esc(t.agent || '')}</span>` : ''}<span>${esc(t.channel || '')}</span></div>
+          <div class="ta-meta">${withAgent ? `<span class="ta-agent">${esc(t.agent || '')}</span>` : ''}<span>${esc(t.channel || '')}</span>${t.team ? `<span>${esc(t.team)}</span>` : ''}</div>
         </a>`).join('') : `<div class="ta-empty">${esc(empty)}</div>`}</div>
     </section>`;
   }
@@ -57,7 +57,7 @@
         ${lane('Over 1 hour', 'over', by('over'), 'Nothing over an hour')}
         ${lane(st.isAdmin ? 'Assigned, no action' : 'Mine, no action', 'idle', st.tickets.idle || [], st.isAdmin ? 'Every assigned ticket has been actioned' : 'You are all caught up', st.isAdmin)}
       </div>
-      <p class="ta-foot">${st.tickets.department ? esc(st.tickets.department) + ' department · ' : ''}Open tickets from the last few days. Updated ${esc(ago(st.tickets.at))}${st.tickets.error ? ' · <span class="ta-err">' + esc(st.tickets.error) + '</span>' : ''}. "No action" means no reply and no comment from the owner since the ticket was assigned to them.</p>`;
+      <p class="ta-foot">${st.tickets.department ? esc(st.tickets.department) + ' department · ' : ''}Unassigned shows only T1's queue (T1 - Customer Support team, or no team yet). Open tickets from the last few days. Updated ${esc(ago(st.tickets.at))}${st.tickets.error ? ' · <span class="ta-err">' + esc(st.tickets.error) + '</span>' : ''}. "No action" means no reply and no comment from the owner since the ticket was assigned to them.</p>`;
   }
 
   async function load(root, mode) {
