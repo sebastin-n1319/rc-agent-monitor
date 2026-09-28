@@ -1,10 +1,11 @@
 /**
- * Brain v4: Branded Design System
+ * Brain v5: grounded in live app data (Session 46). Branded design system.
  * Uses the Brain robot character, brand colors, and design language from the style guide
  */
 (function() {
   'use strict';
 
+  var BRAIN_VERSION = '5.0';
   var msgs = [];
   var busy = false;
   var isOpen = false;
@@ -168,7 +169,7 @@
       // Title brand
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
         '<img src="'+IMG.avatar+'" width="36" height="36" style="border-radius:10px;object-fit:cover;" alt="Brain"/>' +
-        '<div style="text-align:left;"><div style="font-size:18px;font-weight:900;color:#1A1F3C;letter-spacing:-.02em;">Brain</div><div style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain is Braining</div></div>' +
+        '<div style="text-align:left;"><div style="font-size:18px;font-weight:900;color:#1A1F3C;letter-spacing:-.02em;">Brain</div><div style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain v'+BRAIN_VERSION+' · knows your live numbers</div></div>' +
       '</div>' +
       // Thinking illustration
       '<div style="position:relative;margin-bottom:10px;">' +
@@ -209,7 +210,7 @@
           '<div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.01em;line-height:1;">Brain</div>' +
           '<div style="display:flex;align-items:center;gap:5px;margin-top:3px;">' +
             '<div style="width:6px;height:6px;border-radius:50%;background:#F97316;box-shadow:0 0 6px #F97316;flex-shrink:0;animation:brain-dot-bounce 1.4s ease-in-out infinite;"></div>' +
-            '<span style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain is Braining</span>' +
+            '<span style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain v'+BRAIN_VERSION+' · knows your live numbers</span>' +
           '</div>' +
         '</div>' +
         '<button style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1;" onclick="Brain.close()">&#8722;</button>' +
@@ -273,18 +274,24 @@
     var btn=document.getElementById('brain-send-btn'); if(btn) btn.disabled=true;
     try {
       var c=ctx();
+      // Session 46: identity/role now come from the server session; only the
+      // page is sent as context. Last 12 turns, 30s timeout.
+      var ctl=('AbortController' in window)?new AbortController():null;
+      var tmr=ctl?setTimeout(function(){ctl.abort();},30000):null;
       var res=await fetch('/api/brain/chat',{
         method:'POST',credentials:'include',
         headers:{'Content-Type':'application/json'},
+        signal:ctl?ctl.signal:undefined,
         body:JSON.stringify({
-          messages:msgs.map(function(m){return{role:m.role,content:m.content};}),
-          context:'User: '+c.user+' | Role: '+c.role+' | Page: '+c.page+' | Hour: '+hr()+'h',
-          userStats:{page:c.page,role:c.role,hour:hr()}
+          messages:msgs.slice(-12).map(function(m){return{role:m.role,content:String(m.content).slice(0,2000)};}),
+          context:c.page
         })
       });
+      if(tmr) clearTimeout(tmr);
       var data=await res.json();
       rmTyping();
-      msgs.push({role:'assistant',content:data.success?data.reply:'Having trouble connecting, please try again.',time:ts()});
+      msgs.push({role:'assistant',content:data.success?data.reply:(data.error||'Having trouble connecting, please try again.'),time:ts()});
+      if(msgs.length>60) msgs=msgs.slice(-40);
     } catch(e){
       rmTyping();
       msgs.push({role:'assistant',content:'Connection issue, check your internet and retry.',time:ts()});

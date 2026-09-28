@@ -28311,6 +28311,10 @@ async function sendBreakAction(action, btn){
     breakSelectedDate=todayStr();
     syncBreakDateInputs();
     showToast((json.data?.event?.actionLabel || 'Break event')+' saved'+notifySuffix, json.notification?.notified ? 'success' : 'info', 3600);
+    // Session 46: refresh() is a no-op for agents off the Dashboard, so the
+    // Breaks screen stayed stale for up to 30s after a tap (and the next tap
+    // was often rejected). Reload the tracker directly, then the rest.
+    try{ await loadBreakTracker(); }catch(_){}
     await refresh();
   }catch(e){
     showToast(e.message || 'Break event failed','error');
@@ -32498,7 +32502,7 @@ async function deleteNote(id){
   </button>
   <div id="brain-panel" class="brain-panel" style="display:none;"></div>
 </div>
-<script src="/brain.js?v=1.19.129" defer></script>
+<script src="/brain.js?v=5.0.0" defer></script>
 
 <script>
 /* ── Login Page: Particle Canvas ── */
