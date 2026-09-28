@@ -5,7 +5,7 @@
 (function() {
   'use strict';
 
-  var BRAIN_VERSION = '5.0';
+  var BRAIN_VERSION = '5.1';
   var msgs = [];
   var busy = false;
   var isOpen = false;
@@ -39,6 +39,15 @@
     s.textContent = [
       '#brain-fab-wrap{position:fixed!important;bottom:28px!important;right:28px!important;z-index:2147483647!important;display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:12px!important;pointer-events:none!important;}',
       '#brain-fab-wrap>*{pointer-events:auto!important;}',
+      /* Session 49: Brain docks as a small tab on the right edge so it never
+         covers content; it slides out on hover and the panel opens beside it. */
+      '#brain-fab-wrap{right:0!important;bottom:90px!important;gap:10px!important;}',
+      '#brain-fab{width:40px!important;height:44px!important;border-radius:12px 0 0 12px!important;transform:translateX(6px);opacity:.82;box-shadow:0 4px 14px rgba(7,43,64,.18)!important;transition:transform .2s ease,opacity .2s ease!important;}',
+      '#brain-fab:hover,#brain-fab:focus-visible{transform:translateX(0)!important;opacity:1;}',
+      '#brain-fab>div{display:none!important;}',
+      '#brain-fab img{width:40px!important;height:44px!important;border-radius:12px 0 0 12px!important;}',
+      '#brain-panel{margin-right:14px;max-height:calc(100vh - 140px);}',
+      '#brain-bubble{display:none!important;}',
       // FAB button
       '#brain-fab{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;outline:none;background:linear-gradient(135deg,#FF8C00,#F97316);box-shadow:0 8px 28px rgba(249,115,22,.5),0 2px 8px rgba(0,0,0,.2);padding:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;}',
       '#brain-fab:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 14px 40px rgba(249,115,22,.6);}',
@@ -302,6 +311,7 @@
 
   /* ── Proactive bubble ───────────────────────────────────── */
   function showBubble(text,delay){
+    return; // Session 49: no unsolicited pop-ups; Brain waits to be opened.
     clearTimeout(bubbleTimer);
     bubbleTimer=setTimeout(function(){
       if(isOpen) return;
