@@ -611,6 +611,31 @@ async function fetchAccountQueueAbandonCalls(istMidnight, agents) {
   return logs;
 }
 
+// Session 45: the dashboard awaited this on every 30s refresh. When the
+// cache had expired and RingCentral was slow or rate-limiting, the request
+// hung for a minute or more and the whole dashboard sat on "Refreshing".
+// Now: one fetch at a time per day/timezone, and callers that pass
+// maxWaitMs get the last good summary (marked stale) if the fresh one takes
+// longer than that; the fetch keeps running and refills the cache.
+const _queueDashInflight = new Map();
+async function fetchQueueDashboardSummaryFast(dateStr, timeZone = 'America/Chicago', maxWaitMs = 6000) {
+  const key = dateStr + '|' + timeZone;
+  let p = _queueDashInflight.get(key);
+  if (!p) {
+    p = fetchQueueDashboardSummary(dateStr, false, timeZone).finally(() => _queueDashInflight.delete(key));
+    _queueDashInflight.set(key, p);
+  }
+  let timer;
+  const timeout = new Promise(resolve => { timer = setTimeout(() => resolve(null), maxWaitMs); });
+  const result = await Promise.race([p, timeout]);
+  clearTimeout(timer);
+  if (result) return result;
+  if (lastQueueDashboardSummary && lastQueueDashboardSummary.date === dateStr && lastQueueDashboardSummary.timeZone === timeZone) {
+    return { ...lastQueueDashboardSummary, stale: true };
+  }
+  return null;
+}
+
 async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'America/Chicago') {
   const now = Date.now();
   if (
@@ -2148,6 +2173,7 @@ module.exports = {
   fetchPresenceForAll,
   fetchCallLogs,
   fetchQueueDashboardSummary,
+  fetchQueueDashboardSummaryFast,
   searchRCUsers,
   fetchLiveCallStatus,
   handleWebhookNotification,

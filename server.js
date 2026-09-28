@@ -47,7 +47,7 @@ const {
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const ANOMALY = require('./lib/anomaly');
 const {
-  authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
+  authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, fetchQueueDashboardSummaryFast, searchRCUsers, fetchLiveCallStatus,
   repairCallLogs, // Session 42
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
   fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords, backfillCallHistory,
@@ -618,7 +618,11 @@ app.get('/api/queue-dashboard', requireAuth, async (req, res) => {
   // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
   const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
-  try { res.json({ success: true, date, timeZone: tz, data: await fetchQueueDashboardSummary(date, false, tz) }); }
+  try {
+    const data = await fetchQueueDashboardSummaryFast(date, tz, 6000); // Session 45: never hang the dashboard
+    if (!data) return res.json({ success: false, date, timeZone: tz, pending: true, data: null });
+    res.json({ success: true, date, timeZone: tz, data });
+  }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

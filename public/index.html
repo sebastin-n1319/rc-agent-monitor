@@ -29164,13 +29164,17 @@ async function loadTodaySummary(){
   const yesterday=shiftDate(today,-1);
   const tz=encodeURIComponent(activeTimeZone());
   try{
+    // Session 45: queue-dashboard and abandoned-calls are optional extras;
+    // give them 10s, then carry on without them (the dashboard used to sit
+    // on "Refreshing..." forever when RingCentral was slow).
+    const soft=(url,ms)=>{const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);return fetch(url,{signal:c.signal}).catch(()=>({ok:false,headers:new Headers(),json:async()=>({success:false})})).finally(()=>clearTimeout(t));};
     const[sr,tr,lr,yr,qr,ar]=await Promise.all([
       fetch(BACKEND+'/api/summary?date='+today+'&tz='+tz),
       fetch(BACKEND+'/api/presence-events?date='+today+'&tz='+tz),
       fetch(BACKEND+'/api/live-status'),
       fetch(BACKEND+'/api/summary?date='+yesterday+'&tz='+tz),
-      fetch(BACKEND+'/api/queue-dashboard?date='+today+'&tz='+tz),
-      fetch(BACKEND+'/api/abandoned-calls?date='+today+'&tz='+tz)
+      soft(BACKEND+'/api/queue-dashboard?date='+today+'&tz='+tz,10000),
+      soft(BACKEND+'/api/abandoned-calls?date='+today+'&tz='+tz,10000)
     ]);
     const sd=await sr.json(),td=await tr.json(),ld=await lr.json(),yd=await yr.json();
     let qd={success:false,data:null};
