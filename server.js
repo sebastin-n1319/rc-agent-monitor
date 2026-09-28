@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const ai = require('./lib/ai'); // Session 46: shared OpenAI client
+const _ticketAiCache = ai.makeCache(400);
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
@@ -460,8 +462,6 @@ initDB().then(async () => {
   // Fully separate tables/module from roster -- see lib/desk-lifecycle.js.
   try {
     const { db } = require('./database');
-    const ai = require('./lib/ai'); // Session 46: shared OpenAI client
-const _ticketAiCache = ai.makeCache(400);
 const deskLifecycle = require('./lib/desk-lifecycle');
     deskLifecycle.setDB(db);
     await deskLifecycle.initSchema();
