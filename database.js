@@ -759,11 +759,15 @@ async function getPresenceEvents(date,timeZone='America/Chicago'){
 // CALL LOGS - now with ring/hold/transfer/voicemail
 function getStoredCallLogValues(log){
   const sourceCallId = log.callId ? String(log.callId) : null;
-  const storedCallId = [
-    String(log.agentId || 'unknown'),
-    String(log.direction || 'unknown'),
-    sourceCallId || String(log.startTime || Date.now())
-  ].join('::');
+  // Session 42: keyed on agent + RingCentral call id only. It used to
+  // include the direction too -- but RingCentral updates a call's record
+  // while it completes (e.g. first seen as an outbound "IP Phone Offline"
+  // ring attempt, later as the inbound "Accepted" call), so the same call
+  // got stored twice under two directions. Verified: Henry's Sep 21-27
+  // had 99 rows for 82 real calls. See dedupeCallLogs() for the cleanup.
+  const storedCallId = sourceCallId
+    ? `${String(log.agentId || 'unknown')}::${sourceCallId}`
+    : [String(log.agentId || 'unknown'), String(log.direction || 'unknown'), String(log.startTime || Date.now())].join('::');
   return [
     log.agentId,
     log.agentName,
@@ -795,15 +799,24 @@ function deleteCallLogsRange(startIso,endIso){
 }
 
 async function replaceCallLogsRange(startIso,endIso,logs){
-  // SAFE MERGE: never delete existing data — only add new records.
-  // INSERT OR IGNORE on the UNIQUE call_id means duplicates are silently skipped
-  // so a partial sync never overwrites a previously-complete snapshot.
+  // SAFE MERGE: never delete existing data — only add or refresh records.
+  // Session 42: a call already stored is UPDATED with RingCentral's latest
+  // version of it (result/direction/duration settle after the call ends)
+  // instead of being ignored -- the old INSERT OR IGNORE kept whatever
+  // half-finished state was seen first. A partial sync still can't remove
+  // anything; it only touches the calls it actually got back.
   await run('BEGIN IMMEDIATE');
   try{
     for(const log of logs){
-      await run(`INSERT OR IGNORE INTO call_logs
+      await run(`INSERT INTO call_logs
         (agent_id,agent_name,call_id,source_call_id,direction,result,duration,ring_duration,hold_duration,transferred,is_voicemail,from_number,to_number,queue_name,start_time)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        ON CONFLICT(call_id) DO UPDATE SET
+          agent_name=excluded.agent_name, direction=excluded.direction, result=excluded.result,
+          duration=excluded.duration, ring_duration=excluded.ring_duration, hold_duration=excluded.hold_duration,
+          transferred=excluded.transferred, is_voicemail=excluded.is_voicemail,
+          from_number=excluded.from_number, to_number=excluded.to_number, queue_name=excluded.queue_name,
+          start_time=excluded.start_time, fetched_at=CURRENT_TIMESTAMP`,
         getStoredCallLogValues(log));
     }
     await run('COMMIT');
@@ -821,6 +834,23 @@ async function replaceCallLogsRange(startIso,endIso,logs){
 // actual earliest surviving row at query time and falls back to
 // call_monthly_summary for anything older, so it stays correct even if
 // this number changes again in the future.
+// Session 42: collapse the duplicate rows left by the old
+// agent::direction::id key (see getStoredCallLogValues) -- keep the most
+// recently fetched version of each (agent, RingCentral call id), then
+// move every row onto the new agent::id key. Idempotent; cheap to run on
+// every boot.
+async function dedupeCallLogs(){
+  const del = await run(`DELETE FROM call_logs
+    WHERE source_call_id IS NOT NULL AND source_call_id != ''
+      AND id NOT IN (SELECT MAX(id) FROM call_logs
+                      WHERE source_call_id IS NOT NULL AND source_call_id != ''
+                      GROUP BY agent_id, source_call_id)`);
+  const upd = await run(`UPDATE call_logs SET call_id = agent_id || '::' || source_call_id
+    WHERE source_call_id IS NOT NULL AND source_call_id != ''
+      AND call_id != agent_id || '::' || source_call_id`);
+  return { removed: del.changes || 0, rekeyed: upd.changes || 0 };
+}
+
 // Session 42: used by rc-service.js repairCallLogs() to report how many
 // rows a repair pass actually added.
 async function countCallLogsForAgentSince(agentId, sinceIso){
@@ -2363,7 +2393,7 @@ async function getAlertCounts(){
 module.exports={
   db,  // Session 16: roster.js needs the raw handle to share the same connection
   CALL_LOGS_RETENTION_DAYS,
-  countCallLogsForAgentSince, deleteFaxCallLogs, isMonthWithinCallLogRetention, // Session 42
+  countCallLogsForAgentSince, deleteFaxCallLogs, isMonthWithinCallLogRetention, dedupeCallLogs, // Session 42
   createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
   upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
   createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,

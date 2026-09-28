@@ -15,7 +15,7 @@ const {
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
-  isMonthWithinCallLogRetention, deleteFaxCallLogs, // Session 42
+  isMonthWithinCallLogRetention, deleteFaxCallLogs, dedupeCallLogs, // Session 42
   addAgentNote, getAgentNotes, getAgentNoteById, deleteAgentNote,
   getAgentCallStatsRange,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
@@ -487,6 +487,18 @@ initDB().then(async () => {
       console.log('📞 Calls history backfill reset to populate answered_outbound on existing months');
     }
   } catch(e) { log.error('answered_outbound_backfill_reset_failed', e); }
+
+  // Session 42: collapse duplicate call rows (see dedupeCallLogs()), then
+  // rebuild the current + previous month's totals from the clean data.
+  try {
+    const d = await dedupeCallLogs();
+    if (d.removed || d.rekeyed) {
+      const curr = new Date().toISOString().slice(0, 7);
+      await refreshMonthlySummary(curr);
+      await refreshMonthlySummary(shiftMonthKey(curr, -1));
+    }
+    console.log(`📞 call_logs dedupe: ${JSON.stringify(d)}`);
+  } catch(e) { log.error('call_logs_dedupe_failed', e); }
 
   // Session 42: one-time call_logs repair -- remove fax rows that were
   // stored as calls, then re-read the last 45 days from RingCentral to
