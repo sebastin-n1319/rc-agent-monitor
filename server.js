@@ -17,7 +17,7 @@ const {
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
   isMonthWithinCallLogRetention, deleteFaxCallLogs, dedupeCallLogs, // Session 42
   addAgentNote, getAgentNotes, getAgentNoteById, deleteAgentNote,
-  getAgentCallStatsRange,
+  getAgentCallStatsRange, getAgentCallListRange,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   upsertUserProfile, getAllUserProfiles, getUserProfile,
   insertAuditLog, getAuditLog,
@@ -2398,7 +2398,11 @@ const VALID_TICKET_TYPES = new Set([
 // Session 42: manual ticket logging is retired for agents -- "tickets
 // handled" is now counted automatically (see agentHandledTickets() in
 // lib/desk-lifecycle.js) and shown on My Stats. Admins can still log.
+// Session 45: Sebastin brought manual logging back for agents until he says
+// otherwise. Flip this to true to retire it again.
+const MANUAL_TICKET_LOGGING_RETIRED = false;
 async function rejectRetiredTicketLogging(req, res) {
+  if (!MANUAL_TICKET_LOGGING_RETIRED) return false;
   const settings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
   if (settings && settings.role === 'admin') return false;
   res.status(410).json({ success: false, error: 'Manual ticket logging has been retired. Your tickets are now counted automatically, see My Stats.' });
@@ -6374,6 +6378,39 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     } catch (e) { console.warn('⚠️ chat stats lookup failed for my-summary:', e.message); }
 
     res.json({ success: true, from, to, email, summary: summary[0] || null, callStats, chatStats, chatPresence });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Session 45: drill-downs for the call and chat tiles on My Stats. Always
+// scoped to the logged-in agent's own session email, same as my-summary.
+app.get('/api/desk-lifecycle/my-calls', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const kind = String(req.query.kind || 'all');
+    const email = (req.session.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ success: false, error: 'No session email' });
+    const monitored = await getMonitoredAgents();
+    const match = monitored.find(a => (a.email || '').toLowerCase() === email);
+    if (!match) return res.json({ success: true, from, to, kind, linked: false, rows: [], detailFrom: from, partial: false });
+    const list = await getAgentCallListRange({ agentId: match.rc_id || match.extension, from, to, kind });
+    res.json({ success: true, from, to, kind, linked: true, ...list });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.get('/api/desk-lifecycle/my-chats', requireAuth, async (req, res) => {
+  try {
+    const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const kind = String(req.query.kind || 'chats');
+    const email = (req.session.email || '').toLowerCase();
+    if (!email) return res.status(400).json({ success: false, error: 'No session email' });
+    if (kind === 'available' || kind === 'busy') {
+      const rows = await salesiqLifecycle.agentChatPresenceSegments({ email, from, to, status: kind === 'available' ? 'Available' : 'Busy' });
+      return res.json({ success: true, from, to, kind, rows });
+    }
+    const rows = await salesiqLifecycle.agentChatList({ email, from, to });
+    res.json({ success: true, from, to, kind, rows });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

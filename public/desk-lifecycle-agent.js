@@ -406,20 +406,29 @@
   // commented / took ownership), calls and chats for the chosen range.
   // This is what replaces the manual Tickets tab. Ticket cards open the
   // Verify view listing the exact tickets behind the number.
+  // Session 45: every My Stats tile opens the list behind its number.
+  // Ticket tiles open the Verify sub-page on the matching metric; call and
+  // chat tiles open a detail sub-page (see openDetail() below).
+  function clickable(html, attrs) {
+    return html.replace('<article class="av2-stat"', `<article class="av2-stat mystats-tile-link" ${attrs} role="button" tabindex="0" style="cursor:pointer"`);
+  }
+  const vt = (metric, html) => clickable(html, `data-verify-metric="${metric}"`);
+  const dt = (spec, html) => clickable(html, `data-detail="${spec}"`);
+
   function workSection(s, c, cs, prevS) {
     const ready = !!(s && s.tickets_handled_ready);
     const tv = (k) => ready ? (s[k] || 0) : '…';
     const d = (k) => (ready && prevS && prevS.tickets_handled_ready) ? { curr: s[k] || 0, prev: prevS[k] || 0, higherIsBetter: null } : null;
-    const click = (metric, html) => html.replace('<article class="av2-stat"', `<article class="av2-stat" data-verify-metric="${metric}" style="cursor:pointer"`);
+    const click = vt;
     const body = `
       <div class="av2-stat-grid">
         ${click('handled', stat('ticket', 'blue', tv('tickets_handled'), 'Tickets handled', 'handled', s, prevS, d('tickets_handled')))}
         ${click('handled_new', stat('ticket', 'teal', tv('tickets_handled_new'), 'New tickets', 'handled_new', s, prevS, d('tickets_handled_new')))}
         ${click('handled_followup', stat('swap', 'purple', tv('tickets_handled_followup'), 'Follow-ups', 'handled_followup', s, prevS, d('tickets_handled_followup')))}
-        ${stat('phone', 'green', c ? (c.totalCalls || 0) : '-', 'Calls')}
-        ${stat('chat', 'amber', cs ? (cs.chatCount || 0) : '-', 'Chats')}
+        ${c ? dt('calls:all', stat('phone', 'green', c.totalCalls || 0, 'Calls')) : stat('phone', 'green', '-', 'Calls')}
+        ${cs ? dt('chats:chats', stat('chat', 'amber', cs.chatCount || 0, 'Chats')) : stat('chat', 'amber', '-', 'Chats')}
       </div>
-      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} (a ticket can be in more than one). Click a ticket card to see the exact tickets.</div>`
+      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} (a ticket can be in more than one). Click any card to see the exact tickets, calls or chats behind it.</div>`
               : `<div class="av2-section-meta" style="margin-top:8px">Ticket activity for this range is still syncing, check back shortly.</div>`}`;
     return panel('Work handled', 'Counted automatically from Zoho Desk, RingCentral and SalesIQ, nothing to log by hand.', body);
   }
@@ -431,16 +440,16 @@
     const avgHandle = s.avg_handle_hours != null ? `${s.avg_handle_hours}h` : '-';
     const body = `
       <div class="av2-stat-grid">
-        ${stat('ticket', null,   s.unique_tickets || 0, 'Unique tickets', 'unique', s, prevS, { curr: s.unique_tickets || 0, prev: prevS ? (prevS.unique_tickets || 0) : null, higherIsBetter: null })}
-        ${stat('check',  'green', s.solely_handled || 0, 'Solely handled', 'solely', s, prevS, { curr: s.solely_handled || 0, prev: prevS ? (prevS.solely_handled || 0) : null, higherIsBetter: true })}
-        ${stat('alert',  'red',   s.reassigned || 0, 'Reassigned', 'reassigned', s, prevS, { curr: s.reassigned || 0, prev: prevS ? (prevS.reassigned || 0) : null, higherIsBetter: false })}
-        ${stat('swap',   'amber', s.transferred || 0, 'Transferred', 'transferred', s, prevS, { curr: s.transferred || 0, prev: prevS ? (prevS.transferred || 0) : null, higherIsBetter: false })}
-        ${stat('swap',   null,    s.handed_off_internal || 0, 'Handed off (T1)', 'handed_off', s, prevS, { curr: s.handed_off_internal || 0, prev: prevS ? (prevS.handed_off_internal || 0) : null, higherIsBetter: null })}
-        ${stat('check',  'teal',  s.closed_count || 0, 'Closed', 'closed', s, prevS, { curr: s.closed_count || 0, prev: prevS ? (prevS.closed_count || 0) : null, higherIsBetter: null })}
-        ${stat('pulse',  'blue',  s.currently_handling || 0, 'Handling now', 'handling', s, null, null)}
-        ${stat('clock',  'purple', avgHandle, 'Avg handle time', 'avg_handle', s, prevS, (prevS && prevS.avg_handle_hours != null && s.avg_handle_hours != null) ? { curr: s.avg_handle_hours, prev: prevS.avg_handle_hours, higherIsBetter: false } : null)}
-        ${stat('target', 'teal',  fcr, `FCR${s.fcr_total ? ` (${s.fcr_total})` : ''}`, 'fcr', s, prevS, (prevS && prevS.fcr_pct != null && s.fcr_pct != null) ? { curr: s.fcr_pct, prev: prevS.fcr_pct, higherIsBetter: true, pct: true } : null)}
-        ${stat('star',   'purple', csat, `CSAT${s.csat_total ? ` (${s.csat_total})` : ''}`, 'csat', s, prevS, (prevS && prevS.csat_pct != null && s.csat_pct != null) ? { curr: s.csat_pct, prev: prevS.csat_pct, higherIsBetter: true, pct: true } : null)}
+        ${vt('unique', stat('ticket', null,   s.unique_tickets || 0, 'Unique tickets', 'unique', s, prevS, { curr: s.unique_tickets || 0, prev: prevS ? (prevS.unique_tickets || 0) : null, higherIsBetter: null }))}
+        ${vt('solely_handled', stat('check',  'green', s.solely_handled || 0, 'Solely handled', 'solely', s, prevS, { curr: s.solely_handled || 0, prev: prevS ? (prevS.solely_handled || 0) : null, higherIsBetter: true }))}
+        ${vt('reassigned', stat('alert',  'red',   s.reassigned || 0, 'Reassigned', 'reassigned', s, prevS, { curr: s.reassigned || 0, prev: prevS ? (prevS.reassigned || 0) : null, higherIsBetter: false }))}
+        ${vt('transferred', stat('swap',   'amber', s.transferred || 0, 'Transferred', 'transferred', s, prevS, { curr: s.transferred || 0, prev: prevS ? (prevS.transferred || 0) : null, higherIsBetter: false }))}
+        ${vt('handed_off_internal', stat('swap',   null,    s.handed_off_internal || 0, 'Handed off (T1)', 'handed_off', s, prevS, { curr: s.handed_off_internal || 0, prev: prevS ? (prevS.handed_off_internal || 0) : null, higherIsBetter: null }))}
+        ${vt('closed', stat('check',  'teal',  s.closed_count || 0, 'Closed', 'closed', s, prevS, { curr: s.closed_count || 0, prev: prevS ? (prevS.closed_count || 0) : null, higherIsBetter: null }))}
+        ${vt('currently_handling', stat('pulse',  'blue',  s.currently_handling || 0, 'Handling now', 'handling', s, null, null))}
+        ${vt('closed', stat('clock',  'purple', avgHandle, 'Avg handle time', 'avg_handle', s, prevS, (prevS && prevS.avg_handle_hours != null && s.avg_handle_hours != null) ? { curr: s.avg_handle_hours, prev: prevS.avg_handle_hours, higherIsBetter: false } : null))}
+        ${vt('fcr', stat('target', 'teal',  fcr, `FCR${s.fcr_total ? ` (${s.fcr_total})` : ''}`, 'fcr', s, prevS, (prevS && prevS.fcr_pct != null && s.fcr_pct != null) ? { curr: s.fcr_pct, prev: prevS.fcr_pct, higherIsBetter: true, pct: true } : null))}
+        ${vt('csat', stat('star',   'purple', csat, `CSAT${s.csat_total ? ` (${s.csat_total})` : ''}`, 'csat', s, prevS, (prevS && prevS.csat_pct != null && s.csat_pct != null) ? { curr: s.csat_pct, prev: prevS.csat_pct, higherIsBetter: true, pct: true } : null))}
       </div>`;
     return panel('My numbers', 'Unique/solely-handled/reassigned and the breakdowns below count tickets created in this range; Closed/Avg handle/FCR count tickets closed in this range; Handling now is live. Hover any card for what it means, and, where a comparable prior period exists, how it changed.', body);
   }
@@ -469,15 +478,15 @@
     }
     const body = `
       <div class="av2-stat-grid">
-        ${stat('phoneIn',  'teal',   c.inboundCalls || 0, 'Inbound')}
-        ${stat('phoneOut', 'purple', c.outboundCalls || 0, 'Outbound')}
-        ${stat('phone',    null,     c.totalCalls || 0, 'Total calls')}
-        ${stat('x',        'red',    c.missedCalls || 0, 'Missed')}
-        ${stat('voicemail','red',    c.voicemails || 0, 'Voicemails')}
-        ${stat('clock',    'green',  fmtDuration(c.totalTalkSeconds), 'Total talk time')}
-        ${stat('clock',    'blue',   fmtDuration(c.ahtInboundSeconds), 'AHT inbound')}
-        ${stat('clock',    'blue',   fmtDuration(c.ahtOutboundSeconds), 'AHT outbound')}
-        ${stat('swap',     'teal',   c.transferCount || 0, 'Transfers')}
+        ${dt('calls:inbound', stat('phoneIn',  'teal',   c.inboundCalls || 0, 'Inbound'))}
+        ${dt('calls:outbound', stat('phoneOut', 'purple', c.outboundCalls || 0, 'Outbound'))}
+        ${dt('calls:all', stat('phone',    null,     c.totalCalls || 0, 'Total calls'))}
+        ${dt('calls:missed', stat('x',        'red',    c.missedCalls || 0, 'Missed'))}
+        ${dt('calls:voicemail', stat('voicemail','red',    c.voicemails || 0, 'Voicemails'))}
+        ${dt('calls:talk', stat('clock',    'green',  fmtDuration(c.totalTalkSeconds), 'Total talk time'))}
+        ${dt('calls:aht_in', stat('clock',    'blue',   fmtDuration(c.ahtInboundSeconds), 'AHT inbound'))}
+        ${dt('calls:aht_out', stat('clock',    'blue',   fmtDuration(c.ahtOutboundSeconds), 'AHT outbound'))}
+        ${dt('calls:transfers', stat('swap',     'teal',   c.transferCount || 0, 'Transfers'))}
       </div>`;
     return panel('Call Activity', 'RingCentral calls in this range, same period as the ticket numbers above.', body);
   }
@@ -495,10 +504,10 @@
     const avgResp = cs && cs.avgResponseSeconds != null ? fmtDuration(cs.avgResponseSeconds) : '-';
     const body = `
       <div class="av2-stat-grid">
-        ${stat('chat',  null,   cs ? (cs.chatCount || 0) : '-', 'Chats handled')}
-        ${stat('clock', 'blue', avgResp, 'Avg response time')}
-        ${stat('check', 'green', cp ? fmtDuration(cp.availSeconds) : '-', 'Chat available')}
-        ${stat('pause', 'red',  cp ? fmtDuration(cp.busySeconds) : '-', 'Chat busy')}
+        ${cs ? dt('chats:chats', stat('chat',  null,   cs.chatCount || 0, 'Chats handled')) : stat('chat', null, '-', 'Chats handled')}
+        ${cs ? dt('chats:chats', stat('clock', 'blue', avgResp, 'Avg response time')) : stat('clock', 'blue', avgResp, 'Avg response time')}
+        ${cp ? dt('chats:available', stat('check', 'green', fmtDuration(cp.availSeconds), 'Chat available')) : stat('check', 'green', '-', 'Chat available')}
+        ${cp ? dt('chats:busy', stat('pause', 'red',  fmtDuration(cp.busySeconds), 'Chat busy')) : stat('pause', 'red', '-', 'Chat busy')}
       </div>`;
     return panel('Chat Activity', 'Zoho SalesIQ chats in this range. Available/busy time started tracking when this shipped, so it fills in over time rather than covering the full range right away.', body);
   }
@@ -711,8 +720,19 @@
     // where currentEmail hasn't been set yet.
     const verifyBtn = root.querySelector('.mystats-verify-btn');
     // Session 42: ticket cards in "Work handled" open Verify on that metric.
-    root.querySelectorAll('[data-verify-metric]').forEach(card => card.addEventListener('click', () => {
+    const activate = (card, fn) => {
+      card.addEventListener('click', fn);
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } });
+    };
+    root.querySelectorAll('[data-verify-metric]').forEach(card => activate(card, () => {
+      hideTip();
       if (verifyBtn) { verifyBtn.dataset.metric = card.getAttribute('data-verify-metric'); verifyBtn.click(); }
+    }));
+    // Session 45: call and chat tiles open their own list.
+    root.querySelectorAll('[data-detail]').forEach(card => activate(card, () => {
+      hideTip();
+      const [source, kind] = card.getAttribute('data-detail').split(':');
+      openDetail(root, source, kind);
     }));
     if (verifyBtn) verifyBtn.addEventListener('click', () => {
       if (typeof window.openDeskLifecycleVerify !== 'function') return;
@@ -857,6 +877,126 @@
     window.__av2TktTooltipScrollWired = true;
     window.addEventListener('scroll', hideTip, { passive: true, capture: true });
     window.addEventListener('resize', hideTip, { passive: true });
+  }
+
+
+  // ── Session 45: call / chat detail sub-page ────────────────────────────
+  const CALL_KINDS = {
+    all:       { title: 'All calls',            sub: 'Every inbound and outbound call in this range.' },
+    inbound:   { title: 'Inbound calls',        sub: 'Calls that came in to you.' },
+    outbound:  { title: 'Outbound calls',       sub: 'Calls you placed.' },
+    missed:    { title: 'Missed calls',         sub: 'Inbound calls that rang you and were missed or abandoned.' },
+    voicemail: { title: 'Voicemails',           sub: 'Inbound calls that went to voicemail.' },
+    talk:      { title: 'Talk time',            sub: 'Answered calls; their durations add up to your total talk time.' },
+    aht_in:    { title: 'AHT inbound',          sub: 'Answered inbound calls; AHT is their average duration.' },
+    aht_out:   { title: 'AHT outbound',         sub: 'Answered outbound calls; AHT is their average duration.' },
+    transfers: { title: 'Transferred calls',    sub: 'Calls that were transferred.' },
+  };
+  const CHAT_KINDS = {
+    chats:     { title: 'Chats handled',        sub: 'Every SalesIQ chat you attended in this range, with its first response time.' },
+    available: { title: 'Chat available time',  sub: 'Each period your SalesIQ status was Available.' },
+    busy:      { title: 'Chat busy time',       sub: 'Each period your SalesIQ status was Busy.' },
+  };
+
+  function fmtClock(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return esc(iso);
+    return d.toLocaleString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' CST';
+  }
+  function fmtPhone(n) { return n ? esc(n) : '-'; }
+
+  function detailTable(headers, rows) {
+    if (!rows.length) return emptyState('Nothing here', 'No records behind this number for the selected range.');
+    return `<div class="tbl-wrap" style="overflow-x:auto;"><table class="av2-table">
+      <thead><tr>${headers.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.join('')}</tbody></table></div>`;
+  }
+
+  function callRowsHtml(kind, rows) {
+    const body = rows.map(r => `<tr>
+      <td class="mono">${fmtClock(r.startTime)}</td>
+      <td>${esc(r.direction || '-')}</td>
+      <td>${esc(r.result || '-')}${r.isVoicemail ? ' (voicemail)' : ''}${r.transferred ? ' (transferred)' : ''}</td>
+      <td class="mono">${fmtPhone(r.fromNumber)}</td>
+      <td class="mono">${fmtPhone(r.toNumber)}</td>
+      <td class="mono">${fmtDuration(r.duration || 0)}</td>
+      <td class="mono">${r.holdDuration ? fmtDuration(r.holdDuration) : '-'}</td>
+      <td>${esc(r.queueName || '-')}</td></tr>`);
+    const total = rows.reduce((a, r) => a + (r.duration || 0), 0);
+    const summary = kind === 'talk' ? `Total talk time ${fmtDuration(total)}`
+      : (kind === 'aht_in' || kind === 'aht_out') ? `Average ${fmtDuration(rows.length ? total / rows.length : 0)}`
+      : '';
+    return { summary, table: detailTable(['Time', 'Direction', 'Result', 'From', 'To', 'Duration', 'Hold', 'Queue'], body) };
+  }
+
+  function chatRowsHtml(kind, rows) {
+    if (kind === 'available' || kind === 'busy') {
+      const body = rows.map(r => `<tr>
+        <td class="mono">${fmtClock(r.start)}</td>
+        <td class="mono">${r.ongoing ? 'Now' : fmtClock(r.end)}</td>
+        <td class="mono">${fmtDuration(r.seconds)}</td></tr>`);
+      const total = rows.reduce((a, r) => a + (r.seconds || 0), 0);
+      return { summary: `Total ${fmtDuration(total)}`, table: detailTable(['From', 'To', 'Duration'], body) };
+    }
+    const body = rows.map(r => `<tr>
+      <td class="mono">${fmtClock(r.startTime)}</td>
+      <td>${esc(r.department || '-')}</td>
+      <td>${esc(r.statusLabel || r.status || '-')}</td>
+      <td class="mono">${r.responseSeconds != null ? fmtDuration(r.responseSeconds) : '-'}</td>
+      <td class="mono">${fmtClock(r.endTime)}</td>
+      <td class="mono" style="font-size:11px">${esc(r.conversationId || '')}</td></tr>`);
+    const resp = rows.filter(r => r.responseSeconds != null);
+    const avg = resp.length ? resp.reduce((a, r) => a + r.responseSeconds, 0) / resp.length : null;
+    return { summary: avg != null ? `Average response ${fmtDuration(avg)}` : '', table: detailTable(['Started', 'Department', 'Status', 'First response', 'Ended', 'Chat ID'], body) };
+  }
+
+  async function openDetail(root, source, kind) {
+    const defs = source === 'calls' ? CALL_KINDS : CHAT_KINDS;
+    const def = defs[kind] || Object.values(defs)[0];
+    const range = currentRange();
+    const shell = (inner) => `
+      <div class="av2-container">
+        <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-detail-back" style="margin-bottom:12px;">&larr; Back to My Stats</button>
+        <div class="av2-section-head" style="margin-bottom:6px;">
+          <div>
+            <h2 class="av2-section-title">${esc(def.title)}</h2>
+            <div class="av2-section-sub">${esc(def.sub)} ${esc(fmtDateTime(range.from))} &rarr; ${esc(fmtDateTime(range.to))}</div>
+          </div>
+        </div>
+        ${inner}
+      </div>`;
+    const wireBack = () => {
+      const b = root.querySelector('.mystats-detail-back');
+      if (b) b.addEventListener('click', () => window.openDeskLifecycleAgent());
+    };
+    root.innerHTML = shell(`<div class="av2-panel"><div class="av2-skel" style="height:14px;width:40%;margin-bottom:12px;"></div><div class="av2-skel" style="height:180px;width:100%;"></div></div>`);
+    wireBack();
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+    try {
+      const params = new URLSearchParams({ from: range.from, to: range.to, kind });
+      const r = await fetch(`/api/desk-lifecycle/my-${source}?${params.toString()}`, { credentials: 'include' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if (!j.success) throw new Error(j.error || 'Could not load the list');
+      if (source === 'calls' && j.linked === false) {
+        root.innerHTML = shell(`<div class="av2-panel">${emptyState('Not linked yet', 'No RingCentral extension linked to your account yet, ask your admin to add you under Agents.')}</div>`);
+        wireBack(); return;
+      }
+      const rows = j.rows || [];
+      const out = source === 'calls' ? callRowsHtml(kind, rows) : chatRowsHtml(kind, rows);
+      const count = `${rows.length} ${source === 'calls' ? (rows.length === 1 ? 'call' : 'calls') : (kind === 'chats' ? (rows.length === 1 ? 'chat' : 'chats') : (rows.length === 1 ? 'period' : 'periods'))}`;
+      const partial = (source === 'calls' && j.partial)
+        ? `<div class="av2-section-meta" style="margin-bottom:8px;">Call-by-call detail is kept from ${esc(fmtDate(j.detailFrom))} onward. Older calls in this range count toward the tile but only as monthly totals.</div>` : '';
+      root.innerHTML = shell(`<div class="av2-panel">
+          <div class="av2-section-meta" style="margin-bottom:8px;"><b style="color:var(--av2-t1)">${esc(count)}</b>${out.summary ? ` &middot; ${esc(out.summary)}` : ''}</div>
+          ${partial}${out.table}
+        </div>`);
+      wireBack();
+    } catch (e) {
+      root.innerHTML = shell(`<div class="av2-banner" data-tone="warning"><div class="av2-banner-msg">${esc(e.message)}</div></div>`);
+      wireBack();
+    }
   }
 
   function skeletonHTML() {

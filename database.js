@@ -1195,6 +1195,46 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
   };
 }
 
+// Session 45: the individual calls behind each My Stats call tile. Uses
+// the exact same filters as getAgentCallStatsRange() above so a list
+// always matches its tile, for the part of the range that call_logs still
+// holds. Months older than retention only exist as monthly totals, so
+// detailFrom says where the itemised list starts.
+const CALL_LIST_FILTERS = {
+  all:       `1=1`,
+  inbound:   `direction='Inbound'`,
+  outbound:  `direction='Outbound'`,
+  missed:    `direction='Inbound' AND lower(COALESCE(result,'')) IN ('missed','abandoned')`,
+  voicemail: `direction='Inbound' AND (COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail')`,
+  talk:      `lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  aht_in:    `direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  aht_out:   `direction='Outbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  transfers: `COALESCE(transferred,0)>0`,
+};
+async function getAgentCallListRange({ agentId, from, to, kind = 'all' }) {
+  if (!agentId) return { rows: [], detailFrom: from, partial: false };
+  const where = CALL_LIST_FILTERS[kind] || CALL_LIST_FILTERS.all;
+  const floorRow = await get(`SELECT MIN(start_time) as floor FROM call_logs`);
+  const floor = floorRow && floorRow.floor ? floorRow.floor : to;
+  const fd = new Date(floor);
+  let boundary = new Date(Date.UTC(fd.getUTCFullYear(), fd.getUTCMonth(), 1));
+  while (!isMonthWithinCallLogRetention(boundary.toISOString().slice(0, 7)) && boundary < new Date(to)) {
+    boundary = new Date(Date.UTC(boundary.getUTCFullYear(), boundary.getUTCMonth() + 1, 1));
+  }
+  const partial = new Date(from) < boundary;
+  const listFrom = partial ? boundary.toISOString() : from;
+  const rows = await all(
+    `SELECT COALESCE(source_call_id, call_id) AS callId, direction, result, duration, ring_duration AS ringDuration,
+            hold_duration AS holdDuration, transferred, is_voicemail AS isVoicemail, from_number AS fromNumber,
+            to_number AS toNumber, queue_name AS queueName, start_time AS startTime
+       FROM call_logs
+      WHERE agent_id=? AND start_time >= ? AND start_time < ? AND ${where}
+      ORDER BY start_time DESC`,
+    [agentId, listFrom, to]
+  );
+  return { rows, detailFrom: listFrom, partial };
+}
+
 async function getAbandonedCalls(date,timeZone='America/Chicago'){
   const { start, end } = getDateWindow(date,timeZone);
   const callStart = start.toISOString();
@@ -2414,7 +2454,7 @@ module.exports={
   savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
-  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAbandonedCalls,
+  insertCallLog,deleteCallLogsRange,replaceCallLogsRange,pruneCallLogs,refreshMonthlySummary,upsertCallMonthlySummaryRow,getCallsSyncState,setCallsSyncState,getAgentSummary,getAgentCallStatsRange,getAgentCallListRange,getAbandonedCalls,
   getCallLogStats,getCallVolume,getCallLogsFull,
   addAgentNote,getAgentNotes,getAgentNoteById,deleteAgentNote,
   createAppSession,getAppSession,deleteAppSession,deleteSessionsForEmail,pruneExpiredSessions,getPictureForEmail,getGoogleSubForEmail,
