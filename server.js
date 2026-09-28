@@ -1576,6 +1576,10 @@ function t1Alerts() {
     fetchQueueWaiting: () => rc.fetchQueueWaiting(),
     deskGet: (path) => ds.fetchRaw(path),
     fetchDepartments: () => ds.fetchDepartments(),
+    resolveChatId: async (email) => {
+      const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id);
+      return (a && a.chat_id) || await getGoogleSubForEmail(email);
+    },
     getMonitoredAgents,
     db: require('./database'),
     fetchFn: fetch,
@@ -1595,7 +1599,7 @@ app.post('/api/t1-alerts/scan', requireAdmin, rateLimit(6, 60000), async (req, r
 });
 app.get('/api/t1-alerts/config', requireAdmin, async (req, res) => {
   const cfg = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
-  res.json({ success: true, config: { ...cfg, webhookUrl: undefined, webhookSet: !!cfg.webhookUrl, webhookMasked: maskUrl(cfg.webhookUrl) }, mentionPreview: t1Alerts().mentionText(cfg) });
+  res.json({ success: true, config: { ...cfg, webhookUrl: undefined, webhookSet: !!cfg.webhookUrl, webhookMasked: maskUrl(cfg.webhookUrl) }, mentionPreview: (await t1Alerts().resolveMention(cfg)).text, mention: await t1Alerts().resolveMention(cfg) });
 });
 app.post('/api/t1-alerts/config', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try {
@@ -1626,7 +1630,7 @@ app.post('/api/t1-alerts/config', requireAdmin, rateLimit(20, 60000), async (req
 });
 app.post('/api/t1-alerts/test', requireAdmin, rateLimit(5, 60000), async (req, res) => {
   const a = t1Alerts(); const cfg = await a.config();
-  const r = await a.post('test', null, `🔔 Test from T1 CS Stars alerts. ${a.mentionText(cfg) || ''} If you can read this, queue, coverage and ticket alerts will land here.`.trim(), cfg);
+  const r = await a.post('test', null, `🔔 Test from T1 CS Stars alerts. ${(await a.resolveMention(cfg)).text || ''} If you can read this, queue, coverage and ticket alerts will land here.`.trim(), cfg);
   res.json({ success: r.ok, error: r.error });
 });
 app.get('/api/t1-alerts/log', requireAdmin, async (req, res) => {

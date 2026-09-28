@@ -79,7 +79,7 @@
   function tog(name, on, label) {
     return `<label class="ta-tog"><input type="checkbox" name="${name}"${on ? ' checked' : ''}><span class="ta-sw" aria-hidden="true"></span><b>${esc(label)}</b></label>`;
   }
-  function settingsHTML(c, preview) {
+  function settingsHTML(c, preview, mention) {
     return `<form class="ta-set" data-settings>
       <div class="ta-set-grid">
         <fieldset><legend>Google Chat space</legend>
@@ -87,10 +87,10 @@
             <input class="ta-in" name="webhookUrl" type="url" autocomplete="off" placeholder="${c.webhookSet ? esc(c.webhookMasked) : 'https://chat.googleapis.com/v1/spaces/...'}"></label>
           <p class="ta-help">In your T1 CS Alerts space: space name, <b>Apps &amp; integrations</b>, <b>Webhooks</b>, add one named "T1 Alerts", copy the URL and paste it here.</p>
           <div class="ta-row">
-            <label class="ta-f"><span>Tag on queue and coverage alerts</span><input class="ta-in" name="mention" value="${esc(c.mention || '')}" placeholder="users/1234567890 or ronnie@adit.com"></label>
+            <label class="ta-f"><span>Tag on queue and coverage alerts</span><input class="ta-in" name="mention" value="${esc(c.mention || '')}" placeholder="ronnie@adit.com"></label>
             <label class="ta-f"><span>Name if no tag</span><input class="ta-in" name="mentionLabel" value="${esc(c.mentionLabel || '')}" placeholder="Ronnie"></label>
           </div>
-          <p class="ta-help">Posts will show: <code>${esc(preview || '(no tag)')}</code>. Use <b>Send test</b> to check the tag pings the right person.</p>
+          <p class="ta-help">${mention && mention.resolved ? `<span class="ta-ok">Real tag ready</span> ${mention.email ? esc(mention.email) + ' will be pinged.' : 'Tag set.'}` : `<span class="ta-no">Not a real tag yet</span> ${esc((mention && mention.reason) || '')} Posts show plain <code>${esc(preview || '(no tag)')}</code>. Once they sign in to this tool once, the tag becomes a real ping, or paste their Google Chat ID as users/123…`}</p>
         </fieldset>
         <fieldset><legend>Calls</legend>
           ${tog('queue.enabled', c.queue.enabled, 'Caller waiting in queue')}
@@ -129,7 +129,7 @@
     const host = root.querySelector('[data-settings-host]');
     try {
       const j = await api('/api/t1-alerts/config');
-      host.innerHTML = settingsHTML(j.config, j.mentionPreview);
+      host.innerHTML = settingsHTML(j.config, j.mentionPreview, j.mention);
     } catch (e) { host.innerHTML = '<div class="ta-err">Could not load settings</div>'; }
   }
   async function loadLog(root) {
