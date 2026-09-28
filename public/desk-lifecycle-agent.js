@@ -306,6 +306,12 @@
   function fmtPct(pct) { return (pct == null) ? '—' : `${pct}%`; }
   function metricTip(key, s) {
     switch (key) {
+      case 'handled':
+        return 'Tickets handled\n\nEvery ticket you replied to, commented on (incl. private call notes), or took ownership of in this range. Each ticket counts once, however many times you touched it. Click to see the list.';
+      case 'handled_new':
+        return 'New tickets\n\nTickets you handled in this range that were also created in this range.';
+      case 'handled_followup':
+        return 'Follow-ups\n\nTickets you handled in this range that were created earlier (follow-ups, reopens, transfers-in).';
       case 'unique':
         return 'Unique tickets\n\nEvery ticket you appear in anywhere in its ownership history — even one hand-off counts, once. Counted by when the ticket was CREATED.';
       case 'solely':
@@ -394,6 +400,28 @@
       'Nothing to show yet',
       "Either you haven't handled any tickets in this window, or the sync hasn't reached your tickets yet — it runs in the background every 20 minutes."
     ));
+  }
+
+  // Session 42: headline "what I handled" panel -- tickets (replied /
+  // commented / took ownership), calls and chats for the chosen range.
+  // This is what replaces the manual Tickets tab. Ticket cards open the
+  // Verify view listing the exact tickets behind the number.
+  function workSection(s, c, cs, prevS) {
+    const ready = !!(s && s.tickets_handled_ready);
+    const tv = (k) => ready ? (s[k] || 0) : '…';
+    const d = (k) => (ready && prevS && prevS.tickets_handled_ready) ? { curr: s[k] || 0, prev: prevS[k] || 0, higherIsBetter: null } : null;
+    const click = (metric, html) => html.replace('<article class="av2-stat"', `<article class="av2-stat" data-verify-metric="${metric}" style="cursor:pointer"`);
+    const body = `
+      <div class="av2-stat-grid">
+        ${click('handled', stat('ticket', 'blue', tv('tickets_handled'), 'Tickets handled', 'handled', s, prevS, d('tickets_handled')))}
+        ${click('handled_new', stat('ticket', 'teal', tv('tickets_handled_new'), 'New tickets', 'handled_new', s, prevS, d('tickets_handled_new')))}
+        ${click('handled_followup', stat('swap', 'purple', tv('tickets_handled_followup'), 'Follow-ups', 'handled_followup', s, prevS, d('tickets_handled_followup')))}
+        ${stat('phone', 'green', c ? (c.totalCalls || 0) : '—', 'Calls')}
+        ${stat('chat', 'amber', cs ? (cs.chatCount || 0) : '—', 'Chats')}
+      </div>
+      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} (a ticket can be in more than one). Click a ticket card to see the exact tickets.</div>`
+              : `<div class="av2-section-meta" style="margin-top:8px">Ticket activity for this range is still syncing — check back shortly.</div>`}`;
+    return panel('Work handled', 'Counted automatically from Zoho Desk, RingCentral and SalesIQ — nothing to log by hand.', body);
   }
 
   function statsSection(s, prevS) {
@@ -639,6 +667,7 @@
         </div>
         ${metaBarHtml(summaryJson, syncStatus)}
 
+        ${workSection(summaryJson.summary, summaryJson.callStats, summaryJson.chatStats, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${callStatsSection(summaryJson.callStats)}
         ${chatStatsSection(summaryJson.chatStats, summaryJson.chatPresence)}
@@ -681,6 +710,10 @@
     // rcSession lookup only as a fallback for the (non-test-mode) case
     // where currentEmail hasn't been set yet.
     const verifyBtn = root.querySelector('.mystats-verify-btn');
+    // Session 42: ticket cards in "Work handled" open Verify on that metric.
+    root.querySelectorAll('[data-verify-metric]').forEach(card => card.addEventListener('click', () => {
+      if (verifyBtn) { verifyBtn.dataset.metric = card.getAttribute('data-verify-metric'); verifyBtn.click(); }
+    }));
     if (verifyBtn) verifyBtn.addEventListener('click', () => {
       if (typeof window.openDeskLifecycleVerify !== 'function') return;
       let email = (typeof currentEmail !== 'undefined' && currentEmail) ? currentEmail : null;
@@ -696,7 +729,7 @@
       }
       window.openDeskLifecycleVerify({
         agentEmail: email, agentName: name || email,
-        isAdmin: false, metric: 'unique', presetKey: _selectedPreset,
+        isAdmin: false, metric: (() => { const m = verifyBtn.dataset.metric || 'handled'; delete verifyBtn.dataset.metric; return m; })(), presetKey: _selectedPreset,
         customFrom: _customFrom, customTo: _customTo,
         root, backLabel: '← Back to My Stats',
         onBack: () => window.openDeskLifecycleAgent(),

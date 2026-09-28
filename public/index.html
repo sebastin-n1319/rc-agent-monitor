@@ -45,9 +45,9 @@
 <script src="/bulk-actions.js?v=1.19.7" defer></script>
 <script src="/roster-admin.js?v=1.19.85" defer></script>
 <script src="/settings-admin.js?v=1.0.1" defer></script>
-<script src="/desk-lifecycle-admin.js?v=1.9.1" defer></script>
-<script src="/desk-lifecycle-agent.js?v=2.0.0" defer></script>
-<script src="/desk-lifecycle-verify.js?v=1.1.0" defer></script>
+<script src="/desk-lifecycle-admin.js?v=1.10.0" defer></script>
+<script src="/desk-lifecycle-agent.js?v=2.1.0" defer></script>
+<script src="/desk-lifecycle-verify.js?v=1.2.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
 <style id="a11y-css">
@@ -9810,9 +9810,9 @@ html.dark-mode .flc-row-enhanced{border-bottom-color:rgba(255,255,255,.05)}
 <script src="/bulk-actions.js?v=1.19.7" defer></script>
 <script src="/roster-admin.js?v=1.19.85" defer></script>
 <script src="/settings-admin.js?v=1.0.1" defer></script>
-<script src="/desk-lifecycle-admin.js?v=1.9.1" defer></script>
-<script src="/desk-lifecycle-agent.js?v=2.0.0" defer></script>
-<script src="/desk-lifecycle-verify.js?v=1.1.0" defer></script>
+<script src="/desk-lifecycle-admin.js?v=1.10.0" defer></script>
+<script src="/desk-lifecycle-agent.js?v=2.1.0" defer></script>
+<script src="/desk-lifecycle-verify.js?v=1.2.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.7" defer></script>
 <style id="a11y-css">
@@ -19591,7 +19591,8 @@ tbody tr:hover td{
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
     <span class="sb-label">AI Write</span>
   </div>
-  <div class="sb-item" id="sb-agent-tickets" title="Log Ticket"
+  <!-- Session 42: manual ticket logging retired for agents -- tickets are counted automatically on My Stats -->
+  <div class="sb-item" id="sb-agent-tickets" title="Log Ticket" style="display:none"
        onclick="sbAgent('tickets',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
     <span class="sb-label">Tickets</span>
@@ -21153,7 +21154,7 @@ tbody tr:hover td{
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       AI Writer
     </button>
-    <button class="agent-shell-btn" id="agent-tab-tickets" onclick="switchAgentSection('tickets',this)">
+    <button class="agent-shell-btn" id="agent-tab-tickets" style="display:none" onclick="switchAgentSection('tickets',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
       Tickets
     </button>
@@ -21237,9 +21238,9 @@ tbody tr:hover td{
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#F4891F"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>
             Open Break Bot
           </button>
-          <button class="asc-quick-btn" onclick="sbAgent('tickets',document.getElementById('sb-agent-tickets'))">
+          <button class="asc-quick-btn" onclick="sbAgent('mystats',document.getElementById('sb-agent-mystats'))">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#21AAE0"><path d="M10 3v1.5M10 7.5v1.5M10 12v1.5M3 3h10a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 0 0 3v2A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 0 0-3v-2A1.5 1.5 0 0 1 3 3z"/></svg>
-            Log a Ticket
+            My Stats
           </button>
           <button class="asc-quick-btn" onclick="sbAgent('writer',document.getElementById('sb-agent-writer'))">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#6366f1"><path d="M11 2.5a2.5 2.5 0 0 1 0 3.5L5 12l-3 1 1-3z"/></svg>
@@ -23416,6 +23417,13 @@ function openBreakbotPreview(el){
 }
 
 function switchAgentSection(section,el){
+  // Session 42: the manual Tickets tab is retired for agents; anything that
+  // still routes there (saved last section, #tickets deep link, old
+  // shortcuts) lands on My Stats instead.
+  if(section==='tickets'){
+    section='mystats';
+    el=document.getElementById('agent-tab-mystats');
+  }
   if(section==='breakbot' && !breakbotVisibleInAgentView()){
     showToast('Break Bot is not enabled for this account.','warning');
     section='dashboard';
@@ -28348,12 +28356,9 @@ function sbAdmin(tab, sbEl){
   try{ history.pushState({adminTab:tab},'',location.pathname+'#admin/'+tab); }catch(e){}
 }
 function sbAgent(section, sbEl){
+  if(section === 'tickets') section = 'mystats'; // Session 42: manual Tickets tab retired for agents
   const btnEl = document.getElementById('agent-tab-'+section) || document.getElementById('agent-breakbot-tab');
   switchAgentSection(section, btnEl);
-  if(section === 'tickets'){
-    setTimeout(initTlTooltips, 80);
-    loadMyTicketsFromSheet();
-  }
 }
 
 // ── Session 14: sidebar bridge to modal-based features ─────────────────

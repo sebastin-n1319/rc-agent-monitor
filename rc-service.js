@@ -1,6 +1,6 @@
 const RC = require('@ringcentral/sdk').SDK;
 const { EventEmitter } = require('events');
-const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents, updateAgentRcId } = require('./database');
+const { insertPresenceEvent, replaceCallLogsRange, getMonitoredAgents, updateAgentRcId, countCallLogsForAgentSince } = require('./database');
 require('dotenv').config();
 
 const rcsdk = new RC({
@@ -1330,7 +1330,16 @@ async function fetchCallLogs(force = false) {
     // Use IST midnight as start of shift day
     const istMidnight = new Date(new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Kolkata'}) + 'T00:00:00+05:30');
     const istNextMidnight = new Date(istMidnight.getTime() + 86400000);
-    console.log(`📞 Fetching calls from IST midnight: ${istMidnight.toISOString()}`);
+    // Session 42: always re-read YESTERDAY (IST) too. IST midnight falls at
+    // ~13:30 US Central -- mid-shift -- and this sync used to only ever
+    // look at "today (IST)", so any call that landed in RingCentral's log
+    // after the last tick before midnight (or during a missed/failed tick)
+    // was never picked up again. Verified against RC's own call log for
+    // Sep 21-27: e.g. 8 of Henry's 82 calls were missing, 3 of them in the
+    // last 10 min before IST midnight. The insert below is INSERT OR IGNORE,
+    // so re-reading yesterday only ever adds what was missed.
+    const syncFrom = new Date(istMidnight.getTime() - 86400000);
+    console.log(`📞 Fetching calls from ${syncFrom.toISOString()} (yesterday+today IST)`);
     const pendingLogs = [];
     const failedAgents = [];
     try {
@@ -1347,10 +1356,11 @@ async function fetchCallLogs(force = false) {
         try {
           await sleep(2500);
           const calls = await listExtensionCallLogRecords(agent.rc_id, {
-            dateFrom: istMidnight.toISOString(),
+            dateFrom: syncFrom.toISOString(),
             dateTo: istNextMidnight.toISOString(),
-            perPage: 200,
-            view: 'Detailed'
+            perPage: 250,
+            view: 'Detailed',
+            type: 'Voice' // Session 42: faxes ("Received"/"Sent") were being counted as calls
           });
           for (const call of calls) {
             const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
@@ -1402,7 +1412,7 @@ async function fetchCallLogs(force = false) {
       return { imported, preserved: true, failedAgents };
     }
 
-    await replaceCallLogsRange(istMidnight.toISOString(), istNextMidnight.toISOString(), pendingLogs);
+    await replaceCallLogsRange(syncFrom.toISOString(), istNextMidnight.toISOString(), pendingLogs);
     lastCallLogSyncAt = Date.now();
     lastSuccessfulCallLogSyncAt = lastCallLogSyncAt;
     console.log(`✅ Call logs synced: ${imported} agent-scoped calls`);
@@ -1415,6 +1425,62 @@ async function fetchCallLogs(force = false) {
   });
 
   return callLogSyncPromise;
+}
+
+/**
+ * Session 42: one-time (re-runnable) repair of call_logs from RingCentral's
+ * own call log for the last `days` days, per monitored agent. Fills every
+ * gap the old today-only sync left behind (see fetchCallLogs above), and
+ * AditKB's RingCentral mirror can't be used for this -- it stopped
+ * updating on 2026-09-08. INSERT OR IGNORE, so it never duplicates or
+ * overwrites. One paginated request per agent (perPage 1000), paced for
+ * RC's rate limits.
+ */
+async function repairCallLogs(days = 45) {
+  const agents = (await getMonitoredAgents()).filter(a => a.rc_id);
+  const dateFrom = new Date(Date.now() - days * 86400000);
+  const dateTo = new Date();
+  let added = 0, fetched = 0;
+  const failed = [];
+  for (const agent of agents) {
+    try {
+      await sleep(6000);
+      const params = {
+        dateFrom: dateFrom.toISOString(), dateTo: dateTo.toISOString(),
+        perPage: 1000, view: 'Detailed', type: 'Voice',
+      };
+      let calls;
+      try { calls = await listExtensionCallLogRecords(agent.rc_id, params); }
+      catch (e) {
+        if (!isRateLimitError(e, e.rcData)) throw e;
+        console.warn(`⏳ Call repair ${agent.name}: rate limited, retrying in 65s`);
+        await sleep(65000);
+        calls = await listExtensionCallLogRecords(agent.rc_id, params);
+      }
+      fetched += calls.length;
+      const logs = calls.map(call => {
+        const { ringDuration, holdDuration, transferred, isVoicemail } = parseCallDetails(call);
+        return {
+          agentId: agent.rc_id, agentName: agent.name, callId: call.id,
+          direction: inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null)),
+          result: call.result, duration: call.duration || 0,
+          ringDuration, holdDuration, transferred, isVoicemail,
+          fromNumber: call.from?.phoneNumber || call.from?.extensionNumber || null,
+          toNumber: call.to?.phoneNumber || call.to?.extensionNumber || null,
+          queueName: call.to?.name || null, startTime: call.startTime,
+        };
+      });
+      const before = await countCallLogsForAgentSince(agent.rc_id, dateFrom.toISOString());
+      await replaceCallLogsRange(dateFrom.toISOString(), dateTo.toISOString(), logs);
+      const after = await countCallLogsForAgentSince(agent.rc_id, dateFrom.toISOString());
+      added += Math.max(0, after - before);
+      console.log(`🔧 Call repair ${agent.name}: RC ${calls.length}, added ${after - before}`);
+    } catch (e) {
+      failed.push(agent.name);
+      console.error(`❌ Call repair ${agent.name}: ${e.message}`);
+    }
+  }
+  return { days, fetched, added, failed };
 }
 
 async function fetchLiveCallStatus() {
@@ -2076,6 +2142,7 @@ async function backfillCallHistory(fromMonth, toMonth, onSummary) {
 }
 
 module.exports = {
+  repairCallLogs, // Session 42
   authenticate,
   ensureRealtimeSubscription,
   fetchPresenceForAll,

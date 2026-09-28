@@ -821,6 +821,23 @@ async function replaceCallLogsRange(startIso,endIso,logs){
 // actual earliest surviving row at query time and falls back to
 // call_monthly_summary for anything older, so it stays correct even if
 // this number changes again in the future.
+// Session 42: used by rc-service.js repairCallLogs() to report how many
+// rows a repair pass actually added.
+async function countCallLogsForAgentSince(agentId, sinceIso){
+  const r = await get(`SELECT COUNT(*) AS n FROM call_logs WHERE agent_id = ? AND start_time >= ?`, [String(agentId), sinceIso]);
+  return r ? r.n : 0;
+}
+
+// Session 42: RingCentral fax records ("Received"/"Sent"/fax errors) used
+// to be stored as calls because the per-extension call-log request had no
+// type filter. It now requests type=Voice; this removes the fax rows that
+// were already stored. Only fax-specific result values are matched.
+const FAX_RESULTS = ['received','sent','send error','receive error','fax receipt error','fax not sent','fax partially sent','fax poor line','partial receive'];
+async function deleteFaxCallLogs(){
+  const ph = FAX_RESULTS.map(()=>'?').join(',');
+  return run(`DELETE FROM call_logs WHERE lower(COALESCE(result,'')) IN (${ph})`, FAX_RESULTS);
+}
+
 async function pruneCallLogs(daysToKeep=CALL_LOGS_RETENTION_DAYS){
   // Remove call logs older than N days to prevent unbounded DB growth
   const cutoff=new Date(Date.now()-daysToKeep*86400000).toISOString();
@@ -829,8 +846,21 @@ async function pruneCallLogs(daysToKeep=CALL_LOGS_RETENTION_DAYS){
 
 // Aggregate call_logs for a given YYYY-MM month into the persistent call_monthly_summary table.
 // Safe to call at any time — uses INSERT OR REPLACE so repeated calls are idempotent.
+// Session 42: a month can only be (re)computed from call_logs while the
+// WHOLE month is still inside call_logs' retention window. Once its first
+// days have been pruned, re-aggregating it would silently overwrite a
+// complete call_monthly_summary row with a partial one -- which the
+// nightly "refresh every month present in call_logs" cron was doing to the
+// oldest month every night. One day of margin for the prune cutoff.
+function isMonthWithinCallLogRetention(month){
+  const start = Date.parse(`${month}-01T00:00:00Z`);
+  if (Number.isNaN(start)) return false;
+  return start >= Date.now() - (CALL_LOGS_RETENTION_DAYS - 1) * 86400000;
+}
+
 async function refreshMonthlySummary(month){
   if(!month) month = new Date().toISOString().slice(0,7);
+  if(!isMonthWithinCallLogRetention(month)) return 0;
   const rows = await all(`
     SELECT
       agent_id, agent_name,
@@ -1054,7 +1084,15 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
   const logsFloor = (globalFloorRow && globalFloorRow.floor) ? globalFloorRow.floor : to; // no call_logs rows at all -> treat entire range as "old"
 
   const logsFloorDate = new Date(logsFloor);
-  const boundary = new Date(Date.UTC(logsFloorDate.getUTCFullYear(), logsFloorDate.getUTCMonth(), 1));
+  let boundary = new Date(Date.UTC(logsFloorDate.getUTCFullYear(), logsFloorDate.getUTCMonth(), 1));
+  // Session 42: the month containing the floor may itself be partially
+  // pruned (e.g. floor = Aug 14 -> Aug 1-13 are gone from call_logs). Using
+  // call_logs for that month undercounted it. Start call_logs at the first
+  // month that is still WHOLLY inside retention; earlier months come from
+  // call_monthly_summary (whole-month granularity).
+  while (!isMonthWithinCallLogRetention(boundary.toISOString().slice(0, 7)) && boundary < new Date(to)) {
+    boundary = new Date(Date.UTC(boundary.getUTCFullYear(), boundary.getUTCMonth() + 1, 1));
+  }
   const boundaryIso = boundary.toISOString();
 
   const fromDate = new Date(from);
@@ -2325,6 +2363,7 @@ async function getAlertCounts(){
 module.exports={
   db,  // Session 16: roster.js needs the raw handle to share the same connection
   CALL_LOGS_RETENTION_DAYS,
+  countCallLogsForAgentSince, deleteFaxCallLogs, isMonthWithinCallLogRetention, // Session 42
   createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
   upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
   createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,

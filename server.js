@@ -15,6 +15,7 @@ const {
   getAllRoles, setRole, setBreakbotEnabled, removeRole, getRoleForEmail, getRoleSettingsForEmail,
   insertBreakEvent, updateBreakEventNotification, getBreakEvents, getBreakTracker,
   getCallLogStats, pruneCallLogs, refreshMonthlySummary, upsertCallMonthlySummaryRow, getCallsSyncState, setCallsSyncState,
+  isMonthWithinCallLogRetention, deleteFaxCallLogs, // Session 42
   addAgentNote, getAgentNotes, getAgentNoteById, deleteAgentNote,
   getAgentCallStatsRange,
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
@@ -47,6 +48,7 @@ const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const ANOMALY = require('./lib/anomaly');
 const {
   authenticate, fetchPresenceForAll, fetchCallLogs, fetchQueueDashboardSummary, searchRCUsers, fetchLiveCallStatus,
+  repairCallLogs, // Session 42
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
   fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords, backfillCallHistory,
   parseCallDetails, inferAgentScopedDirection, normalizeRecordedDirection,
@@ -485,6 +487,22 @@ initDB().then(async () => {
       console.log('📞 Calls history backfill reset to populate answered_outbound on existing months');
     }
   } catch(e) { log.error('answered_outbound_backfill_reset_failed', e); }
+
+  // Session 42: one-time call_logs repair -- remove fax rows that were
+  // stored as calls, then re-read the last 45 days from RingCentral to
+  // fill every call the old today-only sync missed, then rebuild the
+  // monthly aggregates from the repaired data. Delayed so boot and the
+  // first regular sync ticks go first; flagged so it runs once.
+  setTimeout(() => { runCallLogRepair({ onlyOnce: true }).catch(e => log.error('call_log_repair_failed', e)); }, 3 * 60 * 1000);
+  // Session 42: one-time chat re-crawl (see recrawlRecentConversations()).
+  setTimeout(async () => {
+    try {
+      if ((await salesiqLifecycle.getSyncState('recrawl_v42')) === '1') return;
+      const r = await salesiqLifecycle.recrawlRecentConversations(60);
+      if (r && r.complete) await salesiqLifecycle.setSyncState('recrawl_v42', '1');
+      console.log(`💬 Chat re-crawl: ${JSON.stringify(r)}`);
+    } catch (e) { log.error('chat_recrawl_failed', e); }
+  }, 4 * 60 * 1000);
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
@@ -2365,8 +2383,19 @@ const VALID_TICKET_TYPES = new Set([
   'Auto-Generated/Spam Ticket','New Ticket - Transferred'
 ]);
 
+// Session 42: manual ticket logging is retired for agents -- "tickets
+// handled" is now counted automatically (see agentHandledTickets() in
+// lib/desk-lifecycle.js) and shown on My Stats. Admins can still log.
+async function rejectRetiredTicketLogging(req, res) {
+  const settings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+  if (settings && settings.role === 'admin') return false;
+  res.status(410).json({ success: false, error: 'Manual ticket logging has been retired. Your tickets are now counted automatically — see My Stats.' });
+  return true;
+}
+
 // POST /api/tickets — agent logs a ticket (writes a row to Google Sheet)
 app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  if (await rejectRetiredTicketLogging(req, res)) return;
   try {
     const { ticketId, channel, pickedFromQueue, ticketType, isDuplicate, logDate } = req.body || {};
     // Validate ticket ID
@@ -2535,6 +2564,7 @@ function buildNameSet(email, sessionName) {
 
 // POST /api/tickets/bulk — agent submits multiple backlog tickets at once
 app.post('/api/tickets/bulk', requireAuth, rateLimit(10, 60000), async (req, res) => {
+  if (await rejectRetiredTicketLogging(req, res)) return;
   try {
     const { tickets, channel, pickedFromQueue, ticketType, logDate } = req.body || {};
     if (!Array.isArray(tickets) || !tickets.length)
@@ -5457,6 +5487,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
 const deskService = require('./lib/desk-service');
 const aditkbService = require('./lib/aditkb-service');
 const aditkbCallsService = require('./lib/aditkb-calls-service');
+const aditkbActivityService = require('./lib/aditkb-activity-service'); // Session 42: ticket replies/comments -> "tickets handled"
 const analyticsService = require('./lib/analytics-service');
 const salesiqLifecycle = require('./lib/salesiq-lifecycle');
 const salesiqService = require('./lib/salesiq-service');
@@ -5792,6 +5823,83 @@ async function runMetricsRefreshPhase(budget) {
   return { metricsRefreshed, metricsErrors, lastMetricsError };
 }
 
+// Session 42: mirrors per-agent ticket activity (outgoing replies +
+// comments) from AditKB into desk_ticket_activity -- see
+// lib/aditkb-activity-service.js and agentHandledTickets() in
+// lib/desk-lifecycle.js. Two phases, same shape as the other AditKB syncs:
+//   - Backfill: walks BACKWARD one day at a time from 3 days ago to
+//     ACTIVITY_BACKFILL_DAYS ago (a few days per tick), resumable via
+//     activity_backfill_cursor_ms.
+//   - Steady: every tick re-reads the trailing ACTIVITY_TRAILING_DAYS
+//     window in full. AditKB fills in a ticket's threads/comments minutes
+//     after the fact (and occasionally later), so re-reading a fixed
+//     trailing window -- rather than chasing a watermark -- is what
+//     guarantees a late-arriving reply still gets counted. Upserts are
+//     idempotent, so the overlap costs nothing but a few pages.
+const ACTIVITY_BACKFILL_DAYS = 120;
+const ACTIVITY_TRAILING_DAYS = 3;
+const ACTIVITY_BACKFILL_DAYS_PER_TICK = 10;
+const ACTIVITY_PAGE_SIZE = 2000;
+const ACTIVITY_MAX_PAGES_PER_WINDOW = 25;
+let _activitySyncRunning = false;
+
+async function syncActivityWindow(fromIso, toIso, allowedEmails) {
+  let written = 0;
+  for (const [table, source] of [['desk_ticket_threads', 'thread'], ['desk_ticket_comments', 'comment']]) {
+    let offset = 0;
+    for (let page = 0; page < ACTIVITY_MAX_PAGES_PER_WINDOW; page++) {
+      const { rows } = await aditkbActivityService.fetchActivityPage({ table, fromIso, toIso, offset, limit: ACTIVITY_PAGE_SIZE });
+      if (!rows.length) break;
+      written += await deskLifecycle.upsertTicketActivityRows(source, rows, allowedEmails);
+      offset += rows.length;
+      if (rows.length < ACTIVITY_PAGE_SIZE) break;
+      if (page === ACTIVITY_MAX_PAGES_PER_WINDOW - 1) {
+        throw new Error(`activity window ${fromIso}..${toIso || 'now'} exceeded ${ACTIVITY_MAX_PAGES_PER_WINDOW} pages for ${table}`);
+      }
+    }
+  }
+  return written;
+}
+
+async function runTicketActivitySync() {
+  if (!aditkbActivityService.isConfigured()) return { skipped: true, reason: 'ADITKB_ACTIVITY_API_KEY not set' };
+  if (_activitySyncRunning) return { skipped: true, reason: 'already running' };
+  _activitySyncRunning = true;
+  const DAY = 24 * 3600 * 1000;
+  try {
+    const allowedEmails = new Set((await getMonitoredAgents()).map(a => (a.email || '').toLowerCase()).filter(Boolean));
+    // Steady-state trailing window first, so today's numbers are always current.
+    const trailingFrom = new Date(Date.now() - ACTIVITY_TRAILING_DAYS * DAY).toISOString();
+    const recent = await syncActivityWindow(trailingFrom, null, allowedEmails);
+
+    // Backfill, one UTC day per request window, walking backward.
+    let backfillDays = 0;
+    if ((await deskLifecycle.getSyncState('activity_backfill_complete')) !== '1') {
+      const floorMs = Date.now() - ACTIVITY_BACKFILL_DAYS * DAY;
+      const stored = await deskLifecycle.getSyncState('activity_backfill_cursor_ms');
+      let cursor = stored ? Number(stored) : Date.parse(trailingFrom); // exclusive upper bound of the next window
+      while (backfillDays < ACTIVITY_BACKFILL_DAYS_PER_TICK && cursor > floorMs) {
+        const winFrom = Math.max(floorMs, cursor - DAY);
+        await syncActivityWindow(new Date(winFrom).toISOString(), new Date(cursor).toISOString(), allowedEmails);
+        cursor = winFrom;
+        backfillDays++;
+        await deskLifecycle.setSyncState('activity_backfill_cursor_ms', String(cursor));
+      }
+      if (cursor <= floorMs) await deskLifecycle.setSyncState('activity_backfill_complete', '1');
+    }
+    await deskLifecycle.setSyncState('activity_last_sync_at', new Date().toISOString());
+    await deskLifecycle.setSyncState('activity_last_error', null);
+    console.log(`🧾 Ticket activity sync: ${recent} recent rows, ${backfillDays} backfill day(s)`);
+    return { recent, backfillDays };
+  } catch (e) {
+    await deskLifecycle.setSyncState('activity_last_error', e.message).catch(() => {});
+    console.warn(`⚠️ Ticket activity sync failed: ${e.message}`);
+    return { error: e.message };
+  } finally {
+    _activitySyncRunning = false;
+  }
+}
+
 async function runDeskLifecycleSync() {
   if (!deskService.isConfigured()) {
     if (!_deskConfigWarned) {
@@ -5826,6 +5934,9 @@ async function runDeskLifecycleSync() {
       console.warn(`⚠️ AditKB snapshot sync failed this tick: ${e.message}`);
     }
     _deskSyncProgress.completedUnits = ADITKB_MAX_PAGES_PER_TICK;
+
+    // Session 42: right after the snapshot (so owner-change logs are fresh too).
+    await runTicketActivitySync();
 
     const metricsResult = await runMetricsRefreshPhase(DESK_METRICS_BUDGET_PER_TICK);
     metricsRefreshed = metricsResult.metricsRefreshed;
@@ -5872,6 +5983,27 @@ async function deskLifecycleAgentRoster() {
   return { emails, agentNames, byEmail };
 }
 
+// Session 42: RingCentral call stats + SalesIQ chat counts per monitored
+// agent for the same window as the ticket numbers -- the admin view of
+// what each agent's own My Stats page shows.
+async function callAndChatStatsForAgents(emails, from, to) {
+  const out = {};
+  const monitored = await getMonitoredAgents();
+  const byEmail = {};
+  for (const m of monitored) if (m.email) byEmail[m.email.toLowerCase()] = m;
+  let chats = {};
+  try { if (salesiqService.isConfigured()) chats = await salesiqLifecycle.chatStatsForEmails({ emails, from, to }); }
+  catch (e) { console.warn('⚠️ chat stats (admin summary):', e.message); }
+  for (const email of emails) {
+    const m = byEmail[email];
+    let callStats = null;
+    try { if (m && (m.rc_id || m.extension)) callStats = await getAgentCallStatsRange({ agentId: m.rc_id || m.extension, from, to }); }
+    catch (e) { console.warn('⚠️ call stats (admin summary):', e.message); }
+    out[email] = { callStats, chatStats: chats[email] || (salesiqService.isConfigured() ? { chatCount: 0, avgResponseSeconds: null } : null) };
+  }
+  return out;
+}
+
 app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();
@@ -5879,7 +6011,8 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
     const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
-    const out = summary.map(s => ({ ...s, pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
+    const extra = await callAndChatStatsForAgents(emails, from, to);
+    const out = summary.map(s => ({ ...s, ...extra[s.email], pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
     res.json({ success: true, from, to, agents: out });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -5897,15 +6030,22 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
     const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
 
+    const extra = await callAndChatStatsForAgents(emails, from, to);
     const header = [
-      'Agent', 'Email', 'Unique Tickets', 'Solely Handled', 'Reassigned', 'Transferred',
+      'Agent', 'Email', 'Tickets Handled', 'Handled: New', 'Handled: Follow-up', 'Calls', 'Chats',
+      'Unique Tickets', 'Solely Handled', 'Reassigned', 'Transferred',
       'Handed Off Internally',
       'Closed', 'Avg Handle (hrs)', 'Currently Handling', 'FCR %', 'CSAT %',
     ];
     const rows = [header, ...summary.map(s => {
       const a = byEmail[s.email];
+      const x = extra[s.email] || {};
       return [
         a?.full_name || a?.pseudo || s.email, s.email,
+        s.tickets_handled_ready ? (s.tickets_handled || 0) : 'syncing',
+        s.tickets_handled_ready ? (s.tickets_handled_new || 0) : '',
+        s.tickets_handled_ready ? (s.tickets_handled_followup || 0) : '',
+        x.callStats ? (x.callStats.totalCalls || 0) : '', x.chatStats ? (x.chatStats.chatCount || 0) : '',
         s.unique_tickets || 0, s.solely_handled || 0, s.reassigned || 0, s.transferred || 0,
         s.handed_off_internal || 0,
         s.closed_count || 0, s.avg_handle_hours ?? '',
@@ -5918,6 +6058,23 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
     res.setHeader('Content-Disposition', `attachment; filename="ticket-lifecycle-${fromDate}-to-${toDate}.csv"`);
     res.send(csv);
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Session 42: re-walk ticket-activity history from scratch (e.g. after
+// adding a new agent to the monitored roster -- only monitored agents'
+// activity is stored).
+app.post('/api/admin/desk-lifecycle/activity-reset', requireAdmin, async (req, res) => {
+  try {
+    await deskLifecycle.setSyncState('activity_backfill_complete', null);
+    await deskLifecycle.setSyncState('activity_backfill_cursor_ms', null);
+    res.json({ success: true, message: 'Activity backfill reset -- it re-walks history over the next few sync ticks.' });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Session 42: kick the ticket-activity ("tickets handled") sync by hand.
+app.post('/api/admin/desk-lifecycle/activity-sync-now', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, result: await runTicketActivitySync() }); }
+  catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
@@ -5945,6 +6102,7 @@ app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
       success: true,
       configured: deskService.isConfigured(), rateLimit: deskService.getRateLimitState(),
       aditkbConfigured: aditkbService.isConfigured(),
+      activityConfigured: aditkbActivityService.isConfigured(), // Session 42: ADITKB_ACTIVITY_API_KEY set?
       csatConfigured: analyticsService.isConfigured(), csatRateLimit: analyticsService.getRateLimitState(),
       syncRunning: _deskSyncProgress.running, syncProgressPct, backfillComplete,
       ...status,
@@ -6390,6 +6548,40 @@ async function syncOneMonthForAllAgents(month, agents) {
   }
 }
 
+// Session 42: see the boot-time call in initDB().then() above.
+let _callRepairRunning = false;
+async function runCallLogRepair({ onlyOnce = false, days = 45 } = {}) {
+  if (_callRepairRunning) return { skipped: true, reason: 'already running' };
+  if (onlyOnce && (await getCallsSyncState('rc_repair_v42')) === '1') return { skipped: true, reason: 'already done' };
+  _callRepairRunning = true;
+  try {
+    const fax = await deleteFaxCallLogs();
+    const result = await repairCallLogs(days);
+    const curr = new Date().toISOString().slice(0, 7);
+    await refreshMonthlySummary(curr);
+    await refreshMonthlySummary(shiftMonthKey(curr, -1));
+    if (!result.failed.length) await setCallsSyncState('rc_repair_v42', '1');
+    await setCallsSyncState('rc_repair_last', JSON.stringify({ ...result, faxRowsRemoved: fax.changes || 0, at: new Date().toISOString() }));
+    console.log(`🔧 Call log repair: ${JSON.stringify(result)}; fax rows removed ${fax.changes || 0}`);
+    return { ...result, faxRowsRemoved: fax.changes || 0 };
+  } finally {
+    _callRepairRunning = false;
+  }
+}
+
+app.post('/api/admin/calls/repair', requireAdmin, async (req, res) => {
+  if (_callRepairRunning) return res.status(409).json({ success: false, error: 'Repair already running' });
+  runCallLogRepair({ onlyOnce: false }).catch(e => log.error('call_log_repair_failed', e));
+  res.json({ success: true, message: 'Call log repair started (about 1-2 min). Check /api/admin/calls/repair-status.' });
+});
+app.get('/api/admin/calls/repair-status', requireAdmin, async (req, res) => {
+  try {
+    res.json({ success: true, running: _callRepairRunning, done: (await getCallsSyncState('rc_repair_v42')) === '1',
+      last: JSON.parse((await getCallsSyncState('rc_repair_last')) || 'null'),
+      aditkbLatestCallAt: await getCallsSyncState('aditkb_latest_call_at') });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 async function runAditkbCallsSync() {
   if (!aditkbCallsService.isConfigured()) return { skipped: true, reason: 'not configured' };
   if (_callsSyncRunning) { console.log('⏭️ Calls history sync already running -- skipping overlap'); return { skipped: true, reason: 'already running' }; }
@@ -6401,6 +6593,23 @@ async function runAditkbCallsSync() {
     const currMonth = new Date().toISOString().slice(0, 7);
     const backfillDone = await getCallsSyncState('calls_backfill_complete');
 
+    // Session 42: only ever write a month from AditKB when (a) AditKB's
+    // mirror actually covers that whole month -- it stopped updating on
+    // 2026-09-08, and re-aggregating September from it was overwriting
+    // good numbers with ones that stop on the 8th -- and (b) the month is
+    // no longer wholly inside call_logs retention (while it is, call_logs,
+    // fed straight from RingCentral, is the complete and fresher source;
+    // see refreshMonthlySummary()).
+    let aditkbLatestIso = null;
+    try { aditkbLatestIso = await aditkbCallsService.fetchLatestCallStartIso(); }
+    catch (e) { console.warn(`⚠️ AditKB calls coverage check failed: ${e.message}`); }
+    await setCallsSyncState('aditkb_latest_call_at', aditkbLatestIso);
+    const canUseAditkb = (month) => {
+      if (!aditkbLatestIso) return false;
+      if (isMonthWithinCallLogRetention(month)) return false;
+      return monthRangeIso(month).toIso <= aditkbLatestIso;
+    };
+
     if (backfillDone !== '1') {
       const doneMonths = new Set(JSON.parse((await getCallsSyncState('calls_backfill_done_months')) || '[]'));
       const targetMonths = [];
@@ -6410,7 +6619,7 @@ async function runAditkbCallsSync() {
       for (const month of targetMonths) {
         if (doneMonths.has(month)) continue;
         if (monthsThisTick >= CALLS_MONTHS_PER_TICK) break;
-        await syncOneMonthForAllAgents(month, agents);
+        if (canUseAditkb(month)) await syncOneMonthForAllAgents(month, agents);
         doneMonths.add(month);
         await setCallsSyncState('calls_backfill_done_months', JSON.stringify([...doneMonths]));
         monthsThisTick++;
@@ -6422,28 +6631,20 @@ async function runAditkbCallsSync() {
       return { monthsThisTick, backfillComplete: allDone, monthsRemaining: targetMonths.length - doneMonths.size };
     }
 
-    // Steady state: keep the most recently closed month fresh against
-    // AditKB replication lag, AND (Session 41, per Sebastin: "I need it
-    // refreshed every 20 minutes and stay updated every moment") also
-    // re-sync the CURRENT, still-open month every tick from AditKB
-    // directly. This used to be left to call_logs' own live refresh
-    // (refreshMonthlySummary(), the */15 cron above) alone -- deliberately,
-    // since AditKB is a full month re-fetch and re-running that for a
-    // still-growing month every 20 min is real, ongoing API load, not a
-    // one-time cost like the closed-month top-up above. But call_logs only
-    // holds a rolling window (see CALL_LOGS_RETENTION_DAYS in database.js),
-    // so if it had already been pruned thin before this session's fix
-    // landed, the live-only current-month number stayed permanently low
-    // until month-end -- exactly the gap Sebastin flagged. Syncing from
-    // AditKB here too closes that gap every cycle regardless of whatever
-    // call_logs currently holds; upsertCallMonthlySummaryRow's INSERT OR
-    // REPLACE means whichever of the two crons ran most recently wins, and
-    // AditKB's full-month pull is always the more complete of the two.
+    // Steady state. Session 42 replaced Session 41's "re-pull the current
+    // month from AditKB every tick": with AditKB's mirror frozen at
+    // 2026-09-08, that was writing a September that stops on the 8th. The
+    // current (and previous, while still wholly retained) month now come
+    // from call_logs, which fetchCallLogs() keeps complete straight from
+    // RingCentral every 15 min (re-reading yesterday too) -- same
+    // "always up to date" goal, correct source. AditKB is only used for a
+    // closed month it fully covers and call_logs no longer holds whole.
     const prevMonth = shiftMonthKey(currMonth, -1);
-    await syncOneMonthForAllAgents(prevMonth, agents);
-    await syncOneMonthForAllAgents(currMonth, agents);
+    await refreshMonthlySummary(currMonth);
+    await refreshMonthlySummary(prevMonth); // no-op once prevMonth is partly pruned
+    if (canUseAditkb(prevMonth)) await syncOneMonthForAllAgents(prevMonth, agents);
     await setCallsSyncState('last_sync_at', new Date().toISOString());
-    return { incrementalMonth: prevMonth, currentMonth: currMonth };
+    return { incrementalMonth: prevMonth, currentMonth: currMonth, aditkbLatestIso };
   } finally {
     _callsSyncRunning = false;
   }
@@ -6499,6 +6700,8 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
     const VALID_METRICS = new Set([
       'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal',
       'closed', 'fcr', 'csat', 'currently_handling',
+      // Session 42: "tickets handled" family
+      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned',
     ]);
     const metric = String(req.query.metric || 'unique');
     if (!VALID_METRICS.has(metric)) return res.status(400).json({ success: false, error: 'Invalid metric' });

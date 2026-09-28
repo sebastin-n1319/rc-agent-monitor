@@ -162,6 +162,22 @@
   // agent.js's metricTip() already use for their card tooltips, so this
   // view never disagrees with what hovering the card says. ──
   const METRIC_DEFS = {
+    // Session 42: the headline ticket number that replaces manual logging.
+    handled: {
+      label: 'Tickets handled', basis: 'activity',
+      def: 'Every ticket this agent replied to, commented on (incl. private call notes), or took ownership of during this period. Each ticket counts once, however many times it was touched.',
+    },
+    handled_new: {
+      label: 'Handled: new tickets', basis: 'activity',
+      def: 'Tickets handled in this period that were also created in this period.',
+    },
+    handled_followup: {
+      label: 'Handled: follow-ups', basis: 'activity',
+      def: 'Tickets handled in this period that were created before it (follow-ups, reopens, transfers-in).',
+    },
+    replied: { label: 'Replied to', basis: 'activity', def: 'Tickets this agent sent a reply on during this period.' },
+    commented: { label: 'Commented on', basis: 'activity', def: 'Tickets this agent added a comment to (incl. private notes) during this period.' },
+    owned: { label: 'Took ownership', basis: 'activity', def: 'Tickets that were assigned to this agent during this period (per Zoho\'s owner-change log).' },
     unique: {
       label: 'Unique tickets', basis: 'created',
       def: 'Every ticket this agent\'s name appears on as an individual owner (queue/pod hand-offs and "Unassigned" excluded), created in this period.',
@@ -199,7 +215,7 @@
       def: 'Tickets this agent currently owns that are still open, right now — a live count, not scoped to the period below.',
     },
   };
-  const METRIC_ORDER = ['unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
+  const METRIC_ORDER = ['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
 
   let _state = null;
   let _hostEl = null;
@@ -295,8 +311,27 @@
     }
 
     const ownerFamily = new Set(['unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal']);
+    const handledFamily = new Set(['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned']);
     let head, rows;
-    if (ownerFamily.has(metric)) {
+    if (handledFamily.has(metric)) {
+      head = '<th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Created</th><th>How</th>';
+      rows = tickets.map(t => {
+        const how = [];
+        if (t.is_new) how.push('New');
+        if (t.replied) how.push('Replied');
+        if (t.commented) how.push('Commented');
+        if (t.owned) how.push('Owner');
+        return `
+        <tr>
+          <td>${ticketLink(t)}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
+          <td>${statusPill(t.status, t.status_type)}</td>
+          <td>${esc(t.channel || '—')}</td>
+          <td>${fmtDateTime(t.created_time)}</td>
+          <td>${how.map(l => `<span class="av2-chip">${esc(l)}</span>`).join(' ') || '—'}</td>
+        </tr>`;
+      }).join('');
+    } else if (ownerFamily.has(metric)) {
       head = '<th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Created</th><th>Also counts as</th>';
       rows = tickets.map(t => `
         <tr>
@@ -562,7 +597,7 @@
       agentEmail: opts.agentEmail,
       agentName: opts.agentName || opts.agentEmail,
       isAdmin: !!opts.isAdmin,
-      metric: METRIC_DEFS[opts.metric] ? opts.metric : 'unique',
+      metric: METRIC_DEFS[opts.metric] ? opts.metric : 'handled',
       selectedPreset, customFrom, customTo,
       q: '',
       monitoredAgents: null,

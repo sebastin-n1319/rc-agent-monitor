@@ -91,7 +91,7 @@
   let _wasSyncRunning = false;
 
   const SORT_OPTIONS = [
-    { key: 'activity',  label: 'Total activity',      fn: (a) => (a.unique_tickets || 0) },
+    { key: 'activity',  label: 'Tickets handled',     fn: (a) => (a.tickets_handled_ready ? (a.tickets_handled || 0) : (a.unique_tickets || 0)) },
     { key: 'closed',    label: 'Closed',               fn: (a) => (a.closed_count || 0) },
     { key: 'handling',  label: 'Currently handling',   fn: (a) => (a.currently_handling || 0) },
     { key: 'fcr',       label: 'FCR %',                fn: (a) => (a.fcr_pct == null ? -1 : a.fcr_pct) },
@@ -435,6 +435,20 @@
 
   function metricTip(key, a) {
     switch (key) {
+      case 'handled':
+        return a.tickets_handled_ready
+          ? `Tickets handled\n\nEvery ticket this agent replied to, commented on (incl. private call notes), or took ownership of in this range, counted once each.\n\nReplied ${a.tickets_replied || 0} · commented ${a.tickets_commented || 0} · took ownership ${a.tickets_owned || 0}. Click for the list.`
+          : 'Tickets handled\n\nStill syncing ticket activity for this range.';
+      case 'handled_new':
+        return 'New\n\nTickets handled in this range that were also created in this range.';
+      case 'handled_followup':
+        return 'Follow-ups\n\nTickets handled in this range that were created earlier (follow-ups, reopens, transfers-in).';
+      case 'calls': {
+        const c = a.callStats;
+        return c ? `Calls (RingCentral)\n\nInbound ${c.inboundCalls || 0} · Outbound ${c.outboundCalls || 0} · Missed ${c.missedCalls || 0}` : 'Calls\n\nNo RingCentral extension linked.';
+      }
+      case 'chats':
+        return a.chatStats ? 'Chats (SalesIQ)\n\nChats this agent was the attender on, by chat start time.' : 'Chats\n\nSalesIQ not configured.';
       case 'unique':
         return 'Unique tickets\n\nEvery ticket this agent appears in anywhere in its ownership history — even one hand-off counts, once. Counted by when the ticket was CREATED.';
       case 'solely':
@@ -510,6 +524,7 @@
     transferred: 'transferred', handed_off: 'handed_off_internal',
     closed: 'closed', handling: 'currently_handling', avg_handle: 'closed',
     fcr: 'fcr', csat: 'csat',
+    handled: 'handled', handled_new: 'handled_new', handled_followup: 'handled_followup', // Session 42
   };
 
   function pillHtml(cls, n, label, tipKey, a) {
@@ -530,6 +545,15 @@
     const avgHandle = a.avg_handle_hours != null ? `${a.avg_handle_hours}h` : '—';
     const isExpanded = _expanded.has(a.email);
 
+    // Session 42: automated replacement for manual ticket logging.
+    const ready = !!a.tickets_handled_ready;
+    const workPills = [
+      pillHtml('tkt-pill-good', ready ? (a.tickets_handled || 0) : '…', 'Tickets handled', 'handled', a),
+      pillHtml('', ready ? (a.tickets_handled_new || 0) : '…', 'New', 'handled_new', a),
+      pillHtml('', ready ? (a.tickets_handled_followup || 0) : '…', 'Follow-ups', 'handled_followup', a),
+      pillHtml('', a.callStats ? (a.callStats.totalCalls || 0) : '—', 'Calls', 'calls', a),
+      pillHtml('', a.chatStats ? (a.chatStats.chatCount || 0) : '—', 'Chats', 'chats', a),
+    ].join('');
     const flowPills = [
       pillHtml('', a.unique_tickets || 0, 'Unique', 'unique', a),
       pillHtml('tkt-pill-good', a.solely_handled || 0, 'Solely handled', 'solely', a),
@@ -560,6 +584,10 @@
           <button type="button" class="tkt-expand-btn">${isExpanded ? 'Hide breakdown ▲' : 'Channel / module / category ▾'}</button>
         </div>
         <div class="tkt-stat-groups">
+          <div class="tkt-stat-group">
+            <div class="tkt-stat-group-label">Work handled</div>
+            <div class="tkt-stat-subgrid">${workPills}</div>
+          </div>
           <div class="tkt-stat-group">
             <div class="tkt-stat-group-label">Ticket flow</div>
             <div class="tkt-stat-subgrid">${flowPills}</div>
