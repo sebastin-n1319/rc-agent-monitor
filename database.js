@@ -455,6 +455,15 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC)`);
 
+  // Session 48: planned break slot per agent (IST wall-clock "HH:MM"; the
+  // team works IST shifts). Optional weekday override is not needed yet.
+  await run(`CREATE TABLE IF NOT EXISTS break_plan (
+    email TEXT PRIMARY KEY,
+    start_ist TEXT NOT NULL,
+    minutes INTEGER NOT NULL DEFAULT 60,
+    updated_by TEXT,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+
   // Break thresholds, configurable per AUX type
   await run(`CREATE TABLE IF NOT EXISTS break_thresholds (
     aux_type TEXT PRIMARY KEY,
@@ -1937,6 +1946,18 @@ async function getDbStats() {
 }
 
 // ── Break thresholds ─────────────────────────────────────────────────────────
+async function getBreakPlans() {
+  return all(`SELECT email, start_ist, minutes, updated_by, updated_at FROM break_plan ORDER BY start_ist`);
+}
+async function setBreakPlan(email, startIst, minutes, updatedBy) {
+  return run(`INSERT INTO break_plan (email, start_ist, minutes, updated_by, updated_at) VALUES (?,?,?,?,CURRENT_TIMESTAMP)
+    ON CONFLICT(email) DO UPDATE SET start_ist=excluded.start_ist, minutes=excluded.minutes, updated_by=excluded.updated_by, updated_at=CURRENT_TIMESTAMP`,
+    [String(email).toLowerCase(), startIst, minutes, updatedBy || null]);
+}
+async function deleteBreakPlan(email) {
+  return run(`DELETE FROM break_plan WHERE email=?`, [String(email).toLowerCase()]);
+}
+
 async function getBreakThresholds() {
   return all(`SELECT * FROM break_thresholds ORDER BY aux_type`);
 }
@@ -2465,7 +2486,7 @@ module.exports={
   insertAuditLog,getAuditLog,
   // Session 17, admin settings (pause controls, etc.)
   getSetting,setSetting,deleteSetting,getAllSettings,
-  getBreakThresholds,setBreakThreshold,
+  getBreakThresholds,setBreakThreshold,getBreakPlans,setBreakPlan,deleteBreakPlan,
   getBreakReportData,
   pruneOldData,getDbStats,
   insertTicketFeedback,getTicketFeedback,getFeedbackStats,getWrongPatterns,

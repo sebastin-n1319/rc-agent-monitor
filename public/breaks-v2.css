@@ -117,3 +117,26 @@ html.dark-mode .bx-root{
 .bx-datebar{flex-wrap:nowrap;gap:6px}
 .bx-root .bx-date{width:auto!important;min-width:0;max-width:160px;margin:0}
 .bx-root .bx-btn{width:auto;margin:0}
+
+/* Session 48: team status for agents, break plan */
+.bx-team{margin-bottom:16px}
+.bx-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:900px){.bx-team-grid{grid-template-columns:minmax(0,1fr)}}
+.bx-team-wing{background:var(--bx-surface2);border:1px solid var(--bx-border);border-radius:14px;padding:12px}
+.bx-team-list{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.bx-team-row{display:grid;grid-template-columns:minmax(0,1fr) auto 64px;gap:10px;align-items:center;background:var(--bx-surface);border:1px solid var(--bx-border);border-radius:10px;padding:8px 10px}
+.bx-team-me{border-color:var(--bx-orange);box-shadow:0 0 0 1px var(--bx-orange-s)}
+.bx-team-name{display:flex;flex-direction:column;min-width:0}
+.bx-team-name b{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bx-team-name .bx-sub{font-size:11px}
+.bx-team-t{text-align:right;font-size:13px;font-weight:600}
+.bx-you{font-size:10px;font-weight:600;color:var(--bx-orange);background:var(--bx-orange-s);padding:1px 7px;border-radius:999px;margin-left:4px}
+.bx-plan{position:absolute;top:1px;bottom:1px;border:2px dashed var(--bx-t4);border-radius:6px;background:transparent}
+.bx-plan-key{display:inline-block;width:12px;height:10px;border:2px dashed var(--bx-t4);border-radius:3px}
+.bx-btn-primary{background:var(--bx-teal);border-color:var(--bx-teal);color:#fff}
+.bx-plan-editor{margin-bottom:16px}
+.bx-plan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;margin-top:12px}
+.bx-plan-row{display:grid;grid-template-columns:minmax(0,1fr) 120px 80px;gap:8px;align-items:center;border:1px solid var(--bx-border);border-radius:10px;padding:8px 10px;background:var(--bx-surface2)}
+.bx-plan-row b{font-weight:600;font-size:13px}
+.bx-plan-clash{border-color:var(--bx-red);background:var(--bx-red-s)}
+.bx-root .bx-plan-row .bx-date{max-width:none;width:100%!important}

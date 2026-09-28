@@ -23,7 +23,7 @@ const {
   createAppSession, getAppSession, deleteAppSession, pruneExpiredSessions, getPictureForEmail,
   upsertUserProfile, getAllUserProfiles, getUserProfile,
   insertAuditLog, getAuditLog,
-  getBreakThresholds, setBreakThreshold,
+  getBreakThresholds, setBreakThreshold, getBreakPlans, setBreakPlan, deleteBreakPlan,
   getBreakReportData,
   pruneOldData, getDbStats,
   insertTicketFeedback, getTicketFeedback, getFeedbackStats, getWrongPatterns,
@@ -1332,6 +1332,28 @@ app.get('/api/audit-log', requireAdmin, async (req, res) => {
 });
 
 // Break threshold endpoints
+// Session 48: planned break slots (read: everyone, so agents see their own
+// and can stagger; write: admin).
+app.get('/api/break-plan', requireAuth, async (req, res) => {
+  try { res.json({ success: true, data: await getBreakPlans() }); }
+  catch (e) { res.status(500).json({ success: false, error: 'Could not load break plan' }); }
+});
+app.post('/api/break-plan', requireAdmin, async (req, res) => {
+  try {
+    const items = Array.isArray(req.body && req.body.items) ? req.body.items : [];
+    if (items.length > 100) return res.status(400).json({ success: false, error: 'Too many rows' });
+    for (const it of items) {
+      const email = String(it.email || '').toLowerCase().trim();
+      if (!/^[^@\s]+@[^@\s]+$/.test(email)) continue;
+      if (!it.start) { await deleteBreakPlan(email); continue; }
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(it.start))) return res.status(400).json({ success: false, error: `Bad time for ${email}` });
+      const minutes = Math.max(5, Math.min(120, parseInt(it.minutes, 10) || 60));
+      await setBreakPlan(email, String(it.start), minutes, req.session.email);
+    }
+    res.json({ success: true, data: await getBreakPlans() });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not save break plan' }); }
+});
+
 app.get('/api/break-thresholds', requireAuth, async (req, res) => {
   try { res.json({ success: true, data: await getBreakThresholds() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
