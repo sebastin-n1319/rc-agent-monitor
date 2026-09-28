@@ -80,3 +80,13 @@ html.dark-mode .lf-root{
 .lf-skel{background:linear-gradient(90deg,var(--lf-surface) 0%,var(--lf-surface2) 50%,var(--lf-surface) 100%);background-size:200% 100%;animation:lfSkel 1.2s ease-in-out infinite}
 @keyframes lfSkel{0%{background-position:100% 0}100%{background-position:-100% 0}}
 @media (prefers-reduced-motion: reduce){.lf-skel{animation:none}}
+
+/* Wings + break line (Session 45) */
+.lf-wings{display:flex;flex-direction:column;gap:18px;min-width:0}
+.lf-wing-t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:15px;font-weight:600;margin:0 0 10px;color:var(--lf-t1)}
+.lf-wing-n{font-size:12px;font-weight:600;color:var(--lf-t3);background:var(--lf-grey-s);border-radius:999px;padding:1px 8px}
+.lf-wing-sub{font-size:12px;font-weight:500;color:var(--lf-t3)}
+.lf-breaks{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--lf-t3);margin-top:8px;padding-top:8px;border-top:1px dashed var(--lf-border)}
+.lf-breaks b{color:var(--lf-t1);font-weight:600}
+.lf-sep{width:1px;height:10px;background:var(--lf-border)}
+.lf-dim{color:var(--lf-t3);font-weight:500}

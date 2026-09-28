@@ -19,6 +19,18 @@
   const BREAK_ALERT_SECONDS = 15 * 60;   // breaks over 15m
   const ABANDON_WINDOW_MS = 60 * 60 * 1000;
 
+  // Session 45: Sebastin's two support wings. Anyone not listed here is
+  // shown in the Call Wing; add an email to CHAT_WING to move them.
+  const CHAT_WING = new Set([
+    'anold.fernandes@adit.com',
+    'evan.cruz@adit.com',
+    'leo.clayton@adit.com',
+    'tabbie.shine@adit.com',
+  ]);
+  function wingOf(op) {
+    return CHAT_WING.has(String((op.agent && op.agent.email) || '').toLowerCase()) ? 'chat' : 'call';
+  }
+
   const AWAY_LANES = new Set(['Break', 'BRB', 'Training / Coaching', 'QA Session AUX', 'Internal Calls']);
 
   let _chats = {};           // email -> chats today
@@ -87,14 +99,42 @@
     return em ? rows.find(r => String(r.email || '').toLowerCase() === em) || null : null;
   }
 
-  function breaksToday(tr) {
+  function laneCount(tr, lane) {
     if (!tr || !Array.isArray(tr.events)) return 0;
     let n = 0, prev = null;
     for (const ev of tr.events) {
-      if (ev.currentStatus === 'Break' && prev !== 'Break') n++;
+      if (ev.currentStatus === lane && prev !== lane) n++;
       prev = ev.currentStatus;
     }
     return n;
+  }
+  function breaksToday(tr) { return laneCount(tr, 'Break'); }
+  // Seconds in a lane today, counting the one still running (the tracker's
+  // totals are a snapshot from its last fetch).
+  function laneSeconds(tr, lane, key) {
+    if (!tr) return 0;
+    let secs = tr[key] || 0;
+    if (tr.currentStatus === lane && tr.currentLaneSeconds != null) {
+      const since = parseTs(tr.since);
+      if (since) secs = Math.max(secs, (secs - (tr.currentLaneSeconds || 0)) + (Date.now() - since) / 1000);
+    }
+    return secs;
+  }
+  function shortDur(sec) {
+    sec = Math.max(0, Math.round(sec || 0));
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+    if (h) return `${h}h ${m}m`;
+    if (m) return `${m}m`;
+    return `${sec}s`;
+  }
+  function breakLine(tr) {
+    if (!tr) return `<div class="lf-breaks">Breaks <b class="lf-mono">0</b></div>`;
+    const nb = laneCount(tr, 'Break'), nbrb = laneCount(tr, 'BRB');
+    const parts = [];
+    if (nb) parts.push(`<span>Breaks <b class="lf-mono">${nb}</b> <span class="lf-dim">(${shortDur(laneSeconds(tr, 'Break', 'breakSeconds'))})</span></span>`);
+    if (nbrb) parts.push(`<span>BRB <b class="lf-mono">${nbrb}</b> <span class="lf-dim">(${shortDur(laneSeconds(tr, 'BRB', 'brbSeconds'))})</span></span>`);
+    if (!parts.length) parts.push('Breaks <b class="lf-mono">0</b>');
+    return `<div class="lf-breaks">${parts.join('<span class="lf-sep"></span>')}</div>`;
   }
 
   function stateOf(op) {
@@ -200,11 +240,15 @@
       <div class="lf-agent-pill">${pill(st)}</div>
       <div class="lf-timer lf-mono" data-lf-since="${st.sinceMs || ''}" title="${st.sinceMs ? 'Since ' + e(shortTime(st.sinceMs)) : ''}">${since == null ? '-' : clock(since)}</div>
       <div class="lf-mini">
+        ${r.wing === 'chat' ? `
+        <span>Chats <b class="lf-mono">${ch == null ? 0 : ch}</b></span>
+        <span>Calls <b class="lf-mono">${(op.inboundCalls || 0) + (op.outboundCalls || 0)}</b></span>` : `
         <span>In <b class="lf-mono">${op.inboundCalls || 0}</b></span>
         <span>Out <b class="lf-mono">${op.outboundCalls || 0}</b></span>
         <span>Missed <b class="lf-mono${op.missedCalls ? ' lf-neg' : ''}">${op.missedCalls || 0}</b></span>
-        ${ch ? `<span>Chats <b class="lf-mono">${ch}</b></span>` : ''}
+        ${ch ? `<span>Chats <b class="lf-mono">${ch}</b></span>` : ''}`}
       </div>
+      ${breakLine(st.tr)}
     </article>`;
   }
 
@@ -295,6 +339,7 @@
       [dur(op.availableSeconds || 0), 'Available time'],
       [tickets, 'Tickets handled'],
       [chats, 'Chats today'],
+      [(() => { const tr = st.tr; const nb = laneCount(tr, 'Break'); return tr ? `${nb} (${shortDur(laneSeconds(tr, 'Break', 'breakSeconds'))})` : '0'; })(), 'Breaks today'],
     ];
     return `<div class="lf-card lf-mecard">
       <div class="lf-me-id"><div class="lf-av">${e(initials)}</div><div>
@@ -311,7 +356,7 @@
     const mode = ctx.mode;
     const root = document.getElementById(mode === 'admin' ? 'lf-admin-root' : 'lf-agent-root');
     if (!root) return;
-    const rows = (ctx.agentOps || []).map(op => ({ op, st: stateOf(op) }))
+    const rows = (ctx.agentOps || []).map(op => ({ op, st: stateOf(op), wing: wingOf(op) }))
       .sort((a, b) => (ORDER[a.st.key] - ORDER[b.st.key]) || String(a.op.agent.name).localeCompare(String(b.op.agent.name)));
     const myEmail = String(g('currentEmail', '') || '').toLowerCase();
     const me = mode === 'agent' ? rows.find(r => String(r.op.agent.email || '').toLowerCase() === myEmail) : null;
@@ -322,14 +367,26 @@
         <div class="lf-sub">${mode === 'admin' ? 'Every agent at a glance. Card colour is their current state; the timer is how long they have been in it.' : 'Your status first, then the team.'}</div></div>
         <span class="lf-live"><span class="lf-dot"></span>Live · ${e(tzLabel())}</span>
       </div>`;
+    const wingSection = (key, title) => {
+      const list = rows.filter(r => r.wing === key);
+      if (!list.length) return '';
+      const n = k => list.filter(r => r.st.key === k).length;
+      const sub = [`${n('avail')} available`, `${n('call')} on call`, `${n('busy') + n('break')} away`].join(' · ');
+      return `<section class="lf-wing" aria-label="${e(title)}">
+        <h3 class="lf-wing-t">${e(title)} <span class="lf-wing-n">${list.length}</span><span class="lf-wing-sub">${e(sub)}</span></h3>
+        <div class="lf-grid">${list.map(r => agentCard(r, me && r === me)).join('')}</div>
+      </section>`;
+    };
+    // The viewer's own wing first for agents; Call Wing first for admins.
+    const order = (me && me.wing === 'chat') ? [['chat', 'Chat Wing'], ['call', 'Call Wing']] : [['call', 'Call Wing'], ['chat', 'Chat Wing']];
     const grid = rows.length
-      ? rows.map(r => agentCard(r, me && r === me)).join('')
+      ? order.map(([k, t]) => wingSection(k, t)).join('')
       : '<div class="lf-card lf-pad lf-sub">No monitored agents yet.</div>';
 
     root.innerHTML = head
       + (mode === 'agent' ? meCard(me) : '')
       + kpiStrip(rows, ctx)
-      + `<div class="lf-main"><div class="lf-grid">${grid}</div><aside class="lf-rail">${mode === 'admin' ? adminRail(rows) : agentRail(rows)}</aside></div>`;
+      + `<div class="lf-main"><div class="lf-wings">${grid}</div><aside class="lf-rail">${mode === 'admin' ? adminRail(rows) : agentRail(rows)}</aside></div>`;
   }
 
   function startTicker() {
