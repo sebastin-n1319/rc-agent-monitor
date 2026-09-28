@@ -165,10 +165,33 @@ app.use((req, res, next) => {
   ].join('; '));
   next();
 });
+// Session 47: gzip every text response (index.html alone is ~1 MB and was
+// sent uncompressed). Server-Sent Events are excluded so live pushes are
+// not buffered.
+app.use(require('compression')({
+  threshold: 1024,
+  filter: (req, res) => {
+    if ((req.headers.accept || '').includes('text/event-stream')) return false;
+    return require('compression').filter(req, res);
+  },
+}));
+// Session 47: versioned assets (?v=...) never change under the same URL, so
+// let browsers keep them for a week instead of re-downloading every load.
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.query && req.query.v && /\.(js|css|png|svg|webp|woff2?|jpg|jpeg|ico)$/i.test(req.path)) {
+    res.locals.longCache = true;
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public'), {
-  etag: false,
+  etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
+    if (res.locals && res.locals.longCache) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    } else if (/\.(png|svg|webp|jpg|jpeg|ico)$/i.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+    }
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
