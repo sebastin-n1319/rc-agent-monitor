@@ -13,7 +13,6 @@ html.dark-mode .lf-root{
   --lf-teal:#3BB8EA; --lf-orange:#F59A3C; --lf-green:#34D399; --lf-red:#F07378; --lf-yellow:#F2C14E; --lf-purple:#A58BE6;
   --lf-shadow:none;
 }
-.lf-root:empty{display:none}
 .lf-mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
 .lf-card{background:var(--lf-surface);border:1px solid var(--lf-border);border-radius:14px;box-shadow:var(--lf-shadow)}
 .lf-pad{padding:16px}
@@ -76,3 +75,8 @@ html.dark-mode .lf-root{
 
 /* The live floor covers these, so hide the older duplicates in agent view. */
 #agent-section-dashboard .av2-stat-grid[aria-label="Team metrics summary"], #agent-section-dashboard #agent-self-card{display:none!important}
+
+/* First-paint skeleton (static markup in index.html, replaced on first render) */
+.lf-skel{background:linear-gradient(90deg,var(--lf-surface) 0%,var(--lf-surface2) 50%,var(--lf-surface) 100%);background-size:200% 100%;animation:lfSkel 1.2s ease-in-out infinite}
+@keyframes lfSkel{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion: reduce){.lf-skel{animation:none}}
