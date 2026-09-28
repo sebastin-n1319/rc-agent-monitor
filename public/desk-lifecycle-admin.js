@@ -456,7 +456,7 @@
       case 'reassigned':
         return 'Reassigned\n\nTickets that arrived already in progress, a different person owned it immediately before this agent picked it up.';
       case 'transferred':
-        return 'Transferred\n\nTickets this agent handed off to someone outside the T1 roster (a different team). See "Departments transferred to" below for where they went.';
+        return 'Transferred\n\nTickets this agent handed to another team (anyone outside T1 CS, or a team queue). See "Transferred to" below for which team group.';
       case 'handed_off':
         return 'Handed off (T1)\n\nTickets this agent handed directly to another monitored T1 agent, stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
       case 'closed':
@@ -485,7 +485,7 @@
       case 'module': return 'Adit App Module\n\nWhich Adit product area the ticket relates to (Adit Pay, Adit Voice, Adit AI Agent, EHR/PMS integrations, etc).';
       case 'category': return 'Category\n\nZoho Desk\'s own ticket category field.';
       case 'classification': return 'Classification\n\nZoho Desk\'s own ticket classification field.';
-      case 'departments': return 'Departments transferred to\n\nWhere this agent\'s Transferred tickets ended up, the team/role shown in Zoho\'s owner-change log at the point it left T1.';
+      case 'departments': return 'Transferred to\n\nWhich team group this agent\'s Transferred tickets went to: T1, T2, VoIP, CSM, Pod (Tech OB), T3/Dev or Other. Grouped from AditKB\'s staff teams and Zoho Desk teams.';
       default: return '';
     }
   }
@@ -509,7 +509,7 @@
         ${breakdownChips(a.classification)}
       </div>
       <div>
-        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('departments'))}">Departments transferred to</div>
+        <div class="tkt-bd-group-title" data-tip="${esc(breakdownTip('departments'))}">Transferred to</div>
         ${breakdownChips(a.departments_transferred)}
       </div>`;
   }

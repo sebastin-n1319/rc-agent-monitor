@@ -5950,6 +5950,22 @@ async function runDeskLifecycleSync() {
     // Session 42: right after the snapshot (so owner-change logs are fresh too).
     await runTicketActivitySync();
 
+    // Session 43: refresh AditKB's staff directory (email -> team) twice a
+    // day; it drives the T1/T2/VoIP/CSM/Pod grouping of transfers.
+    try {
+      const last = Number(await deskLifecycle.getSyncState('staff_directory_synced_ms')) || 0;
+      if (Date.now() - last > 12 * 3600 * 1000) {
+        const rows = await aditkbService.fetchStaffDirectory();
+        const n = await deskLifecycle.replaceStaffDirectory(rows);
+        await deskLifecycle.setSyncState('staff_directory_synced_ms', String(Date.now()));
+        await deskLifecycle.setSyncState('staff_directory_error', null);
+        console.log(`👥 Staff directory synced: ${n} people`);
+      }
+    } catch (e) {
+      await deskLifecycle.setSyncState('staff_directory_error', e.message).catch(() => {});
+      console.warn(`⚠️ Staff directory sync failed: ${e.message}`);
+    }
+
     const metricsResult = await runMetricsRefreshPhase(DESK_METRICS_BUDGET_PER_TICK);
     metricsRefreshed = metricsResult.metricsRefreshed;
     metricsErrors = metricsResult.metricsErrors;

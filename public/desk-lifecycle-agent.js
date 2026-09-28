@@ -319,7 +319,7 @@
       case 'reassigned':
         return 'Reassigned\n\nTickets that arrived already in progress, someone else owned it immediately before you picked it up.';
       case 'transferred':
-        return 'Transferred\n\nTickets you handed off to someone outside the T1 roster (a different team). See "Departments transferred to" below for where they went.';
+        return 'Transferred\n\nTickets you handed to another team (anyone outside T1 CS, or a team queue). See "Transferred to" below for which team group.';
       case 'handed_off':
         return 'Handed off (T1)\n\nTickets you handed directly to another monitored T1 agent, stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
       case 'closed':
@@ -454,7 +454,7 @@
         <div><div class="av2-stat-label" style="margin-bottom:8px;">Adit App Module</div>${breakdownChips(s.module)}</div>
         <div><div class="av2-stat-label" style="margin-bottom:8px;">Category</div>${breakdownChips(s.category)}</div>
         <div><div class="av2-stat-label" style="margin-bottom:8px;">Classification</div>${breakdownChips(s.classification)}</div>
-        ${hasTransfers ? `<div><div class="av2-stat-label" style="margin-bottom:8px;">Departments transferred to</div>${breakdownChips(s.departments_transferred)}</div>` : ''}
+        ${hasTransfers ? `<div><div class="av2-stat-label" style="margin-bottom:8px;">Transferred to</div>${breakdownChips(s.departments_transferred)}</div>` : ''}
       </div>`;
     return panel('Breakdown', '', body);
   }

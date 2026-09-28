@@ -192,7 +192,7 @@
     },
     transferred: {
       label: 'Transferred', basis: 'created',
-      def: 'Tickets this agent handed off to someone outside the T1 roster (a different team).',
+      def: 'Tickets this agent handed to another team (anyone outside T1 CS, or a team queue), grouped as T1, T2, VoIP, CSM, Pod (Tech OB), T3/Dev or Other.',
     },
     handed_off_internal: {
       label: 'Handed off (T1)', basis: 'created',
@@ -236,12 +236,12 @@
       : `#${num}`;
   }
 
-  function flagChips(flags) {
+  function flagChips(flags, transferredTo) {
     if (!flags) return '-';
     const on = [];
     if (flags.solely_handled) on.push('Solely handled');
     if (flags.reassigned) on.push('Reassigned');
-    if (flags.transferred) on.push('Transferred');
+    if (flags.transferred) on.push(transferredTo ? `Transferred to ${transferredTo}` : 'Transferred');
     if (flags.handed_off_internal) on.push('Handed off (T1)');
     if (!on.length) return '<span class="dlv-dim">-</span>';
     return on.map(l => `<span class="av2-chip">${esc(l)}</span>`).join(' ');
@@ -340,7 +340,7 @@
           <td>${statusPill(t.status, t.status_type)}</td>
           <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.created_time)}</td>
-          <td>${flagChips(t.flags)}</td>
+          <td>${flagChips(t.flags, t.transferred_to)}</td>
         </tr>`).join('');
     } else if (metric === 'closed') {
       head = '<th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Created</th><th>Closed</th>';
