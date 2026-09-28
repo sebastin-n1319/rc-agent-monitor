@@ -26,6 +26,7 @@
     'desk-lifecycle-admin.css',
     'desk-lifecycle-agent.css',
     'desk-lifecycle-verify.css',
+    'live-floor.css', // Session 45
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
