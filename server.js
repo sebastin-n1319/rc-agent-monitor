@@ -956,6 +956,44 @@ app.get('/api/break-tracker', requireAuth, async (req, res) => {
   }
 });
 
+// Session 47: per-day break history for one agent (Breaks v2 week view).
+// Agents can only read their own; admins any email. Max 31 days.
+app.get('/api/break-history', requireAuth, async (req, res) => {
+  try {
+    const tz = req.query.tz || 'America/Chicago';
+    const me = (req.session.email || '').toLowerCase();
+    let email = String(req.query.email || me).toLowerCase();
+    if (email !== me) {
+      const settings = await getRoleSettingsForEmail(me).catch(() => null);
+      if (!settings || settings.role !== 'admin') return res.status(403).json({ success: false, error: 'Not allowed' });
+    }
+    const days = Math.max(1, Math.min(31, parseInt(req.query.days, 10) || 7));
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const out = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(Date.parse(today + 'T12:00:00Z') - i * 86400000).toISOString().slice(0, 10);
+      const t = await getBreakTracker(d, tz, email).catch(() => null);
+      const row = t && (t.tracker || []).find(r => (r.email || '').toLowerCase() === email);
+      const count = (lane) => {
+        let n = 0, prev = null;
+        for (const ev of [...((row && row.events) || [])].reverse()) { if (ev.currentStatus === lane && prev !== lane) n++; prev = ev.currentStatus; }
+        return n;
+      };
+      out.push({
+        date: d,
+        breakSeconds: row ? row.breakSeconds || 0 : 0,
+        brbSeconds: row ? row.brbSeconds || 0 : 0,
+        auxSeconds: row ? (row.trainingSeconds || 0) + (row.qaSeconds || 0) + (row.internalCallSeconds || 0) : 0,
+        loggedInSeconds: row ? row.loggedInSeconds || 0 : 0,
+        breakCount: row ? count('Break') : 0,
+        brbCount: row ? count('BRB') : 0,
+        overLimit: !!(row && row.alerts && row.alerts.hasAlert),
+      });
+    }
+    res.json({ success: true, email, tz, days: out });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not load break history' }); }
+});
+
 const VALID_BREAK_ACTIONS = new Set([
   'LOGGED_IN','LOGGED_OUT',
   'BRB_OUT','BRB_IN',

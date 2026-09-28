@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.109"></script>
+<script src="/adit-reset.js?v=1.19.110"></script>
 <!-- Session 37: global 401 handler -- catches a dead server session
      (see session-guard.js) before every module downstream has to. -->
 <script src="/session-guard.js?v=1.0.1"></script>
@@ -41,7 +41,7 @@
 <link rel="stylesheet" href="/desk-lifecycle-verify.css?v=1.1.1" id="desk-lifecycle-verify-link">
 <script src="/agent-view-v2.js?v=1.19.8" defer></script>
 <script src="/alert-center.js?v=1.19.8" defer></script>
-<script src="/offline-bridge.js?v=1.19.8" defer></script>
+<script src="/offline-bridge.js?v=1.19.9" defer></script>
 <script src="/bulk-actions.js?v=1.19.8" defer></script>
 <script src="/roster-admin.js?v=1.19.86" defer></script>
 <script src="/settings-admin.js?v=1.0.2" defer></script>
@@ -49,7 +49,9 @@
 <script src="/desk-lifecycle-agent.js?v=2.3.0" defer></script>
 <script src="/desk-lifecycle-verify.js?v=1.3.0" defer></script>
 <link rel="stylesheet" href="/live-floor.css?v=1.1.0">
-<script src="/live-floor.js?v=1.1.0" defer></script>
+<script src="/live-floor.js?v=1.1.2" defer></script>
+<link rel="stylesheet" href="/breaks-v2.css?v=1.0.0">
+<script src="/breaks-v2.js?v=1.0.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
 <style id="a11y-css">
@@ -316,7 +318,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
         </div>
 
         <!-- Live stats -->
-        <div class="lx-stats">
+        <div class="lx-stats" style="display:none"><!-- Session 47: hidden, made-up numbers -->
           <div class="lx-stat"><div class="lx-stat-n" id="lxS1">-</div><div class="lx-stat-l">Agents Online</div></div>
           <div class="lx-stat-div"></div>
           <div class="lx-stat"><div class="lx-stat-n" id="lxS2">-</div><div class="lx-stat-l">Tickets Today</div></div>
@@ -447,7 +449,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </div>
 
     <!-- Live mini stats row -->
-    <div class="l5-stats-row" id="l5StatsRow">
+    <div class="l5-stats-row" id="l5StatsRow" style="display:none"><!-- Session 47: hidden, these were made-up numbers -->
       <div class="l5-stat-card">
         <div class="l5-stat-label">Agents Online</div>
         <div class="l5-stat-val" id="l5s1">0</div>
@@ -1245,6 +1247,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
   <!-- BREAK TRACKER: Command Center Redesign -->
   <div class="page" id="tab-breaks">
+    <div id="bx-admin-root" class="bx-root"></div><!-- Session 47: Breaks v2 (breaks-v2.js); older markup below is hidden -->
 
     <!-- Command header -->
     <div class="btk-command">
@@ -2513,6 +2516,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   </div>
   <!-- agentView remains open, breakbot/hall/bonus/writer/tickets are siblings inside it -->
   <div class="agent-shell-page" id="agent-section-breakbot">
+    <div id="bx-agent-root" class="bx-root"></div><!-- Session 47: Breaks v2 (breaks-v2.js); older markup below is hidden -->
     <!-- Preview banner -->
     <div class="bbn-preview" id="break-preview-note" style="display:none;">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
@@ -9295,6 +9299,7 @@ async function loadBreakTracker(){
   syncBreakActionState();
   renderBreakAdminView();
   renderBreakAgentView();
+  if(typeof window.renderBreaksV2==='function') window.renderBreaksV2(); // Session 47
 }
 
 // ── Break tracker live polling, tick timer, and search ──────────────────────
@@ -9334,7 +9339,8 @@ function btkSetSearch(val){
   renderBreakAdminView();
 }
 
-async function sendBreakAction(action, btn){
+async function sendBreakAction(action, btn, opts){
+  opts = opts || {};
   if(currentBreakbotPreviewMode && !currentBreakbotEnabled){
     showToast('Preview mode is read-only. Enable Break Bot for this account to post live actions.','warning');
     return;
@@ -9397,7 +9403,7 @@ async function sendBreakAction(action, btn){
     }
   }
   // FEAT-2: Break reason category picker for BREAK_OUT and BRB_OUT
-  if(action==='BREAK_OUT' || action==='BRB_OUT'){
+  if((action==='BREAK_OUT' || action==='BRB_OUT') && !opts.skipReason){
     const categories = ['Personal','Restroom','Lunch / Meal','Tea / Coffee','Sick / Unwell','Other'];
     const choice = await new Promise(resolve => {
       const overlay = document.createElement('div');
@@ -15878,9 +15884,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       INTERNAL_CALL_OUT:'Internal call started',
       INTERNAL_CALL_IN:'Internal call ended'
     };
-    window.sendBreakAction = function(action, btn){
-      var result = orig.call(this, action, btn);
-      if(labels[action]) showToast(labels[action], 'success', 2400);
+    // Session 47: pass every argument through (the options object was being
+    // dropped), and only celebrate once the server actually saved it; this
+    // used to toast "Break started" before the request, even if it failed.
+    window.sendBreakAction = async function(action){
+      var before = (typeof getSelfBreakRow==='function' && getSelfBreakRow()) ? getSelfBreakRow().lastActionAt : null;
+      var result = await orig.apply(this, arguments);
+      var after = (typeof getSelfBreakRow==='function' && getSelfBreakRow()) ? getSelfBreakRow().lastActionAt : null;
+      if(labels[action] && after && after !== before) showToast(labels[action], 'success', 2400);
       return result;
     };
   });

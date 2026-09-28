@@ -27,6 +27,8 @@
     'leo.clayton@adit.com',
     'tabbie.shine@adit.com',
   ]);
+  // Shared with breaks-v2.js.
+  window.aditWingOf = function (email) { return CHAT_WING.has(String(email || '').toLowerCase()) ? 'chat' : 'call'; };
   function wingOf(op) {
     return CHAT_WING.has(String((op.agent && op.agent.email) || '').toLowerCase()) ? 'chat' : 'call';
   }

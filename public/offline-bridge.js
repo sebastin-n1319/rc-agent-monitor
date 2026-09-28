@@ -294,12 +294,12 @@
     }
     _wrapped = true;
 
-    window.sendBreakAction = async function (action, btn) {
+    window.sendBreakAction = async function (action, btn, opts) {
       if (!flagOn('offlineQueueV2')) {
-        return original.call(this, action, btn);
+        return original.call(this, action, btn, opts);
       }
       if (isOnline()) {
-        return original.call(this, action, btn);
+        return original.call(this, action, btn, opts);
       }
       // Offline path, enqueue for later
       try {
