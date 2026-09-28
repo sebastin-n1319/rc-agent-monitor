@@ -1,6 +1,6 @@
 /*
- * offline-bridge.css — PWA offline pill in the status bar (Session 8).
- * Minimal — lives inside .sb-left between the live dot and the clock.
+ * offline-bridge.css: PWA offline pill in the status bar (Session 8).
+ * Minimal, lives inside .sb-left between the live dot and the clock.
  */
 
 .offline-pill {

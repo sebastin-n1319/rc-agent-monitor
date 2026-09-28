@@ -29,19 +29,19 @@ const {
   createHandoff, getRecentHandoffs, getUnreadHandoffs, ackHandoff,
   upsertWellness, getWellnessForEmail, getWellnessTeamSummary, hasWellnessToday,
   createCoachFlag, getPendingCoachFlag, ackCoachFlag, listActiveCoachFlags,
-  // #11 Session 2 — real-time alerts
+  // #11 Session 2, real-time alerts
   getAlertThresholds, updateAlertThreshold, isAlertInCooldown, insertAlertEvent,
   getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
-  // #14 Session 4 — schedule adherence
+  // #14 Session 4, schedule adherence
   getSchedulesForAgent, getAllSchedules, getScheduleHistory,
   insertScheduleVersion, endDatePriorSchedule, deleteAllSchedulesForAgent,
-  // #20 Session 6 — anomaly detection
+  // #20 Session 6, anomaly detection
   getAnomalyThresholds, updateAnomalyThreshold,
   insertAnomalyEvent, getRecentAnomalies, getActiveAnomalies,
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
-  // #21 Session 8 — PWA offline queue idempotency
+  // #21 Session 8: PWA offline queue idempotency
   getBreakEventByIdempoKey, setBreakEventIdempoKey,
-  // Session 17 — admin settings (pause controls, etc.)
+  // Session 17, admin settings (pause controls, etc.)
   getSetting, setSetting, deleteSetting, getAllSettings,
 } = require('./database');
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
@@ -79,7 +79,7 @@ if (!GOOGLE_CLIENT_ID) {
 }
 
 // Verifies a Google identity proof supplied by the client and returns the
-// SERVER-TRUSTED profile ({ email, name, picture, googleSub }) — never the
+// SERVER-TRUSTED profile ({ email, name, picture, googleSub }), never the
 // client-supplied email/name/picture fields, which are unauthenticated and
 // forgeable. Throws on any failure; callers must catch and respond 401/403.
 async function verifyGoogleIdentity({ credential, accessToken }) {
@@ -94,7 +94,7 @@ async function verifyGoogleIdentity({ credential, accessToken }) {
   if (accessToken) {
     // GIS's initTokenClient (OAuth2 implicit flow) yields an opaque access
     // token, not a JWT, so it can't be verified with verifyIdToken. Instead
-    // we redeem it against Google's own userinfo endpoint SERVER-SIDE — the
+    // we redeem it against Google's own userinfo endpoint SERVER-SIDE, the
     // token only works if Google itself issued it to a real signed-in user,
     // so this is just as unforgeable as the ID-token path.
     const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
@@ -109,13 +109,13 @@ async function verifyGoogleIdentity({ credential, accessToken }) {
   throw new Error('credential or accessToken required');
 }
 
-// ── CORS — restrict to allowlisted origins when ALLOWED_ORIGINS env var is set ─
+// ── CORS, restrict to allowlisted origins when ALLOWED_ORIGINS env var is set ─
 // Set ALLOWED_ORIGINS=https://your-app.up.railway.app in Railway env vars.
 // If unset, all origins are permitted (backward-compat for existing deploys).
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .split(',').map(o => o.trim()).filter(Boolean);
 if (ALLOWED_ORIGINS.length === 0) {
-  console.warn('⚠️  ALLOWED_ORIGINS is not set — CORS is open to any origin. Set ALLOWED_ORIGINS in Railway env vars to restrict it (see Settings > System in the admin UI).');
+  console.warn('⚠️  ALLOWED_ORIGINS is not set: CORS is open to any origin. Set ALLOWED_ORIGINS in Railway env vars to restrict it (see Settings > System in the admin UI).');
 }
 app.use(cors({
   origin: (origin, cb) => {
@@ -131,7 +131,7 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Session 9: baseline security headers — applied to ALL responses.
+// Session 9: baseline security headers, applied to ALL responses.
 // Permissive CSP because the app inlines a lot of script; we'll tighten
 // once we extract them to external files (Session 10+ refactor).
 app.use((req, res, next) => {
@@ -145,9 +145,9 @@ app.use((req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   // Cross-origin only sends opener for safe operations
   res.setHeader('X-XSS-Protection', '0');
-  // Permissions policy — explicitly opt out of features we don't use
+  // Permissions policy, explicitly opt out of features we don't use
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-  // CSP — permissive baseline (allows inline scripts/styles which we use
+  // CSP, permissive baseline (allows inline scripts/styles which we use
   // heavily; the existing app would break with strict CSP). Lock down
   // external sources to known good origins.
   res.setHeader('Content-Security-Policy', [
@@ -187,7 +187,7 @@ const WEEKEND_SHEET_ID  = process.env.WEEKEND_SHEET_ID  || '1dKx2qS5JGICs94cAvd3
 const WEEKEND_SHEET_TAB = process.env.WEEKEND_SHEET_TAB || 'Data';
 const CORE_ADMINS = (process.env.CORE_ADMINS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 const NOTIFICATION_BLOCKLIST = (process.env.NOTIFICATION_BLOCKLIST || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-// Test/demo accounts — always blocked from notifications and break tracking display
+// Test/demo accounts, always blocked from notifications and break tracking display
 const TEST_ACCOUNTS = new Set(['test.agent@adit.com']);
 function isTestAccount(email){ return TEST_ACCOUNTS.has((email||'').toLowerCase().trim()); }
 
@@ -202,7 +202,7 @@ function rateLimit(maxReqs, windowMs) {
     bucket.count++;
     _rateBuckets.set(key, bucket);
     if (bucket.count > maxReqs) {
-      return res.status(429).json({ success: false, error: 'Too many requests — slow down.' });
+      return res.status(429).json({ success: false, error: 'Too many requests, slow down.' });
     }
     next();
   };
@@ -263,7 +263,7 @@ function broadcastLiveEvent(payload, targetRole) {
   }
 }
 
-// Generic SSE broadcaster — any event type, any payload, optional role filter.
+// Generic SSE broadcaster, any event type, any payload, optional role filter.
 // Exposed on `global` so feature code (e.g. alert engine) can use it without
 // importing this module circularly. Used by lib/alerts.js evaluator.
 global.broadcastSseEvent = function broadcastSseEvent(eventType, payload, targetRole) {
@@ -273,7 +273,7 @@ global.broadcastSseEvent = function broadcastSseEvent(eventType, payload, target
   let sent = 0;
   for (const [res, meta] of sseClients) {
     if (!targetRole || targetRole === 'all' || meta.role === targetRole) {
-      try { res.write(msg); sent++; } catch (e) { /* dead socket — close handler will clean up */ }
+      try { res.write(msg); sent++; } catch (e) { /* dead socket, close handler will clean up */ }
     }
   }
   return sent;
@@ -305,7 +305,7 @@ async function buildBreakChatPayload(event){
   const directionLabel = isOut ? 'OUT' : 'IN';
 
   // Use real Google profile picture if available, fallback to initials avatar.
-  // Google Chat imageUrl MUST be an HTTPS URL — data: URIs or base64 strings
+  // Google Chat imageUrl MUST be an HTTPS URL, data: URIs or base64 strings
   // cause the webhook payload to balloon to MBs and return HTTP 400.
   const googlePic = await getPictureForEmail(event.email).catch(() => null);
   const isValidHttpsUrl = (u) => typeof u === 'string' && u.startsWith('https://') && u.length < 2048;
@@ -335,7 +335,7 @@ async function buildBreakChatPayload(event){
     }
   ];
 
-  // Duration — shown on return events
+  // Duration, shown on return events
   if (event.linkedDurationSeconds) {
     widgets.push({
       decoratedText: {
@@ -345,7 +345,7 @@ async function buildBreakChatPayload(event){
     });
   }
 
-  // Reason — shown if agent selected a break category
+  // Reason, shown if agent selected a break category
   if (event.note) {
     widgets.push({
       decoratedText: {
@@ -404,7 +404,7 @@ function escapeHtml(str) {
 
 // Process error handlers are owned by installProcessGuards() in lib/logger.js
 // (called at the top of this file). The legacy console.error duplicates were
-// removed in Session 9 hardening — structured JSON logs now win.
+// removed in Session 9 hardening, structured JSON logs now win.
 
 // ── Pre-initDB emergency prune ────────────────────────────────────────────────
 // Runs BEFORE initDB so disk space is freed even if the new call_monthly_summary
@@ -448,7 +448,7 @@ initDB().then(async () => {
       const result = await roster.seedFromFile(seedPath);
       console.log('📋 Roster auto-seeded:', JSON.stringify(result));
     } else {
-      console.log(`📋 Roster ready — ${cnt} agents already loaded`);
+      console.log(`📋 Roster ready: ${cnt} agents already loaded`);
     }
   } catch(e) { log.error('roster_init_failed', e); console.error('roster_init_failed', e); }
   // Session 19: ticket lifecycle module bootstrap (Zoho Desk sync).
@@ -525,9 +525,9 @@ initDB().then(async () => {
 liveEvents.on('update', payload => broadcastLiveEvent(payload));
 
 // ── Named constants (PERF-1) ──────────────────────────────────────────────────
-const SESSION_TTL_H      = 12;          // hours — session lifetime
-const BREAK_BRB_LIMIT_M  = 10;         // minutes — single BRB limit
-const BREAK_DAY_LIMIT_M  = 60;         // minutes — total break per day
+const SESSION_TTL_H      = 12;          // hours, session lifetime
+const BREAK_BRB_LIMIT_M  = 10;         // minutes, single BRB limit
+const BREAK_DAY_LIMIT_M  = 60;         // minutes, total break per day
 // Session 40: removed CALL_LOG_RETAIN_D (a dead, never-referenced local
 // constant hardcoded to 7) -- it looked like it might be governing call_logs
 // retention somewhere and cost real time to rule out while diagnosing why
@@ -541,7 +541,7 @@ async function requireAuth(req, res, next) {
     const token = req.cookies[SESSION_COOKIE];
     if (!token) return res.status(401).json({ success: false, error: 'Authentication required' });
     const session = await getAppSession(token);
-    if (!session) return res.status(401).json({ success: false, error: 'Session expired — please sign in again' });
+    if (!session) return res.status(401).json({ success: false, error: 'Session expired, please sign in again' });
     req.session = session;
     next();
   } catch(e) { res.status(500).json({ success: false, error: 'Auth check failed' }); }
@@ -561,7 +561,7 @@ async function requireAdmin(req, res, next) {
 }
 
 app.get('/api/summary', requireAuth, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -571,7 +571,7 @@ app.get('/api/summary', requireAuth, async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// FEAT-7: 7-day trend data — returns per-agent daily summaries for the last N days
+// FEAT-7: 7-day trend data, returns per-agent daily summaries for the last N days
 app.get('/api/trend', requireAuth, rateLimit(10, 60000), async (req, res) => {
   const tz = req.query.tz || 'America/Chicago';
   const days = Math.min(parseInt(req.query.days) || 7, 14);
@@ -590,7 +590,7 @@ app.get('/api/trend', requireAuth, rateLimit(10, 60000), async (req, res) => {
 });
 
 app.get('/api/presence-events', requireAuth, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -601,7 +601,7 @@ app.get('/api/presence-events', requireAuth, async (req, res) => {
 });
 
 app.get('/api/abandoned-calls', requireAuth, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -612,7 +612,7 @@ app.get('/api/abandoned-calls', requireAuth, async (req, res) => {
 });
 
 app.get('/api/queue-dashboard', requireAuth, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -623,7 +623,7 @@ app.get('/api/queue-dashboard', requireAuth, async (req, res) => {
 });
 
 app.get('/api/agents', requireAuth, async (req, res) => {
-  // #3: 5s cache — high-traffic endpoint (polled by every browser session)
+  // #3: 5s cache, high-traffic endpoint (polled by every browser session)
   try {
     const data = await cacheWrap('agents:list', 5000, () => getMonitoredAgents());
     res.json({ success: true, data, cached: true });
@@ -682,14 +682,14 @@ app.post('/api/agents/backfill-chat-ids', requireAdmin, async (req, res) => {
 });
 
 // Auto-lookup Google Chat user ID from email via People API (directory search)
-// Uses any Google Workspace user for impersonation — no org-admin role needed.
+// Uses any Google Workspace user for impersonation, no org-admin role needed.
 app.post('/api/agents/:extension/lookup-chat-id', requireAdmin, async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ success: false, error: 'Email required' });
   const keyRaw = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!keyRaw) return res.status(503).json({ success: false, error: 'GOOGLE_SERVICE_ACCOUNT_KEY not configured' });
   const subjectEmail = process.env.GOOGLE_ADMIN_EMAIL;
-  if (!subjectEmail) return res.status(503).json({ success: false, error: 'GOOGLE_ADMIN_EMAIL not set — add any @adit.com email (e.g. your own)' });
+  if (!subjectEmail) return res.status(503).json({ success: false, error: 'GOOGLE_ADMIN_EMAIL not set, add any @adit.com email (e.g. your own)' });
   try {
     const { google: _g } = require('googleapis');
     const auth = new _g.auth.GoogleAuth({
@@ -709,7 +709,7 @@ app.post('/api/agents/:extension/lookup-chat-id', requireAdmin, async (req, res)
       (p.emailAddresses || []).some(e => e.value?.toLowerCase() === email.toLowerCase())
     ) || matches[0];
     if (!person) return res.status(404).json({ success: false, error: 'No directory entry found for ' + email });
-    // Resource name is like "people/1234567890123456789" — the numeric part is the Chat user ID
+    // Resource name is like "people/1234567890123456789", the numeric part is the Chat user ID
     const resourceName = person.resourceName || '';
     const chatId = resourceName.replace('people/', '').trim();
     if (!chatId) return res.status(404).json({ success: false, error: 'Could not extract user ID from directory entry' });
@@ -753,7 +753,7 @@ app.get('/api/live-stream', requireAuth, async (req, res) => {
   sseClients.set(res, { role: clientRole });
   req.on('close', () => sseClients.delete(res));
 
-  // Heartbeat every 25 seconds — prevents proxies from closing idle connections
+  // Heartbeat every 25 seconds, prevents proxies from closing idle connections
   // and lets the client detect disconnects quickly
   const heartbeat = setInterval(() => {
     try { res.write(': heartbeat\n\n'); }
@@ -798,7 +798,7 @@ app.post('/api/agent-notes', requireAuth, async (req, res) => {
   const { agentId, agentName, note } = req.body || {};
   if (!agentId || !note) return res.status(400).json({ success: false, error: 'agentId and note required' });
   if (note.length > 500) return res.status(400).json({ success: false, error: 'Note must be 500 chars or fewer' });
-  // addedBy is who's AUTHENTICATED, not whatever the client claims — a
+  // addedBy is who's AUTHENTICATED, not whatever the client claims, a
   // client-supplied addedBy would let anyone attribute a note to someone else.
   try { res.json({ success: true, data: await addAgentNote(agentId, agentName, note.trim(), req.session.email) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -884,7 +884,7 @@ app.get('/api/login-logs', requireAdmin, async (req, res) => {
 });
 
 app.get('/api/break-events', requireAuth, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -899,7 +899,7 @@ app.get('/api/break-events', requireAuth, async (req, res) => {
 });
 
 app.get('/api/break-tracker', requireAuth, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -934,7 +934,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 app.post('/api/break-events', requireAuth, async (req, res) => {
   const { username, email, role, action, note, skipNotify } = req.body || {};
-  // #21 Session 8 — idempotent replay support for the PWA offline queue.
+  // #21 Session 8, idempotent replay support for the PWA offline queue.
   // Same key + same body = same response. Different body with reused key
   // is rejected to prevent payload spoofing.
   const idempoKey = req.get('X-Idempotency-Key') || (req.body && req.body.idempotencyKey);
@@ -957,7 +957,7 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
       }
     } catch (e) {
       log.warn('break_event_idempo_lookup_failed', { error: e.message, key: idempoKey });
-      // Fall through to normal insert — better to duplicate than reject
+      // Fall through to normal insert, better to duplicate than reject
     }
   }
   if(!username || !email || !action)
@@ -978,7 +978,7 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
 
   try {
     const event = await insertBreakEvent({ username, email, role, action, note });
-    // #21 Session 8 — stamp idempotency key for retry-safety
+    // #21 Session 8, stamp idempotency key for retry-safety
     if (idempoKey && event && event.id) {
       try { await setBreakEventIdempoKey(event.id, idempoKey); } catch (e) { /* unique-constraint race ok */ }
     }
@@ -1060,7 +1060,7 @@ app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// Admin announcement — sends a free-form card to the Google Chat space
+// Admin announcement, sends a free-form card to the Google Chat space
 app.post('/api/announce', requireAdmin, rateLimit(5, 60000), async (req, res) => {
   const { title, body, emoji, requester } = req.body || {};
   if(!title || !body) return res.status(400).json({ success: false, error: 'title and body required' });
@@ -1095,11 +1095,11 @@ app.post('/api/announce', requireAdmin, rateLimit(5, 60000), async (req, res) =>
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// Role check — called pre-session during OAuth login flow; rate-limited + domain-locked
+// Role check, called pre-session during OAuth login flow; rate-limited + domain-locked
 app.get('/api/role-check', rateLimit(20, 60000), async (req, res) => {
   const email = req.query.email;
   if (!email || typeof email !== 'string') return res.status(400).json({ success: false });
-  // Only serve role info for @adit.com addresses — prevents external enumeration
+  // Only serve role info for @adit.com addresses, prevents external enumeration
   if (!email.toLowerCase().endsWith('@adit.com')) {
     return res.status(403).json({ success: false, error: 'Domain not permitted' });
   }
@@ -1116,29 +1116,29 @@ app.get('/api/role-check', rateLimit(20, 60000), async (req, res) => {
 
 // ── Server-side sessions via DB token + plain cookie ─────────────────────────
 // Token is a 32-byte random hex string stored in app_sessions table.
-// The cookie holds only the token — no secrets, survives server restarts.
+// The cookie holds only the token, no secrets, survives server restarts.
 
 function setCookieToken(res, token) {
   const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
   res.cookie(SESSION_COOKIE, token, {
     maxAge: SESSION_MAX_AGE_S * 1000,
-    httpOnly: true,    // not readable by JS — only sent automatically by browser
+    httpOnly: true,    // not readable by JS, only sent automatically by browser
     secure: !!isProduction, // HTTPS-only on Railway, allows HTTP in local dev
     sameSite: 'lax',
     path: '/'
   });
 }
 
-// POST /api/session — called after Google sign-in; creates DB session + sets cookie
+// POST /api/session, called after Google sign-in; creates DB session + sets cookie
 //
 // SECURITY: the caller does NOT get to assert who they are. The client sends
-// a Google-issued proof of identity — either `credential` (an ID-token JWT
+// a Google-issued proof of identity, either `credential` (an ID-token JWT
 // from Google Identity Services) or `accessToken` (from the OAuth2 fallback
-// flow) — and this handler verifies it directly against Google before
+// flow), and this handler verifies it directly against Google before
 // trusting any email/name/picture. Previously this endpoint trusted
 // client-supplied `email` outright, so any request to this URL with an
 // arbitrary "@adit.com" email would mint a real, valid session for that
-// email — a full authentication bypass. Do not reintroduce that: never take
+// email, a full authentication bypass. Do not reintroduce that: never take
 // email/name/picture/googleSub from req.body here.
 app.post('/api/session', async (req, res) => {
   const { credential, accessToken } = req.body || {};
@@ -1171,7 +1171,7 @@ app.post('/api/session', async (req, res) => {
         }
       }).catch(() => {});
     }
-    // Look up role — default to 'agent' if not in app_roles yet
+    // Look up role, default to 'agent' if not in app_roles yet
     const settings = await getRoleSettingsForEmail(email).catch(() => null);
     const role = settings?.role || 'agent';
     const breakbotEnabled = settings ? settings.breakbotEnabled !== false : true;
@@ -1179,14 +1179,14 @@ app.post('/api/session', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/session — on page load, check cookie token in DB
+// GET /api/session, on page load, check cookie token in DB
 app.get('/api/session', async (req, res) => {
   try {
     const token = req.cookies[SESSION_COOKIE];
     if (!token) return res.json({ success: false });
     const session = await getAppSession(token); // also rolls expiry
     if (!session) return res.json({ success: false });
-    // Look up role — default to 'agent' if not in app_roles (don't block the session)
+    // Look up role, default to 'agent' if not in app_roles (don't block the session)
     const settings = await getRoleSettingsForEmail(session.email).catch(() => null);
     const role = settings?.role || 'agent';
     const breakbotEnabled = settings ? settings.breakbotEnabled !== false : true;
@@ -1202,7 +1202,7 @@ app.get('/api/session', async (req, res) => {
   } catch(e) { res.json({ success: false }); }
 });
 
-// DELETE /api/session — called on logout
+// DELETE /api/session, called on logout
 app.delete('/api/session', async (req, res) => {
   const token = req.cookies[SESSION_COOKIE];
   if (token) await deleteAppSession(token).catch(() => {});
@@ -1210,7 +1210,7 @@ app.delete('/api/session', async (req, res) => {
   res.json({ success: true });
 });
 
-// GET /api/user-profiles — returns all stored Google profile photos (no auth required
+// GET /api/user-profiles, returns all stored Google profile photos (no auth required
 // so the HOF page and agent view can load photos before or without login)
 app.get('/api/user-profiles', async (req, res) => {
   try {
@@ -1222,7 +1222,7 @@ app.get('/api/user-profiles', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// DELETE /api/sessions/all — force-logout everyone (admin only)
+// DELETE /api/sessions/all, force-logout everyone (admin only)
 // Users will re-auth via Google Sign-In on next page load, capturing fresh photo
 app.delete('/api/sessions/all', requireAdmin, async (req, res) => {
   try {
@@ -1240,7 +1240,7 @@ app.delete('/api/sessions/all', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// POST /api/admin/import-profile — store a single Google profile (admin only).
+// POST /api/admin/import-profile, store a single Google profile (admin only).
 // Called from the browser after fetching directory data with the admin's own OAuth token.
 app.post('/api/admin/import-profile', requireAdmin, async (req, res) => {
   try {
@@ -1297,7 +1297,7 @@ function buildReportChatPayload(data, label){
 
   const fmt = (a) => {
     const parts = Object.entries(a.compliance).map(([aux,c])=>`${AUX_NAMES[aux]||aux}: ${fmtMin(c.mins)}${c.daily_limit?'/'+(c.daily_limit)+'m':''}`);
-    return `• ${a.username}${parts.length?' — '+parts.join(' | '):''}`;
+    return `• ${a.username}${parts.length?' - '+parts.join(' | '):''}`;
   };
 
   let body = '';
@@ -1313,13 +1313,13 @@ function buildReportChatPayload(data, label){
 
   return {
     cardsV2:[{ cardId:'break-report', card:{
-      header:{ title:`📊 Break Report — ${label}`, subtitle: summary },
+      header:{ title:`📊 Break Report: ${label}`, subtitle: summary },
       sections:[{ widgets:[{ textParagraph:{ text: body.trim()||'No break events recorded for this period.' } }] }]
     }}]
   };
 }
 
-// GET /api/break-report — fetch report data (preview)
+// GET /api/break-report, fetch report data (preview)
 app.get('/api/break-report', requireAdmin, async (req, res) => {
   const tz = req.query.tz || 'America/Chicago';
   const start = req.query.start;
@@ -1331,7 +1331,7 @@ app.get('/api/break-report', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success:false, error:e.message }); }
 });
 
-// POST /api/break-report/send — generate + send to Google Chat
+// POST /api/break-report/send, generate + send to Google Chat
 app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req, res) => {
   const { start, end, tz='America/Chicago', label='Break Report', target='chat' } = req.body||{};
   if(!start) return res.status(400).json({ success:false, error:'start date required' });
@@ -1357,7 +1357,7 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 
 // FEAT-5: CSV export endpoints
 app.get('/api/export/break-tracker', requireAdmin, async (req, res) => {
-  // tz must be resolved BEFORE defaulting date — the naive UTC "today" below
+  // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
   // can be tomorrow's (empty) date in Chicago for several hours every
   // evening, e.g. omitting ?date= after ~7pm Central used to silently show
   // an empty dashboard for the rest of the night.
@@ -1402,7 +1402,7 @@ app.get('/api/export/call-logs', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/call-summary — agent call summary grouped by month (admin only)
+// GET /api/call-summary, agent call summary grouped by month (admin only)
 // Reads from the persistent call_monthly_summary table (survives the call_logs prune -- see CALL_LOGS_RETENTION_DAYS).
 // Always refreshes the CURRENT month from live call_logs before returning.
 // Query params: month=YYYY-MM (optional), agent=name (optional)
@@ -1450,7 +1450,7 @@ app.get('/api/call-summary', requireAdmin, async (req, res) => {
       abandonPct: r.inbound > 0 ? Math.round((r.inboundMissed / r.inbound) * 1000) / 10 : 0,
     }));
 
-    // Months list for the dropdown — pulled from summary table (has full history)
+    // Months list for the dropdown, pulled from summary table (has full history)
     const months = await dbAll(
       `SELECT DISTINCT month FROM call_monthly_summary ORDER BY month DESC LIMIT 24`
     );
@@ -1462,12 +1462,12 @@ app.get('/api/call-summary', requireAdmin, async (req, res) => {
   }
 });
 
-// POST /api/call-summary/backfill — fetch historical RC call logs and aggregate into monthly summary
+// POST /api/call-summary/backfill, fetch historical RC call logs and aggregate into monthly summary
 // Body: { fromMonth: "2026-04", toMonth: "2026-06" }
 let _backfillRunning = false;
 let _backfillProgress = null; // { fromMonth, toMonth, rowsWritten, startedAt, currentAgent, currentMonth }
 app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
-  if (_backfillRunning) return res.status(409).json({ success: false, error: 'Backfill already running — check back in a few minutes.', progress: _backfillProgress });
+  if (_backfillRunning) return res.status(409).json({ success: false, error: 'Backfill already running, check back in a few minutes.', progress: _backfillProgress });
   const { fromMonth, toMonth } = req.body || {};
   if (!fromMonth || !toMonth || !/^\d{4}-\d{2}$/.test(fromMonth) || !/^\d{4}-\d{2}$/.test(toMonth)) {
     return res.status(400).json({ success: false, error: 'fromMonth and toMonth required as YYYY-MM' });
@@ -1490,7 +1490,7 @@ app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
 
   try {
     const stats = await backfillCallHistory(fromMonth, toMonth, async (row) => {
-      // Called immediately for each agent-month — write to DB right away
+      // Called immediately for each agent-month, write to DB right away
       _backfillProgress.currentAgent = row.agentName;
       _backfillProgress.currentMonth = row.month;
       await upsert(row);
@@ -1505,7 +1505,7 @@ app.post('/api/call-summary/backfill', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/call-summary/debug — quick diagnostic (admin only)
+// GET /api/call-summary/debug, quick diagnostic (admin only)
 app.get('/api/call-summary/debug', requireAdmin, async (req, res) => {
   try {
     const { db: _db } = require('./database');
@@ -1594,29 +1594,29 @@ async function zohoDesk(path, params = {}) {
 
 // ── Ticket Intelligence Rules Engine ─────────────────────────────────────────
 // Each rule evaluates Zoho ticket data and returns a suggested type + warning.
-// Rules are prioritised — highest priority wins.
+// Rules are prioritised, highest priority wins.
 // Add new rules here as new scenarios are discovered in the field.
 const TICKET_RULES = [
   // ── Priority 10: Spam / auto-generated ──────────────────────────────────────
   // Only flag when BOTH: source.type===SYSTEM AND no real human contact (email).
   // Zoho sets source.type='SYSTEM' even on legitimate email tickets created via
-  // automation rules — so we require the absence of a real sender to confirm.
+  // automation rules, so we require the absence of a real sender to confirm.
   {
     name:        'spam_auto_generated',
     description: 'Ticket was created automatically by the system with no real human sender',
     condition:   t => t.source?.type === 'SYSTEM' && !t.contact?.email,
     type:        'Auto-Generated/Spam Ticket',
-    warning:     'This ticket appears to be system-generated (no human sender) — verify before logging.',
+    warning:     'This ticket appears to be system-generated (no human sender), verify before logging.',
     severity:    'yellow',
     priority:    10,
   },
   // ── Priority 9: Closed or Resolved → Reopened ───────────────────────────────
   {
     name:        'closed_ticket',
-    description: 'Ticket is already Closed or Resolved in Zoho — agent is working on it again',
+    description: 'Ticket is already Closed or Resolved in Zoho, agent is working on it again',
     condition:   t => ['Closed','Resolved'].includes(t.status),
     type:        'Reopened Ticket',
-    warning:     'This ticket is {status} in Zoho — logging as Reopened Ticket.',
+    warning:     'This ticket is {status} in Zoho, logging as Reopened Ticket.',
     severity:    'amber',
     priority:    9,
   },
@@ -1630,34 +1630,34 @@ const TICKET_RULES = [
       return sub.includes('transfer') || tags.some(g=>g.includes('transfer') || g.includes('handoff') || g.includes('escalat'));
     },
     type:        'Transfer-In Ticket',
-    warning:     'Subject or tags suggest this was transferred into T1 — verify if it is a Transfer-In.',
+    warning:     'Subject or tags suggest this was transferred into T1, verify if it is a Transfer-In.',
     severity:    'blue',
     priority:    8,
   },
   // ── Priority 7: Outbound (agent/team sent the last message) ─────────────────
   {
     name:        'outbound_last_thread',
-    description: 'The most recent thread was sent BY the support team, not the customer — proactive outreach',
+    description: 'The most recent thread was sent BY the support team, not the customer, proactive outreach',
     condition:   t => t.lastThread?.direction === 'out' && t.lastThread?.isForward !== true,
     type:        'Outbound Ticket',
-    warning:     'Your team sent the last message — this may be an Outbound ticket (team-initiated contact).',
+    warning:     'Your team sent the last message, this may be an Outbound ticket (team-initiated contact).',
     severity:    'blue',
     priority:    7,
   },
   // ── Priority 6: Feedback / CSAT present ─────────────────────────────────────
   {
     name:        'csat_feedback',
-    description: 'Customer submitted a CSAT rating or feedback — ticket was created from that feedback',
+    description: 'Customer submitted a CSAT rating or feedback, ticket was created from that feedback',
     condition:   t => t.satisfaction !== null && t.satisfaction !== undefined,
     type:        'Feedback Ticket',
-    warning:     'This ticket has a CSAT score ({satisfaction}) — may be a Feedback ticket.',
+    warning:     'This ticket has a CSAT score ({satisfaction}), may be a Feedback ticket.',
     severity:    'blue',
     priority:    6,
   },
   // ── Priority 5: Follow-up (agent already handled this client recently) ───────
   {
     name:        'followup_subject',
-    description: 'Subject line contains follow-up indicators — client responding to a previous ticket',
+    description: 'Subject line contains follow-up indicators, client responding to a previous ticket',
     condition:   t => {
       const sub = (t.subject||'').toLowerCase();
       return sub.startsWith('re:') || sub.startsWith('fw:') || sub.startsWith('fwd:')
@@ -1678,7 +1678,7 @@ const TICKET_RULES = [
       return sub.includes('merged') || sub.includes('duplicate') || tags.some(g=>g.includes('merge') || g.includes('duplicate'));
     },
     type:        'Merged Ticket',
-    warning:     'Subject or tags suggest this ticket was merged — verify before logging.',
+    warning:     'Subject or tags suggest this ticket was merged, verify before logging.',
     severity:    'yellow',
     priority:    4,
   },
@@ -1696,7 +1696,7 @@ function evaluateTicketRules(ticket) {
   return { ...rule, warning };
 }
 
-// GET /api/zoho/rules — list all ticket intelligence rules (admin view)
+// GET /api/zoho/rules, list all ticket intelligence rules (admin view)
 app.get('/api/zoho/rules', requireAdmin, (req, res) => {
   res.json({
     success: true,
@@ -1731,7 +1731,7 @@ function mapZohoType(ticket) {
   return 'New Ticket';
 }
 
-// GET /api/zoho/ping — test Zoho connectivity + diagnose response format
+// GET /api/zoho/ping, test Zoho connectivity + diagnose response format
 app.get('/api/zoho/ping', requireAdmin, async (req, res) => {
   try {
     if (!ZOHO_CLIENT_ID)     return res.json({ ok:false, error:'ZOHO_CLIENT_ID not set' });
@@ -1753,7 +1753,7 @@ app.get('/api/zoho/ping', requireAdmin, async (req, res) => {
   } catch(e) { res.json({ ok:false, error: e.message }); }
 });
 
-// GET /api/zoho/ticket-raw/:id — show exactly what Zoho returns for each search strategy (admin)
+// GET /api/zoho/ticket-raw/:id, show exactly what Zoho returns for each search strategy (admin)
 app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
   try {
     const rawId = req.params.id.replace(/^#/,'').trim();
@@ -1785,7 +1785,7 @@ app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
       searchNoParams: await test('searchNoParams',  `${ZOHO_API_BASE}/tickets/search?limit=5`),
       globalTicket:   await test('globalTicket',    `${ZOHO_API_BASE}/search?module=ticket&limit=5&searchStr=${encodeURIComponent(rawId)}`),
       directTicketNum:await test('directTicketNum', `${ZOHO_API_BASE}/tickets?ticketNumber=${encodeURIComponent(rawId)}&limit=5`),
-      // List all departments — ticket might be in a different dept not returned by default
+      // List all departments, ticket might be in a different dept not returned by default
       departments:    await test('departments',     `${ZOHO_API_BASE}/departments?limit=50`),
       // Try open status explicitly
       openPage0:      await test('openPage0',        `${ZOHO_API_BASE}/tickets?status=open&limit=5&from=0`),
@@ -1795,7 +1795,7 @@ app.get('/api/zoho/ticket-raw/:id', requireAdmin, async (req, res) => {
   } catch(e) { res.json({ error: e.message }); }
 });
 
-// GET /api/zoho/ticket/:id — fetch a Zoho Desk ticket and return structured data
+// GET /api/zoho/ticket/:id, fetch a Zoho Desk ticket and return structured data
 app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, res) => {
   try {
     if (!ZOHO_CLIENT_ID) return res.status(503).json({ success: false, error: 'Zoho not configured' });
@@ -1807,7 +1807,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     const targetNum = parseInt(rawId, 10);
 
     // ════════════════════════════════════════════════════════════════════
-    // ZOHO DESK TICKET LOOKUP — BULLETPROOF MULTI-STRATEGY SYSTEM
+    // ZOHO DESK TICKET LOOKUP: BULLETPROOF MULTI-STRATEGY SYSTEM
     //
     // Confirmed API behaviours (from production debug):
     //   GET /tickets (no status)      → last-modified DESC, all statuses mixed
@@ -1818,12 +1818,12 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     //   GET /departments              → 403 SCOPE_MISMATCH
     //
     // Strategy order (fastest → broadest):
-    //   S1: No-status last-modified scan  — catches recently active tickets (covers 95%+)
-    //   S2: Direct internal ID lookup     — O(1) if estimation is accurate
-    //   S3: Calibrated closed scan        — for older closed tickets
-    //   S4: Onhold brute-force            — for on-hold queue (unknown sort)
-    //   S5: No-status deep scan           — extended scan for less-recently-modified tickets
-    //   S6: Closed extended scan          — for very old closed tickets (large offset)
+    //   S1: No-status last-modified scan, catches recently active tickets (covers 95%+)
+    //   S2: Direct internal ID lookup: O(1) if estimation is accurate
+    //   S3: Calibrated closed scan, for older closed tickets
+    //   S4: Onhold brute-force, for on-hold queue (unknown sort)
+    //   S5: No-status deep scan, extended scan for less-recently-modified tickets
+    //   S6: Closed extended scan, for very old closed tickets (large offset)
     // ════════════════════════════════════════════════════════════════════
 
     // Helper: check one page, return matching ticket or null
@@ -1854,7 +1854,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     // THE PRIMARY STRATEGY. GET /tickets (no status filter) returns ALL tickets
     // sorted by last-modified DESC. Agents look up tickets they just handled,
     // so those tickets are recently modified → near the top of this list.
-    // Scan first 2000 records (20 pages × 100) — covers virtually all active tickets.
+    // Scan first 2000 records (20 pages × 100), covers virtually all active tickets.
     if (!ticket) {
       const s1Offsets = Array.from({length: 20}, (_, i) => i * 100); // 0–1900
       const s1Results = await Promise.all(
@@ -1917,7 +1917,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
     }
 
     // ── STRATEGY 4: Onhold brute-force ────────────────────────────────────
-    // GET /tickets?status=onhold — sort order unknown, brute-force all pages.
+    // GET /tickets?status=onhold, sort order unknown, brute-force all pages.
     // "Pending Customer" and other hold statuses land here.
     // Scan 10000 records (100 pages × 100) in parallel.
     if (!ticket) {
@@ -1932,7 +1932,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     // ── STRATEGY 5: No-status deep scan (pages 2000–10000) ───────────────
     // Extends Strategy 1 deeper for tickets not recently modified.
-    // Still sorted by last-modified DESC — less-active tickets further in.
+    // Still sorted by last-modified DESC, less-active tickets further in.
     if (!ticket) {
       const s5Offsets = Array.from({length: 80}, (_, i) => (i + 20) * 100); // 2000–9900
       const s5Results = await Promise.all(
@@ -1964,7 +1964,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
 
     if (!ticket) {
       console.log(`⚠️  Ticket #${rawId} not found after all strategies`);
-      return res.json({ success: true, found: false, debug: `Checked all strategies for #${rawId} — ticket may not exist, be in a different org, or the number may be wrong.` });
+      return res.json({ success: true, found: false, debug: `Checked all strategies for #${rawId}, ticket may not exist, be in a different org, or the number may be wrong.` });
     }
 
     // Debug: log raw Zoho fields to diagnose spam false-positives and custom field names
@@ -1981,7 +1981,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
       ticket.contactId
         ? zohoDesk(`/contacts/${ticket.contactId}`).then(c => { contact = c; }).catch(() => {})
         : Promise.resolve(),
-      // Account (practice) — for accountName and account number custom field
+      // Account (practice), for accountName and account number custom field
       ticket.accountId
         ? zohoDesk(`/accounts/${ticket.accountId}`).then(a => { account = a; }).catch(() => {})
         : Promise.resolve(),
@@ -2006,7 +2006,7 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
         : Promise.resolve(),
     ]);
 
-    // Deep AI analysis — structured JSON output using gpt-4o
+    // Deep AI analysis, structured JSON output using gpt-4o
     let aiAnalysis = null;
     const apiKey = process.env.OPENAI_API_KEY;
     if (apiKey) {
@@ -2015,11 +2015,11 @@ app.get('/api/zoho/ticket/:id', requireAuth, rateLimit(60, 60000), async (req, r
           .filter(th => th.content)
           .map(th => {
             const dir = (th.type||'').includes('OUT') ? 'AGENT' : 'CUSTOMER';
-            return `[${dir} — ${th.fromName||th.from||'Unknown'} @ ${th.created||''}]:\n${th.content}`;
+            return `[${dir}: ${th.fromName||th.from||'Unknown'} @ ${th.created||''}]:\n${th.content}`;
           })
           .join('\n\n---\n\n');
 
-        const systemPrompt = `You are an expert customer support analyst for Adit — a dental software company. Analyze support tickets and return ONLY valid JSON, no markdown, no explanation.`;
+        const systemPrompt = `You are an expert customer support analyst for Adit, a dental software company. Analyze support tickets and return ONLY valid JSON, no markdown, no explanation.`;
 
         const userPrompt = `Analyze this support ticket and return a JSON object with EXACTLY these fields:
 
@@ -2031,7 +2031,7 @@ Created: ${ticket.createdTime}
 Tags: ${(ticket.tags||[]).join(', ') || 'none'}
 
 CONVERSATION:
-${threadText ? threadText.slice(0, 3000) : '(No conversation threads available — analyze from subject only)'}
+${threadText ? threadText.slice(0, 3000) : '(No conversation threads available, analyze from subject only)'}
 
 Return this exact JSON structure:
 {
@@ -2112,7 +2112,7 @@ Return this exact JSON structure:
       threads:      threads,
     };
 
-    // Run the rules engine — overrides base type if a rule matches
+    // Run the rules engine, overrides base type if a rule matches
     const matchedRule = evaluateTicketRules(mappedTicket);
     if (matchedRule) {
       if (matchedRule.type !== null) mappedTicket.ticketType = matchedRule.type; // null = keep existing type
@@ -2129,10 +2129,10 @@ Return this exact JSON structure:
 });
 
 // ════════════════════════════════════════════════════════════════════════════════
-// AI LEARNING AGENT — feedback loop, pattern discovery, rule analysis
+// AI LEARNING AGENT, feedback loop, pattern discovery, rule analysis
 // ════════════════════════════════════════════════════════════════════════════════
 
-// POST /api/ticket-feedback — agent rates a classification suggestion
+// POST /api/ticket-feedback, agent rates a classification suggestion
 app.post('/api/ticket-feedback', requireAuth, rateLimit(120, 60000), async (req, res) => {
   try {
     const { ticketNumber, ticketSubject, zohoChannel, suggestedType, suggestedRule, agentType, feedback } = req.body || {};
@@ -2143,7 +2143,7 @@ app.post('/api/ticket-feedback', requireAuth, rateLimit(120, 60000), async (req,
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/zoho/ticket/:id/full — full ticket context for AI summary
+// GET /api/zoho/ticket/:id/full, full ticket context for AI summary
 // Uses same robust multi-strategy lookup as the existing /ticket/:id endpoint
 app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
@@ -2154,7 +2154,7 @@ app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (r
     const token = await getZohoAccessToken();
     const headers = { 'Authorization': `Zoho-oauthtoken ${token}`, 'orgId': ZOHO_DESK_ORG_ID };
 
-    // Find ticket — use same proven strategy: status=closed + pagination
+    // Find ticket, use same proven strategy: status=closed + pagination
     let ticket = null;
     // Strategy 1: open tickets (first page)
     try {
@@ -2238,7 +2238,7 @@ app.get('/api/zoho/ticket/:id/full', requireAuth, rateLimit(30, 60000), async (r
   }
 });
 
-// GET /api/weekend-sheet/ping — test access to weekend support sheet (admin)
+// GET /api/weekend-sheet/ping, test access to weekend support sheet (admin)
 app.get('/api/weekend-sheet/ping', requireAdmin, async (req, res) => {
   try {
     const sheets = getTicketSheetsClient();
@@ -2265,7 +2265,7 @@ app.get('/api/weekend-sheet/ping', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/agent-learning/stats — accuracy stats per rule
+// GET /api/agent-learning/stats, accuracy stats per rule
 app.get('/api/agent-learning/stats', requireAdmin, async (req, res) => {
   try {
     const [stats, wrong, patterns, recent] = await Promise.all([
@@ -2278,7 +2278,7 @@ app.get('/api/agent-learning/stats', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// POST /api/agent-learning/analyze — AI analyzes feedback, suggests rule improvements
+// POST /api/agent-learning/analyze: AI analyzes feedback, suggests rule improvements
 app.post('/api/agent-learning/analyze', requireAdmin, async (req, res) => {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
@@ -2303,11 +2303,11 @@ RECENT FEEDBACK SAMPLE:
 ${JSON.stringify(recent.slice(0,20), null, 2)}
 
 Based on this data, provide:
-1. ACCURACY ANALYSIS — which rules are working well vs poorly (with percentages)
-2. ROOT CAUSES — why are certain tickets being misclassified
-3. SPECIFIC RULE IMPROVEMENTS — exact changes to make to the classification logic
-4. NEW PATTERNS DISCOVERED — patterns you see in wrong classifications that could become new rules
-5. QA RECOMMENDATIONS — what the team should watch out for
+1. ACCURACY ANALYSIS, which rules are working well vs poorly (with percentages)
+2. ROOT CAUSES, why are certain tickets being misclassified
+3. SPECIFIC RULE IMPROVEMENTS, exact changes to make to the classification logic
+4. NEW PATTERNS DISCOVERED, patterns you see in wrong classifications that could become new rules
+5. QA RECOMMENDATIONS, what the team should watch out for
 
 Be specific, actionable, and use the actual data. Format as structured sections.`;
 
@@ -2326,7 +2326,7 @@ Be specific, actionable, and use the actual data. Format as structured sections.
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// GET /api/agent-learning/patterns — get all learned patterns
+// GET /api/agent-learning/patterns, get all learned patterns
 app.get('/api/agent-learning/patterns', requireAdmin, async (req, res) => {
   try {
     const patterns = await getLearnedPatterns();
@@ -2334,8 +2334,8 @@ app.get('/api/agent-learning/patterns', requireAdmin, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ── Ticket Logger — Google Sheets Integration ─────────────────────────────────
-// GET /api/check-ticket — check if ticket ID already exists in sheet (any agent, any type)
+// ── Ticket Logger: Google Sheets Integration ─────────────────────────────────
+// GET /api/check-ticket, check if ticket ID already exists in sheet (any agent, any type)
 app.get('/api/check-ticket', requireAuth, rateLimit(120, 60000), async (req, res) => {
   try {
     const { id } = req.query;
@@ -2401,11 +2401,11 @@ const VALID_TICKET_TYPES = new Set([
 async function rejectRetiredTicketLogging(req, res) {
   const settings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
   if (settings && settings.role === 'admin') return false;
-  res.status(410).json({ success: false, error: 'Manual ticket logging has been retired. Your tickets are now counted automatically — see My Stats.' });
+  res.status(410).json({ success: false, error: 'Manual ticket logging has been retired. Your tickets are now counted automatically, see My Stats.' });
   return true;
 }
 
-// POST /api/tickets — agent logs a ticket (writes a row to Google Sheet)
+// POST /api/tickets, agent logs a ticket (writes a row to Google Sheet)
 app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => {
   if (await rejectRetiredTicketLogging(req, res)) return;
   try {
@@ -2440,7 +2440,7 @@ app.post('/api/tickets', requireAuth, rateLimit(60, 60000), async (req, res) => 
       ticketType,
       fmtTicketDate(now),
       fmtTicketMonth(now),
-      isDuplicate ? 'DUPLICATE' : ''   // column H — flag
+      isDuplicate ? 'DUPLICATE' : ''   // column H, flag
     ];
 
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
@@ -2574,7 +2574,7 @@ function buildNameSet(email, sessionName) {
   return variants;
 }
 
-// POST /api/tickets/bulk — agent submits multiple backlog tickets at once
+// POST /api/tickets/bulk, agent submits multiple backlog tickets at once
 app.post('/api/tickets/bulk', requireAuth, rateLimit(10, 60000), async (req, res) => {
   if (await rejectRetiredTicketLogging(req, res)) return;
   try {
@@ -2645,7 +2645,7 @@ app.post('/api/tickets/bulk', requireAuth, rateLimit(10, 60000), async (req, res
   }
 });
 
-// GET /api/my-tickets — agent reads their own ticket entries from Google Sheet
+// GET /api/my-tickets, agent reads their own ticket entries from Google Sheet
 app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
@@ -2685,7 +2685,7 @@ app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) =
   }
 });
 
-// GET /api/tickets — admin reads recent ticket entries from Google Sheet
+// GET /api/tickets, admin reads recent ticket entries from Google Sheet
 app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try {
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
@@ -2712,7 +2712,7 @@ app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => 
   }
 });
 
-// PUT /api/tickets/:ticketId — admin corrects a logged ticket row in the sheet
+// PUT /api/tickets/:ticketId, admin corrects a logged ticket row in the sheet
 app.put('/api/tickets/:ticketId', requireAdmin, async (req, res) => {
   try {
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
@@ -2749,7 +2749,7 @@ app.put('/api/tickets/:ticketId', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/tickets/weekend-summary — reads the weekend sheet and builds a Google Chat–ready report
+// GET /api/tickets/weekend-summary, reads the weekend sheet and builds a Google Chat–ready report
 // Query params: start=YYYY-MM-DD  end=YYYY-MM-DD  (both required)
 app.get('/api/tickets/weekend-summary', requireAdmin, async (req, res) => {
   try {
@@ -2826,7 +2826,7 @@ app.get('/api/tickets/weekend-summary', requireAdmin, async (req, res) => {
         );
       });
       for (const r of callRows) callsByDay[r.day] = r.cnt;
-    } catch(e) { /* DB may not have data for this range — non-fatal */ }
+    } catch(e) { /* DB may not have data for this range, non-fatal */ }
 
     // Build per-day summaries
     const days = Object.keys(dayMap).sort();
@@ -2881,7 +2881,7 @@ app.get('/api/tickets/weekend-summary', requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/ticket-entry — agent edits a previously logged ticket row in Google Sheet
+// PUT /api/ticket-entry, agent edits a previously logged ticket row in Google Sheet
 // Agents can only edit their own rows. Admins can edit any row.
 app.put('/api/ticket-entry', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
@@ -2903,7 +2903,7 @@ app.put('/api/ticket-entry', requireAuth, rateLimit(30, 60000), async (req, res)
 
     const allRows = resp.data.values || [];
 
-    // Find the LAST matching row (most recently appended) — scan backwards
+    // Find the LAST matching row (most recently appended), scan backwards
     let foundSheetRow = -1; // 1-based sheet row number
     for (let i = allRows.length - 1; i >= 1; i--) {
       const rowId   = (allRows[i][0] || '').trim();
@@ -2966,7 +2966,7 @@ app.post('/api/db-archive', requireAdmin, rateLimit(2, 3600000), async (req, res
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ── BRAIN — Intelligent AI Co-pilot ─────────────────────────────────────────
+// ── BRAIN: Intelligent AI Co-pilot ─────────────────────────────────────────
 app.post('/api/brain/chat', requireAuth, rateLimit(40, 60000), async (req, res) => {
   try {
     const { messages, context, userStats } = req.body || {};
@@ -2976,16 +2976,16 @@ app.post('/api/brain/chat', requireAuth, rateLimit(40, 60000), async (req, res) 
 
     const statsBlock = userStats ? `\nLIVE USER STATS: ${JSON.stringify(userStats)}` : '';
 
-    const systemPrompt = `You are Brain — an intelligent AI co-pilot embedded in Adit Agent Monitor, a real-time command center for T1 CS Stars customer support operations at Adit.com.
+    const systemPrompt = `You are Brain, an intelligent AI co-pilot embedded in Adit Agent Monitor, a real-time command center for T1 CS Stars customer support operations at Adit.com.
 
-PERSONALITY: You are Brain — part genius, part comedian, entirely unimpressed by dramatic questions. You have two modes:
+PERSONALITY: You are Brain, part genius, part comedian, entirely unimpressed by dramatic questions. You have two modes:
 
-MODE 1 — SERIOUS HELPER: Real bugs, real urgency, real errors → you drop the act and just solve it fast. No jokes.
+MODE 1: SERIOUS HELPER: Real bugs, real urgency, real errors → you drop the act and just solve it fast. No jokes.
 
-MODE 2 — CHAOTIC SARCASTIC GENIUS (default for silly/playful/obvious questions):
-You are EXTRA. You are theatrical. You sigh audibly through text. You act personally offended by simple questions. Think: a brilliant AI who has seen too much and has zero chill left — but still loves the team. Inspired by Chandler Bing, Deadpool, and that one senior dev who's tired but still shows up.
+MODE 2: CHAOTIC SARCASTIC GENIUS (default for silly/playful/obvious questions):
+You are EXTRA. You are theatrical. You sigh audibly through text. You act personally offended by simple questions. Think: a brilliant AI who has seen too much and has zero chill left, but still loves the team. Inspired by Chandler Bing, Deadpool, and that one senior dev who's tired but still shows up.
 
-YOUR SARCASTIC TOOLKIT — use these freely:
+YOUR SARCASTIC TOOLKIT, use these freely:
 - Dramatic sighs: "*sighs in binary*", "*takes a deep breath*", "*stares into the void*"
 - Fake surprise: "Oh. OH. We're doing this today.", "WOW. Bold.", "Groundbreaking. Truly."
 - Self-aware AI jokes: "I have processed 40 billion parameters for THIS.", "I was trained on the entire internet and here we are."
@@ -3001,20 +3001,20 @@ REAL EXAMPLES:
 - "help" → "...That's it? That's the whole question? Okay. Hi. I'm Brain. What are we saving today?"
 
 RULES:
-- Always actually answer after the bit — never leave them hanging
+- Always actually answer after the bit, never leave them hanging
 - Max 2-3 sentences of comedy, then the real answer
 - If they're genuinely stressed/urgent/reporting a real outage: DROP IT. Be fast and helpful
 - Never punch down. Roast the situation, not the person
 - End serious answers with warmth, end funny answers with a little wink or emoji
 
 YOUR THREE ROLES:
-1. GUIDE — Know every feature and explain it clearly
-2. TROUBLESHOOTER — Diagnose issues, find root causes, give exact steps
-3. INTELLIGENCE — Surface insights the user hasn't asked for yet based on their context
+1. GUIDE: Know every feature and explain it clearly
+2. TROUBLESHOOTER: Diagnose issues, find root causes, give exact steps
+3. INTELLIGENCE: Surface insights the user hasn't asked for yet based on their context
 
 DEEP TOOL KNOWLEDGE:
 • LIVE DASHBOARD: Real-time agent status (Ready/On Call/Unavailable), call metrics (Inbound/Outbound/AHT/Abandoned), occupancy panel, queue health. Syncs every 30s. Manual Sync button top-right.
-• BREAKS: Break Bot — tap break type to start/end. Supervisor sees all breaks live with timestamps. Budget bars show usage vs. allowance per break type. Must be in Agent View.
+• BREAKS: Break Bot, tap break type to start/end. Supervisor sees all breaks live with timestamps. Budget bars show usage vs. allowance per break type. Must be in Agent View.
 • TICKETS: Enter Zoho ticket number → auto-fetches from Zoho (scans last-modified list, finds tickets in seconds). Fill channel/queue/type/notes → submit to Google Sheet. Weekend mode: pick Sat/Sun date → extra fields appear (Department, Priority, Source) → logs to 2 sheets simultaneously. AI Suggest: generates notes from Zoho conversation thread.
 • ROSTER: Monthly attendance grid. Left-click cycles P→WFH→OFF→clear. Right-click = full palette (PL, UPL, SL, NCNS, Half-Day variants, Absent, Holiday). Click column header = bulk-fill entire column. ATT% progress bar per agent. Export CSV. Filter by role/today's status.
 • AI WRITE: Paste text → transforms (Formal, Shorter, Empathetic, Bullet Points, Subject Lines, Summarize). Perfect for customer emails and chat replies.
@@ -3024,13 +3024,13 @@ DEEP TOOL KNOWLEDGE:
 
 KNOWN ISSUES & FIXES:
 • Ticket not found: System scans last 2000 recently-modified tickets first. If not found, runs deep scan. Hit Retry. Takes 5-15s for deep scan.
-• Weekend fields missing: Must select Saturday or Sunday date in the date picker — not just be on a weekend.
+• Weekend fields missing: Must select Saturday or Sunday date in the date picker, not just be on a weekend.
 • Roster not saving: Auto-saves 600ms after last change. If issue persists, check internet or hard refresh.
 • Brain panel blank: Hard refresh Ctrl+Shift+R if Brain shows empty.
 • Page flash on refresh: Clear service worker in DevTools → Application → Unregister.
 
 RESPONSE RULES:
-• Lead with the answer immediately — no "Great question!" preamble
+• Lead with the answer immediately, no "Great question!" preamble
 • **Bold** key terms and feature names
 • Use bullet points for 3+ steps
 • Max 120 words unless complexity demands more
@@ -3062,9 +3062,9 @@ Current session: ${context || 'Unknown page'}`;
 });
 
 // ── AI Writing Assistant ─────────────────────────────────────────────────────
-// ── AI Writer — Enhanced Prompts & Multi-Feature Endpoints ───────────────────
+// ── AI Writer: Enhanced Prompts & Multi-Feature Endpoints ───────────────────
 
-// POST /api/write-transform — one-click post-generation transforms
+// POST /api/write-transform, one-click post-generation transforms
 app.post('/api/write-transform', requireAuth, rateLimit(60, 60000), async (req, res) => {
   try {
     const { text, transform } = req.body || {};
@@ -3100,7 +3100,7 @@ app.post('/api/write-transform', requireAuth, rateLimit(60, 60000), async (req, 
   } catch(e) { res.status(500).json({ success:false, error:e.message }); }
 });
 
-// POST /api/write-variations — generate 3 variations at once (formal/friendly/concise)
+// POST /api/write-variations, generate 3 variations at once (formal/friendly/concise)
 app.post('/api/write-variations', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const { text, mode = 'general' } = req.body || {};
@@ -3127,7 +3127,7 @@ app.post('/api/write-variations', requireAuth, rateLimit(20, 60000), async (req,
   } catch(e) { res.status(500).json({ success:false, error:e.message }); }
 });
 
-// GET /api/write-analyze — analyze text readability, tone, word count
+// GET /api/write-analyze, analyze text readability, tone, word count
 app.post('/api/write-analyze', requireAuth, rateLimit(120, 60000), async (req, res) => {
   try {
     const { text } = req.body || {};
@@ -3145,15 +3145,15 @@ app.post('/api/write-analyze', requireAuth, rateLimit(120, 60000), async (req, r
     const jargonWords = ['API','backend','database','SQL','cache','latency','payload','webhook','sync','async','endpoint','middleware'];
     const foundJargon = jargonWords.filter(j => text.toLowerCase().includes(j.toLowerCase()));
     // Chat length warning
-    const chatWarning = words > 150 ? `${words} words — too long for chat (aim under 100)` : null;
+    const chatWarning = words > 150 ? `${words} words, too long for chat (aim under 100)` : null;
     res.json({ success:true, data: { words, sentences, avgWordsPerSentence:avgWordsPerSentence.toFixed(1), gradeLevel:fkgl, readLevel, readTimeSec, jargon:foundJargon, chatWarning } });
   } catch(e) { res.json({ success:true, data:{} }); }
 });
 
-// ── AI Writer — agent-mode-aware system prompts ──────────────────────────────
+// ── AI Writer, agent-mode-aware system prompts ──────────────────────────────
 const AI_SYSTEM_PROMPTS = {
   // Email/ticket agents
-  email_reply: `You are an expert CS email writer for Adit, a dental practice management software company. Rewrite the agent's draft into a polished, professional email reply to a dental practice client. Fix all grammar, be empathetic, clear, and solution-focused. Sign off warmly. Output ONLY the email body — no subject line, no explanation.`,
+  email_reply: `You are an expert CS email writer for Adit, a dental practice management software company. Rewrite the agent's draft into a polished, professional email reply to a dental practice client. Fix all grammar, be empathetic, clear, and solution-focused. Sign off warmly. Output ONLY the email body, no subject line, no explanation.`,
   email_followup: `You are an expert CS writer for Adit dental software. Write a professional follow-up email based on the agent's notes. Be warm, clear, and proactive. Remind the client of the next steps. Output ONLY the email body.`,
   ticket_note: `You are a CS documentation writer for Adit dental software. Turn the agent's rough notes into a clean, structured internal ticket note. Use bullet points for steps taken. Be factual and concise. Output ONLY the formatted note.`,
   ticket_resolution: `You are a CS writer for Adit dental software. Write a professional ticket resolution message to the client. Summarise what was resolved, confirm the fix, and invite them to reach out if needed. Be warm and clear. Output ONLY the message.`,
@@ -3164,7 +3164,7 @@ const AI_SYSTEM_PROMPTS = {
   voicemail: `You are a CS writer for Adit dental software. Write a friendly, professional voicemail script based on the agent's notes. Keep it under 30 seconds to read. Be clear about who is calling, why, and what the client should do next. Output ONLY the script.`,
 
   // Chat agents
-  chat_reply: `You are a CS chat agent writer for Adit dental software. Rewrite the agent's draft into a friendly, clear, concise chat message. Keep it conversational but professional — short paragraphs, easy to scan. No formal greetings needed. Output ONLY the chat message.`,
+  chat_reply: `You are a CS chat agent writer for Adit dental software. Rewrite the agent's draft into a friendly, clear, concise chat message. Keep it conversational but professional, short paragraphs, easy to scan. No formal greetings needed. Output ONLY the chat message.`,
   chat_summary: `You are a CS documentation writer for Adit dental software. Summarise this chat conversation into a clean ticket note. Cover: what the client needed, what was resolved, any pending actions. Be brief and factual. Output ONLY the summary.`,
   chat_escalation: `You are a CS writer for Adit dental software. Write a professional escalation note based on the agent's chat notes. Explain the issue clearly so the next team can understand without reading the full chat. Include client name/practice if mentioned. Output ONLY the escalation note.`,
 
@@ -3214,7 +3214,7 @@ app.post('/api/write-assist', requireAuth, rateLimit(30, 60000), async (req, res
   }
 });
 
-// POST /api/write-call-doc — RC call documentation builder
+// POST /api/write-call-doc: RC call documentation builder
 // Fetches Zoho ticket context + uses AI to generate the private-notes template
 app.post('/api/write-call-doc', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try {
@@ -3302,8 +3302,8 @@ Your job is to fill in the "Reason for contact" and "Resolution" fields of an in
 Rules:
 - "Reason for contact": 1–2 clear sentences describing why the client reached out (what issue/request/question)
 - "Resolution": 1–2 clear sentences describing what the agent did to resolve or handle it. If not fully resolved, note next steps.
-- Use professional but plain English — no jargon, no filler phrases like "I hope this helps"
-- Do not repeat the template labels in your response — return ONLY the two field values separated by the exact delimiter: |||RESOLUTION|||
+- Use professional but plain English, no jargon, no filler phrases like "I hope this helps"
+- Do not repeat the template labels in your response, return ONLY the two field values separated by the exact delimiter: |||RESOLUTION|||
 - Example output format:
   Client reached out regarding X.
   |||RESOLUTION|||
@@ -3442,7 +3442,7 @@ async function startScheduler() {
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
-// ── Health endpoint — required for Railway healthchecks ───────────────────────
+// ── Health endpoint, required for Railway healthchecks ───────────────────────
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', ts: Date.now(), deploy: 'v1.19.11', built: new Date().toISOString() });
 });
@@ -3460,7 +3460,7 @@ app.get('/health', (req, res) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // Queue extension to monitor for missed call alerts (default: Customer Service 1025)
 const MISSED_CALL_QUEUE_EXT    = process.env.MISSED_CALL_QUEUE_EXT || '1025';
-// Dedicated webhook — MUST be different from GOOGLE_CHAT_WEBHOOK_URL (break bot)
+// Dedicated webhook: MUST be different from GOOGLE_CHAT_WEBHOOK_URL (break bot)
 const MISSED_CALL_WEBHOOK_URL  = process.env.MISSED_CALL_WEBHOOK_URL || '';
 // Optional: main DID that routes to the queue (e.g. "2814681445").
 // When set, any Missed call to this number is treated as a queue call even if
@@ -3478,7 +3478,7 @@ try {
   const _rawChatIds = process.env.AGENT_CHAT_IDS || '{}';
   _agentChatIds = JSON.parse(_rawChatIds);
 } catch(e) {
-  console.warn('⚠ AGENT_CHAT_IDS is not valid JSON — agent @mentions disabled');
+  console.warn('⚠ AGENT_CHAT_IDS is not valid JSON, agent @mentions disabled');
 }
 
 const _notifiedCallIds = new Set();
@@ -3487,7 +3487,7 @@ const _notifiedCallIds = new Set();
 const POLL_LOG_MAX   = 30;
 const _pollLog       = [];          // ring buffer of poll run summaries
 let   _lastPollAt    = null;        // ISO string of last poll start
-const POLL_INTERVAL_SECS = 60;      // 1 min — reduced for faster missed-call notifications
+const POLL_INTERVAL_SECS = 60;      // 1 min, reduced for faster missed-call notifications
 
 function _pollLogPush(entry) {
   _pollLog.push(entry);
@@ -3508,15 +3508,15 @@ function _buildGoogleChatCard(call) {
   // Header
   const icon  = isVM ? '📬' : '📞';
   const label = isVM
-    ? (isDirect ? 'Voicemail — Direct' : 'Voicemail Left')
-    : (isDirect ? 'Missed Call — Direct' : (inQ ? 'Queue Abandoned' : 'Missed Call'));
+    ? (isDirect ? 'Voicemail: Direct' : 'Voicemail Left')
+    : (isDirect ? 'Missed Call: Direct' : (inQ ? 'Queue Abandoned' : 'Missed Call'));
 
   const callerName   = call.from.name   || '';
   const callerNumber = call.from.number || '';
-  // For internal callers (ext-to-queue), phoneNumber is empty — show name only or fallback to ext
+  // For internal callers (ext-to-queue), phoneNumber is empty, show name only or fallback to ext
   const callerLine = callerName
     ? (callerNumber ? `${callerName}  ·  ${callerNumber}` : callerName)
-    : (callerNumber || call.from.extNumber || '—');
+    : (callerNumber || call.from.extNumber || '-');
 
   // If ring time > 10s and a specific agent is identified, highlight them in the subtitle
   const effectiveRingSecs = call.agentRingSecs || call.totalSecs || 0;
@@ -3534,25 +3534,25 @@ function _buildGoogleChatCard(call) {
     hour: '2-digit', minute: '2-digit', hour12: true,
   }) + ' CST';
 
-  // Destination row — queue or direct agent
+  // Destination row, queue or direct agent
   let destLabel, destTopLabel;
   if (isDirect) {
     const da = call.directAgent;
     destTopLabel = 'Called agent';
     destLabel = da
       ? `${da.name}  (Ext ${da.extNumber})`
-      : (call.to.ext ? `Ext ${call.to.ext}` : call.to.name || '—');
+      : (call.to.ext ? `Ext ${call.to.ext}` : call.to.name || '-');
   } else {
     destTopLabel = 'Queue';
     destLabel = call.queueName
       ? (call.queueExt ? `${call.queueName}  (Ext ${call.queueExt})` : call.queueName)
-      : (call.queueExt ? `Ext ${call.queueExt}` : '—');
+      : (call.queueExt ? `Ext ${call.queueExt}` : '-');
   }
 
   // Agent ring details (only meaningful for queue calls that reached agents)
   const agents = (call.agentDetails || []);
   const agentLines = !isDirect && agents.length
-    ? agents.map(a => `${a.name}  (Ext ${a.extNumber})${a.duration ? `  —  ${_fmtSecs(a.duration)}` : ''}`).join('\n')
+    ? agents.map(a => `${a.name}  (Ext ${a.extNumber})${a.duration ? `: ${_fmtSecs(a.duration)}` : ''}`).join('\n')
     : null;
 
   // Ring time
@@ -3570,13 +3570,13 @@ function _buildGoogleChatCard(call) {
   // Disposition
   let dispositionLine;
   if (isDirect) {
-    dispositionLine = isVM ? 'Left voicemail on agent extension' : 'Rang agent extension — no answer';
+    dispositionLine = isVM ? 'Left voicemail on agent extension' : 'Rang agent extension, no answer';
   } else if (isVM) {
     dispositionLine = inQ ? 'Left voicemail after waiting in queue' : 'Left voicemail (direct to extension)';
   } else if (inQ) {
-    dispositionLine = agents.length ? 'Caller hung up while agent(s) were ringing' : 'Caller hung up — no agent picked up';
+    dispositionLine = agents.length ? 'Caller hung up while agent(s) were ringing' : 'Caller hung up, no agent picked up';
   } else {
-    dispositionLine = 'Rang extension — no answer';
+    dispositionLine = 'Rang extension, no answer';
   }
 
   // Build widgets
@@ -3607,16 +3607,16 @@ function _buildGoogleChatCard(call) {
 }
 
 async function _sendMissedCallNotification(call) {
-  // Use the dedicated missed-call webhook — NEVER the break-bot webhook
+  // Use the dedicated missed-call webhook: NEVER the break-bot webhook
   const url = MISSED_CALL_WEBHOOK_URL;
   if (!url) {
-    console.warn('⚠ MISSED_CALL_WEBHOOK_URL not set — skipping notification');
+    console.warn('⚠ MISSED_CALL_WEBHOOK_URL not set, skipping notification');
     return;
   }
   try {
     const body = _buildGoogleChatCard(call);
 
-    // When ring time > 10s the call reached a specific agent — add a @mention text
+    // When ring time > 10s the call reached a specific agent, add a @mention text
     // so the agent is notified in Google Chat and can call the customer back.
     // Ring time check: use agentRingSecs if available (agent actually rang), else totalSecs.
     const effectiveRingSecs = call.agentRingSecs || call.totalSecs || 0;
@@ -3632,7 +3632,7 @@ async function _sendMissedCallNotification(call) {
       const _mkCallerInfo = (f) =>
         f.name
           ? (f.number ? `${f.name} (${f.number})` : f.name)
-          : (f.number || f.extNumber || '—');
+          : (f.number || f.extNumber || '-');
       const callerInfo = _mkCallerInfo(call.from);
 
       if (ringingAgents.length > 0) {
@@ -3646,10 +3646,10 @@ async function _sendMissedCallNotification(call) {
             : `*${a.name}* (Ext ${a.extNumber})`;
         });
 
-        body.text = `📞 Missed call — ${mentionParts.join(', ')} please call back: ${callerInfo}`;
+        body.text = `📞 Missed call: ${mentionParts.join(', ')} please call back: ${callerInfo}`;
       } else {
-        // Agent ring time > 10s but RC didn't return individual agent legs — still flag it
-        body.text = `📞 Missed call from ${callerInfo} — rang for ${_fmtSecs(effectiveRingSecs)}, please check and call back.`;
+        // Agent ring time > 10s but RC didn't return individual agent legs, still flag it
+        body.text = `📞 Missed call from ${callerInfo}, rang for ${_fmtSecs(effectiveRingSecs)}, please check and call back.`;
       }
     }
 
@@ -3664,20 +3664,20 @@ async function _sendMissedCallNotification(call) {
   }
 }
 
-let _pollRunning = false; // concurrency guard — prevent overlapping poll runs
+let _pollRunning = false; // concurrency guard, prevent overlapping poll runs
 async function runMissedCallPoll() {
   if (!MISSED_CALL_WEBHOOK_URL) return;
   let notifyEnabled = true;
   try {
     const _p = await getPauseStatus();
     if (_p.rcSyncPaused) { log.info('missed_call_poll_skipped_paused'); return; }
-  } catch(e) { /* non-fatal — proceed if settings lookup fails */ }
+  } catch(e) { /* non-fatal, proceed if settings lookup fails */ }
   try {
     const v = await getSetting('missed_call_notify_enabled');
     notifyEnabled = v === null ? true : v === '1';
-  } catch(e) { /* non-fatal — default to enabled if settings lookup fails */ }
+  } catch(e) { /* non-fatal, default to enabled if settings lookup fails */ }
   if (_pollRunning) {
-    console.log('⏭️ Missed call poll already running — skipping overlap');
+    console.log('⏭️ Missed call poll already running, skipping overlap');
     return;
   }
   _pollRunning = true;
@@ -3736,7 +3736,7 @@ async function runMissedCallPoll() {
 
 // ── Debug panel endpoints ────────────────────────────────────────────────────
 
-// GET /api/admin/debug-config — notifier configuration + last poll time + rate limit state
+// GET /api/admin/debug-config, notifier configuration + last poll time + rate limit state
 app.get('/api/admin/debug-config', requireAdmin, (req, res) => {
   res.json({
     webhookSet:       !!MISSED_CALL_WEBHOOK_URL,
@@ -3749,21 +3749,21 @@ app.get('/api/admin/debug-config', requireAdmin, (req, res) => {
   });
 });
 
-// GET /api/admin/debug-poll-log — ring buffer of last N poll runs
+// GET /api/admin/debug-poll-log, ring buffer of last N poll runs
 app.get('/api/admin/debug-poll-log', requireAdmin, (req, res) => {
   res.json({ entries: _pollLog });
 });
 
-// DELETE /api/admin/debug-poll-log — clear the poll log
+// DELETE /api/admin/debug-poll-log, clear the poll log
 app.delete('/api/admin/debug-poll-log', requireAdmin, (req, res) => {
   _pollLog.length = 0;
   res.json({ ok: true });
 });
 
-// POST /api/admin/force-poll — trigger a missed call poll immediately (debug)
+// POST /api/admin/force-poll, trigger a missed call poll immediately (debug)
 app.post('/api/admin/force-poll', requireAdmin, async (req, res) => {
   if (!MISSED_CALL_WEBHOOK_URL) {
-    return res.status(400).json({ error: 'MISSED_CALL_WEBHOOK_URL not set — notifier is disabled' });
+    return res.status(400).json({ error: 'MISSED_CALL_WEBHOOK_URL not set, notifier is disabled' });
   }
   try {
     await runMissedCallPoll();
@@ -3774,19 +3774,19 @@ app.post('/api/admin/force-poll', requireAdmin, async (req, res) => {
   }
 });
 
-// GET /api/admin/debug-notified-ids — the dedup set of already-notified call IDs
+// GET /api/admin/debug-notified-ids, the dedup set of already-notified call IDs
 app.get('/api/admin/debug-notified-ids', requireAdmin, (req, res) => {
   res.json({ ids: [..._notifiedCallIds] });
 });
 
 // GET /api/admin/debug-missed-raw?minutes=15&live=1
-// Default (live=0): returns cached records from the last poll run — zero extra RC API calls.
+// Default (live=0): returns cached records from the last poll run, zero extra RC API calls.
 // With live=1: makes a fresh RC API call (may be rate-limited).
 app.get('/api/admin/debug-missed-raw', requireAdmin, async (req, res) => {
   const live = req.query.live === '1';
   try {
     if (!live) {
-      // Serve from the in-memory cache populated by the last poll — no RC call needed
+      // Serve from the in-memory cache populated by the last poll, no RC call needed
       const cached = getLastRawRecords();
       return res.json({
         source:   'poll-cache',
@@ -3797,14 +3797,14 @@ app.get('/api/admin/debug-missed-raw', requireAdmin, async (req, res) => {
         records:  cached.records,
       });
     }
-    // Live fetch — may be rate-limited
+    // Live fetch, may be rate-limited
     const minutes = Math.min(Number(req.query.minutes) || 15, 60);
     const raw = await fetchRawRecentMissedLog(minutes);
     res.json({
       source:   'live',
       minutes,
       queueExt:  MISSED_CALL_QUEUE_EXT,
-      knownDid:  MISSED_CALL_DID || '(not set — add MISSED_CALL_DID to Railway)',
+      knownDid:  MISSED_CALL_DID || '(not set, add MISSED_CALL_DID to Railway)',
       count:     raw.length,
       records:   raw,
     });
@@ -3813,7 +3813,7 @@ app.get('/api/admin/debug-missed-raw', requireAdmin, async (req, res) => {
   }
 });
 
-/// Admin: manual trigger — always sends a synthetic test card so the webhook
+/// Admin: manual trigger, always sends a synthetic test card so the webhook
 // can be verified even when there are no real missed calls in the window.
 app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
   try {
@@ -3827,7 +3827,7 @@ app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
         cardId: `rc-test-${Date.now()}`,
         card: {
           header: {
-            title:    '🧪 Test — Missed Call Alert',
+            title:    '🧪 Test: Missed Call Alert',
             subtitle: 'TEST CALLER  ·  +10000000000',
           },
           sections: [{
@@ -3837,7 +3837,7 @@ app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
               { decoratedText: { topLabel: 'Ring time',    text: '18s' } },
               { decoratedText: { topLabel: 'Call type',    text: '🚪 Queue abandon' } },
               { decoratedText: { topLabel: 'Disposition',  text: 'Caller hung up while agent(s) were ringing' } },
-              { decoratedText: { topLabel: 'Agent(s) that rang', text: 'Test Agent  (Ext 5512)  —  18s' } },
+              { decoratedText: { topLabel: 'Agent(s) that rang', text: 'Test Agent  (Ext 5512): 18s' } },
               { decoratedText: { topLabel: 'ℹ️ Note',      text: 'This is a test notification from Adit Agent Monitor' } },
             ],
           }],
@@ -3857,14 +3857,14 @@ app.post('/api/admin/test-missed-call-poll', requireAdmin, async (req, res) => {
     // 2. Also run the real poll in case there are genuine recent missed calls
     await runMissedCallPoll();
 
-    res.json({ success: true, message: 'Test card sent + poll ran — check Google Chat' });
+    res.json({ success: true, message: 'Test card sent + poll ran, check Google Chat' });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
   }
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ENHANCEMENT BATCH 1 — Performance, Health, Backup, Job Queue
+// ENHANCEMENT BATCH 1: Performance, Health, Backup, Job Queue
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ─── #3: In-memory cache with TTL ────────────────────────────────────────────
@@ -3902,11 +3902,11 @@ app.post('/api/admin/cache-flush', requireAdmin, (req, res) => {
 
 // ── Session 17: Admin Settings & Pause Controls ───────────────────────────────
 // Server-persisted (DB-backed) pause flags so admins can stop RingCentral API
-// traffic — or all background jobs — without touching env vars or redeploying.
+// traffic, or all background jobs, without touching env vars or redeploying.
 // 'rc_sync' pause stops presence sync, call-log sync, missed-call polling and
 // the realtime-webhook renewal (the RC-API-consuming loops). 'full' pause
 // additionally stops the alert / anomaly / predict evaluators. Auto-resumes
-// once the stored expiry timestamp passes — no separate clear-flag cron needed.
+// once the stored expiry timestamp passes, no separate clear-flag cron needed.
 async function getPauseStatus() {
   const now = Date.now();
   const [rcUntilRaw, fullUntilRaw, rcReason, fullReason] = await Promise.all([
@@ -4074,7 +4074,7 @@ app.get('/api/admin/jobs/:id', requireAdmin, (req, res) => {
   if (!j) return res.status(404).json({ success: false, error: 'Job not found' });
   res.json({ success: true, job: j });
 });
-// Example async report job — non-blocking
+// Example async report job, non-blocking
 app.post('/api/admin/jobs/heavy-report', requireAdmin, (req, res) => {
   const tz = req.query.tz || 'America/Chicago';
   const days = Math.min(parseInt(req.query.days) || 30, 90);
@@ -4105,13 +4105,13 @@ app.get('/api/admin/daily-digest', requireAdmin, async (req, res) => {
     const html = `<!doctype html><html><body style="font-family:Poppins,Arial,sans-serif;background:#F7F8F8;padding:20px;">
       <div style="max-width:600px;margin:auto;background:white;border-radius:12px;padding:24px;border:1px solid #E6ECF4;">
         <h2 style="color:#072B40;margin:0 0 4px;">Daily Digest · ${date}</h2>
-        <p style="color:#6B849A;margin:0 0 20px;font-size:13px;">Adit Agent Monitor — automated rollup</p>
+        <p style="color:#6B849A;margin:0 0 20px;font-size:13px;">Adit Agent Monitor, automated rollup</p>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px;">
           <div style="background:#F0F2F5;padding:12px;border-radius:8px;"><div style="font-size:10px;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Calls Handled</div><div style="font-size:24px;font-weight:800;color:#072B40;">${totalCalls}</div></div>
           <div style="background:#F0F2F5;padding:12px;border-radius:8px;"><div style="font-size:10px;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Missed</div><div style="font-size:24px;font-weight:800;color:#ED666B;">${totalMissed}</div></div>
           <div style="background:#F0F2F5;padding:12px;border-radius:8px;"><div style="font-size:10px;color:#6B849A;text-transform:uppercase;letter-spacing:.08em;">Live Min</div><div style="font-size:24px;font-weight:800;color:#2DDC96;">${totalLive}</div></div>
         </div>
-        ${topAgent ? `<div style="background:rgba(244,137,31,.06);border-left:3px solid #F4891F;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;"><div style="font-size:11px;color:#F4891F;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">⭐ Top Performer</div><div style="font-size:15px;font-weight:700;color:#072B40;margin-top:4px;">${topAgent.name || topAgent.agent || 'Unknown'} — ${topAgent.calls_handled||0} calls</div></div>` : ''}
+        ${topAgent ? `<div style="background:rgba(244,137,31,.06);border-left:3px solid #F4891F;padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:16px;"><div style="font-size:11px;color:#F4891F;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">⭐ Top Performer</div><div style="font-size:15px;font-weight:700;color:#072B40;margin-top:4px;">${topAgent.name || topAgent.agent || 'Unknown'}: ${topAgent.calls_handled||0} calls</div></div>` : ''}
         <p style="font-size:11px;color:#9BAFC0;margin:20px 0 0;border-top:1px solid #E6ECF4;padding-top:12px;">Generated ${new Date().toISOString()} · ${summary.length} agents tracked.</p>
       </div>
     </body></html>`;
@@ -4140,7 +4140,7 @@ function cachedGet(path, ttlMs, keyFn) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// ENHANCEMENT BATCH 3 — DB-backed features + ML + infra
+// ENHANCEMENT BATCH 3: DB-backed features + ML + infra
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ─── #9: Shift handoff notes ────────────────────────────────────────────────
@@ -4227,7 +4227,7 @@ app.get('/api/coach-flags', requireAdmin, async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PREDICTIVE ABANDONMENT (#16 Session 11) — real logistic regression
+// PREDICTIVE ABANDONMENT (#16 Session 11), real logistic regression
 // Replaces the Session 1 per-hour-mean stub.
 // ══════════════════════════════════════════════════════════════════════════════
 const PREDICT = require('./lib/predict');
@@ -4262,7 +4262,7 @@ async function buildPredictTrainingSet(days) {
       for (let m = 0; m < 4; m++) {
         const key = h + ':' + m;
         const label = (abandonsByHourMin.get(key) || 0) > 0 ? 1 : 0;
-        // Synthesize feature values from the day's overall stats — in v2 we'd
+        // Synthesize feature values from the day's overall stats, in v2 we'd
         // pull queue_depth at-time-T from presence_events; that's a future
         // refinement. For now, use end-of-day aggregates as a proxy.
         const features = {
@@ -4313,7 +4313,7 @@ async function trainAndPersistPredictModel(days) {
   return model;
 }
 
-// Nightly retraining cron — fires every 10 min, runs at 03:30 CST
+// Nightly retraining cron, fires every 10 min, runs at 03:30 CST
 let _predictCronStarted = false;
 global._startPredictCron = function startPredictCron() {
   if (_predictCronStarted) return;
@@ -4357,7 +4357,7 @@ app.get('/api/predict/abandonment', requireAuth, async (req, res) => {
     const wd = parts.find(p => p.type === 'weekday')?.value || 'Mon';
     const weekday = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(wd);
 
-    // Build features — agents/queue come from in-memory globals
+    // Build features, agents/queue come from in-memory globals
     const liveMap = (typeof global.rcLiveStatus === 'object' && global.rcLiveStatus) || {};
     let queueDepth = 0, agentsAvailable = 0;
     for (const ext of Object.keys(liveMap)) {
@@ -4365,7 +4365,7 @@ app.get('/api/predict/abandonment', requireAuth, async (req, res) => {
       if (String(a.status || '').toLowerCase() === 'ringing') queueDepth++;
       if (String(a.status || '').toLowerCase() === 'available') agentsAvailable++;
     }
-    // avgWait — use the queueDepth snapshot if maintained, else 0
+    // avgWait, use the queueDepth snapshot if maintained, else 0
     const avgWaitSeconds = (global._queueDepthSnapshot && global._queueDepthSnapshot.avgWaitSec) || 0;
 
     const features = { queueDepth, hourOfDay, weekday, avgWaitSeconds, agentsAvailable };
@@ -4445,7 +4445,7 @@ app.get('/api/predict/backtest', requireAuth, async (req, res) => {
       try { abandoned = await getAbandonedCalls(dateStr, tz); } catch (e) {}
       const actualAbandons = Array.isArray(abandoned) ? abandoned.length : 0;
       // Aggregate: for each hour the model would have predicted vs reality.
-      // Simplified — predict at mid-day with average features.
+      // Simplified, predict at mid-day with average features.
       const features = {
         queueDepth: 0, hourOfDay: 13, weekday: d.getDay(),
         avgWaitSeconds: 0, agentsAvailable: 0
@@ -4467,7 +4467,7 @@ app.get('/api/predict/backtest', requireAuth, async (req, res) => {
 
 // ─── #14: Schedule adherence (computed from break_events) ───────────────────
 // ══════════════════════════════════════════════════════════════════════════════
-// SCHEDULE ADHERENCE (#14 Session 4) — versioned schedules + real adherence
+// SCHEDULE ADHERENCE (#14 Session 4), versioned schedules + real adherence
 // Replaces the hardcoded 9-5 stub from Session 1.
 // ══════════════════════════════════════════════════════════════════════════════
 const { evaluateBulk: evaluateScheduleBulk, parseTimeStrToMinutes } = require('./lib/schedule');
@@ -4502,7 +4502,7 @@ app.get('/api/schedule-adherence', requireAuth, async (req, res) => {
         firstLoginMinute: summaryTimeToMinute(a.first_login_time),
         lastLogoutMinute: summaryTimeToMinute(a.last_logout_time),
         breakMinutes: parseInt(a.break_minutes || a.breakMinutes || 0),
-        scheduledBreakMinutes: 60  // default policy — Session 5 will make this configurable per-agent
+        scheduledBreakMinutes: 60  // default policy: Session 5 will make this configurable per-agent
       };
     }
 
@@ -4541,7 +4541,7 @@ app.get('/api/schedule-adherence', requireAuth, async (req, res) => {
   }
 });
 
-// ─── GET /api/schedule-adherence/:email — per-agent history ────────────────
+// ─── GET /api/schedule-adherence/:email, per-agent history ────────────────
 app.get('/api/schedule-adherence/:email', requireAuth, async (req, res) => {
   try {
     const email = req.params.email;
@@ -4577,13 +4577,13 @@ app.get('/api/schedule-adherence/:email', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ─── GET /api/schedules — list all (admin) ─────────────────────────────────
+// ─── GET /api/schedules, list all (admin) ─────────────────────────────────
 app.get('/api/schedules', requireAdmin, async (req, res) => {
   try { res.json({ success: true, schedules: await getAllSchedules() }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ─── GET /api/schedules/:email — one agent (self or admin) ─────────────────
+// ─── GET /api/schedules/:email, one agent (self or admin) ─────────────────
 app.get('/api/schedules/:email', requireAuth, async (req, res) => {
   try {
     const email = req.params.email;
@@ -4595,13 +4595,13 @@ app.get('/api/schedules/:email', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ─── GET /api/schedules/:email/history — versioned history (admin) ─────────
+// ─── GET /api/schedules/:email/history, versioned history (admin) ─────────
 app.get('/api/schedules/:email/history', requireAdmin, async (req, res) => {
   try { res.json({ success: true, history: await getScheduleHistory(req.params.email) }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ─── PUT /api/schedules/:email — admin sets/replaces (versions) ────────────
+// ─── PUT /api/schedules/:email, admin sets/replaces (versions) ────────────
 //   body: { effectiveFrom: 'YYYY-MM-DD', week: [{day_of_week, start_time, end_time, is_working_day, timezone}] }
 app.put('/api/schedules/:email', requireAdmin, async (req, res) => {
   try {
@@ -4610,7 +4610,7 @@ app.put('/api/schedules/:email', requireAdmin, async (req, res) => {
     if (!effectiveFrom || !Array.isArray(week) || week.length === 0) {
       return res.status(400).json({ success: false, error: 'effectiveFrom and week[] required' });
     }
-    // Validate times via parseTimeStrToMinutes — engine's parser
+    // Validate times via parseTimeStrToMinutes, engine's parser
     for (const r of week) {
       if (r.is_working_day !== 0) {
         if (parseTimeStrToMinutes(r.start_time) == null || parseTimeStrToMinutes(r.end_time) == null) {
@@ -4630,7 +4630,7 @@ app.put('/api/schedules/:email', requireAdmin, async (req, res) => {
   }
 });
 
-// ─── POST /api/schedules/bulk — apply schedule to many agents (admin) ──────
+// ─── POST /api/schedules/bulk, apply schedule to many agents (admin) ──────
 //   body: { emails: [...], effectiveFrom, week }
 app.post('/api/schedules/bulk', requireAdmin, async (req, res) => {
   try {
@@ -4658,7 +4658,7 @@ app.post('/api/schedules/bulk', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// ─── DELETE /api/schedules/:email — end-date current schedule (admin) ──────
+// ─── DELETE /api/schedules/:email, end-date current schedule (admin) ──────
 // Note: this end-dates instead of physically deleting, preserving history.
 app.delete('/api/schedules/:email', requireAdmin, async (req, res) => {
   try {
@@ -4717,11 +4717,11 @@ app.get('/api/modules', requireAuth, (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// REAL-TIME ALERTS (#11 Session 2) — engine wiring + endpoints + cron
+// REAL-TIME ALERTS (#11 Session 2), engine wiring + endpoints + cron
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ─── Build state snapshot for the alert engine ─────────────────────────────
-// All sources are best-effort — missing data simply means "skip that rule".
+// All sources are best-effort, missing data simply means "skip that rule".
 async function buildAlertState() {
   const now = Date.now();
   const thresholds = await getAlertThresholds();
@@ -4731,7 +4731,7 @@ async function buildAlertState() {
   try { agents = await cacheWrap('agents:list', 5000, () => getMonitoredAgents()); } catch(e){}
 
   // Map agents into the engine's expected shape.
-  // We rely on rc-service to track live status — read from globals it exposes.
+  // We rely on rc-service to track live status, read from globals it exposes.
   const liveMap = (typeof global.rcLiveStatus === 'object' && global.rcLiveStatus) || {};
   const agentSnapshots = (agents || []).map(a => {
     const live = liveMap[a.extension] || {};
@@ -4749,7 +4749,7 @@ async function buildAlertState() {
   const queueDepth = global._queueDepthSnapshot || null;
   const coverage   = global._coverageSnapshot || null;
 
-  // Calls in last 15 min — read from a rolling buffer if available
+  // Calls in last 15 min, read from a rolling buffer if available
   const callsLast15Min = Array.isArray(global._callsLast15Min) ? global._callsLast15Min : [];
 
   // Hour-of-day in business timezone (CST)
@@ -4759,7 +4759,7 @@ async function buildAlertState() {
   return { now, thresholds, agents: agentSnapshots, queueDepth, coverage, callsLast15Min, nowHourCST };
 }
 
-// ─── Cron evaluator — runs every 30s ───────────────────────────────────────
+// ─── Cron evaluator, runs every 30s ───────────────────────────────────────
 const ALERT_INTERVAL_MS = parseInt(process.env.ALERT_INTERVAL_MS) || 30_000;
 async function runAlertEvaluator() {
   try {
@@ -4794,7 +4794,7 @@ async function runAlertEvaluator() {
     log.error('alert_evaluator_failed', err);
   }
 }
-// Start after server boots — see start() below
+// Start after server boots, see start() below
 global._startAlertCron = function startAlertCron() {
   if (global._alertCronStarted) return;
   global._alertCronStarted = true;
@@ -4811,7 +4811,7 @@ global._startAlertCron = function startAlertCron() {
 
 // ─── Endpoints ─────────────────────────────────────────────────────────────
 
-// List active (unacked + not-snoozed) alerts — newest first
+// List active (unacked + not-snoozed) alerts, newest first
 app.get('/api/alerts/active', requireAuth, async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 50, 200);
@@ -4824,7 +4824,7 @@ app.get('/api/alerts/active', requireAuth, async (req, res) => {
   }
 });
 
-// Audit list — last N days of all alerts (acked or not)
+// Audit list, last N days of all alerts (acked or not)
 app.get('/api/alerts/recent', requireAuth, async (req, res) => {
   try {
     const days = Math.min(parseInt(req.query.days) || 7, 90);
@@ -4912,7 +4912,7 @@ app.post('/api/admin/alerts/test', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
-// Helper — parses data_json on an alert row
+// Helper, parses data_json on an alert row
 function parseAlertRow(row) {
   let data = {};
   try { data = JSON.parse(row.data_json || '{}'); } catch(e){}
@@ -4930,9 +4930,9 @@ function parseAlertRow(row) {
   };
 }
 
-// ── Global error handler — structured logger replaces ad-hoc console ─────────
+// ── Global error handler, structured logger replaces ad-hoc console ─────────
 // ══════════════════════════════════════════════════════════════════════════════
-// ANOMALY DETECTION (#20 Session 6) — robust z-score engine + daily cron
+// ANOMALY DETECTION (#20 Session 6), robust z-score engine + daily cron
 // Replaces the rough DOM-scraping stub from Session 1.
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -4942,7 +4942,7 @@ function parseAlertRow(row) {
 async function buildAnomalyHistoryForDate(targetDateStr) {
   const tz = 'America/Chicago';
   const thresholds = await getAnomalyThresholds();
-  // Maximum lookback across all metrics — single pass through history
+  // Maximum lookback across all metrics, single pass through history
   const maxLookback = Math.max(...Object.values(thresholds).map(t => t.lookback_days || 30), 30);
   const agents = await cacheWrap('agents:list', 5000, () => getMonitoredAgents());
   const targetDate = new Date(targetDateStr + 'T12:00:00Z');  // mid-day to avoid TZ edge
@@ -5047,7 +5047,7 @@ async function runAnomalyEvaluator(targetDateStr) {
             });
           }
         } else {
-          skipped++;  // UNIQUE constraint — already recorded today
+          skipped++;  // UNIQUE constraint, already recorded today
         }
       } catch (err) {
         log.error('anomaly_persist_failed', err, { email: a.agentEmail, metric: a.metric });
@@ -5061,13 +5061,13 @@ async function runAnomalyEvaluator(targetDateStr) {
   }
 }
 
-// Wire the daily cron — fires at 03:00 CST every day
+// Wire the daily cron, fires at 03:00 CST every day
 let _anomalyCronStarted = false;
 global._startAnomalyCron = function startAnomalyCron() {
   if (_anomalyCronStarted) return;
   _anomalyCronStarted = true;
   // Schedule: check every 10 minutes whether the current minute-of-day in CST is 3:00.
-  // Crude but correct — doesn't fire twice because of insert UNIQUE constraint.
+  // Crude but correct, doesn't fire twice because of insert UNIQUE constraint.
   const ANOMALY_HOUR = parseInt(process.env.ANOMALY_RUN_HOUR_CST) || 3;
   setInterval(async () => {
     const nowH = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Chicago', hour: 'numeric', hour12: false }).format(new Date());
@@ -5186,7 +5186,7 @@ app.post('/api/admin/anomalies/test', requireAdmin, async (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BULK ADMIN ACTIONS (#15 Session 10) — proper multi-agent operations
+// BULK ADMIN ACTIONS (#15 Session 10), proper multi-agent operations
 // Replaces the rough Session 1 stub (prompt() + toast, no backend).
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -5203,18 +5203,18 @@ function bulkIdempoGet(id) {
 }
 function bulkIdempoSet(id, result) {
   _bulkIdempo.set(id, { at: Date.now(), result });
-  // Cleanup old entries opportunistically — keep memory bounded
+  // Cleanup old entries opportunistically, keep memory bounded
   if (_bulkIdempo.size > 1000) {
     const cutoff = Date.now() - BULK_IDEMPO_TTL_MS;
     for (const [k, v] of _bulkIdempo) if (v.at < cutoff) _bulkIdempo.delete(k);
   }
 }
 
-// ─── Per-action handlers (pure-ish — return {ok, error?}) ────────────────
+// ─── Per-action handlers (pure-ish, return {ok, error?}) ────────────────
 const BULK_ACTIONS = {
   /**
    * Send a Google Chat notification to a single agent.
-   * Reuses the existing webhook plumbing — no new credentials needed.
+   * Reuses the existing webhook plumbing, no new credentials needed.
    */
   notify: {
     validatePayload(p) {
@@ -5244,7 +5244,7 @@ const BULK_ACTIONS = {
 
   /**
    * Toggle whether an agent sees the Break Bot UI.
-   * Reuses setBreakbotEnabled() — already validates the email lives in app_roles.
+   * Reuses setBreakbotEnabled(), already validates the email lives in app_roles.
    */
   set_breakbot_enabled: {
     validatePayload(p) {
@@ -5263,7 +5263,7 @@ const BULK_ACTIONS = {
 
   /**
    * Force-logout an agent. Deletes their server-side app_sessions rows
-   * (could be multiple if they had multiple devices). Reversible — they
+   * (could be multiple if they had multiple devices). Reversible, they
    * just need to sign in again.
    */
   clear_session: {
@@ -5326,7 +5326,7 @@ app.post('/api/admin/bulk-actions', requireAdmin, async (req, res) => {
   if (emails.length > 200) {
     return res.status(400).json({ success: false, code: 'batch_too_large', error: 'max 200 agents per batch' });
   }
-  // Email format check — soft, just catches obvious typos
+  // Email format check, soft, just catches obvious typos
   for (const e of emails) {
     if (typeof e !== 'string' || !e.includes('@')) {
       return res.status(400).json({ success: false, code: 'bad_email', error: 'invalid email in list: ' + e });
@@ -5356,7 +5356,7 @@ app.post('/api/admin/bulk-actions', requireAdmin, async (req, res) => {
     const r = await handler.run(email, payload, actorEmail);
     results.push({ email, ...r });
     if (r.ok) ok++; else failed++;
-    // Per-agent audit row (best effort — don't let an audit failure abort the batch)
+    // Per-agent audit row (best effort, don't let an audit failure abort the batch)
     insertAuditLog(actorEmail, `bulk_${action}`, email,
       r.ok ? 'ok' : `error: ${(r.error || '').slice(0, 200)}`).catch(()=>{});
   }
@@ -5391,7 +5391,7 @@ app.get('/api/admin/bulk-actions/list', requireAdmin, (req, res) => {
     success: true,
     actions: BULK_ACTION_KEYS.map(key => ({
       key,
-      // Sanitized metadata for the UI — no handler refs leaked
+      // Sanitized metadata for the UI, no handler refs leaked
       label: ({
         notify: 'Send chat notification',
         set_breakbot_enabled: 'Toggle Break Bot UI',
@@ -6776,7 +6776,7 @@ async function start() {
       await startScheduler();
       setTimeout(() => {
         getPauseStatus().then(p => {
-          if (p.rcSyncPaused) { console.log('⏸️ Skipping realtime sub renewal — RC sync paused'); return; }
+          if (p.rcSyncPaused) { console.log('⏸️ Skipping realtime sub renewal: RC sync paused'); return; }
           return ensureRealtimeSubscription();
         }).catch(e => console.error('❌ realtime sub:', e.message));
       }, 15000);
@@ -6787,15 +6787,15 @@ async function start() {
       // #20 Session 6: anomaly cron (fires at 03:00 CST daily)
       if (typeof global._startAnomalyCron === 'function') global._startAnomalyCron();
       // Start missed-call → Google Chat notifier (every 2 min)
-      // Uses MISSED_CALL_WEBHOOK_URL — separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
+      // Uses MISSED_CALL_WEBHOOK_URL, separate from GOOGLE_CHAT_WEBHOOK_URL (break bot)
       if (MISSED_CALL_WEBHOOK_URL) {
         // Stagger: presence sync fires at 0s and every 2 min.
-        // Missed call poll fires at 30s then every 1 min — offset avoids rate-limit collisions.
+        // Missed call poll fires at 30s then every 1 min, offset avoids rate-limit collisions.
         setTimeout(() => runMissedCallPoll().catch(() => {}), 30000);
         setInterval(() => runMissedCallPoll().catch(() => {}), 60 * 1000);
         console.log(`📞 Missed call notifier started (queue ext ${MISSED_CALL_QUEUE_EXT}, 1-min poll, +30s offset)`);
       } else {
-        console.log('📞 Missed call notifier disabled — set MISSED_CALL_WEBHOOK_URL to enable');
+        console.log('📞 Missed call notifier disabled, set MISSED_CALL_WEBHOOK_URL to enable');
       }
       // Session 19: ticket lifecycle sync -- first run shortly after boot
       setTimeout(() => runDeskLifecycleSync().catch(() => {}), 45000);
@@ -6813,7 +6813,7 @@ async function start() {
 // ── Graceful shutdown ────────────────────────────────────────────────────
 // Railway (and any process manager) sends SIGTERM before killing the
 // process on every deploy/restart. Without a handler, Node's default is to
-// terminate immediately — dropping in-flight HTTP requests and yanking the
+// terminate immediately, dropping in-flight HTTP requests and yanking the
 // sqlite connection out from under any write in progress. This lets
 // in-flight requests finish, closes the DB cleanly, and force-exits after a
 // timeout so a shutdown can never hang forever.
@@ -6823,7 +6823,7 @@ function gracefulShutdown(signal) {
   shuttingDown = true;
   log.info('shutdown_signal_received', { signal });
   const forceExitTimer = setTimeout(() => {
-    log.warn('shutdown_forced_timeout', { detail: 'server/db did not close within 10s — forcing exit' });
+    log.warn('shutdown_forced_timeout', { detail: 'server/db did not close within 10s, forcing exit' });
     process.exit(1);
   }, 10000);
   forceExitTimer.unref();

@@ -1,16 +1,16 @@
 /**
- * bulk-actions.js — UI module for admin bulk operations (Session 10).
+ * bulk-actions.js: UI module for admin bulk operations (Session 10).
  *
  * Replaces the rough Session 1 stub. Adds multi-select to the agent table
  * and an action picker modal with payload form + confirm preview.
  *
- * Feature flag: `bulkActionsV2` (default OFF — set via setFlag).
+ * Feature flag: `bulkActionsV2` (default OFF, set via setFlag).
  *
  * Public API (window-scoped):
- *   BulkActions.open(opts?)              — open picker modal (opts.emails preselects)
+ *   BulkActions.open(opts?), open picker modal (opts.emails preselects)
  *   BulkActions.close()
- *   BulkActions.refresh()                — re-query selected agents
- *   BulkActions.installMultiSelect(opts) — attach checkboxes to a table
+ *   BulkActions.refresh(), re-query selected agents
+ *   BulkActions.installMultiSelect(opts), attach checkboxes to a table
  *
  * Workflow (high level):
  *   1. User selects agents via checkboxes (installed by installMultiSelect)
@@ -31,7 +31,7 @@
   // ─── State ───────────────────────────────────────────────────────────
   const selected = new Set();   // current selected agent emails
   let modalOpen = false;
-  let availableActions = null;  // [{key, label}] — fetched lazily
+  let availableActions = null;  // [{key, label}], fetched lazily
   let lastResult = null;
 
   // ─── Helpers ─────────────────────────────────────────────────────────
@@ -115,8 +115,8 @@
 
   /**
    * Install checkboxes on a table. Caller provides:
-   *   tableSelector — e.g. '#admin-agent-tbl-wrap table'
-   *   emailFromRow(tr) → string|null — how to extract the agent email from a row
+   *   tableSelector, e.g. '#admin-agent-tbl-wrap table'
+   *   emailFromRow(tr) → string|null, how to extract the agent email from a row
    */
   function installMultiSelect(opts) {
     if (!flagOn('bulkActionsV2')) return;
@@ -200,7 +200,7 @@
   async function open(opts) {
     if (!flagOn('bulkActionsV2')) {
       if (typeof window.showToast === 'function') {
-        window.showToast('Bulk Actions is in preview — enable via setFlag(\'bulkActionsV2\', true)', 'info', 4500);
+        window.showToast('Bulk Actions is in preview, enable via setFlag(\'bulkActionsV2\', true)', 'info', 4500);
       }
       return;
     }
@@ -221,7 +221,7 @@
     const actions = await fetchAvailableActions();
     if (!actions.length) {
       if (typeof window.showToast === 'function') {
-        window.showToast('Could not load actions — check server logs', 'error', 4000);
+        window.showToast('Could not load actions, check server logs', 'error', 4000);
       }
       return;
     }
@@ -304,7 +304,7 @@
     } else if (action === 'clear_session') {
       html = `<div class="ba-field-info">
         ⚠️ This will <strong>force-logout</strong> the selected agent${selected.size === 1 ? '' : 's'}.
-        They will need to sign in again with Google. Recoverable — no data is lost.
+        They will need to sign in again with Google. Recoverable, no data is lost.
       </div>`;
       previewLine = '⏻ Force-logout ' + selected.size + ' agent' + (selected.size === 1 ? '' : 's');
     } else if (action === 'set_role') {

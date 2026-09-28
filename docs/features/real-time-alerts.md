@@ -1,6 +1,6 @@
 # Real-Time Alerts (#11)
 
-**Status:** Session 2 Part 1 — engine + DB + admin API
+**Status:** Session 2 Part 1, engine + DB + admin API
 **Owner:** Eng
 **Last updated:** 2026-05-26
 
@@ -21,15 +21,15 @@ acknowledge / snooze workflows and a configurable threshold per condition.
 
 1. **Detect** the five most impactful conditions automatically every 30 seconds.
 2. **Notify** the right people in real-time (in-app toast + optional browser push).
-3. **Acknowledge / snooze** flow — supervisors mark alerts as seen so they don't
+3. **Acknowledge / snooze** flow, supervisors mark alerts as seen so they don't
    keep firing.
-4. **Configurable** thresholds — admins can tune sensitivity per condition.
-5. **Audited** — every alert and ack is logged for compliance + retrospective.
+4. **Configurable** thresholds, admins can tune sensitivity per condition.
+5. **Audited**, every alert and ack is logged for compliance + retrospective.
 
 ## Non-goals
 
-- ML-driven anomaly alerts (separate effort — see #20 anomaly detection)
-- SMS / email delivery (Part 3 — add SendGrid integration later)
+- ML-driven anomaly alerts (separate effort, see #20 anomaly detection)
+- SMS / email delivery (Part 3, add SendGrid integration later)
 - Per-agent custom alert rules (deferred)
 
 ## The 5 alert types
@@ -44,7 +44,7 @@ acknowledge / snooze workflows and a configurable threshold per condition.
 
 All thresholds and severities are persisted in the `alert_thresholds` table
 and editable via `PUT /api/alerts/thresholds/:key`. Defaults are seeded on
-first boot — see `seedDefaultThresholds()` in `database.js`.
+first boot, see `seedDefaultThresholds()` in `database.js`.
 
 ## Alert lifecycle
 
@@ -88,7 +88,7 @@ Admin-editable knobs. Single row per alert key.
 | `key` | TEXT PRIMARY KEY | matches alert key in code |
 | `enabled` | INTEGER | 0 or 1 |
 | `severity` | TEXT | 'critical' \| 'warning' \| 'info' |
-| `threshold_json` | TEXT | JSON object — shape is alert-specific |
+| `threshold_json` | TEXT | JSON object, shape is alert-specific |
 | `cooldown_seconds` | INTEGER | minimum gap between identical alerts (default 300) |
 | `updated_at` | DATETIME | autoset |
 | `updated_by` | TEXT | email of last editor |
@@ -101,25 +101,25 @@ Every time an alert *fires*, we log it here. Append-only for audit + retrospecti
 | `id` | INTEGER PRIMARY KEY AUTOINCREMENT |
 | `key` | TEXT |
 | `severity` | TEXT |
-| `body` | TEXT — human-readable summary |
-| `data_json` | TEXT — full context for debugging |
-| `agent_email` | TEXT NULL — for agent-scoped alerts |
+| `body` | TEXT, human-readable summary |
+| `data_json` | TEXT, full context for debugging |
+| `agent_email` | TEXT NULL, for agent-scoped alerts |
 | `created_at` | DATETIME |
 | `acked_at` | DATETIME NULL |
 | `acked_by` | TEXT NULL |
 | `snoozed_until` | DATETIME NULL |
 
-### `alert_acks` *(implicit — uses the columns on `alert_events`)*
+### `alert_acks` *(implicit, uses the columns on `alert_events`)*
 
-We don't need a separate ack table — ack metadata lives on the event row.
+We don't need a separate ack table, ack metadata lives on the event row.
 
 ## Architecture
 
-### `lib/alerts.js` — pure evaluation engine
+### `lib/alerts.js`, pure evaluation engine
 
 All threshold-checking logic is in this module as **pure functions**. They take
 a snapshot of system state + threshold config and return zero or more alert
-descriptions. **No I/O, no clock dependency** — `now` is always passed in as
+descriptions. **No I/O, no clock dependency**: `now` is always passed in as
 an argument. This makes the engine 100% deterministic and testable.
 
 ```js
@@ -165,7 +165,7 @@ broadcast via the existing SSE stream.
 
 A condition is met when **every** statement below is verifiable:
 
-1. ✅ Engine in `lib/alerts.js` is a pure function — no `Date.now()`, no `db`, no `fetch`.
+1. ✅ Engine in `lib/alerts.js` is a pure function, no `Date.now()`, no `db`, no `fetch`.
 2. ✅ ≥ 12 unit tests covering each alert type's true/false/edge cases.
 3. ✅ Default thresholds match the table above; seeded on first boot.
 4. ✅ `GET /api/alerts/thresholds` returns the 5 configured rows.
@@ -174,7 +174,7 @@ A condition is met when **every** statement below is verifiable:
 7. ✅ Acknowledge endpoint marks `acked_at` and excludes from `/active`.
 8. ✅ Snooze endpoint sets `snoozed_until` and excludes from `/active` until past.
 9. ✅ Audit log entry on every threshold change.
-10. ✅ Engine never throws — tested with malformed input.
+10. ✅ Engine never throws, tested with malformed input.
 11. ✅ Feature flag: `setFlag('realTimeAlerts', true)` enables client subscription.
 12. ✅ Existing rate-limited toast `checkAlerts()` is removed / replaced.
 
@@ -188,8 +188,8 @@ A condition is met when **every** statement below is verifiable:
 
 ## Rollout
 
-1. Ship Part 1 — engine + DB + admin API + tests behind flag `realTimeAlerts` (default OFF).
+1. Ship Part 1, engine + DB + admin API + tests behind flag `realTimeAlerts` (default OFF).
 2. Tune thresholds in dev for one week using `/api/admin/alerts/test`.
-3. Ship Part 2 — UI + browser push.
+3. Ship Part 2: UI + browser push.
 4. Enable flag for admins only; gather feedback for a week.
 5. Promote to default ON for all supervisors.

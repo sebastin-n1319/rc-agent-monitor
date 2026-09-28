@@ -18,10 +18,10 @@ is: every existing flow keeps working, and the cross-cutting metrics improve.
 | Area | Finding | Action |
 |---|---|---|
 | a11y | `offline-bridge.js` injects a button with **0** `aria-label`s | Add labels to all dynamically-created controls |
-| a11y | Modal focus is not trapped — Tab can escape into the page underneath | Add a focus-trap helper used by every overlay |
+| a11y | Modal focus is not trapped: Tab can escape into the page underneath | Add a focus-trap helper used by every overlay |
 | a11y | No skip-to-content link for screen readers | Add `<a class="skip-link">` |
 | code drift | **39** `console.*` calls left in `server.js` despite the structured logger | Replace with `log.info / warn / error` |
-| reliability | **109** `catch` blocks across **116** routes — 7 untracked | Audit + add catches with structured logging |
+| reliability | **109** `catch` blocks across **116** routes: 7 untracked | Audit + add catches with structured logging |
 | perf | `index.html` is **1.3MB / 24,645 lines** | Defer non-critical inline scripts (full split = Session 10) |
 | perf | **9** external CDN scripts; some block first paint | Add `async`/`defer` where safe |
 | security | `brace-expansion` moderate CVE (auto-fixable) | `npm audit fix` |
@@ -30,12 +30,12 @@ is: every existing flow keeps working, and the cross-cutting metrics improve.
 
 ## Goals
 
-1. **A11y** — keyboard nav + screen-reader friendly. Focus-trap in modals. Skip link. All buttons labeled.
-2. **Logging hygiene** — zero `console.*` in `server.js`. Structured logger only.
-3. **Error coverage** — every async route has try/catch + structured log on failure.
-4. **Security** — `npm audit` clean. Permissive CSP header. Express rate-limit doc.
-5. **Documentation** — `OPERATIONS.md` runbook covering all 8 sessions of features.
-6. **CI signal** — Lighthouse a11y score target ≥ 90 (we'll measure, fix top 3 issues).
+1. **A11y**, keyboard nav + screen-reader friendly. Focus-trap in modals. Skip link. All buttons labeled.
+2. **Logging hygiene**, zero `console.*` in `server.js`. Structured logger only.
+3. **Error coverage**, every async route has try/catch + structured log on failure.
+4. **Security**: `npm audit` clean. Permissive CSP header. Express rate-limit doc.
+5. **Documentation**: `OPERATIONS.md` runbook covering all 8 sessions of features.
+6. **CI signal**: Lighthouse a11y score target ≥ 90 (we'll measure, fix top 3 issues).
 
 ## Non-goals (Session 10+)
 

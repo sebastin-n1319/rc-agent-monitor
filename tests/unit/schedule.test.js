@@ -20,7 +20,7 @@ import {
 } from '../../lib/schedule.js';
 
 // ─── Public surface ────────────────────────────────────────────────────
-describe('schedule — public surface', () => {
+describe('schedule, public surface', () => {
   it('exports the 9 stable status values', () => {
     expect(ADHERENCE_STATUSES).toEqual([
       'on-time', 'minor-late', 'late', 'no-show', 'early-leave',
@@ -164,8 +164,8 @@ describe('resolveScheduleForDate', () => {
   });
 });
 
-// ─── Adherence — primary statuses ──────────────────────────────────────
-describe('evaluateAdherence — primary statuses', () => {
+// ─── Adherence, primary statuses ──────────────────────────────────────
+describe('evaluateAdherence, primary statuses', () => {
   const sched = { isWorkingDay: true, start: '09:00', end: '17:00', timezone: 'America/Chicago' };
   const tueDay = { dateStr: '2026-05-26', nowMinute: 1440 };  // after-shift evaluation
 
@@ -215,7 +215,7 @@ describe('evaluateAdherence — primary statuses', () => {
     const r = evaluateAdherence({
       schedule: sched,
       actuals: {},
-      now: { dateStr: '2026-05-26', nowMinute: 1100 }  // 6:20pm — past 5pm
+      now: { dateStr: '2026-05-26', nowMinute: 1100 }  // 6:20pm, past 5pm
     });
     expect(r.status).toBe('no-show');
   });
@@ -224,7 +224,7 @@ describe('evaluateAdherence — primary statuses', () => {
     const r = evaluateAdherence({
       schedule: sched,
       actuals: {},
-      now: { dateStr: '2026-05-26', nowMinute: 480 }  // 8am — before shift
+      now: { dateStr: '2026-05-26', nowMinute: 480 }  // 8am, before shift
     });
     expect(r.status).toBe('pending');
   });
@@ -233,7 +233,7 @@ describe('evaluateAdherence — primary statuses', () => {
     const r = evaluateAdherence({
       schedule: sched,
       actuals: {},
-      now: { dateStr: '2026-05-26', nowMinute: 600 }  // 10am — during shift
+      now: { dateStr: '2026-05-26', nowMinute: 600 }  // 10am, during shift
     });
     expect(r.status).toBe('pending');
     expect(r.summary).toContain('logged in yet');
@@ -249,8 +249,8 @@ describe('evaluateAdherence — primary statuses', () => {
   });
 });
 
-// ─── Adherence — end-of-shift behaviors ────────────────────────────────
-describe('evaluateAdherence — end-of-shift', () => {
+// ─── Adherence, end-of-shift behaviors ────────────────────────────────
+describe('evaluateAdherence, end-of-shift', () => {
   const sched = { isWorkingDay: true, start: '09:00', end: '17:00' };
   const tueDay = { dateStr: '2026-05-26', nowMinute: 1440 };
 
@@ -289,7 +289,7 @@ describe('evaluateAdherence — end-of-shift', () => {
 });
 
 // ─── Break overage (compounding flag) ──────────────────────────────────
-describe('evaluateAdherence — break overage', () => {
+describe('evaluateAdherence, break overage', () => {
   const sched = { isWorkingDay: true, start: '09:00', end: '17:00' };
   const tueDay = { dateStr: '2026-05-26', nowMinute: 1440 };
 
@@ -312,7 +312,7 @@ describe('evaluateAdherence — break overage', () => {
     expect(r.flags).not.toContain('break-overage');
   });
 
-  it('breaks compound with primary status — late + break-over', () => {
+  it('breaks compound with primary status, late + break-over', () => {
     const r = evaluateAdherence({
       schedule: sched,
       actuals: { firstLoginMinute: 570, lastLogoutMinute: 1020, breakMinutes: 95, scheduledBreakMinutes: 60 },
@@ -324,7 +324,7 @@ describe('evaluateAdherence — break overage', () => {
 });
 
 // ─── Cross-midnight shifts ─────────────────────────────────────────────
-describe('evaluateAdherence — cross-midnight shifts', () => {
+describe('evaluateAdherence, cross-midnight shifts', () => {
   it('handles 22:00 → 06:00 night shift correctly', () => {
     const sched = { isWorkingDay: true, start: '22:00', end: '06:00' };
     // Login at 22:05 (5 min late but within tolerance)
@@ -349,7 +349,7 @@ describe('evaluateAdherence — cross-midnight shifts', () => {
 });
 
 // ─── Engine guarantees ─────────────────────────────────────────────────
-describe('evaluateAdherence — guarantees', () => {
+describe('evaluateAdherence, guarantees', () => {
   it('never throws on null/undefined/malformed input', () => {
     const inputs = [
       null, undefined, {},

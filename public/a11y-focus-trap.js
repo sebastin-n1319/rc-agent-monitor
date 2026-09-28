@@ -1,8 +1,8 @@
 /**
- * a11y-focus-trap.js — small, dependency-free focus trap for modals (Session 9).
+ * a11y-focus-trap.js, small, dependency-free focus trap for modals (Session 9).
  *
  * Why we need this:
- *   When a user opens a modal via keyboard, Tab should cycle within the modal —
+ *   When a user opens a modal via keyboard, Tab should cycle within the modal,
  *   not escape into the dimmed page underneath. Screen readers also expect
  *   focus to be inside aria-modal=true containers.
  *
@@ -21,7 +21,7 @@
  *     toggle an inline display:none/flex on a persistent element; others
  *     (bulk-actions.js, predict-center.js, roster-admin.js) instead
  *     append/remove the overlay element itself, with display:flex baked
- *     into their stylesheet — isVisible() below checks computed style +
+ *     into their stylesheet, isVisible() below checks computed style +
  *     DOM presence so both patterns are detected the same way.
  *
  * Returns focus to the previously-focused element on release.
@@ -31,7 +31,7 @@
 
   const TRAPS = new WeakMap();
   // WeakMap keys aren't enumerable, so we also keep a Set of elements with
-  // an active trap — needed to notice when one of them is REMOVED from the
+  // an active trap, needed to notice when one of them is REMOVED from the
   // DOM entirely (bulk-actions.js/predict-center.js/roster-admin.js close
   // their modals with .remove() rather than hiding them), since a detached
   // element no longer matches any querySelectorAll(sel) for syncAll() to
@@ -114,7 +114,7 @@
 
   // Works for BOTH: (a) a persistent element toggled via inline
   // style.display, and (b) an element appended/removed from the DOM with
-  // display:flex coming from its stylesheet class, not inline style — (a)
+  // display:flex coming from its stylesheet class, not inline style: (a)
   // alone (checking modal.style.display) misses (b) entirely, since its
   // inline style is never set. offsetParent isn't used here because it's
   // null for position:fixed elements in some browsers, which every one of
@@ -128,7 +128,7 @@
   function syncAll() {
     // Sweep first: a modal closed via .remove() (bulk-actions.js,
     // predict-center.js, roster-admin.js) is gone from the document by the
-    // time this runs, so it won't be found by the selector query below —
+    // time this runs, so it won't be found by the selector query below,
     // without this, its trap would never release and focus would never be
     // restored to whatever was focused before it opened.
     ACTIVE.forEach(modal => { if (!modal.isConnected) release(modal); });

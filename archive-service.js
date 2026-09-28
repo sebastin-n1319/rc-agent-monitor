@@ -4,9 +4,9 @@
  * then deletes those rows from SQLite to reclaim space.
  *
  * Env vars required:
- *   GOOGLE_SERVICE_ACCOUNT_KEY  — full JSON string of the service account key
- *   ARCHIVE_SHEET_ID            — Google Spreadsheet ID to archive into
- *   VOLUME_SIZE_MB              — total volume size in MB (default 500)
+ *   GOOGLE_SERVICE_ACCOUNT_KEY, full JSON string of the service account key
+ *   ARCHIVE_SHEET_ID: Google Spreadsheet ID to archive into
+ *   VOLUME_SIZE_MB, total volume size in MB (default 500)
  */
 
 const { google } = require('googleapis');
@@ -181,21 +181,21 @@ async function archiveLoginLogs(db, sheets, cutoffDays = 30) {
 // ── Main archive function ────────────────────────────────────────────────────
 async function runArchive(force = false) {
   if (!SHEET_ID) {
-    console.log('⚠️  ARCHIVE_SHEET_ID not set — skipping archive');
+    console.log('⚠️  ARCHIVE_SHEET_ID not set, skipping archive');
     return null;
   }
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-    console.log('⚠️  GOOGLE_SERVICE_ACCOUNT_KEY not set — skipping archive');
+    console.log('⚠️  GOOGLE_SERVICE_ACCOUNT_KEY not set, skipping archive');
     return null;
   }
 
   const above = force || await isAboveThreshold();
   if (!above) {
-    console.log('✅ Volume below 90% — no archive needed');
+    console.log('✅ Volume below 90%, no archive needed');
     return null;
   }
 
-  console.log('📤 Volume above 90% — starting archive to Google Sheets...');
+  console.log('📤 Volume above 90%, starting archive to Google Sheets...');
 
   const sheets = getSheetsClient();
   await ensureTabs(sheets);
@@ -213,7 +213,7 @@ async function runArchive(force = false) {
     results.vacuumed = true;
 
     const total = Object.values(results).filter(v => typeof v === 'number').reduce((s,v) => s+v, 0);
-    console.log(`✅ Archive complete — ${total} rows archived to Google Sheets:`, results);
+    console.log(`✅ Archive complete: ${total} rows archived to Google Sheets:`, results);
   } catch(e) {
     console.error('❌ Archive error:', e.message);
     results.error = e.message;

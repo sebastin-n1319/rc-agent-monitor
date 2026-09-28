@@ -1,5 +1,5 @@
 /**
- * Unit tests for lib/predict.js — the logistic-regression abandonment engine.
+ * Unit tests for lib/predict.js, the logistic-regression abandonment engine.
  *
  * Coverage targets:
  *   • Math primitives (sigmoid, mean, stddev, standardize)
@@ -47,7 +47,7 @@ function buildSeparableDataset(n = 200) {
 }
 
 // ─── Public surface ────────────────────────────────────────────────────
-describe('predict — public surface', () => {
+describe('predict, public surface', () => {
   it('exports the 5 stable feature keys in canonical order', () => {
     expect(FEATURE_KEYS).toEqual([
       'queueDepth', 'hourOfDay', 'weekday', 'avgWaitSeconds', 'agentsAvailable'
@@ -89,7 +89,7 @@ describe('sigmoid', () => {
 });
 
 // ─── stats internals ───────────────────────────────────────────────────
-describe('stats — mean / stddev', () => {
+describe('stats, mean / stddev', () => {
   const { mean, stddev } = _internal;
   it('mean of empty array = 0', () => {
     expect(mean([])).toBe(0);
@@ -135,7 +135,7 @@ describe('standardize', () => {
 });
 
 // ─── Training ──────────────────────────────────────────────────────────
-describe('trainLogisticRegression — cold start', () => {
+describe('trainLogisticRegression, cold start', () => {
   it('returns ready:false on insufficient data', () => {
     const rows = [];
     for (let i = 0; i < 10; i++) rows.push({ features: {}, label: 0 });
@@ -151,7 +151,7 @@ describe('trainLogisticRegression — cold start', () => {
   });
 });
 
-describe('trainLogisticRegression — convergence', () => {
+describe('trainLogisticRegression, convergence', () => {
   it('learns a clear linear signal (converges to high accuracy)', () => {
     const rows = buildSeparableDataset(300);
     const m = trainLogisticRegression(rows, { iterations: 300 });

@@ -1,4 +1,4 @@
-// Vitest config — unit & integration tests for server-side logic.
+// Vitest config, unit & integration tests for server-side logic.
 // E2E tests live in /tests/e2e and use Playwright (see playwright.config.js).
 import { defineConfig } from 'vitest/config';
 
@@ -22,12 +22,12 @@ export default defineConfig({
       // drop coverage. Update when a module legitimately needs lower
       // coverage and document why.
       thresholds: {
-        // Global — caught by all-files aggregate
+        // Global, caught by all-files aggregate
         statements: 85,
         branches: 80,
         functions: 80,
         lines: 85,
-        // Per-file — locks each library to its current bar (Session 13)
+        // Per-file, locks each library to its current bar (Session 13)
         'lib/alerts.js':   { statements: 98, branches: 78, functions: 100, lines: 98 },
         'lib/anomaly.js':  { statements: 95, branches: 89, functions: 100, lines: 95 },
         'lib/predict.js':  { statements: 98, branches: 85, functions: 100, lines: 98 },

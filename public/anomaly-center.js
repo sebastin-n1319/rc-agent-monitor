@@ -1,15 +1,15 @@
 /**
- * anomaly-center.js — UI module for Anomaly Detection (Session 7).
+ * anomaly-center.js: UI module for Anomaly Detection (Session 7).
  *
  * Owns:
- *   • Anomaly center modal — today's anomalies, auto-grouped by severity
- *   • Per-agent drill-down — last 30 days grouped by metric
- *   • Threshold admin form — tune the 5 metric thresholds
+ *   • Anomaly center modal, today's anomalies, auto-grouped by severity
+ *   • Per-agent drill-down, last 30 days grouped by metric
+ *   • Threshold admin form, tune the 5 metric thresholds
  *   • Inline sparkline (median + today marker)
  *   • SSE subscription for instant push delivery
  *   • CSV export
  *
- * Feature flag: anomalyDetectionV2 (default OFF — set via setFlag).
+ * Feature flag: anomalyDetectionV2 (default OFF, set via setFlag).
  * Keyboard shortcut: `N` opens dashboard.
  *
  * Public API (window-scoped):
@@ -79,7 +79,7 @@
   }
 
   function fmtZ(z) {
-    if (z == null || !isFinite(z)) return '—';
+    if (z == null || !isFinite(z)) return '-';
     const s = z > 0 ? '+' : '';
     return s + Number(z).toFixed(1);
   }
@@ -252,7 +252,7 @@
           <strong>${esc(a.agent_email)}</strong>
           <span class="an-row-metric">· ${esc(meta.label)}</span>
           <span class="an-row-time">· ${esc(fmtRelative(a.created_at))}</span>
-          ${a.flat_baseline ? '<span class="an-row-tag" title="No variance in baseline — synthetic noise floor used">flat baseline</span>' : ''}
+          ${a.flat_baseline ? '<span class="an-row-tag" title="No variance in baseline, synthetic noise floor used">flat baseline</span>' : ''}
         </div>
         <div class="an-row-numbers">
           <span>today <b>${esc(String(a.today_value))}</b> ${esc(meta.unit)}</span>
@@ -290,7 +290,7 @@
       const r = await fetch('/api/admin/anomalies/run', { method: 'POST', credentials: 'same-origin' });
       const j = await r.json();
       if (j.success) {
-        if (typeof window.showToast === 'function') window.showToast('Run complete — ' + (j.inserted || 0) + ' new, ' + (j.skipped || 0) + ' skipped', 'success', 3000);
+        if (typeof window.showToast === 'function') window.showToast('Run complete: ' + (j.inserted || 0) + ' new, ' + (j.skipped || 0) + ' skipped', 'success', 3000);
         await refresh();
       } else if (typeof window.showToast === 'function') {
         window.showToast('Run failed: ' + (j.error || 'unknown'), 'error', 4000);
@@ -516,7 +516,7 @@
   async function open() {
     if (!flagOn('anomalyDetectionV2')) {
       if (typeof window.showToast === 'function') {
-        window.showToast('Anomaly Detection is in preview — enable via setFlag(\'anomalyDetectionV2\', true)', 'info', 4000);
+        window.showToast('Anomaly Detection is in preview, enable via setFlag(\'anomalyDetectionV2\', true)', 'info', 4000);
       }
       return;
     }

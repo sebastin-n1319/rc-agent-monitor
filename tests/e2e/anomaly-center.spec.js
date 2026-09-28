@@ -12,7 +12,7 @@ test.describe('AnomalyCenter assets', () => {
     expect(body).toContain('AnomalyCenter');
     expect(body).toContain('drillDown');
     expect(body).toContain('openThresholdAdmin');
-    // SSE handler — listens for 'anomaly' event type from the live-stream
+    // SSE handler, listens for 'anomaly' event type from the live-stream
     expect(body).toMatch(/addEventListener\(['"]anomaly['"]/);
   });
 
@@ -57,7 +57,7 @@ test.describe('AnomalyCenter runtime', () => {
 
   test('open() respects the anomalyDetectionV2 feature flag', async ({ page }) => {
     await page.goto('/');
-    // Default flag is off — open() should bail without rendering the dashboard
+    // Default flag is off, open() should bail without rendering the dashboard
     await page.evaluate(() => window.AnomalyCenter.open());
     const dashCount = await page.locator('#an-dashboard').count();
     if (dashCount > 0) {
@@ -70,7 +70,7 @@ test.describe('AnomalyCenter runtime', () => {
 });
 
 test.describe('Anomaly API auth gates (Session 7 + 6 combined)', () => {
-  // Session 7 doesn't add new endpoints — it consumes the Session 6 ones.
+  // Session 7 doesn't add new endpoints, it consumes the Session 6 ones.
   // Re-verify the gates here as a regression check.
   const protectedEndpoints = [
     { method: 'GET',  path: '/api/anomalies/active' },

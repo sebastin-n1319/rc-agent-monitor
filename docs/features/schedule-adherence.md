@@ -1,6 +1,6 @@
 # Schedule Adherence (#14)
 
-**Status:** Session 4 Part 1 — engine + DB + API
+**Status:** Session 4 Part 1, engine + DB + API
 **Last updated:** 2026-05-26
 **Replaces:** the rough hardcoded 9–5 stub from Session 1
 
@@ -23,11 +23,11 @@ The Session 1 stub assumes everyone works 9-5 Central. That's wrong for:
 ## Goals
 
 1. **Configurable schedules** per agent, per day-of-week
-2. **Versioned** — schedule changes don't rewrite history
-3. **Pure adherence engine** — deterministic, testable, no I/O
-4. **Real `/api/schedule-adherence` endpoint** — not the stub
-5. **Backwards compatible** — agents without a configured schedule fall back to a sensible default (rather than throwing)
-6. **Audit-logged** — every schedule change tracked
+2. **Versioned**, schedule changes don't rewrite history
+3. **Pure adherence engine**, deterministic, testable, no I/O
+4. **Real `/api/schedule-adherence` endpoint**, not the stub
+5. **Backwards compatible**, agents without a configured schedule fall back to a sensible default (rather than throwing)
+6. **Audit-logged**, every schedule change tracked
 
 ## Non-goals (deferred to Session 5)
 
@@ -56,7 +56,7 @@ preserves history so retrospective reports stay accurate.
 | `timezone` | TEXT NOT NULL DEFAULT 'America/Chicago' | IANA tz name |
 | `is_working_day` | INTEGER NOT NULL DEFAULT 1 | 0 = scheduled day off |
 | `effective_from` | TEXT NOT NULL | `YYYY-MM-DD` |
-| `effective_to` | TEXT | `YYYY-MM-DD` — null = open-ended |
+| `effective_to` | TEXT | `YYYY-MM-DD`, null = open-ended |
 | `created_at` | DATETIME | autoset |
 | `created_by` | TEXT | email of admin who set it |
 
@@ -74,7 +74,7 @@ Sat/Sun: not a working day
 
 This matches the original stub behavior so nothing breaks.
 
-## Adherence engine — pure functions
+## Adherence engine, pure functions
 
 `lib/schedule.js` exports:
 
@@ -133,16 +133,16 @@ The engine returns the *primary* status plus a `flags` array.
 
 A condition is met when **every** statement below is verifiable:
 
-1. ✅ `lib/schedule.js` is pure — no `Date.now()`, no DB, no `fetch`
+1. ✅ `lib/schedule.js` is pure, no `Date.now()`, no DB, no `fetch`
 2. ✅ ≥ 15 unit tests covering each status + edge cases
 3. ✅ Default schedule (Mon-Fri 9-5 CST) used when no DB row exists
-4. ✅ Schedule versioning — old rows preserved when new effective_from added
+4. ✅ Schedule versioning, old rows preserved when new effective_from added
 5. ✅ Cross-midnight shifts handled (e.g., 22:00-06:00 night shift)
 6. ✅ DST transition days handled (no crash, correct hour count)
 7. ✅ `GET /api/schedule-adherence` returns rows for every monitored agent
 8. ✅ Endpoint is auth-gated (auth) and self-or-admin where applicable
 9. ✅ All schedule mutations write to audit_log
-10. ✅ Engine never throws — tested with malformed/null input
+10. ✅ Engine never throws, tested with malformed/null input
 11. ✅ Existing tests still pass (59 from sessions 1-3)
 12. ✅ Feature flag `scheduleAdherenceV2` gates client consumption
 
@@ -157,9 +157,9 @@ A condition is met when **every** statement below is verifiable:
 
 ## Rollout
 
-1. Ship Part 1 — engine + DB + API behind flag (default OFF for client)
-2. Seed default schedules for all agents (admin task — one-time POST)
+1. Ship Part 1, engine + DB + API behind flag (default OFF for client)
+2. Seed default schedules for all agents (admin task, one-time POST)
 3. Tune for one week against real login data
-4. Ship Part 2 — admin UI + viz
+4. Ship Part 2, admin UI + viz
 5. Enable flag for admins
 6. Promote to all supervisors

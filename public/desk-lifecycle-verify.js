@@ -1,14 +1,14 @@
 /**
- * "Verify tickets" drill-down — Session 34, converted to an in-place
+ * "Verify tickets" drill-down: Session 34, converted to an in-place
  * sub-page in Session 35 (was a floating overlay; per feedback it needed
  * to behave like a real page nested inside the Ticket Lifecycle / My
- * Stats page, matching the existing Ticket Report page's shape — filter
- * bar + totals on top, ticket table below — not a modal on top of
+ * Stats page, matching the existing Ticket Report page's shape, filter
+ * bar + totals on top, ticket table below, not a modal on top of
  * everything else).
  *
  * Built after Sabrina Quinn's manually-tracked count (13 tickets handled
  * today, per her team's Google Sheet) conflicted with the Ticket
- * Lifecycle card's number (7) for the same agent/period — with no way to
+ * Lifecycle card's number (7) for the same agent/period, with no way to
  * see which tickets the system actually counted, there was no way to
  * tell whether the card was wrong, the manual sheet was wrong, or both
  * were counting different things. This renders in place of the caller's
@@ -21,7 +21,7 @@
  * the caller, which re-renders its own summary view.
  *
  * Backed by GET /api/desk-lifecycle/verify-tickets (server.js), which
- * calls lib/desk-lifecycle.js's agentTicketsForMetric() — the same
+ * calls lib/desk-lifecycle.js's agentTicketsForMetric(), the same
  * owner_change_log walk and date-basis agentSummary() uses for the
  * aggregate cards, so this view's total always equals the card's number.
  *
@@ -59,7 +59,7 @@
     ));
   }
 
-  // ── Period presets — same Chicago-wall-clock math as desk-lifecycle-
+  // ── Period presets, same Chicago-wall-clock math as desk-lifecycle-
   // admin.js / desk-lifecycle-agent.js (kept as its own copy, same
   // convention those two already use with each other rather than a
   // shared module). ──
@@ -148,7 +148,7 @@
   function findPreset(key) { const all = buildPresets(); return all.find(p => p.key === key) || all[1]; }
 
   function fmtDateTime(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try {
       return new Date(iso).toLocaleString('en-US', {
         timeZone: 'America/Chicago', month: 'short', day: 'numeric',
@@ -157,7 +157,7 @@
     } catch (e) { return iso; }
   }
 
-  // ── Metric definitions — labels/date-basis/explanation text mirror the
+  // ── Metric definitions, labels/date-basis/explanation text mirror the
   // same wording desk-lifecycle-admin.js's metricTip() and desk-lifecycle-
   // agent.js's metricTip() already use for their card tooltips, so this
   // view never disagrees with what hovering the card says. ──
@@ -188,7 +188,7 @@
     },
     reassigned: {
       label: 'Reassigned', basis: 'created',
-      def: 'Tickets that arrived already in progress — a different person owned it immediately before this agent picked it up.',
+      def: 'Tickets that arrived already in progress, a different person owned it immediately before this agent picked it up.',
     },
     transferred: {
       label: 'Transferred', basis: 'created',
@@ -196,11 +196,11 @@
     },
     handed_off_internal: {
       label: 'Handed off (T1)', basis: 'created',
-      def: 'Tickets this agent handed directly to another monitored T1 agent — stayed inside the team.',
+      def: 'Tickets this agent handed directly to another monitored T1 agent, stayed inside the team.',
     },
     closed: {
       label: 'Closed', basis: 'closed',
-      def: 'Tickets now Closed in Zoho Desk, closed within this period — credited to whoever is the CURRENT owner, even if it passed through other hands first.',
+      def: 'Tickets now Closed in Zoho Desk, closed within this period, credited to whoever is the CURRENT owner, even if it passed through other hands first.',
     },
     fcr: {
       label: 'First Contact Resolution (FCR)', basis: 'closed',
@@ -212,7 +212,7 @@
     },
     currently_handling: {
       label: 'Handling now', basis: 'live',
-      def: 'Tickets this agent currently owns that are still open, right now — a live count, not scoped to the period below.',
+      def: 'Tickets this agent currently owns that are still open, right now, a live count, not scoped to the period below.',
     },
   };
   const METRIC_ORDER = ['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
@@ -226,24 +226,24 @@
     if (t.includes('closed')) state = 'available';
     else if (t.includes('open')) state = 'oncall';
     else if (t.includes('hold')) state = 'ringing';
-    return `<span class="av2-pill" data-state="${state}"><span class="av2-pill-dot"></span>${esc(status || '—')}</span>`;
+    return `<span class="av2-pill" data-state="${state}"><span class="av2-pill-dot"></span>${esc(status || '-')}</span>`;
   }
 
   function ticketLink(t) {
-    const num = esc(t.ticket_number || t.ticket_id || '—');
+    const num = esc(t.ticket_number || t.ticket_id || '-');
     return t.web_url
       ? `<a href="${esc(t.web_url)}" target="_blank" rel="noopener" class="dlv-ticket-link">#${num}</a>`
       : `#${num}`;
   }
 
   function flagChips(flags) {
-    if (!flags) return '—';
+    if (!flags) return '-';
     const on = [];
     if (flags.solely_handled) on.push('Solely handled');
     if (flags.reassigned) on.push('Reassigned');
     if (flags.transferred) on.push('Transferred');
     if (flags.handed_off_internal) on.push('Handed off (T1)');
-    if (!on.length) return '<span class="dlv-dim">—</span>';
+    if (!on.length) return '<span class="dlv-dim">-</span>';
     return on.map(l => `<span class="av2-chip">${esc(l)}</span>`).join(' ');
   }
 
@@ -324,11 +324,11 @@
         return `
         <tr>
           <td>${ticketLink(t)}</td>
-          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
           <td>${statusPill(t.status, t.status_type)}</td>
-          <td>${esc(t.channel || '—')}</td>
+          <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.created_time)}</td>
-          <td>${how.map(l => `<span class="av2-chip">${esc(l)}</span>`).join(' ') || '—'}</td>
+          <td>${how.map(l => `<span class="av2-chip">${esc(l)}</span>`).join(' ') || '-'}</td>
         </tr>`;
       }).join('');
     } else if (ownerFamily.has(metric)) {
@@ -336,9 +336,9 @@
       rows = tickets.map(t => `
         <tr>
           <td>${ticketLink(t)}</td>
-          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
           <td>${statusPill(t.status, t.status_type)}</td>
-          <td>${esc(t.channel || '—')}</td>
+          <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.created_time)}</td>
           <td>${flagChips(t.flags)}</td>
         </tr>`).join('');
@@ -347,9 +347,9 @@
       rows = tickets.map(t => `
         <tr>
           <td>${ticketLink(t)}</td>
-          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
           <td>${statusPill(t.status, t.status_type)}</td>
-          <td>${esc(t.channel || '—')}</td>
+          <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.created_time)}</td>
           <td>${fmtDateTime(t.closed_time)}</td>
         </tr>`).join('');
@@ -358,10 +358,10 @@
       rows = tickets.map(t => `
         <tr>
           <td>${ticketLink(t)}</td>
-          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
-          <td>${esc(t.channel || '—')}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
+          <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.closed_time)}</td>
-          <td>${t.resolution_business_hours != null ? t.resolution_business_hours : '—'}</td>
+          <td>${t.resolution_business_hours != null ? t.resolution_business_hours : '-'}</td>
           <td>${t.reopen_count || 0}</td>
           <td>${t.fcr_achieved ? '✅' : '❌'}</td>
         </tr>`).join('');
@@ -370,19 +370,19 @@
       rows = tickets.map(t => `
         <tr>
           <td>${ticketLink(t)}</td>
-          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
-          <td>${esc(t.channel || '—')}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
+          <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.survey_time)}</td>
-          <td><span class="av2-chip">${esc(t.rating || '—')}</span></td>
+          <td><span class="av2-chip">${esc(t.rating || '-')}</span></td>
         </tr>`).join('');
     } else { // currently_handling
       head = '<th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Created</th>';
       rows = tickets.map(t => `
         <tr>
           <td>${ticketLink(t)}</td>
-          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
+          <td class="dlv-subject" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
           <td>${statusPill(t.status, t.status_type)}</td>
-          <td>${esc(t.channel || '—')}</td>
+          <td>${esc(t.channel || '-')}</td>
           <td>${fmtDateTime(t.created_time)}</td>
         </tr>`).join('');
     }
@@ -409,7 +409,7 @@
     }
     return `
       <div class="dlv-total-card">
-        <div class="dlv-total-num">${json ? json.total : '—'}</div>
+        <div class="dlv-total-num">${json ? json.total : '-'}</div>
         <div class="dlv-total-meta">
           <div class="dlv-total-label">${esc(def.label)}</div>
           <div class="dlv-total-def">${esc(def.def)}</div>
@@ -436,7 +436,7 @@
         </div>
         <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost dlv-date-apply">Apply</button>
       </div>
-      ${disabled ? `<div class="dlv-live-note">Handling now is live, so it ignores the period above — same as the card.</div>` : ''}`;
+      ${disabled ? `<div class="dlv-live-note">Handling now is live, so it ignores the period above, same as the card.</div>` : ''}`;
   }
 
   function render() {
@@ -461,7 +461,7 @@
       <div class="av2 dlv-page">
         <button type="button" class="dlv-back-btn">${esc(s.backLabel || '← Back')}</button>
         <div class="dlv-head">
-          <div class="dlv-title">Verify tickets — ${esc(s.agentName || s.agentEmail)}</div>
+          <div class="dlv-title">Verify tickets: ${esc(s.agentName || s.agentEmail)}</div>
           <div class="dlv-sub">Exactly which tickets count toward this number, each linking to the real Zoho Desk ticket to check by hand.</div>
         </div>
         <div class="dlv-controls">

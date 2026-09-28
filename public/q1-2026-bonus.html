@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Q1 2026 Bonus Results — T1 CS Stars</title>
+<title>Q1 2026 Bonus Results: T1 CS Stars</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Poppins:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -105,7 +105,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <div class="hero">
   <div class="hero-badge">🎉 Results Unlocked</div>
   <h1 class="hero-title">Q1 2026 Bonus Results</h1>
-  <p class="hero-sub">T1 CS Stars — Official payout summary for January, February &amp; March 2026</p>
+  <p class="hero-sub">T1 CS Stars: Official payout summary for January, February &amp; March 2026</p>
   <p class="hero-note">Pseudo names used · Slab bonus + CSAT incentive · Min 70 pts + 18 working days</p>
 </div>
 
@@ -138,11 +138,11 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
   <div class="criteria-box">
     <div class="criteria-item">
       <span class="criteria-icon">📊</span>
-      <div><div class="criteria-title">Slab 1 — Top Tier</div><div class="criteria-desc">Calls: ₹7,500/mo · Chat: ₹5,625/mo<br>All metrics at Slab 1 threshold</div></div>
+      <div><div class="criteria-title">Slab 1: Top Tier</div><div class="criteria-desc">Calls: ₹7,500/mo · Chat: ₹5,625/mo<br>All metrics at Slab 1 threshold</div></div>
     </div>
     <div class="criteria-item">
       <span class="criteria-icon">📈</span>
-      <div><div class="criteria-title">Slab 2 — Solid</div><div class="criteria-desc">Partial slab — at least one metric at Slab 2<br>Lower payout tier</div></div>
+      <div><div class="criteria-title">Slab 2: Solid</div><div class="criteria-desc">Partial slab, at least one metric at Slab 2<br>Lower payout tier</div></div>
     </div>
     <div class="criteria-item">
       <span class="criteria-icon">⭐</span>
@@ -173,23 +173,23 @@ const MAX_PAYOUT = 31425;
 
 const AGENTS = [
   // Calls
-  { name:'Debra Horton',  team:'Calls', slab:13125, csat:18300, total:31425, elig:'Slab 1', jan:'₹7,500', feb:'—',     mar:'₹5,625' },
-  { name:'Sabrina Quinn', team:'Calls', slab:11250, csat:6750,  total:18000, elig:'Slab 1', jan:'₹5,625', feb:'₹5,625', mar:'—' },
-  { name:'Lincy Tabita',  team:'Calls', slab:5625,  csat:10650, total:16275, elig:'Slab 1', jan:'—',      feb:'—',     mar:'₹5,625' },
-  { name:'Michelle Pinto',team:'Calls', slab:15000, csat:750,   total:15750, elig:'Slab 1', jan:'₹7,500', feb:'—',     mar:'₹7,500' },
-  { name:'Henry P',       team:'Calls', slab:5625,  csat:3000,  total:8625,  elig:'Slab 1', jan:'—',      feb:'—',     mar:'₹5,625' },
-  { name:'Caroline Lock', team:'Calls', slab:5625,  csat:900,   total:6525,  elig:'Slab 1', jan:'—',      feb:'₹5,625', mar:'—' },
-  { name:'Greg Dawson',   team:'Calls', slab:0,     csat:1050,  total:1050,  elig:'Not Eligible', jan:'—', feb:'—',    mar:'—' },
-  { name:'Sky Gibson',    team:'Calls', slab:0,     csat:600,   total:600,   elig:'Not Eligible', jan:'—', feb:'—',    mar:'—' },
-  { name:'Evan Cruz',     team:'Calls', slab:0,     csat:0,     total:0,     elig:'—',     jan:'—',      feb:'—',     mar:'—' },
+  { name:'Debra Horton',  team:'Calls', slab:13125, csat:18300, total:31425, elig:'Slab 1', jan:'₹7,500', feb:'-',     mar:'₹5,625' },
+  { name:'Sabrina Quinn', team:'Calls', slab:11250, csat:6750,  total:18000, elig:'Slab 1', jan:'₹5,625', feb:'₹5,625', mar:'-' },
+  { name:'Lincy Tabita',  team:'Calls', slab:5625,  csat:10650, total:16275, elig:'Slab 1', jan:'-',      feb:'-',     mar:'₹5,625' },
+  { name:'Michelle Pinto',team:'Calls', slab:15000, csat:750,   total:15750, elig:'Slab 1', jan:'₹7,500', feb:'-',     mar:'₹7,500' },
+  { name:'Henry P',       team:'Calls', slab:5625,  csat:3000,  total:8625,  elig:'Slab 1', jan:'-',      feb:'-',     mar:'₹5,625' },
+  { name:'Caroline Lock', team:'Calls', slab:5625,  csat:900,   total:6525,  elig:'Slab 1', jan:'-',      feb:'₹5,625', mar:'-' },
+  { name:'Greg Dawson',   team:'Calls', slab:0,     csat:1050,  total:1050,  elig:'Not Eligible', jan:'-', feb:'-',    mar:'-' },
+  { name:'Sky Gibson',    team:'Calls', slab:0,     csat:600,   total:600,   elig:'Not Eligible', jan:'-', feb:'-',    mar:'-' },
+  { name:'Evan Cruz',     team:'Calls', slab:0,     csat:0,     total:0,     elig:'-',     jan:'-',      feb:'-',     mar:'-' },
   // Chat
-  { name:'Sabrina Quinn', team:'Chat',  slab:5625,  csat:2700,  total:18000, elig:'Slab 1', jan:'₹5,625', feb:'—',    mar:'—', note:'Also on Calls' },
-  { name:'Anold F',       team:'Chat',  slab:0,     csat:0,     total:0,     elig:'Not Eligible', jan:'—', feb:'—',   mar:'—' },
-  { name:'Tabbie Shine',  team:'Chat',  slab:0,     csat:0,     total:0,     elig:'Not Eligible', jan:'—', feb:'—',   mar:'—' },
-  { name:'Evan Cruz',     team:'Chat',  slab:0,     csat:0,     total:0,     elig:'Not Eligible', jan:'—', feb:'—',   mar:'—' },
+  { name:'Sabrina Quinn', team:'Chat',  slab:5625,  csat:2700,  total:18000, elig:'Slab 1', jan:'₹5,625', feb:'-',    mar:'-', note:'Also on Calls' },
+  { name:'Anold F',       team:'Chat',  slab:0,     csat:0,     total:0,     elig:'Not Eligible', jan:'-', feb:'-',   mar:'-' },
+  { name:'Tabbie Shine',  team:'Chat',  slab:0,     csat:0,     total:0,     elig:'Not Eligible', jan:'-', feb:'-',   mar:'-' },
+  { name:'Evan Cruz',     team:'Chat',  slab:0,     csat:0,     total:0,     elig:'Not Eligible', jan:'-', feb:'-',   mar:'-' },
 ];
 
-function fmtINR(n){ return n===0?'—':'₹'+n.toLocaleString('en-IN'); }
+function fmtINR(n){ return n===0?'-':'₹'+n.toLocaleString('en-IN'); }
 
 function colorClass(total, max){
   if(total===0) return 'col-zero';
@@ -203,7 +203,7 @@ function colorClass(total, max){
 function eligPill(elig){
   if(elig==='Slab 1') return '<span class="elig-pill elig-s1">✦ Slab 1</span>';
   if(elig==='Slab 2') return '<span class="elig-pill elig-s2">◆ Slab 2</span>';
-  if(elig==='—')      return '';
+  if(elig==='-')      return '';
   return '<span class="elig-pill elig-no">Not eligible</span>';
 }
 
@@ -218,7 +218,7 @@ function renderGrid(containerId, team){
     if(a.total>0) rank++;
     const rankNum = a.total>0 ? rank : null;
     const rankClass = rankNum===1?'rank-1':rankNum===2?'rank-2':rankNum===3?'rank-3':'rank-n';
-    const rankLabel = rankNum ? rankNum : '—';
+    const rankLabel = rankNum ? rankNum : '-';
     const col = colorClass(a.total, max);
     const pct = a.total>0 ? Math.max(4, Math.round(a.total/max*100)) : 0;
     const isTop = i===0 && a.total>0;

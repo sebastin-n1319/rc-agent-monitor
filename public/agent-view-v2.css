@@ -1,6 +1,6 @@
 /*
  * ═══════════════════════════════════════════════════════════════════════
- * AGENT VIEW V2 — Design System
+ * AGENT VIEW V2: Design System
  * Inspired by ui-ux-pro-max + motion.dev premium SaaS patterns
  * Used by: dashboard, breakbot, hall, bonus, tickets, writer
  *
@@ -12,7 +12,7 @@
 
 /* ── Design tokens ────────────────────────────────────────────────────── */
 .av2 {
-  /* Spacing scale — strict 4/8 grid */
+  /* Spacing scale, strict 4/8 grid */
   --av2-s1: 4px;
   --av2-s2: 8px;
   --av2-s3: 12px;
@@ -24,7 +24,7 @@
   --av2-s9: 56px;
   --av2-s10: 72px;
 
-  /* Type scale — perfect-fourth with strict hierarchy */
+  /* Type scale, perfect-fourth with strict hierarchy */
   --av2-t-xs:   11px;
   --av2-t-sm:   13px;
   --av2-t-base: 14px;
@@ -54,7 +54,7 @@
   --av2-r-xl:  24px;
   --av2-r-full: 9999px;
 
-  /* Motion — Motion.dev spring curves */
+  /* Motion: Motion.dev spring curves */
   --av2-spring-snap:  cubic-bezier(0.22, 1, 0.36, 1);
   --av2-spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --av2-spring-soft:  cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -63,13 +63,13 @@
   --av2-d-slow:   400ms;
   --av2-d-slower: 600ms;
 
-  /* Elevation — semantic shadows */
+  /* Elevation, semantic shadows */
   --av2-e1: 0 1px 2px rgba(7, 43, 64, 0.04), 0 1px 3px rgba(7, 43, 64, 0.06);
   --av2-e2: 0 4px 12px rgba(7, 43, 64, 0.06), 0 2px 4px rgba(7, 43, 64, 0.04);
   --av2-e3: 0 10px 28px rgba(7, 43, 64, 0.10), 0 4px 12px rgba(7, 43, 64, 0.06);
   --av2-e4: 0 22px 50px rgba(7, 43, 64, 0.16), 0 8px 24px rgba(7, 43, 64, 0.08);
 
-  /* Surfaces — pull from existing Adit tokens */
+  /* Surfaces, pull from existing Adit tokens */
   --av2-bg:        var(--bg, #F7F8F8);
   --av2-surface:   #FFFFFF;
   --av2-surface-2: #FAFBFC;
@@ -100,13 +100,13 @@
   min-height: 100%;
 }
 
-/* Container — max width with side padding */
+/* Container, max width with side padding */
 .av2 .av2-container {
   max-width: 1280px;
   margin: 0 auto;
 }
 
-/* ── Hero — greeting + current state ──────────────────────────────────── */
+/* ── Hero, greeting + current state ──────────────────────────────────── */
 .av2 .av2-hero {
   display: flex;
   align-items: flex-end;
@@ -203,7 +203,7 @@
 .av2 .av2-shift-state[data-state="away"]   { color: var(--av2-yellow); }
 .av2 .av2-shift-state[data-state="break"]  { color: var(--av2-red); }
 
-/* ── Stat grid — primary KPIs (5 cards) ───────────────────────────────── */
+/* ── Stat grid, primary KPIs (5 cards) ───────────────────────────────── */
 .av2 .av2-stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -300,7 +300,7 @@
 .av2 .av2-stat-delta[data-dir="down"] { background: rgba(237,102,107,0.1); color: var(--av2-red); }
 .av2 .av2-stat-delta[data-dir="flat"] { background: var(--av2-surface-3); color: var(--av2-t3); }
 
-/* ── Section header — used above each panel ──────────────────────────── */
+/* ── Section header, used above each panel ──────────────────────────── */
 .av2 .av2-section {
   margin-bottom: var(--av2-s7);
 }
@@ -335,7 +335,7 @@
   color: var(--av2-t3);
 }
 
-/* ── Panel — primary content container ───────────────────────────────── */
+/* ── Panel, primary content container ───────────────────────────────── */
 .av2 .av2-panel {
   background: var(--av2-surface);
   border: 1px solid var(--av2-border);
@@ -347,7 +347,7 @@
 .av2 .av2-panel:hover { box-shadow: var(--av2-e2); }
 .av2 .av2-panel-flush { padding: 0; overflow: hidden; }
 
-/* ── Search bar — modern, accessible ─────────────────────────────────── */
+/* ── Search bar, modern, accessible ─────────────────────────────────── */
 .av2 .av2-search {
   position: relative;
   flex: 1;
@@ -383,7 +383,7 @@
   pointer-events: none;
 }
 
-/* ── Chip — small inline tag ─────────────────────────────────────────── */
+/* ── Chip, small inline tag ─────────────────────────────────────────── */
 .av2 .av2-chip {
   display: inline-flex;
   align-items: center;
@@ -398,7 +398,7 @@
   white-space: nowrap;
 }
 
-/* ── Table — clean rows, generous spacing ────────────────────────────── */
+/* ── Table, clean rows, generous spacing ────────────────────────────── */
 .av2 .av2-table {
   width: 100%;
   border-collapse: collapse;
@@ -481,7 +481,7 @@
   color: var(--av2-t3);
 }
 
-/* ── Status pill — colored by state ──────────────────────────────────── */
+/* ── Status pill, colored by state ──────────────────────────────────── */
 .av2 .av2-pill {
   display: inline-flex;
   align-items: center;
@@ -644,7 +644,7 @@
 }
 .av2 .av2-banner-msg { flex: 1; }
 
-/* ── Responsive — tablet & mobile ────────────────────────────────────── */
+/* ── Responsive, tablet & mobile ────────────────────────────────────── */
 @media (max-width: 900px) {
   .av2 { padding: var(--av2-s4); }
   .av2 .av2-hero {
@@ -678,7 +678,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MOBILE OVERRIDES ≤640px — compact, native-app feel
+   MOBILE OVERRIDES ≤640px, compact, native-app feel
 ═══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {
 
@@ -698,7 +698,7 @@
     font-size: 22px !important;
     margin-bottom: 4px !important;
   }
-  /* Hide verbose subtitle on mobile — chips carry the key info */
+  /* Hide verbose subtitle on mobile, chips carry the key info */
   .av2 .av2-hero-sub { display: none !important; }
 
   /* Hero right: becomes a horizontal row of pills */

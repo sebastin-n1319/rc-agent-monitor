@@ -38,7 +38,7 @@ test.describe('Offline Bridge assets', () => {
     const res = await request.get('/sw.js');
     expect(res.status()).toBe(200);
     const body = await res.text();
-    // Version-agnostic — Session 10 bumped to v1.6, more bumps coming.
+    // Version-agnostic: Session 10 bumped to v1.6, more bumps coming.
     // Only require that the SHAPE is intact: a CACHE_VERSION constant exists
     // and is at least v1.5 (Session 8) or higher.
     expect(body).toMatch(/CACHE_VERSION\s*=\s*['"]adit-v1\.[5-9]/);

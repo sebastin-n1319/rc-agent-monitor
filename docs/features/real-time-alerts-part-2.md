@@ -1,4 +1,4 @@
-# Real-Time Alerts — Part 2 (Session 3)
+# Real-Time Alerts: Part 2 (Session 3)
 
 **Status:** In progress
 **Builds on:** Session 2 Part 1 (`docs/features/real-time-alerts.md`)
@@ -11,7 +11,7 @@ experience. After Session 3, supervisors get:
 
 1. A persistent **bell badge** that shows unread alert count at all times
 2. An **alert center modal** to triage all active alerts (ack / snooze / view detail)
-3. **Instant push** delivery — alerts arrive within ~1 second, not 30
+3. **Instant push** delivery, alerts arrive within ~1 second, not 30
 4. **Browser notifications** when the tab isn't focused (no more missed alerts)
 5. A **threshold admin form** to tune the 5 rules without touching code/console
 6. An **alert history page** for retrospective analysis
@@ -21,7 +21,7 @@ experience. After Session 3, supervisors get:
 - Per-user notification preferences (deferred to Session 4)
 - Alert routing to specific roles/people (deferred)
 - Alert escalation chains (deferred)
-- SMS / email delivery (Session 5 — needs SendGrid)
+- SMS / email delivery (Session 5, needs SendGrid)
 
 ## Architecture
 
@@ -89,7 +89,7 @@ The 30-second poll stays as a fallback for browsers that disconnect/reconnect SS
 ```
 
 - Snooze dropdown: 15min, 1h, until tomorrow, custom
-- Ack is instant — row fades + removes from list
+- Ack is instant, row fades + removes from list
 - Footer link to history page
 
 ### 3. Admin threshold form (under Access Control tab)
@@ -99,7 +99,7 @@ Replaces the curl/console pattern. Renders 5 cards (one per alert) with:
 - Severity selector (info/warning/critical)
 - Cooldown input (seconds)
 - Per-rule threshold inputs (callMinutes, ratePercent, etc.)
-- "Save" button per row — saves only changed row
+- "Save" button per row, saves only changed row
 - "Reset to defaults" button per row
 - "Fire test" button per row (synthetic alert)
 
@@ -128,14 +128,14 @@ Client side:
 - Add a handler in the existing EventSource for `event: alert`
 - Show toast + update bell badge + (if unfocused) Notification API
 
-Reconnection / disconnect handling — the existing live-stream client already
+Reconnection / disconnect handling, the existing live-stream client already
 auto-reconnects. The 30-second polling fallback ensures no alerts are missed
 during reconnection windows.
 
 ## Browser notifications (graceful)
 
 Permission flow:
-1. First alert when tab is unfocused — show inline banner asking permission
+1. First alert when tab is unfocused, show inline banner asking permission
 2. Granted → use Notification API for all future alerts
 3. Denied → silently fall back to toast only (never re-prompt)
 4. Default state → keep falling back to toast, prompt only once per week
@@ -183,8 +183,8 @@ A condition is met when **every** statement below is verifiable:
 
 ## Rollout
 
-1. Ship behind flag `alertsV2` (default OFF) — admin testers only
-2. Internal soak for 3 days — gather threshold feedback
+1. Ship behind flag `alertsV2` (default OFF), admin testers only
+2. Internal soak for 3 days, gather threshold feedback
 3. Enable for all admins
 4. Promote to default ON for everyone
 5. Remove the old `alertCenter` shim from the polling stub

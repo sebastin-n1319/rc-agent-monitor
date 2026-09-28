@@ -1,14 +1,14 @@
 /**
- * Settings Admin — Session 17 (2026-09-09)
+ * Settings Admin: Session 17 (2026-09-09)
  *
  * Admin "Settings" tab. Currently covers:
- *  • Pause Controls — Partial Pause (RC API sync only) and Full Pause
+ *  • Pause Controls: Partial Pause (RC API sync only) and Full Pause
  *    (RC sync + alert/anomaly/predict evaluators), both with a duration
  *    picker, optional reason, and one-click Resume. Backed by the
  *    server-persisted app_settings table (no env vars / redeploy needed).
- *  • Background Jobs Status — read-only view of every scheduled job and
+ *  • Background Jobs Status, read-only view of every scheduled job and
  *    whether it's currently gated by a pause.
- *  • System — DB size + RC rate-limit snapshot, for quick context when
+ *  • System: DB size + RC rate-limit snapshot, for quick context when
  *    deciding whether a pause is needed.
  *
  * Entry point: window.openSettingsAdmin(), rendering into #settings-admin-root.
@@ -34,11 +34,11 @@
     { name: 'Alert Evaluator', gate: 'full', desc: 'Evaluates the 5 real-time alert rules every 30s.' },
     { name: 'Anomaly Evaluator', gate: 'full', desc: 'Runs nightly anomaly detection (~3:00 AM CST).' },
     { name: 'Predict Model Training', gate: 'full', desc: 'Retrains the abandonment-prediction model (~3:30 AM CST).' },
-    { name: 'DB Archive / Prune', gate: 'none', desc: 'Housekeeping — archives to Sheets + prunes old rows every 2h. Never paused (disk stewardship, not RC API load).' },
+    { name: 'DB Archive / Prune', gate: 'none', desc: 'Housekeeping, archives to Sheets + prunes old rows every 2h. Never paused (disk stewardship, not RC API load).' },
   ];
 
   function fmtDateTime(ts) {
-    if (!ts) return '—';
+    if (!ts) return '-';
     try {
       return new Date(ts).toLocaleString('en-US', {
         timeZone: 'America/Chicago', month: 'short', day: 'numeric',
@@ -176,7 +176,7 @@
     btn.textContent = 'Resuming…';
     try {
       await doResume(mode);
-      toastSafe('▶ Resumed — background jobs will pick back up on their next tick', 'success', 4000);
+      toastSafe('▶ Resumed, background jobs will pick back up on their next tick', 'success', 4000);
       await window.openSettingsAdmin();
     } catch (e) {
       toastSafe('❌ ' + e.message, 'error', 5000);
@@ -205,7 +205,7 @@
           <span class="stg-banner-dot"></span>
           <div>
             <div class="stg-banner-title">CORS is open to any origin</div>
-            <div class="stg-banner-sub">ALLOWED_ORIGINS is not set in Railway env vars — any website can call this API from a browser. Set it to your app's URL to restrict this.</div>
+            <div class="stg-banner-sub">ALLOWED_ORIGINS is not set in Railway env vars, any website can call this API from a browser. Set it to your app's URL to restrict this.</div>
           </div>
         </div>
       </div>`;
@@ -216,11 +216,11 @@
     return `
       <div class="stg-card">
         <div class="stg-card-title">Notifications</div>
-        <div class="stg-card-sub">Controls the Google Chat missed-call notifier. Turning this off still polls RingCentral for missed calls (so nothing is missed once re-enabled) — it just stops the chat ping.</div>
+        <div class="stg-card-sub">Controls the Google Chat missed-call notifier. Turning this off still polls RingCentral for missed calls (so nothing is missed once re-enabled), it just stops the chat ping.</div>
         <div class="stg-notify-row">
           <div class="stg-notify-info">
             <div class="stg-pause-option-title">Missed-call Google Chat alerts</div>
-            <div class="stg-pause-option-desc">${enabled ? 'Currently sending a chat message for each new missed call.' : 'Currently silent — missed calls are still tracked, just not posted to chat.'}</div>
+            <div class="stg-pause-option-desc">${enabled ? 'Currently sending a chat message for each new missed call.' : 'Currently silent, missed calls are still tracked, just not posted to chat.'}</div>
           </div>
           <button type="button" class="stg-btn ${enabled ? 'stg-btn-warning' : 'stg-btn-light'} stg-notify-toggle" data-enabled="${enabled ? '0' : '1'}">${enabled ? 'Turn Off' : 'Turn On'}</button>
         </div>
@@ -285,8 +285,8 @@
   }
 
   function systemCard(system) {
-    const dbSize = system && system.dbSizeMB != null ? `${system.dbSizeMB} MB` : '—';
-    let rl = '—';
+    const dbSize = system && system.dbSizeMB != null ? `${system.dbSizeMB} MB` : '-';
+    let rl = '-';
     if (system && system.rcRateLimit) {
       try { rl = JSON.stringify(system.rcRateLimit); } catch (e) { rl = String(system.rcRateLimit); }
     }
@@ -317,7 +317,7 @@
 
         <div class="stg-card">
           <div class="stg-card-title">Pause Controls</div>
-          <div class="stg-card-sub">Stops the RingCentral API traffic this tool generates — useful when another RC-bound job (like a bulk run) needs headroom. Auto-resumes when the timer runs out; no redeploy needed.</div>
+          <div class="stg-card-sub">Stops the RingCentral API traffic this tool generates, useful when another RC-bound job (like a bulk run) needs headroom. Auto-resumes when the timer runs out; no redeploy needed.</div>
           <div class="stg-pause-actions">
             <div class="stg-pause-option">
               <div class="stg-pause-option-title">Partial Pause</div>
@@ -334,7 +334,7 @@
 
         <div class="stg-card">
           <div class="stg-card-title">Background Jobs Status</div>
-          <div class="stg-card-sub">Read-only — reflects the pause state above.</div>
+          <div class="stg-card-sub">Read-only, reflects the pause state above.</div>
           ${jobsTable(pause)}
         </div>
 

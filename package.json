@@ -1,7 +1,7 @@
 {
   "name": "rc-productivity-monitor",
   "version": "1.0.0",
-  "description": "Adit Agent Monitor — real-time call center productivity dashboard",
+  "description": "Adit Agent Monitor, real-time call center productivity dashboard",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

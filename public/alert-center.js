@@ -1,5 +1,5 @@
 /**
- * alert-center.js — UI module for the real-time alert system (Part 2).
+ * alert-center.js: UI module for the real-time alert system (Part 2).
  *
  * Owns:
  *   • Bell icon + unread badge in the status bar
@@ -308,7 +308,7 @@
   // ─── SSE push subscription ───────────────────────────────────────────
   function connectSse() {
     if (sseSource) return;
-    if (!window.EventSource) return;  // older browsers — polling fallback covers
+    if (!window.EventSource) return;  // older browsers, polling fallback covers
     if (!document.documentElement.classList.contains('app-authenticated')) return;
     try {
       sseSource = new EventSource('/api/live-stream');
@@ -656,7 +656,7 @@
     ensureBell();
     refresh();
     connectSse();
-    // Polling fallback — 60s (was 30s; SSE makes faster polling unnecessary)
+    // Polling fallback: 60s (was 30s; SSE makes faster polling unnecessary)
     setInterval(refresh, 60_000);
     // Track focus for browser-notification gating
     window.addEventListener('focus', () => { lastFocusTime = Date.now(); });

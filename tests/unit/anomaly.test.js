@@ -22,7 +22,7 @@ import {
 } from '../../lib/anomaly.js';
 
 // ─── Public surface ────────────────────────────────────────────────────
-describe('anomaly — public surface', () => {
+describe('anomaly, public surface', () => {
   it('exports the 5 stable metric keys', () => {
     expect(METRICS).toEqual([
       'daily_live_minutes',
@@ -140,7 +140,7 @@ describe('severityForZ', () => {
   });
 });
 
-// ─── evaluateMetric — primary cases ────────────────────────────────────
+// ─── evaluateMetric, primary cases ────────────────────────────────────
 describe('evaluateMetric', () => {
   const baseHistory = [];  // 20 days of ~480 live minutes
   for (let i = 0; i < 20; i++) baseHistory.push(480 + (i % 3) * 5);  // 480, 485, 490 …
@@ -163,7 +163,7 @@ describe('evaluateMetric', () => {
     const r = evaluateMetric({
       metric: 'daily_live_minutes',
       history: baseHistory,
-      todayValue: 900,   // 2x baseline — high
+      todayValue: 900,   // 2x baseline, high
       config: DEFAULT_THRESHOLDS.daily_live_minutes  // direction 'low'
     });
     expect(r).toBeNull();
@@ -212,7 +212,7 @@ describe('evaluateMetric', () => {
   });
 
   it('MAD = 0 + tiny diff returns null (within noise floor)', () => {
-    // History always 480; today 481 — a 0.2% diff under the 5% noise floor → no anomaly
+    // History always 480; today 481, a 0.2% diff under the 5% noise floor → no anomaly
     const hist = Array.from({ length: 20 }, () => 480);
     const r = evaluateMetric({
       metric: 'daily_live_minutes',
@@ -224,7 +224,7 @@ describe('evaluateMetric', () => {
   });
 
   it('MAD = 0 + large diff still fires (flat baseline detection)', () => {
-    // History always 480; today 100 — clear anomaly even with no variance
+    // History always 480; today 100, clear anomaly even with no variance
     const hist = Array.from({ length: 20 }, () => 480);
     const r = evaluateMetric({
       metric: 'daily_live_minutes',
@@ -293,7 +293,7 @@ describe('evaluateMetric', () => {
       config: { ...DEFAULT_THRESHOLDS.daily_live_minutes, z_threshold: 2.0 }
     });
     // At least one of these assertions must hold true (tight should fire)
-    // The default may or may not depending on data — we just check tight is more sensitive
+    // The default may or may not depending on data, we just check tight is more sensitive
     if (defaultR) {
       expect(tightR).not.toBeNull();
     } else {
@@ -361,7 +361,7 @@ describe('evaluateAgentDay', () => {
 
 // ─── evaluateBulk ──────────────────────────────────────────────────────
 describe('evaluateBulk', () => {
-  it('returns sorted results — critical first, then by |z| desc', () => {
+  it('returns sorted results, critical first, then by |z| desc', () => {
     const varied = (n, mod) => Array.from({ length: 20 }, (_, i) => n + (i % 5) * mod);
     const agents = {
       'critical@x.com': {

@@ -1,4 +1,4 @@
-// Playwright config — end-to-end tests against a real running server.
+// Playwright config, end-to-end tests against a real running server.
 const { defineConfig, devices } = require('@playwright/test');
 
 module.exports = defineConfig({

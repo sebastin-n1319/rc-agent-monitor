@@ -1,4 +1,4 @@
-# Adit Agent Monitor — Operations Runbook
+# Adit Agent Monitor: Operations Runbook
 
 **Last updated:** 2026-05-27 (Session 13)
 **Production:** https://rc-t1cs-monitor.up.railway.app
@@ -17,7 +17,7 @@ feature in production, and how to operate the system day-to-day.
 | Lighthouse a11y | **94/100** (Session 13 audit) |
 | Lighthouse best-practices | **92/100** |
 | Lighthouse SEO | **91/100** |
-| Lighthouse performance | 55/100 (1.3 MB monolith — split scheduled) |
+| Lighthouse performance | 55/100 (1.3 MB monolith, split scheduled) |
 | npm audit | **0 vulnerabilities** |
 | Test count | **249** (181 unit / 68 E2E) |
 | Service worker | `adit-v1.7.0` (8 assets pre-cached) |
@@ -25,8 +25,8 @@ feature in production, and how to operate the system day-to-day.
 | Logs | Railway dashboard → Deployments → Logs (JSON-line format) |
 | DB | SQLite at `/data/productivity.db` on Railway volume |
 | Always-admin emails | env `CORE_ADMINS=sebastin.n@adit.com,ronnie@adit.com,imran@adit.com` |
-| Google sign-in (**required**) | env `GOOGLE_CLIENT_ID=645617655942-jf8rnpassl0pjl40sip6p17vi3uakb5m.apps.googleusercontent.com` — must match the client_id baked into `public/index.html`. The server verifies every Google sign-in against this ID; without it, **all logins fail closed** (see `POST /api/session` in `server.js`). |
-| Allowed sign-in domain | env `ALLOWED_DOMAIN` (defaults to `adit.com` if unset) — only `@<this domain>` Google accounts can sign in |
+| Google sign-in (**required**) | env `GOOGLE_CLIENT_ID=645617655942-jf8rnpassl0pjl40sip6p17vi3uakb5m.apps.googleusercontent.com`, must match the client_id baked into `public/index.html`. The server verifies every Google sign-in against this ID; without it, **all logins fail closed** (see `POST /api/session` in `server.js`). |
+| Allowed sign-in domain | env `ALLOWED_DOMAIN` (defaults to `adit.com` if unset), only `@<this domain>` Google accounts can sign in |
 
 ## Feature flag matrix
 
@@ -48,7 +48,7 @@ Set per browser via DevTools console: `setFlag('flagName', true); location.reloa
 | `pwaInstall` | "📲 Install" button when SW + manifest are healthy | ✅ on |
 | `statusBar` | Bottom status bar (clock, search, etc.) | ✅ on |
 
-### Preview features (default off — flip flag to enable)
+### Preview features (default off, flip flag to enable)
 
 | Flag | Feature | Session |
 |---|---|---|
@@ -114,9 +114,9 @@ Set per browser via DevTools console: `setFlag('flagName', true); location.reloa
 ### Auth-gated (any logged-in user)
 | Method | Path | Session |
 |---|---|---|
-| `GET` | `/api/session` | — |
+| `GET` | `/api/session` |, |
 | `POST` | `/api/break-events` (supports `X-Idempotency-Key`) | 8 |
-| `GET` | `/api/break-tracker` | — |
+| `GET` | `/api/break-tracker` |, |
 | `GET` | `/api/alerts/active`, `/api/alerts/recent` | 2 |
 | `POST` | `/api/alerts/:id/ack`, `/api/alerts/:id/snooze`, `/api/alerts/ack-all` | 2-3 |
 | `GET` | `/api/anomalies/active`, `/api/anomalies/recent` | 6 |
@@ -125,8 +125,8 @@ Set per browser via DevTools console: `setFlag('flagName', true); location.reloa
 | `GET` | `/api/schedule-adherence`, `/api/schedules/:email` | 4 |
 | `GET` | `/api/predict/abandonment` | 11 |
 | `GET` | `/api/predict/backtest?days=N` | 11 |
-| `GET` | `/api/coach-flag/me`, `/api/wellness/today` | — |
-| `POST` | `/api/handoff`, `/api/wellness` | — |
+| `GET` | `/api/coach-flag/me`, `/api/wellness/today` |, |
+| `POST` | `/api/handoff`, `/api/wellness` |, |
 
 ### Admin-only
 | Method | Path | Session |
@@ -165,7 +165,7 @@ For each preview feature, the rollout pattern is the same:
    predict_cron_started
    ```
 3. **Enable for the 3 core admins** by sharing the `setFlag()` snippet
-4. **Soak for 3-7 days** — gather feedback, tune thresholds via the admin
+4. **Soak for 3-7 days**, gather feedback, tune thresholds via the admin
    UI (no curl needed for alerts, anomalies, schedules, or predictions)
 5. **Promote to default ON** by changing the default in `defaultFlags()`
    inside `public/index.html` (search for `defaultFlags()` to find it)
@@ -258,7 +258,7 @@ Or click "Sync now" in the bottom-left status pill.
 ┌─────────────────────────────────────────────────────────────┐
 │                        BROWSER                              │
 │  ┌────────────────────────────────────────────────────────┐ │
-│  │ index.html (1.3 MB monolith — split is Session 14+)    │ │
+│  │ index.html (1.3 MB monolith, split is Session 14+)    │ │
 │  │   • Login + main app shell + admin views               │ │
 │  │   • All keyboard shortcuts, toasts, status bar         │ │
 │  └──────────────┬─────────────────────────────────────────┘ │
@@ -283,12 +283,12 @@ Or click "Sync now" in the bottom-left status pill.
 │                       SERVER (Railway)                       │
 │  server.js (~4150 lines)                                    │
 │   • Express + cookie auth (server-side sessions in SQLite)  │
-│   • Security middleware (CSP, HSTS, X-Frame, etc — S9)      │
+│   • Security middleware (CSP, HSTS, X-Frame, etc: S9)      │
 │   • Structured JSON logger (lib/logger.js)                  │
 │   • In-memory cache (5s TTL)                                │
 │   • Routes: 140+ endpoints                                  │
 │                                                              │
-│  lib/ — 6 pure engine libraries                             │
+│  lib/: 6 pure engine libraries                             │
 │   ├── alerts.js          Pure alert engine (S2)             │
 │   ├── schedule.js        Pure adherence engine (S4)         │
 │   ├── anomaly.js         Pure anomaly engine (S6)           │
@@ -322,12 +322,12 @@ Or click "Sync now" in the bottom-left status pill.
 ## Testing
 
 ```bash
-# Unit tests (vitest, runs in Node) — covers lib/**
+# Unit tests (vitest, runs in Node), covers lib/**
 npm test                  # all unit tests, no watch
 npm run test:watch        # watch mode
 npm run test:coverage     # with coverage report + per-file floors
 
-# E2E (Playwright, auto-starts server) — covers HTTP surface
+# E2E (Playwright, auto-starts server), covers HTTP surface
 npm run test:e2e
 npm run test:e2e:ui       # interactive
 
@@ -364,7 +364,7 @@ If any of these drop below the floor, `npm test` fails.
 
 These are shipped behind flags or as preview-only stubs:
 
-- Daily digest email delivery (#13) — generator exists, needs SendGrid creds
+- Daily digest email delivery (#13), generator exists, needs SendGrid creds
 - Schedule templates in DB (templates are hardcoded in `schedule-admin.js`)
 - Mobile push notifications (Notification API works in-tab only)
 - Per-agent custom alert rules (single org config for now)
@@ -406,7 +406,7 @@ git revert <bad-commit-sha>
 git push origin main
 ```
 
-Service worker version bumps trigger shell refresh — users get the
+Service worker version bumps trigger shell refresh, users get the
 fixed assets on next page load (or hard-reload to skip the staleness window).
 
 ## Contact

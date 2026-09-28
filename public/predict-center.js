@@ -1,11 +1,11 @@
 /**
- * predict-center.js — UI module for Predictive Abandonment (Session 12).
+ * predict-center.js: UI module for Predictive Abandonment (Session 12).
  *
  * Closes the loop on the Session 11 logistic-regression engine: gives
  * supervisors a real dashboard to see forecasts, backtest accuracy,
  * model weights, and trigger retraining.
  *
- * Feature flag: `predictiveAbandonmentV2` (same as Session 11 — when the
+ * Feature flag: `predictiveAbandonmentV2` (same as Session 11, when the
  * engine is enabled, the UI is too).
  *
  * Public API (window-scoped):
@@ -59,12 +59,12 @@
   }
 
   function fmtPct(p) {
-    if (p == null || !isFinite(p)) return '—';
+    if (p == null || !isFinite(p)) return '-';
     return Math.round(p * 100) + '%';
   }
 
   function fmtZ(z) {
-    if (z == null || !isFinite(z)) return '—';
+    if (z == null || !isFinite(z)) return '-';
     return (z >= 0 ? '+' : '') + Number(z).toFixed(2);
   }
 
@@ -146,7 +146,7 @@
           // Backtest chart
           el('section', { class: 'pc-section', 'aria-label': 'Backtest' }, [
             el('header', { class: 'pc-section-head' }, [
-              el('h3', { text: 'Backtest — last 7 days' }),
+              el('h3', { text: 'Backtest, last 7 days' }),
               el('span', { id: 'pc-backtest-meta', class: 'pc-section-meta' })
             ]),
             el('div', { id: 'pc-backtest', class: 'pc-backtest' })
@@ -203,21 +203,21 @@
     const prob = p.probability;
     const probPct = fmtPct(prob);
     const conf = p.confidence || 'low';
-    const expected = p.expectedAbandons || '—';
+    const expected = p.expectedAbandons || '-';
 
     if (chip) {
       chip.textContent = 'ready · ' + conf;
       chip.dataset.state = conf;
     }
 
-    // 10-segment band — segments fill based on probability
+    // 10-segment band, segments fill based on probability
     const segments = 10;
     const filled = Math.round((prob || 0) * segments);
     const segHtml = Array.from({ length: segments }, (_, i) =>
       `<span class="pc-band-seg${i < filled ? ' is-on' : ''}" style="${i < filled ? 'background:' + bandColor(prob) : ''}"></span>`
     ).join('');
 
-    // Drivers — top features by absolute contribution
+    // Drivers, top features by absolute contribution
     const features = p.features || {};
     const weights = (m && m.evalMetrics) ? null : null;   // weights only on /api/predict/model
     const driverHtml = Object.entries(features).map(([k, v]) =>
@@ -253,7 +253,7 @@
       return;
     }
     if (!backtestCache.ready) {
-      root.innerHTML = '<div class="pc-empty"><div class="pc-empty-ico">🌱</div><div class="pc-empty-title">No model — backtest unavailable</div></div>';
+      root.innerHTML = '<div class="pc-empty"><div class="pc-empty-ico">🌱</div><div class="pc-empty-title">No model, backtest unavailable</div></div>';
       if (meta) meta.textContent = '';
       return;
     }
@@ -304,7 +304,7 @@
     const ev = m.evalMetrics || {};
 
     const weightRows = [
-      `<tr><td><code>intercept</code></td><td class="pc-num">${fmtZ(weights[0])}</td><td>—</td><td>—</td></tr>`,
+      `<tr><td><code>intercept</code></td><td class="pc-num">${fmtZ(weights[0])}</td><td>-</td><td>-</td></tr>`,
       ...featureKeys.map((k, i) =>
         `<tr><td><code>${esc(k)}</code></td><td class="pc-num">${fmtZ(weights[i + 1])}</td><td class="pc-num">${esc((mu[i] || 0).toFixed(2))}</td><td class="pc-num">${esc((sigma[i] || 0).toFixed(2))}</td></tr>`
       )
@@ -312,8 +312,8 @@
 
     root.innerHTML = `
       <div class="pc-debug-grid">
-        <div><span>Model key</span><code>${esc(m.modelKey || '—')}</code></div>
-        <div><span>Fitted at</span><code>${esc(m.fittedAt || '—')}</code></div>
+        <div><span>Model key</span><code>${esc(m.modelKey || '-')}</code></div>
+        <div><span>Fitted at</span><code>${esc(m.fittedAt || '-')}</code></div>
         <div><span>Sample size</span><strong>${esc(String(m.sampleSize || 0))}</strong></div>
         <div><span>Precision</span><strong>${esc(((ev.precision || 0)).toFixed(3))}</strong></div>
         <div><span>Recall</span><strong>${esc(((ev.recall || 0)).toFixed(3))}</strong></div>
@@ -355,7 +355,7 @@
       if (j.success) {
         if (typeof window.showToast === 'function') {
           if (j.ready) {
-            const acc = j.evalMetrics ? Math.round(j.evalMetrics.accuracy * 100) + '%' : '—';
+            const acc = j.evalMetrics ? Math.round(j.evalMetrics.accuracy * 100) + '%' : '-';
             window.showToast(`✓ Trained on ${j.sampleSize} rows · accuracy ${acc}`, 'success', 3500);
           } else {
             window.showToast(`Train skipped: ${j.reason || 'unknown'}`, 'warning', 3500);
@@ -391,7 +391,7 @@
   async function open() {
     if (!flagOn('predictiveAbandonmentV2')) {
       if (typeof window.showToast === 'function') {
-        window.showToast("Predictive Abandonment is in preview — enable via setFlag('predictiveAbandonmentV2', true)", 'info', 4500);
+        window.showToast("Predictive Abandonment is in preview, enable via setFlag('predictiveAbandonmentV2', true)", 'info', 4500);
       }
       return;
     }

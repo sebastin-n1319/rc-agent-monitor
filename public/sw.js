@@ -1,13 +1,13 @@
 /**
- * Adit Agent Monitor — Service Worker v1.8.0 (P0 cache-bust)
+ * Adit Agent Monitor: Service Worker v1.8.0 (P0 cache-bust)
  *
  * Strategies:
  *   • Shell (HTML/CSS/JS) → stale-while-revalidate from `shell-vN` cache
  *   • Assets (fonts/imgs) → cache-first from `assets-vN`
- *   • API GET            → network-only (no caching — contains sensitive data)
+ *   • API GET            → network-only (no caching, contains sensitive data)
  *   • API non-GET        → never cached; offline → 503 (client queues via IDB)
  *   • Navigation         → network-FIRST with /index.html fallback (no SWR
- *     for navigations — v1.8 changed from stale-while-revalidate to prevent
+ *     for navigations, v1.8 changed from stale-while-revalidate to prevent
  *     stuck old shells reported by agents on 2026-05-27)
  *
  * On activate, every cache NOT in CURRENT_CACHES is deleted, so version
@@ -18,17 +18,17 @@
  *     open clients. The client owns the IDB queue & drains it.
  *   • 'message' event with {type:'drain'} is the manual-trigger path.
  *
- * P0 (Session 14 hotfix — 2026-05-27):
+ * P0 (Session 14 hotfix: 2026-05-27):
  *   Agents reported "agent view collapsed, pop-up not working, can't use
  *   break bot or log tickets" after v1.7 rolled out. Repo bytes matched
  *   production bytes exactly → root cause was stale SW cache holding an
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.147'; // Security: API responses never cached (mobile PWA data protection)
+const CACHE_VERSION = 'adit-v1.19.148'; // Security: API responses never cached (mobile PWA data protection)
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
-// API_CACHE intentionally removed — API responses contain sensitive agent data
+// API_CACHE intentionally removed: API responses contain sensitive agent data
 // and must NEVER be stored in the browser cache on personal/mobile devices.
 const CURRENT_CACHES = new Set([SHELL_CACHE, ASSETS_CACHE]);
 
@@ -99,7 +99,7 @@ self.addEventListener('activate', (event) => {
       keys.filter(k => !CURRENT_CACHES.has(k)).map(k => caches.delete(k))
     );
     await self.clients.claim();
-    // Tell all open clients we're activated — they can refresh data if they like
+    // Tell all open clients we're activated, they can refresh data if they like
     const clients = await self.clients.matchAll();
     for (const c of clients) c.postMessage({ type: 'sw-activated', version: CACHE_VERSION });
   })());
@@ -109,7 +109,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') {
-    // Non-GET API calls — never cache. Client owns offline queue.
+    // Non-GET API calls, never cache. Client owns offline queue.
     return;
   }
   const url = new URL(req.url);
@@ -124,7 +124,7 @@ self.addEventListener('fetch', (event) => {
 
   // /api/* GET → network-only (NEVER cache; responses contain sensitive agent data)
   if (url.pathname.startsWith('/api/')) {
-    // Let the browser handle it — no SW interception, no caching.
+    // Let the browser handle it, no SW interception, no caching.
     return;
   }
 
@@ -152,7 +152,7 @@ async function navigationStrategy(req) {
 async function cacheFirst(req) {
   const cached = await caches.match(req);
   if (cached) {
-    // Background revalidate — don't await
+    // Background revalidate, don't await
     fetch(req).then(res => {
       if (res && res.ok) caches.open(SHELL_CACHE).then(c => c.put(req, res.clone())).catch(()=>{});
     }).catch(()=>{});
@@ -170,7 +170,7 @@ async function cacheFirst(req) {
   }
 }
 
-// networkFirstAPI removed — API responses are never cached (security: sensitive agent data)
+// networkFirstAPI removed: API responses are never cached (security: sensitive agent data)
 
 function stampHeaders(orig, extra) {
   const h = new Headers();
@@ -203,7 +203,7 @@ async function notifyClientsToDrain() {
 self.addEventListener('message', (event) => {
   if (!event.data || !event.data.type) return;
   if (event.data.type === 'drain') {
-    // Same as the sync event handler — broadcast to all clients
+    // Same as the sync event handler, broadcast to all clients
     event.waitUntil(notifyClientsToDrain());
   } else if (event.data.type === 'skip-waiting') {
     self.skipWaiting();

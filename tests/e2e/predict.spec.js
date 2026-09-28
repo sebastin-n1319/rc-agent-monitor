@@ -30,7 +30,7 @@ test.describe('Predict API auth gates', () => {
   }
 });
 
-test.describe('Predict endpoints — smoke', () => {
+test.describe('Predict endpoints, smoke', () => {
   test('/healthz still returns OK after predict cron starts', async ({ request }) => {
     const res = await request.get('/healthz');
     expect(res.status()).toBe(200);

@@ -1,15 +1,15 @@
 /*
- * ADIT DESIGN SYSTEM — COMPLETE APP THEME
- * Source: adit-design-system-reference.md (betaapp.adit.com — May 2026)
+ * ADIT DESIGN SYSTEM: COMPLETE APP THEME
+ * Source: adit-design-system-reference.md (betaapp.adit.com: May 2026)
  * Loaded after adit-reset.js disables all conflicting stylesheets.
- * No !important needed — this is the ONLY stylesheet running.
+ * No !important needed, this is the ONLY stylesheet running.
  *
  * Font: Poppins (loaded via Google Fonts)
  * Primary: #F4891F orange | Sidebar: #072B40 dark navy | Bg: #F7F8F8
  */
 
 /* ═══════════════════════════════════════════════════════════════
-   1. CSS VARIABLES — Adit Design System
+   1. CSS VARIABLES: Adit Design System
 ═══════════════════════════════════════════════════════════════ */
 :root {
   /* Core backgrounds */
@@ -138,12 +138,12 @@ button, input, select, textarea {
 @keyframes qhPulse    { 0%,100% { box-shadow:0 0 0 0 rgba(237,102,107,.15); } 50% { box-shadow:0 0 0 6px rgba(237,102,107,0); } }
 
 /* ═══════════════════════════════════════════════════════════════
-   4. AUTH GATE — login/app visibility (JS-managed, we style both)
+   4. AUTH GATE, login/app visibility (JS-managed, we style both)
 ═══════════════════════════════════════════════════════════════ */
 #userAvatar { display:none; }
 
 /* ═══════════════════════════════════════════════════════════════
-   5. TOPBAR — 48px white, Adit spec
+   5. TOPBAR: 48px white, Adit spec
 ═══════════════════════════════════════════════════════════════ */
 header {
   position: fixed;
@@ -222,7 +222,7 @@ header {
 #test-agent-btn:hover { background:rgba(33,170,224,.15); }
 
 /* ═══════════════════════════════════════════════════════════════
-   6. ADIT SIDEBAR — 70px dark navy, icon-only
+   6. ADIT SIDEBAR: 70px dark navy, icon-only
    Spec: width 70px, background #072B40, icons white/orange
 ═══════════════════════════════════════════════════════════════ */
 .adit-sidebar {
@@ -247,7 +247,7 @@ header {
 #adit-admin-sidebar { display:none; }
 #adit-agent-sidebar { display:none; }
 
-/* Sidebar items — exactly per Adit spec */
+/* Sidebar items, exactly per Adit spec */
 .sb-item {
   width: 70px;
   min-height: 56px;
@@ -334,7 +334,7 @@ header {
   min-height: calc(100vh - 48px);
 }
 
-/* Hide old horizontal nav bars — sidebar replaces them */
+/* Hide old horizontal nav bars, sidebar replaces them */
 .nav            { display:none; }
 .agent-shell-nav{ display:none; }
 
@@ -345,7 +345,7 @@ header {
 .agent-shell-page.active    { display:block; }
 
 /* ═══════════════════════════════════════════════════════════════
-   8. CARDS & PANELS — white, DEE1E6 border, shadow
+   8. CARDS & PANELS, white, DEE1E6 border, shadow
    Spec: background #FFFFFF, border-radius 8px, box-shadow rgba(0,0,0,0.05)
 ═══════════════════════════════════════════════════════════════ */
 .card, .ld-panel, .viz-card, .rpt-stat,
@@ -617,7 +617,7 @@ header {
 .health-off        { background:#ED666B; }
 
 /* ═══════════════════════════════════════════════════════════════
-   15. DATA TABLES — exact Adit table pattern
+   15. DATA TABLES, exact Adit table pattern
 ═══════════════════════════════════════════════════════════════ */
 table              { width:100%; border-collapse:collapse; background:#FFFFFF; border-radius:8px; overflow:hidden; box-shadow:rgba(0,0,0,0.05) 0px 0px 10px; }
 thead tr           { background:rgb(247,248,248); border-bottom:1px solid rgb(222,225,230); }
@@ -645,7 +645,7 @@ td a:hover         { text-decoration:underline; }
 #admin-agent-tbl-wrap { overflow-x:auto; overflow-y:auto; max-height:680px; }
 
 /* ═══════════════════════════════════════════════════════════════
-   16. STATUS CHIPS — exact Adit fixed colors
+   16. STATUS CHIPS, exact Adit fixed colors
 ═══════════════════════════════════════════════════════════════ */
 .pill, .status-badge {
   display: inline-flex;
@@ -680,7 +680,7 @@ td a:hover         { text-decoration:underline; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   17. FORM INPUTS — Adit app interior style (ice-blue filled)
+   17. FORM INPUTS: Adit app interior style (ice-blue filled)
 ═══════════════════════════════════════════════════════════════ */
 .field              { display:flex; flex-direction:column; gap:5px; flex:1; min-width:160px; }
 .field label        { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:#6B849A; }
@@ -718,9 +718,9 @@ select option       { background:#FFFFFF; color:#072B40; }
 input[type=checkbox] { accent-color:#F4891F; }
 
 /* ═══════════════════════════════════════════════════════════════
-   18. BUTTONS — App rectangular (NOT pill)
+   18. BUTTONS: App rectangular (NOT pill)
 ═══════════════════════════════════════════════════════════════ */
-/* Primary — orange rectangle with glow */
+/* Primary, orange rectangle with glow */
 .btn-primary, button.btn-primary {
   background: #F4891F;
   color: #FFFFFF;
@@ -737,7 +737,7 @@ input[type=checkbox] { accent-color:#F4891F; }
 .btn-primary:hover { background:#F28820; transform:translateY(-1px); box-shadow:rgba(244,137,31,.5) 0px 6px 20px; }
 .btn-primary:active{ transform:none; }
 
-/* Secondary — outline orange */
+/* Secondary, outline orange */
 .btn-secondary {
   border: 1px solid #F4891F;
   color: #F4891F;
@@ -832,7 +832,7 @@ input[type=checkbox] { accent-color:#F4891F; }
 .tab-btn.active    { border-bottom-color:#F4891F; color:#F4891F; font-weight:600; }
 
 /* ═══════════════════════════════════════════════════════════════
-   24. MODALS — 16px radius, dark overlay
+   24. MODALS: 16px radius, dark overlay
 ═══════════════════════════════════════════════════════════════ */
 .modal-overlay {
   position: fixed; inset: 0;
@@ -996,7 +996,7 @@ input[type=checkbox] { accent-color:#F4891F; }
 .aw-actions        { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
 /* ═══════════════════════════════════════════════════════════════
-   30. BREAKBOT SECTION — Light Adit theme
+   30. BREAKBOT SECTION: Light Adit theme
 ═══════════════════════════════════════════════════════════════ */
 #agent-section-breakbot              { background:#F7F8F8; }
 #agent-section-breakbot::before,
@@ -1192,7 +1192,7 @@ footer {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   42. LOGIN PAGE — betaapp.adit.com style
+   42. LOGIN PAGE, betaapp.adit.com style
 ═══════════════════════════════════════════════════════════════ */
 #loginScreen {
   position: fixed; inset: 0; z-index: 9999;
@@ -1203,7 +1203,7 @@ footer {
   color: #072B40;
 }
 
-/* Left panel — baby blue */
+/* Left panel, baby blue */
 .adit-login-left {
   flex: 1;
   background: rgb(212,242,255);
@@ -1245,7 +1245,7 @@ footer {
 .adit-dot.active       { width:24px; background:#25A8E0; }
 .adit-dot:not(.active) { width:8px; }
 
-/* Right panel — dark navy */
+/* Right panel, dark navy */
 .adit-login-right {
   width: 480px; flex-shrink: 0;
   background: linear-gradient(135deg,#072B40 0%,#0A3D5C 100%);
@@ -1276,7 +1276,7 @@ footer {
 .adit-quick-email  { font-size:11px; color:rgba(178,219,240,.65); }
 .adit-quick-arrow  { font-size:18px; color:#F4891F; margin-left:auto; }
 
-/* Google / auth button — orange rectangle (NOT pill) */
+/* Google / auth button, orange rectangle (NOT pill) */
 .v8-google-btn {
   width: 100%;
   display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -1318,7 +1318,7 @@ footer {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   43. SCROLLBARS — Adit light
+   43. SCROLLBARS: Adit light
 ═══════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar         { width:5px; height:5px; }
 ::-webkit-scrollbar-track   { background:#F0F2F5; }
@@ -1326,7 +1326,7 @@ footer {
 ::-webkit-scrollbar-thumb:hover { background:#A8B5C4; }
 
 /* ═══════════════════════════════════════════════════════════════
-   44. RESPONSIVE — shared utilities
+   44. RESPONSIVE, shared utilities
 ═══════════════════════════════════════════════════════════════ */
 @media(max-width:760px){
   .page, .agent-shell-page { padding:14px 12px 24px; }
@@ -1373,10 +1373,10 @@ footer {
 #sessionDebug      { background:#FFFFFF; border:1px solid rgb(222,225,230); border-radius:8px; color:#072B40; padding:12px; font-size:11px; }
 
 /* ═══════════════════════════════════════════════════════════════
-   BREAKBOT SECTION — Complete layout in Adit light theme
+   BREAKBOT SECTION: Complete layout in Adit light theme
 ═══════════════════════════════════════════════════════════════ */
 
-/* Ambient orbs — hidden in light theme */
+/* Ambient orbs, hidden in light theme */
 .bb-orb { display:none; }
 
 /* ── Date toolbar ── */
@@ -1880,7 +1880,7 @@ footer {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BREAKBOT COMPLETE REDESIGN — Adit Light Theme
+   BREAKBOT COMPLETE REDESIGN: Adit Light Theme
    Overrides all previous breakbot CSS (last rule wins)
 ═══════════════════════════════════════════════════════════════ */
 
@@ -1892,7 +1892,7 @@ footer {
 #agent-section-breakbot::before,
 #agent-section-breakbot::after { display: none; }
 
-/* ── Ambient orbs — hidden ── */
+/* ── Ambient orbs, hidden ── */
 .bb-orb { display: none !important; }
 
 /* ── Toolbar ── */
@@ -2016,7 +2016,7 @@ footer {
 .break-stat .v { font-size: 15px; font-weight: 700; color: #072B40; }
 .break-stat .s { grid-column: 2; font-size: 11px; color: #9BAFC0; margin-top: 0; }
 
-/* ── Break actions grid — 3 columns: category label | out | in ── */
+/* ── Break actions grid: 3 columns: category label | out | in ── */
 .break-actions {
   display: grid;
   grid-template-columns: 72px 1fr 1fr;
@@ -2178,7 +2178,7 @@ footer {
 .sc-icon-aux   { background: rgba(33,170,224,.12);  color: #21AAE0; }
 .sc-icon svg   { width: 16px; height: 16px; }
 
-/* Hero visual — orbit animation, constrained */
+/* Hero visual, orbit animation, constrained */
 .break-hero-visual,
 .break-hero-visual.bha-upgraded {
   width: 100px !important;
@@ -2190,7 +2190,7 @@ footer {
   position: relative; flex-shrink: 0;
   overflow: visible;
 }
-/* Hide complex orbit/radar elements — keep it simple */
+/* Hide complex orbit/radar elements, keep it simple */
 .bha-radar, .bha-ring, .bha-orbit,
 .bha-halo, .bha-flare, .bha-arc { display: none !important; }
 .bha-avatar {
@@ -2231,7 +2231,7 @@ footer {
 .bb-float-icon { display: none !important; }
 
 /* ═══════════════════════════════════════════════════════════════
-   ADMIN BREAK TRACKER — Complete Adit Light Theme
+   ADMIN BREAK TRACKER: Complete Adit Light Theme
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Command header ── */
@@ -2619,7 +2619,7 @@ footer {
 .break-alert-tag  { font-size: 11px; font-weight: 700; color: #ED666B; background: rgba(237,102,107,.08); border-radius: 6px; padding: 3px 8px; display: inline-block; }
 
 /* ═══════════════════════════════════════════════════════════════
-   DARK MODE — html.dark-mode
+   DARK MODE, html.dark-mode
    WCAG AA contrast compliant: all text ≥ 4.5:1 on dark bg
    Base: #051824 bg · #0D2A3E cards · #E8F4FC primary text
    Accent: #F4891F orange (unchanged) · #21AAE0 blue (unchanged)
@@ -2644,11 +2644,11 @@ html.dark-mode {
   --border:       rgba(255,255,255,.10);
   --border-light: rgba(255,255,255,.08);
   --border-strong:rgba(255,255,255,.18);
-  /* Text — ensure minimum 4.5:1 contrast on #051824 */
-  --t1:           #E8F4FC;    /* 14.8:1 ratio — headings, primary text */
-  --t2:           #A8CBE0;    /*  8.2:1 ratio — secondary text */
-  --t3:           #6A92AC;    /*  4.6:1 ratio — muted labels (AA pass) */
-  --t4:           #4A6F88;    /*  3.2:1 ratio — faint hints (AA large only) */
+  /* Text, ensure minimum 4.5:1 contrast on #051824 */
+  --t1:           #E8F4FC;    /* 14.8:1 ratio, headings, primary text */
+  --t2:           #A8CBE0;    /*  8.2:1 ratio, secondary text */
+  --t3:           #6A92AC;    /*  4.6:1 ratio, muted labels (AA pass) */
+  --t4:           #4A6F88;    /*  3.2:1 ratio, faint hints (AA large only) */
   --text:         #E8F4FC;
   --text2:        #A8CBE0;
   --text3:        #6A92AC;
@@ -2661,7 +2661,7 @@ html.dark-mode {
   --orange-hi:    rgba(244,137,31,.40);
   --teal:         #21AAE0;
   --teal-lo:      rgba(33,170,224,.15);
-  /* Status colours — slightly brighter on dark for contrast */
+  /* Status colours, slightly brighter on dark for contrast */
   --green:        #2DDC96;
   --green-lo:     rgba(45,220,150,.15);
   --red:          #ED666B;
@@ -2670,7 +2670,7 @@ html.dark-mode {
   --blue-lo:      rgba(33,170,224,.15);
   --yellow:       #FBC84B;
   --yellow-lo:    rgba(251,200,75,.15);
-  /* Shadows — softer glow on dark */
+  /* Shadows, softer glow on dark */
   --shadow-card:  rgba(0,0,0,0.40) 0px 2px 12px;
   --shadow-md:    rgba(0,0,0,0.50) 0px 4px 20px;
 }
@@ -2695,7 +2695,7 @@ html.dark-mode .hdr-chip:hover{ background: #0D2A3E; color: #E8F4FC; }
 html.dark-mode .hdr-user      { color: #A8CBE0; }
 html.dark-mode .hdr-avatar    { border-color: rgba(255,255,255,.15); }
 
-/* ── Sidebar — already dark, tweak only hover/active ── */
+/* ── Sidebar, already dark, tweak only hover/active ── */
 html.dark-mode .adit-sidebar  { background: #061520; }
 html.dark-mode .sb-item       { color: rgba(255,255,255,.35); }
 html.dark-mode .sb-item:hover { background: rgba(244,137,31,.1); color: rgba(255,255,255,.8); }
@@ -3000,7 +3000,7 @@ html.dark-mode #darkModeBtn {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BREAKBOT PAGE — FUTURISTIC REDESIGN v2
+   BREAKBOT PAGE: FUTURISTIC REDESIGN v2
    Animations, transitions, glow effects, modern layout
 ═══════════════════════════════════════════════════════════════ */
 
@@ -3202,7 +3202,7 @@ html.dark-mode #darkModeBtn {
 }
 .break-lane-chip.alert::before { background:#ED666B; box-shadow:0 0 6px #ED666B; }
 
-/* ── Command Header — premium dark banner ── */
+/* ── Command Header, premium dark banner ── */
 .bb-cmd-header {
   display: flex;
   align-items: center;
@@ -3341,7 +3341,7 @@ html.dark-mode #darkModeBtn {
 }
 .break-stat .s { grid-column: 2; font-size: 11px; color: #9BAFC0; margin-top: 1px; }
 
-/* ── Break action tiles — premium ── */
+/* ── Break action tiles, premium ── */
 .break-actions {
   display: grid;
   grid-template-columns: 68px 1fr 1fr;
@@ -3367,7 +3367,7 @@ html.dark-mode #darkModeBtn {
 .bb-cat-lbl:hover { box-shadow: rgba(0,0,0,.25) 0px 4px 16px; transform: translateY(-1px); }
 .bb-cat-art { opacity: .65; flex-shrink: 0; }
 
-/* Action buttons — premium glass card */
+/* Action buttons, premium glass card */
 .break-action,
 .bb-act {
   background: #FFFFFF;
@@ -3513,7 +3513,7 @@ html.dark-mode #darkModeBtn {
 .sc-icon-break { background:rgba(237,102,107,.12); color:#ED666B; }
 .sc-icon-aux   { background:rgba(33,170,224,.12);  color:#21AAE0; }
 
-/* Hero visual — constrained */
+/* Hero visual, constrained */
 .break-hero-visual,
 .break-hero-visual.bha-upgraded {
   width: 90px !important; height: 90px !important;
@@ -3576,8 +3576,8 @@ html.dark-mode #agent-section-breakbot .card { background:#0D2A3E; border-color:
 html.dark-mode .break-protocol-pill strong { color:#E8F4FC; }
 
 /* ═══════════════════════════════════════════════════════════════
-   TICKET LOGGER — Complete CSS (moved from HTML embedded style)
-   Must live here — adit-reset.js disables all <style> blocks
+   TICKET LOGGER: Complete CSS (moved from HTML embedded style)
+   Must live here, adit-reset.js disables all <style> blocks
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Layout ── */
@@ -3902,7 +3902,7 @@ html.dark-mode .tl-hi-type { color: #A8CBE0; }
 html.dark-mode .tl-card-title { color: #6A92AC; }
 
 /* ═══════════════════════════════════════════════════════════════
-   TICKET ADMIN REPORT — CSS (moved from embedded style)
+   TICKET ADMIN REPORT: CSS (moved from embedded style)
 ═══════════════════════════════════════════════════════════════ */
 .tkt-stats { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:16px; }
 .tkt-stat  { background:#FFFFFF; border:1px solid rgb(222,225,230); border-radius:10px; padding:16px; box-shadow:rgba(0,0,0,0.05) 0px 0px 10px; }
@@ -3945,7 +3945,7 @@ html.dark-mode .tl-card-title { color: #6A92AC; }
 .tkt-queue-no  { color:#ED666B; font-size:11px; font-weight:700; }
 
 /* ═══════════════════════════════════════════════════════════════
-   AI WRITER — CSS override (embedded styles were using dark rgba)
+   AI WRITER: CSS override (embedded styles were using dark rgba)
 ═══════════════════════════════════════════════════════════════ */
 .aw-wrap        { display:flex; flex-direction:column; gap:16px; max-width:860px; margin:0 auto; }
 .aw-header      { display:flex; align-items:center; gap:10px; margin-bottom:4px; }
@@ -4027,7 +4027,7 @@ html.dark-mode .tl-card-title { color: #6A92AC; }
 .aw-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
 /* ═══════════════════════════════════════════════════════════════
-   LIVE FLOOR SIGNAL — Complete Redesign (flc-* classes)
+   LIVE FLOOR SIGNAL: Complete Redesign (flc-* classes)
 ═══════════════════════════════════════════════════════════════ */
 
 /* ── Outer section card ── */
@@ -4283,7 +4283,7 @@ html.dark-mode .flc-chip:hover      { background:rgba(255,255,255,.1); border-co
 html.dark-mode .flc-dur             { color:#4A6F88; }
 
 /* ═══════════════════════════════════════════════════════════════
-   LIVE FLOOR SIGNAL v3 — Ultra Compact Professional Design
+   LIVE FLOOR SIGNAL v3: Ultra Compact Professional Design
 ═══════════════════════════════════════════════════════════════ */
 @keyframes flc-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(var(--pulse-rgb),.5)} 60%{box-shadow:0 0 0 5px rgba(var(--pulse-rgb),0)} }
 @keyframes flc-row-in { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:none} }
@@ -4439,7 +4439,7 @@ html.dark-mode .flc-dur             { color:#4A6F88; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   BREAK ACTION TILES — Premium redesign
+   BREAK ACTION TILES: Premium redesign
 ═══════════════════════════════════════════════════════════════ */
 
 /* Action grid: 3 columns (cat | out | in) */
@@ -4451,7 +4451,7 @@ html.dark-mode .flc-dur             { color:#4A6F88; }
 }
 .bb-pad-row { display: contents; }
 
-/* Category label — sleek dark pill */
+/* Category label, sleek dark pill */
 .bb-cat-lbl {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 4px;
@@ -4469,7 +4469,7 @@ html.dark-mode .flc-dur             { color:#4A6F88; }
 .bb-cat-lbl:hover { background: #112F46; transform: translateY(-1px); }
 .bb-cat-art { width: 22px; height: 22px; opacity: .65; flex-shrink: 0; }
 
-/* Action button — ultra clean card */
+/* Action button, ultra clean card */
 .break-action, .bb-act {
   position: relative; overflow: hidden;
   background: #FFFFFF;
@@ -4580,7 +4580,7 @@ html.dark-mode .bb-act-desc         { color:#4A6F88; }
 html.dark-mode .bb-cat-lbl          { background:#061520; }
 
 /* ═══════════════════════════════════════════════════════════════
-   BREAK BOT — COMPLETE REDESIGN v3 (bbn-* classes)
+   BREAK BOT: COMPLETE REDESIGN v3 (bbn-* classes)
    Professional · Compact · Animated · Command-center feel
 ═══════════════════════════════════════════════════════════════ */
 
@@ -4679,7 +4679,7 @@ html.dark-mode .bb-cat-lbl          { background:#061520; }
 .bbn-left  { display: flex; flex-direction: column; gap: 12px; }
 .bbn-right { display: flex; flex-direction: column; gap: 12px; }
 
-/* ── Status card — dark navy ── */
+/* ── Status card, dark navy ── */
 .bbn-status-card {
   background: linear-gradient(135deg, #072B40 0%, #0D3D5C 100%);
   border: 1px solid rgba(255,255,255,.07);
@@ -4771,7 +4771,7 @@ html.dark-mode .bb-cat-lbl          { background:#061520; }
 #agent-section-breakbot .bb-cat-lbl:hover { background: #0D2A3E; transform: translateY(-1px); }
 #agent-section-breakbot .bb-cat-art { width: 20px; height: 20px; opacity: .6; }
 
-/* Action buttons — minimal, clean */
+/* Action buttons, minimal, clean */
 #agent-section-breakbot .break-action {
   position: relative; overflow: hidden;
   background: #FFFFFF;
@@ -4864,7 +4864,7 @@ html.dark-mode .bb-cat-lbl          { background:#061520; }
 .bbn-floor-count { margin-left: auto; font-size: 11px; font-weight: 700; color: rgba(178,219,240,.6); }
 .break-lane-board { min-height: 60px; }
 
-/* Override flc-board for right column — stacked instead of side-by-side */
+/* Override flc-board for right column, stacked instead of side-by-side */
 .bbn-floor-card .flc-board { grid-template-columns: 1fr; }
 .bbn-floor-card .flc-col-avail { border-right: none; border-bottom: 1px solid rgb(222,225,230); }
 .bbn-floor-card .flc-pills { padding: 8px 14px; }
@@ -4927,7 +4927,7 @@ html.dark-mode .bbn-log-card   { background: #0D2A3E; border-color: rgba(255,255
 html.dark-mode .bbn-log-header { background: #091F30; border-bottom-color: rgba(255,255,255,.07); }
 
 /* ═══════════════════════════════════════════════════════════════
-   TICKET LOGGER — Enhanced: background, tooltip, pivot, popup
+   TICKET LOGGER: Enhanced: background, tooltip, pivot, popup
 ═══════════════════════════════════════════════════════════════ */
 @keyframes tl-check-draw { to { stroke-dashoffset: 0; } }
 @keyframes tl-ring-pop   { 0%{transform:scale(.5);opacity:0} 60%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
@@ -5107,7 +5107,7 @@ html.dark-mode .tl-type-btn[data-desc]::after { background: #E8F4FC; color: #072
 html.dark-mode .tl-type-btn[data-desc]::before { border-top-color: #E8F4FC; }
 
 /* ═══════════════════════════════════════════════════════════════
-   TICKET PAGE FIXES — override agent-shell-page background
+   TICKET PAGE FIXES, override agent-shell-page background
 ═══════════════════════════════════════════════════════════════ */
 
 /* Must use !important to beat .agent-shell-page { background: #F7F8F8 } */
@@ -5130,19 +5130,19 @@ html.dark-mode .tl-type-btn[data-desc]::before { border-top-color: #E8F4FC; }
 }
 #agent-section-tickets > * { position: relative; z-index: 1; }
 
-/* Tighter layout — remove excess blank space */
+/* Tighter layout, remove excess blank space */
 .tl-page {
   gap: 16px !important;
   max-width: 1040px !important;
 }
 .tl-card { margin-bottom: 10px !important; padding: 16px !important; }
 
-/* Pivot card sections — tighter */
+/* Pivot card sections, tighter */
 .tl-pivot-section { padding: 12px 16px !important; }
 .tl-pivot-total   { padding: 16px 16px 10px !important; }
 .tl-pivot-total-num { font-size: 48px !important; }
 
-/* JS tooltip styles — rendered via JS, positioned with cursor */
+/* JS tooltip styles, rendered via JS, positioned with cursor */
 .tl-js-tooltip {
   position: fixed !important;
   z-index: 9100 !important;
@@ -5176,7 +5176,7 @@ html.dark-mode #agent-section-tickets {
 .tl-type-btn::after,
 .tl-type-btn::before { display: none !important; content: none !important; }
 
-/* Background — stronger, uses !important to beat all overrides */
+/* Background, stronger, uses !important to beat all overrides */
 #agent-section-tickets {
   background:
     radial-gradient(ellipse 90% 60% at -5% -10%, rgba(244,137,31,.14) 0%, transparent 55%),
@@ -5253,7 +5253,7 @@ html.dark-mode .tl-period-btn.active { background: #0D2A3E; }
 .tl-mode-btn:hover { border-color: #F4891F; color: #F4891F; }
 .tl-mode-btn.active { background: #F4891F; border-color: #F4891F; color: #FFFFFF; box-shadow: rgba(244,137,31,.3) 0 3px 10px; }
 
-/* Edit modal option buttons — channel / type / queue / flag selectors */
+/* Edit modal option buttons, channel / type / queue / flag selectors */
 .tl-edit-opt-btn.active {
   background: rgba(244,137,31,.12) !important;
   border-color: #F4891F !important;
@@ -5307,7 +5307,7 @@ html.dark-mode .tl-mode-btn   { background: #091F30; border-color: rgba(255,255,
 html.dark-mode .tl-mode-btn.active { background: #F4891F; }
 
 /* ═══════════════════════════════════════════════════════════════
-   ACCESS CONTROL PAGE — Complete Redesign
+   ACCESS CONTROL PAGE: Complete Redesign
 ═══════════════════════════════════════════════════════════════ */
 #tab-access { background: #F7F8F8; }
 
@@ -5615,7 +5615,7 @@ html.dark-mode .tkt-lb-row:hover { background:rgba(255,255,255,.03); }
 html.dark-mode .tkt-lb-name  { color:#E8F4FC; }
 html.dark-mode .tkt-dash-filter { background:#0D2A3E; border-color:rgba(255,255,255,.1); color:#A8CBE0; }
 
-/* ═══ AI WRITER v2 — moved from embedded style (survives adit-reset.js) ══════ */
+/* ═══ AI WRITER v2, moved from embedded style (survives adit-reset.js) ══════ */
 #agent-section-writer { background: #F0F4F8; }
 
 .awv2-page { max-width:1020px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
@@ -5787,7 +5787,7 @@ html.dark-mode .awv2-var-lbl { color:#4A6F88; }
 html.dark-mode .awv2-var-body { color:#E8F4FC; }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   V5 PREMIUM LOGIN — Appended from index.html (adit-reset.js strips
+   V5 PREMIUM LOGIN: Appended from index.html (adit-reset.js strips
    all <style> blocks; this file is the only surviving stylesheet)
 ═══════════════════════════════════════════════════════════════════════ */
 
@@ -6080,7 +6080,7 @@ html.dark-mode .awv2-var-body { color:#E8F4FC; }
 }
 #loginScreen .adit-quick-card:hover .adit-quick-arrow{transform:translateX(4px);}
 
-/* ── GOOGLE SIGN IN BUTTON — V5 Premium ── */
+/* ── GOOGLE SIGN IN BUTTON: V5 Premium ── */
 #loginScreen .v8-google-btn,#loginScreen .adit-google-btn{
   width:100%;display:flex;align-items:center;justify-content:center;gap:12px;
   padding:15px 20px;border-radius:12px;border:none;
@@ -6164,7 +6164,7 @@ html.dark-mode .awv2-var-body { color:#E8F4FC; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   V5 APP ANIMATIONS — Appended from v5-animations style block
+   V5 APP ANIMATIONS: Appended from v5-animations style block
 ═══════════════════════════════════════════════════════════════════════ */
 
 /* HEADER ENHANCEMENTS */
@@ -6191,8 +6191,8 @@ header.v5-scrolled {
   50% { opacity: 1; }
 }
 
-/* PAGE TRANSITIONS — only animate active pages (inactive are display:none anyway) */
-/* Use forwards NOT both — 'both' causes opacity:0 before animation fires = blank page */
+/* PAGE TRANSITIONS, only animate active pages (inactive are display:none anyway) */
+/* Use forwards NOT both: 'both' causes opacity:0 before animation fires = blank page */
 .page.active, .agent-shell-page.active {
   animation: v5PageEnter .32s cubic-bezier(.22,1,.36,1) forwards !important;
 }
@@ -6201,7 +6201,7 @@ header.v5-scrolled {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* METRIC CARDS — 3D tilt + glow on hover */
+/* METRIC CARDS: 3D tilt + glow on hover */
 .metric {
   transition: transform .22s cubic-bezier(.34,1.56,.64,1),
               box-shadow .22s ease,
@@ -6232,7 +6232,7 @@ header.v5-scrolled {
   border-color: rgba(222,225,230,.8) !important;
 }
 
-/* BUTTONS — Spring physics + ripple */
+/* BUTTONS: Spring physics + ripple */
 .btn, .btn-primary, .btn-sm, .btn-ghost {
   transition: transform .18s cubic-bezier(.34,1.56,.64,1),
               box-shadow .18s ease,
@@ -6279,7 +6279,7 @@ tbody tr:hover {
   transition: color .15s ease, background .15s ease, border-color .18s ease !important;
 }
 
-/* STATUS DOTS — enhanced pulse */
+/* STATUS DOTS, enhanced pulse */
 .live-dot {
   animation: v5LivePulse 2s ease-in-out infinite !important;
 }
@@ -6369,7 +6369,7 @@ input:focus, textarea:focus, select:focus {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* DATA TABLE — Stagger row animations */
+/* DATA TABLE: Stagger row animations */
 .v5-row-in {
   animation: v5RowSlide .35s cubic-bezier(.22,1,.36,1) both;
 }
@@ -6381,7 +6381,7 @@ input:focus, textarea:focus, select:focus {
 /* ═══════════════════════════════════════════════════════════════════════
    V5 ULTRA GLOBAL REDESIGN
    Maps V5 Ultra design tokens to the live tool's actual class names.
-   All CSS must live here — adit-reset.js strips every <style> block.
+   All CSS must live here, adit-reset.js strips every <style> block.
 ═══════════════════════════════════════════════════════════════════════ */
 
 /* ── CSS VARIABLES (V5 Light palette override) ── */
@@ -6465,7 +6465,7 @@ html.dark-mode #mainApp {
   -webkit-backdrop-filter: blur(40px) saturate(180%) !important;
   border-bottom: 1px solid var(--v5-b0) !important;
   box-shadow: 0 1px 0 rgba(255,255,255,.6), var(--v5-sh0) !important;
-  /* Do NOT override position — keeps existing position:fixed intact */
+  /* Do NOT override position, keeps existing position:fixed intact */
 }
 
 .hdr-title {
@@ -6549,7 +6549,7 @@ html.dark-mode #mainApp {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   SIDEBAR — .adit-sidebar / .sb-item
+   SIDEBAR, .adit-sidebar / .sb-item
 ════════════════════════════════════════════════════════════════ */
 .adit-sidebar {
   background: rgba(255,255,255,.85) !important;
@@ -6557,7 +6557,7 @@ html.dark-mode #mainApp {
   -webkit-backdrop-filter: blur(40px) !important;
   border-right: 1px solid var(--v5-b0) !important;
   box-shadow: 1px 0 0 rgba(255,255,255,.5) !important;
-  /* Keep position:fixed from base CSS — do NOT override */
+  /* Keep position:fixed from base CSS, do NOT override */
 }
 .adit-sidebar::after {
   content: '';
@@ -6651,7 +6651,7 @@ html.dark-mode .sb-item:hover { color: #fff !important; background: rgba(245,129
 html.dark-mode .sb-item.active { color: #F5811F !important; background: rgba(245,129,31,.1) !important; border-color: rgba(245,129,31,.2) !important; }
 
 /* ════════════════════════════════════════════════════════════════
-   ADMIN SUB-TABS (.sb-subtabs / .sb-subtab-btn) — merged sidebar pages
+   ADMIN SUB-TABS (.sb-subtabs / .sb-subtab-btn), merged sidebar pages
 ════════════════════════════════════════════════════════════════ */
 .sb-subtabs {
   display: flex;
@@ -6689,7 +6689,7 @@ html.dark-mode .sb-subtab-btn.active { color: #F5811F; border-bottom-color: #F58
 /* ════════════════════════════════════════════════════════════════
    ADMIN NAV TABS (.nav / .nav-tab)
 ════════════════════════════════════════════════════════════════ */
-/* .nav is hidden by existing CSS (sidebar replaces it) — keep display:none, only style nav-tab */
+/* .nav is hidden by existing CSS (sidebar replaces it), keep display:none, only style nav-tab */
 .nav-tab {
   padding: 10px 14px !important;
   font-size: 11.5px !important;
@@ -7149,7 +7149,7 @@ select { border-radius: 10px !important; }
 }
 
 /* ════════════════════════════════════════════════════════════════
-   AGENT VIEW — SELF CARD / PERFORMANCE PANEL
+   AGENT VIEW: SELF CARD / PERFORMANCE PANEL
 ════════════════════════════════════════════════════════════════ */
 .agent-self-card, .self-panel, #agentSelfCard {
   background: var(--v5-surf) !important;
@@ -7175,7 +7175,7 @@ select { border-radius: 10px !important; }
 .toast.info, .toast.inf, #toast.inf  { background: var(--v5-sky) !important; }
 
 /* ════════════════════════════════════════════════════════════════
-   STATUS BADGES — available / unavailable / on-call
+   STATUS BADGES, available / unavailable / on-call
 ════════════════════════════════════════════════════════════════ */
 .status-available, [class*="available"]:not(.metric) {
   background: var(--v5-gn1) !important;
@@ -7241,14 +7241,14 @@ select { border-radius: 10px !important; }
 }
 
 /* ════════════════════════════════════════════════════════════════
-   ANIMATED ENTRANCE — ALL MAJOR CONTAINERS ON PAGE LOAD
+   ANIMATED ENTRANCE: ALL MAJOR CONTAINERS ON PAGE LOAD
 ════════════════════════════════════════════════════════════════ */
 @keyframes v5SlideUp {
   from { opacity: 0; transform: translateY(16px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Entrance animation only on metric cards (not .card — causes blank content with fill-mode:both) */
+/* Entrance animation only on metric cards (not .card, causes blank content with fill-mode:both) */
 .metrics .metric {
   animation: v5SlideUp .35s cubic-bezier(.22,1,.36,1) forwards;
 }
@@ -7259,7 +7259,7 @@ select { border-radius: 10px !important; }
 .metrics .metric:nth-child(5){ animation-delay:.20s; }
 
 /* ════════════════════════════════════════════════════════════════
-   DARK MODE — GLOBAL OVERRIDES
+   DARK MODE: GLOBAL OVERRIDES
 ════════════════════════════════════════════════════════════════ */
 html.dark-mode #mainApp header {
   background: rgba(9,31,48,.92) !important;
@@ -7288,7 +7288,7 @@ html.dark-mode ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); }
 
 
 /* ════════════════════════════════════════════════════════════════
-   FUTURISTIC ANIMATIONS & TRANSITIONS — v1.18.0
+   FUTURISTIC ANIMATIONS & TRANSITIONS, v1.18.0
    Scan lines · glows · slide-ins · stagger reveals · pulse rings
 ════════════════════════════════════════════════════════════════ */
 
@@ -7342,12 +7342,12 @@ html.dark-mode ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); }
   50%     { transform:scale(1.15);opacity:1; }
 }
 
-/* ── Tab switching — smooth slide ─────────────────────────────── */
+/* ── Tab switching, smooth slide ─────────────────────────────── */
 .tab-content-panel, [id$="-panel"], .section-panel {
   animation: fx-fadeUp .32s cubic-bezier(.22,1,.36,1) both;
 }
 
-/* Nav tab underline — animated from center */
+/* Nav tab underline, animated from center */
 .nav-tab::after {
   transform-origin: center !important;
   transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .2s !important;
@@ -7371,7 +7371,7 @@ html.dark-mode ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); }
 }
 .tab-btn.active::after { left:0; right:0; }
 
-/* ── Cards — entrance + hover lift ───────────────────────────── */
+/* ── Cards, entrance + hover lift ───────────────────────────── */
 .card, .metric, .kpi-card, .stat-card, [class*="card-"] {
   transition:
     transform .22s cubic-bezier(.22,1,.36,1),
@@ -7382,7 +7382,7 @@ html.dark-mode ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); }
   box-shadow: 0 10px 32px rgba(7,43,64,.14) !important;
 }
 
-/* ── Buttons — micro-press + glow ────────────────────────────── */
+/* ── Buttons, micro-press + glow ────────────────────────────── */
 button, .btn, [class*="btn-"] {
   transition:
     background .18s, color .18s, border-color .18s,
@@ -7393,7 +7393,7 @@ button:active, .btn:active {
   transform: scale(.95) !important;
 }
 
-/* Primary action buttons — orange pulse ring on hover */
+/* Primary action buttons, orange pulse ring on hover */
 .btn-primary, [class*="btn-orange"], button.primary {
   position:relative;
 }
@@ -7401,7 +7401,7 @@ button:active, .btn:active {
   animation: fx-pulseRing .8s ease-out;
 }
 
-/* ── Status badges / pills — live blink when "active" ─────────── */
+/* ── Status badges / pills, live blink when "active" ─────────── */
 .status-dot[data-status="available"],
 .status-dot[data-status="online"],
 .agent-status-dot.green,
@@ -7409,12 +7409,12 @@ span.dot-green {
   animation: fx-statusBlink 2.4s ease-in-out infinite;
 }
 
-/* ── Live counter numbers — count-up reveal ──────────────────── */
+/* ── Live counter numbers, count-up reveal ──────────────────── */
 .metric-value, .kpi-num, .stat-num, .count-val {
   animation: fx-countUp .45s cubic-bezier(.22,1,.36,1) both;
 }
 
-/* ── Table rows — staggered entrance ─────────────────────────── */
+/* ── Table rows, staggered entrance ─────────────────────────── */
 table tbody tr {
   animation: fx-fadeUp .28s cubic-bezier(.22,1,.36,1) both;
   transition: background .15s !important;
@@ -7439,7 +7439,7 @@ table tbody tr:nth-child(n+11) { animation-delay:.22s }
   animation: fx-fadeIn .2s ease both !important;
 }
 
-/* ── Input focus — teal glow ──────────────────────────────────── */
+/* ── Input focus, teal glow ──────────────────────────────────── */
 input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(33,170,224,.18), 0 0 12px rgba(33,170,224,.1) !important;
   border-color: rgba(33,170,224,.6) !important;
@@ -7447,7 +7447,7 @@ input:focus, select:focus, textarea:focus {
   outline: none !important;
 }
 
-/* ── Sidebar / header — glassy shimmer edge ──────────────────── */
+/* ── Sidebar / header, glassy shimmer edge ──────────────────── */
 #mainApp header {
   overflow: hidden;
 }
@@ -7460,7 +7460,7 @@ input:focus, select:focus, textarea:focus {
   pointer-events:none;
 }
 
-/* ── Roster avatar — hover pulse ring ────────────────────────── */
+/* ── Roster avatar, hover pulse ring ────────────────────────── */
 .rx-avatar:hover {
   animation: fx-pulseRing .6s ease-out;
   cursor: pointer;
@@ -7477,7 +7477,7 @@ input:focus, select:focus, textarea:focus {
   animation: fx-fadeUp .16s cubic-bezier(.22,1,.36,1) both !important;
 }
 
-/* ── Bulk action bar — slide-down reveal ─────────────────────── */
+/* ── Bulk action bar, slide-down reveal ─────────────────────── */
 .rx-bulk-bar[style*="flex"] {
   animation: fx-fadeUp .22s cubic-bezier(.22,1,.36,1) both;
 }
@@ -7487,7 +7487,7 @@ input:focus, select:focus, textarea:focus {
   animation: fx-slideLeft .3s cubic-bezier(.22,1,.36,1) both;
 }
 
-/* ── Progress fill — smooth width ───────────────────────────── */
+/* ── Progress fill, smooth width ───────────────────────────── */
 [class*="prog-fill"], .bar-fill, .progress-fill {
   transition: width 1.2s cubic-bezier(.22,1,.36,1) !important;
 }
@@ -7503,7 +7503,7 @@ input:focus, select:focus, textarea:focus {
   border-radius:6px;
 }
 
-/* ── Scrollbar — teal accent ─────────────────────────────────── */
+/* ── Scrollbar, teal accent ─────────────────────────────────── */
 ::-webkit-scrollbar       { width:6px; height:6px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb {
@@ -7513,12 +7513,12 @@ input:focus, select:focus, textarea:focus {
 }
 ::-webkit-scrollbar-thumb:hover { background:rgba(33,170,224,.65); }
 
-/* ── Futuristic nav tab — scan-line underline glow ───────────── */
+/* ── Futuristic nav tab, scan-line underline glow ───────────── */
 .nav-tab.active {
   text-shadow: 0 0 14px rgba(244,137,31,.45) !important;
 }
 
-/* ── Sidebar items — slide-in stagger ───────────────────────── */
+/* ── Sidebar items, slide-in stagger ───────────────────────── */
 .sidebar-item, .side-nav a, [class*="sidebar-"] a {
   animation: fx-slideRight .3s cubic-bezier(.22,1,.36,1) both;
   transition: background .18s, color .18s, transform .18s !important;
@@ -7533,7 +7533,7 @@ input:focus, select:focus, textarea:focus {
   transform: translateX(3px) !important;
 }
 
-/* ── Section headers — slide-in from left ────────────────────── */
+/* ── Section headers, slide-in from left ────────────────────── */
 .section-title, .page-title, h2, h3 {
   animation: fx-slideRight .35s cubic-bezier(.22,1,.36,1) both;
 }
@@ -7543,7 +7543,7 @@ input:focus, select:focus, textarea:focus {
   animation: fx-borderGlow 2s ease-in-out infinite;
 }
 
-/* ── Dark mode — extra glow sharpness ──────────────────────── */
+/* ── Dark mode, extra glow sharpness ──────────────────────── */
 html.dark-mode .metric:hover,
 html.dark-mode .card:hover {
   box-shadow: 0 10px 32px rgba(0,0,0,.4), 0 0 0 1px rgba(244,137,31,.15) !important;
@@ -7553,7 +7553,7 @@ html.dark-mode select:focus {
   box-shadow: 0 0 0 3px rgba(33,170,224,.22), 0 0 20px rgba(33,170,224,.12) !important;
 }
 
-/* ── Reduce motion — respect prefers-reduced-motion ─────────── */
+/* ── Reduce motion, respect prefers-reduced-motion ─────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;
@@ -7562,10 +7562,10 @@ html.dark-mode select:focus {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   LOGO + ICON + BUTTON UPGRADES — v1.19.2
+   LOGO + ICON + BUTTON UPGRADES, v1.19.2
 ════════════════════════════════════════════════════════════════ */
 
-/* ── Header logo — futuristic glow treatment ── */
+/* ── Header logo, futuristic glow treatment ── */
 .hdr-logo-adit {
   width: 36px !important;
   height: 36px !important;
@@ -7588,7 +7588,7 @@ html.dark-mode select:focus {
   transform: scale(1.06) !important;
 }
 
-/* ── All icon buttons — futuristic pill style ── */
+/* ── All icon buttons, futuristic pill style ── */
 .hdr-chip,
 .btn,
 .role-toggle-btn,
@@ -7614,13 +7614,13 @@ button.primary,
   box-shadow: 0 4px 12px rgba(7,43,64,.15) !important;
 }
 
-/* Logout button — danger glow on hover */
+/* Logout button, danger glow on hover */
 .logout-btn:hover {
   box-shadow: 0 0 0 2px rgba(237,102,107,.4), 0 4px 14px rgba(237,102,107,.2) !important;
   transform: translateY(-1px) !important;
 }
 
-/* Switch-to-agent-view / test buttons — teal glow */
+/* Switch-to-agent-view / test buttons, teal glow */
 button[onclick*="switchToAgent"],
 button[onclick*="switchAgent"],
 .switch-agent-btn,
@@ -7665,7 +7665,7 @@ button[onclick*="switchAgent"],
   transform: translateY(-2px) !important;
 }
 
-/* Icon buttons — circular glow */
+/* Icon buttons, circular glow */
 .rx-icon-btn {
   border-radius: 10px !important;
   transition: all .18s cubic-bezier(.22,1,.36,1) !important;
@@ -7745,7 +7745,7 @@ button[onclick*="switchAgent"],
   background: #fff !important;
 }
 
-/* ── KPI bar fill — shimmer animation ── */
+/* ── KPI bar fill, shimmer animation ── */
 .rx-kpi-bar-fill {
   position: relative !important;
   overflow: hidden !important;
@@ -7760,7 +7760,7 @@ button[onclick*="switchAgent"],
 
 
 /* ══════════════════════════════════════════════════════════
-   BRAIN — Floating AI Assistant (futuristic)
+   BRAIN: Floating AI Assistant (futuristic)
 ══════════════════════════════════════════════════════════ */
 #brain-fab-wrap {
   position: fixed; bottom: 28px; right: 28px; z-index: 99999;
@@ -8011,7 +8011,7 @@ button[onclick*="switchAgent"],
 .brain-send-btn:hover{transform:scale(1.1);box-shadow:0 6px 16px rgba(249,115,22,.5);}
 .brain-send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
-/* Brain root fix — must be flex column full height so inner flex:1 works */
+/* Brain root fix, must be flex column full height so inner flex:1 works */
 #brain-root { display:flex!important; flex-direction:column!important; height:100%!important; overflow:hidden!important; }
 /* Brain panel must be positioned relative for drag */
 #brain-fab-wrap { position:fixed!important; bottom:28px!important; right:28px!important; }
@@ -8065,7 +8065,7 @@ button:active { transform: scale(.97) !important; }
 }
 
 /* ══════════════════════════════════════════════════════════
-   LOGIN PAGE — FUTURISTIC REDESIGN vX
+   LOGIN PAGE: FUTURISTIC REDESIGN vX
 ══════════════════════════════════════════════════════════ */
 #loginScreen {
   min-height: 100vh;
@@ -8187,7 +8187,7 @@ button:active { transform: scale(.97) !important; }
 
 .lx-footer-text { font-size: 11px; color: rgba(255,255,255,.2); text-align: center; letter-spacing: .04em; }
 
-/* ── RIGHT PANEL — Auth card ───────────────────────────── */
+/* ── RIGHT PANEL: Auth card ───────────────────────────── */
 .lx-right {
   flex: 1;
   display: flex; align-items: center; justify-content: center;
@@ -8331,7 +8331,7 @@ button:active { transform: scale(.97) !important; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   MOBILE LAYOUT — Sidebar becomes bottom tab bar on phones
+   MOBILE LAYOUT: Sidebar becomes bottom tab bar on phones
    Breakpoint: ≤640px (phones portrait)
 ═══════════════════════════════════════════════════════════════════════ */
 @media (max-width: 640px) {

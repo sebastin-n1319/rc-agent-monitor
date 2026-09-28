@@ -1,4 +1,4 @@
-# Predictive Abandonment (#16 — Session 11)
+# Predictive Abandonment (#16: Session 11)
 
 **Status:** In progress
 **Replaces:** the rough Session 1 stub (`predictiveAbandonment` flag, per-hour-mean only)
@@ -18,31 +18,31 @@ or escalate to the floor manager. The current Session 1 stub answers
 
 ## Goals
 
-1. **Real logistic regression** — not per-hour averages
+1. **Real logistic regression**, not per-hour averages
 2. **5 features** that supervisors intuitively understand:
    - `queue_depth` (current ringing calls)
    - `hour_of_day` (0-23 in business tz)
    - `weekday` (0=Sun…6=Sat)
    - `avg_wait_seconds_last_15min`
    - `agents_available_count`
-3. **15-minute forecast** — probability of any abandonment in the next 15 min
-4. **Confidence interval** — derived from training set size + recent
+3. **15-minute forecast**, probability of any abandonment in the next 15 min
+4. **Confidence interval**, derived from training set size + recent
    prediction accuracy
-5. **Backtest viewer** — "yesterday we predicted X, reality was Y" so
+5. **Backtest viewer**: "yesterday we predicted X, reality was Y" so
    supervisors learn to trust (or distrust) the signal
-6. **Daily retraining** — model weights persisted, refreshed at 3am CST
+6. **Daily retraining**, model weights persisted, refreshed at 3am CST
    (same time as anomaly cron) using the last 30 days of data
-7. **Graceful degradation** — if there's no model yet (cold start, < 7 days
+7. **Graceful degradation**, if there's no model yet (cold start, < 7 days
    of data), endpoint returns `{ ready: false, reason: "insufficient_data" }`
    instead of misleading numbers
 
 ## Non-goals
 
 - Per-agent abandonment risk (this is queue-level)
-- Neural networks or fancy models — logistic regression is interpretable
+- Neural networks or fancy models, logistic regression is interpretable
   and explainable, which matters when supervisors are deciding whether
   to act on the signal
-- Real-time online learning — daily batch retraining is sufficient
+- Real-time online learning, daily batch retraining is sufficient
 
 ## The math (logistic regression in ~120 lines)
 
@@ -60,7 +60,7 @@ log-loss via batch gradient descent with L2 regularization:
 loss = -Σ[y·log(p) + (1-y)·log(1-p)] + λ·||w||²
 ```
 
-We don't need a fancy optimizer — 200 iterations of vanilla GD with
+We don't need a fancy optimizer: 200 iterations of vanilla GD with
 learning rate 0.1 converges fine on this dataset size (~5K training rows).
 
 ### Why logistic regression, not a stub or a deep net?
@@ -165,14 +165,14 @@ The shape is small enough that we don't need partitioning by model version.
 
 The legacy stub at `/api/predict/abandonment` (Session 1) was returning
 per-hour averages. The new implementation reuses the same path but returns
-a fundamentally different response shape — protected by `predictiveAbandonmentV2`
+a fundamentally different response shape, protected by `predictiveAbandonmentV2`
 flag.
 
 ## Acceptance criteria
 
 1. ✅ `lib/predict.js` exports pure functions: `sigmoid`, `standardize`,
    `trainLogisticRegression`, `predictAbandonProb`, `evaluateModel`
-2. ✅ Functions are deterministic (no I/O, no clock) — `now` always passed in
+2. ✅ Functions are deterministic (no I/O, no clock): `now` always passed in
 3. ✅ Training converges on synthetic data (clear signal → high accuracy)
 4. ✅ ≥ 20 unit tests covering math primitives + training + inference + edges
 5. ✅ Engine never throws on malformed input

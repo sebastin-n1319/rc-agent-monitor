@@ -1,13 +1,13 @@
 /**
- * My Ticket Stats — Session 20
+ * My Ticket Stats: Session 20
  * (+ Session 27: hover tooltips on every stat, delta-vs-prior-period
  * chips, a Status filter + sortable columns on the Recent tickets table.)
  *
  * Self-service view of the Ticket Lifecycle report, scoped to the logged-in
  * agent's own session email (no admin access needed). Pulls the same
- * Zoho-Desk-sourced numbers the admin report shows — unique tickets, solely
+ * Zoho-Desk-sourced numbers the admin report shows, unique tickets, solely
  * handled vs reassigned, closed, currently handling (live), FCR%, and
- * channel / Adit App Module / category / classification breakdowns — plus
+ * channel / Adit App Module / category / classification breakdowns, plus
  * a recent-tickets list, so agents can see their own activity here instead
  * of filling in the manual ticket-logging form.
  *
@@ -17,7 +17,7 @@
  * time -- see lib/salesiq-lifecycle.js) cards.
  *
  * Session 22: migrated off the page-local tkt-* / tkta-* token set and onto
- * the shared `.av2` Agent View design system (agent-view-v2.css) — same
+ * the shared `.av2` Agent View design system (agent-view-v2.css), same
  * panels, stat cards, table, pills, buttons, skeleton and motion as
  * Home/Live, and the real adit.com brand orange instead of the old one.
  * Requires `.av2` on the `#agent-section-mystats` shell (see index.html).
@@ -45,7 +45,7 @@
     ));
   }
 
-  // ── Period filter — Session 23: ported from desk-lifecycle-admin.js's
+  // ── Period filter: Session 23: ported from desk-lifecycle-admin.js's
   // filter bar so agents get the same Period options admins already have
   // (rolling/calendar/custom, all DST-aware Chicago wall-clock math),
   // instead of the previous fixed 7/30/90-day buttons. The backend
@@ -160,7 +160,7 @@
   }
 
   function fmtDateTime(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try {
       return new Date(iso).toLocaleString('en-US', {
         timeZone: 'America/Chicago', month: 'short', day: 'numeric',
@@ -169,7 +169,7 @@
     } catch (e) { return iso; }
   }
   function fmtDate(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try {
       return new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' });
     } catch (e) { return iso; }
@@ -212,7 +212,7 @@
       const ago = minutesAgo(syncStatus.lastSyncAt);
       const abs = fmtDateTime(syncStatus.lastSyncAt);
       const shortText = ago ? `Synced ${ago}` : `Synced ${abs}`;
-      const fullText = `Ticket data last synced ${ago ? `${ago} (${abs})` : abs} — syncs automatically every 20 min, so a brand-new ticket may take a few minutes to show up here.`;
+      const fullText = `Ticket data last synced ${ago ? `${ago} (${abs})` : abs}, syncs automatically every 20 min, so a brand-new ticket may take a few minutes to show up here.`;
       syncItem = `
         <div class="mystats-meta-item mystats-meta-sync" data-tip="${esc(fullText)}">
           <span class="mystats-sync-dot" aria-hidden="true"></span>
@@ -225,7 +225,7 @@
   // "1h 23m" / "4m 12s" / "38s" -- matches the existing Summary page's
   // talk-time formatting style.
   function fmtDuration(totalSeconds) {
-    if (totalSeconds == null) return '—';
+    if (totalSeconds == null) return '-';
     const s = Math.max(0, Math.round(totalSeconds));
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
@@ -276,7 +276,7 @@
     return j;
   }
 
-  // ── av2 icon set — same viewBox/stroke conventions as agent-view-v2 ──
+  // ── av2 icon set, same viewBox/stroke conventions as agent-view-v2 ──
   const ICON = {
     ticket:   '<path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7z"/><path d="M13 5v2M13 11v2M13 17v2"/>',
     check:    '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
@@ -299,11 +299,11 @@
     return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[name] || ICON.ticket}</svg>`;
   }
 
-  // ── Session 27: tooltip copy — same definitions/wording as
+  // ── Session 27: tooltip copy, same definitions/wording as
   // desk-lifecycle-admin.js's metricTip() so the two pages never
   // disagree about what a number means. FCR/CSAT are built from this
   // agent's live numerator/denominator.
-  function fmtPct(pct) { return (pct == null) ? '—' : `${pct}%`; }
+  function fmtPct(pct) { return (pct == null) ? '-' : `${pct}%`; }
   function metricTip(key, s) {
     switch (key) {
       case 'handled':
@@ -313,21 +313,21 @@
       case 'handled_followup':
         return 'Follow-ups\n\nTickets you handled in this range that were created earlier (follow-ups, reopens, transfers-in).';
       case 'unique':
-        return 'Unique tickets\n\nEvery ticket you appear in anywhere in its ownership history — even one hand-off counts, once. Counted by when the ticket was CREATED.';
+        return 'Unique tickets\n\nEvery ticket you appear in anywhere in its ownership history, even one hand-off counts, once. Counted by when the ticket was CREATED.';
       case 'solely':
         return 'Solely handled\n\nOf your Unique tickets: the ones you owned start to finish with no one else ever touching it, and the ticket is now Closed.';
       case 'reassigned':
-        return 'Reassigned\n\nTickets that arrived already in progress — someone else owned it immediately before you picked it up.';
+        return 'Reassigned\n\nTickets that arrived already in progress, someone else owned it immediately before you picked it up.';
       case 'transferred':
         return 'Transferred\n\nTickets you handed off to someone outside the T1 roster (a different team). See "Departments transferred to" below for where they went.';
       case 'handed_off':
-        return 'Handed off (T1)\n\nTickets you handed directly to another monitored T1 agent — stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
+        return 'Handed off (T1)\n\nTickets you handed directly to another monitored T1 agent, stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
       case 'closed':
-        return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range — credited to whoever is the CURRENT owner, even if it passed through other hands first.';
+        return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range, credited to whoever is the CURRENT owner, even if it passed through other hands first.';
       case 'handling':
-        return 'Handling now\n\nTickets you currently own that are still open. A live count — not limited to the selected date range.';
+        return 'Handling now\n\nTickets you currently own that are still open. A live count, not limited to the selected date range.';
       case 'avg_handle':
-        return 'Avg handle time\n\nAverage time from ticket creation to closing, across your Closed tickets in range. Wall-clock hours (calendar time), not business hours — see FCR for the business-hours definition.';
+        return 'Avg handle time\n\nAverage time from ticket creation to closing, across your Closed tickets in range. Wall-clock hours (calendar time), not business hours, see FCR for the business-hours definition.';
       case 'fcr': {
         const total = s.fcr_total || 0, yes = s.fcr_yes || 0;
         if (!total) return 'First Contact Resolution (FCR)\n\nNo Closed tickets in this range yet.';
@@ -398,7 +398,7 @@
   function noDataPanel() {
     return panel('No tickets in this range yet', '', emptyState(
       'Nothing to show yet',
-      "Either you haven't handled any tickets in this window, or the sync hasn't reached your tickets yet — it runs in the background every 20 minutes."
+      "Either you haven't handled any tickets in this window, or the sync hasn't reached your tickets yet, it runs in the background every 20 minutes."
     ));
   }
 
@@ -416,19 +416,19 @@
         ${click('handled', stat('ticket', 'blue', tv('tickets_handled'), 'Tickets handled', 'handled', s, prevS, d('tickets_handled')))}
         ${click('handled_new', stat('ticket', 'teal', tv('tickets_handled_new'), 'New tickets', 'handled_new', s, prevS, d('tickets_handled_new')))}
         ${click('handled_followup', stat('swap', 'purple', tv('tickets_handled_followup'), 'Follow-ups', 'handled_followup', s, prevS, d('tickets_handled_followup')))}
-        ${stat('phone', 'green', c ? (c.totalCalls || 0) : '—', 'Calls')}
-        ${stat('chat', 'amber', cs ? (cs.chatCount || 0) : '—', 'Chats')}
+        ${stat('phone', 'green', c ? (c.totalCalls || 0) : '-', 'Calls')}
+        ${stat('chat', 'amber', cs ? (cs.chatCount || 0) : '-', 'Chats')}
       </div>
       ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} (a ticket can be in more than one). Click a ticket card to see the exact tickets.</div>`
-              : `<div class="av2-section-meta" style="margin-top:8px">Ticket activity for this range is still syncing — check back shortly.</div>`}`;
-    return panel('Work handled', 'Counted automatically from Zoho Desk, RingCentral and SalesIQ — nothing to log by hand.', body);
+              : `<div class="av2-section-meta" style="margin-top:8px">Ticket activity for this range is still syncing, check back shortly.</div>`}`;
+    return panel('Work handled', 'Counted automatically from Zoho Desk, RingCentral and SalesIQ, nothing to log by hand.', body);
   }
 
   function statsSection(s, prevS) {
     if (!s) return noDataPanel();
-    const fcr = s.fcr_pct != null ? `${s.fcr_pct}%` : (s.fcr_total ? '0%' : '—');
-    const csat = s.csat_pct != null ? `${s.csat_pct}%` : (s.csat_total ? '0%' : '—');
-    const avgHandle = s.avg_handle_hours != null ? `${s.avg_handle_hours}h` : '—';
+    const fcr = s.fcr_pct != null ? `${s.fcr_pct}%` : (s.fcr_total ? '0%' : '-');
+    const csat = s.csat_pct != null ? `${s.csat_pct}%` : (s.csat_total ? '0%' : '-');
+    const avgHandle = s.avg_handle_hours != null ? `${s.avg_handle_hours}h` : '-';
     const body = `
       <div class="av2-stat-grid">
         ${stat('ticket', null,   s.unique_tickets || 0, 'Unique tickets', 'unique', s, prevS, { curr: s.unique_tickets || 0, prev: prevS ? (prevS.unique_tickets || 0) : null, higherIsBetter: null })}
@@ -442,7 +442,7 @@
         ${stat('target', 'teal',  fcr, `FCR${s.fcr_total ? ` (${s.fcr_total})` : ''}`, 'fcr', s, prevS, (prevS && prevS.fcr_pct != null && s.fcr_pct != null) ? { curr: s.fcr_pct, prev: prevS.fcr_pct, higherIsBetter: true, pct: true } : null)}
         ${stat('star',   'purple', csat, `CSAT${s.csat_total ? ` (${s.csat_total})` : ''}`, 'csat', s, prevS, (prevS && prevS.csat_pct != null && s.csat_pct != null) ? { curr: s.csat_pct, prev: prevS.csat_pct, higherIsBetter: true, pct: true } : null)}
       </div>`;
-    return panel('My numbers', 'Unique/solely-handled/reassigned and the breakdowns below count tickets created in this range; Closed/Avg handle/FCR count tickets closed in this range; Handling now is live. Hover any card for what it means, and — where a comparable prior period exists — how it changed.', body);
+    return panel('My numbers', 'Unique/solely-handled/reassigned and the breakdowns below count tickets created in this range; Closed/Avg handle/FCR count tickets closed in this range; Handling now is live. Hover any card for what it means, and, where a comparable prior period exists, how it changed.', body);
   }
 
   function breakdownSection(s) {
@@ -465,7 +465,7 @@
   function callStatsSection(c) {
     if (!c) {
       return panel('Call Activity', 'RingCentral call stats for this range.',
-        emptyState('Not linked yet', 'No RingCentral extension linked to your account yet — ask your admin to add you under Agents.'));
+        emptyState('Not linked yet', 'No RingCentral extension linked to your account yet, ask your admin to add you under Agents.'));
     }
     const body = `
       <div class="av2-stat-grid">
@@ -479,7 +479,7 @@
         ${stat('clock',    'blue',   fmtDuration(c.ahtOutboundSeconds), 'AHT outbound')}
         ${stat('swap',     'teal',   c.transferCount || 0, 'Transfers')}
       </div>`;
-    return panel('Call Activity', 'RingCentral calls in this range — same period as the ticket numbers above.', body);
+    return panel('Call Activity', 'RingCentral calls in this range, same period as the ticket numbers above.', body);
   }
 
   // Session 21: Zoho SalesIQ chat stats. Chat count / avg response time
@@ -492,13 +492,13 @@
       return panel('Chat Activity', 'Zoho SalesIQ chat stats for this range.',
         emptyState('Not available', "Chat stats aren't available for this account."));
     }
-    const avgResp = cs && cs.avgResponseSeconds != null ? fmtDuration(cs.avgResponseSeconds) : '—';
+    const avgResp = cs && cs.avgResponseSeconds != null ? fmtDuration(cs.avgResponseSeconds) : '-';
     const body = `
       <div class="av2-stat-grid">
-        ${stat('chat',  null,   cs ? (cs.chatCount || 0) : '—', 'Chats handled')}
+        ${stat('chat',  null,   cs ? (cs.chatCount || 0) : '-', 'Chats handled')}
         ${stat('clock', 'blue', avgResp, 'Avg response time')}
-        ${stat('check', 'green', cp ? fmtDuration(cp.availSeconds) : '—', 'Chat available')}
-        ${stat('pause', 'red',  cp ? fmtDuration(cp.busySeconds) : '—', 'Chat busy')}
+        ${stat('check', 'green', cp ? fmtDuration(cp.availSeconds) : '-', 'Chat available')}
+        ${stat('pause', 'red',  cp ? fmtDuration(cp.busySeconds) : '-', 'Chat busy')}
       </div>`;
     return panel('Chat Activity', 'Zoho SalesIQ chats in this range. Available/busy time started tracking when this shipped, so it fills in over time rather than covering the full range right away.', body);
   }
@@ -509,7 +509,7 @@
     if (t.includes('closed')) state = 'available';
     else if (t.includes('open')) state = 'oncall';
     else if (t.includes('hold')) state = 'ringing';
-    return `<span class="av2-pill" data-state="${state}"><span class="av2-pill-dot"></span>${esc(status || '—')}</span>`;
+    return `<span class="av2-pill" data-state="${state}"><span class="av2-pill-dot"></span>${esc(status || '-')}</span>`;
   }
 
   // Session 27: distinct status_type values present in this ticket set,
@@ -610,12 +610,12 @@
     const rows = tickets.map(t => `
       <tr>
         <td>${t.web_url ? `<a href="${esc(t.web_url)}" target="_blank" rel="noopener" style="color:var(--av2-orange);font-weight:600;text-decoration:none;">#${esc(t.ticket_number)}</a>` : `#${esc(t.ticket_number)}`}</td>
-        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(t.subject || '')}">${esc(t.subject || '—')}</td>
+        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(t.subject || '')}">${esc(t.subject || '-')}</td>
         <td>${statusPill(t.status, t.status_type)}</td>
-        <td>${esc(t.channel || '—')}</td>
-        <td>${esc(t.category || '—')}</td>
-        <td>${t.reassign_count ? `<span style="color:var(--av2-red);font-weight:700;">${t.reassign_count}</span>` : '—'}</td>
-        <td>${t.fcr_achieved === 'true' ? '✅' : '—'}</td>
+        <td>${esc(t.channel || '-')}</td>
+        <td>${esc(t.category || '-')}</td>
+        <td>${t.reassign_count ? `<span style="color:var(--av2-red);font-weight:700;">${t.reassign_count}</span>` : '-'}</td>
+        <td>${t.fcr_achieved === 'true' ? '✅' : '-'}</td>
         <td>${fmtDate(t.created_time)}</td>
         <td>${fmtDate(t.closed_time)}</td>
       </tr>`).join('');
@@ -639,7 +639,7 @@
         <div class="av2-section-head" style="margin-bottom:6px;">
           <div>
             <h2 class="av2-section-title">My Ticket Stats</h2>
-            <div class="av2-section-sub">Your own ticket activity, straight from Zoho Desk — no need to log it by hand.</div>
+            <div class="av2-section-sub">Your own ticket activity, straight from Zoho Desk, no need to log it by hand.</div>
           </div>
           <div class="mystats-filterbar">
             ${(() => {
@@ -673,7 +673,7 @@
         ${chatStatsSection(summaryJson.chatStats, summaryJson.chatPresence)}
         ${breakdownSection(summaryJson.summary)}
 
-        ${panel('Recent tickets', 'Most recently created first by default, up to 200 — click Created or Closed to re-sort, or narrow by Status, Channel, FCR outcome, or reassignment.', ticketsTable(ticketsJson.tickets || []), 'mystats-tickets-section')}
+        ${panel('Recent tickets', 'Most recently created first by default, up to 200, click Created or Closed to re-sort, or narrow by Status, Channel, FCR outcome, or reassignment.', ticketsTable(ticketsJson.tickets || []), 'mystats-tickets-section')}
       </div>`;
 
     const presetSel = root.querySelector('.mystats-preset-select');
@@ -724,7 +724,7 @@
         if (session && session.email) { email = session.email; name = name || session.name; }
       }
       if (!email) {
-        if (typeof showToast === 'function') showToast('Could not identify your session — try reloading the page', 'error', 3000);
+        if (typeof showToast === 'function') showToast('Could not identify your session, try reloading the page', 'error', 3000);
         return;
       }
       window.openDeskLifecycleVerify({
@@ -740,7 +740,7 @@
     wireTooltips(root);
 
     // Stagger the ticket rows in, matching the dashboard's row entrance
-    // (see agent-view-v2.js) — same Motion One instance, already loaded.
+    // (see agent-view-v2.js), same Motion One instance, already loaded.
     animateTicketRows(root);
   }
 

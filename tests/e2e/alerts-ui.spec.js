@@ -74,12 +74,12 @@ test.describe('Alert Center runtime behavior (unauthenticated stub)', () => {
     await page.goto('/');
     await expect(page.locator('text=Adit Agent Monitor').first()).toBeVisible();
 
-    // Without app-authenticated, init() should bail — no bell injected
+    // Without app-authenticated, init() should bail, no bell injected
     // because the status bar itself is hidden behind the login screen.
     const bell = page.locator('#ac-bell');
     await expect(bell).toHaveCount(0);
 
-    // But the script should have loaded — window.AlertCenter exists
+    // But the script should have loaded, window.AlertCenter exists
     const hasAlertCenter = await page.evaluate(() => typeof window.AlertCenter === 'object' && typeof window.AlertCenter.open === 'function');
     expect(hasAlertCenter).toBe(true);
   });

@@ -1,6 +1,6 @@
 /**
  * adit-reset.js
- * Nuclear CSS reset — disables ALL inline <style> blocks (except auth-gate-css)
+ * Nuclear CSS reset, disables ALL inline <style> blocks (except auth-gate-css)
  * and ALL external stylesheets (except Google Fonts, Chart.js, adit-theme.css).
  * Then adit-theme.css becomes the sole design source with a clean slate.
  *

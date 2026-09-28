@@ -19,7 +19,7 @@ can actually look at. After Session 12, admins get:
 
 ## Non-goals
 
-- Per-agent or per-queue forecasts (engine is queue-level — see Session 11
+- Per-agent or per-queue forecasts (engine is queue-level, see Session 11
   non-goals)
 - Live SSE push (forecast changes slowly; 60s polling is sufficient)
 - Mobile push notifications when probability exceeds threshold
@@ -125,7 +125,7 @@ visible to non-admin agents.
 
 Adds a 🔮 button to the right side of the status bar (after the existing
 📈 anomaly button and 📅 schedule button). Keyboard shortcut `Y` (think
-"y-prediction" — `P` is Pomodoro).
+"y-prediction" - `P` is Pomodoro).
 
 ## Acceptance criteria
 
@@ -138,7 +138,7 @@ Adds a 🔮 button to the right side of the status bar (after the existing
 7. ✅ Model debug panel shows weights, mu, sigma, eval metrics
 8. ✅ Debug panel is admin-only (gated client-side)
 9. ✅ Auto-refresh every 60s while open
-10. ✅ Cold-start: shows "No model yet — click Retrain" instead of crashing
+10. ✅ Cold-start: shows "No model yet, click Retrain" instead of crashing
 11. ✅ Mobile bottom-sheet at <760px
 12. ✅ A11y: role=dialog, ARIA labels, focus rings, reduced-motion
 13. ✅ Feature-flagged behind `predictiveAbandonmentV2` (same as Session 11)

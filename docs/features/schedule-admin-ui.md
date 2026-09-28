@@ -1,4 +1,4 @@
-# Schedule Adherence — Part 2 (Session 5)
+# Schedule Adherence: Part 2 (Session 5)
 
 **Status:** In progress
 **Builds on:** Session 4 Part 1 (`docs/features/schedule-adherence.md`)
@@ -11,7 +11,7 @@ admin + monitor experience. After Session 5, admins get:
 
 1. A **schedule admin dashboard** to see today's adherence at a glance
 2. A **per-agent editor** with 7 day-of-week rows (no more JSON)
-3. **Bulk apply** — pick a template + a set of agents → push to all
+3. **Bulk apply**, pick a template + a set of agents → push to all
 4. A **timeline visualization** for each agent (planned vs actual)
 5. Quick **filters** by severity status (no-show, late, on-time)
 
@@ -19,8 +19,8 @@ admin + monitor experience. After Session 5, admins get:
 
 - Schedule templates as DB entities (Session 6)
 - Multi-week rotation patterns
-- Approved exceptions (sick day, PTO override) — manual end-date for now
-- Per-agent custom break-budget input — uses global 60min default
+- Approved exceptions (sick day, PTO override), manual end-date for now
+- Per-agent custom break-budget input, uses global 60min default
 
 ## Architecture
 
@@ -96,8 +96,8 @@ Modal with 7 weekday rows.
 │  │ Wed  [☑ working]  09:00 → 17:00                      ││
 │  │ Thu  [☑ working]  09:00 → 17:00                      ││
 │  │ Fri  [☑ working]  09:00 → 17:00                      ││
-│  │ Sat  [☐ off]      — — — —                            ││
-│  │ Sun  [☐ off]      — — — —                            ││
+│  │ Sat  [☐ off], , , , ││
+│  │ Sun  [☐ off], , , , ││
 │  └──────────────────────────────────────────────────────┘│
 │                                                          │
 │  [View history]                  [Cancel]  [💾 Save]     │

@@ -1,4 +1,4 @@
-// E2E smoke tests — verifies the app boots and core routes respond.
+// E2E smoke tests, verifies the app boots and core routes respond.
 // Auth-gated routes are checked by status code only (we don't have a
 // test user yet). When we get one, this becomes the auth test suite.
 const { test, expect } = require('@playwright/test');

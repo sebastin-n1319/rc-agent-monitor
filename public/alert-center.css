@@ -1,5 +1,5 @@
 /*
- * alert-center.css — UI styles for the Real-Time Alerts (Part 2) feature.
+ * alert-center.css: UI styles for the Real-Time Alerts (Part 2) feature.
  * Loaded after adit-theme.css so it can override token-level values.
  * All selectors namespaced under `.ac-*` or specific IDs.
  * Light theme baseline; tokens reused from --av2-* / --t1-* where possible.

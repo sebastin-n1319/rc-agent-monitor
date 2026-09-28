@@ -2,7 +2,7 @@
 //
 // Verifies security headers, a11y artifacts, and that the focus-trap script
 // is wired in. Full keyboard nav tests require auth + would belong in a
-// manual runbook — these are the cross-cutting checks the CI should enforce.
+// manual runbook, these are the cross-cutting checks the CI should enforce.
 const { test, expect } = require('@playwright/test');
 
 test.describe('Security headers (Session 9)', () => {
@@ -69,7 +69,7 @@ test.describe('A11y artifacts', () => {
 
 test.describe('Logger hygiene (regression)', () => {
   // After Session 9 we want fewer than 35 console.* calls in server.js
-  // (down from 39 pre-cleanup). Hard zero is aspirational — startup logs stay.
+  // (down from 39 pre-cleanup). Hard zero is aspirational, startup logs stay.
   test('console.* count in server.js trending down', async ({ request }) => {
     // We can't read the source file from Playwright; this lives in a unit test instead.
     // Use the smoke route as a heartbeat that nothing's broken.

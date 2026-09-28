@@ -40,7 +40,7 @@ test.describe('PredictCenter assets', () => {
     const body = await res.text();
     expect(body).toContain('/predict-center.js');
     expect(body).toContain('/predict-center.css');
-    // Version-agnostic — v1.7 was Session 12, future bumps shouldn't break this
+    // Version-agnostic, v1.7 was Session 12, future bumps shouldn't break this
     expect(body).toMatch(/CACHE_VERSION\s*=\s*['"]adit-v1\.[7-9]/);
   });
 });
@@ -60,7 +60,7 @@ test.describe('PredictCenter runtime', () => {
 
   test('open() respects the predictiveAbandonmentV2 feature flag', async ({ page }) => {
     await page.goto('/');
-    // Default flag is off — open() bails without rendering the modal
+    // Default flag is off, open() bails without rendering the modal
     await page.evaluate(() => window.PredictCenter.open());
     const modalCount = await page.locator('#pc-modal').count();
     if (modalCount > 0) {

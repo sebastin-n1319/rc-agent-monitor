@@ -1,5 +1,5 @@
 /* ───────────────────────────────────────────────────────────────────────
-   TICKET LIFECYCLE ADMIN — Session 19
+   TICKET LIFECYCLE ADMIN: Session 19
    Per-agent Zoho Desk ticket stats (replaces manual lifecycle report export).
    Scoped under #desk-lifecycle-root; tokens namespaced --tkt-*.
    ─────────────────────────────────────────────────────────────────────── */
@@ -83,7 +83,7 @@
 #desk-lifecycle-root .tkt-card code { background:var(--tkt-surface2) !important; border:1px solid var(--tkt-border) !important; border-radius:4px !important; padding:1px 5px !important; font-size:12px !important; }
 
 /* Session 36: split the old single "Range: … <br> windowing note" block
-   into two lines with distinct weight — the range/count is what changes
+   into two lines with distinct weight, the range/count is what changes
    run to run and is worth reading first; the windowing methodology is
    fixed reference text and reads as noise every time otherwise. */
 #desk-lifecycle-root .tkt-card-sub-range { font-size:13px !important; font-weight:600 !important; color:var(--tkt-ink2) !important; margin-top:6px !important; margin-bottom:4px !important; }
@@ -121,7 +121,7 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────
-   Session 20 additions — full per-agent report (unique/solely-handled/
+   Session 20 additions, full per-agent report (unique/solely-handled/
    reassigned/closed/currently-handling/FCR% + channel/module/category/
    classification breakdowns). Agent cards replace the old flat grid row
    table (too many columns now to fit a single row).
@@ -182,7 +182,7 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────
-   Session 21 additions — sync progress bar, relative-date + customer
+   Session 21 additions, sync progress bar, relative-date + customer
    filter bar. Same --tkt-* token / !important convention as above.
    ────────────────────────────────────────────────────────────────────── */
 
@@ -246,13 +246,13 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────
-   Session 27 additions — hover tooltips (data-tip), team-summary strip
+   Session 27 additions, hover tooltips (data-tip), team-summary strip
    with prior-period deltas, agent-finder input, expand/collapse-all,
    and the grouped "Ticket flow" / "Outcomes" pill layout above. Same
    --tkt-* token / !important convention as the rest of this file.
    ────────────────────────────────────────────────────────────────────── */
 
-/* ── Team summary strip — Session 28: capped cell width (was flex:1 1 130px
+/* ── Team summary strip: Session 28: capped cell width (was flex:1 1 130px
    with no cap, which stretched every cell to fill the full card width on
    wide screens and left a lot of visually empty padding around small
    numbers) plus a denser grid so the strip reads as a compact dashboard
@@ -276,7 +276,7 @@
   #desk-lifecycle-root .tkt-team-cell { border-right:none !important; border-bottom:1px solid var(--tkt-border) !important; flex:0 1 50% !important; max-width:none !important; }
 }
 
-/* ── Quick-filter chips — Session 28: additional useful filters beyond
+/* ── Quick-filter chips: Session 28: additional useful filters beyond
    the date/customer/agent filters above, toggled client-side against the
    already-loaded per-agent summary (see matchesQuickFilters() in the JS). ── */
 #desk-lifecycle-root .tkt-quick-filters { display:flex !important; align-items:center !important; gap:6px !important; flex-wrap:wrap !important; margin-bottom:12px !important; }
@@ -290,12 +290,12 @@
 /* ── Hover/focus tooltip (JS-positioned, appended to <body>) ──
    Deliberately NOT scoped under #desk-lifecycle-root since the element
    is appended directly to <body> so it can escape .tkt-agent-card's
-   overflow:hidden — "tkt-" is otherwise exclusive to this feature so
+   overflow:hidden: "tkt-" is otherwise exclusive to this feature so
    there's no collision risk with the rest of the app's CSS.
    Session 28: scale+translate entrance on the spring easing curve (was a
    flat opacity/translateY(4px) fade), plus a brand-orange top edge so the
    tooltip reads as this app's own component rather than a generic system
-   bubble — mirrors the agent page's .av2-tkt-tooltip treatment. */
+   bubble, mirrors the agent page's .av2-tkt-tooltip treatment. */
 .tkt-tooltip {
   position: fixed;
   left: 0; top: 0;

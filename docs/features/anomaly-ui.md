@@ -9,10 +9,10 @@
 Turn the working-but-invisible Session 6 anomaly engine into a real supervisor
 experience. After Session 7, admins get:
 
-1. **Anomaly center dashboard** — severity-grouped list of detected anomalies
-2. **Per-agent drill-down** — last 30 days of anomalies for one agent, with a sparkline
-3. **Admin threshold form** — tune the 5 metric thresholds without curl
-4. **Live toasts** — when anomalies fire (via SSE), supervisors get a toast immediately
+1. **Anomaly center dashboard**, severity-grouped list of detected anomalies
+2. **Per-agent drill-down**, last 30 days of anomalies for one agent, with a sparkline
+3. **Admin threshold form**, tune the 5 metric thresholds without curl
+4. **Live toasts**, when anomalies fire (via SSE), supervisors get a toast immediately
 5. **CSV export** for retrospective analysis
 
 ## Non-goals (Session 8+)
@@ -115,7 +115,7 @@ When the server fires `insertAnomalyEvent()` (whether via daily cron or
 manual `/api/admin/anomalies/run`), it broadcasts `event: anomaly` with
 the inserted row. The client surfaces a toast:
 
-> 🔬 `daily_missed_calls` anomaly: Sarah Chen — today 18 (z=+12.1)
+> 🔬 `daily_missed_calls` anomaly: Sarah Chen, today 18 (z=+12.1)
 
 The bell on the AlertCenter does NOT update for anomalies (anomalies are
 NOT alerts; different lifecycle, different mental model). They live in

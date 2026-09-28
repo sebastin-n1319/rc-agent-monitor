@@ -1,5 +1,5 @@
 /**
- * Roster Admin v3 — 2026-05-29
+ * Roster Admin v3: 2026-05-29
  *
  * World-class attendance grid inspired by Deputy / Humanity / When I Work.
  *
@@ -21,7 +21,7 @@
   'use strict';
 
   /* ══════════════════════════════════════════════════════════
-     CSS INJECTION — guarantees styles even if SW serves stale
+     CSS INJECTION, guarantees styles even if SW serves stale
   ══════════════════════════════════════════════════════════ */
   (function injectCSS() {
     if (document.getElementById('rx-injected-css')) return;
@@ -29,7 +29,7 @@
     s.id = 'rx-injected-css';
     s.textContent = `
 /* ═══════════════════════════════════════════════════════════════
-   ADIT ROSTER — KEKA-INSPIRED DESIGN
+   ADIT ROSTER: KEKA-INSPIRED DESIGN
    Row: 44px | Circle: 30px | Font: Poppins | Clean flat colors
 ═══════════════════════════════════════════════════════════════ */
 :root {
@@ -137,7 +137,7 @@
 #roster-admin-root .rx-grid-wrap::-webkit-scrollbar-thumb { background:#D1D5DB!important; border-radius:99px!important; }
 #roster-admin-root .rx-grid { border-collapse:separate!important; border-spacing:0!important; min-width:100%!important; width:max-content!important; }
 
-/* ── TABLE HEADER — dark navy like Keka ───────────────────── */
+/* ── TABLE HEADER, dark navy like Keka ───────────────────── */
 #roster-admin-root .rx-grid thead .rx-th { position:sticky!important; top:0!important; z-index:5!important; background:#1E293B!important; border-bottom:2px solid rgba(255,255,255,.1)!important; height:46px!important; vertical-align:middle!important; padding:0!important; }
 #roster-admin-root .rx-th-name { position:sticky!important; left:0!important; z-index:7!important; background:#1E293B!important; text-align:left!important; padding-left:16px!important; min-width:var(--rx-agent-w)!important; width:var(--rx-agent-w)!important; border-right:1px solid rgba(255,255,255,.1)!important; font-size:10px!important; font-weight:700!important; color:rgba(255,255,255,.5)!important; letter-spacing:.08em!important; text-transform:uppercase!important; }
 #roster-admin-root .rx-th-day { min-width:var(--rx-cell-w)!important; max-width:var(--rx-cell-w)!important; width:var(--rx-cell-w)!important; cursor:pointer!important; text-align:center!important; transition:background .12s!important; }
@@ -160,7 +160,7 @@
 #roster-admin-root .rx-row-relieved { opacity:.4!important; }
 #roster-admin-root .rx-no-rows { padding:60px 20px!important; text-align:center!important; color:var(--rx-ink3)!important; font-size:13px!important; }
 
-/* ── AGENT CELL — Keka style: avatar + name inline ─────────── */
+/* ── AGENT CELL: Keka style: avatar + name inline ─────────── */
 #roster-admin-root .rx-td-name { position:sticky!important; left:0!important; z-index:4!important; background:var(--rx-surface)!important; border-right:1px solid var(--rx-border)!important; padding:0!important; vertical-align:middle!important; min-width:var(--rx-agent-w)!important; width:var(--rx-agent-w)!important; cursor:pointer!important; }
 #roster-admin-root .rx-row:hover .rx-td-name { background:#FFF8F4!important; box-shadow:inset 3px 0 0 var(--rx-accent)!important; }
 #roster-admin-root .rx-row:nth-child(even) .rx-td-name { background:#FAFBFD!important; }
@@ -178,14 +178,14 @@
 #roster-admin-root .rx-dot-leave { background:#3B82F6!important; }
 #roster-admin-root .rx-dot-rel { background:#94A3B8!important; }
 
-/* ── DATE CELLS — Keka style ──────────────────────────────── */
+/* ── DATE CELLS: Keka style ──────────────────────────────── */
 #roster-admin-root .rx-cell { width:var(--rx-cell-w)!important; height:var(--rx-row-h)!important; text-align:center!important; vertical-align:middle!important; border:none!important; font-size:0!important; cursor:pointer!important; user-select:none!important; padding:0!important; background:transparent!important; position:relative!important; }
 #roster-admin-root .rx-cell::before,#roster-admin-root .rx-cell::after { display:none!important; content:none!important; }
 #roster-admin-root .rx-cell.rx-w { background:rgba(139,92,246,.03)!important; }
 #roster-admin-root .rx-cell.rx-t { background:rgba(249,115,22,.04)!important; }
 #roster-admin-root .rx-cell.rx-week-end { border-left:1px solid #F3F4F6!important; }
 
-/* ── CIRCLES — Keka flat clean style ─────────────────────── */
+/* ── CIRCLES: Keka flat clean style ─────────────────────── */
 #roster-admin-root .rx-day-num { width:var(--rx-circle)!important; height:var(--rx-circle)!important; border-radius:50%!important; margin:0 auto!important; display:flex!important; align-items:center!important; justify-content:center!important; font-size:12px!important; font-weight:600!important; transition:transform .18s var(--rx-spring)!important; box-shadow:none!important; }
 #roster-admin-root .rx-cell:hover .rx-day-num { transform:scale(1.12)!important; }
 #roster-admin-root .rx-day-empty { background:transparent!important; color:#D1D5DB!important; font-weight:400!important; font-size:11.5px!important; }
@@ -193,7 +193,7 @@
 #roster-admin-root .rx-cell.rx-t .rx-day-empty { color:var(--rx-accent)!important; font-weight:700!important; box-shadow:0 0 0 1.5px var(--rx-accent)!important; }
 #roster-admin-root .rx-cell.rx-t .rx-day-num:not(.rx-day-empty) { box-shadow:0 0 0 2px var(--rx-accent)!important; }
 
-/* Status colors — flat like Keka (matches legend colors) */
+/* Status colors, flat like Keka (matches legend colors) */
 #roster-admin-root .rx-st-present .rx-day-num  { background:#F4A23A!important; color:#fff!important; }
 #roster-admin-root .rx-st-wfh     .rx-day-num  { background:#6D8FEF!important; color:#fff!important; }
 #roster-admin-root .rx-st-on_duty .rx-day-num  { background:#F97316!important; color:#fff!important; }
@@ -287,7 +287,7 @@
      CONSTANTS
   ══════════════════════════════════════════════════════════ */
   const STATUS_LABEL = {
-    '': '—', present: 'P', off: 'OFF', pl: 'PL', hd_pl: '½PL',
+    '': '-', present: 'P', off: 'OFF', pl: 'PL', hd_pl: '½PL',
     upl: 'UPL', hd_upl: '½UPL', sl: 'SL', hd_sl: '½SL',
     wfh: 'WFH', on_duty: 'OD', holiday: 'HOL',
     ncns: 'NCNS', relieved: 'REL', absent: 'A', na: 'N/A',
@@ -310,7 +310,7 @@
     { label: 'Issues', statuses: ['ncns', 'absent'] },
   ];
 
-  // Quick-pick statuses (left-click on cell) — ordered by frequency
+  // Quick-pick statuses (left-click on cell), ordered by frequency
   const QUICK_PICK = [
     { s: 'present',    label: 'P',    name: 'Present',       group: 'work' },
     { s: 'wfh',        label: 'WFH',  name: 'Work From Home', group: 'work' },
@@ -368,7 +368,7 @@
   const esc = s => String(s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const $ = (sel, root) => (root || document).querySelector(sel);
   const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
-  // Pinned to America/Chicago — NOT the viewer's browser timezone. Agents
+  // Pinned to America/Chicago: NOT the viewer's browser timezone. Agents
   // here view from IST, so using the browser's local date (as this used to)
   // made "today" run up to ~11.5 hours ahead of what schedule-admin.js and
   // the server's own day boundaries consider "today", e.g. the roster's
@@ -623,7 +623,7 @@
       <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#2DDC96" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="10" cy="10" r="8"/><path d="M6.5 10.5l2.5 2.5 5-5"/></svg></div>
       <div class="rx-kpi-text">
         <div class="rx-kpi-lbl">Present Today</div>
-        <div class="rx-kpi-val">${todayInMonth ? presentToday : '—'}</div>
+        <div class="rx-kpi-val">${todayInMonth ? presentToday : '-'}</div>
         <div class="rx-kpi-sub">${todayInMonth ? 'P · WFH · OD' : 'viewing past month'}</div>
       </div>
     </div>
@@ -631,7 +631,7 @@
       <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#FBC84B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="10" cy="7" r="3"/><path d="M4 17s1-6 6-6 6 6 6 6"/><path d="M2 17h16"/></svg></div>
       <div class="rx-kpi-text">
         <div class="rx-kpi-lbl">On Leave Today</div>
-        <div class="rx-kpi-val">${todayInMonth ? leaveToday : '—'}</div>
+        <div class="rx-kpi-val">${todayInMonth ? leaveToday : '-'}</div>
         <div class="rx-kpi-sub">${todayInMonth ? 'PL · UPL · SL' : ''}</div>
       </div>
     </div>
@@ -639,7 +639,7 @@
       <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#ED666B" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M10 2l8 14H2L10 2z"/><path d="M10 9v4"/><circle cx="10" cy="15" r=".5" fill="#ED666B"/></svg></div>
       <div class="rx-kpi-text">
         <div class="rx-kpi-lbl">Issues Today</div>
-        <div class="rx-kpi-val">${todayInMonth ? ncnsToday : '—'}</div>
+        <div class="rx-kpi-val">${todayInMonth ? ncnsToday : '-'}</div>
         <div class="rx-kpi-sub">${todayInMonth ? 'NCNS · Absent' : ''}</div>
       </div>
     </div>
@@ -647,7 +647,7 @@
       <div class="rx-kpi-icon"><svg viewBox="0 0 20 20" fill="none" stroke="#21AAE0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="2" y="13" width="4" height="5" rx="1"/><rect x="8" y="8" width="4" height="10" rx="1"/><rect x="14" y="3" width="4" height="15" rx="1"/></svg></div>
       <div class="rx-kpi-text">
         <div class="rx-kpi-lbl">Coverage Today</div>
-        <div class="rx-kpi-val">${todayInMonth ? coveragePct + '%' : '—'}</div>
+        <div class="rx-kpi-val">${todayInMonth ? coveragePct + '%' : '-'}</div>
         <div class="rx-kpi-sub">${todayInMonth ? `${presentToday} of ${activeAgents.length} live` : ''}</div>
         ${todayInMonth ? `<div class="rx-kpi-bar"><div class="rx-kpi-bar-fill ${coverageClass(coveragePct)}" style="width:${coveragePct}%"></div></div>` : ''}
       </div>
@@ -756,14 +756,14 @@
     <span class="rx-bulk-count" id="rx-bulk-count">0 agents selected</span>
     <div class="rx-bulk-actions">
       <select class="rx-bulk-sel" id="rx-bulk-status-val" title="Status to apply">
-        <option value="">— Pick status —</option>
-        ${QUICK_PICK.map(q => `<option value="${q.s}">${q.label} — ${q.name}</option>`).join('')}
+        <option value="">, Pick status, </option>
+        ${QUICK_PICK.map(q => `<option value="${q.s}">${q.label}: ${q.name}</option>`).join('')}
       </select>
       <input type="date" class="rx-bulk-date" id="rx-bulk-date" title="Apply to this date" value="${today}">
       <button class="rx-bulk-btn rx-bulk-btn-primary" id="rx-bulk-apply"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M2 7l3.5 3.5L12 3"/></svg> Apply</button>
       <div class="rx-bulk-sep"></div>
       <select class="rx-bulk-sel" id="rx-bulk-shift-val" title="Shift to assign">
-        <option value="">— Pick shift —</option>
+        <option value="">, Pick shift, </option>
         ${SHIFT_OPTIONS.map(g => `<optgroup label="${g.group}">${g.shifts.map(sh => `<option value="${sh}">${sh}</option>`).join('')}</optgroup>`).join('')}
       </select>
       <button class="rx-bulk-btn" id="rx-bulk-shift-apply"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:-1px"><path d="M2 7l3.5 3.5L12 3"/></svg> Change Shift</button>
@@ -846,13 +846,13 @@
               return `<tr class="rx-alist-row">
                 <td><div class="rx-alist-avatar" style="background:${av}">${ini}</div></td>
                 <td>
-                  <div class="rx-alist-name">${esc(a.pseudo||a.full_name||'—')}</div>
+                  <div class="rx-alist-name">${esc(a.pseudo||a.full_name||'-')}</div>
                   ${a.full_name && a.pseudo && a.full_name!==a.pseudo ? '<div class="rx-alist-sub">'+esc(a.full_name)+'</div>' : ''}
                 </td>
-                <td><span class="rx-mono">${esc(a.emp_id||'—')}</span></td>
-                <td>${esc(desg||'—')}</td>
-                <td class="rx-alist-shift">${esc(a.shift||'—')}</td>
-                <td>${esc(a.doj||'—')}</td>
+                <td><span class="rx-mono">${esc(a.emp_id||'-')}</span></td>
+                <td>${esc(desg||'-')}</td>
+                <td class="rx-alist-shift">${esc(a.shift||'-')}</td>
+                <td>${esc(a.doj||'-')}</td>
                 <td>${statusBadge}</td>
                 <td>
                   <div class="rx-alist-actions">
@@ -873,7 +873,7 @@
   </div>
 
   <details class="rx-summary-wrap" id="rx-summary-panel">
-    <summary class="rx-summary-toggle">📊 Monthly Attendance Summary — ${monthLabel(_s.month)}</summary>
+    <summary class="rx-summary-toggle">📊 Monthly Attendance Summary: ${monthLabel(_s.month)}</summary>
     <div class="rx-summary-scroll">
       <table class="rx-summary-tbl">
         <thead>
@@ -905,15 +905,15 @@
                   </div>
                 </div>
               </td>
-              <td class="rx-std">${st.p ? `<span class="rx-stat-p">${st.p}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.wfh ? `<span class="rx-stat-wfh">${st.wfh}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.od ? `<span class="rx-stat-od">${st.od}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.off ? `<span class="rx-stat-off">${st.off}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.pl ? `<span class="rx-stat-pl">${st.pl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.upl ? `<span class="rx-stat-upl">${st.upl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.sl ? `<span class="rx-stat-sl">${st.sl}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.ncns ? `<span class="rx-stat-ncns">${st.ncns}</span>` : '<span class="rx-stat-nil">—</span>'}</td>
-              <td class="rx-std">${st.pct !== null ? `<span class="rx-att-pct ${attCls}">${st.pct}%</span>` : '—'}</td>
+              <td class="rx-std">${st.p ? `<span class="rx-stat-p">${st.p}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.wfh ? `<span class="rx-stat-wfh">${st.wfh}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.od ? `<span class="rx-stat-od">${st.od}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.off ? `<span class="rx-stat-off">${st.off}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.pl ? `<span class="rx-stat-pl">${st.pl}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.upl ? `<span class="rx-stat-upl">${st.upl}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.sl ? `<span class="rx-stat-sl">${st.sl}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.ncns ? `<span class="rx-stat-ncns">${st.ncns}</span>` : '<span class="rx-stat-nil">-</span>'}</td>
+              <td class="rx-std">${st.pct !== null ? `<span class="rx-att-pct ${attCls}">${st.pct}%</span>` : '-'}</td>
             </tr>`;
           }).join('')}
         </tbody>
@@ -949,7 +949,7 @@
       const lbl = STATUS_LABEL[s] || '';
       const dayNum = d.slice(-2).replace(/^0/, ''); // day number without leading zero
       const tip = `${esc(a.pseudo || a.emp_id)} · ${d}${s ? ' · ' + STATUS_LONG[s] : ''}`;
-      // Render day number in a span + status label — CSS uses these to build circular cells
+      // Render day number in a span + status label: CSS uses these to build circular cells
       const inner = s
         ? `<span class="rx-day-num">${dayNum}</span>`
         : `<span class="rx-day-num rx-day-empty">${dayNum}</span>`;
@@ -964,7 +964,7 @@
            <span class="rx-att-pct">${stats.pct}%</span>
            <div class="rx-att-bar"><i class="rx-att-bar-fill" style="width:${stats.pct}%"></i></div>
          </div>`
-      : '<span style="color:#9AA3AF;font-size:11px;">—</span>';
+      : '<span style="color:#9AA3AF;font-size:11px;">-</span>';
 
     // Avatar initials + color
     const displayName = a.pseudo || a.full_name || a.emp_id;
@@ -1074,11 +1074,11 @@
       };
     });
 
-    // Filter bar — designation chips
+    // Filter bar, designation chips
     root.querySelectorAll('[data-desg]').forEach(btn => {
       btn.onclick = () => { _s.designationFilter = btn.dataset.desg; go(_s.month); };
     });
-    // Filter bar — today status chips
+    // Filter bar, today status chips
     root.querySelectorAll('[data-sf]').forEach(btn => {
       btn.onclick = () => { _s.statusFilter = btn.dataset.sf; go(_s.month); };
     });
@@ -1376,21 +1376,21 @@
     const stats = agentStats(emp, _s.data.dates, _s.data.grid);
     const tots = tr.querySelectorAll('.rx-td-tot');
     if (tots.length < 9) return;
-    tots[0].textContent = stats.p || '—';
-    tots[1].textContent = stats.wfh || '—';
-    tots[2].textContent = stats.od || '—';
-    tots[3].textContent = stats.off || '—';
-    tots[4].textContent = stats.pl || '—';
-    tots[5].textContent = stats.upl || '—';
-    tots[6].textContent = stats.sl || '—';
-    tots[7].textContent = stats.ncns || '—';
+    tots[0].textContent = stats.p || '-';
+    tots[1].textContent = stats.wfh || '-';
+    tots[2].textContent = stats.od || '-';
+    tots[3].textContent = stats.off || '-';
+    tots[4].textContent = stats.pl || '-';
+    tots[5].textContent = stats.upl || '-';
+    tots[6].textContent = stats.sl || '-';
+    tots[7].textContent = stats.ncns || '-';
     const attCell = tr.querySelector('.rx-td-att');
     if (attCell) {
       if (stats.pct !== null) {
         const cls = stats.pct >= 70 ? 'rx-att-good' : stats.pct >= 40 ? 'rx-att-mid' : 'rx-att-low';
         attCell.innerHTML = `<span class="rx-att-pct ${cls}">${stats.pct}%</span>`;
       } else {
-        attCell.textContent = '—';
+        attCell.textContent = '-';
       }
     }
   }
@@ -1525,7 +1525,7 @@
   async function flushSaves() {
     if (!_s.pendingSaves.size) return;
     // Snapshot exactly what we're about to send and remove only THOSE keys
-    // from the live queue — not the whole map — so a cell edited by the
+    // from the live queue, not the whole map, so a cell edited by the
     // user while this request is in flight still gets its own save.
     const entries = Array.from(_s.pendingSaves.entries());
     entries.forEach(([key]) => _s.pendingSaves.delete(key));
@@ -1542,7 +1542,7 @@
       setSaveState('ok', `✅ Saved ${updates.length} change${updates.length === 1 ? '' : 's'} · ${new Date().toLocaleTimeString()}`);
     } catch (e) {
       // applyCell() already updated the grid optimistically, so the cell
-      // LOOKS saved — don't let that be a lie. Put the failed updates back
+      // LOOKS saved, don't let that be a lie. Put the failed updates back
       // in the queue (unless a newer edit to the same cell already
       // replaced them) and keep retrying with backoff instead of silently
       // dropping the change.
@@ -1551,7 +1551,7 @@
       });
       _s.saveFailCount++;
       if (_s.saveFailCount >= 5) {
-        setSaveState('err', `❌ Save failed: ${e.message} — ${_s.pendingSaves.size} change(s) not saved yet, still retrying`);
+        setSaveState('err', `❌ Save failed: ${e.message}: ${_s.pendingSaves.size} change(s) not saved yet, still retrying`);
       } else {
         setSaveState('err', '❌ Save failed, retrying: ' + e.message);
       }
@@ -1683,7 +1683,7 @@
       <div class="rx-form"><label>Date of Join</label><input id="rx-f-doj" type="date" value="${esc(a.doj || '')}"></div>
       <div class="rx-form"><label>Shift (IST)</label>
         <select id="rx-f-shift">
-          <option value="">— Select shift —</option>
+          <option value="">, Select shift, </option>
           ${SHIFT_OPTIONS.map(g => `<optgroup label="${g.group}">
             ${g.shifts.map(sh => `<option value="${sh}" ${(a.shift || '').replace(/\./g,':').replace(/\s+/g,' ').trim() === sh ? 'selected' : ''}>${sh} IST (9 hrs)</option>`).join('')}
           </optgroup>`).join('')}
@@ -1788,9 +1788,9 @@
           <thead><tr><th>When</th><th>Who</th><th>Agent</th><th>Date</th><th>From → To</th></tr></thead>
           <tbody>${events.map(e => `<tr>
             <td>${esc(e.ts || '')}</td>
-            <td>${esc(e.actor_name || e.actor_email || '—')}</td>
-            <td>${esc(e.emp_id || '—')}</td>
-            <td>${esc(e.date || '—')}</td>
+            <td>${esc(e.actor_name || e.actor_email || '-')}</td>
+            <td>${esc(e.emp_id || '-')}</td>
+            <td>${esc(e.date || '-')}</td>
             <td>
               <span class="rx-st-badge rx-st-${e.prev_status || 'empty'}">${STATUS_LABEL[e.prev_status] || '∅'}</span>
               → <span class="rx-st-badge rx-st-${e.new_status || 'empty'}">${STATUS_LABEL[e.new_status] || '∅'}</span>

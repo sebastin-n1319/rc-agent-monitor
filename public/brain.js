@@ -1,5 +1,5 @@
 /**
- * Brain v4 — Branded Design System
+ * Brain v4: Branded Design System
  * Uses the Brain robot character, brand colors, and design language from the style guide
  */
 (function() {
@@ -12,7 +12,7 @@
   var lastPage = '';
   var sessionGreeted = false;
 
-  /* ── Brand Images — from uploaded design system ────────── */
+  /* ── Brand Images, from uploaded design system ────────── */
   var IMG = {
     logo:     '/brain-logo.png',
     avatar:   '/brain-avatar.png',
@@ -79,7 +79,7 @@
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   // Assistant replies come verbatim from POST /api/brain/chat's `reply`
   // field (an LLM completion) and are rendered via innerHTML in msgHTML()
-  // below — so they MUST be HTML-escaped before any markdown-lite
+  // below, so they MUST be HTML-escaped before any markdown-lite
   // formatting is layered on, exactly like user messages already are via
   // esc(). Escaping first is safe: none of the patterns below match `&`,
   // `<`, `>` or `"`, so escaping doesn't interfere with markdown detection.
@@ -101,19 +101,19 @@
   }
 
   var PAGE_TIPS = {
-    'admin/live':   'Live Dashboard is open — I can explain any metric or flag what needs attention.',
-    'admin/roster': 'Roster open — left-click cycles status, right-click opens the full palette. Need help?',
-    'admin/tickets':'Viewing ticket reports — ask me about ticket type patterns or AI Learning feedback.',
+    'admin/live':   'Live Dashboard is open: I can explain any metric or flag what needs attention.',
+    'admin/roster': 'Roster open, left-click cycles status, right-click opens the full palette. Need help?',
+    'admin/tickets':'Viewing ticket reports, ask me about ticket type patterns or AI Learning feedback.',
     'agent/tickets':'Ready to log? Enter your Zoho ticket number and I\'ll walk you through it.',
-    'agent/breakbot':'Break Bot ready — tap a break type to start. Supervisor sees it live.',
-    'agent/writer': 'AI Writer is open — paste any draft and ask me to transform it.',
+    'agent/breakbot':'Break Bot ready, tap a break type to start. Supervisor sees it live.',
+    'agent/writer': 'AI Writer is open, paste any draft and ask me to transform it.',
   };
 
   var CHIPS = [
     {e:'🐛',l:'Report bug',  m:'I found a bug. Here\'s what\'s happening:'},
     {e:'📅',l:'Roster help', m:'Walk me through the Roster attendance features.'},
     {e:'🎫',l:'Log ticket',  m:'Walk me through logging a ticket step by step.'},
-    {e:'🔍',l:'Zoho issue',  m:'My Zoho ticket number isn\'t loading — what should I do?'},
+    {e:'🔍',l:'Zoho issue',  m:'My Zoho ticket number isn\'t loading, what should I do?'},
     {e:'⏰',l:'Break Bot',   m:'How does the Break Bot work?'},
     {e:'📖',l:'Full guide',  m:'Give me a full overview of this tool and all its features.'},
   ];
@@ -220,7 +220,7 @@
       '<div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:#fff;" id="brain-msgs">' + msgsHTML + '</div>' +
       // Input row
       '<div style="display:flex;gap:8px;padding:12px 14px;flex-shrink:0;align-items:flex-end;background:#FAFBFC;border-top:1.5px solid #F0F2F5;">' +
-        '<textarea id="brain-input-el" style="flex:1;padding:10px 14px;border-radius:14px;border:1.5px solid #E8EBF0;background:#fff;color:#1A1F3C;font-size:12.5px;font-family:inherit;outline:none;resize:none;max-height:100px;min-height:40px;line-height:1.5;transition:border-color .2s,box-shadow .2s;" placeholder="Ask anything — features, bugs, how-to…" onkeydown="Brain.key(event)" oninput="Brain.resize(this)" rows="1"></textarea>' +
+        '<textarea id="brain-input-el" style="flex:1;padding:10px 14px;border-radius:14px;border:1.5px solid #E8EBF0;background:#fff;color:#1A1F3C;font-size:12.5px;font-family:inherit;outline:none;resize:none;max-height:100px;min-height:40px;line-height:1.5;transition:border-color .2s,box-shadow .2s;" placeholder="Ask anything, features, bugs, how-to…" onkeydown="Brain.key(event)" oninput="Brain.resize(this)" rows="1"></textarea>' +
         '<button id="brain-send-btn" style="width:40px;height:40px;border-radius:12px;flex-shrink:0;border:none;cursor:pointer;background:linear-gradient(135deg,#F97316,#FF8C00);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(249,115,22,.4);transition:transform .2s,box-shadow .2s;" onclick="Brain.send()">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
         '</button>' +
@@ -284,10 +284,10 @@
       });
       var data=await res.json();
       rmTyping();
-      msgs.push({role:'assistant',content:data.success?data.reply:'Having trouble connecting — please try again.',time:ts()});
+      msgs.push({role:'assistant',content:data.success?data.reply:'Having trouble connecting, please try again.',time:ts()});
     } catch(e){
       rmTyping();
-      msgs.push({role:'assistant',content:'Connection issue — check your internet and retry.',time:ts()});
+      msgs.push({role:'assistant',content:'Connection issue, check your internet and retry.',time:ts()});
     }
     busy=false; render();
     var b2=document.getElementById('brain-send-btn'); if(b2) b2.disabled=false;
@@ -325,7 +325,7 @@
       var inp=document.getElementById('brain-input-el'); if(inp) inp.focus();
       if(!sessionGreeted){
         sessionGreeted=true;
-        msgs.push({role:'assistant',content:greet()+', **'+fn()+'**! I\'m Brain — your AI co-pilot for Adit Agent Monitor.\n\nI can see you\'re on the **'+ctx().page+'** page. What can I help you with today?',time:ts()});
+        msgs.push({role:'assistant',content:greet()+', **'+fn()+'**! I\'m Brain, your AI co-pilot for Adit Agent Monitor.\n\nI can see you\'re on the **'+ctx().page+'** page. What can I help you with today?',time:ts()});
         render();
       }
     },160);
@@ -376,7 +376,7 @@
     injectCSS();
     var p=document.getElementById('brain-panel');if(p) p.classList.remove('bopen');
     setTimeout(function(){
-      var n=fn(); if(n) showBubble(greet()+', '+n+'! I\'m Brain — tap me anytime 🤖',0);
+      var n=fn(); if(n) showBubble(greet()+', '+n+'! I\'m Brain, tap me anytime 🤖',0);
     },2500);
     watchPage();
   }

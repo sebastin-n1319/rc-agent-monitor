@@ -26,13 +26,13 @@ The Session 1 stub:
 
 ## Goals
 
-1. **Robust statistics** — median + MAD-based modified z-score, immune to outliers
+1. **Robust statistics**, median + MAD-based modified z-score, immune to outliers
 2. **Multiple metrics** per agent, each with a meaningful direction (low/high/either)
-3. **Persistent anomaly events** — store + acknowledge + audit, not just toasts
-4. **Configurable sensitivity** — per metric, admin-tunable
-5. **Daily evaluation** — nightly cron, plus on-demand
-6. **Real data sources** — DB queries against presence_events, call_logs, break_events
-7. **Graceful for new agents** — skip metrics with too little history rather than misfire
+3. **Persistent anomaly events**, store + acknowledge + audit, not just toasts
+4. **Configurable sensitivity**, per metric, admin-tunable
+5. **Daily evaluation**, nightly cron, plus on-demand
+6. **Real data sources**: DB queries against presence_events, call_logs, break_events
+7. **Graceful for new agents**, skip metrics with too little history rather than misfire
 
 ## Non-goals
 
@@ -54,12 +54,12 @@ The Session 1 stub:
 Each metric has independent threshold + direction + enable flag stored in
 `anomaly_thresholds` table. Admins can tune via `PUT /api/anomaly/thresholds/:metric`.
 
-## The math — modified z-score
+## The math, modified z-score
 
 For each (agent, metric):
 1. Pull last N days of values (default N=30, excluding weekends/holidays for that agent's schedule)
-2. Compute **median** (M) — robust to outliers
-3. Compute **MAD** = median(|x_i - M|) — robust to outliers
+2. Compute **median** (M), robust to outliers
+3. Compute **MAD** = median(|x_i - M|), robust to outliers
 4. **Modified z-score**: `z = 0.6745 * (today - M) / MAD`
 5. Fire if `|z| > threshold` AND direction matches
 
@@ -71,15 +71,15 @@ cutoff. We default each metric to 3.5 with admin override.
 - Regular z uses mean + stdev, both of which are PULLED by outliers
 - An agent who had one massive day of calls would inflate their own baseline,
   making subsequent normal days look like "low" anomalies. Bad UX.
-- Median + MAD use the middle of the distribution — single outliers don't move them
+- Median + MAD use the middle of the distribution, single outliers don't move them
 
 ## Edge cases handled
 
-- **Too little history** (<10 non-zero days): skip — return no anomaly, log `insufficient_data`
-- **MAD = 0** (all values identical): skip — division would be undefined
+- **Too little history** (<10 non-zero days): skip, return no anomaly, log `insufficient_data`
+- **MAD = 0** (all values identical): skip, division would be undefined
 - **All zeros** (vacation, holiday): exclude from baseline
 - **Today is a "day off"** per the agent's schedule: skip evaluation entirely
-- **First few weeks for a new agent**: skip — let baseline build naturally
+- **First few weeks for a new agent**: skip, let baseline build naturally
 
 ## Architecture
 
@@ -111,7 +111,7 @@ cutoff. We default each metric to 3.5 with admin override.
               └───────────────────────────────┘
 ```
 
-Engine is pure — `evaluateMetric(values, todayValue, config)` takes everything
+Engine is pure: `evaluateMetric(values, todayValue, config)` takes everything
 explicitly. The runner (server.js) handles I/O.
 
 ## Database schema
@@ -149,7 +149,7 @@ One row per metric.
 | `acked_at` | DATETIME | |
 | `acked_by` | TEXT | |
 
-UNIQUE constraint on (agent_email, metric, date) — one anomaly per agent/metric/day.
+UNIQUE constraint on (agent_email, metric, date), one anomaly per agent/metric/day.
 
 ## API endpoints
 
@@ -168,7 +168,7 @@ UNIQUE constraint on (agent_email, metric, date) — one anomaly per agent/metri
 
 A condition is met when **every** statement below is verifiable:
 
-1. ✅ `lib/anomaly.js` is pure — no I/O, no clock, no DB
+1. ✅ `lib/anomaly.js` is pure, no I/O, no clock, no DB
 2. ✅ ≥ 15 unit tests covering each metric direction + edge cases
 3. ✅ Modified z-score formula matches spec (`0.6745 * (x - median) / MAD`)
 4. ✅ MAD=0 case returns null (no false positive)

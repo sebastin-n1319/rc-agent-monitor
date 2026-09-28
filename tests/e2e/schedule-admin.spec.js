@@ -84,7 +84,7 @@ test.describe('ScheduleAdmin runtime behavior', () => {
 
   test('open() respects the scheduleAdherenceV2 feature flag', async ({ page }) => {
     await page.goto('/');
-    // Default flag is off — open() should bail without rendering the dashboard
+    // Default flag is off, open() should bail without rendering the dashboard
     await page.evaluate(() => window.ScheduleAdmin.open());
     const dashCount = await page.locator('#sa-dashboard').count();
     // Either the dashboard wasn't created (count 0) or it's display:none

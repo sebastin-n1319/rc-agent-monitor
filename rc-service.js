@@ -15,7 +15,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // RC Heavy tier: 40 req/min shared budget across ALL endpoints.
 // When ANY call gets a 429/CMN-301, we set a global pause so presence sync,
 // call-log sync, and the missed-call poll stop competing and let the budget recover.
-let _rcRateLimitedUntil = 0;     // epoch ms — wall clock time to resume API calls
+let _rcRateLimitedUntil = 0;     // epoch ms, wall clock time to resume API calls
 const RC_GLOBAL_PAUSE_MS = 65000; // 65 s → budget fully replenishes in 60 s; +5 s buffer
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -53,7 +53,7 @@ setInterval(() => {
   for (const [k, v] of Object.entries(lastLiveStatusSnapshot)) {
     if (v && v.at && v.at < cutoff) delete lastLiveStatusSnapshot[k];
   }
-  // lastQueueStatuses — reset if queue data is stale (covered by QUEUE_STATUS_TTL_MS already)
+  // lastQueueStatuses, reset if queue data is stale (covered by QUEUE_STATUS_TTL_MS already)
   if (lastQueueStatusAt && Date.now() - lastQueueStatusAt > SNAPSHOT_TTL_MS) {
     lastQueueStatuses = {};
     lastQueueStatusAt = 0;
@@ -441,7 +441,7 @@ function buildSessionSummary(sessionCalls, lookups) {
   // extension ID in individual leg records. Broaden: also count any inbound call that
   // landed on a monitored agent (owner) whose *first* leg direction was inbound.
   // Using primaryDirection (first leg) rather than !outboundSeen avoids incorrectly
-  // dropping transferred calls — a transfer creates an outbound leg in the same session
+  // dropping transferred calls, a transfer creates an outbound leg in the same session
   // even though the original call came from a customer through the queue.
   const relevantInbound = queueTouched || (!!owner && inboundSeen && primaryDirection !== 'outbound');
   const relevantOutbound = !!owner && !relevantInbound && (primaryDirection === 'outbound' || outboundSeen);
@@ -750,7 +750,7 @@ function isRateLimitError(err, data) {
 }
 
 // RC documents X-Rate-Limit-Window (seconds until the budget resets) and
-// standard Retry-After on 429s. Prefer that over our fixed guess when present —
+// standard Retry-After on 429s. Prefer that over our fixed guess when present,
 // see https://developers.ringcentral.com/guide/basics/rate-limits
 function rateLimitWaitMsFromHeaders(headers) {
   if (!headers || typeof headers.get !== 'function') return null;
@@ -769,7 +769,7 @@ function markRcRateLimited(extraMs = RC_GLOBAL_PAUSE_MS, headers = null) {
   const until = Date.now() + waitMs;
   if (until > _rcRateLimitedUntil) {
     _rcRateLimitedUntil = until;
-    console.warn(`🚫 RC rate limit — GLOBAL pause until ${new Date(_rcRateLimitedUntil).toISOString()} (${Math.round(waitMs / 1000)}s${adaptiveMs ? ', per RC response header' : ', default'})`);
+    console.warn(`🚫 RC rate limit: GLOBAL pause until ${new Date(_rcRateLimitedUntil).toISOString()} (${Math.round(waitMs / 1000)}s${adaptiveMs ? ', per RC response header' : ', default'})`);
   }
 }
 
@@ -787,8 +787,8 @@ function getRcRateLimitState() {
 // Central RC API GET helper.  All platform.get() calls route through here so that:
 //   1. If a global rate-limit pause is active, we wait for it to expire first.
 //   2. The response JSON is parsed once and returned directly (no double-consume).
-//   3. Any 429/CMN-301 — whether thrown by the SDK as an exception OR returned
-//      as an errorCode in the JSON body — automatically sets the global pause.
+//   3. Any 429/CMN-301, whether thrown by the SDK as an exception OR returned
+//      as an errorCode in the JSON body, automatically sets the global pause.
 //
 // Returns the parsed JSON data object on success.
 // Throws an Error (with .rcData set) on RC API errors.
@@ -799,7 +799,7 @@ async function rcGet(path, params) {
     console.log(`⏳ rcGet(${tag}) waiting ${Math.ceil(pause / 1000)}s for global rate-limit pause…`);
     await sleep(pause);
   }
-  // Wrap EVERYTHING — the RC SDK can throw a JS exception for HTTP 429s
+  // Wrap EVERYTHING, the RC SDK can throw a JS exception for HTTP 429s
   // before we ever get a chance to call r.json(), so we must catch at this level.
   try {
     const r = await platform.get(path, params);
@@ -819,7 +819,7 @@ async function rcGet(path, params) {
   }
 }
 
-// Same protection as rcGet() but for POST/PUT/DELETE — used by subscription
+// Same protection as rcGet() but for POST/PUT/DELETE, used by subscription
 // (webhook) management, which previously called platform.post/put/delete
 // directly and bypassed the shared rate-limit gate entirely. That gap let
 // webhook create/renew/delete fire during an active RC-imposed pause and
@@ -1065,7 +1065,7 @@ async function ensureRealtimeSubscription() {
           scheduleSubscriptionRenewal();
           return;
         }
-        // No usable match — delete all stale/orphaned subscriptions to free slots
+        // No usable match, delete all stale/orphaned subscriptions to free slots
         console.log(`🗑️ Purging ${existing.length} stale RC subscription(s) before registering fresh one...`);
         for (const s of existing) {
           try {
@@ -1074,11 +1074,11 @@ async function ensureRealtimeSubscription() {
           } catch (err) {
             console.warn(`   ⚠️ Could not delete ${s.id}: ${err.message}`);
           }
-          await sleep(300); // stagger deletes — don't burst the limit we may have just tripped
+          await sleep(300); // stagger deletes, don't burst the limit we may have just tripped
         }
       }
     } catch (listErr) {
-      // Non-fatal — if listing fails we still try to create (may still hit the limit)
+      // Non-fatal, if listing fails we still try to create (may still hit the limit)
       console.warn('⚠️ Could not list existing subscriptions:', listErr.message);
     }
 
@@ -1617,7 +1617,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   // calls and the `result=Missed,Voicemail` filter works correctly there.
   //
   // Fallback: if the queue extension ID isn't resolved yet, fall back to the
-  // account-level log (which was the prior behavior — still broken, but won't error).
+  // account-level log (which was the prior behavior, still broken, but won't error).
   //
   // rcGet() automatically waits for any active global rate-limit pause and marks
   // a 65s pause on 429, so retries here just re-invoke after the pause clears.
@@ -1627,7 +1627,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
 
     // Ensure queue ID is resolved before attempting extension-level fetch
     if (!customerServiceQueueId) {
-      try { await findQueueId(); } catch(e) { /* non-fatal — will use account-level below */ }
+      try { await findQueueId(); } catch(e) { /* non-fatal, will use account-level below */ }
     }
 
     const fetchFn = customerServiceQueueId
@@ -1641,7 +1641,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     while (true) {
       try {
         records = await fetchFn();
-        console.log(`📞 [missed-poll] Fetched from ${fetchLabel} — ${records.length} records`);
+        console.log(`📞 [missed-poll] Fetched from ${fetchLabel}: ${records.length} records`);
         break;
       } catch(e) {
         attempt++;
@@ -1683,7 +1683,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
 
   // Debug: log first few records so we can verify filter results in Railway logs
   for (const call of records.slice(0, 8)) {
-    console.log(`  · id=${call.id} from.ext=${call.from?.extensionNumber||'—'} from.ph=${call.from?.phoneNumber||'—'} to.ext=${call.to?.extensionNumber || '—'} to.name="${call.to?.name || ''}" legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
+    console.log(`  · id=${call.id} from.ext=${call.from?.extensionNumber||'-'} from.ph=${call.from?.phoneNumber||'-'} to.ext=${call.to?.extensionNumber || '-'} to.name="${call.to?.name || ''}" legs=${(call.legs||[]).length} result=${call.result} age=${Math.round((Date.now()-new Date(call.startTime).getTime())/1000)}s`);
   }
 
   // ── Secondary leg fetch ──────────────────────────────────────────────────────
@@ -1691,7 +1691,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   //   1. Internal-extension callers (ext-to-queue): RC returns 0 legs entirely.
   //   2. Some queue calls: RC returns legs but ALL legs reference only the queue
   //      extension itself (e.g. both legs show ext=1025 instead of the ringing agents).
-  //      Confirmed from logs: id=AMZ14zwNvXHTis1A — legs(2) both "ext=1025", [agent-legs-none].
+  //      Confirmed from logs: id=AMZ14zwNvXHTis1A, legs(2) both "ext=1025", [agent-legs-none].
   // Fix: for ANY missed call with >8s ring time where no agent leg is identifiable,
   // fetch the account-level call log by sessionId/time-window which has full routing legs.
   const _queueExtForFilter = queueExtFilter ? String(queueExtFilter) : null;
@@ -1819,7 +1819,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
   // Hard-filter: only process calls that have definitively ended as Missed or Voicemail.
   // The RC API `result=Missed,Voicemail` filter can return in-progress calls when
   // individual legs were missed even though the overall call is still routing.
-  const MIN_CALL_AGE_MS = 30 * 1000; // wait 30s after call start — ensures routing is complete
+  const MIN_CALL_AGE_MS = 30 * 1000; // wait 30s after call start, ensures routing is complete
   const now = Date.now();
   const completed = filtered.filter(({ call }) => {
     const result   = (call.result || '').toLowerCase();
@@ -1836,7 +1836,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
     const isDirect = matchType === 'direct';
     const legs = call.legs || [];
 
-    // Queue detection — check action, type, extension name, AND extension type.
+    // Queue detection, check action, type, extension name, AND extension type.
     // RC legs for queue routing often have action='Phone Call' with an extension
     // whose name contains "Queue" (e.g. "Customer Service + VoIP Queue").
     // Also consider a direct call to the monitored queue ext as "in queue".
@@ -1867,7 +1867,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
 
     // Agent ring legs: legs that rang a specific extension (not the queue ext itself).
     // For external callers RC puts the agent extension in l.extension.extensionNumber.
-    // For INTERNAL callers (ext-to-queue) RC puts it in l.to.extensionNumber instead —
+    // For INTERNAL callers (ext-to-queue) RC puts it in l.to.extensionNumber instead,
     // so we fall back to l.to when l.extension is absent or has no extensionNumber.
     const _excludedActions = new Set(['voicemail', 'vmgreeting', 'holdabandon', 'hold abandon', 'faxreceive']);
     const _agentExtFromLeg = (l) => {
@@ -1936,7 +1936,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
       vmTranscript = await fetchVoicemailTranscript(call.from?.phoneNumber, call.startTime);
     }
 
-    // For direct calls the destination IS the agent — surface them clearly
+    // For direct calls the destination IS the agent, surface them clearly
     const destExt  = String(call.to?.extensionNumber || '');
     const destAgent = isDirect && destExt ? (extToAgent[destExt] || null) : null;
 
@@ -1963,7 +1963,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
       from: {
         name:   call.from?.name                || '',
         number: call.from?.phoneNumber         || '',
-        // For internal callers (ext-to-queue) phoneNumber is blank — capture the ext instead
+        // For internal callers (ext-to-queue) phoneNumber is blank, capture the ext instead
         extNumber: call.from?.extensionNumber  || '',
       },
       to: {
@@ -1981,7 +1981,7 @@ async function fetchRecentMissedCalls(minutesBack = 3, queueExtFilter = null, kn
 }
 
 /**
- * Raw debug helper — returns the exact fields RC sends for recent Missed/VM calls,
+ * Raw debug helper, returns the exact fields RC sends for recent Missed/VM calls,
  * with NO queue filtering applied. Use the /api/admin/debug-missed-raw endpoint
  * to call this and see what to.extensionNumber / to.name / to.phoneNumber look like
  * for DID calls so the filter can be tuned.
@@ -2063,7 +2063,7 @@ async function backfillCallHistory(fromMonth, toMonth, onSummary) {
 
     for (const agent of agents) {
       try {
-        await sleep(500); // shorter sleep — timeout handles rate limit hangs
+        await sleep(500); // shorter sleep, timeout handles rate limit hangs
 
         // If RC is rate-limited with >8s remaining, wait it out (max 70s) before calling
         const rlRemaining = Math.max(0, _rcRateLimitedUntil - Date.now());
@@ -2134,7 +2134,7 @@ async function backfillCallHistory(fromMonth, toMonth, onSummary) {
         if (typeof onSummary === 'function') await onSummary(row).catch(e => console.warn('⚠️ onSummary:', e.message));
         console.log(`📞 Backfill ${month} ${agent.name}: ${calls.length} calls → written to DB`);
       } catch(e) {
-        console.error(`❌ Backfill ${month} ${agent.name}: ${e.message} — skipped`);
+        console.error(`❌ Backfill ${month} ${agent.name}: ${e.message}, skipped`);
       }
     }
   }

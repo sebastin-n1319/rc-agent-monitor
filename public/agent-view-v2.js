@@ -1,5 +1,5 @@
 /*
- * agent-view-v2.js — interactive logic for the Agent View V2 design system.
+ * agent-view-v2.js, interactive logic for the Agent View V2 design system.
  * - Animates stat counters when values change
  * - Wires the hero "shift state" pill to the user's current Break Bot status
  * - Builds initials/photo avatar from name + Google profile photo
@@ -20,7 +20,7 @@
   const _profileByName = {};
 
   const av2 = {
-    /* Initials avatar — accepts "Sebastin Nathan" → "SN" */
+    /* Initials avatar, accepts "Sebastin Nathan" → "SN" */
     initials(name) {
       if (!name) return '?';
       return name.trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
@@ -63,7 +63,7 @@
       return _profileByName[name.toLowerCase()] || null;
     },
 
-    /* Build the inner HTML for an avatar — photo if available, initials if not */
+    /* Build the inner HTML for an avatar, photo if available, initials if not */
     avatarHtml(name, email, cssClass) {
       const cls = cssClass || 'av2-agent-avatar';
       const pic = email ? av2.getPicture(email) : null;
@@ -94,7 +94,7 @@
         'this.parentElement.innerHTML=this.parentElement.dataset.initials||\'?\'">';
     },
 
-    /* Animated counter — counts from current value to target */
+    /* Animated counter, counts from current value to target */
     countTo(el, target, opts) {
       if (!el || isNaN(target)) return;
       const o = Object.assign({ duration: 800, suffix: '', prefix: '', decimals: 0 }, opts || {});
@@ -194,7 +194,7 @@
     renderAgentRow(agent, idx) {
       const name  = agent.name || 'Unknown';
       const email = agent.email || '';
-      const ext   = agent.extension || agent.ext || '—';
+      const ext   = agent.extension || agent.ext || '-';
       const status = (agent.status || 'offline').toLowerCase();
       const stateMap = {
         available: 'available', avail: 'available', online: 'available',
@@ -204,8 +204,8 @@
         offline: 'offline'
       };
       const state = stateMap[status] || 'offline';
-      const live  = agent.liveTimer || '—';
-      const since = agent.since || '—';
+      const live  = agent.liveTimer || '-';
+      const since = agent.since || '-';
       return '<tr data-ext="' + av2.escape(ext) + '" data-name="' + av2.escape(name) + '">' +
         '<td>' + (idx + 1) + '</td>' +
         '<td><div class="av2-agent-cell">' +
@@ -220,10 +220,10 @@
           av2.escape(agent.statusLabel || agent.status || 'Offline') +
         '</span></td>' +
         '<td>' + av2.escape(String(since)) + '</td>' +
-        '<td>' + av2.escape(String(agent.inboundCalls != null ? agent.inboundCalls : '—')) + '</td>' +
-        '<td>' + av2.escape(String(agent.outboundCalls != null ? agent.outboundCalls : '—')) + '</td>' +
-        '<td>' + av2.escape(String(agent.missedCalls != null ? agent.missedCalls : '—')) + '</td>' +
-        '<td>' + av2.escape(String(agent.aht || '—')) + '</td>' +
+        '<td>' + av2.escape(String(agent.inboundCalls != null ? agent.inboundCalls : '-')) + '</td>' +
+        '<td>' + av2.escape(String(agent.outboundCalls != null ? agent.outboundCalls : '-')) + '</td>' +
+        '<td>' + av2.escape(String(agent.missedCalls != null ? agent.missedCalls : '-')) + '</td>' +
+        '<td>' + av2.escape(String(agent.aht || '-')) + '</td>' +
         '</tr>';
     },
 

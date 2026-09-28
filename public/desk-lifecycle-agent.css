@@ -1,5 +1,5 @@
 /* ───────────────────────────────────────────────────────────────────────
-   MY TICKET STATS (self-service agent view) — Session 22
+   MY TICKET STATS (self-service agent view): Session 22
    Migrated onto the shared `.av2` Agent View design system (see
    agent-view-v2.css) instead of the old tkt-* / tkta-* token set, so this
    page now matches Home/Live: same spacing/type/elevation tokens, the
@@ -9,7 +9,7 @@
    #desk-lifecycle-agent-root sits inside `#agent-section-mystats.av2`
    (see index.html), so it inherits the full av2 component library
    (.av2-panel, .av2-stat-grid, .av2-table, .av2-pill, .av2-btn, .av2-skel,
-   .av2-banner, .av2-empty, ...) straight from agent-view-v2.css — there is
+   .av2-banner, .av2-empty, ...) straight from agent-view-v2.css, there is
    nothing page-specific left to override here.
    ─────────────────────────────────────────────────────────────────────── */
 #desk-lifecycle-agent-root { width: 100%; }
@@ -75,7 +75,7 @@
 }
 
 /* My Stats' cards carry longer values than Home's (durations, percentages,
-   "1h 23m" rather than a bare count) — step the value down from av2's
+   "1h 23m" rather than a bare count), step the value down from av2's
    default --av2-t-2xl (40px) to --av2-t-xl (28px, the same token av2
    itself switches to at its own <=900px breakpoint) so they don't crowd
    the 180px stat-card width. */
@@ -86,7 +86,7 @@
    sections, 24px panel padding, 16-40px inside a stat card) was designed
    for Home/Live's handful of hero cards, but this page stacks five
    sections (My numbers, Call Activity, Chat Activity, Breakdown, Recent
-   tickets) — at the base spacing that's a lot of dead air. Tightened
+   tickets), at the base spacing that's a lot of dead air. Tightened
    here, scoped to this page only, so Home/Live and other .av2 surfaces
    are untouched. */
 .av2 #desk-lifecycle-agent-root .av2-section { margin-bottom: var(--av2-s4); }
@@ -99,7 +99,7 @@
 }
 .av2 #desk-lifecycle-agent-root .av2-stat { padding: var(--av2-s4) var(--av2-s4) var(--av2-s3); }
 
-/* ── Period filter bar — Session 23 ──────────────────────────────────
+/* ── Period filter bar: Session 23 ──────────────────────────────────
    Brings the same Period options admins already have (desk-lifecycle-
    admin.css's .tkt-select / .tkt-date-inputs) to My Stats, styled with
    av2 tokens instead of the admin page's tkt-* variables. */
@@ -146,7 +146,7 @@
 }
 
 /* Session 28: the "amber" tone isn't one of agent-view-v2.css's built-in
-   .av2-stat tones (green/red/blue/teal/purple only) — added here, scoped
+   .av2-stat tones (green/red/blue/teal/purple only), added here, scoped
    to this page, using the shared --av2-yellow token, to match the admin
    page's amber "Transferred" pill. */
 .av2 #desk-lifecycle-agent-root .av2-stat[data-tone="amber"] .av2-stat-ico {
@@ -154,14 +154,14 @@
 }
 
 /* ───────────────────────────────────────────────────────────────────────
-   Session 27 additions — hover tooltips on every "My numbers" card,
+   Session 27 additions, hover tooltips on every "My numbers" card,
    delta-vs-prior-period chips, and the Recent-tickets Status filter /
    sortable-column toolbar.
 
-   Session 28 — visual pass on Sebastin's feedback ("? doesn't look good",
+   Session 28, visual pass on Sebastin's feedback ("? doesn't look good",
    "hover animation can be better"): the OS cursor:help glyph (the little
    arrow+"?" icon) is gone, replaced with a small glowing dot appended
-   after the label text via ::after — a deliberate, on-brand affordance
+   after the label text via ::after, a deliberate, on-brand affordance
    instead of a borrowed system icon. The dotted underline is gone too.
    Hover motion moved from a flat opacity/translateY fade to a springier
    lift+glow using the same easing curve as the tooltip itself, so every
@@ -203,7 +203,7 @@
 .av2-tkt-delta-flat { background: var(--av2-surface-3); color: var(--av2-t3); }
 
 /* ── Recent tickets: Status / Channel / FCR / Reassigned filters +
-   sortable Created/Closed — Session 28 replaces the old single Status-
+   sortable Created/Closed: Session 28 replaces the old single Status-
    only row with a denser filter-chip cluster (the "Company" search box
    that used to live in the header above is gone; these are the filters
    that actually help an agent look at their own tickets). ── */
@@ -245,7 +245,7 @@
   .av2 #desk-lifecycle-agent-root .mystats-ticket-filters { width: 100%; }
 }
 
-/* ── Hover/focus tooltip (JS-positioned, appended to <body>) — mirrors
+/* ── Hover/focus tooltip (JS-positioned, appended to <body>), mirrors
    desk-lifecycle-admin.css's .tkt-tooltip. Deliberately NOT scoped under
    #desk-lifecycle-agent-root since it's appended directly to <body>.
    Session 28: swapped the flat opacity/translateY(4px) fade for a

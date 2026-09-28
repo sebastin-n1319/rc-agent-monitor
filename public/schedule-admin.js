@@ -1,14 +1,14 @@
 /**
- * schedule-admin.js — UI module for Schedule Adherence Part 2 (Session 5).
+ * schedule-admin.js: UI module for Schedule Adherence Part 2 (Session 5).
  *
  * Owns:
- *   • Dashboard modal — today's adherence, auto-grouped by status
- *   • Per-agent schedule editor — 7 day-of-week rows + working toggle
- *   • Bulk apply modal — pick template + agents → POST /api/schedules/bulk
+ *   • Dashboard modal, today's adherence, auto-grouped by status
+ *   • Per-agent schedule editor: 7 day-of-week rows + working toggle
+ *   • Bulk apply modal, pick template + agents → POST /api/schedules/bulk
  *   • Inline timeline visualization (planned vs actual)
  *   • History viewer for versioned schedule changes
  *
- * Feature flag: scheduleAdherenceV2 (default OFF — set via setFlag).
+ * Feature flag: scheduleAdherenceV2 (default OFF, set via setFlag).
  * Keyboard shortcut: `T` opens dashboard (admin only).
  *
  * Public API (window-scoped):
@@ -98,7 +98,7 @@
   }
 
   function fmtTime(m) {
-    if (m == null || !isFinite(m)) return '—';
+    if (m == null || !isFinite(m)) return '-';
     const h = Math.floor(m / 60);
     const mm = m % 60;
     return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
@@ -278,7 +278,7 @@
   function rowHtml(r) {
     const sched = r.schedule || {};
     const scheduledRange = sched.isWorkingDay === false
-      ? '— day off —'
+      ? ', day off, '
       : (sched.start || '09:00') + '–' + (sched.end || '17:00');
     const varianceTxt = r.startVarianceMin != null
       ? (r.startVarianceMin > 0 ? '+' + r.startVarianceMin + ' min' : r.startVarianceMin + ' min')
@@ -536,7 +536,7 @@
           ' · day ' + h.day_of_week + ' · ' + (h.is_working_day ? (h.start_time + '–' + h.end_time) : 'off') +
           ' (by ' + (h.created_by || 'system') + ')';
       });
-      alert('Schedule history for ' + email + ':\n\n' + (lines.join('\n') || 'No history yet — only default schedule applies.'));
+      alert('Schedule history for ' + email + ':\n\n' + (lines.join('\n') || 'No history yet, only default schedule applies.'));
     } catch (e) {}
   }
 
@@ -609,9 +609,9 @@
     }
     wrap.innerHTML = filtered.map(a => {
       const hasEmail = !!a.email;
-      return `<label class="sa-bulk-row${hasEmail ? '' : ' sa-disabled'}" title="${hasEmail ? '' : 'No email on file — cannot apply'}">
+      return `<label class="sa-bulk-row${hasEmail ? '' : ' sa-disabled'}" title="${hasEmail ? '' : 'No email on file, cannot apply'}">
         <input type="checkbox" class="sa-bulk-cb" value="${esc(a.email || '')}" ${hasEmail ? '' : 'disabled'}>
-        <div><strong>${esc(a.name)}</strong> <span class="sa-row-meta">${esc(a.email || '— no email')}</span></div>
+        <div><strong>${esc(a.name)}</strong> <span class="sa-row-meta">${esc(a.email || ', no email')}</span></div>
       </label>`;
     }).join('');
     wrap.querySelectorAll('.sa-bulk-cb').forEach(cb => cb.addEventListener('change', updateBulkCount));
@@ -671,7 +671,7 @@
   async function open() {
     if (!flagOn('scheduleAdherenceV2')) {
       if (typeof window.showToast === 'function') {
-        window.showToast('Schedule Adherence is in preview — enable via setFlag(\'scheduleAdherenceV2\', true)', 'info', 4000);
+        window.showToast('Schedule Adherence is in preview, enable via setFlag(\'scheduleAdherenceV2\', true)', 'info', 4000);
       }
       return;
     }

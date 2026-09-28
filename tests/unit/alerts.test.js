@@ -32,7 +32,7 @@ function makeThresholds(overrides = {}) {
   return t;
 }
 
-describe('alerts — public surface', () => {
+describe('alerts, public surface', () => {
   it('exports the 5 stable alert keys', () => {
     expect(ALERT_KEYS).toEqual([
       'abandonment_spike',
@@ -274,7 +274,7 @@ describe('coverage_gap', () => {
     ];
     const r = evaluateOne(KEY, {
       now: NOW,
-      nowHourCST: 14,  // 2pm — inside default 9-17
+      nowHourCST: 14,  // 2pm, inside default 9-17
       thresholds: makeThresholds(),
       agents,
       coverage: { zeroAvailableSinceMs: NOW - 5 * MIN }

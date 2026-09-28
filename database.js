@@ -298,9 +298,9 @@ function resolveBreakEventStream(events, endAt){
   // Build reason strings for each active alert
   const alertReasons = [];
   if(breakDayCritical)  alertReasons.push(`Break total ${Math.floor(breakSeconds/60)}m (limit 60m + 5m grace)`);
-  else if(breakDayWarning) alertReasons.push(`Break total ${Math.floor(breakSeconds/60)}m (limit 60m — within 5m grace)`);
+  else if(breakDayWarning) alertReasons.push(`Break total ${Math.floor(breakSeconds/60)}m (limit 60m, within 5m grace)`);
   if(brbSingleCritical) alertReasons.push(`Single BRB ${Math.floor(maxBrbInstanceSeconds/60)}m (limit 10m + 2m grace)`);
-  else if(brbSingleWarning) alertReasons.push(`Single BRB ${Math.floor(maxBrbInstanceSeconds/60)}m (limit 10m — within 2m grace)`);
+  else if(brbSingleWarning) alertReasons.push(`Single BRB ${Math.floor(maxBrbInstanceSeconds/60)}m (limit 10m, within 2m grace)`);
   if(brbDayCritical)   alertReasons.push(`BRB total ${Math.floor(brbSeconds/60)}m (limit 20m)`);
   else if(brbDayWarning) alertReasons.push(`BRB total ${Math.floor(brbSeconds/60)}m (at 20m limit)`);
 
@@ -376,7 +376,7 @@ async function initDB() {
     is_voicemail INTEGER DEFAULT 0, from_number TEXT, to_number TEXT,
     queue_name TEXT, start_time DATETIME,
     fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-  // Wrapped separately — disk-full errors here must not abort the rest of initDB
+  // Wrapped separately, disk-full errors here must not abort the rest of initDB
   try {
     await run(`CREATE TABLE IF NOT EXISTS call_monthly_summary (
       agent_id TEXT NOT NULL, agent_name TEXT NOT NULL, month TEXT NOT NULL,
@@ -437,7 +437,7 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_app_sessions_email ON app_sessions(email)`);
 
-  // User profiles — persists Google profile data across session expiry
+  // User profiles, persists Google profile data across session expiry
   await run(`CREATE TABLE IF NOT EXISTS user_profiles (
     email TEXT PRIMARY KEY,
     name TEXT,
@@ -445,7 +445,7 @@ async function initDB() {
     google_sub TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
-  // FEAT-4: Audit log table — tracks admin actions
+  // FEAT-4: Audit log table, tracks admin actions
   await run(`CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     actor_email TEXT NOT NULL,
@@ -455,7 +455,7 @@ async function initDB() {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
   await run(`CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC)`);
 
-  // Break thresholds — configurable per AUX type
+  // Break thresholds, configurable per AUX type
   await run(`CREATE TABLE IF NOT EXISTS break_thresholds (
     aux_type TEXT PRIMARY KEY,
     single_limit_minutes INTEGER,
@@ -548,7 +548,7 @@ async function initDB() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT)`);
 
-  // #16 Session 11: Predictive abandonment — persisted logistic regression model
+  // #16 Session 11: Predictive abandonment, persisted logistic regression model
   await run(`CREATE TABLE IF NOT EXISTS predict_models (
     id INTEGER PRIMARY KEY,
     model_key TEXT NOT NULL,
@@ -563,7 +563,7 @@ async function initDB() {
     accuracy REAL,
     notes TEXT)`);
 
-  // Session 17: Admin Settings & Pause Controls — generic key/value store used
+  // Session 17: Admin Settings & Pause Controls, generic key/value store used
   // for the RC-sync / full background-job pause toggles (and future settings)
   // so admins never have to touch env vars or redeploy to change them.
   await run(`CREATE TABLE IF NOT EXISTS app_settings (
@@ -572,7 +572,7 @@ async function initDB() {
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_by TEXT)`);
 
-  // #20 Session 6: Anomaly detection — thresholds + event log
+  // #20 Session 6: Anomaly detection, thresholds + event log
   await run(`CREATE TABLE IF NOT EXISTS anomaly_thresholds (
     metric TEXT PRIMARY KEY,
     enabled INTEGER NOT NULL DEFAULT 1,
@@ -604,7 +604,7 @@ async function initDB() {
   await run(`CREATE INDEX IF NOT EXISTS idx_anomaly_events_recent
              ON anomaly_events(created_at DESC, severity)`).catch(()=>{});
 
-  // Seed default thresholds on first boot — never overwrite admin edits
+  // Seed default thresholds on first boot, never overwrite admin edits
   try {
     const { DEFAULT_THRESHOLDS: ANOM_DEFAULTS } = require('./lib/anomaly');
     for (const [metric, cfg] of Object.entries(ANOM_DEFAULTS)) {
@@ -631,7 +631,7 @@ async function initDB() {
   await run(`CREATE INDEX IF NOT EXISTS idx_agent_schedules_lookup
              ON agent_schedules(agent_email, day_of_week, effective_from DESC)`).catch(()=>{});
 
-  // #11 Session 2: Alert events — append-only audit log of every fire
+  // #11 Session 2: Alert events, append-only audit log of every fire
   await run(`CREATE TABLE IF NOT EXISTS alert_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     key TEXT NOT NULL,
@@ -644,13 +644,13 @@ async function initDB() {
     acked_by TEXT,
     snoozed_until DATETIME)`);
 
-  // Performance index — every alert lookup filters by key + time
+  // Performance index, every alert lookup filters by key + time
   await run(`CREATE INDEX IF NOT EXISTS idx_alert_events_key_time
              ON alert_events(key, created_at DESC)`).catch(()=>{});
   await run(`CREATE INDEX IF NOT EXISTS idx_alert_events_active
              ON alert_events(acked_at, snoozed_until, created_at DESC)`).catch(()=>{});
 
-  // Seed default thresholds — only inserts missing rows (won't overwrite admin edits)
+  // Seed default thresholds, only inserts missing rows (won't overwrite admin edits)
   const { DEFAULT_THRESHOLDS } = require('./lib/alerts');
   for (const [key, cfg] of Object.entries(DEFAULT_THRESHOLDS)) {
     try {
@@ -658,7 +658,7 @@ async function initDB() {
                  (key, enabled, severity, threshold_json, cooldown_seconds, updated_by)
                  VALUES (?, ?, ?, ?, ?, 'system')`,
         [key, cfg.enabled, cfg.severity, JSON.stringify(cfg.threshold), cfg.cooldown_seconds]);
-    } catch(e) { /* swallow — non-critical */ }
+    } catch(e) { /* swallow, non-critical */ }
   }
 
   // Migrations
@@ -684,11 +684,11 @@ async function initDB() {
     `ALTER TABLE break_events ADD COLUMN notify_status TEXT`,
     `ALTER TABLE break_events ADD COLUMN notify_response TEXT`,
     `ALTER TABLE app_roles ADD COLUMN breakbot_enabled INTEGER DEFAULT 1`,
-    // #21 Session 8 — PWA offline queue idempotency
+    // #21 Session 8: PWA offline queue idempotency
     `ALTER TABLE break_events ADD COLUMN idempotency_key TEXT`,
     // Google Chat user ID for @mention notifications
     `ALTER TABLE monitored_agents ADD COLUMN chat_id TEXT`,
-    // Google account subject ID (from OAuth JWT) — captured at login
+    // Google account subject ID (from OAuth JWT), captured at login
     `ALTER TABLE app_sessions ADD COLUMN google_sub TEXT`,
     // Session 40: outbound counterpart to answered_inbound, needed so
     // getAgentCallStatsRange() can blend a correct outbound AHT across
@@ -698,7 +698,7 @@ async function initDB() {
   ]) {
     try { await run(sql); }
     catch(e) {
-      // "duplicate column name" is the EXPECTED case — it just means this
+      // "duplicate column name" is the EXPECTED case, it just means this
       // migration already ran on a prior boot. Anything else (a typo'd
       // column, a locked/corrupt DB, a real syntax error) was previously
       // swallowed here with zero visibility, so the app could run for a
@@ -710,12 +710,12 @@ async function initDB() {
     }
   }
 
-  // Unique index — silent failure if column already exists from a prior boot
+  // Unique index, silent failure if column already exists from a prior boot
   try {
     await run(`CREATE UNIQUE INDEX IF NOT EXISTS idx_break_events_idempo
                ON break_events(idempotency_key)
                WHERE idempotency_key IS NOT NULL`);
-  } catch(e) { /* SQLite versions vary on partial index support — non-critical */ }
+  } catch(e) { /* SQLite versions vary on partial index support, non-critical */ }
 
   // ── Performance indexes on high-query columns (added SEC/PERF audit) ─────────
   for (const sql of [
@@ -799,7 +799,7 @@ function deleteCallLogsRange(startIso,endIso){
 }
 
 async function replaceCallLogsRange(startIso,endIso,logs){
-  // SAFE MERGE: never delete existing data — only add or refresh records.
+  // SAFE MERGE: never delete existing data, only add or refresh records.
   // Session 42: a call already stored is UPDATED with RingCentral's latest
   // version of it (result/direction/duration settle after the call ends)
   // instead of being ignored -- the old INSERT OR IGNORE kept whatever
@@ -875,7 +875,7 @@ async function pruneCallLogs(daysToKeep=CALL_LOGS_RETENTION_DAYS){
 }
 
 // Aggregate call_logs for a given YYYY-MM month into the persistent call_monthly_summary table.
-// Safe to call at any time — uses INSERT OR REPLACE so repeated calls are idempotent.
+// Safe to call at any time, uses INSERT OR REPLACE so repeated calls are idempotent.
 // Session 42: a month can only be (re)computed from call_logs while the
 // WHOLE month is still inside call_logs' retention window. Once its first
 // days have been pruned, re-aggregating it would silently overwrite a
@@ -1333,7 +1333,7 @@ async function getBreakEventByIdempoKey(key){
 /** Stamp an idempotency key onto a freshly-inserted break_event row. */
 async function setBreakEventIdempoKey(id, key){
   if (!id || !key) return;
-  // UNIQUE constraint will throw if the same key was inserted in a race —
+  // UNIQUE constraint will throw if the same key was inserted in a race,
   // caller should catch and serve the prior row instead.
   return run(`UPDATE break_events SET idempotency_key=? WHERE id=? AND idempotency_key IS NULL`, [key, id]);
 }
@@ -1649,7 +1649,7 @@ async function deleteAgentNote(id) {
   return run(`DELETE FROM agent_notes WHERE id=?`, [id]);
 }
 
-// APP SESSIONS — DB-backed tokens (no shared secret; survives server restarts)
+// APP SESSIONS: DB-backed tokens (no shared secret; survives server restarts)
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
 
 function createAppSession(token, email, name, picture, googleSub){
@@ -1675,7 +1675,7 @@ async function getAppSession(token){
     run(`DELETE FROM app_sessions WHERE token=?`, [token]).catch(()=>{});
     return null;
   }
-  // Rolling expiry — extend on each use
+  // Rolling expiry, extend on each use
   run(`UPDATE app_sessions SET expires_at=? WHERE token=?`, [Date.now() + SESSION_TTL_MS, token]).catch(()=>{});
   return row;
 }
@@ -1684,7 +1684,7 @@ function deleteAppSession(token){
   return run(`DELETE FROM app_sessions WHERE token=?`, [token]);
 }
 
-/** Session 10 bulk-action helper — force-logout an agent by wiping all their
+/** Session 10 bulk-action helper, force-logout an agent by wiping all their
  *  active server-side sessions. They'll need to re-auth via Google on next page load. */
 function deleteSessionsForEmail(email){
   if (!email) return Promise.resolve();
@@ -1806,13 +1806,13 @@ async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Ch
 async function pruneOldData() {
   const results = {};
 
-  // Presence events — BIGGEST table, poll every 2min × 13 agents = ~5MB/day.
+  // Presence events: BIGGEST table, poll every 2min × 13 agents = ~5MB/day.
   // Reduced from 14→7 days: 7-day trend charts still work; saves ~35MB on the
   // 500MB Railway volume that was at 93% capacity and caused the SIGTERM crash.
   const pe = await run(`DELETE FROM presence_events WHERE datetime(timestamp) < datetime('now','-7 days')`);
   results.presence_events = pe.changes;
 
-  // Call logs — Session 40: was hardcoded to 7 days here, completely
+  // Call logs: Session 40: was hardcoded to 7 days here, completely
   // independent of pruneCallLogs()'s own (also-hardcoded, also different)
   // window -- this runs every 2 hours (see server.js's cron), so it was
   // the one that actually won and kept call_logs pinned to ~7 days no
@@ -1821,15 +1821,15 @@ async function pruneOldData() {
   const cl = await pruneCallLogs(CALL_LOGS_RETENTION_DAYS);
   results.call_logs = cl.changes;
 
-  // Login logs — keep 30 days
+  // Login logs, keep 30 days
   const ll = await run(`DELETE FROM login_logs WHERE datetime(logged_in_at) < datetime('now','-30 days')`);
   results.login_logs = ll.changes;
 
-  // Break events — keep 60 days
+  // Break events, keep 60 days
   const be = await run(`DELETE FROM break_events WHERE datetime(created_at) < datetime('now','-60 days')`);
   results.break_events = be.changes;
 
-  // Audit log — keep 60 days
+  // Audit log, keep 60 days
   const al = await run(`DELETE FROM audit_log WHERE datetime(created_at) < datetime('now','-60 days')`);
   results.audit_log = al.changes;
 
@@ -1837,41 +1837,41 @@ async function pruneOldData() {
   const as = await run(`DELETE FROM app_sessions WHERE expires_at < ?`, [Date.now()]);
   results.app_sessions = as.changes;
 
-  // Alert events — keep 30 days (were never pruned; could grow unboundedly)
+  // Alert events, keep 30 days (were never pruned; could grow unboundedly)
   try {
     const ae = await run(`DELETE FROM alert_events WHERE datetime(created_at) < datetime('now','-30 days')`);
     results.alert_events = ae.changes;
   } catch(e) { results.alert_events = 0; }
 
-  // Anomaly events — keep 30 days (were never pruned)
+  // Anomaly events, keep 30 days (were never pruned)
   try {
     const ano = await run(`DELETE FROM anomaly_events WHERE datetime(created_at) < datetime('now','-30 days')`);
     results.anomaly_events = ano.changes;
   } catch(e) { results.anomaly_events = 0; }
 
-  // Wellness check-ins — keep 90 days (were never pruned)
+  // Wellness check-ins, keep 90 days (were never pruned)
   try {
     const wl = await run(`DELETE FROM wellness_checkin WHERE datetime(created_at) < datetime('now','-90 days')`);
     results.wellness_checkin = wl.changes;
   } catch(e) { results.wellness_checkin = 0; }
 
-  // Shift handoffs — keep 30 days (were never pruned)
+  // Shift handoffs, keep 30 days (were never pruned)
   try {
     const sh = await run(`DELETE FROM shift_handoff WHERE datetime(created_at) < datetime('now','-30 days')`);
     results.shift_handoff = sh.changes;
   } catch(e) { results.shift_handoff = 0; }
 
-  // Coach flags — keep 60 days (were never pruned)
+  // Coach flags, keep 60 days (were never pruned)
   try {
     const cf = await run(`DELETE FROM coach_flag WHERE datetime(created_at) < datetime('now','-60 days')`);
     results.coach_flag = cf.changes;
   } catch(e) { results.coach_flag = 0; }
 
   // Checkpoint WAL before VACUUM so SQLite flushes the write-ahead log back
-  // into the main db file — otherwise VACUUM won't reclaim WAL-held pages.
+  // into the main db file, otherwise VACUUM won't reclaim WAL-held pages.
   try { await run(`PRAGMA wal_checkpoint(TRUNCATE)`); } catch(e) { /* non-fatal */ }
 
-  // VACUUM — physically reclaims disk space (DELETE only marks pages free)
+  // VACUUM, physically reclaims disk space (DELETE only marks pages free)
   await run(`VACUUM`);
   results.vacuumed = true;
 
@@ -1930,7 +1930,7 @@ async function getAuditLog(limit = 200) {
 }
 
 // ── Session 17: Generic app settings (key/value) ───────────────────────────────
-// Backs the admin Settings page — RC sync pause, full pause, and any future
+// Backs the admin Settings page: RC sync pause, full pause, and any future
 // admin-tunable value that shouldn't require an env var + redeploy to change.
 function getSetting(key) {
   return get(`SELECT value FROM app_settings WHERE key = ?`, [key])
@@ -2130,7 +2130,7 @@ async function getActiveAlerts(limit){
               ORDER BY created_at DESC LIMIT ?`,[limit || 50]);
 }
 
-/** Full audit list — used for retrospective analytics. */
+/** Full audit list, used for retrospective analytics. */
 async function getRecentAlerts(days){
   const d = Math.min(Math.max(parseInt(days)||7, 1), 90);
   return all(`SELECT id,key,severity,body,data_json,agent_email,created_at,acked_at,acked_by,snoozed_until
@@ -2162,7 +2162,7 @@ async function snoozeAlert(id, minutes){
 
 // ── Predictive abandonment (#16 Session 11) ───────────────────────────
 
-/** Persist the latest fitted model. Single-row table — INSERT OR REPLACE. */
+/** Persist the latest fitted model. Single-row table: INSERT OR REPLACE. */
 async function savePredictModel(model){
   if (!model || !model.ready) throw new Error('only ready models can be saved');
   return run(`INSERT OR REPLACE INTO predict_models
@@ -2253,7 +2253,7 @@ async function insertAnomalyEvent(ev){
   if (!ev || !ev.agent_email || !ev.metric || !ev.date || !ev.severity) {
     throw new Error('agent_email, metric, date, severity required');
   }
-  // INSERT OR IGNORE — UNIQUE(agent_email, metric, date) prevents duplicates
+  // INSERT OR IGNORE: UNIQUE(agent_email, metric, date) prevents duplicates
   const r = await run(`INSERT OR IGNORE INTO anomaly_events
     (agent_email, metric, date, today_value, baseline_median, baseline_mad,
      modified_z, direction, severity, flat_baseline, sample_size)
@@ -2326,7 +2326,7 @@ async function getAllSchedules(){
   return out;
 }
 
-/** Versioned history (admin view) for one agent — newest first. */
+/** Versioned history (admin view) for one agent, newest first. */
 async function getScheduleHistory(email){
   return all(`SELECT id,agent_email,day_of_week,start_time,end_time,timezone,
               is_working_day,effective_from,effective_to,created_at,created_by
@@ -2338,9 +2338,9 @@ async function getScheduleHistory(email){
  * Insert a new schedule version. Accepts an array of day-of-week rows.
  * Caller is responsible for end-dating prior rows via endDatePriorSchedule.
  *
- * @param {Array} weekRows — [{day_of_week, start_time, end_time, timezone, is_working_day}]
+ * @param {Array} weekRows: [{day_of_week, start_time, end_time, timezone, is_working_day}]
  * @param {string} email
- * @param {string} effectiveFrom — YYYY-MM-DD
+ * @param {string} effectiveFrom: YYYY-MM-DD
  * @param {string} createdBy
  */
 async function insertScheduleVersion(weekRows, email, effectiveFrom, createdBy){
@@ -2374,12 +2374,12 @@ async function endDatePriorSchedule(email, endDate){
     [endDate, email, endDate]);
 }
 
-/** Delete all schedule rows for an agent (rare — admin reset). */
+/** Delete all schedule rows for an agent (rare, admin reset). */
 async function deleteAllSchedulesForAgent(email){
   return run(`DELETE FROM agent_schedules WHERE agent_email=?`,[email]);
 }
 
-/** Returns unack count grouped by severity — used by the bell badge. */
+/** Returns unack count grouped by severity, used by the bell badge. */
 async function getAlertCounts(){
   const rows = await all(`SELECT severity, COUNT(*) AS n FROM alert_events
                           WHERE acked_at IS NULL
@@ -2397,20 +2397,20 @@ module.exports={
   createHandoff,getRecentHandoffs,getUnreadHandoffs,ackHandoff,
   upsertWellness,getWellnessForEmail,getWellnessTeamSummary,hasWellnessToday,
   createCoachFlag,getPendingCoachFlag,ackCoachFlag,listActiveCoachFlags,
-  // #11 Session 2 — alerts
+  // #11 Session 2, alerts
   getAlertThresholds, updateAlertThreshold,
   isAlertInCooldown, insertAlertEvent,
   getActiveAlerts, getRecentAlerts, ackAlert, ackAllActiveAlerts, snoozeAlert, getAlertCounts,
-  // #21 Session 8 — PWA offline queue idempotency
+  // #21 Session 8: PWA offline queue idempotency
   getBreakEventByIdempoKey, setBreakEventIdempoKey,
-  // #14 Session 4 — schedule adherence
+  // #14 Session 4, schedule adherence
   getSchedulesForAgent, getAllSchedules, getScheduleHistory,
   insertScheduleVersion, endDatePriorSchedule, deleteAllSchedulesForAgent,
-  // #20 Session 6 — anomaly detection
+  // #20 Session 6, anomaly detection
   getAnomalyThresholds, updateAnomalyThreshold,
   insertAnomalyEvent, getRecentAnomalies, getActiveAnomalies,
   getAnomaliesForAgent, ackAnomaly, getAnomalyCounts,
-  // #16 Session 11 — predictive abandonment
+  // #16 Session 11, predictive abandonment
   savePredictModel, loadPredictModel,
   initDB,addAgent,removeAgent,getMonitoredAgents,updateAgentRcId,updateAgentChatId,
   insertPresenceEvent,getPresenceEvents,
@@ -2423,7 +2423,7 @@ module.exports={
   insertBreakEvent,updateBreakEventNotification,getBreakEvents,getBreakTracker,
   getAllRoles,setRole,setBreakbotEnabled,removeRole,getRoleForEmail,getRoleSettingsForEmail,
   insertAuditLog,getAuditLog,
-  // Session 17 — admin settings (pause controls, etc.)
+  // Session 17, admin settings (pause controls, etc.)
   getSetting,setSetting,deleteSetting,getAllSettings,
   getBreakThresholds,setBreakThreshold,
   getBreakReportData,

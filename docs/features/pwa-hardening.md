@@ -10,9 +10,9 @@ Today the app:
 - Has a service worker but its cache strategy is naive (network-first with
   in-memory stale tolerance only)
 - Has no way to handle break-bot actions that fail because the agent's
-  Wi-Fi blipped — the action just **disappears** and the agent has to
+  Wi-Fi blipped, the action just **disappears** and the agent has to
   remember to click again
-- Doesn't survive a true offline scenario — the UI loads from cache, but
+- Doesn't survive a true offline scenario, the UI loads from cache, but
   the agent can't take any action until the network is back
 - Has no UI feedback that the app is offline, much less that anything's queued
 
@@ -21,18 +21,18 @@ have spotty Wi-Fi. We need to make actions durable across that flakiness.
 
 ## Goals
 
-1. **Durable break-bot actions** — if the user clicks "BRB Out" with no
+1. **Durable break-bot actions**, if the user clicks "BRB Out" with no
    network, the action is queued locally and synced when the network returns
-2. **Background sync** — even if the agent closes the tab, the queued action
+2. **Background sync**, even if the agent closes the tab, the queued action
    syncs when the OS detects connectivity (where supported)
-3. **Visible state** — agent can see "offline · 2 queued" in the status bar
+3. **Visible state**, agent can see "offline · 2 queued" in the status bar
    and force a sync attempt manually
-4. **Resilient caching** — versioned caches that don't strand users on old
+4. **Resilient caching**, versioned caches that don't strand users on old
    shells; clear migration path on every version bump
-5. **No data loss on collision** — if the same action is replayed twice
+5. **No data loss on collision**, if the same action is replayed twice
    (e.g., the user clicks then closes the laptop), the server idempotently
    accepts only the first
-6. **Tested** — both the IDB queue and the SW logic have unit/E2E coverage
+6. **Tested**, both the IDB queue and the SW logic have unit/E2E coverage
 
 ## Non-goals
 
@@ -102,7 +102,7 @@ have spotty Wi-Fi. We need to make actions durable across that flakiness.
 **Object store: `dead`**
 
 Same shape as `outbox` plus `deadAt` (when we gave up).
-Used for retrospective debugging — never re-tried.
+Used for retrospective debugging, never re-tried.
 
 ### Server-side: idempotency
 
@@ -116,7 +116,7 @@ This makes retries safe. (Schema: add `idempotency_key TEXT UNIQUE` column.)
 
 ## Module shape
 
-### `lib/offline-queue.js` — pure logic + IDB adapter
+### `lib/offline-queue.js`, pure logic + IDB adapter
 
 ```js
 const Q = require('./lib/offline-queue');
@@ -129,16 +129,16 @@ const count = await Q.size();                // pending count
 const result = await Q.drain({ fetch });     // returns { sent, failed, dead }
 ```
 
-All public methods async. No DOM access — works in SW context too via the
+All public methods async. No DOM access, works in SW context too via the
 same module (shipped as both ESM-ish and `self.OfflineQueue` global from SW).
 
-### `sw.js` — caches + sync handler
+### `sw.js`, caches + sync handler
 
 - Bump `CACHE_VERSION` to `adit-v1.5.0`
 - Three cache buckets:
-  - `shell-v1.5.0` — HTML/CSS/JS, stale-while-revalidate
-  - `assets-v1.5.0` — fonts, images, cache-first
-  - `api-v1.5.0` — last-known good API responses, network-first
+  - `shell-v1.5.0`: HTML/CSS/JS, stale-while-revalidate
+  - `assets-v1.5.0`, fonts, images, cache-first
+  - `api-v1.5.0`, last-known good API responses, network-first
 - `install` event pre-caches the shell
 - `activate` deletes any cache not in current version set
 - `fetch` event dispatches by URL pattern
@@ -161,12 +161,12 @@ window.sendBreakAction = async function(action, btn) {
     body: { action },
     idempotencyKey: uuid()
   });
-  showToast('📡 Offline — action queued, will sync when back online', 'warning', 4000);
+  showToast('📡 Offline, action queued, will sync when back online', 'warning', 4000);
   updateOfflinePill();
 };
 ```
 
-The original handler stays in charge when online — no logic change for the
+The original handler stays in charge when online, no logic change for the
 happy path.
 
 ## UI
@@ -196,7 +196,7 @@ A condition is met when **every** statement below is verifiable:
 8. ✅ SW has 3 versioned caches (shell, assets, api) + cleanup on activate
 9. ✅ SW handles `sync` event (drain) where supported
 10. ✅ SW handles `message` event to allow manual drain trigger
-11. ✅ `sendBreakAction` wrapped — offline path queues, online path unchanged
+11. ✅ `sendBreakAction` wrapped, offline path queues, online path unchanged
 12. ✅ Server-side idempotency: `X-Idempotency-Key` header honored
 13. ✅ DB schema: `break_events.idempotency_key TEXT UNIQUE` added
 14. ✅ Offline pill renders in status bar when offline OR queue non-empty

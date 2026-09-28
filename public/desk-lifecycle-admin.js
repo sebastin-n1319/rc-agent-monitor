@@ -1,5 +1,5 @@
 /**
- * Ticket Lifecycle Admin — Session 20 (+ Session 21 filters/progress)
+ * Ticket Lifecycle Admin: Session 20 (+ Session 21 filters/progress)
  * (+ Session 27: hover tooltips on every metric, a team-summary strip
  * with previous-period deltas, a client-side agent finder, expand/
  * collapse-all, and grouped "Ticket flow" / "Outcomes" pill layout.)
@@ -103,7 +103,7 @@
   ];
 
   function fmtDateTime(iso) {
-    if (!iso) return '—';
+    if (!iso) return '-';
     try {
       return new Date(iso).toLocaleString('en-US', {
         timeZone: 'America/Chicago', month: 'short', day: 'numeric',
@@ -314,7 +314,7 @@
     return j;
   }
 
-  // Session 27: best-effort — a failed/slow previous-period fetch should
+  // Session 27: best-effort, a failed/slow previous-period fetch should
   // never block or error out the main view, it just means no delta chips.
   async function loadPrevSummarySafe(range, q) {
     const prev = previousRange(range);
@@ -329,7 +329,7 @@
       const r = await fetch('/api/admin/desk-lifecycle/sync-now', { method: 'POST', credentials: 'include' });
       const j = await r.json().catch(() => ({}));
       if (!r.ok || !j.success) throw new Error(j.error || ('HTTP ' + r.status));
-      toastSafe('🎫 Sync started — this runs in the background and refreshes automatically', 'success', 4000);
+      toastSafe('🎫 Sync started, this runs in the background and refreshes automatically', 'success', 4000);
       _wasSyncRunning = true;
       pollStatusOnce(root);
     } catch (e) {
@@ -356,7 +356,7 @@
       stopPolling();
       if (_wasSyncRunning) {
         _wasSyncRunning = false;
-        toastSafe('✅ Sync complete — refreshing results', 'success', 2500);
+        toastSafe('✅ Sync complete, refreshing results', 'success', 2500);
         window.openDeskLifecycleAdmin();
       }
     }
@@ -431,7 +431,7 @@
   // comment) rather than a paraphrase that could drift out of sync.
   // FCR/CSAT tips are built per-agent so they show that agent's actual
   // numerator/denominator, not just the abstract formula.
-  function fmtPct(pct) { return (pct == null) ? '—' : `${pct}%`; }
+  function fmtPct(pct) { return (pct == null) ? '-' : `${pct}%`; }
 
   function metricTip(key, a) {
     switch (key) {
@@ -450,21 +450,21 @@
       case 'chats':
         return a.chatStats ? 'Chats (SalesIQ)\n\nChats this agent was the attender on, by chat start time.' : 'Chats\n\nSalesIQ not configured.';
       case 'unique':
-        return 'Unique tickets\n\nEvery ticket this agent appears in anywhere in its ownership history — even one hand-off counts, once. Counted by when the ticket was CREATED.';
+        return 'Unique tickets\n\nEvery ticket this agent appears in anywhere in its ownership history, even one hand-off counts, once. Counted by when the ticket was CREATED.';
       case 'solely':
         return 'Solely handled\n\nOf the Unique tickets: the ones this agent owned start to finish with no other individual ever touching it, and the ticket is now Closed.';
       case 'reassigned':
-        return 'Reassigned\n\nTickets that arrived already in progress — a different person owned it immediately before this agent picked it up.';
+        return 'Reassigned\n\nTickets that arrived already in progress, a different person owned it immediately before this agent picked it up.';
       case 'transferred':
         return 'Transferred\n\nTickets this agent handed off to someone outside the T1 roster (a different team). See "Departments transferred to" below for where they went.';
       case 'handed_off':
-        return 'Handed off (T1)\n\nTickets this agent handed directly to another monitored T1 agent — stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
+        return 'Handed off (T1)\n\nTickets this agent handed directly to another monitored T1 agent, stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
       case 'closed':
-        return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range — credited to whoever is the CURRENT owner, even if it passed through other hands first.';
+        return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range, credited to whoever is the CURRENT owner, even if it passed through other hands first.';
       case 'handling':
-        return 'Handling now\n\nTickets this agent currently owns that are still open. A live count — not limited to the selected date range.';
+        return 'Handling now\n\nTickets this agent currently owns that are still open. A live count, not limited to the selected date range.';
       case 'avg_handle':
-        return 'Avg handle time\n\nAverage time from ticket creation to closing, across this agent\'s Closed tickets in range. Wall-clock hours (calendar time), not business hours — see FCR for the business-hours definition.';
+        return 'Avg handle time\n\nAverage time from ticket creation to closing, across this agent\'s Closed tickets in range. Wall-clock hours (calendar time), not business hours, see FCR for the business-hours definition.';
       case 'fcr': {
         const total = a.fcr_total || 0, yes = a.fcr_yes || 0;
         if (!total) return 'First Contact Resolution (FCR)\n\nNo Closed tickets in this range yet.';
@@ -481,11 +481,11 @@
 
   function breakdownTip(key) {
     switch (key) {
-      case 'channel': return 'Channel\n\nHow the ticket came in — Phone, Email, Chat, and so on.';
+      case 'channel': return 'Channel\n\nHow the ticket came in: Phone, Email, Chat, and so on.';
       case 'module': return 'Adit App Module\n\nWhich Adit product area the ticket relates to (Adit Pay, Adit Voice, Adit AI Agent, EHR/PMS integrations, etc).';
       case 'category': return 'Category\n\nZoho Desk\'s own ticket category field.';
       case 'classification': return 'Classification\n\nZoho Desk\'s own ticket classification field.';
-      case 'departments': return 'Departments transferred to\n\nWhere this agent\'s Transferred tickets ended up — the team/role shown in Zoho\'s owner-change log at the point it left T1.';
+      case 'departments': return 'Departments transferred to\n\nWhere this agent\'s Transferred tickets ended up, the team/role shown in Zoho\'s owner-change log at the point it left T1.';
       default: return '';
     }
   }
@@ -540,9 +540,9 @@
 
   function agentCard(a) {
     const displayName = esc(a.pseudo || a.full_name || a.email);
-    const fcr = a.fcr_pct != null ? `${a.fcr_pct}%` : (a.fcr_total ? '0%' : '—');
-    const csat = a.csat_pct != null ? `${a.csat_pct}%` : (a.csat_total ? '0%' : '—');
-    const avgHandle = a.avg_handle_hours != null ? `${a.avg_handle_hours}h` : '—';
+    const fcr = a.fcr_pct != null ? `${a.fcr_pct}%` : (a.fcr_total ? '0%' : '-');
+    const csat = a.csat_pct != null ? `${a.csat_pct}%` : (a.csat_total ? '0%' : '-');
+    const avgHandle = a.avg_handle_hours != null ? `${a.avg_handle_hours}h` : '-';
     const isExpanded = _expanded.has(a.email);
 
     // Session 42: automated replacement for manual ticket logging.
@@ -551,8 +551,8 @@
       pillHtml('tkt-pill-good', ready ? (a.tickets_handled || 0) : '…', 'Tickets handled', 'handled', a),
       pillHtml('', ready ? (a.tickets_handled_new || 0) : '…', 'New', 'handled_new', a),
       pillHtml('', ready ? (a.tickets_handled_followup || 0) : '…', 'Follow-ups', 'handled_followup', a),
-      pillHtml('', a.callStats ? (a.callStats.totalCalls || 0) : '—', 'Calls', 'calls', a),
-      pillHtml('', a.chatStats ? (a.chatStats.chatCount || 0) : '—', 'Chats', 'chats', a),
+      pillHtml('', a.callStats ? (a.callStats.totalCalls || 0) : '-', 'Calls', 'calls', a),
+      pillHtml('', a.chatStats ? (a.chatStats.chatCount || 0) : '-', 'Chats', 'chats', a),
     ].join('');
     const flowPills = [
       pillHtml('', a.unique_tickets || 0, 'Unique', 'unique', a),
@@ -675,13 +675,13 @@
             <div class="tkt-team-n">${c.n}${c.delta ? ` ${c.delta}` : ''}</div>
             <div class="tkt-team-l">${esc(c.l)}</div>
           </div>`).join('')}
-        ${prevT ? '' : '<div class="tkt-team-note">Deltas need a same-length prior period — not enough history for this range yet.</div>'}
+        ${prevT ? '' : '<div class="tkt-team-note">Deltas need a same-length prior period, not enough history for this range yet.</div>'}
       </div>`;
   }
 
   function summaryList(agents) {
     if (!agents.length) {
-      return `<div class="tkt-empty">${_agentQuery ? 'No agent name or email matches "' + esc(_agentQuery) + '".' : "No monitored agents with an email on file yet — add emails in the Agents admin page to see their ticket stats here."}</div>`;
+      return `<div class="tkt-empty">${_agentQuery ? 'No agent name or email matches "' + esc(_agentQuery) + '".' : "No monitored agents with an email on file yet, add emails in the Agents admin page to see their ticket stats here."}</div>`;
     }
     const opt = SORT_OPTIONS.find(o => o.key === _sortKey) || SORT_OPTIONS[0];
     const sorted = [...agents].sort((a, b) => {
@@ -790,7 +790,7 @@
     });
   }
 
-  // Client-side "Find agent" match — name or email, case-insensitive.
+  // Client-side "Find agent" match, name or email, case-insensitive.
   function matchesAgentQuery(a) {
     if (!_agentQuery) return true;
     const needle = _agentQuery.toLowerCase();
@@ -1026,7 +1026,7 @@
           <div class="tkt-header">
             <div>
               <div class="tkt-h1">Ticket Lifecycle</div>
-              <div class="tkt-h1-sub">Per-agent, per-channel ticket stats sourced from Zoho Desk — replaces the manual lifecycle report export.</div>
+              <div class="tkt-h1-sub">Per-agent, per-channel ticket stats sourced from Zoho Desk, replaces the manual lifecycle report export.</div>
             </div>
           </div>
 

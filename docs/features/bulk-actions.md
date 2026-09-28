@@ -19,22 +19,22 @@ asking the engineering team.
 
 ## Goals
 
-1. **One real backend endpoint** — `POST /api/admin/bulk-actions` that
+1. **One real backend endpoint**: `POST /api/admin/bulk-actions` that
    accepts an action enum + a list of emails + a payload, performs each
    action atomically per-agent, returns a per-agent result
-2. **Strict action whitelist** — no arbitrary fields. The server defines
+2. **Strict action whitelist**, no arbitrary fields. The server defines
    the supported actions; the client can only request from the list.
-3. **Audit-logged** — every bulk operation writes one summary row plus one
+3. **Audit-logged**, every bulk operation writes one summary row plus one
    per-agent row to `audit_log`, so you can answer "who logged out which
    agents at 2:14pm" months later.
-4. **Idempotent where safe** — re-sending the same bulk request (e.g. the
+4. **Idempotent where safe**, re-sending the same bulk request (e.g. the
    browser retried because the network blipped) doesn't duplicate sends.
-5. **Confirmation + diff preview** — before executing, the UI shows
+5. **Confirmation + diff preview**, before executing, the UI shows
    "About to do X to N agents: …" with a confirm button. No more silent
    "did you really mean it?" bugs.
-6. **Per-agent failure isolation** — one bad email doesn't abort the batch.
+6. **Per-agent failure isolation**, one bad email doesn't abort the batch.
    Results are reported per-row.
-7. **Self-contained UI** — new `bulk-actions.js/.css` module, multi-select
+7. **Self-contained UI**, new `bulk-actions.js/.css` module, multi-select
    toolbar pattern matching schedule-admin's bulk-apply.
 
 ## Supported actions (v1)
@@ -42,14 +42,14 @@ asking the engineering team.
 | Action key | What | Payload | Safety |
 |---|---|---|---|
 | `notify` | Send a Google Chat DM to each agent | `{ message: string ≤500 }` | Reversible, low blast radius |
-| `set_breakbot_enabled` | Toggle whether an agent sees the Break Bot UI | `{ enabled: boolean }` | Reversible — affects only their UI |
-| `clear_session` | Force-logout an agent (deletes their app_session row) | `{}` | Recoverable — they just log in again |
+| `set_breakbot_enabled` | Toggle whether an agent sees the Break Bot UI | `{ enabled: boolean }` | Reversible, affects only their UI |
+| `clear_session` | Force-logout an agent (deletes their app_session row) | `{}` | Recoverable, they just log in again |
 | `set_role` | Promote/demote between 'agent' and 'admin' | `{ role: 'agent'\|'admin' }` | High-risk → triple-confirmation in UI |
 
 **Deferred to a later session** (need design discussion):
-- `force_status` — direct manipulation of RC presence is risky; admins should
+- `force_status`, direct manipulation of RC presence is risky; admins should
   call RingCentral support instead
-- `send_break_event` — same idempotency story as personal break events, would
+- `send_break_event`, same idempotency story as personal break events, would
   need careful per-agent state validation
 
 ## Architecture
@@ -95,11 +95,11 @@ asking the engineering team.
 
 No new tables. Two reuses:
 
-1. **`audit_log`** — existing table. Bulk action writes:
+1. **`audit_log`**, existing table. Bulk action writes:
    - 1 summary row: `action='bulk_<key>_summary'`, `subject=<requester>`, `detail='emails=N,ok=M'`
    - N detail rows: `action='bulk_<key>'`, `subject=<agent_email>`, `detail=<result>`
 
-2. **In-memory idempotency cache** — a `Map<requestId, {at, result}>` with 24h
+2. **In-memory idempotency cache**, a `Map<requestId, {at, result}>` with 24h
    TTL. Lives in `server.js` next to the existing `_cache`. No DB column needed.
 
 ## Endpoint contract
@@ -143,11 +143,11 @@ No new tables. Two reuses:
 ```
 
 **Status codes:**
-- `200` — at least one agent processed (even if some failed)
-- `400` — invalid action / payload shape
-- `401/403` — auth gate
-- `404` — emails list empty
-- `409` — same `requestId` was used in last 24h (idempotent replay returns
+- `200`, at least one agent processed (even if some failed)
+- `400`, invalid action / payload shape
+- `401/403`, auth gate
+- `404`, emails list empty
+- `409`, same `requestId` was used in last 24h (idempotent replay returns
   the original result with HTTP 200 + `replayed: true`)
 
 ## Acceptance criteria
@@ -155,7 +155,7 @@ No new tables. Two reuses:
 A condition is met when **every** statement below is verifiable:
 
 1. ✅ `POST /api/admin/bulk-actions` exists and requires admin
-2. ✅ Action whitelist enforced — unknown action returns 400 with `code: 'unknown_action'`
+2. ✅ Action whitelist enforced, unknown action returns 400 with `code: 'unknown_action'`
 3. ✅ Payload shape validated per action (e.g. `notify` requires `message`)
 4. ✅ Per-agent failure does not abort the batch
 5. ✅ Each result entry has `email`, `ok`, optional `error`
@@ -165,7 +165,7 @@ A condition is met when **every** statement below is verifiable:
 9. ✅ Public API: `BulkActions.open({emails})`, `.close()`
 10. ✅ UI: action picker → payload form → confirm preview → execute → per-agent result
 11. ✅ Multi-select toolbar attached to existing agent table (replaces Session 1 stub)
-12. ✅ Old rough stub removed — `bulkActions` flag default off, `bulkActionsV2` introduced
+12. ✅ Old rough stub removed: `bulkActions` flag default off, `bulkActionsV2` introduced
 13. ✅ At least 8 unit tests for the action-handler functions
 14. ✅ At least 6 E2E tests for asset serving + auth gates + API contract
 15. ✅ All prior 210 tests still pass
@@ -174,11 +174,11 @@ A condition is met when **every** statement below is verifiable:
 18. ✅ SW cache version bumped (v1.5.0 → v1.6.0)
 19. ✅ Each action's handler emits a structured log line
 20. ✅ `role='admin'` action requires the requester to NOT be demoting themselves
-    (safety — prevents accidental self-lockout)
+    (safety, prevents accidental self-lockout)
 
 ## Out of scope (Session 11+)
 
-- Bulk schedule changes (already exists in Session 5 — `POST /api/schedules/bulk`)
+- Bulk schedule changes (already exists in Session 5: `POST /api/schedules/bulk`)
 - Custom action plugins
 - Bulk import/export agents (separate feature)
 - Slack/Teams delivery (notify currently uses Google Chat webhook)

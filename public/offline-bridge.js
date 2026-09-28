@@ -1,5 +1,5 @@
 /**
- * offline-bridge.js — PWA offline integration for the browser (Session 8).
+ * offline-bridge.js: PWA offline integration for the browser (Session 8).
  *
  * Owns:
  *   • In-page IndexedDB queue for break-bot actions when offline
@@ -9,14 +9,14 @@
  *   • Registering background sync where supported
  *
  * Feature flag: `offlineQueueV2` (default OFF). When off, this module is
- * inert — break-bot keeps its original online-only behavior.
+ * inert, break-bot keeps its original online-only behavior.
  *
  * Public API:
  *   OfflineBridge.enqueueAction({endpoint, body})
  *   OfflineBridge.size()         → pending count
  *   OfflineBridge.drainNow()     → manual sync attempt
  *   OfflineBridge.isOnline()
- *   OfflineBridge.refreshPill()  — update the status bar pill
+ *   OfflineBridge.refreshPill(), update the status bar pill
  */
 (function () {
   'use strict';
@@ -29,7 +29,7 @@
   // ─── Helpers ───────────────────────────────────────────────────────────
   function flagOn(name) {
     if (typeof window.flag === 'function') return window.flag(name);
-    return false;  // default off — feature is opt-in
+    return false;  // default off, feature is opt-in
   }
 
   function uuid() {
@@ -187,7 +187,7 @@
           await reg.sync.register('adit-drain');
         }
       }
-    } catch (e) { /* sync not supported — that's fine */ }
+    } catch (e) { /* sync not supported, that's fine */ }
   }
 
   // ─── SW message listener ───────────────────────────────────────────────
@@ -202,7 +202,7 @@
           }
         });
       } else if (event.data.type === 'sw-activated') {
-        // New SW activated — refresh UI
+        // New SW activated, refresh UI
         refreshPill();
       }
     });
@@ -214,12 +214,12 @@
       refreshPill();
       const result = await drainNow();
       if (result.sent > 0 && typeof window.showToast === 'function') {
-        window.showToast('☁ Back online — synced ' + result.sent + ' queued action' + (result.sent === 1 ? '' : 's'), 'success', 3000);
+        window.showToast('☁ Back online, synced ' + result.sent + ' queued action' + (result.sent === 1 ? '' : 's'), 'success', 3000);
       }
     });
     window.addEventListener('offline', () => {
       if (typeof window.showToast === 'function') {
-        window.showToast('📡 Offline — actions will queue until reconnected', 'warning', 4000);
+        window.showToast('📡 Offline, actions will queue until reconnected', 'warning', 4000);
       }
       refreshPill();
     });
@@ -288,7 +288,7 @@
     if (_wrapped) return;
     const original = window.sendBreakAction;
     if (typeof original !== 'function') {
-      // sendBreakAction not loaded yet — try again shortly
+      // sendBreakAction not loaded yet, try again shortly
       setTimeout(wrapSendBreakAction, 1000);
       return;
     }
@@ -301,7 +301,7 @@
       if (isOnline()) {
         return original.call(this, action, btn);
       }
-      // Offline path — enqueue for later
+      // Offline path, enqueue for later
       try {
         // Pull session info the same way the original handler does
         let session = {};
@@ -315,7 +315,7 @@
         };
         await enqueueAction({ endpoint: '/api/break-events', body: payload });
         if (typeof window.showToast === 'function') {
-          window.showToast('📡 Offline — "' + action + '" queued, will sync when back online', 'warning', 4500);
+          window.showToast('📡 Offline: "' + action + '" queued, will sync when back online', 'warning', 4500);
         }
       } catch (e) {
         if (typeof window.showToast === 'function') {

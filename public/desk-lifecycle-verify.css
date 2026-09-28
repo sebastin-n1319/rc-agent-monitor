@@ -1,8 +1,8 @@
 /* ───────────────────────────────────────────────────────────────────────
-   "Verify tickets" drill-down — Session 34, converted to an in-place
+   "Verify tickets" drill-down: Session 34, converted to an in-place
    sub-page in Session 35. Rendered in place of the caller's own page
    content (either #desk-lifecycle-root on the admin Ticket Lifecycle
-   page, or #desk-lifecycle-agent-root on the agent My Stats page) — see
+   page, or #desk-lifecycle-agent-root on the agent My Stats page), see
    desk-lifecycle-verify.js. Always wrapped in its own `.av2` element so
    agent-view-v2.css's tokens resolve regardless of which page's root it
    is rendered into (the admin page uses its own separate tkt-* token

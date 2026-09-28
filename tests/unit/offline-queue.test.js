@@ -1,7 +1,7 @@
 /**
  * Unit tests for lib/offline-queue.js
  *
- * Runs against the in-memory fallback (no IDB in Node) — the IDB code path
+ * Runs against the in-memory fallback (no IDB in Node), the IDB code path
  * is verified separately via Playwright E2E in the browser.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -14,7 +14,7 @@ beforeEach(async () => {
 });
 
 // ─── Public surface ────────────────────────────────────────────────────
-describe('offline-queue — public surface', () => {
+describe('offline-queue, public surface', () => {
   it('exports the public API', () => {
     expect(typeof Q.init).toBe('function');
     expect(typeof Q.enqueue).toBe('function');
@@ -108,9 +108,9 @@ describe('drain', () => {
   });
 
   it('rejects when no fetch provided and globalThis lacks fetch', async () => {
-    // node 24 has fetch globally — explicitly pass undefined
+    // node 24 has fetch globally, explicitly pass undefined
     const result = await Q.drain({ fetch: undefined }).catch(e => e);
-    // If global fetch exists, it doesn't reject — accept either behavior
+    // If global fetch exists, it doesn't reject, accept either behavior
     if (result instanceof Error) {
       expect(result.message).toMatch(/fetch/);
     } else {

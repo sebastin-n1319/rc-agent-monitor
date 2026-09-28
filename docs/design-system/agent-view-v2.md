@@ -1,4 +1,4 @@
-# Agent View V2 — Design System
+# Agent View V2: Design System
 
 **Status:** In progress (Session 1 of 15)
 **Owner:** UX/Eng
@@ -10,12 +10,12 @@ Redesign the 6 agent-facing pages (`dashboard`, `breakbot`, `bonus`, `tickets`, 
 
 ## Principles
 
-1. **Strict 4/8 spacing grid** — no arbitrary pixel values
-2. **Typographic hierarchy** — clear scale from `--av2-t-xs` (11px) to `--av2-t-hero` (56px)
-3. **Motion as a first-class citizen** — every state change has a spring curve
-4. **Accessibility built-in** — all interactive elements have visible focus, ARIA labels, semantic landmarks
-5. **Reduced-motion respected** — `prefers-reduced-motion: reduce` zeros out all transitions
-6. **Mobile-first responsive** — breakpoints at 600px and 900px
+1. **Strict 4/8 spacing grid**, no arbitrary pixel values
+2. **Typographic hierarchy**, clear scale from `--av2-t-xs` (11px) to `--av2-t-hero` (56px)
+3. **Motion as a first-class citizen**, every state change has a spring curve
+4. **Accessibility built-in**, all interactive elements have visible focus, ARIA labels, semantic landmarks
+5. **Reduced-motion respected**: `prefers-reduced-motion: reduce` zeros out all transitions
+6. **Mobile-first responsive**, breakpoints at 600px and 900px
 
 ## Files
 
@@ -37,11 +37,11 @@ All V2 styles are scoped under a `.av2` parent class. To enable on any page:
 </div>
 ```
 
-This means V2 can be rolled out **incrementally** — one page at a time without breaking the others.
+This means V2 can be rolled out **incrementally**, one page at a time without breaking the others.
 
 ## Tokens
 
-### Spacing — strict 4/8 grid
+### Spacing, strict 4/8 grid
 ```
 --av2-s1: 4px   --av2-s6: 24px
 --av2-s2: 8px   --av2-s7: 32px
@@ -86,34 +86,34 @@ This means V2 can be rolled out **incrementally** — one page at a time without
 
 ### Implemented (Session 1)
 
-- ✅ `.av2-hero` — page hero with overline, title, sub, right-aligned status
-- ✅ `.av2-stat-grid` + `.av2-stat` — KPI cards with icon, label, animated value, delta indicator
-- ✅ `.av2-section` + `.av2-section-head` — content section with title + meta
-- ✅ `.av2-panel` — content container (with `.av2-panel-flush` for tables)
-- ✅ `.av2-search` — accessible search input with leading icon
-- ✅ `.av2-chip` — inline tag (status, count, label)
-- ✅ `.av2-table` — clean table with sortable columns
-- ✅ `.av2-agent-cell` — avatar + name + extension cluster
-- ✅ `.av2-pill` — colored status pill (available, unavailable, oncall, ringing, offline)
-- ✅ `.av2-btn` — modern button (primary, ghost, sm, icon variants)
-- ✅ `.av2-empty` — empty state with icon + title + sub
-- ✅ `.av2-skel` — skeleton loader with shimmer
-- ✅ `.av2-banner` — alert banner (warning, info tones)
-- ✅ `.av2-shift-state` — pill showing current Break Bot state (live, away, break, offline)
+- ✅ `.av2-hero`, page hero with overline, title, sub, right-aligned status
+- ✅ `.av2-stat-grid` + `.av2-stat`: KPI cards with icon, label, animated value, delta indicator
+- ✅ `.av2-section` + `.av2-section-head`, content section with title + meta
+- ✅ `.av2-panel`, content container (with `.av2-panel-flush` for tables)
+- ✅ `.av2-search`, accessible search input with leading icon
+- ✅ `.av2-chip`, inline tag (status, count, label)
+- ✅ `.av2-table`, clean table with sortable columns
+- ✅ `.av2-agent-cell`, avatar + name + extension cluster
+- ✅ `.av2-pill`, colored status pill (available, unavailable, oncall, ringing, offline)
+- ✅ `.av2-btn`, modern button (primary, ghost, sm, icon variants)
+- ✅ `.av2-empty`, empty state with icon + title + sub
+- ✅ `.av2-skel`, skeleton loader with shimmer
+- ✅ `.av2-banner`, alert banner (warning, info tones)
+- ✅ `.av2-shift-state`, pill showing current Break Bot state (live, away, break, offline)
 
 ### Planned (subsequent sessions)
 
-- [ ] `.av2-action-row` — Break Bot action button row (Sessions 2-3)
-- [ ] `.av2-timeline` — vertical event timeline
-- [ ] `.av2-progress-ring` — circular SVG progress (Pomodoro, break budget)
-- [ ] `.av2-tab-bar` — segmented control / tab nav
-- [ ] `.av2-card-list` — vertical card list with hover affordance
-- [ ] `.av2-toast` — top-right slide-in notifications (migrate from existing)
-- [ ] `.av2-modal` — bottom-sheet on mobile, centered on desktop
-- [ ] `.av2-leaderboard-row` — Hall of Fame ranking row
-- [ ] `.av2-ticket-card` — ticket summary card
+- [ ] `.av2-action-row`: Break Bot action button row (Sessions 2-3)
+- [ ] `.av2-timeline`, vertical event timeline
+- [ ] `.av2-progress-ring`, circular SVG progress (Pomodoro, break budget)
+- [ ] `.av2-tab-bar`, segmented control / tab nav
+- [ ] `.av2-card-list`, vertical card list with hover affordance
+- [ ] `.av2-toast`, top-right slide-in notifications (migrate from existing)
+- [ ] `.av2-modal`, bottom-sheet on mobile, centered on desktop
+- [ ] `.av2-leaderboard-row`: Hall of Fame ranking row
+- [ ] `.av2-ticket-card`, ticket summary card
 
-## Pages — rollout status
+## Pages, rollout status
 
 | Page | Status | Session |
 |---|---|---|
@@ -128,13 +128,13 @@ This means V2 can be rolled out **incrementally** — one page at a time without
 
 Each page conversion must pass:
 
-1. **Visual review** — side-by-side screenshot vs. current
+1. **Visual review**, side-by-side screenshot vs. current
 2. **Lighthouse a11y** ≥ 90
-3. **Keyboard navigation** — all actions reachable without mouse
-4. **Reduced motion** — verify with DevTools emulation
-5. **Mobile** — 375px width, 600px width snapshots
-6. **No regression** — existing JS that targets element IDs continues to work
-7. **Unit/E2E tests** — at minimum a Playwright smoke test that renders the page
+3. **Keyboard navigation**, all actions reachable without mouse
+4. **Reduced motion**, verify with DevTools emulation
+5. **Mobile**: 375px width, 600px width snapshots
+6. **No regression**, existing JS that targets element IDs continues to work
+7. **Unit/E2E tests**, at minimum a Playwright smoke test that renders the page
 
 ## API helpers
 
@@ -154,13 +154,13 @@ av2.escape(s)
 
 ## Backwards compatibility
 
-- All existing JS that targets element IDs (`#ag-avail`, `#agent-view-table`, etc.) **continues to work** — the V2 markup preserves every ID.
+- All existing JS that targets element IDs (`#ag-avail`, `#agent-view-table`, etc.) **continues to work**, the V2 markup preserves every ID.
 - The legacy CSS (`.card`, `.metric`, `.tbl-wrap`) is **untouched** so pages not yet converted still look the same.
 - `.av2` namespacing prevents any leakage of new styles to old pages.
 
 ## Out of scope (for now)
 
-- Theme switcher (light/dark V2) — current design is light-mode only
+- Theme switcher (light/dark V2), current design is light-mode only
 - Print stylesheets
 - High-contrast V2 (legacy `hc-mode` still works)
 - RTL support

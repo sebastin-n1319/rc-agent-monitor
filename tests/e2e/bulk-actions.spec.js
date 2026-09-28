@@ -40,7 +40,7 @@ test.describe('BulkActions assets', () => {
     const body = await res.text();
     expect(body).toContain('/bulk-actions.js');
     expect(body).toContain('/bulk-actions.css');
-    // Version-agnostic — Session 10 bumped to v1.6, Session 12 to v1.7, etc.
+    // Version-agnostic: Session 10 bumped to v1.6, Session 12 to v1.7, etc.
     expect(body).toMatch(/CACHE_VERSION\s*=\s*['"]adit-v1\.[6-9]/);
   });
 });
@@ -54,7 +54,7 @@ test.describe('BulkActions runtime', () => {
 
   test('BulkActions public API is stable', async ({ page }) => {
     await page.goto('/');
-    // The `_selected` private field is included for tests — keep it stable
+    // The `_selected` private field is included for tests, keep it stable
     const apiKeys = await page.evaluate(() => Object.keys(window.BulkActions || {}).sort());
     expect(apiKeys).toEqual([
       '_selected',
@@ -67,14 +67,14 @@ test.describe('BulkActions runtime', () => {
 
   test('open() respects the bulkActionsV2 feature flag', async ({ page }) => {
     await page.goto('/');
-    // Default flag is off — open() should bail without rendering a modal
+    // Default flag is off, open() should bail without rendering a modal
     await page.evaluate(() => window.BulkActions.open({ emails: ['x@adit.com'] }));
     const modalCount = await page.locator('#ba-picker').count();
     expect(modalCount).toBe(0);
   });
 });
 
-test.describe('Bulk Actions API — auth gates + validation', () => {
+test.describe('Bulk Actions API, auth gates + validation', () => {
   test('POST /api/admin/bulk-actions requires admin (401 unauth)', async ({ request }) => {
     const res = await request.post('/api/admin/bulk-actions', {
       data: { action: 'notify', payload: { message: 'hi' }, emails: ['x@adit.com'] }
