@@ -5,7 +5,7 @@
 (function() {
   'use strict';
 
-  var BRAIN_VERSION = '5.1';
+  var BRAIN_VERSION = '5.2';
   var msgs = [];
   var busy = false;
   var isOpen = false;
@@ -15,14 +15,14 @@
 
   /* ── Brand Images, from uploaded design system ────────── */
   var IMG = {
-    logo:     '/brain-logo.png',
-    avatar:   '/brain-avatar.png',
-    thinking: '/brain-thinking.png',
-    search:   '/brain-search.png',
-    success:  '/brain-success.png',
-    error:    '/brain-error.png',
-    widget:   '/brain-widget.png',
-    learning: '/brain-learning.png',
+    logo:     '/brain-logo.png?v=2',
+    avatar:   '/brain-avatar.png?v=2',
+    thinking: '/brain-thinking.png?v=2',
+    search:   '/brain-search.png?v=2',
+    success:  '/brain-success.png?v=2',
+    error:    '/brain-error.png?v=2',
+    widget:   '/brain-widget.png?v=2',
+    learning: '/brain-learning.png?v=2',
   };
 
   var ROBOT_XS = '<img src="' + IMG.avatar + '" width="30" height="30" style="border-radius:50%;object-fit:cover;" alt="Brain"/>';
@@ -42,10 +42,10 @@
       /* Session 49: Brain docks as a small tab on the right edge so it never
          covers content; it slides out on hover and the panel opens beside it. */
       '#brain-fab-wrap{right:0!important;bottom:90px!important;gap:10px!important;}',
-      '#brain-fab{width:40px!important;height:44px!important;border-radius:12px 0 0 12px!important;transform:translateX(6px);opacity:.82;box-shadow:0 4px 14px rgba(7,43,64,.18)!important;transition:transform .2s ease,opacity .2s ease!important;}',
+      '#brain-fab{width:46px!important;height:48px!important;border-radius:24px 0 0 24px!important;background:#0B2A5B!important;padding:0 0 0 6px!important;justify-content:flex-start!important;transform:translateX(6px);opacity:.82;box-shadow:0 4px 14px rgba(7,43,64,.18)!important;transition:transform .2s ease,opacity .2s ease!important;}',
       '#brain-fab:hover,#brain-fab:focus-visible{transform:translateX(0)!important;opacity:1;}',
       '#brain-fab>div{display:none!important;}',
-      '#brain-fab img{width:40px!important;height:44px!important;border-radius:12px 0 0 12px!important;}',
+      '#brain-fab img{width:38px!important;height:38px!important;border-radius:50%!important;object-fit:contain!important;}',
       '#brain-panel{margin-right:14px;max-height:calc(100vh - 140px);}',
       '#brain-bubble{display:none!important;}',
       // FAB button

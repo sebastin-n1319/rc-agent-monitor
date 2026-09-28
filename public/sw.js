@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.162'; // Security: API responses never cached (mobile PWA data protection)
+const CACHE_VERSION = 'adit-v1.19.163'; // Security: API responses never cached (mobile PWA data protection)
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 // API_CACHE intentionally removed: API responses contain sensitive agent data
@@ -63,14 +63,14 @@ const PRECACHE_URLS = [
   '/live-floor.css',
   '/live-floor.js',
   '/brain.js',
-  '/brain-logo.png',
-  '/brain-avatar.png',
-  '/brain-widget.png',
-  '/brain-thinking.png',
-  '/brain-search.png',
-  '/brain-success.png',
-  '/brain-error.png',
-  '/brain-learning.png',
+  '/brain-logo.png?v=2',
+  '/brain-avatar.png?v=2',
+  '/brain-widget.png?v=2',
+  '/brain-thinking.png?v=2',
+  '/brain-search.png?v=2',
+  '/brain-success.png?v=2',
+  '/brain-error.png?v=2',
+  '/brain-learning.png?v=2',
   '/a11y-focus-trap.js',
   '/adit-logo.png',
   '/adit-icon.svg',

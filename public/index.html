@@ -38,7 +38,7 @@
 <!-- Session 37: global 401 handler -- catches a dead server session
      (see session-guard.js) before every module downstream has to. -->
 <script src="/session-guard.js?v=1.0.1"></script>
-<link rel="stylesheet" href="/adit-theme.css?v=1.19.102" id="adit-theme-link">
+<link rel="stylesheet" href="/adit-theme.css?v=1.19.103" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.8" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css?v=1.19.8" id="alert-center-link">
 <link rel="stylesheet" href="/offline-bridge.css?v=1.19.8" id="offline-bridge-link">
@@ -325,7 +325,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
         <div class="lx-features">
           <div class="lx-feat"><div class="lx-feat-icon">⚡</div><div>Real-time agent presence, refreshed every 30s</div></div>
           <div class="lx-feat"><div class="lx-feat-icon">📊</div><div>QA scoring, call logs &amp; performance analytics</div></div>
-          <div class="lx-feat"><div class="lx-feat-icon">🧠</div><div>Brain AI, your intelligent co-pilot on every page</div></div>
+          <div class="lx-feat"><div class="lx-feat-icon"><img src="/brain-avatar.png?v=2" width="20" height="20" alt="" style="vertical-align:middle;border-radius:50%"></div><div>Brain AI, your intelligent co-pilot on every page</div></div>
           <div class="lx-feat"><div class="lx-feat-icon">📅</div><div>Attendance roster with smart auto-fill</div></div>
         </div>
 
@@ -352,7 +352,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
         <!-- Brain mascot -->
         <div class="lx-mascot">
-          <img src="/brain-avatar.png" alt="Brain" class="lx-mascot-img">
+          <img src="/brain-avatar.png?v=2" alt="Brain" class="lx-mascot-img">
           <div class="lx-mascot-ring"></div>
         </div>
 
@@ -396,7 +396,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
         <div class="lx-divider"><span>Powered by</span></div>
         <div class="lx-powered">
           <span class="lx-pow-item">🔒 Google SSO</span>
-          <span class="lx-pow-item">🧠 Brain AI</span>
+          <span class="lx-pow-item"><img src="/brain-avatar.png?v=2" width="16" height="16" alt="" style="vertical-align:middle;border-radius:50%"> Brain AI</span>
           <span class="lx-pow-item">⚡ Real-time</span>
         </div>
       </div>
@@ -1922,7 +1922,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- Header -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
     <div style="display:flex;align-items:center;gap:16px;">
-      <img src="/brain-learning.png" width="80" height="80" style="object-fit:contain;filter:drop-shadow(0 4px 16px rgba(249,115,22,.3));" alt="AI Learning"/>
+      <img src="/brain-learning.png?v=2" width="80" height="80" style="object-fit:contain;filter:drop-shadow(0 4px 16px rgba(249,115,22,.3));" alt="AI Learning"/>
       <div>
         <div style="font-size:22px;font-weight:800;color:#072B40;letter-spacing:-.01em;">AI Learning Agent</div>
         <div style="font-size:13px;color:#6B849A;margin-top:3px;">Feedback analytics · Pattern discovery · Auto-improvement engine</div>
@@ -12823,7 +12823,7 @@ async function deleteNote(id){
 <!-- BRAIN FLOATING WIDGET -->
 <div id="brain-fab-wrap">
   <div id="brain-bubble" style="display:none;background:#fff;border-radius:18px 18px 4px 18px;padding:12px 40px 12px 46px;box-shadow:0 8px 28px rgba(26,31,60,.15);max-width:270px;font-size:12.5px;color:#1A1F3C;line-height:1.55;border:1.5px solid #F0F2F5;position:relative;animation:brain-bub-in .4s cubic-bezier(.34,1.56,.64,1) both;">
-        <img src="/brain-avatar.png" width="34" height="34" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);border-radius:8px;object-fit:cover;" alt="Brain"/>
+        <img src="/brain-avatar.png?v=2" width="34" height="34" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);border-radius:8px;object-fit:cover;" alt="Brain"/>
     <div id="brain-bubble-text"></div>
     <button onclick="Brain.dismissBubble()" style="position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;color:#9BA3B2;font-size:14px;padding:2px;">&#x2715;</button>
   </div>
@@ -12831,11 +12831,11 @@ async function deleteNote(id){
     <!-- Pulse rings matching rounded square shape -->
     <div style="position:absolute;inset:-7px;border-radius:24px;border:2.5px solid rgba(249,115,22,.5);animation:brain-pulse-ring 2s ease-out infinite;pointer-events:none;"></div>
     <div style="position:absolute;inset:-14px;border-radius:28px;border:1.5px solid rgba(249,115,22,.25);animation:brain-pulse-ring 2s ease-out .7s infinite;pointer-events:none;"></div>
-    <img src="/brain-widget.png" width="64" height="64" style="position:relative;z-index:2;object-fit:cover;border-radius:18px;display:block;" alt="Brain"/>
+    <img src="/brain-widget.png?v=2" width="64" height="64" style="position:relative;z-index:2;object-fit:cover;border-radius:18px;display:block;" alt="Brain"/>
   </button>
   <div id="brain-panel" class="brain-panel" style="display:none;"></div>
 </div>
-<script src="/brain.js?v=5.1.0" defer></script>
+<script src="/brain.js?v=5.2.0" defer></script>
 
 <script>
 /* ── Login Page: Particle Canvas ── */
