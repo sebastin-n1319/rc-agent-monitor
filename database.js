@@ -1422,11 +1422,17 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
         ORDER BY datetime(created_at) ASC, id ASC`,
       email ? [startSql, endSql, email] : [startSql, endSql]
     ),
+    // Session 48: only the latest event per person before the day starts is
+    // used (their carried-over status); this used to return every earlier
+    // break event on every poll.
     all(
-      `SELECT * FROM break_events
-        WHERE datetime(created_at) < datetime(?)
-        ${email ? `AND lower(email)=lower(?)` : ''}
-        ORDER BY datetime(created_at) DESC, id DESC`,
+      `SELECT * FROM (
+         SELECT *, ROW_NUMBER() OVER (PARTITION BY lower(email) ORDER BY datetime(created_at) DESC, id DESC) AS _rn
+           FROM break_events
+          WHERE datetime(created_at) < datetime(?)
+          ${email ? `AND lower(email)=lower(?)` : ''}
+       ) WHERE _rn = 1
+       ORDER BY datetime(created_at) DESC, id DESC`,
       email ? [startSql, email] : [startSql]
     ),
     all(

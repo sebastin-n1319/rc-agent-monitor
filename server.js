@@ -1284,7 +1284,7 @@ app.delete('/api/session', async (req, res) => {
 
 // GET /api/user-profiles, returns all stored Google profile photos (no auth required
 // so the HOF page and agent view can load photos before or without login)
-app.get('/api/user-profiles', async (req, res) => {
+app.get('/api/user-profiles', requireAuth, async (req, res) => { // Session 48: was public
   try {
     const profiles = await getAllUserProfiles();
     // Return as an object keyed by email for fast lookup
@@ -1298,12 +1298,9 @@ app.get('/api/user-profiles', async (req, res) => {
 // Users will re-auth via Google Sign-In on next page load, capturing fresh photo
 app.delete('/api/sessions/all', requireAdmin, async (req, res) => {
   try {
-    // Open a direct sqlite connection to wipe all sessions
-    const sqlite3 = require('better-sqlite3');
-    const dbPath  = require('path').join(__dirname, 'productivity.db');
-    const tmpDb   = sqlite3(dbPath);
-    const result  = tmpDb.prepare('DELETE FROM app_sessions').run();
-    tmpDb.close();
+    // Session 48: better-sqlite3 was never installed, so this always failed.
+    const { db } = require('./database');
+    const result = await new Promise((resolve, reject) => db.run('DELETE FROM app_sessions', function (err) { err ? reject(err) : resolve({ changes: this.changes }); }));
     _cache.clear();
     const actor = req.session?.email || 'admin';
     insertAuditLog(actor, 'sessions_cleared', 'all', `${result.changes} sessions removed`).catch(()=>{});
@@ -1656,6 +1653,7 @@ async function getZohoAccessToken() {
   if (_zohoToken && Date.now() < _zohoTokenExpiry - 60000) return _zohoToken;
   if (!ZOHO_CLIENT_ID || !ZOHO_REFRESH_TOKEN) throw new Error('Zoho not configured');
   const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+    signal: AbortSignal.timeout(15000), // Session 48
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
@@ -1677,6 +1675,7 @@ async function zohoDesk(path, params = {}) {
   const qs    = new URLSearchParams(params).toString();
   const url   = `${ZOHO_API_BASE}${path}${qs ? '?' + qs : ''}`;
   const res   = await fetch(url, {
+    signal: AbortSignal.timeout(20000), // Session 48
     headers: {
       'Authorization': `Zoho-oauthtoken ${token}`,
       'orgId': ZOHO_DESK_ORG_ID,
@@ -4374,7 +4373,7 @@ global._startPredictCron = function startPredictCron() {
       const _p = await getPauseStatus().catch(() => ({ fullPaused: false }));
       if (_p.fullPaused) { log.info('predict_cron_skipped_paused'); return; }
       log.info('predict_cron_tick', { hour: HOUR, min: MIN });
-      await trainAndPersistPredictModel(30);
+      try { await trainAndPersistPredictModel(30); } catch (e) { log.error('predict_cron_failed', e); }
     }
   }, 10 * 60 * 1000);  // every 10 min
   log.info('predict_cron_started', { hourCst: HOUR, min: MIN });
