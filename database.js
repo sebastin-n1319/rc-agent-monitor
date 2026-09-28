@@ -1067,8 +1067,14 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
     const callStart = dayStartUtc.toISOString();
     const callEnd = dayEndUtc.toISOString();
     // Inbound
+    // Session 54: inboundCalls is calls the agent actually answered. A
+    // queue call that rang this agent and was missed (or went to
+    // voicemail) is its own row here, and counting those as "inbound"
+    // made every agent look busier than they were (Sky: 17 shown, 12
+    // handled). Offered rings stay available as inboundOffered.
     const inb=await get(`SELECT
       COUNT(*) as total,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
       AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
       AVG(CASE WHEN ring_duration>0 THEN ring_duration END) as avgRing,
       SUM(hold_duration) as totalHold,
@@ -1099,7 +1105,8 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
       onCallSeconds:Math.round(onCallTime),
       ringingSeconds:Math.round(ringingTime),
       toggleCount,
-      inboundCalls:inb.total||0,
+      inboundCalls:inb.answered||0,
+      inboundOffered:inb.total||0,
       outboundCalls:out.total||0,
       missedCalls:inb.missed||0,
       voicemails:inb.voicemails||0,
@@ -1212,15 +1219,22 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
     }
   }
 
-  const inboundCalls = (inb.total || 0) + monthly.inbound;
+  // Session 54: "Inbound" is answered inbound calls, not every ring leg
+  // (missed and voicemail legs are shown on their own tiles). Monthly rows
+  // from before answered_inbound was filled fall back to inbound minus
+  // missed and voicemails.
+  const monthlyAnsweredIn = monthly.answered_inbound || Math.max(0, monthly.inbound - monthly.missed - monthly.voicemails);
+  const inboundOffered = (inb.total || 0) + monthly.inbound;
+  const inboundCalls = (inb.answered || 0) + monthlyAnsweredIn;
   const outboundCalls = (out.total || 0) + monthly.outbound;
-  const inboundAnswered = (inb.answered || 0) + monthly.answered_inbound;
+  const inboundAnswered = (inb.answered || 0) + monthlyAnsweredIn;
   const outboundAnswered = (out.answered || 0) + monthly.answered_outbound;
   const inboundTalkSeconds = (inb.talkSeconds || 0) + monthly.inbound_talk_time;
   const outboundTalkSeconds = (out.talkSeconds || 0) + monthly.outbound_talk_time;
 
   return {
     inboundCalls,
+    inboundOffered,
     outboundCalls,
     totalCalls: inboundCalls + outboundCalls,
     missedCalls: (inb.missed || 0) + monthly.missed,
@@ -1241,8 +1255,10 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
 // holds. Months older than retention only exist as monthly totals, so
 // detailFrom says where the itemised list starts.
 const CALL_LIST_FILTERS = {
-  all:       `1=1`,
-  inbound:   `direction='Inbound'`,
+  // Session 54: "all" and "inbound" match the tiles, which now count
+  // answered inbound calls (missed/voicemail legs have their own lists).
+  all:       `(direction='Outbound' OR (direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0))`,
+  inbound:   `direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
   outbound:  `direction='Outbound'`,
   missed:    `direction='Inbound' AND lower(COALESCE(result,'')) IN ('missed','abandoned')`,
   voicemail: `direction='Inbound' AND (COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail')`,

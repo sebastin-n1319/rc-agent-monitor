@@ -890,8 +890,8 @@
 
   // ── Session 45: call / chat detail sub-page ────────────────────────────
   const CALL_KINDS = {
-    all:       { title: 'All calls',            sub: 'Every inbound and outbound call in this range.' },
-    inbound:   { title: 'Inbound calls',        sub: 'Calls that came in to you.' },
+    all:       { title: 'All calls',            sub: 'Inbound calls you answered plus every call you placed.' },
+    inbound:   { title: 'Inbound calls',        sub: 'Inbound calls you answered. Missed rings and voicemails are listed separately.' },
     outbound:  { title: 'Outbound calls',       sub: 'Calls you placed.' },
     missed:    { title: 'Missed calls',         sub: 'Inbound calls that rang you and were missed or abandoned.' },
     voicemail: { title: 'Voicemails',           sub: 'Inbound calls that went to voicemail.' },

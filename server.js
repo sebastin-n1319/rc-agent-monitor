@@ -6091,6 +6091,27 @@ async function runAditkbSnapshotSync() {
       // +1ms so the row(s) exactly at the watermark aren't re-pulled forever.
       await deskLifecycle.setSyncState('aditkb_synced_through_ms', String(maxSeenMs + 1));
     }
+    // Session 54: one-time re-pull of the last 60 days so existing rows get
+    // created_by_id (added after they were synced). Resumable by offset.
+    if ((await deskLifecycle.getSyncState('aditkb_createdby_backfill_done')) !== '1') {
+      let startIso = await deskLifecycle.getSyncState('aditkb_createdby_backfill_since');
+      if (!startIso) {
+        startIso = new Date(Date.now() - 60 * 86400000).toISOString();
+        await deskLifecycle.setSyncState('aditkb_createdby_backfill_since', startIso);
+      }
+      let bOffset = Number((await deskLifecycle.getSyncState('aditkb_createdby_backfill_offset')) || 0);
+      let bPages = 0, bDone = false;
+      while (bPages < 5) {
+        const { rows } = await aditkbService.fetchTicketsPage({ modifiedSinceIso: startIso, offset: bOffset, limit: ADITKB_PAGE_SIZE });
+        bPages++;
+        if (!rows.length) { bDone = true; break; }
+        for (const row of rows) { await upsertAditkbRow(row); ticketsSeen++; }
+        bOffset += rows.length;
+        await deskLifecycle.setSyncState('aditkb_createdby_backfill_offset', String(bOffset));
+        if (rows.length < ADITKB_PAGE_SIZE) { bDone = true; break; }
+      }
+      if (bDone) await deskLifecycle.setSyncState('aditkb_createdby_backfill_done', '1');
+    }
   }
   return ticketsSeen;
 }
@@ -6134,6 +6155,7 @@ async function upsertAditkbRow(row) {
       // of waiting on the slow live-Zoho metrics phase below.
       owner_change_log: row.cf_owner_change_log || null,
       reopen_count: row.cf_reopen_count != null ? Number(row.cf_reopen_count) : null,
+      created_by_id: row.j_created_by || null, // Session 54
     });
   } catch(e) { console.warn(`⚠️ desk snapshot upsert (AditKB) failed for ticket ${row.ticket_number || row.id}: ${e.message}`); }
 }
