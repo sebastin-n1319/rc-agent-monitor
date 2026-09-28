@@ -75,4 +75,4 @@ html.dark-mode .lf-root{
 .lf-me-stats span{font-size:12px;color:var(--lf-t3)}
 
 /* The live floor covers these, so hide the older duplicates in agent view. */
-#agent-section-dashboard > .av2-stat-grid, #agent-section-dashboard #agent-self-card{display:none!important}
+#agent-section-dashboard .av2-stat-grid[aria-label="Team metrics summary"], #agent-section-dashboard #agent-self-card{display:none!important}
