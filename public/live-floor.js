@@ -367,7 +367,7 @@
       <div class="lf-head">
         <div><h2 class="lf-h1">${mode === 'admin' ? 'Live floor' : 'My live dashboard'}</h2>
         <div class="lf-sub">${mode === 'admin' ? 'Every agent at a glance. Card colour is their current state; the timer is how long they have been in it.' : 'Your status first, then the team.'}</div></div>
-        <span class="lf-live"><span class="lf-dot"></span>Live · ${e(tzLabel())}</span>
+        <div class="lf-head-r">${mode === 'admin' ? '<button type="button" class="lf-share" onclick="window.openChatComposer&&window.openChatComposer({kind:\'perf\',period:\'today\'})">Share to Chat</button>' : ''}<span class="lf-live"><span class="lf-dot"></span>Live · ${e(tzLabel())}</span></div>
       </div>`;
     const wingSection = (key, title) => {
       const list = rows.filter(r => r.wing === key);

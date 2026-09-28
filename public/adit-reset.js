@@ -28,6 +28,7 @@
     'desk-lifecycle-verify.css',
     'live-floor.css', // Session 45
     'breaks-v2.css', // Session 47
+    'chat-reports.css', // Session 50
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

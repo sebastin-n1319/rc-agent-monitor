@@ -464,6 +464,30 @@ async function initDB() {
     updated_by TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
+  // Session 50: Google Chat report composer -- saved schedules + send log.
+  await run(`CREATE TABLE IF NOT EXISTS chat_report_schedule (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL DEFAULT 'perf',
+    config TEXT NOT NULL DEFAULT '{}',
+    freq TEXT NOT NULL DEFAULT 'daily',
+    time_hm TEXT NOT NULL DEFAULT '18:00',
+    tz TEXT NOT NULL DEFAULT 'Asia/Kolkata',
+    weekday INTEGER,
+    monthday INTEGER,
+    weekdays_only INTEGER NOT NULL DEFAULT 1,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    last_run_key TEXT,
+    last_run_at DATETIME,
+    last_status TEXT,
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE TABLE IF NOT EXISTS chat_report_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT, title TEXT, period_label TEXT, version TEXT,
+    schedule_id INTEGER, sent_by TEXT, ok INTEGER, error TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+
   // Break thresholds, configurable per AUX type
   await run(`CREATE TABLE IF NOT EXISTS break_thresholds (
     aux_type TEXT PRIMARY KEY,
@@ -1842,15 +1866,18 @@ async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Ch
   const agents = Object.values(agentMap).map(a => {
     const compliance = {};
     let anyExceeded = false, anyWarning = false;
+    // Session 50: multi-day ranges compare against the daily limit times
+    // the days this agent was actually on shift, not a single day's limit.
+    const activeDays = Math.max(1, new Set(a.events.map(ev => new Date(String(ev.created_at).replace(' ','T')+'Z').toLocaleDateString('en-CA',{timeZone}))).size);
     for(const [aux, mins] of Object.entries(a.totals)){
       const thr = threshMap[aux];
-      const daily = thr?.daily_limit_minutes;
+      const daily = thr?.daily_limit_minutes ? thr.daily_limit_minutes * activeDays : null;
       const status = !daily ? 'ok' : mins >= daily ? 'exceeded' : mins >= daily*0.8 ? 'warning' : 'ok';
       compliance[aux] = { mins: Math.round(mins*10)/10, daily_limit: daily||null, status };
       if(status==='exceeded') anyExceeded=true;
       if(status==='warning')  anyWarning=true;
     }
-    return { username:a.username, email:a.email, totals:a.totals, compliance,
+    return { username:a.username, email:a.email, totals:a.totals, compliance, activeDays,
       overallStatus: anyExceeded?'exceeded': anyWarning?'warning':'ok' };
   });
 
@@ -1962,6 +1989,40 @@ async function setBreakPlan(email, startIst, minutes, updatedBy) {
 }
 async function deleteBreakPlan(email) {
   return run(`DELETE FROM break_plan WHERE email=?`, [String(email).toLowerCase()]);
+}
+
+// Session 50: chat report schedules + log
+async function listChatReportSchedules() {
+  return all(`SELECT * FROM chat_report_schedule ORDER BY id`);
+}
+async function getChatReportSchedule(id) {
+  return get(`SELECT * FROM chat_report_schedule WHERE id=?`, [id]);
+}
+async function saveChatReportSchedule(s) {
+  const vals = [s.name, s.kind, JSON.stringify(s.config || {}), s.freq, s.time_hm, s.tz, s.weekday ?? null, s.monthday ?? null, s.weekdays_only ? 1 : 0, s.enabled === false ? 0 : 1];
+  if (s.id) {
+    await run(`UPDATE chat_report_schedule SET name=?, kind=?, config=?, freq=?, time_hm=?, tz=?, weekday=?, monthday=?, weekdays_only=?, enabled=? WHERE id=?`, [...vals, s.id]);
+    return s.id;
+  }
+  const r = await run(`INSERT INTO chat_report_schedule (name, kind, config, freq, time_hm, tz, weekday, monthday, weekdays_only, enabled, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`, [...vals, s.created_by || null]);
+  return r.lastID;
+}
+async function setChatReportScheduleEnabled(id, enabled) {
+  return run(`UPDATE chat_report_schedule SET enabled=? WHERE id=?`, [enabled ? 1 : 0, id]);
+}
+async function deleteChatReportSchedule(id) {
+  return run(`DELETE FROM chat_report_schedule WHERE id=?`, [id]);
+}
+async function markChatReportScheduleRun(id, runKey, status) {
+  return run(`UPDATE chat_report_schedule SET last_run_key=?, last_run_at=CURRENT_TIMESTAMP, last_status=? WHERE id=?`, [runKey, status, id]);
+}
+async function insertChatReportLog(l) {
+  await run(`INSERT INTO chat_report_log (kind, title, period_label, version, schedule_id, sent_by, ok, error) VALUES (?,?,?,?,?,?,?,?)`,
+    [l.kind, l.title, l.period_label, l.version, l.schedule_id || null, l.sent_by || null, l.ok ? 1 : 0, l.error || null]);
+  await run(`DELETE FROM chat_report_log WHERE id NOT IN (SELECT id FROM chat_report_log ORDER BY id DESC LIMIT 200)`);
+}
+async function listChatReportLog(limit = 25) {
+  return all(`SELECT * FROM chat_report_log ORDER BY id DESC LIMIT ?`, [limit]);
 }
 
 async function getBreakThresholds() {
@@ -2458,6 +2519,7 @@ async function getAlertCounts(){
 }
 
 module.exports={
+  listChatReportSchedules, getChatReportSchedule, saveChatReportSchedule, setChatReportScheduleEnabled, deleteChatReportSchedule, markChatReportScheduleRun, insertChatReportLog, listChatReportLog, // Session 50
   db,  // Session 16: roster.js needs the raw handle to share the same connection
   CALL_LOGS_RETENTION_DAYS,
   countCallLogsForAgentSince, deleteFaxCallLogs, isMonthWithinCallLogRetention, dedupeCallLogs, // Session 42

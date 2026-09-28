@@ -101,3 +101,6 @@ html.dark-mode .lf-root{
 #desk-lifecycle-root .tkt-wrap,
 #debug-panel{max-width:none!important;width:100%!important;margin-left:0!important;margin-right:0!important}
 .av2 .av2-container,.bx-wrap{padding-left:clamp(12px,2vw,28px);padding-right:clamp(12px,2vw,28px)}
+.lf-head-r{display:flex;align-items:center;gap:12px}
+.lf-share{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--lf-border);background:var(--lf-surface);color:var(--lf-t1);font:600 12px/18px 'Poppins',sans-serif;cursor:pointer}
+.lf-share:hover{border-color:var(--lf-teal);color:var(--lf-teal)}

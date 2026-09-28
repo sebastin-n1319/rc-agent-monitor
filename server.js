@@ -1446,6 +1446,106 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
   } catch(e) { res.status(500).json({ success:false, error:e.message }); }
 });
 
+// ── Session 50: Google Chat report composer (preview, send, schedules) ──
+const { createChatReports } = require('./lib/chat-reports');
+let _chatReports = null;
+function chatReports() {
+  if (_chatReports) return _chatReports;
+  const dbm = require('./database');
+  _chatReports = createChatReports({
+    getDateWindow, getBreakReportData,
+    perfRoster: () => deskLifecycleAgentRoster(),
+    agentSummary: (args) => deskLifecycle.agentSummary(args),
+    callAndChatStats: (emails, from, to) => callAndChatStatsForAgents(emails, from, to),
+    db: dbm, fetchFn: fetch,
+  });
+  return _chatReports;
+}
+function cleanReportCfg(b) {
+  const x = b || {};
+  const str = (v, n) => (typeof v === 'string' ? v.slice(0, n) : '');
+  return {
+    kind: x.kind === 'breaks' ? 'breaks' : 'perf',
+    period: str(x.period, 20) || 'today', start: str(x.start, 10), end: str(x.end, 10),
+    version: str(x.version, 20), metrics: Array.isArray(x.metrics) ? x.metrics.slice(0, 20).map(m => String(m).slice(0, 30)) : undefined,
+    title: str(x.title, 150), intro: str(x.intro, 1500), outro: str(x.outro, 600),
+    options: (x.options && typeof x.options === 'object') ? JSON.parse(JSON.stringify(x.options).slice(0, 2000)) : {},
+  };
+}
+app.get('/api/chat-reports/meta', requireAdmin, (req, res) => {
+  const cr = chatReports();
+  res.json({ success: true, target: cr.spaceLabel(), configured: cr.isConfigured(), periods: cr.PERIODS, defaultMetrics: cr.DEFAULT_METRICS,
+    metrics: Object.fromEntries(Object.entries(cr.METRICS).map(([k, m]) => [k, { label: m.label, better: m.better }])) });
+});
+app.post('/api/chat-reports/preview', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { res.json({ success: true, ...(await chatReports().build(cleanReportCfg(req.body))) }); }
+  catch (e) { console.error('chat report preview:', e.message); res.status(500).json({ success: false, error: 'Could not build the report' }); }
+});
+app.post('/api/chat-reports/send', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try {
+    const cfg = cleanReportCfg(req.body);
+    const r = await chatReports().send(cfg, req.session.email);
+    insertAuditLog(req.session.email, 'chat_report_sent', r.model.title, `${cfg.kind} ${r.model.period.label} ${r.ok ? 'ok' : r.error}`).catch(() => {});
+    res.json({ success: r.ok, error: r.error });
+  } catch (e) { console.error('chat report send:', e.message); res.status(500).json({ success: false, error: 'Could not send the report' }); }
+});
+app.post('/api/chat-reports/polish', requireAdmin, rateLimit(15, 60000), async (req, res) => {
+  const text = String((req.body || {}).text || '').slice(0, 1200);
+  const tone = String((req.body || {}).tone || 'friendly').slice(0, 20);
+  if (!text.trim()) return res.status(400).json({ success: false, error: 'Nothing to polish' });
+  try {
+    const r = await ai.chat({ feature: 'writer', maxTokens: 300, temperature: 0.5, messages: [
+      { role: 'system', content: `Rewrite a short team message a support team lead posts in Google Chat with a performance report. Tone: ${tone}. Keep it under 60 words, keep any {placeholders} exactly as written, keep emoji light, never use em dashes, return only the message.` },
+      { role: 'user', content: ai.redact(text) }] });
+    res.json({ success: true, text: r.text.replace(/\u2014/g, ',') });
+  } catch (e) { res.status(503).json({ success: false, error: e.message }); }
+});
+app.get('/api/chat-reports/schedules', requireAdmin, async (req, res) => {
+  try {
+    const cr = chatReports();
+    const rows = await require('./database').listChatReportSchedules();
+    res.json({ success: true, data: rows.map(r => ({ ...r, config: (() => { try { return JSON.parse(r.config); } catch (e) { return {}; } })(), next_run: r.enabled ? cr.nextRun(r) : null })) });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/chat-reports/schedules', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const freq = ['daily', 'weekly', 'monthly'].includes(b.freq) ? b.freq : 'daily';
+    const time = /^\d{2}:\d{2}$/.test(b.time_hm || '') ? b.time_hm : '19:30';
+    const tz = ['America/Chicago', 'Asia/Kolkata'].includes(b.tz) ? b.tz : 'America/Chicago';
+    const cfg = cleanReportCfg(b.config);
+    const id = await require('./database').saveChatReportSchedule({
+      id: b.id ? Number(b.id) : null, name: String(b.name || cfg.title || 'Report').slice(0, 80), kind: cfg.kind, config: cfg,
+      freq, time_hm: time, tz, weekday: freq === 'weekly' ? Math.min(Math.max(Number(b.weekday ?? 5), 0), 6) : null,
+      monthday: freq === 'monthly' ? Math.min(Math.max(Number(b.monthday || 1), 1), 31) : null,
+      weekdays_only: freq === 'daily' && !!b.weekdays_only, enabled: b.enabled !== false, created_by: req.session.email,
+    });
+    insertAuditLog(req.session.email, 'chat_report_schedule_saved', String(id), `${freq} ${time} ${tz}`).catch(() => {});
+    res.json({ success: true, id });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/chat-reports/schedules/:id/toggle', requireAdmin, async (req, res) => {
+  try { await require('./database').setChatReportScheduleEnabled(Number(req.params.id), !!(req.body || {}).enabled); res.json({ success: true }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/chat-reports/schedules/:id/run', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try {
+    const s = await require('./database').getChatReportSchedule(Number(req.params.id));
+    if (!s) return res.status(404).json({ success: false, error: 'Not found' });
+    let cfg = {}; try { cfg = JSON.parse(s.config); } catch (e) {}
+    const r = await chatReports().send({ ...cfg, kind: s.kind }, req.session.email, s.id);
+    res.json({ success: r.ok, error: r.error });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not send the report' }); }
+});
+app.delete('/api/chat-reports/schedules/:id', requireAdmin, async (req, res) => {
+  try { await require('./database').deleteChatReportSchedule(Number(req.params.id)); insertAuditLog(req.session.email, 'chat_report_schedule_deleted', req.params.id, '').catch(() => {}); res.json({ success: true }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/chat-reports/history', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, data: await require('./database').listChatReportLog(25) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // FEAT-5: CSV export endpoints
 app.get('/api/export/break-tracker', requireAdmin, async (req, res) => {
   // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
@@ -3444,6 +3544,8 @@ async function startScheduler() {
     } catch(e) { console.error('❌ monthly summary refresh:', e.message); }
     pruneCallLogs(CALL_LOGS_RETENTION_DAYS).catch(e => console.error('❌ pruneCallLogs:', e.message));
   });
+  // Session 50: scheduled Google Chat reports (checks every minute)
+  cron.schedule('* * * * *', () => { chatReports().runDue().catch(e => console.error('❌ chat reports cron:', e.message)); });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
   // Every 2 hours: check volume, archive to Google Sheets if >90%, then prune
