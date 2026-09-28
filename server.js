@@ -7053,6 +7053,44 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Session 52: "why is / isn't ticket #N in my list?" Agents: self only.
+// Admins: any monitored agent. Reads the stored data the counts use plus a
+// live Zoho read of the ticket's replies and comments, so pending syncs
+// are explained instead of looking like missing credit.
+app.get('/api/desk-lifecycle/explain-ticket', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const num = String(req.query.ticket || '').replace(/[^0-9]/g, '').slice(0, 12);
+    if (!num) return res.status(400).json({ success: false, error: 'Enter a ticket number' });
+    const sessionEmail = (req.session.email || '').toLowerCase();
+    const settings = await getRoleSettingsForEmail(sessionEmail).catch(() => null);
+    const isAdminCaller = !!(settings && settings.role === 'admin');
+    const targetEmail = isAdminCaller && req.query.agentEmail ? String(req.query.agentEmail).toLowerCase() : sessionEmail;
+    const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+    if (!emails.includes(targetEmail)) return res.status(403).json({ success: false, error: 'This agent is not on the monitored roster' });
+    const from = req.query.from || new Date(Date.now() - 30 * 864e5).toISOString();
+    const to = req.query.to || new Date().toISOString();
+
+    let live = null;
+    try {
+      const ds = require('./lib/desk-service');
+      if (ds.isConfigured()) {
+        const sr = await ds.fetchRaw(`/tickets/search?ticketNumber=${num}&limit=1`);
+        const t = sr && sr.data && sr.data[0];
+        if (t) {
+          const [th, cm] = await Promise.all([
+            ds.fetchRaw(`/tickets/${t.id}/threads?limit=100`).catch(() => null),
+            ds.fetchRaw(`/tickets/${t.id}/comments?limit=100`).catch(() => null),
+          ]);
+          live = { ticket: t, threads: (th && th.data) || [], comments: (cm && cm.data) || [] };
+        }
+      }
+    } catch (e) { console.warn('explain-ticket live read failed:', e.message); }
+
+    const out = await deskLifecycle.explainTicketForAgent({ ticketNumber: num, email: targetEmail, agentName: agentNames[targetEmail], from, to, live });
+    res.json({ success: true, from, to, agentEmail: targetEmail, agentName: byEmail[targetEmail]?.full_name || agentNames[targetEmail] || targetEmail, ...out });
+  } catch (e) { console.error('explain-ticket:', e.message); res.status(500).json({ success: false, error: 'Could not check this ticket' }); }
+});
+
 app.use(errorTracker());
 
 let httpServer = null;

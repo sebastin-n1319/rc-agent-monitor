@@ -441,6 +441,65 @@
       ${disabled ? `<div class="dlv-live-note">Handling now is live, so it ignores the period above, same as the card.</div>` : ''}`;
   }
 
+  // Session 52: "Why is / isn't this ticket in my list?"
+  function checkHtml() {
+    const s = _state;
+    const r = s.checkResult;
+    let body = '';
+    if (s.checkLoading) body = '<div class="dlv-check-msg">Checking the ticket in the synced data and in Zoho Desk…</div>';
+    else if (s.checkError) body = `<div class="dlv-error">${esc(s.checkError)}</div>`;
+    else if (r && !r.found) body = `<div class="dlv-check-msg">${esc(r.reason)}</div>`;
+    else if (r) {
+      const t = r.ticket;
+      const mainKey = s.metric;
+      const rows = r.checks.map(c => `
+        <li class="dlv-check-row ${c.included ? 'is-in' : 'is-out'} ${c.key === mainKey ? 'is-main' : ''}">
+          <span class="dlv-check-ic" aria-hidden="true">${c.included ? '✓' : '✕'}</span>
+          <div><b>${esc(c.label)}: ${c.included ? 'in the list' : 'not in the list'}</b><span>${esc(c.reason)}</span></div>
+        </li>`).join('');
+      const ev = (r.events || []).map(e => `<li class="${e.inPeriod ? 'in' : ''} ${e.pending ? 'pending' : ''}"><b>${esc({ reply: 'Reply', comment: 'Comment', owner: 'Became owner' }[e.type] || e.type)}</b> ${esc(e.when || '')}${e.pending ? ' · in Zoho, not synced yet' : ''}${e.inPeriod ? ' · in this period' : ''}</li>`).join('');
+      body = `
+        <div class="dlv-check-ticket">
+          ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">#${esc(t.number)}</a>` : `<b>#${esc(t.number)}</b>`}
+          <span>${esc(t.subject || '')}</span>
+          <em>${esc(t.status || '')}${t.ownerName ? ' · owner ' + esc(t.ownerName) : ''}${t.createdTime ? ' · created ' + esc(fmtDateTime(t.createdTime)) : ''}</em>
+        </div>
+        <ul class="dlv-check-list">${rows}</ul>
+        ${ev ? `<details class="dlv-check-ev"><summary>Your activity on this ticket (${(r.events || []).length})</summary><ul>${ev}</ul></details>` : ''}
+        <div class="dlv-check-foot">${r.liveChecked ? 'Checked against Zoho Desk live and the synced data.' : 'Checked against the synced data (Zoho live read was not available).'}${r.sync && r.sync.lastActivitySync ? ' Activity last synced ' + esc(fmtDateTime(r.sync.lastActivitySync)) + '.' : ''}</div>`;
+    }
+    return `
+      <section class="dlv-check" aria-label="Check a ticket">
+        <form class="dlv-check-form">
+          <label for="dlv-check-input"><b>Why is a ticket in or out of this list?</b><span>Enter a ticket number. It is checked for ${esc(s.agentName || s.agentEmail)} in the period above.</span></label>
+          <div class="dlv-check-row-in">
+            <input id="dlv-check-input" class="dlv-check-input" inputmode="numeric" autocomplete="off" placeholder="e.g. 400350" value="${esc(s.checkNum || '')}">
+            <button type="submit" class="av2-btn av2-btn-sm dlv-check-btn">Check</button>
+          </div>
+        </form>
+        ${body}
+      </section>`;
+  }
+
+  async function runCheck() {
+    const s = _state;
+    const num = String(s.checkNum || '').replace(/[^0-9]/g, '');
+    if (!num) return;
+    s.checkLoading = true; s.checkError = null; s.checkResult = null;
+    render();
+    try {
+      const range = findPreset(s.selectedPreset).compute();
+      const params = new URLSearchParams({ ticket: num, from: range.from, to: range.to, agentEmail: s.agentEmail });
+      const r = await fetch(`/api/desk-lifecycle/explain-ticket?${params.toString()}`, { credentials: 'include' });
+      const j = await r.json();
+      if (!r.ok || !j.success) throw new Error(j.error || `HTTP ${r.status}`);
+      if (_state !== s) return;
+      s.checkResult = j;
+    } catch (e) { s.checkError = e.message || 'Could not check this ticket'; }
+    s.checkLoading = false;
+    render();
+  }
+
   function render() {
     if (!_hostEl) return;
     const s = _state;
@@ -476,6 +535,7 @@
           ${periodControlsHtml()}
           ${agentPicker}
         </div>
+        ${checkHtml()}
         ${s.loading ? `<div class="dlv-loading">Loading…</div>` : ''}
         ${s.error ? `<div class="dlv-error">${esc(s.error)}</div>` : ''}
         ${(!s.loading && !s.error) ? totalCardHtml(json) : ''}
@@ -486,6 +546,18 @@
 
   function wireControls() {
     const root = _hostEl;
+    const checkForm = root.querySelector('.dlv-check-form');
+    if (checkForm) checkForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      _state.checkNum = root.querySelector('.dlv-check-input').value;
+      runCheck();
+    });
+    const checkInput = root.querySelector('.dlv-check-input');
+    if (checkInput) {
+      checkInput.addEventListener('input', () => { _state.checkNum = checkInput.value; });
+      checkInput.addEventListener('keydown', (e) => { if (e.key === 'Escape') e.stopPropagation(); });
+      if (_state.focusCheck) { _state.focusCheck = false; setTimeout(() => checkInput.focus(), 30); }
+    }
     const backBtn = root.querySelector('.dlv-back-btn');
     if (backBtn) backBtn.addEventListener('click', goBack);
 
@@ -500,7 +572,7 @@
     if (presetSel) presetSel.addEventListener('change', () => {
       _state.selectedPreset = presetSel.value;
       render();
-      if (_state.selectedPreset !== 'custom') fetchAndRender();
+      if (_state.selectedPreset !== 'custom') { fetchAndRender(); if (_state.checkResult) runCheck(); }
     });
     const applyBtn = root.querySelector('.dlv-date-apply');
     if (applyBtn) applyBtn.addEventListener('click', () => {
@@ -608,12 +680,14 @@
       statusFilter: 'all', channelFilter: 'all', fcrFilter: 'all', ratingFilter: 'all',
       onBack: opts.onBack,
       backLabel: opts.backLabel,
+      checkNum: opts.checkTicket || '', checkResult: null, checkLoading: false, checkError: null, focusCheck: !!opts.focusCheck,
     };
 
     document.addEventListener('keydown', onKeydown);
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
 
     fetchAndRender();
+    if (_state.checkNum) runCheck();
   }
 
   window.openDeskLifecycleVerify = openDeskLifecycleVerify;

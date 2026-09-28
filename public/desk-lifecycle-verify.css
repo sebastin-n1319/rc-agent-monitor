@@ -168,3 +168,30 @@
   .dlv-total-card { flex-direction: column; align-items: flex-start; gap: var(--av2-s2); }
   .dlv-chips-bar { flex-direction: column; align-items: stretch; }
 }
+
+/* Session 52: "Why is a ticket in or out of this list?" */
+.dlv-check { background: var(--av2-surface); border: 1px solid var(--av2-border); border-radius: var(--av2-r-md); padding: 14px 16px; margin: 0 0 var(--av2-s4); }
+.dlv-check-form label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--av2-t1); }
+.dlv-check-form label span { font-size: 12px; color: var(--av2-t3); }
+.dlv-check-row-in { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.dlv-check-input { flex: 0 1 220px; min-width: 140px; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--av2-border); background: var(--av2-surface-2); color: var(--av2-t1); font: 500 14px/20px 'Poppins', sans-serif; }
+.dlv-check-input:focus { outline: 2px solid var(--av2-teal); outline-offset: 1px; }
+.dlv-check-btn { height: 36px; }
+.dlv-check-msg { margin-top: 10px; font-size: 13px; color: var(--av2-t2); }
+.dlv-check-ticket { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 12px 0 8px; font-size: 13.5px; color: var(--av2-t1); }
+.dlv-check-ticket a, .dlv-check-ticket b { font-weight: 700; color: var(--av2-teal); text-decoration: none; }
+.dlv-check-ticket em { font-style: normal; font-size: 12px; color: var(--av2-t3); width: 100%; }
+.dlv-check-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.dlv-check-row { display: flex; gap: 10px; align-items: flex-start; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--av2-border); background: var(--av2-surface-2); font-size: 12.5px; }
+.dlv-check-row b { display: block; font-weight: 600; color: var(--av2-t1); margin-bottom: 2px; }
+.dlv-check-row span { color: var(--av2-t2); line-height: 1.45; }
+.dlv-check-ic { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 12px; }
+.dlv-check-row.is-in .dlv-check-ic { background: rgba(22,169,112,.14); color: #16A970; }
+.dlv-check-row.is-out .dlv-check-ic { background: rgba(107,132,154,.16); color: var(--av2-t3); }
+.dlv-check-row.is-main { border-color: var(--av2-teal); box-shadow: inset 3px 0 0 var(--av2-teal); }
+.dlv-check-ev { margin-top: 10px; font-size: 12.5px; color: var(--av2-t2); }
+.dlv-check-ev summary { cursor: pointer; font-weight: 600; color: var(--av2-t1); }
+.dlv-check-ev ul { margin: 6px 0 0; padding-left: 18px; }
+.dlv-check-ev li.in b { color: #16A970; }
+.dlv-check-ev li.pending b { color: #C98F06; }
+.dlv-check-foot { margin-top: 10px; font-size: 11.5px; color: var(--av2-t3); }

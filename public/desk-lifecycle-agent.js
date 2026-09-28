@@ -675,7 +675,8 @@
                   <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-date-apply">Apply</button>
                 </div>`;
             })()}
-            <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-verify-btn">Verify my tickets</button>
+            <button type="button" class="av2-btn av2-btn-sm mystats-verify-btn">Verify my tickets</button>
+            <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-why-btn">Why is a ticket missing?</button>
           </div>
         </div>
         ${metaBarHtml(summaryJson, syncStatus)}
@@ -738,6 +739,8 @@
       const [source, kind] = card.getAttribute('data-detail').split(':');
       openDetail(root, source, kind);
     }));
+    const whyBtn = root.querySelector('.mystats-why-btn');
+    if (whyBtn && verifyBtn) whyBtn.addEventListener('click', () => { verifyBtn.dataset.focusCheck = '1'; verifyBtn.click(); });
     if (verifyBtn) verifyBtn.addEventListener('click', () => {
       if (typeof window.openDeskLifecycleVerify !== 'function') return;
       let email = (typeof currentEmail !== 'undefined' && currentEmail) ? currentEmail : null;
@@ -755,6 +758,7 @@
         agentEmail: email, agentName: name || email,
         isAdmin: false, metric: (() => { const m = verifyBtn.dataset.metric || 'handled'; delete verifyBtn.dataset.metric; return m; })(), presetKey: _selectedPreset,
         customFrom: _customFrom, customTo: _customTo,
+        focusCheck: (() => { const f = verifyBtn.dataset.focusCheck === '1'; delete verifyBtn.dataset.focusCheck; return f; })(),
         root, backLabel: '← Back to My Stats',
         onBack: () => window.openDeskLifecycleAgent(),
       });
