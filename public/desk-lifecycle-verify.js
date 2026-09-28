@@ -177,6 +177,7 @@
     },
     replied: { label: 'Replied to', basis: 'activity', def: 'Tickets this agent sent a reply on during this period.' },
     commented: { label: 'Commented on', basis: 'activity', def: 'Tickets this agent added a comment to (incl. private notes) during this period.' },
+    assist: { label: 'Call notes on others\' tickets', basis: 'activity', def: 'Tickets owned by someone else where this agent only added a comment (usually a call note), with no reply and no ownership during this period. These already count in Tickets handled.' },
     owned: { label: 'Took ownership', basis: 'activity', def: 'Tickets that were assigned to this agent during this period (per Zoho\'s owner-change log).' },
     unique: {
       label: 'Unique tickets', basis: 'created',
@@ -215,7 +216,7 @@
       def: 'Tickets this agent currently owns that are still open, right now, a live count, not scoped to the period below.',
     },
   };
-  const METRIC_ORDER = ['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
+  const METRIC_ORDER = ['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'assist', 'owned', 'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
 
   let _state = null;
   let _hostEl = null;
@@ -311,7 +312,7 @@
     }
 
     const ownerFamily = new Set(['unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal']);
-    const handledFamily = new Set(['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned']);
+    const handledFamily = new Set(['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'assist']);
     let head, rows;
     if (handledFamily.has(metric)) {
       head = '<th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Created</th><th>How</th>';
@@ -321,6 +322,7 @@
         if (t.replied) how.push('Replied');
         if (t.commented) how.push('Commented');
         if (t.owned) how.push('Owner');
+        if (t.assist) how.push('Call note (not owner)');
         return `
         <tr>
           <td>${ticketLink(t)}</td>

@@ -1,0 +1,12 @@
+/* Session 51: duotone icon system. Outline in currentColor plus a soft
+   fill layer (.du) that lights up on hover and in the active state. */
+.nx-ic .du, .nx-ic .du *{fill:currentColor;stroke:none;opacity:.16;transition:opacity .2s ease,fill .2s ease}
+.sb-item svg.nx-ic{width:20px!important;height:20px!important;stroke:currentColor!important;stroke-width:1.6!important}
+.sb-item:hover .nx-ic .du{opacity:.28}
+.sb-item.active .nx-ic .du, .sb-item.active .nx-ic .du *{opacity:.34;fill:#F5811F}
+.sb-item.active svg.nx-ic{filter:drop-shadow(0 0 6px rgba(245,129,31,.45))}
+.bx-tile-ico .nx-ic{width:24px;height:24px;display:block}
+.bx-tile:hover .bx-tile-ico .du{opacity:.3}
+.av2-stat .nx-ic .du{opacity:.2}
+.ta-ic .nx-ic .du{opacity:.22}
+@media (prefers-reduced-motion:reduce){.nx-ic .du{transition:none}}

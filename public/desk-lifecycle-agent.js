@@ -296,7 +296,8 @@
     calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   };
   function statIcon(name) {
-    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON[name] || ICON.ticket}</svg>`;
+    const inner = ICON[name] || ICON.ticket; // Session 51: duotone (soft fill layer + outline)
+    return `<svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><g class="du">${inner}</g>${inner}</svg>`;
   }
 
   // ── Session 27: tooltip copy, same definitions/wording as
@@ -310,6 +311,8 @@
         return 'Tickets handled\n\nEvery ticket you replied to, commented on (incl. private call notes), or took ownership of in this range. Each ticket counts once, however many times you touched it. Click to see the list.';
       case 'handled_new':
         return 'New tickets\n\nTickets you handled in this range that were also created in this range.';
+      case 'assist':
+        return 'Call notes on others\' tickets\n\nTickets someone else owns where you only left a comment, usually a call note after helping the customer on the phone. They already count in Tickets handled.';
       case 'handled_followup':
         return 'Follow-ups\n\nTickets you handled in this range that were created earlier (follow-ups, reopens, transfers-in).';
       case 'unique':
@@ -425,10 +428,11 @@
         ${click('handled', stat('ticket', 'blue', tv('tickets_handled'), 'Tickets handled', 'handled', s, prevS, d('tickets_handled')))}
         ${click('handled_new', stat('ticket', 'teal', tv('tickets_handled_new'), 'New tickets', 'handled_new', s, prevS, d('tickets_handled_new')))}
         ${click('handled_followup', stat('swap', 'purple', tv('tickets_handled_followup'), 'Follow-ups', 'handled_followup', s, prevS, d('tickets_handled_followup')))}
+        ${click('assist', stat('chat', 'teal', tv('tickets_assist'), 'Call notes on others\' tickets', 'assist', s, prevS, d('tickets_assist')))}
         ${c ? dt('calls:all', stat('phone', 'green', c.totalCalls || 0, 'Calls')) : stat('phone', 'green', '-', 'Calls')}
         ${cs ? dt('chats:chats', stat('chat', 'amber', cs.chatCount || 0, 'Chats')) : stat('chat', 'amber', '-', 'Chats')}
       </div>
-      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} (a ticket can be in more than one). Click any card to see the exact tickets, calls or chats behind it.</div>`
+      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} · call notes on ${s.tickets_assist || 0} tickets owned by someone else (a ticket can be in more than one, and all of them count in Tickets handled). Click any card to see the exact tickets, calls or chats behind it.</div>`
               : `<div class="av2-section-meta" style="margin-top:8px">Ticket activity for this range is still syncing, check back shortly.</div>`}`;
     return panel('Work handled', 'Counted automatically from Zoho Desk, RingCentral and SalesIQ, nothing to log by hand.', body);
   }

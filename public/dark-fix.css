@@ -1,0 +1,112 @@
+/* Session 51: dark mode repair layer. Loaded last. Every rule is scoped to
+   html.dark-mode so light mode is untouched. Found by an automated
+   contrast audit of every admin and agent page (text under 3:1 and large
+   light surfaces). */
+html.dark-mode{
+  --dk-surface:#111F2B; --dk-surface2:#152634; --dk-surface3:#1A2F40; --dk-border:#22384A;
+  --dk-t1:#E6EEF5; --dk-t2:#B4C4D2; --dk-t3:#8FA6B8; --dk-teal:#3BB8EA;
+}
+
+/* 1. Design-system tokens that had no dark values */
+html.dark-mode .av2{
+  --av2-bg:transparent; --av2-surface:var(--dk-surface); --av2-surface-2:var(--dk-surface2); --av2-surface-3:var(--dk-surface3);
+  --av2-border:var(--dk-border); --av2-border-strong:#2E4A60;
+  --av2-t1:var(--dk-t1); --av2-t2:var(--dk-t2); --av2-t3:var(--dk-t3); --av2-t4:#6A8295;
+  --av2-e1:none; --av2-e2:0 4px 14px rgba(0,0,0,.25); --av2-e3:0 10px 28px rgba(0,0,0,.3);
+}
+html.dark-mode .agent-shell-page.av2,
+html.dark-mode #agent-section-dashboard,
+html.dark-mode #roster-admin-root,
+html.dark-mode #settings-admin-root,
+html.dark-mode #desk-lifecycle-root,
+html.dark-mode #desk-lifecycle-agent-root,
+html.dark-mode .tkt-sticky-top,
+html.dark-mode #tab-debug,
+html.dark-mode .sb-subtabs{background:transparent!important}
+
+/* 2. Cards and panels that were hard-coded white */
+html.dark-mode .av2-panel, html.dark-mode .av2-stat, html.dark-mode .mystats-meta-bar,
+html.dark-mode .stg-card, html.dark-mode .stg-pause-option, html.dark-mode .stg-notify-row, html.dark-mode .stg-sys-item, html.dark-mode .stg-job-row,
+html.dark-mode .rx-kpi, html.dark-mode .rx-toolbar, html.dark-mode .rx-filter-bar, html.dark-mode .rx-view-tabs, html.dark-mode .rx-legend,
+html.dark-mode .rx-grid-wrap, html.dark-mode .rx-footer, html.dark-mode .rx-search, html.dark-mode .rx-row, html.dark-mode .rx-row td, html.dark-mode .rx-td-name,
+html.dark-mode .rx-grid th, html.dark-mode .rx-modal, html.dark-mode .rx-pop,
+html.dark-mode .tkt-card, html.dark-mode .tkt-table, html.dark-mode .tkt-table tr, html.dark-mode .tkt-table th, html.dark-mode .tkt-table td,
+html.dark-mode .card.v5-sr, html.dark-mode .role-policy-card, html.dark-mode #thresholds-tbody,
+html.dark-mode .awv2-page > div, html.dark-mode .awv2-panel, html.dark-mode .awv2-btn-ghost,
+html.dark-mode .bx-table, html.dark-mode .bx-table tr, html.dark-mode .bx-table th, html.dark-mode .bx-table td,
+html.dark-mode #debug-panel > div, html.dark-mode #debug-panel > div > div, html.dark-mode #la-grid > div, html.dark-mode #tab-ai-agent > div:not(.sb-subtabs),
+html.dark-mode .tl-card{
+  background:var(--dk-surface)!important; border-color:var(--dk-border)!important; color:var(--dk-t1);
+}
+html.dark-mode .rx-row:nth-child(even) td, html.dark-mode .rx-row:nth-child(even),
+html.dark-mode .bx-table th, html.dark-mode .tkt-table th, html.dark-mode table thead tr, html.dark-mode table thead th{background:var(--dk-surface2)!important}
+html.dark-mode .rx-cell.rx-st-empty{background:var(--dk-surface)!important}
+
+/* 3. Inline white / light backgrounds written straight into markup */
+html.dark-mode :is([style*="background:#fff"],[style*="background: #fff"],[style*="background:#FFF"],[style*="background: #FFF"],[style*="background:white"],[style*="background: white"],[style*="background:#ffffff"],[style*="background:#FFFFFF"],[style*="background:#F7F8F8"],[style*="background:#f7f8f8"],[style*="background:#F8FAFC"],[style*="background:#f8fafc"],[style*="background:#F0F2F5"],[style*="background:#f0f2f5"],[style*="background:#FAFBFC"],[style*="background:#F5F6FA"],[style*="background:#F8F9FC"],[style*="background: #F8FAFC"],[style*="background:rgb(248,250,252)"],[style*="background:rgb(255,255,255)"],[style*="background: rgb(255, 255, 255)"],[style*="background:rgb(247,248,248)"],[style*="background: #fff"]):not([style*="border-radius:50%"]):not(#brain-panel *):not(#brain-bubble):not(#brain-bubble *){
+  background:var(--dk-surface)!important; border-color:var(--dk-border)!important;
+}
+html.dark-mode :is([style*="color:#072B40"],[style*="color: #072B40"],[style*="color:#072b40"],[style*="color:#1A1F3C"],[style*="color: #1A1F3C"],[style*="color:#0F172A"],[style*="color:#111827"]):not(#brain-panel *):not(#brain-bubble *){color:var(--dk-t1)!important}
+html.dark-mode :is([style*="color:#6B849A"],[style*="color: #6B849A"],[style*="color:#3A5068"]):not(#brain-panel *){color:var(--dk-t3)!important}
+
+/* 4. Text that was dark on dark */
+html.dark-mode .bx-team-name b, html.dark-mode .card-title, html.dark-mode #tkt-view-title,
+html.dark-mode .av2 .av2-hero-title, html.dark-mode .av2-section-title, html.dark-mode .av2-stat-value,
+html.dark-mode .lf-h1, html.dark-mode .lf-wing-t, html.dark-mode .stg-card-title, html.dark-mode .rx-kpi-val, html.dark-mode .rx-name,
+html.dark-mode .tkt-h1, html.dark-mode .stg-h1{color:var(--dk-t1)!important}
+html.dark-mode .av2 .av2-hero-sub, html.dark-mode .ld-pbar-label, html.dark-mode .role-email, html.dark-mode #mainApp > footer,
+html.dark-mode .tl-date-bar span, html.dark-mode .tl-date-bar button, html.dark-mode .mystats-meta-item span{color:var(--dk-t2)!important}
+html.dark-mode .av2 .av2-hero-title-accent{color:#F59A3C!important;-webkit-text-fill-color:#F59A3C!important;background:none!important}
+html.dark-mode .av2 .av2-hero-chip{background:var(--dk-surface2)!important;border-color:var(--dk-border)!important;color:var(--dk-t2)!important}
+html.dark-mode .av2 .av2-hero-chip-live, html.dark-mode .av2 .av2-hero-chip-live *{color:#34D399!important}
+html.dark-mode .av2-tkt-delta-flat{background:var(--dk-surface2)!important;color:var(--dk-t3)!important}
+html.dark-mode .av2-empty-title{color:var(--dk-t2)!important}
+html.dark-mode .ld-health-badge{background:var(--dk-surface2)!important;border-color:var(--dk-border)!important}
+html.dark-mode .btn.btn-sm:not(.btn-primary), html.dark-mode #cl-prev-btn, html.dark-mode #cl-next-btn{color:var(--dk-t1)!important;background:var(--dk-surface2)!important;border-color:var(--dk-border)!important}
+html.dark-mode #cl-prev-btn:disabled, html.dark-mode #cl-next-btn:disabled{opacity:.45}
+html.dark-mode .rx-view-tab:not(.active), html.dark-mode .rx-filter-chip:not(.active){background:transparent!important;color:var(--dk-t2)!important;border-color:var(--dk-border)!important}
+html.dark-mode .rx-kpi-lbl, html.dark-mode .rx-kpi-sub, html.dark-mode .rx-meta, html.dark-mode .rx-filter-label, html.dark-mode .rx-view-count,
+html.dark-mode .stg-card-sub, html.dark-mode .stg-job-desc, html.dark-mode .stg-sys-label, html.dark-mode .tkt-card-sub, html.dark-mode .tkt-h1-sub, html.dark-mode .stg-h1-sub{color:var(--dk-t3)!important}
+html.dark-mode .rx-day-num.rx-day-empty{color:#4A6478!important}
+html.dark-mode .sb-subtab-btn:not(.active){color:var(--dk-t3)!important}
+html.dark-mode .awv2-tpl{background:rgba(244,137,31,.12)!important;border-color:rgba(244,137,31,.35)!important;color:#F59A3C!important}
+html.dark-mode code{background:var(--dk-surface2)!important;color:var(--dk-t2)!important;border-color:var(--dk-border)!important}
+
+/* 5. Form controls */
+html.dark-mode input:not([type=checkbox]):not([type=radio]):not([type=range]), html.dark-mode select, html.dark-mode textarea{
+  background-color:var(--dk-surface2); color:var(--dk-t1); border-color:var(--dk-border);
+}
+html.dark-mode input::placeholder, html.dark-mode textarea::placeholder{color:#6A8295}
+html.dark-mode input[type=date]::-webkit-calendar-picker-indicator, html.dark-mode input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.85)}
+html.dark-mode{color-scheme:dark}
+
+/* 6. Admin modules with their own token sets (roster, settings, ticket lifecycle) */
+html.dark-mode, html.dark-mode #roster-admin-root, html.dark-mode #settings-admin-root, html.dark-mode #desk-lifecycle-root, html.dark-mode #desk-lifecycle-agent-root{
+  --rx-bg:transparent; --rx-surface:var(--dk-surface); --rx-surface2:var(--dk-surface2); --rx-border:var(--dk-border);
+  --rx-ink:var(--dk-t1); --rx-ink2:var(--dk-t2); --rx-ink3:var(--dk-t3); --rx-ink4:#4A6478; --rx-navy:#E6EEF5;
+  --stg-bg:transparent; --stg-surface:var(--dk-surface); --stg-surface2:var(--dk-surface2); --stg-border:var(--dk-border);
+  --stg-ink:var(--dk-t1); --stg-ink2:var(--dk-t2); --stg-ink3:var(--dk-t3);
+  --tkt-bg:transparent; --tkt-surface:var(--dk-surface); --tkt-surface2:var(--dk-surface2); --tkt-border:var(--dk-border);
+  --tkt-ink:var(--dk-t1); --tkt-ink2:var(--dk-t2); --tkt-ink3:var(--dk-t3);
+}
+html.dark-mode #settings-admin-root .stg-banner-ok{background:rgba(52,211,153,.12)!important;color:#6EE7B7!important}
+html.dark-mode #settings-admin-root .stg-banner-warning{background:rgba(242,193,78,.12)!important;color:#FCD34D!important}
+html.dark-mode #settings-admin-root .stg-job-running{color:#6EE7B7!important}
+html.dark-mode body .role-shell .card, html.dark-mode body .role-shell .card > div{background:var(--dk-surface)!important;border-color:var(--dk-border)!important}
+html.dark-mode body .role-shell > .card > .card-hdr .card-title, html.dark-mode body .role-shell .card-title{color:var(--dk-t1)!important}
+html.dark-mode body .role-email{color:var(--dk-t3)!important}
+html.dark-mode .ld-health-score{color:var(--dk-t1)!important}
+html.dark-mode body #agent-section-tickets .tl-page > div:first-child > div:first-child{background:var(--dk-surface)!important;border-color:var(--dk-border)!important}
+html.dark-mode .tl-date-bar span, html.dark-mode .tl-date-bar button{color:var(--dk-t1)!important}
+html.dark-mode body .av2 .av2-hero .av2-hero-title{color:var(--dk-t1)!important}
+html.dark-mode body .av2 .av2-hero .av2-hero-sub{color:var(--dk-t2)!important}
+html.dark-mode #agent-section-dashboard .av2-hero-title{color:var(--dk-t1)!important}
+html.dark-mode #agent-section-dashboard .av2-hero-sub{color:var(--dk-t2)!important}
+html.dark-mode #roster-admin-root .rx-legend, html.dark-mode #roster-admin-root .rx-footer, html.dark-mode #roster-admin-root .rx-row, html.dark-mode #roster-admin-root .rx-td-name{background:var(--dk-surface)!important}
+html.dark-mode #roster-admin-root .rx-row:nth-child(even), html.dark-mode #roster-admin-root .rx-row:nth-child(even) .rx-td-name{background:var(--dk-surface2)!important}
+html.dark-mode #roster-admin-root .rx-month-display{background:var(--dk-surface2)!important}
+html.dark-mode body .role-shell .card.v5-sr, html.dark-mode body .role-shell .role-policy-card{background:var(--dk-surface)!important}
+html.dark-mode #tab-access .card, html.dark-mode #tab-access .card:last-child, html.dark-mode #tab-access .card > div:not(.card-hdr){background:var(--dk-surface)!important;border-color:var(--dk-border)!important}
+html.dark-mode #roster-admin-root .rx-legend .rx-lg-code{filter:brightness(1.6) saturate(1.1)}
+html.dark-mode #roster-admin-root .rx-lg-tip{color:var(--dk-t3)!important}
+html.dark-mode #tkt-dashboard-view [style*="background:#F8FAFC"], html.dark-mode #tkt-dashboard-view [style*="background:#f8fafc"]{background:var(--dk-surface2)!important}

@@ -488,6 +488,13 @@ async function initDB() {
     schedule_id INTEGER, sent_by TEXT, ok INTEGER, error TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 
+  // Session 51: T1 CS alerts (queue wait, no coverage, ticket alerts) send log.
+  await run(`CREATE TABLE IF NOT EXISTS t1_alert_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT, dedupe_key TEXT, summary TEXT, ok INTEGER, error TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  await run(`CREATE INDEX IF NOT EXISTS idx_t1_alert_dedupe ON t1_alert_log(dedupe_key, created_at)`);
+
   // Break thresholds, configurable per AUX type
   await run(`CREATE TABLE IF NOT EXISTS break_thresholds (
     aux_type TEXT PRIMARY KEY,
@@ -1991,6 +1998,19 @@ async function deleteBreakPlan(email) {
   return run(`DELETE FROM break_plan WHERE email=?`, [String(email).toLowerCase()]);
 }
 
+// Session 51: T1 alerts log
+async function insertT1AlertLog(l) {
+  await run(`INSERT INTO t1_alert_log (kind, dedupe_key, summary, ok, error) VALUES (?,?,?,?,?)`, [l.kind, l.dedupe_key || null, String(l.summary || '').slice(0, 500), l.ok ? 1 : 0, l.error || null]);
+  await run(`DELETE FROM t1_alert_log WHERE id NOT IN (SELECT id FROM t1_alert_log ORDER BY id DESC LIMIT 500)`);
+}
+async function listT1AlertLog(limit = 40) {
+  return all(`SELECT * FROM t1_alert_log ORDER BY id DESC LIMIT ?`, [limit]);
+}
+async function t1AlertSentSince(dedupeKey, sinceIso) {
+  const r = await get(`SELECT id FROM t1_alert_log WHERE dedupe_key=? AND ok=1 AND created_at >= ? LIMIT 1`, [dedupeKey, sinceIso]);
+  return !!r;
+}
+
 // Session 50: chat report schedules + log
 async function listChatReportSchedules() {
   return all(`SELECT * FROM chat_report_schedule ORDER BY id`);
@@ -2519,6 +2539,7 @@ async function getAlertCounts(){
 }
 
 module.exports={
+  insertT1AlertLog, listT1AlertLog, t1AlertSentSince, // Session 51
   listChatReportSchedules, getChatReportSchedule, saveChatReportSchedule, setChatReportScheduleEnabled, deleteChatReportSchedule, markChatReportScheduleRun, insertChatReportLog, listChatReportLog, // Session 50
   db,  // Session 16: roster.js needs the raw handle to share the same connection
   CALL_LOGS_RETENTION_DAYS,

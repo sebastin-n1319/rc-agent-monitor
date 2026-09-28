@@ -1201,6 +1201,44 @@ async function fetchQueueStatuses() {
   }
 }
 
+// Session 51: callers waiting in the Customer Service queue right now.
+// The queue extension's own presence (detailedTelephonyState) lists every
+// call currently sitting in the queue; a call an agent has already
+// answered also shows on that agent's own presence, so those are removed.
+// Cached ~20s and skipped while RingCentral has us rate limited.
+let lastQueueWaiting = { at: 0, calls: [], rawCount: 0, error: null, sample: [] };
+async function fetchQueueWaiting(maxAgeMs = 20000) {
+  const now = Date.now();
+  if (now - lastQueueWaiting.at < maxAgeMs) return lastQueueWaiting;
+  if (now < _rcRateLimitedUntil) return lastQueueWaiting;
+  if (!customerServiceQueueId) await findQueueId();
+  if (!customerServiceQueueId) return { ...lastQueueWaiting, error: 'queue not found' };
+  try {
+    const data = await rcGet(`/restapi/v1.0/account/~/extension/${customerServiceQueueId}/presence`, { detailedTelephonyState: true });
+    const answered = new Set();
+    for (const e of Object.values(lastLiveStatusSnapshot)) {
+      for (const c of (e && e.activeCalls) || []) {
+        if (c && c.telephonySessionId && /connected|hold/i.test(String(c.telephonyStatus || ''))) answered.add(c.telephonySessionId);
+      }
+    }
+    const active = Array.isArray(data.activeCalls) ? data.activeCalls : [];
+    const calls = active
+      .filter(c => c && String(c.direction || 'Inbound') !== 'Outbound' && !answered.has(c.telephonySessionId))
+      .map(c => ({
+        id: c.telephonySessionId || c.id || c.sessionId,
+        status: c.telephonyStatus || null,
+        startTime: c.startTime || null,
+        waitSec: c.startTime ? Math.max(0, Math.round((now - Date.parse(c.startTime)) / 1000)) : null,
+        fromName: c.fromName || null,
+      }));
+    lastQueueWaiting = { at: now, calls, rawCount: active.length, error: null, queueName: customerServiceQueueName,
+      sample: active.slice(0, 5).map(c => ({ status: c.telephonyStatus, direction: c.direction, startTime: c.startTime, answeredByAgent: answered.has(c.telephonySessionId) })) };
+  } catch (e) {
+    lastQueueWaiting = { ...lastQueueWaiting, at: now, error: e.message };
+  }
+  return lastQueueWaiting;
+}
+
 async function fetchAccountPresenceMap() {
   const data = await rcGet('/restapi/v1.0/account/~/presence', { detailedTelephonyState: true });
   const presenceMap = {};
@@ -2167,6 +2205,7 @@ async function backfillCallHistory(fromMonth, toMonth, onSummary) {
 }
 
 module.exports = {
+  fetchQueueWaiting, // Session 51
   repairCallLogs, // Session 42
   authenticate,
   ensureRealtimeSubscription,

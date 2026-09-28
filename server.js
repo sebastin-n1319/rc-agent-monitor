@@ -1546,6 +1546,86 @@ app.get('/api/chat-reports/history', requireAdmin, async (req, res) => {
   catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ── Session 51: T1 CS alerts (queue wait, no coverage, unassigned / idle tickets) ──
+const { createT1Alerts } = require('./lib/t1-alerts');
+let _t1Alerts = null;
+function t1Alerts() {
+  if (_t1Alerts) return _t1Alerts;
+  const rc = require('./rc-service');
+  const ds = require('./lib/desk-service');
+  _t1Alerts = createT1Alerts({
+    isPaused: async () => { const p = await getPauseStatus(); return !!(p.fullPaused || p.rcSyncPaused); },
+    getConfigRaw: () => getSetting('t1_alerts_config'),
+    fetchLive: () => rc.fetchLiveCallStatus(),
+    fetchQueueWaiting: () => rc.fetchQueueWaiting(),
+    deskGet: (path) => ds.fetchRaw(path),
+    fetchDepartments: () => ds.fetchDepartments(),
+    getMonitoredAgents,
+    db: require('./database'),
+    fetchFn: fetch,
+  });
+  return _t1Alerts;
+}
+const maskUrl = (u) => (u ? String(u).replace(/(key=)[^&]+/, '$1••••').replace(/(token=)[^&]+/, '$1••••') : '');
+app.get('/api/t1-alerts/state', requireAuth, async (req, res) => {
+  try {
+    const isAdmin = (await getRoleForEmail(req.session.email).catch(() => null)) === 'admin' && req.query.scope !== 'me';
+    res.json({ success: true, isAdmin, ...t1Alerts().publicState(isAdmin ? null : String(req.session.email || '').toLowerCase()) });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not load alerts' }); }
+});
+app.post('/api/t1-alerts/scan', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try { await t1Alerts().tickTickets(true); res.json({ success: true, ...t1Alerts().publicState(null) }); }
+  catch (e) { res.status(500).json({ success: false, error: 'Scan failed' }); }
+});
+app.get('/api/t1-alerts/config', requireAdmin, async (req, res) => {
+  const cfg = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+  res.json({ success: true, config: { ...cfg, webhookUrl: undefined, webhookSet: !!cfg.webhookUrl, webhookMasked: maskUrl(cfg.webhookUrl) }, mentionPreview: t1Alerts().mentionText(cfg) });
+});
+app.post('/api/t1-alerts/config', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const cur = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+    const num = (v, d, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(Math.max(n, lo), hi) : d; };
+    const next = { ...cur };
+    if (typeof b.webhookUrl === 'string' && b.webhookUrl.trim()) {
+      const u = b.webhookUrl.trim();
+      if (!/^https:\/\/chat\.googleapis\.com\/v1\/spaces\/[^\s]+$/.test(u)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
+      next.webhookUrl = u;
+    }
+    if (b.clearWebhook) next.webhookUrl = '';
+    if (typeof b.mention === 'string') next.mention = b.mention.trim().slice(0, 120);
+    if (typeof b.mentionLabel === 'string') next.mentionLabel = b.mentionLabel.trim().slice(0, 40);
+    if (b.queue) next.queue = { enabled: !!b.queue.enabled, waitSec: num(b.queue.waitSec, 60, 15, 900), repeatMin: num(b.queue.repeatMin, 5, 1, 120) };
+    if (b.coverage) next.coverage = { enabled: !!b.coverage.enabled, minutes: num(b.coverage.minutes, 2, 1, 60), repeatMin: num(b.coverage.repeatMin, 15, 5, 240), notifyRecovery: !!b.coverage.notifyRecovery };
+    if (b.tickets) next.tickets = { ...cur.tickets, enabled: !!b.tickets.enabled, alertUnassigned: !!b.tickets.alertUnassigned, alertIdle: !!b.tickets.alertIdle,
+      unassignedMin: num(b.tickets.unassignedMin, 30, 5, 240), overMin: num(b.tickets.overMin, 60, 10, 720), idleMin: num(b.tickets.idleMin, 60, 10, 1440),
+      lookbackDays: num(b.tickets.lookbackDays, 3, 1, 14), scanMin: num(b.tickets.scanMin, 5, 2, 60),
+      teamIds: Array.isArray(b.tickets.teamIds) ? b.tickets.teamIds.map(String).slice(0, 50) : cur.tickets.teamIds };
+    if (next.tickets.overMin <= next.tickets.unassignedMin) next.tickets.overMin = next.tickets.unassignedMin + 30;
+    await setSetting('t1_alerts_config', JSON.stringify(next), req.session.email);
+    t1Alerts().invalidate();
+    insertAuditLog(req.session.email, 't1_alerts_config', 'saved', `webhook:${next.webhookUrl ? 'set' : 'none'}`).catch(() => {});
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not save' }); }
+});
+app.post('/api/t1-alerts/test', requireAdmin, rateLimit(5, 60000), async (req, res) => {
+  const a = t1Alerts(); const cfg = await a.config();
+  const r = await a.post('test', null, `🔔 Test from T1 CS Stars alerts. ${a.mentionText(cfg) || ''} If you can read this, queue, coverage and ticket alerts will land here.`.trim(), cfg);
+  res.json({ success: r.ok, error: r.error });
+});
+app.get('/api/t1-alerts/log', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, data: (await require('./database').listT1AlertLog(40)).filter(r => !/_item$/.test(r.kind)) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/t1-alerts/queue-debug', requireAdmin, async (req, res) => {
+  try { const r = await require('./rc-service').fetchQueueWaiting(0); res.json({ success: true, ...r, calls: (r.calls || []).map(c => ({ waitSec: c.waitSec, status: c.status })) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/t1-alerts/teams', requireAdmin, async (req, res) => {
+  try { const r = await require('./lib/desk-service').fetchRaw('/teams'); res.json({ success: true, data: ((r && (r.teams || r.data)) || []).map(t => ({ id: t.id, name: t.name })) }); }
+  catch (e) { res.json({ success: true, data: [], note: 'Team list not available with the current Zoho scope' }); }
+});
+
 // FEAT-5: CSV export endpoints
 app.get('/api/export/break-tracker', requireAdmin, async (req, res) => {
   // tz must be resolved BEFORE defaulting date, the naive UTC "today" below
@@ -6925,7 +7005,7 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
       'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal',
       'closed', 'fcr', 'csat', 'currently_handling',
       // Session 42: "tickets handled" family
-      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned',
+      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'assist', // Session 51
     ]);
     const metric = String(req.query.metric || 'unique');
     if (!VALID_METRICS.has(metric)) return res.status(400).json({ success: false, error: 'Invalid metric' });
@@ -6994,6 +7074,8 @@ async function start() {
       }, 15000);
       // #11 Session 2: real-time alert cron (every 30s by default)
       if (typeof global._startAlertCron === 'function') global._startAlertCron();
+      // Session 51: T1 CS alerts to Google Chat (queue wait, coverage, tickets)
+      try { t1Alerts().start(); } catch (e) { console.error('❌ T1 alerts start:', e.message); }
       // Session 11: nightly predict-model retraining at 03:30 CST
       if (typeof global._startPredictCron === 'function') global._startPredictCron();
       // #20 Session 6: anomaly cron (fires at 03:00 CST daily)

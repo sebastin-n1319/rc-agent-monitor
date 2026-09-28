@@ -27,11 +27,11 @@
   };
   // One tile per activity. `out` starts it, `in` ends it.
   const TILES = [
-    { lane: 'Break',               out: 'BREAK_OUT',         in: 'BREAK_IN',         icon: '☕', title: 'Break' },
-    { lane: 'BRB',                 out: 'BRB_OUT',           in: 'BRB_IN',           icon: '⏱', title: 'BRB' },
-    { lane: 'Training / Coaching', out: 'TRAINING_OUT',      in: 'TRAINING_IN',      icon: '🎓', title: 'Training' },
-    { lane: 'QA Session AUX',      out: 'QA_SESSION_OUT',    in: 'QA_SESSION_IN',    icon: '✅', title: 'QA session' },
-    { lane: 'Internal Calls',      out: 'INTERNAL_CALL_OUT', in: 'INTERNAL_CALL_IN', icon: '📞', title: 'Internal call' },
+    { lane: 'Break',               out: 'BREAK_OUT',         in: 'BREAK_IN',         icon: '<svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="du" d="M5 10h11v3.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M5 10h11v3.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11.5h1.2a2.3 2.3 0 0 1 0 4.6H16"/><path d="M8.5 3.5c-.9 1.1.9 2.1 0 3.2M12 3.5c-.9 1.1.9 2.1 0 3.2"/></svg>', title: 'Break' },
+    { lane: 'BRB',                 out: 'BRB_OUT',           in: 'BRB_IN',           icon: '<svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle class="du" cx="12" cy="13" r="7.5"/><circle cx="12" cy="13" r="7.5"/><path d="M12 9v4l2.5 1.5M10 2.5h4M18.5 6l1.2-1.2"/></svg>', title: 'BRB' },
+    { lane: 'Training / Coaching', out: 'TRAINING_OUT',      in: 'TRAINING_IN',      icon: '<svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="du" d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path d="M6.5 11.5v4c1.5 1.6 3.4 2.5 5.5 2.5s4-.9 5.5-2.5v-4M21.5 9.5v5"/></svg>', title: 'Training' },
+    { lane: 'QA Session AUX',      out: 'QA_SESSION_OUT',    in: 'QA_SESSION_IN',    icon: '<svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="du" d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6z"/><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8.2-7.5 9.5-4.3-1.3-7.5-5-7.5-9.5V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg>', title: 'QA session' },
+    { lane: 'Internal Calls',      out: 'INTERNAL_CALL_OUT', in: 'INTERNAL_CALL_IN', icon: '<svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="du" d="M5.5 4h3l1.8 4.6-2.3 1.4a10.6 10.6 0 0 0 5.9 5.9l1.4-2.3 4.6 1.8v3a1.8 1.8 0 0 1-1.9 1.8A15.2 15.2 0 0 1 3.7 5.9 1.8 1.8 0 0 1 5.5 4z"/><path d="M5.5 4h3l1.8 4.6-2.3 1.4a10.6 10.6 0 0 0 5.9 5.9l1.4-2.3 4.6 1.8v3a1.8 1.8 0 0 1-1.9 1.8A15.2 15.2 0 0 1 3.7 5.9 1.8 1.8 0 0 1 5.5 4z"/><path d="M14.5 4.5h5v5M19.5 4.5 14 10"/></svg>', title: 'Internal call' },
   ];
 
   let limits = { breakDay: 60, brbDay: 20, brbSingle: 10 };
@@ -277,7 +277,7 @@
           <span>${active ? 'Tap when you are back' : e(sub)}</span>
         </button>`;
       }).join('')}
-        <button class="bx-tile bx-tile-out" data-bx-action="LOGGED_OUT"><span class="bx-tile-ico" aria-hidden="true">🚪</span><b>End shift</b><span>Log out for the day</span></button>
+        <button class="bx-tile bx-tile-out" data-bx-action="LOGGED_OUT"><span class="bx-tile-ico" aria-hidden="true"><svg class="nx-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path class="du" d="M5 4h9v16H5z"/><path d="M5 4h9v16H5zM14 12h7M18 9l3 3-3 3"/><circle cx="11" cy="12" r=".6"/></svg></span><b>End shift</b><span>Log out for the day</span></button>
       </div>`;
     }
 

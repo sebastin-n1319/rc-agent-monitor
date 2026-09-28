@@ -29,6 +29,9 @@
     'live-floor.css', // Session 45
     'breaks-v2.css', // Session 47
     'chat-reports.css', // Session 50
+    't1-alerts.css', // Session 51
+    'dark-fix.css', // Session 51
+    'nx-icons.css', // Session 51
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];

@@ -437,7 +437,7 @@
     switch (key) {
       case 'handled':
         return a.tickets_handled_ready
-          ? `Tickets handled\n\nEvery ticket this agent replied to, commented on (incl. private call notes), or took ownership of in this range, counted once each.\n\nReplied ${a.tickets_replied || 0} · commented ${a.tickets_commented || 0} · took ownership ${a.tickets_owned || 0}. Click for the list.`
+          ? `Tickets handled\n\nEvery ticket this agent replied to, commented on (incl. private call notes), or took ownership of in this range, counted once each.\n\nReplied ${a.tickets_replied || 0} · commented ${a.tickets_commented || 0} · took ownership ${a.tickets_owned || 0} · call notes on others' tickets ${a.tickets_assist || 0}. Click for the list.`
           : 'Tickets handled\n\nStill syncing ticket activity for this range.';
       case 'handled_new':
         return 'New\n\nTickets handled in this range that were also created in this range.';
