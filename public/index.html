@@ -23464,6 +23464,8 @@ function switchAgentSection(section,el){
     if (wkdToggleWrap) wkdToggleWrap.style.display = currentRole === 'admin' ? 'flex' : 'none';
   }
   if(section==='mystats'){ if(typeof openDeskLifecycleAgent==='function') openDeskLifecycleAgent(); }
+  // Session 44: populate the agent Dashboard right away when it opens.
+  if(section==='dashboard' && currentUser && typeof refresh==='function'){ setTimeout(()=>{ try{ refresh(); }catch(e){} },0); }
   if(section==='writer')setTimeout(initAIWriter,50);
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
@@ -30987,7 +30989,13 @@ async function refresh(){
   // back to wherever it was ~30s ago, every ~30s, on every page (reported by
   // Sebastin as "all the pages are auto scrolling, especially my stats page
   // of the agents"). Skip the whole cycle outside admin view.
-  if (currentViewMode !== 'admin') return;
+  // Session 44: the agent-view Dashboard (Team Status, Available /
+  // Unavailable / On Call / Inbound / Outbound, call-sync chip) is rendered
+  // by this same cycle, so the guard above left it stuck on "--" and
+  // "0 agents" for every agent. Keep refreshing while an agent is on their
+  // Dashboard section; every other agent section still skips it.
+  const agentOnDashboard = currentViewMode === 'agent' && currentAgentSection === 'dashboard';
+  if (currentViewMode !== 'admin' && !agentOnDashboard) return;
 
   // Preserve scroll position across DOM rebuilds
   const scrollY = window.scrollY || window.pageYOffset || 0;
