@@ -29,7 +29,7 @@
       <div class="ta-lh"><span class="ta-dot" aria-hidden="true"></span><h4>${esc(title)}</h4><span class="ta-n">${rows.length}</span></div>
       <div class="ta-list">${rows.length ? rows.map(t => `
         <a class="ta-item" href="${esc(t.url || '#')}" target="_blank" rel="noopener">
-          <div class="ta-row1"><b>#${esc(t.number)}</b><span class="ta-age">${esc(dur(t.ageSec != null ? t.ageSec : t.idleSec))}</span></div>
+          <div class="ta-row1"><b>#${esc(t.number)}</b><span class="ta-age" title="${t.reply ? 'Counted from the customer\'s latest reply' : 'Counted from when the ticket was created'}">${esc(dur(t.ageSec != null ? t.ageSec : t.idleSec))}${t.reply ? ' since reply' : ''}</span></div>
           <div class="ta-sub">${esc(t.subject || '(no subject)')}</div>
           <div class="ta-meta">${withAgent ? `<span class="ta-agent">${esc(t.agent || '')}</span>` : ''}<span>${esc(t.channel || '')}</span>${t.team ? `<span>${esc(t.team)}</span>` : ''}</div>
         </a>`).join('') : `<div class="ta-empty">${esc(empty)}</div>`}</div>
