@@ -1538,7 +1538,8 @@ app.get('/api/assess/me', requireAuth, assessWrap(async (req, res) => {
   const member = await isToolMember(req.session.email);
   const acc = await assessments.accessFor(req.session.email, member);
   res.json({ success: true, email: req.session.email, name: req.session.name, picture: req.session.picture,
-    member, allowed: acc.allowed, reviewer: await assessments.isReviewer(req.session.email),
+    member, allowed: acc.allowed, reviewer: await assessments.isReviewer(req.session.email), owner: assessments.isOwner(req.session.email),
+    ai: { anthropic: require('./lib/ai').isAnthropicConfigured(), openai: require('./lib/ai').isConfigured() },
     tests: acc.allowed ? await assessments.myTests(req.session.email) : [] });
 }));
 app.post('/api/assess/tests/:id/start', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
@@ -1564,13 +1565,15 @@ app.get('/api/assess/attempts/:id/audio', requireAuth, requireAssessAccess, rate
   res.setHeader('Content-Type', 'audio/mpeg'); res.setHeader('Cache-Control', 'no-store'); res.send(mp3);
 }));
 
+app.get('/api/assess/my-results/:id', requireAuth, requireAssessAccess, assessWrap(async (req, res) => res.json({ success: true, result: await assessments.myResult(req.params.id, req.session.email) })));
+
 // Reviewer: assessments
 app.get('/api/assess/admin/tts-preview', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => {
   const mp3 = await assessments.previewSpeech({ text: String(req.query.text || ''), voice: String(req.query.voice || 'alloy'), ai: require('./lib/ai') });
   res.setHeader('Content-Type', 'audio/mpeg'); res.setHeader('Cache-Control', 'no-store'); res.send(mp3);
 }));
-app.delete('/api/assess/admin/attempts/:id/snapshots', ...RV, assessWrap(async (req, res) => res.json({ success: true, deleted: await assessments.deleteSnapshotsFor(req.params.id) })));
-app.put('/api/assess/admin/access/photo-days', ...RV, assessWrap(async (req, res) => { await assessments.setPhotoDays((req.body || {}).days); res.json({ success: true, purged: await assessments.purgeOldSnapshots() }); }));
+app.delete('/api/assess/admin/attempts/:id/snapshots', ...RV, requireAssessOwner, assessWrap(async (req, res) => res.json({ success: true, deleted: await assessments.deleteSnapshotsFor(req.params.id) })));
+app.put('/api/assess/admin/access/photo-days', ...RV, requireAssessOwner, assessWrap(async (req, res) => { await assessments.setPhotoDays((req.body || {}).days); res.json({ success: true, purged: await assessments.purgeOldSnapshots() }); }));
 // Session 58: camera photos older than the retention window are deleted every 6 hours.
 setInterval(() => { assessments.purgeOldSnapshots().then(n => { if (n) console.log(`🧹 assessments: deleted ${n} old camera photos`); }).catch(() => {}); }, 6 * 3600 * 1000);
 setTimeout(() => { assessments.purgeOldSnapshots().catch(() => {}); }, 60 * 1000);
@@ -1581,16 +1584,24 @@ app.post('/api/assess/admin/tests', ...RV, assessWrap(async (req, res) => res.js
 app.put('/api/assess/admin/tests/:id', ...RV, assessWrap(async (req, res) => { await assessments.saveTest(req.params.id, req.body, req.session.email); res.json({ success: true }); }));
 app.delete('/api/assess/admin/tests/:id', ...RV, assessWrap(async (req, res) => { await assessments.archiveTest(req.params.id); res.json({ success: true }); }));
 app.get('/api/assess/admin/tests/:id/questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, questions: await assessments.testQuestions(req.params.id) })));
-app.get('/api/assess/admin/tests/:id/attempts', ...RV, assessWrap(async (req, res) => res.json({ success: true, attempts: await assessments.adminAttempts(req.params.id) })));
+app.get('/api/assess/admin/tests/:id/attempts', ...RV, assessWrap(async (req, res) => res.json({ success: true, attempts: await assessments.adminAttempts(req.params.id, req.session.email) })));
+app.post('/api/assess/admin/tests/:id/duplicate', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.duplicateTest(req.params.id, req.session.email) })));
 app.get('/api/assess/admin/tests/:id/export', ...RV, assessWrap(async (req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="assessment-${Number(req.params.id)}-results.csv"`);
   res.send(await assessments.exportCsv(req.params.id));
 }));
-app.get('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, attempt: await assessments.adminAttemptDetail(req.params.id) })));
+app.get('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, attempt: await assessments.adminAttemptDetail(req.params.id, req.session.email) })));
+app.put('/api/assess/admin/attempts/:id/review', ...RV, assessWrap(async (req, res) => { await assessments.reviewAttempt(req.params.id, req.body || {}, req.session.email); res.json({ success: true }); }));
+app.post('/api/assess/admin/attempts/:id/explain/:idx/suggest', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.suggestMark({ attemptId: req.params.id, idx: req.params.idx, ai: require('./lib/ai') })) })));
 app.put('/api/assess/admin/attempts/:id/explain/:idx', ...RV, assessWrap(async (req, res) => { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); }));
 app.delete('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => { await assessments.deleteAttempt(req.params.id); res.json({ success: true }); }));
-app.get('/api/assess/admin/snapshots/:id', ...RV, assessWrap(async (req, res) => {
+// Session 59: camera photos are visible to the owner only (not every reviewer).
+function requireAssessOwner(req, res, next) {
+  if (!assessments.isOwner(req.session.email)) return res.status(403).json({ success: false, error: 'Only the owner can see camera photos' });
+  next();
+}
+app.get('/api/assess/admin/snapshots/:id', ...RV, requireAssessOwner, assessWrap(async (req, res) => {
   const img = await assessments.getSnapshot(req.params.id);
   if (!img) return res.status(404).end();
   res.setHeader('Content-Type', 'image/jpeg'); res.setHeader('Cache-Control', 'private, max-age=3600'); res.send(img);
@@ -1641,7 +1652,71 @@ app.post('/api/assess/admin/access/guests', ...RV, assessWrap(async (req, res) =
 app.delete('/api/assess/admin/access/guests/:email', ...RV, assessWrap(async (req, res) => { await assessments.removeGuest(req.params.email); res.json({ success: true }); }));
 app.post('/api/assess/admin/access/reviewers', ...RV, assessWrap(async (req, res) => { await assessments.addReviewer((req.body || {}).email, req.session.email); res.json({ success: true }); }));
 app.delete('/api/assess/admin/access/reviewers/:email', ...RV, assessWrap(async (req, res) => { await assessments.removeReviewer(req.params.email); res.json({ success: true }); }));
-app.put('/api/assess/admin/access/extra-time', ...RV, assessWrap(async (req, res) => { await assessments.setExtraTime((req.body || {}).email, (req.body || {}).pct, req.session.email); res.json({ success: true }); }));
+app.put('/api/assess/admin/access/extra-time', ...RV, assessWrap(async (req, res) => { await assessments.setExtraTime((req.body || {}).email, (req.body || {}).pct, req.session.email, (req.body || {}).plain); res.json({ success: true }); }));
+// Session 59: org directory for picking guests and assignees. Zoho Desk
+// agents and their Desk teams (live, cached 6 h), merged with the AditKB
+// staff directory (name, team, role) and the tool's own members/guests.
+let _assessDirCache = { at: 0, rows: null };
+async function assessDirectory() {
+  if (_assessDirCache.rows && Date.now() - _assessDirCache.at < 6 * 3600 * 1000) return _assessDirCache.rows;
+  const byEmail = new Map();
+  const put = (email, patch) => {
+    const e = String(email || '').trim().toLowerCase();
+    if (!/^[^@\s]+@adit\.com$/.test(e)) return;
+    const cur = byEmail.get(e) || { email: e, name: '', team: '', deskTeams: [], role: '' };
+    for (const k of Object.keys(patch)) {
+      if (k === 'deskTeams') { for (const t of patch.deskTeams || []) if (t && !cur.deskTeams.includes(t)) cur.deskTeams.push(t); }
+      else if (patch[k] && !cur[k]) cur[k] = patch[k];
+    }
+    byEmail.set(e, cur);
+  };
+  const { db } = require('./database');
+  const q = (sql) => new Promise((rs) => db.all(sql, [], (e, rows) => rs(e ? [] : rows || [])));
+  // 1) Zoho Desk (live): agents, then team members.
+  try {
+    const desk = require('./lib/desk-service');
+    const agentsById = new Map();
+    for (let from = 0; from < 2000; from += 200) {
+      const r = await desk.fetchRaw(`/agents?limit=200&from=${from}&status=ACTIVE`);
+      const list = (r && (r.data || r.agents)) || [];
+      for (const a of list) {
+        const name = a.name || [a.firstName, a.lastName].filter(Boolean).join(' ');
+        agentsById.set(String(a.id), { email: a.emailId || a.email, name });
+        put(a.emailId || a.email, { name, role: a.roleName || '' });
+      }
+      if (list.length < 200) break;
+    }
+    const tr = await desk.fetchRaw('/teams');
+    for (const t of ((tr && (tr.teams || tr.data)) || []).slice(0, 80)) {
+      try {
+        const m = await desk.fetchRaw(`/teams/${t.id}/members`);
+        for (const mem of ((m && (m.members || m.data)) || [])) {
+          const ag = agentsById.get(String(mem.id)) || {};
+          put(mem.emailId || mem.email || ag.email, { name: mem.name || ag.name, deskTeams: [t.name] });
+        }
+      } catch (e) { /* team members not readable with this scope */ }
+    }
+  } catch (e) { console.warn('assess directory: Zoho Desk list unavailable:', e.message); }
+  // 2) AditKB staff directory (team, role), 3) Desk team seen on tickets.
+  for (const r of await q(`SELECT email, full_name, team, zoho_role, status FROM staff_directory`)) {
+    if (r.status && /inactive|left|terminated/i.test(r.status)) continue;
+    put(r.email, { name: r.full_name, team: r.team, role: r.zoho_role });
+  }
+  for (const r of await q(`SELECT lower(assignee_email) AS email, team_name AS team, COUNT(*) AS n FROM desk_ticket_snapshot WHERE assignee_email IS NOT NULL AND team_name IS NOT NULL AND team_name != '' GROUP BY 1, 2 HAVING n >= 3`)) put(r.email, { deskTeams: [r.team] });
+  for (const r of await q(`SELECT email, full_name FROM roster_agents WHERE email IS NOT NULL`)) put(r.email, { name: r.full_name, team: 'T1 CS Team' });
+  const rows = [...byEmail.values()].sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+  _assessDirCache = { at: Date.now(), rows };
+  return rows;
+}
+setTimeout(() => { assessDirectory().catch(() => {}); }, 2 * 60 * 1000); // warm the cache after boot
+app.get('/api/assess/admin/directory', ...RV, assessWrap(async (req, res) => {
+  if (req.query.refresh === '1') _assessDirCache = { at: 0, rows: null };
+  const rows = await assessDirectory();
+  const members = await toolMemberSet();
+  const acc = await assessments.accessOverview();
+  const guests = new Set(acc.guests.map(g => g.email));
+  res.json({ success: true, people: rows.map(r => ({ ...r, member: members.has(r.email), guest: guests.has(r.email) })) });
+}));
 app.get('/api/assess/admin/people', ...RV, assessWrap(async (req, res) => {
   // Everyone assignable: tool members (name + email) plus guests.
   const set = await toolMemberSet();
@@ -1651,8 +1726,10 @@ app.get('/api/assess/admin/people', ...RV, assessWrap(async (req, res) => {
   try { const { db } = require('./database'); const rows = await new Promise((rs) => db.all(`SELECT email, full_name FROM roster_agents WHERE email IS NOT NULL`, [], (e, r) => rs(e ? [] : r || []))); for (const r of rows) { const e = r.email.toLowerCase(); nameBy[e] = nameBy[e] || r.full_name; } } catch (e) {}
   for (const [e, names] of Object.entries(AGENT_SHEET_NAMES)) nameBy[e] = nameBy[e] || (names[1] || names[0]);
   const acc = await assessments.accessOverview();
-  const people = [...set].filter(e => /@adit\.com$/.test(e)).map(e => ({ email: e, name: nameBy[e] || '', kind: 'member' }))
-    .concat(acc.guests.filter(g => !set.has(g.email)).map(g => ({ email: g.email, name: nameBy[g.email] || g.note || '', kind: 'guest' })))
+  const dir = new Map(((_assessDirCache.rows) || []).map(r => [r.email, r]));
+  const teamOf = (e) => { const d = dir.get(e); return d ? (d.deskTeams[0] || d.team || '') : ''; };
+  const people = [...set].filter(e => /@adit\.com$/.test(e)).map(e => ({ email: e, name: nameBy[e] || (dir.get(e) || {}).name || '', kind: 'member', team: teamOf(e) }))
+    .concat(acc.guests.filter(g => !set.has(g.email)).map(g => ({ email: g.email, name: nameBy[g.email] || (dir.get(g.email) || {}).name || g.note || '', kind: 'guest', team: teamOf(g.email) })))
     .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
   res.json({ success: true, people });
 }));

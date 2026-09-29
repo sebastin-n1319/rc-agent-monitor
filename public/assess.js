@@ -18,11 +18,15 @@
   var userBox = document.getElementById('as-user');
   var live = document.getElementById('as-live');
   var EMBED = document.documentElement.classList.contains('embed');
+  // Session 59: the agent view in the main app shows only the taker pages,
+  // even for a reviewer who switched to agent view.
+  var AGENT_ONLY = (function () { try { return new URLSearchParams(location.search).get('as') === 'agent'; } catch (e) { return false; } })();
   if (EMBED) document.body.classList.add('as-embed');
   var me = null;
   var LETTERS = 'ABCDEFGH';
   var TYPE_LABEL = { single: 'Choose one', multi: 'Choose all that apply', truefalse: 'True or false' };
   var TYPE_SHORT = { single: 'Single choice', multi: 'Multiple answers', truefalse: 'True or false' };
+  var VERDICT = { cleared: ['Cleared', 'ok'], follow_up: ['Needs follow-up', 'warn'], concern: ['Concern', 'bad'] };
   var TIER = { none: ['No issues', 'ok'], some: ['Some issues', 'warn'], major: ['Major issues', 'bad'] };
 
   // ── Theme follows the main app ───────────────────────────────────────
@@ -295,6 +299,7 @@
   function boot() {
     api('/api/assess/me').then(function (j) {
       me = j;
+      if (AGENT_ONLY) { me.reviewer = false; me.owner = false; }
       renderUser();
       if (!j.allowed) return gate();
       window.addEventListener('hashchange', route);
@@ -366,8 +371,11 @@
       }
       var grid = h('div', { class: 'grid-cards' });
       j.tests.forEach(function (t) {
-        var status = t.inProgress ? pill('In progress', 'warn', true) : (t.last ? pill('Completed', 'ok', true) : pill('Not started', 'accent', true));
-        var btnText = t.inProgress ? 'Resume' : (t.canStart ? (t.last ? 'Take again' : 'Start') : 'Completed');
+        var status = t.inProgress ? pill('In progress', 'warn', true) : t.windowState === 'upcoming' ? pill('Opens ' + fmtWhen(t.opensAt), '', true)
+          : (t.last ? pill('Completed', 'ok', true) : t.windowState === 'closed' ? pill('Closed', 'bad', true) : pill('Not started', 'accent', true));
+        var btnText = t.inProgress ? 'Resume' : t.windowState === 'upcoming' ? 'Not open yet' : (t.canStart ? (t.last ? 'Take again' : 'Start') : (t.last ? 'Completed' : 'Closed'));
+        var viewBtn = t.last && t.lastAttemptId && (t.releaseMode !== 'none' || t.last.score != null) ? h('button', { class: 'btn', type: 'button', onclick: function () { viewMyResult(t.lastAttemptId); } }, [icon('chart', 'sm'), 'View result']) : null;
+        var due = !t.last && t.closesAt && t.windowState === 'open' ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Due by ' + fmtWhen(t.closesAt) }) : null;
         var result = null;
         if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
         grid.appendChild(h('div', { class: 'card tcard' }, [
@@ -377,15 +385,43 @@
             h('div', null, [h('dt', { text: 'Per question' }), h('dd', { text: t.secondsPerQuestion + 's' })]),
             h('div', null, [h('dt', { text: 'About' }), h('dd', { text: t.estMinutes + ' min' })]),
           ]),
-          result,
+          result, due,
           h('div', { class: 'foot' }, [
             h('span', { class: 'small muted', text: 'Attempts ' + t.attemptsUsed + ' of ' + t.attemptsAllowed + (t.extraPct ? ' · +' + t.extraPct + '% time' : '') }),
-            h('span', { class: 'spacer' }),
+            h('span', { class: 'spacer' }), viewBtn,
             h('button', { class: 'btn primary', type: 'button', disabled: !t.canStart, onclick: function () { viewPre(t); } }, [btnText, t.canStart ? icon('arrowR', 'sm') : null]),
           ]),
         ]));
       });
       holder.appendChild(grid);
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+  }
+
+  // ── Taker: my released result ────────────────────────────────────────
+  function viewMyResult(attemptId) {
+    clear(main); window.scrollTo(0, 0);
+    main.appendChild(h('button', { class: 'crumb', type: 'button', onclick: function () { route(); } }, [icon('arrowL', 'sm'), 'My assessments']));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    api('/api/assess/my-results/' + attemptId).then(function (j) {
+      var r = j.result; clear(holder);
+      holder.appendChild(pageHead(r.testTitle, 'Submitted ' + fmtWhen(r.finishedAt)));
+      holder.appendChild(h('dl', { class: 'stats' }, [
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Score' }), h('dd', null, [r.score + ' / ' + r.maxScore, h('small', { text: '  ' + r.pct + '%' })])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Result' }), h('dd', null, [r.pct >= r.passPct ? pill('Pass', 'ok') : pill('Below the ' + r.passPct + '% pass mark', 'bad')])]),
+      ]));
+      if (!r.items) { holder.appendChild(h('p', { class: 'muted', text: 'Your reviewer has shared your score. Ask them if you would like to go through the answers.' })); return; }
+      r.items.forEach(function (it, i) {
+        if (it.kind === 'explain') {
+          holder.appendChild(h('div', { class: 'card item' }, [h('div', { class: 'hd' }, [h('b', { text: 'Written answer' }), it.mark == null ? pill('Not marked yet') : pill(it.mark >= 1 ? 'Strong' : it.mark > 0 ? 'Partial' : 'Weak', it.mark >= 1 ? 'ok' : it.mark > 0 ? 'warn' : 'bad')]),
+            it.about ? h('div', { class: 'about small', text: it.about }) : null, h('div', { class: 'q', style: 'white-space:pre-wrap;font-weight:400', text: it.text || '(not answered)' })]));
+          return;
+        }
+        var ans = h('div', { class: 'ans' });
+        (it.chosen && it.chosen.length ? it.chosen : ['No answer']).forEach(function (c) { var ok = it.correctAnswer.indexOf(c) >= 0; ans.appendChild(h('div', { class: ok ? 'right' : 'wrong' }, [icon(ok ? 'check' : 'x', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Your answer: ' }), c])])); });
+        if (!it.correct) it.correctAnswer.forEach(function (c) { if (!(it.chosen || []).includes(c)) ans.appendChild(h('div', { class: 'right' }, [icon('check', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Correct answer: ' }), c])])); });
+        holder.appendChild(h('div', { class: 'card item' }, [h('div', { class: 'hd' }, [h('b', { text: 'Q' + (i + 1) }), it.correct ? pill('Correct', 'ok') : pill(it.late ? 'Timed out' : 'Wrong', 'bad')]), h('div', { class: 'q', text: it.prompt }), ans,
+          it.explanation ? h('p', { class: 'small muted', style: 'margin:10px 0 0', text: 'Why: ' + it.explanation }) : null]));
+      });
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
@@ -428,7 +464,7 @@
         ['expand', 'Stay in full screen', 'The test runs in full screen. Leaving it, switching tabs, or pasting is noted for your reviewer.'],
       ];
       if (t.explainCount) rules.push(['pen', 'Explain in your own words', 'At the end you explain one of your answers. Typing only; pasting is turned off.']);
-      if (t.camera) rules.push(['camera', 'Camera photos', 'Your camera takes a photo every ' + t.snapshotSec + ' seconds while the test is open.']);
+      if (t.camera) rules.push(['camera', 'Camera photos', 'Your camera takes a photo every ' + t.snapshotSec + ' seconds while the test is open. Only the assessment owner can see them, and they are deleted automatically.']);
       card.appendChild(h('ul', { class: 'rules' }, rules.map(function (r) { return h('li', null, [h('span', { class: 'ic' }, [icon(r[0])]), h('div', null, [h('b', { text: r[1] }), h('span', { text: r[2] })])]); })));
       if (t.displayMode === 'fade') {
         var box = h('div', { class: 'demo' });
@@ -478,7 +514,7 @@
         hpOk.addEventListener('change', function () { need.hp = hpOk.checked; if (hpOk.checked) hp.set('ok', 'Headphones confirmed.'); sync(); });
       }
       if (t.camera) {
-        var cr = row('camera', 'Camera', 'Needed for this assessment. A photo is taken every ' + t.snapshotSec + ' seconds, only your reviewer can see them.');
+        var cr = row('camera', 'Camera', 'Needed for this assessment. A photo is taken every ' + t.snapshotSec + ' seconds. Only the assessment owner can see them.');
         var btn = h('button', { class: 'btn sm', type: 'button', text: 'Allow camera' });
         cr.extra.appendChild(btn);
         function showPreview() {
@@ -505,7 +541,7 @@
       var priv = h('div', { class: 'privacy' }, [
         h('b', { text: 'What is recorded' }),
         h('p', { style: 'margin:6px 0 0', text: 'Your answers and how long each one took, and a log of events such as leaving full screen, switching tabs, copy and paste attempts, and Print Screen.' + (t.camera ? ' A camera photo every ' + t.snapshotSec + ' seconds.' : '') }),
-        h('p', { style: 'margin:6px 0 0', text: 'Your screen is not recorded' + (t.camera ? ', and there is no video or audio recording.' : ', and your camera and microphone are not used.') + ' Only reviewers can see this information.' }),
+        h('p', { style: 'margin:6px 0 0', text: 'Your screen is not recorded' + (t.camera ? ', and there is no video or audio recording.' : ', and your camera and microphone are not used.') + ' Only reviewers can see your answers and activity' + (t.camera ? ', and only the assessment owner can see camera photos.' : '.') }),
       ]);
       card.appendChild(priv);
       var c1 = h('input', { type: 'checkbox', id: 'ag1' }), c2 = h('input', { type: 'checkbox', id: 'ag2' });
@@ -714,8 +750,9 @@
           reader = new AudioPrompt(aHost, function () {
             return fetch('/api/assess/attempts/' + attemptId + '/audio', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); });
           }, function () { replays++; ev('replay', 'audio ' + replays); });
-        } else body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
-        var pc = h('canvas', { 'aria-hidden': 'true', style: 'margin-bottom:14px' });
+        } else if (s.plain) body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), h('p', { class: 'plainq', style: 'font-size:15px', text: q.about })]));
+        else body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
+        var pc = s.plain ? h('p', { class: 'plainq', style: 'margin:0 0 14px', text: q.prompt }) : h('canvas', { 'aria-hidden': 'true', style: 'margin-bottom:14px' });
         body.appendChild(pc);
         ta = h('textarea', { class: 'writebox', 'aria-label': 'Your explanation', maxlength: '4000', spellcheck: 'true', placeholder: 'Aim for 2 to 4 sentences.' });
         var count = h('span', { class: 'small muted', text: '0 / 4000' });
@@ -723,8 +760,8 @@
         body.appendChild(h('div', { class: 'row', style: 'margin-top:6px' }, [h('span', { class: 'small muted', text: 'Pasting is turned off.' }), h('span', { class: 'spacer' }), count]));
         ta.addEventListener('input', function () { count.textContent = ta.value.length + ' / 4000'; submitBtn.disabled = !ta.value.trim(); });
         var drawEx = function () {
-          if (q.about) drawText(aboutC, q.about, { font: '400 15px Poppins, sans-serif', lineH: 24, color: cssVar('--t2') });
-          drawText(pc, q.prompt, { font: '600 18px Poppins, sans-serif', lineH: 28 });
+          if (q.about && !s.plain) drawText(aboutC, q.about, { font: '400 15px Poppins, sans-serif', lineH: 24, color: cssVar('--t2') });
+          if (!s.plain) drawText(pc, q.prompt, { font: '600 18px Poppins, sans-serif', lineH: 28 });
         };
         requestAnimationFrame(drawEx);
         qState = { redraw: drawEx, nOpts: 0, canSubmit: function () { return false; }, submit: send };
@@ -732,7 +769,10 @@
       } else {
         body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Question ' + (q.idx + 1) }), pill(TYPE_LABEL[q.type] || 'Choose one', 'accent')]));
         var rHost = h('div'); body.appendChild(rHost);
-        if (q.audio) {
+        if (s.plain) {
+          reader = { stop: function () {}, play: function () {}, resize: function () {} };
+          rHost.appendChild(h('div', { class: 'reader', style: 'min-height:auto' }, [h('p', { class: 'plainq', text: q.prompt })]));
+        } else if (q.audio) {
           reader = new AudioPrompt(rHost, function () {
             return fetch('/api/assess/attempts/' + attemptId + '/audio', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } }).then(function (r) {
               if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('HTTP ' + r.status)); });
@@ -747,8 +787,10 @@
         body.appendChild(opts);
         var multi = q.type === 'multi';
         var btns = q.options.map(function (o, i) {
-          var cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, o.text]);
-          var b = h('button', { class: 'opt' + (multi ? ' multi' : ''), type: 'button', role: multi ? 'checkbox' : 'radio', 'aria-checked': 'false', 'aria-label': 'Option ' + LETTERS[i] },
+          var cv;
+          if (s.plain) cv = h('span', { class: 'plainopt', text: o.text });
+          else { cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, o.text]); }
+          var b = h('button', { class: 'opt' + (multi ? ' multi' : ''), type: 'button', role: multi ? 'checkbox' : 'radio', 'aria-checked': 'false', 'aria-label': s.plain ? LETTERS[i] + '. ' + o.text : 'Option ' + LETTERS[i] },
             [h('span', { class: 'mk' }), h('span', { class: 'ky', text: LETTERS[i] }), cv]);
           b.addEventListener('click', function () { choose(i); });
           opts.appendChild(b);
@@ -770,9 +812,16 @@
         if (auto) ev('auto_submit', 'Time ran out');
         var payload = { idx: q.idx, replays: replays };
         if (q.kind === 'explain') payload.text = ta ? ta.value : ''; else payload.choice = selected;
-        api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: payload })
-          .then(function (r) { flush(); if (r.done) exitTo(function () { doneScreen(r.result); }); else load(); })
-          .catch(fail);
+        var tries = 0;
+        (function attempt() {
+          api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: payload })
+            .then(function (r) { flush(); if (r.done) exitTo(function () { doneScreen(r.result); }); else load(); })
+            .catch(function (e) {
+              // A dropped connection is retried; the server still judges time.
+              if (!e.status && tries < 4) { tries++; toast('Connection lost, retrying…'); setTimeout(attempt, 1500 * tries); return; }
+              fail(e);
+            });
+        })();
       }
       submitBtn.addEventListener('click', function () { send(false); });
       exam.appendChild(h('div', { class: 'xfoot' }, [h('div', { class: 'in' }, [
@@ -955,7 +1004,7 @@
         h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]), h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow, audioRow]));
 
       // Integrity
-      var camT = toggle('Camera photos', st.camera, 'Takes a photo every 30 seconds, with the agent\'s consent. Only reviewers see them. Use it when cameras are not on in a call.');
+      var camT = toggle('Camera photos', st.camera, 'Takes a photo every 30 seconds, with the agent\'s consent. Only you (the owner) can see them, and they are deleted automatically. Use it when cameras are not on in a call.');
       var wmT = toggle('Faint name watermark', st.watermark === 'subtle', 'Very light email and time across the screen, so a photo of the screen can be traced. Off by default.');
       var shQ = toggle('Shuffle question order', st.shuffleQuestions), shO = toggle('Shuffle answer options', st.shuffleOptions);
       var exIn = h('select', { class: 'sel', id: 'b-ex' }, [0, 1, 2, 3].map(function (n) { return h('option', { value: String(n), text: n === 0 ? 'None' : n + ' question' + (n > 1 ? 's' : '') }); })); exIn.value = String(Math.min(3, st.explainCount));
@@ -967,7 +1016,19 @@
       var passIn = h('input', { class: 'inp', id: 'b-pass', type: 'number', min: '0', max: '100', value: String(st.passPct) });
       var attIn = h('input', { class: 'inp', id: 'b-att', type: 'number', min: '1', max: '10', value: String(st.attempts) });
       var showT = toggle('Show the score when they finish', st.showScore, 'Otherwise agents see "Submitted" and you share results.');
-      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Scoring' }), h('div', { class: 'fgrid' }, [field('Pass mark (%)', passIn), field('Attempts allowed', attIn)]), showT]));
+      var relSel = h('select', { class: 'sel', id: 'b-rel' }, [['none', 'Not yet'], ['score', 'Score only'], ['answers', 'Score and answers']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+      relSel.value = st.releaseMode || 'none';
+      relSel.addEventListener('change', function () { st.releaseMode = relSel.value; });
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Scoring and results' }), h('div', { class: 'fgrid' }, [field('Pass mark (%)', passIn), field('Attempts allowed', attIn)]), showT,
+        h('div', { class: 'fgrid', style: 'margin-top:14px' }, [field('Release results to agents', relSel, 'Agents see it under "View result". Releasing answers shows the answer key for the questions they got, so use fresh questions next time.')])]));
+      // Schedule
+      function toLocal(iso) { if (!iso) return ''; var d = new Date(iso); var p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+      var opIn = h('input', { class: 'inp', id: 'b-open', type: 'datetime-local', value: toLocal(st.opensAt) });
+      var clIn = h('input', { class: 'inp', id: 'b-close', type: 'datetime-local', value: toLocal(st.closesAt) });
+      opIn.addEventListener('change', function () { st.opensAt = opIn.value ? new Date(opIn.value).toISOString() : ''; });
+      clIn.addEventListener('change', function () { st.closesAt = clIn.value ? new Date(clIn.value).toISOString() : ''; });
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Schedule' }), h('p', { text: 'Optional. Times are in your computer\'s time zone. Agents see the due date on their card, and cannot start after it closes.' }),
+        h('div', { class: 'fgrid' }, [field('Opens', opIn), field('Closes', clIn)])]));
 
       // Who takes it
       var whoSec = h('div', { class: 'card sec' }); left.appendChild(whoSec);
@@ -979,23 +1040,25 @@
         ev.input.addEventListener('change', function () { assign.everyone = ev.input.checked; renderWho(); renderSide(); });
         whoSec.appendChild(ev);
         if (assign.everyone) return;
-        var search = h('input', { class: 'inp', type: 'search', placeholder: 'Search people', 'aria-label': 'Search people', style: 'width:100%;margin:6px 0 10px' });
+        var search = h('input', { class: 'inp', type: 'search', placeholder: 'Search people', 'aria-label': 'Search people', style: 'flex:1;min-width:180px' });
+        var teams = []; people.forEach(function (p) { if (p.team && teams.indexOf(p.team) < 0) teams.push(p.team); }); teams.sort();
+        var teamSel = h('select', { class: 'sel', 'aria-label': 'Team' }, [h('option', { value: '', text: 'All teams' })].concat(teams.map(function (t) { return h('option', { value: t, text: t }); })));
         var box = h('div', { class: 'people' });
         var allBtn = h('button', { class: 'btn sm', type: 'button', text: 'Select all shown' });
         function drawPeople() {
           clear(box);
           var term = search.value.toLowerCase();
-          var shown = people.filter(function (p) { return !term || (p.name + ' ' + p.email).toLowerCase().indexOf(term) >= 0; });
+          var shown = people.filter(function (p) { return (!term || (p.name + ' ' + p.email).toLowerCase().indexOf(term) >= 0) && (!teamSel.value || p.team === teamSel.value); });
           shown.forEach(function (p) {
             var cb = h('input', { type: 'checkbox', checked: assign.emails.indexOf(p.email) >= 0 ? true : null });
             cb.addEventListener('change', function () { var at = assign.emails.indexOf(p.email); if (cb.checked && at < 0) assign.emails.push(p.email); if (!cb.checked && at >= 0) assign.emails.splice(at, 1); countEl.textContent = assign.emails.length + ' selected'; renderSide(); });
-            box.appendChild(h('label', null, [cb, h('div', { style: 'flex:1;min-width:0' }, [h('div', { text: p.name || p.email }), h('div', { class: 'e', text: p.email })]), p.kind === 'guest' ? pill('Guest') : null]));
+            box.appendChild(h('label', null, [cb, h('div', { style: 'flex:1;min-width:0' }, [h('div', { text: p.name || p.email }), h('div', { class: 'e', text: p.email + (p.team ? ' · ' + p.team : '') })]), p.kind === 'guest' ? pill('Guest') : null]));
           });
           allBtn.onclick = function () { shown.forEach(function (p) { if (assign.emails.indexOf(p.email) < 0) assign.emails.push(p.email); }); drawPeople(); countEl.textContent = assign.emails.length + ' selected'; renderSide(); };
         }
         var countEl = h('span', { class: 'small muted', text: assign.emails.length + ' selected' });
-        search.addEventListener('input', drawPeople);
-        whoSec.appendChild(search); whoSec.appendChild(box);
+        search.addEventListener('input', drawPeople); teamSel.addEventListener('change', drawPeople);
+        whoSec.appendChild(h('div', { class: 'row', style: 'margin:6px 0 10px' }, [search, teamSel])); whoSec.appendChild(box);
         whoSec.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, [countEl, h('span', { class: 'spacer' }), allBtn, h('button', { class: 'btn sm ghost', type: 'button', text: 'Clear', onclick: function () { assign.emails = []; drawPeople(); countEl.textContent = '0 selected'; renderSide(); } })]));
         drawPeople();
       }
@@ -1028,10 +1091,14 @@
           h('div', null, [
             h('div', { class: 'sumrow' }, [h('span', { text: 'Questions' }), h('b', { text: nQ + (st.explainCount && nQ ? ' + ' + Math.min(st.explainCount, nQ) + ' written' : '') })]),
             h('div', { class: 'sumrow' }, [h('span', { text: 'Time' }), h('b', { text: 'About ' + mins + ' min' })]),
+            h('div', { class: 'sumrow' }, [h('span', { text: 'Results' }), h('b', { text: { none: 'Not released', score: 'Score released', answers: 'Answers released' }[st.releaseMode || 'none'] })]),
             h('div', { class: 'sumrow' }, [h('span', { text: 'Assigned' }), h('b', { text: assign.everyone ? 'Everyone' : assign.emails.length + (assign.emails.length === 1 ? ' person' : ' people') })]),
           ]),
           h('div', null, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Status' }), statusSel, h('div', { class: 'small muted', style: 'margin-top:6px', text: status === 'published' ? 'Assigned people can start it now.' : 'Hidden from agents until published.' })]),
           msg, save,
+          id ? h('button', { class: 'btn ghost', type: 'button', style: 'width:100%', onclick: function () {
+            api('/api/assess/admin/tests/' + id + '/duplicate', { method: 'POST', body: {} }).then(function (r) { toast('Copied as a draft'); go('edit/' + r.id); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
+          } }, [icon('copy', 'sm'), 'Duplicate']) : null,
           id ? h('button', { class: 'btn ghost danger', type: 'button', style: 'width:100%', onclick: function () {
             if (!confirm('Archive this assessment? Results are kept; agents will no longer see it.')) return;
             api('/api/assess/admin/tests/' + id, { method: 'DELETE' }).then(function () { toast('Archived'); go('manage'); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
@@ -1056,7 +1123,7 @@
       var done = at.filter(function (a) { return a.status === 'submitted'; });
       var avg = done.length ? Math.round(done.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / done.length) : null;
       var pass = done.length ? Math.round(done.filter(function (a) { return a.passed; }).length / done.length * 100) : null;
-      var review = at.filter(function (a) { return a.unmarked > 0 || a.tier === 'major'; }).length;
+      var review = at.filter(function (a) { return a.status === 'submitted' && (a.unmarked > 0 || !a.verdict); }).length;
       holder.appendChild(h('dl', { class: 'stats' }, [
         h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), at.length > done.length ? h('small', { text: '  ' + (at.length - done.length) + ' in progress' }) : null])]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Average score' }), h('dd', { text: avg != null ? avg + '%' : '–' })]),
@@ -1071,7 +1138,8 @@
           h('td', null, [a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn')]),
           h('td', null, [a.pct != null ? h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + a.pct + '%' })]), h('span', { class: 'num', text: a.score + '/' + a.maxScore + ' · ' + a.pct + '%' })]) : h('span', { class: 'muted', text: '–' })]),
           h('td', null, [tierPill(a.tier), a.flags && a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') + (a.flags.length > 2 ? '…' : '') }) : null]),
-          h('td', null, [a.unmarked ? pill(a.unmarked + ' to mark', 'accent') : h('span', { class: 'muted', text: '–' })]),
+          h('td', null, [a.unmarked ? pill(a.unmarked + ' to mark', 'accent') : (a.writtenPct != null ? h('span', { class: 'num', text: a.writtenPct + '%' }) : h('span', { class: 'muted', text: '–' }))]),
+          h('td', null, [a.verdict ? pill(VERDICT[a.verdict][0], VERDICT[a.verdict][1]) : h('span', { class: 'muted', text: '–' })]),
           h('td', { class: 'num', text: fmtWhen(a.finishedAt || a.startedAt) }),
         ]);
         tr.addEventListener('click', function () { go('attempt/' + a.id); });
@@ -1079,7 +1147,7 @@
         tb.appendChild(tr);
       });
       holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [
-        h('thead', null, [h('tr', null, ['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'When'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
+        h('thead', null, [h('tr', null, ['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'Verdict', 'When'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
@@ -1108,9 +1176,23 @@
         h('div', { class: 'card stat' }, [h('dt', { text: 'Behaviour' }), h('dd', null, [tierPill(integ.tier)])]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Started' }), h('dd', { style: 'font-size:14px;font-weight:500', text: fmtWhen(a.startedAt) })]),
       ]));
+      // Reviewer verdict and notes (for the verbal follow-up round)
+      var verdict = a.verdict || '';
+      var vSeg = h('div', { class: 'markseg', role: 'group', 'aria-label': 'Verdict' });
+      [['cleared', 'Cleared', 's'], ['follow_up', 'Needs follow-up', 'p'], ['concern', 'Concern', 'w']].forEach(function (v) {
+        vSeg.appendChild(h('button', { type: 'button', class: v[2], 'data-v': v[0], 'aria-pressed': String(verdict === v[0]), text: v[1], onclick: function () { verdict = verdict === v[0] ? '' : v[0]; Array.prototype.forEach.call(vSeg.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === verdict)); }); } }));
+      });
+      var notes = h('textarea', { class: 'ta', 'aria-label': 'Reviewer notes', placeholder: 'Notes from the verbal round: which answers you asked about, how well they explained them.', style: 'min-height:70px' }); notes.value = a.notes || '';
+      holder.appendChild(h('div', { class: 'card pad stack', style: 'margin-bottom:18px' }, [
+        h('div', { class: 'row' }, [h('h2', { text: 'Your verdict' }), a.reviewedBy ? h('span', { class: 'small muted', text: 'Last saved by ' + a.reviewedBy + ' · ' + fmtWhen(a.reviewedAt) }) : null]),
+        vSeg, notes,
+        h('div', { class: 'row' }, [h('span', { class: 'spacer' }), h('button', { class: 'btn primary sm', type: 'button', text: 'Save verdict', onclick: function () {
+          api('/api/assess/admin/attempts/' + a.id + '/review', { method: 'PUT', body: { verdict: verdict, notes: notes.value } }).then(function () { toast('Verdict saved'); }).catch(function (e) { toast(e.message); });
+        } })]),
+      ]));
       var tabsEl = h('div', { class: 'tabs', role: 'tablist' }), panel = h('div');
       var tabs = [['answers', 'Answers'], ['behaviour', 'Behaviour'], ['activity', 'Activity log']];
-      if (a.camera || (a.snapshots && a.snapshots.length)) tabs.push(['camera', 'Camera photos (' + a.snapshots.length + ')']);
+      if (a.canSeePhotos && (a.camera || (a.snapshots && a.snapshots.length))) tabs.push(['camera', 'Camera photos (' + a.snapshots.length + ')']);
       function show(k) {
         Array.prototype.forEach.call(tabsEl.children, function (b) { b.setAttribute('aria-selected', String(b.dataset.k === k)); });
         clear(panel);
@@ -1128,6 +1210,14 @@
             [['1', 'Strong', 's'], ['0.5', 'Partial', 'p'], ['0', 'Weak', 'w']].forEach(function (m) {
               seg.appendChild(h('button', { type: 'button', class: m[2], 'aria-pressed': String(mark === m[0]), text: m[1], onclick: function () { mark = m[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b.textContent === m[1])); }); } }));
             });
+            var why = h('div', { class: 'small muted', style: 'flex-basis:100%' });
+            var sug = me.ai && (me.ai.anthropic || me.ai.openai) && it.text ? h('button', { class: 'btn sm', type: 'button', onclick: function (e) {
+              var b = e.currentTarget; b.disabled = true; why.textContent = 'Asking the AI…';
+              api('/api/assess/admin/attempts/' + a.id + '/explain/' + it.idx + '/suggest', { method: 'POST', body: {} }).then(function (r) {
+                mark = r.mark; Array.prototype.forEach.call(seg.children, function (x) { x.setAttribute('aria-pressed', String(x.textContent === r.label)); });
+                why.textContent = 'Suggested ' + r.label + ': ' + r.reason + ' Check it, then save.';
+              }).catch(function (er) { why.textContent = er.message; }).finally(function () { b.disabled = false; });
+            } }, [icon('spark', 'sm'), 'Suggest a mark']) : null;
             var sv = h('button', { class: 'btn sm primary', type: 'button', text: 'Save mark', onclick: function () {
               api('/api/assess/admin/attempts/' + a.id + '/explain/' + it.idx, { method: 'PUT', body: { score: mark, note: note.value } }).then(function () { toast('Mark saved'); }).catch(function (e) { toast(e.message); });
             } });
@@ -1135,7 +1225,7 @@
               h('div', { class: 'hd' }, [h('b', { text: 'Written answer' }), it.late ? pill('Timed out', 'bad') : null, h('span', { class: 'small muted', text: it.elapsedMs != null ? secs(it.elapsedMs) : '' })]),
               h('div', { class: 'about small', text: it.about }),
               h('div', { class: 'q', style: 'white-space:pre-wrap;font-weight:400', text: it.text || (it.answered ? '(left empty)' : 'Not answered') }),
-              h('div', { class: 'row' }, [seg, note, sv]),
+              h('div', { class: 'row' }, [seg, note, sug, sv, why]),
             ]));
             return;
           }
@@ -1169,7 +1259,7 @@
       }
       function camera() {
         if (!a.snapshots.length) { panel.appendChild(h('div', { class: 'empty' }, [h('b', { text: 'No photos' }), h('span', { text: 'The camera was not allowed, or the attempt ended before the first photo.' })])); return; }
-        panel.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Stored in the tool\'s own database on its server, not in Google Drive or on anyone\'s computer. Only reviewers can open them, and they are deleted automatically after the number of days set on the Access page.' })]));
+        panel.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Stored in the tool\'s own database on its server, not in Google Drive or on anyone\'s computer. Only you can open them (other reviewers cannot), and they are deleted automatically after the number of days set on the Access page.' })]));
         panel.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, [h('span', { class: 'small muted', text: a.snapshots.length + ' photos' }), h('span', { class: 'spacer' }),
           h('button', { class: 'btn sm danger', type: 'button', onclick: function () {
             if (!confirm('Delete all camera photos for this attempt? This cannot be undone.')) return;
@@ -1344,7 +1434,7 @@
     body.appendChild(h('div', { class: 'fgrid', style: 'margin-top:16px' }, [field('How many', count), field('Difficulty', diff)]));
     body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Question types' }), typeRow]));
     body.appendChild(field('What to focus on', focus, 'Internal process, owners, time limits and edge cases are the hardest for AI to answer.'));
-    body.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Questions are drafted only from this document and saved as drafts. Nothing reaches agents until you approve it. The document text is sent to OpenAI to write the drafts and is not stored.' })]));
+    body.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Questions are drafted only from this document and saved as drafts. Nothing reaches agents until you approve it. The document text is sent to ' + (me.ai && me.ai.anthropic ? 'Anthropic (Claude)' : 'OpenAI') + ' to write the drafts and is not stored.' })]));
     body.appendChild(err); body.appendChild(out);
     var go_ = h('button', { class: 'btn primary', type: 'button' }, [icon('spark', 'sm'), 'Draft questions']);
     var dlg = openDrawer('Draft questions from a document', body, [h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Close', onclick: function () { dlg.close(); } }), go_]);
@@ -1399,6 +1489,114 @@
     });
   }
 
+  // ── People picker (Session 59): Zoho Desk users + teams, typeahead ───
+  var dirCache = null;
+  function loadDirectory(refresh) {
+    if (dirCache && !refresh) return Promise.resolve(dirCache);
+    return api('/api/assess/admin/directory' + (refresh ? '?refresh=1' : '')).then(function (j) { dirCache = j.people; return dirCache; });
+  }
+  function teamsOf(p) { var t = (p.deskTeams || []).slice(); if (p.team && t.indexOf(p.team) < 0) t.push(p.team); return t; }
+  function PeoplePicker(opts) {
+    var chosen = [], people = [], active = -1, matches = [];
+    var uid = 'pp' + Math.random().toString(36).slice(2, 8);
+    var input = h('input', { class: 'inp', id: uid + '-in', type: 'text', autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': uid + '-lb', 'aria-autocomplete': 'list', placeholder: opts.placeholder || 'Type a name or email', style: 'width:100%' });
+    var lb = h('div', { class: 'pp-list', id: uid + '-lb', role: 'listbox', hidden: true });
+    var chips = h('div', { class: 'chips', style: 'margin-top:8px' });
+    var teamSel = h('select', { class: 'sel', 'aria-label': 'Browse by team' }, [h('option', { value: '', text: 'Browse by team' })]);
+    var teamBox = h('div');
+    var status = h('span', { class: 'small muted', text: 'Loading the Zoho Desk directory…' });
+    var refresh = h('button', { class: 'linkbtn small', type: 'button', text: 'Refresh', onclick: function () { status.textContent = 'Refreshing…'; loadDirectory(true).then(ready).catch(function (e) { status.textContent = e.message; }); } });
+    var el = h('div', { class: 'field pp' }, [
+      h('label', { for: uid + '-in', text: opts.label || 'People' }),
+      h('div', { class: 'pp-wrap' }, [input, lb]),
+      h('div', { class: 'row', style: 'margin-top:8px' }, [teamSel, h('span', { class: 'spacer' }), status, refresh]),
+      teamBox, chips,
+    ]);
+    function renderChips() {
+      clear(chips);
+      chosen.forEach(function (e) {
+        var p = people.find(function (x) { return x.email === e; }) || { email: e };
+        chips.appendChild(h('span', { class: 'chip' }, [p.name ? p.name + ' · ' + e : e, h('button', { type: 'button', 'aria-label': 'Remove ' + e, onclick: function () { chosen.splice(chosen.indexOf(e), 1); renderChips(); drawTeam(); } }, [icon('x', 'sm')])]));
+      });
+    }
+    function add(e) { e = String(e || '').toLowerCase(); if (e && chosen.indexOf(e) < 0) chosen.push(e); renderChips(); }
+    function score(p, toks) {
+      var hay = (p.name + ' ' + p.email + ' ' + teamsOf(p).join(' ')).toLowerCase(), sc = 0;
+      for (var i = 0; i < toks.length; i++) {
+        var t = toks[i], at = hay.indexOf(t);
+        if (at < 0) return -1;
+        sc += (p.name.toLowerCase().indexOf(t) === 0 ? 30 : 0) + (p.email.indexOf(t) === 0 ? 20 : 0) + (/[\s.@]/.test(hay[at - 1] || ' ') ? 10 : 0) + 1;
+      }
+      return sc;
+    }
+    function drawList() {
+      var term = input.value.trim().toLowerCase();
+      clear(lb); active = -1;
+      if (!term) { lb.hidden = true; input.setAttribute('aria-expanded', 'false'); return; }
+      var toks = term.split(/\s+/);
+      matches = people.map(function (p) { return [p, score(p, toks)]; }).filter(function (x) { return x[1] >= 0; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8).map(function (x) { return x[0]; });
+      if (!matches.length && /^[^@\s]+@adit\.com$/.test(term)) matches = [{ email: term, name: '', deskTeams: [], team: '', raw: true }];
+      matches.forEach(function (p, i) {
+        var dis = p.member;
+        var opt = h('div', { class: 'pp-opt' + (dis ? ' dis' : ''), role: 'option', id: uid + '-o' + i, 'aria-disabled': dis ? 'true' : null, 'aria-selected': 'false' }, [
+          h('span', { class: 'as-avatar', text: initials(p.name || p.email) }),
+          h('div', { style: 'flex:1;min-width:0' }, [h('b', { text: p.name || p.email }), h('span', { text: p.email })]),
+          h('div', { class: 'pp-tags' }, teamsOf(p).slice(0, 2).map(function (t) { return pill(t); }).concat([p.member ? pill('Team member', 'ok') : p.guest ? pill('Guest', 'accent') : p.raw ? pill('Not in directory') : null])),
+        ]);
+        opt.addEventListener('mousedown', function (e) { e.preventDefault(); if (!dis) { add(p.email); input.value = ''; drawList(); input.focus(); } });
+        lb.appendChild(opt);
+      });
+      if (!matches.length) lb.appendChild(h('div', { class: 'pp-empty', text: 'No one matches. Type a full @adit.com email to add someone who is not in the directory.' }));
+      lb.hidden = false; input.setAttribute('aria-expanded', 'true');
+    }
+    function setActive(i) {
+      var opts = lb.querySelectorAll('.pp-opt');
+      if (!opts.length) return;
+      active = (i + opts.length) % opts.length;
+      opts.forEach(function (o, k) { o.classList.toggle('on', k === active); o.setAttribute('aria-selected', String(k === active)); });
+      input.setAttribute('aria-activedescendant', opts[active].id);
+      opts[active].scrollIntoView({ block: 'nearest' });
+    }
+    input.addEventListener('input', drawList);
+    input.addEventListener('blur', function () { setTimeout(function () { lb.hidden = true; input.setAttribute('aria-expanded', 'false'); }, 120); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (lb.hidden) drawList(); setActive(active + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        var p = matches[active >= 0 ? active : 0];
+        if (p && !p.member) { add(p.email); input.value = ''; drawList(); }
+      } else if (e.key === 'Escape') { lb.hidden = true; input.setAttribute('aria-expanded', 'false'); }
+    });
+    function drawTeam() {
+      clear(teamBox);
+      var t = teamSel.value; if (!t) return;
+      var inTeam = people.filter(function (p) { return teamsOf(p).indexOf(t) >= 0; });
+      var addable = inTeam.filter(function (p) { return !p.member; });
+      var list = h('div', { class: 'people', style: 'margin-top:8px;max-height:220px' });
+      inTeam.forEach(function (p) {
+        var cb = h('input', { type: 'checkbox', checked: chosen.indexOf(p.email) >= 0 ? true : null, disabled: p.member ? true : null });
+        cb.addEventListener('change', function () { if (cb.checked) add(p.email); else { chosen.splice(chosen.indexOf(p.email), 1); renderChips(); } });
+        list.appendChild(h('label', null, [cb, h('div', { style: 'flex:1;min-width:0' }, [h('div', { text: p.name || p.email }), h('div', { class: 'e', text: p.email })]), p.member ? pill('Team member', 'ok') : p.guest ? pill('Guest', 'accent') : null]));
+      });
+      teamBox.appendChild(h('div', { class: 'row', style: 'margin-top:8px' }, [h('span', { class: 'small muted', text: inTeam.length + ' people in ' + t + (addable.length < inTeam.length ? ', ' + (inTeam.length - addable.length) + ' already team members' : '') }), h('span', { class: 'spacer' }),
+        h('button', { class: 'btn sm', type: 'button', text: 'Select all', disabled: !addable.length, onclick: function () { addable.forEach(function (p) { add(p.email); }); drawTeam(); } })]));
+      teamBox.appendChild(list);
+    }
+    teamSel.addEventListener('change', drawTeam);
+    function ready(list) {
+      people = list || [];
+      var count = {}; people.forEach(function (p) { teamsOf(p).forEach(function (t) { count[t] = (count[t] || 0) + 1; }); });
+      var cur = teamSel.value; clear(teamSel); teamSel.appendChild(h('option', { value: '', text: 'Browse by team' }));
+      Object.keys(count).sort().forEach(function (t) { teamSel.appendChild(h('option', { value: t, text: t + ' (' + count[t] + ')' })); });
+      teamSel.value = cur;
+      status.textContent = people.length + ' people from Zoho Desk and the staff directory';
+      renderChips(); drawTeam();
+    }
+    loadDirectory(false).then(ready).catch(function (e) { status.textContent = 'Directory unavailable (' + e.message + '). You can still type full emails.'; });
+    return { el: el, selected: function () { return chosen.slice(); } };
+  }
+
   // ── Reviewer: access ─────────────────────────────────────────────────
   function viewAccess() {
     main.appendChild(pageHead('Access', 'Team members of the tool can always open assessments. Everyone else needs to be on the guest list below. Guests only ever see the Assessments page, never the rest of the tool.'));
@@ -1425,7 +1623,8 @@
         });
         grid.appendChild(h('div', { class: 'card pad wide stack' }, [h('h2', { text: 'Who else can open the link' }), modes]));
         // Guests
-        var gIn = h('textarea', { class: 'ta', id: 'g-emails', placeholder: 'name@adit.com, one per line or comma separated', style: 'min-height:70px' });
+        var picker = PeoplePicker({ label: 'Find people', placeholder: 'Type a name or email, or browse by team' });
+        var gIn = picker.el;
         var gNote = h('input', { class: 'inp', id: 'g-note', placeholder: 'Note, for example "Tech CSM team"', maxlength: '120' });
         var gList = h('div', { class: 'plist' });
         if (!j.guests.length) gList.appendChild(h('p', { class: 'small muted', text: 'No guests yet.' }));
@@ -1437,10 +1636,12 @@
         grid.appendChild(h('div', { class: 'card pad' }, [
           h('div', { class: 'row' }, [icon('users'), h('h2', { text: 'Guests' }), pill(String(j.guests.length))]),
           h('p', { class: 'small muted', text: 'People outside the tool who can take assessments. They cannot open any other page.' }),
-          field('Emails', gIn), field('Note (optional)', gNote), gErr,
+          gIn, field('Note (optional)', gNote), gErr,
           h('button', { class: 'btn primary', type: 'button', text: 'Add guests', onclick: function () {
             clear(gErr);
-            api('/api/assess/admin/access/guests', { method: 'POST', body: { emails: gIn.value, note: gNote.value } }).then(function (r) { toast(r.added + ' added'); load(); }).catch(function (e) { gErr.appendChild(errBox(e.message)); });
+            var emails = picker.selected();
+            if (!emails.length) { gErr.appendChild(errBox('Pick at least one person.')); return; }
+            api('/api/assess/admin/access/guests', { method: 'POST', body: { emails: emails.join(','), note: gNote.value } }).then(function (r) { toast(r.added + ' added'); load(); }).catch(function (e) { gErr.appendChild(errBox(e.message)); });
           } }),
           gList,
         ]));
@@ -1455,30 +1656,34 @@
         });
         col.appendChild(h('div', { class: 'card pad' }, [
           h('div', { class: 'row' }, [icon('shield'), h('h2', { text: 'Reviewers' })]),
-          h('p', { class: 'small muted', text: 'Reviewers see every result, answer key, activity log and camera photo, and manage questions and access. Being an admin in the tool does not make someone a reviewer.' }),
+          h('p', { class: 'small muted', text: 'Reviewers see every result, answer key and activity log, and manage questions and access. Camera photos stay owner-only. Being an admin in the tool does not make someone a reviewer.' }),
           h('div', { class: 'row' }, [rIn, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () { api('/api/assess/admin/access/reviewers', { method: 'POST', body: { email: rIn.value } }).then(load).catch(function (e) { toast(e.message); }); } })]),
           rList,
         ]));
-        var xIn = h('input', { class: 'inp', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Email for extra time', style: 'flex:1;min-width:180px' });
-        var xPct = h('select', { class: 'sel', 'aria-label': 'Extra time' }, [25, 50, 100].map(function (n) { return h('option', { value: String(n), text: '+' + n + '%' }); }));
+        var xIn = h('input', { class: 'inp', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Email for accommodation', style: 'flex:1;min-width:180px' });
+        var xPct = h('select', { class: 'sel', 'aria-label': 'Extra time' }, [[0, 'No extra time'], [25, '+25% time'], [50, '+50% time'], [100, '+100% time']].map(function (n) { return h('option', { value: String(n[0]), text: n[1] }); })); xPct.value = '25';
+        var xPlain = h('input', { type: 'checkbox' });
         var xList = h('div', { class: 'plist' });
         j.extraTime.forEach(function (x) {
-          xList.appendChild(h('div', null, [h('div', { class: 'who' }, [h('b', { text: x.email }), h('span', { text: '+' + x.pct + '% time on every question' })]),
-            h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: x.email, pct: 0 } }).then(load).catch(function (e) { toast(e.message); }); } })]));
+          var what = [x.pct ? '+' + x.pct + '% time' : '', x.plain ? 'plain text for screen readers' : ''].filter(Boolean).join(', ');
+          xList.appendChild(h('div', null, [h('div', { class: 'who' }, [h('b', { text: x.email }), h('span', { text: what })]),
+            h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: x.email, pct: 0, plain: false } }).then(load).catch(function (e) { toast(e.message); }); } })]));
         });
         col.appendChild(h('div', { class: 'card pad' }, [
-          h('div', { class: 'row' }, [icon('clock'), h('h2', { text: 'Extra time' })]),
-          h('p', { class: 'small muted', text: 'For anyone who needs more reading time. Applies to attempts they start from now on.' }),
-          h('div', { class: 'row' }, [xIn, xPct, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: xIn.value, pct: xPct.value } }).then(load).catch(function (e) { toast(e.message); }); } })]),
+          h('div', { class: 'row' }, [icon('clock'), h('h2', { text: 'Accommodations' })]),
+          h('p', { class: 'small muted', text: 'Extra time, and plain text (questions shown as normal text, not a rolling reveal or audio) for anyone using a screen reader or zoom. Applies from their next attempt.' }),
+          h('div', { class: 'row' }, [xIn, xPct]),
+          h('div', { class: 'row', style: 'margin-top:8px' }, [h('label', { class: 'chk' }, [xPlain, 'Plain text']), h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Save', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: xIn.value, pct: xPct.value, plain: xPlain.checked } }).then(load).catch(function (e) { toast(e.message); }); } })]),
           xList,
         ]));
+        if (!me.owner) return;
         var pd = h('select', { class: 'sel', 'aria-label': 'Keep camera photos for' }, [30, 60, 90, 180].map(function (n) { return h('option', { value: String(n), text: n + ' days' }); }));
         pd.value = String([30, 60, 90, 180].indexOf(j.photoDays) >= 0 ? j.photoDays : 90);
         pd.addEventListener('change', function () { api('/api/assess/admin/access/photo-days', { method: 'PUT', body: { days: pd.value } }).then(function (r) { toast('Saved' + (r.purged ? ', ' + r.purged + ' older photos deleted' : '')); }).catch(function (e) { toast(e.message); }); });
         var ps = j.photoStats || { n: 0, bytes: 0 };
         grid.appendChild(h('div', { class: 'card pad wide stack' }, [
           h('div', { class: 'row' }, [icon('camera'), h('h2', { text: 'Camera photos' })]),
-          h('p', { class: 'small muted', style: 'margin:0', text: 'Only taken on assessments where you turn camera photos on. They are stored in the tool\'s own database on its server (the same place as results), never in Google Drive or on anyone\'s computer. Only reviewers can open them, from an attempt\'s Camera photos tab.' }),
+          h('p', { class: 'small muted', style: 'margin:0', text: 'Only taken on assessments where you turn camera photos on. They are stored in the tool\'s own database on its server (the same place as results), never in Google Drive or on anyone\'s computer. Only you can open them, from an attempt\'s Camera photos tab; other reviewers cannot.' }),
           h('div', { class: 'row' }, [h('span', { text: 'Delete photos automatically after' }), pd, h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: ps.n + ' photos stored (' + (ps.bytes >= 1048576 ? (Math.round(ps.bytes / 104857.6) / 10) + ' MB' : Math.max(1, Math.round(ps.bytes / 1024)) + ' KB') + ')' })]),
         ]));
       }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
