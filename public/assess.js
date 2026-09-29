@@ -24,8 +24,8 @@
   if (EMBED) document.body.classList.add('as-embed');
   var me = null;
   var LETTERS = 'ABCDEFGH';
-  var TYPE_LABEL = { single: 'Choose one', multi: 'Choose all that apply', truefalse: 'True or false' };
-  var TYPE_SHORT = { single: 'Single choice', multi: 'Multiple answers', truefalse: 'True or false' };
+  var TYPE_LABEL = { single: 'Choose one', multi: 'Choose all that apply', truefalse: 'True or false', ordering: 'Put in order', matching: 'Match the pairs' };
+  var TYPE_SHORT = { single: 'Single choice', multi: 'Multiple answers', truefalse: 'True or false', ordering: 'Put in order', matching: 'Match pairs' };
   var VERDICT = { cleared: ['Cleared', 'ok'], follow_up: ['Needs follow-up', 'warn'], concern: ['Concern', 'bad'] };
   var TIER = { none: ['No issues', 'ok'], some: ['Some issues', 'warn'], major: ['Major issues', 'bad'] };
 
@@ -322,7 +322,7 @@
       });
     } }));
   }
-  var SECTIONS = [['', 'My assessments'], ['manage', 'Assessments'], ['bank', 'Question bank'], ['access', 'Access']];
+  var SECTIONS = [['', 'My assessments'], ['manage', 'Assessments'], ['live', 'Live'], ['insights', 'Insights'], ['bank', 'Question bank'], ['access', 'Access']];
   function renderNav(cur) {
     clear(nav);
     if (!me.reviewer) return; // takers only have one page
@@ -343,6 +343,8 @@
     if (sec === 'results') return viewResults(Number(arg));
     if (sec === 'attempt') return viewAttempt(Number(arg));
     if (sec === 'bank') return viewBank();
+    if (sec === 'live') return viewLive();
+    if (sec === 'insights') return viewInsights();
     if (sec === 'access') return viewAccess();
     return viewHome();
   }
@@ -389,11 +391,22 @@
           h('div', { class: 'foot' }, [
             h('span', { class: 'small muted', text: 'Attempts ' + t.attemptsUsed + ' of ' + t.attemptsAllowed + (t.extraPct ? ' · +' + t.extraPct + '% time' : '') }),
             h('span', { class: 'spacer' }), viewBtn,
-            h('button', { class: 'btn primary', type: 'button', disabled: !t.canStart, onclick: function () { viewPre(t); } }, [btnText, t.canStart ? icon('arrowR', 'sm') : null]),
+            viewBtn && !t.canStart ? null : h('button', { class: 'btn primary', type: 'button', disabled: !t.canStart, onclick: function () { viewPre(t); } }, [btnText, t.canStart ? icon('arrowR', 'sm') : null]),
           ]),
         ]));
       });
       holder.appendChild(grid);
+      var prog = h('div'); holder.appendChild(prog);
+      api('/api/assess/my-progress').then(function (p) {
+        if (!p.topics.length && !p.tests.length) return;
+        var card = h('div', { class: 'card pad stack', style: 'margin-top:20px' }, [h('div', { class: 'row' }, [icon('chart'), h('h2', { text: 'Your progress' })]),
+          h('p', { class: 'small muted', style: 'margin:0', text: 'From assessments whose results have been shared with you. Lowest topics first, so you know what to revise.' })]);
+        if (p.tests.length) card.appendChild(h('div', { class: 'chips' }, p.tests.slice(-6).map(function (t) { return pill(t.title + ': ' + t.pct + '%', t.pct >= 70 ? 'ok' : 'warn'); })));
+        p.topics.forEach(function (t) {
+          card.appendChild(h('div', { class: 'topicbar' }, [h('span', { class: 'tn', text: t.tag }), h('div', { class: 'b', role: 'img', 'aria-label': t.tag + ' ' + t.pct + ' percent' }, [h('i', { class: t.pct >= 75 ? 'ok' : t.pct >= 50 ? 'warn' : 'bad', style: 'width:' + Math.max(3, t.pct) + '%' })]), h('span', { class: 'num small', text: t.pct + '% of ' + t.n })]));
+        });
+        prog.appendChild(card);
+      }).catch(function () {});
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
@@ -783,6 +796,57 @@
           reader = s.displayMode === 'full' ? new FullText(rHost, q.prompt) : new Reader(rHost, q.prompt, s);
           reader.onReplay = function () { replays++; ev('replay', String(replays)); };
         }
+        // Session 60: optional image (fetched for the open question only)
+        if (q.hasImage) {
+          var imgBox = h('div', { class: 'qimg' }, [h('span', { class: 'small muted', text: 'Loading image…' })]);
+          body.appendChild(imgBox);
+          fetch('/api/assess/attempts/' + attemptId + '/image', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } })
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+            .then(function (bl) {
+              var url = URL.createObjectURL(bl); clear(imgBox);
+              var im = h('img', { src: url, alt: 'Image for this question', draggable: 'false' });
+              im.addEventListener('click', function () { var lb = h('div', { class: 'lightbox', role: 'dialog', 'aria-label': 'Image', onclick: function () { lb.remove(); } }, [h('img', { src: url, alt: 'Image for this question' })]); document.body.appendChild(lb); });
+              imgBox.appendChild(im);
+            }).catch(function () { clear(imgBox); imgBox.appendChild(h('span', { class: 'small muted', text: 'The image could not be loaded.' })); });
+        }
+        var fontsReady = (document.fonts && document.fonts.load ? document.fonts.load('600 24px Poppins') : Promise.resolve());
+        var textEl = function (text) {
+          if (s.plain) return h('span', { class: 'plainopt', text: text });
+          var cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, text]); return cv;
+        };
+        var drawOptsX = function () { optCanvases.forEach(function (x) { drawText(x[0], x[1], { font: '400 15px Poppins, sans-serif', lineH: 24 }); }); };
+        if (q.type === 'ordering') {
+          var seq = [];
+          var olist = h('div', { class: 'opts', role: 'group', 'aria-label': 'Steps to put in order' });
+          body.appendChild(h('div', { class: 'row small muted', style: 'margin-top:14px' }, [h('span', { text: 'Tap the steps in the order they should happen. Tap a numbered step to take it out.' }), h('span', { class: 'spacer' }), h('button', { class: 'linkbtn small', type: 'button', text: 'Clear order', onclick: function () { seq = []; syncOrd(); } })]));
+          body.appendChild(olist);
+          var obtns = q.options.map(function (o, i) {
+            var num = h('span', { class: 'ordn empty', text: '' });
+            var b = h('button', { class: 'opt ord', type: 'button', 'aria-label': (s.plain ? o.text : 'Step ' + LETTERS[i]) }, [num, textEl(o.text)]);
+            b._num = num;
+            b.addEventListener('click', function () { chooseOrd(i); });
+            olist.appendChild(b); return b;
+          });
+          var syncOrd = function () {
+            obtns.forEach(function (b, k) { var at = seq.indexOf(k); b._num.textContent = at >= 0 ? String(at + 1) : ''; b._num.classList.toggle('empty', at < 0); b.setAttribute('aria-pressed', String(at >= 0)); b.setAttribute('aria-label', (s.plain ? q.options[k].text : 'Step ' + LETTERS[k]) + (at >= 0 ? ', position ' + (at + 1) : ', not placed')); });
+            selected = seq.slice(); submitBtn.disabled = seq.length !== q.options.length;
+          };
+          var chooseOrd = function (i) { var at = seq.indexOf(i); if (at >= 0) seq.splice(at, 1); else seq.push(i); syncOrd(); };
+          qState = { choose: chooseOrd, nOpts: q.options.length, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
+          fontsReady.then(function () { if (reader && !q.audio) reader.play(); drawOptsX(); });
+        } else if (q.type === 'matching') {
+          var picks = q.options.map(function () { return -1; });
+          var mlist = h('div', { class: 'mlist', role: 'group', 'aria-label': 'Match each item' });
+          body.appendChild(h('div', { class: 'small muted', style: 'margin-top:14px', text: 'Pick the right match for each item.' }));
+          body.appendChild(mlist);
+          q.options.forEach(function (o, i) {
+            var sel = h('select', { class: 'sel', 'aria-label': 'Match for item ' + LETTERS[i] }, [h('option', { value: '-1', text: 'Choose…' })].concat(q.matches.map(function (m) { return h('option', { value: String(m.key), text: m.text }); })));
+            sel.addEventListener('change', function () { picks[i] = Number(sel.value); selected = picks.slice(); submitBtn.disabled = picks.some(function (p) { return p < 0; }); });
+            mlist.appendChild(h('div', { class: 'mrow' }, [h('span', { class: 'ky', text: LETTERS[i] }), h('div', { class: 'mleft' }, [textEl(o.text)]), h('span', { class: 'muted', 'aria-hidden': 'true', text: '→' }), sel]));
+          });
+          qState = { nOpts: 0, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
+          fontsReady.then(function () { if (reader && !q.audio) reader.play(); drawOptsX(); });
+        } else {
         var opts = h('div', { class: 'opts', role: q.type === 'multi' ? 'group' : 'radiogroup', 'aria-label': 'Answer options' });
         body.appendChild(opts);
         var multi = q.type === 'multi';
@@ -805,6 +869,7 @@
         }
         qState = { choose: choose, nOpts: q.options.length, redraw: function () { drawOpts(); if (reader.resize) reader.resize(); if (s.displayMode === 'full') reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
         (document.fonts && document.fonts.load ? document.fonts.load('600 24px Poppins') : Promise.resolve()).then(function () { if (reader && !q.audio) reader.play(); drawOpts(); });
+        }
       }
 
       function send(auto) {
@@ -825,7 +890,7 @@
       }
       submitBtn.addEventListener('click', function () { send(false); });
       exam.appendChild(h('div', { class: 'xfoot' }, [h('div', { class: 'in' }, [
-        h('span', { class: 'hint' }, q.kind === 'explain' ? ['Answers lock when you submit.'] : [h('span', { class: 'kbd', text: '1' }), ' to ', h('span', { class: 'kbd', text: String(q.options.length) }), ' to choose, ', h('span', { class: 'kbd', text: 'Enter' }), ' to submit. Answers lock when you submit.']),
+        h('span', { class: 'hint' }, (q.kind === 'explain' || q.type === 'matching') ? ['Answers lock when you submit.'] : [h('span', { class: 'kbd', text: '1' }), ' to ', h('span', { class: 'kbd', text: String(q.options.length) }), ' to choose, ', h('span', { class: 'kbd', text: 'Enter' }), ' to submit. Answers lock when you submit.']),
         h('span', { class: 'spacer' }), submitBtn,
       ])]));
 
@@ -1021,6 +1086,15 @@
       relSel.addEventListener('change', function () { st.releaseMode = relSel.value; });
       left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Scoring and results' }), h('div', { class: 'fgrid' }, [field('Pass mark (%)', passIn), field('Attempts allowed', attIn)]), showT,
         h('div', { class: 'fgrid', style: 'margin-top:14px' }, [field('Release results to agents', relSel, 'Agents see it under "View result". Releasing answers shows the answer key for the questions they got, so use fresh questions next time.')])]));
+      // Repeat
+      var rep = st.repeat || { mode: 'none', openDays: 7 }; st.repeat = rep;
+      var repSel = h('select', { class: 'sel', id: 'b-rep' }, [['none', 'Does not repeat'], ['weekly', 'Every week (Monday)'], ['monthly', 'Every month (1st)']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); repSel.value = rep.mode;
+      var repDays = h('input', { class: 'inp', id: 'b-repdays', type: 'number', min: '1', max: '28', value: String(rep.openDays || 7) });
+      repSel.addEventListener('change', function () { rep.mode = repSel.value; repNote.style.display = rep.mode === 'none' ? 'none' : ''; renderSide(); });
+      repDays.addEventListener('input', function () { rep.openDays = Number(repDays.value) || 7; });
+      var repNote = h('div', { class: 'alert info', style: rep.mode === 'none' ? 'display:none' : '' }, [icon('replay'), h('span', { text: 'This becomes a template. Agents never see it directly: each week or month, from 8 AM Central, a dated copy opens for the same people, draws a fresh random paper if you use a pool, closes after the days you set, and is announced in Google Chat if announcements are on.' })]);
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Repeat' }), h('p', { text: 'Use with "Random from the bank" so every round is a new paper.' }),
+        h('div', { class: 'fgrid' }, [field('Repeat', repSel), field('Each copy stays open for (days)', repDays)]), repNote]));
       // Schedule
       function toLocal(iso) { if (!iso) return ''; var d = new Date(iso); var p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
       var opIn = h('input', { class: 'inp', id: 'b-open', type: 'datetime-local', value: toLocal(st.opensAt) });
@@ -1071,6 +1145,13 @@
         st.camera = camT.input.checked; st.watermark = wmT.input.checked ? 'subtle' : 'off'; st.shuffleQuestions = shQ.input.checked; st.shuffleOptions = shO.input.checked;
         return { title: title.value, description: desc.value, settings: st, questionIds: picked, assign: { everyone: assign.everyone, emails: assign.emails }, status: status };
       }
+      function chatPost(btn, kind) {
+        if (!confirm(kind === 'remind' ? 'Post a reminder in Google Chat, tagging everyone who has not submitted?' : 'Post this assessment in Google Chat, tagging the people assigned?')) return;
+        btn.disabled = true;
+        api('/api/assess/admin/tests/' + id + '/announce', { method: 'POST', body: { kind: kind } })
+          .then(function (r) { toast(r.sent ? 'Posted in Google Chat' + (r.tagged ? ', ' + r.tagged + ' tagged' : '') : (r.reason || 'Nothing to post')); })
+          .catch(function (e) { toast(e.message); }).finally(function () { btn.disabled = false; });
+      }
       function renderSide() {
         clear(side);
         var nQ = st.pool.mode === 'random' ? st.pool.count : picked.length;
@@ -1091,11 +1172,16 @@
           h('div', null, [
             h('div', { class: 'sumrow' }, [h('span', { text: 'Questions' }), h('b', { text: nQ + (st.explainCount && nQ ? ' + ' + Math.min(st.explainCount, nQ) + ' written' : '') })]),
             h('div', { class: 'sumrow' }, [h('span', { text: 'Time' }), h('b', { text: 'About ' + mins + ' min' })]),
+            st.repeat && st.repeat.mode !== 'none' ? h('div', { class: 'sumrow' }, [h('span', { text: 'Repeats' }), h('b', { text: st.repeat.mode === 'weekly' ? 'Weekly' : 'Monthly' })]) : null,
             h('div', { class: 'sumrow' }, [h('span', { text: 'Results' }), h('b', { text: { none: 'Not released', score: 'Score released', answers: 'Answers released' }[st.releaseMode || 'none'] })]),
             h('div', { class: 'sumrow' }, [h('span', { text: 'Assigned' }), h('b', { text: assign.everyone ? 'Everyone' : assign.emails.length + (assign.emails.length === 1 ? ' person' : ' people') })]),
           ]),
           h('div', null, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Status' }), statusSel, h('div', { class: 'small muted', style: 'margin-top:6px', text: status === 'published' ? 'Assigned people can start it now.' : 'Hidden from agents until published.' })]),
           msg, save,
+          id && status === 'published' && (!st.repeat || st.repeat.mode === 'none') ? h('div', { class: 'stack', style: 'gap:6px' }, [
+            h('button', { class: 'btn', type: 'button', style: 'width:100%', onclick: function (e) { chatPost(e.currentTarget, 'announce'); } }, [icon('flag', 'sm'), 'Announce in Google Chat']),
+            h('button', { class: 'btn', type: 'button', style: 'width:100%', onclick: function (e) { chatPost(e.currentTarget, 'remind'); } }, [icon('clock', 'sm'), 'Send a reminder']),
+          ]) : null,
           id ? h('button', { class: 'btn ghost', type: 'button', style: 'width:100%', onclick: function () {
             api('/api/assess/admin/tests/' + id + '/duplicate', { method: 'POST', body: {} }).then(function (r) { toast('Copied as a draft'); go('edit/' + r.id); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
           } }, [icon('copy', 'sm'), 'Duplicate']) : null,
@@ -1279,6 +1365,90 @@
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
+  // ── Reviewer: live monitoring (Session 60) ───────────────────────────
+  var liveTimer = null;
+  function viewLive() {
+    clearInterval(liveTimer);
+    main.appendChild(pageHead('Live', 'Everyone taking an assessment right now. Updates every 5 seconds.'));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    var stamp = h('p', { class: 'small muted', style: 'margin-top:10px' });
+    function fmtS(n) { if (n == null) return '–'; n = Math.max(0, n); return n >= 60 ? Math.floor(n / 60) + 'm ' + (n % 60) + 's' : n + 's'; }
+    function load() {
+      if (location.hash !== '#live') { clearInterval(liveTimer); return; }
+      if (document.hidden) return;
+      api('/api/assess/admin/live').then(function (j) {
+        clear(holder);
+        if (!j.live.length) {
+          holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('users', 'lg')]), h('b', { text: 'Nobody is taking an assessment right now' }), h('span', { text: 'Attempts appear here the moment someone starts.' })]));
+        } else {
+          var tb = h('tbody');
+          j.live.forEach(function (a) {
+            var idle = a.idleSec > 150;
+            var pct = Math.round(a.progress / Math.max(1, a.total) * 100);
+            var tr = h('tr', { class: 'click', tabindex: '0' }, [
+              h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.title })]),
+              h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + pct + '%' })]), h('span', { class: 'num', text: a.progress + '/' + a.total + (a.onWritten ? ' · writing' : '') })])]),
+              h('td', { class: 'num', text: a.leftSec != null && a.leftSec > 0 ? fmtS(a.leftSec) + ' left' : '–' }),
+              h('td', null, [idle ? pill('No activity ' + fmtS(a.idleSec), 'warn', true) : pill('Active', 'ok', true)]),
+              h('td', null, [tierPill(a.tier), a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') }) : null]),
+              h('td', { class: 'num', text: fmtWhen(a.startedAt) }),
+            ]);
+            tr.addEventListener('click', function () { go('attempt/' + a.id); });
+            tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go('attempt/' + a.id); });
+            tb.appendChild(tr);
+          });
+          holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Progress', 'This question', 'Status', 'Behaviour so far', 'Started'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
+        }
+        stamp.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+        holder.appendChild(stamp);
+      }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+    }
+    load();
+    liveTimer = setInterval(load, 5000);
+  }
+
+  // ── Reviewer: insights (Session 60) ──────────────────────────────────
+  function viewInsights() {
+    var months = [['', 'All time']];
+    var d = new Date();
+    for (var i = 0; i < 6; i++) {
+      var m = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      months.push([m.getFullYear() + '-' + String(m.getMonth() + 1).padStart(2, '0'), m.toLocaleString('en-US', { month: 'long', year: 'numeric' })]);
+    }
+    var sel = h('select', { class: 'sel', 'aria-label': 'Period' }, months.map(function (x) { return h('option', { value: x[0], text: x[1] }); }));
+    var exp = h('a', { class: 'btn', href: '/api/assess/admin/insights/export' }, [icon('download', 'sm'), 'Export CSV']);
+    main.appendChild(pageHead('Insights', 'Strengths and gaps by topic across all submitted assessments. The CSV has one row per agent (average score, topic scores, concern verdicts) and can feed your bonus or QA sheets.', [sel, exp]));
+    var holder = h('div'); main.appendChild(holder);
+    function cls(p) { return p >= 75 ? 'ok' : p >= 50 ? 'warn' : 'bad'; }
+    function load() {
+      clear(holder); holder.appendChild(skeleton());
+      exp.setAttribute('href', '/api/assess/admin/insights/export' + (sel.value ? '?month=' + sel.value : ''));
+      api('/api/assess/admin/insights' + (sel.value ? '?month=' + sel.value : '')).then(function (j) {
+        clear(holder);
+        if (!j.agents.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('chart', 'lg')]), h('b', { text: 'No submitted assessments in this period' }), h('span', { text: 'Topic insights need questions with tags.' })])); return; }
+        if (j.tags.length) {
+          var tc = h('div', { class: 'card pad stack', style: 'margin-bottom:16px' }, [h('h2', { text: 'Team by topic' }), h('p', { class: 'small muted', style: 'margin:0', text: 'Share of answers correct across the team. Weakest topics are where to focus training.' })]);
+          j.tags.slice().sort(function (a, b) { return a.pct - b.pct; }).forEach(function (t) {
+            tc.appendChild(h('div', { class: 'topicbar' }, [h('span', { class: 'tn', text: t.tag }), h('div', { class: 'b', role: 'img', 'aria-label': t.tag + ' ' + t.pct + ' percent' }, [h('i', { class: cls(t.pct), style: 'width:' + Math.max(3, t.pct) + '%' })]), h('span', { class: 'num small', text: t.pct + '% of ' + t.n })]));
+          });
+          holder.appendChild(tc);
+        }
+        var head = ['Agent', 'Tests', 'Average'].concat(j.tags.map(function (t) { return t.tag; }));
+        var tb = h('tbody');
+        j.agents.forEach(function (a) {
+          tb.appendChild(h('tr', null, [
+            h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email + (a.concerns ? ' · ' + a.concerns + ' concern' : '') })]),
+            h('td', { class: 'num', text: String(a.attempts) }),
+            h('td', null, [a.avgPct != null ? pill(a.avgPct + '%', cls(a.avgPct)) : h('span', { class: 'muted', text: '–' })]),
+          ].concat(j.tags.map(function (t) { var v = a.topics[t.tag]; return h('td', { class: 'num heat' }, [v ? h('span', { class: 'hc ' + cls(v.pct), title: v.n + ' answers', text: v.pct + '%' }) : h('span', { class: 'muted', text: '–' })]); }))));
+        });
+        holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, head.map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
+      }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+    }
+    sel.addEventListener('change', load);
+    load();
+  }
+
   // ── Reviewer: question bank ──────────────────────────────────────────
   var bankFilter = { q: '', status: '', type: '', tag: '' };
   function viewBank() {
@@ -1328,11 +1498,11 @@
         j.questions.forEach(function (q) {
           var cb = h('input', { type: 'checkbox', 'aria-label': 'Select question', checked: sel.indexOf(q.id) >= 0 ? true : null });
           cb.addEventListener('change', function () { var at = sel.indexOf(q.id); if (cb.checked && at < 0) sel.push(q.id); if (!cb.checked && at >= 0) sel.splice(at, 1); renderBulk(); });
-          var stats = q.stats && q.stats.shown ? 'Seen ' + q.stats.shown + 'x · ' + q.stats.pctCorrect + '% correct' + (q.stats.avgSec != null ? ' · ' + q.stats.avgSec + 's average' : '') : 'Not used yet';
+          var stats = q.stats && q.stats.shown ? 'Seen ' + q.stats.shown + 'x · ' + q.stats.pctCorrect + '% correct' + (q.stats.avgSec != null ? ' · ' + q.stats.avgSec + 's average' : '') + (q.stats.disc != null ? ' · separation ' + q.stats.disc : '') : 'Not used yet';
           list.appendChild(h('div', { class: 'qrow' }, [cb,
             h('div', { style: 'min-width:0' }, [
               h('div', { class: 'p', role: 'button', tabindex: '0', text: q.prompt, onclick: function () { openQuestion(q); }, onkeydown: function (e) { if (e.key === 'Enter') openQuestion(q); } }),
-              h('div', { class: 'm' }, [pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium')].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
+              h('div', { class: 'm' }, [pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium'), q.hasImage ? pill('Image') : null].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
               h('div', { class: 's', text: stats + (q.usedIn.length ? ' · in ' + q.usedIn.join(', ') : '') }),
               q.stats && q.stats.flag ? h('div', { class: 'flag' }, [icon('warn', 'sm'), q.stats.flag]) : null,
             ]),
@@ -1349,51 +1519,99 @@
 
   function openQuestion(q) {
     var d = q || { type: 'single', prompt: '', options: ['', '', '', ''], correct: [], explanation: '', tags: [], difficulty: 'medium', status: 'draft' };
-    var type = d.type, opts = d.type === 'truefalse' ? ['True', 'False'] : d.options.slice(), correct = d.correct.slice();
+    var type = d.type, correct = d.correct.slice();
+    // rows: [{text, match}]
+    var rows = d.type === 'truefalse' ? [{ text: 'True' }, { text: 'False' }]
+      : d.type === 'ordering' ? d.correct.map(function (id) { return { text: d.options[id] || '' }; })
+      : d.options.map(function (t, i) { return { text: t, match: d.matches ? d.matches[i] : '' }; });
     var body = h('div'), err = h('div');
     var prompt = h('textarea', { class: 'ta', id: 'qe-p', maxlength: '1500', placeholder: 'A customer says… What do you do first?' }); prompt.value = d.prompt;
-    var typeSeg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Question type' });
+    var typeSeg = h('div', { class: 'seg wrap', role: 'group', 'aria-label': 'Question type' });
+    var optHint = h('span', { class: 'hint' });
     Object.keys(TYPE_SHORT).forEach(function (k) {
-      typeSeg.appendChild(h('button', { type: 'button', 'aria-pressed': String(type === k), text: TYPE_SHORT[k], onclick: function () {
-        if (k === 'truefalse') { opts = ['True', 'False']; correct = correct.filter(function (c) { return c < 2; }).slice(0, 1); }
-        else if (type === 'truefalse') { opts = ['', '', '', '']; correct = []; }
+      typeSeg.appendChild(h('button', { type: 'button', 'data-k': k, 'aria-pressed': String(type === k), text: TYPE_SHORT[k], onclick: function () {
+        if (k === 'truefalse') { rows = [{ text: 'True' }, { text: 'False' }]; correct = correct.filter(function (c) { return c < 2; }).slice(0, 1); }
+        else if (type === 'truefalse') { rows = [{ text: '' }, { text: '' }, { text: '' }, { text: '' }]; correct = []; }
         if (k === 'single' && correct.length > 1) correct = correct.slice(0, 1);
-        type = k; Array.prototype.forEach.call(typeSeg.children, function (b) { b.setAttribute('aria-pressed', String(b.textContent === TYPE_SHORT[k])); }); drawOpts();
+        if ((k === 'ordering' || k === 'matching') && rows.length < 3) while (rows.length < 3) rows.push({ text: '' });
+        type = k; Array.prototype.forEach.call(typeSeg.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === k)); }); drawOpts();
       } }));
     });
     var optBox = h('div');
     function drawOpts() {
       clear(optBox);
-      opts.forEach(function (o, i) {
-        var on = correct.indexOf(i) >= 0;
-        var mark = h('button', { class: 'mark', type: 'button', 'aria-pressed': String(on), 'aria-label': 'Mark option ' + LETTERS[i] + ' as correct', title: 'Correct answer' }, [icon('check', 'sm')]);
-        mark.addEventListener('click', function () { if (type === 'multi') { var at = correct.indexOf(i); if (at >= 0) correct.splice(at, 1); else correct.push(i); } else correct = [i]; drawOpts(); });
-        var inp = h('input', { class: 'inp', value: o, maxlength: '400', 'aria-label': 'Option ' + LETTERS[i], readonly: type === 'truefalse' ? true : null, placeholder: 'Option ' + LETTERS[i] });
-        inp.addEventListener('input', function () { opts[i] = inp.value; });
-        optBox.appendChild(h('div', { class: 'optedit' }, [mark, inp, type !== 'truefalse' && opts.length > 2 ? h('button', { class: 'btn icon ghost', type: 'button', 'aria-label': 'Remove option ' + LETTERS[i], onclick: function () { opts.splice(i, 1); correct = correct.filter(function (c) { return c !== i; }).map(function (c) { return c > i ? c - 1 : c; }); drawOpts(); } }, [icon('x', 'sm')]) : null]));
+      optHint.textContent = type === 'ordering' ? 'Enter the steps in the correct order. Agents see them shuffled and put them back in order.'
+        : type === 'matching' ? 'Each item and its correct match. Agents see the matches shuffled.'
+        : 'Tick the correct answer' + (type === 'multi' ? 's.' : '.');
+      rows.forEach(function (o, i) {
+        var line = h('div', { class: 'optedit' });
+        if (type === 'ordering') {
+          line.appendChild(h('span', { class: 'ordn', text: String(i + 1) }));
+        } else if (type !== 'matching') {
+          var on = correct.indexOf(i) >= 0;
+          var mark = h('button', { class: 'mark', type: 'button', 'aria-pressed': String(on), 'aria-label': 'Mark option ' + LETTERS[i] + ' as correct', title: 'Correct answer' }, [icon('check', 'sm')]);
+          mark.addEventListener('click', function () { if (type === 'multi') { var at = correct.indexOf(i); if (at >= 0) correct.splice(at, 1); else correct.push(i); } else correct = [i]; drawOpts(); });
+          line.appendChild(mark);
+        }
+        var inp = h('input', { class: 'inp', value: o.text || '', maxlength: '400', 'aria-label': (type === 'matching' ? 'Item ' : type === 'ordering' ? 'Step ' : 'Option ') + (i + 1), readonly: type === 'truefalse' ? true : null, placeholder: type === 'matching' ? 'Item, for example "Terminal declines cards"' : type === 'ordering' ? 'Step ' + (i + 1) : 'Option ' + LETTERS[i] });
+        inp.addEventListener('input', function () { rows[i].text = inp.value; });
+        line.appendChild(inp);
+        if (type === 'matching') {
+          line.appendChild(h('span', { class: 'muted', text: '→' }));
+          var mi = h('input', { class: 'inp', value: o.match || '', maxlength: '300', 'aria-label': 'Match for item ' + (i + 1), placeholder: 'Match, for example "Adit Pay team"' });
+          mi.addEventListener('input', function () { rows[i].match = mi.value; });
+          line.appendChild(mi);
+        }
+        if (type === 'ordering') {
+          line.appendChild(h('button', { class: 'btn icon ghost sm', type: 'button', 'aria-label': 'Move step ' + (i + 1) + ' up', disabled: i === 0, onclick: function () { var x = rows[i]; rows[i] = rows[i - 1]; rows[i - 1] = x; drawOpts(); } }, [h('span', { text: '↑' })]));
+          line.appendChild(h('button', { class: 'btn icon ghost sm', type: 'button', 'aria-label': 'Move step ' + (i + 1) + ' down', disabled: i === rows.length - 1, onclick: function () { var x = rows[i]; rows[i] = rows[i + 1]; rows[i + 1] = x; drawOpts(); } }, [h('span', { text: '↓' })]));
+        }
+        var minRows = type === 'ordering' || type === 'matching' ? 3 : 2;
+        if (type !== 'truefalse' && rows.length > minRows) line.appendChild(h('button', { class: 'btn icon ghost', type: 'button', 'aria-label': 'Remove row ' + (i + 1), onclick: function () { rows.splice(i, 1); correct = correct.filter(function (c) { return c !== i; }).map(function (c) { return c > i ? c - 1 : c; }); drawOpts(); } }, [icon('x', 'sm')]));
+        optBox.appendChild(line);
       });
-      if (type !== 'truefalse' && opts.length < 8) optBox.appendChild(h('button', { class: 'btn sm', type: 'button', onclick: function () { opts.push(''); drawOpts(); } }, [icon('plus', 'sm'), 'Add option']));
+      var max = type === 'matching' ? 6 : 8;
+      if (type !== 'truefalse' && rows.length < max) optBox.appendChild(h('button', { class: 'btn sm', type: 'button', onclick: function () { rows.push({ text: '', match: '' }); drawOpts(); } }, [icon('plus', 'sm'), type === 'ordering' ? 'Add step' : type === 'matching' ? 'Add pair' : 'Add option']));
     }
     drawOpts();
-    var expl = h('textarea', { class: 'ta', id: 'qe-e', maxlength: '1500', placeholder: 'Only reviewers see this. Cite the SOP section if you can.' }); expl.value = d.explanation || '';
+    // Image
+    var imgFile = null, removeImg = false;
+    var imgPrev = h('div', { class: 'qimg-edit' });
+    var imgIn = h('input', { type: 'file', accept: 'image/png,image/jpeg,image/webp', id: 'qe-img', class: 'inp', style: 'padding-top:6px' });
+    function drawImg() {
+      clear(imgPrev);
+      if (imgFile) imgPrev.appendChild(h('img', { src: URL.createObjectURL(imgFile), alt: 'Selected image' }));
+      else if (q && q.hasImage && !removeImg) imgPrev.appendChild(h('img', { src: '/api/assess/admin/questions/' + q.id + '/image?t=' + Date.now(), alt: 'Current image' }));
+      if (imgFile || (q && q.hasImage && !removeImg)) imgPrev.appendChild(h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove image', onclick: function () { imgFile = null; removeImg = true; imgIn.value = ''; drawImg(); } }));
+    }
+    imgIn.addEventListener('change', function () { var f = imgIn.files[0]; if (f && f.size > 2 * 1024 * 1024) { toast('Images must be under 2 MB'); imgIn.value = ''; return; } imgFile = f || null; removeImg = false; drawImg(); });
+    drawImg();
+    var expl = h('textarea', { class: 'ta', id: 'qe-e', maxlength: '1500', placeholder: 'Only reviewers see this, unless you release answers. Cite the SOP section if you can.' }); expl.value = d.explanation || '';
     var tags = h('input', { class: 'inp', id: 'qe-t', value: d.tags.join(', '), placeholder: 'escalation, adit pay' });
     var diff = h('select', { class: 'sel', id: 'qe-d' }, [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); diff.value = d.difficulty || 'medium';
     var stat = h('select', { class: 'sel', id: 'qe-s' }, [['draft', 'Draft'], ['approved', 'Approved']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); stat.value = d.status === 'approved' ? 'approved' : 'draft';
     body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Type' }), typeSeg]));
     body.appendChild(field('Question', prompt, 'Scenario and judgement questions are the hardest to look up.'));
-    body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Options' }), h('span', { class: 'hint', text: 'Tick the correct answer' + (type === 'multi' ? 's' : '') + '.' }), optBox]));
+    body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Answers' }), optHint, optBox]));
+    body.appendChild(h('div', { class: 'field' }, [h('label', { for: 'qe-img', text: 'Image (optional)' }), h('span', { class: 'hint', text: 'For example a ticket or screen from Zoho Desk. Shown with the question. PNG, JPG or WebP under 2 MB. Remove customer details first.' }), imgIn, imgPrev]));
     body.appendChild(field('Why this is the answer', expl));
     body.appendChild(h('div', { class: 'fgrid' }, [field('Topics (tags)', tags, 'Comma separated'), field('Difficulty', diff)]));
     body.appendChild(field('Status', stat, 'Only approved questions go into random pools.'));
-    if (d.stats && d.stats.shown) body.appendChild(h('div', { class: 'alert info' }, [icon('chart'), h('span', { text: 'Seen ' + d.stats.shown + ' times, ' + d.stats.pctCorrect + '% correct' + (d.stats.avgSec != null ? ', ' + d.stats.avgSec + 's on average.' : '.') + (d.stats.flag ? ' ' + d.stats.flag : '') })]));
+    if (d.stats && d.stats.shown) body.appendChild(h('div', { class: 'alert info' }, [icon('chart'), h('span', { text: 'Seen ' + d.stats.shown + ' times, ' + d.stats.pctCorrect + '% correct' + (d.stats.avgSec != null ? ', ' + d.stats.avgSec + 's on average' : '') + (d.stats.disc != null ? ', separation ' + d.stats.disc : '') + '.' + (d.stats.flag ? ' ' + d.stats.flag : '') })]));
     body.appendChild(err);
     var save = h('button', { class: 'btn primary', type: 'button', text: 'Save question' });
     var del = q ? h('button', { class: 'btn ghost danger', type: 'button' }, [icon('trash', 'sm'), 'Delete']) : null;
     var dlg = openDrawer(q ? 'Edit question' : 'New question', body, [del, h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), save]);
     save.addEventListener('click', function () {
       clear(err); save.disabled = true;
-      var payload = { type: type, prompt: prompt.value, options: opts, correct: correct, explanation: expl.value, tags: tags.value, difficulty: diff.value, status: stat.value };
+      var options = type === 'matching' ? rows.map(function (r) { return { text: r.text, match: r.match }; }) : rows.map(function (r) { return r.text; });
+      var payload = { type: type, prompt: prompt.value, options: options, correct: correct, explanation: expl.value, tags: tags.value, difficulty: diff.value, status: stat.value };
       (q ? api('/api/assess/admin/questions/' + q.id, { method: 'PUT', body: payload }) : api('/api/assess/admin/questions', { method: 'POST', body: payload }))
+        .then(function (r) {
+          var qid = q ? q.id : r.id;
+          if (imgFile) return api('/api/assess/admin/questions/' + qid + '/image', { method: 'PUT', raw: imgFile, contentType: imgFile.type });
+          if (removeImg && q && q.hasImage) return api('/api/assess/admin/questions/' + qid + '/image', { method: 'DELETE' });
+        })
         .then(function () { toast('Question saved'); dlg.close(); reloadBank(); })
         .catch(function (e) { err.appendChild(errBox(e.message)); save.disabled = false; });
     });
@@ -1614,6 +1832,27 @@
           h('div', { class: 'linkbox' }, [urlIn, h('button', { class: 'btn', type: 'button', onclick: function () { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied'); }).catch(function () { urlIn.select(); }); } }, [icon('copy', 'sm'), 'Copy'])]),
           h('p', { class: 'small muted', style: 'margin:0', text: 'People sign in with their @adit.com Google account. They only see assessments assigned to them.' }),
         ]));
+        // Google Chat announcements + question reuse
+        var chatCard = h('div', { class: 'card pad wide stack' }, [h('div', { class: 'row' }, [icon('flag'), h('h2', { text: 'Google Chat announcements' })]), h('div', { class: 'skel', style: 'height:60px' })]);
+        grid.appendChild(chatCard);
+        api('/api/assess/admin/chat-config').then(function (c) {
+          chatCard.removeChild(chatCard.lastChild);
+          var hook = h('input', { class: 'inp', id: 'ch-hook', placeholder: c.hasWebhook ? 'Saved. Paste a new URL to replace it.' : 'https://chat.googleapis.com/v1/spaces/…', style: 'flex:1;min-width:240px' });
+          var annT = toggle('Announce when an assessment is published', c.announceOnPublish, 'Posts the title, length and due date, and tags everyone assigned.');
+          var remT = toggle('Remind the day before it closes', c.remindBeforeClose, 'Sent once, about 24 hours before closing, only inside 7 AM to 7 PM CST. Tags only people who have not submitted.');
+          var lim = h('input', { class: 'inp', id: 'ch-lim', type: 'number', min: '0', max: '1000', value: String(c.exposureLimit || 0), style: 'width:120px' });
+          var msg = h('span', { class: 'small muted', role: 'status' });
+          chatCard.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'Create a webhook in the Google Chat space where agents should see new assessments (space name, then Apps and integrations, then Webhooks), and paste it here. Nothing is posted until you publish, press Announce, or a reminder is due.' }));
+          chatCard.appendChild(h('div', { class: 'row' }, [hook, c.hasWebhook ? pill('Connected', 'ok', true) : pill('Not set', '', true)]));
+          chatCard.appendChild(annT); chatCard.appendChild(remT);
+          chatCard.appendChild(h('div', { class: 'setrow' }, [h('div', { class: 'tx' }, [h('b', { text: 'Question reuse limit' }), h('span', { text: 'Random pools skip a question once it has been answered this many times, so fewer questions leak. 0 means no limit.' })]), lim]));
+          chatCard.appendChild(h('div', { class: 'row' }, [msg, h('span', { class: 'spacer' }), c.hasWebhook ? h('button', { class: 'btn ghost danger sm', type: 'button', text: 'Remove webhook', onclick: function () { api('/api/assess/admin/chat-config', { method: 'PUT', body: { webhook: '' } }).then(function () { toast('Webhook removed'); load(); }); } }) : null,
+            h('button', { class: 'btn primary', type: 'button', text: 'Save', onclick: function () {
+              var body = { announceOnPublish: annT.input.checked, remindBeforeClose: remT.input.checked, exposureLimit: Number(lim.value) || 0 };
+              if (hook.value.trim()) body.webhook = hook.value.trim();
+              api('/api/assess/admin/chat-config', { method: 'PUT', body: body }).then(function () { toast('Saved'); if (body.webhook) load(); }).catch(function (e) { msg.textContent = e.message; });
+            } })]));
+        }).catch(function (e) { chatCard.appendChild(errBox(e.message)); });
         // Mode
         var modes = h('div', { class: 'radcards', style: 'margin:0' });
         [['list', 'Only people on the guest list', 'Recommended. Anyone else who opens the link sees "You do not have access".'], ['domain', 'Anyone with an @adit.com account', 'Useful for a company-wide quiz. They still only see what is assigned to them.']].forEach(function (o) {
@@ -1684,7 +1923,7 @@
         grid.appendChild(h('div', { class: 'card pad wide stack' }, [
           h('div', { class: 'row' }, [icon('camera'), h('h2', { text: 'Camera photos' })]),
           h('p', { class: 'small muted', style: 'margin:0', text: 'Only taken on assessments where you turn camera photos on. They are stored in the tool\'s own database on its server (the same place as results), never in Google Drive or on anyone\'s computer. Only you can open them, from an attempt\'s Camera photos tab; other reviewers cannot.' }),
-          h('div', { class: 'row' }, [h('span', { text: 'Delete photos automatically after' }), pd, h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: ps.n + ' photos stored (' + (ps.bytes >= 1048576 ? (Math.round(ps.bytes / 104857.6) / 10) + ' MB' : Math.max(1, Math.round(ps.bytes / 1024)) + ' KB') + ')' })]),
+          h('div', { class: 'row' }, [h('span', { text: 'Delete photos automatically after' }), pd, h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: ps.n + (ps.n === 1 ? ' photo' : ' photos') + ' stored (' + (ps.bytes >= 1048576 ? (Math.round(ps.bytes / 104857.6) / 10) + ' MB' : Math.max(1, Math.round(ps.bytes / 1024)) + ' KB') + ')' })]),
         ]));
       }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
     }

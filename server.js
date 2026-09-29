@@ -1529,6 +1529,7 @@ async function requireReviewer(req, res, next) {
     next();
   } catch (e) { res.status(500).json({ success: false, error: 'Reviewer check failed' }); }
 }
+function RV_EARLY() { return [requireAuth, requireReviewer]; }
 const assessErr = (res, e) => res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Something went wrong', code: e.code || null });
 const assessToken = (req) => String(req.get('x-assess-token') || '');
 const assessWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { if (!e.status) console.warn('assess:', e.message); assessErr(res, e); } };
@@ -1559,6 +1560,33 @@ app.post('/api/assess/attempts/:id/snapshot', requireAuth, requireAssessAccess, 
   const b = req.body || {};
   res.json({ success: true, saved: await assessments.saveSnapshot({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, image: b.image }) });
 }));
+
+// Session 60: wiring for Google Chat posts, mentions and the scheduler.
+assessments.setDeps({
+  publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
+  inAlertHours,
+  postChat: async (url, text) => {
+    try {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: String(text).slice(0, 4000) }), signal: AbortSignal.timeout(15000) });
+      return { ok: r.ok, status: r.status };
+    } catch (e) { return { ok: false, status: 0 }; }
+  },
+  mentionFor: async (email) => {
+    const e = String(email || '').toLowerCase();
+    const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === e && x.chat_id);
+    const id = (a && a.chat_id) || await getGoogleSubForEmail(e).catch(() => null);
+    return id ? `<users/${String(id).replace(/^users\//, '')}>` : null;
+  },
+});
+setInterval(() => { assessments.tick().catch(e => console.warn('assess tick:', e.message)); }, 15 * 60 * 1000);
+setTimeout(() => { assessments.tick().catch(() => {}); }, 90 * 1000);
+
+app.get('/api/assess/attempts/:id/image', requireAuth, requireAssessAccess, rateLimit(40, 60000), assessWrap(async (req, res) => {
+  const r = await assessments.currentImage({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) });
+  res.setHeader('Content-Type', r.image_type); res.setHeader('Cache-Control', 'no-store'); res.send(r.image);
+}));
+app.get('/api/assess/my-progress', requireAuth, requireAssessAccess, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.myProgress(req.session.email)) })));
+app.get('/api/assess/admin/live', ...RV_EARLY(), assessWrap(async (req, res) => res.json({ success: true, live: await assessments.adminLive() })));
 
 app.get('/api/assess/attempts/:id/audio', requireAuth, requireAssessAccess, rateLimit(40, 60000), assessWrap(async (req, res) => {
   const mp3 = await assessments.currentAudio({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), ai: require('./lib/ai') });
@@ -1607,7 +1635,28 @@ app.get('/api/assess/admin/snapshots/:id', ...RV, requireAssessOwner, assessWrap
   res.setHeader('Content-Type', 'image/jpeg'); res.setHeader('Cache-Control', 'private, max-age=3600'); res.send(img);
 }));
 
+// Reviewer: announcements, insights
+app.get('/api/assess/admin/chat-config', ...RV, assessWrap(async (req, res) => { const c = await assessments.chatConfig(); res.json({ success: true, ...c, webhook: c.webhook ? c.webhook.replace(/(key=)[^&]+/, '$1…').slice(0, 90) : '', hasWebhook: !!c.webhook }); }));
+app.put('/api/assess/admin/chat-config', ...RV, assessWrap(async (req, res) => { await assessments.setChatConfig(req.body || {}); res.json({ success: true }); }));
+app.post('/api/assess/admin/tests/:id/announce', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.announceTest(req.params.id, (req.body || {}).kind === 'remind' ? 'remind' : 'announce')) })));
+app.get('/api/assess/admin/insights', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.adminInsights({ month: String(req.query.month || '') })) })));
+app.get('/api/assess/admin/insights/export', ...RV, assessWrap(async (req, res) => {
+  const m = String(req.query.month || '');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="assessment-scores-${/^\d{4}-\d{2}$/.test(m) ? m : 'all'}.csv"`);
+  res.send(await assessments.insightsCsv(m));
+}));
+
 // Reviewer: question bank
+app.get('/api/assess/admin/questions/:id/image', ...RV, assessWrap(async (req, res) => {
+  const r = await assessments.questionImage(req.params.id);
+  if (!r || !r.image) return res.status(404).end();
+  res.setHeader('Content-Type', r.image_type); res.setHeader('Cache-Control', 'no-store'); res.send(r.image);
+}));
+app.put('/api/assess/admin/questions/:id/image', ...RV, express.raw({ type: () => true, limit: '3mb' }), assessWrap(async (req, res) => {
+  await assessments.setQuestionImage(req.params.id, Buffer.isBuffer(req.body) ? req.body : null, String(req.get('content-type') || '').split(';')[0]); res.json({ success: true });
+}));
+app.delete('/api/assess/admin/questions/:id/image', ...RV, assessWrap(async (req, res) => { await assessments.setQuestionImage(req.params.id, null); res.json({ success: true }); }));
 app.get('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => {
   res.json({ success: true, questions: await assessments.listQuestions({ q: req.query.q ? String(req.query.q).slice(0, 100) : '', tag: req.query.tag || '', status: req.query.status || '', type: req.query.type || '' }), tags: await assessments.allTags() });
 }));
