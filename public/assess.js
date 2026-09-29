@@ -1947,11 +1947,31 @@
       if (!at.length) { holder.appendChild(h('div', { class: 'empty' }, [art('people'), h('b', { text: 'No attempts yet' }), h('span', { text: 'Results appear here as agents submit.' })])); return; }
       if (hashQuery().get('retest')) { history.replaceState(null, '', '#results/' + id); pickRetest(id, at); }
       var tb = h('tbody');
+      var dsel = [], bulkBar = h('div');
+      function paintBulk() {
+        clear(bulkBar);
+        if (!me.owner || !dsel.length) return;
+        var del = h('button', { class: 'btn', type: 'button', style: 'background:var(--bad);border-color:var(--bad);color:#fff' }, [icon('trash', 'sm'), 'Delete ' + dsel.length + ' result' + (dsel.length === 1 ? '' : 's')]);
+        del.addEventListener('click', function () {
+          if (!confirm('Delete ' + dsel.length + ' result' + (dsel.length === 1 ? '' : 's') + ' completely? Answers, activity logs and camera photos are removed for good and they disappear from reports. Sending a retest is usually better because it keeps the record. This cannot be undone.')) return;
+          del.disabled = true;
+          api('/api/assess/admin/attempts/delete', { method: 'POST', body: { ids: dsel } }).then(function (r) { toast(r.deleted + ' result' + (r.deleted === 1 ? '' : 's') + ' deleted'); viewResultsReload(); }).catch(function (e) { del.disabled = false; toast(e.message); });
+        });
+        bulkBar.appendChild(h('div', { class: 'bulk' }, [h('b', { text: dsel.length + ' selected' }), h('span', { class: 'spacer' }), del, h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { dsel.length = 0; Array.prototype.forEach.call(tb.querySelectorAll('input[type=checkbox]'), function (c) { c.checked = false; }); paintBulk(); } })]));
+      }
+      holder.appendChild(bulkBar);
       at.forEach(function (a, ri) {
+        var dcb = null;
+        if (me.owner) {
+          dcb = h('input', { type: 'checkbox', 'aria-label': 'Select result for ' + (a.name || a.email) });
+          dcb.addEventListener('click', function (e) { e.stopPropagation(); });
+          dcb.addEventListener('change', function () { var k = dsel.indexOf(a.id); if (dcb.checked && k < 0) dsel.push(a.id); if (!dcb.checked && k >= 0) dsel.splice(k, 1); paintBulk(); });
+        }
         var resetBtn = a.status === 'reset' ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Send ' + (a.name || a.email) + ' a retest', onclick: function (e) {
           e.stopPropagation(); resetFlow(a, function () { viewResultsReload(); });
         } }, [icon('retest', 'sm'), 'Retest']);
         var tr = h('tr', { class: 'click' + (a.status === 'reset' ? ' is-reset' : ''), tabindex: '0', style: '--i:' + Math.min(ri, 12) }, [
+          me.owner ? h('td', { style: 'width:34px' }, [dcb]) : null,
           h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email })]),
           h('td', null, [a.status === 'reset' ? pill('Reset', '', true) : a.status === 'stopped' ? pill('Stopped: camera', 'bad', true) : a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn'),
             a.reset ? h('span', { class: 'sub', title: 'Reset by ' + a.reset.by + ' · ' + fmtWhen(a.reset.at), text: 'by ' + String(a.reset.by || '').split('@')[0] + ' · ' + new Date(a.reset.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }) : null]),
@@ -1967,7 +1987,7 @@
         tb.appendChild(tr);
       });
       holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [
-        h('thead', null, [h('tr', null, ['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'Verdict', 'When', ''].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
+        h('thead', null, [h('tr', null, (me.owner ? [''] : []).concat(['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'Verdict', 'When', '']).map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
@@ -1987,7 +2007,7 @@
       holder.appendChild(pageHead(a.name || a.email, a.testTitle + ' · ' + a.email + (a.extraPct ? ' · +' + a.extraPct + '% time' : '') + ' · ' + (a.navigation === 'bank' ? 'Back and forth' : 'One way'), [
         a.status !== 'reset' ? h('button', { class: 'btn', type: 'button', onclick: function () { resetFlow({ id: a.id, name: a.name, email: a.email, status: a.status }, function () { go('results/' + a.testId); }); } }, [icon('retest', 'sm'), 'Send a retest']) : null,
         a.status === 'submitted' ? h('button', { class: 'btn', type: 'button', onclick: function () { printAttempt(a); } }, [icon('print', 'sm'), 'Print']) : null,
-        h('button', { class: 'btn ghost danger', type: 'button', onclick: function (e) {
+        !me.owner ? null : h('button', { class: 'btn ghost danger', type: 'button', onclick: function (e) {
           if (!confirm('Delete this attempt for ' + (a.name || a.email) + ' completely? Their answers, activity log and photos are removed for good. Reset is usually better, because it keeps the record.')) return;
           e.currentTarget.disabled = true;
           api('/api/assess/admin/attempts/' + a.id, { method: 'DELETE' }).then(function () { toast('Attempt deleted'); go('results/' + a.testId); }).catch(function (er) { toast(er.message); });

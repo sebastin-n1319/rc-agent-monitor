@@ -1793,7 +1793,15 @@ app.get('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => 
 app.put('/api/assess/admin/attempts/:id/review', ...RV, assessWrap(async (req, res) => { await assessments.reviewAttempt(req.params.id, req.body || {}, req.session.email); res.json({ success: true }); }));
 app.post('/api/assess/admin/attempts/:id/explain/:idx/suggest', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.suggestMark({ attemptId: req.params.id, idx: req.params.idx, ai: require('./lib/ai') })) })));
 app.put('/api/assess/admin/attempts/:id/explain/:idx', ...RV, assessWrap(async (req, res) => { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); }));
-app.delete('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => { await assessments.deleteAttempt(req.params.id); insertAuditLog(req.session.email, 'assess_attempt_deleted', String(req.params.id)).catch(() => {}); res.json({ success: true }); }));
+app.post('/api/assess/admin/attempts/delete', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => {
+  if (!assessments.isOwner(req.session.email)) return res.status(403).json({ success: false, error: 'Only the owner can delete results' });
+  const ids = Array.from(new Set(((req.body || {}).ids || []).map(Number).filter(Boolean))).slice(0, 200);
+  if (!ids.length) return res.status(400).json({ success: false, error: 'Pick at least one result' });
+  for (const id of ids) await assessments.deleteAttempt(id);
+  insertAuditLog(req.session.email, 'assess_attempts_deleted', ids.slice(0, 20).join(','), `${ids.length} result(s)`).catch(() => {});
+  res.json({ success: true, deleted: ids.length });
+}));
+app.delete('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => { if (!assessments.isOwner(req.session.email)) return res.status(403).json({ success: false, error: 'Only the owner can delete results' }); await assessments.deleteAttempt(req.params.id); insertAuditLog(req.session.email, 'assess_attempt_deleted', String(req.params.id)).catch(() => {}); res.json({ success: true }); }));
 // Session 62: soft reset, the person can take it again and the old attempt stays marked Reset
 app.post('/api/assess/admin/attempts/:id/reset', ...RV, assessWrap(async (req, res) => {
   const r = await assessments.resetAttempt(req.params.id, req.session.email, (req.body || {}).note);
