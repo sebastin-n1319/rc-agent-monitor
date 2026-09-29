@@ -414,8 +414,8 @@
     var dots = h('div', { class: 'dots', 'aria-hidden': 'true' });
     var state = h('span', { class: 'state', text: 'Reading…' });
     var replayBtn = h('button', { class: 'btn sm primary replay', type: 'button', disabled: true }, [icon('replay', 'sm'), 'Replay from start']);
-    // The speed dial is for admins only (editor preview and "Preview as an agent"). Agents read at the assessment's starting speed.
-    var showDial = !!(s.dial || s.preview);
+    // The speed dial is for admins only (editor "Preview reading" only). Agents read at the assessment's starting speed.
+    var showDial = !!s.dial;
     var speedIdx = showDial ? savedSpeed(speedFor(s.chunkMs)) : speedFor(s.chunkMs);
     var dial = showDial ? SpeedDial(speedIdx, function (i) { speedIdx = i; }) : null;
     host.appendChild(h('div', { class: 'reader' }, [canvas, h('div', { class: 'bar' }, [dots, h('span', { class: 'spacer' }), state, dial, replayBtn])]));
@@ -1879,7 +1879,7 @@
         var sample = picked.length && bankById[picked[0]] ? bankById[picked[0]].prompt : 'A caller says their front desk phones stopped ringing this morning. Which team owns this, and what do you check first?';
         new Reader(prevHost, sample, { wordsPerChunk: st.wordsPerChunk, chunkMs: st.chunkMs, dial: true }).play();
       } }, [icon('replay', 'sm'), 'Preview reading']);
-      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Starting reading speed', spd, 'Agents read at this speed. Admins can change it with the dial in a preview.')]), prevBtn, prevHost]);
+      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Starting reading speed', spd, 'Agents read at this speed. Admins can try speeds with the dial in Preview reading.')]), prevBtn, prevHost]);
       var voiceSel = h('select', { class: 'sel', id: 'b-voice' }, [['alloy', 'Alloy (neutral)'], ['nova', 'Nova (warm)'], ['shimmer', 'Shimmer (bright)'], ['echo', 'Echo (calm)'], ['onyx', 'Onyx (deep)'], ['fable', 'Fable (British)']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
       voiceSel.value = st.voice || 'alloy';
       voiceSel.addEventListener('change', function () { st.voice = voiceSel.value; });
