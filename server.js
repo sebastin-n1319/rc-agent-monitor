@@ -524,6 +524,13 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     const { db } = require('./database');
     assessments.setDB(db);
     await assessments.initSchema();
+    // Session 68: give everyone mid-assessment the downtime back, then keep a heartbeat
+    try {
+      const rec = await assessments.outageRecover();
+      if (rec.credited) console.log(`⏱️ assessments: site was down ${Math.round(rec.gapMs / 1000)}s, credited ${rec.credited} open attempt(s)`);
+    } catch (e) { console.warn('assess outage credit failed:', e.message); }
+    assessments.startAliveBeat();
+    assessments.purgePreviews().catch(() => {});
     const studio = require('./lib/assess-studio'); studio.setDB(db, assessments); await studio.initSchema();
     console.log('📝 Assessments schema ready');
   } catch(e) { log.error('assessments_init_failed', e); console.error('assessments_init_failed', e); }
@@ -1834,6 +1841,11 @@ app.get('/api/assess/admin/tests', requireAuth, anyReviewer, assessWrap(async (r
   if (req.scopedReviewer) { const ok = new Set((await assessments.scopedTests(req.session.email)).map(t => t.id)); tests = tests.filter(t => ok.has(t.id)); }
   res.json({ success: true, tests });
 }));
+// Session 68: preview an assessment as an agent would take it (nothing is kept) and who is taking one now
+app.post('/api/assess/admin/tests/:id/preview', requireAuth, scopedGate('test'), rateLimit(20, 60000), assessWrap(async (req, res) => {
+  res.json({ success: true, ...(await assessments.startPreview({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent') })) });
+}));
+app.get('/api/assess/admin/live-now', ...RV, rateLimit(60, 60000), assessWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, ...(await assessments.liveAttempts()) }); }));
 app.get('/api/assess/admin/tests/:id/reviewers', ...RV, assessWrap(async (req, res) => res.json({ success: true, reviewers: await assessments.testReviewerList(req.params.id) })));
 app.post('/api/assess/admin/tests/:id/reviewers', ...RV, assessWrap(async (req, res) => res.json({ success: true, added: await assessments.addTestReviewers(req.params.id, (req.body || {}).emails, req.session.email) })));
 app.delete('/api/assess/admin/tests/:id/reviewers/:email', ...RV, assessWrap(async (req, res) => { await assessments.removeTestReviewer(req.params.id, req.params.email); res.json({ success: true }); }));
@@ -7970,6 +7982,7 @@ let shuttingDown = false;
 function gracefulShutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
+  try { assessments.markStopping(); } catch (e) { /* best effort */ }
   log.info('shutdown_signal_received', { signal });
   const forceExitTimer = setTimeout(() => {
     log.warn('shutdown_forced_timeout', { detail: 'server/db did not close within 10s, forcing exit' });

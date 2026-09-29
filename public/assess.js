@@ -189,6 +189,15 @@
     document.body.appendChild(el);
     setTimeout(function () { el.remove(); }, 2600);
   }
+  // Shown while the site is restarting during a live assessment
+  var netDown = false;
+  function reconnectBar(on) {
+    var el = document.getElementById('as-reconnect');
+    if (!on) { if (el) el.remove(); return; }
+    if (el) return;
+    el = h('div', { id: 'as-reconnect', class: 'reconnect', role: 'status' }, [icon('refresh', 'sm'), h('span', { text: 'Reconnecting. Your answers are safe and your clock is paused.' })]);
+    document.body.appendChild(el);
+  }
   function api(path, opts) {
     opts = opts || {};
     var method = opts.method || 'GET';
@@ -198,16 +207,21 @@
     if (opts.token) headers['X-Assess-Token'] = opts.token;
     // Session 66: the host restarts on every deploy and 502/503/504 come from its proxy, not from us.
     // Repeatable requests (GET, PUT, DELETE) retry quietly while it comes back; others fail with plain words.
-    var canRetry = method === 'GET' || method === 'PUT' || method === 'DELETE';
+    // Live exam calls are patient: they keep trying for up to 2.5 minutes, because the person's answers and clock are safe on the server.
+    var patient = !!opts.patient, t0 = Date.now();
+    var canRetry = patient || method === 'GET' || method === 'PUT' || method === 'DELETE';
     var waits = [1500, 3000, 6000, 10000];
+    function again(n) { return patient ? (Date.now() - t0 < 150000) : n < waits.length; }
+    function pause(n) { return patient ? Math.min(5000, 1500 + n * 1000) : waits[n]; }
     function once(n) {
       return fetch(path, { method: method, credentials: 'same-origin', headers: headers, body: opts.raw ? opts.raw : (opts.body !== undefined ? JSON.stringify(opts.body) : undefined) })
         .catch(function () { return { status: 0, ok: false, json: function () { return Promise.resolve(null); } }; })
         .then(function (r) {
-          if ((r.status === 0 || r.status === 502 || r.status === 503 || r.status === 504) && canRetry && n < waits.length) {
-            if (n === 1) toast('Reconnecting to the server...');
-            return new Promise(function (ok) { setTimeout(ok, waits[n]); }).then(function () { return once(n + 1); });
+          if ((r.status === 0 || r.status === 502 || r.status === 503 || r.status === 504) && canRetry && again(n)) {
+            if (patient) reconnectBar(true); else if (n === 1) toast('Reconnecting to the server...');
+            return new Promise(function (ok) { setTimeout(ok, pause(n)); }).then(function () { return once(n + 1); });
           }
+          if (patient && !netDown) reconnectBar(false);
           return r.json().catch(function () { return null; }).then(function (j) {
             var down = r.status === 0 || r.status === 502 || r.status === 503 || r.status === 504;
             if (!j) j = { success: false, error: down ? 'The server is restarting or busy. Wait a few seconds and try again.' : 'HTTP ' + r.status };
@@ -998,6 +1012,7 @@
       h('button', { class: 'btn primary', type: 'button', text: 'Back to my assessments', onclick: function () { go(''); } })]));
   }
   // ── Exam runner ──────────────────────────────────────────────────────
+  var previewBack = '';
   function runExam(start, test) {
     var token = start.token, attemptId = start.attemptId, s = start.settings;
     var evQueue = [], curIdx = null, tick = 0, reader = null, busy = false, ended = false, snapTimer = null, faceTimer = null, qState = null, prevIdx = -1;
@@ -1006,6 +1021,8 @@
     clear(main);
     var exam = h('div', { class: 'exam' });
     main.appendChild(exam);
+    if (s.preview) main.appendChild(h('div', { class: 'previewbar' }, [pill('Preview', 'accent'), h('span', { class: 'small', text: 'Nothing here is saved or scored for anyone.' }),
+      h('button', { class: 'btn sm', type: 'button', text: 'Exit preview', onclick: function () { exitTo(function () { go(previewBack); }); } })]));
 
     function ev(type, detail) { evQueue.push({ type: type, idx: curIdx, detail: detail || '' }); if (evQueue.length >= 20) flush(); }
     function flush() {
@@ -1014,6 +1031,14 @@
       api('/api/assess/attempts/' + attemptId + '/events', { method: 'POST', token: token, body: { events: batch } }).catch(function () {});
     }
     var flushTimer = setInterval(flush, 4000);
+    // Watch the connection: while the site is down the question clock is paused here, and the server adds the downtime back on its side.
+    var lastPaintT = Date.now(), beatBusy = false;
+    var netTimer = setInterval(function () {
+      if (ended || beatBusy) return;
+      beatBusy = true;
+      fetch('/healthz', { cache: 'no-store', credentials: 'same-origin' }).then(function (r) { return r.status < 500; }, function () { return false; })
+        .then(function (ok) { beatBusy = false; if (ended) return; netDown = !ok; reconnectBar(!ok); });
+    }, 3000);
 
     // Camera snapshots and the on-device face check
     var snapCanvas = document.createElement('canvas'); snapCanvas.width = 320; snapCanvas.height = 240;
@@ -1150,7 +1175,7 @@
     function hideShield() { if (shield) { shield.remove(); shield = null; } }
 
     function teardown() {
-      ended = true; clearInterval(flushTimer); clearInterval(tick); clearInterval(snapTimer); clearInterval(faceTimer); clearTimeout(saveT); flush(); stopWatermark(); hideShield();
+      ended = true; clearInterval(flushTimer); clearInterval(netTimer); netDown = false; reconnectBar(false); clearInterval(tick); clearInterval(snapTimer); clearInterval(faceTimer); clearTimeout(saveT); flush(); stopWatermark(); hideShield();
       if (reader) reader.stop();
       stopCamera(); qState = null;
       document.removeEventListener('copy', onCopy); document.removeEventListener('cut', onCut); document.removeEventListener('paste', onPaste);
@@ -1172,12 +1197,33 @@
     }
     function load() {
       clearInterval(tick); if (reader) { reader.stop(); reader = null; }
-      api('/api/assess/attempts/' + attemptId + '/current', { token: token }).then(function (q) {
+      api('/api/assess/attempts/' + attemptId + '/current', { token: token, patient: true }).then(function (q) {
         if (q.done) { exitTo(function () { doneScreen(q.result); }); return; }
         if (q.review) renderReview(q); else renderQuestion(q);
       }).catch(fail);
     }
+    function previewDone(r) {
+      var card = h('div', { class: 'card donecard', style: 'max-width:820px;text-align:left' });
+      card.appendChild(h('div', { class: 'row', style: 'align-items:center' }, [pill('Preview', 'accent'), h('h1', { style: 'margin:0', text: 'Preview finished' })]));
+      card.appendChild(h('p', { text: r.score + ' of ' + r.maxScore + ' correct (' + r.pct + '%). ' + (r.passed ? 'That would be a pass.' : 'The pass mark is ' + r.passPct + '%.') + ' Nothing was saved.' }));
+      var list = h('div', { class: 'stack', style: 'gap:10px;margin-top:12px' });
+      var n = 0;
+      (r.key || []).forEach(function (it) {
+        if (it.kind === 'explain') { list.appendChild(h('div', { class: 'card pad' }, [h('b', { text: 'Written answer' }), h('p', { class: 'small muted', style: 'margin:4px 0', text: 'About: ' + (it.about || '') }), h('p', { style: 'margin:0', text: it.text || 'No answer' })])); return; }
+        n++;
+        list.appendChild(h('div', { class: 'card pad' }, [
+          h('div', { class: 'row', style: 'align-items:center' }, [h('b', { text: 'Question ' + n }), pill(it.correct ? 'Correct' : 'Not correct', it.correct ? 'ok' : 'bad')]),
+          h('p', { style: 'margin:6px 0', text: it.prompt }),
+          h('div', { class: 'small' }, [h('span', { class: 'muted', text: 'Chosen: ' }), h('span', { text: it.chosen && it.chosen.length ? it.chosen.join(' | ') : 'No answer' })]),
+          h('div', { class: 'small' }, [h('span', { class: 'muted', text: 'Correct: ' }), h('b', { text: (it.correctAnswer || []).join(' | ') })]),
+          it.explanation ? h('div', { class: 'small muted', style: 'margin-top:4px', text: it.explanation }) : null]));
+      });
+      card.appendChild(list);
+      card.appendChild(h('div', { class: 'row', style: 'margin-top:16px' }, [h('button', { class: 'btn primary', type: 'button', text: 'Back to the editor', onclick: function () { go(previewBack); } })]));
+      main.appendChild(h('div', { class: 'view' }, [card]));
+    }
     function doneScreen(r) {
+      if (r && r.preview) { previewDone(r); return; }
       var card = h('div', { class: 'card donecard' });
       card.appendChild(r && !r.hidden ? h('div', { class: 'badge pop' }, [icon('check', 'lg')]) : art('pending', 190));
       card.appendChild(h('h1', { text: 'Submitted' }));
@@ -1207,7 +1253,7 @@
 
     // ── Time bank: saving and moving ─────────────────────────────────
     var saveT = 0;
-    function post(body) { return api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: body }); }
+    function post(body) { return api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: body, patient: true }); }
 
     function renderQuestion(q) {
       curIdx = q.idx; busy = false;
@@ -1475,7 +1521,10 @@
 
       var val = timer.querySelector('.val');
       function paint() {
-        var left = Math.max(0, deadline - Date.now()), frac = left / (q.seconds * 1000), sLeft = Math.ceil(left / 1000);
+        var nowT = Date.now();
+        if (netDown) { deadline += nowT - lastPaintT; lastPaintT = nowT; return; }
+        lastPaintT = nowT;
+        var left = Math.max(0, deadline - nowT), frac = left / (q.seconds * 1000), sLeft = Math.ceil(left / 1000);
         val.setAttribute('stroke-dashoffset', (C * (1 - Math.max(0, Math.min(1, frac)))).toFixed(2));
         tNum.textContent = String(sLeft);
         timer.classList.toggle('low', sLeft <= 10 && sLeft > 5); timer.classList.toggle('crit', sLeft <= 5);
@@ -1556,7 +1605,7 @@
         dlg.addEventListener('close', function () { dlg.remove(); });
         go2.addEventListener('click', function () {
           go2.disabled = true;
-          api('/api/assess/attempts/' + attemptId + '/submit', { method: 'POST', token: token, body: {} })
+          api('/api/assess/attempts/' + attemptId + '/submit', { method: 'POST', token: token, body: {}, patient: true })
             .then(function (r) { dlg.close(); flush(); exitTo(function () { doneScreen(r.result); }); })
             .catch(function (e) { dlg.close(); fail(e); });
         });
@@ -1573,6 +1622,20 @@
       !me.reviewer ? null : [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
        h('button', { class: 'btn', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Build from a document']),
        h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
+    if (me.reviewer) {
+      var livebar = h('div', { class: 'livebar', role: 'status' }); main.appendChild(livebar);
+      (function pollLive() {
+        if (!document.body.contains(livebar)) return;
+        api('/api/assess/admin/live-now').then(function (r) {
+          clear(livebar);
+          var names = r.people.map(function (p) { return p.name + ' (' + p.progress + ')'; }).join(', ');
+          livebar.className = 'livebar' + (r.count ? ' on' : '');
+          livebar.appendChild(h('i', { class: 'ld' }));
+          livebar.appendChild(h('span', { text: r.count ? r.count + (r.count === 1 ? ' person is' : ' people are') + ' taking an assessment right now: ' + names + '. Hold deploys until this is 0.' : 'No one is taking an assessment right now.' }));
+          if (r.lastOutage) livebar.appendChild(h('span', { class: 'small muted', text: 'Last restart: about ' + r.lastOutage.seconds + 's down, ' + r.lastOutage.credited + ' open attempt(s) got their time back.' }));
+        }).catch(function () {}).then(function () { setTimeout(pollLive, 30000); });
+      })();
+    }
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/admin/tests').then(function (j) {
       clear(holder);
@@ -1901,6 +1964,13 @@
           ]),
           h('div', null, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Status' }), statusSel, h('div', { class: 'small muted', style: 'margin-top:6px', text: status === 'published' ? 'Assigned people can start it now.' : 'Hidden from agents until published.' })]),
           msg, save,
+          h('button', { class: 'btn', type: 'button', style: 'width:100%', onclick: function (e) {
+            if (!id) { toast('Save the assessment first, then preview it'); return; }
+            var b = e.currentTarget; b.disabled = true;
+            api('/api/assess/admin/tests/' + id + '/preview', { method: 'POST', body: {} }).then(function (start) { previewBack = 'edit/' + id; clear(main); renderNav(''); runExam(start, { id: id, title: start.title }); })
+              .catch(function (er) { toast(er.message); }).then(function () { b.disabled = false; });
+          } }, [icon('eye', 'sm'), 'Preview as an agent']),
+          h('div', { class: 'small muted', style: 'margin-top:-4px', text: 'Uses the last saved version. Nothing is scored or kept.' }),
           id && status === 'published' && (!st.repeat || st.repeat.mode === 'none') ? h('div', { class: 'stack', style: 'gap:6px' }, [
             h('button', { class: 'btn', type: 'button', style: 'width:100%', onclick: function (e) { chatPost(e.currentTarget, 'announce'); } }, [icon('flag', 'sm'), 'Announce in Google Chat']),
             h('button', { class: 'btn', type: 'button', style: 'width:100%', onclick: function (e) { chatPost(e.currentTarget, 'remind'); } }, [icon('clock', 'sm'), 'Send a reminder']),

@@ -1093,3 +1093,16 @@ dialog.confirm.ann textarea{resize:vertical;min-height:120px}
 .nt-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;margin-top:6px}
 .nt-empty{padding:26px 18px;font-size:13px;color:var(--t2);text-align:center}
 @media (max-width:1500px){.as-user .who{display:none}}
+
+/* Session 68: reconnect banner, preview bar, live-taker bar */
+.reconnect{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;align-items:center;gap:8px;background:#FFF4E0;color:#7A4306;border:1px solid #F4B25F;padding:10px 16px;border-radius:12px;font-size:13.5px;font-weight:500;box-shadow:0 8px 24px rgba(7,43,64,.18);max-width:calc(100vw - 24px)}
+.reconnect svg{animation:rcspin 1.2s linear infinite}
+@keyframes rcspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.reconnect svg{animation:none}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .reconnect{background:#3A2A10;color:#FFD9A0;border-color:#8A5A1C}}
+:root[data-theme="dark"] .reconnect{background:#3A2A10;color:#FFD9A0;border-color:#8A5A1C}
+.previewbar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;white-space:nowrap;max-width:calc(100vw - 24px);z-index:60;display:flex;align-items:center;gap:10px;background:var(--surface);color:var(--t1);border:1px solid var(--border);border-radius:12px;padding:8px 12px;box-shadow:0 8px 24px rgba(7,43,64,.16)}
+.livebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:9px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-size:13.5px;color:var(--t2)}
+.livebar .ld{width:9px;height:9px;border-radius:50%;background:#9BAFC0;flex:none}
+.livebar.on{border-color:#F4B25F;background:rgba(244,178,95,.12);color:var(--t1)}
+.livebar.on .ld{background:#F4891F}
