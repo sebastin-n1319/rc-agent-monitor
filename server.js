@@ -524,6 +524,16 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     await assessments.initSchema();
     console.log('📝 Assessments schema ready');
   } catch(e) { log.error('assessments_init_failed', e); console.error('assessments_init_failed', e); }
+  // Session 63: access requests, and the one-time copy of everyone who
+  // could sign in before into Access Control.
+  try {
+    const { db } = require('./database');
+    accessReq.setDB(db);
+    await accessReq.initSchema();
+    const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
+    accessApprovalReady = true; invalidateMembers();
+    console.log('🔐 Access approval on:', JSON.stringify(mig));
+  } catch(e) { log.error('access_init_failed', e); console.error('access_init_failed', e); }
   // Session 21: chat (Zoho SalesIQ) lifecycle module bootstrap -- fully
   // separate tables/module, same pattern as desk-lifecycle.js above.
   try {
@@ -606,18 +616,29 @@ const BREAK_DAY_LIMIT_M  = 60;         // minutes, total break per day
 // app_roles (the Access tab), a monitored RingCentral agent, an active
 // roster agent, a known team lead/admin (AGENT_SHEET_NAMES) or a test
 // account. Cached for a minute.
+// Session 63: approval required. Once the one-time copy into app_roles
+// has run (lib/access.js), membership is ONLY app_roles: roster, monitored
+// agents and team leads no longer get in automatically. New people send an
+// access request and an admin approves them in Access Control.
 let _memberCache = { at: 0, set: null };
+let accessApprovalReady = false;
+function invalidateMembers() { _memberCache = { at: 0, set: null }; }
 async function toolMemberSet() {
   if (_memberCache.set && Date.now() - _memberCache.at < 60000) return _memberCache.set;
   const set = new Set();
   const add = (e) => { const v = String(e || '').trim().toLowerCase(); if (v) set.add(v); };
   const { db } = require('./database');
-  const q = (sql) => new Promise((rs) => db.all(sql, [], (e, rows) => rs(e ? [] : rows || [])));
+  const q = (sql) => new Promise((rs, rj) => db.all(sql, [], (e, rows) => e ? rj(e) : rs(rows || [])));
   for (const r of await q(`SELECT email FROM app_roles`)) add(r.email);
-  for (const r of await q(`SELECT email FROM monitored_agents WHERE email IS NOT NULL`)) add(r.email);
-  for (const r of await q(`SELECT email FROM roster_agents WHERE email IS NOT NULL AND COALESCE(status,'active') = 'active'`)) add(r.email);
-  for (const e of Object.keys(AGENT_SHEET_NAMES)) add(e);
-  for (const e of TEST_ACCOUNTS) add(e);
+  add(assessments.OWNER_EMAIL);
+  if (!accessApprovalReady) {
+    // until the copy has run on this database, keep the old sources so
+    // nobody is locked out during boot
+    for (const r of await q(`SELECT email FROM monitored_agents WHERE email IS NOT NULL`).catch(() => [])) add(r.email);
+    for (const r of await q(`SELECT email FROM roster_agents WHERE email IS NOT NULL AND COALESCE(status,'active') = 'active'`).catch(() => [])) add(r.email);
+    for (const e of Object.keys(AGENT_SHEET_NAMES)) add(e);
+    for (const e of TEST_ACCOUNTS) add(e);
+  }
   _memberCache = { at: Date.now(), set };
   return set;
 }
@@ -626,7 +647,12 @@ async function isToolMember(email) {
   catch (e) { return true; } // never lock members out on a lookup error
 }
 async function sessionRoleFor(email) {
-  if (!(await isToolMember(email))) return { role: 'assessment', breakbotEnabled: false };
+  if (!(await isToolMember(email))) {
+    // Session 63: outside the tool, only the Assessments guest list (or an
+    // open assessment link) lets someone in, and only to /assess.
+    const acc = await assessments.accessFor(email, false).catch(() => ({ allowed: false }));
+    return acc.allowed ? { role: 'assessment', breakbotEnabled: false } : { role: null, breakbotEnabled: false };
+  }
   const settings = await getRoleSettingsForEmail(email).catch(() => null);
   return { role: settings?.role || 'agent', breakbotEnabled: settings ? settings.breakbotEnabled !== false : true };
 }
@@ -972,11 +998,9 @@ app.post('/api/login-log', rateLimit(10, 60000), async (req, res) => {
   const realIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress || ip;
   try {
     await insertLoginLog(username, email, role, realIp, location, systemInfo);
-    // Auto-add to roles if not already there (preserves existing role)
-    const existingRole = await getRoleForEmail(email);
-    if (!existingRole) {
-      await setRole(email, 'agent', 'auto');
-    }
+    // Session 63: this used to add anyone who signed in to app_roles as an
+    // agent, which would skip the approval step. Access now only comes
+    // from an admin approving a request in Access Control.
     res.json({ success: true });
   } catch(e) { res.status(500).json({ success: false, error: 'Login log failed' }); }
 });
@@ -1169,7 +1193,10 @@ app.post('/api/roles', requireAdmin, async (req, res) => {
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email format' });
   if (!['admin','agent','readonly'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, or readonly' });
   try {
-    await setRole(email.trim(), role, addedBy, breakbotEnabled);
+    await setRole(email.trim().toLowerCase(), role, req.session.email || addedBy, breakbotEnabled);
+    invalidateMembers();
+    const st = await accessReq.statusOf(email).catch(() => null);
+    if (st && st.status !== 'approved') await accessReq.decide(email, 'approved', req.session.email, { role }).catch(() => {});
     insertAuditLog(req.session.email, 'role_set', email.trim(), `role:${role}`).catch(()=>{});
     res.json({ success: true });
   }
@@ -1190,11 +1217,18 @@ app.patch('/api/roles/:email/breakbot', requireAdmin, async (req, res) => {
 });
 
 app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
-  const email = decodeURIComponent(req.params.email);
-  if (CORE_ADMINS.includes(email.toLowerCase()))
-    return res.status(403).json({ success: false, error: 'Cannot remove core admin' });
+  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  // Session 63: admins can be removed too, except the owner, and you
+  // cannot remove yourself.
+  if (email === assessments.OWNER_EMAIL)
+    return res.status(403).json({ success: false, error: 'The owner account cannot be removed' });
+  if (email === String(req.session.email || '').toLowerCase())
+    return res.status(403).json({ success: false, error: 'You cannot remove your own access' });
   try {
     await removeRole(email);
+    invalidateMembers();
+    await require('./database').deleteSessionsForEmail(email).catch(() => {});
+    await accessReq.markRemoved(email, req.session.email).catch(() => {});
     try { // Session 58: drop their page overrides too
       const cfg = await readAgentPages();
       if (cfg.users[email.toLowerCase()]) { delete cfg.users[email.toLowerCase()]; await setSetting('agent_pages', JSON.stringify(cfg), req.session.email); }
@@ -1266,6 +1300,38 @@ app.put('/api/agent-pages', requireAdmin, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ── Session 63: access requests ──────────────────────────────────────
+app.get('/api/access-requests', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, data: await accessReq.list() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/access-requests/count', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, ...(await accessReq.pendingCount()) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/access-requests/:email/approve', requireAdmin, async (req, res) => {
+  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  const { role = 'agent', breakbotEnabled = true } = req.body || {};
+  if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email' });
+  if (!['admin', 'agent'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin or agent' });
+  try {
+    await setRole(email, role, req.session.email, breakbotEnabled);
+    invalidateMembers();
+    await accessReq.decide(email, 'approved', req.session.email, { role });
+    insertAuditLog(req.session.email, 'access_approved', email, `role:${role}`).catch(() => {});
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/access-requests/:email/deny', requireAdmin, async (req, res) => {
+  const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+  if (email === assessments.OWNER_EMAIL) return res.status(403).json({ success: false, error: 'The owner account cannot be declined' });
+  try {
+    await accessReq.decide(email, 'denied', req.session.email, { note: (req.body || {}).note });
+    insertAuditLog(req.session.email, 'access_denied', email, String((req.body || {}).note || '').slice(0, 200)).catch(() => {});
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // Admin announcement, sends a free-form card to the Google Chat space
 app.post('/api/announce', requireAdmin, rateLimit(5, 60000), async (req, res) => {
   const { title, body, emoji, requester } = req.body || {};
@@ -1311,7 +1377,7 @@ app.get('/api/role-check', rateLimit(20, 60000), async (req, res) => {
   }
   try {
     const r = await sessionRoleFor(email); // Session 56
-    res.json({ success: true, role: r.role, breakbotEnabled: r.breakbotEnabled });
+    res.json({ success: true, role: r.role || 'none', breakbotEnabled: r.breakbotEnabled });
   }
   catch(e) { res.status(500).json({ success: false, error: 'Role check failed' }); }
 });
@@ -1356,6 +1422,13 @@ app.post('/api/session', async (req, res) => {
     return res.status(403).json({ success: false, error: 'Not authorised' });
   }
   try {
+    // Session 63: no approval, no session. Record the request for the admins.
+    const gate = await sessionRoleFor(email);
+    if (!gate.role) {
+      const r = await accessReq.recordAttempt(email, name, picture);
+      if (r.isNew) insertAuditLog(email, 'access_requested', email, name || '').catch(() => {});
+      return res.status(403).json({ success: false, accessRequest: true, status: r.status, email, name: name || '', picture: picture || '', requestedAt: r.requestedAt, isNew: !!r.isNew });
+    }
     const token = crypto.randomBytes(32).toString('hex');
     await createAppSession(token, email, name || '', picture || '', googleSub || null);
     // Persist Google profile data so photos survive session expiry
@@ -1389,6 +1462,13 @@ app.get('/api/session', async (req, res) => {
     if (!session) return res.json({ success: false });
     // Look up role, default to 'agent' if not in app_roles (don't block the session)
     const { role, breakbotEnabled } = await sessionRoleFor(session.email); // Session 56
+    if (!role) {
+      // Session 63: access was removed. End the session and say why.
+      await deleteAppSession(token).catch(() => {});
+      res.clearCookie(SESSION_COOKIE, { path: '/' });
+      const st = await accessReq.statusOf(session.email).catch(() => null);
+      return res.json({ success: false, accessRequest: true, status: st && (st.status === 'denied' || st.status === 'pending') ? st.status : 'removed', requestedAt: st ? st.requested_at : null, email: session.email, name: session.name || '', picture: session.picture || '' });
+    }
     setCookieToken(res, token); // refresh cookie max-age
     res.json({
       success: true,
@@ -1450,8 +1530,22 @@ app.post('/api/admin/import-profile', requireAdmin, async (req, res) => {
 // FEAT-4: Audit log endpoint
 app.get('/api/audit-log', requireAdmin, async (req, res) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
-    res.json({ success: true, data: await getAuditLog(limit) });
+    // Session 63: filters (search, action, person, date range)
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const { db } = require('./database');
+    const where = [], p = [];
+    const q = String(req.query.q || '').trim().toLowerCase();
+    if (q) { where.push(`(lower(actor_email) LIKE ? OR lower(action) LIKE ? OR lower(COALESCE(target,'')) LIKE ? OR lower(COALESCE(detail,'')) LIKE ?)`); p.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`); }
+    const actions = String(req.query.action || '').split(',').map(x => x.trim()).filter(Boolean).slice(0, 30);
+    if (actions.length) { where.push(`action IN (${actions.map(() => '?').join(',')})`); p.push(...actions); }
+    if (req.query.actor) { where.push(`lower(actor_email) = ?`); p.push(String(req.query.actor).trim().toLowerCase()); }
+    if (/^\d{4}-\d{2}-\d{2}/.test(req.query.from || '')) { where.push(`created_at >= ?`); p.push(String(req.query.from).slice(0, 10) + ' 00:00:00'); }
+    if (/^\d{4}-\d{2}-\d{2}/.test(req.query.to || '')) { where.push(`created_at <= ?`); p.push(String(req.query.to).slice(0, 10) + ' 23:59:59'); }
+    const sql = `SELECT * FROM audit_log ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY created_at DESC LIMIT ?`;
+    const data = await new Promise((rs, rj) => db.all(sql, [...p, limit], (e, rows) => e ? rj(e) : rs(rows || [])));
+    const facets = await new Promise((rs) => db.all(`SELECT action, COUNT(*) AS n FROM audit_log GROUP BY action ORDER BY n DESC`, [], (e, rows) => rs(e ? [] : rows)));
+    const actors = await new Promise((rs) => db.all(`SELECT lower(actor_email) AS actor, COUNT(*) AS n FROM audit_log GROUP BY lower(actor_email) ORDER BY n DESC LIMIT 100`, [], (e, rows) => rs(e ? [] : rows)));
+    res.json({ success: true, data, facets, actors, limit });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -1580,6 +1674,7 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 // Reviewers (assess_reviewers, not the same as admin) manage questions,
 // assessments, access and results.
 const assessments = require('./lib/assessments');
+const accessReq = require('./lib/access'); // Session 63: access requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
 async function requireAssessAccess(req, res, next) {
   try {

@@ -134,6 +134,12 @@
     var t0 = performance.now(), dur = 700;
     (function step(now) { var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e) + suffix; if (k < 1) requestAnimationFrame(step); })(t0);
   }
+  // Session 63: animated illustration (illus.js), falls back to nothing
+  function art(name, size) {
+    var el = h('div', { class: 'art', 'aria-hidden': 'true' });
+    if (window.AditIllus) el.innerHTML = window.AditIllus.svg(name, { size: size || 170 });
+    return el;
+  }
   function tierPill(t) { var x = TIER[t]; return x ? pill(x[0], x[1], true) : pill('Not finished', ''); }
   function pageHead(title, sub, acts, crumb) {
     return h('div', null, [
@@ -361,7 +367,7 @@
     clear(nav);
     clear(main);
     main.appendChild(h('div', { class: 'card gate' }, [
-      h('div', { class: 'ic' }, [icon('lock', 'lg')]),
+      art('denied', 200),
       h('h1', { text: 'You do not have access yet' }),
       h('p', { text: 'You are signed in as ' + me.email + '. Assessments are open to the T1 team and people invited by a reviewer.' }),
       h('p', { class: 'muted small', text: 'Ask Sebastin (sebastin.n@adit.com) to add you, then reload this page.' }),
@@ -371,13 +377,13 @@
   // ── Taker: home ──────────────────────────────────────────────────────
   function viewHome() {
     var first = String(me.name || '').split(' ')[0];
-    var hero = h('div', { class: 'hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'My assessments' }), h('h1', { text: first ? 'Hi ' + first + ', ready when you are' : 'Your assessments' }), h('p', { text: 'Every question is timed. Find a quiet spot, use a computer, and give yourself about 15 minutes.' })]), h('div', { class: 'hero-stats', id: 'hero-stats' })]);
+    var hero = h('div', { class: 'hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'My assessments' }), h('h1', { text: first ? 'Hi ' + first + ', ready when you are' : 'Your assessments' }), h('p', { text: 'Every question is timed. Find a quiet spot, use a computer, and give yourself about 15 minutes.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)]), h('div', { class: 'hero-stats', id: 'hero-stats' })]);
     main.appendChild(hero);
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/me').then(function (j) {
       me.tests = j.tests; clear(holder);
       if (!j.tests.length) {
-        holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('b', { text: 'Nothing assigned right now' }), h('span', { text: 'When your lead assigns an assessment, it will appear here.' })]));
+        holder.appendChild(h('div', { class: 'empty' }, [art('tests'), h('b', { text: 'Nothing assigned right now' }), h('span', { text: 'When your lead assigns an assessment, it will appear here.' })]));
         return;
       }
       var hs = document.getElementById('hero-stats');
@@ -846,7 +852,7 @@
     }
     function doneScreen(r) {
       var card = h('div', { class: 'card donecard' });
-      card.appendChild(h('div', { class: 'badge pop' }, [icon('check', 'lg')]));
+      card.appendChild(r && !r.hidden ? h('div', { class: 'badge pop' }, [icon('check', 'lg')]) : art('pending', 190));
       card.appendChild(h('h1', { text: 'Submitted' }));
       if (r && !r.hidden) {
         var C = 2 * Math.PI * 56, off = C * (1 - r.pct / 100);
@@ -1179,6 +1185,7 @@
       var body = h('div', { class: 'xbody review slide-first' });
       exam.appendChild(body);
       body.appendChild(h('div', { class: 'rv-head' }, [
+        art('inbox', 130),
         h('div', null, [h('h1', { text: 'Review before you submit' }), h('p', { class: 'muted', text: 'Question clocks are paused on this screen. Open any question that still has time to check or change your answer. Questions with no time left are locked.' })]),
       ]));
       var pct = Math.round(answered / q.nav.length * 100);
@@ -1240,7 +1247,7 @@
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/admin/tests').then(function (j) {
       clear(holder);
-      if (!j.tests.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('b', { text: 'No assessments yet' }), h('span', { text: 'Add questions to the bank, then create an assessment.' })])); return; }
+      if (!j.tests.length) { holder.appendChild(h('div', { class: 'empty' }, [art('tests'), h('b', { text: 'No assessments yet' }), h('span', { text: 'Add questions to the bank, then create an assessment.' })])); return; }
       var grid = h('div', { class: 'grid-cards' });
       j.tests.forEach(function (t) {
         var qtext = t.settings.pool.mode === 'random' ? t.settings.pool.count + ' random from ' + (t.poolSize || 0) : t.questionIds.length + ' questions';
@@ -1289,7 +1296,7 @@
       layout.appendChild(left); layout.appendChild(side); holder.appendChild(layout);
 
       // Details
-      var title = h('input', { class: 'inp', id: 'b-title', maxlength: '160', value: t ? t.title : '', placeholder: 'e.g. Escalations and ownership, October' });
+      var title = h('input', { class: 'inp', id: 'b-title', maxlength: '160', required: true, 'aria-required': 'true', value: t ? t.title : '', placeholder: 'e.g. Escalations and ownership, October' });
       var desc = h('textarea', { class: 'ta', id: 'b-desc', maxlength: '1000', placeholder: 'What this checks. Agents see this on their card.' }); desc.value = t ? t.description : '';
       left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Details' }), h('p', { text: 'Agents see the title and description before they start.' }), field('Title', title), field('Description', desc)]));
 
@@ -1574,7 +1581,7 @@
         h('div', { class: 'card stat' }, [h('dt', { text: 'Pass rate' }), h('dd', { text: pass != null ? pass + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Needs your review' }), h('dd', { text: String(review) })]),
       ]));
-      if (!at.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('users', 'lg')]), h('b', { text: 'No attempts yet' }), h('span', { text: 'Results appear here as agents submit.' })])); return; }
+      if (!at.length) { holder.appendChild(h('div', { class: 'empty' }, [art('people'), h('b', { text: 'No attempts yet' }), h('span', { text: 'Results appear here as agents submit.' })])); return; }
       var tb = h('tbody');
       at.forEach(function (a, ri) {
         var resetBtn = a.status === 'reset' ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Reset so ' + (a.name || a.email) + ' can take it again', onclick: function (e) {
@@ -1710,7 +1717,7 @@
         panel.appendChild(h('div', { class: 'card pad' }, [a.events.length ? tl : h('p', { class: 'muted', text: 'No events.' }), a.ua ? h('p', { class: 'small muted', style: 'margin:12px 0 0', text: 'Browser: ' + a.ua }) : null]));
       }
       function camera() {
-        if (!a.snapshots.length) { panel.appendChild(h('div', { class: 'empty' }, [h('b', { text: 'No photos' }), h('span', { text: 'The camera was not allowed, or the attempt ended before the first photo.' })])); return; }
+        if (!a.snapshots.length) { panel.appendChild(h('div', { class: 'empty' }, [art('radar'), h('b', { text: 'No photos' }), h('span', { text: 'The camera was not allowed, or the attempt ended before the first photo.' })])); return; }
         panel.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Stored in the tool\'s own database on its server, not in Google Drive or on anyone\'s computer. Only you can open them (other reviewers cannot), and they are deleted automatically after the number of days set on the Access page.' })]));
         panel.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, [h('span', { class: 'small muted', text: a.snapshots.length + ' photos' }), h('span', { class: 'spacer' }),
           h('button', { class: 'btn sm danger', type: 'button', onclick: function () {
@@ -1745,7 +1752,7 @@
       api('/api/assess/admin/live').then(function (j) {
         clear(holder);
         if (!j.live.length) {
-          holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('users', 'lg')]), h('b', { text: 'Nobody is taking an assessment right now' }), h('span', { text: 'Attempts appear here the moment someone starts.' })]));
+          holder.appendChild(h('div', { class: 'empty' }, [art('people'), h('b', { text: 'Nobody is taking an assessment right now' }), h('span', { text: 'Attempts appear here the moment someone starts.' })]));
         } else {
           var tb = h('tbody');
           j.live.forEach(function (a) {
@@ -1791,7 +1798,7 @@
       exp.setAttribute('href', '/api/assess/admin/insights/export' + (sel.value ? '?month=' + sel.value : ''));
       api('/api/assess/admin/insights' + (sel.value ? '?month=' + sel.value : '')).then(function (j) {
         clear(holder);
-        if (!j.agents.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('chart', 'lg')]), h('b', { text: 'No submitted assessments in this period' }), h('span', { text: 'Topic insights need questions with tags.' })])); return; }
+        if (!j.agents.length) { holder.appendChild(h('div', { class: 'empty' }, [art('radar'), h('b', { text: 'No submitted assessments in this period' }), h('span', { text: 'Topic insights need questions with tags.' })])); return; }
         if (j.tags.length) {
           var tc = h('div', { class: 'card pad stack', style: 'margin-bottom:16px' }, [h('h2', { text: 'Team by topic' }), h('p', { class: 'small muted', style: 'margin:0', text: 'Share of answers correct across the team. Weakest topics are where to focus training.' })]);
           j.tags.slice().sort(function (a, b) { return a.pct - b.pct; }).forEach(function (t) {
@@ -1855,7 +1862,7 @@
         j.tags.forEach(function (t) { tagSel.appendChild(h('option', { value: t.tag, text: t.tag + ' (' + t.n + ')' })); }); tagSel.value = cur;
         renderBulk();
         if (!j.questions.length) {
-          holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('doc', 'lg')]), h('b', { text: bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
+          holder.appendChild(h('div', { class: 'empty' }, [art('log'), h('b', { text: bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
           return;
         }
         var drafts = j.questions.filter(function (q) { return q.status === 'draft'; }).length;

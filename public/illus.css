@@ -1,0 +1,32 @@
+/* Session 63: motion for the shared illustrations (illus.js) */
+svg.il{display:block;max-width:100%;height:auto;overflow:visible;color:#0B2A3F}
+html.dark-mode svg.il,:root[data-theme="dark"] svg.il{color:#E8F1F7}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .as-app svg.il{color:#E8F1F7}}
+svg.il .il-spin{transform-box:view-box;animation:ilSpin 14s linear infinite}
+svg.il .il-spin-rev{transform-box:view-box;animation:ilSpin 18s linear infinite reverse}
+svg.il .il-float{animation:ilFloat 5s ease-in-out infinite}
+svg.il .il-scan{animation:ilScan 3.6s ease-in-out infinite}
+svg.il .il-blink{animation:ilBlink 2.4s ease-in-out infinite}
+svg.il .d2{animation-delay:.6s}svg.il .d3{animation-delay:1.2s}svg.il .d4{animation-delay:1.8s}
+svg.il .il-ring{transform-box:fill-box;transform-origin:center;animation:ilRing 2.4s ease-out infinite}
+svg.il .il-ring.d2{animation-delay:.8s}svg.il .il-ring.d3{animation-delay:1.6s}
+svg.il .il-dash{animation:ilDash 1.6s linear infinite}
+svg.il .il-fly{animation:ilFly 3.2s ease-in-out infinite}
+@keyframes ilSpin{to{transform:rotate(360deg)}}
+@keyframes ilFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes ilScan{0%{transform:translateY(0);opacity:0}15%{opacity:1}85%{opacity:1}100%{transform:translateY(70px);opacity:0}}
+@keyframes ilBlink{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes ilRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.6);opacity:0}}
+@keyframes ilDash{to{stroke-dashoffset:-20}}
+@keyframes ilFly{0%,100%{transform:translate(0,0)}50%{transform:translate(10px,-8px)}}
+@media (prefers-reduced-motion:reduce){svg.il *{animation:none!important}}
+
+/* Empty state with an illustration */
+.il-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px;padding:28px 20px}
+.il-empty svg.il{width:180px}
+.il-empty b{font-size:15px;font-weight:700;color:inherit}
+.il-empty span{font-size:13px;opacity:.72;max-width:420px}
+.il-nodata{display:flex!important;flex-direction:column;align-items:center;gap:4px}
+td.il-nodata{display:table-cell!important}
+td.il-nodata .il-nodata-art{display:flex;justify-content:center}
+.il-nodata-art svg.il{width:120px;opacity:.9}

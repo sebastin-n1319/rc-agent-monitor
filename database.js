@@ -764,9 +764,17 @@ async function initDB() {
     `CREATE INDEX IF NOT EXISTS idx_login_logs_email      ON login_logs(email)`,
   ]) { try { await run(sql); } catch(e) {} }
 
-  const coreAdmins = (process.env.CORE_ADMINS || 'sebastin.n@adit.com,ronnie@adit.com,imran@adit.com').split(',').map(e => e.trim()).filter(Boolean);
-  for (const email of coreAdmins) {
-    try { await run(`INSERT OR IGNORE INTO app_roles (email,role,added_by) VALUES (?,'admin','system')`,[email]); } catch(e) {}
+  // Session 63: the owner is always an admin. The other starting admins
+  // are only seeded into an empty table, so removing one sticks across
+  // restarts.
+  try { await run(`INSERT OR IGNORE INTO app_roles (email,role,added_by) VALUES ('sebastin.n@adit.com','admin','system')`); } catch(e) {}
+  let _roleCount = 0;
+  try { const r = await get(`SELECT COUNT(*) AS n FROM app_roles`); _roleCount = r ? r.n : 0; } catch(e) {}
+  if (_roleCount <= 1) {
+    const coreAdmins = (process.env.CORE_ADMINS || 'sebastin.n@adit.com,ronnie@adit.com,imran@adit.com').split(',').map(e => e.trim()).filter(Boolean);
+    for (const email of coreAdmins) {
+      try { await run(`INSERT OR IGNORE INTO app_roles (email,role,added_by) VALUES (?,'admin','system')`,[email]); } catch(e) {}
+    }
   }
   console.log('Database initialized');
 }
