@@ -531,6 +531,12 @@ const deskLifecycle = require('./lib/desk-lifecycle');
   // could sign in before into Access Control.
   try {
     const { db } = require('./database');
+    notices.setDB(db);
+    await notices.initSchema();
+    regularise.setDB(db);
+    await regularise.initSchema();
+    regularise.setDeps({ insertBreakEvent, validActions: VALID_BREAK_ACTIONS, notices });
+    await notices.importWhatsNew().catch(e => console.warn('whats-new import failed:', e.message));
     accessReq.setDB(db);
     await accessReq.initSchema();
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
@@ -1685,6 +1691,8 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 // assessments, access and results.
 const assessments = require('./lib/assessments');
 const accessReq = require('./lib/access'); // Session 63: access requests
+const notices = require('./lib/notices'); // Session 68: tool-wide notification centre
+const regularise = require('./lib/regularise'); // Session 68: break regularise requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
 async function requireAssessAccess(req, res, next) {
   try {
@@ -1782,6 +1790,23 @@ app.get('/api/assess/attempts/:id/image', requireAuth, requireAssessAccess, rate
 }));
 app.get('/api/assess/notifications', requireAuth, requireAssessAccess, rateLimit(120, 60000), assessWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, ...(await assessments.myNotifications(req.session.email)) }); }));
 app.post('/api/assess/notifications/read', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => { const b = req.body || {}; await assessments.markNotificationsRead(req.session.email, Array.isArray(b.ids) ? b.ids : null); res.json({ success: true }); }));
+
+// Session 68: tool-wide notification centre (main header bell)
+const noticeWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Notification centre error' }); } };
+const isAdminSession = async (req) => { const st = await getRoleSettingsForEmail(req.session.email).catch(() => null); return !!(st && st.role === 'admin'); };
+app.get('/api/notices', requireAuth, rateLimit(120, 60000), noticeWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); const adm = await isAdminSession(req); res.json({ success: true, ...(await notices.listFor(req.session.email, adm)), admin: adm, build: assessments.BUILD_ID() }); }));
+app.post('/api/notices/read', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { const b = req.body || {}; await notices.markRead(req.session.email, Array.isArray(b.ids) ? b.ids : null, await isAdminSession(req)); res.json({ success: true }); }));
+app.put('/api/notices/prefs', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { res.json({ success: true, muted: await notices.setMuted(req.session.email, (req.body || {}).muted) }); }));
+app.get('/api/admin/notices', requireAdmin, noticeWrap(async (req, res) => { res.json({ success: true, data: await notices.adminList() }); }));
+app.post('/api/admin/notices', requireAdmin, rateLimit(30, 60000), noticeWrap(async (req, res) => { res.json({ success: true, id: await notices.createNotice(req.session.email, req.body || {}) }); }));
+app.delete('/api/admin/notices/:id', requireAdmin, noticeWrap(async (req, res) => { res.json({ success: true, removed: await notices.deleteNotice(req.params.id) }); }));
+
+// Session 68: break regularise requests (agent asks, admin approves)
+app.get('/api/regularise/mine', requireAuth, noticeWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, data: await regularise.listMine(req.session.email) }); }));
+app.post('/api/regularise', requireAuth, rateLimit(20, 60000), noticeWrap(async (req, res) => { const id = await regularise.create(req.session.email, req.session.name, req.body || {}); res.json({ success: true, id }); }));
+app.get('/api/admin/regularise', requireAdmin, noticeWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, data: await regularise.listAll(String(req.query.status || '')), pending: await regularise.pendingCount() }); }));
+app.post('/api/admin/regularise/:id/approve', requireAdmin, rateLimit(60, 60000), noticeWrap(async (req, res) => { const r = await regularise.decide(req.params.id, req.session.email, true, (req.body || {}).note); insertAuditLog(req.session.email, 'regularise_approved', String(req.params.id), '').catch(() => {}); res.json({ success: true, ...r }); }));
+app.post('/api/admin/regularise/:id/decline', requireAdmin, rateLimit(60, 60000), noticeWrap(async (req, res) => { await regularise.decide(req.params.id, req.session.email, false, (req.body || {}).note); insertAuditLog(req.session.email, 'regularise_declined', String(req.params.id), '').catch(() => {}); res.json({ success: true }); }));
 app.get('/api/assess/my-progress', requireAuth, requireAssessAccess, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.myProgress(req.session.email)) })));
 app.get('/api/assess/admin/live', ...RV_EARLY(), assessWrap(async (req, res) => res.json({ success: true, live: await assessments.adminLive() })));
 

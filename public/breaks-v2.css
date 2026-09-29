@@ -140,3 +140,32 @@ html.dark-mode .bx-root{
 .bx-plan-row b{font-weight:600;font-size:13px}
 .bx-plan-clash{border-color:var(--bx-red);background:var(--bx-red-s)}
 .bx-root .bx-plan-row .bx-date{max-width:none;width:100%!important}
+
+/* Session 68: regularise requests */
+.rg-card{margin-top:16px}
+.rg-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.rg-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--bx-border);border-radius:12px;background:var(--bx-surface2);flex-wrap:wrap}
+.rg-pend .rg-main{flex:1 1 260px;min-width:0}
+.rg-note{flex:1 1 200px;min-width:160px;border:1px solid var(--bx-border);border-radius:8px;padding:7px 9px;font:13px 'Poppins',sans-serif;background:var(--bx-surface);color:var(--bx-t1)}
+.rg-ok{background:var(--bx-teal);border-color:var(--bx-teal);color:#fff}
+.rg-ok:hover{filter:brightness(.95)}
+.rg-count{display:inline-block;min-width:20px;padding:0 6px;border-radius:10px;background:var(--bx-red);color:#fff;font-size:12px;text-align:center}
+.rg-dlg{position:fixed;inset:0;margin:auto;border:1px solid #E3E9F0;border-radius:16px;padding:0;width:min(460px,calc(100vw - 24px));background:#fff;color:#072B40;font-family:'Poppins',system-ui,sans-serif}
+.rg-dlg::backdrop{background:rgba(7,43,64,.45)}
+.rg-form{padding:20px;display:flex;flex-direction:column;gap:12px}
+.rg-form h3{margin:0;font-size:16px}
+.rg-form label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:500}
+.rg-form select,.rg-form input,.rg-form textarea{border:1px solid #C8D0DC;border-radius:8px;padding:8px 10px;font:14px 'Poppins',sans-serif;background:#fff;color:#072B40}
+.rg-form textarea{min-height:80px;resize:vertical}
+.rg-two{display:flex;gap:10px}.rg-two>label{flex:1}
+.rg-msg{color:#B4323A;font-size:13px;min-height:16px}
+.rg-actions{display:flex;justify-content:flex-end;gap:8px}
+html.dark-mode .rg-dlg{background:#0D2A3E;color:#E6EEF5;border-color:#22384A}
+html.dark-mode .rg-form select,html.dark-mode .rg-form input,html.dark-mode .rg-form textarea{background:#0A1F2D;color:#E6EEF5;border-color:#2C4A60}
+html.dark-mode .rg-msg{color:#FF8C92}
+
+.rg-dlg .bx-btn{border:1px solid #E3E9F0;background:#fff;color:#072B40;font:600 13px 'Poppins',sans-serif;padding:8px 14px;border-radius:10px;cursor:pointer}
+.rg-dlg .bx-btn.rg-ok{background:#1D9BCF;border-color:#1D9BCF;color:#fff}
+.rg-dlg .bx-btn:disabled{opacity:.6;cursor:default}
+html.dark-mode .rg-dlg .bx-btn{background:#152634;border-color:#22384A;color:#E6EEF5}
+html.dark-mode .rg-dlg .bx-btn.rg-ok{background:#3BB8EA;border-color:#3BB8EA;color:#072B40}

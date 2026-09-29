@@ -1,0 +1,5 @@
+[
+  {"id":"2026-09-notification-centre","title":"New: notification centre","body":"The bell in the header now collects announcements from admins, what's new in the tool, assessment updates and items meant just for you. Use Filter to hide categories you do not need.","category":"update"},
+  {"id":"2026-09-assessment-reviewers","title":"Assessments: reviewers per assessment","body":"Admins can now choose who reviews each assessment, and approve people as assessment-only guests.","category":"update","audience":"admins"},
+  {"id":"2026-09-assessment-alerts","title":"Assessments: alerts when something is assigned","body":"You now get a bell alert when an assessment is assigned, retested, about to close, or has results ready.","category":"assessments"}
+]

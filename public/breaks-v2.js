@@ -316,6 +316,7 @@
         </section>
       </div>
       ${teamHTML(team)}
+      ${window.RegUI ? window.RegUI.agentBar() : ''}
       <section class="bx-card" aria-label="Today's log">
         <div class="bx-pad bx-strong" style="padding-bottom:0">Today's log</div>
         ${log.length ? `<div class="bx-scroll"><table class="bx-table"><thead><tr><th>Time</th><th>What</th><th>Duration</th><th>Note</th></tr></thead><tbody>
@@ -450,6 +451,7 @@
         </div>
       </div>
       ${planEditor ? planEditorHTML() : ''}
+      ${window.RegUI ? window.RegUI.adminCard() : ''}
       <div class="bx-kpis">
         ${kpi('Logged in', byLane.live.length)}
         ${kpi('On break', byLane.break.length, byLane.break.map(r => e(String(r.username).split(' ')[0])).join(', '))}
@@ -551,6 +553,7 @@
 
   window.renderBreaksV2 = function () {
     loadLimits(); loadMonitored(); loadPlans();
+    if (window.RegUI) window.RegUI.load();
     if (g('view', 'admin') === 'agent') loadHistory();
     render();
   };
