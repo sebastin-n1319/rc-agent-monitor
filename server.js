@@ -516,6 +516,13 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     await deskLifecycle.initSchema();
     console.log('🎫 Desk lifecycle schema ready');
   } catch(e) { log.error('desk_lifecycle_init_failed', e); console.error('desk_lifecycle_init_failed', e); }
+  // Session 56: Assessments (/assess).
+  try {
+    const { db } = require('./database');
+    assessments.setDB(db);
+    await assessments.initSchema();
+    console.log('📝 Assessments schema ready');
+  } catch(e) { log.error('assessments_init_failed', e); console.error('assessments_init_failed', e); }
   // Session 21: chat (Zoho SalesIQ) lifecycle module bootstrap -- fully
   // separate tables/module, same pattern as desk-lifecycle.js above.
   try {
@@ -592,6 +599,37 @@ const BREAK_DAY_LIMIT_M  = 60;         // minutes, total break per day
 
 // ── Auth middleware (SEC-1 + SEC-2) ──────────────────────────────────────────
 // requireAuth: validates session cookie; attaches session to req.session
+// Session 56: who counts as a member of this tool. Anyone else with an
+// @adit.com Google account can still sign in, but only to the Assessments
+// page (/assess): every other API refuses them. Members are anyone in
+// app_roles (the Access tab), a monitored RingCentral agent, an active
+// roster agent, a known team lead/admin (AGENT_SHEET_NAMES) or a test
+// account. Cached for a minute.
+let _memberCache = { at: 0, set: null };
+async function toolMemberSet() {
+  if (_memberCache.set && Date.now() - _memberCache.at < 60000) return _memberCache.set;
+  const set = new Set();
+  const add = (e) => { const v = String(e || '').trim().toLowerCase(); if (v) set.add(v); };
+  const { db } = require('./database');
+  const q = (sql) => new Promise((rs) => db.all(sql, [], (e, rows) => rs(e ? [] : rows || [])));
+  for (const r of await q(`SELECT email FROM app_roles`)) add(r.email);
+  for (const r of await q(`SELECT email FROM monitored_agents WHERE email IS NOT NULL`)) add(r.email);
+  for (const r of await q(`SELECT email FROM roster_agents WHERE email IS NOT NULL AND COALESCE(status,'active') = 'active'`)) add(r.email);
+  for (const e of Object.keys(AGENT_SHEET_NAMES)) add(e);
+  for (const e of TEST_ACCOUNTS) add(e);
+  _memberCache = { at: Date.now(), set };
+  return set;
+}
+async function isToolMember(email) {
+  try { return (await toolMemberSet()).has(String(email || '').trim().toLowerCase()); }
+  catch (e) { return true; } // never lock members out on a lookup error
+}
+async function sessionRoleFor(email) {
+  if (!(await isToolMember(email))) return { role: 'assessment', breakbotEnabled: false };
+  const settings = await getRoleSettingsForEmail(email).catch(() => null);
+  return { role: settings?.role || 'agent', breakbotEnabled: settings ? settings.breakbotEnabled !== false : true };
+}
+
 async function requireAuth(req, res, next) {
   try {
     const token = req.cookies[SESSION_COOKIE];
@@ -599,6 +637,10 @@ async function requireAuth(req, res, next) {
     const session = await getAppSession(token);
     if (!session) return res.status(401).json({ success: false, error: 'Session expired, please sign in again' });
     req.session = session;
+    // Session 56: people outside the tool only reach /api/assess/*.
+    if (!String(req.path || '').startsWith('/api/assess/') && !(await isToolMember(session.email))) {
+      return res.status(403).json({ success: false, assessmentOnly: true, error: 'This account can only use the Assessments page.' });
+    }
     next();
   } catch(e) { res.status(500).json({ success: false, error: 'Auth check failed' }); }
 }
@@ -1202,12 +1244,8 @@ app.get('/api/role-check', rateLimit(20, 60000), async (req, res) => {
     return res.status(403).json({ success: false, error: 'Domain not permitted' });
   }
   try {
-    const settings = await getRoleSettingsForEmail(email);
-    res.json({
-      success: true,
-      role: settings?.role || 'agent',
-      breakbotEnabled: settings ? settings.breakbotEnabled : true
-    });
+    const r = await sessionRoleFor(email); // Session 56
+    res.json({ success: true, role: r.role, breakbotEnabled: r.breakbotEnabled });
   }
   catch(e) { res.status(500).json({ success: false, error: 'Role check failed' }); }
 });
@@ -1269,10 +1307,9 @@ app.post('/api/session', async (req, res) => {
         }
       }).catch(() => {});
     }
-    // Look up role, default to 'agent' if not in app_roles yet
-    const settings = await getRoleSettingsForEmail(email).catch(() => null);
-    const role = settings?.role || 'agent';
-    const breakbotEnabled = settings ? settings.breakbotEnabled !== false : true;
+    // Look up role, default to 'agent' if not in app_roles yet.
+    // Session 56: people outside the tool get 'assessment' (/assess only).
+    const { role, breakbotEnabled } = await sessionRoleFor(email);
     res.json({ success: true, role, breakbotEnabled });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -1285,9 +1322,7 @@ app.get('/api/session', async (req, res) => {
     const session = await getAppSession(token); // also rolls expiry
     if (!session) return res.json({ success: false });
     // Look up role, default to 'agent' if not in app_roles (don't block the session)
-    const settings = await getRoleSettingsForEmail(session.email).catch(() => null);
-    const role = settings?.role || 'agent';
-    const breakbotEnabled = settings ? settings.breakbotEnabled !== false : true;
+    const { role, breakbotEnabled } = await sessionRoleFor(session.email); // Session 56
     setCookieToken(res, token); // refresh cookie max-age
     res.json({
       success: true,
@@ -1473,6 +1508,80 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 });
 
 // ── Session 50: Google Chat report composer (preview, send, schedules) ──
+// ── Session 56: Assessments (/assess) ─────────────────────────────────
+// A standalone page anyone in the org can sign in to. Takers only see
+// tests assigned to them; reviewers (assess_reviewers, not the same as
+// admin) see results, answer keys and integrity logs.
+const assessments = require('./lib/assessments');
+app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
+async function requireReviewer(req, res, next) {
+  try {
+    if (!(await assessments.isReviewer(req.session.email))) return res.status(403).json({ success: false, error: 'Reviewer access required' });
+    next();
+  } catch (e) { res.status(500).json({ success: false, error: 'Reviewer check failed' }); }
+}
+const assessErr = (res, e) => res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Something went wrong', code: e.code || null });
+const assessToken = (req) => String(req.get('x-assess-token') || '');
+app.get('/api/assess/me', requireAuth, async (req, res) => {
+  try {
+    res.json({ success: true, email: req.session.email, name: req.session.name, picture: req.session.picture,
+      member: await isToolMember(req.session.email), reviewer: await assessments.isReviewer(req.session.email),
+      tests: await assessments.myTests(req.session.email) });
+  } catch (e) { assessErr(res, e); }
+});
+app.post('/api/assess/tests/:id/start', requireAuth, rateLimit(10, 60000), async (req, res) => {
+  try { res.json({ success: true, ...(await assessments.startAttempt({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent') })) }); }
+  catch (e) { assessErr(res, e); }
+});
+app.get('/api/assess/attempts/:id/current', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try { res.json({ success: true, ...(await assessments.current({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) })) }); }
+  catch (e) { assessErr(res, e); }
+});
+app.post('/api/assess/attempts/:id/answer', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try {
+    const b = req.body || {};
+    res.json({ success: true, ...(await assessments.answer({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, choice: b.choice, text: b.text, replays: b.replays })) });
+  } catch (e) { assessErr(res, e); }
+});
+app.post('/api/assess/attempts/:id/events', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try { res.json({ success: true, logged: await assessments.clientEvents({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), events: (req.body || {}).events }) }); }
+  catch (e) { assessErr(res, e); }
+});
+app.get('/api/assess/admin/tests', requireAuth, requireReviewer, async (req, res) => {
+  try { res.json({ success: true, tests: await assessments.adminTests() }); } catch (e) { assessErr(res, e); }
+});
+app.put('/api/assess/admin/tests/:id', requireAuth, requireReviewer, async (req, res) => {
+  try { await assessments.updateTest(req.params.id, req.body || {}); res.json({ success: true }); } catch (e) { assessErr(res, e); }
+});
+app.get('/api/assess/admin/tests/:id/attempts', requireAuth, requireReviewer, async (req, res) => {
+  try { res.json({ success: true, attempts: await assessments.adminAttempts(req.params.id) }); } catch (e) { assessErr(res, e); }
+});
+app.get('/api/assess/admin/tests/:id/export', requireAuth, requireReviewer, async (req, res) => {
+  try {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="assessment-${Number(req.params.id)}-results.csv"`);
+    res.send(await assessments.exportCsv(req.params.id));
+  } catch (e) { assessErr(res, e); }
+});
+app.get('/api/assess/admin/attempts/:id', requireAuth, requireReviewer, async (req, res) => {
+  try { res.json({ success: true, attempt: await assessments.adminAttemptDetail(req.params.id) }); } catch (e) { assessErr(res, e); }
+});
+app.put('/api/assess/admin/attempts/:id/explain/:idx', requireAuth, requireReviewer, async (req, res) => {
+  try { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); } catch (e) { assessErr(res, e); }
+});
+app.delete('/api/assess/admin/attempts/:id', requireAuth, requireReviewer, async (req, res) => {
+  try { await assessments.deleteAttempt(req.params.id); res.json({ success: true }); } catch (e) { assessErr(res, e); }
+});
+app.get('/api/assess/admin/reviewers', requireAuth, requireReviewer, async (req, res) => {
+  try { res.json({ success: true, reviewers: await assessments.listReviewers() }); } catch (e) { assessErr(res, e); }
+});
+app.post('/api/assess/admin/reviewers', requireAuth, requireReviewer, async (req, res) => {
+  try { await assessments.addReviewer((req.body || {}).email, req.session.email); res.json({ success: true }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
+app.delete('/api/assess/admin/reviewers/:email', requireAuth, requireReviewer, async (req, res) => {
+  try { await assessments.removeReviewer(req.params.email); res.json({ success: true }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
+});
+
 const { createChatReports } = require('./lib/chat-reports');
 let _chatReports = null;
 function chatReports() {

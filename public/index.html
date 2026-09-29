@@ -37,7 +37,8 @@
 </script>
 <!-- Session 37: global 401 handler -- catches a dead server session
      (see session-guard.js) before every module downstream has to. -->
-<script src="/session-guard.js?v=1.0.1"></script>
+<script src="/session-guard.js?v=1.0.2"></script>
+<script>try{ if(new URLSearchParams(location.search).get('next') === '/assess') sessionStorage.setItem('rcNext','/assess'); }catch(e){}</script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.103" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.8" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css?v=1.19.8" id="alert-center-link">
@@ -4341,6 +4342,10 @@ function configureAgentBreakbotAccess(){
 }
 
 function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false){
+  // Session 56: accounts outside the tool only get the Assessments page,
+  // and a sign-in that started from /assess goes back there.
+  if(role === 'assessment'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} window.location.replace('/assess'); return; }
+  try{ if(sessionStorage.getItem('rcNext') === '/assess'){ sessionStorage.removeItem('rcNext'); window.location.replace('/assess'); return; } }catch(e){}
   // DO NOT clear rcActiveView here, agents need it to restore their last page.
   // We only override it if the stored view doesn't match the user's role
   // (e.g. admin logged in, last session was agent view, keep admin default).
@@ -7691,6 +7696,7 @@ async function loadSession(){
           .then(r => r.json())
           .then(s => {
             if(s.success && s.role){
+              if(s.role === 'assessment'){ try{ localStorage.removeItem('rcSession'); }catch(_){} window.location.replace('/assess'); return; }
               if(s.role !== cached.role) sessionStorage.setItem('rcRole', s.role);
               try{ localStorage.setItem('rcSession', JSON.stringify({
                 name:s.name||cached.name, role:s.role, email:s.email||cached.email,

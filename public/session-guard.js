@@ -80,6 +80,11 @@
         var url = typeof input === 'string' ? input : (input && input.url) || '';
         if (response && response.status === 401 && isGuardedApiPath(url)) {
           handleExpired();
+        } else if (response && response.status === 403 && isGuardedApiPath(url) && window.location.pathname.indexOf('/assess') !== 0) {
+          // Session 56: an account outside the tool can only use /assess.
+          response.clone().json().then(function (b) {
+            if (b && b.assessmentOnly) window.location.replace('/assess');
+          }).catch(function () {});
         }
       } catch (e) { /* never let the guard break a real request */ }
       return response;
