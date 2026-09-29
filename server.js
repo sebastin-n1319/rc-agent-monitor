@@ -159,7 +159,7 @@ app.use((req, res, next) => {
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
     "media-src 'self' blob:",
-    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://people.googleapis.com https://nominatim.openstreetmap.org https://desk.zoho.com https://accounts.zoho.com",
+    "connect-src 'self' https://cdn.jsdelivr.net https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://people.googleapis.com https://nominatim.openstreetmap.org https://desk.zoho.com https://accounts.zoho.com",
     "frame-src 'self' https://accounts.google.com",
     "object-src 'none'",
     "base-uri 'self'"
@@ -1611,19 +1611,23 @@ app.get('/api/assess/me', requireAuth, assessWrap(async (req, res) => {
 app.post('/api/assess/tests/:id/start', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, ...(await assessments.startAttempt({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent') })) });
 }));
-app.get('/api/assess/attempts/:id/current', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
+app.get('/api/assess/attempts/:id/current', requireAuth, requireAssessAccess, rateLimit(120, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, ...(await assessments.current({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) })) });
 }));
-app.post('/api/assess/attempts/:id/answer', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
+app.post('/api/assess/attempts/:id/answer', requireAuth, requireAssessAccess, rateLimit(180, 60000), assessWrap(async (req, res) => {
   const b = req.body || {};
-  res.json({ success: true, ...(await assessments.answer({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, choice: b.choice, text: b.text, replays: b.replays })) });
+  res.json({ success: true, ...(await assessments.answer({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, choice: b.choice, text: b.text, replays: b.replays, go: b.go, flag: typeof b.flag === 'boolean' ? b.flag : undefined })) });
+}));
+// Session 62: time-bank mode, final submit from the review screen
+app.post('/api/assess/attempts/:id/submit', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
+  res.json({ success: true, ...(await assessments.submitAll({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) })) });
 }));
 app.post('/api/assess/attempts/:id/events', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, logged: await assessments.clientEvents({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), events: (req.body || {}).events }) });
 }));
 app.post('/api/assess/attempts/:id/snapshot', requireAuth, requireAssessAccess, rateLimit(20, 60000), assessWrap(async (req, res) => {
   const b = req.body || {};
-  res.json({ success: true, saved: await assessments.saveSnapshot({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, image: b.image }) });
+  res.json({ success: true, saved: await assessments.saveSnapshot({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, image: b.image, faces: Number.isInteger(b.faces) ? b.faces : undefined }) });
 }));
 
 // Session 60: wiring for Google Chat posts, mentions and the scheduler.
@@ -1688,7 +1692,13 @@ app.get('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => 
 app.put('/api/assess/admin/attempts/:id/review', ...RV, assessWrap(async (req, res) => { await assessments.reviewAttempt(req.params.id, req.body || {}, req.session.email); res.json({ success: true }); }));
 app.post('/api/assess/admin/attempts/:id/explain/:idx/suggest', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.suggestMark({ attemptId: req.params.id, idx: req.params.idx, ai: require('./lib/ai') })) })));
 app.put('/api/assess/admin/attempts/:id/explain/:idx', ...RV, assessWrap(async (req, res) => { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); }));
-app.delete('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => { await assessments.deleteAttempt(req.params.id); res.json({ success: true }); }));
+app.delete('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => { await assessments.deleteAttempt(req.params.id); insertAuditLog(req.session.email, 'assess_attempt_deleted', String(req.params.id)).catch(() => {}); res.json({ success: true }); }));
+// Session 62: soft reset, the person can take it again and the old attempt stays marked Reset
+app.post('/api/assess/admin/attempts/:id/reset', ...RV, assessWrap(async (req, res) => {
+  const r = await assessments.resetAttempt(req.params.id, req.session.email, (req.body || {}).note);
+  insertAuditLog(req.session.email, 'assess_attempt_reset', r.email, `attempt:${req.params.id}`).catch(() => {});
+  res.json({ success: true, ...r });
+}));
 // Session 59: camera photos are visible to the owner only (not every reviewer).
 function requireAssessOwner(req, res, next) {
   if (!assessments.isOwner(req.session.email)) return res.status(403).json({ success: false, error: 'Only the owner can see camera photos' });

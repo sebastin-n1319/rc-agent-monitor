@@ -126,6 +126,14 @@
   function errBox(msg) { return h('div', { class: 'alert', role: 'alert' }, [icon('warn'), h('span', { text: msg })]); }
   function initials(s) { return String(s || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(function (x) { return x[0].toUpperCase(); }).join(''); }
   function pill(text, cls, dot) { return h('span', { class: 'pill' + (cls ? ' ' + cls : '') }, [dot ? h('span', { class: 'dot' }) : null, text]); }
+  // Session 62: numbers that count up when they appear (off with reduced motion)
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function countUp(el, to, suffix) {
+    suffix = suffix || '';
+    if (REDUCED || !isFinite(to)) { el.textContent = to + suffix; return; }
+    var t0 = performance.now(), dur = 700;
+    (function step(now) { var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e) + suffix; if (k < 1) requestAnimationFrame(step); })(t0);
+  }
   function tierPill(t) { var x = TIER[t]; return x ? pill(x[0], x[1], true) : pill('Not finished', ''); }
   function pageHead(title, sub, acts, crumb) {
     return h('div', null, [
@@ -363,7 +371,8 @@
   // ── Taker: home ──────────────────────────────────────────────────────
   function viewHome() {
     var first = String(me.name || '').split(' ')[0];
-    main.appendChild(pageHead(first ? 'Hi ' + first + ', here are your assessments' : 'My assessments', 'Each question is timed and answers lock when you move on. Start when you have a quiet 15 minutes.'));
+    var hero = h('div', { class: 'hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'My assessments' }), h('h1', { text: first ? 'Hi ' + first + ', ready when you are' : 'Your assessments' }), h('p', { text: 'Every question is timed. Find a quiet spot, use a computer, and give yourself about 15 minutes.' })]), h('div', { class: 'hero-stats', id: 'hero-stats' })]);
+    main.appendChild(hero);
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/me').then(function (j) {
       me.tests = j.tests; clear(holder);
@@ -371,7 +380,12 @@
         holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('b', { text: 'Nothing assigned right now' }), h('span', { text: 'When your lead assigns an assessment, it will appear here.' })]));
         return;
       }
-      var grid = h('div', { class: 'grid-cards' });
+      var hs = document.getElementById('hero-stats');
+      if (hs) {
+        var todo = j.tests.filter(function (t) { return !t.last && !t.inProgress && t.canStart; }).length, prog = j.tests.filter(function (t) { return t.inProgress; }).length, doneN = j.tests.filter(function (t) { return t.last; }).length;
+        [[todo, 'To do'], [prog, 'In progress'], [doneN, 'Done']].forEach(function (x) { var b = h('b', { text: '0' }); hs.appendChild(h('div', { class: 'hs' }, [b, h('span', { text: x[1] })])); countUp(b, x[0]); });
+      }
+      var grid = h('div', { class: 'grid-cards stagger' });
       j.tests.forEach(function (t) {
         var status = t.inProgress ? pill('In progress', 'warn', true) : t.windowState === 'upcoming' ? pill('Opens ' + fmtWhen(t.opensAt), '', true)
           : (t.last ? pill('Completed', 'ok', true) : t.windowState === 'closed' ? pill('Closed', 'bad', true) : pill('Not started', 'accent', true));
@@ -381,11 +395,12 @@
           : (!t.last && t.closesAt && t.windowState === 'open' ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Due by ' + fmtWhen(t.closesAt) }) : null);
         var result = null;
         if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
-        grid.appendChild(h('div', { class: 'card tcard' }, [
+        var tone = t.inProgress ? 'warn' : (t.last ? 'ok' : (t.canStart ? 'accent' : 'mute'));
+        grid.appendChild(h('div', { class: 'card tcard tone-' + tone }, [
           h('div', { class: 'top' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('div', { style: 'flex:1;min-width:0' }, [h('h2', { text: t.title }), t.description ? h('p', { text: t.description }) : null]), status]),
           h('dl', { class: 'facts' }, [
             h('div', null, [h('dt', { text: 'Questions' }), h('dd', { text: String(t.questions + (t.explainCount ? ' + ' + t.explainCount : '')) })]),
-            h('div', null, [h('dt', { text: 'Per question' }), h('dd', { text: t.secondsPerQuestion + 's' })]),
+            h('div', null, [h('dt', { text: t.navigation === 'locked' ? 'Per question' : 'Clock each' }), h('dd', { text: t.secondsPerQuestion + 's' })]),
             h('div', null, [h('dt', { text: 'About' }), h('dd', { text: t.estMinutes + ' min' })]),
           ]),
           result, due,
@@ -471,16 +486,20 @@
       var modeRule = t.displayMode === 'audio' ? ['headphones', 'Questions are read aloud', 'Each question plays as audio; only the answer options are on screen. Use headphones. Play it again as often as you need; replays are noted.']
         : t.displayMode === 'full' ? ['eye', 'One question at a time', 'Read the question, pick your answer and submit.']
         : ['eye', 'Questions reveal a few words at a time', 'Each question plays once as short groups of words. Replay it from the start as often as you need; replays are noted.'];
+      var bankMode = t.navigation !== 'locked';
       var rules = [
         modeRule,
-        ['clock', t.secondsPerQuestion + ' seconds per question', 'When time runs out, whatever you selected is submitted and the next question opens.'],
-        ['lock', 'No going back', 'Answers lock when you submit, so take the time you need on each one.'],
+        bankMode ? ['clock', 'Each question has its own ' + t.secondsPerQuestion + '-second clock', 'The clock only runs while that question is open. When it reaches zero, your answer is saved and that question locks.']
+          : ['clock', t.secondsPerQuestion + ' seconds per question', 'When time runs out, whatever you selected is submitted and the next question opens.'],
+        bankMode ? ['arrowL', 'Go back and change answers', 'Use Previous, Next or the question numbers at the top. You can reopen any question that still has time left. Flag the ones you want to check again.']
+          : ['lock', 'No going back', 'Answers lock when you submit, so take the time you need on each one.'],
+        bankMode ? ['list', 'Review before you submit', 'A review screen shows what is answered, flagged or still to do. Nothing is final until you press Submit test.'] : null,
         ['hourglass', 'Finish in one sitting', 'If you close the test, you can resume it, but only for a limited time: about ' + (t.estMinutes + t.abandonGraceMin) + ' minutes from when you start' + (t.closesAt ? ', and never after it closes' : '') + '. After that it is submitted automatically and any unanswered questions count as wrong.'],
         ['expand', 'Stay in full screen', 'The test runs in full screen. Leaving it, switching tabs, or pasting is noted for your reviewer.'],
       ];
       if (t.explainCount) rules.push(['pen', 'Explain in your own words', 'At the end you explain one of your answers. Typing only; pasting is turned off.']);
-      if (t.camera) rules.push(['camera', 'Camera photos', 'Your camera takes a photo every ' + t.snapshotSec + ' seconds while the test is open. Only the assessment owner can see them, and they are deleted automatically.']);
-      card.appendChild(h('ul', { class: 'rules' }, rules.map(function (r) { return h('li', null, [h('span', { class: 'ic' }, [icon(r[0])]), h('div', null, [h('b', { text: r[1] }), h('span', { text: r[2] })])]); })));
+      if (t.camera) rules.push(['camera', 'Camera and face check', 'Your camera takes a photo every ' + t.snapshotSec + ' seconds, and checks on your own device that your face is in view and that no one else is. Only the assessment owner can see the photos, and they are deleted automatically.']);
+      card.appendChild(h('ul', { class: 'rules stagger' }, rules.filter(Boolean).map(function (r) { return h('li', null, [h('span', { class: 'ic' }, [icon(r[0])]), h('div', null, [h('b', { text: r[1] }), h('span', { text: r[2] })])]); })));
       if (t.displayMode === 'fade') {
         var box = h('div', { class: 'demo' });
         var play = h('button', { class: 'btn sm', type: 'button' }, [icon('replay', 'sm'), 'Try the reading style']);
@@ -532,12 +551,37 @@
         var cr = row('camera', 'Camera', 'Needed for this assessment. A photo is taken every ' + t.snapshotSec + ' seconds. Only the assessment owner can see them.');
         var btn = h('button', { class: 'btn sm', type: 'button', text: 'Allow camera' });
         cr.extra.appendChild(btn);
+        var faceLoop = null, okRuns = 0;
         function showPreview() {
           clear(cr.extra);
           var v = h('video', { class: 'cam-preview', autoplay: true, muted: true, playsinline: true });
-          v.srcObject = cam.stream; cr.extra.appendChild(v);
-          cr.set('ok', 'Camera is on. Make sure your face is clearly visible.', 'check');
-          need.cam = true; sync();
+          v.srcObject = cam.stream;
+          var pl = v.play && v.play(); if (pl && pl.catch) pl.catch(function () {});
+          var frame = h('div', { class: 'cam-frame' }, [v, h('span', { class: 'cam-ring' })]);
+          cr.extra.appendChild(frame);
+          cr.set('warn', 'Looking for your face… Sit facing the screen with light on your face.', 'camera');
+          need.cam = false; sync();
+          function loop() {
+            clearInterval(faceLoop);
+            faceLoop = setInterval(function () {
+              if (!document.body.contains(v)) { clearInterval(faceLoop); return; }
+              var r = FaceWatch.check(v); if (!r) return;
+              frame.className = 'cam-frame ' + r.status;
+              if (r.status === 'ok') { okRuns++; if (okRuns >= 2 && !need.cam) { cr.set('ok', 'Face found. Keep your face in view during the test; the check runs on this device only.'); need.cam = true; sync(); } }
+              else {
+                okRuns = 0;
+                if (r.status === 'dark') cr.set('bad', 'The camera looks covered or too dark. Uncover it or add some light.', 'camera');
+                else if (r.status === 'multi') cr.set('warn', 'More than one face is in view. Only you should be at the screen.', 'camera');
+                else if (r.status === 'none') cr.set('warn', 'We cannot see your face yet. Move so your face is in the frame.', 'camera');
+                if (need.cam && r.status !== 'unknown') { need.cam = false; sync(); }
+              }
+            }, 700);
+          }
+          FaceWatch.load().then(loop).catch(function () {
+            // The detector could not load (old browser or blocked network): continue with photos only
+            cr.set('ok', 'Camera is on. The face check is not available on this device, so photos are used instead.', 'check');
+            need.cam = true; sync();
+          });
         }
         if (cam.ok && cam.stream) showPreview();
         btn.addEventListener('click', function () {
@@ -596,10 +640,50 @@
   function startWatermark() { wm.on = true; document.getElementById('as-wm').classList.add('on'); drawWatermark(); clearInterval(wm.timer); wm.timer = setInterval(drawWatermark, 60000); window.addEventListener('resize', drawWatermark); }
   function stopWatermark() { wm.on = false; document.getElementById('as-wm').classList.remove('on'); clearInterval(wm.timer); window.removeEventListener('resize', drawWatermark); }
 
+  // ── Face check (Session 62) ──────────────────────────────────────────
+  // Runs on the agent's own device with MediaPipe's BlazeFace model: no
+  // video leaves the browser. It answers three questions about each frame:
+  // is there a face, is there more than one, is the camera covered or dark.
+  var MP_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/';
+  var FaceWatch = (function () {
+    var st = { det: null, loading: null, failed: false };
+    var probe = document.createElement('canvas'); probe.width = 32; probe.height = 24;
+    function load() {
+      if (st.loading) return st.loading;
+      st.loading = import(MP_CDN + 'vision_bundle.mjs').then(function (v) {
+        return v.FilesetResolver.forVisionTasks(MP_CDN + 'wasm').then(function (fs) {
+          return v.FaceDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: '/vendor/face/blaze_face_short_range.tflite' }, runningMode: 'VIDEO', minDetectionConfidence: 0.65 });
+        });
+      }).then(function (d) { st.det = d; return d; }).catch(function (e) { st.failed = true; try { console.warn('Face check unavailable:', e && e.message); } catch (x) {} throw e; });
+      return st.loading;
+    }
+    function brightness(video) {
+      try {
+        var c = probe.getContext('2d', { willReadFrequently: true });
+        c.drawImage(video, 0, 0, 32, 24);
+        var d = c.getImageData(0, 0, 32, 24).data, sum = 0;
+        for (var i = 0; i < d.length; i += 4) sum += d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+        return sum / (d.length / 4);
+      } catch (e) { return null; }
+    }
+    var lastTs = 0;
+    function check(video) {
+      if (!video || video.readyState < 2 || !video.videoWidth) return null;
+      var lum = brightness(video);
+      if (lum != null && lum < 14) return { status: 'dark', faces: 0 };
+      if (!st.det) return { status: 'unknown', faces: null };
+      var ts = Math.max(performance.now(), lastTs + 1); lastTs = ts;
+      try { var n = st.det.detectForVideo(video, ts).detections.length; return { status: n === 0 ? 'none' : (n > 1 ? 'multi' : 'ok'), faces: n }; }
+      catch (e) { return { status: 'unknown', faces: null }; }
+    }
+    return { load: load, check: check, ready: function () { return !!st.det; }, failed: function () { return st.failed; } };
+  })();
+  var FACE_TEXT = { ok: 'Face in view', none: 'We cannot see you', multi: 'More than one face', dark: 'Camera covered', unknown: 'Camera on' };
+
   // ── Exam runner ──────────────────────────────────────────────────────
   function runExam(start, test) {
     var token = start.token, attemptId = start.attemptId, s = start.settings;
-    var evQueue = [], curIdx = null, tick = 0, reader = null, busy = false, ended = false, snapTimer = null, qState = null;
+    var evQueue = [], curIdx = null, tick = 0, reader = null, busy = false, ended = false, snapTimer = null, faceTimer = null, qState = null, prevIdx = -1;
     document.body.classList.add('as-exam');
     if (s.watermark === 'subtle') startWatermark();
     clear(main);
@@ -614,16 +698,52 @@
     }
     var flushTimer = setInterval(flush, 4000);
 
-    // Camera snapshots
+    // Camera snapshots and the on-device face check
     var snapCanvas = document.createElement('canvas'); snapCanvas.width = 320; snapCanvas.height = 240;
-    var camVideo = null;
+    var camVideo = null, lastFaces = null;
+    var face = { status: 'unknown', since: Date.now(), episode: null };
+    var faceChip = null, faceBanner = null;
     function snap() {
       if (!camVideo || !cam.stream) return;
       try {
         snapCanvas.getContext('2d').drawImage(camVideo, 0, 0, 320, 240);
         var data = snapCanvas.toDataURL('image/jpeg', 0.6);
-        api('/api/assess/attempts/' + attemptId + '/snapshot', { method: 'POST', token: token, body: { idx: curIdx, image: data } }).catch(function () {});
+        api('/api/assess/attempts/' + attemptId + '/snapshot', { method: 'POST', token: token, body: { idx: curIdx, image: data, faces: lastFaces } }).catch(function () {});
       } catch (e) {}
+    }
+    function paintFace() {
+      if (faceChip) { faceChip.className = 'facechip ' + face.status; faceChip.lastChild.textContent = FACE_TEXT[face.status] || 'Camera on'; }
+    }
+    function showFaceBanner(kind) {
+      hideFaceBanner();
+      var msg = kind === 'multi' ? 'More than one face is in view. Only you should be at the screen during the test.'
+        : kind === 'dark' ? 'Your camera looks covered or too dark. Uncover it or turn on a light.'
+        : 'We cannot see your face. Sit facing the screen with your face in view.';
+      faceBanner = h('div', { class: 'facebar ' + kind, role: 'alert' }, [icon('camera', 'sm'), h('span', { text: msg + ' This is noted for your reviewer.' })]);
+      exam.insertBefore(faceBanner, exam.children[1] || null);
+    }
+    function hideFaceBanner() { if (faceBanner) { faceBanner.remove(); faceBanner = null; } }
+    function faceTick() {
+      var r = FaceWatch.check(camVideo); if (!r) return;
+      lastFaces = r.faces;
+      var now = Date.now();
+      if (r.status !== face.status) { face.status = r.status; face.since = now; paintFace(); }
+      var bad = r.status === 'none' || r.status === 'multi' || r.status === 'dark';
+      var dur = now - face.since;
+      if (bad && !face.episode && dur >= (r.status === 'multi' ? 1500 : 3000)) {
+        face.episode = { type: r.status, at: face.since };
+        ev(r.status === 'none' ? 'face_missing' : (r.status === 'multi' ? 'face_multi' : 'camera_dark'), r.status === 'multi' ? r.faces + ' faces' : '');
+        showFaceBanner(r.status);
+      } else if (bad && face.episode && face.episode.type !== r.status && dur >= 3000) {
+        // changed from one problem to another, e.g. covered, then no face
+        face.episode = { type: r.status, at: face.episode.at };
+        ev(r.status === 'none' ? 'face_missing' : (r.status === 'multi' ? 'face_multi' : 'camera_dark'), r.status === 'multi' ? r.faces + ' faces' : '');
+        showFaceBanner(r.status);
+      }
+      if (face.episode && r.status === 'ok') {
+        ev('face_back', 'after ' + Math.round((now - face.episode.at) / 1000) + 's');
+        face.episode = null; hideFaceBanner();
+      }
     }
     function startCamera() {
       if (!s.camera) return Promise.resolve();
@@ -631,10 +751,15 @@
       return p.then(function (st) {
         cam.stream = st; cam.ok = true;
         camVideo = h('video', { autoplay: true, muted: true, playsinline: true }); camVideo.srcObject = st;
+        var pl = camVideo.play && camVideo.play(); if (pl && pl.catch) pl.catch(function () {});
         st.getVideoTracks().forEach(function (tr) { tr.addEventListener('ended', function () { ev('camera_off', 'Camera track ended'); }); });
         ev('camera_on');
         setTimeout(snap, 1500);
         snapTimer = setInterval(snap, s.snapshotSec * 1000);
+        FaceWatch.load().then(function () { faceTimer = setInterval(faceTick, 1000); }).catch(function () {
+          ev('face_check_off', 'The face check could not load on this device');
+          faceTimer = setInterval(faceTick, 1500); // still catches a covered camera
+        });
       }).catch(function () { ev('camera_denied'); });
     }
 
@@ -650,18 +775,21 @@
       if (mod && (k === 'c' || k === 'x') && !e.shiftKey) { e.preventDefault(); ev('copy', 'keyboard'); }
       if (mod && k === 'v') { e.preventDefault(); ev('paste', 'keyboard'); toast('Pasting is turned off during the test.'); }
       if (mod && k === 'a' && !(e.target && e.target.tagName === 'TEXTAREA')) e.preventDefault();
-      if (e.target && e.target.tagName === 'TEXTAREA') return;
+      var tag = e.target && e.target.tagName;
+      if (tag === 'TEXTAREA' || tag === 'SELECT') return;
       if (!qState) return;
       var n = parseInt(e.key, 10);
       if (n >= 1 && qState.choose && n <= qState.nOpts) { qState.choose(n - 1); e.preventDefault(); }
       else if (e.key === 'Enter' && qState.canSubmit()) { e.preventDefault(); qState.submit(false); }
+      else if (qState.bank && e.key === 'ArrowRight' && !mod) { e.preventDefault(); qState.next(); }
+      else if (qState.bank && e.key === 'ArrowLeft' && !mod) { e.preventDefault(); qState.prev(); }
     }
     function onVis() { ev(document.hidden ? 'hidden' : 'visible'); }
     function onBlur() { ev('blur'); }
     var lastOut = 0;
     function onMouseOut(e) { if (!e.relatedTarget && Date.now() - lastOut > 4000) { lastOut = Date.now(); ev('mouse_out'); } }
     function onFs() { if (ended) return; if (!document.fullscreenElement) { ev('fullscreen_exit'); showShield(); } else { ev('fullscreen_enter'); hideShield(); } }
-    function onPop() { history.pushState(null, '', location.href); toast('You cannot go back during the test.'); }
+    function onPop() { history.pushState(null, '', location.href); toast('Use the buttons in the test to move between questions.'); }
     function onUnload() { try { if (evQueue.length) navigator.sendBeacon('/api/assess/attempts/' + attemptId + '/events', new Blob([JSON.stringify({ events: evQueue, token: token })], { type: 'application/json' })); } catch (e) {} }
     function onBefore(e) { if (!ended) { e.preventDefault(); e.returnValue = ''; } }
     var resizeT = 0;
@@ -678,10 +806,10 @@
     function showShield() {
       if (shield) return;
       shield = h('div', { class: 'shield', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'sh-t' }, [h('div', null, [
-        h('div', { class: 'empty', style: 'padding:0;border:0;background:none' }, [h('div', { class: 'ic' }, [icon('expand', 'lg')])]),
+        h('div', { class: 'shield-ic' }, [icon('expand', 'lg')]),
         h('h2', { id: 'sh-t', text: 'Return to full screen' }),
         h('p', { text: 'Your timer is still running. Leaving full screen has been noted.' }),
-        h('button', { class: 'btn primary lg', type: 'button', text: 'Back to the question', onclick: function () { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {}); } }),
+        h('button', { class: 'btn primary lg', type: 'button', text: 'Back to the test', onclick: function () { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {}); } }),
       ])]);
       document.body.appendChild(shield);
       shield.querySelector('button').focus();
@@ -689,7 +817,7 @@
     function hideShield() { if (shield) { shield.remove(); shield = null; } }
 
     function teardown() {
-      ended = true; clearInterval(flushTimer); clearInterval(tick); clearInterval(snapTimer); flush(); stopWatermark(); hideShield();
+      ended = true; clearInterval(flushTimer); clearInterval(tick); clearInterval(snapTimer); clearInterval(faceTimer); clearTimeout(saveT); flush(); stopWatermark(); hideShield();
       if (reader) reader.stop();
       stopCamera(); qState = null;
       document.removeEventListener('copy', onCopy); document.removeEventListener('cut', onCut); document.removeEventListener('paste', onPaste);
@@ -702,7 +830,7 @@
     }
     function exitTo(fn) { teardown(); clear(main); renderNav(''); fn(); }
     function fail(e) {
-      if (e && e.code === 'moved') { load(); return; }
+      if (e && (e.code === 'moved' || e.code === 'out')) { if (e.code === 'out') toast(e.message); load(); return; }
       if (e && e.code === 'finished') { exitTo(function () { doneScreen({ hidden: true }); }); return; }
       exitTo(function () {
         main.appendChild(h('div', { class: 'card gate' }, [h('div', { class: 'ic' }, [icon('warn', 'lg')]), h('h1', { text: e && e.code === 'elsewhere' ? 'Open in another tab' : 'Something went wrong' }), h('p', { text: e && e.message }),
@@ -713,77 +841,118 @@
       clearInterval(tick); if (reader) { reader.stop(); reader = null; }
       api('/api/assess/attempts/' + attemptId + '/current', { token: token }).then(function (q) {
         if (q.done) { exitTo(function () { doneScreen(q.result); }); return; }
-        renderQuestion(q);
+        if (q.review) renderReview(q); else renderQuestion(q);
       }).catch(fail);
     }
     function doneScreen(r) {
       var card = h('div', { class: 'card donecard' });
-      card.appendChild(h('div', { class: 'badge' }, [icon('check', 'lg')]));
+      card.appendChild(h('div', { class: 'badge pop' }, [icon('check', 'lg')]));
       card.appendChild(h('h1', { text: 'Submitted' }));
       if (r && !r.hidden) {
         var C = 2 * Math.PI * 56, off = C * (1 - r.pct / 100);
         var ring = h('div', { class: 'ring', role: 'img', 'aria-label': r.pct + ' percent' });
-        ring.innerHTML = '<svg viewBox="0 0 132 132"><circle class="trk" cx="66" cy="66" r="56"/><circle class="val" cx="66" cy="66" r="56" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg>';
-        ring.appendChild(h('b', { text: r.pct + '%' }));
+        ring.innerHTML = '<svg viewBox="0 0 132 132"><circle class="trk" cx="66" cy="66" r="56"/><circle class="val" cx="66" cy="66" r="56" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + C.toFixed(1) + '"/></svg>';
+        var num = h('b', { text: '0%' }); ring.appendChild(num);
+        if (r.passed) ring.classList.add('pass');
         card.appendChild(ring);
+        requestAnimationFrame(function () { requestAnimationFrame(function () { ring.querySelector('.val').setAttribute('stroke-dashoffset', off.toFixed(1)); countUp(num, r.pct, '%'); }); });
         card.appendChild(h('p', { text: r.score + ' of ' + r.maxScore + ' correct. ' + (r.passed ? 'That is a pass.' : 'The pass mark is ' + r.passPct + '%.') }));
         card.appendChild(h('p', { class: 'small muted', text: 'Written answers are marked by your reviewer and are not in this score.' }));
       } else {
         card.appendChild(h('p', { class: 'muted', text: 'Thanks. Your answers are saved and your reviewer will share the result with you.' }));
       }
       card.appendChild(h('div', { class: 'row', style: 'justify-content:center;margin-top:18px' }, [h('button', { class: 'btn primary', type: 'button', text: 'Back to my assessments', onclick: function () { go(''); } })]));
-      main.appendChild(card);
+      main.appendChild(h('div', { class: 'view' }, [card]));
     }
+
+    // Navigator labels: questions are numbered, written answers are W1, W2
+    function navLabels(nav) {
+      var qn = 0, wn = 0;
+      return nav.map(function (n) { return n.kind === 'explain' ? 'W' + (++wn) : String(++qn); });
+    }
+    function fmtClock(ms) { var t = Math.max(0, Math.ceil(ms / 1000)); var m = Math.floor(t / 60), x = t % 60; return m ? m + ':' + (x < 10 ? '0' : '') + x : x + 's'; }
+
+    // ── Time bank: saving and moving ─────────────────────────────────
+    var saveT = 0;
+    function post(body) { return api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: body }); }
 
     function renderQuestion(q) {
       curIdx = q.idx; busy = false;
-      clear(exam);
+      var bank = !!q.bank;
+      var dir = prevIdx < 0 ? 'first' : (q.idx >= prevIdx ? 'next' : 'prev');
+      prevIdx = q.idx;
+      clear(exam); faceChip = null; faceBanner = null;
       var deadline = Date.now() + q.leftMs, C = 2 * Math.PI * 22, lastAnnounce = null;
+      var labels = bank ? navLabels(q.nav) : null;
+      var otherLeft = bank ? q.nav.reduce(function (t, n) { return t + (n.idx === q.idx ? 0 : n.leftMs); }, 0) : 0;
+
       // Top bar
-      var segs = h('div', { class: 'segs', 'aria-hidden': 'true' });
-      for (var i = 0; i < q.total; i++) segs.appendChild(h('i', { class: (i < q.qCount ? '' : 'w ') + (i < q.idx ? 'done' : (i === q.idx ? 'cur' : '')) }));
-      var timer = h('div', { class: 'timer', role: 'timer', 'aria-label': 'Time left' });
+      var center;
+      if (bank) {
+        center = h('nav', { class: 'qnav', 'aria-label': 'Questions' });
+        q.nav.forEach(function (n, i) {
+          var cls = 'qn' + (n.idx === q.idx ? ' cur' : '') + (n.answered ? ' ans' : '') + (n.flagged ? ' flg' : '') + (n.out ? ' out' : '') + (n.kind === 'explain' ? ' w' : '');
+          var lab = (n.kind === 'explain' ? 'Written answer ' + labels[i].slice(1) : 'Question ' + labels[i]) + (n.answered ? ', answered' : ', not answered') + (n.flagged ? ', flagged' : '') + (n.out ? ', no time left' : ', ' + Math.ceil(n.leftMs / 1000) + ' seconds left');
+          center.appendChild(h('button', { type: 'button', class: cls, 'aria-label': lab, title: lab, 'aria-current': n.idx === q.idx ? 'step' : null, disabled: n.out || n.idx === q.idx ? true : null, onclick: function () { move(n.idx); } }, [h('span', { text: labels[i] })]));
+        });
+        center.appendChild(h('button', { type: 'button', class: 'qn rv', title: 'Review all answers', 'aria-label': 'Review all answers', onclick: function () { move('review'); } }, [icon('list', 'sm')]));
+      } else {
+        center = h('div', { class: 'segs', 'aria-hidden': 'true' });
+        for (var i = 0; i < q.total; i++) center.appendChild(h('i', { class: (i < q.qCount ? '' : 'w ') + (i < q.idx ? 'done' : (i === q.idx ? 'cur' : '')) }));
+      }
+      var timer = h('div', { class: 'timer', role: 'timer', 'aria-label': 'Time left on this question' });
       timer.innerHTML = '<svg viewBox="0 0 52 52"><circle class="trk" cx="26" cy="26" r="22"/><circle class="val" cx="26" cy="26" r="22" stroke-dasharray="' + C.toFixed(2) + '" stroke-dashoffset="0"/></svg>';
       var tNum = h('b'); timer.appendChild(tNum);
       var camEl = null;
-      if (s.camera && camVideo) { var mini = h('video', { autoplay: true, muted: true, playsinline: true }); mini.srcObject = cam.stream; camEl = h('div', { class: 'cam-mini', title: 'Camera on' }, [mini, h('span', { class: 'rec' }), h('span', { text: 'Camera on' })]); }
+      if (s.camera && camVideo) {
+        var mini = h('video', { autoplay: true, muted: true, playsinline: true }); mini.srcObject = cam.stream;
+        faceChip = h('span', { class: 'facechip ' + face.status }, [h('i'), h('span', { text: FACE_TEXT[face.status] })]);
+        camEl = h('div', { class: 'cam-mini', title: 'Camera on' }, [mini, faceChip]);
+      }
+      var totalEl = bank ? h('span', { class: 'tot' }) : null;
+      var qLabel = q.kind === 'explain' ? 'Written answer' : 'Question ' + (bank ? labels[q.idx] : (q.idx + 1)) + ' of ' + q.qCount;
       exam.appendChild(h('div', { class: 'xbar' }, [
-        h('div', { class: 'ttl' }, [h('b', { text: start.title }), h('span', { text: q.kind === 'explain' ? 'Written answer' : 'Question ' + (q.idx + 1) + ' of ' + q.qCount })]),
-        segs,
+        h('div', { class: 'ttl' }, [h('b', { text: start.title }), h('span', null, [qLabel, totalEl ? ' · ' : null, totalEl])]),
+        center,
         h('div', { class: 'right' }, [camEl, timer]),
       ]));
-      var body = h('div', { class: 'xbody xfade' });
+      if (face.episode) showFaceBanner(face.episode.type);
+      var body = h('div', { class: 'xbody slide-' + dir });
       exam.appendChild(body);
-      var submitBtn = h('button', { class: 'btn primary lg', type: 'button', disabled: true }, [q.idx + 1 === q.total ? 'Submit and finish' : 'Submit answer', icon('arrowR', 'sm')]);
-      var selected = [], replays = 0, ta = null, optCanvases = [];
+      var card = h('div', { class: 'qcard' });
+      body.appendChild(card);
+
+      var selected = [], replays = 0, ta = null, optCanvases = [], flagged = !!q.flagged, afterSelect = function () {};
+      var primary = h('button', { class: 'btn primary lg', type: 'button' });
 
       if (q.kind === 'explain') {
-        body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Written answer' }), pill('Your own words', 'accent')]));
+        card.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Written answer' }), pill('Your own words', 'accent')]));
         var aboutC = h('canvas', { 'aria-hidden': 'true' });
         if (q.audio) {
-          var aHost = h('div', { style: 'margin-bottom:16px' }); body.appendChild(aHost);
+          var aHost = h('div', { style: 'margin-bottom:16px' }); card.appendChild(aHost);
           reader = new AudioPrompt(aHost, function () {
             return fetch('/api/assess/attempts/' + attemptId + '/audio', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); });
           }, function () { replays++; ev('replay', 'audio ' + replays); });
-        } else if (s.plain) body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), h('p', { class: 'plainq', style: 'font-size:15px', text: q.about })]));
-        else body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
+        } else if (s.plain) card.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), h('p', { class: 'plainq', style: 'font-size:15px', text: q.about })]));
+        else card.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
         var pc = s.plain ? h('p', { class: 'plainq', style: 'margin:0 0 14px', text: q.prompt }) : h('canvas', { 'aria-hidden': 'true', style: 'margin-bottom:14px' });
-        body.appendChild(pc);
+        card.appendChild(pc);
         ta = h('textarea', { class: 'writebox', 'aria-label': 'Your explanation', maxlength: '4000', spellcheck: 'true', placeholder: 'Aim for 2 to 4 sentences.' });
         var count = h('span', { class: 'small muted', text: '0 / 4000' });
-        body.appendChild(ta);
-        body.appendChild(h('div', { class: 'row', style: 'margin-top:6px' }, [h('span', { class: 'small muted', text: 'Pasting is turned off.' }), h('span', { class: 'spacer' }), count]));
-        ta.addEventListener('input', function () { count.textContent = ta.value.length + ' / 4000'; submitBtn.disabled = !ta.value.trim(); });
+        card.appendChild(ta);
+        card.appendChild(h('div', { class: 'row', style: 'margin-top:6px' }, [h('span', { class: 'small muted', text: 'Pasting is turned off.' }), h('span', { class: 'spacer' }), count]));
+        if (q.draft && q.draft.text) { ta.value = q.draft.text; count.textContent = ta.value.length + ' / 4000'; }
+        ta.addEventListener('input', function () { count.textContent = ta.value.length + ' / 4000'; afterSelect(); });
         var drawEx = function () {
           if (q.about && !s.plain) drawText(aboutC, q.about, { font: '400 15px Poppins, sans-serif', lineH: 24, color: cssVar('--t2') });
           if (!s.plain) drawText(pc, q.prompt, { font: '600 18px Poppins, sans-serif', lineH: 28 });
         };
         requestAnimationFrame(drawEx);
-        qState = { redraw: drawEx, nOpts: 0, canSubmit: function () { return false; }, submit: send };
+        qState = { redraw: drawEx, nOpts: 0, canSubmit: function () { return false; } };
         setTimeout(function () { ta.focus(); }, 60);
       } else {
-        body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Question ' + (q.idx + 1) }), pill(TYPE_LABEL[q.type] || 'Choose one', 'accent')]));
-        var rHost = h('div'); body.appendChild(rHost);
+        card.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Question ' + (bank ? labels[q.idx] : (q.idx + 1)) }), pill(TYPE_LABEL[q.type] || 'Choose one', 'accent'), bank && q.visits > 1 ? pill('Visited ' + q.visits + ' times', '') : null]));
+        var rHost = h('div'); card.appendChild(rHost);
         if (s.plain) {
           reader = { stop: function () {}, play: function () {}, resize: function () {} };
           rHost.appendChild(h('div', { class: 'reader', style: 'min-height:auto' }, [h('p', { class: 'plainq', text: q.prompt })]));
@@ -798,10 +967,9 @@
           reader = s.displayMode === 'full' ? new FullText(rHost, q.prompt) : new Reader(rHost, q.prompt, s);
           reader.onReplay = function () { replays++; ev('replay', String(replays)); };
         }
-        // Session 60: optional image (fetched for the open question only)
         if (q.hasImage) {
           var imgBox = h('div', { class: 'qimg' }, [h('span', { class: 'small muted', text: 'Loading image…' })]);
-          body.appendChild(imgBox);
+          card.appendChild(imgBox);
           fetch('/api/assess/attempts/' + attemptId + '/image', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } })
             .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
             .then(function (bl) {
@@ -817,84 +985,160 @@
           var cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, text]); return cv;
         };
         var drawOptsX = function () { optCanvases.forEach(function (x) { drawText(x[0], x[1], { font: '400 15px Poppins, sans-serif', lineH: 24 }); }); };
+        var draft = q.draft && q.draft.choice ? q.draft.choice : null;
         if (q.type === 'ordering') {
-          var seq = [];
+          var seq = draft ? draft.slice() : [];
           var olist = h('div', { class: 'opts', role: 'group', 'aria-label': 'Steps to put in order' });
-          body.appendChild(h('div', { class: 'row small muted', style: 'margin-top:14px' }, [h('span', { text: 'Tap the steps in the order they should happen. Tap a numbered step to take it out.' }), h('span', { class: 'spacer' }), h('button', { class: 'linkbtn small', type: 'button', text: 'Clear order', onclick: function () { seq = []; syncOrd(); } })]));
-          body.appendChild(olist);
+          card.appendChild(h('div', { class: 'row small muted', style: 'margin-top:14px' }, [h('span', { text: 'Tap the steps in the order they should happen. Tap a numbered step to take it out.' }), h('span', { class: 'spacer' }), h('button', { class: 'linkbtn small', type: 'button', text: 'Clear order', onclick: function () { seq = []; syncOrd(); afterSelect(); } })]));
+          card.appendChild(olist);
           var obtns = q.options.map(function (o, i) {
             var num = h('span', { class: 'ordn empty', text: '' });
-            var b = h('button', { class: 'opt ord', type: 'button', 'aria-label': (s.plain ? o.text : 'Step ' + LETTERS[i]) }, [num, textEl(o.text)]);
+            var b = h('button', { class: 'opt ord', type: 'button', style: '--i:' + i, 'aria-label': (s.plain ? o.text : 'Step ' + LETTERS[i]) }, [num, textEl(o.text)]);
             b._num = num;
             b.addEventListener('click', function () { chooseOrd(i); });
             olist.appendChild(b); return b;
           });
           var syncOrd = function () {
             obtns.forEach(function (b, k) { var at = seq.indexOf(k); b._num.textContent = at >= 0 ? String(at + 1) : ''; b._num.classList.toggle('empty', at < 0); b.setAttribute('aria-pressed', String(at >= 0)); b.setAttribute('aria-label', (s.plain ? q.options[k].text : 'Step ' + LETTERS[k]) + (at >= 0 ? ', position ' + (at + 1) : ', not placed')); });
-            selected = seq.slice(); submitBtn.disabled = seq.length !== q.options.length;
+            selected = seq.slice(); syncPrimary();
           };
-          var chooseOrd = function (i) { var at = seq.indexOf(i); if (at >= 0) seq.splice(at, 1); else seq.push(i); syncOrd(); };
-          qState = { choose: chooseOrd, nOpts: q.options.length, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
+          var chooseOrd = function (i) { var at = seq.indexOf(i); if (at >= 0) seq.splice(at, 1); else seq.push(i); syncOrd(); afterSelect(); };
+          qState = { choose: chooseOrd, nOpts: q.options.length, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); } };
           fontsReady.then(function () { if (reader && !q.audio) reader.play(); drawOptsX(); });
+          setTimeout(syncOrd, 0);
         } else if (q.type === 'matching') {
-          var picks = q.options.map(function () { return -1; });
+          var picks = q.options.map(function (o, i) { return draft && draft[i] != null ? draft[i] : -1; });
           var mlist = h('div', { class: 'mlist', role: 'group', 'aria-label': 'Match each item' });
-          body.appendChild(h('div', { class: 'small muted', style: 'margin-top:14px', text: 'Pick the right match for each item.' }));
-          body.appendChild(mlist);
+          card.appendChild(h('div', { class: 'small muted', style: 'margin-top:14px', text: 'Pick the right match for each item.' }));
+          card.appendChild(mlist);
           q.options.forEach(function (o, i) {
             var sel = h('select', { class: 'sel', 'aria-label': 'Match for item ' + LETTERS[i] }, [h('option', { value: '-1', text: 'Choose…' })].concat(q.matches.map(function (m) { return h('option', { value: String(m.key), text: m.text }); })));
-            sel.addEventListener('change', function () { picks[i] = Number(sel.value); selected = picks.slice(); submitBtn.disabled = picks.some(function (p) { return p < 0; }); });
-            mlist.appendChild(h('div', { class: 'mrow' }, [h('span', { class: 'ky', text: LETTERS[i] }), h('div', { class: 'mleft' }, [textEl(o.text)]), h('span', { class: 'muted', 'aria-hidden': 'true', text: '→' }), sel]));
+            sel.value = String(picks[i]);
+            sel.addEventListener('change', function () { picks[i] = Number(sel.value); selected = picks.slice(); syncPrimary(); afterSelect(); });
+            mlist.appendChild(h('div', { class: 'mrow', style: '--i:' + i }, [h('span', { class: 'ky', text: LETTERS[i] }), h('div', { class: 'mleft' }, [textEl(o.text)]), h('span', { class: 'muted', 'aria-hidden': 'true', text: '→' }), sel]));
           });
-          qState = { nOpts: 0, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
+          selected = picks.slice();
+          qState = { nOpts: 0, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); } };
           fontsReady.then(function () { if (reader && !q.audio) reader.play(); drawOptsX(); });
         } else {
-        var opts = h('div', { class: 'opts', role: q.type === 'multi' ? 'group' : 'radiogroup', 'aria-label': 'Answer options' });
-        body.appendChild(opts);
-        var multi = q.type === 'multi';
-        var btns = q.options.map(function (o, i) {
-          var cv;
-          if (s.plain) cv = h('span', { class: 'plainopt', text: o.text });
-          else { cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, o.text]); }
-          var b = h('button', { class: 'opt' + (multi ? ' multi' : ''), type: 'button', role: multi ? 'checkbox' : 'radio', 'aria-checked': 'false', 'aria-label': s.plain ? LETTERS[i] + '. ' + o.text : 'Option ' + LETTERS[i] },
-            [h('span', { class: 'mk' }), h('span', { class: 'ky', text: LETTERS[i] }), cv]);
-          b.addEventListener('click', function () { choose(i); });
-          opts.appendChild(b);
-          return b;
-        });
-        var drawOpts = function () { optCanvases.forEach(function (x) { drawText(x[0], x[1], { font: '400 15px Poppins, sans-serif', lineH: 24 }); }); };
-        requestAnimationFrame(drawOpts);
-        function choose(i) {
-          if (multi) { var at = selected.indexOf(i); if (at >= 0) selected.splice(at, 1); else selected.push(i); } else selected = [i];
-          btns.forEach(function (b, k) { b.setAttribute('aria-checked', String(selected.indexOf(k) >= 0)); });
-          submitBtn.disabled = !selected.length;
-        }
-        qState = { choose: choose, nOpts: q.options.length, redraw: function () { drawOpts(); if (reader.resize) reader.resize(); if (s.displayMode === 'full') reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
-        (document.fonts && document.fonts.load ? document.fonts.load('600 24px Poppins') : Promise.resolve()).then(function () { if (reader && !q.audio) reader.play(); drawOpts(); });
+          var opts = h('div', { class: 'opts', role: q.type === 'multi' ? 'group' : 'radiogroup', 'aria-label': 'Answer options' });
+          card.appendChild(opts);
+          var multi = q.type === 'multi';
+          var btns = q.options.map(function (o, i) {
+            var cv;
+            if (s.plain) cv = h('span', { class: 'plainopt', text: o.text });
+            else { cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, o.text]); }
+            var b = h('button', { class: 'opt' + (multi ? ' multi' : ''), style: '--i:' + i, type: 'button', role: multi ? 'checkbox' : 'radio', 'aria-checked': 'false', 'aria-label': s.plain ? LETTERS[i] + '. ' + o.text : 'Option ' + LETTERS[i] },
+              [h('span', { class: 'mk' }), h('span', { class: 'ky', text: LETTERS[i] }), cv]);
+            b.addEventListener('click', function () { choose(i); afterSelect(); });
+            opts.appendChild(b);
+            return b;
+          });
+          var paintSel = function () { btns.forEach(function (b, k) { b.setAttribute('aria-checked', String(selected.indexOf(k) >= 0)); }); syncPrimary(); };
+          var choose = function (i) {
+            if (multi) { var at = selected.indexOf(i); if (at >= 0) selected.splice(at, 1); else selected.push(i); } else selected = [i];
+            paintSel();
+          };
+          if (draft) { selected = draft.filter(function (k) { return k >= 0 && k < btns.length; }); }
+          qState = { choose: function (i) { choose(i); afterSelect(); }, nOpts: q.options.length, redraw: function () { drawOptsX(); if (reader.resize) reader.resize(); } };
+          requestAnimationFrame(drawOptsX);
+          fontsReady.then(function () { if (reader && !q.audio) reader.play(); drawOptsX(); });
+          setTimeout(paintSel, 0);
         }
       }
 
+      function hasSel() {
+        if (q.kind === 'explain') return !!(ta && ta.value.trim());
+        if (q.type === 'ordering') return selected.length === q.options.length;
+        if (q.type === 'matching') return selected.length && selected.every(function (p) { return p >= 0; });
+        return selected.length > 0;
+      }
+      function payload() {
+        var p = { idx: q.idx, replays: replays };
+        if (q.kind === 'explain') p.text = ta ? ta.value : '';
+        else if (q.type === 'matching' || selected.length || !bank) p.choice = selected.slice();
+        return p;
+      }
+
+      // Footer
+      var savedEl = h('span', { class: 'saved', 'aria-live': 'polite' });
+      var foot = h('div', { class: 'in' });
+      exam.appendChild(h('div', { class: 'xfoot' }, [foot]));
+
+      if (bank) {
+        var hasPrev = false, nextOpenIdx = -1;
+        for (var pi = q.idx - 1; pi >= 0; pi--) if (!q.nav[pi].out) { hasPrev = true; break; }
+        for (var ni = q.idx + 1; ni < q.nav.length; ni++) if (!q.nav[ni].out) { nextOpenIdx = ni; break; }
+        var prevIdxOpen = -1; for (var pj = q.idx - 1; pj >= 0; pj--) if (!q.nav[pj].out) { prevIdxOpen = pj; break; }
+        var prevBtn = h('button', { class: 'btn lg ghost', type: 'button', 'aria-label': 'Previous question', disabled: !hasPrev || null, onclick: function () { move(prevIdxOpen); } }, [icon('arrowL', 'sm'), h('span', { class: 'lbl', text: 'Previous' })]);
+        var flagBtn = h('button', { class: 'btn lg flagbtn', type: 'button', 'aria-label': 'Flag for review', 'aria-pressed': String(flagged), onclick: function () {
+          flagged = !flagged; flagBtn.setAttribute('aria-pressed', String(flagged)); flagBtn.lastChild.textContent = flagged ? 'Flagged' : 'Flag for review';
+          var nb = center.querySelector('.qn.cur'); if (nb) nb.classList.toggle('flg', flagged);
+          var p = payload(); p.go = 'stay'; p.flag = flagged;
+          post(p).catch(fail);
+        } }, [icon('flag', 'sm'), h('span', { class: 'lbl', text: flagged ? 'Flagged' : 'Flag for review' })]);
+        clear(primary);
+        if (nextOpenIdx >= 0) { primary.appendChild(document.createTextNode('Next')); primary.appendChild(icon('arrowR', 'sm')); primary.onclick = function () { move('next'); }; }
+        else { primary.appendChild(icon('list', 'sm')); primary.appendChild(document.createTextNode('Review answers')); primary.onclick = function () { move('review'); }; }
+        foot.appendChild(prevBtn); foot.appendChild(flagBtn); foot.appendChild(h('span', { class: 'spacer' })); foot.appendChild(savedEl); foot.appendChild(primary);
+        afterSelect = function () {
+          savedEl.textContent = 'Saving…'; savedEl.className = 'saved ing';
+          var nb = center.querySelector('.qn.cur'); if (nb) nb.classList.toggle('ans', hasSel());
+          clearTimeout(saveT);
+          saveT = setTimeout(function () {
+            var p = payload(); p.go = 'stay';
+            post(p).then(function (r) {
+              if (r.done) { exitTo(function () { doneScreen(r.result); }); return; }
+              if (r.expired) { load(); return; }
+              savedEl.textContent = 'Saved'; savedEl.className = 'saved ok';
+            }).catch(function (e) { if (!e.status) { savedEl.textContent = 'Not saved yet, retrying'; savedEl.className = 'saved bad'; setTimeout(afterSelect, 2000); } else fail(e); });
+          }, 650);
+        };
+        qState.bank = true;
+        qState.canSubmit = function () { return !busy; };
+        qState.submit = function () { move(nextOpenIdx >= 0 ? 'next' : 'review'); };
+        qState.next = function () { if (!busy) move(nextOpenIdx >= 0 ? 'next' : 'review'); };
+        qState.prev = function () { if (!busy && hasPrev) move(prevIdxOpen); };
+        if (q.draft) { savedEl.textContent = 'Saved'; savedEl.className = 'saved ok'; }
+      } else {
+        clear(primary); primary.appendChild(document.createTextNode(q.idx + 1 === q.total ? 'Submit and finish' : 'Submit answer')); primary.appendChild(icon('arrowR', 'sm'));
+        primary.disabled = true;
+        primary.onclick = function () { send(false); };
+        foot.appendChild(h('span', { class: 'hint' }, (q.kind === 'explain' || q.type === 'matching') ? ['Answers lock when you submit.'] : [h('span', { class: 'kbd', text: '1' }), ' to ', h('span', { class: 'kbd', text: String(q.options.length) }), ' to choose, ', h('span', { class: 'kbd', text: 'Enter' }), ' to submit. Answers lock when you submit.']));
+        foot.appendChild(h('span', { class: 'spacer' })); foot.appendChild(primary);
+        qState.canSubmit = function () { return !primary.disabled; };
+        qState.submit = send;
+      }
+      function syncPrimary() { if (!bank) primary.disabled = !hasSel(); }
+      if (q.kind === 'explain' && !bank) ta.addEventListener('input', syncPrimary);
+
+      // Move within the time bank: saves the current answer on the way out
+      function move(target) {
+        if (busy) return; busy = true; clearTimeout(saveT); clearInterval(tick);
+        var p = payload(); p.go = target;
+        if (typeof target === 'number') ev('nav', 'to item ' + (target + 1));
+        post(p).then(function (r) {
+          flush();
+          if (r.done) exitTo(function () { doneScreen(r.result); }); else load();
+        }).catch(function (e) {
+          if (!e.status) { busy = false; toast('Connection lost, retrying…'); setTimeout(function () { move(target); }, 1500); return; }
+          fail(e);
+        });
+      }
+      // Locked mode: one answer, then the next question
       function send(auto) {
-        if (busy) return; busy = true; submitBtn.disabled = true; clearInterval(tick);
+        if (busy) return; busy = true; primary.disabled = true; clearInterval(tick);
         if (auto) ev('auto_submit', 'Time ran out');
-        var payload = { idx: q.idx, replays: replays };
-        if (q.kind === 'explain') payload.text = ta ? ta.value : ''; else payload.choice = selected;
+        var p = payload();
         var tries = 0;
         (function attempt() {
-          api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: payload })
-            .then(function (r) { flush(); if (r.done) exitTo(function () { doneScreen(r.result); }); else load(); })
+          post(p).then(function (r) { flush(); if (r.done) exitTo(function () { doneScreen(r.result); }); else load(); })
             .catch(function (e) {
-              // A dropped connection is retried; the server still judges time.
               if (!e.status && tries < 4) { tries++; toast('Connection lost, retrying…'); setTimeout(attempt, 1500 * tries); return; }
               fail(e);
             });
         })();
       }
-      submitBtn.addEventListener('click', function () { send(false); });
-      exam.appendChild(h('div', { class: 'xfoot' }, [h('div', { class: 'in' }, [
-        h('span', { class: 'hint' }, (q.kind === 'explain' || q.type === 'matching') ? ['Answers lock when you submit.'] : [h('span', { class: 'kbd', text: '1' }), ' to ', h('span', { class: 'kbd', text: String(q.options.length) }), ' to choose, ', h('span', { class: 'kbd', text: 'Enter' }), ' to submit. Answers lock when you submit.']),
-        h('span', { class: 'spacer' }), submitBtn,
-      ])]));
 
       var val = timer.querySelector('.val');
       function paint() {
@@ -902,10 +1146,88 @@
         val.setAttribute('stroke-dashoffset', (C * (1 - Math.max(0, Math.min(1, frac)))).toFixed(2));
         tNum.textContent = String(sLeft);
         timer.classList.toggle('low', sLeft <= 10 && sLeft > 5); timer.classList.toggle('crit', sLeft <= 5);
-        if ((sLeft === 10 || sLeft === 5) && lastAnnounce !== sLeft) { lastAnnounce = sLeft; announce(sLeft + ' seconds left'); }
-        if (left <= 0) send(true);
+        if (totalEl) totalEl.textContent = fmtClock(otherLeft + left) + ' left in total';
+        if ((sLeft === 10 || sLeft === 5) && lastAnnounce !== sLeft) { lastAnnounce = sLeft; announce(sLeft + ' seconds left on this question'); }
+        if (left <= 0) {
+          clearInterval(tick);
+          if (bank) { toast('Time is up on this question. Your answer is saved.'); move('auto'); } else send(true);
+        }
       }
       paint(); tick = setInterval(paint, 200);
+    }
+
+    // ── Review screen (time bank) ────────────────────────────────────
+    function renderReview(q) {
+      curIdx = null; busy = false; qState = null; prevIdx = -1;
+      clear(exam); faceChip = null; faceBanner = null;
+      var labels = navLabels(q.nav);
+      var answered = q.nav.filter(function (n) { return n.answered; }).length;
+      var unanswered = q.nav.filter(function (n) { return !n.answered; });
+      var flaggedN = q.nav.filter(function (n) { return n.flagged; }).length;
+      var camEl = null;
+      if (s.camera && camVideo) {
+        var mini = h('video', { autoplay: true, muted: true, playsinline: true }); mini.srcObject = cam.stream;
+        faceChip = h('span', { class: 'facechip ' + face.status }, [h('i'), h('span', { text: FACE_TEXT[face.status] })]);
+        camEl = h('div', { class: 'cam-mini' }, [mini, faceChip]);
+      }
+      exam.appendChild(h('div', { class: 'xbar' }, [
+        h('div', { class: 'ttl' }, [h('b', { text: start.title }), h('span', { text: 'Review your answers' })]),
+        h('div'),
+        h('div', { class: 'right' }, [camEl, h('span', { class: 'pill', text: 'Clocks paused' })]),
+      ]));
+      if (face.episode) showFaceBanner(face.episode.type);
+      var body = h('div', { class: 'xbody review slide-first' });
+      exam.appendChild(body);
+      body.appendChild(h('div', { class: 'rv-head' }, [
+        h('div', null, [h('h1', { text: 'Review before you submit' }), h('p', { class: 'muted', text: 'Question clocks are paused on this screen. Open any question that still has time to check or change your answer. Questions with no time left are locked.' })]),
+      ]));
+      var pct = Math.round(answered / q.nav.length * 100);
+      body.appendChild(h('div', { class: 'rv-stats' }, [
+        h('div', { class: 'rv-stat' }, [h('b', { text: answered + ' / ' + q.nav.length }), h('span', { text: 'Answered' }), h('div', { class: 'rv-bar' }, [h('i', { style: 'width:' + pct + '%' })])]),
+        h('div', { class: 'rv-stat' + (unanswered.length ? ' warn' : '') }, [h('b', { text: String(unanswered.length) }), h('span', { text: 'Not answered' })]),
+        h('div', { class: 'rv-stat' + (flaggedN ? ' accent' : '') }, [h('b', { text: String(flaggedN) }), h('span', { text: 'Flagged' })]),
+        h('div', { class: 'rv-stat' }, [h('b', { text: fmtClock(q.leftMs) }), h('span', { text: 'Time left across questions' })]),
+      ]));
+      var grid = h('div', { class: 'rv-grid' });
+      q.nav.forEach(function (n, i) {
+        var state = n.out ? 'Locked, no time left' : (n.answered ? 'Answered' : 'Not answered');
+        var tile = h('button', { type: 'button', class: 'rv-tile' + (n.answered ? ' ans' : ' todo') + (n.flagged ? ' flg' : '') + (n.out ? ' out' : ''), style: '--i:' + i, disabled: n.out || null,
+          'aria-label': (n.kind === 'explain' ? 'Written answer ' + labels[i].slice(1) : 'Question ' + labels[i]) + ', ' + state + (n.flagged ? ', flagged' : '') + (n.out ? '' : ', ' + Math.ceil(n.leftMs / 1000) + ' seconds left'),
+          onclick: function () { open(n.idx); } }, [
+          h('span', { class: 'rv-n', text: labels[i] }),
+          h('span', { class: 'rv-s' }, [n.flagged ? icon('flag', 'sm') : (n.answered ? icon('check', 'sm') : (n.out ? icon('lock', 'sm') : null)), h('span', { text: n.out ? 'Locked' : (n.answered ? 'Answered' : 'To do') })]),
+          h('span', { class: 'rv-t', text: n.out ? 'No time left' : fmtClock(n.leftMs) + ' left' }),
+        ]);
+        grid.appendChild(tile);
+      });
+      body.appendChild(grid);
+      var firstTodo = q.nav.filter(function (n) { return !n.out && (!n.answered || n.flagged); })[0] || q.nav.filter(function (n) { return !n.out; })[0];
+      var back = firstTodo ? h('button', { class: 'btn lg', type: 'button', onclick: function () { open(firstTodo.idx); } }, [icon('arrowL', 'sm'), firstTodo.answered ? 'Back to the questions' : 'Answer what is left']) : null;
+      var submit = h('button', { class: 'btn primary lg', type: 'button', onclick: confirmSubmit }, ['Submit test', icon('check', 'sm')]);
+      exam.appendChild(h('div', { class: 'xfoot' }, [h('div', { class: 'in' }, [back, h('span', { class: 'spacer' }), h('span', { class: 'hint', text: unanswered.length ? unanswered.length + ' not answered yet' : 'Everything is answered' }), submit])]));
+      function open(idx) {
+        if (busy) return; busy = true;
+        post({ go: idx }).then(function (r) { if (r.done) exitTo(function () { doneScreen(r.result); }); else load(); }).catch(function (e) { busy = false; fail(e); });
+      }
+      function confirmSubmit() {
+        var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'cf-t' });
+        var msg = unanswered.length ? unanswered.length + (unanswered.length === 1 ? ' question is' : ' questions are') + ' not answered and will count as wrong.' : 'All questions are answered.';
+        var go2 = h('button', { class: 'btn primary', type: 'button', text: 'Submit now' });
+        dlg.appendChild(h('div', { class: 'cf-in' }, [
+          h('div', { class: 'cf-ic' }, [icon(unanswered.length ? 'warn' : 'check', 'lg')]),
+          h('h2', { id: 'cf-t', text: 'Submit your test?' }),
+          h('p', { text: msg + (flaggedN ? ' You flagged ' + flaggedN + ' to look at again.' : '') + ' You cannot change answers after this.' }),
+          h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:8px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Keep reviewing', onclick: function () { dlg.close(); } }), go2]),
+        ]));
+        dlg.addEventListener('close', function () { dlg.remove(); });
+        go2.addEventListener('click', function () {
+          go2.disabled = true;
+          api('/api/assess/attempts/' + attemptId + '/submit', { method: 'POST', token: token, body: {} })
+            .then(function (r) { dlg.close(); flush(); exitTo(function () { doneScreen(r.result); }); })
+            .catch(function (e) { dlg.close(); fail(e); });
+        });
+        document.body.appendChild(dlg); dlg.showModal();
+      }
     }
 
     startCamera().then(load);
@@ -925,7 +1247,7 @@
         grid.appendChild(h('div', { class: 'card mcard' }, [
           h('div', { class: 'row', style: 'align-items:flex-start' }, [h('h2', { style: 'flex:1;font-size:16px', text: t.title }), t.status === 'published' ? pill('Published', 'ok', true) : pill('Draft', '', true)]),
           t.description ? h('p', { class: 'muted small', style: 'margin:0', text: t.description }) : null,
-          h('div', { class: 'meta' }, [pill(qtext), pill(t.settings.secondsPerQuestion + 's each'), pill(t.assign.everyone ? 'Everyone' : t.assign.emails.length + ' assigned'), t.settings.camera ? pill('Camera', 'accent') : null]),
+          h('div', { class: 'meta' }, [pill(qtext), pill(t.settings.secondsPerQuestion + 's each'), pill(t.settings.navigation === 'locked' ? 'One way' : 'Back and forth'), pill(t.assign.everyone ? 'Everyone' : t.assign.emails.length + ' assigned'), t.settings.camera ? pill('Camera', 'accent') : null]),
           h('div', { class: 'nums' }, [
             h('div', null, [h('b', { text: String(t.submitted) }), h('span', { text: 'Submitted' })]),
             h('div', null, [h('b', { text: t.avgPct != null ? t.avgPct + '%' : '–' }), h('span', { text: 'Average' })]),
@@ -954,7 +1276,8 @@
       var t = id ? r[0].tests.find(function (x) { return x.id === id; }) : null;
       if (id && !t) { holder.appendChild(errBox('Assessment not found.')); return; }
       var bank = r[2].questions, tags = r[2].tags, people = r[3].people;
-      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
+      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, navigation: 'bank', pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
+      if (!st.navigation) st.navigation = 'bank';
       var picked = r[1].questions.map(function (q) { return q.id; });
       var assign = t ? { everyone: t.assign.everyone, emails: t.assign.emails.slice() } : { everyone: false, emails: [] };
       var status = t ? t.status : 'draft';
@@ -1067,11 +1390,19 @@
           .finally(function () { vBtn.disabled = false; });
       });
       var audioRow = h('div', { style: st.displayMode === 'audio' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Voice', voiceSel, 'Audio is generated once per question and reused.')]), vBtn, vErr]);
+      var navCards = h('div', { class: 'radcards' });
+      [['bank', 'Move between questions', 'Each question keeps its own clock, which runs only while it is open. Agents can go back while time is left, flag questions, and review everything before submitting.'], ['locked', 'One way', 'Answers lock on submit and the next question opens. No going back, no review screen.']].forEach(function (o) {
+        var inp = h('input', { type: 'radio', name: 'nmode', value: o[0], checked: st.navigation === o[0] ? true : null });
+        inp.addEventListener('change', function () { st.navigation = o[0]; });
+        navCards.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
+      });
       left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Timing and display' }), h('p', { text: '30 to 45 seconds is enough to read and answer, but too short to look it up.' }),
-        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]), h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow, audioRow]));
+        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]),
+        h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'Moving between questions' }), h('div', { style: 'height:6px' }), navCards,
+        h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow, audioRow]));
 
       // Integrity
-      var camT = toggle('Camera photos', st.camera, 'Takes a photo every 30 seconds, with the agent\'s consent. Only you (the owner) can see them, and they are deleted automatically. Use it when cameras are not on in a call.');
+      var camT = toggle('Camera photos and face check', st.camera, 'With the agent\'s consent: a photo every 30 seconds, plus a check on their own device that their face is in view, that no one else is, and that the camera is not covered. Only you (the owner) can see photos, and they are deleted automatically.');
       var wmT = toggle('Faint name watermark', st.watermark === 'subtle', 'Very light email and time across the screen, so a photo of the screen can be traced. Off by default.');
       var shQ = toggle('Shuffle question order', st.shuffleQuestions), shO = toggle('Shuffle answer options', st.shuffleOptions);
       var exIn = h('select', { class: 'sel', id: 'b-ex' }, [0, 1, 2, 3].map(function (n) { return h('option', { value: String(n), text: n === 0 ? 'None' : n + ' question' + (n > 1 ? 's' : '') }); })); exIn.value = String(Math.min(3, st.explainCount));
@@ -1197,6 +1528,29 @@
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
+  // ── Session 62: reset an attempt so the person can take it again ─────
+  function resetFlow(a, done) {
+    var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'rs-t' });
+    var note = h('input', { class: 'inp', style: 'width:100%', maxlength: '300', placeholder: 'Reason (optional), e.g. connection dropped', 'aria-label': 'Reason' });
+    var okBtn = h('button', { class: 'btn primary', type: 'button', text: 'Reset attempt' });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [
+      h('div', { class: 'cf-ic' }, [icon('replay', 'lg')]),
+      h('h2', { id: 'rs-t', text: 'Reset for ' + (a.name || a.email) + '?' }),
+      h('p', { text: (a.status === 'in_progress' ? 'Their test in progress is closed. ' : '') + 'The attempt stays in the results, marked Reset, and no longer counts toward scores, averages or the attempts allowed. They can start the test again from their list.' }),
+      note,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), okBtn]),
+    ]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    okBtn.addEventListener('click', function () {
+      okBtn.disabled = true;
+      api('/api/assess/admin/attempts/' + a.id + '/reset', { method: 'POST', body: { note: note.value } })
+        .then(function () { dlg.close(); toast('Reset. ' + (a.name || a.email) + ' can take it again.'); done(); })
+        .catch(function (e) { okBtn.disabled = false; toast(e.message); });
+    });
+    document.body.appendChild(dlg); dlg.showModal(); note.focus();
+  }
+  function viewResultsReload() { route(); }
+
   // ── Reviewer: results ────────────────────────────────────────────────
   function viewResults(id) {
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
@@ -1209,41 +1563,49 @@
         h('button', { class: 'btn', type: 'button', onclick: function () { go('edit/' + id); } }, [icon('edit', 'sm'), 'Edit']),
       ], { text: 'Assessments', go: function () { go('manage'); } }));
       var done = at.filter(function (a) { return a.status === 'submitted'; });
+      var resetN = at.filter(function (a) { return a.status === 'reset'; }).length;
+      var active = at.filter(function (a) { return a.status !== 'reset'; });
       var avg = done.length ? Math.round(done.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / done.length) : null;
       var pass = done.length ? Math.round(done.filter(function (a) { return a.passed; }).length / done.length * 100) : null;
       var review = at.filter(function (a) { return a.status === 'submitted' && (a.unmarked > 0 || !a.verdict); }).length;
       holder.appendChild(h('dl', { class: 'stats' }, [
-        h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), at.length > done.length ? h('small', { text: '  ' + (at.length - done.length) + ' in progress' }) : null])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), active.length > done.length ? h('small', { text: '  ' + (active.length - done.length) + ' in progress' }) : null, resetN ? h('small', { text: '  ' + resetN + ' reset' }) : null])]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Average score' }), h('dd', { text: avg != null ? avg + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Pass rate' }), h('dd', { text: pass != null ? pass + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Needs your review' }), h('dd', { text: String(review) })]),
       ]));
       if (!at.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('users', 'lg')]), h('b', { text: 'No attempts yet' }), h('span', { text: 'Results appear here as agents submit.' })])); return; }
       var tb = h('tbody');
-      at.forEach(function (a) {
-        var tr = h('tr', { class: 'click', tabindex: '0' }, [
+      at.forEach(function (a, ri) {
+        var resetBtn = a.status === 'reset' ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Reset so ' + (a.name || a.email) + ' can take it again', onclick: function (e) {
+          e.stopPropagation(); resetFlow(a, function () { viewResultsReload(); });
+        } }, [icon('replay', 'sm'), 'Reset']);
+        var tr = h('tr', { class: 'click' + (a.status === 'reset' ? ' is-reset' : ''), tabindex: '0', style: '--i:' + Math.min(ri, 12) }, [
           h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email })]),
-          h('td', null, [a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn')]),
+          h('td', null, [a.status === 'reset' ? pill('Reset', '', true) : a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn'),
+            a.reset ? h('span', { class: 'sub', text: 'by ' + a.reset.by + ' · ' + fmtWhen(a.reset.at) }) : null]),
           h('td', null, [a.pct != null ? h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + a.pct + '%' })]), h('span', { class: 'num', text: a.score + '/' + a.maxScore + ' · ' + a.pct + '%' })]) : h('span', { class: 'muted', text: '–' })]),
           h('td', null, [tierPill(a.tier), a.flags && a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') + (a.flags.length > 2 ? '…' : '') }) : null]),
           h('td', null, [a.unmarked ? pill(a.unmarked + ' to mark', 'accent') : (a.writtenPct != null ? h('span', { class: 'num', text: a.writtenPct + '%' }) : h('span', { class: 'muted', text: '–' }))]),
           h('td', null, [a.verdict ? pill(VERDICT[a.verdict][0], VERDICT[a.verdict][1]) : h('span', { class: 'muted', text: '–' })]),
           h('td', { class: 'num', text: fmtWhen(a.finishedAt || a.startedAt) }),
+          h('td', { class: 'act' }, [resetBtn]),
         ]);
         tr.addEventListener('click', function () { go('attempt/' + a.id); });
         tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go('attempt/' + a.id); });
         tb.appendChild(tr);
       });
       holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [
-        h('thead', null, [h('tr', null, ['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'Verdict', 'When'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
+        h('thead', null, [h('tr', null, ['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'Verdict', 'When', ''].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
   var EVENT_LABELS = { started: 'Started', submitted: 'Submitted', hidden: 'Left the test tab', visible: 'Came back to the tab', blur: 'Clicked outside the window', focus: 'Note', fullscreen_exit: 'Left full screen', fullscreen_enter: 'Back in full screen',
     copy: 'Tried to copy', cut: 'Tried to cut', paste: 'Tried to paste', contextmenu: 'Right-click', printscreen: 'Pressed Print Screen', devtools_key: 'Developer tools key', print: 'Tried to print', mouse_out: 'Mouse left the window',
     replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text',
-    camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically' };
-  var EVENT_LEVEL = { hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
+    camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically',
+    face_missing: 'Face not in view', face_back: 'Face back in view', face_multi: 'More than one face', camera_dark: 'Camera covered or dark', face_check_off: 'Face check unavailable', nav: 'Moved to another question', reset: 'Reset by a reviewer', submitted_by: 'Submitted' };
+  var EVENT_LEVEL = { face_missing: 'warn', face_multi: 'bad', camera_dark: 'bad', reset: 'warn', hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
 
   function viewAttempt(id) {
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
@@ -1251,13 +1613,15 @@
       clear(holder);
       var a = j.attempt, integ = a.integrity || { tier: null, flags: [] };
       var pct = a.maxScore ? Math.round(a.score / a.maxScore * 100) : null;
-      holder.appendChild(pageHead(a.name || a.email, a.testTitle + ' · ' + a.email + (a.extraPct ? ' · +' + a.extraPct + '% time' : ''), [
-        h('button', { class: 'btn danger', type: 'button', onclick: function (e) {
-          if (!confirm('Delete this attempt for ' + (a.name || a.email) + '? Their answers, activity log and photos are removed and they can take it again.')) return;
+      holder.appendChild(pageHead(a.name || a.email, a.testTitle + ' · ' + a.email + (a.extraPct ? ' · +' + a.extraPct + '% time' : '') + ' · ' + (a.navigation === 'bank' ? 'Back and forth' : 'One way'), [
+        a.status !== 'reset' ? h('button', { class: 'btn', type: 'button', onclick: function () { resetFlow({ id: a.id, name: a.name, email: a.email, status: a.status }, function () { go('results/' + a.testId); }); } }, [icon('replay', 'sm'), 'Reset for a retake']) : null,
+        h('button', { class: 'btn ghost danger', type: 'button', onclick: function (e) {
+          if (!confirm('Delete this attempt for ' + (a.name || a.email) + ' completely? Their answers, activity log and photos are removed for good. Reset is usually better, because it keeps the record.')) return;
           e.currentTarget.disabled = true;
           api('/api/assess/admin/attempts/' + a.id, { method: 'DELETE' }).then(function () { toast('Attempt deleted'); go('results/' + a.testId); }).catch(function (er) { toast(er.message); });
-        } }, [icon('trash', 'sm'), 'Allow a retake']),
+        } }, [icon('trash', 'sm'), 'Delete']),
       ], { text: 'Results', go: function () { go('results/' + a.testId); } }));
+      if (a.reset) holder.appendChild(h('div', { class: 'alert warn' }, [icon('replay'), h('span', { text: 'Reset by ' + a.reset.by + ' on ' + fmtWhen(a.reset.at) + (a.reset.note ? ': ' + a.reset.note : '') + '. This attempt does not count toward scores or attempts.' })]));
       holder.appendChild(h('dl', { class: 'stats' }, [
         h('div', { class: 'card stat' }, [h('dt', { text: 'Score' }), h('dd', null, [a.score != null ? a.score + ' / ' + a.maxScore : 'In progress', pct != null ? h('small', { text: '  ' + pct + '%' }) : null])]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Result' }), h('dd', null, [pct == null ? '–' : (pct >= a.passPct ? pill('Pass', 'ok') : pill('Below pass (' + a.passPct + '%)', 'bad'))])]),
@@ -1325,7 +1689,7 @@
           });
           if (!it.correct) it.correctAnswer.forEach(function (c) { if (!(it.chosen || []).includes(c)) ansList.appendChild(h('div', { class: 'right' }, [icon('check', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Correct answer: ' }), c])])); });
           panel.appendChild(h('div', { class: 'card item' }, [
-            h('div', { class: 'hd' }, [h('b', { text: 'Q' + (it.idx + 1) }), status, h('span', { class: 'small muted', text: (it.elapsedMs != null ? secs(it.elapsedMs) : '') + (it.replays ? ' · replayed ' + it.replays + 'x' : '') })]),
+            h('div', { class: 'hd' }, [h('b', { text: 'Q' + (it.idx + 1) }), status, it.flagged ? pill('Flagged by agent', 'accent') : null, h('span', { class: 'small muted', text: (it.elapsedMs != null ? secs(it.elapsedMs) : '') + (it.replays ? ' · replayed ' + it.replays + 'x' : '') + (it.visits > 1 ? ' · opened ' + it.visits + 'x' : '') })]),
             h('div', { class: 'q', text: it.prompt }), ansList,
             it.explanation ? h('p', { class: 'small muted', style: 'margin:10px 0 0', text: 'Why: ' + it.explanation }) : null,
           ]));
@@ -1359,7 +1723,7 @@
           grid.appendChild(h('button', { type: 'button', 'aria-label': 'Photo at ' + fmtWhen(sn.at), onclick: function () {
             var lb = h('div', { class: 'lightbox', role: 'dialog', 'aria-label': 'Photo', onclick: function () { lb.remove(); } }, [h('img', { src: src, alt: 'Camera photo at ' + fmtWhen(sn.at) })]);
             document.body.appendChild(lb);
-          } }, [h('img', { src: src, alt: '', loading: 'lazy' }), h('span', { text: fmtWhen(sn.at) + (sn.idx != null ? ' · item ' + (sn.idx + 1) : '') })]));
+          } }, [h('span', { class: 'snap-img' }, [h('img', { src: src, alt: '', loading: 'lazy' }), sn.faces != null && sn.faces !== 1 ? h('em', { class: 'snap-tag ' + (sn.faces === 0 ? 'warn' : 'bad'), text: sn.faces === 0 ? 'No face' : sn.faces + ' faces' }) : null]), h('span', { text: fmtWhen(sn.at) + (sn.idx != null ? ' · item ' + (sn.idx + 1) : '') })]));
         });
         panel.appendChild(grid);
       }
@@ -1389,7 +1753,7 @@
             var pct = Math.round(a.progress / Math.max(1, a.total) * 100);
             var tr = h('tr', { class: 'click', tabindex: '0' }, [
               h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.title })]),
-              h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + pct + '%' })]), h('span', { class: 'num', text: a.progress + '/' + a.total + (a.onWritten ? ' · writing' : '') })])]),
+              h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + pct + '%' })]), h('span', { class: 'num', text: a.progress + '/' + a.total + (a.onReview ? ' · reviewing' : a.onWritten ? ' · writing' : '') })])]),
               h('td', { class: 'num', text: a.leftSec != null && a.leftSec > 0 ? fmtS(a.leftSec) + ' left' : '–' }),
               h('td', null, [idle ? pill('No activity ' + fmtS(a.idleSec), 'warn', true) : pill('Active', 'ok', true)]),
               h('td', null, [tierPill(a.tier), a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') }) : null]),
