@@ -1822,7 +1822,10 @@ app.get('/api/assess/admin/snapshots/:id', ...RV, requireAssessOwner, assessWrap
 // Reviewer: announcements, insights
 app.get('/api/assess/admin/chat-config', ...RV, assessWrap(async (req, res) => { const c = await assessments.chatConfig(); res.json({ success: true, ...c, webhook: c.webhook ? c.webhook.replace(/(key=)[^&]+/, '$1…').slice(0, 90) : '', hasWebhook: !!c.webhook }); }));
 app.put('/api/assess/admin/chat-config', ...RV, assessWrap(async (req, res) => { await assessments.setChatConfig(req.body || {}); res.json({ success: true }); }));
-app.post('/api/assess/admin/tests/:id/announce', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.announceTest(req.params.id, (req.body || {}).kind === 'remind' ? 'remind' : 'announce')) })));
+const annKind = (v) => (v === 'remind' ? 'remind' : 'announce');
+app.get('/api/assess/admin/tests/:id/announce-preview', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.announcePreview(req.params.id, annKind(req.query.kind))) })));
+app.post('/api/assess/admin/tests/:id/announce-suggest', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.suggestAnnouncement(req.params.id, annKind((req.body || {}).kind))) })));
+app.post('/api/assess/admin/tests/:id/announce', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.announceTest(req.params.id, annKind(b.kind), { text: b.text, webhook: b.webhook, saveWebhook: !!b.saveWebhook })) }); }));
 app.get('/api/assess/admin/insights', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.adminInsights({ month: String(req.query.month || '') })) })));
 app.get('/api/assess/admin/insights/export', ...RV, assessWrap(async (req, res) => {
   const m = String(req.query.month || '');

@@ -1780,10 +1780,10 @@
         return { title: title.value, description: desc.value, settings: st, questionIds: picked, assign: { everyone: assign.everyone, emails: assign.emails }, status: status };
       }
       function chatPost(btn, kind) {
-        if (!confirm(kind === 'remind' ? 'Post a reminder in Google Chat, tagging everyone who has not submitted?' : 'Post this assessment in Google Chat, tagging the people assigned?')) return;
+        if (!id) { toast('Save the assessment first'); return; }
         btn.disabled = true;
-        api('/api/assess/admin/tests/' + id + '/announce', { method: 'POST', body: { kind: kind } })
-          .then(function (r) { toast(r.sent ? 'Posted in Google Chat' + (r.tagged ? ', ' + r.tagged + ' tagged' : '') : (r.reason || 'Nothing to post')); })
+        api('/api/assess/admin/tests/' + id + '/announce-preview?kind=' + kind)
+          .then(function (pv) { announceDialog(id, kind, pv); })
           .catch(function (e) { toast(e.message); }).finally(function () { btn.disabled = false; });
       }
       function renderSide() {
@@ -1867,6 +1867,56 @@
       api('/api/assess/admin/tests/' + t.id + '/delete-forever', { method: 'POST', body: { confirm: inp.value } }).then(function () { dlg.close(); toast('Deleted'); route(); }).catch(function (e) { ok.disabled = false; toast(e.message); });
     });
     document.body.appendChild(dlg); dlg.showModal(); inp.focus();
+  }
+
+  // ── Session 65: announce / remind preview, webhook prompt, AI suggestion ──
+  function announceDialog(testId, kind, pv) {
+    var dlg = h('dialog', { class: 'confirm ann', 'aria-labelledby': 'an-t' });
+    var isRem = kind === 'remind';
+    var ta = h('textarea', { class: 'inp', rows: 7, style: 'width:100%;font:inherit;line-height:1.45', 'aria-label': 'Message to post' });
+    ta.value = pv.text;
+    var msg = h('div');
+    var hook = h('input', { class: 'inp', style: 'width:100%', type: 'url', placeholder: 'https://chat.googleapis.com/v1/spaces/...', autocomplete: 'off', 'aria-label': 'Google Chat webhook URL' });
+    var keep = h('input', { type: 'checkbox', checked: true, id: 'an-keep' });
+    var aud = pv.audience.everyone ? 'Everyone on the team' : pv.audience.count + (pv.audience.count === 1 ? ' person' : ' people') + (pv.audience.names.length ? ': ' + pv.audience.names.slice(0, 6).join(', ') + (pv.audience.count > 6 ? ' and ' + (pv.audience.count - 6) + ' more' : '') : '');
+    var tagNote = !pv.audience.everyone && pv.audience.count ? (pv.audience.tagged + ' of ' + pv.audience.count + ' can be @mentioned, the rest show as names.') : '';
+    var ai = h('button', { class: 'btn sm', type: 'button' }, [icon('spark', 'sm'), 'Suggest with AI']);
+    ai.addEventListener('click', function () {
+      ai.disabled = true; clear(msg);
+      api('/api/assess/admin/tests/' + testId + '/announce-suggest', { method: 'POST', body: { kind: kind } })
+        .then(function (r) { ta.value = r.text; toast('Suggestion added, edit it if you like'); })
+        .catch(function (e) { msg.appendChild(errBox(e.message)); }).finally(function () { ai.disabled = false; });
+    });
+    var reset = h('button', { class: 'btn ghost sm', type: 'button', text: 'Reset', onclick: function () { ta.value = pv.text; } });
+    var send = h('button', { class: 'btn primary', type: 'button' }, [icon('flag', 'sm'), isRem ? 'Post reminder' : 'Post announcement']);
+    if (pv.blocker) send.disabled = true;
+    send.addEventListener('click', function () {
+      clear(msg);
+      var w = hook.value.trim();
+      if (!pv.hasWebhook && !w) { msg.appendChild(errBox('Paste the Google Chat webhook URL first.')); hook.focus(); return; }
+      send.disabled = true;
+      api('/api/assess/admin/tests/' + testId + '/announce', { method: 'POST', body: { kind: kind, text: ta.value, webhook: w || undefined, saveWebhook: !!w && keep.checked } })
+        .then(function (r) { dlg.close(); toast(r.sent ? 'Posted in Google Chat' + (r.tagged ? ', ' + r.tagged + ' tagged' : '') : (r.reason || 'Nothing to post')); })
+        .catch(function (e) { send.disabled = false; msg.appendChild(errBox(e.message)); });
+    });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [
+      h('h2', { id: 'an-t', text: isRem ? 'Preview reminder' : 'Preview announcement' }),
+      pv.blocker ? errBox(pv.blocker) : null,
+      h('div', { class: 'small muted', text: 'Posts to Google Chat as this message. Edit it before sending.' }),
+      h('div', { class: 'row', style: 'gap:8px;margin:8px 0 4px' }, [h('b', { class: 'small', text: 'Message' }), h('span', { class: 'spacer' }), ai, reset]),
+      ta,
+      h('div', { class: 'small', style: 'margin-top:8px' }, [h('b', { text: 'Audience: ' }), aud]),
+      tagNote ? h('div', { class: 'small muted', text: tagNote }) : null,
+      pv.hasWebhook
+        ? h('div', { class: 'small muted', style: 'margin-top:6px', text: 'Sending to the saved webhook ' + pv.webhookHint })
+        : h('div', { class: 'stack', style: 'gap:6px;margin-top:10px' }, [
+            h('b', { class: 'small', text: 'No webhook saved yet' }), hook,
+            h('label', { class: 'small row', for: 'an-keep', style: 'gap:6px;align-items:center' }, [keep, 'Save it for next time']),
+            h('div', { class: 'small muted', text: 'In Google Chat: space name, Apps and integrations, Webhooks, create one and copy the URL.' })]),
+      msg,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), send])]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal();
   }
 
   // ── Session 64: send a retest (reset + optional Chat tag) ───────────

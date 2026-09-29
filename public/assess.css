@@ -1064,3 +1064,7 @@ body.as-exam{overflow:hidden}
 .rules-all li{margin:3px 0}
 .rules-all li b{color:inherit;font-weight:600}
 @media (prefers-reduced-motion:reduce){.rule-card.in-next,.rule-card.in-prev{animation:none}}
+
+/* Session 65: announce preview dialog */
+dialog.confirm.ann{width:min(560px,calc(100vw - 32px))}
+dialog.confirm.ann textarea{resize:vertical;min-height:120px}
