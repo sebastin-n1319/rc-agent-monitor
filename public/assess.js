@@ -2587,9 +2587,9 @@
       if (!j.ai) err.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: 'AI is not configured on the server, so sections are found but questions cannot be written. Add ANTHROPIC_API_KEY or OPENAI_API_KEY.' })]));
       if (!j.sessions.length) { pl.appendChild(h('div', { class: 'il-empty' }, [art('inbox', 140), h('span', { text: 'Nothing yet. Your first document will appear here.' })])); return; }
       j.sessions.forEach(function (x) {
-        pl.appendChild(h('div', { class: 'click', onclick: function () { go('studio/' + x.id); } }, [h('span', { class: 'ic-round' }, [icon(x.status === 'saved' ? 'check' : 'doc', 'sm')]),
-          h('div', { class: 'who' }, [h('b', { text: x.title }), h('span', { text: x.groups + ' assessment' + (x.groups === 1 ? '' : 's') + ' planned · ' + x.drafts + ' draft questions · ' + fmtWhen(x.updatedAt) })]),
-          x.status === 'saved' ? pill('Saved', 'ok') : pill('In progress', 'accent')]));
+        pl.appendChild(h('div', { class: 'click', onclick: function () { go('studio/' + x.id); } }, [h('span', { class: 'ic-round' }, [icon(x.status === 'saved' && !x.unsaved ? 'check' : 'doc', 'sm')]),
+          h('div', { class: 'who' }, [h('b', { text: x.title }), h('span', { text: x.groups + ' assessment' + (x.groups === 1 ? '' : 's') + ' planned · ' + x.drafts + ' draft questions' + (x.unsaved && x.unsaved < x.drafts ? ' (' + (x.drafts - x.unsaved) + ' in the bank)' : '') + ' · ' + fmtWhen(x.updatedAt) })]),
+          x.unsaved ? pill(x.unsaved + ' not saved yet', 'accent') : (x.status === 'saved' ? pill('Saved', 'ok') : pill('In progress', 'accent'))]));
       });
     }).catch(function () {});
   }
