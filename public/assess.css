@@ -1106,3 +1106,25 @@ dialog.confirm.ann textarea{resize:vertical;min-height:120px}
 .livebar .ld{width:9px;height:9px;border-radius:50%;background:#9BAFC0;flex:none}
 .livebar.on{border-color:#F4B25F;background:rgba(244,178,95,.12);color:var(--t1)}
 .livebar.on .ld{background:#F4891F}
+
+/* Session 68: reading speed dial (crown style) and highlighted Replay */
+.sd{display:inline-flex;flex-direction:column;gap:2px;padding:4px 10px 4px 6px;border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:grab;user-select:none;touch-action:none;outline:none}
+.sd:active{cursor:grabbing}
+.sd:focus-visible{box-shadow:0 0 0 3px var(--accent-ring)}
+.sd .sd-cap{font-size:10.5px;line-height:1;padding-left:38px}
+.sd .sd-row{display:flex;align-items:center;gap:8px}
+.sd-wheel{width:30px;height:30px;border-radius:50%;flex:none;position:relative;transition:transform .18s cubic-bezier(.3,1.6,.5,1);
+  background:repeating-conic-gradient(from 0deg,var(--t3) 0 4deg,var(--surface-3) 4deg 12deg);box-shadow:inset 0 0 0 4px var(--surface),0 1px 3px rgba(7,43,64,.25)}
+.sd-wheel::after{content:"";position:absolute;left:50%;top:3px;width:3px;height:7px;margin-left:-1.5px;border-radius:2px;background:var(--accent)}
+.sd-lab{display:flex;flex-direction:column;gap:3px;min-width:58px}
+.sd-name{font-size:12.5px;color:var(--t1);line-height:1.1}
+.sd-ticks{display:flex;gap:4px}
+.sd-ticks i{width:10px;height:3px;border-radius:2px;background:var(--border-strong)}
+.sd-ticks i.lo,.sd-ticks i.on{background:var(--accent)}
+.sd-ticks i.on{width:14px}
+@media (prefers-reduced-motion:reduce){.sd-wheel{transition:none}}
+.btn.primary.replay{box-shadow:0 0 0 0 var(--accent-ring),0 6px 16px -6px var(--accent-ring)}
+.btn.primary.replay:disabled{opacity:.45;box-shadow:none}
+.btn.primary.replay.nudge{animation:rnudge 1.4s ease-out 2}
+@keyframes rnudge{0%{box-shadow:0 0 0 0 var(--accent-ring)}70%{box-shadow:0 0 0 10px rgba(244,137,31,0)}100%{box-shadow:0 0 0 0 rgba(244,137,31,0)}}
+@media (prefers-reduced-motion:reduce){.btn.primary.replay.nudge{animation:none}}

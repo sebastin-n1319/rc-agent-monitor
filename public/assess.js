@@ -359,6 +359,52 @@
     lines.forEach(function (ln, i) { f.ctx.fillText(ln, 0, i * lh + lh / 2 + 2); });
   }
 
+  // Session 68: reading speed. Four steps, chosen by the agent on a notched dial and remembered on their device.
+  var SPEEDS = [{ label: 'Fast', ms: 700 }, { label: 'Medium', ms: 1000 }, { label: 'Slow', ms: 1400 }, { label: 'Slowest', ms: 2000 }];
+  function speedFor(ms) { var best = 1, gap = 1e9; SPEEDS.forEach(function (o, i) { var d = Math.abs(o.ms - (ms || 1000)); if (d < gap) { gap = d; best = i; } }); return best; }
+  function savedSpeed(dflt) { try { var v = parseInt(localStorage.getItem('as-read-speed'), 10); if (v >= 0 && v < SPEEDS.length) return v; } catch (e) {} return dflt; }
+  function saveSpeed(i) { try { localStorage.setItem('as-read-speed', String(i)); } catch (e) {} }
+  /** A crown-style dial: drag it, scroll over it, click it or use the arrow keys. It turns and clicks into four notches. */
+  function SpeedDial(idx, onChange) {
+    var wheel = h('span', { class: 'sd-wheel', 'aria-hidden': 'true' });
+    var name = h('b', { class: 'sd-name' });
+    var ticks = h('span', { class: 'sd-ticks', 'aria-hidden': 'true' }, SPEEDS.map(function () { return h('i'); }));
+    var el = h('div', { class: 'sd', role: 'slider', tabindex: '0', 'aria-label': 'Reading speed', 'aria-valuemin': '0', 'aria-valuemax': String(SPEEDS.length - 1), title: 'Reading speed. Drag, scroll or use the arrow keys. It applies on the next replay.' }, [
+      h('span', { class: 'sd-cap small muted', text: 'Reading speed' }), h('span', { class: 'sd-row' }, [wheel, h('span', { class: 'sd-lab' }, [name, ticks])])]);
+    function paint() {
+      wheel.style.transform = 'rotate(' + (idx * 60 - 90) + 'deg)';
+      name.textContent = SPEEDS[idx].label;
+      el.setAttribute('aria-valuenow', String(idx)); el.setAttribute('aria-valuetext', SPEEDS[idx].label);
+      Array.prototype.forEach.call(ticks.children, function (t, k) { t.className = k === idx ? 'on' : (k < idx ? 'lo' : ''); });
+    }
+    function set(i, fromUser) {
+      i = Math.max(0, Math.min(SPEEDS.length - 1, i));
+      if (i === idx) return;
+      idx = i; paint(); saveSpeed(idx); if (fromUser && navigator.vibrate) { try { navigator.vibrate(6); } catch (e) {} }
+      if (onChange) onChange(idx);
+    }
+    var lastWheel = 0;
+    el.addEventListener('wheel', function (e) { e.preventDefault(); var n = Date.now(); if (n - lastWheel < 140) return; lastWheel = n; set(idx + ((e.deltaY || e.deltaX) > 0 ? 1 : -1), true); }, { passive: false });
+    el.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowUp') { e.preventDefault(); set(idx + 1, true); }
+      else if (k === 'ArrowLeft' || k === 'ArrowDown') { e.preventDefault(); set(idx - 1, true); }
+      else if (k === 'Home') { e.preventDefault(); set(0, true); } else if (k === 'End') { e.preventDefault(); set(SPEEDS.length - 1, true); }
+    });
+    var drag = null, moved = false;
+    el.addEventListener('pointerdown', function (e) { drag = { x: e.clientX, y: e.clientY, at: idx }; moved = false; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
+    el.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var d = (e.clientX - drag.x) - (e.clientY - drag.y);
+      if (Math.abs(d) > 5) moved = true;
+      set(drag.at + Math.round(d / 26), true);
+    });
+    function up() { if (drag && !moved) set(idx + 1 >= SPEEDS.length ? 0 : idx + 1, true); drag = null; }
+    el.addEventListener('pointerup', up); el.addEventListener('pointercancel', function () { drag = null; });
+    paint();
+    return el;
+  }
+
   /** Rolling reveal: one group of words at a time in a fixed reading band.
    *  The group before it moves up and dims, anything older is gone, so a
    *  single screenshot never holds the whole question. Groups ending in
@@ -367,17 +413,23 @@
     var canvas = h('canvas', { 'aria-hidden': 'true' });
     var dots = h('div', { class: 'dots', 'aria-hidden': 'true' });
     var state = h('span', { class: 'state', text: 'Reading…' });
-    var replayBtn = h('button', { class: 'btn sm', type: 'button', disabled: true }, [icon('replay', 'sm'), 'Replay from start']);
-    host.appendChild(h('div', { class: 'reader' }, [canvas, h('div', { class: 'bar' }, [dots, h('span', { class: 'spacer' }), state, replayBtn])]));
+    var replayBtn = h('button', { class: 'btn sm primary replay', type: 'button', disabled: true }, [icon('replay', 'sm'), 'Replay from start']);
+    var speedIdx = savedSpeed(speedFor(s.chunkMs));
+    var dial = SpeedDial(speedIdx, function (i) { speedIdx = i; });
+    host.appendChild(h('div', { class: 'reader' }, [canvas, h('div', { class: 'bar' }, [dots, h('span', { class: 'spacer' }), state, dial, replayBtn])]));
     var words = String(text).split(/\s+/).filter(Boolean), per = Math.max(2, s.wordsPerChunk || 4), chunks = [];
     for (var i = 0; i < words.length; i += per) chunks.push(words.slice(i, i + per).join(' '));
-    var starts = [], t = 0;
-    chunks.forEach(function (c) {
-      starts.push(t);
-      var n = c.split(' ').length;
-      t += (s.chunkMs || 1000) * (0.55 + 0.45 * n / per) + (/[.,;:?!]$/.test(c) ? 280 : 0);
-    });
-    var total = t + 500, raf = 0, t0 = 0, running = false, self = this, lastIdx = -1;
+    var starts = [], t = 0, total = 0, raf = 0, t0 = 0, running = false, self = this, lastIdx = -1;
+    function timing() {
+      var ms = SPEEDS[speedIdx].ms; starts = []; t = 0;
+      chunks.forEach(function (c) {
+        starts.push(t);
+        var n = c.split(' ').length;
+        t += ms * (0.55 + 0.45 * n / per) + (/[.,;:?!]$/.test(c) ? 280 : 0);
+      });
+      total = t + 500; self.durationMs = total;
+    }
+    timing();
     chunks.forEach(function () { dots.appendChild(h('i')); });
     var f = null;
     function size() { f = fitCanvas(canvas, 118); }
@@ -409,13 +461,12 @@
         Array.prototype.forEach.call(dots.children, function (d, k) { d.className = k === idx ? 'on' : (k < idx ? 'past' : ''); });
       }
       if (el < total) raf = requestAnimationFrame(frame);
-      else { running = false; replayBtn.disabled = false; state.textContent = 'Replay if you need to read it again.'; Array.prototype.forEach.call(dots.children, function (d) { d.className = 'past'; }); if (onEnd) onEnd(); }
+      else { running = false; replayBtn.disabled = false; replayBtn.classList.remove('nudge'); void replayBtn.offsetWidth; replayBtn.classList.add('nudge'); state.textContent = 'Replay if you need to read it again.'; Array.prototype.forEach.call(dots.children, function (d) { d.className = 'past'; }); if (onEnd) onEnd(); }
     }
-    this.play = function () { cancelAnimationFrame(raf); size(); t0 = 0; lastIdx = -1; running = true; replayBtn.disabled = true; state.textContent = 'Reading…'; raf = requestAnimationFrame(frame); };
+    this.play = function () { cancelAnimationFrame(raf); timing(); size(); t0 = 0; lastIdx = -1; running = true; replayBtn.disabled = true; state.textContent = 'Reading…'; raf = requestAnimationFrame(frame); };
     this.stop = function () { cancelAnimationFrame(raf); running = false; };
     this.resize = function () { size(); if (!running) f.ctx.clearRect(0, 0, f.w, f.h); };
     this.replayBtn = replayBtn;
-    this.durationMs = total;
     replayBtn.addEventListener('click', function () { if (self.onReplay) self.onReplay(); self.play(); });
   }
   function FullText(host, text) {
@@ -1816,8 +1867,8 @@
         modeCards.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
       });
       var wpc = h('select', { class: 'sel', id: 'b-wpc' }, [2, 3, 4, 5, 6].map(function (n) { return h('option', { value: String(n), text: n + ' words' }); })); wpc.value = String(st.wordsPerChunk);
-      var spd = h('select', { class: 'sel', id: 'b-spd' }, [[700, 'Fast'], [1000, 'Normal'], [1300, 'Relaxed']].map(function (o) { return h('option', { value: String(o[0]), text: o[1] }); }));
-      spd.value = String([700, 1000, 1300].reduce(function (a, b) { return Math.abs(b - st.chunkMs) < Math.abs(a - st.chunkMs) ? b : a; }));
+      var spd = h('select', { class: 'sel', id: 'b-spd' }, SPEEDS.map(function (o) { return h('option', { value: String(o.ms), text: o.label }); }));
+      spd.value = String(SPEEDS[speedFor(st.chunkMs)].ms);
       wpc.addEventListener('change', function () { st.wordsPerChunk = Number(wpc.value); });
       spd.addEventListener('change', function () { st.chunkMs = Number(spd.value); });
       var prevHost = h('div', { style: 'margin-top:10px' });
@@ -1826,7 +1877,7 @@
         var sample = picked.length && bankById[picked[0]] ? bankById[picked[0]].prompt : 'A caller says their front desk phones stopped ringing this morning. Which team owns this, and what do you check first?';
         new Reader(prevHost, sample, { wordsPerChunk: st.wordsPerChunk, chunkMs: st.chunkMs }).play();
       } }, [icon('replay', 'sm'), 'Preview reading']);
-      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Reading speed', spd)]), prevBtn, prevHost]);
+      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Starting reading speed', spd, 'Agents can change it themselves with the dial.')]), prevBtn, prevHost]);
       var voiceSel = h('select', { class: 'sel', id: 'b-voice' }, [['alloy', 'Alloy (neutral)'], ['nova', 'Nova (warm)'], ['shimmer', 'Shimmer (bright)'], ['echo', 'Echo (calm)'], ['onyx', 'Onyx (deep)'], ['fable', 'Fable (British)']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
       voiceSel.value = st.voice || 'alloy';
       voiceSel.addEventListener('change', function () { st.voice = voiceSel.value; });
