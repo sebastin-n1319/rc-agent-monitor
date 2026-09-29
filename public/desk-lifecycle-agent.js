@@ -313,6 +313,8 @@
         return 'New tickets\n\nTickets you handled in this range that were also created in this range.';
       case 'assist':
         return 'Call notes on others\' tickets\n\nTickets someone else owns where you only left a comment, usually a call note after helping the customer on the phone. They already count in Tickets handled.';
+      case 'created_away':
+        return 'Created by you, now with someone else\n\nTickets you created (for example a phone ticket you logged) that are now owned by someone else. They already count in Tickets handled.';
       case 'handled_followup':
         return 'Follow-ups\n\nTickets you handled in this range that were created earlier (follow-ups, reopens, transfers-in).';
       case 'unique':
@@ -429,10 +431,11 @@
         ${click('handled_new', stat('ticket', 'teal', tv('tickets_handled_new'), 'New tickets', 'handled_new', s, prevS, d('tickets_handled_new')))}
         ${click('handled_followup', stat('swap', 'purple', tv('tickets_handled_followup'), 'Follow-ups', 'handled_followup', s, prevS, d('tickets_handled_followup')))}
         ${click('assist', stat('chat', 'teal', tv('tickets_assist'), 'Call notes on others\' tickets', 'assist', s, prevS, d('tickets_assist')))}
+        ${click('created_away', stat('swap', 'purple', tv('tickets_created_away'), 'Created by you, now with others', 'created_away', s, prevS, d('tickets_created_away')))}
         ${c ? dt('calls:all', stat('phone', 'green', c.totalCalls || 0, 'Calls')) : stat('phone', 'green', '-', 'Calls')}
         ${cs ? dt('chats:chats', stat('chat', 'amber', cs.chatCount || 0, 'Chats')) : stat('chat', 'amber', '-', 'Chats')}
       </div>
-      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} · call notes on ${s.tickets_assist || 0} tickets owned by someone else (a ticket can be in more than one, and all of them count in Tickets handled). Click any card to see the exact tickets, calls or chats behind it.</div>`
+      ${ready ? `<div class="av2-section-meta" style="margin-top:8px">Replied on ${s.tickets_replied || 0} · commented on ${s.tickets_commented || 0} · took ownership of ${s.tickets_owned || 0} · call notes on ${s.tickets_assist || 0} tickets someone else created and owns, created ${s.tickets_created_away || 0} that are now with someone else (a ticket can be in more than one, and all of them count in Tickets handled). Click any card to see the exact tickets, calls or chats behind it.</div>`
               : `<div class="av2-section-meta" style="margin-top:8px">Ticket activity for this range is still syncing, check back shortly.</div>`}`;
     return panel('Work handled', 'Counted automatically from Zoho Desk, RingCentral and SalesIQ, nothing to log by hand.', body);
   }

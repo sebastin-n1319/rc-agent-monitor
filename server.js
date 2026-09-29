@@ -7751,7 +7751,7 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
       'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal',
       'closed', 'fcr', 'csat', 'currently_handling',
       // Session 42: "tickets handled" family
-      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'assist', // Session 51
+      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'assist', 'created_away', // Session 51
     ]);
     const metric = String(req.query.metric || 'unique');
     if (!VALID_METRICS.has(metric)) return res.status(400).json({ success: false, error: 'Invalid metric' });
