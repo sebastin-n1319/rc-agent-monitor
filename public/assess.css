@@ -1068,3 +1068,8 @@ body.as-exam{overflow:hidden}
 /* Session 65: announce preview dialog */
 dialog.confirm.ann{width:min(560px,calc(100vw - 32px))}
 dialog.confirm.ann textarea{resize:vertical;min-height:120px}
+
+/* Batch 36: expanded ground rules were dark text on navy; make them readable */
+.rules .rules-all ul{list-style:disc;color:var(--on-navy-2)}
+.rules .rules-all li{display:list-item;color:var(--on-navy-2);margin:6px 0;line-height:1.45}
+.rules .rules-all li b{display:inline;color:var(--on-navy);font-weight:600}

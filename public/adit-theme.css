@@ -8482,3 +8482,15 @@ button:active { transform: scale(.97) !important; }
   }
   .brain-fab { width: 50px !important; height: 50px !important; }
 }
+
+/* Batch 36: sub-page tab bar stays visible under the fixed header on every page */
+.sb-subtabs {
+  position: sticky;
+  top: 48px;
+  z-index: 60;
+  margin-left: -20px;
+  margin-right: -20px;
+  padding: 8px 20px 0;
+  background: #F7F8F8;
+}
+html.dark-mode .sb-subtabs { background: #051824; }
