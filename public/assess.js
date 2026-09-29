@@ -98,6 +98,22 @@
     layers: '<path d="M12 2.5 2.5 7.5 12 12.5l9.5-5z"/><path d="M2.5 12 12 17l9.5-5M2.5 16.5 12 21.5l9.5-5"/>',
     chat: '<path d="M20.5 15a2 2 0 0 1-2 2H7.5l-4 4V5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/>',
     bot: '<rect x="3.5" y="8" width="17" height="12" rx="3"/><path d="M12 8V4.5M9 13.5v1.5M15 13.5v1.5"/><circle cx="12" cy="3.5" r="1"/>',
+    m_calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h2M14 14h2"/>',
+    m_engage: '<path d="M20.5 12a8 8 0 0 1-11.8 7L3.5 20.5l1.6-4.6A8 8 0 1 1 20.5 12z"/><path d="M8.5 11.5h7M8.5 14.5h4"/>',
+    m_schedcheck: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/>',
+    m_ai: '<text x="12" y="16.4" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" stroke="none" style="font-family:inherit">ai</text>',
+    m_tx: '<text x="12" y="16.2" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor" stroke="none" style="font-family:inherit">Tx</text>',
+    m_dollar: '<circle cx="12" cy="12" r="9"/><path d="M14.6 9c-.4-.9-1.4-1.4-2.6-1.4-1.5 0-2.6.8-2.6 2 0 3 5.4 1.4 5.4 4.2 0 1.2-1.2 2-2.7 2-1.3 0-2.4-.6-2.8-1.5M12 6v1.6M12 16.4V18"/>',
+    m_phone: '<path d="M21 16.5v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 1.1 3.2 2 2 0 0 1 3.1 1h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L7.1 9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/>',
+    m_phonecall: '<path d="M20 16.5v2.4a1.6 1.6 0 0 1-1.8 1.6 15.8 15.8 0 0 1-6.9-2.5 15.6 15.6 0 0 1-4.8-4.8A15.8 15.8 0 0 1 3.9 5.3 1.6 1.6 0 0 1 5.5 3.5h2.4a1.6 1.6 0 0 1 1.6 1.4c.1.8.3 1.5.6 2.2a1.6 1.6 0 0 1-.4 1.7L8.7 9.8a12.8 12.8 0 0 0 4.8 4.8l1-1a1.6 1.6 0 0 1 1.7-.3c.7.3 1.4.5 2.2.6a1.6 1.6 0 0 1 1.6 1.6z"/><path d="M14.5 3.5a6 6 0 0 1 6 6M14.5 7a2.6 2.6 0 0 1 2.6 2.6"/>',
+    m_check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.7 2.7L16 9.5"/>',
+    m_rcm: '<path d="M14 2.5H6.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5M12 11v7M14 12.6c-.4-.5-1.1-.8-2-.8-1.1 0-2 .6-2 1.5 0 2 4 1 4 3 0 .9-.9 1.5-2 1.5-.9 0-1.6-.3-2-.8"/>',
+    m_reports: '<rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M7.5 15.5l3-3.5 2.5 2 3.5-4.5"/>',
+    m_bolt: '<path d="M13 2.5 4.5 13.5H11l-1 8 8.5-11H12z"/>',
+    m_idcard: '<rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.3 3-2.3s2.4.7 3 2.3M14 10h4.5M14 13.5h3"/>',
+    m_gear: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.6"/><path d="M12 2.5v2.9M12 18.6v2.9M2.5 12h2.9M18.6 12h2.9M5.3 5.3l2 2M16.7 16.7l2 2M5.3 18.7l2-2M16.7 7.3l2-2"/>',
+    m_fax: '<path d="M7 9V3.5h8l2 2V9"/><rect x="3" y="9" width="18" height="9" rx="2"/><path d="M7 14h10v6.5H7zM17 11.5h.01"/>',
+    m_folder: '<path d="M3 6.5a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     report: '<path d="M14 2.5H6.5a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V8z"/><path d="M14 2.5V8h5.5M9 17.5v-3M12 17.5v-5.5M15 17.5v-2"/>',
   };
   function icon(name, cls) {
@@ -105,6 +121,64 @@
     s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'i' + (cls ? ' ' + cls : '')); s.setAttribute('aria-hidden', 'true');
     s.innerHTML = ICONS[name] || '';
     return s;
+  }
+  // Session 65: product modules (names and icons come from the server list)
+  var MODS = null, MOD_BY = {};
+  function loadMods() {
+    if (MODS) return Promise.resolve(MODS);
+    return api('/api/assess/modules').then(function (j) { MODS = j.modules || []; MODS.forEach(function (m) { MOD_BY[m.key] = m; }); return MODS; }).catch(function () { MODS = []; return MODS; });
+  }
+  function modChip(m, sub) {
+    var info = MOD_BY[m.key] || m;
+    return h('span', { class: 'mchip', title: info.name }, [icon(info.icon || 'm_folder', 'sm'), h('span', { text: info.name }), sub ? h('em', { text: sub }) : null]);
+  }
+  function modChips(list) {
+    if (!list || !list.length) return null;
+    return h('div', { class: 'mchips' }, list.map(function (m) { return modChip(m, (m.subs || []).join(' · ')); }));
+  }
+  // Module and sub-module picker. state.modules = [{key, subs:[]}]
+  function modEditor(state, onChange) {
+    var el = h('div', { class: 'moded' });
+    function idx(k) { for (var i = 0; i < state.modules.length; i++) if (state.modules[i].key === k) return i; return -1; }
+    function changed() { if (onChange) onChange(); }
+    function draw() {
+      clear(el);
+      if (!MODS || !MODS.length) { el.appendChild(h('p', { class: 'muted small', text: 'Loading modules...' })); return; }
+      var groups = [], byG = {};
+      MODS.forEach(function (m) { if (!byG[m.group]) { byG[m.group] = []; groups.push(m.group); } byG[m.group].push(m); });
+      groups.forEach(function (g) {
+        el.appendChild(h('div', { class: 'modgrp' }, [h('span', { class: 'lbl small', text: g }), h('div', { class: 'chips' }, byG[g].map(function (m) {
+          var on = idx(m.key) >= 0;
+          return h('button', { type: 'button', class: 'chip mod ' + (on ? 'sel' : 'off'), 'aria-pressed': String(on), onclick: function () {
+            var at = idx(m.key);
+            if (at >= 0) state.modules.splice(at, 1); else if (state.modules.length < 6) state.modules.push({ key: m.key, subs: [] }); else { toast('Six modules at most'); return; }
+            draw(); changed();
+          } }, [icon(m.icon, 'sm'), m.name]);
+        }))]));
+      });
+      state.modules.forEach(function (x) {
+        var m = MOD_BY[x.key]; if (!m) return;
+        var dl = h('datalist', { id: 'dl-' + x.key }, (m.subs || []).map(function (sname) { return h('option', { value: sname }); }));
+        var inp = h('input', { class: 'inp', type: 'text', list: 'dl-' + x.key, maxlength: '40', placeholder: 'Add a sub-module, then press Enter', 'aria-label': 'Sub-module for ' + m.name });
+        function add() { var v = inp.value.replace(/[,]/g, ' ').replace(/\s+/g, ' ').trim(); if (!v) return; if (x.subs.every(function (y) { return y.toLowerCase() !== v.toLowerCase(); }) && x.subs.length < 6) x.subs.push(v); draw(); changed(); }
+        inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(); } });
+        inp.addEventListener('change', add);
+        el.appendChild(h('div', { class: 'modsub' }, [h('div', { class: 'modsub-h' }, [icon(m.icon, 'sm'), h('b', { text: m.name })]),
+          h('div', { class: 'chips' }, x.subs.map(function (sname, i) { return h('span', { class: 'chip' }, [sname, h('button', { type: 'button', 'aria-label': 'Remove ' + sname, class: 'x', onclick: function () { x.subs.splice(i, 1); draw(); changed(); } }, [icon('x', 'sm')])]); })), inp, dl]));
+      });
+    }
+    loadMods().then(draw); draw();
+    el.redraw = draw;
+    return el;
+  }
+  // One click: draft questions become a draft assessment with a suggested
+  // name, description, modules and study list. Opens the builder to review.
+  function createFromDrafts(ids, btn, hint) {
+    if (!ids || !ids.length) { toast('No questions to use'); return Promise.resolve(); }
+    if (btn) { btn.disabled = true; btn.classList.add('busy'); }
+    return api('/api/assess/admin/tests/from-questions', { method: 'POST', body: { questionIds: ids, approve: true, hint: hint || '' } })
+      .then(function (r) { toast('Assessment created: ' + ((r.meta && r.meta.title) || 'draft') + '. Its questions are approved.'); go('edit/' + r.id); })
+      .catch(function (e) { toast(e.message); if (btn) { btn.disabled = false; btn.classList.remove('busy'); } });
   }
   function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
   function announce(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 30); }
@@ -463,6 +537,7 @@
         grid.appendChild(h('div', { class: 'card tcard tone-' + tone }, [
           h('div', { class: 'top' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('h2', { text: t.title }), status]),
           t.description ? h('p', { class: 'tdesc', text: t.description }) : null,
+          modChips(t.modules),
           h('dl', { class: 'facts' }, [
             h('div', null, [h('dt', { text: 'Questions' }), h('dd', { text: String(t.questions + (t.explainCount ? ' + ' + t.explainCount : '')) })]),
             h('div', null, [h('dt', { text: t.navigation === 'locked' ? 'Per question' : 'Clock each' }), h('dd', { text: t.secondsPerQuestion + 's' })]),
@@ -545,7 +620,25 @@
       else if (step === 2) stepCheck(card);
       else stepAgree(card);
     }
+    function prepCard(card) {
+      var pr = t.prep || { summary: '', topics: [] };
+      if (!(t.modules && t.modules.length) && !pr.summary && !(pr.topics && pr.topics.length)) return;
+      var box = h('div', { class: 'covers' });
+      box.appendChild(h('div', { class: 'covers-h' }, [h('span', { class: 'ic-round' }, [icon('layers', 'sm')]), h('h2', { text: 'What this covers' })]));
+      if (t.modules && t.modules.length) box.appendChild(modChips(t.modules));
+      if (pr.summary) box.appendChild(h('p', { class: 'lead', text: pr.summary }));
+      if (pr.topics && pr.topics.length) {
+        var grid = h('div', { class: 'ctopics' });
+        pr.topics.forEach(function (tp, i) {
+          grid.appendChild(h('div', { class: 'ctopic', style: '--i:' + i }, [h('b', { text: tp.title }), tp.points && tp.points.length ? h('ul', null, tp.points.map(function (x) { return h('li', { text: x }); })) : null]));
+        });
+        box.appendChild(grid);
+      }
+      box.appendChild(h('p', { class: 'small muted', text: 'Use this to revise before you start. It lists topics only, not the questions.' }));
+      card.appendChild(box);
+    }
     function stepOverview(card) {
+      prepCard(card);
       card.appendChild(h('h2', { text: 'What to expect' }));
       card.appendChild(h('p', { class: 'lead', text: t.questions + ' questions' + (t.explainCount ? ' and ' + t.explainCount + ' written answer' + (t.explainCount > 1 ? 's' : '') : '') + ', about ' + t.estMinutes + ' minutes in total.' }));
       var modeRule = t.displayMode === 'audio' ? ['headphones', 'Questions are read aloud', 'Each question plays as audio; only the answer options are on screen. Use headphones. Play it again as often as you need; replays are noted.']
@@ -1315,6 +1408,7 @@
         grid.appendChild(h('div', { class: 'card mcard' }, [
           h('div', { class: 'row', style: 'align-items:flex-start' }, [h('h2', { style: 'flex:1;font-size:16px', text: t.title }), t.status === 'published' ? pill('Published', 'ok', true) : pill('Draft', '', true)]),
           t.description ? h('p', { class: 'muted small', style: 'margin:0', text: t.description }) : null,
+          modChips(t.modules),
           h('div', { class: 'meta' }, [pill(qtext), pill(t.settings.secondsPerQuestion + 's each'), pill(t.settings.navigation === 'locked' ? 'One way' : 'Back and forth'), pill(t.assign.everyone ? 'Everyone' : t.assign.emails.length + ' assigned'), t.settings.camera ? pill('Camera', 'accent') : null]),
           h('div', { class: 'nums' }, [
             h('div', null, [h('b', { text: String(t.submitted) }), h('span', { text: 'Submitted' })]),
@@ -1345,8 +1439,9 @@
       var t = id ? r[0].tests.find(function (x) { return x.id === id; }) : null;
       if (id && !t) { holder.appendChild(errBox('Assessment not found.')); return; }
       var bank = r[2].questions, tags = r[2].tags, people = r[3].people;
-      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, navigation: 'bank', pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
+      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, navigation: 'bank', modules: [], prep: { summary: '', topics: [] }, pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
       if (!st.navigation) st.navigation = 'bank';
+      if (!st.modules) st.modules = []; if (!st.prep) st.prep = { summary: '', topics: [] };
       var picked = r[1].questions.map(function (q) { return q.id; });
       var assign = t ? { everyone: t.assign.everyone, emails: t.assign.emails.slice() } : { everyone: false, emails: [] };
       var status = t ? t.status : 'draft';
@@ -1360,7 +1455,9 @@
       // Details
       var title = h('input', { class: 'inp', id: 'b-title', maxlength: '160', required: true, 'aria-required': 'true', value: t ? t.title : '', placeholder: 'e.g. Escalations and ownership, October' });
       var desc = h('textarea', { class: 'ta', id: 'b-desc', maxlength: '1000', placeholder: 'What this checks. Agents see this on their card.' }); desc.value = t ? t.description : '';
-      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Details' }), h('p', { text: 'Agents see the title and description before they start.' }), field('Title', title), field('Description', desc)]));
+      var sugBtn = h('button', { class: 'btn sm', type: 'button' }, [icon('wand', 'sm'), 'Suggest name and description']);
+      var sugMsg = h('div');
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Details' }), h('p', { text: 'Agents see the title and description before they start.' }), field('Title', title), field('Description', desc), h('div', { class: 'row', style: 'margin-top:10px' }, [sugBtn, h('span', { class: 'small muted', text: 'Reads the questions below and proposes a name and description. You can edit them.' })]), sugMsg]));
 
       // Questions
       var qsec = h('div', { class: 'card sec' });
@@ -1422,6 +1519,54 @@
           h('button', { class: 'btn primary', type: 'button', text: 'Done', onclick: function () { picked = chosen; dlg.close(); renderQuestions(); renderSide(); } })]);
       }
       renderQuestions();
+
+      // Modules and what it covers (shown to agents before they start)
+      var prep = st.prep;
+      var modState = { modules: st.modules };
+      var prepBox = h('div');
+      var sumIn = h('textarea', { class: 'ta', id: 'b-psum', maxlength: '600', placeholder: 'A sentence or two on what agents should revise.', style: 'min-height:64px' }); sumIn.value = prep.summary || '';
+      sumIn.addEventListener('input', function () { prep.summary = sumIn.value; });
+      function drawPrep() {
+        clear(prepBox);
+        prep.topics.forEach(function (tp, i) {
+          var ti = h('input', { class: 'inp', type: 'text', maxlength: '90', value: tp.title, placeholder: 'Topic', 'aria-label': 'Topic ' + (i + 1) });
+          var pts = h('textarea', { class: 'ta', style: 'min-height:64px', placeholder: 'One study pointer per line', 'aria-label': 'Pointers for ' + (tp.title || 'topic') }); pts.value = (tp.points || []).join('\n');
+          ti.addEventListener('input', function () { tp.title = ti.value; });
+          pts.addEventListener('input', function () { tp.points = pts.value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 6); });
+          prepBox.appendChild(h('div', { class: 'ptopic' }, [h('div', { class: 'row', style: 'flex-wrap:nowrap' }, [ti, h('button', { class: 'btn icon sm ghost', type: 'button', 'aria-label': 'Remove topic', onclick: function () { prep.topics.splice(i, 1); drawPrep(); } }, [icon('x', 'sm')])]), pts]));
+        });
+        if (prep.topics.length < 10) prepBox.appendChild(h('button', { class: 'btn sm', type: 'button', style: 'margin-top:6px', onclick: function () { prep.topics.push({ title: '', points: [] }); drawPrep(); } }, [icon('plus', 'sm'), 'Add a topic']));
+      }
+      drawPrep();
+      var coverBtn = h('button', { class: 'btn sm', type: 'button' }, [icon('wand', 'sm'), 'Suggest from the questions']);
+      var coverMsg = h('div');
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Modules and what it covers' }),
+        h('p', { text: 'Tag the product modules this checks. Agents see the tags and the study list when they open the assessment, so they know what to revise. It never shows questions or answers.' }),
+        modEditor(modState, null), h('div', { style: 'height:14px' }),
+        field('Summary for agents', sumIn), h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'Topics to revise' }), h('div', { style: 'height:6px' }), prepBox,
+        h('div', { class: 'row', style: 'margin-top:12px' }, [coverBtn]), coverMsg]));
+      function suggestIds() {
+        if (st.pool.mode === 'fixed') return picked.slice(0, 60);
+        return bank.filter(function (q) { return q.status === 'approved' && (!st.pool.tags.length || q.tags.some(function (x) { return st.pool.tags.indexOf(x) >= 0; })); }).slice(0, 40).map(function (q) { return q.id; });
+      }
+      function runSuggest(part, btn, msgBox) {
+        var ids = suggestIds();
+        clear(msgBox);
+        if (!ids.length) { msgBox.appendChild(errBox('Add some questions first, then I can suggest from them.')); return; }
+        btn.disabled = true; btn.classList.add('busy');
+        api('/api/assess/admin/tests/suggest', { method: 'POST', body: { questionIds: ids, hint: title.value.slice(0, 120) } }).then(function (r) {
+          var m = r.meta;
+          if (part === 'text') { if (m.title) title.value = m.title; if (m.description) desc.value = m.description; msgBox.appendChild(h('div', { class: 'alert info' }, [icon('check'), h('span', { text: 'Filled in a name and description. Edit them if you like.' })])); }
+          else {
+            st.modules.length = 0; m.modules.forEach(function (x) { st.modules.push(x); });
+            prep.summary = m.prep.summary || ''; sumIn.value = prep.summary; prep.topics.length = 0; (m.prep.topics || []).forEach(function (x) { prep.topics.push(x); });
+            drawPrep(); loadMods().then(function () { document.querySelectorAll('.moded').forEach(function (e) { if (e.redraw) e.redraw(); }); });
+            msgBox.appendChild(h('div', { class: 'alert info' }, [icon('check'), h('span', { text: 'Filled in modules and a study list from the questions. Edit anything that is off.' })]));
+          }
+        }).catch(function (e) { msgBox.appendChild(errBox(e.message)); }).finally(function () { btn.disabled = false; btn.classList.remove('busy'); });
+      }
+      sugBtn.addEventListener('click', function () { runSuggest('text', sugBtn, sugMsg); });
+      coverBtn.addEventListener('click', function () { runSuggest('cover', coverBtn, coverMsg); });
 
       // Timing and display
       var secIn = h('input', { class: 'inp', id: 'b-sec', type: 'number', min: '15', max: '180', value: String(st.secondsPerQuestion) });
@@ -1545,6 +1690,7 @@
       function collect() {
         st.passPct = Number(passIn.value); st.attempts = Number(attIn.value); st.showScore = showT.input.checked;
         st.camera = camT.input.checked; st.watermark = wmT.input.checked ? 'subtle' : 'off'; st.shuffleQuestions = shQ.input.checked; st.shuffleOptions = shO.input.checked;
+        st.prep = { summary: prep.summary, topics: prep.topics.filter(function (x) { return x.title && x.title.trim(); }) };
         return { title: title.value, description: desc.value, settings: st, questionIds: picked, assign: { everyone: assign.everyone, emails: assign.emails }, status: status };
       }
       function chatPost(btn, kind) {
@@ -2447,9 +2593,10 @@
   }
 
   // ── Reviewer: question bank ──────────────────────────────────────────
-  var bankFilter = { q: '', status: '', type: '', tag: '' };
+  var bankFilter = { q: '', status: '', type: '', tag: '', module: '' };
   function viewBank() {
     var dlq = function (ans) { var qs = new URLSearchParams({ answers: ans ? '1' : '0' }); if (bankFilter.status) qs.set('status', bankFilter.status); if (bankFilter.tag) qs.set('tag', bankFilter.tag); if (bankFilter.q) qs.set('q', bankFilter.q); return '/api/assess/admin/questions/export?' + qs; };
+    loadMods();
     main.appendChild(pageHead('Question bank', 'Every question used in assessments. Drafts from documents land here for you to check before agents see them.', [
       menu('Download', 'download', [
         { label: 'Questions only (CSV)', sub: 'No answers. Safe to share for revision.', icon: 'doc', onclick: function () { location.href = dlq(false); } },
@@ -2470,10 +2617,13 @@
     var typeSel = h('select', { class: 'sel', 'aria-label': 'Type' }, [h('option', { value: '', text: 'All types' })].concat(Object.keys(TYPE_SHORT).map(function (k) { return h('option', { value: k, text: TYPE_SHORT[k] }); })));
     typeSel.value = bankFilter.type;
     var tagSel = h('select', { class: 'sel', 'aria-label': 'Tag' }, [h('option', { value: '', text: 'All topics' })]);
+    var modSel = h('select', { class: 'sel', 'aria-label': 'Module' }, [h('option', { value: '', text: 'All modules' })]);
+    loadMods().then(function () { MODS.forEach(function (m) { if (m.questions) modSel.appendChild(h('option', { value: m.key, text: m.name + ' (' + m.questions + ')' })); }); modSel.value = bankFilter.module || ''; });
+    modSel.addEventListener('change', function () { bankFilter.module = modSel.value; load(); });
     typeSel.addEventListener('change', function () { bankFilter.type = typeSel.value; load(); });
     tagSel.addEventListener('change', function () { bankFilter.tag = tagSel.value; load(); });
     var st = 0; search.addEventListener('input', function () { clearTimeout(st); st = setTimeout(function () { bankFilter.q = search.value.trim(); load(); }, 250); });
-    main.appendChild(h('div', { class: 'toolbar' }, [h('div', { class: 'search' }, [icon('search', 'sm'), search]), seg, typeSel, tagSel]));
+    main.appendChild(h('div', { class: 'toolbar' }, [h('div', { class: 'search' }, [icon('search', 'sm'), search]), seg, typeSel, modSel, tagSel]));
     var bulk = h('div'); main.appendChild(bulk);
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     var sel = [];
@@ -2484,7 +2634,14 @@
         if (action === 'delete' && !confirm('Delete ' + sel.length + ' question(s)? Questions already used in an attempt are retired instead, so past results keep them.')) return;
         api('/api/assess/admin/questions/bulk', { method: 'POST', body: { ids: sel, action: action } }).then(function (r) { toast(r.changed + ' updated'); sel = []; load(); }).catch(function (e) { toast(e.message); });
       } }); }
-      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel = []; load(); } })]));
+      var mkAssess = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Create assessment']);
+      mkAssess.addEventListener('click', function () { createFromDrafts(sel.slice(), mkAssess); });
+      var tagMods = h('button', { class: 'btn', type: 'button' }, [icon('layers', 'sm'), 'Tag modules']);
+      tagMods.addEventListener('click', function () {
+        tagMods.disabled = true; tagMods.classList.add('busy');
+        api('/api/assess/admin/questions/tag', { method: 'POST', body: { ids: sel, force: true } }).then(function (r) { toast(r.tagged + ' question' + (r.tagged === 1 ? '' : 's') + ' tagged'); loadMods(); load(); }).catch(function (e) { toast(e.message); tagMods.disabled = false; tagMods.classList.remove('busy'); });
+      });
+      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel = []; load(); } })]));
     }
     function load() {
       var p = new URLSearchParams(bankFilter);
@@ -2498,7 +2655,10 @@
           return;
         }
         var drafts = j.questions.filter(function (q) { return q.status === 'draft'; }).length;
-        holder.appendChild(h('div', { class: 'row small muted', style: 'margin-bottom:10px' }, [j.questions.length + ' questions' + (drafts ? ', ' + drafts + ' drafts waiting for review' : '')]));
+        var draftIds = j.questions.filter(function (q) { return q.status === 'draft'; }).map(function (q) { return q.id; });
+        var mkBtn = drafts ? h('button', { class: 'btn primary sm', type: 'button' }, [icon('wand', 'sm'), 'Create an assessment from these ' + drafts + ' drafts']) : null;
+        if (mkBtn) mkBtn.addEventListener('click', function () { createFromDrafts(draftIds, mkBtn); });
+        holder.appendChild(h('div', { class: 'row small muted', style: 'margin-bottom:10px;align-items:center' }, [h('span', { text: j.questions.length + ' questions' + (drafts ? ', ' + drafts + ' drafts waiting for review' : '') }), h('span', { class: 'spacer' }), mkBtn]));
         var list = h('div', { class: 'card qlist' });
         j.questions.forEach(function (q) {
           var cb = h('input', { type: 'checkbox', 'aria-label': 'Select question', checked: sel.indexOf(q.id) >= 0 ? true : null });
@@ -2507,7 +2667,7 @@
           list.appendChild(h('div', { class: 'qrow' }, [cb,
             h('div', { style: 'min-width:0' }, [
               h('div', { class: 'p', role: 'button', tabindex: '0', text: q.prompt, onclick: function () { openQuestion(q); }, onkeydown: function (e) { if (e.key === 'Enter') openQuestion(q); } }),
-              h('div', { class: 'm' }, [pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium'), q.hasImage ? pill('Image') : null].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
+              h('div', { class: 'm' }, [q.module ? modChip({ key: q.module }, q.subModule) : null, pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium'), q.hasImage ? pill('Image') : null].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
               h('div', { class: 's', text: stats + (q.usedIn.length ? ' · in ' + q.usedIn.join(', ') : '') }),
               q.stats && q.stats.flag ? h('div', { class: 'flag' }, [icon('warn', 'sm'), q.stats.flag]) : null,
             ]),
@@ -2594,6 +2754,15 @@
     drawImg();
     var expl = h('textarea', { class: 'ta', id: 'qe-e', maxlength: '1500', placeholder: 'Only reviewers see this, unless you release answers. Cite the SOP section if you can.' }); expl.value = d.explanation || '';
     var tags = h('input', { class: 'inp', id: 'qe-t', value: d.tags.join(', '), placeholder: 'escalation, adit pay' });
+    var modSel = h('select', { class: 'sel', id: 'qe-m' }, [h('option', { value: '', text: 'No module' })]);
+    var subIn = h('input', { class: 'inp', id: 'qe-sm', type: 'text', maxlength: '40', value: d.subModule || '', placeholder: 'e.g. Ring Groups', list: 'qe-sm-l' });
+    var subDl = h('datalist', { id: 'qe-sm-l' });
+    function fillSubs() { clear(subDl); var m = MOD_BY[modSel.value]; if (m) (m.subs || []).forEach(function (x) { subDl.appendChild(h('option', { value: x })); }); }
+    loadMods().then(function () {
+      var gs = {}; MODS.forEach(function (m) { if (!gs[m.group]) { gs[m.group] = h('optgroup', { label: m.group }); modSel.appendChild(gs[m.group]); } gs[m.group].appendChild(h('option', { value: m.key, text: m.name })); });
+      modSel.value = d.module || ''; fillSubs();
+    });
+    modSel.addEventListener('change', fillSubs);
     var diff = h('select', { class: 'sel', id: 'qe-d' }, [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); diff.value = d.difficulty || 'medium';
     var stat = h('select', { class: 'sel', id: 'qe-s' }, [['draft', 'Draft'], ['approved', 'Approved']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); stat.value = d.status === 'approved' ? 'approved' : 'draft';
     // Session 64: AI improve (clearer wording, better wrong options, explanation)
@@ -2632,6 +2801,7 @@
     body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Answers' }), optHint, optBox]));
     if (!studioOpts) body.appendChild(h('div', { class: 'field' }, [h('label', { for: 'qe-img', text: 'Image (optional)' }), h('span', { class: 'hint', text: 'For example a ticket or screen from Zoho Desk. Shown with the question. PNG, JPG or WebP under 2 MB. Remove customer details first.' }), imgIn, imgPrev]));
     body.appendChild(field('Why this is the answer', expl));
+    body.appendChild(h('div', { class: 'fgrid' }, [field('Module', modSel), field('Sub-module', subIn), subDl]));
     body.appendChild(h('div', { class: 'fgrid' }, [field('Topics (tags)', tags, 'Comma separated'), field('Difficulty', diff)]));
     if (!studioOpts) body.appendChild(field('Status', stat, 'Only approved questions go into random pools.'));
     if (d.stats && d.stats.shown) body.appendChild(h('div', { class: 'alert info' }, [icon('chart'), h('span', { text: 'Seen ' + d.stats.shown + ' times, ' + d.stats.pctCorrect + '% correct' + (d.stats.avgSec != null ? ', ' + d.stats.avgSec + 's on average' : '') + (d.stats.disc != null ? ', separation ' + d.stats.disc : '') + '.' + (d.stats.flag ? ' ' + d.stats.flag : '') })]));
@@ -2643,7 +2813,7 @@
     save.addEventListener('click', function () {
       clear(err); save.disabled = true;
       var options = type === 'matching' ? rows.map(function (r) { return { text: r.text, match: r.match }; }) : rows.map(function (r) { return r.text; });
-      var payload = { type: type, prompt: prompt.value, options: options, correct: correct, explanation: expl.value, tags: tags.value, difficulty: diff.value, status: stat.value };
+      var payload = { type: type, prompt: prompt.value, options: options, correct: correct, explanation: expl.value, tags: tags.value, difficulty: diff.value, status: stat.value, module: modSel.value, subModule: subIn.value };
       if (studioOpts) { payload.tags = String(tags.value).split(',').map(function (x) { return x.trim(); }).filter(Boolean); Promise.resolve(studioOpts.onSave(payload)).then(function () { dlg.close(); }).catch(function (e) { err.appendChild(errBox(e.message)); save.disabled = false; }); return; }
       (q ? api('/api/assess/admin/questions/' + q.id, { method: 'PUT', body: payload }) : api('/api/assess/admin/questions', { method: 'POST', body: payload }))
         .then(function (r) {
@@ -2712,7 +2882,10 @@
         .then(function (r) {
           clearInterval(tmr); clear(out); go_.disabled = false;
           out.appendChild(h('div', { class: 'alert info' }, [icon('check'), h('span', { text: r.created + ' draft questions added to the bank.' + (r.errors && r.errors.length ? ' ' + r.errors.length + ' were skipped because they were incomplete.' : '') })]));
-          out.appendChild(h('button', { class: 'btn primary', type: 'button', text: 'Review the drafts', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
+          var mk = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Create an assessment from these ' + r.created]);
+          mk.addEventListener('click', function () { createFromDrafts(r.ids, mk, name).then(function () { dlg.close(); }); });
+          out.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, [mk]));
+          out.appendChild(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', text: 'Or review the drafts first', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '', module: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
         })
         .catch(function (e) { clearInterval(tmr); clear(out); err.appendChild(errBox(e.message)); go_.disabled = false; });
     });

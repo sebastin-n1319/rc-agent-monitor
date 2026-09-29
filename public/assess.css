@@ -967,3 +967,35 @@ dialog.pick{width:min(520px,calc(100vw - 32px))}
 .pick-who b{font-weight:600;font-size:14px}
 .pick-who span{font-size:12.5px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pick-all input,.pick-row input{width:16px;height:16px;accent-color:var(--accent);flex:none}
+
+/* Session 65: modules, what-this-covers, assessment from drafts */
+.mchips{display:flex;flex-wrap:wrap;gap:6px}
+.mchip{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 10px 4px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);font-size:12.5px;font-weight:500;color:var(--t1);line-height:1.2}
+.mchip svg.i{width:15px;height:15px;color:var(--accent-ink);flex:none}
+.mchip em{font-style:normal;color:var(--t3);font-weight:400}
+.mchip em::before{content:'/';margin-right:6px;opacity:.5}
+.tcard .mchips{margin-top:-4px}
+.mcard .mchips{margin:2px 0 0}
+.qrow .m .mchip{padding:2px 8px 2px 6px;font-size:12px}
+.moded{display:flex;flex-direction:column;gap:12px}
+.modgrp{display:flex;flex-direction:column;gap:6px}
+.chip.mod{display:inline-flex;align-items:center;gap:6px;padding:0 12px 0 9px;height:32px;border:1px solid var(--border);background:var(--surface);color:var(--t2)}
+.chip.mod svg.i{width:15px;height:15px}
+.chip.mod.sel{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--accent-ink)}
+.chip.mod:hover{border-color:var(--border-strong)}
+.modsub{border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2)}
+.modsub-h{display:flex;align-items:center;gap:8px}
+.modsub-h svg.i{color:var(--accent-ink)}
+.chip .x{display:inline-grid;place-items:center;width:20px;height:20px;border:0;background:transparent;color:inherit;border-radius:50%;cursor:pointer;margin-left:2px}
+.chip .x:hover{background:var(--surface-3)}
+.ptopic{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ptopic:last-of-type{border-bottom:0}
+.covers{padding:2px 0 22px;margin-bottom:22px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:12px}
+.covers-h{display:flex;align-items:center;gap:10px}
+.covers-h h2{margin:0}
+.covers .lead{margin:0}
+.ctopics{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.ctopic{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--surface-2);animation:rise .36s var(--ease) both;animation-delay:calc(var(--i,0) * 40ms)}
+.ctopic b{display:block;font-size:14px;margin-bottom:4px}
+.ctopic ul{margin:0;padding-left:18px;color:var(--t2);font-size:13px;line-height:1.5}
+.ctopic li{margin:2px 0}
