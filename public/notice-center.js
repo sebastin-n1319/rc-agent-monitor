@@ -86,7 +86,23 @@
         .catch(function (e) { msg.textContent = e.message; })
         .then(function () { send.disabled = false; });
     } });
+    // AI: describe it in a few words, it writes the title and message for review.
+    var gist = el('textarea', { maxlength: 1200, placeholder: 'Tell me the gist, e.g. "New retest rule for assessments from Monday, agents must stay in full screen"', 'aria-label': 'What do you want to announce?', style: 'min-height:56px' });
+    var aiMsg = el('div', { class: 'nc-m', role: 'status' });
+    var aiBtn = el('button', { class: 'nc-btn', type: 'button', text: 'Write it with AI', onclick: function () {
+      if (String(gist.value).trim().length < 6) { aiMsg.textContent = 'Write a few words first.'; return; }
+      aiBtn.disabled = true; aiBtn.textContent = 'Writing...'; aiMsg.textContent = '';
+      api('/api/admin/notices/compose', { method: 'POST', body: { gist: gist.value, audience: aud.value } }).then(function (r) {
+        var d = r.draft || {};
+        f.title.value = d.title || ''; f.body.value = d.body || '';
+        if (d.category && S.cats.some(function (c) { return c.key === d.category; })) cat.value = d.category;
+        if (aud.value !== 'people' && d.audience) aud.value = d.audience;
+        urgent.checked = !!d.urgent;
+        aiMsg.textContent = 'Drafted. Read it, edit anything you like, then post.';
+      }).catch(function (e) { aiMsg.textContent = e.message; }).then(function () { aiBtn.disabled = false; aiBtn.textContent = 'Write it again'; });
+    } });
     return el('div', { class: 'nc-form open' }, [
+      gist, el('div', { class: 'nc-row' }, [aiBtn]), aiMsg,
       fld('title', el('input', { type: 'text', maxlength: 140, placeholder: 'Title', 'aria-label': 'Title' })),
       fld('body', el('textarea', { maxlength: 600, placeholder: 'What should people know?', 'aria-label': 'Message' })),
       el('div', { class: 'nc-row' }, [aud, cat]),

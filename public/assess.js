@@ -3070,9 +3070,42 @@
             } }, [icon('retest', 'sm'), 'Retest']) : null]),
           ]);
           tr.addEventListener('click', function () { reportState.email = a.email; personSel.value = a.email; tab = 'overview'; Array.prototype.forEach.call(tabsEl.children, function (b, k) { b.setAttribute('aria-selected', String(k === 0)); }); load(); });
-          tb2.appendChild(tr);
+          // Attempt breakdown: every attempt for this person, with owner-only delete.
+          var mine = (data.rows || []).filter(function (r) { return r.email === a.email; });
+          var detail = h('tr', { class: 'att-detail', hidden: true }, [h('td', { colspan: '8' })]);
+          var open = false;
+          var tog = h('button', { class: 'btn sm ghost', type: 'button', 'aria-expanded': 'false', title: 'Show every attempt by ' + a.name }, [icon('layers', 'sm'), 'Attempts']);
+          tog.addEventListener('click', function (e) {
+            e.stopPropagation(); open = !open; tog.setAttribute('aria-expanded', String(open)); detail.hidden = !open;
+            if (open && !detail.firstChild.firstChild) detail.firstChild.appendChild(attemptList(mine, a));
+          });
+          tr.querySelector('.act').insertBefore(tog, tr.querySelector('.act').firstChild);
+          tb2.appendChild(tr); tb2.appendChild(detail);
         });
-        holder.appendChild(h('p', { class: 'small muted', text: 'Lowest average first. Click a person to see their overview, or send them a retest of their latest attempt on each assessment in this view.' }));
+        function attemptList(list, a) {
+          var wrap = h('div', { class: 'att-box' });
+          if (!list.length) { wrap.appendChild(h('p', { class: 'small muted', text: 'No attempts in this view.' })); return wrap; }
+          var sel = {};
+          var delBtn = h('button', { class: 'btn sm danger', type: 'button', disabled: true }, [icon('trash', 'sm'), 'Delete selected']);
+          function upd() { var n = Object.keys(sel).length; delBtn.disabled = !n; delBtn.lastChild.textContent = n ? 'Delete ' + n + ' selected' : 'Delete selected'; }
+          var rowsEl = list.map(function (r) {
+            var cb = me.owner ? h('input', { type: 'checkbox', 'aria-label': 'Select attempt ' + r.id, onchange: function (e) { if (e.target.checked) sel[r.id] = 1; else delete sel[r.id]; upd(); } }) : null;
+            var status = r.status === 'submitted' ? (r.passed == null ? pill('Submitted', '') : r.passed ? pill('Passed', 'ok') : pill('Below pass', 'bad')) : pill(r.status === 'reset' ? 'Reset' : r.status === 'in_progress' ? 'In progress' : (r.status || ''), r.status === 'reset' ? 'warn' : 'accent');
+            return h('tr', null, [h('td', { class: 'ck' }, [cb]), h('td', { text: r.test }), h('td', { class: 'num', text: r.pct != null ? r.pct + '% (' + r.score + '/' + r.maxScore + ')' : '-' }), h('td', null, [status]),
+              h('td', null, [r.status === 'submitted' ? tierPill(r.tier) : h('span', { class: 'muted', text: '-' })]), h('td', { class: 'num', text: r.minutes != null ? r.minutes + ' min' : '-' }), h('td', { class: 'num', text: fmtWhen(r.finishedAt || r.startedAt) }),
+              h('td', { class: 'act' }, [h('button', { class: 'btn sm ghost', type: 'button', text: 'Open', onclick: function () { go('attempt/' + r.id); } })])]);
+          });
+          wrap.appendChild(h('div', { class: 'row', style: 'align-items:center;margin-bottom:8px' }, [h('b', { text: list.length + ' attempt' + (list.length === 1 ? '' : 's') + ' by ' + a.name }), h('span', { class: 'spacer' }), me.owner ? delBtn : null]));
+          wrap.appendChild(h('table', { class: 'tbl att-tbl' }, [h('thead', null, [h('tr', null, [me.owner ? '' : null, 'Assessment', 'Score', 'Result', 'Behaviour', 'Time taken', 'When', ''].map(function (x) { return x == null ? null : h('th', { scope: 'col', text: x }); }))]), h('tbody', null, rowsEl)]));
+          delBtn.addEventListener('click', function () {
+            var ids = Object.keys(sel).map(Number); if (!ids.length) return;
+            if (!confirm('Delete ' + ids.length + ' attempt' + (ids.length === 1 ? '' : 's') + ' by ' + a.name + ' completely? Answers, activity logs and camera photos are removed for good. Reset is usually better, because it keeps the record.')) return;
+            delBtn.disabled = true;
+            api('/api/assess/admin/attempts/delete', { method: 'POST', body: { ids: ids } }).then(function (r) { toast(r.deleted + ' attempt' + (r.deleted === 1 ? '' : 's') + ' deleted'); load(); }).catch(function (e) { toast(e.message); delBtn.disabled = false; });
+          });
+          return wrap;
+        }
+        holder.appendChild(h('p', { class: 'small muted', text: 'Lowest average first. Click a person to see their overview, open Attempts for the full breakdown, or send them a retest of their latest attempt on each assessment in this view.' }));
         holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Attempts', 'Average', 'Best', 'Passed', 'Behaviour', 'Last', ''].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb2])]));
       }
     }

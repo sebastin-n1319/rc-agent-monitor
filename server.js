@@ -1806,6 +1806,27 @@ app.post('/api/notices/read', requireAuth, rateLimit(60, 60000), noticeWrap(asyn
 app.put('/api/notices/prefs', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { res.json({ success: true, muted: await notices.setMuted(req.session.email, (req.body || {}).muted) }); }));
 app.get('/api/admin/notices', requireAdmin, noticeWrap(async (req, res) => { res.json({ success: true, data: await notices.adminList() }); }));
 app.post('/api/admin/notices', requireAdmin, rateLimit(30, 60000), noticeWrap(async (req, res) => { res.json({ success: true, id: await notices.createNotice(req.session.email, req.body || {}) }); }));
+// AI drafts an announcement from a short gist. Nothing is posted: the admin reviews and edits first.
+app.post('/api/admin/notices/compose', requireAdmin, rateLimit(20, 60000), noticeWrap(async (req, res) => {
+  const ai = require('./lib/ai');
+  if (!ai.anyConfigured()) { const e = new Error('AI is not configured on the server (add ANTHROPIC_API_KEY or OPENAI_API_KEY).'); e.status = 503; throw e; }
+  const b = req.body || {};
+  const gist = String(b.gist || '').trim().slice(0, 1200);
+  if (gist.length < 6) { const e = new Error('Write a few words about what you want to announce.'); e.status = 400; throw e; }
+  const cats = notices.CATEGORIES.map(c => c.key + ' (' + c.label + ')').join(', ');
+  const system = 'You write short internal announcements for the T1 customer support team at Adit (dental, optometry and other practice software). The reader is a support agent or team lead reading a notification. '
+    + 'Turn the sender\'s rough notes into a clear announcement. Rules: plain, warm and direct; short sentences; say what changed or what to do, and by when if the notes say so; do not invent facts, dates, names, links or numbers that are not in the notes; no emojis; never use em dashes or en dashes (use commas, periods or parentheses). '
+    + 'The title is at most 80 characters. The body is at most 480 characters, 1 to 4 short sentences, no markdown. '
+    + 'Choose the category key from: ' + cats + '. Choose audience from: all, agents, admins (use all unless the notes clearly address one group). Set urgent true only if the notes say it is urgent or time critical. '
+    + 'Return JSON only: {"title": string, "body": string, "category": string, "audience": string, "urgent": boolean}.';
+  const user = 'Notes from the sender:\n' + gist + (b.tone ? '\nTone: ' + String(b.tone).slice(0, 40) : '') + (b.audience ? '\nIntended audience: ' + String(b.audience).slice(0, 20) : '');
+  const r = await ai.bestJSON({ system, user, maxTokens: 700, feature: 'analyze', timeoutMs: 45000 });
+  const j = r.json || {};
+  const tidy = (s, n) => String(s || '').replace(/[\u2014\u2013]/g, ',').replace(/\s+/g, ' ').trim().slice(0, n);
+  const catKeys = notices.CATEGORIES.map(c => c.key);
+  if (!tidy(j.title, 140) || !tidy(j.body, 600)) { const e = new Error('The AI did not return a usable draft. Try adding a little more detail.'); e.status = 502; throw e; }
+  res.json({ success: true, draft: { title: tidy(j.title, 140), body: tidy(j.body, 600), category: catKeys.includes(j.category) ? j.category : 'general', audience: ['all', 'agents', 'admins'].includes(j.audience) ? j.audience : 'all', urgent: j.urgent === true } });
+}));
 app.delete('/api/admin/notices/:id', requireAdmin, noticeWrap(async (req, res) => { res.json({ success: true, removed: await notices.deleteNotice(req.params.id) }); }));
 
 // Session 68: break regularise requests (agent asks, admin approves)
