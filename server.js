@@ -1834,7 +1834,7 @@ app.put('/api/assess/admin/questions/:id/image', ...RV, express.raw({ type: () =
 }));
 app.delete('/api/assess/admin/questions/:id/image', ...RV, assessWrap(async (req, res) => { await assessments.setQuestionImage(req.params.id, null); res.json({ success: true }); }));
 app.get('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => {
-  res.json({ success: true, questions: await assessments.listQuestions({ q: req.query.q ? String(req.query.q).slice(0, 100) : '', tag: req.query.tag || '', status: req.query.status || '', type: req.query.type || '', module: req.query.module || '' }), tags: await assessments.allTags() });
+  res.json({ success: true, questions: await assessments.listQuestions({ q: req.query.q ? String(req.query.q).slice(0, 100) : '', tag: req.query.tag || '', status: req.query.status || '', type: req.query.type || '', module: req.query.module || '', source: req.query.source || '', difficulty: req.query.difficulty || '', from: req.query.from || '', to: req.query.to || '', used: req.query.used || '' }), facets: await assessments.questionFacets(), tags: await assessments.allTags() });
 }));
 app.post('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveQuestion(null, req.body, req.session.email) })));
 app.put('/api/assess/admin/questions/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveQuestion(req.params.id, req.body, req.session.email) })));
@@ -1848,6 +1848,7 @@ app.post('/api/assess/admin/tests/from-questions', ...RV, rateLimit(20, 60000), 
   res.json({ success: true, ...out });
 }));
 app.post('/api/assess/admin/questions/tag', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => {
+  if ((req.body || {}).untagged) { const o = await assessments.tagUntagged(require('./lib/ai')); return res.json({ success: true, tagged: o.tagged, left: o.left }); }
   const out = await assessments.classifyQuestions((req.body || {}).ids, require('./lib/ai'), { force: !!(req.body || {}).force });
   res.json({ success: true, tagged: out.tagged });
 }));

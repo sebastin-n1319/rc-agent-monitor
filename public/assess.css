@@ -1031,3 +1031,10 @@ body.as-exam{overflow:hidden}
 .exam .opt{min-height:0}
 @media (max-height:760px) and (min-width:900px){.exam .opts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-height:700px){.exam .reader canvas{max-height:22vh}.exam .reader .bar{margin-top:6px}}
+/* Batch 29: bank selection */
+.selrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.selall{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:13.5px;cursor:pointer}
+.selall input{width:18px;height:18px;accent-color:var(--accent)}
+.toolbar input[type=date]{width:auto;min-width:150px}
+.note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;background:var(--accent-soft);color:var(--t1);font-size:13.5px}
+.selrow{position:relative;z-index:30}

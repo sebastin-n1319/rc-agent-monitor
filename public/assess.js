@@ -124,8 +124,8 @@
   }
   // Session 65: product modules (names and icons come from the server list)
   var MODS = null, MOD_BY = {};
-  function loadMods() {
-    if (MODS) return Promise.resolve(MODS);
+  function loadMods(fresh) {
+    if (MODS && !fresh) return Promise.resolve(MODS);
     return api('/api/assess/modules').then(function (j) { MODS = j.modules || []; MODS.forEach(function (m) { MOD_BY[m.key] = m; }); return MODS; }).catch(function () { MODS = []; return MODS; });
   }
   function modChip(m, sub) {
@@ -2641,7 +2641,8 @@
   }
 
   // ── Reviewer: question bank ──────────────────────────────────────────
-  var bankFilter = { q: '', status: '', type: '', tag: '', module: '' };
+  var bankFilter = { q: '', status: '', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' };
+  var bankSel = [], bankAutoTagged = false;
   function viewBank() {
     var dlq = function (ans) { var qs = new URLSearchParams({ answers: ans ? '1' : '0' }); if (bankFilter.status) qs.set('status', bankFilter.status); if (bankFilter.tag) qs.set('tag', bankFilter.tag); if (bankFilter.q) qs.set('q', bankFilter.q); return '/api/assess/admin/questions/export?' + qs; };
     loadMods();
@@ -2666,30 +2667,92 @@
     typeSel.value = bankFilter.type;
     var tagSel = h('select', { class: 'sel', 'aria-label': 'Tag' }, [h('option', { value: '', text: 'All topics' })]);
     var modSel = h('select', { class: 'sel', 'aria-label': 'Module' }, [h('option', { value: '', text: 'All modules' })]);
-    loadMods().then(function () { MODS.forEach(function (m) { if (m.questions) modSel.appendChild(h('option', { value: m.key, text: m.name + ' (' + m.questions + ')' })); }); modSel.value = bankFilter.module || ''; });
+    function fillMods(untagged) {
+      var keep = bankFilter.module || ''; clear(modSel);
+      modSel.appendChild(h('option', { value: '', text: 'All modules' }));
+      if (untagged != null) modSel.appendChild(h('option', { value: '__none', text: 'No module yet (' + untagged + ')' }));
+      var gs = {};
+      (MODS || []).forEach(function (m) { if (!gs[m.group]) { gs[m.group] = h('optgroup', { label: m.group }); modSel.appendChild(gs[m.group]); } gs[m.group].appendChild(h('option', { value: m.key, text: m.name + ' (' + (m.questions || 0) + ')' })); });
+      modSel.value = keep;
+    }
+    loadMods().then(function () { fillMods(null); });
     modSel.addEventListener('change', function () { bankFilter.module = modSel.value; load(); });
+    var srcSel = h('select', { class: 'sel', 'aria-label': 'Upload' }, [h('option', { value: '', text: 'All uploads' })]);
+    srcSel.addEventListener('change', function () { bankFilter.source = srcSel.value; load(); });
+    var diffSel = h('select', { class: 'sel', 'aria-label': 'Difficulty' }, [['', 'Any difficulty'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    diffSel.value = bankFilter.difficulty; diffSel.addEventListener('change', function () { bankFilter.difficulty = diffSel.value; load(); });
+    var usedSel = h('select', { class: 'sel', 'aria-label': 'Use' }, [['', 'Used or not'], ['unused', 'Not used yet'], ['used', 'Used in an assessment']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    usedSel.value = bankFilter.used; usedSel.addEventListener('change', function () { bankFilter.used = usedSel.value; load(); });
+    function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    var fromIn = h('input', { class: 'inp', type: 'date', 'aria-label': 'Uploaded from', value: bankFilter.from }), toIn = h('input', { class: 'inp', type: 'date', 'aria-label': 'Uploaded to', value: bankFilter.to });
+    var whenSel = h('select', { class: 'sel', 'aria-label': 'Date uploaded' }, [['', 'Any date'], ['today', 'Uploaded today'], ['7', 'Last 7 days'], ['30', 'Last 30 days'], ['custom', 'Pick dates']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    whenSel.value = bankFilter.when;
+    function paintWhen() { var c = whenSel.value === 'custom'; fromIn.style.display = toIn.style.display = c ? '' : 'none'; }
+    whenSel.addEventListener('change', function () {
+      var v = whenSel.value, now = new Date(); bankFilter.when = v;
+      if (v === 'today') { bankFilter.from = bankFilter.to = iso(now); }
+      else if (v === '7' || v === '30') { var d0 = new Date(now.getTime() - (Number(v) - 1) * 86400000); bankFilter.from = iso(d0); bankFilter.to = iso(now); }
+      else if (v === '') { bankFilter.from = bankFilter.to = ''; }
+      paintWhen(); if (v !== 'custom') load();
+    });
+    fromIn.addEventListener('change', function () { bankFilter.from = fromIn.value; load(); });
+    toIn.addEventListener('change', function () { bankFilter.to = toIn.value; load(); });
+    paintWhen();
     typeSel.addEventListener('change', function () { bankFilter.type = typeSel.value; load(); });
     tagSel.addEventListener('change', function () { bankFilter.tag = tagSel.value; load(); });
     var st = 0; search.addEventListener('input', function () { clearTimeout(st); st = setTimeout(function () { bankFilter.q = search.value.trim(); load(); }, 250); });
     main.appendChild(h('div', { class: 'toolbar' }, [h('div', { class: 'search' }, [icon('search', 'sm'), search]), seg, typeSel, modSel, tagSel]));
+    var clearF = h('button', { class: 'btn ghost sm', type: 'button', text: 'Clear filters', onclick: function () { bankFilter = { q: '', status: '', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' }; route(); } });
+    main.appendChild(h('div', { class: 'toolbar' }, [srcSel, whenSel, fromIn, toIn, diffSel, usedSel, clearF]));
+    var tagNote = h('div'); main.appendChild(tagNote);
+    var selRow = h('div', { style: 'position:relative;z-index:30' }); main.appendChild(selRow);
     var bulk = h('div'); main.appendChild(bulk);
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
-    var sel = [];
+    var sel = bankSel, shownQs = [], rowBoxes = {};
+    function setSel(ids, add) {
+      if (!add) sel.length = 0;
+      ids.forEach(function (id) { if (sel.indexOf(id) < 0) sel.push(id); });
+      Object.keys(rowBoxes).forEach(function (k) { rowBoxes[k].checked = sel.indexOf(Number(k)) >= 0; });
+      renderBulk();
+    }
+    function renderSelRow() {
+      clear(selRow);
+      if (!shownQs.length) return;
+      var ids = shownQs.map(function (q) { return q.id; });
+      var inShown = ids.filter(function (id) { return sel.indexOf(id) >= 0; }).length;
+      var master = h('input', { type: 'checkbox', 'aria-label': 'Select all shown', checked: inShown === ids.length ? true : null });
+      master.indeterminate = inShown > 0 && inShown < ids.length;
+      master.addEventListener('change', function () { if (master.checked) setSel(ids, true); else { for (var i = sel.length - 1; i >= 0; i--) if (ids.indexOf(sel[i]) >= 0) sel.splice(i, 1); setSel([], true); } });
+      function pick(fn) { return function () { setSel(shownQs.filter(fn).map(function (q) { return q.id; }), true); }; }
+      function firstN(n) { return function () { setSel(ids.slice(0, n), false); }; }
+      var items = [
+        { label: 'Select all ' + ids.length + ' shown', sub: 'Everything that matches the filters above.', icon: 'check', onclick: function () { setSel(ids, true); } },
+        { label: 'Select none', sub: 'Clear the whole selection.', icon: 'x', onclick: function () { setSel([], false); } },
+        { label: 'Select drafts only', sub: 'Just the ones waiting for review.', icon: 'edit', onclick: function () { setSel(shownQs.filter(function (q) { return q.status === 'draft'; }).map(function (q) { return q.id; }), false); } },
+        { label: 'Select approved only', sub: 'Questions agents can already see.', icon: 'shield', onclick: function () { setSel(shownQs.filter(function (q) { return q.status === 'approved'; }).map(function (q) { return q.id; }), false); } },
+        { label: 'Select ones not used yet', sub: 'Not in any assessment.', icon: 'log', onclick: function () { setSel(shownQs.filter(function (q) { return !q.usedIn.length; }).map(function (q) { return q.id; }), false); } },
+        { label: 'Select ones with no module', sub: 'Then use Tag modules.', icon: 'layers', onclick: function () { setSel(shownQs.filter(function (q) { return !q.module; }).map(function (q) { return q.id; }), false); } },
+        { label: 'Select the first 10', sub: 'A small batch from the top of the list.', icon: 'list', onclick: firstN(10) },
+        { label: 'Select the first 25', sub: 'A medium batch.', icon: 'list', onclick: firstN(25) },
+        { label: 'Select the first 50', sub: 'A large batch.', icon: 'list', onclick: firstN(50) },
+      ];
+      selRow.appendChild(h('div', { class: 'selrow' }, [h('label', { class: 'selall' }, [master, h('span', { text: 'All shown' })]), menu('Select', 'check', items), h('span', { class: 'small muted', text: 'Filters keep your selection, so you can pick from several uploads or dates.' })]));
+    }
     function renderBulk() {
-      clear(bulk);
+      clear(bulk); renderSelRow();
       if (!sel.length) return;
       function act(action, label) { return h('button', { class: 'btn', type: 'button', text: label, onclick: function () {
         if (action === 'delete' && !confirm('Delete ' + sel.length + ' question(s)? Questions already used in an attempt are retired instead, so past results keep them.')) return;
-        api('/api/assess/admin/questions/bulk', { method: 'POST', body: { ids: sel, action: action } }).then(function (r) { toast(r.changed + ' updated'); sel = []; load(); }).catch(function (e) { toast(e.message); });
+        api('/api/assess/admin/questions/bulk', { method: 'POST', body: { ids: sel, action: action } }).then(function (r) { toast(r.changed + ' updated'); sel.length = 0; load(); }).catch(function (e) { toast(e.message); });
       } }); }
       var mkAssess = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Create assessment']);
       mkAssess.addEventListener('click', function () { createFromDrafts(sel.slice(), mkAssess); });
       var tagMods = h('button', { class: 'btn', type: 'button' }, [icon('layers', 'sm'), 'Tag modules']);
       tagMods.addEventListener('click', function () {
         tagMods.disabled = true; tagMods.classList.add('busy');
-        api('/api/assess/admin/questions/tag', { method: 'POST', body: { ids: sel, force: true } }).then(function (r) { toast(r.tagged + ' question' + (r.tagged === 1 ? '' : 's') + ' tagged'); loadMods(); load(); }).catch(function (e) { toast(e.message); tagMods.disabled = false; tagMods.classList.remove('busy'); });
+        api('/api/assess/admin/questions/tag', { method: 'POST', body: { ids: sel, force: true } }).then(function (r) { toast(r.tagged + ' question' + (r.tagged === 1 ? '' : 's') + ' tagged'); loadMods(true).then(function () { load(); }); }).catch(function (e) { toast(e.message); tagMods.disabled = false; tagMods.classList.remove('busy'); });
       });
-      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel = []; load(); } })]));
+      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel.length = 0; load(); } })]));
     }
     function load() {
       var p = new URLSearchParams(bankFilter);
@@ -2697,19 +2760,32 @@
         clear(holder);
         var cur = tagSel.value; clear(tagSel); tagSel.appendChild(h('option', { value: '', text: 'All topics' }));
         j.tags.forEach(function (t) { tagSel.appendChild(h('option', { value: t.tag, text: t.tag + ' (' + t.n + ')' })); }); tagSel.value = cur;
+        shownQs = j.questions; rowBoxes = {};
+        var fac = j.facets || { sources: [], untagged: 0 };
+        var keepSrc = bankFilter.source || ''; clear(srcSel); srcSel.appendChild(h('option', { value: '', text: 'All uploads' }));
+        (fac.sources || []).forEach(function (x) { srcSel.appendChild(h('option', { value: x.name, text: x.name.replace(/^AI draft: /, '') + ' (' + x.n + ')' })); });
+        srcSel.value = keepSrc;
+        loadMods(true).then(function () { fillMods(fac.untagged); });
+        clear(tagNote);
+        if (fac.untagged) tagNote.appendChild(h('div', { class: 'note', style: 'margin-bottom:12px' }, [icon('layers', 'sm'), h('span', { text: fac.untagged + ' question' + (fac.untagged === 1 ? ' has' : 's have') + ' no module yet. ' }), h('button', { class: 'btn sm', type: 'button', text: 'Tag them all', onclick: function (e) { autoTag(e.currentTarget); } })]));
+        if (fac.untagged && !bankAutoTagged) { bankAutoTagged = true; autoTag(null); }
         renderBulk();
         if (!j.questions.length) {
-          holder.appendChild(h('div', { class: 'empty' }, [art('log'), h('b', { text: bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
+          holder.appendChild(h('div', { class: 'empty' }, [art('log'), h('b', { text: bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type || bankFilter.module || bankFilter.source || bankFilter.from || bankFilter.to || bankFilter.difficulty || bankFilter.used ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
           return;
         }
         var drafts = j.questions.filter(function (q) { return q.status === 'draft'; }).length;
+        var allIds = j.questions.map(function (q) { return q.id; });
         var draftIds = j.questions.filter(function (q) { return q.status === 'draft'; }).map(function (q) { return q.id; });
-        var mkBtn = drafts ? h('button', { class: 'btn primary sm', type: 'button' }, [icon('wand', 'sm'), 'Create an assessment from these ' + drafts + ' drafts']) : null;
-        if (mkBtn) mkBtn.addEventListener('click', function () { createFromDrafts(draftIds, mkBtn); });
-        holder.appendChild(h('div', { class: 'row small muted', style: 'margin-bottom:10px;align-items:center' }, [h('span', { text: j.questions.length + ' questions' + (drafts ? ', ' + drafts + ' drafts waiting for review' : '') }), h('span', { class: 'spacer' }), mkBtn]));
+        var mkBtn = h('button', { class: 'btn primary sm', type: 'button' }, [icon('wand', 'sm'), drafts && drafts === j.questions.length ? 'Create an assessment from these ' + drafts + ' drafts' : 'Create an assessment from these ' + Math.min(allIds.length, 200) + ' questions']);
+        mkBtn.addEventListener('click', function () { if (allIds.length > 200) toast('An assessment holds up to 200 questions. Using the first 200.'); createFromDrafts(allIds.slice(0, 200), mkBtn); });
+        var mkDrafts = drafts && drafts < j.questions.length ? h('button', { class: 'btn sm', type: 'button', text: 'Only the ' + drafts + ' drafts' }) : null;
+        if (mkDrafts) mkDrafts.addEventListener('click', function () { createFromDrafts(draftIds, mkDrafts); });
+        holder.appendChild(h('div', { class: 'row small muted', style: 'margin-bottom:10px;align-items:center' }, [h('span', { text: j.questions.length + ' questions' + (drafts ? ', ' + drafts + ' drafts waiting for review' : '') }), h('span', { class: 'spacer' }), mkDrafts, mkBtn]));
         var list = h('div', { class: 'card qlist' });
         j.questions.forEach(function (q) {
           var cb = h('input', { type: 'checkbox', 'aria-label': 'Select question', checked: sel.indexOf(q.id) >= 0 ? true : null });
+          rowBoxes[q.id] = cb;
           cb.addEventListener('change', function () { var at = sel.indexOf(q.id); if (cb.checked && at < 0) sel.push(q.id); if (!cb.checked && at >= 0) sel.splice(at, 1); renderBulk(); });
           var stats = q.stats && q.stats.shown ? 'Seen ' + q.stats.shown + 'x · ' + q.stats.pctCorrect + '% correct' + (q.stats.avgSec != null ? ' · ' + q.stats.avgSec + 's average' : '') + (q.stats.disc != null ? ' · separation ' + q.stats.disc : '') : 'Not used yet';
           list.appendChild(h('div', { class: 'qrow' }, [cb,
@@ -2724,6 +2800,13 @@
         });
         holder.appendChild(list);
       }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+    }
+    function autoTag(btn) {
+      if (btn) { btn.disabled = true; btn.classList.add('busy'); }
+      api('/api/assess/admin/questions/tag', { method: 'POST', body: { untagged: true } }).then(function (r) {
+        if (r.tagged) toast(r.tagged + ' existing question' + (r.tagged === 1 ? '' : 's') + ' tagged with a module');
+        loadMods(true).then(function () { load(); });
+      }).catch(function (e) { if (btn) { btn.disabled = false; btn.classList.remove('busy'); } if (btn) toast(e.message); });
     }
     main._reloadBank = load;
     load();
@@ -2933,7 +3016,7 @@
           var mk = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Create an assessment from these ' + r.created]);
           mk.addEventListener('click', function () { createFromDrafts(r.ids, mk, name).then(function () { dlg.close(); }); });
           out.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, [mk]));
-          out.appendChild(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', text: 'Or review the drafts first', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '', module: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
+          out.appendChild(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', text: 'Or review the drafts first', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
         })
         .catch(function (e) { clearInterval(tmr); clear(out); err.appendChild(errBox(e.message)); go_.disabled = false; });
     });
