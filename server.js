@@ -1195,10 +1195,75 @@ app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
     return res.status(403).json({ success: false, error: 'Cannot remove core admin' });
   try {
     await removeRole(email);
+    try { // Session 58: drop their page overrides too
+      const cfg = await readAgentPages();
+      if (cfg.users[email.toLowerCase()]) { delete cfg.users[email.toLowerCase()]; await setSetting('agent_pages', JSON.stringify(cfg), req.session.email); }
+    } catch (e) {}
     insertAuditLog(req.session.email, 'role_removed', email).catch(()=>{});
     res.json({ success: true });
   }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Session 58: which agent-view pages agents can open (Access Control tab).
+// app_settings 'agent_pages' = { global: {page: bool}, users: {email: {page: bool}} }.
+// Home is always on. Break Bot also respects the per-person breakbot_enabled column.
+const AGENT_PAGES = ['breakbot', 'bonus', 'writer', 'tickets', 'mystats', 'talerts', 'assess', 'hall'];
+async function readAgentPages() {
+  let raw = {};
+  try { raw = JSON.parse((await getSetting('agent_pages')) || '{}') || {}; } catch (e) { raw = {}; }
+  const global = {};
+  for (const p of AGENT_PAGES) global[p] = !(raw.global && raw.global[p] === false);
+  const users = {};
+  for (const [email, m] of Object.entries(raw.users || {})) {
+    const clean = {};
+    for (const p of AGENT_PAGES) if (m && typeof m[p] === 'boolean') clean[p] = m[p];
+    if (Object.keys(clean).length) users[String(email).toLowerCase()] = clean;
+  }
+  return { global, users };
+}
+async function effectiveAgentPages(email) {
+  const cfg = await readAgentPages();
+  const mine = cfg.users[String(email || '').toLowerCase()] || {};
+  const settings = await getRoleSettingsForEmail(email).catch(() => null);
+  const out = { dashboard: true };
+  for (const p of AGENT_PAGES) out[p] = typeof mine[p] === 'boolean' ? mine[p] : cfg.global[p];
+  if (settings && settings.breakbotEnabled === false) out.breakbot = false;
+  return { pages: out, admin: settings?.role === 'admin' };
+}
+app.get('/api/agent-pages', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, pages: AGENT_PAGES, ...(await readAgentPages()) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.get('/api/agent-pages/mine', requireAuth, async (req, res) => {
+  try { res.json({ success: true, ...(await effectiveAgentPages(req.session.email)) }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.put('/api/agent-pages', requireAdmin, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const cfg = await readAgentPages();
+    let detail = '';
+    if (b.global && typeof b.global === 'object') {
+      for (const p of AGENT_PAGES) if (typeof b.global[p] === 'boolean') cfg.global[p] = b.global[p];
+      detail = 'global:' + AGENT_PAGES.filter(p => !cfg.global[p]).join(',') + ' off';
+    }
+    if (b.email) {
+      const email = String(b.email).trim().toLowerCase();
+      if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email' });
+      const next = { ...(cfg.users[email] || {}) };
+      for (const p of AGENT_PAGES) {
+        if (!b.pages || !(p in b.pages)) continue;
+        const v = b.pages[p];
+        if (v === true || v === false) next[p] = v; else delete next[p];
+      }
+      if (Object.keys(next).length) cfg.users[email] = next; else delete cfg.users[email];
+      detail = 'user:' + email + ' ' + JSON.stringify(next);
+    }
+    await setSetting('agent_pages', JSON.stringify(cfg), req.session.email);
+    insertAuditLog(req.session.email, 'agent_pages_set', b.email || 'global', detail.slice(0, 300)).catch(() => {});
+    res.json({ success: true, pages: AGENT_PAGES, ...cfg });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 // Admin announcement, sends a free-form card to the Google Chat space

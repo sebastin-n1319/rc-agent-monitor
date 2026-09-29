@@ -31,6 +31,7 @@
     'chat-reports.css', // Session 50
     't1-alerts.css', // Session 51
     'alert-hub.css', // Session 53
+    'access-control.css', // Session 58
     'dark-fix.css', // Session 51
     'nx-icons.css', // Session 51
     'chart.umd',

@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.113"></script>
+<script src="/adit-reset.js?v=1.19.114"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -68,6 +68,7 @@
 <link rel="stylesheet" href="/chat-reports.css?v=1.0.1">
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
+<link rel="stylesheet" href="/access-control.css?v=1.0.0">
 <script src="/t1-alerts.js?v=1.0.3" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.0.0">
 <script src="/alert-hub.js?v=1.0.1" defer></script>
@@ -1187,103 +1188,66 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
   <!-- ACCESS -->
   <div class="page" id="tab-access">
-    <div class="role-shell">
-      <div class="role-overview">
-        <div class="role-stat" style="--stat-color:var(--teal)">
-          <div class="role-stat-label">Tracked Users</div>
-          <div class="role-stat-value" id="role-stat-total">0</div>
-          <div class="role-stat-sub">People with explicit access rows</div>
+    <div class="acx">
+      <div class="acx-head">
+        <div class="acx-head-text">
+          <h2 class="acx-title">Access Control</h2>
+          <p class="acx-sub">Who can use the tool, their role, and which pages agents can open.</p>
         </div>
-        <div class="role-stat" style="--stat-color:var(--orange)">
-          <div class="role-stat-label">Admins</div>
-          <div class="role-stat-value" id="role-stat-admin">0</div>
-          <div class="role-stat-sub">Leads with full control and preview access</div>
-        </div>
-        <div class="role-stat" style="--stat-color:var(--green)">
-          <div class="role-stat-label">Agents</div>
-          <div class="role-stat-value" id="role-stat-agent">0</div>
-          <div class="role-stat-sub">Read-only users in the live floor</div>
-        </div>
-        <div class="role-stat" style="--stat-color:var(--blue2)">
-          <div class="role-stat-label">Break Bot Enabled</div>
-          <div class="role-stat-value" id="role-stat-breakbot">0</div>
-          <div class="role-stat-sub">Users who see Break Bot in agent view</div>
+        <div class="acx-stats" aria-label="Access summary">
+          <div class="acx-stat"><span class="acx-stat-n" id="role-stat-total">0</span><span class="acx-stat-l">People</span></div>
+          <div class="acx-stat"><span class="acx-stat-n" id="role-stat-admin">0</span><span class="acx-stat-l">Admins</span></div>
+          <div class="acx-stat"><span class="acx-stat-n" id="role-stat-agent">0</span><span class="acx-stat-l">Agents</span></div>
+          <div class="acx-stat"><span class="acx-stat-n" id="role-stat-custom">0</span><span class="acx-stat-l">Custom pages</span></div>
         </div>
       </div>
 
-      <div class="role-layout">
-        <div class="card role-setup-card">
-          <div class="card-hdr"><span class="card-title">Assign Or Update Access</span><span class="chip">Live policy editor</span></div>
-          <div class="form-row">
-            <div class="field" style="flex:2"><label>Email Address</label><input type="text" id="roleEmail" placeholder="user@adit.com"></div>
-            <div class="field"><label>Role</label><select id="roleSelect"><option value="agent">Agent (read-only)</option><option value="admin">Admin (full access)</option></select></div>
-            <div class="field inline-toggle"><label>Break Bot in Agent View</label><label class="inline-flag"><input type="checkbox" id="roleBreakbotEnabled" checked> Show Break Bot tab</label></div>
+      <div class="acx-grid">
+        <section class="acx-card" aria-labelledby="acx-add-h">
+          <div class="acx-card-hd"><h3 id="acx-add-h">Add or update a person</h3></div>
+          <div class="acx-form">
+            <label class="acx-field acx-field-grow"><span>Email</span><input type="email" id="roleEmail" placeholder="name@adit.com" autocomplete="off" onkeydown="if(event.key==='Enter')addRole()"></label>
+            <label class="acx-field"><span>Role</span><select id="roleSelect"><option value="agent">Agent</option><option value="admin">Admin</option></select></label>
+            <button class="acx-btn acx-btn-primary" type="button" onclick="addRole()">Save</button>
           </div>
-          <div class="role-form-footer"><button class="btn btn-primary" onclick="addRole()">Save Role</button></div>
-        </div>
+          <p class="acx-note">Agents see only the pages switched on under Agent pages. Admins see every page. To give one person a different set, open Pages on their row below.</p>
+        </section>
 
-        <div class="card role-policy-card">
-          <div class="card-hdr"><span class="card-title">Access Signal</span><span class="chip">Compact governance</span></div>
-          <div class="role-policy-list">
-            <div class="role-policy-item">
-              <strong>Hide Break Bot for selected users</strong>
-              <span>Keep their agent access intact while removing the Break Bot tab from the live agent shell.</span>
-            </div>
-            <div class="role-policy-item">
-              <strong>Admin preview stays available</strong>
-              <span>If you hide Break Bot on your own account, you can still open a read-only preview from Agent View for testing.</span>
-            </div>
-            <div class="role-policy-item">
-              <strong>Fast audit board</strong>
-              <span>Search by email, filter by role or Break Bot state, and manage every user from one dense control board.</span>
-            </div>
-          </div>
-        </div>
+        <section class="acx-card" aria-labelledby="acx-pages-h">
+          <div class="acx-card-hd"><h3 id="acx-pages-h">Agent pages</h3><span class="acx-chip" id="acx-pages-count">Loading</span></div>
+          <div class="acx-pages" id="acx-pages-list"><div class="acx-empty">Loading...</div></div>
+        </section>
       </div>
 
-      <div class="card">
-        <div class="card-hdr"><span class="card-title">Access Board</span><span class="chip" id="roleCount">0 users</span></div>
-        <div class="role-toolbar">
-          <label class="role-search">
-            <input type="text" id="roleSearchInput" placeholder="Search by email or owner..." oninput="handleRoleSearchInput(this.value)">
-          </label>
-          <div class="role-filter-strip">
-            <button class="role-filter-btn active" data-filter="all" onclick="setRoleFilter('all', this)">All</button>
-            <button class="role-filter-btn" data-filter="admin" onclick="setRoleFilter('admin', this)">Admins</button>
-            <button class="role-filter-btn" data-filter="agent" onclick="setRoleFilter('agent', this)">Agents</button>
-            <button class="role-filter-btn" data-filter="breakbot-on" onclick="setRoleFilter('breakbot-on', this)">Break Bot On</button>
-            <button class="role-filter-btn" data-filter="breakbot-off" onclick="setRoleFilter('breakbot-off', this)">Break Bot Off</button>
+      <section class="acx-card acx-board" aria-labelledby="acx-board-h">
+        <div class="acx-card-hd"><h3 id="acx-board-h">People</h3><span class="acx-chip" id="roleCount">0 people</span></div>
+        <div class="acx-toolbar">
+          <input type="search" class="acx-search" id="roleSearchInput" placeholder="Search name or email" aria-label="Search people" oninput="handleRoleSearchInput(this.value)">
+          <div class="acx-seg" role="group" aria-label="Filter people">
+            <button type="button" class="role-filter-btn active" data-filter="all" onclick="setRoleFilter('all', this)">All</button>
+            <button type="button" class="role-filter-btn" data-filter="admin" onclick="setRoleFilter('admin', this)">Admins</button>
+            <button type="button" class="role-filter-btn" data-filter="agent" onclick="setRoleFilter('agent', this)">Agents</button>
+            <button type="button" class="role-filter-btn" data-filter="custom" onclick="setRoleFilter('custom', this)">Custom pages</button>
           </div>
         </div>
-        <div class="role-board">
-          <div class="role-board-head">
-            <div>User</div>
-            <div>Role</div>
-            <div>Break Bot</div>
-            <div>Managed By</div>
-            <div style="text-align:right">Actions</div>
-          </div>
-          <div id="roleGrid" class="role-board-body"><div class="no-data">Loading...</div></div>
+        <div class="acx-table-wrap">
+          <table class="acx-table">
+            <thead><tr><th scope="col">Person</th><th scope="col">Role</th><th scope="col">Pages</th><th scope="col">Added by</th><th scope="col" class="acx-right">Actions</th></tr></thead>
+            <tbody id="roleGrid"><tr><td colspan="5" class="acx-empty">Loading...</td></tr></tbody>
+          </table>
         </div>
-      </div>
+      </section>
 
-      <!-- Break Thresholds -->
-      <div class="card" style="margin-top:20px;">
-        <div class="card-hdr">
-          <span class="card-title">Break Thresholds</span>
-          <button onclick="saveAllThresholds()" id="save-thresholds-btn" style="margin-left:auto;background:rgba(245,130,31,.15);border:1px solid rgba(245,130,31,.35);border-radius:7px;color:#f5821f;font-size:12px;font-weight:600;padding:5px 14px;cursor:pointer;">Save All</button>
+      <section class="acx-card" aria-labelledby="acx-thr-h">
+        <div class="acx-card-hd"><h3 id="acx-thr-h">Break thresholds</h3><button type="button" class="acx-btn acx-btn-primary acx-btn-sm" id="save-thresholds-btn" onclick="saveAllThresholds()">Save all</button></div>
+        <div class="acx-table-wrap acx-table-wrap-auto">
+          <table class="acx-table acx-thr">
+            <thead><tr><th scope="col">Break type</th><th scope="col">Single break limit<small>Alert when one break runs longer</small></th><th scope="col">Daily total limit<small>Alert when the day's total runs longer</small></th></tr></thead>
+            <tbody id="thresholds-tbody"><tr><td colspan="3" class="acx-empty">Loading...</td></tr></tbody>
+          </table>
         </div>
-        <!-- Column labels -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:6px 16px;background:rgba(255,255,255,.02);border-bottom:1px solid var(--b1);">
-          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;">AUX Type</div>
-          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;text-align:center;">Single limit<br><span style="font-size:9px;font-weight:400;text-transform:none">Alert if 1 break exceeds this</span></div>
-          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;text-align:center;">Daily total<br><span style="font-size:9px;font-weight:400;text-transform:none">Alert if day total exceeds this</span></div>
-        </div>
-        <div id="thresholds-tbody" style="display:flex;flex-direction:column;">
-          <div style="text-align:center;padding:30px;color:var(--t3);font-size:13px;">Loading…</div>
-        </div>
-        <div id="threshold-msg" style="padding:8px 16px;font-size:12px;display:none;border-top:1px solid var(--b1);"></div>
-      </div>
+        <div id="threshold-msg" class="acx-msg" style="display:none"></div>
+      </section>
     </div>
   </div>
 
@@ -3822,7 +3786,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     if(p.has('fresh') || p.has('forceLogout')){
       // Wipe all client-side session storage
       ['rcLastUser','rcSession','rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled',
-       'rcActiveView','rcActiveAgentSection','rcActiveAdminTab'].forEach(function(k){
+       'rcActiveView','rcActiveAgentSection','rcActiveAdminTab','rcAgentPages'].forEach(function(k){
         try{localStorage.removeItem(k);}catch(e){}
         try{sessionStorage.removeItem(k);}catch(e){}
       });
@@ -4319,7 +4283,57 @@ let currentViewMode = 'admin'; // 'admin' or 'agent'
 let currentAgentSection = 'dashboard';
 
 function breakbotTabEnabled(){
-  return !!currentBreakbotEnabled;
+  return !!currentBreakbotEnabled && agentPageOn('breakbot');
+}
+
+// Session 58: agent page availability, set on Team > Access Control.
+// Agents only see pages the server allows; admins keep every page in Agent
+// View so they can preview, with pages hidden from agents marked.
+const AGENT_PAGE_KEYS=['breakbot','bonus','writer','tickets','mystats','talerts','assess','hall'];
+let agentPagesAllowed=(()=>{ try{ return JSON.parse(localStorage.getItem('rcAgentPages')||'null'); }catch(e){ return null; } })();
+let agentPagesGlobal=null;
+function agentPageOn(p){
+  if(!p || p==='dashboard') return true;
+  if(isAdminRole()) return true;
+  return !agentPagesAllowed || agentPagesAllowed[p]!==false;
+}
+function agentPageEls(p){
+  const els=[document.getElementById('sb-agent-'+p), document.getElementById(p==='breakbot'?'agent-breakbot-tab':'agent-tab-'+p)];
+  document.querySelectorAll('.asc-quick-btn').forEach(b=>{ if((b.getAttribute('onclick')||'').indexOf("'"+p+"'")!==-1) els.push(b); });
+  return els.filter(Boolean);
+}
+function applyAgentPages(){
+  const admin=isAdminRole();
+  AGENT_PAGE_KEYS.forEach(p=>{
+    const hide=!admin && !agentPageOn(p);
+    const marked=admin && agentPagesGlobal && agentPagesGlobal[p]===false;
+    agentPageEls(p).forEach(el=>{
+      el.classList.toggle('ap-hidden',hide);
+      el.classList.toggle('ap-off',!!marked);
+      if(el.classList.contains('sb-item')){
+        if(!el.dataset.apTitle) el.dataset.apTitle=el.getAttribute('title')||'';
+        el.setAttribute('title', marked ? el.dataset.apTitle+' (hidden for agents)' : el.dataset.apTitle);
+      }
+    });
+  });
+  if(typeof currentAgentSection!=='undefined' && currentAgentSection && currentAgentSection!=='breakbot' && !agentPageOn(currentAgentSection)){
+    switchAgentSection('dashboard',document.getElementById('agent-tab-dashboard'));
+  }
+}
+async function loadAgentPages(){
+  try{
+    const j=await fetch(BACKEND+'/api/agent-pages/mine',{credentials:'include'}).then(r=>r.json());
+    if(j && j.success && j.pages){
+      agentPagesAllowed=j.pages;
+      try{ localStorage.setItem('rcAgentPages',JSON.stringify(j.pages)); }catch(e){}
+    }
+    if(isAdminRole()){
+      const g=await fetch(BACKEND+'/api/agent-pages',{credentials:'include'}).then(r=>r.json()).catch(()=>null);
+      if(g && g.success) agentPagesGlobal=g.global;
+    }
+  }catch(e){}
+  applyAgentPages();
+  if(typeof configureAgentBreakbotAccess==='function') configureAgentBreakbotAccess();
 }
 
 // Role compare is case-insensitive, older rcSession caches store
@@ -4571,6 +4585,8 @@ function applyView(view){
   // Always scroll to top when switching views, setTimeout ensures DOM reflow first
   setTimeout(()=>window.scrollTo({top:0,behavior:'instant'}),0);
   configureAgentBreakbotAccess();
+  applyAgentPages();
+  loadAgentPages();
   // Agent landing page is handled by restoreLastAgentSection() after startApp.
   // Only fall back to breakbot/dashboard if there's no stored section at all.
   if(!isAdmin){
@@ -4655,6 +4671,11 @@ function openBreakbotPreview(el){
 }
 
 function switchAgentSection(section,el){
+  if(section!=='breakbot' && !agentPageOn(section)){
+    showToast('This page is turned off for your account.','warning');
+    section='dashboard';
+    el=document.getElementById('agent-tab-dashboard');
+  }
   if(section==='breakbot' && !breakbotVisibleInAgentView()){
     showToast('Break Bot is not enabled for this account.','warning');
     section='dashboard';
@@ -7627,7 +7648,7 @@ function doLogout(){
   fetch(BACKEND + '/api/session', { method: 'DELETE', credentials: 'include' }).catch(() => {});
   try{ localStorage.removeItem('rcLastUser'); localStorage.removeItem('rcSession'); }catch(e){}
   sessionStorage.clear();
-  currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;
+  currentUser=null;currentEmail=null;currentRole=null;currentBreakbotEnabled=true;agentPagesAllowed=null;agentPagesGlobal=null;try{localStorage.removeItem('rcAgentPages');}catch(e){}
   currentBreakbotPreviewMode=false;breakTrackerData={summary:{},tracker:[],recentLog:[]};breakSelectedDate='';
   if(window.google?.accounts?.id) try{google.accounts.id.disableAutoSelect();}catch(e){}
   gisRendered = false; // reset so prompt() fires fresh on next login page visit
@@ -11486,27 +11507,98 @@ function deriveRoleName(email=''){
     .join(' ');
 }
 
+// Session 58: Access Control, redesigned. People board + agent page controls.
+const ACX_PAGES={
+  breakbot:{label:'Breaks',desc:'Break Bot, start and end breaks'},
+  bonus:{label:'Bonus',desc:'Bonus guide'},
+  writer:{label:'AI Write',desc:'AI reply writer'},
+  tickets:{label:'Tickets',desc:'Log a ticket'},
+  mystats:{label:'My Stats',desc:'Personal ticket stats'},
+  talerts:{label:'Alerts',desc:'Unassigned and waiting tickets'},
+  assess:{label:'Tests',desc:'Assigned assessments'},
+  hall:{label:'HOF',desc:'Hall of Fame'}
+};
+let acxPageCfg={pages:Object.keys(ACX_PAGES),global:{},users:{}};
+let acxOpenEmail=null;
+
+function acxGlobalOn(p){ return acxPageCfg.global[p]!==false; }
+function acxOverrides(email){ return acxPageCfg.users[String(email||'').toLowerCase()]||{}; }
+// Per person state for one page: 'default' | 'show' | 'hide'
+function acxPageState(r,p){
+  if(p==='breakbot' && r.breakbot_enabled===0) return 'hide';
+  const o=acxOverrides(r.email)[p];
+  if(o===true) return 'show';
+  if(o===false) return 'hide';
+  return 'default';
+}
+function acxEffective(r,p){
+  const st=acxPageState(r,p);
+  return st==='default'?acxGlobalOn(p):st==='show';
+}
+function acxIsCustom(r){
+  if(r.role==='admin') return false;
+  return acxPageCfg.pages.some(p=>acxPageState(r,p)!=='default');
+}
+
 function renderRoleOverview(roles){
-  const total=roles.length;
-  const adminCount=roles.filter(r=>r.role==='admin').length;
-  const agentCount=roles.filter(r=>r.role!=='admin').length;
-  const breakbotCount=roles.filter(r=>r.breakbot_enabled!==0).length;
-  const totalEl=document.getElementById('role-stat-total');
-  const adminEl=document.getElementById('role-stat-admin');
-  const agentEl=document.getElementById('role-stat-agent');
-  const breakbotEl=document.getElementById('role-stat-breakbot');
-  if(totalEl) totalEl.textContent=String(total);
-  if(adminEl) adminEl.textContent=String(adminCount);
-  if(agentEl) agentEl.textContent=String(agentCount);
-  if(breakbotEl) breakbotEl.textContent=String(breakbotCount);
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=String(v); };
+  set('role-stat-total',roles.length);
+  set('role-stat-admin',roles.filter(r=>r.role==='admin').length);
+  set('role-stat-agent',roles.filter(r=>r.role!=='admin').length);
+  set('role-stat-custom',roles.filter(acxIsCustom).length);
+}
+
+function renderAgentPagesCard(){
+  const list=document.getElementById('acx-pages-list');
+  if(!list) return;
+  const pages=acxPageCfg.pages;
+  const onCount=pages.filter(acxGlobalOn).length+1;
+  const cnt=document.getElementById('acx-pages-count');
+  if(cnt) cnt.textContent=onCount+' of '+(pages.length+1)+' on';
+  const differ=p=>roleDirectory.filter(r=>r.role!=='admin' && acxPageState(r,p)!=='default').length;
+  let html='<div class="acx-page"><div class="acx-page-t"><strong>Home</strong><span>Dashboard, always on</span></div><span class="acx-lock">Always on</span></div>';
+  html+=pages.map(p=>{
+    const m=ACX_PAGES[p]||{label:p,desc:''};
+    const on=acxGlobalOn(p);
+    const d=differ(p);
+    return '<div class="acx-page'+(on?'':' is-off')+'"><div class="acx-page-t"><strong>'+esc(m.label)+'</strong><span>'+esc(m.desc)+(d?' <em>'+d+(d===1?' person differs':' people differ')+'</em>':'')+'</span></div>'+
+      '<label class="acx-switch"><input type="checkbox" data-page="'+p+'"'+(on?' checked':'')+' onchange="setAgentPageGlobal(this)" aria-label="'+esc(m.label)+' for agents"><span aria-hidden="true"></span></label></div>';
+  }).join('');
+  list.innerHTML=html;
+}
+
+async function loadAgentPageConfig(){
+  try{
+    const j=await fetch(BACKEND+'/api/agent-pages',{credentials:'include'}).then(r=>r.json());
+    if(j && j.success){ acxPageCfg={pages:j.pages||Object.keys(ACX_PAGES),global:j.global||{},users:j.users||{}}; agentPagesGlobal=acxPageCfg.global; }
+  }catch(e){}
+}
+
+async function saveAgentPages(body){
+  const r=await fetch(BACKEND+'/api/agent-pages',{method:'PUT',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(!j.success) throw new Error(j.error||'Could not save');
+  acxPageCfg={pages:j.pages,global:j.global,users:j.users};
+  agentPagesGlobal=acxPageCfg.global;
+  if(typeof applyAgentPages==='function') applyAgentPages();
+}
+
+async function setAgentPageGlobal(input){
+  const p=input.dataset.page, on=input.checked;
+  input.disabled=true;
+  try{
+    await saveAgentPages({global:{[p]:on}});
+    showToast((ACX_PAGES[p]?ACX_PAGES[p].label:p)+(on?' is on for agents':' is hidden from agents'),'success');
+  }catch(e){ input.checked=!on; showToast(e.message,'error'); }
+  input.disabled=false;
+  renderAgentPagesCard(); renderRoleRows(); renderRoleOverview(roleDirectory);
 }
 
 function getFilteredRoles(){
   let rows=[...roleDirectory];
   if(roleFilterMode==='admin') rows=rows.filter(r=>r.role==='admin');
   if(roleFilterMode==='agent') rows=rows.filter(r=>r.role!=='admin');
-  if(roleFilterMode==='breakbot-on') rows=rows.filter(r=>r.breakbot_enabled!==0);
-  if(roleFilterMode==='breakbot-off') rows=rows.filter(r=>r.breakbot_enabled===0);
+  if(roleFilterMode==='custom') rows=rows.filter(acxIsCustom);
   if(roleSearchTerm){
     const needle=roleSearchTerm.toLowerCase();
     rows=rows.filter(r=>String(r.email||'').toLowerCase().includes(needle)||String(r.added_by||'').toLowerCase().includes(needle)||deriveRoleName(r.email).toLowerCase().includes(needle));
@@ -11514,36 +11606,122 @@ function getFilteredRoles(){
   return rows;
 }
 
+function acxPagesSummary(r){
+  if(r.role==='admin') return '<span class="acx-tag">All pages</span>';
+  const pages=acxPageCfg.pages;
+  const hidden=pages.filter(p=>!acxEffective(r,p));
+  const custom=pages.filter(p=>acxPageState(r,p)!=='default');
+  const shown=pages.length+1-hidden.length;
+  const title=hidden.length?'Hidden: '+hidden.map(p=>ACX_PAGES[p]?ACX_PAGES[p].label:p).join(', '):'Every page is on';
+  return '<span class="acx-tag" title="'+esc(title)+'">'+shown+' of '+(pages.length+1)+'</span>'+(custom.length?'<span class="acx-tag acx-tag-accent">Custom</span>':'');
+}
+
+function acxEditorRow(r){
+  const seg=(p,val,label,st)=>'<button type="button" class="'+(st===val?'on':'')+'" aria-pressed="'+(st===val)+'" data-email="'+esc(r.email)+'" data-page="'+p+'" data-val="'+val+'" onclick="setPersonPage(this)">'+label+'</button>';
+  const items=acxPageCfg.pages.map(p=>{
+    const m=ACX_PAGES[p]||{label:p};
+    const st=acxPageState(r,p);
+    const def=acxGlobalOn(p)?'Default (on)':'Default (off)';
+    return '<div class="acx-pe-item"><span class="acx-pe-l">'+esc(m.label)+'</span><div class="acx-seg acx-seg-sm" role="group" aria-label="'+esc(m.label)+'">'+seg(p,'default',def,st)+seg(p,'show','Show',st)+seg(p,'hide','Hide',st)+'</div></div>';
+  }).join('');
+  return '<tr class="acx-pe-row"><td colspan="5"><div class="acx-pe"><div class="acx-pe-hd"><strong>Pages for '+esc(deriveRoleName(r.email))+'</strong><span>Default follows the Agent pages switches. Show or Hide applies to this person only.</span><button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="resetPersonPages(this)">Reset to default</button></div><div class="acx-pe-grid">'+items+'</div></div></td></tr>';
+}
+
 function renderRoleRows(){
   const roleGrid=document.getElementById('roleGrid');
   const roleCount=document.getElementById('roleCount');
+  if(!roleGrid) return;
   const rows=getFilteredRoles();
   const total=roleDirectory.length;
-  if(roleCount) roleCount.textContent=rows.length===total?total+' users':rows.length+' / '+total+' users';
-  if(!rows.length){
-    roleGrid.innerHTML='<div class="no-data">No users match this view.</div>';
-    return;
-  }
+  if(roleCount) roleCount.textContent=rows.length===total?total+' people':rows.length+' of '+total+' people';
+  if(!rows.length){ roleGrid.innerHTML='<tr><td colspan="5" class="acx-empty">No people match this view.</td></tr>'; return; }
   roleGrid.innerHTML=rows.map(r=>{
-    const isCore=CORE_ADMINS.includes(r.email);
-    const breakbotEnabled=r.breakbot_enabled!==0;
-    const isSelf=currentEmail && String(r.email||'').toLowerCase()===String(currentEmail||'').toLowerCase();
-    const roleBadge='<span class="role-pill '+(r.role==='admin'?'role-admin':'role-agent')+'">'+r.role.toUpperCase()+'</span>';
-    const breakbotChip='<span class="role-breakbot-chip '+(breakbotEnabled?'on':'off')+'">'+(breakbotEnabled?'Visible':'Hidden')+'</span>';
-    const toggleBtn='<button class="role-toggle-btn '+(breakbotEnabled?'':'off')+'" data-email="'+r.email+'" data-enabled="'+(breakbotEnabled?'1':'0')+'" onclick="toggleRoleBreakbotBtn(this)">'+(breakbotEnabled?'Hide Break Bot':'Show Break Bot')+'</button>';
-    const removeBtn=isCore?'<span class="role-core-note">Core admin</span>':'<button class="btn btn-danger btn-sm" data-email="'+r.email+'" onclick="deleteRoleBtn(this)">Remove</button>';
-    const previewTag=isSelf && currentRole==='admin' && !breakbotEnabled?'<span class="role-inline-pill preview">Preview Ready</span>':'';
-    return '<div class="role-row">'+
-      '<div class="role-cell role-identity">'+
-        '<div class="role-name-line"><span class="role-name-label">'+deriveRoleName(r.email)+'</span>'+(isSelf?'<span class="role-inline-pill self">You</span>':'')+previewTag+'</div>'+
-        '<div class="role-email" title="'+r.email+'">'+r.email+'</div>'+
-      '</div>'+
-      '<div class="role-cell">'+roleBadge+'</div>'+
-      '<div class="role-cell">'+breakbotChip+'</div>'+
-      '<div class="role-cell"><div class="role-added-by">'+(r.added_by||'system')+'</div><div class="role-core-note">Access source</div></div>'+
-      '<div class="role-cell role-actions">'+toggleBtn+removeBtn+'</div>'+
-    '</div>';
+    const email=String(r.email||'');
+    const isCore=CORE_ADMINS.includes(email.toLowerCase());
+    const isSelf=currentEmail && email.toLowerCase()===String(currentEmail||'').toLowerCase();
+    const isAdmin=r.role==='admin';
+    const open=acxOpenEmail===email.toLowerCase();
+    const roleSel='<select class="acx-role-sel" data-email="'+esc(email)+'" aria-label="Role for '+esc(email)+'" onchange="setRoleInline(this)"'+(isCore?' disabled title="Core admin"':'')+'>'+
+      '<option value="agent"'+(isAdmin?'':' selected')+'>Agent</option><option value="admin"'+(isAdmin?' selected':'')+'>Admin</option></select>';
+    const pagesBtn=isAdmin?'':'<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" aria-expanded="'+open+'" data-email="'+esc(email)+'" onclick="togglePersonPages(this)">'+(open?'Close':'Pages')+'</button>';
+    const removeBtn=isCore?'<span class="acx-muted">Core admin</span>':'<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(email)+'" onclick="deleteRoleBtn(this)">Remove</button>';
+    return '<tr class="'+(open?'is-open':'')+'">'+
+      '<td><div class="acx-person"><span class="acx-name">'+esc(deriveRoleName(email))+(isSelf?' <span class="acx-tag">You</span>':'')+'</span><span class="acx-email" title="'+esc(email)+'">'+esc(email)+'</span></div></td>'+
+      '<td>'+roleSel+'</td>'+
+      '<td><div class="acx-tags">'+acxPagesSummary(r)+'</div></td>'+
+      '<td><span class="acx-muted acx-by" title="'+esc(r.added_by||'system')+'">'+esc(r.added_by||'system')+'</span></td>'+
+      '<td class="acx-right"><div class="acx-actions">'+pagesBtn+removeBtn+'</div></td>'+
+    '</tr>'+(open?acxEditorRow(r):'');
   }).join('');
+}
+
+function togglePersonPages(btn){
+  const e=String(btn.dataset.email||'').toLowerCase();
+  acxOpenEmail=acxOpenEmail===e?null:e;
+  renderRoleRows();
+}
+
+function acxSyncSelfBreakbot(email,enabled){
+  if(currentEmail && email.toLowerCase()===currentEmail.toLowerCase()){
+    currentBreakbotEnabled=enabled;
+    currentBreakbotPreviewMode=false;
+    sessionStorage.setItem('rcBreakbotEnabled',enabled?'1':'0');
+    configureAgentBreakbotAccess();
+    syncBreakActionState();
+  }
+}
+
+async function acxSetBreakbotColumn(email,enabled){
+  const res=await fetch(BACKEND+'/api/roles/'+encodeURIComponent(email)+'/breakbot',{method:'PATCH',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled,updatedBy:currentUser||'system'})});
+  const j=await res.json();
+  if(!j.success) throw new Error(j.error||'Could not update Break Bot');
+  const row=roleDirectory.find(r=>String(r.email).toLowerCase()===email.toLowerCase());
+  if(row) row.breakbot_enabled=enabled?1:0;
+  acxSyncSelfBreakbot(email,enabled);
+}
+
+async function setPersonPage(btn){
+  const email=String(btn.dataset.email||''), p=btn.dataset.page, val=btn.dataset.val;
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.disabled=true);
+  try{
+    if(p==='breakbot'){
+      await acxSetBreakbotColumn(email,val!=='hide');
+      await saveAgentPages({email,pages:{breakbot:val==='show'?true:null}});
+    }else{
+      await saveAgentPages({email,pages:{[p]:val==='show'?true:val==='hide'?false:null}});
+    }
+    showToast('Pages updated','success');
+  }catch(e){ showToast(e.message,'error'); }
+  renderRoleRows(); renderRoleOverview(roleDirectory); renderAgentPagesCard();
+}
+
+async function resetPersonPages(btn){
+  const email=String(btn.dataset.email||'');
+  btn.disabled=true;
+  try{
+    const row=roleDirectory.find(r=>String(r.email).toLowerCase()===email.toLowerCase());
+    if(row && row.breakbot_enabled===0) await acxSetBreakbotColumn(email,true);
+    const pages={}; acxPageCfg.pages.forEach(p=>pages[p]=null);
+    await saveAgentPages({email,pages});
+    showToast('Pages reset to default','success');
+  }catch(e){ showToast(e.message,'error'); }
+  renderRoleRows(); renderRoleOverview(roleDirectory); renderAgentPagesCard();
+}
+
+async function setRoleInline(sel){
+  const email=String(sel.dataset.email||''), role=sel.value;
+  const row=roleDirectory.find(r=>String(r.email).toLowerCase()===email.toLowerCase());
+  const prev=row?row.role:'agent';
+  sel.disabled=true;
+  try{
+    const res=await fetch(BACKEND+'/api/roles',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser,breakbotEnabled:row?row.breakbot_enabled!==0:true})});
+    const j=await res.json();
+    if(!j.success) throw new Error(j.error||'Could not change role');
+    if(row){ row.role=role; row.added_by=currentUser; }
+    showToast(email+' is now '+(role==='admin'?'an admin':'an agent'),'success');
+  }catch(e){ sel.value=prev; showToast(e.message,'error'); }
+  sel.disabled=false;
+  renderRoleRows(); renderRoleOverview(roleDirectory); renderAgentPagesCard();
 }
 
 function handleRoleSearchInput(value){
@@ -11570,37 +11748,24 @@ async function loadBreakThresholds(){
   if(!wrap) return;
   try{
     const j = await fetch(BACKEND+'/api/break-thresholds',{credentials:'include'}).then(r=>r.json());
-    if(!j.success){ wrap.innerHTML='<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Failed to load</div>'; return; }
+    if(!j.success){ wrap.innerHTML='<tr><td colspan="3" class="acx-empty acx-err">Could not load thresholds</td></tr>'; return; }
     const rows = (j.data||[]).map(t=>{
-      const meta = AUX_LABELS[t.aux_type] || { label: t.aux_type, icon:'◎' };
+      const meta = AUX_LABELS[t.aux_type] || { label: t.aux_type };
       const singleVal = t.single_limit_minutes != null ? t.single_limit_minutes : '';
       const dailyVal  = t.daily_limit_minutes  != null ? t.daily_limit_minutes  : '';
-      const inp = `background:rgba(255,255,255,.04);border:1px solid var(--b1);border-radius:8px;color:var(--t1);font-size:13px;text-align:center;outline:none;padding:7px 10px;width:100px;`;
-      return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05);">
-        <div>
-          <div style="font-size:13px;font-weight:500;">${meta.icon}&nbsp; ${esc(meta.label)}</div>
-          <div style="font-size:10px;color:var(--t3);margin-top:2px">AUX: ${esc(t.aux_type)}</div>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
-          <input type="number" id="thr-single-${t.aux_type}" min="1" max="1440" value="${singleVal}" placeholder="No limit"
-            style="${inp}" onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
-          <span style="font-size:11px;color:var(--t3)">min</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;">
-          <input type="number" id="thr-daily-${t.aux_type}" min="1" max="1440" value="${dailyVal}" placeholder="No limit"
-            style="${inp}" onfocus="this.style.borderColor='rgba(245,130,31,.5)'" onblur="this.style.borderColor='var(--b1)'">
-          <span style="font-size:11px;color:var(--t3)">min</span>
-        </div>
-      </div>`;
+      const cell=(id,val,lbl)=>`<label class="acx-min"><input type="number" id="${id}" min="1" max="1440" value="${val}" placeholder="No limit" aria-label="${esc(lbl)}"><span>min</span></label>`;
+      return `<tr><td><div class="acx-person"><span class="acx-name">${esc(meta.label)}</span><span class="acx-email">${esc(t.aux_type)}</span></div></td>
+        <td>${cell('thr-single-'+t.aux_type,singleVal,meta.label+' single break limit')}</td>
+        <td>${cell('thr-daily-'+t.aux_type,dailyVal,meta.label+' daily total limit')}</td></tr>`;
     });
-    wrap.innerHTML = rows.length ? rows.join('') : '<div style="text-align:center;padding:24px;color:var(--t3);font-size:13px">No thresholds configured</div>';
-  }catch(e){ wrap.innerHTML='<div style="text-align:center;padding:24px;color:var(--red);font-size:13px">Error: '+esc(e.message)+'</div>'; }
+    wrap.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="3" class="acx-empty">No thresholds configured</td></tr>';
+  }catch(e){ wrap.innerHTML='<tr><td colspan="3" class="acx-empty acx-err">Could not load: '+esc(e.message)+'</td></tr>'; }
 }
 
 async function saveAllThresholds(){
   const btn = document.getElementById('save-thresholds-btn');
   const msg = document.getElementById('threshold-msg');
-  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  if(btn){ btn.disabled=true; btn.textContent='Saving...'; }
   let errors=0, saved=0;
   for(const auxType of Object.keys(AUX_LABELS)){
     const singleEl = document.getElementById('thr-single-'+auxType);
@@ -11618,11 +11783,11 @@ async function saveAllThresholds(){
       if(j.success) saved++; else errors++;
     }catch(e){ errors++; }
   }
-  if(btn){ btn.disabled=false; btn.textContent='Save All'; }
+  if(btn){ btn.disabled=false; btn.textContent='Save all'; }
   if(msg){
     msg.style.display='block';
     if(errors===0){
-      msg.style.color='var(--green)'; msg.textContent=`✓ All ${saved} thresholds saved.`;
+      msg.style.color='var(--green)'; msg.textContent=`All ${saved} thresholds saved.`;
     } else {
       msg.style.color='var(--red)'; msg.textContent=`Saved ${saved}, failed ${errors}. Check values.`;
     }
@@ -11633,69 +11798,35 @@ async function saveAllThresholds(){
 
 async function loadRoles(){
   try{
-    const res=await fetch(BACKEND+'/api/roles');const json=await res.json();const roles=json.data||[];
-    roleDirectory=roles;
+    const [res]=await Promise.all([fetch(BACKEND+'/api/roles',{credentials:'include'}).then(r=>r.json()), loadAgentPageConfig()]);
+    roleDirectory=(res && res.data)||[];
     renderRoleOverview(roleDirectory);
-    if(!roleDirectory.length){document.getElementById('roleCount').textContent='0 users';document.getElementById('roleGrid').innerHTML='<div class="no-data">No roles.</div>';return;}
+    renderAgentPagesCard();
     renderRoleRows();
-  }catch(e){showToast('Error','error');}
+  }catch(e){ showToast('Could not load access list','error'); }
 }
 
 async function addRole(){
   const email=document.getElementById('roleEmail').value.trim();
   const role=document.getElementById('roleSelect').value;
-  const breakbotEnabled=document.getElementById('roleBreakbotEnabled').checked;
-  if(!email){showToast('Email required','warning');return;}
+  if(!email){ showToast('Enter an email address','warning'); return; }
+  const existing=roleDirectory.find(r=>String(r.email).toLowerCase()===email.toLowerCase());
+  const breakbotEnabled=existing?existing.breakbot_enabled!==0:true;
   try{
     const res=await fetch(BACKEND+'/api/roles',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,role,addedBy:currentUser,breakbotEnabled})});
     const json=await res.json();
     if(json.success){
-      showToast('Saved','success');
+      showToast(existing?'Updated '+email:'Added '+email,'success');
       document.getElementById('roleEmail').value='';
-      document.getElementById('roleBreakbotEnabled').checked=true;
-      if(currentEmail && email.toLowerCase()===currentEmail.toLowerCase()){
-        currentBreakbotEnabled=breakbotEnabled;
-        currentBreakbotPreviewMode=false;
-        sessionStorage.setItem('rcBreakbotEnabled',breakbotEnabled?'1':'0');
-        configureAgentBreakbotAccess();
-        syncBreakActionState();
-      }
       loadRoles();
-    }else showToast('Error: '+json.error,'error');
-  }catch(e){showToast('Error','error');}
-}
-
-async function toggleRoleBreakbotBtn(btn){
-  const email=String(btn.dataset.email||'').trim();
-  const enabled=btn.dataset.enabled!=='1';
-  if(!email)return;
-  btn.disabled=true;
-  try{
-    const res=await fetch(BACKEND+'/api/roles/'+encodeURIComponent(email)+'/breakbot',{
-      method:'PATCH',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({enabled,updatedBy:currentUser||'system'})
-    });
-    const json=await res.json();
-    if(!json.success) throw new Error(json.error||'Unable to update Break Bot access');
-    if(currentEmail && email.toLowerCase()===currentEmail.toLowerCase()){
-      currentBreakbotEnabled=enabled;
-      currentBreakbotPreviewMode=false;
-      sessionStorage.setItem('rcBreakbotEnabled',enabled?'1':'0');
-      configureAgentBreakbotAccess();
-      syncBreakActionState();
-    }
-    showToast('Break Bot visibility updated','success');
-    loadRoles();
-  }catch(e){
-    showToast(e.message||'Error updating Break Bot access','error');
-    btn.disabled=false;
-  }
+    }else showToast(json.error||'Could not save','error');
+  }catch(e){ showToast('Could not save','error'); }
 }
 
 function deleteRoleBtn(btn){
-  if(!confirm('Remove '+btn.dataset.email+'?'))return;
-  fetch(BACKEND+'/api/roles/'+encodeURIComponent(btn.dataset.email),{method:'DELETE'}).then(r=>r.json()).then(j=>{if(j.success){showToast('Removed','success');loadRoles();}else showToast(j.error,'error');}).catch(()=>showToast('Error','error'));
+  const email=btn.dataset.email;
+  if(!confirm('Remove '+email+' from Access Control? Their role and page settings are removed.'))return;
+  fetch(BACKEND+'/api/roles/'+encodeURIComponent(email),{method:'DELETE',credentials:'include'}).then(r=>r.json()).then(j=>{if(j.success){showToast('Removed '+email,'success');loadRoles();}else showToast(j.error,'error');}).catch(()=>showToast('Could not remove','error'));
 }
 
 // REPORTS
