@@ -934,3 +934,36 @@ body.as-embed .st-secs,body.as-embed .st-chat{top:56px;max-height:calc(100vh - 7
 .studio-hero .hero-art{margin:-10px 0 -20px}
 .studio-prog[hidden]{display:none}
 .seg button{display:inline-flex;align-items:center;gap:6px}
+
+/* Session 65: layout and icon fixes */
+/* Page heads sit above the sticky filter bar so their menus are never covered. */
+.ph-wrap{position:relative;z-index:20}
+details.menu[open]{z-index:45}
+/* Icons v3: one outline style, slightly heavier at small sizes. */
+svg.i.sm{width:16px;height:16px;stroke-width:2}
+.btn svg.i{opacity:.9}
+.btn.primary svg.i{opacity:1}
+/* Row actions stay in view even when a wide table scrolls sideways. */
+.tbl th:last-child:empty{position:sticky;right:0;background:var(--surface-2,var(--surface))}
+.tbl td.act{position:sticky;right:0;background:var(--surface);box-shadow:-10px 0 12px -10px rgba(11,42,63,.18);padding-left:12px}
+.tbl td.act:empty{box-shadow:none}
+.tbl tr.click:hover td.act{background:var(--surface-2)}
+.tbl tr.is-reset td.act{opacity:1}
+/* Taker cards: description gets the full width, actions share one row. */
+.tcard::before{display:none}
+.tcard .top{align-items:center}
+.tcard .top h2{flex:1;min-width:0;margin:0}
+.tcard .tdesc{margin:-6px 0 0;color:var(--t2);font-size:13.5px;line-height:1.5}
+.tcard .foot{flex-wrap:wrap;row-gap:10px}
+.tcard .foot-acts{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end}
+/* Retest picker */
+dialog.pick{width:min(520px,calc(100vw - 32px))}
+.pick-all{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
+.pick-list{max-height:min(360px,50vh);overflow:auto;border:1px solid var(--border);border-radius:12px;margin-top:10px}
+.pick-list .pick-row{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
+.pick-list .pick-row:last-child{border-bottom:0}
+.pick-list .pick-row:hover{background:var(--surface-2)}
+.pick-who{flex:1;min-width:0;display:flex;flex-direction:column}
+.pick-who b{font-weight:600;font-size:14px}
+.pick-who span{font-size:12.5px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-all input,.pick-row input{width:16px;height:16px;accent-color:var(--accent);flex:none}
