@@ -2044,6 +2044,14 @@
         clear(revBox);
         revBox.appendChild(h('div', { class: 'row', style: 'flex-direction:row;align-items:center;gap:8px;flex-wrap:nowrap' }, [icon('shield'), h('h2', { style: 'font-size:16px;margin:0', text: 'Reviewers for this assessment' })]));
         revBox.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'These people see results, answers and activity for this assessment only, and can mark written answers and save a verdict. They cannot edit it, retest or open anything else.' }));
+        // Assessment-specific link to send to reviewers: opens this assessment's results after sign-in.
+        var rvUrl = location.origin + '/assess#results/' + id;
+        var rvIn = h('input', { class: 'inp', readonly: true, value: rvUrl, 'aria-label': 'Reviewer link for this assessment', onfocus: function () { rvIn.select(); } });
+        revBox.appendChild(h('label', { class: 'small muted', style: 'margin:0', text: 'Link to send them' }));
+        revBox.appendChild(h('div', { class: 'linkbox' }, [rvIn, h('button', { class: 'btn', type: 'button', onclick: function () {
+          (navigator.clipboard ? navigator.clipboard.writeText(rvUrl) : Promise.reject()).then(function () { toast('Reviewer link copied'); }).catch(function () { rvIn.select(); toast('Press Ctrl+C or Cmd+C to copy'); });
+        } }, [icon('copy', 'sm'), 'Copy link'])]));
+        revBox.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'They sign in with their @adit.com account and land on this assessment. It only works for people added below.' }));
         var rp = PeoplePicker({ label: 'Find people', placeholder: 'Type a name or email' });
         var list = h('div', { class: 'plist' });
         revBox.appendChild(rp.el);
