@@ -2316,6 +2316,7 @@
             h('button', { class: 'btn sm', type: 'button', onclick: function () { selGroup = selGroup === g.id ? null : g.id; draw(); } }, [icon('chat', 'sm'), selGroup === g.id ? 'Chatting about this' : 'Chat about this']),
             h('button', { class: 'btn sm primary', type: 'button', disabled: busy || !g.sectionIds.length || null, onclick: function () { generate([g.id]); } }, [icon('spark', 'sm'), drafts.length ? 'Rewrite all' : 'Write questions'])]),
           qlist,
+          !g.testId && !busy && readyGroups([g.id]).length ? h('div', { class: 'note', style: 'margin:10px 0 0' }, [icon('wand', 'sm'), h('span', { text: 'This set is ready. Convert it into an assessment? ' }), h('button', { class: 'btn sm primary', type: 'button', text: 'Convert', onclick: function () { offerConvert([g.id]); } })]) : null,
           g.testId ? h('div', { class: 'alert info', style: 'margin:10px 0 0' }, [icon('check'), h('span', null, ['Saved as a draft assessment. ', h('button', { class: 'linkbtn', type: 'button', text: 'Open it', onclick: function () { go('edit/' + g.testId); } })])]) : null,
         ]);
         box.appendChild(card);
@@ -2366,8 +2367,34 @@
       busy = true; draw();
       var ov = h('div', { class: 'st-busy' }, [art('tests', 150), h('b', { text: 'Writing questions…' }), h('span', { class: 'small muted', text: 'About 20 to 60 seconds per assessment.' })]);
       holder.appendChild(ov);
-      api('/api/assess/admin/studio/' + id + '/generate', { method: 'POST', body: { groupIds: groupIds || [] } }).then(function (j) { S = j.studio; busy = false; draw(); if (j.studio.errors && j.studio.errors.length) toast(j.studio.errors[0]); })
+      api('/api/assess/admin/studio/' + id + '/generate', { method: 'POST', body: { groupIds: groupIds || [] } }).then(function (j) { S = j.studio; busy = false; draw(); if (j.studio.errors && j.studio.errors.length) toast(j.studio.errors[0]); offerConvert(groupIds); })
         .catch(function (e) { busy = false; draw(); toast(e.message); });
+    }
+    // Once a set is written, ask whether to turn it into an assessment.
+    function readyGroups(ids) {
+      return S.groups.filter(function (g) { return (!ids || !ids.length || ids.indexOf(g.id) >= 0) && !g.testId && S.drafts.some(function (d) { return d.groupId === g.id && !d.saved && d.ok !== false; }); });
+    }
+    function offerConvert(ids) {
+      var gs = readyGroups(ids); if (!gs.length) return;
+      var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'cv-t' });
+      var secs = h('input', { class: 'inp', type: 'number', min: '15', max: '180', value: '40', style: 'width:80px', 'aria-label': 'Seconds per question' });
+      var yes = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), gs.length === 1 ? 'Yes, convert it' : 'Yes, convert them']);
+      var list = h('ul', { class: 'small', style: 'margin:8px 0 0;padding-left:18px' }, gs.map(function (g) { return h('li', { text: g.title + ' (' + S.drafts.filter(function (d) { return d.groupId === g.id && !d.saved; }).length + ' questions)' }); }));
+      dlg.appendChild(h('div', { class: 'cf-in' }, [art('tests', 150), h('h2', { id: 'cv-t', text: gs.length === 1 ? 'Convert this set into an assessment?' : 'Convert these ' + gs.length + ' sets into assessments?' }),
+        h('p', { text: 'The questions are saved to the bank as drafts, and each set opens as a draft assessment with a name, description and modules. Nothing reaches agents until you publish.' }), list,
+        h('label', { class: 'small muted row', style: 'margin-top:10px' }, ['Seconds per question', secs]),
+        h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Not now', onclick: function () { dlg.close(); } }), yes])]));
+      dlg.addEventListener('close', function () { dlg.remove(); });
+      yes.addEventListener('click', function () {
+        yes.disabled = true; yes.classList.add('busy');
+        api('/api/assess/admin/studio/' + id + '/publish', { method: 'POST', body: { createTests: true, groupIds: gs.map(function (g) { return g.id; }), secondsPerQuestion: Number(secs.value) || 40 } }).then(function (j) {
+          dlg.close(); S = j.studio;
+          var tests = j.made.filter(function (m) { return m.testId; });
+          toast(tests.length + ' assessment' + (tests.length === 1 ? '' : 's') + ' created as draft' + (tests.length === 1 ? '' : 's') + '.');
+          if (tests.length === 1) go('edit/' + tests[0].testId); else draw();
+        }).catch(function (e) { yes.disabled = false; yes.classList.remove('busy'); toast(e.message); });
+      });
+      document.body.appendChild(dlg); dlg.showModal();
     }
     function publish() {
       var n = S.drafts.filter(function (d) { return !d.saved; }).length;
@@ -3013,10 +3040,12 @@
         .then(function (r) {
           clearInterval(tmr); clear(out); go_.disabled = false;
           out.appendChild(h('div', { class: 'alert info' }, [icon('check'), h('span', { text: r.created + ' draft questions added to the bank.' + (r.errors && r.errors.length ? ' ' + r.errors.length + ' were skipped because they were incomplete.' : '') })]));
-          var mk = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Create an assessment from these ' + r.created]);
+          out.appendChild(h('p', { style: 'margin:14px 0 4px;font-weight:600', text: 'Convert this set of ' + r.created + ' into an assessment?' }));
+          out.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'The questions are approved and it opens as a draft assessment you can adjust. Nothing reaches agents until you publish.' }));
+          var mk = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Yes, convert it']);
           mk.addEventListener('click', function () { createFromDrafts(r.ids, mk, name).then(function () { dlg.close(); }); });
           out.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, [mk]));
-          out.appendChild(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', text: 'Or review the drafts first', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
+          out.appendChild(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', text: 'Not now, review the drafts first', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
         })
         .catch(function (e) { clearInterval(tmr); clear(out); err.appendChild(errBox(e.message)); go_.disabled = false; });
     });
