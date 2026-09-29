@@ -52,40 +52,52 @@
     if (tag === 'video') { el.muted = true; el.playsInline = true; }
     return el;
   }
+  // Session 64: icon set v2. Duotone: a soft ".du" fill layer under the
+  // outline, tinted by currentColor (see assess.css).
   var ICONS = {
-    clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 11h6M9 15h4"/>',
-    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
-    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
-    lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    clipboard: '<rect class="du" x="5" y="4" width="14" height="17" rx="2.5"/><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4V2.8h6V4"/><path d="M8.5 10.5l1.5 1.5 3-3M8.5 16h7"/>',
+    clock: '<circle class="du" cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/><path d="M12 3.5v1M20.5 12h-1M12 20.5v-1M3.5 12h1"/>',
+    eye: '<path class="du" d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    lock: '<rect class="du" x="5" y="10.5" width="14" height="10" rx="2.2"/><rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/>',
     arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
     arrowL: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
     x: '<path d="M6 6l12 12M18 6L6 18"/>',
-    warn: '<path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.3"/>',
-    camera: '<rect x="3" y="6.5" width="13" height="11" rx="2"/><path d="M16 10.5l5-3v9l-5-3"/>',
-    screen: '<rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/>',
-    expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
-    wifi: '<path d="M4 9.5a12 12 0 0 1 16 0M7 13a7.5 7.5 0 0 1 10 0M10 16.5a3 3 0 0 1 4 0"/><circle cx="12" cy="19.5" r=".6"/>',
-    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
-    replay: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4h4"/>',
+    warn: '<path class="du" d="M12 4 2.8 19.5h18.4z"/><path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+    camera: '<rect class="du" x="3" y="6.5" width="13" height="11" rx="2.2"/><rect x="3" y="6.5" width="13" height="11" rx="2.2"/><path d="M16 10.5l5-3v9l-5-3"/><circle cx="7" cy="10" r=".9"/>',
+    screen: '<rect class="du" x="3" y="4.5" width="18" height="12" rx="2"/><rect x="3" y="4.5" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16.5V20"/>',
+    expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect class="du" x="8" y="8" width="8" height="8" rx="1.5"/>',
+    wifi: '<path d="M4 9.5a12 12 0 0 1 16 0M7 13a7.5 7.5 0 0 1 10 0M10 16.5a3 3 0 0 1 4 0"/><circle cx="12" cy="19.5" r=".8"/>',
+    pen: '<path class="du" d="M4 20h4L19 9l-4-4L4 16z"/><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    replay: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4h4"/><path class="du" d="M10 9.2v5.6l4.6-2.8z"/><path d="M10 9.2v5.6l4.6-2.8z"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
-    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/>',
-    upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V16"/>',
-    doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
-    spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
-    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+    search: '<circle class="du" cx="11" cy="11" r="6.5"/><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/>',
+    upload: '<path d="M12 15V4M7 9l5-5 5 5"/><path class="du" d="M4 15v4.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V15z"/><path d="M4 15v4.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V15"/>',
+    doc: '<path class="du" d="M6 3h8l4 4v14H6z"/><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+    spark: '<path class="du" d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+    users: '<path class="du" d="M2.5 20a6.5 6.5 0 0 1 13 0z"/><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
     link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
-    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
-    download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
-    trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/>',
-    shield: '<path d="M12 3l7.5 3v6c0 4.5-3.2 7.8-7.5 9-4.3-1.2-7.5-4.5-7.5-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
-    flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
-    list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
-    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
-    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
-    volume: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
-    headphones: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3.5" y="14" width="4" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4" height="6.5" rx="1.5"/>',
-    hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9"/>',
+    copy: '<rect class="du" x="8" y="8" width="12" height="12" rx="2"/><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
+    download: '<path d="M12 4v11M7 10l5 5 5-5"/><path class="du" d="M4 17h16v3H4z"/><path d="M4 20h16"/>',
+    trash: '<path class="du" d="M6.5 7l1 13h9l1-13z"/><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5M14 11v5"/>',
+    shield: '<path class="du" d="M12 3l7.5 3v6c0 4.5-3.2 7.8-7.5 9-4.3-1.2-7.5-4.5-7.5-9V6z"/><path d="M12 3l7.5 3v6c0 4.5-3.2 7.8-7.5 9-4.3-1.2-7.5-4.5-7.5-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+    flag: '<path class="du" d="M5 4h11l-2 4 2 4H5z"/><path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11"/><rect class="du" x="3" y="4.5" width="3" height="3" rx="1"/><rect class="du" x="3" y="10.5" width="3" height="3" rx="1"/><rect class="du" x="3" y="16.5" width="3" height="3" rx="1"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+    edit: '<path class="du" d="M4 20h4L19 9l-4-4L4 16z"/><path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    chart: '<rect class="du" x="4" y="10" width="4" height="10" rx="1"/><rect class="du" x="10" y="4" width="4" height="16" rx="1"/><rect class="du" x="16" y="13" width="4" height="7" rx="1"/><path d="M6 20V10M12 20V4M18 20v-7M3 20h18"/>',
+    volume: '<path class="du" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+    headphones: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect class="du" x="3.5" y="14" width="4" height="6.5" rx="1.5"/><rect class="du" x="16.5" y="14" width="4" height="6.5" rx="1.5"/><rect x="3.5" y="14" width="4" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4" height="6.5" rx="1.5"/>',
+    hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9"/><path class="du" d="M9 19c1-2 5-2 6 0z"/>',
+    archive: '<rect class="du" x="4" y="8" width="16" height="12" rx="2"/><rect x="3" y="4" width="18" height="4" rx="1.5"/><path d="M4 8v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/>',
+    restore: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4h4"/><path d="M12 8v4l2.5 2"/>',
+    send: '<path class="du" d="M3.5 11 20.5 3.5 13 20.5l-2.5-7z"/><path d="M3.5 11 20.5 3.5 13 20.5l-2.5-7zM10.5 13.5l10-10"/>',
+    wand: '<path d="M4 20 15 9M13 7l4 4"/><path class="du" d="M15.5 3.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/><path d="M15.5 3.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9zM20 11l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5z"/>',
+    filter: '<path class="du" d="M3.5 5h17l-6.5 8v6l-4-2v-4z"/><path d="M3.5 5h17l-6.5 8v6l-4-2v-4z"/>',
+    print: '<rect class="du" x="3" y="9" width="18" height="8" rx="2"/><path d="M7 9V3.5h10V9M7 14h10v6.5H7z"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M17.5 12h.01"/>',
+    layers: '<path class="du" d="M12 3 21 8l-9 5-9-5z"/><path d="M12 3 21 8l-9 5-9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5"/>',
+    chat: '<path class="du" d="M4 5.5h16v10H9l-5 4z"/><path d="M4 5.5h16v10H9l-5 4zM8 9.5h8M8 12.5h5"/>',
+    bot: '<rect class="du" x="4.5" y="8" width="15" height="11" rx="3"/><rect x="4.5" y="8" width="15" height="11" rx="3"/><path d="M12 8V4.5M9.5 13h.01M14.5 13h.01M9.5 16h5"/><circle cx="12" cy="4" r="1"/>',
+    report: '<path class="du" d="M5 4h10l4 4v12H5z"/><path d="M5 4h10l4 4v12H5zM15 4v4h4M8 16v-3M11.5 16v-5M15 16v-2"/>',
   };
   function icon(name, cls) {
     var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -133,6 +145,47 @@
     if (REDUCED || !isFinite(to)) { el.textContent = to + suffix; return; }
     var t0 = performance.now(), dur = 700;
     (function step(now) { var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e) + suffix; if (k < 1) requestAnimationFrame(step); })(t0);
+  }
+  // Session 64: a small dropdown menu (native <details>)
+  function menu(label, ic, items, cls) {
+    var d = h('details', { class: 'menu' + (cls ? ' ' + cls : '') });
+    d.appendChild(h('summary', { class: 'btn' }, [icon(ic || 'download', 'sm'), label, h('span', { class: 'caret', 'aria-hidden': 'true', text: '▾' })]));
+    var list = h('div', { class: 'menu-list', role: 'menu' });
+    items.forEach(function (it) {
+      if (!it) return;
+      list.appendChild(h(it.href ? 'a' : 'button', { class: 'menu-item', role: 'menuitem', type: it.href ? null : 'button', href: it.href || null, onclick: function (e) { d.open = false; if (it.onclick) it.onclick(e); } }, [icon(it.icon || 'doc', 'sm'), h('span', null, [h('b', { text: it.label }), it.sub ? h('span', { text: it.sub }) : null])]));
+    });
+    d.appendChild(list);
+    d.addEventListener('toggle', function () { if (!d.open) return; var r = d.getBoundingClientRect(); var left = r.left < 320; list.style.left = left ? '0' : 'auto'; list.style.right = left ? 'auto' : '0'; });
+    document.addEventListener('click', function (e) { if (d.open && !d.contains(e.target)) d.open = false; });
+    return d;
+  }
+  // Session 64: print a clean sheet (the browser's Save as PDF works too)
+  function printSheet(title, sub, nodes) {
+    var root = document.getElementById('print-root');
+    if (root) root.remove();
+    root = h('div', { id: 'print-root', class: 'print-root' }, [
+      h('div', { class: 'pr-head' }, [h('img', { src: '/adit-icon-32.png', alt: '', width: '28', height: '28' }), h('div', null, [h('h1', { text: title }), sub ? h('p', { text: sub }) : null]), h('span', { class: 'pr-date', text: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) })]),
+    ].concat(nodes));
+    document.body.appendChild(root);
+    document.body.classList.add('printing');
+    var done = function () { document.body.classList.remove('printing'); root.remove(); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    setTimeout(function () { window.print(); setTimeout(function () { if (document.body.classList.contains('printing')) done(); }, 1500); }, 60);
+  }
+  function printBank(answers, filter) {
+    var qs = new URLSearchParams({ format: 'json', answers: answers ? '1' : '0' });
+    if (filter && filter.status) qs.set('status', filter.status); if (filter && filter.tag) qs.set('tag', filter.tag); if (filter && filter.q) qs.set('q', filter.q);
+    api('/api/assess/admin/questions/export?' + qs).then(function (j) {
+      var nodes = j.items.map(function (it) {
+        var opts = h('ol', { class: 'pr-opts', type: 'A' }, it.options.map(function (o) { return h('li', { text: o }); }));
+        return h('div', { class: 'pr-q' }, [h('div', { class: 'pr-qh' }, [h('b', { text: it.n + '. ' }), h('span', { text: it.prompt })]), h('div', { class: 'pr-meta', text: TYPE_SHORT[it.type] + (it.tags ? ' · ' + it.tags.split(',').join(', ') : '') }),
+          opts, it.matches ? h('div', { class: 'pr-meta', text: 'Match with: ' + it.matches.join(' · ') }) : null,
+          answers ? h('div', { class: 'pr-key' }, [h('b', { text: 'Answer: ' }), it.key || '']) : null,
+          answers && it.explanation ? h('div', { class: 'pr-meta', text: 'Why: ' + it.explanation }) : null]);
+      });
+      printSheet(answers ? 'Question bank with answer key' : 'Question bank', j.items.length + ' questions', nodes.length ? nodes : [h('p', { text: 'No questions match.' })]);
+    }).catch(function (e) { toast(e.message); });
   }
   // Session 63: animated illustration (illus.js), falls back to nothing
   function art(name, size) {
@@ -336,20 +389,21 @@
       });
     } }));
   }
-  var SECTIONS = [['', 'My assessments'], ['manage', 'Assessments'], ['live', 'Live'], ['insights', 'Insights'], ['bank', 'Question bank'], ['access', 'Access']];
+  var SECTIONS = [['', 'My assessments', 'clipboard'], ['manage', 'Assessments', 'layers'], ['studio', 'AI Studio', 'bot'], ['reports', 'Reports', 'chart'], ['live', 'Live', 'eye'], ['bank', 'Question bank', 'list'], ['access', 'Access', 'shield']];
   function renderNav(cur) {
     clear(nav);
     if (!me.reviewer) return; // takers only have one page
     SECTIONS.forEach(function (s) {
-      nav.appendChild(h('button', { type: 'button', 'aria-current': cur === s[0] ? 'page' : null, text: s[1], onclick: function () { go(s[0]); } }));
+      nav.appendChild(h('button', { type: 'button', 'aria-current': cur === s[0] ? 'page' : null, onclick: function () { go(s[0]); } }, [icon(s[2], 'sm'), h('span', { text: s[1] })]));
     });
   }
+  function hashQuery() { var q = location.hash.split('?')[1] || ''; try { return new URLSearchParams(q); } catch (e) { return new URLSearchParams(); } }
   function go(hash) { if (('#' + hash) === location.hash || (!hash && !location.hash)) route(); else location.hash = hash; }
   function route() {
-    var parts = location.hash.replace(/^#/, '').split('/');
+    var parts = location.hash.replace(/^#/, '').split('?')[0].split('/');
     var sec = parts[0] || '', arg = parts[1];
     if (!me.reviewer && sec) sec = '';
-    var top = { edit: 'manage', results: 'manage', attempt: 'manage' }[sec] || sec;
+    var top = { edit: 'manage', results: 'manage', attempt: 'manage', archived: 'manage', insights: 'reports' }[sec] || sec;
     renderNav(top);
     clear(main); main.focus({ preventScroll: true }); window.scrollTo(0, 0);
     if (sec === 'manage') return viewManage();
@@ -358,7 +412,10 @@
     if (sec === 'attempt') return viewAttempt(Number(arg));
     if (sec === 'bank') return viewBank();
     if (sec === 'live') return viewLive();
-    if (sec === 'insights') return viewInsights();
+    if (sec === 'insights') return viewReports('topics');
+    if (sec === 'reports') return viewReports(hashQuery().get('tab') || 'overview');
+    if (sec === 'archived') return viewArchived();
+    if (sec === 'studio') return arg ? viewStudio(Number(arg)) : viewStudioHome();
     if (sec === 'access') return viewAccess();
     return viewHome();
   }
@@ -1243,7 +1300,9 @@
   // ── Reviewer: assessments list ───────────────────────────────────────
   function viewManage() {
     main.appendChild(pageHead('Assessments', 'Build assessments from the question bank, choose who takes them, and review results.',
-      [h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
+      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
+       h('button', { class: 'btn', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Build from a document']),
+       h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/admin/tests').then(function (j) {
       clear(holder);
@@ -1526,7 +1585,7 @@
             api('/api/assess/admin/tests/' + id + '/duplicate', { method: 'POST', body: {} }).then(function (r) { toast('Copied as a draft'); go('edit/' + r.id); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
           } }, [icon('copy', 'sm'), 'Duplicate']) : null,
           id ? h('button', { class: 'btn ghost danger', type: 'button', style: 'width:100%', onclick: function () {
-            if (!confirm('Archive this assessment? Results are kept; agents will no longer see it.')) return;
+            if (!confirm('Archive this assessment? Agents will no longer see it and results are kept. You can restore it, or delete it for good, from Assessments > Archived.')) return;
             api('/api/assess/admin/tests/' + id, { method: 'DELETE' }).then(function () { toast('Archived'); go('manage'); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
           } }, [icon('trash', 'sm'), 'Archive']) : null,
         ]));
@@ -1535,28 +1594,92 @@
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
-  // ── Session 62: reset an attempt so the person can take it again ─────
-  function resetFlow(a, done) {
+  // ── Session 64: archived assessments: restore or delete for good ─────
+  function viewArchived() {
+    main.appendChild(pageHead('Archived assessments', 'Hidden from agents. Restore one to edit or reuse it, or delete it for good together with all of its results.', null, { text: 'Assessments', go: function () { go('manage'); } }));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    api('/api/assess/admin/tests-archived').then(function (j) {
+      clear(holder);
+      if (!j.tests.length) { holder.appendChild(h('div', { class: 'empty' }, [art('inbox'), h('b', { text: 'Nothing archived' }), h('span', { text: 'Archive an assessment from its Edit page when you no longer need it.' })])); return; }
+      var list = h('div', { class: 'grid-cards stagger' });
+      j.tests.forEach(function (t) {
+        list.appendChild(h('div', { class: 'card mcard arch' }, [
+          h('div', { class: 'row', style: 'align-items:flex-start' }, [h('h2', { style: 'flex:1;font-size:16px', text: t.title }), pill('Archived', '', true)]),
+          t.description ? h('p', { class: 'muted small', style: 'margin:0', text: t.description }) : null,
+          h('div', { class: 'meta' }, [pill(t.attempts + (t.attempts === 1 ? ' attempt' : ' attempts')), pill('Archived ' + fmtDay(t.archivedAt))]),
+          h('div', { class: 'row' }, [
+            h('button', { class: 'btn sm', type: 'button', onclick: function (e) { e.currentTarget.disabled = true; api('/api/assess/admin/tests/' + t.id + '/restore', { method: 'POST', body: {} }).then(function () { toast('Restored as a draft'); go('edit/' + t.id); }).catch(function (er) { toast(er.message); }); } }, [icon('restore', 'sm'), 'Restore']),
+            h('span', { class: 'spacer' }),
+            h('button', { class: 'btn sm danger', type: 'button', onclick: function () { deleteForever(t); } }, [icon('trash', 'sm'), 'Delete for good']),
+          ]),
+        ]));
+      });
+      holder.appendChild(list);
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+  }
+  function deleteForever(t) {
+    var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'df-t' });
+    var inp = h('input', { class: 'inp', style: 'width:100%', 'aria-label': 'Type the assessment name', placeholder: t.title, autocomplete: 'off' });
+    var ok = h('button', { class: 'btn primary danger-fill', type: 'button', disabled: true }, [icon('trash', 'sm'), 'Delete for good']);
+    inp.addEventListener('input', function () { ok.disabled = inp.value.trim() !== t.title.trim(); });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [art('denied', 140), h('h2', { id: 'df-t', text: 'Delete "' + t.title + '" for good?' }),
+      h('p', { text: 'This removes the assessment and all ' + t.attempts + ' attempt' + (t.attempts === 1 ? '' : 's') + ': answers, activity logs and camera photos. It cannot be undone. Questions stay in the bank.' }),
+      h('p', { class: 'small muted', text: 'Type the name to confirm:' }), inp,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), ok])]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    ok.addEventListener('click', function () {
+      ok.disabled = true;
+      api('/api/assess/admin/tests/' + t.id + '/delete-forever', { method: 'POST', body: { confirm: inp.value } }).then(function () { dlg.close(); toast('Deleted'); route(); }).catch(function (e) { ok.disabled = false; toast(e.message); });
+    });
+    document.body.appendChild(dlg); dlg.showModal(); inp.focus();
+  }
+
+  // ── Session 64: send a retest (reset + optional Chat tag) ───────────
+  // target: { attemptIds:[...], name, status } for one person, or
+  //         { testId, below:true, count } for everyone below the pass mark
+  function resetFlow(a, done) { retestFlow({ attemptIds: [a.id], name: a.name || a.email, status: a.status }, done); }
+  function retestFlow(t, done) {
     var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'rs-t' });
-    var note = h('input', { class: 'inp', style: 'width:100%', maxlength: '300', placeholder: 'Reason (optional), e.g. connection dropped', 'aria-label': 'Reason' });
-    var okBtn = h('button', { class: 'btn primary', type: 'button', text: 'Reset attempt' });
+    var note = h('input', { class: 'inp', style: 'width:100%', maxlength: '300', placeholder: 'Message (optional), e.g. "Please retake after the refresher on Friday"', 'aria-label': 'Message' });
+    var chat = h('input', { type: 'checkbox', id: 'rs-chat', checked: true });
+    var okBtn = h('button', { class: 'btn primary', type: 'button' }, [icon('send', 'sm'), t.below ? 'Send retests' : 'Send retest']);
+    var who = t.below ? (t.count + ' ' + (t.count === 1 ? 'person' : 'people') + ' below the pass mark') : t.name;
     dlg.appendChild(h('div', { class: 'cf-in' }, [
-      h('div', { class: 'cf-ic' }, [icon('replay', 'lg')]),
-      h('h2', { id: 'rs-t', text: 'Reset for ' + (a.name || a.email) + '?' }),
-      h('p', { text: (a.status === 'in_progress' ? 'Their test in progress is closed. ' : '') + 'The attempt stays in the results, marked Reset, and no longer counts toward scores, averages or the attempts allowed. They can start the test again from their list.' }),
+      art('pending', 150),
+      h('h2', { id: 'rs-t', text: 'Send a retest to ' + who + '?' }),
+      h('p', { text: (t.status === 'in_progress' ? 'Their test in progress is closed. ' : '') + 'Their latest attempt stays in the results, marked Reset, and stops counting toward scores and the attempts allowed. The test shows again as "Take again" on their list.' }),
       note,
-      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), okBtn]),
+      h('label', { class: 'chk', for: 'rs-chat', style: 'margin-top:10px' }, [chat, 'Tag ' + (t.below ? 'them' : 'them') + ' in the Google Chat space with a link']),
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), okBtn]),
     ]));
     dlg.addEventListener('close', function () { dlg.remove(); });
     okBtn.addEventListener('click', function () {
       okBtn.disabled = true;
-      api('/api/assess/admin/attempts/' + a.id + '/reset', { method: 'POST', body: { note: note.value } })
-        .then(function () { dlg.close(); toast('Reset. ' + (a.name || a.email) + ' can take it again.'); done(); })
+      api('/api/assess/admin/retest', { method: 'POST', body: { attemptIds: t.attemptIds || [], testId: t.testId, below: !!t.below, note: note.value, notify: chat.checked } })
+        .then(function (r) { dlg.close(); toast(r.reset ? ('Retest sent to ' + r.reset + (r.reset === 1 ? ' person' : ' people') + (r.notified ? ', tagged in Chat.' : (chat.checked && r.reason ? '. Chat: ' + r.reason : '.'))) : (r.reason || 'Nobody to retest')); done(); })
         .catch(function (e) { okBtn.disabled = false; toast(e.message); });
     });
     document.body.appendChild(dlg); dlg.showModal(); note.focus();
   }
   function viewResultsReload() { route(); }
+  function printResults(title, at) {
+    var rows = at.filter(function (a) { return a.status === 'submitted'; });
+    var tb = h('tbody', null, rows.map(function (a) { return h('tr', null, [h('td', { text: a.name || a.email }), h('td', { text: a.pct != null ? a.score + '/' + a.maxScore + ' (' + a.pct + '%)' : '–' }), h('td', { text: a.passed ? 'Pass' : 'Below pass' }), h('td', { text: (TIER[a.tier] || ['–'])[0] }), h('td', { text: a.verdict ? VERDICT[a.verdict][0] : '' }), h('td', { text: fmtWhen(a.finishedAt) })]); }));
+    var avg = rows.length ? Math.round(rows.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / rows.length) : 0;
+    printSheet(title, rows.length + ' submitted · average ' + avg + '% · pass rate ' + (rows.length ? Math.round(rows.filter(function (a) { return a.passed; }).length / rows.length * 100) : 0) + '%',
+      [h('table', { class: 'pr-tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Score', 'Result', 'Behaviour', 'Verdict', 'Submitted'].map(function (x) { return h('th', { text: x }); }))]), tb])]);
+  }
+  function printAttempt(a) {
+    var pct = a.maxScore ? Math.round(a.score / a.maxScore * 100) : 0;
+    var nodes = [h('div', { class: 'pr-kpis' }, [['Score', a.score + ' / ' + a.maxScore + ' (' + pct + '%)'], ['Result', pct >= a.passPct ? 'Pass' : 'Below the ' + a.passPct + '% pass mark'], ['Behaviour', (TIER[(a.integrity || {}).tier] || ['–'])[0]], ['Verdict', a.verdict ? VERDICT[a.verdict][0] : 'Not set']].map(function (k) { return h('div', null, [h('span', { text: k[0] }), h('b', { text: k[1] })]); }))];
+    if (a.notes) nodes.push(h('p', { class: 'pr-meta', text: 'Reviewer notes: ' + a.notes }));
+    a.items.forEach(function (it, i) {
+      if (it.kind === 'explain') { nodes.push(h('div', { class: 'pr-q' }, [h('div', { class: 'pr-qh' }, [h('b', { text: 'Written answer' })]), h('div', { class: 'pr-meta', text: it.about }), h('p', { text: it.text || 'Not answered' }), it.reviewScore != null ? h('div', { class: 'pr-key', text: 'Mark: ' + (it.reviewScore >= 1 ? 'Strong' : it.reviewScore > 0 ? 'Partial' : 'Weak') }) : null])); return; }
+      nodes.push(h('div', { class: 'pr-q' + (it.correct ? ' ok' : ' bad') }, [h('div', { class: 'pr-qh' }, [h('b', { text: 'Q' + (it.idx + 1) + (it.correct ? ' ✓ ' : ' ✗ ') }), h('span', { text: it.prompt })]),
+        h('div', { class: 'pr-meta', text: 'Their answer: ' + ((it.chosen && it.chosen.length) ? it.chosen.join(' | ') : 'No answer') }), it.correct ? null : h('div', { class: 'pr-key', text: 'Correct: ' + it.correctAnswer.join(' | ') }), it.explanation ? h('div', { class: 'pr-meta', text: 'Why: ' + it.explanation }) : null]));
+    });
+    printSheet((a.name || a.email) + ' · ' + a.testTitle, a.email + ' · submitted ' + fmtWhen(a.finishedAt), nodes);
+  }
 
   // ── Reviewer: results ────────────────────────────────────────────────
   function viewResults(id) {
@@ -1565,8 +1688,15 @@
       clear(holder);
       var t = r[0].tests.find(function (x) { return x.id === id; });
       var at = r[1].attempts;
+      var latest = {}; at.forEach(function (a) { if (a.status === 'submitted' && !latest[a.email]) latest[a.email] = a; });
+      var belowN = Object.keys(latest).filter(function (e) { return latest[e].passed === false; }).length;
       holder.appendChild(pageHead(t ? t.title : 'Results', 'Behaviour flags are signals to look into, not proof. Talk to the agent before acting on them.', [
-        h('a', { class: 'btn', href: '/api/assess/admin/tests/' + id + '/export' }, [icon('download', 'sm'), 'Export CSV']),
+        belowN ? h('button', { class: 'btn', type: 'button', onclick: function () { retestFlow({ testId: id, below: true, count: belowN }, viewResultsReload); } }, [icon('send', 'sm'), 'Retest ' + belowN + ' below pass']) : null,
+        menu('Download', 'download', [
+          { label: 'Results (CSV)', sub: 'One row per attempt, with score, behaviour and verdict.', icon: 'doc', onclick: function () { location.href = '/api/assess/admin/results/export?tests=' + id + '&reset=1'; } },
+          { label: 'Print summary', sub: 'Everyone\'s score on one page. Save as PDF from the print window.', icon: 'print', onclick: function () { printResults(t ? t.title : 'Results', at); } },
+        ]),
+        h('button', { class: 'btn', type: 'button', onclick: function () { go('reports?tests=' + id); } }, [icon('chart', 'sm'), 'Report']),
         h('button', { class: 'btn', type: 'button', onclick: function () { go('edit/' + id); } }, [icon('edit', 'sm'), 'Edit']),
       ], { text: 'Assessments', go: function () { go('manage'); } }));
       var done = at.filter(function (a) { return a.status === 'submitted'; });
@@ -1584,9 +1714,9 @@
       if (!at.length) { holder.appendChild(h('div', { class: 'empty' }, [art('people'), h('b', { text: 'No attempts yet' }), h('span', { text: 'Results appear here as agents submit.' })])); return; }
       var tb = h('tbody');
       at.forEach(function (a, ri) {
-        var resetBtn = a.status === 'reset' ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Reset so ' + (a.name || a.email) + ' can take it again', onclick: function (e) {
+        var resetBtn = a.status === 'reset' ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Send ' + (a.name || a.email) + ' a retest', onclick: function (e) {
           e.stopPropagation(); resetFlow(a, function () { viewResultsReload(); });
-        } }, [icon('replay', 'sm'), 'Reset']);
+        } }, [icon('send', 'sm'), 'Retest']);
         var tr = h('tr', { class: 'click' + (a.status === 'reset' ? ' is-reset' : ''), tabindex: '0', style: '--i:' + Math.min(ri, 12) }, [
           h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email })]),
           h('td', null, [a.status === 'reset' ? pill('Reset', '', true) : a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn'),
@@ -1621,7 +1751,8 @@
       var a = j.attempt, integ = a.integrity || { tier: null, flags: [] };
       var pct = a.maxScore ? Math.round(a.score / a.maxScore * 100) : null;
       holder.appendChild(pageHead(a.name || a.email, a.testTitle + ' · ' + a.email + (a.extraPct ? ' · +' + a.extraPct + '% time' : '') + ' · ' + (a.navigation === 'bank' ? 'Back and forth' : 'One way'), [
-        a.status !== 'reset' ? h('button', { class: 'btn', type: 'button', onclick: function () { resetFlow({ id: a.id, name: a.name, email: a.email, status: a.status }, function () { go('results/' + a.testId); }); } }, [icon('replay', 'sm'), 'Reset for a retake']) : null,
+        a.status !== 'reset' ? h('button', { class: 'btn', type: 'button', onclick: function () { resetFlow({ id: a.id, name: a.name, email: a.email, status: a.status }, function () { go('results/' + a.testId); }); } }, [icon('send', 'sm'), 'Send a retest']) : null,
+        a.status === 'submitted' ? h('button', { class: 'btn', type: 'button', onclick: function () { printAttempt(a); } }, [icon('print', 'sm'), 'Print']) : null,
         h('button', { class: 'btn ghost danger', type: 'button', onclick: function (e) {
           if (!confirm('Delete this attempt for ' + (a.name || a.email) + ' completely? Their answers, activity log and photos are removed for good. Reset is usually better, because it keeps the record.')) return;
           e.currentTarget.disabled = true;
@@ -1781,7 +1912,8 @@
   }
 
   // ── Reviewer: insights (Session 60) ──────────────────────────────────
-  function viewInsights() {
+  function viewInsights(host) {
+    var M = host || main;
     var months = [['', 'All time']];
     var d = new Date();
     for (var i = 0; i < 6; i++) {
@@ -1790,8 +1922,9 @@
     }
     var sel = h('select', { class: 'sel', 'aria-label': 'Period' }, months.map(function (x) { return h('option', { value: x[0], text: x[1] }); }));
     var exp = h('a', { class: 'btn', href: '/api/assess/admin/insights/export' }, [icon('download', 'sm'), 'Export CSV']);
-    main.appendChild(pageHead('Insights', 'Strengths and gaps by topic across all submitted assessments. The CSV has one row per agent (average score, topic scores, concern verdicts) and can feed your bonus or QA sheets.', [sel, exp]));
-    var holder = h('div'); main.appendChild(holder);
+    M.appendChild(host ? h('div', { class: 'toolbar' }, [h('span', { class: 'small muted', style: 'flex:1;min-width:240px', text: 'Topic scores per agent, by month. The CSV can feed your bonus or QA sheets.' }), sel, exp])
+      : pageHead('Insights', 'Strengths and gaps by topic across all submitted assessments. The CSV has one row per agent (average score, topic scores, concern verdicts) and can feed your bonus or QA sheets.', [sel, exp]));
+    var holder = h('div'); M.appendChild(holder);
     function cls(p) { return p >= 75 ? 'ok' : p >= 50 ? 'warn' : 'bad'; }
     function load() {
       clear(holder); holder.appendChild(skeleton());
@@ -1822,13 +1955,469 @@
     load();
   }
 
+  // ── Session 64: AI Studio ────────────────────────────────────────────
+  function viewStudioHome() {
+    main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'Turn a document into assessments' }), h('p', { text: 'Upload an SOP, a guide or any long document, paste text, or give a web link. The AI reads it, splits it into sections, suggests how many assessments to make, writes the questions, and works through them with you. Nothing reaches agents until you publish.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)])]));
+    var grid = h('div', { class: 'studio-start' });
+    main.appendChild(grid);
+    // source card
+    var mode = 'file', file = null;
+    var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Source' });
+    var panes = {};
+    [['file', 'Upload a file', 'upload'], ['text', 'Paste text', 'doc'], ['url', 'Web link', 'link']].forEach(function (o) {
+      seg.appendChild(h('button', { type: 'button', 'aria-pressed': String(mode === o[0]), onclick: function () { mode = o[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b === this)); }, this); Object.keys(panes).forEach(function (k) { panes[k].hidden = k !== mode; }); } }, [icon(o[2], 'sm'), o[1]]));
+    });
+    var fin = h('input', { type: 'file', accept: '.pdf,.docx,.txt,.md,.html,.htm', hidden: true });
+    var fname = h('span', { class: 'small muted', text: 'PDF, Word (.docx), text or HTML, up to 25 MB' });
+    var drop = h('label', { class: 'drop' }, [art('pending', 140), h('b', { text: 'Drop a document here or choose a file' }), fname, fin]);
+    ['dragover', 'dragenter'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('over'); }); });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) { file = e.dataTransfer.files[0]; fname.textContent = file.name + ' · ' + Math.round(file.size / 1024) + ' KB'; } });
+    fin.addEventListener('change', function () { file = fin.files[0] || null; if (file) fname.textContent = file.name + ' · ' + Math.round(file.size / 1024) + ' KB'; });
+    panes.file = h('div', null, [drop]);
+    var ta = h('textarea', { class: 'ta', style: 'min-height:200px', placeholder: 'Paste the text of an SOP, a policy, a product guide or training notes. Headings help the AI split it into sections.' });
+    var taName = h('input', { class: 'inp', placeholder: 'Name for this source, e.g. "Refund policy v3"' });
+    panes.text = h('div', { hidden: true }, [field('Name', taName), field('Text', ta)]);
+    var urlIn = h('input', { class: 'inp', type: 'url', placeholder: 'https://…' });
+    panes.url = h('div', { hidden: true }, [field('Web page', urlIn, 'Public pages only. If a page needs a sign-in (Google Docs, Zoho), download it and upload the file instead.')]);
+    var focus = h('textarea', { class: 'ta', style: 'min-height:70px', maxlength: '600', placeholder: 'Optional: what should the assessments focus on? e.g. "escalation owners and time limits, not the history section"' });
+    var err = h('div');
+    var goBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), 'Read it and plan assessments']);
+    var progress = h('div', { class: 'studio-prog', hidden: true }, [art('radar', 150), h('ol', { class: 'sp-steps' }, ['Reading the document', 'Finding sections', 'Planning assessments'].map(function (t) { return h('li', { text: t }); }))]);
+    grid.appendChild(h('div', { class: 'card pad stack' }, [h('h2', { text: 'Start with a source' }), seg, panes.file, panes.text, panes.url, field('Focus (optional)', focus), err, h('div', { class: 'row' }, [h('span', { class: 'spacer' }), goBtn]), progress]));
+    goBtn.addEventListener('click', function () {
+      clear(err);
+      var qs = new URLSearchParams({ kind: mode }), body;
+      if (focus.value.trim()) qs.set('focus', focus.value.trim());
+      if (mode === 'file') { if (!file) { err.appendChild(errBox('Choose a file first')); return; } qs.set('name', file.name); body = file; }
+      else if (mode === 'text') { if (ta.value.trim().length < 300) { err.appendChild(errBox('Paste a bit more text (at least a few paragraphs)')); return; } qs.set('name', taName.value.trim() || 'Pasted text'); body = new Blob([ta.value], { type: 'text/plain' }); }
+      else { if (!/^https?:\/\//.test(urlIn.value.trim())) { err.appendChild(errBox('Enter a web address starting with https://')); return; } body = new Blob([urlIn.value.trim()], { type: 'text/plain' }); }
+      goBtn.disabled = true; progress.hidden = false;
+      var steps = progress.querySelectorAll('li'), si = 0; steps[0].className = 'on';
+      var tm = setInterval(function () { if (si < steps.length - 1) { steps[si].className = 'done'; si++; steps[si].className = 'on'; } }, 4500);
+      api('/api/assess/admin/studio?' + qs, { method: 'POST', raw: body, contentType: body.type || 'application/octet-stream' })
+        .then(function (j) { clearInterval(tm); go('studio/' + j.studio.id); })
+        .catch(function (e) { clearInterval(tm); progress.hidden = true; goBtn.disabled = false; err.appendChild(errBox(e.message)); });
+    });
+    // past sessions
+    var past = h('div', { class: 'card pad stack' }, [h('h2', { text: 'Your studio work' }), h('p', { class: 'small muted', style: 'margin:0', text: 'Pick up where you left off.' })]);
+    var pl = h('div', { class: 'plist' }); past.appendChild(pl);
+    grid.appendChild(past);
+    api('/api/assess/admin/studio').then(function (j) {
+      if (!j.ai) err.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: 'AI is not configured on the server, so sections are found but questions cannot be written. Add ANTHROPIC_API_KEY or OPENAI_API_KEY.' })]));
+      if (!j.sessions.length) { pl.appendChild(h('div', { class: 'il-empty' }, [art('inbox', 140), h('span', { text: 'Nothing yet. Your first document will appear here.' })])); return; }
+      j.sessions.forEach(function (x) {
+        pl.appendChild(h('div', { class: 'click', onclick: function () { go('studio/' + x.id); } }, [h('span', { class: 'ic-round' }, [icon(x.status === 'saved' ? 'check' : 'doc', 'sm')]),
+          h('div', { class: 'who' }, [h('b', { text: x.title }), h('span', { text: x.groups + ' assessment' + (x.groups === 1 ? '' : 's') + ' planned · ' + x.drafts + ' draft questions · ' + fmtWhen(x.updatedAt) })]),
+          x.status === 'saved' ? pill('Saved', 'ok') : pill('In progress', 'accent')]));
+      });
+    }).catch(function () {});
+  }
+
+  function viewStudio(id) {
+    var holder = h('div', { class: 'studio' }); main.appendChild(holder); holder.appendChild(skeleton());
+    var S = null, busy = false, selGroup = null;
+    function put(body) { return api('/api/assess/admin/studio/' + id, { method: 'PUT', body: body }).then(function (j) { S = j.studio; return S; }); }
+    function load() { api('/api/assess/admin/studio/' + id).then(function (j) { S = j.studio; draw(); }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); }); }
+    function secById(sid) { return S.sections.find(function (x) { return x.id === sid; }); }
+    function draw() {
+      clear(holder);
+      var totalQ = S.drafts.filter(function (d) { return !d.saved; }).length;
+      holder.appendChild(pageHead(S.title, (S.summary || 'Sections found: ' + S.sections.length) + ' · ' + Math.round(S.chars / 1000) + 'k characters', [
+        h('button', { class: 'btn ghost danger', type: 'button', onclick: function () { if (!confirm('Delete this studio session? Saved questions and assessments stay.')) return; api('/api/assess/admin/studio/' + id, { method: 'DELETE' }).then(function () { go('studio'); }); } }, [icon('trash', 'sm'), 'Delete session']),
+        h('button', { class: 'btn primary', type: 'button', disabled: !totalQ || null, onclick: publish }, [icon('check', 'sm'), totalQ ? 'Save ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + ' and create drafts' : 'Nothing to save yet']),
+      ], { text: 'AI Studio', go: function () { go('studio'); } }));
+      var cols = h('div', { class: 'studio-cols' });
+      holder.appendChild(cols);
+      cols.appendChild(sectionsPane());
+      cols.appendChild(groupsPane());
+      cols.appendChild(chatPane());
+    }
+    // ── sections
+    function sectionsPane() {
+      var box = h('div', { class: 'card st-pane st-secs' }, [h('div', { class: 'st-hd' }, [icon('layers', 'sm'), h('h3', { text: 'Sections' }), h('span', { class: 'pill', text: S.sections.filter(function (x) { return x.include; }).length + ' of ' + S.sections.length })])]);
+      var list = h('div', { class: 'st-scroll' });
+      S.sections.forEach(function (sc, i) {
+        var g = S.groups.find(function (x) { return x.sectionIds.indexOf(sc.id) >= 0; });
+        var inc = h('input', { type: 'checkbox', checked: sc.include ? true : null, 'aria-label': 'Include ' + sc.title });
+        inc.addEventListener('change', function () { put({ sections: [{ id: sc.id, include: inc.checked }] }).then(draw).catch(function (e) { toast(e.message); }); });
+        var more = h('details', { class: 'st-sec-more' }, [h('summary', { text: sc.summary || 'Preview' }), sc.keyPoints && sc.keyPoints.length ? h('ul', null, sc.keyPoints.map(function (k) { return h('li', { text: k }); })) : null, h('p', { class: 'small muted', text: sc.preview + (sc.chars > 600 ? '…' : '') })]);
+        list.appendChild(h('div', { class: 'st-sec' + (sc.include ? '' : ' off'), style: '--i:' + Math.min(i, 14) }, [h('div', { class: 'row', style: 'gap:8px;flex-wrap:nowrap' }, [inc, h('b', { text: sc.title }), h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: Math.max(1, Math.round(sc.chars / 1000)) + 'k' })]),
+          g ? h('span', { class: 'st-gtag', text: g.title }) : h('span', { class: 'st-gtag none', text: 'Not in an assessment' }), more]));
+      });
+      box.appendChild(list);
+      return box;
+    }
+    // ── groups and drafts
+    function groupsPane() {
+      var box = h('div', { class: 'st-pane st-groups' });
+      box.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, [h('h3', { style: 'margin:0', text: 'Assessments' }), h('span', { class: 'spacer' }),
+        h('button', { class: 'btn sm', type: 'button', onclick: function () { var ng = S.groups.concat([{ id: '', title: 'New assessment', sectionIds: [], questionCount: 8, difficulty: 'mixed' }]); put({ groups: ng }).then(draw); } }, [icon('plus', 'sm'), 'Add']),
+        h('button', { class: 'btn sm primary', type: 'button', disabled: busy || null, onclick: function () { generate(null); } }, [icon('spark', 'sm'), 'Write all'])]));
+      S.groups.forEach(function (g, gi) {
+        var drafts = S.drafts.filter(function (d) { return d.groupId === g.id; });
+        var titleIn = h('input', { class: 'inp st-title', value: g.title, 'aria-label': 'Assessment title' });
+        titleIn.addEventListener('change', function () { g.title = titleIn.value; put({ groups: S.groups }).then(draw); });
+        var cnt = h('input', { class: 'inp', type: 'number', min: '1', max: '25', value: String(g.questionCount), style: 'width:70px', 'aria-label': 'Number of questions' });
+        cnt.addEventListener('change', function () { g.questionCount = Number(cnt.value) || 8; put({ groups: S.groups }); });
+        var dif = h('select', { class: 'sel', 'aria-label': 'Difficulty' }, [['mixed', 'Mixed'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); dif.value = g.difficulty;
+        dif.addEventListener('change', function () { g.difficulty = dif.value; put({ groups: S.groups }); });
+        var chips = h('div', { class: 'chips' });
+        g.sectionIds.forEach(function (sid) { var sc = secById(sid); if (!sc) return; chips.appendChild(h('span', { class: 'chip' }, [sc.title, h('button', { type: 'button', 'aria-label': 'Remove section', onclick: function () { g.sectionIds = g.sectionIds.filter(function (x) { return x !== sid; }); put({ groups: S.groups }).then(draw); } }, [icon('x', 'sm')])])); });
+        var free = S.sections.filter(function (sc) { return !S.groups.some(function (x) { return x.sectionIds.indexOf(sc.id) >= 0; }); });
+        if (free.length) {
+          var addSel = h('select', { class: 'sel sm', 'aria-label': 'Add a section' }, [h('option', { value: '', text: '+ Add section' })].concat(free.map(function (sc) { return h('option', { value: sc.id, text: sc.title }); })));
+          addSel.addEventListener('change', function () { if (!addSel.value) return; g.sectionIds.push(addSel.value); put({ groups: S.groups }).then(draw); });
+          chips.appendChild(addSel);
+        }
+        var qlist = h('div', { class: 'st-qs' });
+        drafts.forEach(function (d, qi) { qlist.appendChild(draftCard(d, qi)); });
+        if (!drafts.length) qlist.appendChild(h('p', { class: 'small muted', text: 'No questions yet. Press Write questions, or ask in the chat.' }));
+        var card = h('div', { class: 'card st-group' + (selGroup === g.id ? ' sel' : ''), style: '--i:' + gi }, [
+          h('div', { class: 'st-g-hd' }, [h('span', { class: 'st-num', text: String(gi + 1) }), titleIn,
+            h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Remove this assessment', 'aria-label': 'Remove this assessment', onclick: function () { if (!confirm('Remove "' + g.title + '" and its draft questions?')) return; put({ groups: S.groups.filter(function (x) { return x !== g; }), drafts: S.drafts.filter(function (d) { return d.groupId !== g.id; }) }).then(draw); } }, [icon('trash', 'sm')])]),
+          g.why ? h('p', { class: 'small muted', style: 'margin:0 0 8px', text: g.why }) : null,
+          chips,
+          h('div', { class: 'row st-g-opts' }, [h('label', { class: 'small muted' }, ['Questions ', cnt]), dif, h('span', { class: 'spacer' }),
+            h('button', { class: 'btn sm', type: 'button', onclick: function () { selGroup = selGroup === g.id ? null : g.id; draw(); } }, [icon('chat', 'sm'), selGroup === g.id ? 'Chatting about this' : 'Chat about this']),
+            h('button', { class: 'btn sm primary', type: 'button', disabled: busy || !g.sectionIds.length || null, onclick: function () { generate([g.id]); } }, [icon('spark', 'sm'), drafts.length ? 'Rewrite all' : 'Write questions'])]),
+          qlist,
+          g.testId ? h('div', { class: 'alert info', style: 'margin:10px 0 0' }, [icon('check'), h('span', null, ['Saved as a draft assessment. ', h('button', { class: 'linkbtn', type: 'button', text: 'Open it', onclick: function () { go('edit/' + g.testId); } })])]) : null,
+        ]);
+        box.appendChild(card);
+      });
+      return box;
+    }
+    function draftCard(d, qi) {
+      var L = 'ABCDEFGH';
+      var opts = h('div', { class: 'st-opts' });
+      if (d.type === 'matching') (d.options || []).forEach(function (o) { opts.appendChild(h('div', { class: 'st-opt' }, [h('span', { text: (o.text || o[0]) + ' → ' + (o.match || o[1]) })])); });
+      else if (d.type === 'ordering') (d.options || []).forEach(function (o, i) { opts.appendChild(h('div', { class: 'st-opt' }, [h('b', { text: (i + 1) + '.' }), h('span', { text: typeof o === 'string' ? o : o.text })])); });
+      else (d.options || []).forEach(function (o, i) { var ok = (d.correct || []).indexOf(i) >= 0; opts.appendChild(h('div', { class: 'st-opt' + (ok ? ' ok' : '') }, [h('b', { text: L[i] }), h('span', { text: typeof o === 'string' ? o : o.text }), ok ? icon('check', 'sm') : null])); });
+      var card = h('div', { class: 'st-q' + (d.ok ? '' : ' bad') + (d.saved ? ' saved' : ''), style: '--i:' + Math.min(qi, 14) }, [
+        h('div', { class: 'row', style: 'gap:6px' }, [h('span', { class: 'st-qn', text: String(qi + 1) }), pill(TYPE_SHORT[d.type] || d.type, 'accent'), pill(d.difficulty || 'medium'), d.saved ? pill('Saved to bank', 'ok') : null, d.ok ? null : pill('Needs a fix', 'bad'), h('span', { class: 'spacer' }),
+          d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Edit', 'aria-label': 'Edit question', onclick: function () { editDraft(d); } }, [icon('edit', 'sm')]),
+          d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Improve with AI', 'aria-label': 'Improve with AI', onclick: function (e) { improveDraft(d, e.currentTarget); } }, [icon('wand', 'sm')]),
+          d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Remove', 'aria-label': 'Remove question', onclick: function () { put({ drafts: S.drafts.filter(function (x) { return x !== d; }) }).then(draw); } }, [icon('x', 'sm')])]),
+        h('p', { class: 'st-qp', text: d.prompt }), opts,
+        d.explanation ? h('p', { class: 'small muted', style: 'margin:6px 0 0', text: 'Why: ' + d.explanation }) : null,
+        d.problem ? h('p', { class: 'small', style: 'color:var(--bad);margin:6px 0 0', text: d.problem }) : null,
+      ]);
+      return card;
+    }
+    function toEditor(d) {
+      if (d.type === 'matching') return { type: 'matching', prompt: d.prompt, options: (d.options || []).map(function (o) { return o.text || o[0]; }), matches: (d.options || []).map(function (o) { return o.match || o[1]; }), correct: [], explanation: d.explanation, tags: d.tags || [], difficulty: d.difficulty, status: 'draft' };
+      if (d.type === 'ordering') { var o = (d.options || []).map(function (x) { return typeof x === 'string' ? x : x.text; }); return { type: 'ordering', prompt: d.prompt, options: o, correct: o.map(function (_, i) { return i; }), explanation: d.explanation, tags: d.tags || [], difficulty: d.difficulty, status: 'draft' }; }
+      return { type: d.type, prompt: d.prompt, options: (d.options || []).map(function (x) { return typeof x === 'string' ? x : x.text; }), correct: (d.correct || []).slice(), explanation: d.explanation, tags: d.tags || [], difficulty: d.difficulty, status: 'draft' };
+    }
+    function fromEditor(d, p) {
+      var nd = Object.assign({}, d, { type: p.type, prompt: p.prompt, explanation: p.explanation, tags: p.tags, difficulty: p.difficulty });
+      if (p.type === 'matching') { nd.options = p.options; nd.correct = []; }
+      else if (p.type === 'ordering') { nd.options = p.options; nd.correct = []; }
+      else { nd.options = p.options; nd.correct = p.correct; }
+      return nd;
+    }
+    function editDraft(d) {
+      openQuestion(toEditor(d), { onSave: function (p) { var nd = fromEditor(d, p); var list = S.drafts.map(function (x) { return x === d ? nd : x; }); return put({ drafts: list }).then(draw); } });
+    }
+    function improveDraft(d, btn) {
+      btn.disabled = true; btn.classList.add('busy');
+      var q = toEditor(d); if (d.type === 'matching') q.pairs = (d.options || []).map(function (o) { return [o.text, o.match]; });
+      api('/api/assess/admin/questions/improve', { method: 'POST', body: { question: q } }).then(function (r) {
+        var nq = r.question; var nd = Object.assign({}, d, { type: nq.type, prompt: nq.prompt, options: nq.options, correct: nq.correct || [], explanation: nq.explanation || d.explanation, difficulty: nq.difficulty || d.difficulty });
+        return put({ drafts: S.drafts.map(function (x) { return x === d ? nd : x; }) }).then(function () { toast('Improved: ' + (r.changes || 'wording and options')); draw(); });
+      }).catch(function (e) { toast(e.message); btn.disabled = false; btn.classList.remove('busy'); });
+    }
+    function generate(groupIds) {
+      busy = true; draw();
+      var ov = h('div', { class: 'st-busy' }, [art('tests', 150), h('b', { text: 'Writing questions…' }), h('span', { class: 'small muted', text: 'About 20 to 60 seconds per assessment.' })]);
+      holder.appendChild(ov);
+      api('/api/assess/admin/studio/' + id + '/generate', { method: 'POST', body: { groupIds: groupIds || [] } }).then(function (j) { S = j.studio; busy = false; draw(); if (j.studio.errors && j.studio.errors.length) toast(j.studio.errors[0]); })
+        .catch(function (e) { busy = false; draw(); toast(e.message); });
+    }
+    function publish() {
+      var n = S.drafts.filter(function (d) { return !d.saved; }).length;
+      var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'pb-t' });
+      var mk = h('input', { type: 'checkbox', id: 'pb-mk', checked: true });
+      var secs = h('input', { class: 'inp', type: 'number', min: '15', max: '180', value: '40', style: 'width:80px' });
+      var ok = h('button', { class: 'btn primary', type: 'button' }, [icon('check', 'sm'), 'Save']);
+      dlg.appendChild(h('div', { class: 'cf-in' }, [art('inbox', 150), h('h2', { id: 'pb-t', text: 'Save ' + n + ' question' + (n === 1 ? '' : 's') + '?' }),
+        h('p', { text: 'They go to the question bank as drafts, tagged by section. Approve them there before they can be used in random pools.' }),
+        h('label', { class: 'chk', for: 'pb-mk' }, [mk, 'Also create one draft assessment per group (' + S.groups.filter(function (g) { return S.drafts.some(function (d) { return d.groupId === g.id && !d.saved; }); }).length + ')']),
+        h('label', { class: 'small muted row', style: 'margin-top:8px' }, ['Seconds per question', secs]),
+        h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), ok])]));
+      dlg.addEventListener('close', function () { dlg.remove(); });
+      ok.addEventListener('click', function () {
+        ok.disabled = true;
+        api('/api/assess/admin/studio/' + id + '/publish', { method: 'POST', body: { createTests: mk.checked, secondsPerQuestion: Number(secs.value) || 40 } }).then(function (j) {
+          dlg.close(); S = j.studio; draw();
+          toast('Saved ' + j.made.reduce(function (t, m) { return t + m.questions; }, 0) + ' questions' + (mk.checked ? ' and ' + j.made.filter(function (m) { return m.testId; }).length + ' draft assessment(s)' : '') + (j.errors.length ? '. ' + j.errors.length + ' could not be saved.' : ''));
+        }).catch(function (e) { ok.disabled = false; toast(e.message); });
+      });
+      document.body.appendChild(dlg); dlg.showModal();
+    }
+    // ── chat
+    function chatPane() {
+      var box = h('div', { class: 'card st-pane st-chat' });
+      var g = S.groups.find(function (x) { return x.id === selGroup; });
+      box.appendChild(h('div', { class: 'st-hd' }, [icon('bot', 'sm'), h('h3', { text: 'Work with the AI' }), g ? h('span', { class: 'pill accent', text: 'About: ' + g.title }) : null]));
+      var log = h('div', { class: 'st-log', 'aria-live': 'polite' });
+      S.messages.forEach(function (m) {
+        log.appendChild(h('div', { class: 'msg ' + (m.role === 'user' ? 'me' : 'ai') }, [
+          m.role === 'user' ? null : h('span', { class: 'msg-av' }, [icon('bot', 'sm')]),
+          h('div', { class: 'msg-b' }, [h('p', { text: m.text }), m.done && m.done.length ? h('ul', { class: 'msg-done' }, m.done.map(function (x) { return h('li', null, [icon('check', 'sm'), x]); })) : null, m.problems && m.problems.length ? h('p', { class: 'small', style: 'color:var(--bad)', text: m.problems.join(' · ') }) : null])]));
+      });
+      box.appendChild(log);
+      setTimeout(function () { log.scrollTop = log.scrollHeight; }, 30);
+      var sug = h('div', { class: 'chips st-sug' });
+      (g ? ['Make these harder', 'Add 3 scenario questions', 'Rewrite the wrong options to be more believable', 'Remove any question that is trivia']
+        : ['Split the first assessment in two', 'Make one short assessment per section', 'Focus on escalation rules and owners', 'Which sections are most important to test?']).forEach(function (t) {
+        sug.appendChild(h('button', { class: 'chip off', type: 'button', text: t, onclick: function () { inp.value = t; send(); } }));
+      });
+      box.appendChild(sug);
+      var inp = h('textarea', { class: 'ta st-in', rows: '2', placeholder: 'Ask for changes, e.g. "add 4 questions on refunds to assessment 2"', 'aria-label': 'Message to the AI' });
+      var sendBtn = h('button', { class: 'btn primary', type: 'button', 'aria-label': 'Send' }, [icon('send', 'sm')]);
+      inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+      sendBtn.addEventListener('click', send);
+      box.appendChild(h('div', { class: 'st-compose' }, [inp, sendBtn]));
+      function send() {
+        var t = inp.value.trim(); if (!t || busy) return;
+        busy = true; inp.value = ''; sendBtn.disabled = true;
+        log.appendChild(h('div', { class: 'msg me' }, [h('div', { class: 'msg-b' }, [h('p', { text: t })])]));
+        var typing = h('div', { class: 'msg ai' }, [h('span', { class: 'msg-av' }, [icon('bot', 'sm')]), h('div', { class: 'msg-b typing' }, [h('i'), h('i'), h('i')])]);
+        log.appendChild(typing); log.scrollTop = log.scrollHeight;
+        api('/api/assess/admin/studio/' + id + '/chat', { method: 'POST', body: { message: t, groupId: selGroup } }).then(function (j) { S = j.studio; busy = false; draw(); })
+          .catch(function (e) { busy = false; typing.remove(); sendBtn.disabled = false; toast(e.message); });
+      }
+      return box;
+    }
+    load();
+  }
+
+  // ── Session 64: Reports ──────────────────────────────────────────────
+  // Charts are plain SVG: one measure per chart, one hue (the accent), a
+  // recessive grid, direct labels only where they help, and a tooltip on
+  // every mark. Status colours are only used for pass/below and behaviour,
+  // always with a text label.
+  var tipEl = null;
+  function tip(e, html) {
+    if (!tipEl) { tipEl = h('div', { class: 'ch-tip', role: 'status' }); document.body.appendChild(tipEl); }
+    if (!html) { tipEl.style.opacity = '0'; return; }
+    tipEl.innerHTML = html; tipEl.style.opacity = '1';
+    var x = Math.min(window.innerWidth - tipEl.offsetWidth - 12, e.clientX + 14), y = Math.max(8, e.clientY - tipEl.offsetHeight - 10);
+    tipEl.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+  }
+  function escH(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  function chartCard(title, sub, body, extra) { return h('div', { class: 'card ch-card' }, [h('div', { class: 'ch-hd' }, [h('div', null, [h('h3', { text: title }), sub ? h('p', { text: sub }) : null]), extra || null]), body]); }
+  // vertical columns (histogram, weekly counts)
+  function columns(data, opts) {
+    opts = opts || {};
+    var W = 560, H = 220, P = { l: 34, r: 8, t: 12, b: 30 };
+    var max = opts.max || Math.max(1, Math.max.apply(null, data.map(function (d) { return d.value; })));
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ch', role: 'img', 'aria-label': opts.label || 'Chart' });
+    var ih = H - P.t - P.b, iw = W - P.l - P.r, bw = iw / data.length;
+    [0, .5, 1].forEach(function (f) { var y = P.t + ih * (1 - f); svg.appendChild(svgEl('line', { x1: P.l, x2: W - P.r, y1: y, y2: y, class: 'ch-grid' })); var t = svgEl('text', { x: P.l - 6, y: y + 4, class: 'ch-ax', 'text-anchor': 'end' }); t.textContent = Math.round(max * f) + (opts.unit || ''); svg.appendChild(t); });
+    data.forEach(function (d, i) {
+      var bh = d.value ? Math.max(2, ih * d.value / max) : 0, x = P.l + i * bw + 3, y = P.t + ih - bh, w = Math.max(4, bw - 6);
+      var g = svgEl('g', { class: 'ch-hit', tabindex: '0' });
+      g.appendChild(svgEl('rect', { x: P.l + i * bw, y: P.t, width: bw, height: ih, fill: 'transparent' }));
+      if (bh) { var r = svgEl('path', { class: 'ch-bar', d: 'M' + x + ',' + (y + bh) + 'V' + (y + 4) + 'Q' + x + ',' + y + ' ' + (x + 4) + ',' + y + 'H' + (x + w - 4) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + 4) + 'V' + (y + bh) + 'Z' }); r.style.setProperty('--d', (i * 40) + 'ms'); g.appendChild(r); }
+      var lb = svgEl('text', { x: P.l + i * bw + bw / 2, y: H - 10, class: 'ch-ax', 'text-anchor': 'middle' }); lb.textContent = d.label; g.appendChild(lb);
+      g.addEventListener('mousemove', function (e) { tip(e, '<b>' + escH(d.tip || d.label) + '</b><br>' + escH(d.value + (opts.valueLabel ? ' ' + opts.valueLabel : ''))); });
+      g.addEventListener('mouseleave', function () { tip(null); });
+      svg.appendChild(g);
+    });
+    return svg;
+  }
+  // a line over time with markers and an optional reference line
+  function line(points, opts) {
+    opts = opts || {};
+    var W = 560, H = 220, P = { l: 34, r: 12, t: 14, b: 30 };
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, class: 'ch', role: 'img', 'aria-label': opts.label || 'Chart' });
+    var ih = H - P.t - P.b, iw = W - P.l - P.r;
+    [0, 50, 100].forEach(function (v) { var y = P.t + ih * (1 - v / 100); svg.appendChild(svgEl('line', { x1: P.l, x2: W - P.r, y1: y, y2: y, class: 'ch-grid' })); var t = svgEl('text', { x: P.l - 6, y: y + 4, class: 'ch-ax', 'text-anchor': 'end' }); t.textContent = v + '%'; svg.appendChild(t); });
+    if (opts.ref != null) { var ry = P.t + ih * (1 - opts.ref / 100); svg.appendChild(svgEl('line', { x1: P.l, x2: W - P.r, y1: ry, y2: ry, class: 'ch-ref' })); var rt = svgEl('text', { x: W - P.r, y: ry - 5, class: 'ch-ax', 'text-anchor': 'end' }); rt.textContent = 'Pass mark ' + opts.ref + '%'; svg.appendChild(rt); }
+    if (!points.length) return svg;
+    var xs = function (i) { return P.l + (points.length === 1 ? iw / 2 : iw * i / (points.length - 1)); }, ys = function (v) { return P.t + ih * (1 - v / 100); };
+    var d = points.map(function (p, i) { return (i ? 'L' : 'M') + xs(i).toFixed(1) + ',' + ys(p.y).toFixed(1); }).join('');
+    svg.appendChild(svgEl('path', { d: d + 'L' + xs(points.length - 1) + ',' + (P.t + ih) + 'L' + xs(0) + ',' + (P.t + ih) + 'Z', class: 'ch-area' }));
+    var pl = svgEl('path', { d: d, class: 'ch-line' }); svg.appendChild(pl);
+    var step = Math.ceil(points.length / 8);
+    points.forEach(function (p, i) {
+      var c = svgEl('circle', { cx: xs(i), cy: ys(p.y), r: 4.5, class: 'ch-dot' }); svg.appendChild(c);
+      if (i % step === 0 || i === points.length - 1) { var t = svgEl('text', { x: xs(i), y: H - 10, class: 'ch-ax', 'text-anchor': 'middle' }); t.textContent = p.x; svg.appendChild(t); }
+      var hit = svgEl('rect', { x: xs(i) - Math.max(10, iw / points.length / 2), y: P.t, width: Math.max(20, iw / points.length), height: ih, fill: 'transparent', class: 'ch-hit' });
+      hit.addEventListener('mousemove', function (e) { c.setAttribute('r', 6.5); tip(e, '<b>' + escH(p.tip || p.x) + '</b><br>' + escH(p.label || (p.y + '%'))); });
+      hit.addEventListener('mouseleave', function () { c.setAttribute('r', 4.5); tip(null); });
+      svg.appendChild(hit);
+    });
+    return svg;
+  }
+  // horizontal bars with a label, value and a thin track (HTML, easy to read and wrap)
+  function hbars(rows, opts) {
+    opts = opts || {};
+    var box = h('div', { class: 'hb' });
+    rows.forEach(function (r, i) {
+      var pct = Math.max(0, Math.min(100, r.value));
+      var row = h('div', { class: 'hb-row', tabindex: '0', style: '--i:' + i }, [h('span', { class: 'hb-l', title: r.label, text: r.label }), h('div', { class: 'hb-t' }, [h('i', { class: r.tone ? 'tone-' + r.tone : '', style: 'width:' + pct + '%' })]), h('span', { class: 'hb-v', text: (r.valueText || (r.value + '%')) })]);
+      if (r.tip) { row.addEventListener('mousemove', function (e) { tip(e, r.tip); }); row.addEventListener('mouseleave', function () { tip(null); }); }
+      if (r.onclick) { row.classList.add('click'); row.addEventListener('click', r.onclick); }
+      box.appendChild(row);
+    });
+    if (!rows.length) box.appendChild(h('p', { class: 'small muted', text: opts.empty || 'No data.' }));
+    return box;
+  }
+  var reportState = { tests: [], from: '', to: '', email: '', result: '', range: '0' };
+  function viewReports(tab) {
+    var q = hashQuery();
+    if (q.get('tests')) reportState.tests = q.get('tests').split(',').map(Number).filter(Boolean);
+    var holder = h('div');
+    var qsOf = function () { var x = new URLSearchParams(); if (reportState.tests.length) x.set('tests', reportState.tests.join(',')); ['from', 'to', 'email', 'result'].forEach(function (k) { if (reportState[k]) x.set(k, reportState[k]); }); return x; };
+    var dl = menu('Download', 'download', [
+      { label: 'Results with these filters (CSV)', sub: 'One row per attempt.', icon: 'doc', onclick: function () { location.href = '/api/assess/admin/results/export?' + qsOf(); } },
+      { label: 'Include reset attempts (CSV)', sub: 'Same, plus attempts that were reset.', icon: 'doc', onclick: function () { var x = qsOf(); x.set('reset', '1'); location.href = '/api/assess/admin/results/export?' + x; } },
+      { label: 'Print this report', sub: 'Save as PDF from the print window.', icon: 'print', onclick: function () { printReport(); } },
+    ]);
+    main.appendChild(pageHead('Reports', 'How the team is doing across assessments: scores, pass rates, the hardest questions and the wrong answers people pick. Filters apply to every tab.', [dl]));
+    // filters
+    var testsBtn = h('details', { class: 'menu fsel' });
+    var testsSum = h('summary', { class: 'btn' }, [icon('layers', 'sm'), h('span', { text: 'All assessments' }), h('span', { class: 'caret', text: '▾' })]);
+    var testsList = h('div', { class: 'menu-list checks-list' });
+    testsBtn.appendChild(testsSum); testsBtn.appendChild(testsList);
+    document.addEventListener('click', function (e) { if (testsBtn.open && !testsBtn.contains(e.target)) testsBtn.open = false; });
+    var rng = h('div', { class: 'seg', role: 'group', 'aria-label': 'Period' });
+    [['7', '7 days'], ['30', '30 days'], ['90', '90 days'], ['0', 'All time']].forEach(function (o) {
+      rng.appendChild(h('button', { type: 'button', 'aria-pressed': String(reportState.range === o[0]), text: o[1], onclick: function () {
+        reportState.range = o[0];
+        if (o[0] === '0') { reportState.from = ''; reportState.to = ''; } else { var d = new Date(Date.now() - (Number(o[0]) - 1) * 86400000); reportState.from = d.toISOString().slice(0, 10); reportState.to = new Date().toISOString().slice(0, 10); }
+        fromIn.value = reportState.from; toIn.value = reportState.to;
+        Array.prototype.forEach.call(rng.children, function (b) { b.setAttribute('aria-pressed', String(b === this)); }, this); load();
+      } }));
+    });
+    var fromIn = h('input', { class: 'inp', type: 'date', 'aria-label': 'From', value: reportState.from }), toIn = h('input', { class: 'inp', type: 'date', 'aria-label': 'To', value: reportState.to });
+    [fromIn, toIn].forEach(function (x) { x.addEventListener('change', function () { reportState.from = fromIn.value; reportState.to = toIn.value; reportState.range = ''; Array.prototype.forEach.call(rng.children, function (b) { b.setAttribute('aria-pressed', 'false'); }); load(); }); });
+    var personSel = h('select', { class: 'sel', 'aria-label': 'Person' }, [h('option', { value: '', text: 'Everyone' })]);
+    personSel.addEventListener('change', function () { reportState.email = personSel.value; load(); });
+    var resSel = h('select', { class: 'sel', 'aria-label': 'Result' }, [['', 'Any result'], ['pass', 'Passed'], ['fail', 'Below pass']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    resSel.value = reportState.result; resSel.addEventListener('change', function () { reportState.result = resSel.value; load(); });
+    var clearBtn = h('button', { class: 'btn ghost sm', type: 'button', text: 'Clear', onclick: function () { reportState = { tests: [], from: '', to: '', email: '', result: '', range: '0' }; history.replaceState(null, '', '#reports'); route(); } });
+    main.appendChild(h('div', { class: 'toolbar rep-filters' }, [icon('filter', 'sm'), testsBtn, rng, h('label', { class: 'small muted rep-d' }, ['From', fromIn]), h('label', { class: 'small muted rep-d' }, ['To', toIn]), personSel, resSel, clearBtn]));
+    var tabsEl = h('div', { class: 'tabs', role: 'tablist' });
+    [['overview', 'Overview'], ['questions', 'Questions'], ['people', 'People'], ['topics', 'Topics by agent']].forEach(function (t) {
+      tabsEl.appendChild(h('button', { type: 'button', role: 'tab', 'aria-selected': String(tab === t[0]), text: t[1], onclick: function () { tab = t[0]; Array.prototype.forEach.call(tabsEl.children, function (b) { b.setAttribute('aria-selected', String(b === this)); }, this); paint(); } }));
+    });
+    main.appendChild(tabsEl); main.appendChild(holder);
+    var data = null, testsAll = [];
+    api('/api/assess/admin/tests').then(function (j) {
+      testsAll = j.tests;
+      clear(testsList);
+      j.tests.forEach(function (t) {
+        var cb = h('input', { type: 'checkbox', checked: reportState.tests.indexOf(t.id) >= 0 ? true : null });
+        cb.addEventListener('change', function () { var at = reportState.tests.indexOf(t.id); if (cb.checked && at < 0) reportState.tests.push(t.id); if (!cb.checked && at >= 0) reportState.tests.splice(at, 1); syncTests(); load(); });
+        testsList.appendChild(h('label', { class: 'menu-item chk' }, [cb, h('span', { text: t.title })]));
+      });
+      syncTests();
+    }).catch(function () {});
+    function syncTests() { testsSum.children[1].textContent = reportState.tests.length ? reportState.tests.length + ' assessment' + (reportState.tests.length > 1 ? 's' : '') : 'All assessments'; }
+    function load() {
+      clear(holder); holder.appendChild(skeleton());
+      api('/api/assess/admin/report?' + qsOf()).then(function (j) { data = j.report; fillPeople(); paint(); }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+    }
+    function fillPeople() {
+      var keep = reportState.email;
+      if (personSel.options.length <= 1 || !keep) {
+        clear(personSel); personSel.appendChild(h('option', { value: '', text: 'Everyone' }));
+        data.byAgent.slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); }).forEach(function (a) { personSel.appendChild(h('option', { value: a.email, text: a.name })); });
+      }
+      personSel.value = keep;
+    }
+    function kpi(label, val, suffix, sub) { var b = h('b', { text: '0' }); var el = h('div', { class: 'card kpi' }, [h('span', { class: 'kpi-l', text: label }), h('div', { class: 'kpi-v' }, [b, suffix ? h('small', { text: suffix }) : null]), sub ? h('span', { class: 'kpi-s', text: sub }) : null]); if (val == null) b.textContent = '–'; else if (val % 1) b.textContent = String(val); else countUp(b, val); return el; }
+    function paint() {
+      clear(holder); tip(null);
+      if (!data) return;
+      var k = data.kpis;
+      if (tab === 'topics') { viewInsights(holder); return; }
+      if (!k.attempts) { holder.appendChild(h('div', { class: 'empty' }, [art('radar'), h('b', { text: 'No submitted attempts match these filters' }), h('span', { text: 'Try a wider period or clear the filters.' })])); return; }
+      if (tab === 'overview') {
+        holder.appendChild(h('div', { class: 'kpis stagger' }, [kpi('Attempts', k.attempts), kpi('People', k.people), kpi('Average score', k.avg, '%'), kpi('Pass rate', k.passRate, '%'), kpi('Median time', k.medianMinutes, ' min'), kpi('Flagged behaviour', k.flagged, '%', 'Some or major issues')]));
+        var passMark = data.rows.length ? data.rows[0].passPct : null;
+        var grid = h('div', { class: 'ch-grid2' });
+        grid.appendChild(chartCard('Score distribution', 'How many attempts landed in each score band', columns(data.distribution.map(function (d) { return { label: d.from + (d.from === 90 ? '+' : ''), value: d.n, tip: d.from + '% to ' + (d.to === 100 ? '100' : d.to - 1) + '%' }; }), { label: 'Score distribution', valueLabel: 'attempts' })));
+        grid.appendChild(chartCard('Average score by week', data.trend.length > 1 ? 'Week starting Monday' : 'Needs two or more weeks of attempts to show a trend',
+          line(data.trend.map(function (w) { var d = new Date(w.week + 'T12:00:00Z'); return { x: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), y: w.avg, tip: 'Week of ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), label: w.avg + '% average · ' + w.passRate + '% passed · ' + w.n + ' attempts' }; }), { ref: passMark, label: 'Average score by week' })));
+        grid.appendChild(chartCard('By assessment', 'Average score; click to filter', hbars(data.byTest.map(function (t) { return { label: t.test, value: t.avg, valueText: t.avg + '% · ' + t.n, tone: 'acc', tip: '<b>' + escH(t.test) + '</b><br>' + t.avg + '% average, ' + t.passRate + '% passed, ' + t.n + ' attempts', onclick: function () { reportState.tests = [t.testId]; syncTests(); Array.prototype.forEach.call(testsList.querySelectorAll('input'), function (cb, i) { cb.checked = testsAll[i] && testsAll[i].id === t.testId; }); load(); } }; }))));
+        var tiers = data.tiers, tot = (tiers.none || 0) + (tiers.some || 0) + (tiers.major || 0) || 1;
+        var stack = h('div', { class: 'stackbar', role: 'img', 'aria-label': 'Behaviour: ' + tiers.none + ' no issues, ' + tiers.some + ' some issues, ' + tiers.major + ' major issues' });
+        [['none', 'No issues', 'ok'], ['some', 'Some issues', 'warn'], ['major', 'Major issues', 'bad']].forEach(function (x) { var n = tiers[x[0]] || 0; if (!n) return; var seg = h('i', { class: 'tone-' + x[2], style: 'flex:' + n }); seg.addEventListener('mousemove', function (e) { tip(e, '<b>' + x[1] + '</b><br>' + n + ' attempts (' + Math.round(n / tot * 100) + '%)'); }); seg.addEventListener('mouseleave', function () { tip(null); }); stack.appendChild(seg); });
+        var legend = h('div', { class: 'legend' }, [['none', 'No issues', 'ok'], ['some', 'Some issues', 'warn'], ['major', 'Major issues', 'bad']].map(function (x) { return h('span', null, [h('i', { class: 'tone-' + x[2] }), x[1] + ' · ' + (tiers[x[0]] || 0)]); }));
+        grid.appendChild(chartCard('Behaviour during tests', 'Signals to look into, not proof', h('div', null, [stack, legend])));
+        holder.appendChild(grid);
+        if (data.topics.length) holder.appendChild(chartCard('Topics, weakest first', 'Share of answers correct, from question tags', hbars(data.topics.map(function (t) { return { label: t.tag, value: t.pct, valueText: t.pct + '% · ' + t.n, tone: t.pct >= 75 ? 'ok' : t.pct >= 50 ? 'warn' : 'bad', tip: '<b>' + escH(t.tag) + '</b><br>' + t.pct + '% correct over ' + t.n + ' answers' }; }))));
+      } else if (tab === 'questions') {
+        holder.appendChild(h('p', { class: 'small muted', text: 'Hardest first. "Most picked wrong answer" shows which option people chose when they got it wrong, and how many of the wrong answers it takes. A single wrong option taking most of them usually means a knowledge gap on that point, or a confusing question.' }));
+        var tb = h('tbody');
+        data.questions.forEach(function (x, i) {
+          var tr = h('tr', { style: '--i:' + Math.min(i, 14) }, [
+            h('td', null, [h('span', { class: 'qtxt', text: x.prompt }), h('span', { class: 'sub', text: 'Correct: ' + x.correct.join(' | ') })]),
+            h('td', { class: 'num', text: String(x.n) }),
+            h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { class: x.pct >= 75 ? 'ok' : x.pct >= 50 ? 'warn' : 'bad', style: 'width:' + x.pct + '%' })]), h('span', { class: 'num', text: x.pct + '%' })])]),
+            h('td', null, [x.topWrong ? h('div', { class: 'wrongpick' }, [h('span', { text: x.topWrong.text }), h('span', { class: 'sub', text: x.topWrong.n + ' picks · ' + x.topWrong.share + '% of wrong answers' })]) : h('span', { class: 'muted', text: x.n && x.pct < 100 ? 'Mixed' : '–' })]),
+            h('td', { class: 'num', text: x.avgSec != null ? x.avgSec + 's' : '–' }),
+            h('td', { class: 'num', text: String(x.unanswered || 0) }),
+          ]);
+          tb.appendChild(tr);
+        });
+        holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Question', 'Answers', 'Correct', 'Most picked wrong answer', 'Avg time', 'Not answered'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb])]));
+      } else if (tab === 'people') {
+        var tb2 = h('tbody');
+        data.byAgent.forEach(function (a, i) {
+          var tr = h('tr', { class: 'click', tabindex: '0', style: '--i:' + Math.min(i, 14) }, [
+            h('td', null, [h('b', { style: 'font-weight:500', text: a.name }), h('span', { class: 'sub', text: a.email })]),
+            h('td', { class: 'num', text: String(a.n) }),
+            h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + a.avg + '%' })]), h('span', { class: 'num', text: a.avg + '%' })])]),
+            h('td', { class: 'num', text: a.best + '%' }),
+            h('td', { class: 'num', text: a.passed + ' of ' + a.n }),
+            h('td', null, [a.flagged ? pill(a.flagged + ' flagged', 'warn') : h('span', { class: 'muted', text: '–' })]),
+            h('td', { class: 'num', text: fmtWhen(a.last) }),
+          ]);
+          tr.addEventListener('click', function () { reportState.email = a.email; personSel.value = a.email; tab = 'overview'; Array.prototype.forEach.call(tabsEl.children, function (b, k) { b.setAttribute('aria-selected', String(k === 0)); }); load(); });
+          tb2.appendChild(tr);
+        });
+        holder.appendChild(h('p', { class: 'small muted', text: 'Lowest average first. Click a person to see their overview.' }));
+        holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Attempts', 'Average', 'Best', 'Passed', 'Behaviour', 'Last'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb2])]));
+      }
+    }
+    function printReport() {
+      if (!data) return;
+      var k = data.kpis;
+      var nodes = [h('div', { class: 'pr-kpis' }, [['Attempts', k.attempts], ['People', k.people], ['Average', (k.avg != null ? k.avg + '%' : '–')], ['Pass rate', (k.passRate != null ? k.passRate + '%' : '–')]].map(function (x) { return h('div', null, [h('span', { text: x[0] }), h('b', { text: String(x[1]) })]); }))];
+      nodes.push(h('h2', { text: 'By assessment' }));
+      nodes.push(h('table', { class: 'pr-tbl' }, [h('thead', null, [h('tr', null, ['Assessment', 'Attempts', 'Average', 'Pass rate'].map(function (x) { return h('th', { text: x }); }))]), h('tbody', null, data.byTest.map(function (t) { return h('tr', null, [h('td', { text: t.test }), h('td', { text: String(t.n) }), h('td', { text: t.avg + '%' }), h('td', { text: t.passRate + '%' })]); }))]));
+      nodes.push(h('h2', { text: 'People' }));
+      nodes.push(h('table', { class: 'pr-tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Attempts', 'Average', 'Passed'].map(function (x) { return h('th', { text: x }); }))]), h('tbody', null, data.byAgent.map(function (a) { return h('tr', null, [h('td', { text: a.name }), h('td', { text: String(a.n) }), h('td', { text: a.avg + '%' }), h('td', { text: a.passed + ' of ' + a.n })]); }))]));
+      nodes.push(h('h2', { text: 'Hardest questions' }));
+      data.questions.slice(0, 10).forEach(function (x) { nodes.push(h('div', { class: 'pr-q' }, [h('div', { class: 'pr-qh' }, [h('b', { text: x.pct + '% correct · ' }), h('span', { text: x.prompt })]), x.topWrong ? h('div', { class: 'pr-meta', text: 'Most picked wrong: ' + x.topWrong.text + ' (' + x.topWrong.share + '% of wrong answers)' }) : null])); });
+      printSheet('Assessment report', (reportState.from ? reportState.from + ' to ' + (reportState.to || 'today') : 'All time') + (reportState.tests.length ? ' · ' + reportState.tests.length + ' assessment(s)' : ''), nodes);
+    }
+    load();
+  }
+
   // ── Reviewer: question bank ──────────────────────────────────────────
   var bankFilter = { q: '', status: '', type: '', tag: '' };
   function viewBank() {
+    var dlq = function (ans) { var qs = new URLSearchParams({ answers: ans ? '1' : '0' }); if (bankFilter.status) qs.set('status', bankFilter.status); if (bankFilter.tag) qs.set('tag', bankFilter.tag); if (bankFilter.q) qs.set('q', bankFilter.q); return '/api/assess/admin/questions/export?' + qs; };
     main.appendChild(pageHead('Question bank', 'Every question used in assessments. Drafts from documents land here for you to check before agents see them.', [
+      menu('Download', 'download', [
+        { label: 'Questions only (CSV)', sub: 'No answers. Safe to share for revision.', icon: 'doc', onclick: function () { location.href = dlq(false); } },
+        { label: 'With answer key (CSV)', sub: 'Correct answers and explanations.', icon: 'lock', onclick: function () { location.href = dlq(true); } },
+        { label: 'Print questions only', sub: 'Or save as PDF from the print window.', icon: 'print', onclick: function () { printBank(false, bankFilter); } },
+        { label: 'Print with answer key', sub: 'For reviewers only.', icon: 'print', onclick: function () { printBank(true, bankFilter); } },
+      ]),
       h('button', { class: 'btn', type: 'button', onclick: openImport }, [icon('upload', 'sm'), 'Import CSV']),
       h('button', { class: 'btn', type: 'button', onclick: function () { openQuestion(null); } }, [icon('plus', 'sm'), 'New question']),
-      h('button', { class: 'btn primary', type: 'button', onclick: openGenerate }, [icon('spark', 'sm'), 'Draft from a document']),
+      h('button', { class: 'btn', type: 'button', onclick: openGenerate }, [icon('spark', 'sm'), 'Quick draft']),
+      h('button', { class: 'btn primary', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'AI Studio']),
     ]));
     var search = h('input', { class: 'inp', type: 'search', placeholder: 'Search questions, options or tags', 'aria-label': 'Search questions', value: bankFilter.q });
     var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Status' });
@@ -1890,7 +2479,8 @@
   }
   function reloadBank() { if (main._reloadBank && location.hash === '#bank') main._reloadBank(); }
 
-  function openQuestion(q) {
+  function openQuestion(q, studioOpts) {
+    studioOpts = studioOpts || null;
     var d = q || { type: 'single', prompt: '', options: ['', '', '', ''], correct: [], explanation: '', tags: [], difficulty: 'medium', status: 'draft' };
     var type = d.type, correct = d.correct.slice();
     // rows: [{text, match}]
@@ -1898,7 +2488,7 @@
       : d.type === 'ordering' ? d.correct.map(function (id) { return { text: d.options[id] || '' }; })
       : d.options.map(function (t, i) { return { text: t, match: d.matches ? d.matches[i] : '' }; });
     var body = h('div'), err = h('div');
-    var prompt = h('textarea', { class: 'ta', id: 'qe-p', maxlength: '1500', placeholder: 'A customer says… What do you do first?' }); prompt.value = d.prompt;
+    var prompt = h('textarea', { class: 'ta', id: 'qe-p', maxlength: '1500', required: true, placeholder: 'A customer says… What do you do first?' }); prompt.value = d.prompt;
     var typeSeg = h('div', { class: 'seg wrap', role: 'group', 'aria-label': 'Question type' });
     var optHint = h('span', { class: 'hint' });
     Object.keys(TYPE_SHORT).forEach(function (k) {
@@ -1963,22 +2553,55 @@
     var tags = h('input', { class: 'inp', id: 'qe-t', value: d.tags.join(', '), placeholder: 'escalation, adit pay' });
     var diff = h('select', { class: 'sel', id: 'qe-d' }, [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); diff.value = d.difficulty || 'medium';
     var stat = h('select', { class: 'sel', id: 'qe-s' }, [['draft', 'Draft'], ['approved', 'Approved']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); stat.value = d.status === 'approved' ? 'approved' : 'draft';
+    // Session 64: AI improve (clearer wording, better wrong options, explanation)
+    if (me.ai && (me.ai.anthropic || me.ai.openai)) {
+      var impIn = h('input', { class: 'inp', style: 'flex:1;min-width:180px', maxlength: '300', placeholder: 'Optional: what to change, e.g. "make it a scenario" or "harder wrong options"', 'aria-label': 'What to improve' });
+      var impNote = h('div', { class: 'small', style: 'flex-basis:100%' });
+      var undo = null;
+      var impBtn = h('button', { class: 'btn sm ai-btn', type: 'button' }, [icon('wand', 'sm'), 'Improve with AI']);
+      impBtn.addEventListener('click', function () {
+        var cur = { type: type, prompt: prompt.value, options: type === 'matching' ? rows.map(function (r) { return { text: r.text, match: r.match }; }) : rows.map(function (r) { return r.text; }), correct: type === 'ordering' ? [] : correct.slice(), explanation: expl.value, tags: tags.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean), difficulty: diff.value };
+        if (type === 'matching') cur.pairs = rows.map(function (r) { return [r.text, r.match]; });
+        undo = { type: type, prompt: prompt.value, rows: JSON.parse(JSON.stringify(rows)), correct: correct.slice(), expl: expl.value };
+        impBtn.disabled = true; impBtn.classList.add('busy'); impNote.className = 'small muted'; impNote.textContent = 'Thinking…';
+        api('/api/assess/admin/questions/improve', { method: 'POST', body: { question: cur, instruction: impIn.value } }).then(function (r) {
+          var nq = r.question;
+          type = nq.type || type;
+          Array.prototype.forEach.call(typeSeg.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === type)); });
+          prompt.value = nq.prompt || prompt.value;
+          if (type === 'matching') rows = (nq.options || []).map(function (o) { return { text: o.text || o[0], match: o.match || o[1] }; });
+          else if (type === 'truefalse') rows = [{ text: 'True' }, { text: 'False' }];
+          else rows = (nq.options || []).map(function (t) { return { text: typeof t === 'string' ? t : t.text }; });
+          correct = type === 'ordering' || type === 'matching' ? [] : (nq.correct || []).map(Number);
+          if (nq.explanation) expl.value = nq.explanation;
+          if (nq.difficulty) diff.value = nq.difficulty;
+          drawOpts();
+          clear(impNote); impNote.className = 'small ai-note';
+          impNote.appendChild(h('span', { text: 'Changed: ' + (r.changes || 'wording and options') + '. Check it, then save. ' }));
+          impNote.appendChild(h('button', { class: 'linkbtn small', type: 'button', text: 'Undo', onclick: function () { if (!undo) return; type = undo.type; prompt.value = undo.prompt; rows = undo.rows; correct = undo.correct; expl.value = undo.expl; Array.prototype.forEach.call(typeSeg.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.k === type)); }); drawOpts(); clear(impNote); } }));
+        }).catch(function (e) { impNote.className = 'small'; impNote.style.color = 'var(--bad)'; impNote.textContent = e.message; })
+          .finally(function () { impBtn.disabled = false; impBtn.classList.remove('busy'); });
+      });
+      body.appendChild(h('div', { class: 'ai-bar' }, [impBtn, impIn, impNote]));
+    }
     body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Type' }), typeSeg]));
     body.appendChild(field('Question', prompt, 'Scenario and judgement questions are the hardest to look up.'));
     body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Answers' }), optHint, optBox]));
-    body.appendChild(h('div', { class: 'field' }, [h('label', { for: 'qe-img', text: 'Image (optional)' }), h('span', { class: 'hint', text: 'For example a ticket or screen from Zoho Desk. Shown with the question. PNG, JPG or WebP under 2 MB. Remove customer details first.' }), imgIn, imgPrev]));
+    if (!studioOpts) body.appendChild(h('div', { class: 'field' }, [h('label', { for: 'qe-img', text: 'Image (optional)' }), h('span', { class: 'hint', text: 'For example a ticket or screen from Zoho Desk. Shown with the question. PNG, JPG or WebP under 2 MB. Remove customer details first.' }), imgIn, imgPrev]));
     body.appendChild(field('Why this is the answer', expl));
     body.appendChild(h('div', { class: 'fgrid' }, [field('Topics (tags)', tags, 'Comma separated'), field('Difficulty', diff)]));
-    body.appendChild(field('Status', stat, 'Only approved questions go into random pools.'));
+    if (!studioOpts) body.appendChild(field('Status', stat, 'Only approved questions go into random pools.'));
     if (d.stats && d.stats.shown) body.appendChild(h('div', { class: 'alert info' }, [icon('chart'), h('span', { text: 'Seen ' + d.stats.shown + ' times, ' + d.stats.pctCorrect + '% correct' + (d.stats.avgSec != null ? ', ' + d.stats.avgSec + 's on average' : '') + (d.stats.disc != null ? ', separation ' + d.stats.disc : '') + '.' + (d.stats.flag ? ' ' + d.stats.flag : '') })]));
     body.appendChild(err);
     var save = h('button', { class: 'btn primary', type: 'button', text: 'Save question' });
-    var del = q ? h('button', { class: 'btn ghost danger', type: 'button' }, [icon('trash', 'sm'), 'Delete']) : null;
-    var dlg = openDrawer(q ? 'Edit question' : 'New question', body, [del, h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), save]);
+    var del = q && !studioOpts ? h('button', { class: 'btn ghost danger', type: 'button' }, [icon('trash', 'sm'), 'Delete']) : null;
+    if (studioOpts) save.textContent = 'Keep changes';
+    var dlg = openDrawer(studioOpts ? 'Edit draft question' : (q ? 'Edit question' : 'New question'), body, [del, h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), save]);
     save.addEventListener('click', function () {
       clear(err); save.disabled = true;
       var options = type === 'matching' ? rows.map(function (r) { return { text: r.text, match: r.match }; }) : rows.map(function (r) { return r.text; });
       var payload = { type: type, prompt: prompt.value, options: options, correct: correct, explanation: expl.value, tags: tags.value, difficulty: diff.value, status: stat.value };
+      if (studioOpts) { payload.tags = String(tags.value).split(',').map(function (x) { return x.trim(); }).filter(Boolean); Promise.resolve(studioOpts.onSave(payload)).then(function () { dlg.close(); }).catch(function (e) { err.appendChild(errBox(e.message)); save.disabled = false; }); return; }
       (q ? api('/api/assess/admin/questions/' + q.id, { method: 'PUT', body: payload }) : api('/api/assess/admin/questions', { method: 'POST', body: payload }))
         .then(function (r) {
           var qid = q ? q.id : r.id;

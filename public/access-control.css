@@ -223,3 +223,5 @@ html.dark-mode .tone-warn.aud-act,html.dark-mode .aud-chip.tone-warn b{color:#F0
 .acx-title{display:flex;align-items:center;gap:10px}
 .acx-head-art{display:inline-flex;width:64px;height:48px;flex:none}
 .acx-head-art svg.il{width:64px;height:48px}
+/* Session 64: Tests frame fills the screen; the outer page stays put */
+html.assess-lock,html.assess-lock body{overflow:hidden!important}

@@ -522,6 +522,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     const { db } = require('./database');
     assessments.setDB(db);
     await assessments.initSchema();
+    const studio = require('./lib/assess-studio'); studio.setDB(db, assessments); await studio.initSchema();
     console.log('📝 Assessments schema ready');
   } catch(e) { log.error('assessments_init_failed', e); console.error('assessments_init_failed', e); }
   // Session 63: access requests, and the one-time copy of everyone who
@@ -1863,6 +1864,89 @@ app.post('/api/assess/admin/generate', ...RV, rateLimit(10, 60000), express.raw(
   const out = await assessments.generateFromText({ text, count: q.count, types: String(q.types || '').split(',').filter(Boolean), focus: q.focus, difficulty: q.difficulty, sourceName, by: req.session.email, ai: require('./lib/ai') });
   res.json({ success: true, ...out });
 }));
+
+// ── Session 64: AI Studio, retest, archive/delete, downloads, reports ──
+const assessStudio = require('./lib/assess-studio');
+function assessHtmlToText(html) {
+  return String(html || '')
+    .replace(/<(script|style|noscript|svg|nav|footer)[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<\/(p|div|li|h[1-6]|tr|section|article|br)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<h([1-4])[^>]*>/gi, '\n\n').replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/[ \t]+/g, ' ').replace(/\n\s*\n\s*\n+/g, '\n\n').trim();
+}
+/** Reads a public web page for AI Studio. Only http(s) to public addresses. */
+async function assessFetchUrl(raw) {
+  let u;
+  try { u = new URL(String(raw || '').trim()); } catch (e) { const er = new Error('That does not look like a web address'); er.status = 400; throw er; }
+  if (!/^https?:$/.test(u.protocol)) { const er = new Error('Use an http or https link'); er.status = 400; throw er; }
+  const dns = require('dns').promises, net = require('net');
+  const addrs = net.isIP(u.hostname) ? [{ address: u.hostname }] : await dns.lookup(u.hostname, { all: true }).catch(() => []);
+  const priv = (ip) => /^(10\.|127\.|0\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1|fc|fd|fe80)/i.test(ip);
+  if (!addrs.length || addrs.some(a => priv(a.address)) || /localhost|\.internal$|\.local$/i.test(u.hostname)) { const er = new Error('That address cannot be read from the server'); er.status = 400; throw er; }
+  const r = await fetch(u.href, { redirect: 'follow', signal: AbortSignal.timeout(20000), headers: { 'User-Agent': 'AditAssessments/1.0' } });
+  if (!r.ok) { const er = new Error(`The page answered with HTTP ${r.status}. If it needs a sign-in, download it and upload the file instead.`); er.status = 400; throw er; }
+  const type = r.headers.get('content-type') || '';
+  const buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length > 12 * 1024 * 1024) { const er = new Error('That page is too large'); er.status = 400; throw er; }
+  if (/pdf/i.test(type)) return assessExtractText(buf, 'page.pdf');
+  if (/html|xml/i.test(type)) return assessHtmlToText(buf.toString('utf8'));
+  return buf.toString('utf8');
+}
+const AI = () => require('./lib/ai');
+app.get('/api/assess/admin/studio', ...RV, assessWrap(async (req, res) => res.json({ success: true, sessions: await assessStudio.list(), ai: AI().anyConfigured() })));
+app.post('/api/assess/admin/studio', ...RV, rateLimit(10, 60000), express.raw({ type: () => true, limit: '25mb' }), assessWrap(async (req, res) => {
+  const q = req.query || {};
+  if (!Buffer.isBuffer(req.body) || !req.body.length) { const er = new Error('Nothing to read'); er.status = 400; throw er; }
+  let text, name = String(q.name || '').slice(0, 140), kind = q.kind || 'file';
+  if (kind === 'text') { text = req.body.toString('utf8'); name = name || 'Pasted text'; }
+  else if (kind === 'url') { const url = req.body.toString('utf8').trim(); text = await assessFetchUrl(url); name = name || url.replace(/^https?:\/\//, '').slice(0, 120); }
+  else text = await assessExtractText(req.body, q.name);
+  const view = await assessStudio.create({ text, sourceName: name, sourceKind: kind, focus: q.focus, by: req.session.email, ai: AI() });
+  res.json({ success: true, studio: view });
+}));
+app.get('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.getView(req.params.id) })));
+app.put('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.update(req.params.id, req.body || {}) })));
+app.delete('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => { await assessStudio.remove(req.params.id); res.json({ success: true }); }));
+app.post('/api/assess/admin/studio/:id/generate', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.generate(req.params.id, req.body || {}, AI()) })));
+app.post('/api/assess/admin/studio/:id/chat', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.chat(req.params.id, req.body || {}, AI(), req.session.email) })));
+app.post('/api/assess/admin/studio/:id/publish', ...RV, assessWrap(async (req, res) => {
+  const out = await assessStudio.publish(req.params.id, req.body || {}, req.session.email);
+  insertAuditLog(req.session.email, 'assess_studio_saved', String(req.params.id), out.made.map(m => `${m.title}: ${m.questions}q`).join('; ').slice(0, 280)).catch(() => {});
+  res.json({ success: true, ...out, studio: out.view });
+}));
+app.post('/api/assess/admin/questions/improve', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.improveQuestion({ question: (req.body || {}).question, instruction: (req.body || {}).instruction, ai: AI() })) })));
+// Retest (reset + optional Chat tag), single or bulk below the pass mark
+app.post('/api/assess/admin/retest', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {};
+  const out = await assessments.retest({ attemptIds: b.attemptIds, testId: b.testId, below: !!b.below, by: req.session.email, note: b.note, notify: !!b.notify });
+  insertAuditLog(req.session.email, 'assess_retest', String(b.testId || (b.attemptIds || []).join(',')).slice(0, 200), `reset:${out.reset}${out.notified ? ' chat' : ''}`).catch(() => {});
+  res.json({ success: true, ...out });
+}));
+// Archive list, restore, permanent delete
+app.get('/api/assess/admin/tests-archived', ...RV, assessWrap(async (req, res) => res.json({ success: true, tests: await assessments.archivedTests() })));
+app.post('/api/assess/admin/tests/:id/restore', ...RV, assessWrap(async (req, res) => { await assessments.restoreTest(req.params.id); res.json({ success: true }); }));
+app.post('/api/assess/admin/tests/:id/delete-forever', ...RV, assessWrap(async (req, res) => {
+  const out = await assessments.deleteTestForever(req.params.id, (req.body || {}).confirm);
+  insertAuditLog(req.session.email, 'assess_test_deleted', out.title, `attempts:${out.attempts}`).catch(() => {});
+  res.json({ success: true, ...out });
+}));
+// Downloads
+app.get('/api/assess/admin/questions/export', ...RV, assessWrap(async (req, res) => {
+  const q = req.query || {};
+  const out = await assessments.bankExport({ answers: q.answers === '1', status: q.status, tag: q.tag, q: q.q, ids: q.ids ? String(q.ids).split(',').map(Number).filter(Boolean) : null });
+  if (q.format === 'json') return res.json({ success: true, items: out.items });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="question-bank-${q.answers === '1' ? 'with-answers' : 'questions-only'}-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send('﻿' + out.csv);
+}));
+const reportFilters = (q) => ({ testIds: q.tests, from: q.from, to: q.to, email: q.email, result: q.result, includeReset: q.reset === '1' });
+app.get('/api/assess/admin/results/export', ...RV, assessWrap(async (req, res) => {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="assessment-results-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send('﻿' + await assessments.resultsCsv(reportFilters(req.query || {})));
+}));
+app.get('/api/assess/admin/report', ...RV, assessWrap(async (req, res) => res.json({ success: true, report: await assessments.reportData(reportFilters(req.query || {})) })));
 
 // Reviewer: access
 app.get('/api/assess/admin/access', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.accessOverview()) })));

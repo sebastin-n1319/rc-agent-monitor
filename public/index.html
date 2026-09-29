@@ -68,7 +68,7 @@
 <link rel="stylesheet" href="/chat-reports.css?v=1.0.1">
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
-<link rel="stylesheet" href="/access-control.css?v=1.1.0">
+<link rel="stylesheet" href="/access-control.css?v=1.2.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.3" defer></script>
@@ -1370,7 +1370,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- ALERTS HUB (Session 53) -->
   <div class="page" id="tab-alerts"><div id="alert-hub-root"></div></div>
   <!-- Session 57: Assessments, embedded -->
-  <div class="page" id="tab-assess"><iframe class="assess-frame" data-src="/assess?embed=1#manage" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:620px;border:0;background:transparent"></iframe></div>
+  <div class="page" id="tab-assess"><iframe class="assess-frame" data-src="/assess?embed=1#manage" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <div class="page" id="tab-alerts-breaklog"><div id="alert-breaklog-root"></div></div>
   <div class="page" id="tab-alerts-missed"><div id="alert-missed-root"></div></div>
 
@@ -3150,7 +3150,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- Session 51: agent ticket alerts -->
   <div class="agent-shell-page av2" id="agent-section-talerts"><div id="t1-alerts-agent-root"></div></div>
   <!-- Session 57: assessments, embedded -->
-  <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:620px;border:0;background:transparent"></iframe></div>
+  <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Session 20: self-service Ticket Lifecycle stats (My Ticket Stats) -->
   <div class="agent-shell-page av2" id="agent-section-mystats">
     <div id="desk-lifecycle-agent-root"></div>
@@ -4765,6 +4765,7 @@ function switchAgentSection(section,el){
   if(section==='mystats'){ if(typeof openDeskLifecycleAgent==='function') openDeskLifecycleAgent(); }
   if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); }
   if(section==='assess') loadAssessFrame('agent-section-assess');
+  setTimeout(syncAssessLock, 0);
   // Session 44: populate the agent Dashboard right away when it opens.
   if(section==='dashboard' && currentUser && typeof refresh==='function'){ setTimeout(()=>{ try{ refresh(); }catch(e){} },0); }
   if(section==='writer')setTimeout(initAIWriter,50);
@@ -9715,7 +9716,30 @@ function evtToggle(el){
 function loadAssessFrame(hostId){
   var f = document.querySelector('#'+hostId+' .assess-frame');
   if(f && !f.getAttribute('src')) f.setAttribute('src', f.getAttribute('data-src'));
+  try{ window.scrollTo(0,0); }catch(e){}
+  setTimeout(function(){ try{ window.scrollTo(0,0); }catch(e){} fitAssessFrames(); }, 30); setTimeout(fitAssessFrames, 400);
 }
+// Session 64: the Tests iframe fills exactly the space under the app header,
+// so the outer page never scrolls and the Tests menu stays in view. The
+// page inside the frame scrolls on its own, with its menu frozen at the top.
+function fitAssessFrames(){
+  document.querySelectorAll('.assess-frame').forEach(function(f){
+    if(!f.offsetParent) return;
+    var top = f.getBoundingClientRect().top + (window.scrollY || 0);
+    var hgt = Math.max(420, window.innerHeight - top - 10);
+    f.style.height = hgt + 'px';
+    try{ window.scrollTo(0,0); }catch(e){}
+  });
+}
+window.addEventListener('resize', function(){ clearTimeout(window.__afT); window.__afT = setTimeout(fitAssessFrames, 120); });
+// While a Tests frame is on screen the outer page does not scroll at all,
+// so the app header never covers the Tests menu; the frame scrolls itself.
+function syncAssessLock(){
+  var on = Array.prototype.some.call(document.querySelectorAll('.assess-frame'), function(f){ return !!f.offsetParent; });
+  document.documentElement.classList.toggle('assess-lock', on);
+  if(on){ try{ window.scrollTo(0,0); }catch(e){} }
+}
+setInterval(syncAssessLock, 1500);
 function sbAdmin(tab, sbEl){
   // Get corresponding hidden nav-tab (for backward compat with switchTab logic)
   const navEl = document.querySelector('.nav-tab[data-tab="'+tab+'"]') || document.querySelector('.nav-tab');
@@ -9913,6 +9937,7 @@ function switchTab(tab,el){
   if(tab==='ticket-alerts' && typeof window.openT1AlertsAdmin==='function') window.openT1AlertsAdmin();
   if(tab==='alerts' && typeof window.openAlertHub==='function') window.openAlertHub();
   if(tab==='assess') loadAssessFrame('tab-assess');
+  setTimeout(syncAssessLock, 0);
   if(tab==='alerts-breaklog' && typeof window.openAlertBreakLog==='function') window.openAlertBreakLog();
   if(tab==='alerts-missed' && typeof window.openAlertMissed==='function') window.openAlertMissed();
   if(tab==='debug') loadDebugPanel();
