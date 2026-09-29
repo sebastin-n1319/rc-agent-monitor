@@ -377,7 +377,8 @@
           : (t.last ? pill('Completed', 'ok', true) : t.windowState === 'closed' ? pill('Closed', 'bad', true) : pill('Not started', 'accent', true));
         var btnText = t.inProgress ? 'Resume' : t.windowState === 'upcoming' ? 'Not open yet' : (t.canStart ? (t.last ? 'Take again' : 'Start') : (t.last ? 'Completed' : 'Closed'));
         var viewBtn = t.last && t.lastAttemptId && (t.releaseMode !== 'none' || t.last.score != null) ? h('button', { class: 'btn', type: 'button', onclick: function () { viewMyResult(t.lastAttemptId); } }, [icon('chart', 'sm'), 'View result']) : null;
-        var due = !t.last && t.closesAt && t.windowState === 'open' ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Due by ' + fmtWhen(t.closesAt) }) : null;
+        var due = t.inProgress && t.autoSubmitAt ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Resume before ' + fmtWhen(t.autoSubmitAt) + '. After that it is submitted automatically and unanswered questions count as wrong.' })
+          : (!t.last && t.closesAt && t.windowState === 'open' ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Due by ' + fmtWhen(t.closesAt) }) : null);
         var result = null;
         if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
         grid.appendChild(h('div', { class: 'card tcard' }, [
@@ -456,7 +457,7 @@
       if (demo) { demo.stop(); demo = null; }
       clear(wrap);
       wrap.appendChild(h('button', { class: 'crumb', type: 'button', onclick: function () { stopCamera(); route(); } }, [icon('arrowL', 'sm'), 'My assessments']));
-      wrap.appendChild(h('div', { class: 'ph', style: 'margin-bottom:16px' }, [h('div', null, [h('h1', { text: t.title }), t.inProgress ? h('p', { text: 'You have an attempt in progress. The timer on your current question kept running while you were away.' }) : null])]));
+      wrap.appendChild(h('div', { class: 'ph', style: 'margin-bottom:16px' }, [h('div', null, [h('h1', { text: t.title }), t.inProgress ? h('p', { text: 'You have an attempt in progress. The timer on your current question kept running while you were away.' + (t.autoSubmitAt ? ' Finish it before ' + fmtWhen(t.autoSubmitAt) + ', when it is submitted automatically.' : '') }) : null])]));
       wrap.appendChild(steps());
       var card = h('div', { class: 'card' });
       wrap.appendChild(card);
@@ -474,6 +475,7 @@
         modeRule,
         ['clock', t.secondsPerQuestion + ' seconds per question', 'When time runs out, whatever you selected is submitted and the next question opens.'],
         ['lock', 'No going back', 'Answers lock when you submit, so take the time you need on each one.'],
+        ['hourglass', 'Finish in one sitting', 'If you close the test, you can resume it, but only for a limited time: about ' + (t.estMinutes + t.abandonGraceMin) + ' minutes from when you start' + (t.closesAt ? ', and never after it closes' : '') + '. After that it is submitted automatically and any unanswered questions count as wrong.'],
         ['expand', 'Stay in full screen', 'The test runs in full screen. Leaving it, switching tabs, or pasting is noted for your reviewer.'],
       ];
       if (t.explainCount) rules.push(['pen', 'Explain in your own words', 'At the end you explain one of your answers. Typing only; pasting is turned off.']);
@@ -559,7 +561,7 @@
       card.appendChild(priv);
       var c1 = h('input', { type: 'checkbox', id: 'ag1' }), c2 = h('input', { type: 'checkbox', id: 'ag2' });
       card.appendChild(h('label', { class: 'agree', for: 'ag1' }, [c1, h('span', { text: 'I will answer on my own, without help from other people, notes, search engines or AI tools.' })]));
-      card.appendChild(h('label', { class: 'agree', for: 'ag2' }, [c2, h('span', { text: 'I understand what is recorded and that my reviewer may ask me to explain some answers.' })]));
+      card.appendChild(h('label', { class: 'agree', for: 'ag2' }, [c2, h('span', { text: 'I understand what is recorded, that my reviewer may ask me to explain some answers, and that if I leave the test unfinished it is submitted automatically with unanswered questions counted as wrong.' })]));
       var err = h('div');
       card.appendChild(err);
       var start = h('button', { class: 'btn primary lg', type: 'button', disabled: true }, [t.inProgress ? 'Resume in full screen' : 'Start in full screen', icon('arrowR', 'sm')]);
@@ -1240,7 +1242,7 @@
   var EVENT_LABELS = { started: 'Started', submitted: 'Submitted', hidden: 'Left the test tab', visible: 'Came back to the tab', blur: 'Clicked outside the window', focus: 'Note', fullscreen_exit: 'Left full screen', fullscreen_enter: 'Back in full screen',
     copy: 'Tried to copy', cut: 'Tried to cut', paste: 'Tried to paste', contextmenu: 'Right-click', printscreen: 'Pressed Print Screen', devtools_key: 'Developer tools key', print: 'Tried to print', mouse_out: 'Mouse left the window',
     replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text',
-    camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically when time ran out' };
+    camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically' };
   var EVENT_LEVEL = { hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
 
   function viewAttempt(id) {
