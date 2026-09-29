@@ -189,18 +189,33 @@
   }
   function api(path, opts) {
     opts = opts || {};
+    var method = opts.method || 'GET';
     var headers = {};
     if (opts.body !== undefined && !opts.raw) headers['Content-Type'] = 'application/json';
     if (opts.raw) headers['Content-Type'] = opts.contentType || 'application/octet-stream';
     if (opts.token) headers['X-Assess-Token'] = opts.token;
-    return fetch(path, { method: opts.method || 'GET', credentials: 'same-origin', headers: headers, body: opts.raw ? opts.raw : (opts.body !== undefined ? JSON.stringify(opts.body) : undefined) })
-      .then(function (r) {
-        return r.json().catch(function () { return { success: false, error: 'HTTP ' + r.status }; }).then(function (j) {
-          if (r.status === 401) { location.replace(EMBED ? '/' : '/?next=/assess'); throw new Error('Please sign in'); }
-          if (!r.ok || j.success === false) { var e = new Error(j.error || ('HTTP ' + r.status)); e.code = j.code; e.status = r.status; e.noAccess = j.noAccess; throw e; }
-          return j;
+    // Session 66: the host restarts on every deploy and 502/503/504 come from its proxy, not from us.
+    // Repeatable requests (GET, PUT, DELETE) retry quietly while it comes back; others fail with plain words.
+    var canRetry = method === 'GET' || method === 'PUT' || method === 'DELETE';
+    var waits = [1500, 3000, 6000, 10000];
+    function once(n) {
+      return fetch(path, { method: method, credentials: 'same-origin', headers: headers, body: opts.raw ? opts.raw : (opts.body !== undefined ? JSON.stringify(opts.body) : undefined) })
+        .catch(function () { return { status: 0, ok: false, json: function () { return Promise.resolve(null); } }; })
+        .then(function (r) {
+          if ((r.status === 0 || r.status === 502 || r.status === 503 || r.status === 504) && canRetry && n < waits.length) {
+            if (n === 1) toast('Reconnecting to the server...');
+            return new Promise(function (ok) { setTimeout(ok, waits[n]); }).then(function () { return once(n + 1); });
+          }
+          return r.json().catch(function () { return null; }).then(function (j) {
+            var down = r.status === 0 || r.status === 502 || r.status === 503 || r.status === 504;
+            if (!j) j = { success: false, error: down ? 'The server is restarting or busy. Wait a few seconds and try again.' : 'HTTP ' + r.status };
+            if (r.status === 401) { location.replace(EMBED ? '/' : '/?next=/assess'); throw new Error('Please sign in'); }
+            if (!r.ok || j.success === false) { var e = new Error(j.error || ('HTTP ' + r.status)); e.code = j.code; e.status = r.status; e.noAccess = j.noAccess; throw e; }
+            return j;
+          });
         });
-      });
+    }
+    return once(0);
   }
   function toDate(iso) { if (!iso) return null; return new Date(/Z$|[+-]\d\d:?\d\d$/.test(iso) ? iso : String(iso).replace(' ', 'T') + 'Z'); }
   function fmtWhen(iso) {
