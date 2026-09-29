@@ -79,6 +79,8 @@
     list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
     edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
     chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    volume: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+    headphones: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3.5" y="14" width="4" height="6.5" rx="1.5"/><rect x="16.5" y="14" width="4" height="6.5" rx="1.5"/>',
     hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9"/>',
   };
   function icon(name, cls) {
@@ -247,6 +249,48 @@
     this.resize = draw; this.stop = function () {}; this.play = function () {};
   }
 
+  /** Session 58: read-aloud mode. The question arrives as audio only, so
+   *  there is no text on screen to copy, screenshot or read by OCR. */
+  function AudioPrompt(host, loadBlob, onPlay) {
+    var bars = h('div', { class: 'eq', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i'), h('i'), h('i')]);
+    var state = h('span', { class: 'state', text: 'Loading the question…' });
+    var prog = h('i');
+    var again = h('button', { class: 'btn sm', type: 'button', disabled: true }, [icon('replay', 'sm'), 'Play again']);
+    var box = h('div', { class: 'reader audio' }, [
+      h('div', { class: 'aud' }, [h('span', { class: 'aud-ic' }, [icon('headphones', 'lg')]), h('div', { style: 'flex:1;min-width:0' }, [h('b', { text: 'Listen to the question' }), state, h('div', { class: 'aprog' }, [prog])]), bars]),
+      h('div', { class: 'bar' }, [h('span', { class: 'small muted', text: 'Use headphones. The question is not shown as text.' }), h('span', { class: 'spacer' }), again]),
+    ]);
+    host.appendChild(box);
+    var audio = new Audio(), url = null, self = this, plays = 0;
+    audio.addEventListener('playing', function () { box.classList.add('playing'); state.textContent = 'Playing…'; again.disabled = true; });
+    audio.addEventListener('timeupdate', function () { if (audio.duration) prog.style.width = (audio.currentTime / audio.duration * 100) + '%'; });
+    audio.addEventListener('ended', function () { box.classList.remove('playing'); prog.style.width = '100%'; state.textContent = 'Finished. Play again if you need to.'; again.disabled = false; });
+    function play() {
+      plays++; if (plays > 1 && onPlay) onPlay();
+      audio.currentTime = 0;
+      var p = audio.play();
+      if (p && p.catch) p.catch(function () { box.classList.remove('playing'); state.textContent = 'Press Play to hear the question.'; again.disabled = false; clear(again); again.appendChild(icon('volume', 'sm')); again.appendChild(document.createTextNode('Play')); plays--; });
+    }
+    again.addEventListener('click', function () { play(); });
+    loadBlob().then(function (blob) {
+      url = URL.createObjectURL(blob); audio.src = url; play();
+    }).catch(function (e) { state.textContent = 'The audio could not be loaded: ' + e.message; });
+    this.stop = function () { try { audio.pause(); } catch (e) {} if (url) URL.revokeObjectURL(url); };
+    this.play = function () {}; this.resize = function () {};
+  }
+  function beepTest(done) {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext, ctx = new Ctx();
+      [[-1, 0], [1, 0.9]].forEach(function (x) {
+        var o = ctx.createOscillator(), g = ctx.createGain(), p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+        o.frequency.value = 523; g.gain.setValueAtTime(0.0001, ctx.currentTime + x[1]); g.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + x[1] + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + x[1] + 0.7);
+        if (p) { p.pan.value = x[0]; o.connect(g); g.connect(p); p.connect(ctx.destination); } else { o.connect(g); g.connect(ctx.destination); }
+        o.start(ctx.currentTime + x[1]); o.stop(ctx.currentTime + x[1] + 0.75);
+      });
+      setTimeout(function () { ctx.close(); if (done) done(); }, 1800);
+    } catch (e) { if (done) done(); }
+  }
+
   // ── Boot + routing ───────────────────────────────────────────────────
   function boot() {
     api('/api/assess/me').then(function (j) {
@@ -374,8 +418,11 @@
     function stepOverview(card) {
       card.appendChild(h('h2', { text: 'What to expect' }));
       card.appendChild(h('p', { class: 'lead', text: t.questions + ' questions' + (t.explainCount ? ' and ' + t.explainCount + ' written answer' + (t.explainCount > 1 ? 's' : '') : '') + ', about ' + t.estMinutes + ' minutes in total.' }));
+      var modeRule = t.displayMode === 'audio' ? ['headphones', 'Questions are read aloud', 'Each question plays as audio; only the answer options are on screen. Use headphones. Play it again as often as you need; replays are noted.']
+        : t.displayMode === 'full' ? ['eye', 'One question at a time', 'Read the question, pick your answer and submit.']
+        : ['eye', 'Questions reveal a few words at a time', 'Each question plays once as short groups of words. Replay it from the start as often as you need; replays are noted.'];
       var rules = [
-        [t.displayMode === 'full' ? 'eye' : 'eye', t.displayMode === 'full' ? 'One question at a time' : 'Questions reveal a few words at a time', t.displayMode === 'full' ? 'Read the question, pick your answer and submit.' : 'Each question plays once as short groups of words. Replay it from the start as often as you need; replays are noted.'],
+        modeRule,
         ['clock', t.secondsPerQuestion + ' seconds per question', 'When time runs out, whatever you selected is submitted and the next question opens.'],
         ['lock', 'No going back', 'Answers lock when you submit, so take the time you need on each one.'],
         ['expand', 'Stay in full screen', 'The test runs in full screen. Leaving it, switching tabs, or pasting is noted for your reviewer.'],
@@ -383,7 +430,7 @@
       if (t.explainCount) rules.push(['pen', 'Explain in your own words', 'At the end you explain one of your answers. Typing only; pasting is turned off.']);
       if (t.camera) rules.push(['camera', 'Camera photos', 'Your camera takes a photo every ' + t.snapshotSec + ' seconds while the test is open.']);
       card.appendChild(h('ul', { class: 'rules' }, rules.map(function (r) { return h('li', null, [h('span', { class: 'ic' }, [icon(r[0])]), h('div', null, [h('b', { text: r[1] }), h('span', { text: r[2] })])]); })));
-      if (t.displayMode !== 'full') {
+      if (t.displayMode === 'fade') {
         var box = h('div', { class: 'demo' });
         var play = h('button', { class: 'btn sm', type: 'button' }, [icon('replay', 'sm'), 'Try the reading style']);
         box.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, [h('b', { text: 'Practice' }), h('span', { class: 'small muted', text: 'Not scored. See how questions appear before you start.' }), h('span', { class: 'spacer' }), play]));
@@ -409,7 +456,7 @@
         list.appendChild(li);
         return { set: function (cls, text, ico) { st.className = 'st ' + cls; clear(st); st.appendChild(icon(ico || (cls === 'ok' ? 'check' : 'warn'), 'sm')); if (text) s.textContent = text; }, extra: extra };
       }
-      function sync() { cont.disabled = !(need.fs && need.cam); }
+      function sync() { cont.disabled = !(need.fs && need.cam && need.hp !== false); }
       var fs = row('expand', 'Full screen', 'Checking…');
       if (document.fullscreenEnabled) { fs.set('ok', 'Supported in this browser.'); need.fs = true; } else fs.set('bad', 'This browser cannot go full screen. Use Chrome or Edge on a computer.');
       var sc = row('screen', 'One screen', 'Checking…');
@@ -421,6 +468,15 @@
         var ms = Math.round(performance.now() - t0);
         if (ms < 1500) net.set('ok', 'Good (' + ms + ' ms).'); else net.set('warn', 'Slow (' + ms + ' ms). Answers are saved on each submit, but a stable connection helps.');
       }).catch(function () { net.set('bad', 'You look offline. Reconnect before you start.'); });
+      if (t.displayMode === 'audio') {
+        need.hp = false;
+        var hp = row('headphones', 'Headphones', 'Questions are read aloud. Put your headphones on and play the test sound: one beep in the left ear, then one in the right.');
+        var hpBtn = h('button', { class: 'btn sm', type: 'button' }, [icon('volume', 'sm'), 'Play test sound']);
+        var hpOk = h('input', { type: 'checkbox', id: 'hp-ok', disabled: true });
+        hp.extra.appendChild(h('div', { class: 'stack', style: 'gap:8px;align-items:flex-end' }, [hpBtn, h('label', { class: 'chk small', for: 'hp-ok' }, [hpOk, 'I heard both, on headphones'])]));
+        hpBtn.addEventListener('click', function () { hpBtn.disabled = true; beepTest(function () { hpBtn.disabled = false; hpOk.disabled = false; }); });
+        hpOk.addEventListener('change', function () { need.hp = hpOk.checked; if (hpOk.checked) hp.set('ok', 'Headphones confirmed.'); sync(); });
+      }
       if (t.camera) {
         var cr = row('camera', 'Camera', 'Needed for this assessment. A photo is taken every ' + t.snapshotSec + ' seconds, only your reviewer can see them.');
         var btn = h('button', { class: 'btn sm', type: 'button', text: 'Allow camera' });
@@ -653,7 +709,12 @@
       if (q.kind === 'explain') {
         body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Written answer' }), pill('Your own words', 'accent')]));
         var aboutC = h('canvas', { 'aria-hidden': 'true' });
-        body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
+        if (q.audio) {
+          var aHost = h('div', { style: 'margin-bottom:16px' }); body.appendChild(aHost);
+          reader = new AudioPrompt(aHost, function () {
+            return fetch('/api/assess/attempts/' + attemptId + '/audio', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); });
+          }, function () { replays++; ev('replay', 'audio ' + replays); });
+        } else body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
         var pc = h('canvas', { 'aria-hidden': 'true', style: 'margin-bottom:14px' });
         body.appendChild(pc);
         ta = h('textarea', { class: 'writebox', 'aria-label': 'Your explanation', maxlength: '4000', spellcheck: 'true', placeholder: 'Aim for 2 to 4 sentences.' });
@@ -662,7 +723,7 @@
         body.appendChild(h('div', { class: 'row', style: 'margin-top:6px' }, [h('span', { class: 'small muted', text: 'Pasting is turned off.' }), h('span', { class: 'spacer' }), count]));
         ta.addEventListener('input', function () { count.textContent = ta.value.length + ' / 4000'; submitBtn.disabled = !ta.value.trim(); });
         var drawEx = function () {
-          drawText(aboutC, q.about, { font: '400 15px Poppins, sans-serif', lineH: 24, color: cssVar('--t2') });
+          if (q.about) drawText(aboutC, q.about, { font: '400 15px Poppins, sans-serif', lineH: 24, color: cssVar('--t2') });
           drawText(pc, q.prompt, { font: '600 18px Poppins, sans-serif', lineH: 28 });
         };
         requestAnimationFrame(drawEx);
@@ -671,8 +732,17 @@
       } else {
         body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Question ' + (q.idx + 1) }), pill(TYPE_LABEL[q.type] || 'Choose one', 'accent')]));
         var rHost = h('div'); body.appendChild(rHost);
-        reader = s.displayMode === 'full' ? new FullText(rHost, q.prompt) : new Reader(rHost, q.prompt, s);
-        reader.onReplay = function () { replays++; ev('replay', String(replays)); };
+        if (q.audio) {
+          reader = new AudioPrompt(rHost, function () {
+            return fetch('/api/assess/attempts/' + attemptId + '/audio', { credentials: 'same-origin', headers: { 'X-Assess-Token': token } }).then(function (r) {
+              if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { throw new Error(j.error || ('HTTP ' + r.status)); });
+              return r.blob();
+            });
+          }, function () { replays++; ev('replay', 'audio ' + replays); });
+        } else {
+          reader = s.displayMode === 'full' ? new FullText(rHost, q.prompt) : new Reader(rHost, q.prompt, s);
+          reader.onReplay = function () { replays++; ev('replay', String(replays)); };
+        }
         var opts = h('div', { class: 'opts', role: q.type === 'multi' ? 'group' : 'radiogroup', 'aria-label': 'Answer options' });
         body.appendChild(opts);
         var multi = q.type === 'multi';
@@ -692,7 +762,7 @@
           submitBtn.disabled = !selected.length;
         }
         qState = { choose: choose, nOpts: q.options.length, redraw: function () { drawOpts(); if (reader.resize) reader.resize(); if (s.displayMode === 'full') reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
-        (document.fonts && document.fonts.load ? document.fonts.load('600 24px Poppins') : Promise.resolve()).then(function () { if (reader) reader.play(); drawOpts(); });
+        (document.fonts && document.fonts.load ? document.fonts.load('600 24px Poppins') : Promise.resolve()).then(function () { if (reader && !q.audio) reader.play(); drawOpts(); });
       }
 
       function send(auto) {
@@ -848,10 +918,10 @@
       // Timing and display
       var secIn = h('input', { class: 'inp', id: 'b-sec', type: 'number', min: '15', max: '180', value: String(st.secondsPerQuestion) });
       secIn.addEventListener('input', function () { st.secondsPerQuestion = Number(secIn.value) || 40; renderSide(); });
-      var modeCards = h('div', { class: 'radcards' });
-      [['fade', 'Rolling reveal', 'A few words at a time, then it fades. Hardest to screenshot or paste into AI.'], ['full', 'Full question', 'The whole question stays on screen. Easier to read.']].forEach(function (o) {
+      var modeCards = h('div', { class: 'radcards three' });
+      [['fade', 'Rolling reveal', 'A few words at a time, then it fades. Hard to screenshot or paste into AI.'], ['audio', 'Read aloud', 'The question is spoken, never shown as text. Agents need headphones.'], ['full', 'Full question', 'The whole question stays on screen. Easiest to read.']].forEach(function (o) {
         var inp = h('input', { type: 'radio', name: 'dmode', value: o[0], checked: st.displayMode === o[0] ? true : null });
-        inp.addEventListener('change', function () { st.displayMode = o[0]; fadeRow.style.display = o[0] === 'fade' ? '' : 'none'; });
+        inp.addEventListener('change', function () { st.displayMode = o[0]; fadeRow.style.display = o[0] === 'fade' ? '' : 'none'; audioRow.style.display = o[0] === 'audio' ? '' : 'none'; });
         modeCards.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
       });
       var wpc = h('select', { class: 'sel', id: 'b-wpc' }, [2, 3, 4, 5, 6].map(function (n) { return h('option', { value: String(n), text: n + ' words' }); })); wpc.value = String(st.wordsPerChunk);
@@ -866,8 +936,23 @@
         new Reader(prevHost, sample, { wordsPerChunk: st.wordsPerChunk, chunkMs: st.chunkMs }).play();
       } }, [icon('replay', 'sm'), 'Preview reading']);
       var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Reading speed', spd)]), prevBtn, prevHost]);
+      var voiceSel = h('select', { class: 'sel', id: 'b-voice' }, [['alloy', 'Alloy (neutral)'], ['nova', 'Nova (warm)'], ['shimmer', 'Shimmer (bright)'], ['echo', 'Echo (calm)'], ['onyx', 'Onyx (deep)'], ['fable', 'Fable (British)']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+      voiceSel.value = st.voice || 'alloy';
+      voiceSel.addEventListener('change', function () { st.voice = voiceSel.value; });
+      var vErr = h('div');
+      var vBtn = h('button', { class: 'btn sm', type: 'button' }, [icon('volume', 'sm'), 'Preview voice']);
+      vBtn.addEventListener('click', function () {
+        clear(vErr); vBtn.disabled = true;
+        var sample = picked.length && bankById[picked[0]] ? bankById[picked[0]].prompt : 'A caller says their front desk phones stopped ringing this morning. Which team owns this, and what do you check first?';
+        fetch('/api/assess/admin/tts-preview?voice=' + encodeURIComponent(st.voice || 'alloy') + '&text=' + encodeURIComponent(sample.slice(0, 300)), { credentials: 'same-origin' })
+          .then(function (r) { if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || 'HTTP ' + r.status); }); return r.blob(); })
+          .then(function (b) { var a = new Audio(URL.createObjectURL(b)); a.play(); })
+          .catch(function (e) { vErr.appendChild(errBox(e.message)); })
+          .finally(function () { vBtn.disabled = false; });
+      });
+      var audioRow = h('div', { style: st.displayMode === 'audio' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Voice', voiceSel, 'Audio is generated once per question and reused.')]), vBtn, vErr]);
       left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Timing and display' }), h('p', { text: '30 to 45 seconds is enough to read and answer, but too short to look it up.' }),
-        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]), h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow]));
+        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]), h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow, audioRow]));
 
       // Integrity
       var camT = toggle('Camera photos', st.camera, 'Takes a photo every 30 seconds, with the agent\'s consent. Only reviewers see them. Use it when cameras are not on in a call.');
@@ -1084,6 +1169,12 @@
       }
       function camera() {
         if (!a.snapshots.length) { panel.appendChild(h('div', { class: 'empty' }, [h('b', { text: 'No photos' }), h('span', { text: 'The camera was not allowed, or the attempt ended before the first photo.' })])); return; }
+        panel.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Stored in the tool\'s own database on its server, not in Google Drive or on anyone\'s computer. Only reviewers can open them, and they are deleted automatically after the number of days set on the Access page.' })]));
+        panel.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, [h('span', { class: 'small muted', text: a.snapshots.length + ' photos' }), h('span', { class: 'spacer' }),
+          h('button', { class: 'btn sm danger', type: 'button', onclick: function () {
+            if (!confirm('Delete all camera photos for this attempt? This cannot be undone.')) return;
+            api('/api/assess/admin/attempts/' + a.id + '/snapshots', { method: 'DELETE' }).then(function (r) { toast(r.deleted + ' photos deleted'); a.snapshots = []; show('camera'); }).catch(function (e) { toast(e.message); });
+          } }, [icon('trash', 'sm'), 'Delete these photos'])]));
         var grid = h('div', { class: 'snaps' });
         a.snapshots.forEach(function (sn) {
           var src = '/api/assess/admin/snapshots/' + sn.id;
@@ -1380,6 +1471,15 @@
           h('p', { class: 'small muted', text: 'For anyone who needs more reading time. Applies to attempts they start from now on.' }),
           h('div', { class: 'row' }, [xIn, xPct, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: xIn.value, pct: xPct.value } }).then(load).catch(function (e) { toast(e.message); }); } })]),
           xList,
+        ]));
+        var pd = h('select', { class: 'sel', 'aria-label': 'Keep camera photos for' }, [30, 60, 90, 180].map(function (n) { return h('option', { value: String(n), text: n + ' days' }); }));
+        pd.value = String([30, 60, 90, 180].indexOf(j.photoDays) >= 0 ? j.photoDays : 90);
+        pd.addEventListener('change', function () { api('/api/assess/admin/access/photo-days', { method: 'PUT', body: { days: pd.value } }).then(function (r) { toast('Saved' + (r.purged ? ', ' + r.purged + ' older photos deleted' : '')); }).catch(function (e) { toast(e.message); }); });
+        var ps = j.photoStats || { n: 0, bytes: 0 };
+        grid.appendChild(h('div', { class: 'card pad wide stack' }, [
+          h('div', { class: 'row' }, [icon('camera'), h('h2', { text: 'Camera photos' })]),
+          h('p', { class: 'small muted', style: 'margin:0', text: 'Only taken on assessments where you turn camera photos on. They are stored in the tool\'s own database on its server (the same place as results), never in Google Drive or on anyone\'s computer. Only reviewers can open them, from an attempt\'s Camera photos tab.' }),
+          h('div', { class: 'row' }, [h('span', { text: 'Delete photos automatically after' }), pd, h('span', { class: 'spacer' }), h('span', { class: 'small muted', text: ps.n + ' photos stored (' + (ps.bytes >= 1048576 ? (Math.round(ps.bytes / 104857.6) / 10) + ' MB' : Math.max(1, Math.round(ps.bytes / 1024)) + ' KB') + ')' })]),
         ]));
       }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
     }

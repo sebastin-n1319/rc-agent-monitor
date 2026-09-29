@@ -158,6 +158,7 @@ app.use((req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https:",
+    "media-src 'self' blob:",
     "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://www.googleapis.com https://people.googleapis.com https://nominatim.openstreetmap.org https://desk.zoho.com https://accounts.zoho.com",
     "frame-src 'self' https://accounts.google.com",
     "object-src 'none'",
@@ -1557,6 +1558,22 @@ app.post('/api/assess/attempts/:id/snapshot', requireAuth, requireAssessAccess, 
   const b = req.body || {};
   res.json({ success: true, saved: await assessments.saveSnapshot({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, image: b.image }) });
 }));
+
+app.get('/api/assess/attempts/:id/audio', requireAuth, requireAssessAccess, rateLimit(40, 60000), assessWrap(async (req, res) => {
+  const mp3 = await assessments.currentAudio({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), ai: require('./lib/ai') });
+  res.setHeader('Content-Type', 'audio/mpeg'); res.setHeader('Cache-Control', 'no-store'); res.send(mp3);
+}));
+
+// Reviewer: assessments
+app.get('/api/assess/admin/tts-preview', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => {
+  const mp3 = await assessments.previewSpeech({ text: String(req.query.text || ''), voice: String(req.query.voice || 'alloy'), ai: require('./lib/ai') });
+  res.setHeader('Content-Type', 'audio/mpeg'); res.setHeader('Cache-Control', 'no-store'); res.send(mp3);
+}));
+app.delete('/api/assess/admin/attempts/:id/snapshots', ...RV, assessWrap(async (req, res) => res.json({ success: true, deleted: await assessments.deleteSnapshotsFor(req.params.id) })));
+app.put('/api/assess/admin/access/photo-days', ...RV, assessWrap(async (req, res) => { await assessments.setPhotoDays((req.body || {}).days); res.json({ success: true, purged: await assessments.purgeOldSnapshots() }); }));
+// Session 58: camera photos older than the retention window are deleted every 6 hours.
+setInterval(() => { assessments.purgeOldSnapshots().then(n => { if (n) console.log(`🧹 assessments: deleted ${n} old camera photos`); }).catch(() => {}); }, 6 * 3600 * 1000);
+setTimeout(() => { assessments.purgeOldSnapshots().catch(() => {}); }, 60 * 1000);
 
 // Reviewer: assessments
 app.get('/api/assess/admin/tests', ...RV, assessWrap(async (req, res) => res.json({ success: true, tests: await assessments.adminTests() })));
