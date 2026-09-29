@@ -148,7 +148,7 @@ app.use((req, res, next) => {
   // Cross-origin only sends opener for safe operations
   res.setHeader('X-XSS-Protection', '0');
   // Permissions policy, explicitly opt out of features we don't use
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()'); // Session 57: camera for optional assessment snapshots
   // CSP, permissive baseline (allows inline scripts/styles which we use
   // heavily; the existing app would break with strict CSP). Lock down
   // external sources to known good origins.
@@ -1508,12 +1508,20 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 });
 
 // ── Session 50: Google Chat report composer (preview, send, schedules) ──
-// ── Session 56: Assessments (/assess) ─────────────────────────────────
-// A standalone page anyone in the org can sign in to. Takers only see
-// tests assigned to them; reviewers (assess_reviewers, not the same as
-// admin) see results, answer keys and integrity logs.
+// ── Session 56-57: Assessments (/assess, also embedded in the app) ────
+// Tool members always get in. Anyone else needs to be on the guest list
+// (Access page), unless the link is opened to the whole @adit.com domain.
+// Reviewers (assess_reviewers, not the same as admin) manage questions,
+// assessments, access and results.
 const assessments = require('./lib/assessments');
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
+async function requireAssessAccess(req, res, next) {
+  try {
+    const acc = await assessments.accessFor(req.session.email, await isToolMember(req.session.email));
+    if (!acc.allowed) return res.status(403).json({ success: false, noAccess: true, error: 'You do not have access to assessments yet. Ask Sebastin to add you.' });
+    next();
+  } catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
+}
 async function requireReviewer(req, res, next) {
   try {
     if (!(await assessments.isReviewer(req.session.email))) return res.status(403).json({ success: false, error: 'Reviewer access required' });
@@ -1522,65 +1530,115 @@ async function requireReviewer(req, res, next) {
 }
 const assessErr = (res, e) => res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Something went wrong', code: e.code || null });
 const assessToken = (req) => String(req.get('x-assess-token') || '');
-app.get('/api/assess/me', requireAuth, async (req, res) => {
-  try {
-    res.json({ success: true, email: req.session.email, name: req.session.name, picture: req.session.picture,
-      member: await isToolMember(req.session.email), reviewer: await assessments.isReviewer(req.session.email),
-      tests: await assessments.myTests(req.session.email) });
-  } catch (e) { assessErr(res, e); }
-});
-app.post('/api/assess/tests/:id/start', requireAuth, rateLimit(10, 60000), async (req, res) => {
-  try { res.json({ success: true, ...(await assessments.startAttempt({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent') })) }); }
-  catch (e) { assessErr(res, e); }
-});
-app.get('/api/assess/attempts/:id/current', requireAuth, rateLimit(60, 60000), async (req, res) => {
-  try { res.json({ success: true, ...(await assessments.current({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) })) }); }
-  catch (e) { assessErr(res, e); }
-});
-app.post('/api/assess/attempts/:id/answer', requireAuth, rateLimit(60, 60000), async (req, res) => {
-  try {
-    const b = req.body || {};
-    res.json({ success: true, ...(await assessments.answer({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, choice: b.choice, text: b.text, replays: b.replays })) });
-  } catch (e) { assessErr(res, e); }
-});
-app.post('/api/assess/attempts/:id/events', requireAuth, rateLimit(60, 60000), async (req, res) => {
-  try { res.json({ success: true, logged: await assessments.clientEvents({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), events: (req.body || {}).events }) }); }
-  catch (e) { assessErr(res, e); }
-});
-app.get('/api/assess/admin/tests', requireAuth, requireReviewer, async (req, res) => {
-  try { res.json({ success: true, tests: await assessments.adminTests() }); } catch (e) { assessErr(res, e); }
-});
-app.put('/api/assess/admin/tests/:id', requireAuth, requireReviewer, async (req, res) => {
-  try { await assessments.updateTest(req.params.id, req.body || {}); res.json({ success: true }); } catch (e) { assessErr(res, e); }
-});
-app.get('/api/assess/admin/tests/:id/attempts', requireAuth, requireReviewer, async (req, res) => {
-  try { res.json({ success: true, attempts: await assessments.adminAttempts(req.params.id) }); } catch (e) { assessErr(res, e); }
-});
-app.get('/api/assess/admin/tests/:id/export', requireAuth, requireReviewer, async (req, res) => {
-  try {
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="assessment-${Number(req.params.id)}-results.csv"`);
-    res.send(await assessments.exportCsv(req.params.id));
-  } catch (e) { assessErr(res, e); }
-});
-app.get('/api/assess/admin/attempts/:id', requireAuth, requireReviewer, async (req, res) => {
-  try { res.json({ success: true, attempt: await assessments.adminAttemptDetail(req.params.id) }); } catch (e) { assessErr(res, e); }
-});
-app.put('/api/assess/admin/attempts/:id/explain/:idx', requireAuth, requireReviewer, async (req, res) => {
-  try { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); } catch (e) { assessErr(res, e); }
-});
-app.delete('/api/assess/admin/attempts/:id', requireAuth, requireReviewer, async (req, res) => {
-  try { await assessments.deleteAttempt(req.params.id); res.json({ success: true }); } catch (e) { assessErr(res, e); }
-});
-app.get('/api/assess/admin/reviewers', requireAuth, requireReviewer, async (req, res) => {
-  try { res.json({ success: true, reviewers: await assessments.listReviewers() }); } catch (e) { assessErr(res, e); }
-});
-app.post('/api/assess/admin/reviewers', requireAuth, requireReviewer, async (req, res) => {
-  try { await assessments.addReviewer((req.body || {}).email, req.session.email); res.json({ success: true }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
-});
-app.delete('/api/assess/admin/reviewers/:email', requireAuth, requireReviewer, async (req, res) => {
-  try { await assessments.removeReviewer(req.params.email); res.json({ success: true }); } catch (e) { res.status(400).json({ success: false, error: e.message }); }
-});
+const assessWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { if (!e.status) console.warn('assess:', e.message); assessErr(res, e); } };
+const RV = [requireAuth, requireReviewer];
+
+app.get('/api/assess/me', requireAuth, assessWrap(async (req, res) => {
+  const member = await isToolMember(req.session.email);
+  const acc = await assessments.accessFor(req.session.email, member);
+  res.json({ success: true, email: req.session.email, name: req.session.name, picture: req.session.picture,
+    member, allowed: acc.allowed, reviewer: await assessments.isReviewer(req.session.email),
+    tests: acc.allowed ? await assessments.myTests(req.session.email) : [] });
+}));
+app.post('/api/assess/tests/:id/start', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
+  res.json({ success: true, ...(await assessments.startAttempt({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent') })) });
+}));
+app.get('/api/assess/attempts/:id/current', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
+  res.json({ success: true, ...(await assessments.current({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) })) });
+}));
+app.post('/api/assess/attempts/:id/answer', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {};
+  res.json({ success: true, ...(await assessments.answer({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, choice: b.choice, text: b.text, replays: b.replays })) });
+}));
+app.post('/api/assess/attempts/:id/events', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
+  res.json({ success: true, logged: await assessments.clientEvents({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), events: (req.body || {}).events }) });
+}));
+app.post('/api/assess/attempts/:id/snapshot', requireAuth, requireAssessAccess, rateLimit(20, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {};
+  res.json({ success: true, saved: await assessments.saveSnapshot({ attemptId: req.params.id, email: req.session.email, token: assessToken(req), idx: b.idx, image: b.image }) });
+}));
+
+// Reviewer: assessments
+app.get('/api/assess/admin/tests', ...RV, assessWrap(async (req, res) => res.json({ success: true, tests: await assessments.adminTests() })));
+app.post('/api/assess/admin/tests', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveTest(null, req.body, req.session.email) })));
+app.put('/api/assess/admin/tests/:id', ...RV, assessWrap(async (req, res) => { await assessments.saveTest(req.params.id, req.body, req.session.email); res.json({ success: true }); }));
+app.delete('/api/assess/admin/tests/:id', ...RV, assessWrap(async (req, res) => { await assessments.archiveTest(req.params.id); res.json({ success: true }); }));
+app.get('/api/assess/admin/tests/:id/questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, questions: await assessments.testQuestions(req.params.id) })));
+app.get('/api/assess/admin/tests/:id/attempts', ...RV, assessWrap(async (req, res) => res.json({ success: true, attempts: await assessments.adminAttempts(req.params.id) })));
+app.get('/api/assess/admin/tests/:id/export', ...RV, assessWrap(async (req, res) => {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="assessment-${Number(req.params.id)}-results.csv"`);
+  res.send(await assessments.exportCsv(req.params.id));
+}));
+app.get('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, attempt: await assessments.adminAttemptDetail(req.params.id) })));
+app.put('/api/assess/admin/attempts/:id/explain/:idx', ...RV, assessWrap(async (req, res) => { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); }));
+app.delete('/api/assess/admin/attempts/:id', ...RV, assessWrap(async (req, res) => { await assessments.deleteAttempt(req.params.id); res.json({ success: true }); }));
+app.get('/api/assess/admin/snapshots/:id', ...RV, assessWrap(async (req, res) => {
+  const img = await assessments.getSnapshot(req.params.id);
+  if (!img) return res.status(404).end();
+  res.setHeader('Content-Type', 'image/jpeg'); res.setHeader('Cache-Control', 'private, max-age=3600'); res.send(img);
+}));
+
+// Reviewer: question bank
+app.get('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => {
+  res.json({ success: true, questions: await assessments.listQuestions({ q: req.query.q ? String(req.query.q).slice(0, 100) : '', tag: req.query.tag || '', status: req.query.status || '', type: req.query.type || '' }), tags: await assessments.allTags() });
+}));
+app.post('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveQuestion(null, req.body, req.session.email) })));
+app.put('/api/assess/admin/questions/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveQuestion(req.params.id, req.body, req.session.email) })));
+app.delete('/api/assess/admin/questions/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, result: await assessments.deleteQuestion(req.params.id) })));
+app.post('/api/assess/admin/questions/bulk', ...RV, assessWrap(async (req, res) => res.json({ success: true, changed: await assessments.bulkQuestions((req.body || {}).ids, (req.body || {}).action) })));
+app.post('/api/assess/admin/questions/import', ...RV, express.raw({ type: () => true, limit: '5mb' }), assessWrap(async (req, res) => {
+  const text = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : '';
+  res.json({ success: true, ...(await assessments.importCsv(text, req.session.email, String(req.query.name || '').slice(0, 120))) });
+}));
+// Document -> text. PDF (pdf-parse), Word .docx (mammoth), or plain text.
+async function assessExtractText(buf, name) {
+  const ext = String(name || '').toLowerCase().split('.').pop();
+  if (ext === 'pdf') {
+    const pdf = require('pdf-parse/lib/pdf-parse.js');
+    try { return (await pdf(buf)).text; }
+    catch (e) {
+      try { return (await pdf(buf, { version: 'v2.0.550' })).text; }
+      catch (e2) { const er = new Error('This PDF could not be read. Try saving it again as PDF, or paste the text instead.'); er.status = 400; throw er; }
+    }
+  }
+  if (ext === 'docx') { const mammoth = require('mammoth'); return (await mammoth.extractRawText({ buffer: buf })).value; }
+  if (['txt', 'md', 'csv', 'html', 'htm'].includes(ext)) { const t = buf.toString('utf8'); return ext.startsWith('htm') ? t.replace(/<[^>]+>/g, ' ') : t; }
+  const er = new Error('Upload a PDF, Word (.docx) or text file.'); er.status = 400; throw er;
+}
+app.post('/api/assess/admin/generate', ...RV, rateLimit(10, 60000), express.raw({ type: () => true, limit: '15mb' }), assessWrap(async (req, res) => {
+  const q = req.query || {};
+  let text = '', sourceName = String(q.name || '').slice(0, 120);
+  // Client sends the raw file (kind=file) or pasted text (kind=text) as the body.
+  if (!Buffer.isBuffer(req.body) || !req.body.length) { const er = new Error('Nothing to read'); er.status = 400; throw er; }
+  if (q.kind === 'text') { text = req.body.toString('utf8'); sourceName = sourceName || 'Pasted text'; }
+  else text = await assessExtractText(req.body, q.name);
+  const out = await assessments.generateFromText({ text, count: q.count, types: String(q.types || '').split(',').filter(Boolean), focus: q.focus, difficulty: q.difficulty, sourceName, by: req.session.email, ai: require('./lib/ai') });
+  res.json({ success: true, ...out });
+}));
+
+// Reviewer: access
+app.get('/api/assess/admin/access', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.accessOverview()) })));
+app.put('/api/assess/admin/access/mode', ...RV, assessWrap(async (req, res) => { await assessments.setLinkMode((req.body || {}).mode); res.json({ success: true }); }));
+app.post('/api/assess/admin/access/guests', ...RV, assessWrap(async (req, res) => res.json({ success: true, added: await assessments.addGuests((req.body || {}).emails, (req.body || {}).note, req.session.email) })));
+app.delete('/api/assess/admin/access/guests/:email', ...RV, assessWrap(async (req, res) => { await assessments.removeGuest(req.params.email); res.json({ success: true }); }));
+app.post('/api/assess/admin/access/reviewers', ...RV, assessWrap(async (req, res) => { await assessments.addReviewer((req.body || {}).email, req.session.email); res.json({ success: true }); }));
+app.delete('/api/assess/admin/access/reviewers/:email', ...RV, assessWrap(async (req, res) => { await assessments.removeReviewer(req.params.email); res.json({ success: true }); }));
+app.put('/api/assess/admin/access/extra-time', ...RV, assessWrap(async (req, res) => { await assessments.setExtraTime((req.body || {}).email, (req.body || {}).pct, req.session.email); res.json({ success: true }); }));
+app.get('/api/assess/admin/people', ...RV, assessWrap(async (req, res) => {
+  // Everyone assignable: tool members (name + email) plus guests.
+  const set = await toolMemberSet();
+  const profiles = await getAllUserProfiles().catch(() => []);
+  const nameBy = {}; for (const p of profiles) nameBy[String(p.email || '').toLowerCase()] = p.name;
+  for (const a of await getMonitoredAgents().catch(() => [])) if (a.email) nameBy[a.email.toLowerCase()] = nameBy[a.email.toLowerCase()] || a.name;
+  try { const { db } = require('./database'); const rows = await new Promise((rs) => db.all(`SELECT email, full_name FROM roster_agents WHERE email IS NOT NULL`, [], (e, r) => rs(e ? [] : r || []))); for (const r of rows) { const e = r.email.toLowerCase(); nameBy[e] = nameBy[e] || r.full_name; } } catch (e) {}
+  for (const [e, names] of Object.entries(AGENT_SHEET_NAMES)) nameBy[e] = nameBy[e] || (names[1] || names[0]);
+  const acc = await assessments.accessOverview();
+  const people = [...set].filter(e => /@adit\.com$/.test(e)).map(e => ({ email: e, name: nameBy[e] || '', kind: 'member' }))
+    .concat(acc.guests.filter(g => !set.has(g.email)).map(g => ({ email: g.email, name: nameBy[g.email] || g.note || '', kind: 'guest' })))
+    .sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email));
+  res.json({ success: true, people });
+}));
 
 const { createChatReports } = require('./lib/chat-reports');
 let _chatReports = null;

@@ -1,63 +1,260 @@
-/* Session 56: Assessments page (/assess).
- * Takers: assigned tests, a rules screen, then one question at a time.
- * Question text is drawn on a canvas as a rolling fade (only a few word
- * groups visible at once), options are drawn on canvases too, and a tiled
- * watermark with the taker's name covers the screen. Timing and grading
- * happen on the server. Reviewers also get test settings, results,
- * answer detail, explanation marking and CSV export. */
+/* Session 57: Assessments (/assess, and embedded in the main app with ?embed=1).
+ *
+ * Takers: My assessments, a three-step start (overview with a reading demo,
+ * setup check, agreement), then one question at a time. Question text is
+ * drawn on a canvas, either as a rolling reveal (a few words at a time) or
+ * as the full question. Options are drawn on canvases too. Timing and
+ * grading happen on the server.
+ *
+ * Reviewers: Assessments (builder, results, attempt detail), Question bank
+ * (editor, AI drafts from documents, CSV import, question stats) and
+ * Access (who can open the link, guests, reviewers, extra time).
+ */
 (function () {
   'use strict';
 
   var main = document.getElementById('as-main');
   var nav = document.getElementById('as-nav');
   var userBox = document.getElementById('as-user');
+  var live = document.getElementById('as-live');
+  var EMBED = document.documentElement.classList.contains('embed');
+  if (EMBED) document.body.classList.add('as-embed');
   var me = null;
-  var view = 'tests';
+  var LETTERS = 'ABCDEFGH';
+  var TYPE_LABEL = { single: 'Choose one', multi: 'Choose all that apply', truefalse: 'True or false' };
+  var TYPE_SHORT = { single: 'Single choice', multi: 'Multiple answers', truefalse: 'True or false' };
+  var TIER = { none: ['No issues', 'ok'], some: ['Some issues', 'warn'], major: ['Major issues', 'bad'] };
 
-  // ── helpers ──────────────────────────────────────────────────────────
+  // ── Theme follows the main app ───────────────────────────────────────
+  window.addEventListener('storage', function (e) {
+    if (e.key !== 'aditDarkMode') return;
+    if (e.newValue === '1') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.setAttribute('data-theme', 'light');
+  });
+
+  // ── Helpers ──────────────────────────────────────────────────────────
   function h(tag, attrs, kids) {
     var el = document.createElement(tag);
     if (attrs) for (var k in attrs) {
-      if (attrs[k] == null || attrs[k] === false) continue;
-      if (k === 'class') el.className = attrs[k];
-      else if (k === 'text') el.textContent = attrs[k];
-      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), attrs[k]);
-      else el.setAttribute(k, attrs[k] === true ? '' : attrs[k]);
+      var v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'html') el.innerHTML = v; // only ever used with static strings
+      else if (k.slice(0, 2) === 'on' && typeof v === 'function') el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
     }
-    (kids || []).forEach(function (c) { if (c != null) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    (kids || []).forEach(function (c) { if (c != null && c !== false) el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    if (tag === 'video') { el.muted = true; el.playsInline = true; }
     return el;
   }
+  var ICONS = {
+    clipboard: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 11h6M9 15h4"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+    arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    arrowL: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    x: '<path d="M6 6l12 12M18 6L6 18"/>',
+    warn: '<path d="M12 4 2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.3"/>',
+    camera: '<rect x="3" y="6.5" width="13" height="11" rx="2"/><path d="M16 10.5l5-3v9l-5-3"/>',
+    screen: '<rect x="3" y="4.5" width="18" height="12" rx="1.5"/><path d="M8.5 20h7M12 16.5V20"/>',
+    expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    wifi: '<path d="M4 9.5a12 12 0 0 1 16 0M7 13a7.5 7.5 0 0 1 10 0M10 16.5a3 3 0 0 1 4 0"/><circle cx="12" cy="19.5" r=".6"/>',
+    pen: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    replay: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4.5v4h4"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/>',
+    upload: '<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V16"/>',
+    doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+    spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
+    download: '<path d="M12 4v12M7 11l5 5 5-5"/><path d="M4 20h16"/>',
+    trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/>',
+    shield: '<path d="M12 3l7.5 3v6c0 4.5-3.2 7.8-7.5 9-4.3-1.2-7.5-4.5-7.5-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+    flag: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    hourglass: '<path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9"/>',
+  };
+  function icon(name, cls) {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'i' + (cls ? ' ' + cls : '')); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = ICONS[name] || '';
+    return s;
+  }
   function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
+  function announce(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 30); }
+  function toast(t) {
+    var el = h('div', { class: 'toast', role: 'status', text: t });
+    document.body.appendChild(el);
+    setTimeout(function () { el.remove(); }, 2600);
+  }
   function api(path, opts) {
     opts = opts || {};
-    var headers = { 'Content-Type': 'application/json' };
+    var headers = {};
+    if (opts.body !== undefined && !opts.raw) headers['Content-Type'] = 'application/json';
+    if (opts.raw) headers['Content-Type'] = opts.contentType || 'application/octet-stream';
     if (opts.token) headers['X-Assess-Token'] = opts.token;
-    return fetch(path, { method: opts.method || 'GET', credentials: 'same-origin', headers: headers, body: opts.body ? JSON.stringify(opts.body) : undefined })
+    return fetch(path, { method: opts.method || 'GET', credentials: 'same-origin', headers: headers, body: opts.raw ? opts.raw : (opts.body !== undefined ? JSON.stringify(opts.body) : undefined) })
       .then(function (r) {
         return r.json().catch(function () { return { success: false, error: 'HTTP ' + r.status }; }).then(function (j) {
-          if (r.status === 401) { location.replace('/?next=/assess'); throw new Error('Please sign in'); }
-          if (!r.ok || j.success === false) { var e = new Error(j.error || ('HTTP ' + r.status)); e.code = j.code; e.status = r.status; throw e; }
+          if (r.status === 401) { location.replace(EMBED ? '/' : '/?next=/assess'); throw new Error('Please sign in'); }
+          if (!r.ok || j.success === false) { var e = new Error(j.error || ('HTTP ' + r.status)); e.code = j.code; e.status = r.status; e.noAccess = j.noAccess; throw e; }
           return j;
         });
       });
   }
+  function toDate(iso) { if (!iso) return null; return new Date(/Z$|[+-]\d\d:?\d\d$/.test(iso) ? iso : String(iso).replace(' ', 'T') + 'Z'); }
   function fmtWhen(iso) {
-    if (!iso) return '';
-    var d = new Date(/Z$|[+-]\d\d:?\d\d$/.test(iso) ? iso : iso.replace(' ', 'T') + 'Z');
+    var d = toDate(iso); if (!d) return '';
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CST';
   }
+  function fmtDay(iso) { var d = toDate(iso); return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'America/Chicago' }) : ''; }
   function secs(ms) { return ms == null ? '' : (Math.round(ms / 100) / 10) + 's'; }
-  function pct(a, b) { return b ? Math.round(a / b * 100) : 0; }
   function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
-  function errBox(msg) { return h('p', { class: 'as-err', role: 'alert', text: msg }); }
+  function errBox(msg) { return h('div', { class: 'alert', role: 'alert' }, [icon('warn'), h('span', { text: msg })]); }
+  function initials(s) { return String(s || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(function (x) { return x[0].toUpperCase(); }).join(''); }
+  function pill(text, cls, dot) { return h('span', { class: 'pill' + (cls ? ' ' + cls : '') }, [dot ? h('span', { class: 'dot' }) : null, text]); }
+  function tierPill(t) { var x = TIER[t]; return x ? pill(x[0], x[1], true) : pill('Not finished', ''); }
+  function pageHead(title, sub, acts, crumb) {
+    return h('div', null, [
+      crumb ? h('button', { class: 'crumb', type: 'button', onclick: crumb.go }, [icon('arrowL', 'sm'), crumb.text]) : null,
+      h('div', { class: 'ph' }, [h('div', null, [h('h1', { text: title }), sub ? h('p', { text: sub }) : null]), acts ? h('div', { class: 'acts' }, acts) : null]),
+    ]);
+  }
+  function skeleton() { return h('div', null, [h('div', { class: 'skel', style: 'height:120px;margin-bottom:12px' }), h('div', { class: 'skel', style: 'height:120px' })]); }
+  function field(label, input, hint, id) {
+    if (id && input && !input.id) input.id = id;
+    return h('div', { class: 'field' }, [h('label', { for: input && input.id, text: label }), input, hint ? h('span', { class: 'hint', text: hint }) : null]);
+  }
+  function toggle(label, checked, sub) {
+    var inp = h('input', { type: 'checkbox', checked: checked ? true : null });
+    var el = h('label', { class: 'setrow' }, [h('div', { class: 'tx' }, [h('b', { text: label }), sub ? h('span', { text: sub }) : null]), h('span', { class: 'toggle' }, [inp, h('span', { class: 'sw' })])]);
+    el.input = inp; return el;
+  }
+  function openDrawer(title, body, foot) {
+    var dlg = h('dialog', { class: 'drawer', 'aria-label': title });
+    var close = h('button', { class: 'btn icon ghost', type: 'button', 'aria-label': 'Close' }, [icon('x')]);
+    dlg.appendChild(h('div', { class: 'dh' }, [h('h2', { text: title }), close]));
+    dlg.appendChild(h('div', { class: 'db' }, [body]));
+    if (foot) dlg.appendChild(h('div', { class: 'df' }, foot));
+    close.addEventListener('click', function () { dlg.close(); });
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+    document.body.appendChild(dlg);
+    dlg.showModal();
+    return dlg;
+  }
 
-  // ── boot ─────────────────────────────────────────────────────────────
+  // ── Canvas text ──────────────────────────────────────────────────────
+  function fitCanvas(c, cssH) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth || (c.parentNode && c.parentNode.clientWidth) || 600;
+    c.style.height = cssH + 'px';
+    c.width = Math.round(w * dpr); c.height = Math.round(cssH * dpr);
+    var ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: w, h: cssH };
+  }
+  function wrapLines(ctx, text, maxW) {
+    var words = String(text).split(/\s+/).filter(Boolean), lines = [], line = '';
+    words.forEach(function (wd) {
+      var test = line ? line + ' ' + wd : wd;
+      if (line && ctx.measureText(test).width > maxW) { lines.push(line); line = wd; } else line = test;
+    });
+    if (line) lines.push(line);
+    return lines;
+  }
+  function drawText(c, text, opts) {
+    opts = opts || {};
+    var font = opts.font || '500 20px Poppins, sans-serif', lh = opts.lineH || 32;
+    var probe = c.getContext('2d'); probe.font = font;
+    var w = c.clientWidth || (c.parentNode && c.parentNode.clientWidth) || 600;
+    var lines = wrapLines(probe, text, w - 2);
+    var f = fitCanvas(c, Math.max(opts.minH || 0, lines.length * lh + 6));
+    f.ctx.font = font; f.ctx.fillStyle = opts.color || cssVar('--t1'); f.ctx.textBaseline = 'middle';
+    lines.forEach(function (ln, i) { f.ctx.fillText(ln, 0, i * lh + lh / 2 + 2); });
+  }
+
+  /** Rolling reveal: one group of words at a time in a fixed reading band.
+   *  The group before it moves up and dims, anything older is gone, so a
+   *  single screenshot never holds the whole question. Groups ending in
+   *  punctuation stay a little longer. */
+  function Reader(host, text, s, onEnd) {
+    var canvas = h('canvas', { 'aria-hidden': 'true' });
+    var dots = h('div', { class: 'dots', 'aria-hidden': 'true' });
+    var state = h('span', { class: 'state', text: 'Reading…' });
+    var replayBtn = h('button', { class: 'btn sm', type: 'button', disabled: true }, [icon('replay', 'sm'), 'Replay from start']);
+    host.appendChild(h('div', { class: 'reader' }, [canvas, h('div', { class: 'bar' }, [dots, h('span', { class: 'spacer' }), state, replayBtn])]));
+    var words = String(text).split(/\s+/).filter(Boolean), per = Math.max(2, s.wordsPerChunk || 4), chunks = [];
+    for (var i = 0; i < words.length; i += per) chunks.push(words.slice(i, i + per).join(' '));
+    var starts = [], t = 0;
+    chunks.forEach(function (c) {
+      starts.push(t);
+      var n = c.split(' ').length;
+      t += (s.chunkMs || 1000) * (0.55 + 0.45 * n / per) + (/[.,;:?!]$/.test(c) ? 280 : 0);
+    });
+    var total = t + 500, raf = 0, t0 = 0, running = false, self = this, lastIdx = -1;
+    chunks.forEach(function () { dots.appendChild(h('i')); });
+    var f = null;
+    function size() { f = fitCanvas(canvas, 118); }
+    function ease(x) { return 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3); }
+    function drawChunk(txt, y, px, alpha, weight) {
+      if (alpha <= 0 || !txt) return;
+      f.ctx.globalAlpha = alpha; f.ctx.font = weight + ' ' + px + 'px Poppins, sans-serif';
+      var lines = wrapLines(f.ctx, txt, f.w - 8), lh = px * 1.3;
+      lines.forEach(function (ln, k) { var w = f.ctx.measureText(ln).width; f.ctx.fillText(ln, (f.w - w) / 2, y + (k - (lines.length - 1) / 2) * lh); });
+    }
+    function frame(now) {
+      if (!t0) t0 = now;
+      var el = now - t0, idx = -1;
+      for (var k = 0; k < starts.length; k++) if (el >= starts[k]) idx = k;
+      f.ctx.clearRect(0, 0, f.w, f.h); f.ctx.textBaseline = 'middle'; f.ctx.fillStyle = cssVar('--t1');
+      if (el < t && idx >= 0) {
+        var p = ease((el - starts[idx]) / 260);
+        if (idx > 0) drawChunk(chunks[idx - 1], 70 - 46 * p, 24 - 9 * p, 1 - 0.62 * p, 500);
+        if (idx > 1) drawChunk(chunks[idx - 2], 24 - 20 * p, 15, 0.38 * (1 - p), 500);
+        drawChunk(chunks[idx], 82 - 12 * p, 24, p, 600);
+      } else if (el >= t) {
+        var q = ease((el - t) / 400);
+        drawChunk(chunks[chunks.length - 1], 70, 24, 1 - q, 600);
+        if (chunks.length > 1) drawChunk(chunks[chunks.length - 2], 24, 15, 0.38 * (1 - q), 500);
+      }
+      f.ctx.globalAlpha = 1;
+      if (idx !== lastIdx) {
+        lastIdx = idx;
+        Array.prototype.forEach.call(dots.children, function (d, k) { d.className = k === idx ? 'on' : (k < idx ? 'past' : ''); });
+      }
+      if (el < total) raf = requestAnimationFrame(frame);
+      else { running = false; replayBtn.disabled = false; state.textContent = 'Replay if you need to read it again.'; Array.prototype.forEach.call(dots.children, function (d) { d.className = 'past'; }); if (onEnd) onEnd(); }
+    }
+    this.play = function () { cancelAnimationFrame(raf); size(); t0 = 0; lastIdx = -1; running = true; replayBtn.disabled = true; state.textContent = 'Reading…'; raf = requestAnimationFrame(frame); };
+    this.stop = function () { cancelAnimationFrame(raf); running = false; };
+    this.resize = function () { size(); if (!running) f.ctx.clearRect(0, 0, f.w, f.h); };
+    this.replayBtn = replayBtn;
+    this.durationMs = total;
+    replayBtn.addEventListener('click', function () { if (self.onReplay) self.onReplay(); self.play(); });
+  }
+  function FullText(host, text) {
+    var canvas = h('canvas', { 'aria-hidden': 'true' });
+    host.appendChild(h('div', { class: 'reader', style: 'min-height:auto' }, [canvas]));
+    function draw() { drawText(canvas, text, { font: '500 19px Poppins, sans-serif', lineH: 31 }); }
+    requestAnimationFrame(draw);
+    this.resize = draw; this.stop = function () {}; this.play = function () {};
+  }
+
+  // ── Boot + routing ───────────────────────────────────────────────────
   function boot() {
     api('/api/assess/me').then(function (j) {
       me = j;
       renderUser();
-      renderNav();
-      show('tests');
+      if (!j.allowed) return gate();
+      window.addEventListener('hashchange', route);
+      route();
     }).catch(function (e) {
       if (/sign in/i.test(e.message)) return;
       clear(main); main.appendChild(errBox('Could not load assessments: ' + e.message));
@@ -65,193 +262,242 @@
   }
   function renderUser() {
     clear(userBox);
-    if (me.picture) userBox.appendChild(h('img', { src: me.picture, alt: '', referrerpolicy: 'no-referrer' }));
-    userBox.appendChild(h('span', { text: me.name || me.email, title: me.email }));
-    if (me.member) userBox.appendChild(h('a', { class: 'as-link', href: '/', text: 'Back to tool' }));
-    userBox.appendChild(h('button', { class: 'as-link', type: 'button', text: 'Sign out', onclick: function () {
+    var av = h('span', { class: 'as-avatar' }, [me.picture ? h('img', { src: me.picture, alt: '', referrerpolicy: 'no-referrer' }) : initials(me.name || me.email)]);
+    userBox.appendChild(av);
+    userBox.appendChild(h('span', { class: 'who' }, [h('b', { text: me.name || me.email, title: me.email }), h('span', { text: me.reviewer ? 'Reviewer' : (me.member ? 'Team member' : 'Guest') })]));
+    if (me.member && !EMBED) userBox.appendChild(h('a', { class: 'btn sm', href: '/', text: 'Open the tool' }));
+    userBox.appendChild(h('button', { class: 'btn sm ghost', type: 'button', text: 'Sign out', onclick: function () {
       fetch('/api/session', { method: 'DELETE', credentials: 'same-origin' }).finally(function () {
         try { localStorage.removeItem('rcSession'); sessionStorage.clear(); } catch (e) {}
         location.replace('/?next=/assess');
       });
     } }));
   }
-  function renderNav() {
+  var SECTIONS = [['', 'My assessments'], ['manage', 'Assessments'], ['bank', 'Question bank'], ['access', 'Access']];
+  function renderNav(cur) {
     clear(nav);
-    var items = [['tests', 'My assessments']];
-    if (me.reviewer) items.push(['review', 'Review'], ['reviewers', 'Reviewers']);
-    if (items.length < 2) return;
-    items.forEach(function (it) {
-      nav.appendChild(h('button', { type: 'button', 'aria-current': view === it[0] ? 'page' : null, text: it[1], onclick: function () { show(it[0]); } }));
+    if (!me.reviewer) return; // takers only have one page
+    SECTIONS.forEach(function (s) {
+      nav.appendChild(h('button', { type: 'button', 'aria-current': cur === s[0] ? 'page' : null, text: s[1], onclick: function () { go(s[0]); } }));
     });
   }
-  function show(v, arg) {
-    view = v; renderNav(); clear(main); main.focus();
-    if (v === 'tests') return viewTests();
-    if (v === 'rules') return viewRules(arg);
-    if (v === 'review') return viewReview();
-    if (v === 'settings') return viewSettings(arg);
-    if (v === 'results') return viewResults(arg);
-    if (v === 'attempt') return viewAttempt(arg);
-    if (v === 'reviewers') return viewReviewers();
+  function go(hash) { if (('#' + hash) === location.hash || (!hash && !location.hash)) route(); else location.hash = hash; }
+  function route() {
+    var parts = location.hash.replace(/^#/, '').split('/');
+    var sec = parts[0] || '', arg = parts[1];
+    if (!me.reviewer && sec) sec = '';
+    var top = { edit: 'manage', results: 'manage', attempt: 'manage' }[sec] || sec;
+    renderNav(top);
+    clear(main); main.focus({ preventScroll: true }); window.scrollTo(0, 0);
+    if (sec === 'manage') return viewManage();
+    if (sec === 'edit') return viewBuilder(arg === 'new' ? null : Number(arg));
+    if (sec === 'results') return viewResults(Number(arg));
+    if (sec === 'attempt') return viewAttempt(Number(arg));
+    if (sec === 'bank') return viewBank();
+    if (sec === 'access') return viewAccess();
+    return viewHome();
   }
-
-  // ── taker: list ──────────────────────────────────────────────────────
-  function viewTests() {
-    main.appendChild(h('h1', { class: 'as-h1', text: 'My assessments' }));
-    main.appendChild(h('p', { class: 'as-sub', text: 'Assessments assigned to you. Each question is timed and there is no going back, so start only when you are ready.' }));
-    api('/api/assess/me').then(function (j) {
-      me.tests = j.tests;
-      if (!j.tests.length) { main.appendChild(h('div', { class: 'as-empty', text: 'No assessments are assigned to you right now.' })); return; }
-      var grid = h('div', { class: 'as-grid' });
-      j.tests.forEach(function (t) {
-        var meta = h('div', { class: 'as-meta' }, [
-          h('span', { class: 'as-pill', text: t.questions + ' questions' }),
-          h('span', { class: 'as-pill', text: t.secondsPerQuestion + 's each' }),
-          t.explainCount ? h('span', { class: 'as-pill', text: t.explainCount + ' written' }) : null,
-          h('span', { class: 'as-pill', text: 'Attempts ' + t.attemptsUsed + ' of ' + t.attemptsAllowed }),
-        ]);
-        var last = null;
-        if (t.last) last = h('p', { class: 'as-note', text: 'Last submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? ', score ' + t.last.score + ' of ' + t.last.maxScore : '') + '.' });
-        var btn = h('button', { class: 'as-btn primary', type: 'button', disabled: !t.canStart, text: t.inProgress ? 'Resume' : (t.canStart ? 'Start' : 'No attempts left'),
-          onclick: function () { show('rules', t); } });
-        grid.appendChild(h('div', { class: 'as-card' }, [h('h2', { text: t.title }), t.description ? h('p', { text: t.description }) : null, meta, last, h('div', { class: 'as-row' }, [btn])]));
-      });
-      main.appendChild(grid);
-    }).catch(function (e) { main.appendChild(errBox(e.message)); });
-  }
-
-  // ── taker: rules ─────────────────────────────────────────────────────
-  function viewRules(t) {
-    var wrap = h('div', { class: 'as-rules' });
-    wrap.appendChild(h('h1', { class: 'as-h1', text: t.title }));
-    wrap.appendChild(h('p', { class: 'as-sub', text: t.inProgress ? 'You have an attempt in progress. The timer on the current question kept running while you were away.' : 'Read this once before you start.' }));
-    var card = h('div', { class: 'as-card' });
-    card.appendChild(h('h2', { text: 'How it works' }));
-    card.appendChild(h('ol', null, [
-      h('li', { text: 'Each question appears a few words at a time and fades as it goes. Use "Replay from start" if you need it again. Replays are recorded.' }),
-      h('li', { text: 'You have ' + t.secondsPerQuestion + ' seconds per question. When time runs out, your current selection is submitted and the next question opens. You cannot go back.' }),
-      t.explainCount ? h('li', { text: 'At the end you will explain ' + (t.explainCount === 1 ? 'one of your answers' : t.explainCount + ' of your answers') + ' in your own words.' }) : null,
-      h('li', { text: 'The test runs in full screen. Leaving the window, switching tabs, copying, pasting or taking screenshots is recorded for your reviewer.' }),
-      h('li', { text: 'Reloading the page does not stop the clock, and opening the test in a second tab closes the first one.' }),
+  function gate() {
+    renderNav('');
+    clear(nav);
+    clear(main);
+    main.appendChild(h('div', { class: 'card gate' }, [
+      h('div', { class: 'ic' }, [icon('lock', 'lg')]),
+      h('h1', { text: 'You do not have access yet' }),
+      h('p', { text: 'You are signed in as ' + me.email + '. Assessments are open to the T1 team and people invited by a reviewer.' }),
+      h('p', { class: 'muted small', text: 'Ask Sebastin (sebastin.n@adit.com) to add you, then reload this page.' }),
     ]));
-    var c1 = h('input', { type: 'checkbox', id: 'as-c1' });
-    var c2 = h('input', { type: 'checkbox', id: 'as-c2' });
-    var start = h('button', { class: 'as-btn primary', type: 'button', disabled: true, text: t.inProgress ? 'Resume in full screen' : 'Start in full screen' });
-    function sync() { start.disabled = !(c1.checked && c2.checked); }
-    c1.addEventListener('change', sync); c2.addEventListener('change', sync);
-    card.appendChild(h('label', { class: 'as-check', for: 'as-c1' }, [c1, h('span', { text: 'I am answering on my own, without help from people, notes, search or AI tools.' })]));
-    card.appendChild(h('label', { class: 'as-check', for: 'as-c2' }, [c2, h('span', { text: 'I understand that my activity during the test is recorded and reviewed.' })]));
-    var err = h('div');
-    card.appendChild(err);
-    card.appendChild(h('div', { class: 'as-row' }, [h('button', { class: 'as-btn ghost', type: 'button', text: 'Back', onclick: function () { show('tests'); } }), h('span', { class: 'as-spacer' }), start]));
-    start.addEventListener('click', function () {
-      start.disabled = true;
-      var fs = document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen().catch(function () {}) : Promise.resolve();
-      fs.then(function () { return api('/api/assess/tests/' + t.id + '/start', { method: 'POST' }); })
-        .then(function (j) { runExam(j); })
-        .catch(function (e) { clear(err); err.appendChild(errBox(e.message)); start.disabled = false; if (document.fullscreenElement) document.exitFullscreen().catch(function () {}); });
-    });
-    wrap.appendChild(card);
-    main.appendChild(wrap);
   }
 
-  // ── watermark ────────────────────────────────────────────────────────
-  var wmTimer = null;
+  // ── Taker: home ──────────────────────────────────────────────────────
+  function viewHome() {
+    var first = String(me.name || '').split(' ')[0];
+    main.appendChild(pageHead(first ? 'Hi ' + first + ', here are your assessments' : 'My assessments', 'Each question is timed and answers lock when you move on. Start when you have a quiet 15 minutes.'));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    api('/api/assess/me').then(function (j) {
+      me.tests = j.tests; clear(holder);
+      if (!j.tests.length) {
+        holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('b', { text: 'Nothing assigned right now' }), h('span', { text: 'When your lead assigns an assessment, it will appear here.' })]));
+        return;
+      }
+      var grid = h('div', { class: 'grid-cards' });
+      j.tests.forEach(function (t) {
+        var status = t.inProgress ? pill('In progress', 'warn', true) : (t.last ? pill('Completed', 'ok', true) : pill('Not started', 'accent', true));
+        var btnText = t.inProgress ? 'Resume' : (t.canStart ? (t.last ? 'Take again' : 'Start') : 'Completed');
+        var result = null;
+        if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
+        grid.appendChild(h('div', { class: 'card tcard' }, [
+          h('div', { class: 'top' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('div', { style: 'flex:1;min-width:0' }, [h('h2', { text: t.title }), t.description ? h('p', { text: t.description }) : null]), status]),
+          h('dl', { class: 'facts' }, [
+            h('div', null, [h('dt', { text: 'Questions' }), h('dd', { text: String(t.questions + (t.explainCount ? ' + ' + t.explainCount : '')) })]),
+            h('div', null, [h('dt', { text: 'Per question' }), h('dd', { text: t.secondsPerQuestion + 's' })]),
+            h('div', null, [h('dt', { text: 'About' }), h('dd', { text: t.estMinutes + ' min' })]),
+          ]),
+          result,
+          h('div', { class: 'foot' }, [
+            h('span', { class: 'small muted', text: 'Attempts ' + t.attemptsUsed + ' of ' + t.attemptsAllowed + (t.extraPct ? ' · +' + t.extraPct + '% time' : '') }),
+            h('span', { class: 'spacer' }),
+            h('button', { class: 'btn primary', type: 'button', disabled: !t.canStart, onclick: function () { viewPre(t); } }, [btnText, t.canStart ? icon('arrowR', 'sm') : null]),
+          ]),
+        ]));
+      });
+      holder.appendChild(grid);
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+  }
+
+  // ── Taker: three-step start ──────────────────────────────────────────
+  var cam = { stream: null, ok: false };
+  function stopCamera() { if (cam.stream) cam.stream.getTracks().forEach(function (tr) { tr.stop(); }); cam.stream = null; cam.ok = false; }
+  function viewPre(t) {
+    clear(main); window.scrollTo(0, 0);
+    var step = 1, demo = null;
+    var wrap = h('div', { class: 'pre' });
+    main.appendChild(wrap);
+    function steps() {
+      var names = ['Overview', 'Setup check', 'Start'];
+      return h('ol', { class: 'steps', 'aria-label': 'Steps' }, names.map(function (n, i) {
+        return h('li', { class: i + 1 === step ? 'on' : (i + 1 < step ? 'done' : ''), 'aria-current': i + 1 === step ? 'step' : null }, [h('span', { text: n })]);
+      }));
+    }
+    function render() {
+      if (demo) { demo.stop(); demo = null; }
+      clear(wrap);
+      wrap.appendChild(h('button', { class: 'crumb', type: 'button', onclick: function () { stopCamera(); route(); } }, [icon('arrowL', 'sm'), 'My assessments']));
+      wrap.appendChild(h('div', { class: 'ph', style: 'margin-bottom:16px' }, [h('div', null, [h('h1', { text: t.title }), t.inProgress ? h('p', { text: 'You have an attempt in progress. The timer on your current question kept running while you were away.' }) : null])]));
+      wrap.appendChild(steps());
+      var card = h('div', { class: 'card' });
+      wrap.appendChild(card);
+      if (step === 1) stepOverview(card);
+      else if (step === 2) stepCheck(card);
+      else stepAgree(card);
+    }
+    function stepOverview(card) {
+      card.appendChild(h('h2', { text: 'What to expect' }));
+      card.appendChild(h('p', { class: 'lead', text: t.questions + ' questions' + (t.explainCount ? ' and ' + t.explainCount + ' written answer' + (t.explainCount > 1 ? 's' : '') : '') + ', about ' + t.estMinutes + ' minutes in total.' }));
+      var rules = [
+        [t.displayMode === 'full' ? 'eye' : 'eye', t.displayMode === 'full' ? 'One question at a time' : 'Questions reveal a few words at a time', t.displayMode === 'full' ? 'Read the question, pick your answer and submit.' : 'Each question plays once as short groups of words. Replay it from the start as often as you need; replays are noted.'],
+        ['clock', t.secondsPerQuestion + ' seconds per question', 'When time runs out, whatever you selected is submitted and the next question opens.'],
+        ['lock', 'No going back', 'Answers lock when you submit, so take the time you need on each one.'],
+        ['expand', 'Stay in full screen', 'The test runs in full screen. Leaving it, switching tabs, or pasting is noted for your reviewer.'],
+      ];
+      if (t.explainCount) rules.push(['pen', 'Explain in your own words', 'At the end you explain one of your answers. Typing only; pasting is turned off.']);
+      if (t.camera) rules.push(['camera', 'Camera photos', 'Your camera takes a photo every ' + t.snapshotSec + ' seconds while the test is open.']);
+      card.appendChild(h('ul', { class: 'rules' }, rules.map(function (r) { return h('li', null, [h('span', { class: 'ic' }, [icon(r[0])]), h('div', null, [h('b', { text: r[1] }), h('span', { text: r[2] })])]); })));
+      if (t.displayMode !== 'full') {
+        var box = h('div', { class: 'demo' });
+        var play = h('button', { class: 'btn sm', type: 'button' }, [icon('replay', 'sm'), 'Try the reading style']);
+        box.appendChild(h('div', { class: 'row', style: 'margin-bottom:12px' }, [h('b', { text: 'Practice' }), h('span', { class: 'small muted', text: 'Not scored. See how questions appear before you start.' }), h('span', { class: 'spacer' }), play]));
+        var host = h('div'); box.appendChild(host);
+        card.appendChild(box);
+        play.addEventListener('click', function () {
+          clear(host);
+          demo = new Reader(host, 'A caller says their front desk phones stopped ringing this morning. Which team owns this, and what do you check first?', { wordsPerChunk: 4, chunkMs: 1000 });
+          demo.play();
+        });
+      }
+      card.appendChild(h('div', { class: 'pre-foot' }, [h('span', { class: 'spacer' }), h('button', { class: 'btn primary lg', type: 'button', onclick: function () { step = 2; render(); } }, ['Continue', icon('arrowR', 'sm')])]));
+    }
+    function stepCheck(card) {
+      card.appendChild(h('h2', { text: 'Check your setup' }));
+      card.appendChild(h('p', { class: 'lead', text: 'A quick check so nothing interrupts you once the timer starts.' }));
+      var list = h('ul', { class: 'checks' }); card.appendChild(list);
+      var cont = h('button', { class: 'btn primary lg', type: 'button', disabled: true, onclick: function () { step = 3; render(); } }, ['Continue', icon('arrowR', 'sm')]);
+      var need = { fs: false, cam: !t.camera };
+      function row(ic, title, sub) {
+        var st = h('span', { class: 'st' }, [icon(ic, 'sm')]), s = h('span', { text: sub }), extra = h('div');
+        var li = h('li', null, [st, h('div', { class: 'tx' }, [h('b', { text: title }), s]), extra]);
+        list.appendChild(li);
+        return { set: function (cls, text, ico) { st.className = 'st ' + cls; clear(st); st.appendChild(icon(ico || (cls === 'ok' ? 'check' : 'warn'), 'sm')); if (text) s.textContent = text; }, extra: extra };
+      }
+      function sync() { cont.disabled = !(need.fs && need.cam); }
+      var fs = row('expand', 'Full screen', 'Checking…');
+      if (document.fullscreenEnabled) { fs.set('ok', 'Supported in this browser.'); need.fs = true; } else fs.set('bad', 'This browser cannot go full screen. Use Chrome or Edge on a computer.');
+      var sc = row('screen', 'One screen', 'Checking…');
+      if (window.screen && window.screen.isExtended) sc.set('warn', 'A second screen is connected. Please disconnect it; this is noted for your reviewer.');
+      else sc.set('ok', 'No second screen detected.');
+      var net = row('wifi', 'Connection', 'Checking…');
+      var t0 = performance.now();
+      fetch('/api/assess/me', { credentials: 'same-origin' }).then(function () {
+        var ms = Math.round(performance.now() - t0);
+        if (ms < 1500) net.set('ok', 'Good (' + ms + ' ms).'); else net.set('warn', 'Slow (' + ms + ' ms). Answers are saved on each submit, but a stable connection helps.');
+      }).catch(function () { net.set('bad', 'You look offline. Reconnect before you start.'); });
+      if (t.camera) {
+        var cr = row('camera', 'Camera', 'Needed for this assessment. A photo is taken every ' + t.snapshotSec + ' seconds, only your reviewer can see them.');
+        var btn = h('button', { class: 'btn sm', type: 'button', text: 'Allow camera' });
+        cr.extra.appendChild(btn);
+        function showPreview() {
+          clear(cr.extra);
+          var v = h('video', { class: 'cam-preview', autoplay: true, muted: true, playsinline: true });
+          v.srcObject = cam.stream; cr.extra.appendChild(v);
+          cr.set('ok', 'Camera is on. Make sure your face is clearly visible.', 'check');
+          need.cam = true; sync();
+        }
+        if (cam.ok && cam.stream) showPreview();
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false }).then(function (st) {
+            cam.stream = st; cam.ok = true; showPreview();
+          }).catch(function () { btn.disabled = false; cr.set('bad', 'Camera blocked. Allow it in the browser address bar, then try again.'); });
+        });
+      }
+      sync();
+      card.appendChild(h('div', { class: 'pre-foot' }, [h('button', { class: 'btn ghost', type: 'button', onclick: function () { step = 1; render(); } }, [icon('arrowL', 'sm'), 'Back']), h('span', { class: 'spacer' }), cont]));
+    }
+    function stepAgree(card) {
+      card.appendChild(h('h2', { text: 'Ready when you are' }));
+      card.appendChild(h('p', { class: 'lead', text: 'The timer starts as soon as the first question opens.' }));
+      var priv = h('div', { class: 'privacy' }, [
+        h('b', { text: 'What is recorded' }),
+        h('p', { style: 'margin:6px 0 0', text: 'Your answers and how long each one took, and a log of events such as leaving full screen, switching tabs, copy and paste attempts, and Print Screen.' + (t.camera ? ' A camera photo every ' + t.snapshotSec + ' seconds.' : '') }),
+        h('p', { style: 'margin:6px 0 0', text: 'Your screen is not recorded' + (t.camera ? ', and there is no video or audio recording.' : ', and your camera and microphone are not used.') + ' Only reviewers can see this information.' }),
+      ]);
+      card.appendChild(priv);
+      var c1 = h('input', { type: 'checkbox', id: 'ag1' }), c2 = h('input', { type: 'checkbox', id: 'ag2' });
+      card.appendChild(h('label', { class: 'agree', for: 'ag1' }, [c1, h('span', { text: 'I will answer on my own, without help from other people, notes, search engines or AI tools.' })]));
+      card.appendChild(h('label', { class: 'agree', for: 'ag2' }, [c2, h('span', { text: 'I understand what is recorded and that my reviewer may ask me to explain some answers.' })]));
+      var err = h('div');
+      card.appendChild(err);
+      var start = h('button', { class: 'btn primary lg', type: 'button', disabled: true }, [t.inProgress ? 'Resume in full screen' : 'Start in full screen', icon('arrowR', 'sm')]);
+      function sync() { start.disabled = !(c1.checked && c2.checked); }
+      c1.addEventListener('change', sync); c2.addEventListener('change', sync);
+      start.addEventListener('click', function () {
+        start.disabled = true; clear(err);
+        var fsP = document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen().catch(function () {}) : Promise.resolve();
+        fsP.then(function () { return api('/api/assess/tests/' + t.id + '/start', { method: 'POST', body: {} }); })
+          .then(function (j) { runExam(j, t); })
+          .catch(function (e) { err.appendChild(errBox(e.message)); start.disabled = false; if (document.fullscreenElement) document.exitFullscreen().catch(function () {}); });
+      });
+      card.appendChild(h('div', { class: 'pre-foot' }, [h('button', { class: 'btn ghost', type: 'button', onclick: function () { step = 2; render(); } }, [icon('arrowL', 'sm'), 'Back']), h('span', { class: 'spacer' }), start]));
+    }
+    render();
+  }
+
+  // ── Watermark (optional, very faint) ─────────────────────────────────
+  var wm = { timer: null, on: false };
   function drawWatermark() {
     var c = document.getElementById('as-wm');
     var dpr = window.devicePixelRatio || 1;
     c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr);
     var ctx = c.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, innerWidth, innerHeight);
-    var stamp = (me.name || '') + '  ·  ' + me.email + '  ·  ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CST';
-    ctx.fillStyle = cssVar('--as-wm') || 'rgba(0,0,0,.07)';
-    ctx.font = '500 14px Poppins, sans-serif';
-    ctx.translate(innerWidth / 2, innerHeight / 2);
-    ctx.rotate(-0.42);
-    var w = ctx.measureText(stamp).width + 90, step = 96, span = Math.hypot(innerWidth, innerHeight);
-    for (var y = -span; y < span; y += step) {
-      var off = (Math.round(y / step) % 2) * (w / 2);
-      for (var x = -span - off; x < span; x += w) ctx.fillText(stamp, x, y);
-    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, innerWidth, innerHeight);
+    var stamp = me.email + '  ' + new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
+    ctx.fillStyle = cssVar('--wm'); ctx.font = '500 13px Poppins, sans-serif';
+    ctx.translate(innerWidth / 2, innerHeight / 2); ctx.rotate(-0.35);
+    var w = ctx.measureText(stamp).width + 260, step = 190, span = Math.hypot(innerWidth, innerHeight);
+    for (var y = -span; y < span; y += step) { var off = (Math.round(y / step) % 2) * (w / 2); for (var x = -span - off; x < span; x += w) ctx.fillText(stamp, x, y); }
   }
-  function startWatermark() { drawWatermark(); clearInterval(wmTimer); wmTimer = setInterval(drawWatermark, 30000); window.addEventListener('resize', drawWatermark); }
-  function stopWatermark() { clearInterval(wmTimer); window.removeEventListener('resize', drawWatermark); }
+  function startWatermark() { wm.on = true; document.getElementById('as-wm').classList.add('on'); drawWatermark(); clearInterval(wm.timer); wm.timer = setInterval(drawWatermark, 60000); window.addEventListener('resize', drawWatermark); }
+  function stopWatermark() { wm.on = false; document.getElementById('as-wm').classList.remove('on'); clearInterval(wm.timer); window.removeEventListener('resize', drawWatermark); }
 
-  // ── canvas text ──────────────────────────────────────────────────────
-  function fitCanvas(c, cssH) {
-    var dpr = window.devicePixelRatio || 1;
-    var w = c.clientWidth || c.parentNode.clientWidth;
-    if (cssH) c.style.height = cssH + 'px';
-    c.width = Math.round(w * dpr); c.height = Math.round((cssH || c.clientHeight) * dpr);
-    var ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { ctx: ctx, w: w, h: cssH || c.clientHeight };
-  }
-  function layoutWords(ctx, text, maxW, font, lineH) {
-    ctx.font = font;
-    var words = String(text).split(/\s+/).filter(Boolean), out = [], x = 0, y = lineH * 0.8, space = ctx.measureText(' ').width;
-    words.forEach(function (wd) {
-      var ww = ctx.measureText(wd).width;
-      if (x > 0 && x + ww > maxW) { x = 0; y += lineH; }
-      out.push({ t: wd, x: x, y: y, w: ww }); x += ww + space;
-    });
-    return { words: out, height: y + lineH * 0.35 };
-  }
-  function drawStatic(c, text, font, color) {
-    var probe = c.getContext('2d');
-    var w = c.clientWidth || c.parentNode.clientWidth;
-    var lay = layoutWords(probe, text, w, font, 22);
-    var f = fitCanvas(c, Math.max(24, lay.height));
-    f.ctx.font = font; f.ctx.fillStyle = color; f.ctx.textBaseline = 'alphabetic';
-    lay.words.forEach(function (wd) { f.ctx.fillText(wd.t, wd.x, wd.y); });
-  }
-
-  /** Rolling fade: chunk i fades in at i*chunkMs, stays while the next
-   *  (visibleChunks-1) chunks appear, then fades out. Word positions are
-   *  fixed, so it reads left to right like normal text. */
-  function FadeText(canvas, text, s, onDone) {
-    var font = '500 19px Poppins, sans-serif', lineH = 30;
-    var probe = canvas.getContext('2d');
-    var w = canvas.clientWidth || canvas.parentNode.clientWidth;
-    var lay = layoutWords(probe, text, w, font, lineH);
-    var f = fitCanvas(canvas, Math.max(90, lay.height + 8));
-    var per = Math.max(1, s.wordsPerChunk), n = Math.ceil(lay.words.length / per);
-    var fadeIn = 220, fadeOut = 320, color = cssVar('--as-t1');
-    var t0 = 0, raf = 0, finished = false;
-    function alphaFor(i, t) {
-      var on = i * s.chunkMs, off = (i + s.visibleChunks) * s.chunkMs;
-      if (t < on) return 0;
-      if (t < on + fadeIn) return (t - on) / fadeIn;
-      if (t < off) return 1;
-      if (t < off + fadeOut) return 1 - (t - off) / fadeOut;
-      return 0;
-    }
-    function frame(now) {
-      if (!t0) t0 = now;
-      var t = now - t0;
-      f.ctx.clearRect(0, 0, f.w, f.h);
-      f.ctx.font = font; f.ctx.textBaseline = 'alphabetic';
-      for (var i = 0; i < n; i++) {
-        var a = alphaFor(i, t);
-        if (a <= 0) continue;
-        f.ctx.globalAlpha = a; f.ctx.fillStyle = color;
-        for (var k = i * per; k < Math.min(lay.words.length, (i + 1) * per); k++) f.ctx.fillText(lay.words[k].t, lay.words[k].x, lay.words[k].y + 4);
-      }
-      f.ctx.globalAlpha = 1;
-      if (t < (n - 1 + s.visibleChunks) * s.chunkMs + fadeOut) raf = requestAnimationFrame(frame);
-      else if (!finished) { finished = true; if (onDone) onDone(); }
-    }
-    this.play = function () { cancelAnimationFrame(raf); t0 = 0; finished = false; raf = requestAnimationFrame(frame); };
-    this.stop = function () { cancelAnimationFrame(raf); f.ctx.clearRect(0, 0, f.w, f.h); };
-    this.durationMs = (n - 1 + s.visibleChunks) * s.chunkMs + fadeOut;
-  }
-
-  // ── exam runner ──────────────────────────────────────────────────────
-  function runExam(start) {
+  // ── Exam runner ──────────────────────────────────────────────────────
+  function runExam(start, test) {
     var token = start.token, attemptId = start.attemptId, s = start.settings;
-    var evQueue = [], curIdx = null, tick = 0, fader = null, busy = false, ended = false;
+    var evQueue = [], curIdx = null, tick = 0, reader = null, busy = false, ended = false, snapTimer = null, qState = null;
     document.body.classList.add('as-exam');
-    startWatermark();
+    if (s.watermark === 'subtle') startWatermark();
+    clear(main);
+    var exam = h('div', { class: 'exam' });
+    main.appendChild(exam);
 
     function ev(type, detail) { evQueue.push({ type: type, idx: curIdx, detail: detail || '' }); if (evQueue.length >= 20) flush(); }
     function flush() {
@@ -261,44 +507,74 @@
     }
     var flushTimer = setInterval(flush, 4000);
 
-    // Guards (all recorded; blocking is best-effort)
+    // Camera snapshots
+    var snapCanvas = document.createElement('canvas'); snapCanvas.width = 320; snapCanvas.height = 240;
+    var camVideo = null;
+    function snap() {
+      if (!camVideo || !cam.stream) return;
+      try {
+        snapCanvas.getContext('2d').drawImage(camVideo, 0, 0, 320, 240);
+        var data = snapCanvas.toDataURL('image/jpeg', 0.6);
+        api('/api/assess/attempts/' + attemptId + '/snapshot', { method: 'POST', token: token, body: { idx: curIdx, image: data } }).catch(function () {});
+      } catch (e) {}
+    }
+    function startCamera() {
+      if (!s.camera) return Promise.resolve();
+      var p = cam.stream ? Promise.resolve(cam.stream) : navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false });
+      return p.then(function (st) {
+        cam.stream = st; cam.ok = true;
+        camVideo = h('video', { autoplay: true, muted: true, playsinline: true }); camVideo.srcObject = st;
+        st.getVideoTracks().forEach(function (tr) { tr.addEventListener('ended', function () { ev('camera_off', 'Camera track ended'); }); });
+        ev('camera_on');
+        setTimeout(snap, 1500);
+        snapTimer = setInterval(snap, s.snapshotSec * 1000);
+      }).catch(function () { ev('camera_denied'); });
+    }
+
+    // Guards: best-effort blocking, always logged
     function block(type) { return function (e) { e.preventDefault(); ev(type); }; }
     var onCopy = block('copy'), onCut = block('cut'), onCtx = block('contextmenu'), onDrag = function (e) { e.preventDefault(); };
-    var onPaste = function (e) { e.preventDefault(); ev('paste'); };
+    var onPaste = function (e) { e.preventDefault(); ev('paste'); toast('Pasting is turned off during the test.'); };
     function onKey(e) {
       var k = (e.key || '').toLowerCase(), mod = e.ctrlKey || e.metaKey;
-      if (k === 'printscreen') { ev('printscreen'); try { navigator.clipboard.writeText(''); } catch (_) {} }
-      if (k === 'f12' || (mod && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) || (mod && k === 'u')) { e.preventDefault(); ev('devtools_key', e.key); }
-      if (mod && (k === 'p' || k === 's')) { e.preventDefault(); ev(k === 'p' ? 'print' : 'devtools_key', e.key); }
+      if (k === 'printscreen') ev('printscreen');
+      if (k === 'f12' || (mod && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) || (mod && e.altKey && (k === 'i' || k === 'j')) || (mod && k === 'u')) { e.preventDefault(); ev('devtools_key', e.key); }
+      if (mod && k === 'p') { e.preventDefault(); ev('print'); }
       if (mod && (k === 'c' || k === 'x') && !e.shiftKey) { e.preventDefault(); ev('copy', 'keyboard'); }
-      if (mod && k === 'v') { e.preventDefault(); ev('paste', 'keyboard'); }
+      if (mod && k === 'v') { e.preventDefault(); ev('paste', 'keyboard'); toast('Pasting is turned off during the test.'); }
       if (mod && k === 'a' && !(e.target && e.target.tagName === 'TEXTAREA')) e.preventDefault();
+      if (e.target && e.target.tagName === 'TEXTAREA') return;
+      if (!qState) return;
+      var n = parseInt(e.key, 10);
+      if (n >= 1 && qState.choose && n <= qState.nOpts) { qState.choose(n - 1); e.preventDefault(); }
+      else if (e.key === 'Enter' && qState.canSubmit()) { e.preventDefault(); qState.submit(false); }
     }
     function onVis() { ev(document.hidden ? 'hidden' : 'visible'); }
     function onBlur() { ev('blur'); }
     var lastOut = 0;
-    function onMouseOut(e) { if (!e.relatedTarget && Date.now() - lastOut > 3000) { lastOut = Date.now(); ev('mouse_out'); } }
-    function onFs() {
-      if (ended) return;
-      if (!document.fullscreenElement) { ev('fullscreen_exit'); showShield(); } else { ev('fullscreen_enter'); hideShield(); }
-    }
-    function onPop() { history.pushState(null, '', location.href); ev('blur', 'Tried the browser back button'); }
+    function onMouseOut(e) { if (!e.relatedTarget && Date.now() - lastOut > 4000) { lastOut = Date.now(); ev('mouse_out'); } }
+    function onFs() { if (ended) return; if (!document.fullscreenElement) { ev('fullscreen_exit'); showShield(); } else { ev('fullscreen_enter'); hideShield(); } }
+    function onPop() { history.pushState(null, '', location.href); toast('You cannot go back during the test.'); }
     function onUnload() { try { if (evQueue.length) navigator.sendBeacon('/api/assess/attempts/' + attemptId + '/events', new Blob([JSON.stringify({ events: evQueue, token: token })], { type: 'application/json' })); } catch (e) {} }
     function onBefore(e) { if (!ended) { e.preventDefault(); e.returnValue = ''; } }
+    var resizeT = 0;
+    function onResize() { clearTimeout(resizeT); resizeT = setTimeout(function () { if (qState && qState.redraw) qState.redraw(); }, 150); }
     document.addEventListener('copy', onCopy); document.addEventListener('cut', onCut); document.addEventListener('paste', onPaste);
     document.addEventListener('contextmenu', onCtx); document.addEventListener('dragstart', onDrag); document.addEventListener('keydown', onKey, true);
     document.addEventListener('visibilitychange', onVis); window.addEventListener('blur', onBlur); document.addEventListener('mouseout', onMouseOut);
     document.addEventListener('fullscreenchange', onFs); window.addEventListener('popstate', onPop); window.addEventListener('pagehide', onUnload);
-    window.addEventListener('beforeunload', onBefore);
+    window.addEventListener('beforeunload', onBefore); window.addEventListener('resize', onResize);
     history.pushState(null, '', location.href);
+    if (window.screen && window.screen.isExtended) ev('multi_screen', 'Second screen connected at start');
 
     var shield = null;
     function showShield() {
       if (shield) return;
-      shield = h('div', { class: 'as-shield', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'as-sh-t' }, [h('div', null, [
-        h('h2', { id: 'as-sh-t', text: 'Return to full screen' }),
-        h('p', { text: 'The timer is still running. Leaving full screen has been recorded.' }),
-        h('button', { class: 'as-btn primary', type: 'button', text: 'Back to the question', onclick: function () { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(function () {}); } }),
+      shield = h('div', { class: 'shield', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'sh-t' }, [h('div', null, [
+        h('div', { class: 'empty', style: 'padding:0;border:0;background:none' }, [h('div', { class: 'ic' }, [icon('expand', 'lg')])]),
+        h('h2', { id: 'sh-t', text: 'Return to full screen' }),
+        h('p', { text: 'Your timer is still running. Leaving full screen has been noted.' }),
+        h('button', { class: 'btn primary lg', type: 'button', text: 'Back to the question', onclick: function () { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {}); } }),
       ])]);
       document.body.appendChild(shield);
       shield.querySelector('button').focus();
@@ -306,330 +582,806 @@
     function hideShield() { if (shield) { shield.remove(); shield = null; } }
 
     function teardown() {
-      ended = true; clearInterval(flushTimer); clearInterval(tick); flush(); stopWatermark(); hideShield();
-      if (fader) fader.stop();
+      ended = true; clearInterval(flushTimer); clearInterval(tick); clearInterval(snapTimer); flush(); stopWatermark(); hideShield();
+      if (reader) reader.stop();
+      stopCamera(); qState = null;
       document.removeEventListener('copy', onCopy); document.removeEventListener('cut', onCut); document.removeEventListener('paste', onPaste);
       document.removeEventListener('contextmenu', onCtx); document.removeEventListener('dragstart', onDrag); document.removeEventListener('keydown', onKey, true);
       document.removeEventListener('visibilitychange', onVis); window.removeEventListener('blur', onBlur); document.removeEventListener('mouseout', onMouseOut);
       document.removeEventListener('fullscreenchange', onFs); window.removeEventListener('popstate', onPop); window.removeEventListener('pagehide', onUnload);
-      window.removeEventListener('beforeunload', onBefore);
+      window.removeEventListener('beforeunload', onBefore); window.removeEventListener('resize', onResize);
       document.body.classList.remove('as-exam');
       if (document.fullscreenElement) document.exitFullscreen().catch(function () {});
     }
-
+    function exitTo(fn) { teardown(); clear(main); renderNav(''); fn(); }
     function fail(e) {
-      if (e && e.code === 'elsewhere') { teardown(); clear(main); main.appendChild(errBox(e.message)); main.appendChild(h('button', { class: 'as-btn', type: 'button', text: 'Back to my assessments', onclick: function () { show('tests'); } })); return; }
-      if (e && e.code === 'finished') { teardown(); doneScreen({ hidden: true }); return; }
       if (e && e.code === 'moved') { load(); return; }
-      teardown(); clear(main); main.appendChild(errBox('Something went wrong: ' + (e && e.message))); main.appendChild(h('button', { class: 'as-btn', type: 'button', text: 'Back to my assessments', onclick: function () { show('tests'); } }));
+      if (e && e.code === 'finished') { exitTo(function () { doneScreen({ hidden: true }); }); return; }
+      exitTo(function () {
+        main.appendChild(h('div', { class: 'card gate' }, [h('div', { class: 'ic' }, [icon('warn', 'lg')]), h('h1', { text: e && e.code === 'elsewhere' ? 'Open in another tab' : 'Something went wrong' }), h('p', { text: e && e.message }),
+          h('button', { class: 'btn primary', type: 'button', text: 'Back to my assessments', onclick: function () { go(''); } })]));
+      });
     }
-
     function load() {
-      clearInterval(tick); if (fader) { fader.stop(); fader = null; }
+      clearInterval(tick); if (reader) { reader.stop(); reader = null; }
       api('/api/assess/attempts/' + attemptId + '/current', { token: token }).then(function (q) {
-        if (q.done) { teardown(); doneScreen(q.result); return; }
+        if (q.done) { exitTo(function () { doneScreen(q.result); }); return; }
         renderQuestion(q);
       }).catch(fail);
     }
-
     function doneScreen(r) {
-      clear(main);
-      var card = h('div', { class: 'as-card', style: 'max-width:560px' });
-      card.appendChild(h('h1', { class: 'as-h1', text: 'Submitted' }));
+      var card = h('div', { class: 'card donecard' });
+      card.appendChild(h('div', { class: 'badge' }, [icon('check', 'lg')]));
+      card.appendChild(h('h1', { text: 'Submitted' }));
       if (r && !r.hidden) {
-        card.appendChild(h('p', { text: 'You scored ' + r.score + ' of ' + r.maxScore + ' (' + r.pct + '%). ' + (r.passed ? 'That is a pass.' : 'That is below the pass mark.') }));
-        card.appendChild(h('p', { class: 'as-note', text: 'Written answers are marked by your reviewer and are not in this score.' }));
-      } else card.appendChild(h('p', { text: 'Thanks. Your reviewer will share your results.' }));
-      card.appendChild(h('div', { class: 'as-row' }, [h('button', { class: 'as-btn primary', type: 'button', text: 'Back to my assessments', onclick: function () { show('tests'); } })]));
+        var C = 2 * Math.PI * 56, off = C * (1 - r.pct / 100);
+        var ring = h('div', { class: 'ring', role: 'img', 'aria-label': r.pct + ' percent' });
+        ring.innerHTML = '<svg viewBox="0 0 132 132"><circle class="trk" cx="66" cy="66" r="56"/><circle class="val" cx="66" cy="66" r="56" stroke-dasharray="' + C.toFixed(1) + '" stroke-dashoffset="' + off.toFixed(1) + '"/></svg>';
+        ring.appendChild(h('b', { text: r.pct + '%' }));
+        card.appendChild(ring);
+        card.appendChild(h('p', { text: r.score + ' of ' + r.maxScore + ' correct. ' + (r.passed ? 'That is a pass.' : 'The pass mark is ' + r.passPct + '%.') }));
+        card.appendChild(h('p', { class: 'small muted', text: 'Written answers are marked by your reviewer and are not in this score.' }));
+      } else {
+        card.appendChild(h('p', { class: 'muted', text: 'Thanks. Your answers are saved and your reviewer will share the result with you.' }));
+      }
+      card.appendChild(h('div', { class: 'row', style: 'justify-content:center;margin-top:18px' }, [h('button', { class: 'btn primary', type: 'button', text: 'Back to my assessments', onclick: function () { go(''); } })]));
       main.appendChild(card);
     }
 
     function renderQuestion(q) {
       curIdx = q.idx; busy = false;
-      clear(main);
-      var deadline = Date.now() + q.leftMs;
-      var bar = h('i'), barWrap = h('div', { class: 'as-timer', role: 'progressbar', 'aria-label': 'Time left', 'aria-valuemin': '0', 'aria-valuemax': String(q.seconds) }, [bar]);
-      var secsEl = h('span', { class: 'as-secs', 'aria-live': 'off' });
-      main.appendChild(h('div', { class: 'as-exam-head' }, [h('span', { class: 'as-q', text: (q.kind === 'explain' ? 'Written answer ' : 'Question ') + (q.idx + 1) + ' of ' + q.total }), barWrap, secsEl]));
-      var stage = h('div', { class: 'as-stage' });
-      main.appendChild(stage);
-      var submitBtn = h('button', { class: 'as-btn primary', type: 'button', text: q.idx + 1 === q.total ? 'Submit and finish' : 'Submit answer' });
-      var selected = [], replays = 0, getText = null;
+      clear(exam);
+      var deadline = Date.now() + q.leftMs, C = 2 * Math.PI * 22, lastAnnounce = null;
+      // Top bar
+      var segs = h('div', { class: 'segs', 'aria-hidden': 'true' });
+      for (var i = 0; i < q.total; i++) segs.appendChild(h('i', { class: (i < q.qCount ? '' : 'w ') + (i < q.idx ? 'done' : (i === q.idx ? 'cur' : '')) }));
+      var timer = h('div', { class: 'timer', role: 'timer', 'aria-label': 'Time left' });
+      timer.innerHTML = '<svg viewBox="0 0 52 52"><circle class="trk" cx="26" cy="26" r="22"/><circle class="val" cx="26" cy="26" r="22" stroke-dasharray="' + C.toFixed(2) + '" stroke-dashoffset="0"/></svg>';
+      var tNum = h('b'); timer.appendChild(tNum);
+      var camEl = null;
+      if (s.camera && camVideo) { var mini = h('video', { autoplay: true, muted: true, playsinline: true }); mini.srcObject = cam.stream; camEl = h('div', { class: 'cam-mini', title: 'Camera on' }, [mini, h('span', { class: 'rec' }), h('span', { text: 'Camera on' })]); }
+      exam.appendChild(h('div', { class: 'xbar' }, [
+        h('div', { class: 'ttl' }, [h('b', { text: start.title }), h('span', { text: q.kind === 'explain' ? 'Written answer' : 'Question ' + (q.idx + 1) + ' of ' + q.qCount })]),
+        segs,
+        h('div', { class: 'right' }, [camEl, timer]),
+      ]));
+      var body = h('div', { class: 'xbody xfade' });
+      exam.appendChild(body);
+      var submitBtn = h('button', { class: 'btn primary lg', type: 'button', disabled: true }, [q.idx + 1 === q.total ? 'Submit and finish' : 'Submit answer', icon('arrowR', 'sm')]);
+      var selected = [], replays = 0, ta = null, optCanvases = [];
 
       if (q.kind === 'explain') {
-        var pc = h('canvas', { class: 'as-prompt', 'aria-hidden': 'true' });
-        stage.appendChild(pc);
-        requestAnimationFrame(function () { drawStatic(pc, q.prompt, '500 16px Poppins, sans-serif', cssVar('--as-t1')); });
-        var ta = h('textarea', { class: 'as-explain', 'aria-label': 'Your explanation', maxlength: '4000', spellcheck: 'true', placeholder: 'Type your explanation here. Pasting is disabled.' });
-        stage.appendChild(h('p', { class: 'as-note', style: 'margin:12px 0 6px', text: 'Written in your own words. Pasting is disabled.' }));
-        stage.appendChild(ta);
-        getText = function () { return ta.value; };
-        setTimeout(function () { ta.focus(); }, 50);
+        body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Written answer' }), pill('Your own words', 'accent')]));
+        var aboutC = h('canvas', { 'aria-hidden': 'true' });
+        body.appendChild(h('div', { class: 'about' }, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Earlier question' }), aboutC]));
+        var pc = h('canvas', { 'aria-hidden': 'true', style: 'margin-bottom:14px' });
+        body.appendChild(pc);
+        ta = h('textarea', { class: 'writebox', 'aria-label': 'Your explanation', maxlength: '4000', spellcheck: 'true', placeholder: 'Aim for 2 to 4 sentences.' });
+        var count = h('span', { class: 'small muted', text: '0 / 4000' });
+        body.appendChild(ta);
+        body.appendChild(h('div', { class: 'row', style: 'margin-top:6px' }, [h('span', { class: 'small muted', text: 'Pasting is turned off.' }), h('span', { class: 'spacer' }), count]));
+        ta.addEventListener('input', function () { count.textContent = ta.value.length + ' / 4000'; submitBtn.disabled = !ta.value.trim(); });
+        var drawEx = function () {
+          drawText(aboutC, q.about, { font: '400 15px Poppins, sans-serif', lineH: 24, color: cssVar('--t2') });
+          drawText(pc, q.prompt, { font: '600 18px Poppins, sans-serif', lineH: 28 });
+        };
+        requestAnimationFrame(drawEx);
+        qState = { redraw: drawEx, nOpts: 0, canSubmit: function () { return false; }, submit: send };
+        setTimeout(function () { ta.focus(); }, 60);
       } else {
-        var canvas = h('canvas', { class: 'as-prompt', 'aria-hidden': 'true' });
-        stage.appendChild(canvas);
-        var status = h('span', { text: 'Reading…' });
-        var replayBtn = h('button', { class: 'as-btn', type: 'button', text: 'Replay from start', onclick: function () { replays++; ev('replay', String(replays)); status.textContent = 'Replaying…'; fader.play(); } });
-        stage.appendChild(h('div', { class: 'as-prompt-tools' }, [replayBtn, status, h('span', { class: 'as-spacer' }), h('span', { text: q.type === 'multi' ? 'Select every correct option' : 'Select one option' })]));
-        var opts = h('div', { class: 'as-opts', role: q.type === 'multi' ? 'group' : 'radiogroup', 'aria-label': 'Options' });
-        stage.appendChild(opts);
-        var letters = 'ABCDEFGH';
+        body.appendChild(h('div', { class: 'qhead' }, [h('span', { class: 'n', text: 'Question ' + (q.idx + 1) }), pill(TYPE_LABEL[q.type] || 'Choose one', 'accent')]));
+        var rHost = h('div'); body.appendChild(rHost);
+        reader = s.displayMode === 'full' ? new FullText(rHost, q.prompt) : new Reader(rHost, q.prompt, s);
+        reader.onReplay = function () { replays++; ev('replay', String(replays)); };
+        var opts = h('div', { class: 'opts', role: q.type === 'multi' ? 'group' : 'radiogroup', 'aria-label': 'Answer options' });
+        body.appendChild(opts);
+        var multi = q.type === 'multi';
         var btns = q.options.map(function (o, i) {
-          var cv = h('canvas', { 'aria-hidden': 'true' });
-          var b = h('button', { class: 'as-opt', type: 'button', role: q.type === 'multi' ? null : 'radio', 'aria-pressed': q.type === 'multi' ? 'false' : null, 'aria-checked': q.type === 'multi' ? null : 'false', 'aria-label': 'Option ' + letters[i] }, [h('span', { class: 'k', text: letters[i] }), cv]);
+          var cv = h('canvas', { 'aria-hidden': 'true' }); optCanvases.push([cv, o.text]);
+          var b = h('button', { class: 'opt' + (multi ? ' multi' : ''), type: 'button', role: multi ? 'checkbox' : 'radio', 'aria-checked': 'false', 'aria-label': 'Option ' + LETTERS[i] },
+            [h('span', { class: 'mk' }), h('span', { class: 'ky', text: LETTERS[i] }), cv]);
           b.addEventListener('click', function () { choose(i); });
           opts.appendChild(b);
-          requestAnimationFrame(function () { drawStatic(cv, o.text, '400 15px Poppins, sans-serif', cssVar('--as-t1')); });
           return b;
         });
+        var drawOpts = function () { optCanvases.forEach(function (x) { drawText(x[0], x[1], { font: '400 15px Poppins, sans-serif', lineH: 24 }); }); };
+        requestAnimationFrame(drawOpts);
         function choose(i) {
-          if (q.type === 'multi') {
-            var at = selected.indexOf(i); if (at >= 0) selected.splice(at, 1); else selected.push(i);
-          } else selected = [i];
-          btns.forEach(function (b, k) { var on = selected.indexOf(k) >= 0; if (q.type === 'multi') b.setAttribute('aria-pressed', String(on)); else b.setAttribute('aria-checked', String(on)); });
+          if (multi) { var at = selected.indexOf(i); if (at >= 0) selected.splice(at, 1); else selected.push(i); } else selected = [i];
+          btns.forEach(function (b, k) { b.setAttribute('aria-checked', String(selected.indexOf(k) >= 0)); });
+          submitBtn.disabled = !selected.length;
         }
-        main._choose = choose; main._nopts = q.options.length;
-        (document.fonts && document.fonts.load ? document.fonts.load('500 19px Poppins') : Promise.resolve()).then(function () {
-          fader = new FadeText(canvas, q.prompt, s, function () { status.textContent = 'Use Replay to read it again.'; });
-          fader.play();
-        });
+        qState = { choose: choose, nOpts: q.options.length, redraw: function () { drawOpts(); if (reader.resize) reader.resize(); if (s.displayMode === 'full') reader.resize(); }, canSubmit: function () { return !submitBtn.disabled; }, submit: send };
+        (document.fonts && document.fonts.load ? document.fonts.load('600 24px Poppins') : Promise.resolve()).then(function () { if (reader) reader.play(); drawOpts(); });
       }
 
       function send(auto) {
         if (busy) return; busy = true; submitBtn.disabled = true; clearInterval(tick);
-        var body = { idx: q.idx, replays: replays };
-        if (q.kind === 'explain') body.text = getText ? getText() : ''; else body.choice = selected;
-        api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: body })
-          .then(function (r) { flush(); if (r.done) { teardown(); doneScreen(r.result); } else load(); })
+        if (auto) ev('auto_submit', 'Time ran out');
+        var payload = { idx: q.idx, replays: replays };
+        if (q.kind === 'explain') payload.text = ta ? ta.value : ''; else payload.choice = selected;
+        api('/api/assess/attempts/' + attemptId + '/answer', { method: 'POST', token: token, body: payload })
+          .then(function (r) { flush(); if (r.done) exitTo(function () { doneScreen(r.result); }); else load(); })
           .catch(fail);
-        if (auto) ev('focus', 'Time ran out; submitted automatically');
       }
       submitBtn.addEventListener('click', function () { send(false); });
-      main.appendChild(h('div', { class: 'as-exam-foot' }, [h('span', { class: 'as-note', text: q.kind === 'explain' ? '' : 'Keys 1 to ' + (q.options ? q.options.length : 4) + ' select, Enter submits.' }), h('span', { class: 'as-spacer' }), submitBtn]));
+      exam.appendChild(h('div', { class: 'xfoot' }, [h('div', { class: 'in' }, [
+        h('span', { class: 'hint' }, q.kind === 'explain' ? ['Answers lock when you submit.'] : [h('span', { class: 'kbd', text: '1' }), ' to ', h('span', { class: 'kbd', text: String(q.options.length) }), ' to choose, ', h('span', { class: 'kbd', text: 'Enter' }), ' to submit. Answers lock when you submit.']),
+        h('span', { class: 'spacer' }), submitBtn,
+      ])]));
 
-      main._send = function () { send(false); };
+      var val = timer.querySelector('.val');
       function paint() {
-        var left = Math.max(0, deadline - Date.now());
-        var frac = left / (q.seconds * 1000);
-        bar.style.transform = 'scaleX(' + Math.max(0, Math.min(1, frac)) + ')';
-        var sLeft = Math.ceil(left / 1000);
-        secsEl.textContent = sLeft + 's';
-        barWrap.setAttribute('aria-valuenow', String(sLeft));
-        var low = sLeft <= 10; barWrap.classList.toggle('low', low); secsEl.classList.toggle('low', low);
+        var left = Math.max(0, deadline - Date.now()), frac = left / (q.seconds * 1000), sLeft = Math.ceil(left / 1000);
+        val.setAttribute('stroke-dashoffset', (C * (1 - Math.max(0, Math.min(1, frac)))).toFixed(2));
+        tNum.textContent = String(sLeft);
+        timer.classList.toggle('low', sLeft <= 10 && sLeft > 5); timer.classList.toggle('crit', sLeft <= 5);
+        if ((sLeft === 10 || sLeft === 5) && lastAnnounce !== sLeft) { lastAnnounce = sLeft; announce(sLeft + ' seconds left'); }
         if (left <= 0) send(true);
       }
       paint(); tick = setInterval(paint, 200);
     }
 
-    // number keys + Enter while a question is open
-    document.addEventListener('keydown', function numKeys(e) {
-      if (ended) { document.removeEventListener('keydown', numKeys); return; }
-      if (e.target && e.target.tagName === 'TEXTAREA') return;
-      var n = parseInt(e.key, 10);
-      if (n >= 1 && main._choose && n <= (main._nopts || 0)) { main._choose(n - 1); e.preventDefault(); }
-      else if (e.key === 'Enter' && main._send) { e.preventDefault(); main._send(); }
-    });
-
-    if (!document.fullscreenElement) ev('fullscreen_exit', 'Did not enter full screen at start');
-    load();
+    startCamera().then(load);
   }
 
-  // ── reviewer: tests ──────────────────────────────────────────────────
-  function viewReview() {
-    main.appendChild(h('h1', { class: 'as-h1', text: 'Review' }));
-    main.appendChild(h('p', { class: 'as-sub', text: 'Assessment settings, who each one is assigned to, and results. Only reviewers can see this.' }));
+  // ── Reviewer: assessments list ───────────────────────────────────────
+  function viewManage() {
+    main.appendChild(pageHead('Assessments', 'Build assessments from the question bank, choose who takes them, and review results.',
+      [h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/admin/tests').then(function (j) {
-      if (!j.tests.length) { main.appendChild(h('div', { class: 'as-empty', text: 'No assessments yet.' })); return; }
-      var grid = h('div', { class: 'as-grid' });
+      clear(holder);
+      if (!j.tests.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('b', { text: 'No assessments yet' }), h('span', { text: 'Add questions to the bank, then create an assessment.' })])); return; }
+      var grid = h('div', { class: 'grid-cards' });
       j.tests.forEach(function (t) {
-        grid.appendChild(h('div', { class: 'as-card' }, [
-          h('h2', { text: t.title }),
-          t.description ? h('p', { text: t.description }) : null,
-          h('div', { class: 'as-meta' }, [
-            h('span', { class: 'as-pill ' + (t.status === 'published' ? 'ok' : 'warn'), text: t.status === 'published' ? 'Published' : 'Draft' }),
-            h('span', { class: 'as-pill', text: t.questionIds.length + ' questions' }),
-            h('span', { class: 'as-pill', text: t.assign.everyone ? 'Assigned to everyone' : ('Assigned to ' + t.assign.emails.length) }),
-            h('span', { class: 'as-pill', text: t.submitted + ' submitted' }),
+        var qtext = t.settings.pool.mode === 'random' ? t.settings.pool.count + ' random from ' + (t.poolSize || 0) : t.questionIds.length + ' questions';
+        grid.appendChild(h('div', { class: 'card mcard' }, [
+          h('div', { class: 'row', style: 'align-items:flex-start' }, [h('h2', { style: 'flex:1;font-size:16px', text: t.title }), t.status === 'published' ? pill('Published', 'ok', true) : pill('Draft', '', true)]),
+          t.description ? h('p', { class: 'muted small', style: 'margin:0', text: t.description }) : null,
+          h('div', { class: 'meta' }, [pill(qtext), pill(t.settings.secondsPerQuestion + 's each'), pill(t.assign.everyone ? 'Everyone' : t.assign.emails.length + ' assigned'), t.settings.camera ? pill('Camera', 'accent') : null]),
+          h('div', { class: 'nums' }, [
+            h('div', null, [h('b', { text: String(t.submitted) }), h('span', { text: 'Submitted' })]),
+            h('div', null, [h('b', { text: t.avgPct != null ? t.avgPct + '%' : '–' }), h('span', { text: 'Average' })]),
           ]),
-          h('div', { class: 'as-row' }, [
-            h('button', { class: 'as-btn primary', type: 'button', text: 'Results', onclick: function () { show('results', t); } }),
-            h('button', { class: 'as-btn', type: 'button', text: 'Settings', onclick: function () { show('settings', t); } }),
+          h('div', { class: 'row' }, [
+            h('button', { class: 'btn primary sm', type: 'button', onclick: function () { go('results/' + t.id); } }, [icon('chart', 'sm'), 'Results']),
+            h('button', { class: 'btn sm', type: 'button', onclick: function () { go('edit/' + t.id); } }, [icon('edit', 'sm'), 'Edit']),
           ]),
         ]));
       });
-      main.appendChild(grid);
-    }).catch(function (e) { main.appendChild(errBox(e.message)); });
+      holder.appendChild(grid);
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
-  function viewSettings(t) {
-    var s = t.settings;
-    main.appendChild(h('div', { class: 'as-row', style: 'margin-bottom:12px' }, [h('button', { class: 'as-btn ghost', type: 'button', text: 'Back to Review', onclick: function () { show('review'); } })]));
-    main.appendChild(h('h1', { class: 'as-h1', text: 'Settings' }));
-    main.appendChild(h('p', { class: 'as-sub', text: t.title }));
-    var f = {};
-    function num(key, label, hint, min, max) {
-      var id = 'as-f-' + key;
-      f[key] = h('input', { class: 'as-in', id: id, type: 'number', min: String(min), max: String(max), value: String(s[key]) });
-      return h('div', { class: 'as-field' }, [h('label', { for: id, text: label }), f[key], hint ? h('span', { class: 'hint', text: hint }) : null]);
-    }
-    function tog(key, label, val) { f[key] = h('input', { type: 'checkbox', checked: val ? true : null }); return h('label', { class: 'as-toggle' }, [f[key], h('span', { text: label })]); }
-    f.title = h('input', { class: 'as-in', id: 'as-f-title', value: t.title, maxlength: '160' });
-    f.description = h('textarea', { class: 'as-ta', id: 'as-f-desc', maxlength: '1000' }); f.description.value = t.description || '';
-    f.emails = h('textarea', { class: 'as-ta', id: 'as-f-emails', placeholder: 'name@adit.com, one per line' }); f.emails.value = t.assign.emails.join('\n');
-    f.status = h('select', { class: 'as-sel', id: 'as-f-status' }, [h('option', { value: 'published', text: 'Published' }), h('option', { value: 'draft', text: 'Draft (hidden from takers)' })]); f.status.value = t.status;
-    var card = h('div', { class: 'as-card' }, [
-      h('div', { class: 'as-form' }, [
-        h('div', { class: 'as-field', style: 'grid-column:1/-1' }, [h('label', { for: 'as-f-title', text: 'Title' }), f.title]),
-        h('div', { class: 'as-field', style: 'grid-column:1/-1' }, [h('label', { for: 'as-f-desc', text: 'Description' }), f.description]),
-        num('secondsPerQuestion', 'Seconds per question', '30 to 45 breaks the AI round trip', 15, 180),
-        num('wordsPerChunk', 'Words per fade group', 'Fewer words, harder to capture', 1, 12),
-        num('chunkMs', 'Milliseconds per group', 'Lower is faster', 400, 4000),
-        num('visibleChunks', 'Groups visible at once', '1 or 2 is strongest', 1, 4),
-        num('explainCount', 'Written follow-ups', '"Explain your answer" questions', 0, 5),
-        num('passPct', 'Pass mark (%)', null, 0, 100),
-        num('attempts', 'Attempts allowed', null, 1, 10),
-        h('div', { class: 'as-field' }, [h('label', { for: 'as-f-status', text: 'Status' }), f.status]),
-      ]),
-      h('div', { class: 'as-row', style: 'gap:18px' }, [tog('showScore', 'Show the score when they finish', s.showScore), tog('shuffleQuestions', 'Shuffle questions', s.shuffleQuestions), tog('shuffleOptions', 'Shuffle options', s.shuffleOptions)]),
-      h('h3', { text: 'Assigned to' }),
-      tog('everyone', 'Everyone in the organisation', t.assign.everyone),
-      h('div', { class: 'as-field' }, [h('label', { for: 'as-f-emails', text: 'Or these people' }), f.emails, h('span', { class: 'hint', text: '@adit.com emails, separated by lines or commas.' })]),
-    ]);
-    var msg = h('span', { class: 'as-note', role: 'status' });
-    var save = h('button', { class: 'as-btn primary', type: 'button', text: 'Save' });
-    save.addEventListener('click', function () {
-      save.disabled = true; msg.textContent = 'Saving…';
-      var settings = {}; ['secondsPerQuestion', 'wordsPerChunk', 'chunkMs', 'visibleChunks', 'explainCount', 'passPct', 'attempts'].forEach(function (k) { settings[k] = Number(f[k].value); });
-      ['showScore', 'shuffleQuestions', 'shuffleOptions'].forEach(function (k) { settings[k] = f[k].checked; });
-      api('/api/assess/admin/tests/' + t.id, { method: 'PUT', body: { title: f.title.value, description: f.description.value, status: f.status.value, settings: settings, assign: { everyone: f.everyone.checked, emails: f.emails.value } } })
-        .then(function () { msg.textContent = 'Saved.'; return api('/api/assess/admin/tests'); })
-        .then(function (j) { var nt = j.tests.find(function (x) { return x.id === t.id; }); if (nt) { t = nt; f.emails.value = nt.assign.emails.join('\n'); } })
-        .catch(function (e) { msg.textContent = e.message; })
-        .finally(function () { save.disabled = false; });
-    });
-    card.appendChild(h('div', { class: 'as-row' }, [save, msg]));
-    main.appendChild(card);
+  // ── Reviewer: builder ────────────────────────────────────────────────
+  function viewBuilder(id) {
+    main.appendChild(pageHead(id ? 'Edit assessment' : 'New assessment', null, null, { text: 'Assessments', go: function () { go('manage'); } }));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    Promise.all([
+      id ? api('/api/assess/admin/tests') : Promise.resolve({ tests: [] }),
+      id ? api('/api/assess/admin/tests/' + id + '/questions') : Promise.resolve({ questions: [] }),
+      api('/api/assess/admin/questions'),
+      api('/api/assess/admin/people'),
+    ]).then(function (r) {
+      clear(holder);
+      var t = id ? r[0].tests.find(function (x) { return x.id === id; }) : null;
+      if (id && !t) { holder.appendChild(errBox('Assessment not found.')); return; }
+      var bank = r[2].questions, tags = r[2].tags, people = r[3].people;
+      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
+      var picked = r[1].questions.map(function (q) { return q.id; });
+      var assign = t ? { everyone: t.assign.everyone, emails: t.assign.emails.slice() } : { everyone: false, emails: [] };
+      var status = t ? t.status : 'draft';
+      var bankById = {}; bank.forEach(function (q) { bankById[q.id] = q; });
+      r[1].questions.forEach(function (q) { if (!bankById[q.id]) bankById[q.id] = q; });
+
+      var layout = h('div', { class: 'builder' });
+      var left = h('div'), side = h('div', { class: 'side' });
+      layout.appendChild(left); layout.appendChild(side); holder.appendChild(layout);
+
+      // Details
+      var title = h('input', { class: 'inp', id: 'b-title', maxlength: '160', value: t ? t.title : '', placeholder: 'e.g. Escalations and ownership, October' });
+      var desc = h('textarea', { class: 'ta', id: 'b-desc', maxlength: '1000', placeholder: 'What this checks. Agents see this on their card.' }); desc.value = t ? t.description : '';
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Details' }), h('p', { text: 'Agents see the title and description before they start.' }), field('Title', title), field('Description', desc)]));
+
+      // Questions
+      var qsec = h('div', { class: 'card sec' });
+      left.appendChild(qsec);
+      function renderQuestions() {
+        clear(qsec);
+        qsec.appendChild(h('h2', { text: 'Questions' }));
+        qsec.appendChild(h('p', { text: 'Pick exact questions, or draw a random set from the bank so every agent gets a different paper.' }));
+        var rc = h('div', { class: 'radcards' });
+        [['fixed', 'Pick questions', 'The same questions for everyone, in shuffled order.'], ['random', 'Random from the bank', 'Each agent gets a different random set from matching approved questions.']].forEach(function (o) {
+          var inp = h('input', { type: 'radio', name: 'pmode', value: o[0], checked: st.pool.mode === o[0] ? true : null });
+          inp.addEventListener('change', function () { st.pool.mode = o[0]; renderQuestions(); renderSide(); });
+          rc.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
+        });
+        qsec.appendChild(rc);
+        if (st.pool.mode === 'fixed') {
+          if (!picked.length) qsec.appendChild(h('p', { class: 'muted small', text: 'No questions yet.' }));
+          picked.forEach(function (qid, i) {
+            var q = bankById[qid] || { prompt: 'Question ' + qid, status: '' };
+            qsec.appendChild(h('div', { class: 'pickrow' }, [h('span', { class: 'n', text: String(i + 1) }), h('span', { class: 't', text: q.prompt, title: q.prompt }),
+              q.status === 'draft' ? pill('Draft', 'warn') : null,
+              h('button', { class: 'btn icon sm ghost', type: 'button', 'aria-label': 'Remove question', onclick: function () { picked.splice(i, 1); renderQuestions(); renderSide(); } }, [icon('x', 'sm')])]));
+          });
+          qsec.appendChild(h('button', { class: 'btn', type: 'button', style: 'margin-top:8px', onclick: openPicker }, [icon('plus', 'sm'), 'Add questions']));
+        } else {
+          var chipBox = h('div', { class: 'chips' });
+          tags.forEach(function (tg) {
+            var on = st.pool.tags.indexOf(tg.tag) >= 0;
+            chipBox.appendChild(h('button', { class: 'chip ' + (on ? 'sel' : 'off'), type: 'button', 'aria-pressed': String(on), text: tg.tag + ' (' + tg.n + ')', onclick: function () {
+              var at = st.pool.tags.indexOf(tg.tag); if (at >= 0) st.pool.tags.splice(at, 1); else st.pool.tags.push(tg.tag); renderQuestions(); renderSide();
+            } }));
+          });
+          qsec.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Topics (tags)' }), tags.length ? chipBox : h('span', { class: 'hint', text: 'Add tags to questions in the bank to build pools.' }), h('span', { class: 'hint', text: 'No topic selected means any approved question.' })]));
+          var diff = h('select', { class: 'sel', id: 'b-diff' }, [h('option', { value: '', text: 'Any' }), h('option', { value: 'easy', text: 'Easy' }), h('option', { value: 'medium', text: 'Medium' }), h('option', { value: 'hard', text: 'Hard' })]); diff.value = st.pool.difficulty || '';
+          diff.addEventListener('change', function () { st.pool.difficulty = diff.value; renderSide(); });
+          var cnt = h('input', { class: 'inp', id: 'b-count', type: 'number', min: '1', max: '100', value: String(st.pool.count) });
+          cnt.addEventListener('input', function () { st.pool.count = Number(cnt.value) || 1; renderSide(); });
+          qsec.appendChild(h('div', { class: 'fgrid' }, [field('Difficulty', diff), field('Questions per agent', cnt)]));
+          var match = bank.filter(function (q) { return q.status === 'approved' && (!st.pool.tags.length || q.tags.some(function (x) { return st.pool.tags.indexOf(x) >= 0; })) && (!st.pool.difficulty || q.difficulty === st.pool.difficulty); }).length;
+          qsec.appendChild(h('div', { class: 'alert ' + (match >= st.pool.count ? 'info' : 'warn') }, [icon(match >= st.pool.count ? 'check' : 'warn'), h('span', { text: match + ' approved questions match. ' + (match >= st.pool.count * 2 ? 'Good spread for different papers.' : match >= st.pool.count ? 'Agents will get similar papers; add more questions for variety.' : 'Fewer than the number asked for; agents get all ' + match + '.') })]));
+        }
+      }
+      function openPicker() {
+        var chosen = picked.slice();
+        var q = h('input', { class: 'inp', type: 'search', placeholder: 'Search questions', 'aria-label': 'Search questions', style: 'width:100%;margin-bottom:12px' });
+        var listEl = h('div');
+        function draw() {
+          clear(listEl);
+          var term = q.value.toLowerCase();
+          bank.filter(function (x) { return !term || x.prompt.toLowerCase().indexOf(term) >= 0 || x.tags.join(' ').indexOf(term) >= 0; }).forEach(function (x) {
+            var cb = h('input', { type: 'checkbox', checked: chosen.indexOf(x.id) >= 0 ? true : null });
+            cb.addEventListener('change', function () { var at = chosen.indexOf(x.id); if (cb.checked && at < 0) chosen.push(x.id); if (!cb.checked && at >= 0) chosen.splice(at, 1); });
+            listEl.appendChild(h('label', { class: 'pickrow', style: 'cursor:pointer' }, [cb, h('span', { class: 't', text: x.prompt, title: x.prompt }), x.status === 'draft' ? pill('Draft', 'warn') : null, pill(TYPE_SHORT[x.type] || x.type)]));
+          });
+          if (!listEl.children.length) listEl.appendChild(h('p', { class: 'muted', text: 'No questions match.' }));
+        }
+        q.addEventListener('input', draw); draw();
+        var dlg = openDrawer('Add questions', h('div', null, [q, listEl]), [h('span', { class: 'small muted', text: 'Drafts can be added, but approve them before agents see them.' }), h('span', { class: 'spacer' }),
+          h('button', { class: 'btn primary', type: 'button', text: 'Done', onclick: function () { picked = chosen; dlg.close(); renderQuestions(); renderSide(); } })]);
+      }
+      renderQuestions();
+
+      // Timing and display
+      var secIn = h('input', { class: 'inp', id: 'b-sec', type: 'number', min: '15', max: '180', value: String(st.secondsPerQuestion) });
+      secIn.addEventListener('input', function () { st.secondsPerQuestion = Number(secIn.value) || 40; renderSide(); });
+      var modeCards = h('div', { class: 'radcards' });
+      [['fade', 'Rolling reveal', 'A few words at a time, then it fades. Hardest to screenshot or paste into AI.'], ['full', 'Full question', 'The whole question stays on screen. Easier to read.']].forEach(function (o) {
+        var inp = h('input', { type: 'radio', name: 'dmode', value: o[0], checked: st.displayMode === o[0] ? true : null });
+        inp.addEventListener('change', function () { st.displayMode = o[0]; fadeRow.style.display = o[0] === 'fade' ? '' : 'none'; });
+        modeCards.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
+      });
+      var wpc = h('select', { class: 'sel', id: 'b-wpc' }, [2, 3, 4, 5, 6].map(function (n) { return h('option', { value: String(n), text: n + ' words' }); })); wpc.value = String(st.wordsPerChunk);
+      var spd = h('select', { class: 'sel', id: 'b-spd' }, [[700, 'Fast'], [1000, 'Normal'], [1300, 'Relaxed']].map(function (o) { return h('option', { value: String(o[0]), text: o[1] }); }));
+      spd.value = String([700, 1000, 1300].reduce(function (a, b) { return Math.abs(b - st.chunkMs) < Math.abs(a - st.chunkMs) ? b : a; }));
+      wpc.addEventListener('change', function () { st.wordsPerChunk = Number(wpc.value); });
+      spd.addEventListener('change', function () { st.chunkMs = Number(spd.value); });
+      var prevHost = h('div', { style: 'margin-top:10px' });
+      var prevBtn = h('button', { class: 'btn sm', type: 'button', onclick: function () {
+        clear(prevHost);
+        var sample = picked.length && bankById[picked[0]] ? bankById[picked[0]].prompt : 'A caller says their front desk phones stopped ringing this morning. Which team owns this, and what do you check first?';
+        new Reader(prevHost, sample, { wordsPerChunk: st.wordsPerChunk, chunkMs: st.chunkMs }).play();
+      } }, [icon('replay', 'sm'), 'Preview reading']);
+      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Reading speed', spd)]), prevBtn, prevHost]);
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Timing and display' }), h('p', { text: '30 to 45 seconds is enough to read and answer, but too short to look it up.' }),
+        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]), h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow]));
+
+      // Integrity
+      var camT = toggle('Camera photos', st.camera, 'Takes a photo every 30 seconds, with the agent\'s consent. Only reviewers see them. Use it when cameras are not on in a call.');
+      var wmT = toggle('Faint name watermark', st.watermark === 'subtle', 'Very light email and time across the screen, so a photo of the screen can be traced. Off by default.');
+      var shQ = toggle('Shuffle question order', st.shuffleQuestions), shO = toggle('Shuffle answer options', st.shuffleOptions);
+      var exIn = h('select', { class: 'sel', id: 'b-ex' }, [0, 1, 2, 3].map(function (n) { return h('option', { value: String(n), text: n === 0 ? 'None' : n + ' question' + (n > 1 ? 's' : '') }); })); exIn.value = String(Math.min(3, st.explainCount));
+      exIn.addEventListener('change', function () { st.explainCount = Number(exIn.value); renderSide(); });
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Integrity' }), h('p', { text: 'Tab switches, full screen exits, copy, paste and Print Screen are always logged. Nothing is screen recorded.' }),
+        camT, wmT, shQ, shO, h('div', { class: 'setrow' }, [h('div', { class: 'tx' }, [h('b', { text: 'Explain your answer' }), h('span', { text: 'At the end the agent explains random answers in their own words. You mark them.' })]), exIn])]));
+
+      // Scoring
+      var passIn = h('input', { class: 'inp', id: 'b-pass', type: 'number', min: '0', max: '100', value: String(st.passPct) });
+      var attIn = h('input', { class: 'inp', id: 'b-att', type: 'number', min: '1', max: '10', value: String(st.attempts) });
+      var showT = toggle('Show the score when they finish', st.showScore, 'Otherwise agents see "Submitted" and you share results.');
+      left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Scoring' }), h('div', { class: 'fgrid' }, [field('Pass mark (%)', passIn), field('Attempts allowed', attIn)]), showT]));
+
+      // Who takes it
+      var whoSec = h('div', { class: 'card sec' }); left.appendChild(whoSec);
+      function renderWho() {
+        clear(whoSec);
+        whoSec.appendChild(h('h2', { text: 'Who takes it' }));
+        whoSec.appendChild(h('p', { text: 'Only assigned people see it. Guests must also be on the Access list.' }));
+        var ev = toggle('Everyone with access', assign.everyone, 'All team members and guests.');
+        ev.input.addEventListener('change', function () { assign.everyone = ev.input.checked; renderWho(); renderSide(); });
+        whoSec.appendChild(ev);
+        if (assign.everyone) return;
+        var search = h('input', { class: 'inp', type: 'search', placeholder: 'Search people', 'aria-label': 'Search people', style: 'width:100%;margin:6px 0 10px' });
+        var box = h('div', { class: 'people' });
+        var allBtn = h('button', { class: 'btn sm', type: 'button', text: 'Select all shown' });
+        function drawPeople() {
+          clear(box);
+          var term = search.value.toLowerCase();
+          var shown = people.filter(function (p) { return !term || (p.name + ' ' + p.email).toLowerCase().indexOf(term) >= 0; });
+          shown.forEach(function (p) {
+            var cb = h('input', { type: 'checkbox', checked: assign.emails.indexOf(p.email) >= 0 ? true : null });
+            cb.addEventListener('change', function () { var at = assign.emails.indexOf(p.email); if (cb.checked && at < 0) assign.emails.push(p.email); if (!cb.checked && at >= 0) assign.emails.splice(at, 1); countEl.textContent = assign.emails.length + ' selected'; renderSide(); });
+            box.appendChild(h('label', null, [cb, h('div', { style: 'flex:1;min-width:0' }, [h('div', { text: p.name || p.email }), h('div', { class: 'e', text: p.email })]), p.kind === 'guest' ? pill('Guest') : null]));
+          });
+          allBtn.onclick = function () { shown.forEach(function (p) { if (assign.emails.indexOf(p.email) < 0) assign.emails.push(p.email); }); drawPeople(); countEl.textContent = assign.emails.length + ' selected'; renderSide(); };
+        }
+        var countEl = h('span', { class: 'small muted', text: assign.emails.length + ' selected' });
+        search.addEventListener('input', drawPeople);
+        whoSec.appendChild(search); whoSec.appendChild(box);
+        whoSec.appendChild(h('div', { class: 'row', style: 'margin-top:10px' }, [countEl, h('span', { class: 'spacer' }), allBtn, h('button', { class: 'btn sm ghost', type: 'button', text: 'Clear', onclick: function () { assign.emails = []; drawPeople(); countEl.textContent = '0 selected'; renderSide(); } })]));
+        drawPeople();
+      }
+      renderWho();
+
+      // Summary side
+      var msg = h('div');
+      function collect() {
+        st.passPct = Number(passIn.value); st.attempts = Number(attIn.value); st.showScore = showT.input.checked;
+        st.camera = camT.input.checked; st.watermark = wmT.input.checked ? 'subtle' : 'off'; st.shuffleQuestions = shQ.input.checked; st.shuffleOptions = shO.input.checked;
+        return { title: title.value, description: desc.value, settings: st, questionIds: picked, assign: { everyone: assign.everyone, emails: assign.emails }, status: status };
+      }
+      function renderSide() {
+        clear(side);
+        var nQ = st.pool.mode === 'random' ? st.pool.count : picked.length;
+        var mins = Math.max(1, Math.ceil((nQ * (Number(secIn.value) || 40) + Math.min(st.explainCount, nQ) * 90) / 60));
+        var statusSel = h('div', { class: 'seg', role: 'group', 'aria-label': 'Status' }, [['draft', 'Draft'], ['published', 'Published']].map(function (o) {
+          return h('button', { type: 'button', 'aria-pressed': String(status === o[0]), text: o[1], onclick: function () { status = o[0]; renderSide(); } });
+        }));
+        var save = h('button', { class: 'btn primary', type: 'button', style: 'width:100%', text: 'Save' });
+        save.addEventListener('click', function () {
+          save.disabled = true; clear(msg);
+          var body = collect();
+          (id ? api('/api/assess/admin/tests/' + id, { method: 'PUT', body: body }) : api('/api/assess/admin/tests', { method: 'POST', body: body }))
+            .then(function (res) { toast('Saved'); if (!id && res.id) { id = res.id; history.replaceState(null, '', '#edit/' + res.id); } save.disabled = false; })
+            .catch(function (e) { msg.appendChild(errBox(e.message)); save.disabled = false; });
+        });
+        side.appendChild(h('div', { class: 'card pad stack' }, [
+          h('h2', { text: 'Summary' }),
+          h('div', null, [
+            h('div', { class: 'sumrow' }, [h('span', { text: 'Questions' }), h('b', { text: nQ + (st.explainCount && nQ ? ' + ' + Math.min(st.explainCount, nQ) + ' written' : '') })]),
+            h('div', { class: 'sumrow' }, [h('span', { text: 'Time' }), h('b', { text: 'About ' + mins + ' min' })]),
+            h('div', { class: 'sumrow' }, [h('span', { text: 'Assigned' }), h('b', { text: assign.everyone ? 'Everyone' : assign.emails.length + (assign.emails.length === 1 ? ' person' : ' people') })]),
+          ]),
+          h('div', null, [h('div', { class: 'small muted', style: 'margin-bottom:6px', text: 'Status' }), statusSel, h('div', { class: 'small muted', style: 'margin-top:6px', text: status === 'published' ? 'Assigned people can start it now.' : 'Hidden from agents until published.' })]),
+          msg, save,
+          id ? h('button', { class: 'btn ghost danger', type: 'button', style: 'width:100%', onclick: function () {
+            if (!confirm('Archive this assessment? Results are kept; agents will no longer see it.')) return;
+            api('/api/assess/admin/tests/' + id, { method: 'DELETE' }).then(function () { toast('Archived'); go('manage'); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
+          } }, [icon('trash', 'sm'), 'Archive']) : null,
+        ]));
+      }
+      renderSide();
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
-  // ── reviewer: results ────────────────────────────────────────────────
-  function integPill(v) {
-    if (v == null) return h('span', { class: 'as-pill', text: 'n/a' });
-    return h('span', { class: 'as-pill ' + (v >= 85 ? 'ok' : v >= 60 ? 'warn' : 'bad'), text: String(Math.round(v)) });
-  }
-  function viewResults(t) {
-    main.appendChild(h('div', { class: 'as-row', style: 'margin-bottom:12px' }, [
-      h('button', { class: 'as-btn ghost', type: 'button', text: 'Back to Review', onclick: function () { show('review'); } }),
-      h('span', { class: 'as-spacer' }),
-      h('a', { class: 'as-btn', href: '/api/assess/admin/tests/' + t.id + '/export', text: 'Export CSV' }),
-    ]));
-    main.appendChild(h('h1', { class: 'as-h1', text: 'Results' }));
-    main.appendChild(h('p', { class: 'as-sub', text: t.title + '. Integrity is 100 minus recorded events (tab switches, full screen exits, paste, screenshots, long pauses before a right answer). Read it as a pattern, not proof.' }));
-    var holder = h('div');
-    main.appendChild(holder);
-    api('/api/assess/admin/tests/' + t.id + '/attempts').then(function (j) {
-      if (!j.attempts.length) { holder.appendChild(h('div', { class: 'as-empty', text: 'No attempts yet.' })); return; }
+  // ── Reviewer: results ────────────────────────────────────────────────
+  function viewResults(id) {
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    Promise.all([api('/api/assess/admin/tests'), api('/api/assess/admin/tests/' + id + '/attempts')]).then(function (r) {
+      clear(holder);
+      var t = r[0].tests.find(function (x) { return x.id === id; });
+      var at = r[1].attempts;
+      holder.appendChild(pageHead(t ? t.title : 'Results', 'Behaviour flags are signals to look into, not proof. Talk to the agent before acting on them.', [
+        h('a', { class: 'btn', href: '/api/assess/admin/tests/' + id + '/export' }, [icon('download', 'sm'), 'Export CSV']),
+        h('button', { class: 'btn', type: 'button', onclick: function () { go('edit/' + id); } }, [icon('edit', 'sm'), 'Edit']),
+      ], { text: 'Assessments', go: function () { go('manage'); } }));
+      var done = at.filter(function (a) { return a.status === 'submitted'; });
+      var avg = done.length ? Math.round(done.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / done.length) : null;
+      var pass = done.length ? Math.round(done.filter(function (a) { return a.passed; }).length / done.length * 100) : null;
+      var review = at.filter(function (a) { return a.unmarked > 0 || a.tier === 'major'; }).length;
+      holder.appendChild(h('dl', { class: 'stats' }, [
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), at.length > done.length ? h('small', { text: '  ' + (at.length - done.length) + ' in progress' }) : null])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Average score' }), h('dd', { text: avg != null ? avg + '%' : '–' })]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Pass rate' }), h('dd', { text: pass != null ? pass + '%' : '–' })]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Needs your review' }), h('dd', { text: String(review) })]),
+      ]));
+      if (!at.length) { holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('users', 'lg')]), h('b', { text: 'No attempts yet' }), h('span', { text: 'Results appear here as agents submit.' })])); return; }
       var tb = h('tbody');
-      j.attempts.forEach(function (a) {
-        tb.appendChild(h('tr', null, [
-          h('td', null, [h('button', { class: 'as-link', type: 'button', text: a.name || a.email, onclick: function () { show('attempt', a.id); } }), h('small', { text: a.email })]),
-          h('td', null, [h('span', { class: 'as-pill ' + (a.status === 'submitted' ? 'ok' : 'warn'), text: a.status === 'submitted' ? 'Submitted' : 'In progress ' + a.progress })]),
-          h('td', { class: 'num', text: a.score != null ? a.score + ' / ' + a.maxScore + ' (' + pct(a.score, a.maxScore) + '%)' : '' }),
-          h('td', null, [integPill(a.integrity)]),
-          h('td', { text: (a.flags || []).join(', ') || 'None' }),
+      at.forEach(function (a) {
+        var tr = h('tr', { class: 'click', tabindex: '0' }, [
+          h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email })]),
+          h('td', null, [a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn')]),
+          h('td', null, [a.pct != null ? h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + a.pct + '%' })]), h('span', { class: 'num', text: a.score + '/' + a.maxScore + ' · ' + a.pct + '%' })]) : h('span', { class: 'muted', text: '–' })]),
+          h('td', null, [tierPill(a.tier), a.flags && a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') + (a.flags.length > 2 ? '…' : '') }) : null]),
+          h('td', null, [a.unmarked ? pill(a.unmarked + ' to mark', 'accent') : h('span', { class: 'muted', text: '–' })]),
           h('td', { class: 'num', text: fmtWhen(a.finishedAt || a.startedAt) }),
-        ]));
+        ]);
+        tr.addEventListener('click', function () { go('attempt/' + a.id); });
+        tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go('attempt/' + a.id); });
+        tb.appendChild(tr);
       });
-      holder.appendChild(h('div', { class: 'as-table-wrap' }, [h('table', { class: 'as-table' }, [
-        h('thead', null, [h('tr', null, ['Agent', 'Status', 'Score', 'Integrity', 'Flags', 'When'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
-    }).catch(function (e) { holder.appendChild(errBox(e.message)); });
+      holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [
+        h('thead', null, [h('tr', null, ['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'When'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
-  var EVENT_LABELS = { started: 'Started', submitted: 'Submitted', hidden: 'Left the tab', visible: 'Came back to the tab', blur: 'Window lost focus', focus: 'Note', fullscreen_exit: 'Left full screen', fullscreen_enter: 'Back in full screen',
-    copy: 'Tried to copy', cut: 'Tried to cut', paste: 'Tried to paste', contextmenu: 'Right-click', printscreen: 'Print Screen key', devtools_key: 'Developer tools key', print: 'Tried to print', mouse_out: 'Mouse left the window',
-    replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text' };
+  var EVENT_LABELS = { started: 'Started', submitted: 'Submitted', hidden: 'Left the test tab', visible: 'Came back to the tab', blur: 'Clicked outside the window', focus: 'Note', fullscreen_exit: 'Left full screen', fullscreen_enter: 'Back in full screen',
+    copy: 'Tried to copy', cut: 'Tried to cut', paste: 'Tried to paste', contextmenu: 'Right-click', printscreen: 'Pressed Print Screen', devtools_key: 'Developer tools key', print: 'Tried to print', mouse_out: 'Mouse left the window',
+    replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text',
+    camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically when time ran out' };
+  var EVENT_LEVEL = { hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
 
   function viewAttempt(id) {
-    var holder = h('div');
-    main.appendChild(holder);
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/admin/attempts/' + id).then(function (j) {
-      var a = j.attempt;
-      holder.appendChild(h('div', { class: 'as-row', style: 'margin-bottom:12px' }, [
-        h('button', { class: 'as-btn ghost', type: 'button', text: 'Back to results', onclick: function () { api('/api/assess/admin/tests').then(function (x) { show('results', x.tests.find(function (t) { return t.id === a.testId; })); }); } }),
-        h('span', { class: 'as-spacer' }),
-        h('button', { class: 'as-btn danger', type: 'button', text: 'Allow a retake (delete this attempt)', onclick: function (e) {
-          if (!window.confirm('Delete this attempt for ' + (a.name || a.email) + '? Their answers and activity log are removed and they can take it again.')) return;
-          e.target.disabled = true;
-          api('/api/assess/admin/attempts/' + a.id, { method: 'DELETE' }).then(function () { return api('/api/assess/admin/tests'); }).then(function (x) { show('results', x.tests.find(function (t) { return t.id === a.testId; })); }).catch(function (er) { e.target.disabled = false; alert(er.message); });
-        } }),
+      clear(holder);
+      var a = j.attempt, integ = a.integrity || { tier: null, flags: [] };
+      var pct = a.maxScore ? Math.round(a.score / a.maxScore * 100) : null;
+      holder.appendChild(pageHead(a.name || a.email, a.testTitle + ' · ' + a.email + (a.extraPct ? ' · +' + a.extraPct + '% time' : ''), [
+        h('button', { class: 'btn danger', type: 'button', onclick: function (e) {
+          if (!confirm('Delete this attempt for ' + (a.name || a.email) + '? Their answers, activity log and photos are removed and they can take it again.')) return;
+          e.currentTarget.disabled = true;
+          api('/api/assess/admin/attempts/' + a.id, { method: 'DELETE' }).then(function () { toast('Attempt deleted'); go('results/' + a.testId); }).catch(function (er) { toast(er.message); });
+        } }, [icon('trash', 'sm'), 'Allow a retake']),
+      ], { text: 'Results', go: function () { go('results/' + a.testId); } }));
+      holder.appendChild(h('dl', { class: 'stats' }, [
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Score' }), h('dd', null, [a.score != null ? a.score + ' / ' + a.maxScore : 'In progress', pct != null ? h('small', { text: '  ' + pct + '%' }) : null])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Result' }), h('dd', null, [pct == null ? '–' : (pct >= a.passPct ? pill('Pass', 'ok') : pill('Below pass (' + a.passPct + '%)', 'bad'))])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Behaviour' }), h('dd', null, [tierPill(integ.tier)])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Started' }), h('dd', { style: 'font-size:14px;font-weight:500', text: fmtWhen(a.startedAt) })]),
       ]));
-      holder.appendChild(h('h1', { class: 'as-h1', text: a.name || a.email }));
-      holder.appendChild(h('p', { class: 'as-sub', text: a.testTitle + ' · ' + a.email + ' · started ' + fmtWhen(a.startedAt) + (a.finishedAt ? ', finished ' + fmtWhen(a.finishedAt) : '') }));
-      var integ = a.integrity || { score: null, flags: [] };
-      holder.appendChild(h('dl', { class: 'as-summary' }, [
-        h('div', null, [h('dt', { text: 'Score' }), h('dd', { text: a.score != null ? a.score + ' / ' + a.maxScore : 'In progress' })]),
-        h('div', null, [h('dt', { text: 'Percent' }), h('dd', { text: a.score != null ? pct(a.score, a.maxScore) + '%' + (pct(a.score, a.maxScore) >= a.passPct ? ' pass' : ' below pass') : '' })]),
-        h('div', null, [h('dt', { text: 'Integrity' }), h('dd', null, [integPill(integ.score)])]),
-        h('div', null, [h('dt', { text: 'Flags' }), h('dd', { style: 'font-size:13px;font-weight:500', text: (integ.flags || []).join(', ') || 'None' })]),
-      ]));
-      var list = h('div', { style: 'display:grid;gap:10px' });
-      a.items.forEach(function (it) {
-        if (it.kind === 'explain') {
-          var sel = h('select', { class: 'as-sel', 'aria-label': 'Mark', style: 'width:auto;min-width:150px' }, [h('option', { value: '', text: 'Not marked' }), h('option', { value: '1', text: 'Strong' }), h('option', { value: '0.5', text: 'Partial' }), h('option', { value: '0', text: 'Weak' })]);
-          sel.value = it.reviewScore == null ? '' : String(it.reviewScore);
-          var note = h('input', { class: 'as-in', 'aria-label': 'Note', placeholder: 'Note (optional)', value: it.reviewNote || '', style: 'flex:1;width:auto;min-width:180px' });
-          var st = h('span', { class: 'as-note', role: 'status' });
-          var sv = h('button', { class: 'as-btn', type: 'button', text: 'Save mark', onclick: function () { st.textContent = 'Saving…'; api('/api/assess/admin/attempts/' + a.id + '/explain/' + it.idx, { method: 'PUT', body: { score: sel.value, note: note.value } }).then(function () { st.textContent = 'Saved.'; }).catch(function (e) { st.textContent = e.message; }); } });
-          list.appendChild(h('div', { class: 'as-item' }, [
-            h('div', { class: 'as-row' }, [h('strong', { text: 'Written answer ' + (it.idx + 1) }), it.late ? h('span', { class: 'as-pill bad', text: 'Timed out' }) : null, h('span', { class: 'as-note', text: it.elapsedMs != null ? secs(it.elapsedMs) : '' })]),
-            h('div', { class: 'as-note', text: 'About: ' + it.about }),
-            h('div', { class: 'q', style: 'white-space:pre-wrap', text: it.text || (it.answered ? '(empty)' : 'Not answered') }),
-            h('div', { class: 'as-row' }, [sel, note, sv, st]),
+      var tabsEl = h('div', { class: 'tabs', role: 'tablist' }), panel = h('div');
+      var tabs = [['answers', 'Answers'], ['behaviour', 'Behaviour'], ['activity', 'Activity log']];
+      if (a.camera || (a.snapshots && a.snapshots.length)) tabs.push(['camera', 'Camera photos (' + a.snapshots.length + ')']);
+      function show(k) {
+        Array.prototype.forEach.call(tabsEl.children, function (b) { b.setAttribute('aria-selected', String(b.dataset.k === k)); });
+        clear(panel);
+        if (k === 'answers') answers(); else if (k === 'behaviour') behaviour(); else if (k === 'activity') activity(); else camera();
+      }
+      tabs.forEach(function (tb) { tabsEl.appendChild(h('button', { type: 'button', role: 'tab', 'data-k': tb[0], text: tb[1], onclick: function () { show(tb[0]); } })); });
+      holder.appendChild(tabsEl); holder.appendChild(panel);
+
+      function answers() {
+        a.items.forEach(function (it) {
+          if (it.kind === 'explain') {
+            var note = h('input', { class: 'inp', 'aria-label': 'Note', placeholder: 'Note for yourself (optional)', value: it.reviewNote || '', style: 'flex:1;min-width:200px' });
+            var mark = it.reviewScore == null ? '' : String(it.reviewScore);
+            var seg = h('div', { class: 'markseg', role: 'group', 'aria-label': 'Mark' });
+            [['1', 'Strong', 's'], ['0.5', 'Partial', 'p'], ['0', 'Weak', 'w']].forEach(function (m) {
+              seg.appendChild(h('button', { type: 'button', class: m[2], 'aria-pressed': String(mark === m[0]), text: m[1], onclick: function () { mark = m[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b.textContent === m[1])); }); } }));
+            });
+            var sv = h('button', { class: 'btn sm primary', type: 'button', text: 'Save mark', onclick: function () {
+              api('/api/assess/admin/attempts/' + a.id + '/explain/' + it.idx, { method: 'PUT', body: { score: mark, note: note.value } }).then(function () { toast('Mark saved'); }).catch(function (e) { toast(e.message); });
+            } });
+            panel.appendChild(h('div', { class: 'card item' }, [
+              h('div', { class: 'hd' }, [h('b', { text: 'Written answer' }), it.late ? pill('Timed out', 'bad') : null, h('span', { class: 'small muted', text: it.elapsedMs != null ? secs(it.elapsedMs) : '' })]),
+              h('div', { class: 'about small', text: it.about }),
+              h('div', { class: 'q', style: 'white-space:pre-wrap;font-weight:400', text: it.text || (it.answered ? '(left empty)' : 'Not answered') }),
+              h('div', { class: 'row' }, [seg, note, sv]),
+            ]));
+            return;
+          }
+          var status = it.correct ? pill('Correct', 'ok') : it.late ? pill('Timed out', 'bad') : it.answered ? pill('Wrong', 'bad') : pill('Not answered', 'bad');
+          var ansList = h('div', { class: 'ans' });
+          (it.chosen && it.chosen.length ? it.chosen : ['No answer']).forEach(function (c) {
+            var right = it.correctAnswer.indexOf(c) >= 0;
+            ansList.appendChild(h('div', { class: right ? 'right' : 'wrong' }, [icon(right ? 'check' : 'x', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Their answer: ' }), c])]));
+          });
+          if (!it.correct) it.correctAnswer.forEach(function (c) { if (!(it.chosen || []).includes(c)) ansList.appendChild(h('div', { class: 'right' }, [icon('check', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Correct answer: ' }), c])])); });
+          panel.appendChild(h('div', { class: 'card item' }, [
+            h('div', { class: 'hd' }, [h('b', { text: 'Q' + (it.idx + 1) }), status, h('span', { class: 'small muted', text: (it.elapsedMs != null ? secs(it.elapsedMs) : '') + (it.replays ? ' · replayed ' + it.replays + 'x' : '') })]),
+            h('div', { class: 'q', text: it.prompt }), ansList,
+            it.explanation ? h('p', { class: 'small muted', style: 'margin:10px 0 0', text: 'Why: ' + it.explanation }) : null,
           ]));
-          return;
-        }
-        list.appendChild(h('div', { class: 'as-item' }, [
-          h('div', { class: 'as-row' }, [h('strong', { text: 'Q' + (it.idx + 1) }),
-            h('span', { class: 'as-pill ' + (it.correct ? 'ok' : 'bad'), text: it.correct ? 'Correct' : (it.late ? 'Timed out' : (it.answered ? 'Wrong' : 'Not answered')) }),
-            h('span', { class: 'as-note', text: (it.elapsedMs != null ? secs(it.elapsedMs) : '') + (it.replays ? ' · replayed ' + it.replays + 'x' : '') })]),
-          h('div', { class: 'q', text: it.prompt }),
-          h('dl', { class: 'as-kv' }, [
-            h('dt', { text: 'Their answer' }), h('dd', { text: it.chosen && it.chosen.length ? it.chosen.join(' | ') : 'None' }),
-            h('dt', { text: 'Correct answer' }), h('dd', { text: it.correctAnswer.join(' | ') }),
-            h('dt', { text: 'Order shown' }), h('dd', { text: it.shownOrder.map(function (x, i) { return 'ABCDEFGH'[i] + '. ' + x; }).join('   ') }),
-          ]),
+        });
+      }
+      function behaviour() {
+        panel.appendChild(h('div', { class: 'card pad stack' }, [
+          h('div', { class: 'row' }, [h('h2', { text: 'Behaviour' }), tierPill(integ.tier)]),
+          h('p', { class: 'muted', style: 'margin:0', text: 'These are signals, not proof. A dropped connection or a notification can explain a tab switch. Ask the agent to talk you through two or three answers before drawing a conclusion.' }),
+          integ.flags && integ.flags.length ? h('ul', { class: 'flags' }, integ.flags.map(function (f) { return h('li', null, [h('span', { class: 'lv ' + (f.level || 'some') }), h('span', { text: f.text })]); })) : h('p', { text: 'Nothing unusual was logged.' }),
         ]));
-      });
-      holder.appendChild(h('h2', { style: 'font-size:16px;margin:0 0 10px', text: 'Answers' }));
-      holder.appendChild(list);
-      holder.appendChild(h('h2', { style: 'font-size:16px;margin:20px 0 10px', text: 'Activity log' }));
-      var tb = h('tbody');
-      a.events.forEach(function (e) {
-        tb.appendChild(h('tr', null, [h('td', { class: 'num', text: fmtWhen(e.at) }), h('td', { text: e.idx != null ? String(e.idx + 1) : '' }), h('td', { text: EVENT_LABELS[e.type] || e.type }), h('td', { text: e.detail || '' })]));
-      });
-      holder.appendChild(h('div', { class: 'as-table-wrap as-events' }, [h('table', { class: 'as-table' }, [h('thead', null, [h('tr', null, ['When', 'Q', 'Event', 'Detail'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
-      if (a.ua) holder.appendChild(h('p', { class: 'as-note', style: 'margin-top:10px', text: 'Browser: ' + a.ua }));
-    }).catch(function (e) { holder.appendChild(errBox(e.message)); });
+      }
+      function activity() {
+        var tl = h('ul', { class: 'tl' });
+        a.events.forEach(function (e) {
+          tl.appendChild(h('li', { class: EVENT_LEVEL[e.type] || '' }, [h('time', { text: fmtWhen(e.at) + (e.idx != null ? ' · item ' + (e.idx + 1) : '') }), h('span', { text: (EVENT_LABELS[e.type] || e.type) + (e.detail ? ' (' + e.detail + ')' : '') })]));
+        });
+        panel.appendChild(h('div', { class: 'card pad' }, [a.events.length ? tl : h('p', { class: 'muted', text: 'No events.' }), a.ua ? h('p', { class: 'small muted', style: 'margin:12px 0 0', text: 'Browser: ' + a.ua }) : null]));
+      }
+      function camera() {
+        if (!a.snapshots.length) { panel.appendChild(h('div', { class: 'empty' }, [h('b', { text: 'No photos' }), h('span', { text: 'The camera was not allowed, or the attempt ended before the first photo.' })])); return; }
+        var grid = h('div', { class: 'snaps' });
+        a.snapshots.forEach(function (sn) {
+          var src = '/api/assess/admin/snapshots/' + sn.id;
+          grid.appendChild(h('button', { type: 'button', 'aria-label': 'Photo at ' + fmtWhen(sn.at), onclick: function () {
+            var lb = h('div', { class: 'lightbox', role: 'dialog', 'aria-label': 'Photo', onclick: function () { lb.remove(); } }, [h('img', { src: src, alt: 'Camera photo at ' + fmtWhen(sn.at) })]);
+            document.body.appendChild(lb);
+          } }, [h('img', { src: src, alt: '', loading: 'lazy' }), h('span', { text: fmtWhen(sn.at) + (sn.idx != null ? ' · item ' + (sn.idx + 1) : '') })]));
+        });
+        panel.appendChild(grid);
+      }
+      show('answers');
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
 
-  // ── reviewer: reviewers ──────────────────────────────────────────────
-  function viewReviewers() {
-    main.appendChild(h('h1', { class: 'as-h1', text: 'Reviewers' }));
-    main.appendChild(h('p', { class: 'as-sub', text: 'Reviewers can see every result, answer key and activity log, and change assessment settings. Being an admin elsewhere in the tool does not make someone a reviewer.' }));
-    var holder = h('div', { class: 'as-card', style: 'max-width:640px' });
-    main.appendChild(holder);
+  // ── Reviewer: question bank ──────────────────────────────────────────
+  var bankFilter = { q: '', status: '', type: '', tag: '' };
+  function viewBank() {
+    main.appendChild(pageHead('Question bank', 'Every question used in assessments. Drafts from documents land here for you to check before agents see them.', [
+      h('button', { class: 'btn', type: 'button', onclick: openImport }, [icon('upload', 'sm'), 'Import CSV']),
+      h('button', { class: 'btn', type: 'button', onclick: function () { openQuestion(null); } }, [icon('plus', 'sm'), 'New question']),
+      h('button', { class: 'btn primary', type: 'button', onclick: openGenerate }, [icon('spark', 'sm'), 'Draft from a document']),
+    ]));
+    var search = h('input', { class: 'inp', type: 'search', placeholder: 'Search questions, options or tags', 'aria-label': 'Search questions', value: bankFilter.q });
+    var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Status' });
+    [['', 'All'], ['draft', 'Drafts'], ['approved', 'Approved']].forEach(function (o) {
+      seg.appendChild(h('button', { type: 'button', 'aria-pressed': String(bankFilter.status === o[0]), text: o[1], onclick: function () { bankFilter.status = o[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b === this)); }, this); load(); } }));
+    });
+    var typeSel = h('select', { class: 'sel', 'aria-label': 'Type' }, [h('option', { value: '', text: 'All types' })].concat(Object.keys(TYPE_SHORT).map(function (k) { return h('option', { value: k, text: TYPE_SHORT[k] }); })));
+    typeSel.value = bankFilter.type;
+    var tagSel = h('select', { class: 'sel', 'aria-label': 'Tag' }, [h('option', { value: '', text: 'All topics' })]);
+    typeSel.addEventListener('change', function () { bankFilter.type = typeSel.value; load(); });
+    tagSel.addEventListener('change', function () { bankFilter.tag = tagSel.value; load(); });
+    var st = 0; search.addEventListener('input', function () { clearTimeout(st); st = setTimeout(function () { bankFilter.q = search.value.trim(); load(); }, 250); });
+    main.appendChild(h('div', { class: 'toolbar' }, [h('div', { class: 'search' }, [icon('search', 'sm'), search]), seg, typeSel, tagSel]));
+    var bulk = h('div'); main.appendChild(bulk);
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    var sel = [];
+    function renderBulk() {
+      clear(bulk);
+      if (!sel.length) return;
+      function act(action, label) { return h('button', { class: 'btn', type: 'button', text: label, onclick: function () {
+        if (action === 'delete' && !confirm('Delete ' + sel.length + ' question(s)? Questions already used in an attempt are retired instead, so past results keep them.')) return;
+        api('/api/assess/admin/questions/bulk', { method: 'POST', body: { ids: sel, action: action } }).then(function (r) { toast(r.changed + ' updated'); sel = []; load(); }).catch(function (e) { toast(e.message); });
+      } }); }
+      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel = []; load(); } })]));
+    }
     function load() {
-      clear(holder);
-      api('/api/assess/admin/reviewers').then(function (j) {
-        j.reviewers.forEach(function (r) {
-          holder.appendChild(h('div', { class: 'as-row' }, [h('span', { text: r.email }), h('span', { class: 'as-note', text: r.added_by && r.added_by !== 'system' ? 'added by ' + r.added_by : '' }), h('span', { class: 'as-spacer' }),
-            r.email === me.email ? null : h('button', { class: 'as-btn danger', type: 'button', text: 'Remove', onclick: function (e) { e.target.disabled = true; api('/api/assess/admin/reviewers/' + encodeURIComponent(r.email), { method: 'DELETE' }).then(load).catch(function (er) { e.target.disabled = false; alert(er.message); }); } })]));
+      var p = new URLSearchParams(bankFilter);
+      api('/api/assess/admin/questions?' + p.toString()).then(function (j) {
+        clear(holder);
+        var cur = tagSel.value; clear(tagSel); tagSel.appendChild(h('option', { value: '', text: 'All topics' }));
+        j.tags.forEach(function (t) { tagSel.appendChild(h('option', { value: t.tag, text: t.tag + ' (' + t.n + ')' })); }); tagSel.value = cur;
+        renderBulk();
+        if (!j.questions.length) {
+          holder.appendChild(h('div', { class: 'empty' }, [h('div', { class: 'ic' }, [icon('doc', 'lg')]), h('b', { text: bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
+          return;
+        }
+        var drafts = j.questions.filter(function (q) { return q.status === 'draft'; }).length;
+        holder.appendChild(h('div', { class: 'row small muted', style: 'margin-bottom:10px' }, [j.questions.length + ' questions' + (drafts ? ', ' + drafts + ' drafts waiting for review' : '')]));
+        var list = h('div', { class: 'card qlist' });
+        j.questions.forEach(function (q) {
+          var cb = h('input', { type: 'checkbox', 'aria-label': 'Select question', checked: sel.indexOf(q.id) >= 0 ? true : null });
+          cb.addEventListener('change', function () { var at = sel.indexOf(q.id); if (cb.checked && at < 0) sel.push(q.id); if (!cb.checked && at >= 0) sel.splice(at, 1); renderBulk(); });
+          var stats = q.stats && q.stats.shown ? 'Seen ' + q.stats.shown + 'x · ' + q.stats.pctCorrect + '% correct' + (q.stats.avgSec != null ? ' · ' + q.stats.avgSec + 's average' : '') : 'Not used yet';
+          list.appendChild(h('div', { class: 'qrow' }, [cb,
+            h('div', { style: 'min-width:0' }, [
+              h('div', { class: 'p', role: 'button', tabindex: '0', text: q.prompt, onclick: function () { openQuestion(q); }, onkeydown: function (e) { if (e.key === 'Enter') openQuestion(q); } }),
+              h('div', { class: 'm' }, [pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium')].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
+              h('div', { class: 's', text: stats + (q.usedIn.length ? ' · in ' + q.usedIn.join(', ') : '') }),
+              q.stats && q.stats.flag ? h('div', { class: 'flag' }, [icon('warn', 'sm'), q.stats.flag]) : null,
+            ]),
+            h('div', { class: 'row', style: 'flex-wrap:nowrap' }, [q.status === 'draft' ? pill('Draft', 'warn', true) : pill('Approved', 'ok', true), h('button', { class: 'btn sm', type: 'button', text: 'Edit', onclick: function () { openQuestion(q); } })]),
+          ]));
         });
-        var inp = h('input', { class: 'as-in', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Reviewer email', style: 'flex:1;min-width:200px' });
-        var msg = h('span', { class: 'as-note', role: 'status' });
-        holder.appendChild(h('div', { class: 'as-row', style: 'margin-top:8px' }, [inp, h('button', { class: 'as-btn primary', type: 'button', text: 'Add reviewer', onclick: function () {
-          api('/api/assess/admin/reviewers', { method: 'POST', body: { email: inp.value } }).then(load).catch(function (e) { msg.textContent = e.message; });
-        } }), msg]));
-      }).catch(function (e) { holder.appendChild(errBox(e.message)); });
+        holder.appendChild(list);
+      }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+    }
+    main._reloadBank = load;
+    load();
+  }
+  function reloadBank() { if (main._reloadBank && location.hash === '#bank') main._reloadBank(); }
+
+  function openQuestion(q) {
+    var d = q || { type: 'single', prompt: '', options: ['', '', '', ''], correct: [], explanation: '', tags: [], difficulty: 'medium', status: 'draft' };
+    var type = d.type, opts = d.type === 'truefalse' ? ['True', 'False'] : d.options.slice(), correct = d.correct.slice();
+    var body = h('div'), err = h('div');
+    var prompt = h('textarea', { class: 'ta', id: 'qe-p', maxlength: '1500', placeholder: 'A customer says… What do you do first?' }); prompt.value = d.prompt;
+    var typeSeg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Question type' });
+    Object.keys(TYPE_SHORT).forEach(function (k) {
+      typeSeg.appendChild(h('button', { type: 'button', 'aria-pressed': String(type === k), text: TYPE_SHORT[k], onclick: function () {
+        if (k === 'truefalse') { opts = ['True', 'False']; correct = correct.filter(function (c) { return c < 2; }).slice(0, 1); }
+        else if (type === 'truefalse') { opts = ['', '', '', '']; correct = []; }
+        if (k === 'single' && correct.length > 1) correct = correct.slice(0, 1);
+        type = k; Array.prototype.forEach.call(typeSeg.children, function (b) { b.setAttribute('aria-pressed', String(b.textContent === TYPE_SHORT[k])); }); drawOpts();
+      } }));
+    });
+    var optBox = h('div');
+    function drawOpts() {
+      clear(optBox);
+      opts.forEach(function (o, i) {
+        var on = correct.indexOf(i) >= 0;
+        var mark = h('button', { class: 'mark', type: 'button', 'aria-pressed': String(on), 'aria-label': 'Mark option ' + LETTERS[i] + ' as correct', title: 'Correct answer' }, [icon('check', 'sm')]);
+        mark.addEventListener('click', function () { if (type === 'multi') { var at = correct.indexOf(i); if (at >= 0) correct.splice(at, 1); else correct.push(i); } else correct = [i]; drawOpts(); });
+        var inp = h('input', { class: 'inp', value: o, maxlength: '400', 'aria-label': 'Option ' + LETTERS[i], readonly: type === 'truefalse' ? true : null, placeholder: 'Option ' + LETTERS[i] });
+        inp.addEventListener('input', function () { opts[i] = inp.value; });
+        optBox.appendChild(h('div', { class: 'optedit' }, [mark, inp, type !== 'truefalse' && opts.length > 2 ? h('button', { class: 'btn icon ghost', type: 'button', 'aria-label': 'Remove option ' + LETTERS[i], onclick: function () { opts.splice(i, 1); correct = correct.filter(function (c) { return c !== i; }).map(function (c) { return c > i ? c - 1 : c; }); drawOpts(); } }, [icon('x', 'sm')]) : null]));
+      });
+      if (type !== 'truefalse' && opts.length < 8) optBox.appendChild(h('button', { class: 'btn sm', type: 'button', onclick: function () { opts.push(''); drawOpts(); } }, [icon('plus', 'sm'), 'Add option']));
+    }
+    drawOpts();
+    var expl = h('textarea', { class: 'ta', id: 'qe-e', maxlength: '1500', placeholder: 'Only reviewers see this. Cite the SOP section if you can.' }); expl.value = d.explanation || '';
+    var tags = h('input', { class: 'inp', id: 'qe-t', value: d.tags.join(', '), placeholder: 'escalation, adit pay' });
+    var diff = h('select', { class: 'sel', id: 'qe-d' }, [['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); diff.value = d.difficulty || 'medium';
+    var stat = h('select', { class: 'sel', id: 'qe-s' }, [['draft', 'Draft'], ['approved', 'Approved']].map(function (o) { return h('option', { value: o[0], text: o[1] }); })); stat.value = d.status === 'approved' ? 'approved' : 'draft';
+    body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Type' }), typeSeg]));
+    body.appendChild(field('Question', prompt, 'Scenario and judgement questions are the hardest to look up.'));
+    body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Options' }), h('span', { class: 'hint', text: 'Tick the correct answer' + (type === 'multi' ? 's' : '') + '.' }), optBox]));
+    body.appendChild(field('Why this is the answer', expl));
+    body.appendChild(h('div', { class: 'fgrid' }, [field('Topics (tags)', tags, 'Comma separated'), field('Difficulty', diff)]));
+    body.appendChild(field('Status', stat, 'Only approved questions go into random pools.'));
+    if (d.stats && d.stats.shown) body.appendChild(h('div', { class: 'alert info' }, [icon('chart'), h('span', { text: 'Seen ' + d.stats.shown + ' times, ' + d.stats.pctCorrect + '% correct' + (d.stats.avgSec != null ? ', ' + d.stats.avgSec + 's on average.' : '.') + (d.stats.flag ? ' ' + d.stats.flag : '') })]));
+    body.appendChild(err);
+    var save = h('button', { class: 'btn primary', type: 'button', text: 'Save question' });
+    var del = q ? h('button', { class: 'btn ghost danger', type: 'button' }, [icon('trash', 'sm'), 'Delete']) : null;
+    var dlg = openDrawer(q ? 'Edit question' : 'New question', body, [del, h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), save]);
+    save.addEventListener('click', function () {
+      clear(err); save.disabled = true;
+      var payload = { type: type, prompt: prompt.value, options: opts, correct: correct, explanation: expl.value, tags: tags.value, difficulty: diff.value, status: stat.value };
+      (q ? api('/api/assess/admin/questions/' + q.id, { method: 'PUT', body: payload }) : api('/api/assess/admin/questions', { method: 'POST', body: payload }))
+        .then(function () { toast('Question saved'); dlg.close(); reloadBank(); })
+        .catch(function (e) { err.appendChild(errBox(e.message)); save.disabled = false; });
+    });
+    if (del) del.addEventListener('click', function () {
+      if (!confirm('Delete this question? If it was already used in an attempt it is retired instead, so past results keep it.')) return;
+      api('/api/assess/admin/questions/' + q.id, { method: 'DELETE' }).then(function (r) { toast(r.result === 'retired' ? 'Question retired' : 'Question deleted'); dlg.close(); reloadBank(); }).catch(function (e) { err.appendChild(errBox(e.message)); });
+    });
+    setTimeout(function () { prompt.focus(); }, 80);
+  }
+
+  function openGenerate() {
+    var mode = 'file', file = null;
+    var body = h('div'), err = h('div'), out = h('div');
+    var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Source' });
+    var fileBox = h('div'), textBox = h('div', { style: 'display:none' });
+    [['file', 'Upload a file'], ['text', 'Paste text']].forEach(function (o) {
+      seg.appendChild(h('button', { type: 'button', 'aria-pressed': String(mode === o[0]), text: o[1], onclick: function () { mode = o[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b.textContent === o[1])); }); fileBox.style.display = mode === 'file' ? '' : 'none'; textBox.style.display = mode === 'text' ? '' : 'none'; } }));
+    });
+    var input = h('input', { type: 'file', accept: '.pdf,.docx,.txt,.md', style: 'display:none' });
+    var fname = h('span', { class: 'small muted', text: 'PDF, Word (.docx) or text, up to 15 MB' });
+    var drop = h('div', { class: 'drop', role: 'button', tabindex: '0' }, [icon('upload', 'lg'), h('b', { text: 'Choose a file or drop it here' }), fname, input]);
+    function setFile(f) { file = f; fname.textContent = f ? f.name + ' (' + Math.round(f.size / 1024) + ' KB)' : 'PDF, Word (.docx) or text, up to 15 MB'; }
+    drop.addEventListener('click', function () { input.click(); });
+    drop.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+    input.addEventListener('change', function () { setFile(input.files[0] || null); });
+    drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+    drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('over'); setFile(e.dataTransfer.files[0] || null); });
+    fileBox.appendChild(drop);
+    var paste = h('textarea', { class: 'ta', id: 'gen-text', placeholder: 'Paste SOP, KB or process text here', style: 'min-height:180px' });
+    textBox.appendChild(field('Text', paste));
+    var count = h('select', { class: 'sel', id: 'gen-n' }, [5, 10, 15, 20, 25].map(function (n) { return h('option', { value: String(n), text: n + ' questions' }); })); count.value = '10';
+    var diff = h('select', { class: 'sel', id: 'gen-d' }, [['', 'Mixed'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    var types = {}; var typeRow = h('div', { class: 'row' });
+    Object.keys(TYPE_SHORT).forEach(function (k) { var cb = h('input', { type: 'checkbox', checked: true }); types[k] = cb; typeRow.appendChild(h('label', { class: 'chk' }, [cb, TYPE_SHORT[k]])); });
+    var focus = h('textarea', { class: 'ta', id: 'gen-f', placeholder: 'Optional. For example: escalation owners and time limits, not product features.', style: 'min-height:70px' });
+    body.appendChild(h('div', { class: 'field' }, [seg])); body.appendChild(fileBox); body.appendChild(textBox);
+    body.appendChild(h('div', { class: 'fgrid', style: 'margin-top:16px' }, [field('How many', count), field('Difficulty', diff)]));
+    body.appendChild(h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Question types' }), typeRow]));
+    body.appendChild(field('What to focus on', focus, 'Internal process, owners, time limits and edge cases are the hardest for AI to answer.'));
+    body.appendChild(h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'Questions are drafted only from this document and saved as drafts. Nothing reaches agents until you approve it. The document text is sent to OpenAI to write the drafts and is not stored.' })]));
+    body.appendChild(err); body.appendChild(out);
+    var go_ = h('button', { class: 'btn primary', type: 'button' }, [icon('spark', 'sm'), 'Draft questions']);
+    var dlg = openDrawer('Draft questions from a document', body, [h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Close', onclick: function () { dlg.close(); } }), go_]);
+    go_.addEventListener('click', function () {
+      clear(err); clear(out);
+      var tsel = Object.keys(types).filter(function (k) { return types[k].checked; });
+      if (!tsel.length) { err.appendChild(errBox('Pick at least one question type.')); return; }
+      var raw, name, kind;
+      if (mode === 'file') { if (!file) { err.appendChild(errBox('Choose a file first.')); return; } if (file.size > 15 * 1024 * 1024) { err.appendChild(errBox('That file is over 15 MB.')); return; } raw = file; name = file.name; kind = 'file'; }
+      else { if (paste.value.trim().length < 200) { err.appendChild(errBox('Paste at least a few paragraphs.')); return; } raw = paste.value; name = 'Pasted text'; kind = 'text'; }
+      go_.disabled = true;
+      var started = Date.now();
+      var prog = h('div', { class: 'alert info', role: 'status' }, [icon('hourglass'), h('span', { text: 'Reading the document and drafting questions. This can take up to a minute.' })]);
+      out.appendChild(prog);
+      var tmr = setInterval(function () { prog.lastChild.textContent = 'Reading the document and drafting questions (' + Math.round((Date.now() - started) / 1000) + 's). This can take up to a minute.'; }, 1000);
+      var p = new URLSearchParams({ name: name, kind: kind, count: count.value, types: tsel.join(','), difficulty: diff.value, focus: focus.value.slice(0, 400) });
+      api('/api/assess/admin/generate?' + p.toString(), { method: 'POST', raw: raw, contentType: kind === 'text' ? 'text/plain' : 'application/octet-stream' })
+        .then(function (r) {
+          clearInterval(tmr); clear(out); go_.disabled = false;
+          out.appendChild(h('div', { class: 'alert info' }, [icon('check'), h('span', { text: r.created + ' draft questions added to the bank.' + (r.errors && r.errors.length ? ' ' + r.errors.length + ' were skipped because they were incomplete.' : '') })]));
+          out.appendChild(h('button', { class: 'btn primary', type: 'button', text: 'Review the drafts', onclick: function () { dlg.close(); bankFilter = { q: '', status: 'draft', type: '', tag: '' }; if (location.hash === '#bank') route(); else go('bank'); } }));
+        })
+        .catch(function (e) { clearInterval(tmr); clear(out); err.appendChild(errBox(e.message)); go_.disabled = false; });
+    });
+  }
+
+  function openImport() {
+    var body = h('div'), err = h('div'), out = h('div');
+    var tmpl = 'type,question,option1,option2,option3,option4,correct,tags,difficulty,explanation\n' +
+      'single,"A customer says X. What do you do first?","Option A","Option B","Option C","Option D",B,"escalation",medium,"Per SOP 3.2"\n' +
+      'multi,"Select everything that must be in a hand-off note.","What the customer said","What you checked","Your opinion","What you need next","A,B,D","handoff",easy,\n' +
+      'truefalse,"You can close a ticket without a reply if the customer called in.",True,False,,,B,"tickets",easy,\n';
+    var link = h('a', { class: 'btn sm', download: 'question-template.csv', href: URL.createObjectURL(new Blob([tmpl], { type: 'text/csv' })) }, [icon('download', 'sm'), 'Download the template']);
+    body.appendChild(h('p', { class: 'muted', style: 'margin-top:0', text: 'One question per row. Put the correct option letters in "correct" (for example B, or A,C for several). Everything is imported as a draft.' }));
+    body.appendChild(link);
+    var input = h('input', { type: 'file', accept: '.csv,text/csv', id: 'imp-f', class: 'inp', style: 'width:100%;margin-top:16px;padding-top:6px' });
+    body.appendChild(field('CSV file', input));
+    body.appendChild(err); body.appendChild(out);
+    var go_ = h('button', { class: 'btn primary', type: 'button', text: 'Import' });
+    var dlg = openDrawer('Import questions from CSV', body, [h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Close', onclick: function () { dlg.close(); } }), go_]);
+    go_.addEventListener('click', function () {
+      clear(err); clear(out);
+      var f = input.files[0]; if (!f) { err.appendChild(errBox('Choose a CSV file.')); return; }
+      go_.disabled = true;
+      f.text().then(function (txt) { return api('/api/assess/admin/questions/import?name=' + encodeURIComponent(f.name), { method: 'POST', raw: txt, contentType: 'text/csv' }); })
+        .then(function (r) {
+          go_.disabled = false;
+          out.appendChild(h('div', { class: 'alert info' }, [icon('check'), h('span', { text: r.imported + ' questions imported as drafts.' })]));
+          if (r.errors && r.errors.length) out.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: r.errors.slice(0, 6).join(' · ') + (r.errors.length > 6 ? ' …' : '') })]));
+          reloadBank();
+        }).catch(function (e) { go_.disabled = false; err.appendChild(errBox(e.message)); });
+    });
+  }
+
+  // ── Reviewer: access ─────────────────────────────────────────────────
+  function viewAccess() {
+    main.appendChild(pageHead('Access', 'Team members of the tool can always open assessments. Everyone else needs to be on the guest list below. Guests only ever see the Assessments page, never the rest of the tool.'));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    function load() {
+      api('/api/assess/admin/access').then(function (j) {
+        clear(holder);
+        var url = location.origin + '/assess';
+        var grid = h('div', { class: 'acc' });
+        holder.appendChild(grid);
+        // Link
+        var urlIn = h('input', { class: 'inp', readonly: true, value: url, 'aria-label': 'Assessment link' });
+        grid.appendChild(h('div', { class: 'card pad wide stack' }, [
+          h('div', { class: 'row' }, [icon('link'), h('h2', { text: 'Assessment link' })]),
+          h('div', { class: 'linkbox' }, [urlIn, h('button', { class: 'btn', type: 'button', onclick: function () { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { toast('Link copied'); }).catch(function () { urlIn.select(); }); } }, [icon('copy', 'sm'), 'Copy'])]),
+          h('p', { class: 'small muted', style: 'margin:0', text: 'People sign in with their @adit.com Google account. They only see assessments assigned to them.' }),
+        ]));
+        // Mode
+        var modes = h('div', { class: 'radcards', style: 'margin:0' });
+        [['list', 'Only people on the guest list', 'Recommended. Anyone else who opens the link sees "You do not have access".'], ['domain', 'Anyone with an @adit.com account', 'Useful for a company-wide quiz. They still only see what is assigned to them.']].forEach(function (o) {
+          var inp = h('input', { type: 'radio', name: 'lm', value: o[0], checked: j.linkMode === o[0] ? true : null });
+          inp.addEventListener('change', function () { api('/api/assess/admin/access/mode', { method: 'PUT', body: { mode: o[0] } }).then(function () { toast('Saved'); }).catch(function (e) { toast(e.message); }); });
+          modes.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
+        });
+        grid.appendChild(h('div', { class: 'card pad wide stack' }, [h('h2', { text: 'Who else can open the link' }), modes]));
+        // Guests
+        var gIn = h('textarea', { class: 'ta', id: 'g-emails', placeholder: 'name@adit.com, one per line or comma separated', style: 'min-height:70px' });
+        var gNote = h('input', { class: 'inp', id: 'g-note', placeholder: 'Note, for example "Tech CSM team"', maxlength: '120' });
+        var gList = h('div', { class: 'plist' });
+        if (!j.guests.length) gList.appendChild(h('p', { class: 'small muted', text: 'No guests yet.' }));
+        j.guests.forEach(function (g) {
+          gList.appendChild(h('div', null, [h('span', { class: 'as-avatar', text: initials(g.email) }), h('div', { class: 'who' }, [h('b', { text: g.email }), h('span', { text: (g.note ? g.note + ' · ' : '') + (g.last_seen ? 'Last seen ' + fmtDay(g.last_seen) : 'Not signed in yet') })]),
+            h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove', onclick: function () { api('/api/assess/admin/access/guests/' + encodeURIComponent(g.email), { method: 'DELETE' }).then(load).catch(function (e) { toast(e.message); }); } })]));
+        });
+        var gErr = h('div');
+        grid.appendChild(h('div', { class: 'card pad' }, [
+          h('div', { class: 'row' }, [icon('users'), h('h2', { text: 'Guests' }), pill(String(j.guests.length))]),
+          h('p', { class: 'small muted', text: 'People outside the tool who can take assessments. They cannot open any other page.' }),
+          field('Emails', gIn), field('Note (optional)', gNote), gErr,
+          h('button', { class: 'btn primary', type: 'button', text: 'Add guests', onclick: function () {
+            clear(gErr);
+            api('/api/assess/admin/access/guests', { method: 'POST', body: { emails: gIn.value, note: gNote.value } }).then(function (r) { toast(r.added + ' added'); load(); }).catch(function (e) { gErr.appendChild(errBox(e.message)); });
+          } }),
+          gList,
+        ]));
+        // Reviewers + extra time
+        var col = h('div', { class: 'stack' });
+        grid.appendChild(col);
+        var rIn = h('input', { class: 'inp', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Reviewer email', style: 'flex:1;min-width:180px' });
+        var rList = h('div', { class: 'plist' });
+        j.reviewers.forEach(function (r) {
+          rList.appendChild(h('div', null, [h('span', { class: 'as-avatar', text: initials(r.email) }), h('div', { class: 'who' }, [h('b', { text: r.email }), h('span', { text: r.added_by === 'system' ? 'Owner' : 'Added by ' + r.added_by })]),
+            r.added_by === 'system' || r.email === me.email ? null : h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove', onclick: function () { api('/api/assess/admin/access/reviewers/' + encodeURIComponent(r.email), { method: 'DELETE' }).then(load).catch(function (e) { toast(e.message); }); } })]));
+        });
+        col.appendChild(h('div', { class: 'card pad' }, [
+          h('div', { class: 'row' }, [icon('shield'), h('h2', { text: 'Reviewers' })]),
+          h('p', { class: 'small muted', text: 'Reviewers see every result, answer key, activity log and camera photo, and manage questions and access. Being an admin in the tool does not make someone a reviewer.' }),
+          h('div', { class: 'row' }, [rIn, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () { api('/api/assess/admin/access/reviewers', { method: 'POST', body: { email: rIn.value } }).then(load).catch(function (e) { toast(e.message); }); } })]),
+          rList,
+        ]));
+        var xIn = h('input', { class: 'inp', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Email for extra time', style: 'flex:1;min-width:180px' });
+        var xPct = h('select', { class: 'sel', 'aria-label': 'Extra time' }, [25, 50, 100].map(function (n) { return h('option', { value: String(n), text: '+' + n + '%' }); }));
+        var xList = h('div', { class: 'plist' });
+        j.extraTime.forEach(function (x) {
+          xList.appendChild(h('div', null, [h('div', { class: 'who' }, [h('b', { text: x.email }), h('span', { text: '+' + x.pct + '% time on every question' })]),
+            h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: x.email, pct: 0 } }).then(load).catch(function (e) { toast(e.message); }); } })]));
+        });
+        col.appendChild(h('div', { class: 'card pad' }, [
+          h('div', { class: 'row' }, [icon('clock'), h('h2', { text: 'Extra time' })]),
+          h('p', { class: 'small muted', text: 'For anyone who needs more reading time. Applies to attempts they start from now on.' }),
+          h('div', { class: 'row' }, [xIn, xPct, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () { api('/api/assess/admin/access/extra-time', { method: 'PUT', body: { email: xIn.value, pct: xPct.value } }).then(load).catch(function (e) { toast(e.message); }); } })]),
+          xList,
+        ]));
+      }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
     }
     load();
   }
