@@ -231,7 +231,7 @@
       list.appendChild(h(it.href ? 'a' : 'button', { class: 'menu-item', role: 'menuitem', type: it.href ? null : 'button', href: it.href || null, onclick: function (e) { d.open = false; if (it.onclick) it.onclick(e); } }, [icon(it.icon || 'doc', 'sm'), h('span', null, [h('b', { text: it.label }), it.sub ? h('span', { text: it.sub }) : null])]));
     });
     d.appendChild(list);
-    d.addEventListener('toggle', function () { if (!d.open) return; var r = d.getBoundingClientRect(); var left = r.left < 320; list.style.left = left ? '0' : 'auto'; list.style.right = left ? 'auto' : '0'; });
+    d.addEventListener('toggle', function () { if (!d.open) return; var r = d.getBoundingClientRect(); var w = list.offsetWidth || 240; var vw = document.documentElement.clientWidth; var alignLeft = (r.left + w <= vw - 8); list.style.left = alignLeft ? '0' : 'auto'; list.style.right = alignLeft ? 'auto' : '0'; if (!alignLeft && r.right - w < 8) { list.style.right = 'auto'; list.style.left = Math.max(8 - r.left, 0) + 'px'; } });
     document.addEventListener('click', function (e) { if (d.open && !d.contains(e.target)) d.open = false; });
     return d;
   }
@@ -525,15 +525,16 @@
       }
       var grid = h('div', { class: 'grid-cards stagger' });
       j.tests.forEach(function (t) {
-        var status = t.inProgress ? pill('In progress', 'warn', true) : t.windowState === 'upcoming' ? pill('Opens ' + fmtWhen(t.opensAt), '', true)
+        var status = t.stopped ? pill('Stopped: camera', 'bad', true) : t.inProgress ? pill('In progress', 'warn', true) : t.windowState === 'upcoming' ? pill('Opens ' + fmtWhen(t.opensAt), '', true)
           : (t.last ? pill('Completed', 'ok', true) : t.windowState === 'closed' ? pill('Closed', 'bad', true) : pill('Not started', 'accent', true));
-        var btnText = t.inProgress ? 'Resume' : t.windowState === 'upcoming' ? 'Not open yet' : (t.canStart ? (t.last ? 'Take again' : 'Start') : (t.last ? 'Completed' : 'Closed'));
+        var btnText = t.stopped ? 'Waiting for a retest' : t.inProgress ? 'Resume' : t.windowState === 'upcoming' ? 'Not open yet' : (t.canStart ? (t.last ? 'Take again' : 'Start') : (t.last ? 'Completed' : 'Closed'));
         var viewBtn = t.last && t.lastAttemptId && (t.releaseMode !== 'none' || t.last.score != null) ? h('button', { class: 'btn', type: 'button', onclick: function () { viewMyResult(t.lastAttemptId); } }, [icon('eye', 'sm'), 'View result']) : null;
         var due = t.inProgress && t.autoSubmitAt ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Resume before ' + fmtWhen(t.autoSubmitAt) + '. After that it is submitted automatically and unanswered questions count as wrong.' })
           : (!t.last && t.closesAt && t.windowState === 'open' ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Due by ' + fmtWhen(t.closesAt) }) : null);
         var result = null;
-        if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
-        var tone = t.inProgress ? 'warn' : (t.last ? 'ok' : (t.canStart ? 'accent' : 'mute'));
+        if (t.stopped) result = h('p', { class: 'small', style: 'margin:0;color:var(--bad)', text: 'This test was stopped because the camera rules were not followed. Your reviewer can send you a retest.' });
+        else if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
+        var tone = t.stopped ? 'warn' : t.inProgress ? 'warn' : (t.last ? 'ok' : (t.canStart ? 'accent' : 'mute'));
         grid.appendChild(h('div', { class: 'card tcard tone-' + tone }, [
           h('div', { class: 'top' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('h2', { text: t.title }), status]),
           t.description ? h('p', { class: 'tdesc', text: t.description }) : null,
@@ -599,7 +600,7 @@
   function stopCamera() { if (cam.stream) cam.stream.getTracks().forEach(function (tr) { tr.stop(); }); cam.stream = null; cam.ok = false; }
   function viewPre(t) {
     clear(main); window.scrollTo(0, 0);
-    var step = 1, demo = null;
+    var step = 1, demo = null, camChecked = !t.camera;
     var wrap = h('div', { class: 'pre' });
     main.appendChild(wrap);
     function steps() {
@@ -676,7 +677,7 @@
       card.appendChild(h('h2', { text: 'Check your setup' }));
       card.appendChild(h('p', { class: 'lead', text: 'A quick check so nothing interrupts you once the timer starts.' }));
       var list = h('ul', { class: 'checks' }); card.appendChild(list);
-      var cont = h('button', { class: 'btn primary lg', type: 'button', disabled: true, onclick: function () { step = 3; render(); } }, ['Continue', icon('arrowR', 'sm')]);
+      var cont = h('button', { class: 'btn primary lg', type: 'button', disabled: true, onclick: function () { camChecked = true; step = 3; render(); } }, ['Continue', icon('arrowR', 'sm')]);
       var need = { fs: false, cam: !t.camera };
       function row(ic, title, sub) {
         var st = h('span', { class: 'st' }, [icon(ic, 'sm')]), s = h('span', { text: sub }), extra = h('div');
@@ -706,47 +707,65 @@
         hpOk.addEventListener('change', function () { need.hp = hpOk.checked; if (hpOk.checked) hp.set('ok', 'Headphones confirmed.'); sync(); });
       }
       if (t.camera) {
-        var cr = row('camera', 'Camera', 'Needed for this assessment. A photo is taken every ' + t.snapshotSec + ' seconds. Only the assessment owner can see them.');
-        var btn = h('button', { class: 'btn sm', type: 'button', text: 'Allow camera' });
+        var cr = row('camera', 'Camera and face check', 'Required for this assessment. Allow the camera, sit facing the screen with your face in the frame, and make sure no one else is in view. A photo is taken every ' + t.snapshotSec + ' seconds; only the assessment owner can see them. You cannot start until this check passes.');
+        var btn = h('button', { class: 'btn sm primary', type: 'button', text: 'Allow camera' });
         cr.extra.appendChild(btn);
         var faceLoop = null, okRuns = 0;
         function showPreview() {
-          clear(cr.extra);
+          clear(cr.extra); clearInterval(faceLoop);
           var v = h('video', { class: 'cam-preview', autoplay: true, muted: true, playsinline: true });
           v.srcObject = cam.stream;
           var pl = v.play && v.play(); if (pl && pl.catch) pl.catch(function () {});
-          var frame = h('div', { class: 'cam-frame' }, [v, h('span', { class: 'cam-ring' })]);
-          cr.extra.appendChild(frame);
-          cr.set('warn', 'Looking for your face… Sit facing the screen with light on your face.', 'camera');
+          var frame = h('div', { class: 'cam-frame big' }, [v, h('span', { class: 'cam-ring' })]);
+          var marks = {};
+          function mark(k, label) { var st = h('span', { class: 'cm pend' }, [icon('clock', 'sm')]); marks[k] = st; return h('div', { class: 'cmi' }, [st, h('span', { text: label })]); }
+          var list2 = h('div', { class: 'cam-checks' }, [mark('face', 'Your face is in view'), mark('one', 'Only one person in view'), mark('light', 'Camera is uncovered and lit')]);
+          function setMark(k, state) { var st = marks[k]; st.className = 'cm ' + state; clear(st); st.appendChild(icon(state === 'ok' ? 'check' : (state === 'bad' ? 'x' : 'clock'), 'sm')); }
+          var retry = h('button', { class: 'btn sm', type: 'button', style: 'display:none', text: 'Try the face check again' });
+          cr.extra.appendChild(h('div', { class: 'cam-gate' }, [frame, h('div', { class: 'stack', style: 'gap:10px;min-width:0' }, [list2, retry])]));
           need.cam = false; sync();
+          cr.set('warn', 'Loading the face check…', 'camera');
+          function pass(r) {
+            frame.className = 'cam-frame big ' + r.status;
+            setMark('light', r.status === 'dark' ? 'bad' : 'ok');
+            setMark('face', r.status === 'ok' || r.status === 'multi' ? 'ok' : (r.status === 'dark' ? 'pend' : 'bad'));
+            setMark('one', r.status === 'ok' ? 'ok' : (r.status === 'multi' ? 'bad' : 'pend'));
+          }
           function loop() {
-            clearInterval(faceLoop);
+            retry.style.display = 'none';
+            cr.set('warn', 'Looking for your face… Sit facing the screen with light on your face.', 'camera');
+            clearInterval(faceLoop); okRuns = 0;
             faceLoop = setInterval(function () {
               if (!document.body.contains(v)) { clearInterval(faceLoop); return; }
-              var r = FaceWatch.check(v); if (!r) return;
-              frame.className = 'cam-frame ' + r.status;
-              if (r.status === 'ok') { okRuns++; if (okRuns >= 2 && !need.cam) { cr.set('ok', 'Face found. Keep your face in view during the test; the check runs on this device only.'); need.cam = true; sync(); } }
-              else {
+              var r = FaceWatch.check(v); if (!r || r.status === 'unknown') return;
+              pass(r);
+              if (r.status === 'ok') {
+                okRuns++;
+                if (okRuns >= 3 && !need.cam) { cr.set('ok', 'Face check passed. Keep your face in view during the test. If the camera rules are broken for more than 10 seconds, the test stops and your reviewer must send you a retest.'); need.cam = true; sync(); }
+              } else {
                 okRuns = 0;
+                if (need.cam) { need.cam = false; sync(); }
                 if (r.status === 'dark') cr.set('bad', 'The camera looks covered or too dark. Uncover it or add some light.', 'camera');
                 else if (r.status === 'multi') cr.set('warn', 'More than one face is in view. Only you should be at the screen.', 'camera');
-                else if (r.status === 'none') cr.set('warn', 'We cannot see your face yet. Move so your face is in the frame.', 'camera');
-                if (need.cam && r.status !== 'unknown') { need.cam = false; sync(); }
+                else cr.set('warn', 'We cannot see your face yet. Move so your face is in the frame.', 'camera');
               }
-            }, 700);
+            }, 500);
           }
-          FaceWatch.load().then(loop).catch(function () {
-            // The detector could not load (old browser or blocked network): continue with photos only
-            cr.set('ok', 'Camera is on. The face check is not available on this device, so photos are used instead.', 'check');
-            need.cam = true; sync();
-          });
+          function loadDetector() {
+            cr.set('warn', 'Loading the face check…', 'camera');
+            FaceWatch.load().then(loop).catch(function () {
+              cr.set('bad', 'The face check could not start on this device or network, so you cannot begin this assessment. Try again, or use the latest Chrome or Edge on a computer. If it keeps failing, tell your reviewer.', 'camera');
+              retry.style.display = ''; retry.onclick = loadDetector;
+            });
+          }
+          loadDetector();
         }
         if (cam.ok && cam.stream) showPreview();
         btn.addEventListener('click', function () {
           btn.disabled = true;
-          navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false }).then(function (st) {
+          navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' }, audio: false }).then(function (st) {
             cam.stream = st; cam.ok = true; showPreview();
-          }).catch(function () { btn.disabled = false; cr.set('bad', 'Camera blocked. Allow it in the browser address bar, then try again.'); });
+          }).catch(function () { btn.disabled = false; cr.set('bad', 'The camera is blocked or missing, so you cannot start. Allow it in the browser address bar (the camera icon), then press Allow camera again.'); });
         });
       }
       sync();
@@ -772,7 +791,7 @@
       start.addEventListener('click', function () {
         start.disabled = true; clear(err);
         var fsP = document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen().catch(function () {}) : Promise.resolve();
-        fsP.then(function () { return api('/api/assess/tests/' + t.id + '/start', { method: 'POST', body: {} }); })
+        fsP.then(function () { return api('/api/assess/tests/' + t.id + '/start', { method: 'POST', body: { cameraChecked: camChecked } }); })
           .then(function (j) { runExam(j, t); })
           .catch(function (e) { err.appendChild(errBox(e.message)); start.disabled = false; if (document.fullscreenElement) document.exitFullscreen().catch(function () {}); });
       });
@@ -808,11 +827,16 @@
     var probe = document.createElement('canvas'); probe.width = 32; probe.height = 24;
     function load() {
       if (st.loading) return st.loading;
-      st.loading = import(MP_CDN + 'vision_bundle.mjs').then(function (v) {
-        return v.FilesetResolver.forVisionTasks(MP_CDN + 'wasm').then(function (fs) {
-          return v.FaceDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: '/vendor/face/blaze_face_short_range.tflite' }, runningMode: 'VIDEO', minDetectionConfidence: 0.65 });
+      function via(base) {
+        return import(base + 'vision_bundle.mjs').then(function (v) {
+          return v.FilesetResolver.forVisionTasks(base + 'wasm').then(function (fs) {
+            return v.FaceDetector.createFromOptions(fs, { baseOptions: { modelAssetPath: '/vendor/face/blaze_face_short_range.tflite' }, runningMode: 'VIDEO', minDetectionConfidence: 0.65 });
+          });
         });
-      }).then(function (d) { st.det = d; return d; }).catch(function (e) { st.failed = true; try { console.warn('Face check unavailable:', e && e.message); } catch (x) {} throw e; });
+      }
+      // Our own server first, the public CDN as a backup
+      st.loading = via('/vendor/mediapipe/').catch(function () { return via(MP_CDN); })
+        .then(function (d) { st.det = d; return d; }).catch(function (e) { st.failed = true; st.err = e && e.message; st.loading = null; try { console.warn('Face check unavailable:', e && e.message); } catch (x) {} throw e; });
       return st.loading;
     }
     function brightness(video) {
@@ -838,6 +862,13 @@
   })();
   var FACE_TEXT = { ok: 'Face in view', none: 'We cannot see you', multi: 'More than one face', dark: 'Camera covered', unknown: 'Camera on' };
 
+  function stoppedScreen(reason) {
+    main.appendChild(h('div', { class: 'card gate' }, [art('denied', 190),
+      h('h1', { text: 'Your test was stopped' }),
+      h('p', { text: 'The camera rules were not followed: ' + String(reason || 'your face was not in view').replace(/\.$/, '') + '.' }),
+      h('p', { class: 'muted small', text: 'Your answers so far are kept as a draft and are not scored. Your reviewer can see what happened and can send you a retest. Before you try again, sit facing the screen in good light, on your own, with the camera uncovered.' }),
+      h('button', { class: 'btn primary', type: 'button', text: 'Back to my assessments', onclick: function () { go(''); } })]));
+  }
   // ── Exam runner ──────────────────────────────────────────────────────
   function runExam(start, test) {
     var token = start.token, attemptId = start.attemptId, s = start.settings;
@@ -860,7 +891,7 @@
     var snapCanvas = document.createElement('canvas'); snapCanvas.width = 320; snapCanvas.height = 240;
     var camVideo = null, lastFaces = null;
     var face = { status: 'unknown', since: Date.now(), episode: null };
-    var faceChip = null, faceBanner = null;
+    var faceChip = null, faceBanner = null, faceCount = null, stopping = false, strikes = 0;
     function snap() {
       if (!camVideo || !cam.stream) return;
       try {
@@ -874,51 +905,67 @@
     }
     function showFaceBanner(kind) {
       hideFaceBanner();
-      var msg = kind === 'multi' ? 'More than one face is in view. Only you should be at the screen during the test.'
+      var msg = kind === 'multi' ? 'More than one face is in view. Only you should be at the screen.'
         : kind === 'dark' ? 'Your camera looks covered or too dark. Uncover it or turn on a light.'
         : 'We cannot see your face. Sit facing the screen with your face in view.';
-      faceBanner = h('div', { class: 'facebar ' + kind, role: 'alert' }, [icon('camera', 'sm'), h('span', { text: msg + ' This is noted for your reviewer.' })]);
+      faceCount = h('b', { text: '' });
+      faceBanner = h('div', { class: 'facebar ' + kind, role: 'alert' }, [icon('camera', 'sm'), h('span', null, [msg + ' Fix it within ', faceCount, ' or the test will end.'])]);
       exam.insertBefore(faceBanner, exam.children[1] || null);
     }
     function hideFaceBanner() { if (faceBanner) { faceBanner.remove(); faceBanner = null; } }
+    var WARN_MS = 3000, STOP_MS = 10000;
+    function stopExam(reason) {
+      if (stopping || ended) return;
+      stopping = true; hideFaceBanner();
+      flush();
+      setTimeout(function () {
+        api('/api/assess/attempts/' + attemptId + '/stop', { method: 'POST', token: token, body: { reason: reason } }).catch(function () {}).then(function () { exitTo(function () { stoppedScreen(reason); }); });
+      }, 400);
+    }
+    var FACE_REASON = { none: 'your face was not in view for 10 seconds', multi: 'a second person was in view for 10 seconds', dark: 'the camera was covered or too dark for 10 seconds' };
+    function faceEv(status, faces) { ev(status === 'none' ? 'face_missing' : (status === 'multi' ? 'face_multi' : 'camera_dark'), status === 'multi' ? faces + ' faces' : ''); }
     function faceTick() {
+      if (stopping || ended) return;
       var r = FaceWatch.check(camVideo); if (!r) return;
       lastFaces = r.faces;
+      if (r.status === 'unknown') return;
       var now = Date.now();
       if (r.status !== face.status) { face.status = r.status; face.since = now; paintFace(); }
       var bad = r.status === 'none' || r.status === 'multi' || r.status === 'dark';
-      var dur = now - face.since;
-      if (bad && !face.episode && dur >= (r.status === 'multi' ? 1500 : 3000)) {
-        face.episode = { type: r.status, at: face.since };
-        ev(r.status === 'none' ? 'face_missing' : (r.status === 'multi' ? 'face_multi' : 'camera_dark'), r.status === 'multi' ? r.faces + ' faces' : '');
-        showFaceBanner(r.status);
-      } else if (bad && face.episode && face.episode.type !== r.status && dur >= 3000) {
-        // changed from one problem to another, e.g. covered, then no face
-        face.episode = { type: r.status, at: face.episode.at };
-        ev(r.status === 'none' ? 'face_missing' : (r.status === 'multi' ? 'face_multi' : 'camera_dark'), r.status === 'multi' ? r.faces + ' faces' : '');
-        showFaceBanner(r.status);
+      if (!bad) {
+        face.badSince = 0;
+        if (face.episode) { ev('face_back', 'after ' + Math.round((now - face.episode.at) / 1000) + 's'); face.episode = null; hideFaceBanner(); }
+        return;
       }
-      if (face.episode && r.status === 'ok') {
-        ev('face_back', 'after ' + Math.round((now - face.episode.at) / 1000) + 's');
-        face.episode = null; hideFaceBanner();
+      if (!face.badSince) face.badSince = now;
+      var ms = now - face.badSince;
+      if (ms >= WARN_MS && !face.episode) {
+        face.episode = { type: r.status, at: face.badSince };
+        strikes++; faceEv(r.status, r.faces);
+        if (strikes >= 3) { stopExam('the camera rules were broken three times'); return; }
+        showFaceBanner(r.status);
+      } else if (face.episode && face.episode.type !== r.status) {
+        face.episode.type = r.status; faceEv(r.status, r.faces); showFaceBanner(r.status);
       }
+      if (faceCount) faceCount.textContent = Math.max(0, Math.ceil((STOP_MS - ms) / 1000)) + ' seconds';
+      if (ms >= STOP_MS) stopExam(FACE_REASON[r.status] || 'the camera rules were not followed');
     }
     function startCamera() {
       if (!s.camera) return Promise.resolve();
-      var p = cam.stream ? Promise.resolve(cam.stream) : navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false });
+      var p = cam.stream ? Promise.resolve(cam.stream) : navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' }, audio: false });
       return p.then(function (st) {
         cam.stream = st; cam.ok = true;
         camVideo = h('video', { autoplay: true, muted: true, playsinline: true }); camVideo.srcObject = st;
         var pl = camVideo.play && camVideo.play(); if (pl && pl.catch) pl.catch(function () {});
-        st.getVideoTracks().forEach(function (tr) { tr.addEventListener('ended', function () { ev('camera_off', 'Camera track ended'); }); });
+        st.getVideoTracks().forEach(function (tr) { tr.addEventListener('ended', function () { if (ended || stopping) return; ev('camera_off', 'Camera track ended'); stopExam('the camera was turned off or unplugged'); }); });
         ev('camera_on');
         setTimeout(snap, 1500);
         snapTimer = setInterval(snap, s.snapshotSec * 1000);
-        FaceWatch.load().then(function () { faceTimer = setInterval(faceTick, 1000); }).catch(function () {
+        return FaceWatch.load().then(function () { faceTimer = setInterval(faceTick, 500); }).catch(function () {
           ev('face_check_off', 'The face check could not load on this device');
-          faceTimer = setInterval(faceTick, 1500); // still catches a covered camera
+          stopExam('the face check could not run on this device');
         });
-      }).catch(function () { ev('camera_denied'); });
+      }).catch(function () { ev('camera_denied'); stopExam('the camera was not available'); });
     }
 
     // Guards: best-effort blocking, always logged
@@ -1389,7 +1436,7 @@
       }
     }
 
-    startCamera().then(load);
+    startCamera().then(function () { if (!stopping) load(); });
   }
 
   // ── Reviewer: assessments list ───────────────────────────────────────
@@ -1801,7 +1848,7 @@
       var cb = h('input', { type: 'checkbox' }); boxes.push([cb, a]);
       cb.addEventListener('change', function () { if (cb.checked) chosen[a.id] = a; else delete chosen[a.id]; sync(); });
       return h('label', { class: 'pick-row' }, [cb, h('span', { class: 'pick-who' }, [h('b', { text: a.name || a.email }), h('span', { text: a.email })]),
-        a.status === 'submitted' ? (a.passed ? pill(a.pct + '%', 'ok') : pill(a.pct + '%', 'bad')) : pill('In progress', 'warn')]);
+        a.status === 'submitted' ? (a.passed ? pill(a.pct + '%', 'ok') : pill(a.pct + '%', 'bad')) : a.status === 'stopped' ? pill('Stopped', 'bad') : pill('In progress', 'warn')]);
     }));
     all.addEventListener('change', function () { boxes.forEach(function (x) { x[0].checked = all.checked; if (all.checked) chosen[x[1].id] = x[1]; else delete chosen[x[1].id]; }); sync(); });
     dlg.appendChild(h('div', { class: 'cf-in' }, [
@@ -1887,11 +1934,12 @@
       var done = at.filter(function (a) { return a.status === 'submitted'; });
       var resetN = at.filter(function (a) { return a.status === 'reset'; }).length;
       var active = at.filter(function (a) { return a.status !== 'reset'; });
+      var stopN = at.filter(function (a) { return a.status === 'stopped'; }).length;
       var avg = done.length ? Math.round(done.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / done.length) : null;
       var pass = done.length ? Math.round(done.filter(function (a) { return a.passed; }).length / done.length * 100) : null;
       var review = at.filter(function (a) { return a.status === 'submitted' && (a.unmarked > 0 || !a.verdict); }).length;
       holder.appendChild(h('dl', { class: 'stats' }, [
-        h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), active.length > done.length ? h('small', { text: '  ' + (active.length - done.length) + ' in progress' }) : null, resetN ? h('small', { text: '  ' + resetN + ' reset' }) : null])]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), active.length > done.length + stopN ? h('small', { text: '  ' + (active.length - done.length - stopN) + ' in progress' }) : null, stopN ? h('small', { text: '  ' + stopN + ' stopped' }) : null, resetN ? h('small', { text: '  ' + resetN + ' reset' }) : null])]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Average score' }), h('dd', { text: avg != null ? avg + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Pass rate' }), h('dd', { text: pass != null ? pass + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Needs your review' }), h('dd', { text: String(review) })]),
@@ -1905,7 +1953,7 @@
         } }, [icon('retest', 'sm'), 'Retest']);
         var tr = h('tr', { class: 'click' + (a.status === 'reset' ? ' is-reset' : ''), tabindex: '0', style: '--i:' + Math.min(ri, 12) }, [
           h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email })]),
-          h('td', null, [a.status === 'reset' ? pill('Reset', '', true) : a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn'),
+          h('td', null, [a.status === 'reset' ? pill('Reset', '', true) : a.status === 'stopped' ? pill('Stopped: camera', 'bad', true) : a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn'),
             a.reset ? h('span', { class: 'sub', title: 'Reset by ' + a.reset.by + ' · ' + fmtWhen(a.reset.at), text: 'by ' + String(a.reset.by || '').split('@')[0] + ' · ' + new Date(a.reset.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }) : null]),
           h('td', null, [a.pct != null ? h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + a.pct + '%' })]), h('span', { class: 'num', text: a.score + '/' + a.maxScore + ' · ' + a.pct + '%' })]) : h('span', { class: 'muted', text: '–' })]),
           h('td', null, [tierPill(a.tier), a.flags && a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') + (a.flags.length > 2 ? '…' : '') }) : null]),
@@ -1927,8 +1975,8 @@
     copy: 'Tried to copy', cut: 'Tried to cut', paste: 'Tried to paste', contextmenu: 'Right-click', printscreen: 'Pressed Print Screen', devtools_key: 'Developer tools key', print: 'Tried to print', mouse_out: 'Mouse left the window',
     replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text',
     camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically',
-    face_missing: 'Face not in view', face_back: 'Face back in view', face_multi: 'More than one face', camera_dark: 'Camera covered or dark', face_check_off: 'Face check unavailable', nav: 'Moved to another question', reset: 'Reset by a reviewer', submitted_by: 'Submitted' };
-  var EVENT_LEVEL = { face_missing: 'warn', face_multi: 'bad', camera_dark: 'bad', reset: 'warn', hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
+    face_missing: 'Face not in view', face_back: 'Face back in view', face_multi: 'More than one face', camera_dark: 'Camera covered or dark', face_check_off: 'Face check unavailable', camera_stop: 'Test stopped: camera rules', nav: 'Moved to another question', reset: 'Reset by a reviewer', submitted_by: 'Submitted' };
+  var EVENT_LEVEL = { face_missing: 'warn', face_multi: 'bad', camera_dark: 'bad', reset: 'warn', hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', camera_stop: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
 
   function viewAttempt(id) {
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());

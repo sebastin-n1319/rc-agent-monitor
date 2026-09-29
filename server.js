@@ -184,6 +184,8 @@ app.use((req, res, next) => {
   }
   next();
 });
+// Session 65: the face detector runs from our own server (no CDN needed on the agent's network)
+app.use('/vendor/mediapipe', express.static(path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision'), { index: false, maxAge: '30d', immutable: true, fallthrough: false }));
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: true,
   lastModified: true,
@@ -1705,7 +1707,7 @@ app.get('/api/assess/me', requireAuth, assessWrap(async (req, res) => {
     tests: acc.allowed ? await assessments.myTests(req.session.email) : [] });
 }));
 app.post('/api/assess/tests/:id/start', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
-  res.json({ success: true, ...(await assessments.startAttempt({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent') })) });
+  res.json({ success: true, ...(await assessments.startAttempt({ testId: req.params.id, email: req.session.email, name: req.session.name, ua: req.get('user-agent'), cameraChecked: !!(req.body || {}).cameraChecked })) });
 }));
 app.get('/api/assess/attempts/:id/current', requireAuth, requireAssessAccess, rateLimit(120, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, ...(await assessments.current({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) })) });
@@ -1720,6 +1722,9 @@ app.post('/api/assess/attempts/:id/submit', requireAuth, requireAssessAccess, ra
 }));
 app.post('/api/assess/attempts/:id/events', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, logged: await assessments.clientEvents({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), events: (req.body || {}).events }) });
+}));
+app.post('/api/assess/attempts/:id/stop', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
+  res.json({ success: true, ...(await assessments.stopAttempt({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), reason: (req.body || {}).reason })) });
 }));
 app.post('/api/assess/attempts/:id/snapshot', requireAuth, requireAssessAccess, rateLimit(20, 60000), assessWrap(async (req, res) => {
   const b = req.body || {};

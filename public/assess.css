@@ -57,7 +57,7 @@ svg.i.lg{width:22px;height:22px}
 body.as-embed .as-top{height:auto;position:static;background:transparent;border-bottom:1px solid var(--border);padding:0 24px}
 body.as-embed .as-brand,body.as-embed .as-user{display:none}
 body.as-embed .as-nav button{height:46px}
-.as-main{flex:1;width:100%;max-width:1160px;margin:0 auto;padding:28px 24px 64px}
+.as-main{flex:1;width:100%;max-width:none;margin:0 auto;padding:24px clamp(16px,2.4vw,40px) 56px}
 .as-main:focus{outline:none}
 
 /* Page header */
@@ -999,3 +999,35 @@ dialog.pick{width:min(520px,calc(100vw - 32px))}
 .ctopic b{display:block;font-size:14px;margin-bottom:4px}
 .ctopic ul{margin:0;padding-left:18px;color:var(--t2);font-size:13px;line-height:1.5}
 .ctopic li{margin:2px 0}
+
+/* Session 65: camera gate, stopped state */
+.checks li{flex-wrap:wrap}
+.checks li > div:last-child:not(.tx){flex:1 1 100%;margin-top:4px}
+.cam-preview{transform:scaleX(-1)}
+.cam-frame.big{width:min(320px,100%);height:auto;aspect-ratio:4/3;border-radius:16px}
+.cam-frame.big .cam-ring{border-radius:16px;border-width:4px}
+.cam-gate{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.cam-checks{display:flex;flex-direction:column;gap:8px}
+.cam-checks .cmi{display:flex;align-items:center;gap:10px;font-size:14px;padding:0;border:0;background:none}
+.cam-checks .cm{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--surface-3);color:var(--t3);flex:none;transition:background .2s,color .2s}
+.cam-checks .cm.ok{background:var(--ok-soft);color:var(--ok)}
+.cam-checks .cm.bad{background:var(--bad-soft);color:var(--bad)}
+.facebar b{font-variant-numeric:tabular-nums}
+
+/* Batch 28: full-width pages, exam fits the frame */
+body.as-exam{overflow:hidden}
+.exam{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+.exam>.xbar{position:relative;top:auto;flex:0 0 auto;min-height:56px;padding:6px clamp(16px,2.4vw,40px)}
+.exam>.facebar{position:relative;top:auto;flex:0 0 auto}
+.exam>.xbody{flex:1 1 auto;min-height:0;overflow-y:auto;max-width:none;padding:clamp(12px,2.2vh,28px) clamp(16px,2.4vw,40px) 16px;overscroll-behavior:contain}
+.exam>.xbody>*{max-width:1000px;margin-left:auto;margin-right:auto}
+.exam>.xfoot{position:relative;left:auto;right:auto;bottom:auto;flex:0 0 auto}
+.exam>.xfoot .in{max-width:none;padding:10px clamp(16px,2.4vw,40px)}
+.exam .qcard{padding:clamp(14px,2.6vh,26px) clamp(16px,2vw,28px)}
+@media (max-height:700px){.exam .qcard{padding:14px 18px}.exam .opt{padding-top:9px;padding-bottom:9px}.exam>.xbar{min-height:48px;padding-top:4px;padding-bottom:4px}}
+.exam .reader{min-height:0;padding:14px 20px 10px}
+.exam .reader canvas{max-height:min(200px,26vh)}
+.exam .opts{gap:8px;margin-top:12px}
+.exam .opt{min-height:0}
+@media (max-height:760px) and (min-width:900px){.exam .opts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-height:700px){.exam .reader canvas{max-height:22vh}.exam .reader .bar{margin-top:6px}}

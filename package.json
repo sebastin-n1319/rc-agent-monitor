@@ -27,6 +27,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "0.10.21",
     "@ringcentral/sdk": "^5.0.6",
     "compression": "^1.7.5",
     "cookie-parser": "^1.4.7",
