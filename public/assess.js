@@ -56,6 +56,8 @@
   // padding, round caps. No fill layers: they read as smudges at 15px.
   var ICONS = {
     clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2.5" width="6" height="3.5" rx="1"/><path d="M9 13.5l2 2 4-4"/>',
+    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 5v6h-6"/>',
+    bell: '<path d="M6 9a6 6 0 0 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/>',
     eye: '<path d="M2.5 12s3.5-7 9.5-7 9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7z"/><circle cx="12" cy="12" r="3"/>',
     lock: '<rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
@@ -452,6 +454,74 @@
     } catch (e) { if (done) done(); }
   }
 
+  // ── Session 66: notification centre ─────────────────────────────────
+  var bellBox = h('div', { class: 'bell-wrap' });
+  var notif = { items: [], unread: 0, build: null, seenMax: null, open: false, timer: null };
+  var KIND_ICON = { assigned: 'clipboard', retest: 'refresh', remind: 'clock', results: 'check', update: 'spark' };
+  function inExam() { return !!document.querySelector('.exam'); }
+  function onHome() { var hsh = location.hash.replace(/^#/, ''); return !hsh || hsh === 'my'; }
+  function ago(iso) {
+    var d = toDate(iso); if (!d) return '';
+    var m = Math.round((Date.now() - d.getTime()) / 60000);
+    if (m < 1) return 'just now'; if (m < 60) return m + ' min ago';
+    if (m < 1440) return Math.round(m / 60) + ' h ago';
+    return fmtDay(iso);
+  }
+  function drawBell() {
+    clear(bellBox);
+    var btn = h('button', { class: 'bell-btn', type: 'button', 'aria-label': 'Notifications' + (notif.unread ? ', ' + notif.unread + ' unread' : ''), 'aria-expanded': String(notif.open), onclick: function (e) { e.stopPropagation(); notif.open = !notif.open; drawBell(); if (notif.open) refreshNotifs(true); } },
+      [icon('bell', 'sm'), notif.unread ? h('span', { class: 'bell-n', text: notif.unread > 9 ? '9+' : String(notif.unread) }) : null]);
+    bellBox.appendChild(btn);
+    if (!notif.open) return;
+    var upd = notif.updateReady;
+    var list = notif.items.map(function (n) {
+      return h('button', { class: 'nt' + (n.read ? '' : ' unread'), type: 'button', onclick: function () { openNotif(n); } }, [
+        h('span', { class: 'nt-ic' }, [icon(KIND_ICON[n.kind] || 'bell', 'sm')]),
+        h('span', { class: 'nt-tx' }, [h('b', { text: n.title }), n.body ? h('span', { text: n.body }) : null, h('span', { class: 'nt-t', text: ago(n.at) })]),
+        n.read ? null : h('span', { class: 'nt-dot', 'aria-hidden': 'true' })]);
+    });
+    if (upd) list.unshift(h('button', { class: 'nt unread', type: 'button', onclick: function () { location.reload(); } }, [
+      h('span', { class: 'nt-ic' }, [icon('spark', 'sm')]), h('span', { class: 'nt-tx' }, [h('b', { text: 'A new version is ready' }), h('span', { text: 'New pages or fixes were added. Tap to refresh.' })])]));
+    bellBox.appendChild(h('div', { class: 'nt-panel', role: 'dialog', 'aria-label': 'Notifications' }, [
+      h('div', { class: 'nt-hd' }, [h('b', { text: 'Notifications' }), h('span', { class: 'spacer' }),
+        notif.unread ? h('button', { class: 'btn ghost sm', type: 'button', text: 'Mark all read', onclick: markAll }) : null]),
+      list.length ? h('div', { class: 'nt-list' }, list) : h('div', { class: 'nt-empty', text: 'Nothing new. Assignments, retests and reminders show up here.' })]));
+  }
+  function openNotif(n) {
+    notif.open = false;
+    if (!n.read) { n.read = true; notif.unread = Math.max(0, notif.unread - 1); api('/api/assess/notifications/read', { method: 'POST', body: { ids: [n.id] } }).catch(function () {}); }
+    drawBell();
+    if (!inExam()) go('');
+  }
+  function markAll() {
+    notif.items.forEach(function (n) { n.read = true; }); notif.unread = 0; drawBell();
+    api('/api/assess/notifications/read', { method: 'POST', body: {} }).catch(function () {});
+  }
+  function refreshNotifs(quiet) {
+    return api('/api/assess/notifications').then(function (r) {
+      var maxId = r.items.length ? r.items[0].id : 0;
+      var fresh = notif.seenMax != null ? r.items.filter(function (n) { return n.id > notif.seenMax && !n.read; }) : [];
+      notif.items = r.items; notif.unread = r.unread;
+      if (notif.build && r.build && r.build !== notif.build) notif.updateReady = true;
+      if (!notif.build) notif.build = r.build;
+      var firstLoad = notif.seenMax == null;
+      notif.seenMax = Math.max(maxId, notif.seenMax || 0);
+      drawBell();
+      if (fresh.length && !firstLoad && !inExam()) {
+        toast(fresh[0].title + (fresh.length > 1 ? ' and ' + (fresh.length - 1) + ' more' : ''));
+        if (onHome() && !document.querySelector('dialog[open]')) route(); // new work for this person: refresh the list
+      }
+      if (notif.updateReady && !inExam() && onHome() && !document.querySelector('dialog[open]') && document.visibilityState === 'hidden') location.reload();
+    }).catch(function () {});
+  }
+  function startNotifs() {
+    drawBell(); refreshNotifs(true);
+    if (notif.timer) return;
+    notif.timer = setInterval(function () { if (document.visibilityState === 'visible' && !inExam()) refreshNotifs(true); }, 30000);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && !inExam()) refreshNotifs(true); });
+    document.addEventListener('click', function (e) { if (notif.open && !bellBox.contains(e.target)) { notif.open = false; drawBell(); } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && notif.open) { notif.open = false; drawBell(); } });
+  }
   // ── Boot + routing ───────────────────────────────────────────────────
   function boot() {
     api('/api/assess/me').then(function (j) {
@@ -461,6 +531,7 @@
       if (!j.allowed) return gate();
       window.addEventListener('hashchange', route);
       route();
+      startNotifs();
     }).catch(function (e) {
       if (/sign in/i.test(e.message)) return;
       clear(main); main.appendChild(errBox('Could not load assessments: ' + e.message));
@@ -469,6 +540,7 @@
   function renderUser() {
     clear(userBox);
     var av = h('span', { class: 'as-avatar' }, [me.picture ? h('img', { src: me.picture, alt: '', referrerpolicy: 'no-referrer' }) : initials(me.name || me.email)]);
+    userBox.appendChild(bellBox);
     userBox.appendChild(av);
     userBox.appendChild(h('span', { class: 'who' }, [h('b', { text: me.name || me.email, title: me.email }), h('span', { text: me.reviewer ? 'Reviewer' : (me.member ? 'Team member' : 'Guest') })]));
     if (me.member && !EMBED) userBox.appendChild(h('a', { class: 'btn sm', href: '/', text: 'Open the tool' }));

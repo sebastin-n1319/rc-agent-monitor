@@ -1755,6 +1755,8 @@ app.get('/api/assess/attempts/:id/image', requireAuth, requireAssessAccess, rate
   const r = await assessments.currentImage({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) });
   res.setHeader('Content-Type', r.image_type); res.setHeader('Cache-Control', 'no-store'); res.send(r.image);
 }));
+app.get('/api/assess/notifications', requireAuth, requireAssessAccess, rateLimit(120, 60000), assessWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, ...(await assessments.myNotifications(req.session.email)) }); }));
+app.post('/api/assess/notifications/read', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => { const b = req.body || {}; await assessments.markNotificationsRead(req.session.email, Array.isArray(b.ids) ? b.ids : null); res.json({ success: true }); }));
 app.get('/api/assess/my-progress', requireAuth, requireAssessAccess, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.myProgress(req.session.email)) })));
 app.get('/api/assess/admin/live', ...RV_EARLY(), assessWrap(async (req, res) => res.json({ success: true, live: await assessments.adminLive() })));
 

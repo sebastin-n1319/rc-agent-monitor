@@ -1073,3 +1073,23 @@ dialog.confirm.ann textarea{resize:vertical;min-height:120px}
 .rules .rules-all ul{list-style:disc;color:var(--on-navy-2)}
 .rules .rules-all li{display:list-item;color:var(--on-navy-2);margin:6px 0;line-height:1.45}
 .rules .rules-all li b{display:inline;color:var(--on-navy);font-weight:600}
+
+/* Session 66: notification centre */
+.bell-wrap{position:relative;flex:none}
+.bell-btn{position:relative;width:34px;height:34px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--t2);display:grid;place-items:center;cursor:pointer}
+.bell-btn:hover{color:var(--t1);background:var(--surface-2,var(--surface))}
+.bell-n{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;border:2px solid var(--surface)}
+.nt-panel{position:absolute;right:0;top:calc(100% + 8px);width:min(380px,calc(100vw - 24px));max-height:min(70vh,520px);display:flex;flex-direction:column;background:var(--surface);color:var(--t1);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-3);z-index:80;overflow:hidden}
+.nt-hd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.nt-list{overflow:auto;display:flex;flex-direction:column}
+.nt{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;padding:12px 14px;border:0;border-bottom:1px solid var(--border);background:transparent;color:inherit;font:inherit;cursor:pointer}
+.nt:hover{background:var(--surface-3)}
+.nt.unread{background:var(--accent-soft)}
+.nt-ic{width:30px;height:30px;border-radius:9px;background:var(--surface-3);color:var(--t1);display:grid;place-items:center;flex:none}
+.nt-tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.nt-tx b{font-weight:600;font-size:13.5px}
+.nt-tx span{font-size:12.5px;color:var(--t2);line-height:1.4}
+.nt-tx .nt-t{font-size:11.5px;color:var(--t3)}
+.nt-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;margin-top:6px}
+.nt-empty{padding:26px 18px;font-size:13px;color:var(--t2);text-align:center}
+@media (max-width:1500px){.as-user .who{display:none}}
