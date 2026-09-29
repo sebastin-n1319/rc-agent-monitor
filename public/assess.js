@@ -554,8 +554,9 @@
   var SECTIONS = [['', 'My assessments', 'clipboard'], ['manage', 'Assessments', 'layers'], ['studio', 'AI Studio', 'bot'], ['reports', 'Reports', 'chart'], ['live', 'Live', 'eye'], ['bank', 'Question bank', 'list'], ['access', 'Access', 'shield']];
   function renderNav(cur) {
     clear(nav);
-    if (!me.reviewer) return; // takers only have one page
-    SECTIONS.forEach(function (s) {
+    var scopedOnly = !me.reviewer && me.reviewTests && me.reviewTests.length;
+    if (!me.reviewer && !scopedOnly) return; // takers only have one page
+    SECTIONS.filter(function (s) { return me.reviewer || s[0] === '' || s[0] === 'manage'; }).forEach(function (s) {
       nav.appendChild(h('button', { type: 'button', 'aria-current': cur === s[0] ? 'page' : null, onclick: function () { go(s[0]); } }, [icon(s[2], 'sm'), h('span', { text: s[1] })]));
     });
   }
@@ -564,7 +565,8 @@
   function route() {
     var parts = location.hash.replace(/^#/, '').split('?')[0].split('/');
     var sec = parts[0] || '', arg = parts[1];
-    if (!me.reviewer && sec) sec = '';
+    var scopedOnly = !me.reviewer && me.reviewTests && me.reviewTests.length;
+    if (!me.reviewer && !(scopedOnly && (sec === 'manage' || sec === 'results' || sec === 'attempt'))) sec = '';
     var top = { edit: 'manage', results: 'manage', attempt: 'manage', archived: 'manage', insights: 'reports' }[sec] || sec;
     renderNav(top);
     clear(main); main.focus({ preventScroll: true }); window.scrollTo(0, 0);
@@ -1567,14 +1569,14 @@
 
   // ── Reviewer: assessments list ───────────────────────────────────────
   function viewManage() {
-    main.appendChild(pageHead('Assessments', 'Build assessments from the question bank, choose who takes them, and review results.',
-      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
+    main.appendChild(pageHead('Assessments', me.reviewer ? 'Build assessments from the question bank, choose who takes them, and review results.' : 'You review these assessments. Open one to see results and mark answers.',
+      !me.reviewer ? null : [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
        h('button', { class: 'btn', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Build from a document']),
        h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/admin/tests').then(function (j) {
       clear(holder);
-      if (!j.tests.length) { holder.appendChild(h('div', { class: 'empty' }, [art('tests'), h('b', { text: 'No assessments yet' }), h('span', { text: 'Add questions to the bank, then create an assessment.' })])); return; }
+      if (!j.tests.length) { holder.appendChild(h('div', { class: 'empty' }, [art('tests'), h('b', { text: 'No assessments yet' }), h('span', { text: me.reviewer ? 'Add questions to the bank, then create an assessment.' : 'Nothing to review right now.' })])); return; }
       var grid = h('div', { class: 'grid-cards' });
       j.tests.forEach(function (t) {
         var qtext = t.settings.pool.mode === 'random' ? t.settings.pool.count + ' random from ' + (t.poolSize || 0) : t.questionIds.length + ' questions';
@@ -1589,8 +1591,8 @@
           ]),
           h('div', { class: 'row' }, [
             h('button', { class: 'btn primary sm', type: 'button', onclick: function () { go('results/' + t.id); } }, [icon('chart', 'sm'), 'Results']),
-            h('button', { class: 'btn sm', type: 'button', onclick: function () { go('edit/' + t.id); } }, [icon('edit', 'sm'), 'Edit']),
-            t.submitted ? h('button', { class: 'btn sm ghost', type: 'button', onclick: function () { go('results/' + t.id + '?retest=1'); } }, [icon('retest', 'sm'), 'Retest']) : null,
+            !me.reviewer ? null : h('button', { class: 'btn sm', type: 'button', onclick: function () { go('edit/' + t.id); } }, [icon('edit', 'sm'), 'Edit']),
+            t.submitted && me.reviewer ? h('button', { class: 'btn sm ghost', type: 'button', onclick: function () { go('results/' + t.id + '?retest=1'); } }, [icon('retest', 'sm'), 'Retest']) : null,
           ]),
         ]));
       });
@@ -1911,7 +1913,31 @@
             api('/api/assess/admin/tests/' + id, { method: 'DELETE' }).then(function () { toast('Archived'); go('manage'); }).catch(function (e) { msg.appendChild(errBox(e.message)); });
           } }, [icon('trash', 'sm'), 'Archive']) : null,
         ]));
+        if (id) side.appendChild(revBox);
       }
+      // Reviewers for this assessment only: they can see and mark its results, nothing else
+      var revBox = h('div', { class: 'card pad stack' });
+      function loadRev() {
+        clear(revBox);
+        revBox.appendChild(h('div', { class: 'row', style: 'flex-direction:row;align-items:center;gap:8px;flex-wrap:nowrap' }, [icon('shield'), h('h2', { style: 'font-size:16px;margin:0', text: 'Reviewers for this assessment' })]));
+        revBox.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'These people see results, answers and activity for this assessment only, and can mark written answers and save a verdict. They cannot edit it, retest or open anything else.' }));
+        var rp = PeoplePicker({ label: 'Find people', placeholder: 'Type a name or email' });
+        var list = h('div', { class: 'plist' });
+        revBox.appendChild(rp.el);
+        revBox.appendChild(h('button', { class: 'btn', type: 'button', text: 'Add reviewers', onclick: function () {
+          var em = rp.selected(); if (!em.length) { toast('Pick at least one person'); return; }
+          api('/api/assess/admin/tests/' + id + '/reviewers', { method: 'POST', body: { emails: em.join(',') } }).then(function (r) { toast(r.added + ' added'); loadRev(); }).catch(function (e) { toast(e.message); });
+        } }));
+        revBox.appendChild(list);
+        api('/api/assess/admin/tests/' + id + '/reviewers').then(function (r) {
+          if (!r.reviewers.length) list.appendChild(h('p', { class: 'small muted', text: 'No one yet. Global reviewers can already see everything.' }));
+          r.reviewers.forEach(function (x) {
+            list.appendChild(h('div', null, [h('span', { class: 'as-avatar', text: initials(x.email) }), h('div', { class: 'who' }, [h('b', { text: x.email }), h('span', { text: 'Added by ' + x.added_by })]),
+              h('button', { class: 'btn sm ghost danger', type: 'button', text: 'Remove', onclick: function () { api('/api/assess/admin/tests/' + id + '/reviewers/' + encodeURIComponent(x.email), { method: 'DELETE' }).then(loadRev).catch(function (e) { toast(e.message); }); } })]));
+          });
+        }).catch(function () {});
+      }
+      if (id) loadRev();
       renderSide();
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
   }
@@ -2095,7 +2121,8 @@
       var at = r[1].attempts;
       var latest = {}; at.forEach(function (a) { if (a.status === 'submitted' && !latest[a.email]) latest[a.email] = a; });
       var belowN = Object.keys(latest).filter(function (e) { return latest[e].passed === false; }).length;
-      holder.appendChild(pageHead(t ? t.title : 'Results', 'Behaviour flags are signals to look into, not proof. Talk to the agent before acting on them.', [
+      var printOnlyBtn = h('button', { class: 'btn', type: 'button', onclick: function () { printResults(t ? t.title : 'Results', at); } }, [icon('print', 'sm'), 'Print summary']);
+      holder.appendChild(pageHead(t ? t.title : 'Results', 'Behaviour flags are signals to look into, not proof. Talk to the agent before acting on them.', !me.reviewer ? [printOnlyBtn] : [
         menu('Send a retest', 'retest', [
           belowN ? { label: 'Everyone below the pass mark', sub: belowN + (belowN === 1 ? ' person' : ' people') + ', based on their latest attempt.', icon: 'flag', onclick: function () { retestFlow({ testId: id, below: true, count: belowN }, viewResultsReload); } } : null,
           { label: 'Choose people', sub: 'Pick from everyone who has taken it.', icon: 'users', onclick: function () { pickRetest(id, at); } },
@@ -2143,7 +2170,7 @@
           dcb.addEventListener('click', function (e) { e.stopPropagation(); });
           dcb.addEventListener('change', function () { var k = dsel.indexOf(a.id); if (dcb.checked && k < 0) dsel.push(a.id); if (!dcb.checked && k >= 0) dsel.splice(k, 1); paintBulk(); });
         }
-        var resetBtn = a.status === 'reset' ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Send ' + (a.name || a.email) + ' a retest', onclick: function (e) {
+        var resetBtn = (a.status === 'reset' || !me.reviewer) ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Send ' + (a.name || a.email) + ' a retest', onclick: function (e) {
           e.stopPropagation(); resetFlow(a, function () { viewResultsReload(); });
         } }, [icon('retest', 'sm'), 'Retest']);
         var tr = h('tr', { class: 'click' + (a.status === 'reset' ? ' is-reset' : ''), tabindex: '0', style: '--i:' + Math.min(ri, 12) }, [
@@ -2181,7 +2208,7 @@
       var a = j.attempt, integ = a.integrity || { tier: null, flags: [] };
       var pct = a.maxScore ? Math.round(a.score / a.maxScore * 100) : null;
       holder.appendChild(pageHead(a.name || a.email, a.testTitle + ' · ' + a.email + (a.extraPct ? ' · +' + a.extraPct + '% time' : '') + ' · ' + (a.navigation === 'bank' ? 'Back and forth' : 'One way'), [
-        a.status !== 'reset' ? h('button', { class: 'btn', type: 'button', onclick: function () { resetFlow({ id: a.id, name: a.name, email: a.email, status: a.status }, function () { go('results/' + a.testId); }); } }, [icon('retest', 'sm'), 'Send a retest']) : null,
+        a.status !== 'reset' && me.reviewer ? h('button', { class: 'btn', type: 'button', onclick: function () { resetFlow({ id: a.id, name: a.name, email: a.email, status: a.status }, function () { go('results/' + a.testId); }); } }, [icon('retest', 'sm'), 'Send a retest']) : null,
         a.status === 'submitted' ? h('button', { class: 'btn', type: 'button', onclick: function () { printAttempt(a); } }, [icon('print', 'sm'), 'Print']) : null,
         !me.owner ? null : h('button', { class: 'btn ghost danger', type: 'button', onclick: function (e) {
           if (!confirm('Delete this attempt for ' + (a.name || a.email) + ' completely? Their answers, activity log and photos are removed for good. Reset is usually better, because it keeps the record.')) return;
@@ -3455,7 +3482,7 @@
         // Reviewers + extra time
         var col = h('div', { class: 'stack' });
         grid.appendChild(col);
-        var rIn = h('input', { class: 'inp', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Reviewer email', style: 'flex:1;min-width:180px' });
+        var rPicker = PeoplePicker({ label: 'Find people', placeholder: 'Type a name or email, or browse by team' });
         var rList = h('div', { class: 'plist' });
         j.reviewers.forEach(function (r) {
           rList.appendChild(h('div', null, [h('span', { class: 'as-avatar', text: initials(r.email) }), h('div', { class: 'who' }, [h('b', { text: r.email }), h('span', { text: r.added_by === 'system' ? 'Owner' : 'Added by ' + r.added_by })]),
@@ -3463,8 +3490,10 @@
         });
         col.appendChild(h('div', { class: 'card pad' }, [
           h('div', { class: 'row' }, [icon('shield'), h('h2', { text: 'Reviewers' })]),
-          h('p', { class: 'small muted', text: 'Reviewers see every result, answer key and activity log, and manage questions and access. Camera photos stay owner-only. Being an admin in the tool does not make someone a reviewer.' }),
-          h('div', { class: 'row' }, [rIn, h('button', { class: 'btn', type: 'button', text: 'Add', onclick: function () { api('/api/assess/admin/access/reviewers', { method: 'POST', body: { email: rIn.value } }).then(load).catch(function (e) { toast(e.message); }); } })]),
+          h('p', { class: 'small muted', text: 'Reviewers on this page see every assessment: results, answer keys and activity logs, and they manage questions and access. Camera photos stay owner-only. Being an admin in the tool does not make someone a reviewer.' }),
+          rPicker.el,
+          h('button', { class: 'btn', type: 'button', text: 'Add reviewers', onclick: function () { var em = rPicker.selected(); if (!em.length) { toast('Pick at least one person'); return; } api('/api/assess/admin/access/reviewers', { method: 'POST', body: { emails: em.join(',') } }).then(function () { toast('Reviewers added'); load(); }).catch(function (e) { toast(e.message); }); } }),
+          h('p', { class: 'small muted', style: 'margin:0', text: 'Want someone to review only one assessment? Open that assessment and add them under Reviewers for this assessment.' }),
           rList,
         ]));
         var xIn = h('input', { class: 'inp', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Email for accommodation', style: 'flex:1;min-width:180px' });

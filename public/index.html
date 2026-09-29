@@ -11942,15 +11942,15 @@ function renderAccessRequests(){
     let meta, acts;
     if(r.status==='pending'){
       meta='Asked '+acxAgo(r.requested_at)+(r.attempts>1?' · tried '+r.attempts+' times, last '+acxAgo(r.last_attempt_at):'');
-      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option></select>'+
+      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option></select>'+
         '<button type="button" class="acx-btn acx-btn-primary acx-btn-sm" data-email="'+esc(r.email)+'" onclick="approveRequest(this)">Approve</button>'+
         '<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="denyRequest(this)">Decline</button>';
     } else if(r.status==='denied'){
       meta='Declined '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'')+(r.note?' · '+esc(r.note):'')+(r.attempts>1?' · tried '+r.attempts+' times':'');
-      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option></select>'+
+      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option></select>'+
         '<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="approveRequest(this)">Approve instead</button>';
     } else {
-      meta=(r.status==='approved'?'Approved as '+esc(r.decided_role||'agent'):'Removed')+' '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'');
+      meta=(r.status==='approved'?'Approved as '+esc(r.decided_role==='guest'?'guest (assessments only)':(r.decided_role||'agent')):'Removed')+' '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'');
       acts='<span class="acx-tag '+(r.status==='approved'?'acx-tag-ok':'')+'">'+(r.status==='approved'?'Approved':'Removed')+'</span>';
     }
     return '<div class="acx-req-row" style="--i:'+Math.min(i,10)+'"><div class="acx-req-av">'+av+'</div><div class="acx-person"><span class="acx-name">'+esc(nm)+'</span><span class="acx-email">'+esc(r.email)+'</span><span class="acx-req-meta">'+meta+'</span></div><div class="acx-actions">'+acts+'</div></div>';
@@ -11963,7 +11963,7 @@ async function approveRequest(btn){
     const j=await fetch(BACKEND+'/api/access-requests/'+encodeURIComponent(email)+'/approve',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({role})}).then(r=>r.json());
     if(!j.success) throw new Error(j.error||'Could not approve');
     row.classList.add('is-leaving');
-    showToast(email+' approved as '+(role==='admin'?'an admin':'an agent'),'success');
+    showToast(email+' approved as '+(role==='admin'?'an admin':role==='guest'?'an assessment guest':'an agent'),'success');
     setTimeout(()=>loadRoles(),260);
   }catch(e){ showToast(e.message,'error'); row.querySelectorAll('button,select').forEach(x=>x.disabled=false); }
 }
