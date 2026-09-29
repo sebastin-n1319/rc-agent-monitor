@@ -299,6 +299,16 @@
     if (window.AditIllus) el.innerHTML = window.AditIllus.svg(name, { size: size || 170 });
     return el;
   }
+  // Unlock a test that was locked because the agent left full screen. Owner and admins only (the server checks too).
+  function canUnlock() { return !!(me && (me.owner || me.admin)); }
+  function unlockBtn(attId, done, label) {
+    var b = h('button', { class: 'btn sm primary', type: 'button', title: 'Let them carry on from the same question with the same time left' }, [icon('refresh', 'sm'), label || 'Unlock']);
+    b.addEventListener('click', function (e) {
+      e.stopPropagation(); b.disabled = true;
+      api('/api/assess/admin/attempts/' + attId + '/unlock', { method: 'POST', body: {} }).then(function (r) { toast('Unlocked. They continue from the same question' + (r.seconds ? ' (' + r.seconds + 's was not counted).' : '.')); if (done) done(); }).catch(function (er) { toast(er.message); b.disabled = false; });
+    });
+    return b;
+  }
   function tierPill(t) { var x = TIER[t]; return x ? pill(x[0], x[1], true) : pill('Not finished', ''); }
   function pageHead(title, sub, acts, crumb) {
     return h('div', { class: 'ph-wrap' }, [
@@ -1199,7 +1209,7 @@
     function onBlur() { ev('blur'); }
     var lastOut = 0;
     function onMouseOut(e) { if (!e.relatedTarget && Date.now() - lastOut > 4000) { lastOut = Date.now(); ev('mouse_out'); } }
-    function onFs() { if (ended) return; if (!document.fullscreenElement) { ev('fullscreen_exit'); showShield(); } else { ev('fullscreen_enter'); hideShield(); } }
+    function onFs() { if (ended) return; if (!document.fullscreenElement) { ev('fullscreen_exit'); if (s.preview) showShield(); else lockNow('Left full screen'); } else { ev('fullscreen_enter'); hideShield(); } }
     function onPop() { history.pushState(null, '', location.href); toast('Use the buttons in the test to move between questions.'); }
     function onUnload() { try { if (evQueue.length) navigator.sendBeacon('/api/assess/attempts/' + attemptId + '/events', new Blob([JSON.stringify({ events: evQueue, token: token })], { type: 'application/json' })); } catch (e) {} }
     function onBefore(e) { if (!ended) { e.preventDefault(); e.returnValue = ''; } }
@@ -1213,6 +1223,38 @@
     history.pushState(null, '', location.href);
     if (window.screen && window.screen.isExtended) ev('multi_screen', 'Second screen connected at start');
 
+    // Full screen lock: leaving full screen stops the test. It stays locked until an owner or admin unlocks it, then they continue from the same question.
+    var lockEl = null, lockTimer = 0, lockSent = false;
+    function sendLock(reason) {
+      api('/api/assess/attempts/' + attemptId + '/lock', { method: 'POST', token: token, body: { reason: reason, token: token }, patient: true }).then(function () { lockSent = true; }).catch(function () {});
+    }
+    function lockNow(reason) { lockSent = false; sendLock(reason); showLocked(); }
+    function showLocked() {
+      if (lockEl) return;
+      clearInterval(tick); if (reader) reader.stop(); hideShield();
+      var status = h('p', { class: 'small muted', role: 'status', 'aria-live': 'polite', text: 'Waiting for your team lead to unlock it. You can leave this page open.' });
+      var go2 = h('button', { class: 'btn primary lg', type: 'button', text: 'Back to full screen and continue', style: 'display:none' });
+      lockEl = h('div', { class: 'shield lockshield', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'lk-t' }, [h('div', null, [
+        h('div', { class: 'shield-ic' }, [icon('shield', 'lg')]),
+        h('h2', { id: 'lk-t', text: 'Your assessment is locked' }),
+        h('p', { text: 'You left full screen, so the test stopped. Your answers are safe and your timer is paused. Your team lead has been told.' }),
+        h('p', { class: 'small muted', text: 'Once it is unlocked you carry on from the same question with the same time left.' }),
+        status, go2])]);
+      document.body.appendChild(lockEl);
+      go2.addEventListener('click', function () {
+        var rq = document.documentElement.requestFullscreen ? document.documentElement.requestFullscreen() : Promise.resolve();
+        Promise.resolve(rq).catch(function () {}).then(function () { hideLocked(); load(); });
+      });
+      function poll() {
+        if (ended) return;
+        if (!lockSent) sendLock('Left full screen');
+        api('/api/assess/attempts/' + attemptId + '/lock-state', { token: token }).then(function (r) {
+          if (r && r.locked === false && lockSent) { clearInterval(lockTimer); status.textContent = 'Unlocked. Return to full screen to carry on.'; go2.style.display = ''; go2.focus(); }
+        }).catch(function (e) { if (e && (e.code === 'finished' || e.code === 'elsewhere')) { clearInterval(lockTimer); hideLocked(); fail(e); } });
+      }
+      clearInterval(lockTimer); lockTimer = setInterval(poll, 4000);
+    }
+    function hideLocked() { clearInterval(lockTimer); if (lockEl) { lockEl.remove(); lockEl = null; } }
     var shield = null;
     function showShield() {
       if (shield) return;
@@ -1228,7 +1270,7 @@
     function hideShield() { if (shield) { shield.remove(); shield = null; } }
 
     function teardown() {
-      ended = true; clearInterval(flushTimer); clearInterval(netTimer); netDown = false; reconnectBar(false); clearInterval(tick); clearInterval(snapTimer); clearInterval(faceTimer); clearTimeout(saveT); flush(); stopWatermark(); hideShield();
+      ended = true; clearInterval(flushTimer); clearInterval(netTimer); netDown = false; reconnectBar(false); clearInterval(tick); clearInterval(snapTimer); clearInterval(faceTimer); clearTimeout(saveT); flush(); stopWatermark(); hideShield(); hideLocked();
       if (reader) reader.stop();
       stopCamera(); qState = null;
       document.removeEventListener('copy', onCopy); document.removeEventListener('cut', onCut); document.removeEventListener('paste', onPaste);
@@ -1241,6 +1283,7 @@
     }
     function exitTo(fn) { teardown(); clear(main); renderNav(''); fn(); }
     function fail(e) {
+      if (e && e.code === 'locked') { lockSent = true; showLocked(); return; }
       if (e && (e.code === 'moved' || e.code === 'out')) { if (e.code === 'out') toast(e.message); load(); return; }
       if (e && e.code === 'finished') { exitTo(function () { doneScreen({ hidden: true }); }); return; }
       exitTo(function () {
@@ -1251,6 +1294,7 @@
     function load() {
       clearInterval(tick); if (reader) { reader.stop(); reader = null; }
       api('/api/assess/attempts/' + attemptId + '/current', { token: token, patient: true }).then(function (q) {
+        if (q.locked) { lockSent = true; showLocked(); return; }
         if (q.done) { exitTo(function () { doneScreen(q.result); }); return; }
         if (q.review) renderReview(q); else renderQuestion(q);
       }).catch(fail);
@@ -2327,10 +2371,10 @@
 
   var EVENT_LABELS = { started: 'Started', submitted: 'Submitted', hidden: 'Left the test tab', visible: 'Came back to the tab', blur: 'Clicked outside the window', focus: 'Note', fullscreen_exit: 'Left full screen', fullscreen_enter: 'Back in full screen',
     copy: 'Tried to copy', cut: 'Tried to cut', paste: 'Tried to paste', contextmenu: 'Right-click', printscreen: 'Pressed Print Screen', devtools_key: 'Developer tools key', print: 'Tried to print', mouse_out: 'Mouse left the window',
-    replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text',
+    replay: 'Replayed the question', timeout: 'Timed out', resumed: 'Reopened in another tab', locked: 'Test locked', unlocked: 'Test unlocked', reserved: 'Reloaded the question', resize: 'Window resized', select: 'Selected text',
     camera_on: 'Camera on', camera_off: 'Camera stopped', camera_denied: 'Camera not allowed', multi_screen: 'Second screen connected', auto_submit: 'Submitted automatically',
     face_missing: 'Face not in view', face_back: 'Face back in view', face_multi: 'More than one face', camera_dark: 'Camera covered or dark', face_check_off: 'Face check unavailable', camera_stop: 'Test stopped: camera rules', nav: 'Moved to another question', reset: 'Reset by a reviewer', submitted_by: 'Submitted' };
-  var EVENT_LEVEL = { face_missing: 'warn', face_multi: 'bad', camera_dark: 'bad', reset: 'warn', hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', camera_stop: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
+  var EVENT_LEVEL = { locked: 'bad', unlocked: 'warn', face_missing: 'warn', face_multi: 'bad', camera_dark: 'bad', reset: 'warn', hidden: 'warn', fullscreen_exit: 'warn', paste: 'bad', copy: 'warn', printscreen: 'bad', devtools_key: 'bad', camera_off: 'bad', camera_denied: 'bad', camera_stop: 'bad', multi_screen: 'warn', resumed: 'warn', reserved: 'warn', timeout: 'warn' };
 
   function viewAttempt(id) {
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
@@ -2347,6 +2391,7 @@
           api('/api/assess/admin/attempts/' + a.id, { method: 'DELETE' }).then(function () { toast('Attempt deleted'); go('results/' + a.testId); }).catch(function (er) { toast(er.message); });
         } }, [icon('trash', 'sm'), 'Delete']),
       ], { text: 'Results', go: function () { go('results/' + a.testId); } }));
+      if (a.locked) holder.appendChild(h('div', { class: 'alert warn' }, [icon('shield'), h('span', { text: 'Locked since ' + fmtWhen(a.lockedAt) + ' because the agent left full screen. Their timer is paused. Unlock it and they carry on from the same question with the same time left.' }), h('span', { class: 'spacer' }), canUnlock() ? unlockBtn(a.id, function () { go('attempt/' + a.id); }, 'Unlock and continue') : null]));
       if (a.reset) holder.appendChild(h('div', { class: 'alert warn' }, [icon('replay'), h('span', { text: 'Reset by ' + a.reset.by + ' on ' + fmtWhen(a.reset.at) + (a.reset.note ? ': ' + a.reset.note : '') + '. This attempt does not count toward scores or attempts.' })]));
       holder.appendChild(h('dl', { class: 'stats' }, [
         h('div', { class: 'card stat' }, [h('dt', { text: 'Score' }), h('dd', null, [a.score != null ? a.score + ' / ' + a.maxScore : 'In progress', pct != null ? h('small', { text: '  ' + pct + '%' }) : null])]),
@@ -2437,6 +2482,7 @@
         var G = [
           { label: 'Left the test tab', types: ['hidden'], end: 'visible', lv: 'warn' },
           { label: 'Left full screen', types: ['fullscreen_exit'], end: 'fullscreen_enter', lv: 'warn' },
+          { label: 'Test locked after leaving full screen', types: ['locked'], end: 'unlocked', lv: 'bad' },
           { label: 'Clicked outside the test window', types: ['blur'], lv: 'warn', minus: 'hidden' },
           { label: 'Tried to paste', types: ['paste'], lv: 'bad' },
           { label: 'Tried to copy or cut', types: ['copy', 'cut'], lv: 'warn' },
@@ -2539,8 +2585,8 @@
             var tr = h('tr', { class: 'click', tabindex: '0' }, [
               h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.title })]),
               h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + pct + '%' })]), h('span', { class: 'num', text: a.progress + '/' + a.total + (a.onReview ? ' · reviewing' : a.onWritten ? ' · writing' : '') })])]),
-              h('td', { class: 'num', text: a.leftSec != null && a.leftSec > 0 ? fmtS(a.leftSec) + ' left' : '–' }),
-              h('td', null, [idle ? pill('No activity ' + fmtS(a.idleSec), 'warn', true) : pill('Active', 'ok', true)]),
+              h('td', { class: 'num', text: a.leftSec != null && a.leftSec > 0 ? fmtS(a.leftSec) + ' left' + (a.locked ? ' (paused)' : '') : '–' }),
+              h('td', null, [a.locked ? h('div', { class: 'row', style: 'align-items:center;gap:8px;flex-wrap:nowrap' }, [pill('Locked', 'bad', true), canUnlock() ? unlockBtn(a.id, load) : null]) : idle ? pill('No activity ' + fmtS(a.idleSec), 'warn', true) : pill('Active', 'ok', true)]),
               h('td', null, [tierPill(a.tier), a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') }) : null]),
               h('td', { class: 'num', text: fmtWhen(a.startedAt) }),
             ]);

@@ -1742,7 +1742,7 @@ app.get('/api/assess/me', requireAuth, assessWrap(async (req, res) => {
   const member = await isToolMember(req.session.email);
   const acc = await assessments.accessFor(req.session.email, member);
   res.json({ success: true, email: req.session.email, name: req.session.name, picture: req.session.picture,
-    member, allowed: acc.allowed, reviewer: await assessments.isReviewer(req.session.email), reviewTests: await assessments.scopedTests(req.session.email), owner: assessments.isOwner(req.session.email),
+    member, allowed: acc.allowed, reviewer: await assessments.isReviewer(req.session.email), reviewTests: await assessments.scopedTests(req.session.email), owner: assessments.isOwner(req.session.email), admin: await isAdminSession(req),
     ai: { anthropic: require('./lib/ai').isAnthropicConfigured(), openai: require('./lib/ai').isConfigured() },
     tests: acc.allowed ? await assessments.myTests(req.session.email) : [] });
 }));
@@ -1762,6 +1762,16 @@ app.post('/api/assess/attempts/:id/submit', requireAuth, requireAssessAccess, ra
 }));
 app.post('/api/assess/attempts/:id/events', requireAuth, requireAssessAccess, rateLimit(60, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, logged: await assessments.clientEvents({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), events: (req.body || {}).events }) });
+}));
+// Leaving full screen locks the test. Owner and admins get a notice and can unlock it.
+app.get('/api/assess/attempts/:id/lock-state', requireAuth, requireAssessAccess, rateLimit(120, 60000), assessWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, locked: await assessments.lockState({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) }) }); }));
+app.post('/api/assess/attempts/:id/lock', requireAuth, requireAssessAccess, rateLimit(20, 60000), assessWrap(async (req, res) => {
+  const r = await assessments.lockAttempt({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), reason: (req.body || {}).reason });
+  if (r.locked && !r.already) {
+    notices.notifyAudience('admins', { title: r.name + '\'s assessment is locked', body: r.name + ' left full screen during "' + r.title + '". Their timer is paused. Unlock it to let them continue from the same question.', link: '/assess#attempt/' + r.id, category: 'assessments', urgent: true, days: 3 }).catch(() => {});
+    insertAuditLog(r.email, 'assess_locked', String(r.id), 'Left full screen').catch(() => {});
+  }
+  res.json({ success: true, locked: !!r.locked });
 }));
 app.post('/api/assess/attempts/:id/stop', requireAuth, requireAssessAccess, rateLimit(10, 60000), assessWrap(async (req, res) => {
   res.json({ success: true, ...(await assessments.stopAttempt({ attemptId: req.params.id, email: req.session.email, token: assessToken(req) || String((req.body || {}).token || ''), reason: (req.body || {}).reason })) });
@@ -1885,6 +1895,12 @@ app.get('/api/assess/admin/attempts/:id', requireAuth, scopedGate('attempt'), as
 app.put('/api/assess/admin/attempts/:id/review', requireAuth, scopedGate('attempt'), assessWrap(async (req, res) => { await assessments.reviewAttempt(req.params.id, req.body || {}, req.session.email); res.json({ success: true }); }));
 app.post('/api/assess/admin/attempts/:id/explain/:idx/suggest', requireAuth, scopedGate('attempt'), rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.suggestMark({ attemptId: req.params.id, idx: req.params.idx, ai: require('./lib/ai') })) })));
 app.put('/api/assess/admin/attempts/:id/explain/:idx', requireAuth, scopedGate('attempt'), assessWrap(async (req, res) => { await assessments.reviewExplain(req.params.id, req.params.idx, req.body || {}); res.json({ success: true }); }));
+app.post('/api/assess/admin/attempts/:id/unlock', requireAuth, assessWrap(async (req, res) => {
+  if (!assessments.isOwner(req.session.email) && !(await isAdminSession(req))) return res.status(403).json({ success: false, error: 'Only the owner or an admin can unlock an assessment' });
+  const r = await assessments.unlockAttempt(req.params.id, req.session.email);
+  insertAuditLog(req.session.email, 'assess_unlocked', String(r.id), r.email + ' after ' + r.seconds + 's').catch(() => {});
+  res.json({ success: true, ...r });
+}));
 app.post('/api/assess/admin/attempts/delete', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => {
   if (!assessments.isOwner(req.session.email)) return res.status(403).json({ success: false, error: 'Only the owner can delete results' });
   const ids = Array.from(new Set(((req.body || {}).ids || []).map(Number).filter(Boolean))).slice(0, 200);
