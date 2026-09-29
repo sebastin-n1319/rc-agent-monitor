@@ -506,10 +506,49 @@
     ]));
   }
 
+  // ── Taker: ground rules, one at a time, rotating gently ─────────────
+  var GROUND_RULES = [
+    ['monitor', 'Set up your space', 'Use a computer in a quiet, well-lit spot. Phones and tablets are not supported.'],
+    ['clock', 'Every question is timed', 'When the timer ends, your current choice is saved and the next question opens.'],
+    ['eye', 'Stay on the test', 'Keep the test in full screen and on its own tab. Leaving is recorded for your reviewer.'],
+    ['camera', 'Camera checks', 'Some tests use your camera. Keep your face in view, stay alone, and keep the camera uncovered or the test ends.'],
+    ['lock', 'No copying or looking things up', 'Copy, paste, print and right-click are blocked. Do not use notes, other people, search or AI tools.'],
+    ['replay', 'If something goes wrong', 'Reopen the test from this page. Your answers are kept, but the timer keeps running.'],
+    ['chat', 'A conversation may follow', 'Your reviewer may ask you to talk through some answers afterwards.'],
+  ];
+  function rulesStrip() {
+    var i = 0, timer = null, paused = false;
+    var card = h('div', { class: 'rule-card', 'aria-live': 'off' });
+    var dots = h('div', { class: 'rule-dots' });
+    var count = h('span', { class: 'rule-n' });
+    function paint(dir) {
+      var r = GROUND_RULES[i];
+      clear(card);
+      card.className = 'rule-card ' + (dir === -1 ? 'in-prev' : 'in-next');
+      card.appendChild(h('span', { class: 'ic-round' }, [icon(r[0] === 'monitor' ? 'doc' : r[0], 'sm')]));
+      card.appendChild(h('div', null, [h('b', { text: r[1] }), h('span', { text: r[2] })]));
+      count.textContent = (i + 1) + ' of ' + GROUND_RULES.length;
+      Array.prototype.forEach.call(dots.children, function (d, k) { d.setAttribute('aria-current', String(k === i)); });
+    }
+    function go_(k, dir) { i = (k + GROUND_RULES.length) % GROUND_RULES.length; paint(dir); restart(); }
+    function restart() { clearInterval(timer); if (REDUCED) return; timer = setInterval(function () { if (paused) return; if (!document.body.contains(card)) { clearInterval(timer); return; } i = (i + 1) % GROUND_RULES.length; paint(1); }, 5500); }
+    GROUND_RULES.forEach(function (r, k) { dots.appendChild(h('button', { type: 'button', class: 'rule-dot', 'aria-label': 'Rule ' + (k + 1) + ': ' + r[1], onclick: function () { go_(k, k < i ? -1 : 1); } })); });
+    var el = h('div', { class: 'rules', role: 'region', 'aria-label': 'Ground rules' }, [
+      h('div', { class: 'rules-hd' }, [h('span', { class: 'eyebrow', text: 'Ground rules' }), h('span', { class: 'spacer' }), count,
+        h('button', { class: 'rule-nav', type: 'button', 'aria-label': 'Previous rule', text: '‹', onclick: function () { go_(i - 1, -1); } }),
+        h('button', { class: 'rule-nav', type: 'button', 'aria-label': 'Next rule', text: '›', onclick: function () { go_(i + 1, 1); } })]),
+      card, dots,
+      h('details', { class: 'rules-all' }, [h('summary', { text: 'See all ground rules' }), h('ul', null, GROUND_RULES.map(function (r) { return h('li', null, [h('b', { text: r[1] + '. ' }), r[2]]); }))]),
+    ]);
+    el.addEventListener('mouseenter', function () { paused = true; }); el.addEventListener('mouseleave', function () { paused = false; });
+    el.addEventListener('focusin', function () { paused = true; }); el.addEventListener('focusout', function () { paused = false; });
+    paint(1); restart();
+    return el;
+  }
   // ── Taker: home ──────────────────────────────────────────────────────
   function viewHome() {
     var first = String(me.name || '').split(' ')[0];
-    var hero = h('div', { class: 'hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'My assessments' }), h('h1', { text: first ? 'Hi ' + first + ', ready when you are' : 'Your assessments' }), h('p', { text: 'Every question is timed. Find a quiet spot, use a computer, and give yourself about 15 minutes.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)]), h('div', { class: 'hero-stats', id: 'hero-stats' })]);
+    var hero = h('div', { class: 'hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'My assessments' }), h('h1', { text: first ? 'Hi ' + first + ', here are your assessments' : 'Your assessments' }), h('p', { text: 'Each assessment is timed and monitored so results are fair for everyone. Read the ground rules below before you start.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)]), h('div', { class: 'hero-stats', id: 'hero-stats' }), rulesStrip()]);
     main.appendChild(hero);
     var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
     api('/api/assess/me').then(function (j) {

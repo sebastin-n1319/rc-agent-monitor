@@ -1038,3 +1038,29 @@ body.as-exam{overflow:hidden}
 .toolbar input[type=date]{width:auto;min-width:150px}
 .note{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:12px;background:var(--accent-soft);color:var(--t1);font-size:13.5px}
 .selrow{position:relative;z-index:30}
+
+/* Batch 34: ground rules strip in the taker hero */
+.rules{flex:1 1 100%;position:relative;z-index:1;margin-top:6px;padding:14px 16px 12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)}
+.rules-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rules-hd .eyebrow{margin:0}
+.rules-hd .spacer{flex:1}
+.rule-n{font-size:12px;color:var(--on-navy-2);font-variant-numeric:tabular-nums}
+.rule-nav{width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:transparent;color:inherit;font-size:18px;line-height:1;cursor:pointer}
+.rule-nav:hover{background:rgba(255,255,255,.1)}
+.rule-card{display:flex;align-items:flex-start;gap:12px;min-height:58px}
+.rule-card.in-next{animation:ruleNext .45s var(--ease) both}
+.rule-card.in-prev{animation:rulePrev .45s var(--ease) both}
+.rule-card b{display:block;font-size:15px;font-weight:600}
+.rule-card span:not(.ic-round){display:block;margin-top:2px;color:var(--on-navy-2);font-size:13.5px;max-width:720px}
+.rule-card .ic-round{flex:none;background:rgba(247,164,82,.16);color:#F7A452}
+@keyframes ruleNext{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes rulePrev{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.rule-dots{display:flex;gap:6px;margin-top:8px}
+.rule-dot{width:8px;height:8px;padding:0;border-radius:99px;border:0;background:rgba(255,255,255,.25);cursor:pointer;transition:width .25s var(--ease),background .25s}
+.rule-dot[aria-current="true"]{width:22px;background:#F7A452}
+.rules-all{margin-top:8px;font-size:13px}
+.rules-all summary{cursor:pointer;color:var(--on-navy-2)}
+.rules-all ul{margin:8px 0 0;padding-left:18px;color:var(--on-navy-2)}
+.rules-all li{margin:3px 0}
+.rules-all li b{color:inherit;font-weight:600}
+@media (prefers-reduced-motion:reduce){.rule-card.in-next,.rule-card.in-prev{animation:none}}
