@@ -409,11 +409,23 @@ async function buildBreakChatPayload(event){
   };
 }
 
+// Session 55: every live alert (break log, missed calls, T1 CS alerts)
+// posts only between 7 AM and 7 PM US Central, every day. Scheduled
+// summaries keep their own times, and "Send test" always posts.
+const ALERT_HOURS = { start: 7, end: 19, tz: 'America/Chicago', label: '7 AM to 7 PM CST' };
+function inAlertHours(d = new Date()) {
+  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: ALERT_HOURS.tz, hour: 'numeric', hourCycle: 'h23' }).format(d));
+  return h >= ALERT_HOURS.start && h < ALERT_HOURS.end;
+}
+
 const BREAK_EVENT_GROUP = { LOGGED_IN: 'shift', LOGGED_OUT: 'shift', BREAK_OUT: 'break', BREAK_IN: 'break', BRB_OUT: 'brb', BRB_IN: 'brb',
   TRAINING_OUT: 'training', TRAINING_IN: 'training', QA_SESSION_OUT: 'qa', QA_SESSION_IN: 'qa', INTERNAL_CALL_OUT: 'internal', INTERNAL_CALL_IN: 'internal' };
 async function sendBreakChatNotification(event){
   if(ALERT_HOOKS.breakLogEnabled === false){
     return { notified: false, status: 'disabled', response: 'Break log alerts are turned off on the Alerts page' };
+  }
+  if(!inAlertHours()){
+    return { notified: false, status: 'off_hours', response: `Outside alert hours (${ALERT_HOURS.label})` };
   }
   const grp = BREAK_EVENT_GROUP[event.action];
   if(grp && Array.isArray(ALERT_HOOKS.breakEvents) && !ALERT_HOOKS.breakEvents.includes(grp)){
@@ -1576,6 +1588,7 @@ function t1Alerts() {
     fetchQueueWaiting: () => rc.fetchQueueWaiting(),
     deskGet: (path) => ds.fetchRaw(path),
     fetchDepartments: () => ds.fetchDepartments(),
+    inAlertHours, alertHoursLabel: ALERT_HOURS.label,
     resolveChatId: async (email) => {
       const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id);
       return (a && a.chat_id) || await getGoogleSubForEmail(email);
@@ -3966,6 +3979,7 @@ async function _sendMissedCallNotification(call) {
     console.warn('⚠ MISSED_CALL_WEBHOOK_URL not set, skipping notification');
     return;
   }
+  if (!inAlertHours()) { console.log(`📞 Missed call not posted: outside alert hours (${ALERT_HOURS.label})`); return; }
   try {
     const body = _buildGoogleChatCard(call);
 

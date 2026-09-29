@@ -66,7 +66,7 @@
       if (!j.success) throw new Error(j.error);
       host.innerHTML = j.channels.map(card).join('');
       const on = j.channels.filter(c => c.enabled && c.source !== 'none').length;
-      root.querySelector('[data-summary]').textContent = `${on} of ${j.channels.length} alert types are on and connected.`;
+      root.querySelector('[data-summary]').textContent = `${on} of ${j.channels.length} alert types are on and connected. Live alerts post only between 7 AM and 7 PM CST, every day.`;
     } catch (e) { host.innerHTML = `<div class="ah-err">${esc(e.message || 'Could not load')}</div>`; }
   }
 
