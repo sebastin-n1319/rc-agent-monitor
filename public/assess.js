@@ -2427,6 +2427,65 @@
           h('p', { class: 'muted', style: 'margin:0', text: 'These are signals, not proof. A dropped connection or a notification can explain a tab switch. Ask the agent to talk you through two or three answers before drawing a conclusion.' }),
           integ.flags && integ.flags.length ? h('ul', { class: 'flags' }, integ.flags.map(function (f) { return h('li', null, [h('span', { class: 'lv ' + (f.level || 'some') }), h('span', { text: f.text })]); })) : h('p', { text: 'Nothing unusual was logged.' }),
         ]));
+        behaviourDetail();
+      }
+      // What the agent did, behaviour by behaviour: how often, on which questions, when, and time away.
+      function behaviourDetail() {
+        var t0 = toDate(a.startedAt), tEnd = toDate(a.finishedAt) || new Date();
+        function into(e) { var d = toDate(e.at); if (!d || !t0) return ''; var s = Math.max(0, Math.round((d - t0) / 1000)); return s >= 60 ? Math.floor(s / 60) + 'm ' + (s % 60) + 's' : s + 's'; }
+        function dur(s) { s = Math.round(s); return s >= 60 ? Math.floor(s / 60) + 'm ' + (s % 60) + 's' : s + 's'; }
+        var G = [
+          { label: 'Left the test tab', types: ['hidden'], end: 'visible', lv: 'warn' },
+          { label: 'Left full screen', types: ['fullscreen_exit'], end: 'fullscreen_enter', lv: 'warn' },
+          { label: 'Clicked outside the test window', types: ['blur'], lv: 'warn', minus: 'hidden' },
+          { label: 'Tried to paste', types: ['paste'], lv: 'bad' },
+          { label: 'Tried to copy or cut', types: ['copy', 'cut'], lv: 'warn' },
+          { label: 'Pressed Print Screen', types: ['printscreen'], lv: 'bad' },
+          { label: 'Tried developer tools', types: ['devtools_key'], lv: 'bad' },
+          { label: 'Right-clicked', types: ['contextmenu'], lv: 'info' },
+          { label: 'Second screen connected', types: ['multi_screen'], lv: 'warn' },
+          { label: 'Camera not allowed or stopped', types: ['camera_denied', 'camera_off'], lv: 'bad' },
+          { label: 'Face out of view', types: ['face_missing'], end: 'face_back', lv: 'warn', endSecs: true },
+          { label: 'More than one face', types: ['face_multi'], lv: 'bad' },
+          { label: 'Camera covered or too dark', types: ['camera_dark'], lv: 'bad' },
+          { label: 'Opened the test in another tab', types: ['resumed'], lv: 'warn' },
+          { label: 'Reloaded a question', types: ['reserved'], lv: 'warn' },
+          { label: 'Replayed a question', types: ['replay'], lv: 'info' }];
+        var evs = a.events || [], rows = [], clean = [];
+        G.forEach(function (g) {
+          var hits = evs.filter(function (e) { return g.types.indexOf(e.type) >= 0; });
+          var n = hits.length;
+          if (g.minus) n = Math.max(0, n - evs.filter(function (e) { return e.type === g.minus; }).length);
+          if (!n) { if (g.lv !== 'info') clean.push(g.label); return; }
+          var qs = []; hits.forEach(function (e) { if (e.idx != null && qs.indexOf(e.idx + 1) < 0) qs.push(e.idx + 1); }); qs.sort(function (x, y) { return x - y; });
+          var away = null;
+          if (g.end) {
+            away = 0; var open = null;
+            evs.forEach(function (e) {
+              var d = toDate(e.at); if (!d) return;
+              if (g.types.indexOf(e.type) >= 0 && open == null) open = d;
+              else if (e.type === g.end) {
+                if (g.endSecs) { var m = /(\d+)s/.exec(e.detail || ''); if (m) away += Number(m[1]); open = null; }
+                else if (open != null) { away += (d - open) / 1000; open = null; }
+              }
+            });
+            if (open != null && !g.endSecs) away += Math.max(0, (tEnd - open) / 1000);
+          }
+          rows.push({ g: g, n: n, qs: qs, first: hits[0], last: hits[hits.length - 1], away: away });
+        });
+        var card = h('div', { class: 'card pad stack', style: 'margin-top:16px' }, [h('h2', { style: 'font-size:16px;margin:0', text: 'What the agent did' })]);
+        if (!rows.length) card.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'No tab switches, copy or paste attempts, screen changes or camera issues were logged.' }));
+        else {
+          card.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [
+            h('thead', null, [h('tr', null, ['Behaviour', 'Times', 'On questions', 'When (into the test)', 'Time away'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]),
+            h('tbody', null, rows.map(function (r) {
+              var when = into(r.first) + (r.n > 1 ? ' to ' + into(r.last) : '');
+              return h('tr', null, [h('td', null, [h('span', { class: 'lv ' + (r.g.lv === 'bad' ? 'major' : r.g.lv === 'warn' ? 'some' : ''), style: 'display:inline-block;margin-right:8px' }), r.g.label]), h('td', { text: String(r.n) }),
+                h('td', { text: r.qs.length ? r.qs.map(function (q) { return 'Q' + q; }).join(', ') : 'Not tied to a question' }), h('td', { text: when || '-' }), h('td', { text: r.away != null && r.away > 0 ? dur(r.away) : '-' })]);
+            }))])]));
+        }
+        if (clean.length) card.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'Checked, nothing logged: ' + clean.join(', ') + '.' }));
+        panel.appendChild(card);
       }
       function activity() {
         var tl = h('ul', { class: 'tl' });
@@ -2968,6 +3027,17 @@
         var legend = h('div', { class: 'legend' }, [['none', 'No issues', 'ok'], ['some', 'Some issues', 'warn'], ['major', 'Major issues', 'bad']].map(function (x) { return h('span', null, [h('i', { class: 'tone-' + x[2] }), x[1] + ' · ' + (tiers[x[0]] || 0)]); }));
         grid.appendChild(chartCard('Behaviour during tests', 'Signals to look into, not proof', h('div', null, [stack, legend])));
         holder.appendChild(grid);
+        // What agents actually did, behaviour by behaviour, with who did it.
+        var bh = data.behaviours || [], totalAtt = data.kpis.attempts || 1;
+        var bhBody;
+        if (!bh.length) bhBody = h('p', { class: 'small muted', style: 'margin:0', text: 'Nothing unusual was logged in these attempts.' });
+        else {
+          var bhList = h('ul', { class: 'bh-who' }, bh.map(function (b) {
+            return h('li', null, [h('b', { text: b.label + ': ' }), h('span', { text: b.agents.map(function (a) { return (a.name || 'Unknown') + (a.n > 1 ? ' (' + a.n + 'x)' : ''); }).join(', ') + (b.attempts > b.agents.length ? ' and others' : '') })]);
+          }));
+          bhBody = h('div', null, [hbars(bh.map(function (b) { return { label: b.label, value: Math.round(b.attempts / totalAtt * 100), valueText: b.attempts + ' attempt' + (b.attempts === 1 ? '' : 's') + ' · ' + b.times + 'x', tone: b.level === 'major' ? 'bad' : 'warn', tip: '<b>' + escH(b.label) + '</b><br>' + b.attempts + ' of ' + totalAtt + ' attempts, ' + b.times + ' times in total' }; })), bhList]);
+        }
+        holder.appendChild(chartCard('What agents did during tests', 'Share of attempts where each behaviour was logged, and who did it', bhBody));
         if (data.topics.length) holder.appendChild(chartCard('Topics, weakest first', 'Share of answers correct, from question tags', hbars(data.topics.map(function (t) { return { label: t.tag, value: t.pct, valueText: t.pct + '% · ' + t.n, tone: t.pct >= 75 ? 'ok' : t.pct >= 50 ? 'warn' : 'bad', tip: '<b>' + escH(t.tag) + '</b><br>' + t.pct + '% correct over ' + t.n + ' answers' }; }))));
       } else if (tab === 'questions') {
         holder.appendChild(h('p', { class: 'small muted', text: 'Hardest first. "Most picked wrong answer" shows which option people chose when they got it wrong, and how many of the wrong answers it takes. A single wrong option taking most of them usually means a knowledge gap on that point, or a confusing question.' }));
