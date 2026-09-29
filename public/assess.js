@@ -359,7 +359,7 @@
     lines.forEach(function (ln, i) { f.ctx.fillText(ln, 0, i * lh + lh / 2 + 2); });
   }
 
-  // Session 68: reading speed. Four steps, chosen by the agent on a notched dial and remembered on their device.
+  // Session 68: reading speed. Four steps. Admins tune it on a notched dial (remembered on their device); agents get the assessment's starting speed.
   var SPEEDS = [{ label: 'Fast', ms: 700 }, { label: 'Medium', ms: 1000 }, { label: 'Slow', ms: 1400 }, { label: 'Slowest', ms: 2000 }];
   function speedFor(ms) { var best = 1, gap = 1e9; SPEEDS.forEach(function (o, i) { var d = Math.abs(o.ms - (ms || 1000)); if (d < gap) { gap = d; best = i; } }); return best; }
   function savedSpeed(dflt) { try { var v = parseInt(localStorage.getItem('as-read-speed'), 10); if (v >= 0 && v < SPEEDS.length) return v; } catch (e) {} return dflt; }
@@ -414,8 +414,10 @@
     var dots = h('div', { class: 'dots', 'aria-hidden': 'true' });
     var state = h('span', { class: 'state', text: 'Reading…' });
     var replayBtn = h('button', { class: 'btn sm primary replay', type: 'button', disabled: true }, [icon('replay', 'sm'), 'Replay from start']);
-    var speedIdx = savedSpeed(speedFor(s.chunkMs));
-    var dial = SpeedDial(speedIdx, function (i) { speedIdx = i; });
+    // The speed dial is for admins only (editor preview and "Preview as an agent"). Agents read at the assessment's starting speed.
+    var showDial = !!(s.dial || s.preview);
+    var speedIdx = showDial ? savedSpeed(speedFor(s.chunkMs)) : speedFor(s.chunkMs);
+    var dial = showDial ? SpeedDial(speedIdx, function (i) { speedIdx = i; }) : null;
     host.appendChild(h('div', { class: 'reader' }, [canvas, h('div', { class: 'bar' }, [dots, h('span', { class: 'spacer' }), state, dial, replayBtn])]));
     var words = String(text).split(/\s+/).filter(Boolean), per = Math.max(2, s.wordsPerChunk || 4), chunks = [];
     for (var i = 0; i < words.length; i += per) chunks.push(words.slice(i, i + per).join(' '));
@@ -1875,9 +1877,9 @@
       var prevBtn = h('button', { class: 'btn sm', type: 'button', onclick: function () {
         clear(prevHost);
         var sample = picked.length && bankById[picked[0]] ? bankById[picked[0]].prompt : 'A caller says their front desk phones stopped ringing this morning. Which team owns this, and what do you check first?';
-        new Reader(prevHost, sample, { wordsPerChunk: st.wordsPerChunk, chunkMs: st.chunkMs }).play();
+        new Reader(prevHost, sample, { wordsPerChunk: st.wordsPerChunk, chunkMs: st.chunkMs, dial: true }).play();
       } }, [icon('replay', 'sm'), 'Preview reading']);
-      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Starting reading speed', spd, 'Agents can change it themselves with the dial.')]), prevBtn, prevHost]);
+      var fadeRow = h('div', { style: st.displayMode === 'fade' ? '' : 'display:none' }, [h('div', { class: 'fgrid' }, [field('Words per group', wpc), field('Starting reading speed', spd, 'Agents read at this speed. Admins can change it with the dial in a preview.')]), prevBtn, prevHost]);
       var voiceSel = h('select', { class: 'sel', id: 'b-voice' }, [['alloy', 'Alloy (neutral)'], ['nova', 'Nova (warm)'], ['shimmer', 'Shimmer (bright)'], ['echo', 'Echo (calm)'], ['onyx', 'Onyx (deep)'], ['fable', 'Fable (British)']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
       voiceSel.value = st.voice || 'alloy';
       voiceSel.addEventListener('change', function () { st.voice = voiceSel.value; });
