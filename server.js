@@ -1834,9 +1834,9 @@ app.post('/api/assess/attempts/:id/snapshot', requireAuth, requireAssessAccess, 
 assessments.setDeps({
   publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
   inAlertHours,
-  postChat: async (url, text) => {
+  postChat: async (url, text, extra) => {
     try {
-      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: String(text).slice(0, 4000) }), signal: AbortSignal.timeout(15000) });
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(Object.assign({ text: String(text).slice(0, 4000) }, extra && typeof extra === 'object' ? extra : {})), signal: AbortSignal.timeout(15000) });
       return { ok: r.ok, status: r.status };
     } catch (e) { return { ok: false, status: 0 }; }
   },
@@ -2146,7 +2146,9 @@ app.get('/api/assess/admin/results/export', ...RV, assessWrap(async (req, res) =
 }));
 // Batch 59: send a report or result summary to Google Chat (saved webhook, another webhook, or a private message)
 app.get('/api/assess/admin/share/options', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.shareOptions()) })));
-app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople })) }); }));
+app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople, guidance: b.guidance })) }); }));
+app.post('/api/assess/admin/share/image', ...RV, rateLimit(12, 60000), express.raw({ type: 'image/png', limit: '1600kb' }), assessWrap(async (req, res) => res.json({ success: true, token: await assessments.saveShareImage(req.body) })));
+app.get('/share-img/:file', rateLimit(120, 60000), async (req, res) => { try { const m = /^([a-f0-9]{32})\.png$/.exec(String(req.params.file || '')); const buf = m ? await assessments.getShareImage(m[1]) : null; if (!buf) return res.status(404).end(); res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400', 'X-Robots-Tag': 'noindex' }); res.send(buf); } catch (e) { res.status(404).end(); } });
 app.post('/api/assess/admin/share/send', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => { const b = req.body || {}; const r = await assessments.shareSend(b, req.session.email); insertAuditLog(req.session.email, 'assess_share_chat', String(b.mode || 'saved'), b.mode === 'dm' ? String(b.toEmail || '') : '').catch(() => {}); res.json({ success: true, ...r }); }));
 app.get('/api/assess/admin/report', ...RV, assessWrap(async (req, res) => res.json({ success: true, report: await assessments.reportData(reportFilters(req.query || {})) })));
 

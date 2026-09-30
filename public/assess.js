@@ -2358,6 +2358,54 @@
   }
 
   // ── Batch 59: send a summary to Google Chat (saved webhook, another webhook, or a private message) ──
+  // Chart image for Chat: drawn in the browser from the report numbers, sent as a PNG.
+  function drawShareChart(rep, title) {
+    var k = rep.kpis || {}, W = 1000, pad = 40;
+    var tests = (rep.byTest || []).slice(0, 6);
+    var H = 370 + (tests.length ? 62 + 22 + tests.length * 46 + 40 : 50);
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var g = cv.getContext('2d'), F = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    var NAVY = '#0f2a3d', ORG = '#f47c20', MUTE = '#64748b', LINE = '#e2e8f0', GOOD = '#16a34a', BAD = '#dc2626';
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    function txt(t, x, y, size, color, weight, align) { g.font = (weight || 400) + ' ' + size + 'px ' + F; g.fillStyle = color; g.textAlign = align || 'left'; g.fillText(t, x, y); }
+    function fit(t, max, size, weight) { g.font = (weight || 400) + ' ' + size + 'px ' + F; if (g.measureText(t).width <= max) return t; while (t.length > 3 && g.measureText(t + '...').width > max) t = t.slice(0, -1); return t + '...'; }
+    txt(fit(title || 'Assessment results', W - pad * 2, 30, 700), pad, 56, 30, NAVY, 700);
+    var f = rep.filters || {};
+    txt((f.from || f.to ? (f.from || 'start') + ' to ' + (f.to || 'today') : 'All time') + '  |  ' + (k.attempts || 0) + ' attempts from ' + (k.people || 0) + ' ' + ((k.people || 0) === 1 ? 'person' : 'people'), pad, 88, 16, MUTE, 400);
+    var kp = [['Average best score', k.avg != null ? k.avg + '%' : '-'], ['Pass rate', k.passRate != null ? k.passRate + '%' : '-'], ['Median time', k.medianMinutes != null ? k.medianMinutes + ' min' : '-']];
+    var bw = (W - pad * 2 - 40) / 3;
+    kp.forEach(function (x, i) {
+      var bx = pad + i * (bw + 20), by = 110;
+      g.fillStyle = '#f8fafc'; g.fillRect(bx, by, bw, 90); g.strokeStyle = LINE; g.lineWidth = 1; g.strokeRect(bx + .5, by + .5, bw - 1, 89);
+      txt(x[0], bx + 18, by + 30, 14, MUTE, 500); txt(x[1], bx + 18, by + 72, 38, NAVY, 700);
+    });
+    var y0 = 240;
+    txt('How scores are spread (best score per person)', pad, y0, 16, NAVY, 700);
+    var d = rep.distribution || [], mx = Math.max.apply(null, d.map(function (b) { return b.n; }).concat([1]));
+    var cw = (W - pad * 2) / 10, ch = 110, base = y0 + 20 + ch;
+    d.forEach(function (b, i) {
+      var h = Math.round(b.n / mx * ch), x = pad + i * cw + 8;
+      g.fillStyle = b.n ? ORG : '#f1f5f9'; g.fillRect(x, base - Math.max(h, b.n ? 3 : 2), cw - 16, Math.max(h, b.n ? 3 : 2));
+      if (b.n) txt(String(b.n), x + (cw - 16) / 2, base - h - 6, 13, NAVY, 600, 'center');
+      txt(b.from + (i === 9 ? '-100' : '-' + b.to), x + (cw - 16) / 2, base + 20, 12, MUTE, 400, 'center');
+    });
+    g.fillStyle = LINE; g.fillRect(pad, base, W - pad * 2, 1);
+    if (tests.length) {
+      var y1 = base + 62;
+      txt('Pass rate by assessment', pad, y1, 16, NAVY, 700);
+      tests.forEach(function (t, i) {
+        var y = y1 + 22 + i * 46, lw = 330, bx = pad + lw, bwid = W - pad * 2 - lw - 110;
+        txt(fit(t.test, lw - 14, 15, 500), pad, y + 20, 15, NAVY, 500);
+        g.fillStyle = '#f1f5f9'; g.fillRect(bx, y + 6, bwid, 18);
+        g.fillStyle = t.passRate >= 70 ? GOOD : t.passRate >= 40 ? ORG : BAD; g.fillRect(bx, y + 6, Math.max(2, Math.round(bwid * t.passRate / 100)), 18);
+        txt(t.passRate + '% passed', bx + bwid + 12, y + 21, 14, NAVY, 600);
+        txt('avg ' + t.avg + '%  |  ' + t.n + (t.n === 1 ? ' attempt' : ' attempts'), bx, y + 40, 12, MUTE, 400);
+      });
+    }
+    txt('T1 CS Stars assessments', W - pad, H - 12, 12, MUTE, 400, 'right');
+    return cv;
+  }
+
   function shareDialog(scope, title) {
     var dlg = h('dialog', { class: 'confirm wide ann', 'aria-labelledby': 'sh-t' });
     var msg = h('div'), mode = 'saved', opts = null, dirty = false;
@@ -2368,13 +2416,14 @@
     var status = h('span', { class: 'small muted', role: 'status' });
     function draft() {
       status.textContent = 'Drafting…'; ta.disabled = true; clear(msg);
-      api('/api/assess/admin/share/draft', { method: 'POST', body: { scope: scope, includePeople: incl.checked } })
-        .then(function (r) { ta.value = r.text; dirty = false; status.textContent = r.ai ? 'Drafted with AI. Edit it if you like.' : 'Drafted from the numbers. Edit it if you like.'; })
+      api('/api/assess/admin/share/draft', { method: 'POST', body: { scope: scope, includePeople: incl.checked, guidance: guide.value.trim() } })
+        .then(function (r) { ta.value = r.text; dirty = false; status.textContent = r.ai ? 'Drafted with AI. Edit it if you like.' : (r.reason ? r.reason + ', so this is drafted from the numbers.' : 'Drafted from the numbers.') + ' Edit it if you like.'; })
         .catch(function (e) { status.textContent = ''; msg.appendChild(errBox(e.message)); })
         .finally(function () { ta.disabled = false; });
     }
-    var redo = h('button', { class: 'btn sm', type: 'button' }, [icon('spark', 'sm'), 'Redraft']);
+    var redo = h('button', { class: 'btn sm', type: 'button' }, [icon('spark', 'sm'), 'Draft with AI']);
     redo.addEventListener('click', draft);
+    var guide = h('textarea', { class: 'inp', rows: 2, style: 'width:100%;font:inherit', maxlength: '600', 'aria-label': 'Tell the AI what to say', placeholder: 'Optional: tell the AI what to say. For example: friendly tone, focus on the weakest topics, ask people to retake it by Friday.' });
     incl.addEventListener('change', function () { dirty = false; draft(); });
     var hook = h('input', { class: 'inp', style: 'width:100%', type: 'url', placeholder: 'https://chat.googleapis.com/v1/spaces/...', autocomplete: 'off', 'aria-label': 'Google Chat webhook URL' });
     var keep = h('input', { type: 'checkbox', id: 'sh-keep' });
@@ -2382,6 +2431,21 @@
     var dmNote = h('div', { class: 'small muted', style: 'margin-top:6px' });
     var pane = h('div', { style: 'margin-top:10px' });
     var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Where to send it' });
+    var chartOn = h('input', { type: 'checkbox', id: 'sh-chart', checked: true, disabled: true });
+    var chartBox = h('div', { style: 'margin-top:8px;max-width:100%;overflow:hidden;border:1px solid var(--line,#e2e8f0);border-radius:8px' });
+    var chartCv = null, chartNote = h('span', { class: 'small muted', text: 'Drawing the chart…' });
+    chartOn.addEventListener('change', function () { chartBox.hidden = !chartOn.checked; });
+    (function () {
+      var x = new URLSearchParams();
+      if (scope.testIds && scope.testIds.length) x.set('tests', scope.testIds.join(','));
+      ['from', 'to', 'email', 'result'].forEach(function (k) { if (scope[k]) x.set(k, scope[k]); });
+      api('/api/assess/admin/report?' + x).then(function (r) {
+        var rep = r.report;
+        if (!rep || !rep.kpis || !rep.kpis.attempts) { chartNote.textContent = 'No submitted attempts yet, so there is no chart.'; return; }
+        chartCv = drawShareChart(rep, scope.kind === 'report' ? 'Assessment report' : (title || 'Assessment results')); chartCv.style.cssText = 'width:100%;height:auto;display:block';
+        chartBox.appendChild(chartCv); chartOn.disabled = false; chartNote.textContent = '';
+      }).catch(function () { chartNote.textContent = 'Could not draw the chart.'; });
+    })();
     var send = h('button', { class: 'btn primary', type: 'button' }, [icon('flag', 'sm'), 'Send']);
     function setMode(m) {
       mode = m; clear(pane); clear(msg);
@@ -2413,15 +2477,25 @@
       var targets = [null];
       if (mode === 'dm') { targets = picker.selected(); if (!targets.length) { msg.appendChild(errBox('Pick who to message. Click a name in the list to select it.')); return; } }
       send.disabled = true;
-      targets.reduce(function (pr, to) { return pr.then(function () { var b2 = Object.assign({}, body); if (to) b2.toEmail = to; return api('/api/assess/admin/share/send', { method: 'POST', body: b2 }); }); }, Promise.resolve())
+      var upload = Promise.resolve(null);
+      if (chartOn.checked && !chartOn.disabled && chartCv) {
+        upload = new Promise(function (res) { chartCv.toBlob(function (bl) { res(bl); }, 'image/png'); })
+          .then(function (bl) { return bl ? api('/api/assess/admin/share/image', { method: 'POST', raw: bl, contentType: 'image/png' }) : null; })
+          .then(function (r) { return r ? r.token : null; });
+      }
+      upload.then(function (tok) { if (tok) body.imageToken = tok; return targets.reduce(function (pr, to) { return pr.then(function () { var b2 = Object.assign({}, body); if (to) b2.toEmail = to; return api('/api/assess/admin/share/send', { method: 'POST', body: b2 }); }); }, Promise.resolve()); })
         .then(function () { dlg.close(); toast(mode === 'dm' ? 'Private message sent' : 'Posted in Google Chat'); })
         .catch(function (e) { send.disabled = false; msg.appendChild(errBox(e.message)); });
     });
     dlg.appendChild(h('div', { class: 'cf-in' }, [
       h('h2', { id: 'sh-t', text: 'Send to Google Chat' }),
       h('div', { class: 'small muted', text: (title || 'This summary') + '. Only totals are shared by default. Edit the message before you send it.' }),
-      h('div', { class: 'row', style: 'gap:8px;margin:8px 0 4px' }, [h('b', { class: 'small', text: 'Message' }), h('span', { class: 'spacer' }), status, redo]),
+      h('div', { class: 'row', style: 'gap:8px;margin:6px 0 0;align-items:center' }, [status, h('span', { class: 'spacer' }), redo]),
+      h('div', { class: 'small', style: 'margin:0 0 6px' }, [h('b', { text: 'Tell the AI what to say ' }), h('span', { class: 'muted', text: '(optional)' })]), guide,
+      h('div', { class: 'small', style: 'margin:10px 0 4px' }, [h('b', { text: 'Message' })]),
       ta, people,
+      h('div', { class: 'row', style: 'gap:8px;margin-top:10px;align-items:center' }, [h('label', { class: 'small row', for: 'sh-chart', style: 'gap:6px;align-items:center' }, [chartOn, 'Attach a chart image']), chartNote]),
+      chartBox,
       h('div', { style: 'margin-top:12px' }, [h('b', { class: 'small', text: 'Send it to' }), h('div', { style: 'margin-top:6px' }, [seg])]),
       pane, msg,
       h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), send])]));
