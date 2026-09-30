@@ -2149,10 +2149,10 @@ app.get('/api/assess/admin/results/export', ...RV, assessWrap(async (req, res) =
 app.get('/api/assess/admin/share/options', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.shareOptions()) })));
 app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople, guidance: b.guidance })) }); }));
 app.post('/api/assess/admin/share/image', ...RV, rateLimit(12, 60000), express.raw({ type: 'image/png', limit: '1600kb' }), assessWrap(async (req, res) => res.json({ success: true, token: await assessments.saveShareImage(req.body) })));
-// Google Chat app "T1 Agent Monitor": receives events so Chat accepts the app. It only replies with a fixed note.
+// Google Chat app "Adit Agent Monitor": receives events so Chat accepts the app. It only replies with a fixed note.
 app.post('/gchat/event', rateLimit(120, 60000), (req, res) => {
   const b = req.body || {};
-  const msg = b.type === 'ADDED_TO_SPACE' ? 'Hi, I am T1 Agent Monitor. I send assessment updates and results from T1 CS Stars. Replies here are not monitored.' : 'I only send updates from T1 CS Stars, so replies here are not monitored. Open the tool to take or review assessments.';
+  const msg = b.type === 'ADDED_TO_SPACE' ? 'Hi, I am Adit Agent Monitor. I send assessment updates and results from T1 CS Stars. Replies here are not monitored.' : 'I only send updates from T1 CS Stars, so replies here are not monitored. Open the tool to take or review assessments.';
   if (b.chat || b.commonEventObject) return res.json({ hostAppDataAction: { chatDataAction: { createMessageAction: { message: { text: msg } } } } });
   res.json({ text: msg });
 });

@@ -2462,7 +2462,7 @@
       } else {
         send.disabled = !(opts && opts.dmAvailable);
         pane.appendChild(picker.el);
-        dmNote.textContent = opts && !opts.dmAvailable ? 'Private messages need the Google service account on the server.' : 'Arrives as a direct message from the T1 Agent Monitor Chat app. The app must be set up in Google Cloud and installed for the person (your Workspace admin can install it for everyone).';
+        dmNote.textContent = opts && !opts.dmAvailable ? 'Private messages need the Google service account on the server.' : 'Arrives as a direct message from the Adit Agent Monitor Chat app. The app must be set up in Google Cloud and installed for the person (your Workspace admin can install it for everyone).';
         pane.appendChild(dmNote);
       }
     }
