@@ -2358,8 +2358,44 @@
   }
 
   // ── Batch 59: send a summary to Google Chat (saved webhook, another webhook, or a private message) ──
+  // Per-person chart: one bar per person (best score), with the pass mark line.
+  function drawPeopleChart(rep, title) {
+    var rows = (rep.byAgent || []).filter(function (a) { return a.avg != null; }).slice().sort(function (a, b) { return b.avg - a.avg; });
+    var extra = Math.max(0, rows.length - 30); rows = rows.slice(0, 30);
+    var pm = null; (rep.rows || []).forEach(function (r) { if (r.passPct != null) pm = pm == null ? r.passPct : (pm === r.passPct ? pm : -1); }); if (pm === -1) pm = null;
+    var W = 1000, pad = 40, lw = 210, rw = 70, rh = 36, top = 120, bottom = 70;
+    var H = top + rows.length * rh + bottom + (extra ? 24 : 0);
+    var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    var g = cv.getContext('2d'), F = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
+    var NAVY = '#0f2a3d', BLUE = '#2f5fa8', MUTE = '#64748b', LINE = '#e2e8f0', WARN = '#e0782a';
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    function txt(t, x, y, size, color, weight, align) { g.font = (weight || 400) + ' ' + size + 'px ' + F; g.fillStyle = color; g.textAlign = align || 'left'; g.fillText(t, x, y); }
+    function fit(t, max, size, weight) { g.font = (weight || 400) + ' ' + size + 'px ' + F; if (g.measureText(t).width <= max) return t; while (t.length > 3 && g.measureText(t + '...').width > max) t = t.slice(0, -1); return t + '...'; }
+    txt(fit(title + ' - Scores', W - pad * 2, 30, 700), pad, 54, 30, NAVY, 700);
+    txt('Best score for each of the ' + rows.length + (extra ? ' top' : '') + ' people' + (pm != null ? '  |  pass mark ' + pm + '%' : ''), pad, 84, 16, MUTE, 400);
+    var x0 = pad + lw, x1 = W - pad - rw, bw = x1 - x0, y0 = top, yEnd = top + rows.length * rh;
+    [0, 25, 50, 75, 100].forEach(function (v) {
+      var x = x0 + bw * v / 100; g.fillStyle = LINE; g.fillRect(Math.round(x), y0 - 6, 1, yEnd - y0 + 12);
+      txt(v + '%', x, yEnd + 30, 13, MUTE, 400, 'center');
+    });
+    rows.forEach(function (a, i) {
+      var y = y0 + i * rh, w = Math.max(3, Math.round(bw * a.avg / 100));
+      txt(fit(a.name || a.email, lw - 16, 15, 500), x0 - 12, y + 23, 15, NAVY, 500, 'right');
+      g.fillStyle = pm != null && a.avg < pm ? WARN : BLUE; g.fillRect(x0, y + 6, w, rh - 14);
+      txt(a.avg + '%', x0 + w + 8, y + 23, 14, NAVY, 600);
+    });
+    if (pm != null) {
+      var px = Math.round(x0 + bw * pm / 100); g.save(); g.strokeStyle = '#16a34a'; g.lineWidth = 2; g.setLineDash([6, 5]); g.beginPath(); g.moveTo(px, y0 - 8); g.lineTo(px, yEnd + 8); g.stroke(); g.restore();
+      txt('Pass mark ' + pm + '%', px, y0 - 14, 12, '#16a34a', 600, 'center');
+    }
+    if (extra) txt('and ' + extra + ' more', pad, yEnd + 52, 13, MUTE, 400);
+    txt('Adit team tool', W - pad, H - 12, 12, MUTE, 400, 'right');
+    return cv;
+  }
+
   // Chart image for Chat: drawn in the browser from the report numbers, sent as a PNG.
-  function drawShareChart(rep, title) {
+  function drawShareChart(rep, title, people) {
+    if (people) return drawPeopleChart(rep, title);
     var k = rep.kpis || {}, W = 1000, pad = 40;
     var tests = (rep.byTest || []).slice(0, 6);
     var H = 370 + (tests.length ? 62 + 22 + tests.length * 46 + 40 : 50);
@@ -2433,8 +2469,17 @@
     var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Where to send it' });
     var chartOn = h('input', { type: 'checkbox', id: 'sh-chart', checked: true, disabled: true });
     var chartBox = h('div', { style: 'margin-top:8px;max-width:100%;overflow:hidden;border:1px solid var(--line,#e2e8f0);border-radius:8px' });
-    var chartCv = null, chartNote = h('span', { class: 'small muted', text: 'Drawing the chart…' });
-    chartOn.addEventListener('change', function () { chartBox.hidden = !chartOn.checked; });
+    var chartCv = null, chartRep = null, chartNote = h('span', { class: 'small muted', text: 'Drawing the chart…' });
+    var namesOn = h('input', { type: 'checkbox', id: 'sh-names', checked: true });
+    var chartTitle = function () { return scope.kind === 'report' ? 'Assessment report' : (title || 'Assessment results'); };
+    function redrawChart() {
+      if (!chartRep) return;
+      if (chartCv && chartCv.parentNode) chartCv.parentNode.removeChild(chartCv);
+      chartCv = drawShareChart(chartRep, chartTitle(), namesOn.checked); chartCv.style.cssText = 'width:100%;height:auto;display:block'; chartBox.appendChild(chartCv);
+    }
+    chartOn.addEventListener('change', function () { chartBox.hidden = !chartOn.checked; namesRow.hidden = !chartOn.checked; });
+    namesOn.addEventListener('change', redrawChart);
+    var namesRow = h('label', { class: 'small row', for: 'sh-names', style: 'gap:6px;align-items:center;margin-top:6px' }, [namesOn, 'Show each person\'s best score in the chart (untick for a summary chart with no names)']);
     (function () {
       var x = new URLSearchParams();
       if (scope.testIds && scope.testIds.length) x.set('tests', scope.testIds.join(','));
@@ -2442,8 +2487,7 @@
       api('/api/assess/admin/report?' + x).then(function (r) {
         var rep = r.report;
         if (!rep || !rep.kpis || !rep.kpis.attempts) { chartNote.textContent = 'No submitted attempts yet, so there is no chart.'; return; }
-        chartCv = drawShareChart(rep, scope.kind === 'report' ? 'Assessment report' : (title || 'Assessment results')); chartCv.style.cssText = 'width:100%;height:auto;display:block';
-        chartBox.appendChild(chartCv); chartOn.disabled = false; chartNote.textContent = '';
+        chartRep = rep; redrawChart(); chartOn.disabled = false; chartNote.textContent = '';
       }).catch(function () { chartNote.textContent = 'Could not draw the chart.'; });
     })();
     var send = h('button', { class: 'btn primary', type: 'button' }, [icon('flag', 'sm'), 'Send']);
@@ -2489,13 +2533,13 @@
     });
     dlg.appendChild(h('div', { class: 'cf-in' }, [
       h('h2', { id: 'sh-t', text: 'Send to Google Chat' }),
-      h('div', { class: 'small muted', text: (title || 'This summary') + '. Only totals are shared by default. Edit the message before you send it.' }),
+      h('div', { class: 'small muted', text: (title || 'This summary') + '. The message shares totals. The chart can also show each person\'s best score. Edit anything before you send it.' }),
       h('div', { class: 'row', style: 'gap:8px;margin:6px 0 0;align-items:center' }, [status, h('span', { class: 'spacer' }), redo]),
       h('div', { class: 'small', style: 'margin:0 0 6px' }, [h('b', { text: 'Tell the AI what to say ' }), h('span', { class: 'muted', text: '(optional)' })]), guide,
       h('div', { class: 'small', style: 'margin:10px 0 4px' }, [h('b', { text: 'Message' })]),
       ta, people,
       h('div', { class: 'row', style: 'gap:8px;margin-top:10px;align-items:center' }, [h('label', { class: 'small row', for: 'sh-chart', style: 'gap:6px;align-items:center' }, [chartOn, 'Attach a chart image']), chartNote]),
-      chartBox,
+      namesRow, chartBox,
       h('div', { style: 'margin-top:12px' }, [h('b', { class: 'small', text: 'Send it to' }), h('div', { style: 'margin-top:6px' }, [seg])]),
       pane, msg,
       h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), send])]));
