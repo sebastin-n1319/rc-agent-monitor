@@ -5,7 +5,7 @@
 (function() {
   'use strict';
 
-  var BRAIN_VERSION = '5.2';
+  var BRAIN_VERSION = '5.3';
   var msgs = [];
   var busy = false;
   var isOpen = false;
@@ -148,6 +148,7 @@
           '<div style="background:#F8F9FC;border:1.5px solid #F0F2F5;border-radius:4px 16px 16px 16px;padding:10px 14px;font-size:12.5px;line-height:1.65;color:#1A1F3C;">' +
             md(m.content) +
           '</div>' +
+          (m.proposal ? propHTML(m.proposal) : '') +
           '<div style="font-size:9.5px;color:#9BA3B2;margin-top:4px;padding-left:4px;">' + esc(m.time||'') + '</div>' +
         '</div>' +
       '</div>';
@@ -165,6 +166,40 @@
       '</div>';
     }
   }
+
+  /* ── Announcement card: Brain drafts, the admin approves and presses Send ── */
+  function propHTML(p) {
+    var st = p.state || '';
+    var head = '<div style="font-size:10px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Announcement draft</div>' +
+      '<div style="font-size:12.5px;font-weight:700;color:#1A1F3C;">' + esc(p.title || 'Announcement') + '</div>' +
+      '<div style="font-size:10.5px;color:#6B7280;margin:2px 0 8px;">Posts to the ' + esc(p.target || 'Google Chat space') + (p.audience ? ' · For: ' + esc(p.audience) : '') + '</div>';
+    var box = 'margin-top:8px;background:#fff;border:1.5px solid #F97316;border-radius:12px;padding:10px 12px;';
+    if (st === 'sent') return '<div style="' + box + 'border-color:#10B981;">' + head + '<div style="font-size:12px;color:#059669;font-weight:700;">Sent to Google Chat.</div></div>';
+    if (st === 'discarded') return '<div style="' + box + 'border-color:#E8EBF0;opacity:.7;">' + head + '<div style="font-size:12px;color:#6B7280;">Discarded. Nothing was sent.</div></div>';
+    var id = esc(p.id);
+    var busyNow = st === 'sending';
+    return '<div style="' + box + '">' + head +
+      (p.blocker ? '<div style="font-size:11px;color:#B45309;background:#FEF3C7;border-radius:8px;padding:6px 8px;margin-bottom:8px;">' + esc(p.blocker) + '</div>' : '') +
+      '<textarea id="brain-prop-' + id + '" rows="6" aria-label="Announcement text, you can edit it" style="width:100%;box-sizing:border-box;border:1.5px solid #E8EBF0;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.5;font-family:inherit;color:#1A1F3C;resize:vertical;"' + (busyNow ? ' disabled' : '') + '>' + esc(p.text) + '</textarea>' +
+      (st === 'error' ? '<div style="font-size:11px;color:#DC2626;margin-top:6px;">' + esc(p.error || 'Could not send.') + '</div>' : '') +
+      '<div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">' +
+        '<button type="button" onclick="Brain.discardProposal(\'' + id + '\')" style="padding:7px 14px;border-radius:10px;border:1.5px solid #E8EBF0;background:#fff;color:#4B5563;font-size:12px;font-weight:600;cursor:pointer;"' + (busyNow ? ' disabled' : '') + '>Discard</button>' +
+        '<button type="button" onclick="Brain.sendProposal(\'' + id + '\')" style="padding:7px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#F97316,#FF8C00);color:#fff;font-size:12px;font-weight:700;cursor:pointer;"' + (busyNow || p.blocker ? ' disabled' : '') + '>' + (busyNow ? 'Sending...' : 'Approve and send') + '</button>' +
+      '</div></div>';
+  }
+  function findProp(id) { for (var i = 0; i < msgs.length; i++) if (msgs[i].proposal && msgs[i].proposal.id === id) return msgs[i].proposal; return null; }
+  async function sendProposal(id) {
+    var p = findProp(id); if (!p || p.state === 'sending' || p.state === 'sent') return;
+    var ta = document.getElementById('brain-prop-' + id); if (ta) p.text = ta.value;
+    p.state = 'sending'; render();
+    try {
+      var res = await fetch('/api/brain/announce/send', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id, text: p.text }) });
+      var d = await res.json();
+      if (d.success) p.state = 'sent'; else { p.state = 'error'; p.error = d.error || 'Could not send.'; }
+    } catch (e) { p.state = 'error'; p.error = 'Connection issue. Nothing was sent, try again.'; }
+    render();
+  }
+  function discardProposal(id) { var p = findProp(id); if (!p) return; var ta = document.getElementById('brain-prop-' + id); if (ta) p.text = ta.value; p.state = 'discarded'; render(); }
 
   /* ── State illustrations ─────────────────────────────── */
   function stateImg(src, alt, w, h, extra) {
@@ -203,7 +238,9 @@
     var panel = document.getElementById('brain-panel');
     if (!panel) return;
 
-    var chipsHTML = CHIPS.map(function(c){
+    var isAdm=(typeof currentRole!=='undefined'&&currentRole==='admin');
+    var chipList=CHIPS.slice(0,4).concat([{e:'📝',l:'Assessments',m:isAdm?'Who has not taken their assessment yet?':'Which assessments do I still have to take?'}],isAdm?[{e:'📣',l:'Announce',m:'Help me announce something to the team'}]:[],CHIPS.slice(4));
+    var chipsHTML = chipList.map(function(c){
       return '<button class="brain-chip-btn" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;font-size:10.5px;font-weight:600;background:#F8F9FC;border:1.5px solid #E8EBF0;color:#4B5563;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .18s;" onclick="Brain.quick(' + JSON.stringify(c.m) + ')">' + c.e + ' ' + c.l + '</button>';
     }).join('');
 
@@ -299,7 +336,7 @@
       if(tmr) clearTimeout(tmr);
       var data=await res.json();
       rmTyping();
-      msgs.push({role:'assistant',content:data.success?data.reply:(data.error||'Having trouble connecting, please try again.'),time:ts()});
+      msgs.push({role:'assistant',content:data.success?data.reply:(data.error||'Having trouble connecting, please try again.'),time:ts(),proposal:(data.success&&data.proposal)?data.proposal:null});
       if(msgs.length>60) msgs=msgs.slice(-40);
     } catch(e){
       rmTyping();
@@ -382,6 +419,8 @@
       inp.value=''; inp.style.height='';
       callAI(msg);
     },
+    sendProposal:sendProposal,
+    discardProposal:discardProposal,
     quick:function(msg){if(!busy){if(!isOpen)openPanel();setTimeout(function(){callAI(msg);},200);}},
     key:function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();Brain.send();}},
     resize:function(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';},
