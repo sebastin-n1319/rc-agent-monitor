@@ -2378,7 +2378,7 @@
     incl.addEventListener('change', function () { dirty = false; draft(); });
     var hook = h('input', { class: 'inp', style: 'width:100%', type: 'url', placeholder: 'https://chat.googleapis.com/v1/spaces/...', autocomplete: 'off', 'aria-label': 'Google Chat webhook URL' });
     var keep = h('input', { type: 'checkbox', id: 'sh-keep' });
-    var picker = PeoplePicker({ label: 'Who should get the private message?', placeholder: 'Type a name or email' });
+    var picker = PeoplePicker({ label: 'Who should get the private message?', placeholder: 'Type a name or email', allowMembers: true });
     var dmNote = h('div', { class: 'small muted', style: 'margin-top:6px' });
     var pane = h('div', { style: 'margin-top:10px' });
     var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Where to send it' });
@@ -2410,9 +2410,10 @@
       var text = ta.value.trim(); if (!text) { msg.appendChild(errBox('Write a message first.')); return; }
       var body = { text: text, mode: mode };
       if (mode === 'webhook') { body.webhook = hook.value.trim(); body.saveWebhook = keep.checked; if (!body.webhook) { msg.appendChild(errBox('Paste the webhook URL first.')); hook.focus(); return; } }
-      if (mode === 'dm') { var to = picker.selected(); if (!to.length) { msg.appendChild(errBox('Pick who to message.')); return; } body.toEmail = to[0]; }
+      var targets = [null];
+      if (mode === 'dm') { targets = picker.selected(); if (!targets.length) { msg.appendChild(errBox('Pick who to message. Click a name in the list to select it.')); return; } }
       send.disabled = true;
-      api('/api/assess/admin/share/send', { method: 'POST', body: body })
+      targets.reduce(function (pr, to) { return pr.then(function () { var b2 = Object.assign({}, body); if (to) b2.toEmail = to; return api('/api/assess/admin/share/send', { method: 'POST', body: b2 }); }); }, Promise.resolve())
         .then(function () { dlg.close(); toast(mode === 'dm' ? 'Private message sent' : 'Posted in Google Chat'); })
         .catch(function (e) { send.disabled = false; msg.appendChild(errBox(e.message)); });
     });
@@ -3984,7 +3985,7 @@
       matches = people.map(function (p) { return [p, score(p, toks)]; }).filter(function (x) { return x[1] >= 0; }).sort(function (a, b) { return b[1] - a[1]; }).slice(0, 8).map(function (x) { return x[0]; });
       if (!matches.length && /^[^@\s]+@adit\.com$/.test(term)) matches = [{ email: term, name: '', deskTeams: [], team: '', raw: true }];
       matches.forEach(function (p, i) {
-        var dis = p.member;
+        var dis = p.member && !opts.allowMembers;
         var opt = h('div', { class: 'pp-opt' + (dis ? ' dis' : ''), role: 'option', id: uid + '-o' + i, 'aria-disabled': dis ? 'true' : null, 'aria-selected': 'false' }, [
           h('span', { class: 'as-avatar', text: initials(p.name || p.email) }),
           h('div', { style: 'flex:1;min-width:0' }, [h('b', { text: p.name || p.email }), h('span', { text: p.email })]),
@@ -4012,17 +4013,17 @@
       else if (e.key === 'Enter') {
         e.preventDefault();
         var p = matches[active >= 0 ? active : 0];
-        if (p && !p.member) { add(p.email); input.value = ''; drawList(); }
+        if (p && (!p.member || opts.allowMembers)) { add(p.email); input.value = ''; drawList(); }
       } else if (e.key === 'Escape') { lb.hidden = true; input.setAttribute('aria-expanded', 'false'); }
     });
     function drawTeam() {
       clear(teamBox);
       var t = teamSel.value; if (!t) return;
       var inTeam = people.filter(function (p) { return teamsOf(p).indexOf(t) >= 0; });
-      var addable = inTeam.filter(function (p) { return !p.member; });
+      var addable = inTeam.filter(function (p) { return !p.member || opts.allowMembers; });
       var list = h('div', { class: 'people', style: 'margin-top:8px;max-height:220px' });
       inTeam.forEach(function (p) {
-        var cb = h('input', { type: 'checkbox', checked: chosen.indexOf(p.email) >= 0 ? true : null, disabled: p.member ? true : null });
+        var cb = h('input', { type: 'checkbox', checked: chosen.indexOf(p.email) >= 0 ? true : null, disabled: p.member && !opts.allowMembers ? true : null });
         cb.addEventListener('change', function () { if (cb.checked) add(p.email); else { chosen.splice(chosen.indexOf(p.email), 1); renderChips(); } });
         list.appendChild(h('label', null, [cb, h('div', { style: 'flex:1;min-width:0' }, [h('div', { text: p.name || p.email }), h('div', { class: 'e', text: p.email })]), p.member ? pill('Team member', 'ok') : p.guest ? pill('Guest', 'accent') : null]));
       });
