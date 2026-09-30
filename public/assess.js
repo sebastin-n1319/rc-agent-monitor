@@ -2299,12 +2299,12 @@
       clear(holder);
       var t = r[0].tests.find(function (x) { return x.id === id; });
       var at = r[1].attempts;
-      var latest = {}; at.forEach(function (a) { if (a.status === 'submitted' && !latest[a.email]) latest[a.email] = a; });
+      var latest = {}; at.forEach(function (a) { if (a.status === 'submitted' && a.pct != null && (!latest[a.email] || a.pct > latest[a.email].pct)) latest[a.email] = a; });
       var belowN = Object.keys(latest).filter(function (e) { return latest[e].passed === false; }).length;
       var printOnlyBtn = h('button', { class: 'btn', type: 'button', onclick: function () { printResults(t ? t.title : 'Results', at); } }, [icon('print', 'sm'), 'Print summary']);
       holder.appendChild(pageHead(t ? t.title : 'Results', 'Behaviour flags are signals to look into, not proof. Talk to the agent before acting on them.', !me.reviewer ? [printOnlyBtn] : [
         menu('Send a retest', 'retest', [
-          belowN ? { label: 'Everyone below the pass mark', sub: belowN + (belowN === 1 ? ' person' : ' people') + ', based on their latest attempt.', icon: 'flag', onclick: function () { retestFlow({ testId: id, below: true, count: belowN }, viewResultsReload); } } : null,
+          belowN ? { label: 'Everyone below the pass mark', sub: belowN + (belowN === 1 ? ' person' : ' people') + ', based on their highest score.', icon: 'flag', onclick: function () { retestFlow({ testId: id, below: true, count: belowN }, viewResultsReload); } } : null,
           { label: 'Choose people', sub: 'Pick from everyone who has taken it.', icon: 'users', onclick: function () { pickRetest(id, at); } },
         ], 'primary'),
         menu('Download', 'download', [
@@ -2318,12 +2318,13 @@
       var resetN = at.filter(function (a) { return a.status === 'reset'; }).length;
       var active = at.filter(function (a) { return a.status !== 'reset'; });
       var stopN = at.filter(function (a) { return a.status === 'stopped'; }).length;
-      var avg = done.length ? Math.round(done.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / done.length) : null;
-      var pass = done.length ? Math.round(done.filter(function (a) { return a.passed; }).length / done.length * 100) : null;
+      var bestDone = Object.keys(latest).map(function (e) { return latest[e]; });
+      var avg = bestDone.length ? Math.round(bestDone.reduce(function (s, a) { return s + (a.pct || 0); }, 0) / bestDone.length) : null;
+      var pass = bestDone.length ? Math.round(bestDone.filter(function (a) { return a.passed; }).length / bestDone.length * 100) : null;
       var review = at.filter(function (a) { return a.status === 'submitted' && (a.unmarked > 0 || !a.verdict); }).length;
       holder.appendChild(h('dl', { class: 'stats' }, [
         h('div', { class: 'card stat' }, [h('dt', { text: 'Submitted' }), h('dd', null, [String(done.length), active.length > done.length + stopN ? h('small', { text: '  ' + (active.length - done.length - stopN) + ' in progress' }) : null, stopN ? h('small', { text: '  ' + stopN + ' stopped' }) : null, resetN ? h('small', { text: '  ' + resetN + ' reset' }) : null])]),
-        h('div', { class: 'card stat' }, [h('dt', { text: 'Average score' }), h('dd', { text: avg != null ? avg + '%' : '–' })]),
+        h('div', { class: 'card stat' }, [h('dt', { text: 'Average best score' }), h('dd', { text: avg != null ? avg + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Pass rate' }), h('dd', { text: pass != null ? pass + '%' : '–' })]),
         h('div', { class: 'card stat' }, [h('dt', { text: 'Needs your review' }), h('dd', { text: String(review) })]),
       ]));
@@ -2343,31 +2344,65 @@
         bulkBar.appendChild(h('div', { class: 'bulk' }, [h('b', { text: dsel.length + ' selected' }), h('span', { class: 'spacer' }), del, h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { dsel.length = 0; Array.prototype.forEach.call(tb.querySelectorAll('input[type=checkbox]'), function (c) { c.checked = false; }); paintBulk(); } })]));
       }
       holder.appendChild(bulkBar);
-      at.forEach(function (a, ri) {
+      function rowFor(a, ri, o) {
+        o = o || {};
         var dcb = null;
         if (me.owner) {
           dcb = h('input', { type: 'checkbox', 'aria-label': 'Select result for ' + (a.name || a.email) });
           dcb.addEventListener('click', function (e) { e.stopPropagation(); });
-          dcb.addEventListener('change', function () { var k = dsel.indexOf(a.id); if (dcb.checked && k < 0) dsel.push(a.id); if (!dcb.checked && k >= 0) dsel.splice(k, 1); paintBulk(); });
+          dcb.addEventListener('change', function () {
+            var ids = o.group ? o.group.map(function (x) { return x.id; }) : [a.id];
+            ids.forEach(function (id) { var k = dsel.indexOf(id); if (dcb.checked && k < 0) dsel.push(id); if (!dcb.checked && k >= 0) dsel.splice(k, 1); });
+            if (o.group && o.subCbs) o.subCbs.forEach(function (c) { c.checked = dcb.checked; });
+            paintBulk();
+          });
+          if (o.onCb) o.onCb(dcb);
         }
-        var resetBtn = (a.status === 'reset' || !me.reviewer) ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Send ' + (a.name || a.email) + ' a retest', onclick: function (e) {
-          e.stopPropagation(); resetFlow(a, function () { viewResultsReload(); });
+        var ra = o.latest && o.latest.status !== 'reset' ? o.latest : a;
+        var resetBtn = (ra.status === 'reset' || !me.reviewer) ? null : h('button', { class: 'btn sm ghost', type: 'button', title: 'Send ' + (a.name || a.email) + ' a retest', onclick: function (e) {
+          e.stopPropagation(); resetFlow(ra, function () { viewResultsReload(); });
         } }, [icon('retest', 'sm'), 'Retest']);
         var tr = h('tr', { class: 'click' + (a.status === 'reset' ? ' is-reset' : ''), tabindex: '0', style: '--i:' + Math.min(ri, 12) }, [
           me.owner ? h('td', { style: 'width:34px' }, [dcb]) : null,
-          h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email })]),
+          h('td', null, o.sub ? [h('span', { style: 'padding-left:18px;font-weight:500', text: 'Attempt ' + o.num }), o.isBest ? h('span', { class: 'sub', style: 'padding-left:18px', text: 'Highest score' }) : null] : [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.email }), o.group && o.group.length > 1 ? o.toggle : null]),
           h('td', null, [a.status === 'reset' ? pill('Reset', '', true) : a.status === 'stopped' ? pill('Stopped: camera', 'bad', true) : a.status === 'submitted' ? (a.passed ? pill('Pass', 'ok') : pill('Below pass', 'bad')) : pill('In progress ' + a.progress, 'warn'),
             a.reset ? h('span', { class: 'sub', title: 'Reset by ' + a.reset.by + ' · ' + fmtWhen(a.reset.at), text: 'by ' + String(a.reset.by || '').split('@')[0] + ' · ' + new Date(a.reset.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) }) : null]),
           h('td', null, [a.pct != null ? h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + a.pct + '%' })]), h('span', { class: 'num', text: a.score + '/' + a.maxScore + ' · ' + a.pct + '%' })]) : h('span', { class: 'muted', text: '–' })]),
           h('td', null, [tierPill(a.tier), a.flags && a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') + (a.flags.length > 2 ? '…' : '') }) : null]),
           h('td', null, [a.unmarked ? pill(a.unmarked + ' to mark', 'accent') : (a.writtenPct != null ? h('span', { class: 'num', text: a.writtenPct + '%' }) : h('span', { class: 'muted', text: '–' }))]),
           h('td', null, [a.verdict ? pill(VERDICT[a.verdict][0], VERDICT[a.verdict][1]) : h('span', { class: 'muted', text: '–' })]),
-          (function () { var w = fmtWhen(a.finishedAt || a.startedAt), k = w.indexOf(', '); return h('td', { class: 'num' }, k > 0 ? [w.slice(0, k), h('span', { class: 'sub', text: w.slice(k + 2) })] : [w]); })(),
+          (function () { var w = fmtWhen((o.latest || a).finishedAt || (o.latest || a).startedAt), k = w.indexOf(', '); return h('td', { class: 'num' }, k > 0 ? [w.slice(0, k), h('span', { class: 'sub', text: w.slice(k + 2) })] : [w]); })(),
           h('td', { class: 'act' }, [resetBtn]),
         ]);
         tr.addEventListener('click', function () { go('attempt/' + a.id); });
         tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') go('attempt/' + a.id); });
-        tb.appendChild(tr);
+        return tr;
+      }
+      var order = [], byMail = {};
+      at.forEach(function (a) { if (!byMail[a.email]) { byMail[a.email] = []; order.push(a.email); } byMail[a.email].push(a); });
+      order.forEach(function (email, gi) {
+        var g = byMail[email];
+        var subs = g.filter(function (x) { return x.status === 'submitted' && x.pct != null; });
+        var best = subs.length ? subs.reduce(function (b, x) { return x.pct > b.pct ? x : b; }, subs[0]) : (g.filter(function (x) { return x.status !== 'reset'; })[0] || g[0]);
+        var num = {}; g.slice().reverse().forEach(function (x, i) { num[x.id] = i + 1; });
+        var subRows = [], subCbs = [], open = false;
+        var toggle = null;
+        if (g.length > 1) {
+          toggle = h('button', { class: 'btn sm ghost', type: 'button', 'aria-expanded': 'false', style: 'margin:4px 0 0 -6px;padding:2px 8px;font-size:12px' }, [g.length + ' attempts, highest shown']);
+          toggle.addEventListener('click', function (e) {
+            e.stopPropagation(); open = !open; toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggle.textContent = open ? 'Hide attempts' : g.length + ' attempts, highest shown';
+            subRows.forEach(function (r) { r.style.display = open ? '' : 'none'; });
+          });
+          toggle.addEventListener('keydown', function (e) { e.stopPropagation(); });
+        }
+        var main = rowFor(best, gi, { group: g, latest: g[0], toggle: toggle, subCbs: subCbs });
+        tb.appendChild(main);
+        if (g.length > 1) g.forEach(function (x) {
+          var r = rowFor(x, gi, { sub: true, num: num[x.id], isBest: x === best, onCb: function (c) { subCbs.push(c); } });
+          r.style.display = 'none'; r.classList.add('sub-attempt'); r.style.background = 'rgba(0,0,0,.02)';
+          subRows.push(r); tb.appendChild(r);
+        });
       });
       holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [
         h('thead', null, [h('tr', null, (me.owner ? [''] : []).concat(['Agent', 'Result', 'Score', 'Behaviour', 'Written', 'Verdict', 'When', '']).map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
@@ -3065,13 +3100,13 @@
       if (tab === 'topics') { viewInsights(holder); return; }
       if (!k.attempts) { holder.appendChild(h('div', { class: 'empty' }, [art('radar'), h('b', { text: 'No submitted attempts match these filters' }), h('span', { text: 'Try a wider period or clear the filters.' })])); return; }
       if (tab === 'overview') {
-        holder.appendChild(h('div', { class: 'kpis stagger' }, [kpi('Attempts', k.attempts), kpi('People', k.people), kpi('Average score', k.avg, '%'), kpi('Pass rate', k.passRate, '%'), kpi('Median time', k.medianMinutes, ' min'), kpi('Flagged behaviour', k.flagged, '%', 'Some or major issues')]));
+        holder.appendChild(h('div', { class: 'kpis stagger' }, [kpi('Attempts', k.attempts), kpi('People', k.people), kpi('Average best score', k.avg, '%', 'Each agent\'s highest attempt'), kpi('Pass rate', k.passRate, '%'), kpi('Median time', k.medianMinutes, ' min'), kpi('Flagged behaviour', k.flagged, '%', 'Some or major issues')]));
         var passMark = data.rows.length ? data.rows[0].passPct : null;
         var grid = h('div', { class: 'ch-grid2' });
         grid.appendChild(chartCard('Score distribution', 'How many attempts landed in each score band', columns(data.distribution.map(function (d) { return { label: d.from + (d.from === 90 ? '+' : ''), value: d.n, tip: d.from + '% to ' + (d.to === 100 ? '100' : d.to - 1) + '%' }; }), { label: 'Score distribution', valueLabel: 'attempts' })));
         grid.appendChild(chartCard('Average score by week', data.trend.length > 1 ? 'Week starting Monday' : 'Needs two or more weeks of attempts to show a trend',
           line(data.trend.map(function (w) { var d = new Date(w.week + 'T12:00:00Z'); return { x: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), y: w.avg, tip: 'Week of ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), label: w.avg + '% average · ' + w.passRate + '% passed · ' + w.n + ' attempts' }; }), { ref: passMark, label: 'Average score by week' })));
-        grid.appendChild(chartCard('By assessment', 'Average score; click to filter', hbars(data.byTest.map(function (t) { return { label: t.test, value: t.avg, valueText: t.avg + '% · ' + t.n, tone: 'acc', tip: '<b>' + escH(t.test) + '</b><br>' + t.avg + '% average, ' + t.passRate + '% passed, ' + t.n + ' attempts', onclick: function () { reportState.tests = [t.testId]; syncTests(); Array.prototype.forEach.call(testsList.querySelectorAll('input'), function (cb, i) { cb.checked = testsAll[i] && testsAll[i].id === t.testId; }); load(); } }; }))));
+        grid.appendChild(chartCard('By assessment', 'Average of best scores; click to filter', hbars(data.byTest.map(function (t) { return { label: t.test, value: t.avg, valueText: t.avg + '% · ' + t.n, tone: 'acc', tip: '<b>' + escH(t.test) + '</b><br>' + t.avg + '% average, ' + t.passRate + '% passed, ' + t.n + ' attempts', onclick: function () { reportState.tests = [t.testId]; syncTests(); Array.prototype.forEach.call(testsList.querySelectorAll('input'), function (cb, i) { cb.checked = testsAll[i] && testsAll[i].id === t.testId; }); load(); } }; }))));
         var tiers = data.tiers, tot = (tiers.none || 0) + (tiers.some || 0) + (tiers.major || 0) || 1;
         var stack = h('div', { class: 'stackbar', role: 'img', 'aria-label': 'Behaviour: ' + tiers.none + ' no issues, ' + tiers.some + ' some issues, ' + tiers.major + ' major issues' });
         [['none', 'No issues', 'ok'], ['some', 'Some issues', 'warn'], ['major', 'Major issues', 'bad']].forEach(function (x) { var n = tiers[x[0]] || 0; if (!n) return; var seg = h('i', { class: 'tone-' + x[2], style: 'flex:' + n }); seg.addEventListener('mousemove', function (e) { tip(e, '<b>' + x[1] + '</b><br>' + n + ' attempts (' + Math.round(n / tot * 100) + '%)'); }); seg.addEventListener('mouseleave', function () { tip(null); }); stack.appendChild(seg); });
@@ -3157,7 +3192,7 @@
           return wrap;
         }
         holder.appendChild(h('p', { class: 'small muted', text: 'Lowest average first. Click a person to see their overview, open Attempts for the full breakdown, or send them a retest of their latest attempt on each assessment in this view.' }));
-        holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Attempts', 'Average', 'Best', 'Passed', 'Behaviour', 'Last', ''].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb2])]));
+        holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Attempts', 'Avg best', 'Best', 'Passed', 'Behaviour', 'Last', ''].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb2])]));
       }
     }
     function printReport() {
