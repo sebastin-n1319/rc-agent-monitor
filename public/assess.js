@@ -1774,7 +1774,7 @@
       var t = id ? r[0].tests.find(function (x) { return x.id === id; }) : null;
       if (id && !t) { holder.appendChild(errBox('Assessment not found.')); return; }
       var bank = r[2].questions, tags = r[2].tags, people = r[3].people;
-      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, navigation: 'bank', modules: [], prep: { summary: '', topics: [] }, pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
+      var st = t ? JSON.parse(JSON.stringify(t.settings)) : { secondsPerQuestion: 40, displayMode: 'fade', wordsPerChunk: 4, chunkMs: 1000, explainCount: 1, explainSec: 90, passPct: 70, attempts: 1, showScore: false, shuffleQuestions: true, shuffleOptions: true, watermark: 'off', camera: false, snapshotSec: 30, navigation: 'bank', modules: [], prep: { summary: '', topics: [] }, pool: { mode: 'fixed', tags: [], count: 10, difficulty: '' } };
       if (!st.navigation) st.navigation = 'bank';
       if (!st.modules) st.modules = []; if (!st.prep) st.prep = { summary: '', topics: [] };
       var picked = r[1].questions.map(function (q) { return q.id; });
@@ -1946,7 +1946,7 @@
         navCards.appendChild(h('label', { class: 'radcard' }, [inp, h('div', null, [h('b', { text: o[1] }), h('span', { text: o[2] })])]));
       });
       left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Timing and display' }), h('p', { text: '30 to 45 seconds is enough to read and answer, but too short to look it up.' }),
-        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers get 90 seconds.')]),
+        h('div', { class: 'fgrid' }, [field('Seconds per question', secIn, 'Written answers have their own time, set under Integrity.')]),
         h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'Moving between questions' }), h('div', { style: 'height:6px' }), navCards,
         h('span', { class: 'lbl small', style: 'font-weight:600;color:var(--t2)', text: 'How questions appear' }), h('div', { style: 'height:6px' }), modeCards, fadeRow, audioRow]));
 
@@ -1955,9 +1955,14 @@
       var wmT = toggle('Faint name watermark', st.watermark === 'subtle', 'Very light email and time across the screen, so a photo of the screen can be traced. Off by default.');
       var shQ = toggle('Shuffle question order', st.shuffleQuestions), shO = toggle('Shuffle answer options', st.shuffleOptions);
       var exIn = h('select', { class: 'sel', id: 'b-ex' }, [0, 1, 2, 3].map(function (n) { return h('option', { value: String(n), text: n === 0 ? 'None' : n + ' question' + (n > 1 ? 's' : '') }); })); exIn.value = String(Math.min(3, st.explainCount));
-      exIn.addEventListener('change', function () { st.explainCount = Number(exIn.value); renderSide(); });
+      exIn.addEventListener('change', function () { st.explainCount = Number(exIn.value); exSecWrap.style.display = st.explainCount ? '' : 'none'; renderSide(); });
+      if (!st.explainSec) st.explainSec = 90;
+      var exSec = h('input', { class: 'inp', id: 'b-exsec', type: 'number', min: '30', max: '600', step: '10', value: String(st.explainSec), 'aria-label': 'Seconds for each written answer', style: 'width:84px' });
+      exSec.addEventListener('input', function () { var n = Number(exSec.value); st.explainSec = n >= 30 && n <= 600 ? Math.round(n) : 90; renderSide(); });
+      exSec.addEventListener('blur', function () { var n = Number(exSec.value); if (!(n >= 30 && n <= 600)) { exSec.value = String(st.explainSec); } });
+      var exSecWrap = h('span', { style: 'display:' + (st.explainCount ? 'inline-flex' : 'none') + ';align-items:center;gap:6px;margin-left:8px' }, [exSec, h('span', { class: 'small muted', text: 'seconds each' })]);
       left.appendChild(h('div', { class: 'card sec' }, [h('h2', { text: 'Integrity' }), h('p', { text: 'Tab switches, full screen exits, copy, paste and Print Screen are always logged. Nothing is screen recorded.' }),
-        camT, wmT, shQ, shO, h('div', { class: 'setrow' }, [h('div', { class: 'tx' }, [h('b', { text: 'Explain your answer' }), h('span', { text: 'At the end the agent explains random answers in their own words. You mark them.' })]), exIn])]));
+        camT, wmT, shQ, shO, h('div', { class: 'setrow' }, [h('div', { class: 'tx' }, [h('b', { text: 'Explain your answer' }), h('span', { text: 'At the end the agent explains random answers in their own words. You mark them. Give agents the time they need, 30 to 600 seconds.' })]), h('div', { style: 'display:flex;align-items:center;flex-wrap:wrap;gap:4px' }, [exIn, exSecWrap])])]));
 
       // Scoring
       var passIn = h('input', { class: 'inp', id: 'b-pass', type: 'number', min: '0', max: '100', value: String(st.passPct) });
@@ -2038,7 +2043,7 @@
       function renderSide() {
         clear(side);
         var nQ = st.pool.mode === 'random' ? st.pool.count : picked.length;
-        var mins = Math.max(1, Math.ceil((nQ * (Number(secIn.value) || 40) + Math.min(st.explainCount, nQ) * 90) / 60));
+        var mins = Math.max(1, Math.ceil((nQ * (Number(secIn.value) || 40) + Math.min(st.explainCount, nQ) * (st.explainSec || 90)) / 60));
         var statusSel = h('div', { class: 'seg', role: 'group', 'aria-label': 'Status' }, [['draft', 'Draft'], ['published', 'Published']].map(function (o) {
           return h('button', { type: 'button', 'aria-pressed': String(status === o[0]), text: o[1], onclick: function () { status = o[0]; renderSide(); } });
         }));
