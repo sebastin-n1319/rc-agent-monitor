@@ -2095,6 +2095,17 @@ app.get('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => re
 app.put('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.update(req.params.id, req.body || {}) })));
 app.delete('/api/assess/admin/studio/:id', ...RV, assessWrap(async (req, res) => { await assessStudio.remove(req.params.id); res.json({ success: true }); }));
 app.post('/api/assess/admin/studio/:id/generate', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.generate(req.params.id, req.body || {}, AI()) })));
+app.post('/api/assess/admin/studio/:id/fill-gaps', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.fillGaps(req.params.id, req.body || {}, AI()) })));
+app.post('/api/assess/admin/studio/:id/merge', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.mergeGroups(req.params.id, req.body || {}) })));
+app.post('/api/assess/admin/studio/:id/undo', ...RV, assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.undo(req.params.id, (req.body || {}).historyId) })));
+app.post('/api/assess/admin/studio/:id/remove-duplicates', ...RV, assessWrap(async (req, res) => { const r = await assessStudio.removeDupes(req.params.id); res.json({ success: true, studio: r, removed: r.removed }); }));
+app.post('/api/assess/admin/tests/:id/add-questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.addToTest(req.params.id, (req.body || {}).questionIds, req.session.email, { approve: !!(req.body || {}).approve })) })));
+app.post('/api/assess/admin/tests/merge', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.mergeTests((req.body || {}).ids, req.body || {}, req.session.email)) })));
+app.post('/api/assess/admin/questions/similar', ...RV, assessWrap(async (req, res) => {
+  const b = req.body || {};
+  if (Array.isArray(b.prompts)) return res.json({ success: true, matches: await assessments.similarTo(b.prompts.slice(0, 200).map(x => String(x || '').slice(0, 1500)), { excludeIds: b.excludeIds }) });
+  res.json({ success: true, pairs: await assessments.duplicatesAmong(b.ids) });
+}));
 app.post('/api/assess/admin/studio/:id/chat', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, studio: await assessStudio.chat(req.params.id, req.body || {}, AI(), req.session.email) })));
 app.post('/api/assess/admin/studio/:id/publish', ...RV, assessWrap(async (req, res) => {
   const out = await assessStudio.publish(req.params.id, req.body || {}, req.session.email);

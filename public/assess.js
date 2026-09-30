@@ -1714,9 +1714,122 @@
   }
 
   // ── Reviewer: assessments list ───────────────────────────────────────
+  // ── Session 67: add questions to an assessment that already exists, and combine assessments ──
+  function fixedTests(tests) { return tests.filter(function (t) { return t.status !== 'archived' && t.settings.pool.mode !== 'random'; }); }
+  function addToAssessmentDialog(qs, onDone) {
+    var ids = qs.map(function (q) { return q.id; });
+    var draftsN = qs.filter(function (q) { return q.status === 'draft'; }).length;
+    var dlg = h('dialog', { class: 'confirm wide', 'aria-labelledby': 'at-t' });
+    var picked = null, tests = [];
+    var list = h('div', { class: 'at-list', role: 'radiogroup', 'aria-label': 'Assessments' });
+    var search = h('input', { class: 'inp', type: 'search', placeholder: 'Search assessments', 'aria-label': 'Search assessments' });
+    var note = h('div', { class: 'at-note', 'aria-live': 'polite' });
+    var apr = h('input', { type: 'checkbox', id: 'at-apr' });
+    var aprRow = draftsN ? h('label', { class: 'chk', for: 'at-apr' }, [apr, 'Also approve the ' + draftsN + ' draft question' + (draftsN === 1 ? '' : 's')]) : null;
+    var addBtn = h('button', { class: 'btn primary', type: 'button', disabled: true }, [icon('plus', 'sm'), 'Add to assessment']);
+    function drawList() {
+      clear(list);
+      var q = search.value.trim().toLowerCase();
+      var shown = tests.filter(function (t) { return !q || t.title.toLowerCase().indexOf(q) >= 0; });
+      if (!shown.length) list.appendChild(h('p', { class: 'small muted', style: 'padding:10px', text: tests.length ? 'No assessment matches.' : 'No assessment with a fixed question list yet.' }));
+      shown.forEach(function (t) {
+        var on = picked && picked.id === t.id;
+        list.appendChild(h('button', { class: 'at-row' + (on ? ' on' : ''), type: 'button', role: 'radio', 'aria-checked': on ? 'true' : 'false', onclick: function () { pick(t); } }, [
+          h('span', { class: 'at-t', text: t.title }),
+          h('span', { class: 'small muted', text: t.questionIds.length + ' question' + (t.questionIds.length === 1 ? '' : 's') + (t.attempts ? ' · ' + t.attempts + ' attempt' + (t.attempts === 1 ? '' : 's') : '') }),
+          t.status === 'published' ? pill('Published', 'ok', true) : pill('Draft', '', true)]));
+      });
+    }
+    function pick(t) {
+      picked = t; drawList(); addBtn.disabled = true; clear(note); note.appendChild(h('span', { class: 'small muted', text: 'Checking...' }));
+      if (t.status === 'published' && draftsN) apr.checked = true;
+      api('/api/assess/admin/tests/' + t.id + '/questions').then(function (r) {
+        var have = {}; r.questions.forEach(function (x) { have[x.id] = 1; });
+        var dup = ids.filter(function (x) { return have[x]; }).length, fresh = ids.length - dup;
+        return api('/api/assess/admin/questions/similar', { method: 'POST', body: { ids: ids.concat(r.questions.map(function (x) { return x.id; })) } }).then(function (s) {
+          var near = {}; (s.pairs || []).forEach(function (p) { if (have[p.a] && ids.indexOf(p.b) >= 0 && !have[p.b]) near[p.b] = 1; if (have[p.b] && ids.indexOf(p.a) >= 0 && !have[p.a]) near[p.a] = 1; });
+          return { dup: dup, fresh: fresh, near: Object.keys(near).length, total: r.questions.length };
+        }).catch(function () { return { dup: dup, fresh: fresh, near: 0, total: r.questions.length }; });
+      }).then(function (x) {
+        if (picked !== t) return;
+        clear(note);
+        note.appendChild(h('p', { text: x.fresh ? x.fresh + ' new question' + (x.fresh === 1 ? '' : 's') + ' will be added. It will have ' + (x.total + x.fresh) + '.' : 'Every selected question is already in this assessment.' }));
+        if (x.dup && x.fresh) note.appendChild(h('p', { class: 'small muted', text: x.dup + ' already in it will be skipped.' }));
+        if (x.near) note.appendChild(h('p', { class: 'small', style: 'color:var(--warn-ink,var(--t2))' }, [icon('warn', 'sm'), ' ' + x.near + ' of your questions look almost the same as ones already in it.']));
+        if (t.attempts) note.appendChild(h('p', { class: 'small', style: 'color:var(--bad)' }, [icon('warn', 'sm'), ' ' + t.attempts + ' attempt' + (t.attempts === 1 ? '' : 's') + ' already exist. Adding questions changes it for anyone who starts or resumes it from now on.']));
+        if (x.total + x.fresh > 200) note.appendChild(h('p', { class: 'small', style: 'color:var(--bad)', text: 'An assessment holds up to 200 questions.' }));
+        addBtn.disabled = !x.fresh || x.total + x.fresh > 200;
+      }).catch(function (e) { clear(note); note.appendChild(h('p', { class: 'small', style: 'color:var(--bad)', text: e.message })); });
+    }
+    search.addEventListener('input', drawList);
+    addBtn.addEventListener('click', function () {
+      if (!picked) return; addBtn.disabled = true; addBtn.classList.add('busy');
+      api('/api/assess/admin/tests/' + picked.id + '/add-questions', { method: 'POST', body: { questionIds: ids, approve: !!apr.checked } }).then(function (r) {
+        dlg.close(); toast('Added ' + r.added + ' to "' + r.title + '"' + (r.skipped ? ', ' + r.skipped + ' were already there' : '') + '.');
+        if (onDone) onDone(r);
+      }).catch(function (e) { addBtn.disabled = false; addBtn.classList.remove('busy'); toast(e.message); });
+    });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [h('h2', { id: 'at-t', text: 'Add ' + ids.length + ' question' + (ids.length === 1 ? '' : 's') + ' to an assessment' }),
+      h('p', { class: 'small muted', style: 'margin:0 0 8px', text: 'Pick one that already exists. Questions it already has are skipped.' }), search, list, note, aprRow,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), addBtn])]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal();
+    drawList(); list.appendChild(h('p', { class: 'small muted', style: 'padding:10px', text: 'Loading...' }));
+    api('/api/assess/admin/tests').then(function (j) { tests = fixedTests(j.tests); drawList(); }).catch(function (e) { clear(list); list.appendChild(errBox(e.message)); });
+  }
+  function combineDialog(onDone) {
+    var dlg = h('dialog', { class: 'confirm wide', 'aria-labelledby': 'cb-t' });
+    var tests = [], order = [];
+    var list = h('div', { class: 'at-list' });
+    var title = h('input', { class: 'inp', style: 'width:100%;margin-top:4px', placeholder: 'Leave empty to join the titles', 'aria-label': 'Title of the combined assessment' });
+    var mNew = h('input', { type: 'radio', name: 'cb-mode', id: 'cb-new', checked: true }), mInto = h('input', { type: 'radio', name: 'cb-mode', id: 'cb-into' });
+    var dd = h('input', { type: 'checkbox', id: 'cb-dd', checked: true }), ar = h('input', { type: 'checkbox', id: 'cb-ar' });
+    var sum = h('p', { class: 'small muted', 'aria-live': 'polite' });
+    var go2 = h('button', { class: 'btn primary', type: 'button', disabled: true }, [icon('layers', 'sm'), 'Combine']);
+    function total() { var s = {}; order.forEach(function (id) { var t = tests.find(function (x) { return x.id === id; }); if (t) t.questionIds.forEach(function (q) { s[q] = 1; }); }); return Object.keys(s).length; }
+    function upd() {
+      var n = total(); clear(sum);
+      sum.textContent = order.length < 2 ? 'Tick at least two assessments.' : order.length + ' assessments, ' + n + ' different question' + (n === 1 ? '' : 's') + (n > 200 ? '. That is over the limit of 200.' : '.');
+      go2.disabled = order.length < 2 || n > 200;
+      var first = tests.find(function (x) { return x.id === order[0]; });
+      document.getElementById('cb-intol') && (document.getElementById('cb-intol').textContent = first ? 'Put everything into "' + first.title + '" (the first one ticked)' : 'Put everything into the first one ticked');
+      ar.disabled = mInto.checked;
+    }
+    function draw() {
+      clear(list);
+      tests.forEach(function (t) {
+        var cb = h('input', { type: 'checkbox', 'aria-label': t.title, checked: order.indexOf(t.id) >= 0 ? true : null });
+        cb.addEventListener('change', function () { var k = order.indexOf(t.id); if (cb.checked && k < 0) order.push(t.id); if (!cb.checked && k >= 0) order.splice(k, 1); upd(); });
+        list.appendChild(h('label', { class: 'at-row chk' }, [cb, h('span', { class: 'at-t', text: t.title }), h('span', { class: 'small muted', text: t.questionIds.length + ' questions' }), t.status === 'published' ? pill('Published', 'ok', true) : pill('Draft', '', true)]));
+      });
+      if (!tests.length) list.appendChild(h('p', { class: 'small muted', style: 'padding:10px', text: 'No assessment with a fixed question list yet.' }));
+    }
+    [mNew, mInto].forEach(function (r) { r.addEventListener('change', upd); });
+    go2.addEventListener('click', function () {
+      go2.disabled = true; go2.classList.add('busy');
+      api('/api/assess/admin/tests/merge', { method: 'POST', body: { ids: order, title: title.value, mode: mInto.checked ? 'into' : 'new', dedupe: dd.checked, archiveSources: ar.checked && !mInto.checked } }).then(function (r) {
+        dlg.close(); toast('Combined ' + r.merged + ' assessments into one with ' + r.total + ' questions' + (r.dupes ? ' (' + r.dupes + ' near-identical skipped)' : '') + '.');
+        if (onDone) onDone(r); else go('edit/' + r.id);
+      }).catch(function (e) { go2.disabled = false; go2.classList.remove('busy'); toast(e.message); });
+    });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [h('h2', { id: 'cb-t', text: 'Combine assessments' }),
+      h('p', { class: 'small muted', style: 'margin:0 0 8px', text: 'Tick the assessments to join. Their questions are merged in the order you tick them. Assessments that draw random questions from a pool are not listed.' }), list, sum,
+      h('label', { class: 'small muted', style: 'display:block;margin-top:10px' }, ['Title', title]),
+      h('div', { style: 'display:grid;gap:6px;margin-top:10px' }, [
+        h('label', { class: 'chk', for: 'cb-new' }, [mNew, 'Make a new draft assessment']),
+        h('label', { class: 'chk', for: 'cb-into' }, [mInto, h('span', { id: 'cb-intol', text: 'Put everything into the first one ticked' })]),
+        h('label', { class: 'chk', for: 'cb-dd' }, [dd, 'Skip questions that are almost identical']),
+        h('label', { class: 'chk', for: 'cb-ar' }, [ar, 'Archive the originals afterwards (new assessment only)'])]),
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), go2])]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal();
+    api('/api/assess/admin/tests').then(function (j) { tests = fixedTests(j.tests); draw(); upd(); }).catch(function (e) { clear(list); list.appendChild(errBox(e.message)); });
+  }
+
   function viewManage() {
     main.appendChild(pageHead('Assessments', me.reviewer ? 'Build assessments from the question bank, choose who takes them, and review results.' : 'You review these assessments. Open one to see results and mark answers.',
       !me.reviewer ? null : [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
+       h('button', { class: 'btn', type: 'button', onclick: function () { combineDialog(); } }, [icon('layers', 'sm'), 'Combine']),
        h('button', { class: 'btn', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Build from a document']),
        h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
     if (me.reviewer) {
@@ -2749,22 +2862,25 @@
 
   function viewStudio(id) {
     var holder = h('div', { class: 'studio' }); main.appendChild(holder); holder.appendChild(skeleton());
-    var S = null, busy = false, selGroup = null;
+    var S = null, busy = false, selGroup = null, selQ = null, pending = null, chatErr = null, comb = {};
     function put(body) { return api('/api/assess/admin/studio/' + id, { method: 'PUT', body: body }).then(function (j) { S = j.studio; return S; }); }
     function load() { api('/api/assess/admin/studio/' + id).then(function (j) { S = j.studio; draw(); }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); }); }
     function secById(sid) { return S.sections.find(function (x) { return x.id === sid; }); }
     function draw() {
+      var keepY = window.scrollY;
       clear(holder);
       var totalQ = S.drafts.filter(function (d) { return !d.saved; }).length;
       holder.appendChild(pageHead(S.title, (S.summary || 'Sections found: ' + S.sections.length) + ' · ' + Math.round(S.chars / 1000) + 'k characters', [
         h('button', { class: 'btn ghost danger', type: 'button', onclick: function () { if (!confirm('Delete this studio session? Saved questions and assessments stay.')) return; api('/api/assess/admin/studio/' + id, { method: 'DELETE' }).then(function () { go('studio'); }); } }, [icon('trash', 'sm'), 'Delete session']),
-        h('button', { class: 'btn primary', type: 'button', disabled: !totalQ || null, onclick: publish }, [icon('check', 'sm'), totalQ ? 'Save ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + ' and create drafts' : 'Nothing to save yet']),
+        S.history && S.history.length ? h('button', { class: 'btn ghost', type: 'button', disabled: busy || null, title: 'Undo: ' + S.history[S.history.length - 1].label, onclick: function () { undo(); } }, [icon('replay', 'sm'), 'Undo']) : null,
+        h('button', { class: 'btn primary', type: 'button', disabled: !totalQ || busy || null, onclick: function () { saveDialog(null, true); } }, [icon('check', 'sm'), totalQ ? 'Save ' + totalQ + ' question' + (totalQ === 1 ? '' : 's') + ' or add to an assessment' : 'Nothing to save yet']),
       ], { text: 'AI Studio', go: function () { go('studio'); } }));
       var cols = h('div', { class: 'studio-cols' });
       holder.appendChild(cols);
       cols.appendChild(sectionsPane());
       cols.appendChild(groupsPane());
       cols.appendChild(chatPane());
+      window.scrollTo(0, keepY);
     }
     // ── sections
     function sectionsPane() {
@@ -2786,6 +2902,8 @@
       var box = h('div', { class: 'st-pane st-groups' });
       box.appendChild(h('div', { class: 'row', style: 'margin-bottom:10px' }, [h('h3', { style: 'margin:0', text: 'Assessments' }), h('span', { class: 'spacer' }),
         h('button', { class: 'btn sm', type: 'button', onclick: function () { var ng = S.groups.concat([{ id: '', title: 'New assessment', sectionIds: [], questionCount: 8, difficulty: 'mixed' }]); put({ groups: ng }).then(draw); } }, [icon('plus', 'sm'), 'Add']),
+        (function () { var n = Object.keys(comb).filter(function (k) { return comb[k]; }).length; return n >= 2 ? h('button', { class: 'btn sm', type: 'button', disabled: busy || null, onclick: combineSets }, [icon('layers', 'sm'), 'Combine ' + n]) : null; })(),
+        (function () { var n = S.drafts.filter(function (d) { return d.dupe && !d.saved && !d.dupeOk; }).length; return n ? h('button', { class: 'btn sm', type: 'button', disabled: busy || null, title: 'Drop questions that repeat another question or one already in the bank', onclick: removeDupes }, [icon('copy', 'sm'), 'Remove ' + n + ' duplicate' + (n === 1 ? '' : 's')]) : null; })(),
         h('button', { class: 'btn sm primary', type: 'button', disabled: busy || null, onclick: function () { generate(null); } }, [icon('spark', 'sm'), 'Write all'])]));
       S.groups.forEach(function (g, gi) {
         var drafts = S.drafts.filter(function (d) { return d.groupId === g.id; });
@@ -2807,12 +2925,14 @@
         drafts.forEach(function (d, qi) { qlist.appendChild(draftCard(d, qi)); });
         if (!drafts.length) qlist.appendChild(h('p', { class: 'small muted', text: 'No questions yet. Press Write questions, or ask in the chat.' }));
         var card = h('div', { class: 'card st-group' + (selGroup === g.id ? ' sel' : ''), style: '--i:' + gi }, [
-          h('div', { class: 'st-g-hd' }, [h('span', { class: 'st-num', text: String(gi + 1) }), titleIn,
+          h('div', { class: 'st-g-hd' }, [S.groups.length > 1 ? (function () { var c = h('input', { type: 'checkbox', class: 'st-comb', title: 'Tick two or more to combine them', 'aria-label': 'Select ' + g.title + ' to combine', checked: comb[g.id] ? true : null }); c.addEventListener('change', function () { comb[g.id] = c.checked; draw(); }); return c; })() : null, h('span', { class: 'st-num', text: String(gi + 1) }), titleIn,
             h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Remove this assessment', 'aria-label': 'Remove this assessment', onclick: function () { if (!confirm('Remove "' + g.title + '" and its draft questions?')) return; put({ groups: S.groups.filter(function (x) { return x !== g; }), drafts: S.drafts.filter(function (d) { return d.groupId !== g.id; }) }).then(draw); } }, [icon('trash', 'sm')])]),
           g.why ? h('p', { class: 'small muted', style: 'margin:0 0 8px', text: g.why }) : null,
           chips,
+          coverageStrip(g),
           h('div', { class: 'row st-g-opts' }, [h('label', { class: 'small muted' }, ['Questions ', cnt]), dif, h('span', { class: 'spacer' }),
-            h('button', { class: 'btn sm', type: 'button', onclick: function () { selGroup = selGroup === g.id ? null : g.id; draw(); } }, [icon('chat', 'sm'), selGroup === g.id ? 'Chatting about this' : 'Chat about this']),
+            h('button', { class: 'btn sm', type: 'button', disabled: busy || !drafts.some(function (d) { return !d.saved && d.ok !== false; }) || null, onclick: function () { saveDialog([g.id], true); } }, [icon('plus', 'sm'), 'Save or add to...']),
+            h('button', { class: 'btn sm', type: 'button', 'aria-pressed': selGroup === g.id && !selQ ? 'true' : 'false', onclick: function () { var was = selGroup === g.id && !selQ; selQ = null; selGroup = was ? null : g.id; draw(); } }, [icon('chat', 'sm'), selGroup === g.id && !selQ ? 'Chatting about this' : 'Chat about this']),
             h('button', { class: 'btn sm primary', type: 'button', disabled: busy || !g.sectionIds.length || null, onclick: function () { generate([g.id]); } }, [icon('spark', 'sm'), drafts.length ? 'Rewrite all' : 'Write questions'])]),
           qlist,
           !g.testId && !busy && readyGroups([g.id]).length ? h('div', { class: 'note', style: 'margin:10px 0 0' }, [icon('wand', 'sm'), h('span', { text: 'This set is ready. Convert it into an assessment? ' }), h('button', { class: 'btn sm primary', type: 'button', text: 'Convert', onclick: function () { offerConvert([g.id]); } })]) : null,
@@ -2829,12 +2949,17 @@
       else if (d.type === 'ordering') (d.options || []).forEach(function (o, i) { opts.appendChild(h('div', { class: 'st-opt' }, [h('b', { text: (i + 1) + '.' }), h('span', { text: typeof o === 'string' ? o : o.text })])); });
       else (d.options || []).forEach(function (o, i) { var ok = (d.correct || []).indexOf(i) >= 0; opts.appendChild(h('div', { class: 'st-opt' + (ok ? ' ok' : '') }, [h('b', { text: L[i] }), h('span', { text: typeof o === 'string' ? o : o.text }), ok ? icon('check', 'sm') : null])); });
       var card = h('div', { class: 'st-q' + (d.ok ? '' : ' bad') + (d.saved ? ' saved' : ''), style: '--i:' + Math.min(qi, 14) }, [
-        h('div', { class: 'row', style: 'gap:6px' }, [h('span', { class: 'st-qn', text: String(qi + 1) }), pill(TYPE_SHORT[d.type] || d.type, 'accent'), pill(d.difficulty || 'medium'), d.saved ? pill('Saved to bank', 'ok') : null, d.ok ? null : pill('Needs a fix', 'bad'), h('span', { class: 'spacer' }),
+        h('div', { class: 'row', style: 'gap:6px' }, [h('span', { class: 'st-qn', text: String(qi + 1) }), pill(TYPE_SHORT[d.type] || d.type, 'accent'), pill(d.difficulty || 'medium'), d.saved ? pill('Saved to bank', 'ok') : null, d.locked ? pill('Locked', 'accent') : null, d.ok ? null : pill('Needs a fix', 'bad'), h('span', { class: 'spacer' }),
+          d.saved ? null : h('button', { class: 'btn icon ghost sm' + (d.locked ? ' on' : ''), type: 'button', title: d.locked ? 'Unlock: let the AI change this question again' : 'Lock: the AI will not change or remove this question', 'aria-pressed': d.locked ? 'true' : 'false', 'aria-label': d.locked ? 'Unlock question' : 'Lock question', onclick: function () { put({ drafts: S.drafts.map(function (x) { if (x === d) { var y = Object.assign({}, x); if (y.locked) delete y.locked; else y.locked = true; return y; } return x; }) }).then(draw).catch(function (e) { toast(e.message); }); } }, [icon('lock', 'sm')]),
+          d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Talk to the AI about this question', 'aria-label': 'Talk to the AI about this question', onclick: function () { selQ = d.id; selGroup = d.groupId; draw(); } }, [icon('chat', 'sm')]),
           d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Edit', 'aria-label': 'Edit question', onclick: function () { editDraft(d); } }, [icon('edit', 'sm')]),
           d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Improve with AI', 'aria-label': 'Improve with AI', onclick: function (e) { improveDraft(d, e.currentTarget); } }, [icon('wand', 'sm')]),
           d.saved ? null : h('button', { class: 'btn icon ghost sm', type: 'button', title: 'Remove', 'aria-label': 'Remove question', onclick: function () { put({ drafts: S.drafts.filter(function (x) { return x !== d; }) }).then(draw); } }, [icon('x', 'sm')])]),
         h('p', { class: 'st-qp', text: d.prompt }), opts,
         d.explanation ? h('p', { class: 'small muted', style: 'margin:6px 0 0', text: 'Why: ' + d.explanation }) : null,
+        d.dupe && !d.saved && !d.dupeOk ? h('div', { class: 'st-dupe' }, [icon('copy', 'sm'), h('span', { text: (d.dupe.kind === 'bank' ? 'Looks like a question already in the bank: "' : 'Looks like another question in this session: "') + String(d.dupe.prompt).slice(0, 90) + '"' }),
+          h('button', { class: 'linkbtn small', type: 'button', text: 'Keep anyway', onclick: function () { put({ drafts: S.drafts.map(function (x) { return x === d ? Object.assign({}, x, { dupeOk: true }) : x; }) }).then(draw); } }),
+          h('button', { class: 'linkbtn small', type: 'button', text: 'Remove', onclick: function () { put({ drafts: S.drafts.filter(function (x) { return x !== d; }) }).then(draw); } })]) : null,
         d.problem ? h('p', { class: 'small', style: 'color:var(--bad);margin:6px 0 0', text: d.problem }) : null,
       ]);
       return card;
@@ -2873,81 +2998,161 @@
     function readyGroups(ids) {
       return S.groups.filter(function (g) { return (!ids || !ids.length || ids.indexOf(g.id) >= 0) && !g.testId && S.drafts.some(function (d) { return d.groupId === g.id && !d.saved && d.ok !== false; }); });
     }
-    function offerConvert(ids) {
-      var gs = readyGroups(ids); if (!gs.length) return;
-      var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'cv-t' });
+    function savableGroups(ids) {
+      return S.groups.filter(function (g) { return (!ids || !ids.length || ids.indexOf(g.id) >= 0) && S.drafts.some(function (d) { return d.groupId === g.id && !d.saved && d.ok !== false; }); });
+    }
+    function offerConvert(ids) { var gs = readyGroups(ids); if (gs.length) saveDialog(gs.map(function (g) { return g.id; }), false); }
+    // One dialog for every way out: a new assessment, an existing one, or the bank only.
+    function saveDialog(ids, manual) {
+      var gs = savableGroups(ids); if (!gs.length) { toast('Nothing to save yet.'); return; }
+      var cntOf = function (g) { return S.drafts.filter(function (d) { return d.groupId === g.id && !d.saved && d.ok !== false; }).length; };
+      var n = gs.reduce(function (t, g) { return t + cntOf(g); }, 0);
+      var dupN = S.drafts.filter(function (d) { return gs.some(function (g) { return g.id === d.groupId; }) && !d.saved && d.dupe && !d.dupeOk; }).length;
+      var dlg = h('dialog', { class: 'confirm wide', 'aria-labelledby': 'sv-t' });
+      var tests = [], targets = {};
+      gs.forEach(function (g) { targets[g.id] = g.testId ? String(g.testId) : 'new'; });
+      var rows = h('div', { class: 'sv-rows' });
       var secs = h('input', { class: 'inp', type: 'number', min: '15', max: '180', value: '40', style: 'width:80px', 'aria-label': 'Seconds per question' });
-      var yes = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), gs.length === 1 ? 'Yes, convert it' : 'Yes, convert them']);
-      var list = h('ul', { class: 'small', style: 'margin:8px 0 0;padding-left:18px' }, gs.map(function (g) { return h('li', { text: g.title + ' (' + S.drafts.filter(function (d) { return d.groupId === g.id && !d.saved; }).length + ' questions)' }); }));
-      dlg.appendChild(h('div', { class: 'cf-in' }, [art('tests', 150), h('h2', { id: 'cv-t', text: gs.length === 1 ? 'Convert this set into an assessment?' : 'Convert these ' + gs.length + ' sets into assessments?' }),
-        h('p', { text: 'The questions are saved to the bank as drafts, and each set opens as a draft assessment with a name, description and modules. Nothing reaches agents until you publish.' }), list,
-        h('label', { class: 'small muted row', style: 'margin-top:10px' }, ['Seconds per question', secs]),
-        h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Not now', onclick: function () { dlg.close(); } }), yes])]));
+      var apr = h('input', { type: 'checkbox', id: 'sv-apr' });
+      var sk = h('input', { type: 'checkbox', id: 'sv-sk', checked: true });
+      var ok = h('button', { class: 'btn primary', type: 'button' }, [icon('check', 'sm'), 'Save ' + n + ' question' + (n === 1 ? '' : 's')]);
+      function drawRows() {
+        clear(rows);
+        gs.forEach(function (g) {
+          var sel = h('select', { class: 'sel', 'aria-label': 'Where to put ' + g.title });
+          if (g.testId) sel.appendChild(h('option', { value: String(g.testId), text: 'Its saved draft assessment' }));
+          sel.appendChild(h('option', { value: 'new', text: 'Create a new draft assessment' }));
+          tests.forEach(function (t) { if (String(t.id) === String(g.testId)) return; sel.appendChild(h('option', { value: String(t.id), text: 'Add to: ' + t.title + ' (' + t.questionIds.length + ')' })); });
+          sel.appendChild(h('option', { value: 'none', text: 'Question bank only' }));
+          sel.value = targets[g.id];
+          sel.addEventListener('change', function () { targets[g.id] = sel.value; var t = tests.find(function (x) { return String(x.id) === sel.value; }); if (t && t.status === 'published') apr.checked = true; });
+          rows.appendChild(h('div', { class: 'sv-row' }, [h('div', { style: 'min-width:0' }, [h('b', { text: g.title }), h('span', { class: 'small muted', style: 'display:block', text: cntOf(g) + ' question' + (cntOf(g) === 1 ? '' : 's') })]), sel]));
+        });
+      }
+      drawRows();
+      dlg.appendChild(h('div', { class: 'cf-in' }, [art('tests', 120), h('h2', { id: 'sv-t', text: manual ? 'Save ' + n + ' question' + (n === 1 ? '' : 's') : (gs.length === 1 ? 'Turn this set into an assessment?' : 'Turn these ' + gs.length + ' sets into assessments?') }),
+        h('p', { text: 'Questions go to the bank as drafts, tagged by section. For each set, choose a new draft assessment, an assessment that already exists, or the bank only. Nothing reaches agents until you publish.' }), rows,
+        h('label', { class: 'small muted row', style: 'margin-top:10px' }, ['Seconds per question (new assessments)', secs]),
+        h('label', { class: 'chk', for: 'sv-apr', style: 'margin-top:8px' }, [apr, 'Also approve these questions']),
+        dupN ? h('label', { class: 'chk', for: 'sv-sk', style: 'margin-top:6px' }, [sk, 'Skip ' + dupN + ' that look like duplicates']) : null,
+        h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: manual ? 'Cancel' : 'Not now', onclick: function () { dlg.close(); } }), ok])]));
       dlg.addEventListener('close', function () { dlg.remove(); });
-      yes.addEventListener('click', function () {
-        yes.disabled = true; yes.classList.add('busy');
-        api('/api/assess/admin/studio/' + id + '/publish', { method: 'POST', body: { createTests: true, groupIds: gs.map(function (g) { return g.id; }), secondsPerQuestion: Number(secs.value) || 40 } }).then(function (j) {
+      ok.addEventListener('click', function () {
+        ok.disabled = true; ok.classList.add('busy');
+        var tg = {}; gs.forEach(function (g) { var v = targets[g.id]; if (v === 'none') tg[g.id] = 'none'; else if (v !== 'new') tg[g.id] = Number(v); });
+        api('/api/assess/admin/studio/' + id + '/publish', { method: 'POST', body: { createTests: true, groupIds: gs.map(function (g) { return g.id; }), secondsPerQuestion: Number(secs.value) || 40, targets: tg, approve: apr.checked, skipDupes: dupN ? sk.checked : false } }).then(function (j) {
           dlg.close(); S = j.studio;
-          var tests = j.made.filter(function (m) { return m.testId; });
-          toast(tests.length + ' assessment' + (tests.length === 1 ? '' : 's') + ' created as draft' + (tests.length === 1 ? '' : 's') + '.');
-          if (tests.length === 1) go('edit/' + tests[0].testId); else draw();
-        }).catch(function (e) { yes.disabled = false; yes.classList.remove('busy'); toast(e.message); });
+          var made = j.made.filter(function (m) { return m.testId; }), adds = j.made.filter(function (m) { return m.addedTo; });
+          var saved = j.made.reduce(function (t, m) { return t + m.questions; }, 0);
+          var parts = ['Saved ' + saved + ' question' + (saved === 1 ? '' : 's')];
+          if (made.length) parts.push(made.length + ' draft assessment' + (made.length === 1 ? '' : 's') + ' created');
+          if (adds.length) parts.push(adds.reduce(function (t, m) { return t + m.addedTo.added; }, 0) + ' added to ' + adds.map(function (m) { return '"' + m.addedTo.title + '"'; }).join(', '));
+          toast(parts.join(', ') + (j.errors.length ? '. ' + j.errors.length + ' could not be saved.' : '.'));
+          if (made.length === 1 && !adds.length) go('edit/' + made[0].testId);
+          else if (adds.length === 1 && !made.length) go('edit/' + adds[0].addedTo.id);
+          else draw();
+        }).catch(function (e) { ok.disabled = false; ok.classList.remove('busy'); toast(e.message); });
       });
       document.body.appendChild(dlg); dlg.showModal();
+      api('/api/assess/admin/tests').then(function (j) { tests = fixedTests(j.tests); drawRows(); }).catch(function () {});
     }
-    function publish() {
-      var n = S.drafts.filter(function (d) { return !d.saved; }).length;
-      var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'pb-t' });
-      var mk = h('input', { type: 'checkbox', id: 'pb-mk', checked: true });
-      var secs = h('input', { class: 'inp', type: 'number', min: '15', max: '180', value: '40', style: 'width:80px' });
-      var ok = h('button', { class: 'btn primary', type: 'button' }, [icon('check', 'sm'), 'Save']);
-      dlg.appendChild(h('div', { class: 'cf-in' }, [art('inbox', 150), h('h2', { id: 'pb-t', text: 'Save ' + n + ' question' + (n === 1 ? '' : 's') + '?' }),
-        h('p', { text: 'They go to the question bank as drafts, tagged by section. Approve them there before they can be used in random pools.' }),
-        h('label', { class: 'chk', for: 'pb-mk' }, [mk, 'Also create one draft assessment per group (' + S.groups.filter(function (g) { return S.drafts.some(function (d) { return d.groupId === g.id && !d.saved; }); }).length + ')']),
-        h('label', { class: 'small muted row', style: 'margin-top:8px' }, ['Seconds per question', secs]),
+    // ── combine sets, undo, fill gaps, duplicates
+    function combineSets() {
+      var picks = S.groups.filter(function (g) { return comb[g.id]; });
+      var dlg = h('dialog', { class: 'confirm', 'aria-labelledby': 'cs-t' });
+      var title = h('input', { class: 'inp', style: 'width:100%;margin-top:4px', value: picks.map(function (g) { return g.title; }).join(' + ').slice(0, 120), 'aria-label': 'Title of the combined assessment' });
+      var ok = h('button', { class: 'btn primary', type: 'button' }, [icon('layers', 'sm'), 'Combine']);
+      dlg.appendChild(h('div', { class: 'cf-in' }, [h('h2', { id: 'cs-t', text: 'Combine ' + picks.length + ' assessments?' }),
+        h('p', { text: 'Their sections and questions move into one assessment. You can undo this.' }), h('label', { class: 'small muted' }, ['Title', title]),
         h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), ok])]));
       dlg.addEventListener('close', function () { dlg.remove(); });
       ok.addEventListener('click', function () {
         ok.disabled = true;
-        api('/api/assess/admin/studio/' + id + '/publish', { method: 'POST', body: { createTests: mk.checked, secondsPerQuestion: Number(secs.value) || 40 } }).then(function (j) {
-          dlg.close(); S = j.studio; draw();
-          toast('Saved ' + j.made.reduce(function (t, m) { return t + m.questions; }, 0) + ' questions' + (mk.checked ? ' and ' + j.made.filter(function (m) { return m.testId; }).length + ' draft assessment(s)' : '') + (j.errors.length ? '. ' + j.errors.length + ' could not be saved.' : ''));
-        }).catch(function (e) { ok.disabled = false; toast(e.message); });
+        api('/api/assess/admin/studio/' + id + '/merge', { method: 'POST', body: { groupIds: picks.map(function (g) { return g.id; }), title: title.value } }).then(function (j) { dlg.close(); S = j.studio; comb = {}; selGroup = null; draw(); toast('Combined.'); })
+          .catch(function (e) { ok.disabled = false; toast(e.message); });
       });
       document.body.appendChild(dlg); dlg.showModal();
+    }
+    function undo(hid) {
+      if (busy) return; busy = true; draw();
+      api('/api/assess/admin/studio/' + id + '/undo', { method: 'POST', body: { historyId: hid } }).then(function (j) { S = j.studio; busy = false; draw(); toast('Undone.'); }).catch(function (e) { busy = false; draw(); toast(e.message); });
+    }
+    function fillGaps(g) {
+      busy = true; draw();
+      holder.appendChild(h('div', { class: 'st-busy' }, [art('tests', 150), h('b', { text: 'Filling the gaps...' }), h('span', { class: 'small muted', text: 'Writing only what is missing.' })]));
+      api('/api/assess/admin/studio/' + id + '/fill-gaps', { method: 'POST', body: { groupId: g.id } }).then(function (j) { S = j.studio; busy = false; draw(); toast(S.errors && S.errors.length ? S.errors[0] : (j.studio.filled ? 'Added ' + j.studio.filled + ' question' + (j.studio.filled === 1 ? '' : 's') + '.' : 'No gaps to fill.')); })
+        .catch(function (e) { busy = false; draw(); toast(e.message); });
+    }
+    function removeDupes() {
+      if (busy) return; busy = true; draw();
+      api('/api/assess/admin/studio/' + id + '/remove-duplicates', { method: 'POST', body: {} }).then(function (j) { S = j.studio; busy = false; draw(); toast(j.removed ? 'Removed ' + j.removed + ' duplicate' + (j.removed === 1 ? '' : 's') + '. You can undo this.' : 'No duplicates to remove.'); }).catch(function (e) { busy = false; draw(); toast(e.message); });
+    }
+    function coverageStrip(g) {
+      var c = S.coverage && S.coverage[g.id]; if (!c) return null;
+      var secs = h('div', { class: 'cv-secs' });
+      c.sections.forEach(function (r) {
+        if (!r.want && !r.have) return;
+        secs.appendChild(h('span', { class: 'cv' + (r.gap ? ' gap' : r.have >= r.want ? ' ok' : ''), title: r.title + ': ' + r.have + ' question' + (r.have === 1 ? '' : 's') + ', about ' + r.want + ' wanted' }, [h('b', { text: r.title }), h('em', { text: r.have + '/' + r.want })]));
+      });
+      var tot = Math.max(1, c.total);
+      var mixBar = h('div', { class: 'cv-mix', role: 'img', 'aria-label': 'Difficulty: ' + c.mix.easy + ' easy, ' + c.mix.medium + ' medium, ' + c.mix.hard + ' hard' }, ['easy', 'medium', 'hard'].map(function (k) { return c.mix[k] ? h('i', { class: 'mx-' + k, style: 'flex:' + c.mix[k], title: k + ': ' + c.mix[k] }) : null; }));
+      var need = c.gapCount || c.mixGap;
+      return h('div', { class: 'st-cov' + (need ? ' need' : '') }, [
+        h('div', { class: 'row', style: 'gap:8px;align-items:center' }, [h('b', { class: 'small', text: 'Coverage' }), h('span', { class: 'small muted', text: need ? (c.gapCount ? c.gapCount + ' section' + (c.gapCount === 1 ? '' : 's') + ' thin' : '') + (c.gapCount && c.mixGap ? ', ' : '') + (c.mixGap ? 'difficulty is lopsided' : '') : 'Every section has questions' }), h('span', { class: 'spacer' }),
+          need ? h('button', { class: 'btn sm', type: 'button', disabled: busy || null, onclick: function () { fillGaps(g); } }, [icon('spark', 'sm'), 'Fill gaps']) : null]),
+        secs, h('div', { class: 'row', style: 'gap:8px;align-items:center;margin-top:6px' }, [mixBar, h('span', { class: 'small muted cv-leg', text: 'Easy ' + c.mix.easy + ' · Medium ' + c.mix.medium + ' · Hard ' + c.mix.hard + (g.difficulty !== 'mixed' ? ' (set to ' + g.difficulty + ')' : '') })]),
+        c.unassigned ? h('p', { class: 'small muted', style: 'margin:4px 0 0', text: c.unassigned + ' question' + (c.unassigned === 1 ? ' is' : 's are') + ' general, not tied to one section.' }) : null]);
     }
     // ── chat
     function chatPane() {
       var box = h('div', { class: 'card st-pane st-chat' });
       var g = S.groups.find(function (x) { return x.id === selGroup; });
-      box.appendChild(h('div', { class: 'st-hd' }, [icon('bot', 'sm'), h('h3', { text: 'Work with the AI' }), g ? h('span', { class: 'pill accent', text: 'About: ' + g.title }) : null]));
-      var log = h('div', { class: 'st-log', 'aria-live': 'polite' });
+      var fq = selQ && S.drafts.find(function (d) { return d.id === selQ; });
+      if (selQ && !fq) selQ = null;
+      var focusLabel = fq ? 'Question: ' + fq.prompt.slice(0, 40) + (fq.prompt.length > 40 ? '...' : '') : g ? g.title : '';
+      box.appendChild(h('div', { class: 'st-hd' }, [icon('bot', 'sm'), h('h3', { text: 'Work with the AI' })]));
+      box.appendChild(h('div', { class: 'st-focus' + (focusLabel ? ' on' : '') }, focusLabel ? [h('span', { class: 'small' }, ['Talking about: ', h('b', { text: focusLabel })]), h('button', { class: 'linkbtn small', type: 'button', text: 'Clear', onclick: function () { selGroup = null; selQ = null; draw(); } })] : [h('span', { class: 'small muted', text: 'Talking about the whole document. Pick "Chat about this" on a set, or the chat icon on a question, to focus.' })]));
+      var log = h('div', { class: 'st-log', role: 'log', 'aria-live': 'polite' });
       S.messages.forEach(function (m) {
+        var hasUndo = m.undoId && S.history.some(function (x) { return x.id === m.undoId; });
+        var latest = hasUndo && S.history[S.history.length - 1].id === m.undoId;
         log.appendChild(h('div', { class: 'msg ' + (m.role === 'user' ? 'me' : 'ai') }, [
           m.role === 'user' ? null : h('span', { class: 'msg-av' }, [icon('bot', 'sm')]),
-          h('div', { class: 'msg-b' }, [h('p', { text: m.text }), m.done && m.done.length ? h('ul', { class: 'msg-done' }, m.done.map(function (x) { return h('li', null, [icon('check', 'sm'), x]); })) : null, m.problems && m.problems.length ? h('p', { class: 'small', style: 'color:var(--bad)', text: m.problems.join(' · ') }) : null])]));
+          h('div', { class: 'msg-b' }, [
+            m.role === 'user' && m.focus ? h('span', { class: 'msg-focus', text: 'About: ' + m.focus }) : null,
+            h('p', { text: m.text }),
+            m.done && m.done.length ? h('ul', { class: 'msg-done', 'aria-label': 'Changes made' }, m.done.map(function (x) { return h('li', null, [icon('check', 'sm'), x]); })) : null,
+            m.problems && m.problems.length ? h('ul', { class: 'msg-prob', 'aria-label': 'Problems' }, m.problems.map(function (x) { return h('li', null, [icon('warn', 'sm'), x]); })) : null,
+            hasUndo ? h('button', { class: 'linkbtn small', type: 'button', disabled: busy || null, text: latest ? 'Undo these changes' : 'Undo back to here', onclick: function () { undo(m.undoId); } }) : null])]));
       });
+      if (pending) {
+        log.appendChild(h('div', { class: 'msg me' }, [h('div', { class: 'msg-b' }, [focusLabel ? h('span', { class: 'msg-focus', text: 'About: ' + focusLabel }) : null, h('p', { text: pending })])]));
+        log.appendChild(h('div', { class: 'msg ai' }, [h('span', { class: 'msg-av' }, [icon('bot', 'sm')]), h('div', { class: 'msg-b typing', 'aria-label': 'The AI is working' }, [h('i'), h('i'), h('i')])]));
+      }
+      if (chatErr) {
+        log.appendChild(h('div', { class: 'msg ai err', role: 'alert' }, [h('span', { class: 'msg-av' }, [icon('warn', 'sm')]), h('div', { class: 'msg-b' }, [h('p', { text: chatErr.msg }), h('p', { class: 'small muted', style: 'margin:4px 0 0', text: 'Your message: ' + chatErr.text.slice(0, 120) }),
+          h('div', { class: 'row', style: 'margin-top:6px' }, [h('button', { class: 'btn sm primary', type: 'button', disabled: busy || null, text: 'Try again', onclick: function () { send(chatErr.text); } }), h('button', { class: 'btn sm ghost', type: 'button', text: 'Dismiss', onclick: function () { chatErr = null; draw(); } })])])]));
+      }
       box.appendChild(log);
       setTimeout(function () { log.scrollTop = log.scrollHeight; }, 30);
       var sug = h('div', { class: 'chips st-sug' });
-      (g ? ['Make these harder', 'Add 3 scenario questions', 'Rewrite the wrong options to be more believable', 'Remove any question that is trivia']
-        : ['Split the first assessment in two', 'Make one short assessment per section', 'Focus on escalation rules and owners', 'Which sections are most important to test?']).forEach(function (t) {
-        sug.appendChild(h('button', { class: 'chip off', type: 'button', text: t, onclick: function () { inp.value = t; send(); } }));
+      (fq ? ['Make this question harder', 'Make it a realistic scenario', 'Make the wrong answers more believable', 'Remove it']
+        : g ? ['Make these harder', 'Add 3 scenario questions', 'Check for gaps and fill them', 'Remove any question that is trivia']
+        : ['Combine all the assessments into one', 'Make one short assessment per section', 'Remove duplicate questions', 'Which sections are most important to test?']).forEach(function (t) {
+        sug.appendChild(h('button', { class: 'chip off', type: 'button', text: t, disabled: busy || null, onclick: function () { send(t); } }));
       });
       box.appendChild(sug);
-      var inp = h('textarea', { class: 'ta st-in', rows: '2', placeholder: 'Ask for changes, e.g. "add 4 questions on refunds to assessment 2"', 'aria-label': 'Message to the AI' });
-      var sendBtn = h('button', { class: 'btn primary', type: 'button', 'aria-label': 'Send' }, [icon('send', 'sm')]);
+      var inp = h('textarea', { class: 'ta st-in', rows: '2', placeholder: 'Ask for changes, e.g. "add 4 questions on refunds" or "combine 1 and 2"', 'aria-label': 'Message to the AI' });
+      var sendBtn = h('button', { class: 'btn primary', type: 'button', 'aria-label': 'Send', disabled: busy || null }, [icon('send', 'sm')]);
       inp.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
-      sendBtn.addEventListener('click', send);
+      sendBtn.addEventListener('click', function () { send(); });
       box.appendChild(h('div', { class: 'st-compose' }, [inp, sendBtn]));
-      function send() {
-        var t = inp.value.trim(); if (!t || busy) return;
-        busy = true; inp.value = ''; sendBtn.disabled = true;
-        log.appendChild(h('div', { class: 'msg me' }, [h('div', { class: 'msg-b' }, [h('p', { text: t })])]));
-        var typing = h('div', { class: 'msg ai' }, [h('span', { class: 'msg-av' }, [icon('bot', 'sm')]), h('div', { class: 'msg-b typing' }, [h('i'), h('i'), h('i')])]);
-        log.appendChild(typing); log.scrollTop = log.scrollHeight;
-        api('/api/assess/admin/studio/' + id + '/chat', { method: 'POST', body: { message: t, groupId: selGroup } }).then(function (j) { S = j.studio; busy = false; draw(); })
-          .catch(function (e) { busy = false; typing.remove(); sendBtn.disabled = false; toast(e.message); });
+      function send(text) {
+        var t = String(text || inp.value).trim(); if (!t || busy) return;
+        chatErr = null; pending = t; busy = true; draw();
+        api('/api/assess/admin/studio/' + id + '/chat', { method: 'POST', body: { message: t, groupId: selGroup, questionId: selQ } })
+          .then(function (j) { S = j.studio; pending = null; busy = false; draw(); })
+          .catch(function (e) { pending = null; busy = false; chatErr = { text: t, msg: e.message || 'Something went wrong. Nothing was changed.' }; draw(); });
       }
       return box;
     }
@@ -3317,12 +3522,14 @@
       } }); }
       var mkAssess = h('button', { class: 'btn primary', type: 'button' }, [icon('wand', 'sm'), 'Create assessment']);
       mkAssess.addEventListener('click', function () { createFromDrafts(sel.slice(), mkAssess); });
+      var addTo = h('button', { class: 'btn', type: 'button' }, [icon('plus', 'sm'), 'Add to assessment']);
+      addTo.addEventListener('click', function () { addToAssessmentDialog(sel.map(function (id) { return shownQs.find(function (q) { return q.id === id; }) || { id: id, status: 'approved' }; }), function () { sel.length = 0; load(); }); });
       var tagMods = h('button', { class: 'btn', type: 'button' }, [icon('layers', 'sm'), 'Tag modules']);
       tagMods.addEventListener('click', function () {
         tagMods.disabled = true; tagMods.classList.add('busy');
         api('/api/assess/admin/questions/tag', { method: 'POST', body: { ids: sel, force: true } }).then(function (r) { toast(r.tagged + ' question' + (r.tagged === 1 ? '' : 's') + ' tagged'); loadMods(true).then(function () { load(); }); }).catch(function (e) { toast(e.message); tagMods.disabled = false; tagMods.classList.remove('busy'); });
       });
-      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel.length = 0; load(); } })]));
+      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, addTo, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel.length = 0; load(); } })]));
     }
     function load() {
       var p = new URLSearchParams(bankFilter);
