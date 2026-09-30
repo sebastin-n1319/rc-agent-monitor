@@ -2462,7 +2462,7 @@
       } else {
         send.disabled = !(opts && opts.dmAvailable);
         pane.appendChild(picker.el);
-        dmNote.textContent = opts && !opts.dmAvailable ? 'Private messages need the Google service account on the server.' : 'Arrives as a direct message from you. One-time setup: the Google Chat API must be on, and the Chat message scopes allowed for the service account in Workspace admin.';
+        dmNote.textContent = opts && !opts.dmAvailable ? 'Private messages need the Google service account on the server.' : 'Arrives as a direct message from the T1 Agent Monitor Chat app. The app must be set up in Google Cloud and installed for the person (your Workspace admin can install it for everyone).';
         pane.appendChild(dmNote);
       }
     }

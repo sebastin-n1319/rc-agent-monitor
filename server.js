@@ -1840,6 +1840,7 @@ assessments.setDeps({
       return { ok: r.ok, status: r.status };
     } catch (e) { return { ok: false, status: 0 }; }
   },
+  chatIdFor: async (email) => { const e = String(email || '').toLowerCase(); const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === e && x.chat_id); return (a && a.chat_id) || await getGoogleSubForEmail(e).catch(() => null); },
   mentionFor: async (email) => {
     const e = String(email || '').toLowerCase();
     const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === e && x.chat_id);
@@ -2148,6 +2149,13 @@ app.get('/api/assess/admin/results/export', ...RV, assessWrap(async (req, res) =
 app.get('/api/assess/admin/share/options', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.shareOptions()) })));
 app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople, guidance: b.guidance })) }); }));
 app.post('/api/assess/admin/share/image', ...RV, rateLimit(12, 60000), express.raw({ type: 'image/png', limit: '1600kb' }), assessWrap(async (req, res) => res.json({ success: true, token: await assessments.saveShareImage(req.body) })));
+// Google Chat app "T1 Agent Monitor": receives events so Chat accepts the app. It only replies with a fixed note.
+app.post('/gchat/event', rateLimit(120, 60000), (req, res) => {
+  const b = req.body || {};
+  const msg = b.type === 'ADDED_TO_SPACE' ? 'Hi, I am T1 Agent Monitor. I send assessment updates and results from T1 CS Stars. Replies here are not monitored.' : 'I only send updates from T1 CS Stars, so replies here are not monitored. Open the tool to take or review assessments.';
+  if (b.chat || b.commonEventObject) return res.json({ hostAppDataAction: { chatDataAction: { createMessageAction: { message: { text: msg } } } } });
+  res.json({ text: msg });
+});
 app.get('/share-img/:file', rateLimit(120, 60000), async (req, res) => { try { const m = /^([a-f0-9]{32})\.png$/.exec(String(req.params.file || '')); const buf = m ? await assessments.getShareImage(m[1]) : null; if (!buf) return res.status(404).end(); res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400', 'X-Robots-Tag': 'noindex' }); res.send(buf); } catch (e) { res.status(404).end(); } });
 app.post('/api/assess/admin/share/send', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => { const b = req.body || {}; const r = await assessments.shareSend(b, req.session.email); insertAuditLog(req.session.email, 'assess_share_chat', String(b.mode || 'saved'), b.mode === 'dm' ? String(b.toEmail || '') : '').catch(() => {}); res.json({ success: true, ...r }); }));
 app.get('/api/assess/admin/report', ...RV, assessWrap(async (req, res) => res.json({ success: true, report: await assessments.reportData(reportFilters(req.query || {})) })));
