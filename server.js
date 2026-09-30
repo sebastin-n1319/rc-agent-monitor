@@ -2101,6 +2101,7 @@ app.post('/api/assess/admin/studio/:id/undo', ...RV, assessWrap(async (req, res)
 app.post('/api/assess/admin/studio/:id/remove-duplicates', ...RV, assessWrap(async (req, res) => { const r = await assessStudio.removeDupes(req.params.id); res.json({ success: true, studio: r, removed: r.removed }); }));
 app.post('/api/assess/admin/tests/:id/add-questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.addToTest(req.params.id, (req.body || {}).questionIds, req.session.email, { approve: !!(req.body || {}).approve })) })));
 app.post('/api/assess/admin/tests/merge', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.mergeTests((req.body || {}).ids, req.body || {}, req.session.email)) })));
+app.post('/api/assess/admin/questions/usage', ...RV, assessWrap(async (req, res) => res.json({ success: true, usage: await assessments.questionUsage((req.body || {}).ids, (req.body || {}).excludeTestId) })));
 app.post('/api/assess/admin/questions/similar', ...RV, assessWrap(async (req, res) => {
   const b = req.body || {};
   if (Array.isArray(b.prompts)) return res.json({ success: true, matches: await assessments.similarTo(b.prompts.slice(0, 200).map(x => String(x || '').slice(0, 1500)), { excludeIds: b.excludeIds }) });

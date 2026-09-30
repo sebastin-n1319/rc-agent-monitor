@@ -175,11 +175,39 @@
   }
   // One click: draft questions become a draft assessment with a suggested
   // name, description, modules and study list. Opens the builder to review.
+  // Questions already used in other assessments: ask before reusing them.
+  function askReuse(ids, excludeTestId) {
+    return api('/api/assess/admin/questions/usage', { method: 'POST', body: { ids: ids, excludeTestId: excludeTestId || null } }).then(function (r) {
+      var usage = r.usage || {};
+      var used = ids.filter(function (id) { return usage[id]; });
+      if (!used.length) return ids;
+      var unused = ids.filter(function (id) { return !usage[id]; });
+      var byTest = {}; used.forEach(function (id) { usage[id].forEach(function (t) { byTest[t] = (byTest[t] || 0) + 1; }); });
+      var names = Object.keys(byTest).sort(function (a, b) { return byTest[b] - byTest[a]; });
+      return new Promise(function (resolve) {
+        var done = false;
+        var dlg = h('dialog', { class: 'confirm wide', 'aria-labelledby': 'ru-t' });
+        function pick(v) { done = true; dlg.close(); resolve(v); }
+        dlg.appendChild(h('div', { class: 'cf-in' }, [h('h2', { id: 'ru-t', text: used.length + ' of these ' + ids.length + ' question' + (ids.length === 1 ? ' is' : 's are') + ' already used in other assessments' }),
+          h('p', { text: 'Reusing a question means agents may see it in more than one assessment. Do you want to use ' + (used.length === 1 ? 'it' : 'them') + ' here too?' }),
+          h('ul', { class: 'small', style: 'margin:8px 0 0;padding-left:18px' }, names.slice(0, 6).map(function (t) { return h('li', { text: t + ' (' + byTest[t] + ')' }); }).concat(names.length > 6 ? [h('li', { class: 'muted', text: 'and ' + (names.length - 6) + ' more' })] : [])),
+          h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:14px;flex-wrap:wrap' }, [
+            h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { pick(null); } }),
+            unused.length ? h('button', { class: 'btn', type: 'button', text: 'Only the ' + unused.length + ' not used elsewhere', onclick: function () { pick(unused); } }) : null,
+            h('button', { class: 'btn primary', type: 'button', text: unused.length ? 'Use all ' + ids.length : 'Use ' + (ids.length === 1 ? 'it' : 'them') + ' anyway', onclick: function () { pick(ids); } })])]));
+        dlg.addEventListener('close', function () { dlg.remove(); if (!done) resolve(null); });
+        document.body.appendChild(dlg); dlg.showModal();
+      });
+    }).catch(function () { return ids; });
+  }
   function createFromDrafts(ids, btn, hint) {
     if (!ids || !ids.length) { toast('No questions to use'); return Promise.resolve(); }
     if (btn) { btn.disabled = true; btn.classList.add('busy'); }
-    return api('/api/assess/admin/tests/from-questions', { method: 'POST', body: { questionIds: ids, approve: true, hint: hint || '' } })
-      .then(function (r) { toast('Assessment created: ' + ((r.meta && r.meta.title) || 'draft') + '. Its questions are approved.'); go('edit/' + r.id); })
+    return askReuse(ids).then(function (use) {
+      if (!use || !use.length) { if (btn) { btn.disabled = false; btn.classList.remove('busy'); } return null; }
+      return api('/api/assess/admin/tests/from-questions', { method: 'POST', body: { questionIds: use, approve: true, hint: hint || '' } });
+    })
+      .then(function (r) { if (!r) return; toast('Assessment created: ' + ((r.meta && r.meta.title) || 'draft') + '. Its questions are approved.'); go('edit/' + r.id); })
       .catch(function (e) { toast(e.message); if (btn) { btn.disabled = false; btn.classList.remove('busy'); } });
   }
   function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); }
@@ -1764,7 +1792,11 @@
     search.addEventListener('input', drawList);
     addBtn.addEventListener('click', function () {
       if (!picked) return; addBtn.disabled = true; addBtn.classList.add('busy');
-      api('/api/assess/admin/tests/' + picked.id + '/add-questions', { method: 'POST', body: { questionIds: ids, approve: !!apr.checked } }).then(function (r) {
+      askReuse(ids, picked.id).then(function (use) {
+        if (!use || !use.length) { addBtn.disabled = false; addBtn.classList.remove('busy'); return null; }
+        return api('/api/assess/admin/tests/' + picked.id + '/add-questions', { method: 'POST', body: { questionIds: use, approve: !!apr.checked } });
+      }).then(function (r) {
+        if (!r) return;
         dlg.close(); toast('Added ' + r.added + ' to "' + r.title + '"' + (r.skipped ? ', ' + r.skipped + ' were already there' : '') + '.');
         if (onDone) onDone(r);
       }).catch(function (e) { addBtn.disabled = false; addBtn.classList.remove('busy'); toast(e.message); });
