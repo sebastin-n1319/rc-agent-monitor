@@ -39,7 +39,7 @@
      (see session-guard.js) before every module downstream has to. -->
 <script src="/session-guard.js?v=1.0.2"></script>
 <script>try{ if(new URLSearchParams(location.search).get('next') === '/assess') sessionStorage.setItem('rcNext','/assess'); }catch(e){}</script>
-<link rel="stylesheet" href="/adit-theme.css?v=1.19.104" id="adit-theme-link">
+<link rel="stylesheet" href="/adit-theme.css?v=1.19.108" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.8" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css?v=1.19.8" id="alert-center-link">
 <link rel="stylesheet" href="/offline-bridge.css?v=1.19.8" id="offline-bridge-link">
@@ -4459,7 +4459,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
     window.av2.loadUserProfiles().catch(()=>{});
   }
   const toggleBtn=document.getElementById('viewToggleBtn');
-  if(toggleBtn)toggleBtn.style.setProperty('display',role==='admin'?'inline-flex':'none','important');
+  if(toggleBtn){ const _m=window.__isMobile||window.__isPWA||window.matchMedia('(max-width:640px)').matches; toggleBtn.style.setProperty('display',(!_m&&role==='admin')?'inline-flex':'none','important'); }
   applyView(bootView);
   configureAgentBreakbotAccess();
   initEmbeddedFrames();
@@ -13924,6 +13924,10 @@ async function deleteNote(id){
 })();
 </script>
 
+<script>
+/* Phone tab bar scrolls sideways: keep the tapped tab in view */
+document.addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('.adit-sidebar .sb-item');if(t&&t.scrollIntoView){try{t.scrollIntoView({block:'nearest',inline:'nearest',behavior:'smooth'});}catch(_){}}},true);
+</script>
 </body>
 </html>
 
@@ -14329,7 +14333,7 @@ async function deleteNote(id){
 (function() {
   // Allowlist: our own fixed elements that must survive
   const SAFE_IDS = new Set(['toast','loginScreen','weekend-announce-overlay',
-    'status-bar','scroll-progress-wrap','cmd-overlay','toast-wrap',
+    'status-bar','adit-admin-sidebar','adit-agent-sidebar','scroll-progress-wrap','cmd-overlay','toast-wrap',
     'kbd-overlay','focus-hud',
     // Session 3, alert center overlays
     'ac-modal','ac-history-modal','ac-thresh-modal',
@@ -14346,6 +14350,8 @@ async function deleteNote(id){
   const isRogue = el => {
     if (!el || el.nodeType !== 1) return false;
     if (SAFE_IDS.has(el.id)) return false;
+    // The app's own navigation (on phones it is the fixed bottom tab bar, which reaches the bottom-right corner).
+    if (el.tagName === 'NAV' || (el.classList && el.classList.contains('adit-sidebar'))) return false;
     if (SAFE_CLASSES.some(c => el.classList && el.classList.contains(c))) return false;
     // Session 15.2: never nuke modal/popup overlays. The popup pattern is
     // position:fixed;inset:0 covering the full viewport at z-index >= 4000.
