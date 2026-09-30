@@ -2144,6 +2144,10 @@ app.get('/api/assess/admin/results/export', ...RV, assessWrap(async (req, res) =
   res.setHeader('Content-Disposition', `attachment; filename="assessment-results-${new Date().toISOString().slice(0, 10)}.csv"`);
   res.send('﻿' + await assessments.resultsCsv(reportFilters(req.query || {})));
 }));
+// Batch 59: send a report or result summary to Google Chat (saved webhook, another webhook, or a private message)
+app.get('/api/assess/admin/share/options', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.shareOptions()) })));
+app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople })) }); }));
+app.post('/api/assess/admin/share/send', ...RV, rateLimit(10, 60000), assessWrap(async (req, res) => { const b = req.body || {}; const r = await assessments.shareSend(b, req.session.email); insertAuditLog(req.session.email, 'assess_share_chat', String(b.mode || 'saved'), b.mode === 'dm' ? String(b.toEmail || '') : '').catch(() => {}); res.json({ success: true, ...r }); }));
 app.get('/api/assess/admin/report', ...RV, assessWrap(async (req, res) => res.json({ success: true, report: await assessments.reportData(reportFilters(req.query || {})) })));
 
 // Reviewer: access
@@ -2451,6 +2455,7 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
     const sm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM chat_report_log WHERE created_at >= ?`, [todaySql()]);
     const sch = await one(`SELECT COUNT(*) AS n, SUM(enabled) AS on_n FROM chat_report_schedule`);
     const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item'`, [todaySql()]);
+    const ast = await assessments.alertStatus().catch(() => ({ cfg: { enabled: true }, hook: '', sentToday: 0, failedToday: 0, last: null, due: [], recent: [] }));
     const missedToday = (_pollLog || []).reduce((n, e) => n + (Number(e && e.notified) || 0), 0);
     const lastPoll = (_pollLog || []).slice(-1)[0] || null;
     res.json({ success: true, channels: [
@@ -2465,6 +2470,9 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
       { key: 'liveOps', label: 'Live ops', desc: 'Caller waiting in queue, nobody available, unassigned tickets and assigned tickets with no action.', enabled: t1cfg.enabled !== false,
         source: t1cfg.webhookUrl ? 'app' : 'none', masked: maskHook(t1cfg.webhookUrl), sentToday: lo.sent || 0, failedToday: lo.failed || 0, last: lo.last || null,
         parts: { queue: t1cfg.queue.enabled, coverage: t1cfg.coverage.enabled, tickets: t1cfg.tickets.enabled } },
+      { key: 'assessments', label: 'Assessments', desc: 'Closing soon and not taken, overdue, low pass rate or average, and stuck or abandoned attempts.', enabled: ast.cfg.enabled,
+        source: ast.hasOwnHook ? 'app' : (ast.fallbackHook ? 'assess' : 'none'), masked: maskHook(ast.hook), sentToday: ast.sentToday, failedToday: ast.failedToday, last: ast.last,
+        assess: { cfg: ast.cfg, due: ast.due, recent: ast.recent } },
     ] });
   } catch (e) { console.error('alert-hub status:', e.message); res.status(500).json({ success: false, error: 'Could not load alert status' }); }
 });
@@ -2473,10 +2481,12 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
   try {
     const b = req.body || {};
     const key = String(b.key || '');
-    if (!['breakLog', 'missed', 'summaries', 'liveOps'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
+    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
     const url = typeof b.webhookUrl === 'string' ? b.webhookUrl.trim() : '';
     if (url && !HOOK_URL_RE.test(url)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
-    if (key === 'liveOps') {
+    if (key === 'assessments') {
+      await assessments.setAlertCfg({ webhook: url || undefined, clearWebhook: !!b.clearWebhook, enabled: typeof b.enabled === 'boolean' ? b.enabled : undefined, closing: b.closing, overdue: b.overdue, low: b.low, stuck: b.stuck });
+    } else if (key === 'liveOps') {
       const cur = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
       if (url) cur.webhookUrl = url;
       if (b.clearWebhook) cur.webhookUrl = '';
@@ -2512,6 +2522,7 @@ app.post('/api/alert-hub/test', requireAdmin, rateLimit(8, 60000), async (req, r
   else if (key === 'missed') url = MISSED_CALL_WEBHOOK_URL;
   else if (key === 'summaries') url = ALERT_HOOKS.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL;
   else if (key === 'liveOps') url = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null)).webhookUrl;
+  if (key === 'assessments') { try { const r = await assessments.alertTest(); return res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` }); } catch (e) { return res.json({ success: false, error: e.message }); } }
   if (!url) return res.json({ success: false, error: 'No webhook set for this alert type' });
   const label = { breakLog: 'Break log', missed: 'Missed call', summaries: 'Summary', liveOps: 'Live ops' }[key] || 'Alert';
   try {

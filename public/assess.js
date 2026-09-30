@@ -2357,6 +2357,80 @@
     document.body.appendChild(dlg); dlg.showModal();
   }
 
+  // ── Batch 59: send a summary to Google Chat (saved webhook, another webhook, or a private message) ──
+  function shareDialog(scope, title) {
+    var dlg = h('dialog', { class: 'confirm wide ann', 'aria-labelledby': 'sh-t' });
+    var msg = h('div'), mode = 'saved', opts = null, dirty = false;
+    var ta = h('textarea', { class: 'inp', rows: 8, style: 'width:100%;font:inherit;line-height:1.45', 'aria-label': 'Message to send', placeholder: 'Drafting a summary…' });
+    ta.addEventListener('input', function () { dirty = true; });
+    var people = h('label', { class: 'small row', for: 'sh-ppl', style: 'gap:6px;align-items:center;margin-top:6px' });
+    var incl = h('input', { type: 'checkbox', id: 'sh-ppl' }); people.appendChild(incl); people.appendChild(document.createTextNode('Name the people who are below the pass mark (no scores)'));
+    var status = h('span', { class: 'small muted', role: 'status' });
+    function draft() {
+      status.textContent = 'Drafting…'; ta.disabled = true; clear(msg);
+      api('/api/assess/admin/share/draft', { method: 'POST', body: { scope: scope, includePeople: incl.checked } })
+        .then(function (r) { ta.value = r.text; dirty = false; status.textContent = r.ai ? 'Drafted with AI. Edit it if you like.' : 'Drafted from the numbers. Edit it if you like.'; })
+        .catch(function (e) { status.textContent = ''; msg.appendChild(errBox(e.message)); })
+        .finally(function () { ta.disabled = false; });
+    }
+    var redo = h('button', { class: 'btn sm', type: 'button' }, [icon('spark', 'sm'), 'Redraft']);
+    redo.addEventListener('click', draft);
+    incl.addEventListener('change', function () { dirty = false; draft(); });
+    var hook = h('input', { class: 'inp', style: 'width:100%', type: 'url', placeholder: 'https://chat.googleapis.com/v1/spaces/...', autocomplete: 'off', 'aria-label': 'Google Chat webhook URL' });
+    var keep = h('input', { type: 'checkbox', id: 'sh-keep' });
+    var picker = PeoplePicker({ label: 'Who should get the private message?', placeholder: 'Type a name or email' });
+    var dmNote = h('div', { class: 'small muted', style: 'margin-top:6px' });
+    var pane = h('div', { style: 'margin-top:10px' });
+    var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Where to send it' });
+    var send = h('button', { class: 'btn primary', type: 'button' }, [icon('flag', 'sm'), 'Send']);
+    function setMode(m) {
+      mode = m; clear(pane); clear(msg);
+      Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b.dataset.m === m)); });
+      if (m === 'saved') {
+        pane.appendChild(opts && opts.hasSaved ? h('div', { class: 'small muted', text: 'Sends to the saved webhook ' + opts.savedMasked })
+          : h('div', { class: 'small', text: 'No webhook is saved yet. Use "Different webhook" to paste one and save it.' }));
+        send.disabled = !(opts && opts.hasSaved);
+      } else if (m === 'webhook') {
+        send.disabled = false;
+        pane.appendChild(h('div', { class: 'stack', style: 'gap:6px' }, [hook,
+          h('label', { class: 'small row', for: 'sh-keep', style: 'gap:6px;align-items:center' }, [keep, 'Save it as the assessment webhook']),
+          h('div', { class: 'small muted', text: 'In Google Chat: space name, Apps and integrations, Webhooks, create one and copy the URL.' })]));
+      } else {
+        send.disabled = !(opts && opts.dmAvailable);
+        pane.appendChild(picker.el);
+        dmNote.textContent = opts && !opts.dmAvailable ? 'Private messages need the Google service account on the server.' : 'Arrives as a direct message from you. One-time setup: the Google Chat API must be on, and the Chat message scopes allowed for the service account in Workspace admin.';
+        pane.appendChild(dmNote);
+      }
+    }
+    [['saved', 'Saved webhook'], ['webhook', 'Different webhook'], ['dm', 'Private message']].forEach(function (o) {
+      seg.appendChild(h('button', { type: 'button', 'data-m': o[0], 'aria-pressed': String(o[0] === 'saved'), text: o[1], onclick: function () { setMode(o[0]); } }));
+    });
+    send.addEventListener('click', function () {
+      clear(msg);
+      var text = ta.value.trim(); if (!text) { msg.appendChild(errBox('Write a message first.')); return; }
+      var body = { text: text, mode: mode };
+      if (mode === 'webhook') { body.webhook = hook.value.trim(); body.saveWebhook = keep.checked; if (!body.webhook) { msg.appendChild(errBox('Paste the webhook URL first.')); hook.focus(); return; } }
+      if (mode === 'dm') { var to = picker.selected(); if (!to.length) { msg.appendChild(errBox('Pick who to message.')); return; } body.toEmail = to[0]; }
+      send.disabled = true;
+      api('/api/assess/admin/share/send', { method: 'POST', body: body })
+        .then(function () { dlg.close(); toast(mode === 'dm' ? 'Private message sent' : 'Posted in Google Chat'); })
+        .catch(function (e) { send.disabled = false; msg.appendChild(errBox(e.message)); });
+    });
+    dlg.appendChild(h('div', { class: 'cf-in' }, [
+      h('h2', { id: 'sh-t', text: 'Send to Google Chat' }),
+      h('div', { class: 'small muted', text: (title || 'This summary') + '. Only totals are shared by default. Edit the message before you send it.' }),
+      h('div', { class: 'row', style: 'gap:8px;margin:8px 0 4px' }, [h('b', { class: 'small', text: 'Message' }), h('span', { class: 'spacer' }), status, redo]),
+      ta, people,
+      h('div', { style: 'margin-top:12px' }, [h('b', { class: 'small', text: 'Send it to' }), h('div', { style: 'margin-top:6px' }, [seg])]),
+      pane, msg,
+      h('div', { class: 'row', style: 'justify-content:flex-end;margin-top:12px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), send])]));
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal();
+    setMode('saved'); send.disabled = true;
+    api('/api/assess/admin/share/options').then(function (o) { opts = o; if (o.hasSaved) { setMode('saved'); } else { setMode('webhook'); } }).catch(function () {});
+    draft();
+  }
+
   // ── Session 64: send a retest (reset + optional Chat tag) ───────────
   // target: { attemptIds:[...], name, status } for one person, or
   //         { testId, below:true, count } for everyone below the pass mark
@@ -2456,6 +2530,7 @@
           { label: 'Results (CSV)', sub: 'One row per attempt, with score, behaviour and verdict.', icon: 'doc', onclick: function () { location.href = '/api/assess/admin/results/export?tests=' + id + '&reset=1'; } },
           { label: 'Print summary', sub: 'Everyone\'s score on one page. Save as PDF from the print window.', icon: 'print', onclick: function () { printResults(t ? t.title : 'Results', at); } },
         ]),
+        h('button', { class: 'btn', type: 'button', onclick: function () { shareDialog({ kind: 'result', testIds: [id] }, t ? t.title : 'These results'); } }, [icon('flag', 'sm'), 'Send to Chat']),
         h('button', { class: 'btn', type: 'button', onclick: function () { go('reports?tests=' + id); } }, [icon('chart', 'sm'), 'Report']),
         h('button', { class: 'btn', type: 'button', onclick: function () { go('edit/' + id); } }, [icon('edit', 'sm'), 'Edit']),
       ], { text: 'Assessments', go: function () { go('manage'); } }));
@@ -3276,7 +3351,7 @@
       { label: 'Include reset attempts (CSV)', sub: 'Same, plus attempts that were reset.', icon: 'doc', onclick: function () { var x = qsOf(); x.set('reset', '1'); location.href = '/api/assess/admin/results/export?' + x; } },
       { label: 'Print this report', sub: 'Save as PDF from the print window.', icon: 'print', onclick: function () { printReport(); } },
     ]);
-    main.appendChild(pageHead('Reports', 'How the team is doing across assessments: scores, pass rates, the hardest questions and the wrong answers people pick. Filters apply to every tab.', [dl]));
+    main.appendChild(pageHead('Reports', 'How the team is doing across assessments: scores, pass rates, the hardest questions and the wrong answers people pick. Filters apply to every tab.', [h('button', { class: 'btn', type: 'button', onclick: function () { shareDialog({ kind: 'report', testIds: reportState.tests, from: reportState.from, to: reportState.to, email: reportState.email, result: reportState.result }, 'This report with the current filters'); } }, [icon('flag', 'sm'), 'Send to Chat']), dl]));
     // filters
     var testsBtn = h('details', { class: 'menu fsel' });
     var testsSum = h('summary', { class: 'btn' }, [icon('layers', 'sm'), h('span', { text: 'All assessments' }), h('span', { class: 'caret', text: '▾' })]);

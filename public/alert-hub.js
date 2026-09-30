@@ -26,12 +26,21 @@
     breakLog: ic('<path d="M5 10h11v3.5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11.5h1.2a2.3 2.3 0 0 1 0 4.6H16M8.5 3.5c-.9 1.1.9 2.1 0 3.2M12 3.5c-.9 1.1.9 2.1 0 3.2"/>'),
     missed: ic('<path d="M5.5 4h3l1.8 4.6-2.3 1.4a10.6 10.6 0 0 0 5.9 5.9l1.4-2.3 4.6 1.8v3a1.8 1.8 0 0 1-1.9 1.8A15.2 15.2 0 0 1 3.7 5.9 1.8 1.8 0 0 1 5.5 4z"/><path d="M15 4l5 5M20 4l-5 5"/>'),
     summaries: ic('<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/><path d="M8.5 14.5v-2M12 14.5V9M15.5 14.5v-4"/>'),
+    assessments: ic('<path d="M9 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z"/><path d="M9 4v4H5M9 13h6M9 17h4"/>'),
     liveOps: ic('<path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M12 3v1.5"/>'),
   };
   const EVENTS = [['shift', 'Shift start and end'], ['break', 'Break'], ['brb', 'BRB'], ['training', 'Training'], ['qa', 'QA session'], ['internal', 'Internal call']];
-  const SRC = { app: 'Set here', env: 'From Railway', breaklog: 'Using the break log space', none: 'Not set' };
+  const SRC = { assess: 'Using the assessment webhook', app: 'Set here', env: 'From Railway', breaklog: 'Using the break log space', none: 'Not set' };
   const LINK = { liveOps: ['ticket-alerts', 'Open live ops settings'], summaries: ['digest', 'Open summary composer'], breakLog: ['alerts-breaklog', 'Open break log'], missed: ['alerts-missed', 'Open missed call log'] };
 
+  const RULES = [['closing', 'Closing soon and not taken', 'hours', 'hours before it closes', 1, 72], ['overdue', 'Overdue, closed with people who never took it'], ['low', 'Low pass rate or average'], ['stuck', 'Stuck or abandoned attempts', 'hours', 'hours open or locked', 1, 48]];
+  function assessBlock(c) {
+    if (c.key !== 'assessments' || !c.assess) return '';
+    const cfg = c.assess.cfg, due = c.assess.due || [];
+    const rows = RULES.map(([k, l, nk, nl, lo, hi]) => `<div class="ah-rule"><label><input type="checkbox" data-rule="${k}"${cfg[k].on ? ' checked' : ''}> ${l}</label>${nk ? `<span class="ah-num"><input class="ah-in" type="number" min="${lo}" max="${hi}" data-num="${k}.${nk}" value="${cfg[k][nk]}" aria-label="${l}, ${nl}"> ${nl}</span>` : ''}${k === 'low' ? `<span class="ah-num">pass rate under <input class="ah-in" type="number" min="1" max="100" data-num="low.passBelow" value="${cfg.low.passBelow}" aria-label="Pass rate below"> % or average under <input class="ah-in" type="number" min="1" max="100" data-num="low.avgBelow" value="${cfg.low.avgBelow}" aria-label="Average below"> %, from <input class="ah-in" type="number" min="1" max="200" data-num="low.minAttempts" value="${cfg.low.minAttempts}" aria-label="At least this many people"> people</span>` : ''}</div>`).join('');
+    return `<fieldset class="ah-events ah-rules"><legend>Post these</legend>${rows}</fieldset>
+      <p class="ah-foot" style="margin:6px 0 0">${due.length ? 'Needs attention now: ' + due.map(d => esc(d.title) + ' (' + d.kind + ')').join(', ') + '. These post at the next check, every 15 minutes during alert hours.' : 'Nothing needs attention right now. Checked every 15 minutes during alert hours, and each item posts once.'}</p>`;
+  }
   function card(c) {
     const parts = c.key === 'liveOps' && c.parts ? `<div class="ah-parts">${[['queue', 'Caller in queue'], ['coverage', 'Nobody available'], ['tickets', 'Tickets']].map(([k, l]) => `<span class="${c.parts[k] ? 'on' : ''}">${l}</span>`).join('')}</div>` : '';
     const sched = c.key === 'summaries' ? `<div class="ah-parts"><span class="${c.schedulesOn ? 'on' : ''}">${c.schedulesOn || 0} of ${c.schedules || 0} schedules on</span></div>` : '';
@@ -48,14 +57,14 @@
         <div><dt>Failed</dt><dd class="${c.failedToday ? 'bad' : ''}">${c.failedToday || 0}</dd></div>
         <div><dt>${esc(c.lastLabel || 'Last sent')}</dt><dd>${esc(ago(c.last))}</dd></div>
       </dl>
-      ${parts}${sched}${events}
+      ${parts}${sched}${events}${assessBlock(c)}
       <div class="ah-hook">
         <input class="ah-in" type="url" data-url autocomplete="off" placeholder="${c.masked ? esc(c.masked) : 'Paste a Google Chat webhook URL'}" aria-label="${esc(c.label)} webhook URL">
         <button type="button" class="ah-btn ah-primary" data-save>Save</button>
         <button type="button" class="ah-btn" data-test>Send test</button>
-        ${c.source === 'app' ? `<button type="button" class="ah-btn ah-ghost" data-clear>${c.key === 'liveOps' ? 'Disconnect' : 'Use Railway value'}</button>` : ''}
+        ${c.source === 'app' ? `<button type="button" class="ah-btn ah-ghost" data-clear>${c.key === 'liveOps' ? 'Disconnect' : (c.key === 'assessments' ? 'Use assessment webhook' : 'Use Railway value')}</button>` : ''}
       </div>
-      <button type="button" class="ah-link" data-go="${LINK[c.key][0]}">${LINK[c.key][1]} →</button>
+      ${LINK[c.key] ? `<button type="button" class="ah-link" data-go="${LINK[c.key][0]}">${LINK[c.key][1]} →</button>` : ''}
     </article>`;
   }
 
@@ -90,6 +99,8 @@
         const c = e.target.closest('.ah-card'); if (!c) return;
         const key = c.dataset.key;
         if (e.target.hasAttribute('data-enable')) save(root, key, { enabled: e.target.checked });
+        if (e.target.hasAttribute('data-rule')) save(root, key, { [e.target.dataset.rule]: { on: e.target.checked } });
+        if (e.target.hasAttribute('data-num')) { const [g, f] = e.target.dataset.num.split('.'); const body = { [g]: { [f]: Number(e.target.value) } }; save(root, key, body); }
         if (e.target.hasAttribute('data-ev')) save(root, key, { events: [...c.querySelectorAll('[data-ev]:checked')].map(x => x.dataset.ev) });
       });
       root.addEventListener('click', async e => {

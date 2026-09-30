@@ -69,3 +69,9 @@ html.dark-mode .ah-page{
 .ah-skel{height:120px;border-radius:14px;background:linear-gradient(90deg,var(--ah-surface2),var(--ah-border),var(--ah-surface2));background-size:200% 100%;animation:ahSk 1.2s ease-in-out infinite}
 @keyframes ahSk{0%{background-position:100% 0}100%{background-position:-100% 0}}
 @media (prefers-reduced-motion:reduce){.ah-skel{animation:none}.ah-sw,.ah-sw::after{transition:none}}
+
+/* Batch 59: assessment alert rules */
+.ah-rules .ah-rule { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 6px 0; }
+.ah-rules .ah-rule label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.ah-rules .ah-num { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; opacity: .85; }
+.ah-card .ah-rules input[type=number].ah-in { width: 72px; flex: none; padding: 6px 8px; }
