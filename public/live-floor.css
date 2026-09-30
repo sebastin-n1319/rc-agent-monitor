@@ -104,3 +104,8 @@ html.dark-mode .lf-root{
 .lf-head-r{display:flex;align-items:center;gap:12px}
 .lf-share{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--lf-border);background:var(--lf-surface);color:var(--lf-t1);font:600 12px/18px 'Poppins',sans-serif;cursor:pointer}
 .lf-share:hover{border-color:var(--lf-teal);color:var(--lf-teal)}
+.lf-avt .lf-sep{margin:0 8px}
+.lf-avt{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;font-size:12px;color:var(--lf-t3);margin-top:6px;padding-top:6px;border-top:1px dashed rgba(7,43,64,.12)}
+.lf-avt b{color:var(--lf-t1);font-weight:600}
+.lf-av-g b{color:var(--lf-green)}
+.lf-av-r b{color:var(--lf-red)}

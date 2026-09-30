@@ -2204,7 +2204,26 @@ async function backfillCallHistory(fromMonth, toMonth, onSummary) {
   return { agents: agents.length, calls: totalCalls, months: months.length, monthsList: months, summaries };
 }
 
+// Audit Trail search (needs the "Read Audit Trail" permission on the RC app).
+// Returns every record for the window, paging until the account runs out. Throws RC errors so callers can fall back.
+async function fetchAuditTrail(fromIso, toIso, maxPages = 40) {
+  const records = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const resp = await rcCall('post', '/restapi/v1.0/account/~/audit-trail/search', {
+      eventTimeFrom: fromIso, eventTimeTo: toIso, page, perPage: 250, includeAdmins: true, includeHidden: true,
+    });
+    const data = await resp.json();
+    if (data && data.errorCode) { const err = new Error(data.message || data.errorCode); err.rcData = data; throw err; }
+    const recs = (data && (data.records || data.data)) || [];
+    records.push(...recs);
+    const totalPages = data && data.paging && Number(data.paging.totalPages);
+    if (!recs.length || (totalPages && page >= totalPages) || (!totalPages && recs.length < 250)) break;
+  }
+  return records;
+}
+
 module.exports = {
+  fetchAuditTrail,
   fetchQueueWaiting, // Session 51
   repairCallLogs, // Session 42
   authenticate,

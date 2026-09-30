@@ -53,7 +53,7 @@ const {
   repairCallLogs, // Session 42
   handleWebhookNotification, liveEvents, getFallbackSyncMs, ensureRealtimeSubscription, getCallSyncStatus,
   fetchRecentMissedCalls, fetchRawRecentMissedLog, getRcRateLimitState, getLastRawRecords, backfillCallHistory,
-  parseCallDetails, inferAgentScopedDirection, normalizeRecordedDirection,
+  parseCallDetails, inferAgentScopedDirection, normalizeRecordedDirection, fetchAuditTrail,
 } = require('./rc-service');
 const { runArchive, getDbSizeMB } = require('./archive-service');
 const { OAuth2Client } = require('google-auth-library');
@@ -877,6 +877,43 @@ app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) =>
   if (q.length < 2) return res.json({ success: true, data: [] });
   try { res.json({ success: true, data: await searchRCUsers(q) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+
+// Available / Unavailable time per agent for one CST day, from the RingCentral Audit Trail
+// (first "Take all calls" starts the clock). Falls back to presence data when RC refuses the Audit Trail.
+const rcAudit = require('./lib/rc-audit');
+const _availCache = new Map();
+app.get('/api/live-availability', requireAuth, requireAdmin, async (req, res) => {
+  const tz = 'America/Chicago';
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : today;
+  const hit = _availCache.get(date);
+  if (hit && Date.now() - hit.at < 90000 && !req.query.fresh) return res.json(hit.body);
+  try {
+    const agents = await getMonitoredAgents();
+    const win = getDateWindow(date, tz);
+    const nowMs = Date.now();
+    const toMs = Math.min(win.end.getTime ? win.end.getTime() : Date.parse(win.end), nowMs);
+    const startMs = win.start.getTime ? win.start.getTime() : Date.parse(win.start);
+    let body;
+    try {
+      const recs = await fetchAuditTrail(new Date(startMs).toISOString(), new Date(toMs).toISOString());
+      const events = recs.map(rcAudit.parseRecord).filter(Boolean);
+      const endMs = win.end.getTime ? win.end.getTime() : Date.parse(win.end);
+      body = { success: true, source: 'audit', date, timeZone: tz, records: recs.length, dndEvents: events.length,
+        data: rcAudit.computeForAgents(events, agents, nowMs, endMs, date === today) };
+    } catch (auditErr) {
+      const summary = await getAgentSummary(date, tz);
+      const data = {};
+      for (const r of summary) data[String(r.extension)] = { name: r.agentName, availSec: r.availableSeconds || 0, unavailSec: r.unavailableSeconds || 0, started: true };
+      const denied = /permission|scope|forbidden|insufficient|CMN-4|OAU-/i.test(String(auditErr.message) + JSON.stringify(auditErr.rcData || {}));
+      body = { success: true, source: 'presence', date, timeZone: tz, data,
+        note: denied ? 'RingCentral did not allow the Audit Trail. Add the "Read Audit Trail" permission to the RC app. Showing presence data meanwhile.' : 'Audit Trail was not reachable (' + String(auditErr.message).slice(0, 120) + '). Showing presence data meanwhile.' };
+    }
+    _availCache.set(date, { at: Date.now(), body });
+    res.json(body);
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
 app.get('/api/live-status', requireAuth, async (req, res) => {

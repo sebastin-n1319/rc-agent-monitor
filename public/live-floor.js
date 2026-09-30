@@ -41,6 +41,9 @@
   let _mine = null;          // my-summary for today (agent view)
   let _mineFetchedAt = 0;
   let _mineKey = '';
+  let _avail = null;         // /api/live-availability for today (admin view)
+  let _availFetchedAt = 0;
+  let _availKey = '';
   let _tick = null;
   let _last = null;
 
@@ -200,6 +203,28 @@
     } catch (err) { /* ticket tile shows '-' */ }
   }
 
+  async function refreshAvail() {
+    const { key } = dayKey();
+    if (key === _availKey && Date.now() - _availFetchedAt < 90000) return;
+    _availKey = key; _availFetchedAt = Date.now();
+    try {
+      const r = await fetch('/api/live-availability', { credentials: 'include' });
+      const j = await r.json();
+      if (j && j.success) { _avail = j; if (_last) paint(_last); }
+    } catch (err) { /* the line just stays hidden */ }
+  }
+  function availFor(agent) {
+    if (!_avail || !_avail.data) return null;
+    const a = _avail.data[String((agent && (agent.extension || agent.ext)) || '')] || null;
+    return a;
+  }
+  function availLine(agent) {
+    if (!_avail) return '';
+    const a = availFor(agent);
+    if (!a || !a.started) return `<div class="lf-avt lf-dim" title="Counts from the first Take all calls of the CST day">Avail <b class="lf-mono">-</b><span class="lf-sep"></span>Unavail <b class="lf-mono">-</b></div>`;
+    return `<div class="lf-avt" title="${_avail.source === 'audit' ? 'From the RingCentral Audit Trail, CST day, from first Take all calls' : 'From presence data (Audit Trail not available)'}"><span class="lf-av-g">Avail <b class="lf-mono">${shortDur(a.availSec)}</b></span><span class="lf-sep"></span><span class="lf-av-r">Unavail <b class="lf-mono">${shortDur(a.unavailSec)}</b></span></div>`;
+  }
+
   function chatsFor(email) {
     const v = _chats[String(email || '').toLowerCase()];
     return typeof v === 'number' ? v : null;
@@ -233,7 +258,7 @@
       <div class="lf-bar" aria-hidden="true"><i style="width:${Math.round(Math.min(1, p) * 100)}%;background:${c}"></i></div></div>`).join('')}</div>`;
   }
 
-  function agentCard(r, isMe) {
+  function agentCard(r, isMe, admin) {
     const op = r.op, st = r.st;
     const ch = chatsFor(op.agent.email);
     const since = st.sinceMs ? Math.max(0, (Date.now() - st.sinceMs) / 1000) : null;
@@ -251,6 +276,7 @@
         ${ch ? `<span>Chats <b class="lf-mono">${ch}</b></span>` : ''}`}
       </div>
       ${breakLine(st.tr)}
+      ${admin ? availLine(op.agent) : ''}
     </article>`;
   }
 
@@ -376,7 +402,7 @@
       const sub = [`${n('avail')} available`, `${n('call')} on call`, `${n('busy') + n('break')} away`].join(' · ');
       return `<section class="lf-wing" aria-label="${e(title)}">
         <h3 class="lf-wing-t">${e(title)} <span class="lf-wing-n">${list.length}</span><span class="lf-wing-sub">${e(sub)}</span></h3>
-        <div class="lf-grid">${list.map(r => agentCard(r, me && r === me)).join('')}</div>
+        <div class="lf-grid">${list.map(r => agentCard(r, me && r === me, mode === 'admin')).join('')}</div>
       </section>`;
     };
     // The viewer's own wing first for agents; Call Wing first for admins.
@@ -385,7 +411,8 @@
       ? order.map(([k, t]) => wingSection(k, t)).join('')
       : '<div class="lf-card lf-pad lf-sub">No monitored agents yet.</div>';
 
-    root.innerHTML = head
+    const availNote = (mode === 'admin' && _avail && _avail.note) ? `<div class="lf-card lf-pad lf-sub" role="status" style="margin-bottom:10px">${e(_avail.note)}</div>` : '';
+    root.innerHTML = head + availNote
       + (mode === 'agent' ? meCard(me) : '')
       + kpiStrip(rows, ctx)
       + `<div class="lf-main"><div class="lf-wings">${grid}</div><aside class="lf-rail">${mode === 'admin' ? adminRail(rows) : agentRail(rows)}</aside></div>`;
@@ -410,6 +437,7 @@
       startTicker();
       refreshChats();
       if (ctx.mode === 'agent') refreshMine();
+      if (ctx.mode === 'admin') refreshAvail();
     } catch (err) {
       console.error('renderLiveFloor', err);
     }
