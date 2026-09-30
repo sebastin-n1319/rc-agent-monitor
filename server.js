@@ -2152,7 +2152,7 @@ app.post('/api/assess/admin/share/image', ...RV, rateLimit(12, 60000), express.r
 // Google Chat app "Adit Agent Monitor": receives events so Chat accepts the app. It only replies with a fixed note.
 app.post('/gchat/event', rateLimit(120, 60000), (req, res) => {
   const b = req.body || {};
-  const msg = b.type === 'ADDED_TO_SPACE' ? 'Hi, I am Adit Agent Monitor. I send assessment updates and results from T1 CS Stars. Replies here are not monitored.' : 'I only send updates from T1 CS Stars, so replies here are not monitored. Open the tool to take or review assessments.';
+  const msg = b.type === 'ADDED_TO_SPACE' ? 'Hi, I am Adit Agent Monitor. I send updates from the Adit team tool, like assessments, alerts and announcements. Replies here are not monitored.' : 'I only send updates from the Adit team tool, so replies here are not monitored. Open the tool to see more.';
   if (b.chat || b.commonEventObject) return res.json({ hostAppDataAction: { chatDataAction: { createMessageAction: { message: { text: msg } } } } });
   res.json({ text: msg });
 });
