@@ -1178,3 +1178,5 @@ dialog.confirm.wide{width:min(560px,calc(100vw - 32px))}
 .msg-prob li{display:flex;gap:6px;align-items:flex-start}
 .msg.err .msg-av{background:var(--bad);color:#fff}
 .msg.err .msg-b{border-color:var(--bad)}
+
+.noanim,.noanim *{animation:none!important}

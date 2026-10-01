@@ -572,7 +572,9 @@
     if (m < 1440) return Math.round(m / 60) + ' h ago';
     return fmtDay(iso);
   }
-  function drawBell() {
+  function drawBell(force) {
+    var bsig = JSON.stringify([notif.open, notif.unread, !!notif.updateReady, notif.items.map(function (n) { return [n.id, n.read, n.title]; })]) + (notif.open ? ago(notif.items[0] && notif.items[0].at) : '');
+    if (!force && bsig === bellBox._sig) return; bellBox._sig = bsig;
     clear(bellBox);
     var btn = h('button', { class: 'bell-btn', type: 'button', 'aria-label': 'Notifications' + (notif.unread ? ', ' + notif.unread + ' unread' : ''), 'aria-expanded': String(notif.open), onclick: function (e) { e.stopPropagation(); notif.open = !notif.open; drawBell(); if (notif.open) refreshNotifs(true); } },
       [icon('bell', 'sm'), notif.unread ? h('span', { class: 'bell-n', text: notif.unread > 9 ? '9+' : String(notif.unread) }) : null]);
@@ -1869,6 +1871,8 @@
       (function pollLive() {
         if (!document.body.contains(livebar)) return;
         api('/api/assess/admin/live-now').then(function (r) {
+          var lsig = JSON.stringify([r.count, r.people, r.lastOutage]);
+          if (lsig === livebar._sig) return; livebar._sig = lsig;
           clear(livebar);
           var names = r.people.map(function (p) { return p.name + ' (' + p.progress + ')'; }).join(', ');
           livebar.className = 'livebar' + (r.count ? ' on' : '');
@@ -2450,15 +2454,30 @@
     var people = h('label', { class: 'small row', for: 'sh-ppl', style: 'gap:6px;align-items:center;margin-top:6px' });
     var incl = h('input', { type: 'checkbox', id: 'sh-ppl' }); people.appendChild(incl); people.appendChild(document.createTextNode('Name the people who are below the pass mark (no scores)'));
     var status = h('span', { class: 'small muted', role: 'status' });
-    function draft() {
+    var tone = 'friendly', len = 'standard', refineNow = false;
+    function draft(ref) {
+      refineNow = ref === true;
       status.textContent = 'Drafting…'; ta.disabled = true; clear(msg);
-      api('/api/assess/admin/share/draft', { method: 'POST', body: { scope: scope, includePeople: incl.checked, guidance: guide.value.trim() } })
+      api('/api/assess/admin/share/draft', { method: 'POST', body: { scope: scope, includePeople: incl.checked, guidance: guide.value.trim(), tone: tone, length: len, shoutout: shout.checked, refine: refineNow && ta.value.trim() ? ta.value.trim() : undefined } })
         .then(function (r) { ta.value = r.text; dirty = false; status.textContent = r.ai ? 'Drafted with AI. Edit it if you like.' : (r.reason ? r.reason + ', so this is drafted from the numbers.' : 'Drafted from the numbers.') + ' Edit it if you like.'; })
         .catch(function (e) { status.textContent = ''; msg.appendChild(errBox(e.message)); })
         .finally(function () { ta.disabled = false; });
     }
     var redo = h('button', { class: 'btn sm', type: 'button' }, [icon('spark', 'sm'), 'Draft with AI']);
-    redo.addEventListener('click', draft);
+    redo.addEventListener('click', function () { draft(false); });
+    var refineBtn = h('button', { class: 'btn sm', type: 'button', title: 'Improve the text below using your instructions' }, [icon('spark', 'sm'), 'Refine this draft']);
+    refineBtn.addEventListener('click', function () { draft(true); });
+    var shout = h('input', { type: 'checkbox', id: 'sh-shout' });
+    function chips(list, cur, onPick) {
+      var row = h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;margin:4px 0', role: 'group' });
+      list.forEach(function (o) { var b = h('button', { type: 'button', class: 'btn sm', 'aria-pressed': String(o[0] === cur), text: o[1] }); b.addEventListener('click', function () { Array.prototype.forEach.call(row.children, function (x) { x.setAttribute('aria-pressed', 'false'); }); b.setAttribute('aria-pressed', 'true'); onPick(o[0]); }); row.appendChild(b); });
+      return row;
+    }
+    var toneRow = chips([['friendly', 'Friendly'], ['professional', 'Professional'], ['motivating', 'Motivating'], ['concise', 'Concise']], 'friendly', function (v) { tone = v; });
+    var lenRow = chips([['short', 'Short'], ['standard', 'Standard'], ['detailed', 'Detailed']], 'standard', function (v) { len = v; });
+    var shoutRow = h('label', { class: 'small row', for: 'sh-shout', style: 'gap:6px;align-items:center;margin-top:6px' }, [shout, 'Give a shout-out to the top scorers by name']);
+    var ideas = h('div', { class: 'row', style: 'gap:6px;flex-wrap:wrap;margin:4px 0' });
+    ['Ask people to retake it by Friday', 'Focus on the weakest topics', 'Thank the team for the effort', 'Keep it casual'].forEach(function (t) { var b = h('button', { type: 'button', class: 'btn sm ghost', text: '+ ' + t }); b.addEventListener('click', function () { guide.value = (guide.value.trim() ? guide.value.trim() + '. ' : '') + t; guide.focus(); }); ideas.appendChild(b); });
     var guide = h('textarea', { class: 'inp', rows: 2, style: 'width:100%;font:inherit', maxlength: '600', 'aria-label': 'Tell the AI what to say', placeholder: 'Optional: tell the AI what to say. For example: friendly tone, focus on the weakest topics, ask people to retake it by Friday.' });
     incl.addEventListener('change', function () { dirty = false; draft(); });
     var hook = h('input', { class: 'inp', style: 'width:100%', type: 'url', placeholder: 'https://chat.googleapis.com/v1/spaces/...', autocomplete: 'off', 'aria-label': 'Google Chat webhook URL' });
@@ -2534,8 +2553,10 @@
     dlg.appendChild(h('div', { class: 'cf-in' }, [
       h('h2', { id: 'sh-t', text: 'Send to Google Chat' }),
       h('div', { class: 'small muted', text: (title || 'This summary') + '. The message shares totals. The chart can also show each person\'s best score. Edit anything before you send it.' }),
-      h('div', { class: 'row', style: 'gap:8px;margin:6px 0 0;align-items:center' }, [status, h('span', { class: 'spacer' }), redo]),
-      h('div', { class: 'small', style: 'margin:0 0 6px' }, [h('b', { text: 'Tell the AI what to say ' }), h('span', { class: 'muted', text: '(optional)' })]), guide,
+      h('div', { class: 'small', style: 'margin:8px 0 2px' }, [h('b', { text: 'Tone' })]), toneRow,
+      h('div', { class: 'small', style: 'margin:6px 0 2px' }, [h('b', { text: 'Length' })]), lenRow,
+      h('div', { class: 'small', style: 'margin:8px 0 6px' }, [h('b', { text: 'Tell the AI what to say ' }), h('span', { class: 'muted', text: '(optional)' })]), ideas, guide, shoutRow,
+      h('div', { class: 'row', style: 'gap:8px;margin:8px 0 0;align-items:center' }, [status, h('span', { class: 'spacer' }), refineBtn, redo]),
       h('div', { class: 'small', style: 'margin:10px 0 4px' }, [h('b', { text: 'Message' })]),
       ta, people,
       h('div', { class: 'row', style: 'gap:8px;margin-top:10px;align-items:center' }, [h('label', { class: 'small row', for: 'sh-chart', style: 'gap:6px;align-items:center' }, [chartOn, 'Attach a chart image']), chartNote]),
@@ -2946,14 +2967,15 @@
   function viewLive() {
     clearInterval(liveTimer);
     main.appendChild(pageHead('Live', 'Everyone taking an assessment right now. Updates every 5 seconds.'));
-    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
-    var stamp = h('p', { class: 'small muted', style: 'margin-top:10px' });
+    var holder = h('div'), real = holder; main.appendChild(holder); holder.appendChild(skeleton());
+    var stamp = h('p', { class: 'small muted', style: 'margin-top:10px' }), lastSig = null;
     function fmtS(n) { if (n == null) return '–'; n = Math.max(0, n); return n >= 60 ? Math.floor(n / 60) + 'm ' + (n % 60) + 's' : n + 's'; }
     function load() {
       if (location.hash !== '#live') { clearInterval(liveTimer); return; }
       if (document.hidden) return;
       api('/api/assess/admin/live').then(function (j) {
-        clear(holder);
+        var next = h('div');
+        holder = next;
         if (!j.live.length) {
           holder.appendChild(h('div', { class: 'empty' }, [art('people'), h('b', { text: 'Nobody is taking an assessment right now' }), h('span', { text: 'Attempts appear here the moment someone starts.' })]));
         } else {
@@ -2965,7 +2987,7 @@
               h('td', null, [h('b', { style: 'font-weight:500', text: a.name || a.email }), h('span', { class: 'sub', text: a.title })]),
               h('td', null, [h('div', { class: 'scorebar' }, [h('div', { class: 'b' }, [h('i', { style: 'width:' + pct + '%' })]), h('span', { class: 'num', text: a.progress + '/' + a.total + (a.onReview ? ' · reviewing' : a.onWritten ? ' · writing' : '') })])]),
               h('td', { class: 'num', text: a.leftSec != null && a.leftSec > 0 ? fmtS(a.leftSec) + ' left' + (a.locked ? ' (paused)' : '') : '–' }),
-              h('td', null, [a.locked ? h('div', { class: 'row', style: 'align-items:center;gap:8px;flex-wrap:nowrap' }, [pill('Locked', 'bad', true), canUnlock() ? unlockBtn(a.id, load) : null]) : idle ? pill('No activity ' + fmtS(a.idleSec), 'warn', true) : pill('Active', 'ok', true)]),
+              h('td', null, [a.locked ? h('div', { class: 'row', style: 'align-items:center;gap:8px;flex-wrap:nowrap' }, [pill('Locked', 'bad', true), canUnlock() ? unlockBtn(a.id, function () { lastSig = ''; load(); }) : null]) : idle ? pill('No activity ' + fmtS(a.idleSec), 'warn', true) : pill('Active', 'ok', true)]),
               h('td', null, [tierPill(a.tier), a.flags.length ? h('span', { class: 'sub', text: a.flags.slice(0, 2).join(', ') }) : null]),
               h('td', { class: 'num', text: fmtWhen(a.startedAt) }),
             ]);
@@ -2975,9 +2997,19 @@
           });
           holder.appendChild(h('div', { class: 'tbl-wrap' }, [h('table', { class: 'tbl' }, [h('thead', null, [h('tr', null, ['Agent', 'Progress', 'This question', 'Status', 'Behaviour so far', 'Started'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb])]));
         }
+        holder = real;
+        var sig = next.innerHTML;
         stamp.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+        if (sig !== lastSig) {
+          // only touch the page when something changed, and do not replay the entrance animations
+          var sy = window.scrollY, first = lastSig === null;
+          clear(holder); if (!first) holder.className = 'noanim';
+          while (next.firstChild) holder.appendChild(next.firstChild);
+          lastSig = sig;
+          if (!first) window.scrollTo(0, sy);
+        }
         holder.appendChild(stamp);
-      }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+      }).catch(function (e) { holder = real; if (lastSig === null) { clear(holder); holder.appendChild(errBox(e.message)); } else { stamp.textContent = 'Could not refresh, showing the last update (' + e.message + ')'; } });
     }
     load();
     liveTimer = setInterval(load, 5000);
