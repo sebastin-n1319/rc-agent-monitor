@@ -2147,7 +2147,7 @@ app.get('/api/assess/admin/results/export', ...RV, assessWrap(async (req, res) =
 }));
 // Batch 59: send a report or result summary to Google Chat (saved webhook, another webhook, or a private message)
 app.get('/api/assess/admin/share/options', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessments.shareOptions()) })));
-app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople, guidance: b.guidance })) }); }));
+app.post('/api/assess/admin/share/draft', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => { const b = req.body || {}; res.json({ success: true, ...(await assessments.shareDraft(b.scope || {}, { includePeople: !!b.includePeople, guidance: b.guidance, tone: b.tone, length: b.length, shoutout: !!b.shoutout, refine: typeof b.refine === 'string' ? b.refine : '' })) }); }));
 app.post('/api/assess/admin/share/image', ...RV, rateLimit(12, 60000), express.raw({ type: 'image/png', limit: '1600kb' }), assessWrap(async (req, res) => res.json({ success: true, token: await assessments.saveShareImage(req.body) })));
 // Google Chat app "Adit Agent Monitor": receives events so Chat accepts the app. It only replies with a fixed note.
 app.post('/gchat/event', rateLimit(120, 60000), (req, res) => {
