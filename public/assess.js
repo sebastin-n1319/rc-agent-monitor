@@ -253,7 +253,7 @@
           return r.json().catch(function () { return null; }).then(function (j) {
             var down = r.status === 0 || r.status === 502 || r.status === 503 || r.status === 504;
             if (!j) j = { success: false, error: down ? 'The server is restarting or busy. Wait a few seconds and try again.' : 'HTTP ' + r.status };
-            if (r.status === 401) { try { localStorage.removeItem('rcSession'); sessionStorage.removeItem('rcRole'); } catch (e) {} /* drop the stale cached sign-in so the main page shows the login instead of bouncing straight back here */ location.replace(EMBED ? '/' : '/?next=/assess'); throw new Error('Please sign in'); }
+            if (r.status === 401) { try { localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); ['rcUser', 'rcRole', 'rcEmail', 'rcPicture', 'rcBreakbotEnabled'].forEach(function (k) { sessionStorage.removeItem(k); }); } catch (e) {} /* drop the stale cached sign-in so the main page shows the login instead of bouncing straight back here */ location.replace(EMBED ? '/' : '/?next=/assess'); throw new Error('Please sign in'); }
             if (!r.ok || j.success === false) { var e = new Error(j.error || ('HTTP ' + r.status)); e.code = j.code; e.status = r.status; e.noAccess = j.noAccess; throw e; }
             return j;
           });

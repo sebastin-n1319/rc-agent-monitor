@@ -38,7 +38,7 @@
 <!-- Session 37: global 401 handler -- catches a dead server session
      (see session-guard.js) before every module downstream has to. -->
 <script src="/session-guard.js?v=1.0.2"></script>
-<script>try{ if(new URLSearchParams(location.search).get('next') === '/assess') sessionStorage.setItem('rcNext','/assess'); }catch(e){}</script>
+<script>try{ if(new URLSearchParams(location.search).get('next') === '/assess'){ sessionStorage.setItem('rcNext','/assess'); var _g=Number(sessionStorage.getItem('rcAssessGo')||0); /* sent here by /assess moments after we sent the person there: the saved sign-in is stale, so drop it and show the login instead of bouncing again */ if(_g && Date.now()-_g < 20000){ localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); ['rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled'].forEach(function(k){sessionStorage.removeItem(k);}); sessionStorage.removeItem('rcAssessGo'); } } }catch(e){}</script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.109" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.8" id="agent-view-v2-link">
 <link rel="stylesheet" href="/alert-center.css?v=1.19.8" id="alert-center-link">
@@ -4413,11 +4413,22 @@ function configureAgentBreakbotAccess(){
   }
 }
 
+// Go to /assess only when the server really has our sign-in. The saved copies in this browser can be stale,
+// and trusting them sends /assess straight back here, which flickers between the two pages.
+function forgetSavedSignIn(){
+  try{ ['rcSession','rcLastUser'].forEach(k=>localStorage.removeItem(k)); ['rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled'].forEach(k=>sessionStorage.removeItem(k)); }catch(e){}
+}
+function goAssessChecked(){
+  fetch('/api/session',{credentials:'include'}).then(r=>r.json()).then(s=>{
+    if(s && s.success){ try{ sessionStorage.setItem('rcAssessGo', String(Date.now())); }catch(e){} window.location.replace('/assess'); }
+    else { forgetSavedSignIn(); try{ sessionStorage.setItem('rcNext','/assess'); }catch(e){} window.location.replace('/?next=/assess'); }
+  }).catch(()=>{ window.location.replace('/assess'); });
+}
 function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false){
   // Session 56: accounts outside the tool only get the Assessments page,
   // and a sign-in that started from /assess goes back there.
-  if(role === 'assessment'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} window.location.replace('/assess'); return; }
-  try{ if(sessionStorage.getItem('rcNext') === '/assess'){ sessionStorage.removeItem('rcNext'); window.location.replace('/assess'); return; } }catch(e){}
+  if(role === 'assessment'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} goAssessChecked(); return; }
+  try{ if(sessionStorage.getItem('rcNext') === '/assess'){ sessionStorage.removeItem('rcNext'); goAssessChecked(); return; } }catch(e){}
   // DO NOT clear rcActiveView here, agents need it to restore their last page.
   // We only override it if the stored view doesn't match the user's role
   // (e.g. admin logged in, last session was agent view, keep admin default).
