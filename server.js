@@ -8152,7 +8152,37 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
         }
       }
     } catch (e) { console.warn('verify-ticket live read failed:', e.message); }
-    const involved = await deskLifecycle.ticketInvolvedEmails({ ticketNumber: num, live, emails, agentNames });
+    // Zoho's event history: catches team changes and other updates that leave no
+    // reply, comment or owner-log entry (not counted in any metric).
+    const historyTouches = {};
+    if (live && live.ticket && live.ticket.id) {
+      try {
+        const ds2 = require('./lib/desk-service');
+        const hr = await ds2.fetchRaw(`/tickets/${live.ticket.id}/History?limit=100`);
+        const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
+        const list = Array.isArray(items) ? items : (items.data || []);
+        const byName = {};
+        for (const e of emails) { const n = String(agentNames[e] || byEmail[e]?.full_name || '').trim().toLowerCase(); if (n) byName[n] = e; }
+        for (const it of list) {
+          const act = it.actor || {};
+          const em = String(act.email || act.emailId || '').toLowerCase();
+          const nm = String(act.name || [act.firstName, act.lastName].filter(Boolean).join(' ')).trim().toLowerCase();
+          const who = (em && emails.includes(em)) ? em : byName[nm];
+          if (!who) continue;
+          let text = String(it.eventName || 'Updated').replace(/([a-z])([A-Z])/g, '$1 $2');
+          const info = Array.isArray(it.eventInfo) ? it.eventInfo : [];
+          const ch = info.map(i => {
+            const pv = i && i.propertyValue;
+            const v = (x) => (x && typeof x === 'object') ? (x.name || x.value || '') : (x == null ? '' : x);
+            return pv && typeof pv === 'object' ? `${String(i.propertyName || '').replace(/([a-z])([A-Z])/g, '$1 $2')}: ${v(pv.previousValue)} to ${v(pv.updatedValue)}` : '';
+          }).filter(Boolean);
+          if (ch.length) text += ' (' + ch.join('; ') + ')';
+          (historyTouches[who] = historyTouches[who] || []).push({ at: it.eventTime || null, text });
+        }
+      } catch (e) { console.warn('verify-ticket history read failed:', e.message); }
+    }
+    const involvedBase = await deskLifecycle.ticketInvolvedEmails({ ticketNumber: num, live, emails, agentNames });
+    const involved = [...new Set([...involvedBase, ...Object.keys(historyTouches)])];
     let ticket = null, found = false, sync = null, liveChecked = !!live;
     const agents = [];
     const targets = involved.length ? involved.slice(0, 12) : [];
@@ -8162,7 +8192,7 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
       found = true; ticket = out.ticket; sync = out.sync; liveChecked = out.liveChecked;
       const third = (x) => String(x == null ? '' : x).replace(/\b(by|from|to|shows|show|add|adds|for|of|than|assigning it to) you\b/g, '$1 them').replace(/\byou are\b/g, 'they are').replace(/\bYou are\b/g, 'They are').replace(/\byou\b/g, 'they').replace(/\bYou\b/g, 'They').replace(/\byour\b/g, 'their').replace(/\bYour\b/g, 'Their');
       out.checks = out.checks.map(c => ({ ...c, label: third(c.label), reason: third(c.reason) }));
-      agents.push({ email, name: byEmail[email]?.full_name || agentNames[email] || email, checks: out.checks, events: out.events,
+      agents.push({ email, name: byEmail[email]?.full_name || agentNames[email] || email, checks: out.checks, events: out.events, history: historyTouches[email] || [],
         counted: out.checks.filter(c => c.included && ['handled','replied','commented','owned','unique','transferred','closed','assist','created_away'].includes(c.key)).map(c => c.label) });
     }
     if (!found) {

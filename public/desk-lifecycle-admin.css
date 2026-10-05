@@ -357,3 +357,6 @@
 .tvk-agent li.in>span{color:#10B981}.tvk-agent li.out>span{color:#EF4444}
 .tvk-agent li i{display:block;font-style:normal;color:#4B5563}
 .tvk-foot{font-size:11px;color:#9CA3AF;margin-top:8px}
+.tvk-agent summary em.hist{background:#FFF7ED;color:#C2410C}
+.tvk-hist{font-size:12px;padding:2px 12px 6px;color:#4B5563}
+.tvk-hist b{display:block;color:#0F1824;margin-bottom:2px}

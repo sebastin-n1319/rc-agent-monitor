@@ -790,7 +790,8 @@
         const agents = (j.agents || []).map((a) => {
           const rows = a.checks.map(c => `<li class="${c.included ? 'in' : 'out'}"><span aria-hidden="true">${c.included ? '\u2713' : '\u2715'}</span><div><b>${esc(c.label)}: ${c.included ? 'counted' : 'not counted'}</b><i>${esc(c.reason)}</i></div></li>`).join('');
           const chips = a.counted.length ? a.counted.map(l => `<em>${esc(l)}</em>`).join('') : '<em class="none">Not counted in this period</em>';
-          return `<details class="tvk-agent"><summary><b>${esc(a.name)}</b><span>${chips}</span></summary><ul>${rows}</ul></details>`;
+          const hist = (a.history || []).length ? `<div class="tvk-hist"><b>In Zoho history (not counted in any metric)</b>${a.history.map(h => `<div>${h.at ? esc(fmtDateTime(h.at)) + ': ' : ''}${esc(h.text)}</div>`).join('')}</div>` : '';
+          return `<details class="tvk-agent"${(a.history || []).length && !a.counted.length ? ' open' : ''}><summary><b>${esc(a.name)}</b><span>${chips}${(a.history || []).length ? '<em class="hist">Updated the ticket in Zoho</em>' : ''}</span></summary>${hist}<ul>${rows}</ul></details>`;
         }).join('');
         out.innerHTML = `
           <div class="tvk-ticket">
@@ -799,7 +800,7 @@
             <small>${esc(t.status || '')}${t.ownerName ? ' \u00b7 owner ' + esc(t.ownerName) : ''}${t.createdTime ? ' \u00b7 created ' + esc(fmtDateTime(t.createdTime)) : ''}${t.closedTime ? ' \u00b7 closed ' + esc(fmtDateTime(t.closedTime)) : ''}</small>
           </div>
           <div class="tvk-range">Period: ${esc(fmtDateTime(j.from))} to ${esc(fmtDateTime(j.to))}</div>
-          ${agents ? `<div class="tvk-label">Monitored agents on this ticket (${j.agents.length})</div>${agents}` : '<div class="tvk-msg">No monitored agent has a reply, comment or ownership entry on this ticket.</div>'}
+          ${agents ? `<div class="tvk-label">Monitored agents on this ticket (${j.agents.length})</div>${agents}` : '<div class="tvk-msg">No monitored agent has a reply, comment, ownership entry or update in Zoho history on this ticket.</div>'}
           ${j.truncated ? '<div class="tvk-msg">Showing the first 12 agents.</div>' : ''}
           <div class="tvk-foot">${j.liveChecked ? 'Checked against Zoho Desk live and the synced data.' : 'Checked against the synced data (Zoho live read was not available).'}${j.sync && j.sync.lastActivitySync ? ' Activity last synced ' + esc(fmtDateTime(j.sync.lastActivitySync)) + '.' : ''}</div>`;
       } catch (err) {
