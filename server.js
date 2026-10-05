@@ -545,7 +545,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     productUpdates.setNotices(notices);
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
-    ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload) });
+    ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
     // Announce new updates in the bell even when nobody has the Updates page open
     setTimeout(() => productUpdates.recent().catch(() => {}), 30000);
     setInterval(() => productUpdates.recent().catch(() => {}), 10 * 60 * 1000);
@@ -8295,6 +8295,7 @@ app.get('/api/audits/queue', requireAuth, requireAuditAccess, auditWrap(async (r
 app.get('/api/audits/ticket/:id', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
   res.json({ success: true, audit: await ticketAudits.getAudit(Number(req.params.id), req.audit) });
 }));
+app.get('/api/audits/ticket/:id/story', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.getAudit(Number(req.params.id), req.audit); res.json({ success: true, ...(await ticketAudits.ticketStory(Number(req.params.id), { refresh: req.query.refresh === '1' })) }); }));
 app.post('/api/audits/ticket/:id/start', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.startAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
 app.post('/api/audits/ticket/:id/submit', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { const out = await ticketAudits.submitAudit(Number(req.params.id), req.audit, req.body || {}); res.json({ success: true, status: out.status, chat: out.chat }); }));
 app.post('/api/audits/ticket/:id/close', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.closeAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));

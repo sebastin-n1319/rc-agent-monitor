@@ -134,7 +134,8 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-ai-sum{margin:6px 0 0;font-size:13px;color:var(--tka-t1);font-style:italic}
 .tka-row.warm{box-shadow:inset 3px 0 0 var(--tka-amber)}
 /* simple audit page */
-.tka-body.tka-audit{max-width:760px;display:flex;flex-direction:column;gap:12px}
+.tka-page.tka-wide{max-width:1280px}
+.tka-body.tka-audit{display:flex;flex-direction:column;gap:12px}
 .tka-audit .tka-btn.ghost{margin-bottom:0;align-self:flex-start}
 .tka-audit h3{margin:0 0 6px;font-size:15px}
 .tka-fold{background:var(--tka-surface);border:1px solid var(--tka-border);border-radius:14px;padding:10px 16px}
@@ -151,3 +152,26 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-vbtn.good.on{border-color:var(--tka-green);background:rgba(22,169,112,.12);color:var(--tka-green)}
 .tka-vbtn.bad.on{border-color:var(--tka-red);background:rgba(217,70,77,.12);color:var(--tka-red)}
 @media (max-width:520px){.tka-verdicts{grid-template-columns:1fr}}
+
+/* audit page: main column and ticket story */
+.tka-cols{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-items:start}
+.tka-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (min-width:1100px){.tka-cols{grid-template-columns:minmax(0,1fr) 400px}.tka-side{position:sticky;top:76px}}
+.tka-story h3{margin:0}
+.tka-sub-h{margin:14px 0 6px;font-size:12.5px;font-weight:600;color:var(--tka-t2);text-transform:uppercase;letter-spacing:.04em}
+.tka-now{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.tka-kv{display:flex;flex-direction:column;gap:3px;margin-top:4px}
+.tka-kvr{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--tka-t2)}
+.tka-kvr b{color:var(--tka-t1);font-weight:500;text-align:right}
+.tka-pts{display:flex;flex-direction:column;gap:6px}
+.tka-pt{display:flex;gap:8px;font-size:13px;color:var(--tka-t1);line-height:1.45}
+.tka-pt i{flex:none;width:6px;height:6px;border-radius:50%;background:var(--tka-teal);margin-top:7px}
+.tka-story-tl{display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow:auto;padding-right:4px}
+.tka-ev{display:flex;gap:10px;font-size:12.5px}
+.tka-ev>i{flex:none;width:9px;height:9px;border-radius:50%;background:var(--tka-t3);margin-top:5px}
+.tka-ev p{margin:1px 0 0;color:var(--tka-t1);line-height:1.4;overflow-wrap:anywhere}
+.tka-ev.k-customer>i{background:var(--tka-amber)}
+.tka-ev.k-agent>i{background:var(--tka-teal)}
+.tka-ev.k-status>i,.tka-ev.k-priority>i{background:var(--tka-red)}
+.tka-ev.k-team>i,.tka-ev.k-owner>i{background:#7c5cd6}
+.tka-ev.k-created>i{background:var(--tka-green)}

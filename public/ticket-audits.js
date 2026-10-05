@@ -66,6 +66,7 @@
   };
   function render() {
     if (!TA.root) return;
+    TA.root.classList.remove('tka-wide');
     var bar = h('div', { class: 'tka-tabs', role: 'tablist' }, tabs().map(function (t) {
       return h('button', { type: 'button', role: 'tab', class: 'tka-tab' + (TA.tab === t[0] && !TA.auditId ? ' on' : ''), text: t[1], onclick: function () { TA.tab = t[0]; TA.auditId = null; render(); } });
     }));
@@ -263,10 +264,6 @@
       if (pills.length) spot.appendChild(h('div', { class: 'tka-flags' }, pills));
       a.flags.forEach(function (f) { spot.appendChild(h('div', { class: 'tka-flag-row' }, [pill(f.severity, 'sev-' + f.severity), h('div', null, [h('b', { text: f.title }), h('span', { text: f.why })])])); });
       if (!a.flags.length && !pills.length) spot.appendChild(h('p', { class: 'tka-empty', text: a.ai_scanned_at ? 'Nothing was flagged automatically. Check it by hand.' : 'Not scanned yet. Check it by hand.' }));
-      var tl = h('details', { class: 'tka-fold' }, [h('summary', { text: 'What the agent did on this ticket (' + a.timeline.length + ')' })]);
-      if (!a.timeline.length) tl.appendChild(h('p', { class: 'tka-empty', text: 'No replies, notes or updates from the agent are recorded yet.' }));
-      a.timeline.forEach(function (x) { tl.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(x.at) }), h('span', { text: x.text })])); });
-
       // checklist: flagged rules first, the rest tucked away
       var checkBox = h('div', { class: 'tka-card' }, [h('h3', { text: 'What was missed?' }), h('p', { class: 'tka-hint', text: 'Tick what you found and say what exactly was missed. Nothing is ticked for you.' })]);
       var allRules = a.rules.filter(function (r) { return r.enabled; });
@@ -324,10 +321,40 @@
       if (a.status === 'closed') actions.push(btn('Reopen audit', '', function () { api('/api/audits/ticket/' + id + '/reopen', {}).then(function () { viewAudit(body, id); }); }));
       var log = h('details', { class: 'tka-fold' }, [h('summary', { text: 'History (' + (a.log || []).length + ')' })].concat((a.log || []).map(function (l) { return h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(l.at) }), h('span', { text: nameOf(l.actor) + ' ' + String(l.action).replace(/_/g, ' ') + (l.note ? ': ' + l.note : '') })]); })));
       var back = btn('Back to the queue', 'ghost', function () { TA.auditId = null; render(); });
-      body.replaceChildren.apply(body, [back, head, spot, tl].concat(a.own ? [h('div', { class: 'tka-note', text: 'You handled this ticket, so you cannot audit it. Another SPOC will review it.' })] : [checkBox, verdictBox, actions.length ? h('div', { class: 'tka-actions pad' }, actions) : null]).concat([log]).filter(Boolean));
+      var side = h('div', { class: 'tka-side' }, [storyCard(id)]);
+      var main = h('div', { class: 'tka-main' }, [spot].concat(a.own ? [h('div', { class: 'tka-note', text: 'You handled this ticket, so you cannot audit it. Another SPOC will review it.' })] : [checkBox, verdictBox, actions.length ? h('div', { class: 'tka-actions pad' }, actions) : null]).concat([log]).filter(Boolean));
+      body.replaceChildren(back, head, h('div', { class: 'tka-cols' }, [main, side]));
+      if (TA.root) TA.root.classList.add('tka-wide');
       body.classList.add('tka-audit');
       try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
     });
+  }
+  // Right-hand panel: where the ticket stands now, the conversation in pointers, and the changes that mattered.
+  var KIND_LABEL = { created: 'Created', customer: 'Customer', agent: 'Agent reply', note: 'Note', status: 'Status', team: 'Team', owner: 'Owner', priority: 'Priority' };
+  function storyCard(id) {
+    var card = h('div', { class: 'tka-card tka-story' }, [h('h3', { text: 'Ticket at a glance' }), h('p', { class: 'tka-empty', text: 'Reading the ticket from Zoho Desk...' })]);
+    function load(refresh) {
+      api('/api/audits/ticket/' + id + '/story' + (refresh ? '?refresh=1' : '')).then(function (j) {
+        var kids = [h('div', { class: 'tka-inline between' }, [h('h3', { text: 'Ticket at a glance' }), btn('Refresh', 'ghost sm', function (ev) { busy(ev.currentTarget, true, 'Reading...'); load(true); })])];
+        if (!j.success || !j.available) { kids.push(h('p', { class: 'tka-empty', text: (j && (j.reason || j.error)) || 'Could not read the ticket.' })); card.replaceChildren.apply(card, kids); return; }
+        var c = j.current || {};
+        kids.push(h('div', { class: 'tka-now' }, [
+          h('div', { class: 'tka-inline' }, [pill(c.status || 'Unknown', c.escalated ? 'sev-high' : 'dest'), c.escalated ? pill('Escalated', 'sev-high') : null, c.overdue ? pill('Overdue', 'sev-medium') : null]),
+          j.statusLine ? h('p', { class: 'tka-ai-sum', text: j.statusLine }) : null,
+          h('div', { class: 'tka-kv' }, [['Owner', c.owner || 'none'], ['Team', c.team || 'unknown'], ['Waiting', c.waiting || ''], ['Messages', c.customerMessages + ' from customer, ' + c.agentReplies + ' agent repl' + (c.agentReplies === 1 ? 'y' : 'ies') + (c.notes ? ', ' + c.notes + ' note' + (c.notes === 1 ? '' : 's') : '')], ['Last customer', c.lastCustomerAt ? when(c.lastCustomerAt) : 'none'], ['Last agent reply', c.lastAgentAt ? when(c.lastAgentAt) : 'none']].map(function (kv) { return h('div', { class: 'tka-kvr' }, [h('span', { text: kv[0] }), h('b', { text: kv[1] })]); }))]));
+        kids.push(h('h4', { class: 'tka-sub-h', text: 'The conversation in short' }));
+        kids.push(h('div', { class: 'tka-pts' }, (j.points || []).map(function (p) { return h('div', { class: 'tka-pt' }, [h('i'), h('span', { text: p })]); })));
+        kids.push(h('h4', { class: 'tka-sub-h', text: 'What changed' }));
+        var tl = h('div', { class: 'tka-story-tl' }, (j.timeline || []).map(function (e) {
+          return h('div', { class: 'tka-ev k-' + e.kind }, [h('i'), h('div', null, [h('span', { class: 'tka-when', text: when(e.at) + (KIND_LABEL[e.kind] ? ' · ' + KIND_LABEL[e.kind] : '') }), h('p', { text: e.text })])]);
+        }));
+        kids.push(tl);
+        kids.push(h('p', { class: 'tka-when', text: (j.source === 'ai' ? 'Summarised by AI from Zoho Desk' : 'Read from Zoho Desk') + ', ' + when(j.at) }));
+        card.replaceChildren.apply(card, kids);
+      }).catch(function () { card.replaceChildren(h('h3', { text: 'Ticket at a glance' }), h('p', { class: 'tka-empty', text: 'Could not read the ticket.' })); });
+    }
+    load(false);
+    return card;
   }
   function fact(k, v) { return h('div', { class: 'tka-fact' }, [h('span', { text: k }), h('b', { text: v })]); }
 
