@@ -7052,6 +7052,41 @@ async function upsertAditkbRow(row) {
  *  already-synced tickets need it -- i.e. desk_ticket_snapshot rows
  *  whose modified_time has moved past the last metrics pull, up to
  *  `budget` tickets this tick (it'll catch up over later ticks). */
+// Session 74: Zoho event-history phase. Reads each ticket's history once
+// (newest modified first: last 90 days drain first, older tickets follow in
+// the background, changed tickets jump the queue) and stores team changes
+// and other updates made by monitored agents. Budgeted per tick.
+const DESK_HISTORY_BUDGET_PER_TICK = Number(process.env.DESK_HISTORY_BUDGET) || 200;
+async function runHistoryPhase(budget) {
+  if (!deskService.isConfigured()) return { done: 0, errors: 0 };
+  const { emails, agentNames } = await deskLifecycleAgentRoster();
+  if (!emails.length) return { done: 0, errors: 0 };
+  const cands = await deskLifecycle.historyCandidates(budget);
+  const teamNameById = await deskLifecycle.teamNameMap();
+  let done = 0, errors = 0, lastError = null;
+  for (const c of cands) {
+    if (deskService.getRateLimitState().paused) break;
+    try {
+      const hr = await deskService.fetchRaw(`/tickets/${c.ticket_id}/History?limit=100`);
+      const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
+      const list = Array.isArray(items) ? items : (items.data || []);
+      const evs = deskLifecycle.historyEventsFromItems(list, { emails, agentNames, teamNameById });
+      await deskLifecycle.storeHistoryEvents(c.ticket_id, evs, c.modified_time);
+      done++;
+    } catch (e) {
+      errors++; lastError = e.message;
+      if (e.status === 429) break;
+      // Permanent problems (deleted/forbidden ticket): mark as checked so it
+      // cannot block the queue; it is retried if the ticket changes again.
+      if (/Zoho Desk API (403|404)/.test(e.message)) await deskLifecycle.storeHistoryEvents(c.ticket_id, [], c.modified_time).catch(() => {});
+      if (errors >= 10) break;
+    }
+  }
+  await deskLifecycle.setSyncState('history_last_at', new Date().toISOString());
+  await deskLifecycle.setSyncState('history_last_error', lastError);
+  return { done, errors };
+}
+
 async function runMetricsRefreshPhase(budget) {
   let metricsRefreshed = 0, metricsErrors = 0, lastMetricsError = null;
   if (budget <= 0) return { metricsRefreshed, metricsErrors, lastMetricsError };
@@ -7233,6 +7268,11 @@ async function runDeskLifecycleSync() {
     metricsErrors = metricsResult.metricsErrors;
     lastMetricsError = metricsResult.lastMetricsError;
 
+    try {
+      const hp = await runHistoryPhase(DESK_HISTORY_BUDGET_PER_TICK);
+      if (hp.done || hp.errors) console.log(`📜 Desk history: ${hp.done} tickets read, ${hp.errors} errors`);
+    } catch (e) { console.warn('⚠️ Desk history phase failed:', e.message); }
+
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('last_error', snapshotError);
     await deskLifecycle.setSyncState('last_metrics_error', lastMetricsError);
@@ -7395,6 +7435,7 @@ app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
       activityConfigured: aditkbActivityService.isConfigured(), // Session 42: ADITKB_ACTIVITY_API_KEY set?
       csatConfigured: analyticsService.isConfigured(), csatRateLimit: analyticsService.getRateLimitState(),
       syncRunning: _deskSyncProgress.running, syncProgressPct, backfillComplete,
+      history: await deskLifecycle.historyProgress().catch(() => null),
       ...status,
     });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -8042,7 +8083,7 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
       'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal',
       'closed', 'fcr', 'csat', 'currently_handling',
       // Session 42: "tickets handled" family
-      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'assist', 'created_away', // Session 51
+      'handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'updated', 'assist', 'created_away', // Session 51
     ]);
     const metric = String(req.query.metric || 'unique');
     if (!VALID_METRICS.has(metric)) return res.status(400).json({ success: false, error: 'Invalid metric' });
@@ -8161,24 +8202,8 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
         const hr = await ds2.fetchRaw(`/tickets/${live.ticket.id}/History?limit=100`);
         const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
         const list = Array.isArray(items) ? items : (items.data || []);
-        const byName = {};
-        for (const e of emails) { const n = String(agentNames[e] || byEmail[e]?.full_name || '').trim().toLowerCase(); if (n) byName[n] = e; }
-        for (const it of list) {
-          const act = it.actor || {};
-          const em = String(act.email || act.emailId || '').toLowerCase();
-          const nm = String(act.name || [act.firstName, act.lastName].filter(Boolean).join(' ')).trim().toLowerCase();
-          const who = (em && emails.includes(em)) ? em : byName[nm];
-          if (!who) continue;
-          let text = String(it.eventName || 'Updated').replace(/([a-z])([A-Z])/g, '$1 $2');
-          const info = Array.isArray(it.eventInfo) ? it.eventInfo : [];
-          const ch = info.map(i => {
-            const pv = i && i.propertyValue;
-            const v = (x) => (x && typeof x === 'object') ? (x.name || x.value || '') : (x == null ? '' : x);
-            return pv && typeof pv === 'object' ? `${String(i.propertyName || '').replace(/([a-z])([A-Z])/g, '$1 $2')}: ${v(pv.previousValue)} to ${v(pv.updatedValue)}` : '';
-          }).filter(Boolean);
-          if (ch.length) text += ' (' + ch.join('; ') + ')';
-          (historyTouches[who] = historyTouches[who] || []).push({ at: it.eventTime || null, text });
-        }
+        live.historyEvents = deskLifecycle.historyEventsFromItems(list, { emails, agentNames, teamNameById: await deskLifecycle.teamNameMap() });
+        for (const ev of live.historyEvents) (historyTouches[ev.email] = historyTouches[ev.email] || []).push({ at: ev.at, text: ev.text });
       } catch (e) { console.warn('verify-ticket history read failed:', e.message); }
     }
     const involvedBase = await deskLifecycle.ticketInvolvedEmails({ ticketNumber: num, live, emails, agentNames });
@@ -8208,7 +8233,24 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
   } catch (e) { console.error('verify-ticket:', e.message); res.status(500).json({ success: false, error: 'Could not verify this ticket' }); }
 });
 
+// Session 74: raw Zoho history for one ticket (admin diagnostic), to confirm the real event shape.
+app.get('/api/admin/desk-lifecycle/debug-history', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try {
+    const num = String(req.query.ticket || '').replace(/[^0-9]/g, '').slice(0, 12);
+    if (!num) return res.status(400).json({ success: false, error: 'ticket required' });
+    const sr = await deskService.fetchRaw(`/tickets/search?ticketNumber=${num}&limit=1`);
+    const t = sr && sr.data && sr.data[0];
+    if (!t) return res.json({ success: true, found: false });
+    const hr = await deskService.fetchRaw(`/tickets/${t.id}/History?limit=100`);
+    const { emails, agentNames } = await deskLifecycleAgentRoster();
+    const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
+    const parsed = deskLifecycle.historyEventsFromItems(Array.isArray(items) ? items : (items.data || []), { emails, agentNames, teamNameById: await deskLifecycle.teamNameMap() });
+    res.json({ success: true, ticketId: t.id, parsed, raw: hr });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 app.use(errorTracker());
+
 
 
 let httpServer = null;

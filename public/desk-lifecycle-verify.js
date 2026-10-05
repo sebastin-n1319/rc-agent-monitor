@@ -179,6 +179,7 @@
     commented: { label: 'Commented on', basis: 'activity', def: 'Tickets this agent added a comment to (incl. private notes) during this period.' },
     assist: { label: 'Call notes on others\' tickets', basis: 'activity', def: 'Tickets created and owned by someone else where this agent only added a comment (usually a call note), with no reply and no ownership during this period. These already count in Tickets handled.' },
     created_away: { label: 'Created by you, now with someone else', basis: 'activity', def: 'Tickets this agent created (for example a phone ticket they logged) that are now owned by someone else. These already count in Tickets handled.' },
+    updated: { label: 'Updated in Zoho', basis: 'activity', def: 'Tickets where this agent changed the ticket in Zoho (for example moving it to another team, or editing status or fields) during this period, read from Zoho\'s event history. These already count in Tickets handled.' },
     owned: { label: 'Took ownership', basis: 'activity', def: 'Tickets that were assigned to this agent during this period (per Zoho\'s owner-change log).' },
     unique: {
       label: 'Unique tickets', basis: 'created',
@@ -217,7 +218,7 @@
       def: 'Tickets this agent currently owns that are still open, right now, a live count, not scoped to the period below.',
     },
   };
-  const METRIC_ORDER = ['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'assist', 'created_away', 'owned', 'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
+  const METRIC_ORDER = ['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'updated', 'assist', 'created_away', 'owned', 'unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal', 'closed', 'fcr', 'csat', 'currently_handling'];
 
   let _state = null;
   let _hostEl = null;
@@ -313,7 +314,7 @@
     }
 
     const ownerFamily = new Set(['unique', 'solely_handled', 'reassigned', 'transferred', 'handed_off_internal']);
-    const handledFamily = new Set(['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'assist', 'created_away']);
+    const handledFamily = new Set(['handled', 'handled_new', 'handled_followup', 'replied', 'commented', 'owned', 'updated', 'assist', 'created_away']);
     let head, rows;
     if (handledFamily.has(metric)) {
       head = '<th>Ticket</th><th>Subject</th><th>Status</th><th>Channel</th><th>Created</th><th>How</th>';
@@ -323,6 +324,7 @@
         if (t.replied) how.push('Replied');
         if (t.commented) how.push('Commented');
         if (t.owned) how.push('Owner');
+        if (t.updated) how.push('Updated in Zoho');
         if (t.assist) how.push('Call note (not owner)');
         if (t.created_away) how.push('Created by you');
         return `
@@ -459,7 +461,7 @@
           <span class="dlv-check-ic" aria-hidden="true">${c.included ? '✓' : '✕'}</span>
           <div><b>${esc(c.label)}: ${c.included ? 'in the list' : 'not in the list'}</b><span>${esc(c.reason)}</span></div>
         </li>`).join('');
-      const ev = (r.events || []).map(e => `<li class="${e.inPeriod ? 'in' : ''} ${e.pending ? 'pending' : ''}"><b>${esc({ reply: 'Reply', comment: 'Comment', owner: 'Became owner' }[e.type] || e.type)}</b> ${esc(e.when || '')}${e.pending ? ' · in Zoho, not synced yet' : ''}${e.inPeriod ? ' · in this period' : ''}</li>`).join('');
+      const ev = (r.events || []).map(e => `<li class="${e.inPeriod ? 'in' : ''} ${e.pending ? 'pending' : ''}"><b>${esc({ reply: 'Reply', comment: 'Comment', owner: 'Became owner', update: 'Updated the ticket', team_out: 'Moved out of T1' }[e.type] || e.type)}</b> ${esc(e.when || '')}${e.pending ? ' · in Zoho, not synced yet' : ''}${e.inPeriod ? ' · in this period' : ''}</li>`).join('');
       body = `
         <div class="dlv-check-ticket">
           ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">#${esc(t.number)}</a>` : `<b>#${esc(t.number)}</b>`}
