@@ -1916,7 +1916,7 @@ async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Ch
 }
 
 // ── Database maintenance ──────────────────────────────────────────────────────
-async function pruneOldData() {
+async function pruneOldData({ vacuum = 'auto' } = {}) {
   const results = {};
 
   // Presence events: BIGGEST table, poll every 2min × 13 agents = ~5MB/day.
@@ -1984,9 +1984,25 @@ async function pruneOldData() {
   // into the main db file, otherwise VACUUM won't reclaim WAL-held pages.
   try { await run(`PRAGMA wal_checkpoint(TRUNCATE)`); } catch(e) { /* non-fatal */ }
 
-  // VACUUM, physically reclaims disk space (DELETE only marks pages free)
-  await run(`VACUUM`);
-  results.vacuumed = true;
+  // VACUUM, physically reclaims disk space (DELETE only marks pages free).
+  // Session 86 (speed): VACUUM rewrites the whole file and blocks every other
+  // query while it runs, which froze the app after each deploy and every 2 hours.
+  // Freed pages are reused by SQLite anyway, so 'auto' only vacuums when a large
+  // share of the file is free space. The manual cleanup still forces it.
+  let doVacuum = vacuum === 'always';
+  try {
+    const pc = await get(`PRAGMA page_count`), fl = await get(`PRAGMA freelist_count`), ps = await get(`PRAGMA page_size`);
+    const pages = pc ? Object.values(pc)[0] : 0, free = fl ? Object.values(fl)[0] : 0, size = ps ? Object.values(ps)[0] : 4096;
+    results.dbMB = Math.round(pages * size / 1048576);
+    results.freeMB = Math.round(free * size / 1048576);
+    if (vacuum === 'auto' && pages && free / pages > 0.2 && free * size > 50 * 1048576) doVacuum = true;
+  } catch (e) { /* non-fatal */ }
+  if (doVacuum) {
+    const t0 = Date.now();
+    await run(`VACUUM`);
+    results.vacuumMs = Date.now() - t0;
+  }
+  results.vacuumed = doVacuum;
 
   return results;
 }

@@ -132,6 +132,29 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+// Session 86: Speed check. Records how long each API route takes (in memory only, no
+// request data), plus event-loop delay, so slow pages can be traced to a route.
+const _speed = { started: Date.now(), routes: new Map(), slow: [] };
+let _loopDelay = null;
+try { _loopDelay = require('perf_hooks').monitorEventLoopDelay({ resolution: 10 }); _loopDelay.enable(); } catch (e) { _loopDelay = null; }
+function _speedKey(req) {
+  const p = String(req.path || '').replace(/\/[0-9a-f]{16,}(?=\/|$)/gi, '/:id').replace(/\/\d+(?=\/|$)/g, '/:n').replace(/\/[^/]*@[^/]*(?=\/|$)/g, '/:email');
+  return req.method + ' ' + p;
+}
+app.use((req, res, next) => {
+  if (!req.path || !req.path.startsWith('/api/')) return next();
+  const t0 = process.hrtime.bigint();
+  res.on('finish', () => {
+    const ms = Number(process.hrtime.bigint() - t0) / 1e6;
+    const key = _speedKey(req);
+    let r = _speed.routes.get(key);
+    if (!r) { if (_speed.routes.size > 600) return; r = { n: 0, total: 0, max: 0, samples: [] }; _speed.routes.set(key, r); }
+    r.n++; r.total += ms; if (ms > r.max) r.max = ms;
+    r.samples.push(ms); if (r.samples.length > 200) r.samples.shift();
+    if (ms > 1500) { _speed.slow.push({ at: new Date().toISOString(), route: key, ms: Math.round(ms), status: res.statusCode }); if (_speed.slow.length > 60) _speed.slow.shift(); }
+  });
+  next();
+});
 
 // Session 9: baseline security headers, applied to ALL responses.
 // Permissive CSP because the app inlines a lot of script; we'll tighten
@@ -2755,7 +2778,7 @@ app.post('/api/db-cleanup', requireAdmin, rateLimit(2, 3600000), async (req, res
       archiveResult = await runArchive(true); // force=true ignores threshold
       if (archiveResult) insertAuditLog(req.session?.email||'system', 'manual_archive', 'google_sheets', JSON.stringify(archiveResult)).catch(()=>{});
     }
-    const results = await pruneOldData();
+    const results = await pruneOldData({ vacuum: 'always' });
     insertAuditLog(req.session?.email||'system', 'db_cleanup', 'manual', JSON.stringify(results)).catch(()=>{});
     res.json({ success: true, results, archiveResult });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -8374,6 +8397,24 @@ app.post('/api/audits/updates', requireAuth, requireAuditAccess, rateLimit(30, 6
 app.put('/api/audits/updates/:id', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.saveUpdate(req.audit.email, req.body || {}, Number(req.params.id)); res.json({ success: true }); }));
 app.post('/api/audits/updates/:id/publish', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { await ticketAudits.publishUpdate(req.audit.email, Number(req.params.id)); res.json({ success: true }); }));
 app.delete('/api/audits/updates/:id', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { await ticketAudits.deleteUpdate(Number(req.params.id)); res.json({ success: true }); }));
+
+// Session 86: Speed check report (admin). ?format=text for a paste-friendly table, ?reset=1 to start over.
+app.get('/api/admin/speed', requireAdmin, (req, res) => {
+  if (req.query.reset === '1') { _speed.routes.clear(); _speed.slow.length = 0; _speed.started = Date.now(); if (_loopDelay) _loopDelay.reset(); }
+  const pct = (arr, p) => { if (!arr.length) return 0; const a = arr.slice().sort((x, y) => x - y); return a[Math.min(a.length - 1, Math.floor(p * a.length))]; };
+  const routes = [..._speed.routes.entries()].map(([route, r]) => ({ route, calls: r.n, avg: Math.round(r.total / r.n), p95: Math.round(pct(r.samples, 0.95)), max: Math.round(r.max), totalSec: Math.round(r.total / 100) / 10 }))
+    .sort((a, b) => b.p95 - a.p95).slice(0, 40);
+  const loop = _loopDelay ? { meanMs: Math.round(_loopDelay.mean / 1e5) / 10, p99Ms: Math.round(_loopDelay.percentile(99) / 1e5) / 10, maxMs: Math.round(_loopDelay.max / 1e5) / 10 } : null;
+  const mem = process.memoryUsage();
+  const out = { since: new Date(_speed.started).toISOString(), uptimeMin: Math.round(process.uptime() / 60), eventLoop: loop, memoryMB: { rss: Math.round(mem.rss / 1048576), heap: Math.round(mem.heapUsed / 1048576) }, slowest: routes, recentSlow: _speed.slow.slice(-20).reverse() };
+  if (req.query.format === 'text') {
+    const lines = [`Speed check since ${out.since} (uptime ${out.uptimeMin} min)`, loop ? `Event loop delay: mean ${loop.meanMs} ms, p99 ${loop.p99Ms} ms, max ${loop.maxMs} ms` : '', `Memory: ${out.memoryMB.rss} MB`, '', 'p95 ms | avg ms | max ms | calls | route'];
+    for (const r of routes) lines.push(`${String(r.p95).padStart(6)} | ${String(r.avg).padStart(6)} | ${String(r.max).padStart(6)} | ${String(r.calls).padStart(5)} | ${r.route}`);
+    if (out.recentSlow.length) { lines.push('', 'Recent requests over 1.5 s:'); for (const x of out.recentSlow) lines.push(`${x.at}  ${x.ms} ms  ${x.status}  ${x.route}`); }
+    return res.type('text/plain').send(lines.join('\n'));
+  }
+  res.json({ success: true, ...out });
+});
 
 app.use(errorTracker());
 
