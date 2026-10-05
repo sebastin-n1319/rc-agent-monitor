@@ -323,3 +323,37 @@
 .tkt-tooltip.tkt-tooltip-below { transform: translateY(-6px) scale(.96); transform-origin: bottom center; }
 .tkt-tooltip.tkt-tooltip-visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
 @media (prefers-reduced-motion: reduce) { .tkt-tooltip { transition: none; } }
+
+/* Session 73: admin Verify ticket dialog (appended to body, outside #desk-lifecycle-root) */
+.tvk-overlay{position:fixed;inset:0;z-index:300000;background:rgba(15,24,36,.45);display:flex;align-items:flex-start;justify-content:center;padding:6vh 14px;overflow:auto;font-family:'Poppins',system-ui,sans-serif}
+.tvk-dialog{background:#fff;color:#0F1824;border-radius:14px;width:100%;max-width:640px;padding:18px 20px 16px;box-shadow:0 20px 60px rgba(15,24,36,.3)}
+.tvk-top{display:flex;align-items:center;justify-content:space-between}
+.tvk-title{font-size:17px;font-weight:700}
+.tvk-x{border:0;background:none;font-size:24px;line-height:1;cursor:pointer;color:#4B5563;padding:2px 8px}
+.tvk-sub{font-size:12.5px;color:#4B5563;margin:4px 0 12px}
+.tvk-form{display:flex;gap:8px}
+.tvk-input{flex:1;border:1px solid #EAECF0;border-radius:8px;padding:9px 12px;font:inherit;font-size:14px}
+.tvk-input:focus{outline:2px solid #F97316;outline-offset:1px}
+.tvk-go{border:0;border-radius:8px;background:#F97316;color:#fff;font:inherit;font-weight:600;padding:0 18px;cursor:pointer}
+.tvk-out{margin-top:12px}
+.tvk-msg{font-size:13px;color:#4B5563;background:#F8F9FC;border-radius:8px;padding:10px 12px;margin-top:8px}
+.tvk-err{color:#B91C1C;background:#FEF2F2}
+.tvk-ticket{display:flex;flex-direction:column;gap:2px;background:#F8F9FC;border-radius:10px;padding:10px 12px}
+.tvk-ticket a,.tvk-ticket b{font-weight:700;color:#F97316;text-decoration:none;font-size:15px}
+.tvk-ticket span{font-size:13px}
+.tvk-ticket small{font-size:11.5px;color:#4B5563}
+.tvk-range{font-size:11.5px;color:#9CA3AF;margin:8px 0 2px}
+.tvk-label{font-size:12px;font-weight:600;margin:10px 0 6px}
+.tvk-agent{border:1px solid #EAECF0;border-radius:10px;margin-bottom:6px}
+.tvk-agent summary{cursor:pointer;padding:9px 12px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;list-style:none}
+.tvk-agent summary::-webkit-details-marker{display:none}
+.tvk-agent summary b{font-size:13px}
+.tvk-agent summary span{display:flex;flex-wrap:wrap;gap:4px}
+.tvk-agent summary em{font-style:normal;font-size:11px;background:#ECFDF5;color:#047857;border-radius:999px;padding:2px 8px}
+.tvk-agent summary em.none{background:#F3F4F6;color:#4B5563}
+.tvk-agent ul{list-style:none;margin:0;padding:4px 12px 10px}
+.tvk-agent li{display:flex;gap:8px;font-size:12px;padding:5px 0;border-top:1px solid #F3F4F6}
+.tvk-agent li>span{width:14px;flex:none;font-weight:700}
+.tvk-agent li.in>span{color:#10B981}.tvk-agent li.out>span{color:#EF4444}
+.tvk-agent li i{display:block;font-style:normal;color:#4B5563}
+.tvk-foot{font-size:11px;color:#9CA3AF;margin-top:8px}

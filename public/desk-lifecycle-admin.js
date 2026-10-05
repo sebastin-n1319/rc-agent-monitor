@@ -746,9 +746,66 @@
         </div>
         <div class="tkt-filter-group">
           <span class="tkt-filter-label">&nbsp;</span>
+          <button type="button" class="tkt-btn tkt-btn-light tkt-verify-ticket-btn">Verify ticket</button>
           <button type="button" class="tkt-btn tkt-btn-light tkt-export-btn">Export CSV</button>
         </div>
       </div>`;
+  }
+
+
+  // Session 73: admin "Verify ticket" dialog. Any ticket number, every
+  // monitored agent who touched it, and how each is counted in the period.
+  function openVerifyTicket() {
+    const old = document.getElementById('tvk-overlay'); if (old) old.remove();
+    const ov = document.createElement('div');
+    ov.id = 'tvk-overlay'; ov.className = 'tvk-overlay';
+    ov.innerHTML = `
+      <div class="tvk-dialog" role="dialog" aria-modal="true" aria-labelledby="tvk-title">
+        <div class="tvk-top"><div id="tvk-title" class="tvk-title">Verify ticket</div><button type="button" class="tvk-x" aria-label="Close">&times;</button></div>
+        <div class="tvk-sub">Enter a Zoho Desk ticket number to see who owns it and which agents get credit for it in the selected period.</div>
+        <form class="tvk-form"><input class="tvk-input" inputmode="numeric" autocomplete="off" placeholder="Ticket number, e.g. 400350"><button type="submit" class="tvk-go">Verify</button></form>
+        <div class="tvk-out"></div>
+      </div>`;
+    document.body.appendChild(ov);
+    const input = ov.querySelector('.tvk-input'), out = ov.querySelector('.tvk-out');
+    const close = () => { ov.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+    ov.querySelector('.tvk-x').addEventListener('click', close);
+    ov.addEventListener('mousedown', (e) => { if (e.target === ov) close(); });
+    setTimeout(() => input.focus(), 30);
+    ov.querySelector('.tvk-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const num = input.value.replace(/[^0-9]/g, '');
+      if (!num) { input.focus(); return; }
+      out.innerHTML = '<div class="tvk-msg">Checking the synced data and Zoho Desk\u2026</div>';
+      try {
+        const range = currentRange();
+        const params = new URLSearchParams({ ticket: num, from: range.from, to: range.to });
+        const r = await fetch(`/api/admin/desk-lifecycle/verify-ticket?${params.toString()}`, { credentials: 'include' });
+        const j = await r.json();
+        if (!r.ok || !j.success) throw new Error(j.error || `HTTP ${r.status}`);
+        if (!j.found) { out.innerHTML = `<div class="tvk-msg">${esc(j.reason || 'Ticket not found.')}</div>`; return; }
+        const t = j.ticket;
+        const agents = (j.agents || []).map((a) => {
+          const rows = a.checks.map(c => `<li class="${c.included ? 'in' : 'out'}"><span aria-hidden="true">${c.included ? '\u2713' : '\u2715'}</span><div><b>${esc(c.label)}: ${c.included ? 'counted' : 'not counted'}</b><i>${esc(c.reason)}</i></div></li>`).join('');
+          const chips = a.counted.length ? a.counted.map(l => `<em>${esc(l)}</em>`).join('') : '<em class="none">Not counted in this period</em>';
+          return `<details class="tvk-agent"><summary><b>${esc(a.name)}</b><span>${chips}</span></summary><ul>${rows}</ul></details>`;
+        }).join('');
+        out.innerHTML = `
+          <div class="tvk-ticket">
+            ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">#${esc(t.number)}</a>` : `<b>#${esc(t.number)}</b>`}
+            <span>${esc(t.subject || '')}</span>
+            <small>${esc(t.status || '')}${t.ownerName ? ' \u00b7 owner ' + esc(t.ownerName) : ''}${t.createdTime ? ' \u00b7 created ' + esc(fmtDateTime(t.createdTime)) : ''}${t.closedTime ? ' \u00b7 closed ' + esc(fmtDateTime(t.closedTime)) : ''}</small>
+          </div>
+          <div class="tvk-range">Period: ${esc(fmtDateTime(j.from))} to ${esc(fmtDateTime(j.to))}</div>
+          ${agents ? `<div class="tvk-label">Monitored agents on this ticket (${j.agents.length})</div>${agents}` : '<div class="tvk-msg">No monitored agent has a reply, comment or ownership entry on this ticket.</div>'}
+          ${j.truncated ? '<div class="tvk-msg">Showing the first 12 agents.</div>' : ''}
+          <div class="tvk-foot">${j.liveChecked ? 'Checked against Zoho Desk live and the synced data.' : 'Checked against the synced data (Zoho live read was not available).'}${j.sync && j.sync.lastActivitySync ? ' Activity last synced ' + esc(fmtDateTime(j.sync.lastActivitySync)) + '.' : ''}</div>`;
+      } catch (err) {
+        out.innerHTML = `<div class="tvk-msg tvk-err">${esc(err.message || 'Could not verify this ticket')}</div>`;
+      }
+    });
   }
 
   function wireFilterBar(root, status) {
@@ -781,6 +838,8 @@
       _agentQuery = agentSearch.value.trim();
       renderResults(root, status, _lastSummaryData, _lastPrevSummaryData);
     });
+    const vtBtn = $('.tkt-verify-ticket-btn', root);
+    if (vtBtn) vtBtn.addEventListener('click', openVerifyTicket);
     const exportBtn = $('.tkt-export-btn', root);
     if (exportBtn) exportBtn.addEventListener('click', () => {
       const range = currentRange();

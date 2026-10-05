@@ -8128,7 +8128,58 @@ app.get('/api/desk-lifecycle/explain-ticket', requireAuth, rateLimit(20, 60000),
   } catch (e) { console.error('explain-ticket:', e.message); res.status(500).json({ success: false, error: 'Could not check this ticket' }); }
 });
 
+// Session 73: admin "Verify ticket". One ticket number, every monitored
+// agent who touched it, and how each one is counted in the period.
+app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const num = String(req.query.ticket || '').replace(/[^0-9]/g, '').slice(0, 12);
+    if (!num) return res.status(400).json({ success: false, error: 'Enter a ticket number' });
+    const from = req.query.from || new Date(Date.now() - 30 * 864e5).toISOString();
+    const to = req.query.to || new Date().toISOString();
+    const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+    let live = null;
+    try {
+      const ds = require('./lib/desk-service');
+      if (ds.isConfigured()) {
+        const sr = await ds.fetchRaw(`/tickets/search?ticketNumber=${num}&limit=1`);
+        const t = sr && sr.data && sr.data[0];
+        if (t) {
+          const [th, cm] = await Promise.all([
+            ds.fetchRaw(`/tickets/${t.id}/threads?limit=100`).catch(() => null),
+            ds.fetchRaw(`/tickets/${t.id}/comments?limit=100`).catch(() => null),
+          ]);
+          live = { ticket: t, threads: (th && th.data) || [], comments: (cm && cm.data) || [] };
+        }
+      }
+    } catch (e) { console.warn('verify-ticket live read failed:', e.message); }
+    const involved = await deskLifecycle.ticketInvolvedEmails({ ticketNumber: num, live, emails, agentNames });
+    let ticket = null, found = false, sync = null, liveChecked = !!live;
+    const agents = [];
+    const targets = involved.length ? involved.slice(0, 12) : [];
+    for (const email of targets) {
+      const out = await deskLifecycle.explainTicketForAgent({ ticketNumber: num, email, agentName: agentNames[email], from, to, live });
+      if (!out.found) continue;
+      found = true; ticket = out.ticket; sync = out.sync; liveChecked = out.liveChecked;
+      const third = (x) => String(x == null ? '' : x).replace(/\b(by|from|to|shows|show|add|adds|for|of|than|assigning it to) you\b/g, '$1 them').replace(/\byou are\b/g, 'they are').replace(/\bYou are\b/g, 'They are').replace(/\byou\b/g, 'they').replace(/\bYou\b/g, 'They').replace(/\byour\b/g, 'their').replace(/\bYour\b/g, 'Their');
+      out.checks = out.checks.map(c => ({ ...c, label: third(c.label), reason: third(c.reason) }));
+      agents.push({ email, name: byEmail[email]?.full_name || agentNames[email] || email, checks: out.checks, events: out.events,
+        counted: out.checks.filter(c => c.included && ['handled','replied','commented','owned','unique','transferred','closed','assist','created_away'].includes(c.key)).map(c => c.label) });
+    }
+    if (!found) {
+      // No monitored agent involved: still describe the ticket itself.
+      const first = emails[0];
+      if (first) {
+        const out = await deskLifecycle.explainTicketForAgent({ ticketNumber: num, email: first, agentName: agentNames[first], from, to, live });
+        if (!out.found) return res.json({ success: true, from, to, found: false, reason: out.reason });
+        ticket = out.ticket; found = true; sync = out.sync; liveChecked = out.liveChecked;
+      } else return res.json({ success: true, from, to, found: false, reason: 'No monitored agents are set up.' });
+    }
+    res.json({ success: true, from, to, found: true, ticket, agents, sync, liveChecked, truncated: involved.length > 12 });
+  } catch (e) { console.error('verify-ticket:', e.message); res.status(500).json({ success: false, error: 'Could not verify this ticket' }); }
+});
+
 app.use(errorTracker());
+
 
 let httpServer = null;
 
