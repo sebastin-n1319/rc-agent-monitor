@@ -70,16 +70,16 @@
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.0.1">
-<link rel="stylesheet" href="/ticket-audits.css?v=1.0.1" id="ticket-audits-link">
+<link rel="stylesheet" href="/ticket-audits.css?v=1.1.0" id="ticket-audits-link">
 <link rel="stylesheet" href="/access-control.css?v=1.2.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.0.0" defer></script>
-<script src="/ticket-audits.js?v=1.0.0" defer></script>
+<script src="/ticket-audits.js?v=1.1.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.1.1">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
-<script src="/notice-center.js?v=1.2.1" defer></script>
+<script src="/notice-center.js?v=1.2.2" defer></script>
 <script src="/alert-hub.js?v=1.1.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -740,7 +740,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">Tickets</span>
   </div>
   <!-- Session 76: Ticket audits (SPOC review of transferred tickets) -->
-  <div class="sb-item" id="sb-audits" title="Ticket audits: review tickets moved to other teams"
+  <div class="sb-item ap-hidden" id="sb-audits" title="Ticket audits: review tickets moved to other teams"
        onclick="sbAdmin('audits',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
     <span class="sb-label">Audits</span>
@@ -811,7 +811,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">Alerts</span>
   </div>
   <!-- Session 76: Ticket audits for SPOCs (shown only to SPOCs and admins) -->
-  <div class="sb-item" id="sb-agent-audits" style="display:none" title="Ticket audits assigned to you"
+  <div class="sb-item ap-hidden" id="sb-agent-audits" title="Ticket audits assigned to you"
        onclick="sbAgent('audits',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
     <span class="sb-label">Audits</span>
@@ -2406,7 +2406,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </button>
     <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Alerts</button>
     <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
-    <button class="agent-shell-btn" id="agent-tab-audits" style="display:none" onclick="switchAgentSection('audits',this)">Audits</button>
+    <button class="agent-shell-btn ap-hidden" id="agent-tab-audits" onclick="switchAgentSection('audits',this)">Audits</button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">

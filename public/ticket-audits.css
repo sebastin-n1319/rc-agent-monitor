@@ -94,3 +94,9 @@ html.dark-mode .ta-page{--ta-surface:#111F2B;--ta-surface2:#152634;--ta-border:#
 .ta-bar-t i{display:block;height:100%;background:var(--ta-teal);border-radius:6px}
 @media(max-width:640px){.ta-bar{grid-template-columns:1fr}}
 .ta-card>.ta-input{width:100%;margin:6px 0;flex:none}
+
+.ta-ai{border-style:dashed}
+.ta-sugg{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-top:1px solid var(--ta-border)}
+.ta-sugg .ta-row-side{display:flex;gap:6px;flex-wrap:wrap}
+.ta-aibox{background:var(--ta-surface-2,rgba(7,43,64,.04));border-radius:10px;padding:10px 12px;margin-bottom:10px}
+@media (max-width:640px){.ta-sugg{flex-direction:column}}

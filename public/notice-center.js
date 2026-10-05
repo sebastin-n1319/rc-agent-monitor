@@ -66,6 +66,7 @@
     }
     if (i.link === 'app:audits') {
       S.open = false; draw();
+      if (!(window.TA && window.TA.me && window.TA.me.access)) return;
       try {
         var adminView = typeof isAdminRole === 'function' && isAdminRole() && typeof currentViewMode !== 'undefined' && currentViewMode !== 'agent';
         if (adminView && typeof sbAdmin === 'function') sbAdmin('audits', document.getElementById('sb-audits'));

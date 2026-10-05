@@ -8284,7 +8284,7 @@ const requireAuditAdmin = async (req, res, next) => {
 };
 app.get('/api/audits/me', requireAuth, auditWrap(async (req, res) => {
   const c = await auditCtx(req);
-  res.json({ success: true, admin: c.admin, spoc: c.spoc, access: c.access, open: c.access ? (await ticketAudits.counts({ email: c.email, admin: c.admin })).open : 0 });
+  res.json({ success: true, admin: c.admin, spoc: c.spoc, access: c.access, open: c.access ? (await ticketAudits.counts({ email: c.email, admin: c.admin })).open : 0, suggestions: c.access ? await ticketAudits.suggestionCount() : 0 });
 }));
 app.get('/api/audits/queue', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
   const c = req.audit, q = req.query;
@@ -8317,8 +8317,8 @@ app.post('/api/audits/queue-now', requireAuth, requireAuditAdmin, rateLimit(6, 6
 }));
 // rules
 app.get('/api/audits/rules', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, rules: await ticketAudits.listRules(), detectors: ticketAudits.DETECTORS }); }));
-app.post('/api/audits/rules', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { const id = await ticketAudits.createRule(req.audit.email, req.body || {}); res.json({ success: true, id }); }));
-app.put('/api/audits/rules/:id', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.updateRule(Number(req.params.id), req.body || {}); res.json({ success: true }); }));
+app.post('/api/audits/rules', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { const id = await ticketAudits.createRule(req.audit.email, req.body || {}); res.json({ success: true, id }); }));
+app.put('/api/audits/rules/:id', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.updateRule(Number(req.params.id), req.body || {}); res.json({ success: true }); }));
 app.delete('/api/audits/rules/:id', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.deleteRule(Number(req.params.id)); res.json({ success: true }); }));
 // SPOC management and settings
 app.get('/api/audits/spocs', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => {
@@ -8329,7 +8329,7 @@ app.get('/api/audits/spocs', requireAuth, requireAuditAdmin, auditWrap(async (re
   for (const p of people) if (p.email) map.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.full_name || p.pseudo || p.email, kind: 'Agent' });
   for (const a of admins) if (a.email && !map.has(a.email.toLowerCase())) map.set(a.email.toLowerCase(), { email: a.email.toLowerCase(), name: a.name || a.email, kind: 'Admin' });
   res.json({ success: true, spocs: await ticketAudits.listSpocs(), candidates: [...map.values()].sort((a, b) => a.name.localeCompare(b.name)),
-    settings: { autoQueue: (await ticketAudits.getSetting('auto_queue')) !== '0', queueSince: await ticketAudits.getSetting('queue_since') } });
+    settings: { autoQueue: (await ticketAudits.getSetting('auto_queue')) !== '0', autoAnalyze: (await ticketAudits.getSetting('auto_analyze')) !== '0', queueSince: await ticketAudits.getSetting('queue_since') } });
 }));
 app.post('/api/audits/spocs', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => {
   const email = String((req.body || {}).email || '').trim().toLowerCase();
@@ -8347,15 +8347,22 @@ app.delete('/api/audits/spocs/:email', requireAuth, requireAuditAdmin, rateLimit
 app.put('/api/audits/settings', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => {
   const b = req.body || {};
   if (b.autoQueue !== undefined) await ticketAudits.setSetting('auto_queue', b.autoQueue ? '1' : '0');
+  if (b.autoAnalyze !== undefined) await ticketAudits.setSetting('auto_analyze', b.autoAnalyze ? '1' : '0');
   if (b.sinceDays !== undefined) { const d = Math.max(1, Math.min(120, Number(b.sinceDays) || 14)); await ticketAudits.setSetting('queue_since', new Date(Date.now() - d * 864e5).toISOString()); }
   res.json({ success: true });
 }));
 app.get('/api/audits/insights', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.insights()) }); }));
+// AI analysis of auditors' findings: suggested rules and updates
+app.get('/api/audits/suggestions', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, suggestions: await ticketAudits.listSuggestions(), analyzedAt: await ticketAudits.getSetting('analyzed_at'), auto: (await ticketAudits.getSetting('auto_analyze')) !== '0' }); }));
+app.post('/api/audits/suggestions/analyze', requireAuth, requireAuditAccess, rateLimit(5, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.analyze({ by: req.audit.email, force: true })) }); }));
+app.post('/api/audits/suggestions/:id/accept', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.acceptSuggestion(Number(req.params.id), req.audit.email)) }); }));
+app.post('/api/audits/suggestions/:id/dismiss', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.dismissSuggestion(Number(req.params.id), req.audit.email); res.json({ success: true }); }));
+app.post('/api/audits/rules/draft', requireAuth, requireAuditAccess, rateLimit(15, 60000), auditWrap(async (req, res) => { res.json({ success: true, rule: await ticketAudits.draftRule((req.body || {}).words) }); }));
 // updates (process and product updates built from audit findings)
-app.get('/api/audits/updates', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, updates: await ticketAudits.listUpdates() }); }));
-app.post('/api/audits/updates/draft', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { res.json({ success: true, draft: await ticketAudits.draftUpdate(req.body || {}) }); }));
-app.post('/api/audits/updates', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { res.json({ success: true, id: await ticketAudits.saveUpdate(req.audit.email, req.body || {}) }); }));
-app.put('/api/audits/updates/:id', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.saveUpdate(req.audit.email, req.body || {}, Number(req.params.id)); res.json({ success: true }); }));
+app.get('/api/audits/updates', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, updates: await ticketAudits.listUpdates() }); }));
+app.post('/api/audits/updates/draft', requireAuth, requireAuditAccess, rateLimit(15, 60000), auditWrap(async (req, res) => { res.json({ success: true, draft: await ticketAudits.draftUpdate(req.body || {}) }); }));
+app.post('/api/audits/updates', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { res.json({ success: true, id: await ticketAudits.saveUpdate(req.audit.email, req.body || {}) }); }));
+app.put('/api/audits/updates/:id', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.saveUpdate(req.audit.email, req.body || {}, Number(req.params.id)); res.json({ success: true }); }));
 app.post('/api/audits/updates/:id/publish', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { await ticketAudits.publishUpdate(req.audit.email, Number(req.params.id)); res.json({ success: true }); }));
 app.delete('/api/audits/updates/:id', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { await ticketAudits.deleteUpdate(Number(req.params.id)); res.json({ success: true }); }));
 

@@ -47,8 +47,8 @@
 
   // ── shell ────────────────────────────────────────────────────────────
   function tabs() {
-    var t = [['queue', 'Queue'], ['rules', 'Rule list']];
-    if (isAdmin()) t = t.concat([['spocs', 'SPOC management'], ['updates', 'Updates'], ['insights', 'Insights']]);
+    var t = [['queue', 'Queue'], ['rules', 'Rule list'], ['updates', 'Updates']];
+    if (isAdmin()) t = t.concat([['spocs', 'SPOC management'], ['insights', 'Insights']]);
     return t;
   }
   TA.open = function (mode) {
@@ -89,7 +89,7 @@
     api('/api/audits/me').then(function (m) {
       if (!m || !m.success) return;
       TA.me = m;
-      ['sb-agent-audits', 'agent-tab-audits'].forEach(function (id) { var el = document.getElementById(id); if (el) el.style.display = m.access ? '' : 'none'; });
+      ['sb-agent-audits', 'agent-tab-audits', 'sb-audits'].forEach(function (id) { var el = document.getElementById(id); if (el) el.classList.toggle('ap-hidden', id === 'sb-audits' ? !m.admin : !m.access); });
       setBadge(m.open || 0);
     }).catch(function () {});
   };
@@ -260,17 +260,54 @@
 
   // ── rules ────────────────────────────────────────────────────────────
   var TEAMS = ['T2', 'T3/DEV', 'VOIP', 'CSM', 'POD'];
+  // AI suggestions written from auditors' findings. type: 'rule' or 'update'.
+  function suggestCard(type, sg, done) {
+    var items = ((sg && sg.suggestions) || []).filter(function (x) { return x.type === type; });
+    var card = h('div', { class: 'ta-card ta-ai' });
+    var title = type === 'rule' ? 'AI suggested rules' : 'AI suggested updates';
+    var analyze = btn('Analyze audits with AI', '', function () {
+      busy(analyze, true, 'Reading audits...');
+      api('/api/audits/suggestions/analyze', {}).then(function (r) {
+        busy(analyze, false, 'Analyze audits with AI');
+        if (!r.success) return toast(r.error || 'Could not analyze', 'error');
+        var n = (r.rules || 0) + (r.updates || 0); toast(n ? n + ' new suggestion' + (n > 1 ? 's' : '') : 'Nothing new to suggest yet');
+        done();
+      });
+    });
+    card.appendChild(h('div', { class: 'ta-inline between' }, [h('div', null, [h('h3', { text: title }), h('p', { class: 'ta-hint', text: sg && sg.analyzedAt ? 'Written from what SPOCs recorded in audits. Last read ' + when(sg.analyzedAt) + '.' : 'Written from what SPOCs record in audits. It also runs by itself after every 5 finished audits.' })]), analyze]));
+    if (!items.length) card.appendChild(h('p', { class: 'ta-empty', text: 'No suggestions waiting.' }));
+    items.forEach(function (x) {
+      var p = x;
+      var body = type === 'rule'
+        ? [h('div', { class: 'ta-row-top' }, [h('b', { text: p.title }), p.severity ? pill(p.severity, 'sev-' + p.severity) : null, pill(p.category || 'General', 'cat')]), p.description ? h('p', { class: 'ta-sub', text: p.description }) : null]
+        : [h('div', { class: 'ta-row-top' }, [h('b', { text: p.title }), pill(p.kind === 'product' ? 'Product' : 'Process', 'cat')]), h('p', { class: 'ta-sub', text: p.body || '' })];
+      if (x.evidence) body.push(h('p', { class: 'ta-when', text: 'Why: ' + x.evidence }));
+      var acceptBtn = btn(type === 'rule' ? 'Add rule' : 'Use as draft', 'primary', function () {
+        busy(acceptBtn, true);
+        api('/api/audits/suggestions/' + x.id + '/accept', {}).then(function (r) {
+          busy(acceptBtn, false);
+          if (!r.success) return toast(r.error || 'Failed', 'error');
+          toast(type === 'rule' ? 'Rule added' : 'Saved as a draft');
+          done();
+        });
+      });
+      card.appendChild(h('div', { class: 'ta-sugg' }, [h('div', { class: 'ta-rule-main' }, body), h('div', { class: 'ta-row-side' }, [acceptBtn, btn('Dismiss', 'ghost', function () { api('/api/audits/suggestions/' + x.id + '/dismiss', {}).then(function () { done(); }); })])]));
+    });
+    return card;
+  }
+
   function viewRules(body) {
     var host = h('div');
     body.appendChild(host);
-    Promise.all([api('/api/audits/rules'), isAdmin() ? api('/api/audits/insights') : Promise.resolve(null)]).then(function (res) {
-      var j = res[0], ins = res[1];
+    Promise.all([api('/api/audits/rules'), isAdmin() ? api('/api/audits/insights') : Promise.resolve(null), api('/api/audits/suggestions')]).then(function (res) {
+      var j = res[0], ins = res[1], sg = res[2];
       if (!j.success) { host.appendChild(h('div', { class: 'ta-note', text: j.error || 'Could not load rules' })); return; }
       var head = h('div', { class: 'ta-sectionhead' }, [h('div', null, [h('h3', { text: 'Rule list' }), h('p', { class: 'ta-hint', text: 'Rules with a detector highlight matching tickets in the queue. Checklist rules are for the SPOC to tick during an audit.' })])]);
-      if (isAdmin()) head.appendChild(btn('Add rule', 'primary', function () { ruleForm(null); }));
+      head.appendChild(btn('Add rule', 'primary', function () { ruleForm(null); }));
       host.append(head);
       var formHost = h('div'), listHost = h('div', { class: 'ta-list' });
       host.append(formHost);
+      host.appendChild(suggestCard('rule', sg, function () { TA.tab = 'rules'; render(); }));
       if (ins) {
         var unlisted = (ins.topMistakes || []).filter(function (m) { return m.rule_id == null; });
         if (unlisted.length) host.appendChild(h('div', { class: 'ta-card' }, [h('h3', { text: 'Written by SPOCs, not on the list yet' }), h('p', { class: 'ta-hint', text: 'Turn repeated mistakes into rules so they show up for every SPOC.' })].concat(unlisted.map(function (m) {
@@ -288,10 +325,10 @@
           h('div', { class: 'ta-rule-main' }, [h('div', { class: 'ta-row-top' }, [h('b', { text: r.title }), pill(r.severity, 'sev-' + r.severity), pill(r.category || 'General', 'cat')]),
             r.description ? h('p', { class: 'ta-sub', text: r.description }) : null,
             h('div', { class: 'ta-meta' }, [h('span', { text: det + extra }), h('span', { class: 'ta-when', text: 'Flagged ' + r.flagged + ', confirmed by SPOCs ' + r.confirmed })])])]);
-        if (isAdmin()) c.appendChild(h('div', { class: 'ta-row-side' }, [
+        c.appendChild(h('div', { class: 'ta-row-side' }, [
           btn(r.enabled ? 'On' : 'Off', r.enabled ? 'on' : '', function () { api('/api/audits/rules/' + r.id, { enabled: !r.enabled }, 'PUT').then(function () { viewRulesRefresh(); }); }, { 'aria-pressed': String(!!r.enabled) }),
           btn('Edit', '', function () { ruleForm(r); }),
-          btn('Delete', 'danger', function () { if (confirm('Delete this rule? Past audit notes keep its name.')) api('/api/audits/rules/' + r.id, null, 'DELETE').then(function () { viewRulesRefresh(); }); })]));
+          isAdmin() ? btn('Delete', 'danger', function () { if (confirm('Delete this rule? Past audit notes keep its name.')) api('/api/audits/rules/' + r.id, null, 'DELETE').then(function () { viewRulesRefresh(); }); }) : null]));
         return c;
       }
       function viewRulesRefresh() { TA.tab = 'rules'; render(); }
@@ -327,7 +364,19 @@
           busy(save, true);
           (r.id ? api('/api/audits/rules/' + r.id, payload, 'PUT') : api('/api/audits/rules', payload)).then(function (x) { busy(save, false); if (!x.success) return toast(x.error || 'Could not save', 'error'); toast('Rule saved'); viewRulesRefresh(); });
         });
-        formHost.replaceChildren(h('div', { class: 'ta-card' }, [h('h3', { text: r.id ? 'Edit rule' : 'New rule' }), f.title, h('div', { class: 'ta-inline' }, [f.category, f.severity]), f.description,
+        var words = h('textarea', { class: 'ta-note-in', rows: '2', maxlength: '800', placeholder: 'Describe the mistake in your own words, for example: agents move billing tickets to T2 without checking the invoice first', 'aria-label': 'Describe the rule in your own words' });
+        var fill = btn('Fill the form with AI', '', function () {
+          if (words.value.trim().length < 8) return toast('Describe the mistake in a sentence first', 'error');
+          busy(fill, true, 'Writing...');
+          api('/api/audits/rules/draft', { words: words.value }).then(function (x) {
+            busy(fill, false, 'Fill the form with AI');
+            if (!x.success) return toast(x.error || 'Could not write the rule', 'error');
+            var d = x.rule; f.title.value = d.title || ''; f.category.value = d.category || ''; f.description.value = d.description || ''; f.severity.value = d.severity || 'medium'; f.detector.value = d.detector || 'manual';
+            var ps = d.params || {}; f.a.value = d.detector === 'quick_transfer' ? (ps.minutes || 10) : (ps.count || 3); f.pattern.value = ps.pattern || ''; f.expected.value = ps.expected || 'T2'; drawDyn();
+            toast('Filled in. Check it and save.');
+          });
+        });
+        formHost.replaceChildren(h('div', { class: 'ta-card' }, [h('h3', { text: r.id ? 'Edit rule' : 'New rule' }), r.id ? null : h('div', { class: 'ta-aibox' }, [h('p', { class: 'ta-hint', text: 'Optional: let AI turn a sentence into a full rule, then edit anything.' }), words, h('div', { class: 'ta-actions' }, [fill])]), f.title, h('div', { class: 'ta-inline' }, [f.category, f.severity]), f.description,
           h('div', { class: 'ta-inline' }, [h('span', { text: 'How it is found' }), f.detector]), dyn, h('div', { class: 'ta-actions' }, [save, btn('Cancel', 'ghost', function () { formHost.replaceChildren(); })])]));
         formHost.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
@@ -353,8 +402,9 @@
       }) : [h('div', { class: 'ta-empty-card' }, [h('b', { text: 'No SPOCs yet' }), h('p', { text: 'Add people below. Queued tickets are shared between active SPOCs automatically, and nobody audits their own tickets.' })])];
       var since = h('input', { class: 'ta-input narrow', type: 'number', min: '1', max: '120', value: String(Math.max(1, Math.round((Date.now() - Date.parse(j.settings.queueSince || Date.now())) / 864e5)) || 14), 'aria-label': 'Days back' });
       var auto = h('input', { type: 'checkbox', id: 'ta-auto' }); auto.checked = !!j.settings.autoQueue;
+      var aa = h('input', { type: 'checkbox', id: 'ta-aa' }); aa.checked = j.settings.autoAnalyze !== false;
       var saveSet = btn('Save settings', '', function () {
-        api('/api/audits/settings', { autoQueue: auto.checked, sinceDays: Number(since.value) }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); });
+        api('/api/audits/settings', { autoQueue: auto.checked, sinceDays: Number(since.value), autoAnalyze: aa.checked }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); });
       });
       body.append(
         h('div', { class: 'ta-sectionhead' }, [h('div', null, [h('h3', { text: 'SPOC management' }), h('p', { class: 'ta-hint', text: 'SPOCs are existing agents or admins. They see the Ticket audits page with only the tickets assigned to them, plus the rule list.' })])]),
@@ -363,14 +413,15 @@
         h('div', { class: 'ta-card' }, [h('h3', { text: 'Queue settings' }),
           h('label', { class: 'ta-inline', for: 'ta-auto' }, [auto, h('span', { text: 'Add tickets automatically when an agent moves them out of T1' })]),
           h('div', { class: 'ta-inline' }, [h('span', { text: 'Include transfers from the last' }), since, h('span', { text: 'days' })]),
+          h('label', { class: 'ta-inline', for: 'ta-aa' }, [aa, h('span', { text: 'Let AI suggest new rules and updates after every 5 finished audits' })]),
           h('div', { class: 'ta-actions' }, [saveSet])]));
     });
   }
 
   // ── updates ──────────────────────────────────────────────────────────
   function viewUpdates(body) {
-    Promise.all([api('/api/audits/updates'), api('/api/audits/rules')]).then(function (res) {
-      var u = res[0], rj = res[1];
+    Promise.all([api('/api/audits/updates'), api('/api/audits/rules'), api('/api/audits/suggestions')]).then(function (res) {
+      var u = res[0], rj = res[1], sg = res[2];
       if (!u.success) { body.appendChild(h('div', { class: 'ta-note', text: u.error || 'Could not load updates' })); return; }
       var rules = (rj.rules || []).filter(function (r) { return r.enabled; });
       var cur = TA.editUpdate || { id: null, kind: 'process', title: '', body: '', rule_ids: TA.draftRules.slice(), audience: 'agents' };
@@ -398,6 +449,16 @@
           title.value = r.draft.title; text.value = r.draft.body; count.textContent = text.value.length + '/600';
         });
       });
+      var polishIn = h('input', { class: 'ta-input', maxlength: '200', placeholder: 'Optional: how to change it, for example shorter, add the correct steps', 'aria-label': 'How should AI change the text' });
+      var polish = btn('Polish with AI', '', function () {
+        if (text.value.trim().length < 10) return toast('Write the update first, then AI can polish it', 'error');
+        busy(polish, true, 'Polishing...');
+        api('/api/audits/updates/draft', { ruleIds: ids(), kind: kind.value, current: { title: title.value, body: text.value }, instruction: polishIn.value }).then(function (r) {
+          busy(polish, false, 'Polish with AI');
+          if (!r.success) return toast(r.error || 'Could not polish', 'error');
+          title.value = r.draft.title || title.value; text.value = r.draft.body || text.value; count.textContent = text.value.length + '/600';
+        });
+      });
       function payload() { return { kind: kind.value, title: title.value, body: text.value, audience: aud.value, rule_ids: ids() }; }
       function save(then) {
         return (cur.id ? api('/api/audits/updates/' + cur.id, payload(), 'PUT') : api('/api/audits/updates', payload())).then(function (r) {
@@ -405,8 +466,8 @@
           return r.id || cur.id;
         });
       }
-      var saveBtn = btn('Save draft', '', function () { busy(saveBtn, true); save().then(function (id) { busy(saveBtn, false); if (id) { toast('Draft saved'); TA.tab = 'updates'; render(); } }); });
-      var pub = btn('Publish to the bell', 'primary', function () {
+      var saveBtn = btn(cur.status === 'published' ? 'Save changes' : 'Save draft', '', function () { busy(saveBtn, true); save().then(function (id) { busy(saveBtn, false); if (id) { toast(cur.status === 'published' ? 'Changes saved' : 'Draft saved'); TA.tab = 'updates'; render(); } }); });
+      var pub = !isAdmin() ? null : btn('Publish to the bell', 'primary', function () {
         if (!title.value.trim() || !text.value.trim()) return toast('Add a title and text first', 'error');
         if (!confirm('Publish this ' + kind.value + ' update to ' + (aud.value === 'all' ? 'everyone' : 'all agents') + '?')) return;
         busy(pub, true, 'Publishing...');
@@ -418,13 +479,14 @@
       var list = u.updates.map(function (x) {
         var c = h('article', { class: 'ta-rule' }, [h('div', { class: 'ta-rule-main' }, [h('div', { class: 'ta-row-top' }, [h('b', { text: x.title }), pill(x.kind === 'product' ? 'Product' : 'Process', 'cat'), pill(x.status === 'published' ? 'Published' : 'Draft', x.status === 'published' ? 'st-approved' : 'st-pending')]),
           h('p', { class: 'ta-sub', text: x.body || '' }), h('div', { class: 'ta-meta' }, [h('span', { class: 'ta-when', text: x.status === 'published' ? 'Published ' + when(x.published_at) : 'Created ' + when(x.created_at) })])])]);
-        if (x.status !== 'published') c.appendChild(h('div', { class: 'ta-row-side' }, [btn('Edit', '', function () { TA.editUpdate = x; TA.tab = 'updates'; render(); }), btn('Delete', 'danger', function () { api('/api/audits/updates/' + x.id, null, 'DELETE').then(function () { TA.tab = 'updates'; render(); }); })]));
+        c.appendChild(h('div', { class: 'ta-row-side' }, [btn('Edit', '', function () { TA.editUpdate = x; TA.tab = 'updates'; render(); }), isAdmin() ? btn('Delete', 'danger', function () { if (confirm('Delete this update?')) api('/api/audits/updates/' + x.id, null, 'DELETE').then(function () { TA.tab = 'updates'; render(); }); }) : null]));
         return c;
       });
       body.append(
-        h('div', { class: 'ta-sectionhead' }, [h('div', null, [h('h3', { text: cur.id ? 'Edit update' : 'New update' }), h('p', { class: 'ta-hint', text: 'Pick the rules behind a recurring mistake, let AI draft a blameless update, edit it, then publish it to everyone\'s bell.' })])]),
+        suggestCard('update', sg, function () { TA.tab = 'updates'; render(); }),
+        h('div', { class: 'ta-sectionhead' }, [h('div', null, [h('h3', { text: cur.id ? (cur.status === 'published' ? 'Edit published update' : 'Edit update') : 'New update' }), h('p', { class: 'ta-hint', text: (isAdmin() ? 'Pick the rules behind a recurring mistake, let AI draft or polish a blameless update, edit it, then publish it to everyone\'s bell.' : 'Pick the rules behind a recurring mistake, let AI draft or polish a blameless update and save it. An admin publishes it.') + (cur.status === 'published' ? ' Saving also updates the bell entry.' : '') })])]),
         h('div', { class: 'ta-card' }, [h('div', { class: 'ta-inline' }, [kind, aud]), h('p', { class: 'ta-hint', text: 'Rules behind this update' }), ruleBox, gist, h('div', { class: 'ta-actions' }, [draft]),
-          title, text, h('div', { class: 'ta-inline between' }, [count]), h('div', { class: 'ta-actions' }, [saveBtn, pub, cur.id ? btn('New update', 'ghost', function () { TA.tab = 'updates'; render(); }) : null])]),
+          title, text, h('div', { class: 'ta-inline between' }, [count]), h('div', { class: 'ta-inline' }, [polishIn, polish]), h('div', { class: 'ta-actions' }, [saveBtn, cur.status === 'published' ? null : pub, cur.id ? btn('New update', 'ghost', function () { TA.tab = 'updates'; render(); }) : null])]),
         h('h3', { class: 'ta-h3', text: 'Drafts and published updates' }), h('div', { class: 'ta-list' }, list.length ? list : [h('p', { class: 'ta-empty', text: 'Nothing yet.' })]));
     });
   }
