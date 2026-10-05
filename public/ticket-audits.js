@@ -246,70 +246,68 @@
           a.web_url ? h('a', { class: 'tka-num big', href: a.web_url, target: '_blank', rel: 'noopener', text: '#' + a.ticket_number + ' (open in Zoho Desk)' }) : h('b', { class: 'tka-num big', text: '#' + a.ticket_number }),
           pill(STATUS_LABEL[a.status] || a.status, 'st-' + a.status)]),
         h('p', { class: 'tka-subject', text: a.subject || '' }),
-        h('div', { class: 'tka-facts' }, [
-          fact('Agent', nameOf(a.agent_email, a.agent_name)), fact('Moved to', a.dest_group || 'another team'), fact('Moved', when(a.transferred_at)),
-          fact('Now in Zoho', a.zoho_status || '-'), fact('Current owner', a.owner_name || '-'), fact('Channel', a.channel || '-'), fact('Account', a.account_name || '-')])]);
-      var reassign = null;
+        h('div', { class: 'tka-meta' }, [h('span', { text: nameOf(a.agent_email, a.agent_name) }), h('span', { class: 'tka-arrow', text: 'moved to' }), pill(a.dest_group || 'another team', 'dest'), h('span', { class: 'tka-when', text: when(a.transferred_at) }),
+          a.channel ? h('span', { class: 'tka-when', text: a.channel }) : null])]);
       if (isAdmin()) {
         var sel = h('select', { class: 'tka-input', 'aria-label': 'Assigned SPOC' }, [h('option', { value: '', text: 'No SPOC' })]);
         api('/api/audits/spocs').then(function (s) {
           (s.spocs || []).filter(function (x) { return x.active && x.email !== a.agent_email; }).forEach(function (x) { sel.appendChild(h('option', { value: x.email, text: nameOf(x.email, x.name) })); });
           sel.value = a.spoc_email || '';
         });
-        reassign = h('div', { class: 'tka-inline' }, [h('span', { text: 'Assigned to' }), sel, btn('Reassign', '', function () { api('/api/audits/ticket/' + id + '/reassign', { spoc: sel.value }).then(function (r) { toast(r.success ? 'Reassigned' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); })]);
-        head.appendChild(reassign);
+        head.appendChild(h('div', { class: 'tka-inline' }, [h('span', { class: 'tka-when', text: 'Assigned to' }), sel, btn('Reassign', 'sm', function () { api('/api/audits/ticket/' + id + '/reassign', { spoc: sel.value }).then(function (r) { toast(r.success ? 'Reassigned' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); })]));
       }
-      var flagBox = h('div', { class: 'tka-card' }, [h('h3', { text: 'Highlighted by the rule list' })]);
-      if (!a.flags.length) flagBox.appendChild(h('p', { class: 'tka-empty', text: 'No rule flagged this ticket automatically. Check it by hand.' }));
-      a.flags.forEach(function (f) { flagBox.appendChild(h('div', { class: 'tka-flag-row' }, [pill(f.severity, 'sev-' + f.severity), h('div', null, [h('b', { text: f.title }), h('span', { text: f.why })])])); });
-      var aiBox = h('div', { class: 'tka-card tka-ai' }, [h('div', { class: 'tka-inline between' }, [h('h3', { text: 'AI read of the conversation' }), btn('Re-scan', 'ghost sm', function (ev) { var b = ev.currentTarget; busy(b, true, 'Reading...'); api('/api/audits/ticket/' + id + '/rescan', {}).then(function (r) { busy(b, false, 'Re-scan'); if (!r.success) return toast(r.error || 'Failed', 'error'); viewAudit(body, id); }); })])]);
-      if (!a.ai_scanned_at) aiBox.appendChild(h('p', { class: 'tka-empty', text: 'Not scanned yet. It runs by itself shortly after a ticket is queued.' }));
-      else {
-        if (a.ai_summary) aiBox.appendChild(h('p', { class: 'tka-ai-sum', text: a.ai_summary }));
-        if (!(a.aiSignals || []).length) aiBox.appendChild(h('p', { class: 'tka-empty', text: 'No frustration, missed follow-up, escalation or cancellation signs found.' }));
-        (a.aiSignals || []).forEach(function (x) { aiBox.appendChild(h('div', { class: 'tka-flag-row' }, [pill(SIGNAL_LABEL[x.key] || x.key, 'ai ai-' + x.key), h('div', null, [h('span', { text: x.evidence || '' })])])); });
-        aiBox.appendChild(h('p', { class: 'tka-when', text: (a.ai_source === 'ai' ? 'Read by AI' : 'Keyword scan') + ', ' + when(String(a.ai_scanned_at).replace(' ', 'T') + 'Z') }));
-      }
-      var tl = h('div', { class: 'tka-card' }, [h('h3', { text: 'What the agent did on this ticket' })]);
+      // one short card with everything that was spotted automatically
+      var spot = h('div', { class: 'tka-card tka-ai' }, [h('div', { class: 'tka-inline between' }, [h('h3', { text: 'Spotted for you' }), btn('Re-scan', 'ghost sm', function (ev) { var b = ev.currentTarget; busy(b, true, 'Reading...'); api('/api/audits/ticket/' + id + '/rescan', {}).then(function (r) { busy(b, false, 'Re-scan'); if (!r.success) return toast(r.error || 'Failed', 'error'); viewAudit(body, id); }); }, { title: 'Read the conversation again with AI' })])]);
+      if (a.ai_summary) spot.appendChild(h('p', { class: 'tka-ai-sum', text: a.ai_summary }));
+      var pills = (a.aiSignals || []).map(function (x) { return pill(SIGNAL_LABEL[x.key] || x.key, 'ai ai-' + x.key, x.evidence); });
+      if (pills.length) spot.appendChild(h('div', { class: 'tka-flags' }, pills));
+      a.flags.forEach(function (f) { spot.appendChild(h('div', { class: 'tka-flag-row' }, [pill(f.severity, 'sev-' + f.severity), h('div', null, [h('b', { text: f.title }), h('span', { text: f.why })])])); });
+      if (!a.flags.length && !pills.length) spot.appendChild(h('p', { class: 'tka-empty', text: a.ai_scanned_at ? 'Nothing was flagged automatically. Check it by hand.' : 'Not scanned yet. Check it by hand.' }));
+      var tl = h('details', { class: 'tka-fold' }, [h('summary', { text: 'What the agent did on this ticket (' + a.timeline.length + ')' })]);
       if (!a.timeline.length) tl.appendChild(h('p', { class: 'tka-empty', text: 'No replies, notes or updates from the agent are recorded yet.' }));
       a.timeline.forEach(function (x) { tl.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(x.at) }), h('span', { text: x.text })])); });
 
-      // checklist
-      var checkBox = h('div', { class: 'tka-card' }, [h('h3', { text: 'What was missed' }), h('p', { class: 'tka-hint', text: 'Tick every mistake you found and add a short note. Flagged rules are highlighted but nothing is ticked for you.' })]);
-      var cats = {};
-      a.rules.filter(function (r) { return r.enabled; }).forEach(function (r) { (cats[r.category || 'General'] = cats[r.category || 'General'] || []).push(r); });
+      // checklist: flagged rules first, the rest tucked away
+      var checkBox = h('div', { class: 'tka-card' }, [h('h3', { text: 'What was missed?' }), h('p', { class: 'tka-hint', text: 'Tick what you found and say what exactly was missed. Nothing is ticked for you.' })]);
+      var allRules = a.rules.filter(function (r) { return r.enabled; });
       function ruleRow(key, label, ruleId, desc, flagInfo) {
         var st = checks[key] || (checks[key] = { on: false, note: '', label: label, rule_id: ruleId });
-        var note = h('textarea', { class: 'tka-note-in', rows: '2', placeholder: 'What exactly was missed? (shown to the agent)', maxlength: '600', value: st.note, 'aria-label': 'Note for ' + label });
+        var note = h('textarea', { class: 'tka-note-in', rows: '2', placeholder: 'What exactly was missed? (the agent will see this)', maxlength: '600', value: st.note, 'aria-label': 'Note for ' + label });
         note.addEventListener('input', function () { st.note = note.value; });
-        var cb = h('input', { type: 'checkbox', id: 'tka-ck-' + key, disabled: done && a.status !== 'closed' ? false : false });
+        var cb = h('input', { type: 'checkbox', id: 'tka-ck-' + key });
         cb.checked = st.on;
         var wrap = h('div', { class: 'tka-ck' + (flagInfo ? ' flagged' : '') + (st.on ? ' on' : '') }, [
-          h('label', { for: 'tka-ck-' + key }, [cb, h('span', { class: 'tka-ck-t' }, [h('b', { text: label }), desc ? h('em', { text: desc }) : null, flagInfo ? h('i', { text: 'Flagged: ' + flagInfo.why }) : null])]), note]);
+          h('label', { for: 'tka-ck-' + key, title: desc || '' }, [cb, h('span', { class: 'tka-ck-t' }, [h('b', { text: label }), flagInfo ? h('i', { text: 'Flagged: ' + flagInfo.why }) : null])]), note]);
         note.style.display = st.on ? '' : 'none';
         cb.addEventListener('change', function () { st.on = cb.checked; wrap.classList.toggle('on', cb.checked); note.style.display = cb.checked ? '' : 'none'; });
         return wrap;
       }
-      Object.keys(cats).forEach(function (c) {
-        checkBox.appendChild(h('div', { class: 'tka-cat', text: c }));
-        cats[c].forEach(function (r) { checkBox.appendChild(ruleRow('r' + r.id, r.title, r.id, r.description, flagged[r.id])); });
-      });
-      Object.keys(checks).filter(function (k) { return k.charAt(0) === 'c'; }).forEach(function (k) { checkBox.appendChild(ruleRow(k, checks[k].label, null, '', null)); });
-      var customIn = h('input', { class: 'tka-input', placeholder: 'Mistake that is not on the list', maxlength: '140', 'aria-label': 'Other mistake' });
-      checkBox.appendChild(h('div', { class: 'tka-inline' }, [customIn, btn('Add to this audit', '', function () {
+      var flaggedRules = allRules.filter(function (r) { return flagged[r.id]; }), otherRules = allRules.filter(function (r) { return !flagged[r.id]; });
+      flaggedRules.forEach(function (r) { checkBox.appendChild(ruleRow('r' + r.id, r.title, r.id, r.description, flagged[r.id])); });
+      var moreWrap = h('div', { class: 'tka-more' });
+      var more = h('details', { class: 'tka-fold', open: flaggedRules.length ? null : 'open' }, [h('summary', { text: flaggedRules.length ? 'Other things to check (' + otherRules.length + ')' : 'Things to check (' + otherRules.length + ')' }), moreWrap]);
+      otherRules.forEach(function (r) { moreWrap.appendChild(ruleRow('r' + r.id, r.title, r.id, r.description, null)); });
+      Object.keys(checks).filter(function (k) { return k.charAt(0) === 'c'; }).forEach(function (k) { moreWrap.appendChild(ruleRow(k, checks[k].label, null, '', null)); });
+      var customIn = h('input', { class: 'tka-input', placeholder: 'Something else that was missed', maxlength: '140', 'aria-label': 'Other mistake' });
+      var customRow = h('div', { class: 'tka-inline' }, [customIn, btn('Add', 'sm', function () {
         var label = customIn.value.trim(); if (!label) return;
         var key = 'c' + label; checks[key] = { on: true, note: '', label: label, rule_id: null };
-        checkBox.insertBefore(ruleRow(key, label, null, '', null), customIn.parentNode); customIn.value = '';
-      })]));
+        moreWrap.insertBefore(ruleRow(key, label, null, '', null), customRow); customIn.value = ''; more.open = true;
+      })]);
+      moreWrap.appendChild(customRow);
+      checkBox.appendChild(more);
 
-      var vr = h('div', { class: 'tka-radios' }, [
-        radio('correct', 'Transfer was correct'), radio('needs_fix', 'Needs correction: return to the agent')]);
-      function radio(val, label) {
-        var r = h('input', { type: 'radio', name: 'tka-verdict', id: 'tka-v-' + val, value: val });
-        r.checked = verdict === val; r.addEventListener('change', function () { verdict = val; });
-        return h('label', { for: 'tka-v-' + val, class: 'tka-radio' }, [r, h('span', { text: label })]);
+      var verdictHint = h('p', { class: 'tka-hint' });
+      function setHint() { verdictHint.textContent = verdict === 'needs_fix' ? 'The agent is tagged in the Live Ops alerts group with the misses and your feedback, and Ronnie is copied. The ticket stays with the agent until it is fixed.' : verdict === 'correct' ? 'The agent is thanked in their notifications.' : ''; }
+      var verdictBtns = h('div', { class: 'tka-verdicts' });
+      function vbtn(val, label, cls) {
+        var b = h('button', { type: 'button', class: 'tka-vbtn ' + cls + (verdict === val ? ' on' : ''), text: label, 'aria-pressed': String(verdict === val) });
+        b.addEventListener('click', function () { verdict = val; Array.prototype.forEach.call(verdictBtns.children, function (x) { var on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', String(on)); }); setHint(); });
+        return b;
       }
-      var summary = h('textarea', { class: 'tka-note-in', rows: '3', maxlength: '800', placeholder: 'Feedback for the agent: what to fix before this ticket moves on (kept blameless and specific)', value: a.summary || '', 'aria-label': 'Feedback for the agent' });
+      verdictBtns.append(vbtn('correct', 'Transfer was correct', 'good'), vbtn('needs_fix', 'Needs correction', 'bad'));
+      setHint();
+      var summary = h('textarea', { class: 'tka-note-in', rows: '3', maxlength: '800', placeholder: 'Feedback for the agent: what to fix before this ticket moves on (specific and kind)', value: a.summary || '', 'aria-label': 'Feedback for the agent' });
       var submit = btn(done ? 'Update audit' : 'Submit audit', 'primary', function () {
         if (!verdict) return toast('Choose whether the transfer was correct or needs correction', 'error');
         var findings = Object.keys(checks).filter(function (k) { return checks[k].on; }).map(function (k) { return { rule_id: checks[k].rule_id, label: checks[k].label, note: checks[k].note }; });
@@ -317,17 +315,18 @@
         api('/api/audits/ticket/' + id + '/submit', { verdict: verdict, summary: summary.value, findings: findings }).then(function (r) {
           busy(submit, false, done ? 'Update audit' : 'Submit audit');
           if (!r.success) return toast(r.error || 'Could not save', 'error');
-          toast(r.status === 'returned' ? 'Returned to the agent with your feedback' : 'Audit approved'); viewAudit(body, id);
+          if (r.status === 'returned') toast(r.chat && r.chat.ok ? 'Returned. The agent was tagged in the Live Ops alerts group' : r.chat ? 'Returned, but the group message was not sent: ' + (r.chat.error || 'unknown reason') : 'Returned to the agent with your feedback', r.chat && !r.chat.ok ? 'error' : 'success'); else toast('Audit approved'); viewAudit(body, id);
         });
       });
-      var verdictBox = h('div', { class: 'tka-card' }, [h('h3', { text: 'Verdict' }), vr, summary,
-        h('p', { class: 'tka-hint', text: 'Returning a ticket keeps it with the agent. They are notified with your feedback. Move or fix the ticket in Zoho Desk, then close the audit here.' }), h('div', { class: 'tka-actions' }, [submit])]);
+      var verdictBox = h('div', { class: 'tka-card' }, [h('h3', { text: 'Your verdict' }), verdictBtns, summary, verdictHint, h('div', { class: 'tka-actions' }, [submit])]);
       var actions = [];
       if (a.status === 'returned' || a.status === 'approved') actions.push(btn('Mark closed', '', function () { api('/api/audits/ticket/' + id + '/close', {}).then(function (r) { toast(r.success ? 'Closed' : (r.error || 'Failed'), r.success ? 'success' : 'error'); viewAudit(body, id); }); }));
       if (a.status === 'closed') actions.push(btn('Reopen audit', '', function () { api('/api/audits/ticket/' + id + '/reopen', {}).then(function () { viewAudit(body, id); }); }));
-      var log = h('div', { class: 'tka-card' }, [h('h3', { text: 'History' })].concat((a.log || []).map(function (l) { return h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(l.at) }), h('span', { text: nameOf(l.actor) + ' ' + String(l.action).replace(/_/g, ' ') + (l.note ? ': ' + l.note : '') })]); })));
+      var log = h('details', { class: 'tka-fold' }, [h('summary', { text: 'History (' + (a.log || []).length + ')' })].concat((a.log || []).map(function (l) { return h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(l.at) }), h('span', { text: nameOf(l.actor) + ' ' + String(l.action).replace(/_/g, ' ') + (l.note ? ': ' + l.note : '') })]); })));
       var back = btn('Back to the queue', 'ghost', function () { TA.auditId = null; render(); });
-      body.replaceChildren(back, head, h('div', { class: 'tka-two' }, [h('div', null, [aiBox, flagBox, tl]), a.own ? h('div', { class: 'tka-note', text: 'You handled this ticket, so you cannot audit it. Another SPOC will review it.' }) : h('div', null, [checkBox, verdictBox, actions.length ? h('div', { class: 'tka-actions pad' }, actions) : null])]), log);
+      body.replaceChildren.apply(body, [back, head, spot, tl].concat(a.own ? [h('div', { class: 'tka-note', text: 'You handled this ticket, so you cannot audit it. Another SPOC will review it.' })] : [checkBox, verdictBox, actions.length ? h('div', { class: 'tka-actions pad' }, actions) : null]).concat([log]).filter(Boolean));
+      body.classList.add('tka-audit');
+      try { window.scrollTo(0, 0); } catch (e) { /* ignore */ }
     });
   }
   function fact(k, v) { return h('div', { class: 'tka-fact' }, [h('span', { text: k }), h('b', { text: v })]); }

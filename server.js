@@ -545,7 +545,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     productUpdates.setNotices(notices);
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
-    ticketAudits.setDeps({ notices, ai: require('./lib/ai') });
+    ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload) });
     // Announce new updates in the bell even when nobody has the Updates page open
     setTimeout(() => productUpdates.recent().catch(() => {}), 30000);
     setInterval(() => productUpdates.recent().catch(() => {}), 10 * 60 * 1000);
@@ -8296,7 +8296,7 @@ app.get('/api/audits/ticket/:id', requireAuth, requireAuditAccess, auditWrap(asy
   res.json({ success: true, audit: await ticketAudits.getAudit(Number(req.params.id), req.audit) });
 }));
 app.post('/api/audits/ticket/:id/start', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.startAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
-app.post('/api/audits/ticket/:id/submit', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { const status = await ticketAudits.submitAudit(Number(req.params.id), req.audit, req.body || {}); res.json({ success: true, status }); }));
+app.post('/api/audits/ticket/:id/submit', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { const out = await ticketAudits.submitAudit(Number(req.params.id), req.audit, req.body || {}); res.json({ success: true, status: out.status, chat: out.chat }); }));
 app.post('/api/audits/ticket/:id/close', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.closeAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
 app.post('/api/audits/ticket/:id/reopen', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.reopenAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
 app.post('/api/audits/ticket/:id/reassign', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.reassign(Number(req.params.id), req.audit.email, (req.body || {}).spoc); res.json({ success: true }); }));
