@@ -56,6 +56,14 @@
   }
   function openItem(i) {
     markRead([i]);
+    if (i.link === 'app:updates') {
+      S.open = false; draw();
+      try {
+        if (typeof isAdminRole === 'function' && isAdminRole() && typeof applyView === 'function' && typeof currentViewMode !== 'undefined' && currentViewMode !== 'agent') applyView('agent');
+        if (typeof sbAgent === 'function') sbAgent('updates', document.getElementById('sb-agent-updates'));
+      } catch (e) {}
+      return;
+    }
     if (i.link) { S.open = false; draw(); if (/^https:\/\//.test(i.link)) window.open(i.link, '_blank', 'noopener'); else window.location.href = i.link; }
   }
   function saveMute(key, on) {
@@ -142,12 +150,24 @@
     })));
     var stale = S.build && S.firstBuild && S.build !== S.firstBuild
       ? el('div', { class: 'nc-refresh' }, [el('span', { text: 'A new version of the tool is ready.' }), el('button', { type: 'button', text: 'Refresh', onclick: function () { window.location.reload(); } })]) : null;
-    var body = el('div', { class: 'nc-list' }, list.length ? list.map(function (i) {
+    function itemNode(i) {
       return el('button', { class: 'nc-item' + (i.read ? '' : ' unread') + (i.urgent ? ' urgent' : ''), type: 'button', onclick: function () { openItem(i); } }, [
         el('div', { class: 'nc-t', text: i.title }),
         i.body ? el('div', { class: 'nc-b', text: i.body }) : null,
         el('div', { class: 'nc-m' }, [el('span', { class: 'nc-chip', text: catLabel(i.category) }), el('span', { text: ago(i.at) })])]);
-    }) : [el('div', { class: 'nc-empty', text: S.err ? 'Could not load notifications. Retrying soon.' : 'Nothing new. You are all caught up.' })]);
+    }
+    // Grouped by type, in the order of the category list; newest first inside each group
+    var groups = [];
+    S.cats.forEach(function (c) { var g = list.filter(function (i) { return i.category === c.key; }); if (g.length) groups.push({ label: c.label, items: g }); });
+    var known = S.cats.map(function (c) { return c.key; });
+    var rest = list.filter(function (i) { return known.indexOf(i.category) === -1; }); if (rest.length) groups.push({ label: 'Other', items: rest });
+    var nodes = [];
+    groups.forEach(function (g) {
+      var un = g.items.filter(function (i) { return !i.read; }).length;
+      nodes.push(el('div', { class: 'nc-grp', role: 'heading', 'aria-level': '3' }, [el('span', { text: g.label }), el('span', { class: 'nc-grp-n' + (un ? ' on' : ''), text: un ? un + ' new' : String(g.items.length) })]));
+      g.items.forEach(function (i) { nodes.push(itemNode(i)); });
+    });
+    var body = el('div', { class: 'nc-list' }, nodes.length ? nodes : [el('div', { class: 'nc-empty', text: S.err ? 'Could not load notifications. Retrying soon.' : 'Nothing new. You are all caught up.' })]);
     var foot = S.admin ? el('div', { class: 'nc-foot' }, [el('button', { class: 'nc-btn', type: 'button', text: S.showForm ? 'Close form' : 'New announcement', onclick: function () { S.showForm = !S.showForm; if (S.showForm) loadPosted(); draw(); } })]) : null;
     [top, mute, stale, S.admin && S.showForm ? formBox() : null, S.admin && S.showForm ? postedBox() : null, body, foot].forEach(function (n) { if (n) panel.appendChild(n); });
   }

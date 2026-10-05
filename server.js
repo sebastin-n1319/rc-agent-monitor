@@ -542,6 +542,10 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     await notices.initSchema();
     productUpdates.setDB(db);
     await productUpdates.initSchema();
+    productUpdates.setNotices(notices);
+    // Announce new updates in the bell even when nobody has the Updates page open
+    setTimeout(() => productUpdates.recent().catch(() => {}), 30000);
+    setInterval(() => productUpdates.recent().catch(() => {}), 10 * 60 * 1000);
     regularise.setDB(db);
     await regularise.initSchema();
     regularise.setDeps({ insertBreakEvent, validActions: VALID_BREAK_ACTIONS, notices });
