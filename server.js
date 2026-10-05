@@ -8290,7 +8290,7 @@ app.get('/api/audits/queue', requireAuth, requireAuditAccess, auditWrap(async (r
   const c = req.audit, q = req.query;
   res.json({ success: true,
     counts: await ticketAudits.counts({ email: c.email, admin: c.admin }),
-    items: await ticketAudits.listQueue({ email: c.email, admin: c.admin, status: String(q.status || 'open'), spoc: q.spoc ? String(q.spoc) : '', agent: q.agent ? String(q.agent) : '', q: q.q ? String(q.q) : '' }) });
+    items: await ticketAudits.listQueue({ email: c.email, admin: c.admin, status: String(q.status || 'open'), spoc: q.spoc ? String(q.spoc) : '', agent: q.agent ? String(q.agent) : '', dest: q.dest ? String(q.dest) : '', signal: q.signal ? String(q.signal) : '', urgent: q.urgent === '1', q: q.q ? String(q.q) : '' }) });
 }));
 app.get('/api/audits/ticket/:id', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
   res.json({ success: true, audit: await ticketAudits.getAudit(Number(req.params.id), req.audit) });
@@ -8309,11 +8309,19 @@ app.get('/api/audits/agents', requireAuth, requireAuditAccess, auditWrap(async (
   const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
   res.json({ success: true, agents: emails.map(e => ({ email: e, name: byEmail[e]?.full_name || agentNames[e] || e })).sort((a, b) => a.name.localeCompare(b.name)) });
 }));
+app.get('/api/audits/summary', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.summary({ email: req.audit.email, admin: req.audit.admin })) }); }));
+app.get('/api/audits/facets', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.facets({ email: req.audit.email, admin: req.audit.admin })) }); }));
+app.post('/api/audits/rebalance', requireAuth, requireAuditAdmin, rateLimit(6, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.rebalance(req.audit.email)) }); }));
+app.post('/api/audits/rescan', requireAuth, requireAuditAccess, rateLimit(4, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.scanPending({ limit: 40, force: !!(req.body || {}).force })) }); }));
+app.post('/api/audits/ticket/:id/rescan', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.getAudit(Number(req.params.id), req.audit); await ticketAudits.scanAudit(Number(req.params.id)); res.json({ success: true, audit: await ticketAudits.getAudit(Number(req.params.id), req.audit) }); }));
 app.post('/api/audits/queue-now', requireAuth, requireAuditAdmin, rateLimit(6, 60000), auditWrap(async (req, res) => {
   const { agentNames } = await deskLifecycleAgentRoster();
   const r = await ticketAudits.enqueueTransfers({ agentNames });
   const a = await ticketAudits.assignUnassigned();
-  res.json({ success: true, ...r, reassigned: a.assigned });
+  const open = await ticketAudits.listQueue({ email: req.audit.email, admin: true, status: 'open' });
+  for (const x of open.slice(0, 200)) await ticketAudits.refreshFlags(x.id).catch(() => {});
+  ticketAudits.kickScan();
+  res.json({ success: true, ...r, reassigned: a.assigned, refreshed: Math.min(open.length, 200) });
 }));
 // rules
 app.get('/api/audits/rules', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, rules: await ticketAudits.listRules(), detectors: ticketAudits.DETECTORS }); }));

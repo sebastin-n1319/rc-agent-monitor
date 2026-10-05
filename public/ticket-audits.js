@@ -1,7 +1,7 @@
 /* Ticket audits: queue, audit form, rule list, SPOC management, updates and insights. */
 (function () {
   'use strict';
-  var TA = window.TA = { me: null, root: null, mode: 'admin', tab: 'queue', filter: 'open', spocFilter: '', q: '', auditId: null, draftRules: [], editUpdate: null };
+  var TA = window.TA = { me: null, root: null, mode: 'admin', tab: 'queue', filter: 'open', spocFilter: '', destF: '', agentF: '', signalF: '', sumOpen: true, q: '', auditId: null, draftRules: [], editUpdate: null };
   var BASE = (typeof BACKEND !== 'undefined' ? BACKEND : '');
 
   function h(tag, attrs, kids) {
@@ -124,13 +124,77 @@
       });
     }
     var top = h('div', { class: 'ta-toolbar' }, [search, addIn, addBtn]);
-    if (isAdmin()) top.appendChild(btn('Check for new transfers', '', function (ev) {
-      var b = ev.currentTarget; busy(b, true, 'Checking...');
-      api('/api/audits/queue-now', {}).then(function (j) { busy(b, false, 'Check for new transfers'); toast(j.success ? (j.queued ? j.queued + ' new transfer' + (j.queued > 1 ? 's' : '') + ' queued' : 'No new transfers found') : (j.error || 'Failed'), j.success ? 'success' : 'error'); load(); });
-    }));
-    body.append(top, chips, list);
+    var sumHost = h('div', { class: 'ta-sum' }), filterBar = h('div', { class: 'ta-filters' });
+    function refreshAll() { loadSummary(); load(); }
+    if (isAdmin()) {
+      top.appendChild(btn('Sync', '', function (ev) {
+        var b = ev.currentTarget; busy(b, true, 'Syncing...');
+        api('/api/audits/queue-now', {}).then(function (j) { busy(b, false, 'Sync'); toast(j.success ? (j.queued ? j.queued + ' new transfer' + (j.queued > 1 ? 's' : '') + ' queued, flags refreshed' : 'Up to date, flags refreshed') : (j.error || 'Failed'), j.success ? 'success' : 'error'); refreshAll(); });
+      }, { title: 'Pull in new transfers, refresh rule flags and scan new tickets with AI' }));
+      top.appendChild(btn('Assign equally', '', function (ev) {
+        if (!confirm('Reshuffle every pending ticket so each active SPOC gets the same number? Tickets already in audit stay where they are.')) return;
+        var b = ev.currentTarget; busy(b, true, 'Assigning...');
+        api('/api/audits/rebalance', {}).then(function (j) { busy(b, false, 'Assign equally'); toast(j.success ? (j.moved ? j.moved + ' of ' + j.total + ' pending tickets moved' : 'Already balanced') : (j.error || 'Failed'), j.success ? 'success' : 'error'); refreshAll(); });
+      }, { title: 'Round-robin all pending tickets across active SPOCs' }));
+    }
+    top.appendChild(btn('Re-scan with AI', '', function (ev) {
+      var b = ev.currentTarget; busy(b, true, 'Reading tickets...');
+      api('/api/audits/rescan', { force: true }).then(function (j) { busy(b, false, 'Re-scan with AI'); toast(j.success ? (j.busy ? 'A scan is already running' : j.scanned + ' ticket' + (j.scanned === 1 ? '' : 's') + ' scanned') : (j.error || 'Failed'), j.success ? 'success' : 'error'); refreshAll(); });
+    }, { title: 'AI reads the description and conversation to spot frustrated customers, missed follow-ups, escalations and cancellations' }));
+    function fmtH(x) { return x == null ? 'none' : x >= 48 ? Math.round(x / 24) + ' d' : x + ' h'; }
+    function tile(label, value, sub, cls, fn) {
+      return h(fn ? 'button' : 'div', { type: fn ? 'button' : null, class: 'ta-tile ' + (cls || '') + (fn ? ' click' : ''), onclick: fn || null }, [h('span', { class: 'ta-tile-l', text: label }), h('b', { class: 'ta-tile-v', text: String(value) }), sub ? h('span', { class: 'ta-tile-s', text: sub }) : null]);
+    }
+    function loadSummary() {
+      api('/api/audits/summary').then(function (j) {
+        if (!j.success) { sumHost.replaceChildren(); return; }
+        var q = j.queue, kids = [];
+        var head = h('div', { class: 'ta-inline between' }, [h('h3', { text: isAdmin() ? 'Auditor summary' : 'Your summary' }), btn(TA.sumOpen ? 'Hide' : 'Show', 'ghost sm', function () { TA.sumOpen = !TA.sumOpen; loadSummary(); })]);
+        kids.push(head);
+        if (TA.sumOpen) {
+          var tiles = [tile('Open', q.open, q.pending + ' pending', '', function () { TA.filter = 'open'; TA.urgentF = false; TA.signalF = ''; load(); }),
+            tile('Urgent by AI', q.urgent, j.aiReady ? 'cancellation, escalation, anger' : 'keyword scan only', q.urgent ? 'hot' : '', function () { TA.filter = 'open'; TA.signalF = 'urgent'; load(); })];
+          if (isAdmin()) tiles.push(tile('No SPOC yet', q.unassigned, q.unassigned ? 'use Assign equally' : 'all assigned', q.unassigned ? 'warn' : '', function () { TA.filter = 'open'; TA.spocFilter = 'none'; load(); }));
+          tiles.push(tile('Oldest waiting', fmtH(q.oldestHours), 'pending ticket'), tile('Audited', q.today + ' today', q.week + ' this week'), tile('Sent back', q.needsFixPct == null ? 'none' : q.needsFixPct + '%', q.done ? q.needsFix + ' of ' + q.done + ' audits' : 'no audits yet'));
+          kids.push(h('div', { class: 'ta-tiles' }, tiles));
+          if (j.unscanned) kids.push(h('p', { class: 'ta-hint', text: j.unscanned + ' ticket' + (j.unscanned === 1 ? '' : 's') + ' waiting for the AI scan. It runs by itself in the background.' }));
+          if (j.spocs && j.spocs.length) kids.push(h('div', { class: 'ta-spocs' }, j.spocs.map(function (s) {
+            var tot = s.approved + s.returned;
+            return h('div', { class: 'ta-spoc' + (s.active ? '' : ' off') }, [h('b', { text: s.name }), h('div', { class: 'ta-spoc-n' }, [h('span', null, [h('b', { text: String(s.open) }), ' open']), h('span', null, [h('b', { text: String(s.done) }), ' audited'])]),
+              h('span', { class: 'ta-when', text: (tot ? s.approved + ' approved, ' + s.returned + ' sent back' : 'no verdicts yet') + (s.avgHours != null ? ', about ' + s.avgHours + ' h each' : '') + (s.active ? '' : ', paused') })]);
+          })));
+          if (isAdmin() && (j.topMistakes || j.agents || j.destinations)) {
+            function mini(title, rows, fmt) { return h('div', { class: 'ta-mini' }, [h('b', { text: title })].concat(rows.length ? rows.map(function (r) { return h('div', { class: 'ta-mini-r' }, [h('span', { text: fmt[0](r) }), h('b', { text: fmt[1](r) })]); }) : [h('span', { class: 'ta-when', text: 'Not enough audits yet' })])); }
+            kids.push(h('div', { class: 'ta-minis' }, [
+              mini('Most missed', j.topMistakes || [], [function (r) { return r.label; }, function (r) { return String(r.count); }]),
+              mini('Agents with most mistakes', (j.agents || []).filter(function (r) { return r.mistakes; }), [function (r) { return r.name; }, function (r) { return r.mistakes + ' in ' + r.audited; }]),
+              mini('Transferred to', j.destinations || [], [function (r) { return r.name; }, function (r) { return r.audited + (r.needs ? ' (' + r.needs + ' sent back)' : ''); }])]));
+          }
+        }
+        sumHost.replaceChildren.apply(sumHost, kids);
+      });
+    }
+    function loadFacets() {
+      api('/api/audits/facets').then(function (f) {
+        if (!f.success) return;
+        function sel(label, val, opts, set) {
+          var el = h('select', { class: 'ta-input', 'aria-label': label }, [h('option', { value: '', text: label })].concat(opts));
+          el.value = val || ''; el.addEventListener('change', function () { set(el.value); load(); }); return el;
+        }
+        var sigOpts = [h('option', { value: 'urgent', text: 'Urgent by AI (' + f.signals.urgent + ')' })].concat(Object.keys(f.signalLabels).map(function (k) { return h('option', { value: k, text: f.signalLabels[k] + ' (' + f.signals[k] + ')' }); }));
+        var bits = [
+          sel('Moved to: any team', TA.destF, f.dests.map(function (d) { return h('option', { value: d.name, text: d.name + ' (' + d.n + ')' }); }), function (v) { TA.destF = v; }),
+          sel('Agent: anyone', TA.agentF, f.agents.map(function (a) { return h('option', { value: a.email, text: a.name + ' (' + a.n + ')' }); }), function (v) { TA.agentF = v; }),
+          sel('Signal: any', TA.signalF, sigOpts, function (v) { TA.signalF = v; })];
+        if (isAdmin()) bits.push(sel('SPOC: anyone', TA.spocFilter, [h('option', { value: 'none', text: 'No SPOC yet' })].concat(f.spocs.map(function (a) { return h('option', { value: a.email, text: a.name + ' (' + a.n + ')' }); })), function (v) { TA.spocFilter = v; }));
+        bits.push(btn('Clear filters', 'ghost sm', function () { TA.destF = TA.agentF = TA.signalF = TA.spocFilter = ''; TA.q = ''; search.value = ''; loadFacets(); load(); }));
+        filterBar.replaceChildren.apply(filterBar, bits);
+      });
+    }
+    body.append(sumHost, top, filterBar, chips, list);
+    loadSummary(); loadFacets();
     function load() {
-      var qs = '?status=' + encodeURIComponent(TA.filter) + (TA.spocFilter ? '&spoc=' + encodeURIComponent(TA.spocFilter) : '') + (TA.q ? '&q=' + encodeURIComponent(TA.q) : '');
+      var qs = '?status=' + encodeURIComponent(TA.filter) + (TA.spocFilter ? '&spoc=' + encodeURIComponent(TA.spocFilter) : '') + (TA.destF ? '&dest=' + encodeURIComponent(TA.destF) : '') + (TA.agentF ? '&agent=' + encodeURIComponent(TA.agentF) : '') + (TA.signalF === 'urgent' ? '&urgent=1' : TA.signalF ? '&signal=' + encodeURIComponent(TA.signalF) : '') + (TA.q ? '&q=' + encodeURIComponent(TA.q) : '');
       api('/api/audits/queue' + qs).then(function (j) {
         if (!j.success) { list.replaceChildren(h('div', { class: 'ta-note', text: j.error || 'Could not load the queue' })); return; }
         setBadge(j.counts.open || 0);
@@ -150,16 +214,18 @@
     }
     load();
   }
+  var SIGNAL_LABEL = { frustrated: 'Frustrated', missed_followup: 'Missed follow-up', escalation: 'Escalation', cancellation: 'Cancellation risk' };
   function row(a) {
     var meta = [h('span', { text: nameOf(a.agent_email, a.agent_name) }), h('span', { class: 'ta-arrow', text: 'moved to' }), pill(a.dest_group || 'another team', 'dest'), h('span', { class: 'ta-when', text: ago(a.transferred_at) })];
     if (isAdmin()) meta.push(h('span', { class: 'ta-when', text: a.spoc_email ? 'SPOC: ' + nameOf(a.spoc_email, a.spoc_name) : 'No SPOC' }));
-    var flags = h('div', { class: 'ta-flags' }, a.flags.map(function (f) { return pill(f.title, 'sev-' + f.severity, f.why); }));
-    return h('article', { class: 'ta-row' + (a.flagScore >= 3 && (a.status === 'pending' || a.status === 'in_audit') ? ' hot' : '') }, [
+    var flags = h('div', { class: 'ta-flags' }, (a.aiSignals || []).map(function (x) { return pill('AI: ' + (SIGNAL_LABEL[x.key] || x.key), 'ai ai-' + x.key, x.evidence); }).concat(a.flags.map(function (f) { return pill(f.title, 'sev-' + f.severity, f.why); })));
+    var hasFlags = a.flags.length || (a.aiSignals || []).length;
+    return h('article', { class: 'ta-row' + (a.ai_priority >= 2 && (a.status === 'pending' || a.status === 'in_audit') ? ' hot' : a.flagScore >= 3 && (a.status === 'pending' || a.status === 'in_audit') ? ' warm' : '') }, [
       h('div', { class: 'ta-row-main' }, [
         h('div', { class: 'ta-row-top' }, [
           a.web_url ? h('a', { class: 'ta-num', href: a.web_url, target: '_blank', rel: 'noopener', text: '#' + a.ticket_number }) : h('b', { class: 'ta-num', text: '#' + a.ticket_number }),
           h('span', { class: 'ta-sub', text: a.subject || '' })]),
-        h('div', { class: 'ta-meta' }, meta), a.flags.length ? flags : null]),
+        h('div', { class: 'ta-meta' }, meta), a.ai_summary ? h('p', { class: 'ta-ai-sum', text: a.ai_summary }) : null, hasFlags ? flags : null]),
       h('div', { class: 'ta-row-side' }, [pill(STATUS_LABEL[a.status] || a.status, 'st-' + a.status),
         btn(a.status === 'pending' || a.status === 'in_audit' ? 'Audit' : 'View', a.status === 'pending' || a.status === 'in_audit' ? 'primary' : '', function () { TA.auditId = a.id; render(); })])]);
   }
@@ -196,6 +262,14 @@
       var flagBox = h('div', { class: 'ta-card' }, [h('h3', { text: 'Highlighted by the rule list' })]);
       if (!a.flags.length) flagBox.appendChild(h('p', { class: 'ta-empty', text: 'No rule flagged this ticket automatically. Check it by hand.' }));
       a.flags.forEach(function (f) { flagBox.appendChild(h('div', { class: 'ta-flag-row' }, [pill(f.severity, 'sev-' + f.severity), h('div', null, [h('b', { text: f.title }), h('span', { text: f.why })])])); });
+      var aiBox = h('div', { class: 'ta-card ta-ai' }, [h('div', { class: 'ta-inline between' }, [h('h3', { text: 'AI read of the conversation' }), btn('Re-scan', 'ghost sm', function (ev) { var b = ev.currentTarget; busy(b, true, 'Reading...'); api('/api/audits/ticket/' + id + '/rescan', {}).then(function (r) { busy(b, false, 'Re-scan'); if (!r.success) return toast(r.error || 'Failed', 'error'); viewAudit(body, id); }); })])]);
+      if (!a.ai_scanned_at) aiBox.appendChild(h('p', { class: 'ta-empty', text: 'Not scanned yet. It runs by itself shortly after a ticket is queued.' }));
+      else {
+        if (a.ai_summary) aiBox.appendChild(h('p', { class: 'ta-ai-sum', text: a.ai_summary }));
+        if (!(a.aiSignals || []).length) aiBox.appendChild(h('p', { class: 'ta-empty', text: 'No frustration, missed follow-up, escalation or cancellation signs found.' }));
+        (a.aiSignals || []).forEach(function (x) { aiBox.appendChild(h('div', { class: 'ta-flag-row' }, [pill(SIGNAL_LABEL[x.key] || x.key, 'ai ai-' + x.key), h('div', null, [h('span', { text: x.evidence || '' })])])); });
+        aiBox.appendChild(h('p', { class: 'ta-when', text: (a.ai_source === 'ai' ? 'Read by AI' : 'Keyword scan') + ', ' + when(String(a.ai_scanned_at).replace(' ', 'T') + 'Z') }));
+      }
       var tl = h('div', { class: 'ta-card' }, [h('h3', { text: 'What the agent did on this ticket' })]);
       if (!a.timeline.length) tl.appendChild(h('p', { class: 'ta-empty', text: 'No replies, notes or updates from the agent are recorded yet.' }));
       a.timeline.forEach(function (x) { tl.appendChild(h('div', { class: 'ta-tl' }, [h('span', { class: 'ta-when', text: when(x.at) }), h('span', { text: x.text })])); });
@@ -253,7 +327,7 @@
       if (a.status === 'closed') actions.push(btn('Reopen audit', '', function () { api('/api/audits/ticket/' + id + '/reopen', {}).then(function () { viewAudit(body, id); }); }));
       var log = h('div', { class: 'ta-card' }, [h('h3', { text: 'History' })].concat((a.log || []).map(function (l) { return h('div', { class: 'ta-tl' }, [h('span', { class: 'ta-when', text: when(l.at) }), h('span', { text: nameOf(l.actor) + ' ' + String(l.action).replace(/_/g, ' ') + (l.note ? ': ' + l.note : '') })]); })));
       var back = btn('Back to the queue', 'ghost', function () { TA.auditId = null; render(); });
-      body.replaceChildren(back, head, h('div', { class: 'ta-two' }, [h('div', null, [flagBox, tl]), h('div', null, [checkBox, verdictBox, actions.length ? h('div', { class: 'ta-actions pad' }, actions) : null])]), log);
+      body.replaceChildren(back, head, h('div', { class: 'ta-two' }, [h('div', null, [aiBox, flagBox, tl]), h('div', null, [checkBox, verdictBox, actions.length ? h('div', { class: 'ta-actions pad' }, actions) : null])]), log);
     });
   }
   function fact(k, v) { return h('div', { class: 'ta-fact' }, [h('span', { text: k }), h('b', { text: v })]); }
