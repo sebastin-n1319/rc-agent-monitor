@@ -394,7 +394,7 @@
       function ruleCard(r) {
         var det = r.detector === 'manual' ? 'Checklist' : r.detectorLabel;
         var ps = r.params || {};
-        var extra = r.detector === 'quick_transfer' ? ' (within ' + ps.minutes + ' min)' : r.detector === 'repeat_transfer' ? ' (' + ps.count + ' or more)' : (ps.pattern ? ' (' + ps.pattern + (ps.expected ? ' should go to ' + ps.expected : '') + ')' : '');
+        var extra = r.detector === 'quick_transfer' ? ' (within ' + ps.minutes + ' min)' : r.detector === 'repeat_transfer' ? ' (' + ps.count + ' or more)' : r.detector === 'no_followups' ? ' (' + (ps.count || 3) + ' follow-up days)' : (ps.pattern ? ' (' + ps.pattern + (ps.expected ? ' should go to ' + ps.expected : '') + ')' : '');
         var c = h('article', { class: 'ta-rule' + (r.enabled ? '' : ' off') }, [
           h('div', { class: 'ta-rule-main' }, [h('div', { class: 'ta-row-top' }, [h('b', { text: r.title }), pill(r.severity, 'sev-' + r.severity), pill(r.category || 'General', 'cat')]),
             r.description ? h('p', { class: 'ta-sub', text: r.description }) : null,
@@ -423,6 +423,7 @@
         function drawDyn() {
           var d = f.detector.value; dyn.replaceChildren();
           if (d === 'quick_transfer') dyn.append(h('span', { text: 'Flag when moved within' }), f.a, h('span', { text: 'minutes of creation' }));
+          if (d === 'no_followups') dyn.append(h('span', { text: 'Expect' }), f.a, h('span', { text: 'follow-up days after the first reply' }));
           if (d === 'repeat_transfer') dyn.append(h('span', { text: 'Flag at' }), f.a, h('span', { text: 'or more reassignments' }));
           if (d === 'category_team') dyn.append(f.pattern, h('span', { text: 'should go to' }), f.expected);
           if (d === 'subject_keyword') dyn.append(f.pattern);
@@ -431,7 +432,7 @@
         var save = btn(r.id ? 'Save rule' : 'Add rule', 'primary', function () {
           var d = f.detector.value, params = {};
           if (d === 'quick_transfer') params.minutes = Number(f.a.value);
-          if (d === 'repeat_transfer') params.count = Number(f.a.value);
+          if (d === 'repeat_transfer' || d === 'no_followups') params.count = Number(f.a.value);
           if (d === 'category_team') { params.pattern = f.pattern.value; params.expected = f.expected.value; }
           if (d === 'subject_keyword') params.pattern = f.pattern.value;
           var payload = { title: f.title.value, category: f.category.value, description: f.description.value, severity: f.severity.value, detector: d, params: params };
