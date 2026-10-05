@@ -540,6 +540,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     const { db } = require('./database');
     notices.setDB(db);
     await notices.initSchema();
+    productUpdates.setDB(db);
+    await productUpdates.initSchema();
     regularise.setDB(db);
     await regularise.initSchema();
     regularise.setDeps({ insertBreakEvent, validActions: VALID_BREAK_ACTIONS, notices });
@@ -1736,6 +1738,7 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 const assessments = require('./lib/assessments');
 const accessReq = require('./lib/access'); // Session 63: access requests
 const notices = require('./lib/notices'); // Session 68: tool-wide notification centre
+const productUpdates = require('./lib/product-updates'); // process and product updates from the Adit Updates site
 const regularise = require('./lib/regularise'); // Session 68: break regularise requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
 async function requireAssessAccess(req, res, next) {
@@ -1865,6 +1868,15 @@ app.get('/api/notices', requireAuth, rateLimit(120, 60000), noticeWrap(async (re
 app.post('/api/notices/read', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { const b = req.body || {}; await notices.markRead(req.session.email, Array.isArray(b.ids) ? b.ids : null, await isAdminSession(req)); res.json({ success: true }); }));
 app.put('/api/notices/prefs', requireAuth, rateLimit(60, 60000), noticeWrap(async (req, res) => { res.json({ success: true, muted: await notices.setMuted(req.session.email, (req.body || {}).muted) }); }));
 app.get('/api/admin/notices', requireAdmin, noticeWrap(async (req, res) => { res.json({ success: true, data: await notices.adminList() }); }));
+// Process and product updates (Adit Updates site). The key lives in env ADIT_UPDATES_KEY and never reaches the browser.
+const puWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Updates are not available right now' }); } };
+app.get('/api/updates', requireAuth, rateLimit(60, 60000), puWrap(async (req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ success: true, ...(await productUpdates.feedFor(req.session.email)), admin: await isAdminSession(req) }); }));
+app.post('/api/updates/ack', requireAuth, rateLimit(30, 60000), puWrap(async (req, res) => { const b = req.body || {}; const n = await productUpdates.ack(req.session.email, b.all ? 'all' : b.ids); res.json({ success: true, acknowledged: n, ...(await productUpdates.feedFor(req.session.email)) }); }));
+app.get('/api/admin/updates/report', requireAdmin, rateLimit(30, 60000), puWrap(async (req, res) => {
+  const list = await roster.listAgents({ includeRelieved: false }).catch(() => []);
+  const people = list.filter(a => a.email).map(a => ({ email: a.email, name: a.pseudo || a.full_name || a.email }));
+  res.json({ success: true, ...(await productUpdates.report(people)) });
+}));
 app.post('/api/admin/notices', requireAdmin, rateLimit(30, 60000), noticeWrap(async (req, res) => { res.json({ success: true, id: await notices.createNotice(req.session.email, req.body || {}) }); }));
 // AI drafts an announcement from a short gist. Nothing is posted: the admin reviews and edits first.
 app.post('/api/admin/notices/compose', requireAdmin, rateLimit(20, 60000), noticeWrap(async (req, res) => {

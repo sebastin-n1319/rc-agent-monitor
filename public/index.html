@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.116"></script>
+<script src="/adit-reset.js?v=1.19.117"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -69,10 +69,12 @@
 <link rel="stylesheet" href="/chat-reports.css?v=1.0.1">
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
+<link rel="stylesheet" href="/updates.css?v=1.0.1">
 <link rel="stylesheet" href="/access-control.css?v=1.2.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
+<script src="/updates.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.1.1">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.3">
 <script src="/notice-center.js?v=1.1.0" defer></script>
@@ -799,6 +801,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
        onclick="sbAgent('talerts',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path class="nx-wave" d="M2.8 8.5a9 9 0 0 1 2-3.7M21.2 8.5a9 9 0 0 0-2-3.7"/></svg>
     <span class="sb-label">Alerts</span>
+  </div>
+  <!-- Process and product updates from the Adit Updates site -->
+  <div class="sb-item" id="sb-agent-updates" title="Process and product updates from the last 7 days"
+       onclick="sbAgent('updates',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M5 5h11a2 2 0 0 1 2 2v12H7a2 2 0 0 1-2-2z"/><path d="M18 9h1.5A1.5 1.5 0 0 1 21 10.5V17a2 2 0 0 1-2 2"/><path d="M8.5 9h6M8.5 12.5h6M8.5 16h3.5"/></svg>
+    <span class="sb-label">Updates</span>
   </div>
   <!-- Session 57: assessments assigned to the agent -->
   <div class="sb-item" id="sb-agent-assess" title="Assessments assigned to you"
@@ -2380,6 +2388,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
       My Stats
     </button>
     <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Alerts</button>
+    <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">
@@ -3143,6 +3152,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   </div>
   <!-- Session 51: agent ticket alerts -->
   <div class="agent-shell-page av2" id="agent-section-talerts"><div id="t1-alerts-agent-root"></div></div>
+  <div class="agent-shell-page av2" id="agent-section-updates"><div id="pu-agent-root"></div></div>
   <!-- Session 57: assessments, embedded -->
   <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Session 20: self-service Ticket Lifecycle stats (My Ticket Stats) -->
@@ -4484,6 +4494,8 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   if(isTestMode()) setTimeout(showTestBanner, 600);
   // Show bonus notification once per session (not in test mode)
   if(!isTestMode()) setTimeout(()=>{ try{ showWeekendAnnouncement(); }catch(e){} }, 800);
+  // Unread process and product updates must be acknowledged before agents start
+  setTimeout(()=>{ try{ if(window.PU) window.PU.gate(role); }catch(e){} }, 1200);
 
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
@@ -4769,6 +4781,7 @@ function switchAgentSection(section,el){
   }
   if(section==='mystats'){ if(typeof openDeskLifecycleAgent==='function') openDeskLifecycleAgent(); }
   if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); }
+  if(section==='updates'){ if(window.PU) window.PU.open(); }
   if(section==='assess') loadAssessFrame('agent-section-assess');
   setTimeout(syncAssessLock, 0);
   // Session 44: populate the agent Dashboard right away when it opens.
