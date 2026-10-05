@@ -253,7 +253,7 @@
       if (isAdmin()) {
         var sel = h('select', { class: 'tka-input', 'aria-label': 'Assigned SPOC' }, [h('option', { value: '', text: 'No SPOC' })]);
         api('/api/audits/spocs').then(function (s) {
-          (s.spocs || []).filter(function (x) { return x.active; }).forEach(function (x) { sel.appendChild(h('option', { value: x.email, text: nameOf(x.email, x.name) })); });
+          (s.spocs || []).filter(function (x) { return x.active && x.email !== a.agent_email; }).forEach(function (x) { sel.appendChild(h('option', { value: x.email, text: nameOf(x.email, x.name) })); });
           sel.value = a.spoc_email || '';
         });
         reassign = h('div', { class: 'tka-inline' }, [h('span', { text: 'Assigned to' }), sel, btn('Reassign', '', function () { api('/api/audits/ticket/' + id + '/reassign', { spoc: sel.value }).then(function (r) { toast(r.success ? 'Reassigned' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); })]);
@@ -327,7 +327,7 @@
       if (a.status === 'closed') actions.push(btn('Reopen audit', '', function () { api('/api/audits/ticket/' + id + '/reopen', {}).then(function () { viewAudit(body, id); }); }));
       var log = h('div', { class: 'tka-card' }, [h('h3', { text: 'History' })].concat((a.log || []).map(function (l) { return h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(l.at) }), h('span', { text: nameOf(l.actor) + ' ' + String(l.action).replace(/_/g, ' ') + (l.note ? ': ' + l.note : '') })]); })));
       var back = btn('Back to the queue', 'ghost', function () { TA.auditId = null; render(); });
-      body.replaceChildren(back, head, h('div', { class: 'tka-two' }, [h('div', null, [aiBox, flagBox, tl]), h('div', null, [checkBox, verdictBox, actions.length ? h('div', { class: 'tka-actions pad' }, actions) : null])]), log);
+      body.replaceChildren(back, head, h('div', { class: 'tka-two' }, [h('div', null, [aiBox, flagBox, tl]), a.own ? h('div', { class: 'tka-note', text: 'You handled this ticket, so you cannot audit it. Another SPOC will review it.' }) : h('div', null, [checkBox, verdictBox, actions.length ? h('div', { class: 'tka-actions pad' }, actions) : null])]), log);
     });
   }
   function fact(k, v) { return h('div', { class: 'tka-fact' }, [h('span', { text: k }), h('b', { text: v })]); }
