@@ -7052,6 +7052,19 @@ async function upsertAditkbRow(row) {
  *  already-synced tickets need it -- i.e. desk_ticket_snapshot rows
  *  whose modified_time has moved past the last metrics pull, up to
  *  `budget` tickets this tick (it'll catch up over later ticks). */
+// Zoho caps History at 50 per page; page by `from` (index offset), newest first.
+async function fetchTicketHistoryItems(ticketId, maxPages = 4) {
+  const all = [];
+  for (let page = 0; page < maxPages; page++) {
+    const hr = await deskService.fetchRaw(`/tickets/${ticketId}/History?from=${page * 50 + 1}&limit=50`);
+    const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
+    const list = Array.isArray(items) ? items : (items.data || []);
+    all.push(...list);
+    if (list.length < 50) break;
+  }
+  return all;
+}
+
 // Session 74: Zoho event-history phase. Reads each ticket's history once
 // (newest modified first: last 90 days drain first, older tickets follow in
 // the background, changed tickets jump the queue) and stores team changes
@@ -7067,9 +7080,7 @@ async function runHistoryPhase(budget) {
   for (const c of cands) {
     if (deskService.getRateLimitState().paused) break;
     try {
-      const hr = await deskService.fetchRaw(`/tickets/${c.ticket_id}/History?limit=100`);
-      const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
-      const list = Array.isArray(items) ? items : (items.data || []);
+      const list = await fetchTicketHistoryItems(c.ticket_id);
       const evs = deskLifecycle.historyEventsFromItems(list, { emails, agentNames, teamNameById });
       await deskLifecycle.storeHistoryEvents(c.ticket_id, evs, c.modified_time);
       done++;
@@ -8198,10 +8209,7 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
     const historyTouches = {};
     if (live && live.ticket && live.ticket.id) {
       try {
-        const ds2 = require('./lib/desk-service');
-        const hr = await ds2.fetchRaw(`/tickets/${live.ticket.id}/History?limit=100`);
-        const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
-        const list = Array.isArray(items) ? items : (items.data || []);
+        const list = await fetchTicketHistoryItems(live.ticket.id);
         live.historyEvents = deskLifecycle.historyEventsFromItems(list, { emails, agentNames, teamNameById: await deskLifecycle.teamNameMap() });
         for (const ev of live.historyEvents) (historyTouches[ev.email] = historyTouches[ev.email] || []).push({ at: ev.at, text: ev.text });
       } catch (e) { console.warn('verify-ticket history read failed:', e.message); }
@@ -8241,10 +8249,9 @@ app.get('/api/admin/desk-lifecycle/debug-history', requireAdmin, rateLimit(10, 6
     const sr = await deskService.fetchRaw(`/tickets/search?ticketNumber=${num}&limit=1`);
     const t = sr && sr.data && sr.data[0];
     if (!t) return res.json({ success: true, found: false });
-    const hr = await deskService.fetchRaw(`/tickets/${t.id}/History?limit=100`);
+    const hr = await fetchTicketHistoryItems(t.id);
     const { emails, agentNames } = await deskLifecycleAgentRoster();
-    const items = Array.isArray(hr) ? hr : ((hr && hr.data) || []);
-    const parsed = deskLifecycle.historyEventsFromItems(Array.isArray(items) ? items : (items.data || []), { emails, agentNames, teamNameById: await deskLifecycle.teamNameMap() });
+    const parsed = deskLifecycle.historyEventsFromItems(hr, { emails, agentNames, teamNameById: await deskLifecycle.teamNameMap() });
     res.json({ success: true, ticketId: t.id, parsed, raw: hr });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
