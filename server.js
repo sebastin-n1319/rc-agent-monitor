@@ -543,6 +543,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     productUpdates.setDB(db);
     await productUpdates.initSchema();
     productUpdates.setNotices(notices);
+    ticketAudits.setDB(db);
+    await ticketAudits.initSchema();
+    ticketAudits.setDeps({ notices, ai: require('./lib/ai') });
     // Announce new updates in the bell even when nobody has the Updates page open
     setTimeout(() => productUpdates.recent().catch(() => {}), 30000);
     setInterval(() => productUpdates.recent().catch(() => {}), 10 * 60 * 1000);
@@ -1742,7 +1745,8 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 const assessments = require('./lib/assessments');
 const accessReq = require('./lib/access'); // Session 63: access requests
 const notices = require('./lib/notices'); // Session 68: tool-wide notification centre
-const productUpdates = require('./lib/product-updates'); // process and product updates from the Adit Updates site
+const productUpdates = require('./lib/product-updates');
+const ticketAudits = require('./lib/ticket-audits'); // Session 76: ticket audits
 const regularise = require('./lib/regularise'); // Session 68: break regularise requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
 async function requireAssessAccess(req, res, next) {
@@ -7283,6 +7287,11 @@ async function runDeskLifecycleSync() {
       const hp = await runHistoryPhase(DESK_HISTORY_BUDGET_PER_TICK);
       if (hp.done || hp.errors) console.log(`📜 Desk history: ${hp.done} tickets read, ${hp.errors} errors`);
     } catch (e) { console.warn('⚠️ Desk history phase failed:', e.message); }
+    try {
+      const { agentNames: an } = await deskLifecycleAgentRoster();
+      const q = await ticketAudits.enqueueTransfers({ agentNames: an });
+      if (q.queued) console.log(`🔎 Ticket audits: ${q.queued} transfers queued`);
+    } catch (e) { console.warn('⚠️ Ticket audit queue failed:', e.message); }
 
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('last_error', snapshotError);
@@ -8256,7 +8265,102 @@ app.get('/api/admin/desk-lifecycle/debug-history', requireAdmin, rateLimit(10, 6
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ── Session 76: Ticket audits ───────────────────────────────────────────
+// SPOCs (existing agents or admins) audit tickets that T1 agents moved to other
+// teams. Admins manage SPOCs, rules and updates; SPOCs see their own audits.
+const auditWrap = (fn) => async (req, res) => { try { await fn(req, res); } catch (e) { if (!e.status) console.error('ticket-audits:', e.message); res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'Ticket audits error' }); } };
+async function auditCtx(req) {
+  const admin = await isAdminSession(req);
+  const acc = await ticketAudits.accessFor(req.session.email, admin);
+  return { email: (req.session.email || '').toLowerCase(), admin, spoc: acc.spoc, access: acc.access };
+}
+const requireAuditAccess = async (req, res, next) => {
+  try { const c = await auditCtx(req); if (!c.access) return res.status(403).json({ success: false, error: 'Ticket audits are for SPOCs and admins' }); req.audit = c; next(); }
+  catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
+};
+const requireAuditAdmin = async (req, res, next) => {
+  try { const c = await auditCtx(req); if (!c.admin) return res.status(403).json({ success: false, error: 'Admin access required' }); req.audit = c; next(); }
+  catch (e) { res.status(500).json({ success: false, error: 'Access check failed' }); }
+};
+app.get('/api/audits/me', requireAuth, auditWrap(async (req, res) => {
+  const c = await auditCtx(req);
+  res.json({ success: true, admin: c.admin, spoc: c.spoc, access: c.access, open: c.access ? (await ticketAudits.counts({ email: c.email, admin: c.admin })).open : 0 });
+}));
+app.get('/api/audits/queue', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  const c = req.audit, q = req.query;
+  res.json({ success: true,
+    counts: await ticketAudits.counts({ email: c.email, admin: c.admin }),
+    items: await ticketAudits.listQueue({ email: c.email, admin: c.admin, status: String(q.status || 'open'), spoc: q.spoc ? String(q.spoc) : '', agent: q.agent ? String(q.agent) : '', q: q.q ? String(q.q) : '' }) });
+}));
+app.get('/api/audits/ticket/:id', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  res.json({ success: true, audit: await ticketAudits.getAudit(Number(req.params.id), req.audit) });
+}));
+app.post('/api/audits/ticket/:id/start', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.startAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
+app.post('/api/audits/ticket/:id/submit', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { const status = await ticketAudits.submitAudit(Number(req.params.id), req.audit, req.body || {}); res.json({ success: true, status }); }));
+app.post('/api/audits/ticket/:id/close', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.closeAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
+app.post('/api/audits/ticket/:id/reopen', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.reopenAudit(Number(req.params.id), req.audit); res.json({ success: true }); }));
+app.post('/api/audits/ticket/:id/reassign', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.reassign(Number(req.params.id), req.audit.email, (req.body || {}).spoc); res.json({ success: true }); }));
+app.post('/api/audits/add', requireAuth, requireAuditAccess, rateLimit(30, 60000), auditWrap(async (req, res) => {
+  const { emails, agentNames } = await deskLifecycleAgentRoster();
+  const r = await ticketAudits.addManual({ ticketNumber: (req.body || {}).ticket, agentEmail: (req.body || {}).agentEmail, by: req.audit.email, monitoredEmails: emails, agentNames });
+  res.json({ success: true, ...r });
+}));
+app.get('/api/audits/agents', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+  res.json({ success: true, agents: emails.map(e => ({ email: e, name: byEmail[e]?.full_name || agentNames[e] || e })).sort((a, b) => a.name.localeCompare(b.name)) });
+}));
+app.post('/api/audits/queue-now', requireAuth, requireAuditAdmin, rateLimit(6, 60000), auditWrap(async (req, res) => {
+  const { agentNames } = await deskLifecycleAgentRoster();
+  const r = await ticketAudits.enqueueTransfers({ agentNames });
+  const a = await ticketAudits.assignUnassigned();
+  res.json({ success: true, ...r, reassigned: a.assigned });
+}));
+// rules
+app.get('/api/audits/rules', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, rules: await ticketAudits.listRules(), detectors: ticketAudits.DETECTORS }); }));
+app.post('/api/audits/rules', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { const id = await ticketAudits.createRule(req.audit.email, req.body || {}); res.json({ success: true, id }); }));
+app.put('/api/audits/rules/:id', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.updateRule(Number(req.params.id), req.body || {}); res.json({ success: true }); }));
+app.delete('/api/audits/rules/:id', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await ticketAudits.deleteRule(Number(req.params.id)); res.json({ success: true }); }));
+// SPOC management and settings
+app.get('/api/audits/spocs', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => {
+  const roster = require('./lib/roster');
+  const people = await roster.listAgents({ includeRelieved: false }).catch(() => []);
+  const admins = await getAllRoles().then(r => (r || []).filter(x => x.role === 'admin')).catch(() => []);
+  const map = new Map();
+  for (const p of people) if (p.email) map.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.full_name || p.pseudo || p.email, kind: 'Agent' });
+  for (const a of admins) if (a.email && !map.has(a.email.toLowerCase())) map.set(a.email.toLowerCase(), { email: a.email.toLowerCase(), name: a.name || a.email, kind: 'Admin' });
+  res.json({ success: true, spocs: await ticketAudits.listSpocs(), candidates: [...map.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    settings: { autoQueue: (await ticketAudits.getSetting('auto_queue')) !== '0', queueSince: await ticketAudits.getSetting('queue_since') } });
+}));
+app.post('/api/audits/spocs', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => {
+  const email = String((req.body || {}).email || '').trim().toLowerCase();
+  const roster = require('./lib/roster');
+  const people = await roster.listAgents({ includeRelieved: false }).catch(() => []);
+  const admins = await getAllRoles().then(r => (r || []).filter(x => x.role === 'admin')).catch(() => []);
+  const ok = people.some(p => (p.email || '').toLowerCase() === email) || admins.some(a => (a.email || '').toLowerCase() === email);
+  if (!ok) return res.status(400).json({ success: false, error: 'SPOCs must be existing agents or admins' });
+  const person = people.find(p => (p.email || '').toLowerCase() === email) || admins.find(a => (a.email || '').toLowerCase() === email);
+  const r = await ticketAudits.addSpoc(req.audit.email, email, (req.body || {}).name || person.full_name || person.pseudo || person.name);
+  res.json({ success: true, assigned: r.assigned });
+}));
+app.put('/api/audits/spocs/:email', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.setSpocActive(req.params.email, !!(req.body || {}).active); res.json({ success: true }); }));
+app.delete('/api/audits/spocs/:email', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.removeSpoc(req.params.email); res.json({ success: true }); }));
+app.put('/api/audits/settings', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => {
+  const b = req.body || {};
+  if (b.autoQueue !== undefined) await ticketAudits.setSetting('auto_queue', b.autoQueue ? '1' : '0');
+  if (b.sinceDays !== undefined) { const d = Math.max(1, Math.min(120, Number(b.sinceDays) || 14)); await ticketAudits.setSetting('queue_since', new Date(Date.now() - d * 864e5).toISOString()); }
+  res.json({ success: true });
+}));
+app.get('/api/audits/insights', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.insights()) }); }));
+// updates (process and product updates built from audit findings)
+app.get('/api/audits/updates', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, updates: await ticketAudits.listUpdates() }); }));
+app.post('/api/audits/updates/draft', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { res.json({ success: true, draft: await ticketAudits.draftUpdate(req.body || {}) }); }));
+app.post('/api/audits/updates', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { res.json({ success: true, id: await ticketAudits.saveUpdate(req.audit.email, req.body || {}) }); }));
+app.put('/api/audits/updates/:id', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await ticketAudits.saveUpdate(req.audit.email, req.body || {}, Number(req.params.id)); res.json({ success: true }); }));
+app.post('/api/audits/updates/:id/publish', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { await ticketAudits.publishUpdate(req.audit.email, Number(req.params.id)); res.json({ success: true }); }));
+app.delete('/api/audits/updates/:id', requireAuth, requireAuditAdmin, rateLimit(15, 60000), auditWrap(async (req, res) => { await ticketAudits.deleteUpdate(Number(req.params.id)); res.json({ success: true }); }));
+
 app.use(errorTracker());
+
 
 
 

@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.117"></script>
+<script src="/adit-reset.js?v=1.19.118"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -70,14 +70,16 @@
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.0.1">
+<link rel="stylesheet" href="/ticket-audits.css?v=1.0.1" id="ticket-audits-link">
 <link rel="stylesheet" href="/access-control.css?v=1.2.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.0.0" defer></script>
+<script src="/ticket-audits.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.1.1">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
-<script src="/notice-center.js?v=1.2.0" defer></script>
+<script src="/notice-center.js?v=1.2.1" defer></script>
 <script src="/alert-hub.js?v=1.1.0" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -737,6 +739,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12a2.5 2.5 0 0 1 2.5 2.5v1.8a2.7 2.7 0 0 0 0 5.4v1.8A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-1.8a2.7 2.7 0 0 0 0-5.4z"/><path d="M3.5 7.5A2.5 2.5 0 0 1 6 5h12a2.5 2.5 0 0 1 2.5 2.5v1.8a2.7 2.7 0 0 0 0 5.4v1.8A2.5 2.5 0 0 1 18 19H6a2.5 2.5 0 0 1-2.5-2.5v-1.8a2.7 2.7 0 0 0 0-5.4z"/><path d="M14.5 5v2.2M14.5 10.9v2.2M14.5 16.8V19"/><path d="M7 10h4M7 14h3"/></svg>
     <span class="sb-label">Tickets</span>
   </div>
+  <!-- Session 76: Ticket audits (SPOC review of transferred tickets) -->
+  <div class="sb-item" id="sb-audits" title="Ticket audits: review tickets moved to other teams"
+       onclick="sbAdmin('audits',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
+    <span class="sb-label">Audits</span>
+  </div>
   <!-- Session 53: Alerts hub (break log, missed calls, summaries, live ops) -->
   <div class="sb-item" id="sb-alerts" title="Alerts: break log, missed calls, summaries and live ops alerts to Google Chat"
        onclick="sbAdmin('alerts',this)">
@@ -801,6 +809,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
        onclick="sbAgent('talerts',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path class="nx-wave" d="M2.8 8.5a9 9 0 0 1 2-3.7M21.2 8.5a9 9 0 0 0-2-3.7"/></svg>
     <span class="sb-label">Alerts</span>
+  </div>
+  <!-- Session 76: Ticket audits for SPOCs (shown only to SPOCs and admins) -->
+  <div class="sb-item" id="sb-agent-audits" style="display:none" title="Ticket audits assigned to you"
+       onclick="sbAgent('audits',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
+    <span class="sb-label">Audits</span>
   </div>
   <!-- Process and product updates from the Adit Updates site -->
   <div class="sb-item" id="sb-agent-updates" title="Process and product updates from the last 7 days"
@@ -1574,6 +1588,9 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <div class="page" id="tab-settings">
     <div id="settings-admin-root"></div>
   </div>
+
+  <!-- Session 76: Ticket audits -->
+  <div class="page" id="tab-audits"><div id="ta-admin-root"></div></div>
 
   <!-- Session 51: T1 CS alerts (queue, coverage, unassigned / idle tickets) -->
   <div class="page" id="tab-ticket-alerts"><div id="t1-alerts-admin-root"></div></div>
@@ -2389,6 +2406,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </button>
     <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Alerts</button>
     <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
+    <button class="agent-shell-btn" id="agent-tab-audits" style="display:none" onclick="switchAgentSection('audits',this)">Audits</button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">
@@ -3153,6 +3171,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- Session 51: agent ticket alerts -->
   <div class="agent-shell-page av2" id="agent-section-talerts"><div id="t1-alerts-agent-root"></div></div>
   <div class="agent-shell-page av2" id="agent-section-updates"><div id="pu-agent-root"></div></div>
+  <div class="agent-shell-page av2" id="agent-section-audits"><div id="ta-agent-root"></div></div>
   <!-- Session 57: assessments, embedded -->
   <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Session 20: self-service Ticket Lifecycle stats (My Ticket Stats) -->
@@ -4496,6 +4515,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   if(!isTestMode()) setTimeout(()=>{ try{ showWeekendAnnouncement(); }catch(e){} }, 800);
   // Unread process and product updates must be acknowledged before agents start
   setTimeout(()=>{ try{ if(window.PU) window.PU.gate(role); }catch(e){} }, 1200);
+  setTimeout(()=>{ try{ if(window.TA) window.TA.gate(); }catch(e){} }, 1500);
 
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
@@ -4782,6 +4802,7 @@ function switchAgentSection(section,el){
   if(section==='mystats'){ if(typeof openDeskLifecycleAgent==='function') openDeskLifecycleAgent(); }
   if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); }
   if(section==='updates'){ if(window.PU) window.PU.open(); }
+  if(section==='audits'){ if(window.TA) window.TA.open('agent'); }
   if(section==='assess') loadAssessFrame('agent-section-assess');
   setTimeout(syncAssessLock, 0);
   // Session 44: populate the agent Dashboard right away when it opens.
@@ -9950,6 +9971,7 @@ function switchTab(tab,el){
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='settings') { if(typeof openSettingsAdmin==='function') openSettingsAdmin(); }
   if(tab==='ticket-lifecycle') { if(typeof openDeskLifecycleAdmin==='function') openDeskLifecycleAdmin(); }
+  if(tab==='audits'){ if(window.TA) window.TA.open('admin'); }
   if(tab==='ai-agent') laLoadStats();
   if(tab==='digest' && typeof window.openDigest==='function') window.openDigest();
   if(tab==='ticket-alerts' && typeof window.openT1AlertsAdmin==='function') window.openT1AlertsAdmin();

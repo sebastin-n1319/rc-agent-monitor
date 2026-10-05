@@ -64,6 +64,15 @@
       } catch (e) {}
       return;
     }
+    if (i.link === 'app:audits') {
+      S.open = false; draw();
+      try {
+        var adminView = typeof isAdminRole === 'function' && isAdminRole() && typeof currentViewMode !== 'undefined' && currentViewMode !== 'agent';
+        if (adminView && typeof sbAdmin === 'function') sbAdmin('audits', document.getElementById('sb-audits'));
+        else if (typeof sbAgent === 'function') sbAgent('audits', document.getElementById('sb-agent-audits'));
+      } catch (e) {}
+      return;
+    }
     if (i.link) { S.open = false; draw(); if (/^https:\/\//.test(i.link)) window.open(i.link, '_blank', 'noopener'); else window.location.href = i.link; }
   }
   function saveMute(key, on) {
