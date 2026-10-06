@@ -577,7 +577,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Session 88: transfer review (Pending Review - T1), polled every minute.
     transferReview.setDB(db);
     await transferReview.initSchema();
-    transferReview.setDeps({ notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
+    transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
       roster: () => deskLifecycleAgentRoster(),
       spocs: async () => (await ticketAudits.listSpocs()).filter(x => x.active).map(x => x.email),
       chat: { pendingIdle: (p) => t1Alerts().notifyPendingIdle(p), strike: (p) => t1Alerts().notifyStrike(p) } });
@@ -8401,6 +8401,7 @@ app.get('/api/audits/agents', requireAuth, requireAuditAccess, auditWrap(async (
 // Session 88: transfer review (Pending Review - T1), strikes and the agent policy tab.
 app.get('/api/review/list', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.list()), me: req.audit.email }); }));
 app.post('/api/review/refresh', requireAuth, requireAuditAccess, rateLimit(10, 60000), auditWrap(async (req, res) => { res.json({ success: true, result: await transferReview.poll(), ...(await transferReview.list()) }); }));
+app.post('/api/review/:id/assist', requireAuth, requireAuditAccess, rateLimit(40, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.assist(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.post('/api/review/:id/verdict', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.verdict(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.get('/api/review/people', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, people: await transferReview.people(String(req.query.q || '').slice(0, 60), 30) }); }));
 app.post('/api/review/people/refresh', requireAuth, requireAuditAdmin, rateLimit(3, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.refreshPeople()) }); }));
@@ -8418,6 +8419,7 @@ app.get('/api/review/history', requireAuth, requireAuditAccess, auditWrap(async 
   res.setHeader('Content-Disposition', 'attachment; filename="transfer-reviews.csv"');
   res.send([cols.join(',')].concat(r.rows.map(x => cols.map(c => esc(x[c])).join(','))).join('\n'));
 }));
+app.get('/api/review/my/tips', requireAuth, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.tips(req.session.email)) }); }));
 app.get('/api/review/my', requireAuth, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.mine(req.session.email)) }); }));
 // Session 90: escalation watch (admin)
 app.get('/api/escalations/settings', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, settings: await escalationWatch.settings(false) }); }));

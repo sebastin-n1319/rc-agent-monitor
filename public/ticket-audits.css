@@ -230,3 +230,9 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-tile-btn.on{border-color:var(--tka-teal);box-shadow:0 0 0 3px var(--tka-teal-s)}
 .tka-tile-btn:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
 .tka-filters select.tka-input{flex:0 1 170px;width:auto;min-width:130px}
+
+.tka-asst{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:var(--tka-surface2);margin:2px 0 6px}
+.tka-asst .tka-actions{margin-top:0;align-items:center;flex-wrap:wrap}
+.tka-sugg{margin:0;font-size:13.5px;color:var(--tka-t1);white-space:pre-wrap}
+.tka-sim{display:flex;flex-direction:column;gap:3px;padding-top:6px;border-top:1px solid var(--tka-border)}
+.tka-btn[hidden]{display:none}

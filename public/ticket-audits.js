@@ -144,6 +144,54 @@
       host.replaceChildren.apply(host, kids);
     }
     function tileBox(l, v, s, cls) { return h('div', { class: 'tka-tile ' + (cls || '') }, [h('span', { class: 'tka-tile-l', text: l }), h('b', { class: 'tka-tile-v', text: String(v) }), h('span', { class: 'tka-tile-s', text: s })]); }
+
+    function copyText(txt, done) {
+      function fallback() { var t = document.createElement('textarea'); t.value = txt; t.style.position = 'fixed'; t.style.opacity = '0'; document.body.appendChild(t); t.select(); var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; } t.remove(); done(ok); }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { done(true); }, fallback); else fallback();
+    }
+    function composeHandoff(f, who) {
+      var L = function (k, v) { return k + ' - ' + (v || ''); };
+      return [(who ? '@' + who + ' ' : '') + 'Can you take the ' + (f.call ? 'call' : 'ticket') + '?', '',
+        L('Client Name', f.clientName), L('Practice Name', f.practiceName), L('Account Number', f.accountNumber), L('Deal Stage (OB or CSM or Churn)', f.dealStage),
+        L('Callback Number', f.callback), L('Email', f.email), L('Ticket', f.ticketUrl || (f.ticketNumber ? '#' + f.ticketNumber : '')),
+        L('Reason for contact (issue, existing ticket, or some request)', f.reason), L('Resolution Provided', f.resolution)].join('\n');
+    }
+    function similarBox(list) {
+      if (!list || !list.length) return null;
+      return h('div', { class: 'tka-sim' }, [h('b', { text: 'Reviewers said this on similar tickets' })].concat(list.map(function (x) {
+        return h('div', { class: 'tka-when', text: '#' + x.ticket + ' (' + (x.severity === 'feedback' ? 'feedback' : 'fatal') + '): ' + x.comment });
+      })));
+    }
+    function assistFor(r, kind, box, who, comment, sev, setSev) {
+      var body = { mode: kind === 'invalid' ? 'invalid' : 'good', toAgent: who.value };
+      api('/api/review/' + r.id + '/assist', body).then(function (a) {
+        if (!a.success) { box.replaceChildren(h('span', { class: 'tka-when', text: a.error || 'AI help is not available right now' })); return; }
+        if (kind === 'invalid') {
+          var kids = [];
+          if (a.comment) {
+            kids.push(h('b', { text: 'AI suggested feedback' }), h('p', { class: 'tka-sugg', text: a.comment }),
+              h('div', { class: 'tka-actions' }, [btn('Use this', 'sm', function () { comment.value = a.comment; if (a.severity) setSev(a.severity); }),
+                a.severity ? h('span', { class: 'tka-when', text: 'Suggested: ' + (a.severity === 'fatal' ? 'Fatal (strike)' : 'Feedback (no strike)') + '. You decide.' }) : null]));
+          } else kids.push(h('span', { class: 'tka-when', text: a.ai ? 'AI could not suggest feedback for this one.' : 'AI is not set up, so no suggestion.' }));
+          var sm = similarBox(a.similar); if (sm) kids.push(sm);
+          box.replaceChildren.apply(box, kids.filter(Boolean)); return;
+        }
+        var f = a.fields || {}, dirty = false;
+        var ta = h('textarea', { class: 'tka-note-in', rows: '11', 'aria-label': 'Message for the department space' });
+        ta.value = composeHandoff(f, who.value);
+        ta.addEventListener('input', function () { dirty = true; });
+        who.addEventListener('input', function () { if (!dirty) ta.value = composeHandoff(f, who.value); });
+        var dept = h('select', { class: 'tka-input', 'aria-label': 'Department space' }, [h('option', { value: '', text: 'Which department space?' })].concat((a.departments || []).map(function (t) { var o = h('option', { value: t, text: t }); if (t === a.department) o.selected = true; return o; })));
+        var open = h('a', { class: 'tka-btn ghost sm', target: '_blank', rel: 'noopener', text: 'Open space' });
+        var note = h('span', { class: 'tka-when' });
+        function setSpace() { var u = (a.spaces || {})[dept.value]; if (u) { open.href = u; open.hidden = false; note.textContent = ''; } else { open.removeAttribute('href'); open.hidden = true; note.textContent = dept.value ? 'No space link saved for ' + dept.value + (isAdmin() ? '. Add it in Settings.' : '. Ask an admin to add it in Settings.') : ''; } }
+        dept.addEventListener('change', setSpace); setSpace();
+        var cp = btn('Copy message', 'primary sm', function () { copyText(ta.value, function (ok) { toast(ok ? 'Copied. Paste it in ' + (dept.value || 'the department') + ' space' : 'Could not copy, select the text and copy it', ok ? 'success' : 'error'); }); });
+        var kids = [h('b', { text: 'Message for the department space' }), h('p', { class: 'tka-when', text: (a.ai ? 'AI drafted this from the ticket. ' : 'AI is not set up, so only the ticket link is filled. ') + 'Check it, copy it and post it yourself.' }), dept, ta, h('div', { class: 'tka-actions' }, [cp, open, note])];
+        var sm2 = similarBox(a.similar); if (sm2) kids.push(sm2);
+        box.replaceChildren.apply(box, kids);
+      }).catch(function () { box.replaceChildren(h('span', { class: 'tka-when', text: 'AI help is not available right now' })); });
+    }
     function reviewCard(r, buf, me) {
       var waiting = r.state === 'waiting';
       var cls = waiting ? (r.minutes >= buf ? 'sev-high' : r.minutes >= buf - 5 ? 'sev-medium' : 'st-approved') : 'sev-low';
@@ -173,8 +221,10 @@
             load(false);
           });
         });
+        var ai = kind === 'ignored' ? null : h('div', { class: 'tka-asst' }, [h('span', { class: 'tka-when', text: 'AI is reading the ticket...' })]);
+        if (ai) assistFor(r, kind, ai, who, c, sev, function (v) { var rb = document.getElementById(sevName + '-' + v); if (rb) { rb.checked = true; rb.dispatchEvent(new Event('change')); } });
         form.replaceChildren.apply(form, [h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : kind === 'ignored' ? 'Not a transfer, for example the status was set by mistake. No strike, no feedback to the agent. It stays in History with your reason.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
-          kind === 'good' ? who : null, sevBox, c, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
+          kind === 'good' ? who : null, ai, sevBox, c, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
       }
       var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [btn('Good to go', 'primary', function () { openForm('good'); }), btn('Invalid', 'danger', function () { openForm('invalid'); })];
       if (!own && !waiting) side.push(btn('Ignore', 'ghost sm', function () { openForm('ignored'); }));
@@ -192,6 +242,7 @@
     clearInterval(TA._rvTimer);
     TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
   }
+  function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
   function reviewSettings(host) {
     api('/api/review/settings').then(function (j) {
       if (!j.success) return toast(j.error || 'Could not load settings', 'error');
@@ -204,17 +255,22 @@
       var buf = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '240', value: String(st.bufferMin), 'aria-label': 'Buffer minutes' });
       var esc = h('input', { class: 'tka-input', value: (st.escalateEmails || []).join(', '), 'aria-label': 'People tagged when the buffer passes' });
       var stName = h('input', { class: 'tka-input', value: st.statusName, 'aria-label': 'Zoho status name' });
+      var spaces = h('textarea', { class: 'tka-note-in', rows: '5', 'aria-label': 'Department space links', placeholder: 'Team name = https://chat.google.com/room/...' });
+      spaces.value = Object.keys(st.deptSpaces || {}).map(function (k) { return k + ' = ' + st.deptSpaces[k]; }).join('\n');
       var on = h('input', { type: 'checkbox', id: 'tka-rv-on' }); on.checked = st.enabled !== false;
       var card = h('div', { class: 'tka-card' }, [h('h3', { text: 'Review settings' }),
         h('p', { class: 'tka-hint', text: 'Assign directly: T1 agents may assign tickets straight to people in these teams without review. Everything else must go through ' + st.statusName + '.' }),
         box,
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Review within' }), buf, h('span', { text: 'minutes, then tag' }), esc]),
+        h('h3', { text: 'Department chat spaces' }),
+        h('p', { class: 'tka-hint', text: 'One per line: team name, an equals sign, then the Google Chat space link. Good to go shows an Open space button for the chosen team. Team names: ' + ((j.teams || []).slice(0, 12).join(', ') || 'not loaded yet') + ((j.teams || []).length > 12 ? ', and more' : '') + '.' }),
+        spaces,
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Zoho status' }), stName, h('label', { class: 'tka-inline', for: 'tka-rv-on' }, [on, h('span', { text: 'Review on' })])]),
         h('p', { class: 'tka-when', text: 'People directory ' + (j.peopleRefreshedAt ? 'updated ' + ago(j.peopleRefreshedAt) : 'not built yet') + ' (Zoho teams, staff list and the Who does what sheet).' }),
         h('div', { class: 'tka-actions' }, [
           btn('Save settings', 'primary', function () {
             var ex = Object.keys(picked).filter(function (k) { return picked[k]; });
-            api('/api/review/settings', { excludedTeams: ex, bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.checked }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'review'; render(); } });
+            api('/api/review/settings', { excludedTeams: ex, bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.checked, deptSpaces: parseSpaces(spaces.value) }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'review'; render(); } });
           }),
           btn('Rebuild people directory', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Rebuilding...'); api('/api/review/people/refresh', {}).then(function (r) { busy(b, false, 'Rebuild people directory'); toast(r.success ? 'Directory: ' + r.zoho + ' from Zoho teams, ' + r.staff + ' staff, ' + r.sheet + ' from the sheet' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); }),
           btn('Close', 'ghost sm', function () { card.remove(); })])]);
@@ -549,6 +605,13 @@
         var hit = j.active >= p.from && j.active <= p.to;
         return h('div', { class: 'tka-step' + (hit ? ' on' : '') + (j.active >= p.from ? ' past' : '') }, [h('b', { text: p.from === p.to ? 'Strike ' + p.from : p.to > 100 ? 'Strike ' + p.from + '+' : 'Strikes ' + p.from + ' to ' + p.to }), h('span', { text: p.label }), h('em', { text: p.text })]);
       }));
+      var tipsCard = h('div', { class: 'tka-card' }, [h('h3', { text: 'Tips for your next transfers' }), h('p', { class: 'tka-empty', text: 'Loading...' })]);
+      api('/api/review/my/tips').then(function (t) {
+        var kids = [h('h3', { text: 'Tips for your next transfers' })];
+        if (!t.success || !(t.tips || []).length) kids.push(h('p', { class: 'tka-empty', text: t.success ? 'No tips yet. They appear after a reviewer sends you feedback.' : 'Could not load tips' }));
+        else { kids.push(h('p', { class: 'tka-hint', text: (t.ai ? 'Written by AI from' : 'Taken from') + ' your reviewers\' feedback. They update when you get new feedback.' })); t.tips.forEach(function (x) { kids.push(h('div', { class: 'tka-pt' }, [h('i'), h('span', { text: x })])); }); }
+        tipsCard.replaceChildren.apply(tipsCard, kids);
+      }).catch(function () {});
       pol.replaceChildren(
         h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer policy' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
         h('div', { class: 'tka-card' }, [h('h3', { text: 'How it works' }),
@@ -561,6 +624,7 @@
           h('div', { class: 'tka-tile ' + (j.active >= 5 ? 'hot' : '') }, [h('span', { class: 'tka-tile-l', text: 'Your active strikes' }), h('b', { class: 'tka-tile-v', text: String(j.active) }), h('span', { class: 'tka-tile-s', text: j.level ? j.level : 'Clean record' })]),
           h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Good to go' }), h('b', { class: 'tka-tile-v', text: String(j.good) }), h('span', { class: 'tka-tile-s', text: 'transfers in the last ' + j.days + ' days' })]),
           h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Next strike means' }), h('b', { class: 'tka-tile-v sm', text: j.nextLevel || '' }), h('span', { class: 'tka-tile-s', text: 'Strikes expire after ' + j.days + ' days' })])]),
+        tipsCard,
         h('div', { class: 'tka-card' }, [h('h3', { text: 'The 5 strike policy' }), steps]),
         h('div', { class: 'tka-card' }, [h('h3', { text: 'Your fatals (strikes)' })].concat(j.strikes.length ? j.strikes.map(function (s) {
           return h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(s.at).replace(' ', 'T') + 'Z') }), h('span', null, [s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + s.ticket }) : '#' + s.ticket, s.subject ? h('span', { class: 'tka-when', text: ' ' + s.subject + ': ' }) : ' ', s.comment || '', h('span', { class: 'tka-when', text: '  expires ' + when(s.expires).split(',')[0] })])]);
