@@ -141,6 +141,11 @@ function _speedKey(req) {
   const p = String(req.path || '').replace(/\/[0-9a-f]{16,}(?=\/|$)/gi, '/:id').replace(/\/\d+(?=\/|$)/g, '/:n').replace(/\/[^/]*@[^/]*(?=\/|$)/g, '/:email');
   return req.method + ' ' + p;
 }
+// Session 86: any ticket write through the app clears the cached ticket sheet.
+app.use((req, res, next) => {
+  if (req.method !== 'GET' && /^\/api\/(tickets|ticket-entry)(\/|$)/.test(req.path || '')) res.on('finish', () => { try { _cache.delete('tickets:sheet'); } catch (e) { /* ignore */ } });
+  next();
+});
 app.use((req, res, next) => {
   if (!req.path || !req.path.startsWith('/api/')) return next();
   const t0 = process.hrtime.bigint();
@@ -3926,12 +3931,18 @@ app.get('/api/my-tickets', requireAuth, rateLimit(30, 60000), async (req, res) =
 app.get('/api/tickets', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try {
     if (!TICKET_SHEET_ID) return res.status(503).json({ success: false, error: 'Ticket sheet not configured' });
-    const sheets = getTicketSheetsClient();
-    const resp = await sheets.spreadsheets.values.get({
-      spreadsheetId: TICKET_SHEET_ID,
-      range: `'${TICKET_SHEET_TAB}'!A:H`,
+    // Session 86 (speed): the Google Sheet read took 1.5 to 3 s on every open; cache it
+    // for 60 s. Any ticket write through the app clears the cache (see middleware).
+    if (req.query.fresh === '1') _cache.delete('tickets:sheet');
+    const values = await cacheWrap('tickets:sheet', 60000, async () => {
+      const sheets = getTicketSheetsClient();
+      const resp = await sheets.spreadsheets.values.get({
+        spreadsheetId: TICKET_SHEET_ID,
+        range: `'${TICKET_SHEET_TAB}'!A:H`,
+      });
+      return resp.data.values || [];
     });
-    const rows = (resp.data.values || []).slice(1); // skip header row
+    const rows = values.slice(1); // skip header row
     const tickets = rows.filter(r => (r[0]||'').trim()).map(r => ({
       ticketId:        (r[0]||'').trim(),
       agentName:       (r[1]||'').trim(),

@@ -625,8 +625,13 @@ async function fetchQueueDashboardSummaryFast(dateStr, timeZone = 'America/Chica
     p = fetchQueueDashboardSummary(dateStr, false, timeZone).finally(() => _queueDashInflight.delete(key));
     _queueDashInflight.set(key, p);
   }
+  // Session 86 (speed): when a summary for this day is already in memory, answer
+  // with it almost at once (stale-while-revalidate) instead of holding the page
+  // for up to 6 s while RingCentral is slow; the fetch above refills the cache.
+  const haveLast = !!(lastQueueDashboardSummary && lastQueueDashboardSummary.date === dateStr && lastQueueDashboardSummary.timeZone === timeZone);
+  const waitMs = haveLast ? Math.min(maxWaitMs, 400) : maxWaitMs;
   let timer;
-  const timeout = new Promise(resolve => { timer = setTimeout(() => resolve(null), maxWaitMs); });
+  const timeout = new Promise(resolve => { timer = setTimeout(() => resolve(null), waitMs); });
   const result = await Promise.race([p, timeout]);
   clearTimeout(timer);
   if (result) return result;
