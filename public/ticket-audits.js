@@ -46,8 +46,9 @@
   function busy(b, on, label) { if (!b) return; b.disabled = !!on; if (label) b.textContent = label; }
 
   // ── shell ────────────────────────────────────────────────────────────
+  var VERDICT_LABEL = { good: 'Good to go', invalid: 'Invalid', ignored: 'Ignored' }, VERDICT_CLS = { good: 'st-approved', invalid: 'st-returned', ignored: 'st-closed' };
   function tabs() {
-    var t = [['review', 'Pending review']];
+    var t = [['review', 'Pending review'], ['history', 'History']];
     if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['escalations', 'Escalation watch'], ['spocs', 'SPOC management']]);
     return t;
   }
@@ -75,7 +76,7 @@
       h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer review' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
       bar, body);
     if (TA.auditId) return viewAudit(body, TA.auditId);
-    ({ review: viewReview, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+    ({ review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
   }
   function setBadge(n) {
     ['sb-agent-audits', 'agent-tab-audits', 'sb-audits'].forEach(function (id) {
@@ -132,7 +133,7 @@
         var d = h('details', { class: 'tka-fold' }, [h('summary', { text: 'Reviewed in the last 24 hours (' + j.done.length + ')' })]);
         j.done.forEach(function (r) {
           d.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(r.reviewed_at).replace(' ', 'T') + 'Z') }),
-            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', pill(r.verdict === 'good' ? 'Good to go' : 'Invalid', r.verdict === 'good' ? 'st-approved' : 'st-returned'), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.comment ? ' ' + r.comment : ''])]));
+            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', pill(VERDICT_LABEL[r.verdict] || r.verdict, VERDICT_CLS[r.verdict] || 'cat'), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.comment ? ' ' + r.comment : ''])]));
         });
         kids.push(d);
       }
@@ -145,13 +146,13 @@
       var own = r.agent_email && me && r.agent_email === me;
       var form = h('div', { class: 'tka-rv-form' });
       function openForm(kind) {
-        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'What did the agent miss? This is shown to the agent and counts as a strike.' : 'Optional note', 'aria-label': 'Comments' });
+        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'What did the agent miss? This is shown to the agent and counts as a strike.' : kind === 'ignored' ? 'Why ignore it? For example: set by mistake and moved back to Open' : 'Optional note', 'aria-label': 'Comments' });
         var who = h('input', { class: 'tka-input', list: 'tka-people', placeholder: 'Moved to (person)', value: r.to_agent || '', 'aria-label': 'Moved to' });
         var dl = document.getElementById('tka-people') || h('datalist', { id: 'tka-people' });
         if (!dl.parentNode) document.body.appendChild(dl);
         var t = null;
         who.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { api('/api/review/people?q=' + encodeURIComponent(who.value)).then(function (p) { dl.replaceChildren.apply(dl, (p.people || []).map(function (x) { return h('option', { value: x.name, text: x.team }); })); }); }, 250); });
-        var save = btn(kind === 'invalid' ? 'Save as invalid (strike)' : 'Save as good to go', kind === 'invalid' ? 'danger' : 'primary', function () {
+        var save = btn(kind === 'invalid' ? 'Save as invalid (strike)' : kind === 'ignored' ? 'Ignore this one' : 'Save as good to go', kind === 'invalid' ? 'danger' : 'primary', function () {
           busy(save, true, 'Saving...');
           api('/api/review/' + r.id + '/verdict', { verdict: kind, comment: c.value, toAgent: who.value }).then(function (x) {
             busy(save, false);
@@ -160,10 +161,11 @@
             load(false);
           });
         });
-        form.replaceChildren(h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
+        form.replaceChildren(h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : kind === 'ignored' ? 'Not a transfer, for example the status was set by mistake. No strike, no feedback to the agent. It stays in History with your reason.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
           kind === 'good' ? who : null, c, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })]));
       }
       var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [btn('Good to go', 'primary', function () { openForm('good'); }), btn('Invalid', 'danger', function () { openForm('invalid'); })];
+      if (!own && !waiting) side.push(btn('Ignore', 'ghost sm', function () { openForm('ignored'); }));
       return h('article', { class: 'tka-row' + (waiting && r.minutes >= buf ? ' hot' : '') }, [
         h('div', { class: 'tka-row-main' }, [
           h('div', { class: 'tka-row-top' }, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number }), h('span', { class: 'tka-sub', text: r.subject || '' })]),
@@ -223,6 +225,59 @@
         body.appendChild(d);
       });
     });
+  }
+
+  // ── Review history: every review, searchable, for tracing later escalations ──
+  function viewHistory(body) {
+    var f = TA.histF = TA.histF || { q: '', verdict: '', reviewer: '', agent: '', from: '', to: '', offset: 0 };
+    var iso = function (d) { return d.toISOString().slice(0, 10); };
+    if (!f.from) f.from = iso(new Date(Date.now() - 30 * 864e5));
+    var q = h('input', { class: 'tka-input', type: 'search', value: f.q, placeholder: 'Search ticket #, subject, agent, comment', 'aria-label': 'Search reviews' });
+    var verdict = h('select', { class: 'tka-input narrow', 'aria-label': 'Verdict' }, [['', 'All verdicts'], ['good', 'Good to go'], ['invalid', 'Invalid'], ['ignored', 'Ignored'], ['none', 'No verdict yet'], ['skipped', 'Skipped review']].map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (o[0] === f.verdict) op.selected = true; return op; }));
+    var reviewer = h('select', { class: 'tka-input narrow', 'aria-label': 'Reviewer' }, [h('option', { value: '', text: 'All reviewers' })]);
+    var agent = h('select', { class: 'tka-input narrow', 'aria-label': 'Agent' }, [h('option', { value: '', text: 'All agents' })]);
+    var from = h('input', { class: 'tka-input narrow', type: 'date', value: f.from, 'aria-label': 'From date' });
+    var to = h('input', { class: 'tka-input narrow', type: 'date', value: f.to, 'aria-label': 'To date' });
+    var out = h('div', null, [h('p', { class: 'tka-empty', text: 'Loading...' })]);
+    function params(extra) {
+      var p = { q: f.q, verdict: f.verdict, reviewer: f.reviewer, agent: f.agent, from: f.from, to: f.to, offset: f.offset, limit: 50 };
+      Object.assign(p, extra || {});
+      return Object.keys(p).filter(function (k) { return p[k] !== '' && p[k] != null; }).map(function (k) { return k + '=' + encodeURIComponent(p[k]); }).join('&');
+    }
+    function apply() { f.q = q.value.trim(); f.verdict = verdict.value; f.reviewer = reviewer.value; f.agent = agent.value; f.from = from.value; f.to = to.value; f.offset = 0; load(); }
+    var t = null;
+    q.addEventListener('input', function () { clearTimeout(t); t = setTimeout(apply, 350); });
+    [verdict, reviewer, agent, from, to].forEach(function (x) { x.addEventListener('change', apply); });
+    body.appendChild(h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'Review history' }), h('p', { class: 'tka-hint', text: 'Every review is kept. Search here when an escalation comes in later, to see who reviewed the transfer and what they decided.' })])]));
+    body.appendChild(h('div', { class: 'tka-filters' }, [q, verdict, reviewer, agent, h('span', { class: 'tka-when', text: 'From' }), from, h('span', { class: 'tka-when', text: 'to' }), to,
+      h('a', { class: 'tka-btn ghost sm', href: '#', text: 'Download CSV', onclick: function (ev) { ev.preventDefault(); window.open(BASE + '/api/review/history?' + params({ format: 'csv', offset: 0 }), '_blank'); } })]));
+    body.appendChild(out);
+    function load() {
+      out.replaceChildren(h('p', { class: 'tka-empty', text: 'Loading...' }));
+      api('/api/review/history?' + params()).then(function (j) {
+        if (!j.success) { out.replaceChildren(h('div', { class: 'tka-note', text: j.error || 'Could not load history' })); return; }
+        if (reviewer.options.length === 1) j.reviewers.forEach(function (r) { var op = h('option', { value: r, text: r.split('@')[0] }); if (r === f.reviewer) op.selected = true; reviewer.appendChild(op); });
+        if (agent.options.length === 1) j.agents.forEach(function (a) { var op = h('option', { value: a.email, text: a.name || a.email.split('@')[0] }); if (a.email === f.agent) op.selected = true; agent.appendChild(op); });
+        if (!j.rows.length) { out.replaceChildren(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No reviews match' }), h('p', { text: 'Try a wider date range or clear the search.' })])); return; }
+        var tbl = h('table', { class: 'tka-cov tka-hist' }, [h('thead', null, [h('tr', null, ['Ticket', 'Agent', 'Verdict', 'Moved to', 'Reviewer', 'When', 'Comment'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]),
+          h('tbody', null, j.rows.map(function (r) {
+            var v = r.verdict ? pill(VERDICT_LABEL[r.verdict] || r.verdict, VERDICT_CLS[r.verdict] || 'cat') : pill(r.state === 'waiting' ? 'Waiting' : 'No verdict', 'sev-medium');
+            return h('tr', null, [
+              h('td', null, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { text: '#' + r.ticket_number }), h('div', { class: 'tka-when', text: (r.subject || '').slice(0, 60) })]),
+              h('td', { text: nameOf(r.agent_email, r.agent_name) }),
+              h('td', null, [v, r.source === 'bypass' ? h('div', { class: 'tka-when', text: 'Skipped review' }) : null, r.voided ? h('div', { class: 'tka-when', text: 'Strike removed' }) : null]),
+              h('td', { text: [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') || '' }),
+              h('td', { text: r.reviewer ? r.reviewer.split('@')[0] : '' }),
+              h('td', { text: when(r.reviewed_at || r.left_at || r.entered_at) }),
+              h('td', { class: 'tka-hist-c', text: r.comment || '' })]);
+          }))]);
+        var pages = h('div', { class: 'tka-toolbar' }, [h('span', { class: 'tka-when', text: (f.offset + 1) + ' to ' + (f.offset + j.rows.length) + ' of ' + j.total }),
+          f.offset > 0 ? btn('Previous', 'ghost sm', function () { f.offset = Math.max(0, f.offset - 50); load(); }) : null,
+          f.offset + j.rows.length < j.total ? btn('Next', 'ghost sm', function () { f.offset += 50; load(); }) : null]);
+        out.replaceChildren(h('div', { class: 'tka-histwrap' }, [tbl]), pages);
+      });
+    }
+    load();
   }
 
   // ── Escalation watch (admin) ───────────────────────────────────────

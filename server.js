@@ -8380,6 +8380,16 @@ app.get('/api/review/settings', requireAuth, requireAuditAccess, auditWrap(async
 app.put('/api/review/settings', requireAuth, requireAuditAdmin, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, settings: await transferReview.saveSettings(req.body || {}) }); }));
 app.get('/api/review/strikes', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.strikesBoard()) }); }));
 app.post('/api/review/strikes/:id/void', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await transferReview.voidStrike(Number(req.params.id), req.audit.email, (req.body || {}).reason); res.json({ success: true }); }));
+app.get('/api/review/history', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
+  const csv = req.query.format === 'csv';
+  const r = await transferReview.history({ ...req.query, limit: csv ? 5000 : req.query.limit });
+  if (!csv) return res.json({ success: true, ...r });
+  const esc = (v) => { const x = v == null ? '' : String(v); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+  const cols = ['ticket_number', 'subject', 'channel', 'agent_name', 'agent_email', 'source', 'entered_at', 'left_at', 'verdict', 'to_agent', 'to_team', 'comment', 'reviewer', 'reviewed_at', 'voided', 'web_url'];
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="transfer-reviews.csv"');
+  res.send([cols.join(',')].concat(r.rows.map(x => cols.map(c => esc(x[c])).join(','))).join('\n'));
+}));
 app.get('/api/review/my', requireAuth, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.mine(req.session.email)) }); }));
 // Session 90: escalation watch (admin)
 app.get('/api/escalations/settings', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, settings: await escalationWatch.settings(false) }); }));

@@ -215,3 +215,10 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-tagopt.on,.tka-tagopt:hover{background:var(--tka-teal-s)}
 .tka-tagempty{padding:8px 10px;color:var(--tka-t3);font-size:13px}
 .tka-tagbox .tka-tagin,.tka-tagbox .tka-tagin:focus{border:0 !important;box-shadow:none !important;outline:0;background:none !important;border-radius:0}
+
+/* Transfer review: history */
+.tka-histwrap{overflow-x:auto;border:1px solid var(--tka-border);border-radius:14px;background:var(--tka-surface);padding:4px 10px}
+.tka-hist td:not(:first-child),.tka-hist th:not(:first-child){text-align:left;width:auto}
+.tka-hist td{vertical-align:top}
+.tka-hist-c{max-width:280px;color:var(--tka-t2)}
+.tka-filters input[type=search]{flex:1 1 280px;min-width:240px}.tka-filters .tka-when{align-self:center}
