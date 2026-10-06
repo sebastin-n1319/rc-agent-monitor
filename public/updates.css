@@ -70,3 +70,5 @@ body.pu-lock{overflow:hidden}
 .pu-btn.danger:hover{border-color:var(--pu-red)}
 .pu-det{margin:0 0 10px;font-size:13.5px}
 .pu-det p{margin:4px 0 0;white-space:pre-line;line-height:1.55;color:var(--pu-t2)}
+
+.pu-confirm{margin:6px 0 10px;padding:10px 14px;border-radius:10px;background:rgba(201,143,6,.12);border:1px solid var(--pu-amber);color:var(--pu-t1);font-size:13.5px}.pu-confirm ul{margin:4px 0 0 18px;padding:0}

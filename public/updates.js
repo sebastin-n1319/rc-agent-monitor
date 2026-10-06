@@ -110,8 +110,9 @@
     return h('section', { class: 'pu-editor', 'aria-label': d.id ? 'Edit update' : 'New update' }, [
       h('h3', { text: d.id ? 'Edit update' : 'New update for this tool' }),
       h('p', { class: 'pu-when', text: 'Shown only inside this tool: on the Updates page, in the bell and on the must-read screen at sign-in. It is not posted to the updates site.' }),
-      lab('notes', 'Your notes', '(the AI uses only what you write here)'), notes,
+      lab('notes', 'Your notes', '(the AI also knows how this tool works, but it only states what you or the tool guide confirm)'), notes,
       h('div', { class: 'pu-ed-row' }, [aiBtn, h('span', { class: 'pu-when', text: 'The AI writes a draft below. Nothing is published until you press Publish.' })]),
+      (d.confirm && d.confirm.length) ? h('div', { class: 'pu-confirm', role: 'status' }, [h('b', { text: 'Confirm before you publish' }), h('ul', null, d.confirm.map(function (x) { return h('li', { text: x }); }))]) : null,
       h('div', { class: 'pu-ed-grid' }, [h('div', null, [lab('title', 'Title'), title]), h('div', null, [lab('category', 'Type'), cat]), h('div', null, [lab('modules', 'Areas', '(comma separated)'), mods])]),
       lab('summary', 'What changed'), sum,
       lab('impact', 'What it means for agents'), imp,

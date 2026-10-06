@@ -1940,6 +1940,34 @@ app.get('/api/admin/updates/report', requireAdmin, rateLimit(30, 60000), puWrap(
 app.post('/api/admin/updates', requireAdmin, rateLimit(20, 60000), puWrap(async (req, res) => { res.json({ success: true, update: await productUpdates.createLocal(req.session.email, req.session.name, req.body || {}) }); }));
 app.put('/api/admin/updates/:id', requireAdmin, rateLimit(30, 60000), puWrap(async (req, res) => { res.json({ success: true, update: await productUpdates.updateLocal(req.params.id, req.body || {}) }); }));
 app.delete('/api/admin/updates/:id', requireAdmin, rateLimit(30, 60000), puWrap(async (req, res) => { res.json({ success: true, removed: await productUpdates.deleteLocal(req.params.id) }); }));
+// Feature guide for the updates composer: docs/tool-guide.md split by section, plus live policy values.
+let _guide = null;
+function toolGuideSections() {
+  if (_guide) return _guide;
+  let txt = '';
+  try { txt = require('fs').readFileSync(require('path').join(__dirname, 'docs', 'tool-guide.md'), 'utf8'); } catch (e) { return (_guide = []); }
+  _guide = txt.split(/^## /m).slice(1).map(b => { const i = b.indexOf('\n'); return { title: b.slice(0, i).trim(), body: b.slice(i + 1).trim() }; });
+  return _guide;
+}
+const guideWords = (s) => new Set(String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 3));
+async function toolGuideFor(text) {
+  const secs = toolGuideSections();
+  if (!secs.length) return '';
+  const want = guideWords(text);
+  const scored = secs.map(x => { let sc = 0; const tw = guideWords(x.title); for (const w of tw) if (want.has(w)) sc += 4; for (const w of guideWords(x.body)) if (want.has(w)) sc += 1; return { x, sc }; });
+  const pick = scored.filter(o => o.sc > 1).sort((a, b) => b.sc - a.sc).slice(0, 4).map(o => o.x);
+  let out = 'All parts of the tool: ' + secs.map(x => x.title).join('; ') + '.\n\nRelevant parts in detail:\n' + (pick.length ? pick.map(x => '### ' + x.title + '\n' + x.body).join('\n\n') : '(none matched the notes)');
+  if (pick.some(x => /transfer review|ticket audits/i.test(x.title))) {
+    try {
+      const st = await transferReview.settings();
+      out += '\n\nLive transfer review settings right now: status name "' + st.statusName + '", review window ' + st.bufferMin + ' minutes, review ' + (st.enabled ? 'on' : 'off') + ', teams agents may assign to directly: ' + ((st.excludedTeams || []).join(', ') || 'none') + '. Strikes stay active 90 days. Levels: ' + transferReview.POLICY.map(p => (p.from === p.to ? 'strike ' + p.from : 'strikes ' + p.from + (p.to > 100 ? '+' : ' to ' + p.to)) + ' ' + p.label).join(', ') + '.';
+    } catch (e) { /* guide alone is fine */ }
+  }
+  if (pick.some(x => /escalation watch/i.test(x.title))) {
+    try { const es = await escalationWatch.settings(false); out += '\n\nLive escalation watch settings: ' + (es.enabled ? 'on' : 'off') + ', reminders every ' + es.reminderHours + ' hours, one alert per client within ' + es.dedupeHours + ' hours.'; } catch (e) { /* ignore */ }
+  }
+  return out.slice(0, 14000);
+}
 app.post('/api/admin/updates/compose', requireAdmin, rateLimit(20, 60000), puWrap(async (req, res) => {
   const ai = require('./lib/ai');
   if (!ai.anyConfigured()) { const e = new Error('AI is not configured on the server (add ANTHROPIC_API_KEY or OPENAI_API_KEY).'); e.status = 503; throw e; }
@@ -1950,11 +1978,14 @@ app.post('/api/admin/updates/compose', requireAdmin, rateLimit(20, 60000), puWra
   if (notes.length < 10 && !hasDraft) { const e = new Error('Paste your notes first: what changed, who it affects and what agents should do.'); e.status = 400; throw e; }
   const system = 'You write process and product updates for the T1 customer support team at Adit (software for dental, optometry and other practices). Agents must read and acknowledge each update, so it has to be clear and usable on a live call or chat. '
     + 'Turn the admin\'s rough notes into an update. Rules: plain, direct and friendly; short sentences; say exactly what changed, who it affects, what agents must do differently and from when, only if the notes say so; '
-    + 'never invent facts, dates, names, links, numbers, settings or steps that are not in the notes; if something important is unclear, leave it out rather than guess; no emojis; never use em dashes or en dashes (use commas, periods or parentheses); no markdown symbols except "- " at the start of a line in details. '
+    + 'you also get a REFERENCE GUIDE of how this tool works. Use it to state correct facts about features and policies the notes mention (names, rules, time windows, steps), and never contradict the notes. Do not invent facts, dates, names, links, numbers, settings or steps that are in neither the notes nor the guide. '
+    + 'When the notes announce a change but leave out something agents need (such as the start date, the reason, who it affects or what to do), do not guess: leave it out of the text and add a short item to "confirm" saying what the admin should add, for example "Start date" or "Which teams this applies to". '
+    + 'no emojis; never use em dashes or en dashes (use commas, periods or parentheses); no markdown symbols except "- " at the start of a line in details. '
     + 'Fields: title (at most 80 characters, says what changed), category (one of: Process update, Product update, Policy, Training, Release), modules (0 to 4 short product or area names mentioned in the notes, such as Adit Pay, Voice, Texting, Forms, Zoho Desk), '
     + 'summary (2 to 4 sentences, what changed and why), impact (1 to 3 sentences starting with what the agent should now do), details (optional step by step instructions or talking points as short "- " lines, empty if the notes have none). '
-    + 'If a current draft is given, improve it using the notes and keep anything the admin wrote that is still correct. Return JSON only: {"title": string, "category": string, "modules": [string], "summary": string, "impact": string, "details": string}.';
-  const user = (notes ? 'Notes from the admin:\n' + notes + '\n' : '') + (b.kind ? 'This is a ' + String(b.kind).slice(0, 20) + ' update.\n' : '')
+    + 'If a current draft is given, improve it using the notes and keep anything the admin wrote that is still correct. Return JSON only: {"title": string, "category": string, "modules": [string], "summary": string, "impact": string, "details": string, "confirm": [string]}.';
+  const guide = await toolGuideFor(notes + ' ' + ['title', 'summary', 'impact', 'details'].map(k => String(cur[k] || '')).join(' '));
+  const user = (guide ? 'REFERENCE GUIDE (facts about this tool):\n' + guide + '\n\n' : '') + (notes ? 'Notes from the admin:\n' + notes + '\n' : '') + (b.kind ? 'This is a ' + String(b.kind).slice(0, 20) + ' update.\n' : '')
     + (hasDraft ? '\nCurrent draft:\n' + JSON.stringify({ title: String(cur.title || '').slice(0, 200), category: String(cur.category || '').slice(0, 60), modules: String(cur.modules || '').slice(0, 200), summary: String(cur.summary || '').slice(0, 1500), impact: String(cur.impact || '').slice(0, 1000), details: String(cur.details || '').slice(0, 4000) }) : '');
   const r = await ai.bestJSON({ system, user, maxTokens: 1500, feature: 'analyze', timeoutMs: 60000 });
   const j = (r && r.json) || {};
@@ -1962,7 +1993,8 @@ app.post('/api/admin/updates/compose', requireAdmin, rateLimit(20, 60000), puWra
   const cats = ['Process update', 'Product update', 'Policy', 'Training', 'Release'];
   if (!t(j.title, 140) || !t(j.summary, 1200)) { const e = new Error('The AI did not return a usable draft. Add a little more detail to the notes and try again.'); e.status = 502; throw e; }
   res.json({ success: true, draft: { title: t(j.title, 140), category: cats.includes(j.category) ? j.category : 'Process update', modules: (Array.isArray(j.modules) ? j.modules : []).map(m => t(m, 40)).filter(Boolean).slice(0, 4).join(', '),
-    summary: t(j.summary, 1200), impact: t(j.impact, 800), details: String(j.details || '').replace(/\s*[\u2014\u2013]\s*/g, ', ').trim().slice(0, 4000) } });
+    summary: t(j.summary, 1200), impact: t(j.impact, 800), details: String(j.details || '').replace(/\s*[\u2014\u2013]\s*/g, ', ').trim().slice(0, 4000),
+    confirm: (Array.isArray(j.confirm) ? j.confirm : []).map(x => t(x, 120)).filter(Boolean).slice(0, 5) } });
 }));
 app.post('/api/admin/notices', requireAdmin, rateLimit(30, 60000), noticeWrap(async (req, res) => { res.json({ success: true, id: await notices.createNotice(req.session.email, req.body || {}) }); }));
 // AI drafts an announcement from a short gist. Nothing is posted: the admin reviews and edits first.
