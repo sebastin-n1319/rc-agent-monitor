@@ -15,8 +15,8 @@
     (kids || []).forEach(function (c) { if (c != null) e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
     return e;
   }
-  function api(path, body) {
-    var o = { credentials: 'include', method: body ? 'POST' : 'GET' };
+  function api(path, body, method) {
+    var o = { credentials: 'include', method: method || (body ? 'POST' : 'GET') };
     if (body) { o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(body); }
     return fetch(BASE + path, o).then(function (r) { return r.json().catch(function () { return { success: false, error: 'HTTP ' + r.status }; }); });
   }
@@ -31,7 +31,7 @@
     if (m < 1440) return Math.round(m / 60) + ' h ago';
     var days = Math.round(m / 1440); return days === 1 ? 'yesterday' : days + ' days ago';
   }
-  function toast(msg) { try { if (typeof showToast === 'function') showToast(msg, 'success'); } catch (e) {} }
+  function toast(msg, type) { try { if (typeof showToast === 'function') showToast(msg, type || 'success'); } catch (e) {} }
 
   function setBadge(n) {
     ['sb-agent-updates', 'agent-tab-updates'].forEach(function (id) {
@@ -58,10 +58,66 @@
       h('div', { class: 'pu-meta' }, [posted].concat(meta))];
     if (u.summary) body.push(h('p', { class: 'pu-sum', text: u.summary }));
     if (u.impact) body.push(h('p', { class: 'pu-imp' }, [h('b', { text: 'What it means for you: ' }), u.impact]));
-    var foot = [h('a', { class: 'pu-link', href: u.url, target: '_blank', rel: 'noopener', text: 'Read the full update' + (u.screenshots ? ' (' + u.screenshots + ' screenshot' + (u.screenshots > 1 ? 's' : '') + ')' : '') })];
+    if (u.local && u.details) body.push(h('div', { class: 'pu-det' }, [h('b', { text: 'Details' }), h('p', { text: u.details })]));
+    var foot = u.local ? [h('span', { class: 'pu-when', text: 'Posted in this tool by ' + (u.author || 'an admin') + (u.edited ? ' (edited)' : '') })]
+      : [h('a', { class: 'pu-link', href: u.url, target: '_blank', rel: 'noopener', text: 'Read the full update' + (u.screenshots ? ' (' + u.screenshots + ' screenshot' + (u.screenshots > 1 ? 's' : '') + ')' : '') })];
     if (opts && opts.extra) foot.push(opts.extra);
+    if (opts && opts.admin && u.local) {
+      foot.push(h('button', { type: 'button', class: 'pu-btn sm', text: 'Edit', onclick: function () { PU.editing = { id: u.localId, title: u.title, category: u.category, modules: (u.modules || []).join(', '), summary: u.summary, impact: u.impact, details: u.details, notes: '' }; PU.open(); } }));
+      foot.push(h('button', { type: 'button', class: 'pu-btn sm danger', text: 'Delete', onclick: function (ev) {
+        if (!confirm('Delete this update? Agents will no longer see it.')) return;
+        ev.target.disabled = true;
+        api('/api/admin/updates/' + u.localId, null, 'DELETE').then(function (r) { toast(r && r.success ? 'Update deleted' : (r && r.error) || 'Could not delete', r && r.success ? 'success' : 'error'); PU.open(); });
+      } }));
+    }
     body.push(h('div', { class: 'pu-foot' }, foot));
     return h('article', { class: 'pu-card' + (u.acked ? '' : ' unread') }, body);
+  }
+
+  // ── Admin editor: write an update for this tool, with AI drafting ──
+  function editor(root) {
+    var d = PU.editing;
+    var f = function (tag, key, attrs) { var el = h(tag, Object.assign({ class: 'pu-in', id: 'pu-ed-' + key }, attrs || {})); el.value = d[key] || ''; el.addEventListener('input', function () { d[key] = el.value; }); return el; };
+    var lab = function (key, text, hint) { return h('label', { class: 'pu-lab', for: 'pu-ed-' + key }, [text, hint ? h('span', { class: 'pu-when', text: ' ' + hint }) : null]); };
+    var notes = f('textarea', 'notes', { rows: '5', placeholder: 'Paste rough notes, a Chat message or steps. For example: from Monday all port out requests go to the Porting team in Zoho Desk, agents must collect the account PIN first.' });
+    var title = f('input', 'title', { type: 'text', maxlength: '140' });
+    var cat = f('select', 'category');
+    ['Process update', 'Product update', 'Policy', 'Training', 'Release'].forEach(function (c) { var o = h('option', { value: c, text: c }); if (c === (d.category || 'Process update')) o.selected = true; cat.appendChild(o); });
+    var mods = f('input', 'modules', { type: 'text', placeholder: 'For example: Adit Pay, Voice' });
+    var sum = f('textarea', 'summary', { rows: '3' });
+    var imp = f('textarea', 'impact', { rows: '2' });
+    var det = f('textarea', 'details', { rows: '5', placeholder: 'Optional steps or talking points, one per line' });
+    var err = h('p', { class: 'pu-err', role: 'alert' });
+    var aiBtn = h('button', { type: 'button', class: 'pu-btn', text: d.title ? 'Improve with AI' : 'Draft with AI', onclick: function () {
+      err.textContent = ''; aiBtn.disabled = true; aiBtn.textContent = 'Writing...';
+      api('/api/admin/updates/compose', { notes: d.notes, kind: d.category, current: { title: d.title, category: d.category, modules: d.modules, summary: d.summary, impact: d.impact, details: d.details } }).then(function (r) {
+        aiBtn.disabled = false;
+        if (!r || !r.success) { aiBtn.textContent = d.title ? 'Improve with AI' : 'Draft with AI'; err.textContent = (r && r.error) || 'The AI could not write a draft.'; return; }
+        Object.assign(d, r.draft); paint(root, PU.state); toast('Draft ready. Check every line before you publish.');
+      });
+    } });
+    var pubBtn = h('button', { type: 'button', class: 'pu-btn primary', text: d.id ? 'Save changes' : 'Publish to all agents', onclick: function () {
+      err.textContent = '';
+      if (!d.id && !confirm('Publish this update? Every agent will see it and must acknowledge it.')) return;
+      pubBtn.disabled = true;
+      var body = { title: d.title, category: d.category, modules: d.modules, summary: d.summary, impact: d.impact, details: d.details };
+      api(d.id ? '/api/admin/updates/' + d.id : '/api/admin/updates', body, d.id ? 'PUT' : 'POST').then(function (r) {
+        pubBtn.disabled = false;
+        if (!r || !r.success) { err.textContent = (r && r.error) || 'Could not save the update.'; return; }
+        toast(d.id ? 'Update saved' : 'Update published'); PU.editing = null; PU.open();
+      });
+    } });
+    return h('section', { class: 'pu-editor', 'aria-label': d.id ? 'Edit update' : 'New update' }, [
+      h('h3', { text: d.id ? 'Edit update' : 'New update for this tool' }),
+      h('p', { class: 'pu-when', text: 'Shown only inside this tool: on the Updates page, in the bell and on the must-read screen at sign-in. It is not posted to the updates site.' }),
+      lab('notes', 'Your notes', '(the AI uses only what you write here)'), notes,
+      h('div', { class: 'pu-ed-row' }, [aiBtn, h('span', { class: 'pu-when', text: 'The AI writes a draft below. Nothing is published until you press Publish.' })]),
+      h('div', { class: 'pu-ed-grid' }, [h('div', null, [lab('title', 'Title'), title]), h('div', null, [lab('category', 'Type'), cat]), h('div', null, [lab('modules', 'Areas', '(comma separated)'), mods])]),
+      lab('summary', 'What changed'), sum,
+      lab('impact', 'What it means for agents'), imp,
+      lab('details', 'Details', '(optional)'), det,
+      err,
+      h('div', { class: 'pu-ed-row' }, [pubBtn, h('button', { type: 'button', class: 'pu-btn', text: 'Cancel', onclick: function () { PU.editing = null; paint(root, PU.state); } })])]);
   }
 
   // ── The page ──────────────────────────────────────────────────────
@@ -78,9 +134,11 @@
     var head = h('div', { class: 'pu-head' }, [
       h('div', null, [h('h2', { text: 'Process and product updates' }), h('p', { text: 'What changed in the last 7 days. Open any update for the full detail and screenshots.' })]),
       h('div', { class: 'pu-actions' }, [
+        isAdmin() && !PU.editing ? h('button', { type: 'button', class: 'pu-btn primary', text: 'New update', onclick: function () { PU.editing = { notes: '', title: '', category: 'Process update', modules: '', summary: '', impact: '', details: '' }; paint(root, PU.state); } }) : null,
         isAdmin() ? h('button', { type: 'button', class: 'pu-btn', text: reportOpen ? 'Hide who has read' : 'Who has read', onclick: function () { reportOpen = !reportOpen; paint(root, PU.state); } }) : null,
-        more ? h('a', { class: 'pu-btn primary', href: more, target: '_blank', rel: 'noopener', text: 'See all updates' }) : null])]);
+        more && j.remoteConfigured ? h('a', { class: 'pu-btn', href: more, target: '_blank', rel: 'noopener', text: 'See all updates' }) : null])]);
     root.appendChild(head);
+    if (isAdmin() && PU.editing) root.appendChild(editor(root));
     if (!j) { root.appendChild(h('p', { class: 'pu-empty', text: 'Could not load updates. Try again in a moment.' })); return; }
     if (!j.configured) {
       root.appendChild(h('div', { class: 'pu-note', text: isAdmin() ? 'Updates are not connected yet. Create an API key on the updates site (Settings, API) and add it to the server as ADIT_UPDATES_KEY.' : 'Updates are not connected yet. Please check back soon.' }));
@@ -95,9 +153,9 @@
     if (!j.items.length) root.appendChild(h('p', { class: 'pu-empty', text: 'No updates in the last 7 days.' }));
     j.items.forEach(function (u) {
       var extra = u.acked ? null : h('button', { type: 'button', class: 'pu-btn', text: 'Mark as read', onclick: function (ev) { ev.target.disabled = true; api('/api/updates/ack', { ids: [u.id] }).then(function (r) { if (r && r.success) { PU.state = r; setBadge(r.unread || 0); } paint(root, PU.state); }); } });
-      root.appendChild(card(u, { extra: extra }));
+      root.appendChild(card(u, { extra: extra, admin: isAdmin() }));
     });
-    if (more) root.appendChild(h('p', { class: 'pu-more' }, [h('a', { href: more, target: '_blank', rel: 'noopener', text: 'Older updates and the full feed' })]));
+    if (more && j.remoteConfigured) root.appendChild(h('p', { class: 'pu-more' }, [h('a', { href: more, target: '_blank', rel: 'noopener', text: 'Older updates and the full feed' })]));
     if (isAdmin() && reportOpen) paintReport();
   }
   function paintReport() {

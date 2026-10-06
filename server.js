@@ -1936,6 +1936,34 @@ app.get('/api/admin/updates/report', requireAdmin, rateLimit(30, 60000), puWrap(
   const people = list.filter(a => a.email).map(a => ({ email: a.email, name: a.pseudo || a.full_name || a.email }));
   res.json({ success: true, ...(await productUpdates.report(people)) });
 }));
+// In-tool updates: admins write them here (with AI help); they join the Updates feed, the bell and the must-read screen.
+app.post('/api/admin/updates', requireAdmin, rateLimit(20, 60000), puWrap(async (req, res) => { res.json({ success: true, update: await productUpdates.createLocal(req.session.email, req.session.name, req.body || {}) }); }));
+app.put('/api/admin/updates/:id', requireAdmin, rateLimit(30, 60000), puWrap(async (req, res) => { res.json({ success: true, update: await productUpdates.updateLocal(req.params.id, req.body || {}) }); }));
+app.delete('/api/admin/updates/:id', requireAdmin, rateLimit(30, 60000), puWrap(async (req, res) => { res.json({ success: true, removed: await productUpdates.deleteLocal(req.params.id) }); }));
+app.post('/api/admin/updates/compose', requireAdmin, rateLimit(20, 60000), puWrap(async (req, res) => {
+  const ai = require('./lib/ai');
+  if (!ai.anyConfigured()) { const e = new Error('AI is not configured on the server (add ANTHROPIC_API_KEY or OPENAI_API_KEY).'); e.status = 503; throw e; }
+  const b = req.body || {};
+  const notes = String(b.notes || '').trim().slice(0, 6000);
+  const cur = b.current || {};
+  const hasDraft = ['title', 'summary', 'impact', 'details'].some(k => String(cur[k] || '').trim());
+  if (notes.length < 10 && !hasDraft) { const e = new Error('Paste your notes first: what changed, who it affects and what agents should do.'); e.status = 400; throw e; }
+  const system = 'You write process and product updates for the T1 customer support team at Adit (software for dental, optometry and other practices). Agents must read and acknowledge each update, so it has to be clear and usable on a live call or chat. '
+    + 'Turn the admin\'s rough notes into an update. Rules: plain, direct and friendly; short sentences; say exactly what changed, who it affects, what agents must do differently and from when, only if the notes say so; '
+    + 'never invent facts, dates, names, links, numbers, settings or steps that are not in the notes; if something important is unclear, leave it out rather than guess; no emojis; never use em dashes or en dashes (use commas, periods or parentheses); no markdown symbols except "- " at the start of a line in details. '
+    + 'Fields: title (at most 80 characters, says what changed), category (one of: Process update, Product update, Policy, Training, Release), modules (0 to 4 short product or area names mentioned in the notes, such as Adit Pay, Voice, Texting, Forms, Zoho Desk), '
+    + 'summary (2 to 4 sentences, what changed and why), impact (1 to 3 sentences starting with what the agent should now do), details (optional step by step instructions or talking points as short "- " lines, empty if the notes have none). '
+    + 'If a current draft is given, improve it using the notes and keep anything the admin wrote that is still correct. Return JSON only: {"title": string, "category": string, "modules": [string], "summary": string, "impact": string, "details": string}.';
+  const user = (notes ? 'Notes from the admin:\n' + notes + '\n' : '') + (b.kind ? 'This is a ' + String(b.kind).slice(0, 20) + ' update.\n' : '')
+    + (hasDraft ? '\nCurrent draft:\n' + JSON.stringify({ title: String(cur.title || '').slice(0, 200), category: String(cur.category || '').slice(0, 60), modules: String(cur.modules || '').slice(0, 200), summary: String(cur.summary || '').slice(0, 1500), impact: String(cur.impact || '').slice(0, 1000), details: String(cur.details || '').slice(0, 4000) }) : '');
+  const r = await ai.bestJSON({ system, user, maxTokens: 1500, feature: 'analyze', timeoutMs: 60000 });
+  const j = (r && r.json) || {};
+  const t = (s, n) => String(s || '').replace(/\s*[\u2014\u2013]\s*/g, ', ').replace(/[ \t]+/g, ' ').trim().slice(0, n);
+  const cats = ['Process update', 'Product update', 'Policy', 'Training', 'Release'];
+  if (!t(j.title, 140) || !t(j.summary, 1200)) { const e = new Error('The AI did not return a usable draft. Add a little more detail to the notes and try again.'); e.status = 502; throw e; }
+  res.json({ success: true, draft: { title: t(j.title, 140), category: cats.includes(j.category) ? j.category : 'Process update', modules: (Array.isArray(j.modules) ? j.modules : []).map(m => t(m, 40)).filter(Boolean).slice(0, 4).join(', '),
+    summary: t(j.summary, 1200), impact: t(j.impact, 800), details: String(j.details || '').replace(/\s*[\u2014\u2013]\s*/g, ', ').trim().slice(0, 4000) } });
+}));
 app.post('/api/admin/notices', requireAdmin, rateLimit(30, 60000), noticeWrap(async (req, res) => { res.json({ success: true, id: await notices.createNotice(req.session.email, req.body || {}) }); }));
 // AI drafts an announcement from a short gist. Nothing is posted: the admin reviews and edits first.
 app.post('/api/admin/notices/compose', requireAdmin, rateLimit(20, 60000), noticeWrap(async (req, res) => {
