@@ -7336,8 +7336,7 @@ async function runDeskLifecycleSync() {
     } catch (e) { console.warn('⚠️ Desk history phase failed:', e.message); }
     try {
       const { agentNames: an } = await deskLifecycleAgentRoster();
-      const q = await ticketAudits.enqueueTransfers({ agentNames: an });
-      if (q.queued) console.log(`🔎 Ticket audits: ${q.queued} transfers queued`);
+      void an; // Session 89: the post-transfer audit queue is retired; Pending Review - T1 replaces it.
     } catch (e) { console.warn('⚠️ Ticket audit queue failed:', e.message); }
     try {
       const b = await transferReview.detectBypass();
@@ -8335,7 +8334,7 @@ const requireAuditAdmin = async (req, res, next) => {
 };
 app.get('/api/audits/me', requireAuth, auditWrap(async (req, res) => {
   const c = await auditCtx(req);
-  res.json({ success: true, admin: c.admin, spoc: c.spoc, access: c.access, open: c.access ? (await ticketAudits.counts({ email: c.email, admin: c.admin })).open : 0, suggestions: c.access ? await ticketAudits.suggestionCount() : 0 });
+  res.json({ success: true, admin: c.admin, spoc: c.spoc, access: c.access, open: c.access ? (await transferReview.waitingCount()) : 0, suggestions: 0 });
 }));
 app.get('/api/audits/queue', requireAuth, requireAuditAccess, auditWrap(async (req, res) => {
   const c = req.audit, q = req.query;
@@ -8399,7 +8398,8 @@ app.get('/api/audits/spocs', requireAuth, requireAuditAdmin, auditWrap(async (re
   const map = new Map();
   for (const p of people) if (p.email) map.set(p.email.toLowerCase(), { email: p.email.toLowerCase(), name: p.full_name || p.pseudo || p.email, kind: 'Agent' });
   for (const a of admins) if (a.email && !map.has(a.email.toLowerCase())) map.set(a.email.toLowerCase(), { email: a.email.toLowerCase(), name: a.name || a.email, kind: 'Admin' });
-  res.json({ success: true, spocs: await ticketAudits.listSpocs(), candidates: [...map.values()].sort((a, b) => a.name.localeCompare(b.name)),
+  const rs = await transferReview.reviewerStats().catch(() => ({}));
+  res.json({ success: true, spocs: (await ticketAudits.listSpocs()).map(x => ({ ...x, review: rs[x.email] || { reviewed: 0, invalid: 0, today: 0, avgMin: null } })), candidates: [...map.values()].sort((a, b) => a.name.localeCompare(b.name)),
     settings: { autoQueue: (await ticketAudits.getSetting('auto_queue')) !== '0', autoAnalyze: (await ticketAudits.getSetting('auto_analyze')) !== '0', queueSince: await ticketAudits.getSetting('queue_since') } });
 }));
 app.post('/api/audits/spocs', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => {

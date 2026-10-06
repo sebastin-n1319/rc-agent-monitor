@@ -47,8 +47,8 @@
 
   // ── shell ────────────────────────────────────────────────────────────
   function tabs() {
-    var t = [['review', 'Pending review'], ['queue', 'Audit queue'], ['rules', 'Rule list'], ['updates', 'Updates']];
-    if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['spocs', 'SPOC management'], ['insights', 'Insights']]);
+    var t = [['review', 'Pending review']];
+    if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['spocs', 'SPOC management']]);
     return t;
   }
   TA.open = function (mode) {
@@ -72,7 +72,7 @@
     }));
     var body = h('div', { class: 'tka-body' });
     TA.root.replaceChildren(
-      h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Ticket audits' }), h('p', { text: 'Review every transfer before it leaves T1, record what was missed, and turn it into rules and team updates.' })])]),
+      h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer review' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
       bar, body);
     if (TA.auditId) return viewAudit(body, TA.auditId);
     ({ review: viewReview, strikes: viewStrikes, queue: viewQueue, rules: viewRules, spocs: viewSpocs, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
@@ -674,7 +674,7 @@
       });
       var cards = j.spocs.length ? j.spocs.map(function (s) {
         return h('article', { class: 'tka-rule' + (s.active ? '' : ' off') }, [
-          h('div', { class: 'tka-rule-main' }, [h('b', { text: s.name || s.email }), h('div', { class: 'tka-meta' }, [h('span', { text: s.email }), h('span', { text: s.open + ' open' }), h('span', { text: s.done + ' audited' }), h('span', { text: s.avgHours != null ? 'about ' + s.avgHours + ' h per audit' : 'no turnaround yet' })])]),
+          h('div', { class: 'tka-rule-main' }, [h('b', { text: s.name || s.email }), h('div', { class: 'tka-meta' }, [h('span', { text: s.email }), h('span', { text: s.review.today + ' reviewed today' }), h('span', { text: s.review.reviewed + ' in 30 days' }), h('span', { text: s.review.invalid + ' marked invalid' }), h('span', { text: s.review.avgMin != null ? 'about ' + s.review.avgMin + ' min per review' : 'no reviews yet' })])]),
           h('div', { class: 'tka-row-side' }, [
             btn(s.active ? 'Active' : 'Paused', s.active ? 'on' : '', function () { api('/api/audits/spocs/' + encodeURIComponent(s.email), { active: !s.active }, 'PUT').then(function () { TA.tab = 'spocs'; render(); }); }, { 'aria-pressed': String(!!s.active) }),
             btn('Remove', 'danger', function () { if (confirm('Remove this SPOC? Their open audits go back to the pool.')) api('/api/audits/spocs/' + encodeURIComponent(s.email), null, 'DELETE').then(function () { TA.tab = 'spocs'; render(); }); })])]);
@@ -686,14 +686,9 @@
         api('/api/audits/settings', { autoQueue: auto.checked, sinceDays: Number(since.value), autoAnalyze: aa.checked }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); });
       });
       body.append(
-        h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'SPOC management' }), h('p', { class: 'tka-hint', text: 'SPOCs are existing agents or admins. They see the Ticket audits page with only the tickets assigned to them, plus the rule list.' })])]),
+        h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'SPOC management' }), h('p', { class: 'tka-hint', text: 'SPOCs are existing agents or admins. They review tickets in Pending Review - T1 and record Good to go or Invalid.' })])]),
         h('div', { class: 'tka-card' }, [h('div', { class: 'tka-inline' }, [sel, add])]),
-        h('div', { class: 'tka-list' }, cards),
-        h('div', { class: 'tka-card' }, [h('h3', { text: 'Queue settings' }),
-          h('label', { class: 'tka-inline', for: 'tka-auto' }, [auto, h('span', { text: 'Add tickets automatically when an agent moves them out of T1' })]),
-          h('div', { class: 'tka-inline' }, [h('span', { text: 'Include transfers from the last' }), since, h('span', { text: 'days' })]),
-          h('label', { class: 'tka-inline', for: 'tka-aa' }, [aa, h('span', { text: 'Let AI suggest new rules and updates after every 5 finished audits' })]),
-          h('div', { class: 'tka-actions' }, [saveSet])]));
+        h('div', { class: 'tka-list' }, cards));
     });
   }
 

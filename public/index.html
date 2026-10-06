@@ -76,7 +76,7 @@
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.0.0" defer></script>
-<script src="/ticket-audits.js?v=1.5.0" defer></script>
+<script src="/ticket-audits.js?v=1.6.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.1.1">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
 <script src="/notice-center.js?v=1.2.2" defer></script>
@@ -740,10 +740,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">Tickets</span>
   </div>
   <!-- Session 76: Ticket audits (SPOC review of transferred tickets) -->
-  <div class="sb-item ap-hidden" id="sb-audits" title="Ticket audits: review tickets moved to other teams"
+  <div class="sb-item ap-hidden" id="sb-audits" title="Transfer review: tickets waiting in Pending Review - T1"
        onclick="sbAdmin('audits',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
-    <span class="sb-label">Audits</span>
+    <span class="sb-label">Review</span>
   </div>
   <!-- Session 53: Alerts hub (break log, missed calls, summaries, live ops) -->
   <div class="sb-item" id="sb-alerts" title="Alerts: break log, missed calls, summaries and live ops alerts to Google Chat"
@@ -811,10 +811,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">Alerts</span>
   </div>
   <!-- Session 76: Ticket audits for SPOCs (shown only to SPOCs and admins) -->
-  <div class="sb-item ap-hidden" id="sb-agent-audits" title="Ticket audits assigned to you"
+  <div class="sb-item ap-hidden" id="sb-agent-audits" title="Transfer review"
        onclick="sbAgent('audits',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M12 3.2l7 2.6v5.4c0 4.3-2.8 7.6-7 9.6-4.2-2-7-5.3-7-9.6V5.8z"/><path d="M8.8 12l2.3 2.3 4.2-4.6"/></svg>
-    <span class="sb-label">Audits</span>
+    <span class="sb-label">Review</span>
   </div>
   <!-- Process and product updates from the Adit Updates site -->
   <div class="sb-item" id="sb-agent-updates" title="Process and product updates from the last 7 days"
@@ -2406,7 +2406,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </button>
     <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Alerts</button>
     <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
-    <button class="agent-shell-btn ap-hidden" id="agent-tab-audits" onclick="switchAgentSection('audits',this)">Audits</button>
+    <button class="agent-shell-btn ap-hidden" id="agent-tab-audits" onclick="switchAgentSection('audits',this)">Review</button>
   </div>
   <div class="agent-shell-page active av2" id="agent-section-dashboard">
    <div class="av2-container">
