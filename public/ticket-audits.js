@@ -1,7 +1,7 @@
 /* Ticket audits: queue, audit form, rule list, SPOC management, updates and insights. */
 (function () {
   'use strict';
-  var TA = window.TA = { me: null, root: null, mode: 'admin', tab: 'queue', filter: 'open', spocFilter: '', destF: '', agentF: '', signalF: '', sumOpen: true, q: '', auditId: null, draftRules: [], editUpdate: null };
+  var TA = window.TA = { me: null, root: null, mode: 'admin', tab: 'review', filter: 'open', spocFilter: '', destF: '', agentF: '', signalF: '', sumOpen: true, q: '', auditId: null, draftRules: [], editUpdate: null };
   var BASE = (typeof BACKEND !== 'undefined' ? BACKEND : '');
 
   function h(tag, attrs, kids) {
@@ -47,8 +47,8 @@
 
   // ── shell ────────────────────────────────────────────────────────────
   function tabs() {
-    var t = [['queue', 'Queue'], ['rules', 'Rule list'], ['updates', 'Updates']];
-    if (isAdmin()) t = t.concat([['spocs', 'SPOC management'], ['insights', 'Insights']]);
+    var t = [['review', 'Pending review'], ['queue', 'Audit queue'], ['rules', 'Rule list'], ['updates', 'Updates']];
+    if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['spocs', 'SPOC management'], ['insights', 'Insights']]);
     return t;
   }
   TA.open = function (mode) {
@@ -60,7 +60,7 @@
     api('/api/audits/me').then(function (m) {
       if (!m || !m.success || !m.access) { TA.root.replaceChildren(h('div', { class: 'tka-note', text: 'Ticket audits are for SPOCs and admins.' })); return; }
       TA.me = m; setBadge(m.open || 0);
-      if (!tabs().some(function (t) { return t[0] === TA.tab; })) TA.tab = 'queue';
+      if (!tabs().some(function (t) { return t[0] === TA.tab; })) TA.tab = 'review';
       render();
     });
   };
@@ -72,10 +72,10 @@
     }));
     var body = h('div', { class: 'tka-body' });
     TA.root.replaceChildren(
-      h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Ticket audits' }), h('p', { text: 'Review tickets moved to other teams, record what was missed, and turn it into rules and team updates.' })])]),
+      h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Ticket audits' }), h('p', { text: 'Review every transfer before it leaves T1, record what was missed, and turn it into rules and team updates.' })])]),
       bar, body);
     if (TA.auditId) return viewAudit(body, TA.auditId);
-    ({ queue: viewQueue, rules: viewRules, spocs: viewSpocs, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+    ({ review: viewReview, strikes: viewStrikes, queue: viewQueue, rules: viewRules, spocs: viewSpocs, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
   }
   function setBadge(n) {
     ['sb-agent-audits', 'agent-tab-audits', 'sb-audits'].forEach(function (id) {
@@ -94,6 +94,184 @@
       setBadge(m.open || 0);
     }).catch(function () {});
   };
+
+  // ── Pending review (Session 88) ──────────────────────────────────────
+  function mmLabel(m) { return m == null ? '' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
+  function viewReview(body) {
+    var host = h('div', { class: 'tka-rv' });
+    body.appendChild(host);
+    function load(refresh) {
+      (refresh ? api('/api/review/refresh', {}) : api('/api/review/list')).then(function (j) {
+        if (!j.success) { host.replaceChildren(h('div', { class: 'tka-note', text: j.error || 'Could not load reviews' })); return; }
+        draw(j);
+      });
+    }
+    function draw(j) {
+      var st = j.settings || {}, buf = st.bufferMin || 15;
+      var over = j.waiting.filter(function (r) { return r.minutes >= buf; }).length;
+      var tiles = h('div', { class: 'tka-tiles' }, [
+        tileBox('Waiting for review', j.waiting.length, over ? over + ' over ' + buf + ' min' : 'all within ' + buf + ' min', over ? 'hot' : ''),
+        tileBox('Moved, verdict missing', j.moved.length, 'left the status without a verdict', j.moved.length ? 'warn' : ''),
+        tileBox('Reviewed today', (j.today.good || 0) + (j.today.invalid || 0), (j.today.good || 0) + ' good, ' + (j.today.invalid || 0) + ' invalid'),
+        tileBox('Average review time', j.today.avgMin == null ? 'none' : j.today.avgMin + ' min', 'today')]);
+      var bar = h('div', { class: 'tka-inline between' }, [
+        h('p', { class: 'tka-hint', text: 'Tickets in "' + (st.statusName || 'Pending Review - T1') + '". Review each within ' + buf + ' minutes: move it to the right person in Zoho Desk, then record your verdict here.' + (j.lastPollAt ? ' Checked ' + ago(j.lastPollAt) + '.' : '') }),
+        h('div', { class: 'tka-inline' }, [btn('Check Zoho now', '', function (ev) { busy(ev.currentTarget, true, 'Checking...'); load(true); }),
+          isAdmin() ? btn('Settings', 'ghost sm', function () { reviewSettings(host); }) : null])]);
+      var kids = [tiles, bar];
+      if (j.lastPollError) kids.push(h('div', { class: 'tka-note', text: 'Could not read Zoho: ' + j.lastPollError }));
+      kids.push(h('h3', { class: 'tka-sec', text: 'Waiting for review (' + j.waiting.length + ')' }));
+      if (!j.waiting.length) kids.push(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'Nothing waiting' }), h('p', { text: 'When a T1 agent sets a ticket to ' + (st.statusName || 'Pending Review - T1') + ', it shows here within a minute.' })]));
+      j.waiting.forEach(function (r) { kids.push(reviewCard(r, buf, j.me)); });
+      if (j.moved.length) {
+        kids.push(h('h3', { class: 'tka-sec', text: 'Moved, verdict missing (' + j.moved.length + ')' }));
+        kids.push(h('p', { class: 'tka-hint', text: 'These left the review status, or were moved by a T1 agent without it ("Skipped review"). Record a verdict so the agent gets feedback.' }));
+        j.moved.forEach(function (r) { kids.push(reviewCard(r, buf, j.me)); });
+      }
+      if (j.done.length) {
+        var d = h('details', { class: 'tka-fold' }, [h('summary', { text: 'Reviewed in the last 24 hours (' + j.done.length + ')' })]);
+        j.done.forEach(function (r) {
+          d.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(r.reviewed_at).replace(' ', 'T') + 'Z') }),
+            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', pill(r.verdict === 'good' ? 'Good to go' : 'Invalid', r.verdict === 'good' ? 'st-approved' : 'st-returned'), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.comment ? ' ' + r.comment : ''])]));
+        });
+        kids.push(d);
+      }
+      host.replaceChildren.apply(host, kids);
+    }
+    function tileBox(l, v, s, cls) { return h('div', { class: 'tka-tile ' + (cls || '') }, [h('span', { class: 'tka-tile-l', text: l }), h('b', { class: 'tka-tile-v', text: String(v) }), h('span', { class: 'tka-tile-s', text: s })]); }
+    function reviewCard(r, buf, me) {
+      var waiting = r.state === 'waiting';
+      var cls = waiting ? (r.minutes >= buf ? 'sev-high' : r.minutes >= buf - 5 ? 'sev-medium' : 'st-approved') : 'sev-low';
+      var own = r.agent_email && me && r.agent_email === me;
+      var form = h('div', { class: 'tka-rv-form' });
+      function openForm(kind) {
+        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'What did the agent miss? This is shown to the agent and counts as a strike.' : 'Optional note', 'aria-label': 'Comments' });
+        var who = h('input', { class: 'tka-input', list: 'tka-people', placeholder: 'Moved to (person)', value: r.to_agent || '', 'aria-label': 'Moved to' });
+        var dl = document.getElementById('tka-people') || h('datalist', { id: 'tka-people' });
+        if (!dl.parentNode) document.body.appendChild(dl);
+        var t = null;
+        who.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { api('/api/review/people?q=' + encodeURIComponent(who.value)).then(function (p) { dl.replaceChildren.apply(dl, (p.people || []).map(function (x) { return h('option', { value: x.name, text: x.team }); })); }); }, 250); });
+        var save = btn(kind === 'invalid' ? 'Save as invalid (strike)' : 'Save as good to go', kind === 'invalid' ? 'danger' : 'primary', function () {
+          busy(save, true, 'Saving...');
+          api('/api/review/' + r.id + '/verdict', { verdict: kind, comment: c.value, toAgent: who.value }).then(function (x) {
+            busy(save, false);
+            if (!x.success) return toast(x.error || 'Could not save', 'error');
+            toast(x.strike ? 'Saved. Strike ' + x.strike.count + ' (' + x.strike.level + ') for the agent' + (x.strike.chat && !x.strike.chat.ok ? ', group message not sent' : '') : 'Saved');
+            load(false);
+          });
+        });
+        form.replaceChildren(h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
+          kind === 'good' ? who : null, c, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })]));
+      }
+      var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [btn('Good to go', 'primary', function () { openForm('good'); }), btn('Invalid', 'danger', function () { openForm('invalid'); })];
+      return h('article', { class: 'tka-row' + (waiting && r.minutes >= buf ? ' hot' : '') }, [
+        h('div', { class: 'tka-row-main' }, [
+          h('div', { class: 'tka-row-top' }, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number }), h('span', { class: 'tka-sub', text: r.subject || '' })]),
+          h('div', { class: 'tka-meta' }, [h('span', { text: nameOf(r.agent_email, r.agent_name) }), r.channel ? pill(r.channel, 'dest') : null,
+            waiting ? pill('Waiting ' + mmLabel(r.minutes), cls) : pill(r.source === 'bypass' ? 'Skipped review' : 'Left review status', r.source === 'bypass' ? 'sev-high' : 'sev-medium'),
+            r.to_team || r.to_agent ? h('span', { class: 'tka-when', text: 'Now with ' + [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') }) : null,
+            r.breach_count ? h('span', { class: 'tka-when', text: 'Escalated ' + r.breach_count + 'x' }) : null]),
+          form]),
+        h('div', { class: 'tka-row-side' }, side)]);
+    }
+    load(false);
+    clearInterval(TA._rvTimer);
+    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
+  }
+  function reviewSettings(host) {
+    api('/api/review/settings').then(function (j) {
+      if (!j.success) return toast(j.error || 'Could not load settings', 'error');
+      var st = j.settings, picked = {}; (st.excludedTeams || []).forEach(function (t) { picked[t] = true; });
+      var box = h('div', { class: 'tka-picks' }, (j.teams || []).map(function (t, i) {
+        var cb = h('input', { type: 'checkbox', id: 'tka-ex-' + i }); cb.checked = !!picked[t];
+        cb.addEventListener('change', function () { picked[t] = cb.checked; });
+        return h('label', { for: 'tka-ex-' + i, class: 'tka-pick' }, [cb, h('span', { text: t })]);
+      }));
+      var buf = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '240', value: String(st.bufferMin), 'aria-label': 'Buffer minutes' });
+      var esc = h('input', { class: 'tka-input', value: (st.escalateEmails || []).join(', '), 'aria-label': 'People tagged when the buffer passes' });
+      var stName = h('input', { class: 'tka-input', value: st.statusName, 'aria-label': 'Zoho status name' });
+      var on = h('input', { type: 'checkbox', id: 'tka-rv-on' }); on.checked = st.enabled !== false;
+      var card = h('div', { class: 'tka-card' }, [h('h3', { text: 'Review settings' }),
+        h('p', { class: 'tka-hint', text: 'Assign directly: T1 agents may assign tickets straight to people in these teams without review. Everything else must go through ' + st.statusName + '.' }),
+        box,
+        h('div', { class: 'tka-inline' }, [h('span', { text: 'Review within' }), buf, h('span', { text: 'minutes, then tag' }), esc]),
+        h('div', { class: 'tka-inline' }, [h('span', { text: 'Zoho status' }), stName, h('label', { class: 'tka-inline', for: 'tka-rv-on' }, [on, h('span', { text: 'Review on' })])]),
+        h('p', { class: 'tka-when', text: 'People directory ' + (j.peopleRefreshedAt ? 'updated ' + ago(j.peopleRefreshedAt) : 'not built yet') + ' (Zoho teams, staff list and the Who does what sheet).' }),
+        h('div', { class: 'tka-actions' }, [
+          btn('Save settings', 'primary', function () {
+            var ex = Object.keys(picked).filter(function (k) { return picked[k]; });
+            api('/api/review/settings', { excludedTeams: ex, bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.checked }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'review'; render(); } });
+          }),
+          btn('Rebuild people directory', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Rebuilding...'); api('/api/review/people/refresh', {}).then(function (r) { busy(b, false, 'Rebuild people directory'); toast(r.success ? 'Directory: ' + r.zoho + ' from Zoho teams, ' + r.staff + ' staff, ' + r.sheet + ' from the sheet' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); }),
+          btn('Close', 'ghost sm', function () { card.remove(); })])]);
+      host.insertBefore(card, host.firstChild);
+    });
+  }
+  function viewStrikes(body) {
+    api('/api/review/strikes').then(function (j) {
+      if (!j.success) { body.appendChild(h('div', { class: 'tka-note', text: j.error || 'Could not load strikes' })); return; }
+      var l30 = j.last30 || {};
+      body.appendChild(h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'Strikes (rolling ' + j.days + ' days)' }), h('p', { class: 'tka-hint', text: 'Every review marked Invalid is a strike. 5th: verbal warning, 6th: written warning, 7th: PIP for 30 days, more: disciplinary action. Last 30 days: ' + (l30.n || 0) + ' reviews, ' + (l30.good || 0) + ' good, ' + (l30.invalid || 0) + ' invalid.' })])]));
+      if (!j.agents.length) { body.appendChild(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No strikes' }), h('p', { text: 'Invalid transfers show here once reviewers record them.' })])); return; }
+      j.agents.forEach(function (a) {
+        var d = h('details', { class: 'tka-fold' }, [h('summary', null, [h('b', { text: a.name + '  ' }), pill(a.active + ' active', a.active >= 7 ? 'sev-high' : a.active >= 5 ? 'sev-medium' : 'sev-low'), a.level ? pill(a.level, a.active >= 5 ? 'sev-high' : 'cat') : null])]);
+        a.strikes.forEach(function (s) {
+          d.appendChild(h('div', { class: 'tka-tl' + (s.voided ? ' off' : '') }, [h('span', { class: 'tka-when', text: when(String(s.at).replace(' ', 'T') + 'Z') }),
+            h('span', null, [s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + s.ticket }) : '#' + s.ticket, ' ' + (s.comment || '') + (s.voided ? ' (removed)' : ' (expires ' + when(s.expires).split(',')[0] + ')')]),
+            s.voided ? null : btn('Remove strike', 'ghost sm', function (ev) { var why = prompt('Why remove this strike?'); if (why == null) return; api('/api/review/strikes/' + s.id + '/void', { reason: why }).then(function (r) { toast(r.success ? 'Strike removed' : (r.error || 'Failed'), r.success ? 'success' : 'error'); TA.tab = 'strikes'; render(); }); })]));
+        });
+        body.appendChild(d);
+      });
+    });
+  }
+
+  // ── My Stats: Transfer policy tab for every agent ─────────────────────
+  TA.policyTab = function () {
+    var sec = document.getElementById('agent-section-mystats'); if (!sec) return;
+    var root = document.getElementById('desk-lifecycle-agent-root');
+    var bar = document.getElementById('tka-mystats-tabs'), pol = document.getElementById('tka-policy-root');
+    if (!bar) {
+      pol = h('div', { id: 'tka-policy-root', class: 'tka-page', style: 'display:none' });
+      var b1 = h('button', { type: 'button', role: 'tab', class: 'tka-tab on', text: 'Ticket stats', 'aria-selected': 'true' });
+      var b2 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Transfer policy', 'aria-selected': 'false' });
+      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2]);
+      function pick(which) {
+        var p = which === 'policy';
+        b1.classList.toggle('on', !p); b2.classList.toggle('on', p); b1.setAttribute('aria-selected', String(!p)); b2.setAttribute('aria-selected', String(p));
+        if (root) root.style.display = p ? 'none' : ''; pol.style.display = p ? '' : 'none';
+        if (p) drawPolicy(pol);
+      }
+      b1.addEventListener('click', function () { pick('stats'); });
+      b2.addEventListener('click', function () { pick('policy'); });
+      sec.insertBefore(bar, sec.firstChild); sec.appendChild(pol);
+    }
+  };
+  function drawPolicy(pol) {
+    pol.replaceChildren(h('p', { class: 'tka-empty', text: 'Loading...' }));
+    api('/api/review/my').then(function (j) {
+      if (!j.success) { pol.replaceChildren(h('div', { class: 'tka-note', text: j.error || 'Could not load' })); return; }
+      var steps = h('div', { class: 'tka-policy' }, j.policy.map(function (p) {
+        var hit = j.active >= p.from && j.active <= p.to;
+        return h('div', { class: 'tka-step' + (hit ? ' on' : '') + (j.active >= p.from ? ' past' : '') }, [h('b', { text: p.from === p.to ? 'Strike ' + p.from : p.to > 100 ? 'Strike ' + p.from + '+' : 'Strikes ' + p.from + ' to ' + p.to }), h('span', { text: p.label }), h('em', { text: p.text })]);
+      }));
+      pol.replaceChildren(
+        h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer policy' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
+        h('div', { class: 'tka-card' }, [h('h3', { text: 'How it works' }),
+          h('div', { class: 'tka-pts' }, [
+            'Do not move a ticket to another team or person yourself. Set the status to "' + j.statusName + '".',
+            'A reviewer checks it within ' + j.bufferMin + ' minutes and moves it to the right person, or sends it back to you with comments.',
+            'A transfer marked Invalid is a strike. Each strike stays active for ' + j.days + ' days.',
+            j.excludedTeams && j.excludedTeams.length ? 'You may assign directly to: ' + j.excludedTeams.join(', ') + '.' : 'There are no teams you can assign to directly right now.'].map(function (t) { return h('div', { class: 'tka-pt' }, [h('i'), h('span', { text: t })]); }))]),
+        h('div', { class: 'tka-tiles' }, [
+          h('div', { class: 'tka-tile ' + (j.active >= 5 ? 'hot' : '') }, [h('span', { class: 'tka-tile-l', text: 'Your active strikes' }), h('b', { class: 'tka-tile-v', text: String(j.active) }), h('span', { class: 'tka-tile-s', text: j.level ? j.level : 'Clean record' })]),
+          h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Good to go' }), h('b', { class: 'tka-tile-v', text: String(j.good) }), h('span', { class: 'tka-tile-s', text: 'transfers in the last ' + j.days + ' days' })]),
+          h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Next strike means' }), h('b', { class: 'tka-tile-v sm', text: j.nextLevel || '' }), h('span', { class: 'tka-tile-s', text: 'Strikes expire after ' + j.days + ' days' })])]),
+        h('div', { class: 'tka-card' }, [h('h3', { text: 'The 5 strike policy' }), steps]),
+        h('div', { class: 'tka-card' }, [h('h3', { text: 'Your strikes' })].concat(j.strikes.length ? j.strikes.map(function (s) {
+          return h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(s.at).replace(' ', 'T') + 'Z') }), h('span', null, [s.url ? h('a', { href: s.url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + s.ticket }) : '#' + s.ticket, ' ' + (s.comment || ''), h('span', { class: 'tka-when', text: '  expires ' + when(s.expires).split(',')[0] })])]);
+        }) : [h('p', { class: 'tka-empty', text: 'No strikes. Keep it that way.' })])));
+    });
+  }
 
   // ── queue ────────────────────────────────────────────────────────────
   function viewQueue(body) {

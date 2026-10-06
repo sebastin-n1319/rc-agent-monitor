@@ -574,6 +574,18 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
     ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
+    // Session 88: transfer review (Pending Review - T1), polled every minute.
+    transferReview.setDB(db);
+    await transferReview.initSchema();
+    transferReview.setDeps({ notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
+      roster: () => deskLifecycleAgentRoster(),
+      spocs: async () => (await ticketAudits.listSpocs()).filter(x => x.active).map(x => x.email),
+      chat: { pendingIdle: (p) => t1Alerts().notifyPendingIdle(p), strike: (p) => t1Alerts().notifyStrike(p) } });
+    setTimeout(() => transferReview.refreshPeople().then(r => console.log('👥 Transfer review directory:', JSON.stringify(r))).catch(e => console.warn('directory refresh failed:', e.message)), 60000);
+    setInterval(() => transferReview.refreshPeople().catch(() => {}), 12 * 3600 * 1000);
+    setTimeout(() => {
+      setInterval(() => { transferReview.poll().catch(e => console.warn('transfer review poll failed:', e.message)); }, 60 * 1000);
+    }, 40000);
     // Announce new updates in the bell even when nobody has the Updates page open
     setTimeout(() => productUpdates.recent().catch(() => {}), 30000);
     setInterval(() => productUpdates.recent().catch(() => {}), 10 * 60 * 1000);
@@ -1775,6 +1787,7 @@ const accessReq = require('./lib/access'); // Session 63: access requests
 const notices = require('./lib/notices'); // Session 68: tool-wide notification centre
 const productUpdates = require('./lib/product-updates');
 const ticketAudits = require('./lib/ticket-audits'); // Session 76: ticket audits
+const transferReview = require('./lib/transfer-review'); // Session 88: pending review before transfer
 const regularise = require('./lib/regularise'); // Session 68: break regularise requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
 async function requireAssessAccess(req, res, next) {
@@ -7326,6 +7339,10 @@ async function runDeskLifecycleSync() {
       const q = await ticketAudits.enqueueTransfers({ agentNames: an });
       if (q.queued) console.log(`🔎 Ticket audits: ${q.queued} transfers queued`);
     } catch (e) { console.warn('⚠️ Ticket audit queue failed:', e.message); }
+    try {
+      const b = await transferReview.detectBypass();
+      if (b.found) console.log(`🚦 Transfer review: ${b.found} moves skipped review`);
+    } catch (e) { console.warn('⚠️ Transfer review bypass check failed:', e.message); }
 
     await deskLifecycle.setSyncState('last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('last_error', snapshotError);
@@ -8344,6 +8361,17 @@ app.get('/api/audits/agents', requireAuth, requireAuditAccess, auditWrap(async (
   const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
   res.json({ success: true, agents: emails.map(e => ({ email: e, name: byEmail[e]?.full_name || agentNames[e] || e })).sort((a, b) => a.name.localeCompare(b.name)) });
 }));
+// Session 88: transfer review (Pending Review - T1), strikes and the agent policy tab.
+app.get('/api/review/list', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.list()), me: req.audit.email }); }));
+app.post('/api/review/refresh', requireAuth, requireAuditAccess, rateLimit(10, 60000), auditWrap(async (req, res) => { res.json({ success: true, result: await transferReview.poll(), ...(await transferReview.list()) }); }));
+app.post('/api/review/:id/verdict', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.verdict(Number(req.params.id), req.audit, req.body || {})) }); }));
+app.get('/api/review/people', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, people: await transferReview.people(String(req.query.q || '').slice(0, 60), 30) }); }));
+app.post('/api/review/people/refresh', requireAuth, requireAuditAdmin, rateLimit(3, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.refreshPeople()) }); }));
+app.get('/api/review/settings', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, settings: await transferReview.settings(), teams: await transferReview.teamOptions(), peopleRefreshedAt: await transferReview.getSetting('people_refreshed_at') }); }));
+app.put('/api/review/settings', requireAuth, requireAuditAdmin, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, settings: await transferReview.saveSettings(req.body || {}) }); }));
+app.get('/api/review/strikes', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.strikesBoard()) }); }));
+app.post('/api/review/strikes/:id/void', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await transferReview.voidStrike(Number(req.params.id), req.audit.email, (req.body || {}).reason); res.json({ success: true }); }));
+app.get('/api/review/my', requireAuth, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.mine(req.session.email)) }); }));
 app.get('/api/audits/summary', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.summary({ email: req.audit.email, admin: req.audit.admin })) }); }));
 app.get('/api/audits/facets', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.facets({ email: req.audit.email, admin: req.audit.admin })) }); }));
 app.post('/api/audits/rebalance', requireAuth, requireAuditAdmin, rateLimit(6, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.rebalance(req.audit.email)) }); }));

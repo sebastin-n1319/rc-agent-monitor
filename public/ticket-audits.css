@@ -175,3 +175,21 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-ev.k-status>i,.tka-ev.k-priority>i{background:var(--tka-red)}
 .tka-ev.k-team>i,.tka-ev.k-owner>i{background:#7c5cd6}
 .tka-ev.k-created>i{background:var(--tka-green)}
+
+/* transfer review and policy */
+.tka-sec{margin:16px 0 8px;font-size:15px}
+.tka-rv .tka-row{margin-bottom:10px}
+.tka-rv-form{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-width:640px}
+.tka-rv-form:empty{display:none}
+.tka-tile-v.sm{font-size:16px}
+.tka-tl.off{opacity:.55;text-decoration:line-through}
+#tka-mystats-tabs{margin:0 0 14px;max-width:none}
+.tka-policy{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.tka-step{display:flex;flex-direction:column;gap:3px;padding:10px 12px;border-radius:12px;border:1px solid var(--tka-border);background:var(--tka-surface2);font-size:12.5px;color:var(--tka-t2)}
+.tka-step b{color:var(--tka-t1);font-size:13px}
+.tka-step span{font-weight:600;color:var(--tka-t1)}
+.tka-step em{font-style:normal}
+.tka-step.past{border-color:var(--tka-amber)}
+.tka-step.on{border-color:var(--tka-red);background:rgba(217,70,77,.08)}
+.tka-fold summary .tka-pill{margin-left:6px}
+.tka-rv-form .tka-input{flex:none;width:100%;box-sizing:border-box}
