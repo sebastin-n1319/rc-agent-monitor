@@ -227,12 +227,13 @@
 
   // ── Escalation watch (admin) ───────────────────────────────────────
   var ESC_KIND = { 'new': ['New escalation', 'sev-high'], existing: ['Already escalated', 'sev-medium'], reopen: ['Reopen ESC', 'sev-medium'] };
-  var ESC_STATUS = { alerted: ['Alerted', 'st-pending'], reported: ['Reported', 'st-approved'], late_reported: ['Reported late', 'st-returned'], not_reported: ['Not reported', 'sev-high'], dismissed: ['Dismissed', 'st-closed'] };
+  var ESC_STATUS = { alerted: ['Alerted', 'st-pending'], reported: ['Reported', 'st-approved'], late_reported: ['Reported late', 'st-returned'], not_reported: ['Not reported', 'sev-high'], dismissed: ['Dismissed', 'st-closed'],
+    not_needed: ['Escalation not needed', 'st-closed'], watching: ['Checking ESC owner', 'st-pending'], handled: ['ESC owner looped in', 'st-approved'], owner_missed: ['ESC owner not looped in', 'sev-high'], noted: ['No action needed', 'st-closed'] };
   function viewEscalations(body) {
     var days = TA.escDays || 7;
     var setHost = h('div'), listHost = h('div', null, [h('p', { class: 'tka-empty', text: 'Loading...' })]);
     body.appendChild(h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'Escalation watch' }),
-      h('p', { class: 'tka-hint', text: 'Every 15 minutes this reads T1 ticket conversations, SalesIQ chat transcripts, private notes and T1 call summaries (Avoma and RingCentral), and posts to Google Chat when a client shows escalation signs. It checks CRM for an existing ESC and reminds once if nothing is created or updated in time.' })])]));
+      h('p', { class: 'tka-hint', text: 'Every 15 minutes this reads T1 ticket conversations, SalesIQ chat transcripts, private notes and T1 call summaries (Avoma and RingCentral). When a client shows escalation signs and has no active ESC, it posts to Google Chat and reminds once if no ESC is created in time. When the client is already escalated, it posts only if the agent did not tag the ESC owner on the ticket or assign it to them.' })])]));
     var covHost = h('div');
     body.appendChild(setHost); body.appendChild(covHost); body.appendChild(listHost);
     api('/api/escalations/coverage?days=7').then(function (j) {
@@ -250,13 +251,17 @@
         if (!j.success) { listHost.replaceChildren(h('div', { class: 'tka-note', text: j.error || 'Could not load alerts' })); return; }
         var sel = h('select', { class: 'tka-input narrow', 'aria-label': 'Period' }, [[1, 'Today'], [7, 'Last 7 days'], [30, 'Last 30 days']].map(function (o) { var op = h('option', { value: String(o[0]), text: o[1] }); if (o[0] === days) op.selected = true; return op; }));
         sel.addEventListener('change', function () { days = TA.escDays = Number(sel.value); loadList(); });
-        var sig = j.signals || [], c = { n: sig.length, nr: 0, rep: 0, open: 0 };
-        sig.forEach(function (x) { if (x.status === 'not_reported') c.nr++; else if (x.status === 'reported' || x.status === 'late_reported') c.rep++; else if (x.status === 'alerted') c.open++; });
+        var sig = j.signals || [], c = { n: 0, nr: 0, rep: 0, om: 0, nn: 0 };
+        sig.forEach(function (x) {
+          if (x.status === 'not_needed') { c.nn++; return; }
+          if (x.kind !== 'existing') c.n++;
+          if (x.status === 'not_reported') c.nr++; else if (x.status === 'reported' || x.status === 'late_reported') c.rep++; else if (x.status === 'owner_missed') c.om++;
+        });
         var tile = function (l, v, sub, cls) { return h('div', { class: 'tka-tile ' + (cls || '') }, [h('span', { class: 'tka-tile-l', text: l }), h('b', { class: 'tka-tile-v', text: String(v) }), h('span', { class: 'tka-tile-s', text: sub })]); };
         var kids = [h('div', { class: 'tka-toolbar' }, [h('span', { class: 'tka-when', text: 'Showing' }), sel]),
-          h('div', { class: 'tka-tiles' }, [tile('Alerts', c.n, 'escalation signals found'), tile('Waiting', c.open, 'inside the reporting window'), tile('Reported', c.rep, 'ESC created or updated in CRM'), tile('Not reported', c.nr, 'no ESC after the reminder', c.nr ? 'hot' : '')])];
-        var ag = (j.agents || []).filter(function (a) { return a.notReported; });
-        if (ag.length) kids.push(h('div', { class: 'tka-card' }, [h('h3', { text: 'Not reported, by agent' }), h('div', { class: 'tka-chips' }, ag.map(function (a) { return pill(a.name + ': ' + a.notReported + ' of ' + a.alerts, 'sev-high'); }))]));
+          h('div', { class: 'tka-tiles' }, [tile('New escalation alerts', c.n, c.nn ? c.nn + ' more marked not needed' : 'no ESC on record'), tile('Reported', c.rep, 'ESC created or updated in CRM'), tile('Not reported', c.nr, 'no ESC after the reminder', c.nr ? 'hot' : ''), tile('ESC owner missed', c.om, 'escalated client, owner not tagged or assigned', c.om ? 'hot' : '')])];
+        var ag = (j.agents || []).filter(function (a) { return a.notReported || a.ownerMissed; });
+        if (ag.length) kids.push(h('div', { class: 'tka-card' }, [h('h3', { text: 'Misses by agent' }), h('div', { class: 'tka-chips' }, ag.map(function (a) { return pill(a.name + ': ' + [a.notReported ? a.notReported + ' not reported' : '', a.ownerMissed ? a.ownerMissed + ' owner missed' : ''].filter(Boolean).join(', '), 'sev-high'); }))]));
         if (!sig.length) kids.push(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No escalation signals' }), h('p', { text: 'Alerts appear here once the watch is on and finds a client who should be escalated.' })]));
         sig.forEach(function (x) { kids.push(escCard(x, loadList)); });
         listHost.replaceChildren.apply(listHost, kids);
@@ -266,22 +271,30 @@
   }
   function escCard(x, reload) {
     var k = ESC_KIND[x.kind] || [x.kind, 'cat'], st = ESC_STATUS[x.status] || [x.status, 'cat'];
-    var src = x.source === 'ticket' ? (x.ticket_url ? h('a', { class: 'tka-num', href: x.ticket_url, target: '_blank', rel: 'noopener', text: '#' + x.ticket_number }) : h('b', { class: 'tka-num', text: '#' + (x.ticket_number || '') })) : h('b', { class: 'tka-num', text: x.call_label || 'Call' });
+    var src = x.source !== 'call' ? (x.ticket_url ? h('a', { class: 'tka-num', href: x.ticket_url, target: '_blank', rel: 'noopener', text: '#' + x.ticket_number }) : h('b', { class: 'tka-num', text: '#' + (x.ticket_number || '') })) : h('b', { class: 'tka-num', text: x.call_label || 'Call' });
     var side = [];
+    var notNeeded = btn('Escalation not needed', 'ghost sm', function () {
+      var why = prompt('Why is escalation not needed? This teaches the watch to skip similar cases.', '');
+      if (why == null) return;
+      api('/api/escalations/' + x.id + '/not-needed', { reason: why }).then(function (r) { toast(r.success ? 'Marked as not needed' : (r.error || 'Failed'), r.success ? 'success' : 'error'); reload(); });
+    });
+    if (x.status === 'watching' || x.status === 'owner_missed') side.push(notNeeded);
     if (x.status === 'alerted' || x.status === 'not_reported') {
       side.push(btn('Mark reported', 'primary sm', function () { var esc = prompt('ESC id (optional), for example ESC-1234', x.esc_name || ''); if (esc == null) return; api('/api/escalations/' + x.id + '/reported', { esc: esc }).then(function (r) { toast(r.success ? 'Marked reported' : (r.error || 'Failed'), r.success ? 'success' : 'error'); reload(); }); }));
-      side.push(btn('Dismiss', 'ghost sm', function () { api('/api/escalations/' + x.id + '/dismiss', {}).then(function (r) { toast(r.success ? 'Dismissed' : (r.error || 'Failed'), r.success ? 'success' : 'error'); reload(); }); }));
+      side.push(notNeeded);
     }
-    return h('article', { class: 'tka-row' + (x.status === 'not_reported' ? ' hot' : '') }, [
+    return h('article', { class: 'tka-row' + (x.status === 'not_reported' || x.status === 'owner_missed' ? ' hot' : '') }, [
       h('div', { class: 'tka-row-main' }, [
         h('div', { class: 'tka-row-top' }, [src, h('span', { class: 'tka-sub', text: x.account_name || 'Unknown account' })]),
         h('div', { class: 'tka-meta' }, [pill(k[0] + (x.esc_name ? ' ' + x.esc_name : ''), k[1], x.esc_status || null), pill(st[0] + (x.reported_esc ? ' ' + x.reported_esc : ''), st[1]),
           x.tier_suggestion && x.kind !== 'existing' ? pill('Suggested ' + x.tier_suggestion, 'dest') : null,
-          h('span', { text: nameOf(x.agent_email, x.agent_name) }), h('span', { class: 'tka-when', text: when(x.detected_at) + (x.via === 'ai' ? ', AI ' : ', keywords ') + Math.round((x.confidence || 0) * 100) + '%' }),
-          x.post_ok ? null : pill('Not posted', 'sev-medium', x.post_error || null)]),
+          h('span', { text: nameOf(x.agent_email, x.agent_name) }), h('span', { class: 'tka-when', text: when(x.detected_at) + (x.via === 'ai' ? ', AI ' + Math.round((x.confidence || 0) * 100) + '%' : ', keywords') }),
+          x.post_ok || x.post_ok == null ? null : pill('Not posted', 'sev-medium', x.post_error || null)]),
         (x.signals || []).length ? h('div', { class: 'tka-flags' }, x.signals.map(function (g) { return pill(g, 'ai ai-escalation'); })) : null,
         x.summary ? h('p', { class: 'tka-hint', text: x.summary }) : null,
         x.quote ? h('p', { class: 'tka-when', text: 'Client said: "' + x.quote + '"' }) : null,
+        x.owner_check ? h('p', { class: 'tka-when', text: 'ESC owner check: ' + x.owner_check }) : null,
+        x.nn_reason ? h('p', { class: 'tka-when', text: 'Not needed: ' + x.nn_reason }) : null,
         [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).length ? h('p', { class: 'tka-when', text: [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).join(' | ') }) : null]),
       h('div', { class: 'tka-row-side' }, side)]);
   }
@@ -340,6 +353,8 @@
     var tags = tagPicker(st.tagItems || []);
     var rem = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '48', value: String(st.reminderHours), 'aria-label': 'Reminder after hours' });
     var conf = h('input', { class: 'tka-input narrow', type: 'number', min: '30', max: '95', step: '5', value: String(Math.round(st.minConfidence * 100)), 'aria-label': 'Minimum confidence percent' });
+    var kw = h('textarea', { class: 'tka-input', rows: '4', 'aria-labelledby': 'tka-esc-kw-l', placeholder: 'One phrase per line' });
+    kw.value = String(st.keywords || '').split('\n').join(', ');
     var ded = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '72', value: String(st.dedupeHours), 'aria-label': 'One alert per client every hours' });
     var lookSel = h('select', { class: 'tka-input narrow', 'aria-label': 'Scan period' }, [['0', 'Since last scan'], ['12', 'Last 12 hours'], ['24', 'Last 24 hours'], ['48', 'Last 48 hours']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
     var on = h('input', { type: 'checkbox', id: 'tka-esc-on' }); on.checked = !!st.enabled;
@@ -347,7 +362,7 @@
     var acc = st.access || {}, blocked = Object.keys(acc).filter(function (t) { return acc[t] !== 'ok'; });
     var status = st.lastScanAt ? 'Last scan ' + ago(st.lastScanAt) + ': ' + (res.error ? res.error : (res.tickets || 0) + ' tickets and ' + (res.calls || 0) + ' calls read, ' + (res.alerts || 0) + ' alerts, ' + (res.reminders || 0) + ' reminders' + (res.since ? ' (activity since ' + when(res.since) + ')' : '') + (res.errors && res.errors.length ? ', ' + res.errors.length + (res.errors.length === 1 ? ' error' : ' errors') : '')) + '.' : 'No scan yet.';
     function save(extra) {
-      var b = Object.assign({ tags: tags.value(), reminderHours: Number(rem.value), minConfidence: Number(conf.value) / 100, dedupeHours: Number(ded.value), enabled: on.checked }, extra || {});
+      var b = Object.assign({ keywords: kw.value, tags: tags.value(), reminderHours: Number(rem.value), minConfidence: Number(conf.value) / 100, dedupeHours: Number(ded.value), enabled: on.checked }, extra || {});
       if (hook.value.trim()) b.webhook = hook.value.trim();
       return api('/api/escalations/settings', b, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'escalations'; render(); } return r; });
     }
@@ -358,7 +373,9 @@
       h('p', { class: 'tka-hint', id: 'tka-esc-tags-l', text: 'People to tag at the top of every alert and reminder. Type a name and pick the person. A grey chip means they have not signed in to this tool yet, so Google Chat cannot notify them until they do.' }),
       tags.el,
       h('div', { class: 'tka-inline' }, [h('span', { text: 'Remind after' }), rem, h('span', { text: 'hours if no ESC is created or updated. One alert per client every' }), ded, h('span', { text: 'hours.' })]),
-      h('div', { class: 'tka-inline' }, [h('span', { text: 'Alert at' }), conf, h('span', { text: '% confidence or more' }), h('label', { class: 'tka-inline', for: 'tka-esc-on' }, [on, h('span', { text: 'Watch on' })])]),
+      h('p', { class: 'tka-hint', id: 'tka-esc-kw-l', text: 'Escalation keywords, separated by commas. Any of these in a client message, chat, private note or call raises an alert on its own, whatever the AI confidence. Use * for word endings (cancel* also catches cancelling). Cancel next to appointment, patient, reminder or similar words is ignored.' }),
+      kw,
+      h('div', { class: 'tka-inline' }, [h('span', { text: 'AI alone alerts at' }), conf, h('span', { text: '% confidence or more (when no keyword matched)' }), h('label', { class: 'tka-inline', for: 'tka-esc-on' }, [on, h('span', { text: 'Watch on' })])]),
       blocked.length ? h('div', { class: 'tka-note', text: 'AditKB did not allow: ' + blocked.map(function (t) { return t + ' (' + acc[t] + ')'; }).join(', ') + '. Ask for access to these tables for the key the server uses, or set ADITKB_ESC_API_KEY.' }) : null,
       h('div', { class: 'tka-actions' }, [
         btn('Save settings', 'primary', function () { save(); }),
