@@ -199,3 +199,19 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-cov th,.tka-cov td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--tka-border)}
 .tka-cov th{font-weight:600;color:var(--tka-t3)}
 .tka-cov td:not(:first-child),.tka-cov th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;width:110px}
+
+/* Escalation watch: people to tag */
+.tka-tagbox{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:44px;padding:6px 10px;border:1px solid var(--tka-border);border-radius:12px;background:var(--tka-surface);cursor:text}
+.tka-tagbox:focus-within{border-color:var(--tka-teal);box-shadow:0 0 0 3px var(--tka-teal-s)}
+.tka-tagchips{display:contents}
+.tka-tagchip{display:inline-flex;align-items:center;gap:4px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--tka-teal-s);color:var(--tka-t1);font-size:13px;font-weight:500}
+.tka-tagchip.off{background:var(--tka-surface2);color:var(--tka-t3);border:1px dashed var(--tka-border)}
+.tka-tagx{border:0;background:none;color:inherit;font-size:16px;line-height:1;width:24px;height:24px;border-radius:50%;cursor:pointer}
+.tka-tagx:hover,.tka-tagx:focus-visible{background:var(--tka-border)}
+.tka-tagin{flex:1;min-width:180px;border:0;outline:0;background:none;font:inherit;font-size:14px;color:var(--tka-t1);padding:6px 2px}
+.tka-taglist{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;margin:0;padding:4px;list-style:none;background:var(--tka-surface);border:1px solid var(--tka-border);border-radius:12px;box-shadow:0 8px 24px rgba(7,43,64,.12);max-height:280px;overflow:auto}
+.tka-taglist[hidden]{display:none}
+.tka-tagopt{padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13.5px}
+.tka-tagopt.on,.tka-tagopt:hover{background:var(--tka-teal-s)}
+.tka-tagempty{padding:8px 10px;color:var(--tka-t3);font-size:13px}
+.tka-tagbox .tka-tagin,.tka-tagbox .tka-tagin:focus{border:0;box-shadow:none;outline:0;background:none}

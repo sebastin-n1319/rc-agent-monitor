@@ -285,9 +285,59 @@
         [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).length ? h('p', { class: 'tka-when', text: [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).join(' | ') }) : null]),
       h('div', { class: 'tka-row-side' }, side)]);
   }
+  // Chip picker for people to tag. Value is a comma list of emails (or "all").
+  function tagPicker(initial) {
+    var items = (initial || []).slice(), opts = [], active = -1, timer = null;
+    var chips = h('div', { class: 'tka-tagchips' });
+    var input = h('input', { class: 'tka-tagin', type: 'text', placeholder: 'Type a name, for example Ronnie', autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'tka-esc-tag-list', 'aria-labelledby': 'tka-esc-tags-l' });
+    var list = h('ul', { class: 'tka-taglist', id: 'tka-esc-tag-list', role: 'listbox', hidden: true });
+    var el = h('div', { class: 'tka-tagbox' }, [chips, input, list]);
+    el.addEventListener('click', function (ev) { if (ev.target === el || ev.target === chips) input.focus(); });
+    function drawChips() {
+      chips.replaceChildren.apply(chips, items.map(function (it, i) {
+        return h('span', { class: 'tka-tagchip' + (it.mention ? '' : ' off'), title: it.mention ? 'Google Chat will notify ' + it.label : it.label + ' has not signed in to this tool yet, so the alert shows the name without notifying them' }, [
+          h('span', { text: it.label }),
+          h('button', { type: 'button', class: 'tka-tagx', 'aria-label': 'Remove ' + it.label, text: '×', onclick: function () { items.splice(i, 1); drawChips(); input.focus(); } })]);
+      }));
+    }
+    function close() { list.hidden = true; input.setAttribute('aria-expanded', 'false'); active = -1; input.removeAttribute('aria-activedescendant'); }
+    function pick(p) {
+      if (!items.some(function (x) { return x.token === p.email; })) items.push({ token: p.email, label: p.name, mention: !!p.canMention });
+      input.value = ''; close(); drawChips(); input.focus();
+    }
+    function drawList() {
+      if (!opts.length) list.replaceChildren(h('li', { class: 'tka-tagempty', text: 'No one found. Try a first name.' }));
+      else list.replaceChildren.apply(list, opts.map(function (p, i) {
+        var li = h('li', { id: 'tka-esc-opt-' + i, role: 'option', class: 'tka-tagopt' + (i === active ? ' on' : ''), 'aria-selected': i === active ? 'true' : 'false' }, [
+          h('b', { text: p.name }), h('span', { class: 'tka-when', text: ' ' + (p.email === 'all' ? '' : p.email) + (p.team ? ', ' + p.team : '') }),
+          p.canMention ? null : h('span', { class: 'tka-when', text: ' (not signed in yet)' })]);
+        li.addEventListener('mousedown', function (ev) { ev.preventDefault(); pick(p); });
+        return li;
+      }));
+      list.hidden = false; input.setAttribute('aria-expanded', 'true');
+      if (active >= 0) input.setAttribute('aria-activedescendant', 'tka-esc-opt-' + active); else input.removeAttribute('aria-activedescendant');
+    }
+    input.addEventListener('input', function () {
+      clearTimeout(timer);
+      var q = input.value.trim();
+      if (q.length < 2) { close(); return; }
+      if (/^all$/i.test(q)) { opts = [{ name: 'Everyone in the space', email: 'all', canMention: true }]; active = 0; drawList(); return; }
+      timer = setTimeout(function () { api('/api/escalations/people?q=' + encodeURIComponent(q)).then(function (j) { opts = (j && j.people) || []; active = opts.length ? 0 : -1; drawList(); }); }, 200);
+    });
+    input.addEventListener('keydown', function (ev) {
+      if (ev.key === 'ArrowDown' && opts.length) { ev.preventDefault(); active = (active + 1) % opts.length; drawList(); }
+      else if (ev.key === 'ArrowUp' && opts.length) { ev.preventDefault(); active = (active - 1 + opts.length) % opts.length; drawList(); }
+      else if (ev.key === 'Enter') { ev.preventDefault(); if (!list.hidden && opts[active]) pick(opts[active]); }
+      else if (ev.key === 'Escape') close();
+      else if (ev.key === 'Backspace' && !input.value && items.length) { items.pop(); drawChips(); }
+    });
+    input.addEventListener('blur', function () { setTimeout(close, 150); });
+    drawChips();
+    return { el: el, value: function () { return items.map(function (x) { return x.token; }).join(', '); } };
+  }
   function drawEscSettings(host, st) {
     var hook = h('input', { class: 'tka-input', type: 'url', placeholder: st.webhookSet ? 'Saved: ' + st.webhookMasked : 'https://chat.googleapis.com/v1/spaces/...', 'aria-label': 'Google Chat webhook URL', autocomplete: 'off' });
-    var tags = h('input', { class: 'tka-input', value: st.tags || '', placeholder: 'For example sebastin.n@adit.com, ronnie@adit.com', 'aria-label': 'People to tag at the top of every alert' });
+    var tags = tagPicker(st.tagItems || []);
     var rem = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '48', value: String(st.reminderHours), 'aria-label': 'Reminder after hours' });
     var conf = h('input', { class: 'tka-input narrow', type: 'number', min: '30', max: '95', step: '5', value: String(Math.round(st.minConfidence * 100)), 'aria-label': 'Minimum confidence percent' });
     var ded = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '72', value: String(st.dedupeHours), 'aria-label': 'One alert per client every hours' });
@@ -297,7 +347,7 @@
     var acc = st.access || {}, blocked = Object.keys(acc).filter(function (t) { return acc[t] !== 'ok'; });
     var status = st.lastScanAt ? 'Last scan ' + ago(st.lastScanAt) + ': ' + (res.error ? res.error : (res.tickets || 0) + ' tickets and ' + (res.calls || 0) + ' calls read, ' + (res.alerts || 0) + ' alerts, ' + (res.reminders || 0) + ' reminders' + (res.since ? ' (activity since ' + when(res.since) + ')' : '') + (res.errors && res.errors.length ? ', ' + res.errors.length + (res.errors.length === 1 ? ' error' : ' errors') : '')) + '.' : 'No scan yet.';
     function save(extra) {
-      var b = Object.assign({ tags: tags.value, reminderHours: Number(rem.value), minConfidence: Number(conf.value) / 100, dedupeHours: Number(ded.value), enabled: on.checked }, extra || {});
+      var b = Object.assign({ tags: tags.value(), reminderHours: Number(rem.value), minConfidence: Number(conf.value) / 100, dedupeHours: Number(ded.value), enabled: on.checked }, extra || {});
       if (hook.value.trim()) b.webhook = hook.value.trim();
       return api('/api/escalations/settings', b, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'escalations'; render(); } return r; });
     }
@@ -305,8 +355,8 @@
       h('summary', null, [h('b', { text: 'Settings  ' }), pill(st.enabled ? 'On' : 'Off', st.enabled ? 'st-approved' : 'st-closed'), h('span', { class: 'tka-when', text: '  ' + status })]),
       h('p', { class: 'tka-hint', text: 'Google Chat webhook for the escalation space. It is stored on the server and never shown in full again.' }),
       hook,
-      h('p', { class: 'tka-hint', text: 'People to tag at the top of every alert and reminder: Adit emails separated by commas (they are turned into Google Chat mentions), a Chat user ID, or all for everyone.' }),
-      tags,
+      h('p', { class: 'tka-hint', id: 'tka-esc-tags-l', text: 'People to tag at the top of every alert and reminder. Type a name and pick the person. A grey chip means they have not signed in to this tool yet, so Google Chat cannot notify them until they do.' }),
+      tags.el,
       h('div', { class: 'tka-inline' }, [h('span', { text: 'Remind after' }), rem, h('span', { text: 'hours if no ESC is created or updated. One alert per client every' }), ded, h('span', { text: 'hours.' })]),
       h('div', { class: 'tka-inline' }, [h('span', { text: 'Alert at' }), conf, h('span', { text: '% confidence or more' }), h('label', { class: 'tka-inline', for: 'tka-esc-on' }, [on, h('span', { text: 'Watch on' })])]),
       blocked.length ? h('div', { class: 'tka-note', text: 'AditKB did not allow: ' + blocked.map(function (t) { return t + ' (' + acc[t] + ')'; }).join(', ') + '. Ask for access to these tables for the key the server uses, or set ADITKB_ESC_API_KEY.' }) : null,
