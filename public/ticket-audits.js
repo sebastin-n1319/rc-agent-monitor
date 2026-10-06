@@ -433,7 +433,7 @@
   }
   function escCard(x, reload) {
     var k = ESC_KIND[x.kind] || [x.kind, 'cat'], st = ESC_STATUS[x.status] || [x.status, 'cat'];
-    var src = x.source !== 'call' ? (x.ticket_url ? h('a', { class: 'tka-num', href: x.ticket_url, target: '_blank', rel: 'noopener', text: '#' + x.ticket_number }) : h('b', { class: 'tka-num', text: '#' + (x.ticket_number || '') })) : h('b', { class: 'tka-num', text: x.call_label || 'Call' });
+    var src = x.source !== 'call' ? (x.ticket_url ? h('a', { class: 'tka-num', href: x.ticket_url, target: '_blank', rel: 'noopener', text: '#' + x.ticket_number }) : h('b', { class: 'tka-num', text: '#' + (x.ticket_number || '') })) : h('span', null, [h('b', { class: 'tka-num', text: x.call_label || 'Call' }), x.ticket_url ? h('span', null, [' ', h('a', { class: 'tka-num', href: x.ticket_url, target: '_blank', rel: 'noopener', text: 'Ticket #' + x.ticket_number })]) : null]);
     var side = [];
     var form = h('div', { class: 'tka-rv-form' });
     function openAction(required) {
