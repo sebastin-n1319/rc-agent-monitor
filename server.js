@@ -586,6 +586,14 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     setTimeout(() => {
       setInterval(() => { transferReview.poll().catch(e => console.warn('transfer review poll failed:', e.message)); }, 60 * 1000);
     }, 40000);
+    // Session 90: escalation watch, every 15 minutes (does nothing until enabled with a webhook)
+    escalationWatch.setDB(db);
+    await escalationWatch.initSchema();
+    escalationWatch.setDeps({ ai: require('./lib/ai'), roster: () => deskLifecycleAgentRoster() });
+    setTimeout(() => {
+      const tick = () => escalationWatch.scan().then(r => { if (r && (r.alerts || r.reminders || r.error)) console.log('🚨 Escalation watch:', JSON.stringify(r)); }).catch(e => console.warn('escalation watch failed:', e.message));
+      tick(); setInterval(tick, 15 * 60 * 1000);
+    }, 90000);
     // Announce new updates in the bell even when nobody has the Updates page open
     setTimeout(() => productUpdates.recent().catch(() => {}), 30000);
     setInterval(() => productUpdates.recent().catch(() => {}), 10 * 60 * 1000);
@@ -1788,6 +1796,7 @@ const notices = require('./lib/notices'); // Session 68: tool-wide notification 
 const productUpdates = require('./lib/product-updates');
 const ticketAudits = require('./lib/ticket-audits'); // Session 76: ticket audits
 const transferReview = require('./lib/transfer-review'); // Session 88: pending review before transfer
+const escalationWatch = require('./lib/escalation-watch'); // Session 90: T1 escalation signals to Google Chat
 const regularise = require('./lib/regularise'); // Session 68: break regularise requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
 async function requireAssessAccess(req, res, next) {
@@ -8371,6 +8380,14 @@ app.put('/api/review/settings', requireAuth, requireAuditAdmin, rateLimit(20, 60
 app.get('/api/review/strikes', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.strikesBoard()) }); }));
 app.post('/api/review/strikes/:id/void', requireAuth, requireAuditAdmin, rateLimit(30, 60000), auditWrap(async (req, res) => { await transferReview.voidStrike(Number(req.params.id), req.audit.email, (req.body || {}).reason); res.json({ success: true }); }));
 app.get('/api/review/my', requireAuth, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.mine(req.session.email)) }); }));
+// Session 90: escalation watch (admin)
+app.get('/api/escalations/settings', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, settings: await escalationWatch.settings(false) }); }));
+app.put('/api/escalations/settings', requireAuth, requireAuditAdmin, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, settings: await escalationWatch.saveSettings(req.body || {}) }); }));
+app.post('/api/escalations/scan', requireAuth, requireAuditAdmin, rateLimit(4, 60000), auditWrap(async (req, res) => { res.json({ success: true, result: await escalationWatch.scan({ force: true }), settings: await escalationWatch.settings(false) }); }));
+app.post('/api/escalations/test', requireAuth, requireAuditAdmin, rateLimit(5, 60000), auditWrap(async (req, res) => { const r = await escalationWatch.testPost(req.session.name || req.audit.email); res.json({ success: r.ok, error: r.error }); }));
+app.get('/api/escalations/list', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await escalationWatch.list({ days: Number(req.query.days) || 7 })) }); }));
+app.post('/api/escalations/:id/reported', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await escalationWatch.markReported(Number(req.params.id), req.audit.email, (req.body || {}).esc); res.json({ success: true }); }));
+app.post('/api/escalations/:id/dismiss', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await escalationWatch.dismiss(Number(req.params.id)); res.json({ success: true }); }));
 app.get('/api/audits/summary', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.summary({ email: req.audit.email, admin: req.audit.admin })) }); }));
 app.get('/api/audits/facets', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.facets({ email: req.audit.email, admin: req.audit.admin })) }); }));
 app.post('/api/audits/rebalance', requireAuth, requireAuditAdmin, rateLimit(6, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await ticketAudits.rebalance(req.audit.email)) }); }));
