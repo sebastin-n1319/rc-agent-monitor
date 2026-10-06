@@ -8413,7 +8413,7 @@ app.get('/api/review/history', requireAuth, requireAuditAccess, auditWrap(async 
   const r = await transferReview.history({ ...req.query, limit: csv ? 5000 : req.query.limit });
   if (!csv) return res.json({ success: true, ...r });
   const esc = (v) => { const x = v == null ? '' : String(v); return /[",\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
-  const cols = ['ticket_number', 'subject', 'channel', 'agent_name', 'agent_email', 'source', 'entered_at', 'left_at', 'verdict', 'to_agent', 'to_team', 'comment', 'reviewer', 'reviewed_at', 'voided', 'web_url'];
+  const cols = ['ticket_number', 'subject', 'channel', 'agent_name', 'agent_email', 'source', 'entered_at', 'left_at', 'verdict', 'severity', 'to_agent', 'to_team', 'comment', 'reviewer', 'reviewed_at', 'voided', 'web_url'];
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', 'attachment; filename="transfer-reviews.csv"');
   res.send([cols.join(',')].concat(r.rows.map(x => cols.map(c => esc(x[c])).join(','))).join('\n'));
