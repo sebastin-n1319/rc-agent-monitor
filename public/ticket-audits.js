@@ -277,7 +277,7 @@
   }
   function drawEscSettings(host, st) {
     var hook = h('input', { class: 'tka-input', type: 'url', placeholder: st.webhookSet ? 'Saved: ' + st.webhookMasked : 'https://chat.googleapis.com/v1/spaces/...', 'aria-label': 'Google Chat webhook URL', autocomplete: 'off' });
-    var tags = h('input', { class: 'tka-input', value: st.tags || '', placeholder: 'For example <users/123456789> <users/987654321> or plain names', 'aria-label': 'People to tag at the top of every alert' });
+    var tags = h('input', { class: 'tka-input', value: st.tags || '', placeholder: 'For example sebastin.n@adit.com, ronnie@adit.com', 'aria-label': 'People to tag at the top of every alert' });
     var rem = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '48', value: String(st.reminderHours), 'aria-label': 'Reminder after hours' });
     var conf = h('input', { class: 'tka-input narrow', type: 'number', min: '30', max: '95', step: '5', value: String(Math.round(st.minConfidence * 100)), 'aria-label': 'Minimum confidence percent' });
     var ded = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '72', value: String(st.dedupeHours), 'aria-label': 'One alert per client every hours' });
@@ -294,14 +294,14 @@
       h('summary', null, [h('b', { text: 'Settings  ' }), pill(st.enabled ? 'On' : 'Off', st.enabled ? 'st-approved' : 'st-closed'), h('span', { class: 'tka-when', text: '  ' + status })]),
       h('p', { class: 'tka-hint', text: 'Google Chat webhook for the escalation space. It is stored on the server and never shown in full again.' }),
       hook,
-      h('p', { class: 'tka-hint', text: 'People to tag: this line goes at the top of every alert and reminder. Use <users/ID> to mention someone, or <users/all> for everyone.' }),
+      h('p', { class: 'tka-hint', text: 'People to tag at the top of every alert and reminder: Adit emails separated by commas (they are turned into Google Chat mentions), a Chat user ID, or all for everyone.' }),
       tags,
       h('div', { class: 'tka-inline' }, [h('span', { text: 'Remind after' }), rem, h('span', { text: 'hours if no ESC is created or updated. One alert per client every' }), ded, h('span', { text: 'hours.' })]),
       h('div', { class: 'tka-inline' }, [h('span', { text: 'Alert at' }), conf, h('span', { text: '% confidence or more' }), h('label', { class: 'tka-inline', for: 'tka-esc-on' }, [on, h('span', { text: 'Watch on' })])]),
       blocked.length ? h('div', { class: 'tka-note', text: 'AditKB did not allow: ' + blocked.map(function (t) { return t + ' (' + acc[t] + ')'; }).join(', ') + '. Ask for access to these tables for the key the server uses, or set ADITKB_ESC_API_KEY.' }) : null,
       h('div', { class: 'tka-actions' }, [
         btn('Save settings', 'primary', function () { save(); }),
-        btn('Send test', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Sending...'); api('/api/escalations/test', {}).then(function (r) { busy(b, false, 'Send test'); toast(r.success ? 'Test posted to Google Chat' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); }),
+        btn('Send test', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Sending...'); api('/api/escalations/test', {}).then(function (r) { busy(b, false, 'Send test'); toast(!r.success ? (r.error || 'Failed') : (r.unresolved && r.unresolved.length) ? 'Posted, but no Google Chat ID yet for ' + r.unresolved.join(', ') + ' (they need to sign in to this tool once), so they show as plain text' : 'Test posted to Google Chat' + (r.tags ? ' with tags' : ''), !r.success ? 'error' : (r.unresolved && r.unresolved.length) ? 'warning' : 'success'); }); }),
         btn('Scan now', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Scanning...'); api('/api/escalations/scan', {}).then(function (r) { busy(b, false, 'Scan now'); var x = r.result || {}; toast(r.success ? (x.busy ? 'A scan is already running' : x.error ? x.error : 'Scan done: ' + (x.alerts || 0) + ' alerts') : (r.error || 'Failed'), r.success && !x.error ? 'success' : 'error'); TA.tab = 'escalations'; render(); }); }),
         st.webhookSet ? btn('Remove webhook', 'ghost sm', function () { if (confirm('Remove the webhook and turn the watch off?')) save({ clearWebhook: true, enabled: false }); }) : null])]);
     host.replaceChildren(card);

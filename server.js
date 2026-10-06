@@ -589,7 +589,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Session 90: escalation watch, every 15 minutes (does nothing until enabled with a webhook)
     escalationWatch.setDB(db);
     await escalationWatch.initSchema();
-    escalationWatch.setDeps({ ai: require('./lib/ai'), roster: () => deskLifecycleAgentRoster() });
+    escalationWatch.setDeps({ ai: require('./lib/ai'), roster: () => deskLifecycleAgentRoster(),
+      resolveChatId: async (email) => { const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id); return (a && a.chat_id) || await getGoogleSubForEmail(email).catch(() => null); } });
     setTimeout(() => {
       const tick = () => escalationWatch.scan().then(r => { if (r && (r.alerts || r.reminders || r.error)) console.log('🚨 Escalation watch:', JSON.stringify(r)); }).catch(e => console.warn('escalation watch failed:', e.message));
       tick(); setInterval(tick, 15 * 60 * 1000);
@@ -8384,7 +8385,7 @@ app.get('/api/review/my', requireAuth, auditWrap(async (req, res) => { res.json(
 app.get('/api/escalations/settings', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, settings: await escalationWatch.settings(false) }); }));
 app.put('/api/escalations/settings', requireAuth, requireAuditAdmin, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, settings: await escalationWatch.saveSettings(req.body || {}) }); }));
 app.post('/api/escalations/scan', requireAuth, requireAuditAdmin, rateLimit(4, 60000), auditWrap(async (req, res) => { res.json({ success: true, result: await escalationWatch.scan({ force: true }), settings: await escalationWatch.settings(false) }); }));
-app.post('/api/escalations/test', requireAuth, requireAuditAdmin, rateLimit(5, 60000), auditWrap(async (req, res) => { const r = await escalationWatch.testPost(req.session.name || req.audit.email); res.json({ success: r.ok, error: r.error }); }));
+app.post('/api/escalations/test', requireAuth, requireAuditAdmin, rateLimit(5, 60000), auditWrap(async (req, res) => { const r = await escalationWatch.testPost(req.session.name || req.audit.email); res.json({ success: r.ok, error: r.error, tags: r.tags, unresolved: r.unresolved }); }));
 app.get('/api/escalations/list', requireAuth, requireAuditAdmin, auditWrap(async (req, res) => { res.json({ success: true, ...(await escalationWatch.list({ days: Number(req.query.days) || 7 })) }); }));
 app.post('/api/escalations/:id/reported', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await escalationWatch.markReported(Number(req.params.id), req.audit.email, (req.body || {}).esc); res.json({ success: true }); }));
 app.post('/api/escalations/:id/dismiss', requireAuth, requireAuditAdmin, rateLimit(60, 60000), auditWrap(async (req, res) => { await escalationWatch.dismiss(Number(req.params.id)); res.json({ success: true }); }));
