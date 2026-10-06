@@ -328,14 +328,42 @@
     var k = ESC_KIND[x.kind] || [x.kind, 'cat'], st = ESC_STATUS[x.status] || [x.status, 'cat'];
     var src = x.source !== 'call' ? (x.ticket_url ? h('a', { class: 'tka-num', href: x.ticket_url, target: '_blank', rel: 'noopener', text: '#' + x.ticket_number }) : h('b', { class: 'tka-num', text: '#' + (x.ticket_number || '') })) : h('b', { class: 'tka-num', text: x.call_label || 'Call' });
     var side = [];
-    var notNeeded = btn('Escalation not needed', 'ghost sm', function () {
-      var why = prompt('Why is escalation not needed? This teaches the watch to skip similar cases.', '');
-      if (why == null) return;
-      api('/api/escalations/' + x.id + '/not-needed', { reason: why }).then(function (r) { toast(r.success ? 'Marked as not needed' : (r.error || 'Failed'), r.success ? 'success' : 'error'); reload(); });
-    });
-    if (x.status === 'watching' || x.status === 'owner_missed') side.push(notNeeded);
+    var form = h('div', { class: 'tka-rv-form' });
+    function openAction(required) {
+      var uid = 'tka-esa-' + x.id;
+      var yes = h('input', { type: 'radio', name: uid, id: uid + '-y', value: 'yes' }), no = h('input', { type: 'radio', name: uid, id: uid + '-n', value: 'no' });
+      yes.checked = required; no.checked = !required;
+      var esc = h('input', { class: 'tka-input', id: uid + '-esc', placeholder: 'ESC id, for example ESC-1234', value: x.reported_esc || x.esc_name || '', autocomplete: 'off' });
+      var escRow = h('div', null, [h('label', { class: 'tka-hint', for: uid + '-esc', text: 'ESC id (created, updated or reopened in CRM)' }), esc]);
+      var note = h('textarea', { class: 'tka-note-in', id: uid + '-note', rows: '3', maxlength: '800' });
+      var noteLab = h('label', { class: 'tka-hint', for: uid + '-note' });
+      function sync() {
+        var r = yes.checked;
+        escRow.hidden = !r;
+        noteLab.textContent = r ? 'What did you do? (for example: confirmed with the client, created ESC with ticket link, informed the CSM)' : 'Why is escalation not needed, and what action was taken instead?';
+        note.placeholder = r ? 'Action taken' : 'For example: client was asking about appointment cancellations, not the Adit account. Issue resolved on the call.';
+        save.textContent = r ? 'Save: escalation required' : 'Save: escalation not needed';
+      }
+      var save = btn('Save', 'primary', function () {
+        busy(save, true, 'Saving...');
+        api('/api/escalations/' + x.id + '/action', { required: yes.checked, esc: esc.value, note: note.value }).then(function (r) {
+          busy(save, false); sync();
+          if (!r.success) return toast(r.error || 'Could not save', 'error');
+          toast(yes.checked ? 'Saved as escalated' : 'Saved as not needed'); reload();
+        });
+      });
+      yes.addEventListener('change', sync); no.addEventListener('change', sync);
+      form.replaceChildren(
+        h('div', { class: 'tka-radios', role: 'radiogroup', 'aria-label': 'Escalation required?' }, [h('span', { class: 'tka-hint', text: 'Escalation required?' }),
+          h('label', { for: uid + '-y', class: 'tka-radio' }, [yes, h('span', { text: 'Yes' })]), h('label', { for: uid + '-n', class: 'tka-radio' }, [no, h('span', { text: 'No' })])]),
+        escRow, noteLab, note, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })]));
+      sync();
+      (yes.checked ? esc : note).focus();
+    }
+    var notNeeded = btn('Escalation not needed', 'ghost sm', function () { openAction(false); });
+    if (x.status === 'watching' || x.status === 'owner_missed') { side.push(btn('Record action', 'primary sm', function () { openAction(true); })); side.push(notNeeded); }
     if (x.status === 'alerted' || x.status === 'not_reported') {
-      side.push(btn('Mark reported', 'primary sm', function () { var esc = prompt('ESC id (optional), for example ESC-1234', x.esc_name || ''); if (esc == null) return; api('/api/escalations/' + x.id + '/reported', { esc: esc }).then(function (r) { toast(r.success ? 'Marked reported' : (r.error || 'Failed'), r.success ? 'success' : 'error'); reload(); }); }));
+      side.push(btn('Mark reported', 'primary sm', function () { openAction(true); }));
       side.push(notNeeded);
     }
     return h('article', { class: 'tka-row' + (x.status === 'not_reported' || x.status === 'owner_missed' ? ' hot' : '') }, [
@@ -349,8 +377,8 @@
         x.summary ? h('p', { class: 'tka-hint', text: x.summary }) : null,
         x.quote ? h('p', { class: 'tka-when', text: 'Client said: "' + x.quote + '"' }) : null,
         x.owner_check ? h('p', { class: 'tka-when', text: 'ESC owner check: ' + x.owner_check }) : null,
-        x.nn_reason ? h('p', { class: 'tka-when', text: 'Not needed: ' + x.nn_reason }) : null,
-        [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).length ? h('p', { class: 'tka-when', text: [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).join(' | ') }) : null]),
+        x.action_note ? h('p', { class: 'tka-hint tka-act' }, [h('b', { text: (x.status === 'not_needed' ? 'Not needed' : 'Action taken') + ' by ' + String(x.action_by || '').split('@')[0] + ', ' + when(x.action_at) + ': ' }), x.action_note]) : (x.nn_reason ? h('p', { class: 'tka-when', text: 'Not needed: ' + x.nn_reason }) : null),
+        [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).length ? h('p', { class: 'tka-when', text: [x.csm ? 'CSM: ' + x.csm : '', x.ob_owner ? 'Onboarding: ' + x.ob_owner : '', x.esc_owner ? 'ESC owner: ' + x.esc_owner : ''].filter(Boolean).join(' | ') }) : null, form]),
       h('div', { class: 'tka-row-side' }, side)]);
   }
   // Chip picker for people to tag. Value is a comma list of emails (or "all").

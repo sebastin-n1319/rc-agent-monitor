@@ -222,3 +222,4 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-hist td{vertical-align:top}
 .tka-hist-c{max-width:280px;color:var(--tka-t2)}
 .tka-filters input[type=search]{flex:1 1 280px;min-width:240px}.tka-filters .tka-when{align-self:center}
+.tka-act{background:var(--tka-surface2);border-radius:8px;padding:8px 10px;margin:6px 0 0}.tka-rv-form .tka-input{margin-bottom:6px}
