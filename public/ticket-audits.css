@@ -193,3 +193,9 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-step.on{border-color:var(--tka-red);background:rgba(217,70,77,.08)}
 .tka-fold summary .tka-pill{margin-left:6px}
 .tka-rv-form .tka-input{flex:none;width:100%;box-sizing:border-box}
+
+/* Escalation watch: agents watched */
+.tka-cov{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.tka-cov th,.tka-cov td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--tka-border)}
+.tka-cov th{font-weight:600;color:var(--tka-t3)}
+.tka-cov td:not(:first-child),.tka-cov th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;width:110px}

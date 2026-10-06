@@ -232,8 +232,18 @@
     var days = TA.escDays || 7;
     var setHost = h('div'), listHost = h('div', null, [h('p', { class: 'tka-empty', text: 'Loading...' })]);
     body.appendChild(h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'Escalation watch' }),
-      h('p', { class: 'tka-hint', text: 'Every 15 minutes this reads T1 ticket conversations, private notes and T1 call summaries (Avoma and RingCentral), and posts to Google Chat when a client shows escalation signs. It checks CRM for an existing ESC and reminds once if nothing is created or updated in time.' })])]));
-    body.appendChild(setHost); body.appendChild(listHost);
+      h('p', { class: 'tka-hint', text: 'Every 15 minutes this reads T1 ticket conversations, SalesIQ chat transcripts, private notes and T1 call summaries (Avoma and RingCentral), and posts to Google Chat when a client shows escalation signs. It checks CRM for an existing ESC and reminds once if nothing is created or updated in time.' })])]));
+    var covHost = h('div');
+    body.appendChild(setHost); body.appendChild(covHost); body.appendChild(listHost);
+    api('/api/escalations/coverage?days=7').then(function (j) {
+      if (!j.success) return;
+      var ag = j.agents || [];
+      var tbl = h('table', { class: 'tka-cov' }, [h('thead', null, [h('tr', null, ['Agent', 'Tickets', 'SalesIQ chats', 'Calls'].map(function (x) { return h('th', { text: x, scope: 'col' }); }))]),
+        h('tbody', null, ag.map(function (a) { return h('tr', null, [h('td', null, [h('b', { text: a.name }), h('span', { class: 'tka-when', text: ' ' + a.email })]), h('td', { text: String(a.tickets) }), h('td', { text: String(a.chats) }), h('td', { text: String(a.calls) })]); }))]);
+      covHost.replaceChildren(h('details', { class: 'tka-card tka-fold' }, [h('summary', null, [h('b', { text: 'Agents watched (' + ag.length + ')  ' }), h('span', { class: 'tka-when', text: 'what was read for each agent in the last 7 days' })]),
+        h('p', { class: 'tka-hint', text: 'This is the agent list on the Team page. Add or remove agents there to change who is watched. Calls are read only for these agents, even though AditKB also tags some other people as T1.' }),
+        ag.length ? tbl : h('p', { class: 'tka-empty', text: 'No agents on the Team page yet.' })]));
+    });
     api('/api/escalations/settings').then(function (j) { if (j.success) drawEscSettings(setHost, j.settings); else setHost.appendChild(h('div', { class: 'tka-note', text: j.error || 'Could not load settings' })); });
     function loadList() {
       api('/api/escalations/list?days=' + days).then(function (j) {
