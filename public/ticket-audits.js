@@ -115,7 +115,7 @@
     var facts = [];
     if (d.stage) facts.push(h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: 'Stage' }), h('span', { class: 'tka-chipv ' + stageCls(d.stage), text: d.stage })]));
     if (d.escalation) facts.push(h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: 'Escalation' }), h('span', { class: 'tka-chipv ' + escCls(d.escalation), text: d.escalation })]));
-    if (d.escalationOwner && d.escalationOwner.owner) facts.push(person('Escalation owner', d.escalationOwner.owner, d.escalationOwner.since ? 'since ' + d.escalationOwner.since : ''));
+    if (d.escalationOwner && d.escalationOwner.owner) facts.push(person(d.escalationOwner.past ? 'Last escalation owner' : 'Escalation owner', d.escalationOwner.owner, d.escalationOwner.since ? (d.escalationOwner.past ? 'de-escalated ' : 'since ') + d.escalationOwner.since : ''));
     if (d.csm) facts.push(person('CSM', d.csm));
     if (d.ob) facts.push(person('OB', d.ob));
     return h('div', { class: 'tka-deal e-' + escCls(d.escalation) }, [h('div', { class: 'tka-deal-main' }, main), facts.length ? h('div', { class: 'tka-deal-facts' }, facts) : null]);
