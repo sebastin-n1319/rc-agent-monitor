@@ -302,6 +302,7 @@
       var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [btn('Good to go', 'primary', function () { openForm('good'); }), btn('Invalid', 'danger', function () { openForm('invalid'); })];
       if (!own && !waiting) side.push(btn('Ignore', 'ghost sm', function () { openForm('ignored'); }));
       var dealBox = h('div', { class: 'tka-dp', hidden: true });
+      var lineHost = h('div', null, [dealLine(r.deal)]);
       var dealBtn = null;
       function toggleDeal() {
         var open = dealBox.hidden;
@@ -310,7 +311,7 @@
         if (open && !dealBox.dataset.loaded) {
           dealBox.dataset.loaded = '1';
           dealBox.replaceChildren(h('p', { class: 'tka-when', text: 'Loading deal history...' }));
-          api('/api/review/' + r.id + '/deal').then(function (x) { if (!x.success) { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not load deal history' })); return; } renderDeal(dealBox, x); });
+          api('/api/review/' + r.id + '/deal').then(function (x) { if (!x.success) { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not load deal history' })); return; } if (!r.deal && x.quick) lineHost.replaceChildren(dealLine(x.quick)); renderDeal(dealBox, x); });
         }
       }
       var showDeal = waiting || r.state === 'moved';
@@ -322,7 +323,7 @@
             waiting ? pill('Waiting ' + mmLabel(r.minutes), cls) : pill(r.source === 'bypass' ? 'Skipped review' : 'Left review status', r.source === 'bypass' ? 'sev-high' : 'sev-medium'),
             r.to_team || r.to_agent ? h('span', { class: 'tka-when', text: 'Now with ' + [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') }) : null,
             r.breach_count ? h('span', { class: 'tka-when', text: 'Escalated ' + r.breach_count + 'x' }) : null]),
-          showDeal ? dealLine(r.deal) : null,
+          showDeal ? lineHost : null,
           showDeal ? h('div', { class: 'tka-actions' }, [dealBtn]) : null,
           dealBox,
           form]),
