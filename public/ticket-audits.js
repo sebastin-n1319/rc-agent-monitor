@@ -458,9 +458,69 @@
         form.replaceChildren.apply(form, [h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : kind === 'ignored' ? 'Not a transfer, for example the status was set by mistake. No strike, no feedback to the agent. It stays in History with your reason.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
           kind === 'good' ? who : null, ai, sevBox, c, kind === 'ignored' ? null : msgBox(r, kind, c), h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
       }
-      function vb(cls, icon, label, hint, kind) { return h('button', { type: 'button', class: 'tka-vb ' + cls, title: hint, onclick: function () { openForm(kind); } }, [h('span', { class: 'tka-vb-i', 'aria-hidden': 'true', text: icon }), h('span', { text: label })]); }
+      function vb(cls, icon, label, hint, kind) { return h('button', { type: 'button', class: 'tka-vb ' + cls, title: hint, onclick: function () {
+        // The deal history is no longer needed once a decision is being made: fold it away and bring the feedback form into view.
+        var wasOpen = isOpen; if (isOpen) toggleDeal();
+        openForm(kind);
+        var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        setTimeout(function () { revealEl(form, { whole: true, block: 'start' }); var f = form.querySelector('textarea, input'); if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} } }, wasOpen && !calm ? 340 : 30);
+      } }, [h('span', { class: 'tka-vb-i', 'aria-hidden': 'true', text: icon }), h('span', { text: label })]); }
       var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [];
       var vrow = own ? null : h('div', { class: 'tka-vrow', role: 'group', 'aria-label': 'Review decision' }, [vb('ok', '\u2713', 'Approved', 'The transfer was right', 'good'), vb('fix', '\u21BA', 'Needs rework', 'Send it back to the agent', 'invalid')].concat(waiting ? [] : [vb('skip', '\u2192', 'Skip', 'Not a transfer, no strike', 'ignored')]));
+      var anBox = h('div', { class: 'tka-an' }), anOpen = false, anBtn = null;
+      var anShell = h('div', { class: 'tka-an-shell' }, [anBox]); anShell.hidden = true;
+      function timeLabel(at) { if (!at) return ''; var d = new Date(String(at).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+      function analysisCard(x) {
+        var A = x.analysis, t = x.ticket || {}, kids = [];
+        var lean = A && A.lean !== 'unclear' ? A.lean : null;
+        kids.push(h('div', { class: 'tka-an-top' }, [
+          h('div', null, [h('b', { text: 'Ticket analysis' }), h('span', { class: 'tka-when', text: ' ' + [t.channel, t.status, t.department ? 'Dept: ' + t.department : '', t.movedTo ? 'Moved to ' + t.movedTo : ''].filter(Boolean).join(' · ') })]),
+          h('div', { class: 'tka-an-acts' }, [lean ? pill(lean === 'approve' ? 'Looks right to approve' : 'Looks like it needs rework', lean === 'approve' ? 'st-approved' : 'sev-high', 'A suggestion from the ticket. You decide.') : null,
+            btn('Refresh', 'ghost sm', function () { loadAn(true); })])]));
+        if (!x.readable) kids.push(h('p', { class: 'tka-when', text: 'The ticket conversation could not be read right now (AditKB may not have it yet).' }));
+        if (A) {
+          kids.push(h('div', { class: 'tka-an-grid' }, [
+            h('div', { class: 'tka-an-box' }, [h('small', { text: 'THE CLIENT ASKED' }), h('p', { text: A.clientAsked || 'Not clear from the ticket' })]),
+            h('div', { class: 'tka-an-box' }, [h('small', { text: 'T1 DID' }), h('p', { text: A.t1Did || 'Nothing recorded on the ticket' })]),
+            h('div', { class: 'tka-an-box' }, [h('small', { text: 'RIGHT NOW' }), h('p', { text: A.status || 'Unknown' }), A.mood && A.mood !== 'unclear' ? pill('Client seems ' + A.mood, A.mood === 'calm' ? 'st-approved' : 'sev-medium') : null])]));
+          if (A.fit !== 'unclear' || A.fitWhy) kids.push(h('p', { class: 'tka-an-fit' }, [h('b', { text: A.fit === 'right' ? 'Destination fits. ' : A.fit === 'wrong' ? 'Destination may be wrong. ' : 'Destination: ' }), A.fitWhy || '']));
+          if (A.leanWhy) kids.push(h('p', { class: 'tka-an-fit' }, [h('b', { text: 'Why: ' }), A.leanWhy]));
+        } else if (x.readable) kids.push(h('p', { class: 'tka-when', text: x.ai ? 'AI could not read this one, the facts below come from the ticket itself.' : 'AI is not set up, the facts below come from the ticket itself.' }));
+        var cks = (A && A.checks && A.checks.length ? A.checks : []).concat(x.checks || []);
+        if (cks.length) kids.push(h('ul', { class: 'tka-an-ck' }, cks.map(function (c) { return h('li', { class: c.status }, [h('i', { 'aria-hidden': 'true', text: c.status === 'ok' ? '\u2713' : c.status === 'bad' ? '\u2715' : '!' }), h('span', null, [h('b', { text: c.label }), c.note ? ' ' + c.note : ''])]); })));
+        if (A && A.missing && A.missing.length) kids.push(h('p', { class: 'tka-an-fit' }, [h('b', { text: 'Missing from the hand-off: ' }), A.missing.join(', ')]));
+        if (A && A.nextSteps && A.nextSteps.length) kids.push(h('div', { class: 'tka-an-next' }, [h('small', { text: 'BEFORE YOU DECIDE' })].concat(A.nextSteps.map(function (n) { return h('span', { text: n }); }))));
+        var tl = x.timeline || [];
+        if (tl.length) {
+          var all = false, list = h('div', { class: 'tka-an-tl' }), more = null;
+          var drawTl = function () {
+            var shown = all ? tl : tl.slice(-4);
+            list.replaceChildren.apply(list, shown.map(function (m) { return h('div', { class: 'tka-an-m ' + m.kind }, [h('div', { class: 'tka-an-mh' }, [h('b', { text: m.kind === 'customer' ? 'Client' : m.who }), h('span', { class: 'tka-when', text: timeLabel(m.at) })]), h('p', { text: m.text })]); }));
+            if (more) more.textContent = all ? 'Show only the latest' : 'Show the full conversation (' + tl.length + ')';
+          };
+          if (tl.length > 4) more = h('button', { type: 'button', class: 'tka-link', onclick: function () { all = !all; drawTl(); } });
+          drawTl();
+          kids.push(h('div', { class: 'tka-an-conv' }, [h('small', { text: 'CONVERSATION' }), list, more]));
+        }
+        if (x.openUrl) kids.push(h('p', { class: 'tka-an-foot' }, [h('span', { class: 'tka-when', text: 'Everything above is read from the ticket. ' }), h('a', { class: 'tka-link', href: x.openUrl, target: '_blank', rel: 'noopener', text: 'Open in Zoho Desk' }), h('span', { class: 'tka-when', text: ' only if you need attachments or to change the ticket.' })]));
+        anBox.replaceChildren.apply(anBox, kids.filter(Boolean));
+      }
+      function loadAn(refresh) {
+        anBox.dataset.loaded = '1';
+        anBox.replaceChildren(loadingCard(['Reading the ticket...', 'Checking what T1 did...', 'Checking the destination...', 'Almost there...'], true));
+        api('/api/review/' + r.id + '/analysis' + (refresh ? '?refresh=1' : '')).then(function (x) {
+          if (!x.success) { anBox.dataset.loaded = ''; anBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not read this ticket' }), btn('Try again', 'sm', function () { loadAn(false); })); return; }
+          analysisCard(x);
+        }).catch(function () { anBox.dataset.loaded = ''; anBox.replaceChildren(h('p', { class: 'tka-when', text: 'Could not read this ticket' }), btn('Try again', 'sm', function () { loadAn(false); })); });
+      }
+      function toggleAn(force) {
+        var open = force == null ? !anOpen : !!force;
+        if (open === anOpen) return;
+        anOpen = open; anShell.hidden = !open; art.classList.toggle('an-open', open);
+        if (anBtn) { anBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); anBtn.classList.toggle('on', open); }
+        if (open && !anBox.dataset.loaded) loadAn(false);
+        if (open) revealEl(anShell, { whole: false });
+      }
       var dealBox = h('div', { class: 'tka-dp' });
       var shell = h('div', { class: 'tka-dp-shell' }, [h('div', { class: 'tka-dp-clip' }, [dealBox])]);
       shell.inert = true;
@@ -496,6 +556,7 @@
       }
       var showDeal = waiting || r.state === 'moved';
       if (showDeal) { dealBtn = btn('', 'tka-dealbtn', function (ev) { ev.stopPropagation(); toggleDeal(); }, { 'aria-expanded': 'false' }); dealBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: 'Deal history' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
+      if (showDeal) { anBtn = btn('', 'tka-dealbtn tka-anbtn', function (ev) { ev.stopPropagation(); toggleAn(); }, { 'aria-expanded': 'false' }); anBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: asRow ? 'Analysis' : 'Ticket analysis' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
       TA.seen = TA.seen || {}; var fresh = !TA.seen[r.id]; TA.seen[r.id] = 1;
       var numEl = r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number });
       var destTxt = [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ');
@@ -507,10 +568,10 @@
             h('span', { class: 'tka-lr-ch' }, [r.channel ? pill(r.channel, 'dest') : null]),
             h('span', { class: 'tka-lr-st' }, [pill(r.source === 'bypass' ? 'Skipped review' : 'Left status', r.source === 'bypass' ? 'sev-high' : 'sev-medium')]),
             h('span', { class: 'tka-lr-to', title: destTxt || null, text: destTxt || 'Not recorded' }),
-            h('div', { class: 'tka-lr-act' }, [dealBtn, vrow])]),
-          showDeal ? lineHost : null, shell, form].filter(Boolean));
+            h('div', { class: 'tka-lr-act' }, [anBtn, dealBtn, vrow])]),
+          showDeal ? lineHost : null, anShell, shell, form].filter(Boolean));
         if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
-        if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-deal')) return; toggleDeal(); });
+        if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-an-shell, .tka-deal')) return; toggleDeal(); });
         return art;
       }
       art = h('article', { class: 'tka-row' + (waiting && r.minutes >= buf ? ' hot' : '') + (showDeal ? ' tka-clickable' : '') + (fresh ? ' tka-in' : '') }, [
@@ -521,17 +582,17 @@
             r.to_team || r.to_agent ? h('span', { class: 'tka-when', text: 'Now with ' + [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') }) : null,
             r.breach_count ? h('span', { class: 'tka-when', text: 'Escalated ' + r.breach_count + 'x' }) : null]),
           showDeal ? lineHost : null,
-          (dealBtn || vrow) ? h('div', { class: 'tka-acts' }, [dealBtn, vrow]) : null,
-          shell,
+          (dealBtn || vrow) ? h('div', { class: 'tka-acts' }, [anBtn, dealBtn, vrow]) : null,
+          anShell, shell,
           form]),
         side.length ? h('div', { class: 'tka-row-side' }, side) : null].filter(Boolean));
       if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
-      if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell')) return; toggleDeal(); });
+      if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-an-shell')) return; toggleDeal(); });
       return art;
     }
     load(false);
     clearInterval(TA._rvTimer);
-    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-lf-q:focus') && !host.querySelector('.tka-row.deal-open')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
+    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-lf-q:focus') && !host.querySelector('.tka-row.deal-open') && !host.querySelector('.tka-row.an-open')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
   }
   function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
   // ── Review settings: a page of its own, admins only ────────────────────────────
@@ -1034,6 +1095,19 @@
   var CALL_TOPICS = [['Phone issue', 'phone calls not working'], ['EHR not syncing', 'ehr not syncing'], ['Online scheduling', 'online scheduling double booking'], ['Reminders and texts', 'reminders text messages'], ['Billing', 'billing invoice charge'], ['Login or access', 'cannot log in password'], ['Email campaign', 'email campaign'], ['Reviews', 'reviews reputation'], ['Forms', 'patient forms']];
 
   // A loading card that tells the person what is being read, so a slow lookup never looks stuck.
+  // Bring an element into view only when it is not already comfortably visible. Instant, so a page that is still
+  // growing (loaders swapping for content) cannot cancel or overshoot the scroll the way a smooth scroll does.
+  function revealEl(el, opts) {
+    if (!el) return;
+    var o = opts || {};
+    requestAnimationFrame(function () {
+      if (!el.isConnected) return;
+      var r = el.getBoundingClientRect(), top = 76, vh = window.innerHeight || 800;
+      var out = o.whole ? (r.top < top || r.bottom > vh - 12) : (r.top < top - 4 || r.top > vh * 0.5);
+      if (!out) return;
+      try { el.scrollIntoView({ behavior: 'instant', block: o.block || 'start' }); } catch (e) { try { el.scrollIntoView(true); } catch (e2) {} }
+    });
+  }
   function loadingCard(stages, small) {
     var msg = h('span', { class: 'tka-ld-msg', text: stages[0] });
     var dots = h('span', { class: 'tka-ld-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]);
@@ -1068,6 +1142,7 @@
     function run() {
       var q = input.value.trim(); if (q.length < 2) { results.replaceChildren(); return; }
       var my = ++seq; results.replaceChildren(loadingCard(['Searching clients...', 'Matching tickets and contacts...', 'Still looking, this can take a few seconds...'], true));
+      view.replaceChildren(); revealEl(results);
       api('/api/client-lookup/search?q=' + encodeURIComponent(q)).then(function (j) {
         if (my !== seq) return;
         if (!j.success) { results.replaceChildren(h('p', { class: 'tka-empty', text: j.error || 'Search failed' })); return; }
@@ -1081,6 +1156,7 @@
     function openProfile(accountId, dealId, ticketId) {
       results.replaceChildren();
       view.replaceChildren(loadingCard(['Finding the account...', 'Reading tickets from Zoho Desk...', 'Checking escalations and owners...', 'Reading the account analysis...', 'Almost there...']));
+      revealEl(view);
       api('/api/client-lookup/profile?account=' + encodeURIComponent(accountId || '') + '&deal=' + encodeURIComponent(dealId || '')).then(function (p) {
         if (!p.success || !p.available) {
           if (ticketId) { view.replaceChildren(ticketPanel(ticketId)); return; }
@@ -1175,8 +1251,8 @@
         ticketId ? ticketPanel(ticketId) : null,
         h('div', { class: 'tka-cl-grid' }, [assist, rail.length ? h('div', { class: 'tka-cl-rail' }, rail) : null]),
         h('div', { class: 'tka-card tka-cl-hist' }, [h('h3', { text: 'Support history' }), dealBox]));
-      try { view.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
-      topicIn.focus();
+      revealEl(view);
+      try { topicIn.focus({ preventScroll: true }); } catch (e) { topicIn.focus(); }
     }
   }
   function drawPolicy(pol) {
@@ -1601,7 +1677,7 @@
         });
         formHost.replaceChildren(h('div', { class: 'tka-card' }, [h('h3', { text: r.id ? 'Edit rule' : 'New rule' }), r.id ? null : h('div', { class: 'tka-aibox' }, [h('p', { class: 'tka-hint', text: 'Optional: let AI turn a sentence into a full rule, then edit anything.' }), words, h('div', { class: 'tka-actions' }, [fill])]), f.title, h('div', { class: 'tka-inline' }, [f.category, f.severity]), f.description,
           h('div', { class: 'tka-inline' }, [h('span', { text: 'How it is found' }), f.detector]), dyn, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost', function () { formHost.replaceChildren(); })])]));
-        formHost.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        revealEl(formHost, { whole: true });
       }
     });
   }
