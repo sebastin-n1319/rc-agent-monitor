@@ -587,7 +587,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
     // Session 88: transfer review (Pending Review - T1), polled every minute.
     require('./lib/deal-context').setKb(escalationWatch.kbHi);
-    require('./lib/client-lookup').setDeps({ ai: require('./lib/ai') });
+    require('./lib/client-lookup').setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid) });
     transferReview.setDB(db);
     await transferReview.initSchema();
     transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
@@ -8511,6 +8511,7 @@ const idArg = (v) => String(v || '').replace(/[^0-9A-Za-z_-]/g, '').slice(0, 40)
 app.get('/api/client-lookup/search', requireAuth, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await clientLookup.search(String(req.query.q || ''))) }); }));
 app.get('/api/client-lookup/profile', requireAuth, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await clientLookup.profile(idArg(req.query.account), idArg(req.query.deal), dbAllLocal)) }); }));
 app.get('/api/client-lookup/topic', requireAuth, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await clientLookup.topic(idArg(req.query.account), idArg(req.query.deal), String(req.query.q || '').slice(0, 300), dbAllLocal)) }); }));
+app.get('/api/client-lookup/ticket', requireAuth, rateLimit(15, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await clientLookup.ticketAdvice(idArg(req.query.id), { call: req.query.call === '1', email: req.query.email === '1' })) }); }));
 app.get('/api/client-lookup/guide', requireAuth, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await clientLookup.guide(idArg(req.query.account), idArg(req.query.deal), String(req.query.q || '').slice(0, 300), dbAllLocal)) }); }));
 app.get('/api/review/my/tips', requireAuth, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.tips(req.session.email)) }); }));
 app.get('/api/review/my', requireAuth, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.mine(req.session.email)) }); }));

@@ -697,3 +697,26 @@ body.ct-lock{overflow:hidden}
 @keyframes tka-ld-shim{0%{background-position:120% 0}100%{background-position:-120% 0}}
 @media (prefers-reduced-motion:reduce){.tka-ld-orb i,.tka-ld-dots i,.tka-ld-bar i,.tka-ld-sk i,.tka-ld{animation:none}.tka-ld-bar i{width:100%;opacity:.5}}
 .tka-cl-results>.tka-ld{grid-column:1/-1}
+
+/* Batch 135: ticket next step in Client lookup */
+.tka-tk{display:flex;flex-direction:column;gap:12px;border-left:3px solid var(--tka-teal)}
+.tka-tk-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:flex-start}
+.tka-tk-head h3{margin:0}
+.tka-tk-head h3 a{color:var(--tka-teal);text-decoration:none}
+.tka-tk-subj{margin:2px 0 0;font-size:13.5px;color:var(--tka-t2);overflow-wrap:anywhere}
+.tka-tk-meta{display:flex;flex-wrap:wrap;gap:6px}
+.tka-tk-sum{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;background:var(--tka-teal-s);border:1px solid var(--tka-border)}
+.tka-tk-sum b{font:600 17px 'Poppins',sans-serif;color:var(--tka-t1)}
+.tka-tk-sum p{margin:4px 0 0;font-size:13.5px;line-height:1.5;color:var(--tka-t2)}
+.tka-tk-tabs{display:flex;gap:6px}
+.tka-tk-tab{padding:7px 14px;border-radius:999px;border:1px solid var(--tka-border);background:var(--tka-surface);color:var(--tka-t2);font:500 13px 'Poppins',sans-serif;cursor:pointer}
+.tka-tk-tab.on{background:var(--tka-teal-s);border-color:var(--tka-teal);color:var(--tka-teal)}
+.tka-tk-tab:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
+.tka-tk-pane{display:flex;flex-direction:column;gap:8px;animation:tka-cl-in .2s ease both}
+.tka-tk-row{display:flex;gap:8px;align-items:center}
+.tka-tk-row .tka-input{flex:1 1 auto}
+.tka-tk-body{width:100%;box-sizing:border-box;min-height:180px;line-height:1.5;resize:vertical}
+.tka-tk-chk:empty{display:none}
+.tka-tk-src{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tka-mod.used{background:var(--tka-teal-s);border-color:var(--tka-teal)}
+.tka-tk>.tka-btn{align-self:flex-start}

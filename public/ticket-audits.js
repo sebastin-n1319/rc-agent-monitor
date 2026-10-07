@@ -961,6 +961,75 @@
     b2.addEventListener('click', function () { pick(true); });
     sec.insertBefore(bar, sec.firstChild); sec.appendChild(look);
   };
+
+  // A ticket typed into Client lookup: read it and suggest the best next step. Email and web tickets get an email reply,
+  // phone tickets a call guide; the other one is only produced when the agent asks for it.
+  function ticketPanel(ticketId) {
+    var card = h('div', { class: 'tka-card tka-tk' });
+    var asked = { call: false, email: false };
+    function load() {
+      card.replaceChildren(h('h3', { text: 'Reading the ticket' }), loadingCard(['Reading the ticket...', 'Reading the conversation...', 'Checking similar solved tickets...', 'Writing the next step...', 'Almost there...'], true));
+      var q = '/api/client-lookup/ticket?id=' + encodeURIComponent(ticketId) + (asked.call ? '&call=1' : '') + (asked.email ? '&email=1' : '');
+      api(q).then(function (r) {
+        if (!r.success || !r.available) { card.replaceChildren(h('h3', { text: 'Ticket' }), h('p', { class: 'tka-empty', text: r.error || r.note || 'Could not read this ticket.' })); return; }
+        draw(r);
+      }).catch(function () { card.replaceChildren(h('h3', { text: 'Ticket' }), h('p', { class: 'tka-empty', text: 'Could not read this ticket. Try again in a moment.' })); });
+    }
+    function copyBtn(getText, label) {
+      return btn(label || 'Copy', 'sm', function (ev) {
+        var b = ev.currentTarget, txt = getText();
+        function ok() { b.textContent = 'Copied'; setTimeout(function () { b.textContent = label || 'Copy'; }, 1500); }
+        try { navigator.clipboard.writeText(txt).then(ok, function () { toast('Could not copy', 'error'); }); } catch (e) { toast('Could not copy', 'error'); }
+      });
+    }
+    function list(title, arr) { return arr && arr.length ? h('div', { class: 'tka-cl-g' }, [h('h5', { text: title })].concat(arr.map(function (x) { return h('div', { class: 'tka-pt' }, [h('i'), h('span', { text: x })]); }))) : null; }
+    function draw(r) {
+      var t = r.ticket, a = r.advice || {};
+      var head = h('div', { class: 'tka-tk-head' }, [h('div', null, [
+        h('h3', null, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: 'Ticket #' + t.number }) : 'Ticket #' + t.number]),
+        h('p', { class: 'tka-tk-subj', text: t.subject })]),
+        h('div', { class: 'tka-tk-meta' }, [pill(t.status || 'Open', /closed|resolved/i.test(t.status) ? 'st-approved' : 'sev-medium'), t.channel ? pill(t.channel, 'dest') : null, a.urgency === 'high' ? pill('Urgent', 'sev-high') : null,
+          a.waitingOn === 'us' ? pill('Waiting on us', 'sev-high') : a.waitingOn === 'client' ? pill('Waiting on client', '') : null])]);
+      var step = a.bestChannel === 'email' ? 'Reply by email' : a.bestChannel === 'call' ? 'Call the client' : 'Reply by email or call';
+      var summary = h('div', { class: 'tka-tk-sum' }, [h('span', { class: 'tka-df-l', text: 'Best next step' }), h('b', { text: step }), a.summary ? h('p', { text: a.summary }) : null, a.headsUp ? h('p', { class: 'tka-dp-cause', text: a.headsUp }) : null]);
+      var tabs = [], panes = {};
+      if (a.email || r.mode !== 'call') {
+        var subj = h('input', { class: 'tka-input', value: a.email ? a.email.subject : '', 'aria-label': 'Email subject', readonly: true });
+        var body = h('textarea', { class: 'tka-note-in tka-tk-body', rows: '10', 'aria-label': 'Email reply draft' }); body.value = a.email ? a.email.body : '';
+        panes.email = a.email ? h('div', { class: 'tka-tk-pane' }, [h('div', { class: 'tka-tk-row' }, [subj, copyBtn(function () { return subj.value; }, 'Copy subject')]), body,
+          h('div', { class: 'tka-actions' }, [copyBtn(function () { return body.value; }, 'Copy reply'), h('span', { class: 'tka-when', text: 'A draft only. Edit it, then send it from the ticket in Zoho Desk.' })])]) : h('div', { class: 'tka-tk-pane' }, [h('p', { class: 'tka-empty', text: a.why || 'No email draft yet.' })]);
+        tabs.push(['email', 'Email reply']);
+      }
+      if (a.call || r.mode !== 'email') {
+        panes.call = a.call ? h('div', { class: 'tka-tk-pane' }, [a.call.opener ? h('div', { class: 'tka-cl-open' }, [h('span', { class: 'tka-df-l', text: 'Start with' }), h('p', { text: '"' + a.call.opener + '"' })]) : null,
+          h('div', { class: 'tka-cl-gg' }, [list('Cover', a.call.talkPoints), list('Ask the client', a.call.ask), list('Do not', a.call.avoid)])]) : h('div', { class: 'tka-tk-pane' }, [h('p', { class: 'tka-empty', text: 'No call guide yet.' })]);
+        tabs.push(['call', 'Call guide']);
+      }
+      var show = a.bestChannel === 'call' ? 'call' : 'email';
+      var tabBar = h('div', { class: 'tka-tk-tabs', role: 'tablist' });
+      var paneHost = h('div', { class: 'tka-tk-panes' });
+      function pick(k) { Array.prototype.forEach.call(tabBar.children, function (b) { var on = b.getAttribute('data-k') === k; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); }); paneHost.replaceChildren(panes[k]); }
+      tabs.forEach(function (x) { var b = h('button', { type: 'button', role: 'tab', class: 'tka-tk-tab', 'data-k': x[0], text: x[1] }); b.addEventListener('click', function () { pick(x[0]); }); tabBar.appendChild(b); });
+      // The other channel is produced only on request.
+      var more = null;
+      if (r.mode === 'email' && !a.call) more = btn('Client asked for a call? Get a call guide', 'ghost sm', function () { asked.call = true; load(); });
+      if (r.mode === 'call' && !a.email) more = btn('Need an email follow-up? Draft one', 'ghost sm', function () { asked.email = true; load(); });
+      if (!panes[show]) show = tabs.length ? tabs[0][0] : 'email';
+      var src = r.sources || { cases: [], updates: [] };
+      var srcRow = h('div', { class: 'tka-tk-src' }, [h('span', { class: 'tka-df-l', text: 'Based on' })].concat(
+        src.cases.length ? src.cases.map(function (c) { return h('span', { class: 'tka-mod' + (c.used ? ' used' : ''), title: c.title + (c.closed ? ' (closed ' + c.closed + ')' : '') }, [h('span', { text: 'Solved #' + c.number + (c.module ? ' (' + c.module + ')' : '') })]); }) : [h('span', { class: 'tka-when', text: 'no similar solved ticket found' })],
+        src.updates.map(function (u) { return h('span', { class: 'tka-mod used', title: u.at }, [h('span', { text: 'Update: ' + u.title })]); })));
+      var conv = (r.messages || []).length ? h('details', { class: 'tka-cl-cv' }, [h('summary', { text: 'Conversation read (' + r.messages.length + ' messages)' }),
+        h('div', { class: 'tka-cl-msgs' }, r.messages.map(function (m) { return h('div', { class: 'tka-cl-msg ' + (m.who === 'Client' ? 'in' : 'out') }, [h('b', { text: m.who + (m.name && m.who === 'Adit' ? ' · ' + m.name : '') + (m.at ? ' · ' + String(m.at).slice(0, 10) : '') }), h('span', { text: m.text })]); }))]) : null;
+      card.replaceChildren.apply(card, [head, summary, tabs.length > 1 ? tabBar : null, paneHost, more,
+        h('div', { class: 'tka-cl-gg tka-tk-chk' }, [list('Check first', a.checks), list('You can do now', a.canDo)]),
+        a.escalate ? h('p', { class: 'tka-cl-esc' }, [h('b', { text: 'Escalate when: ' }), a.escalate]) : null, srcRow, conv,
+        h('p', { class: 'tka-when', text: r.ai ? 'Written by AI from this ticket, similar solved tickets and recent updates. Check it against the ticket before you send.' : 'AI suggestions are not available right now.' })].filter(Boolean));
+      if (tabs.length) pick(show);
+    }
+    load();
+    return card;
+  }
   // ── Client lookup, for agents on a live call ───────────────
   var CALL_TOPICS = [['Phone issue', 'phone calls not working'], ['EHR not syncing', 'ehr not syncing'], ['Online scheduling', 'online scheduling double booking'], ['Reminders and texts', 'reminders text messages'], ['Billing', 'billing invoice charge'], ['Login or access', 'cannot log in password'], ['Email campaign', 'email campaign'], ['Reviews', 'reviews reputation'], ['Forms', 'patient forms']];
 
@@ -992,7 +1061,7 @@
           h('b', { text: r.deal || r.account || 'Client' }),
           h('span', { class: 'tka-when', text: [r.deal ? r.account : '', r.stage].filter(Boolean).join(' · ') }),
           h('span', { class: 'tka-cl-m', text: r.matchedOn || '' })]);
-        c.addEventListener('click', function () { openProfile(r.accountId, r.dealId); });
+        c.addEventListener('click', function () { openProfile(r.accountId, r.dealId, r.ticketId); });
         return c;
       }));
     }
@@ -1002,22 +1071,25 @@
       api('/api/client-lookup/search?q=' + encodeURIComponent(q)).then(function (j) {
         if (my !== seq) return;
         if (!j.success) { results.replaceChildren(h('p', { class: 'tka-empty', text: j.error || 'Search failed' })); return; }
-        if (j.results.length === 1) { results.replaceChildren(); openProfile(j.results[0].accountId, j.results[0].dealId); return; }
+        if (j.results.length === 1) { results.replaceChildren(); openProfile(j.results[0].accountId, j.results[0].dealId, j.results[0].ticketId); return; }
         showResults(j.results, q);
       });
     }
     input.addEventListener('input', function () { clearTimeout(t); t = setTimeout(run, 400); });
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(t); run(); } });
 
-    function openProfile(accountId, dealId) {
+    function openProfile(accountId, dealId, ticketId) {
       results.replaceChildren();
       view.replaceChildren(loadingCard(['Finding the account...', 'Reading tickets from Zoho Desk...', 'Checking escalations and owners...', 'Reading the account analysis...', 'Almost there...']));
       api('/api/client-lookup/profile?account=' + encodeURIComponent(accountId || '') + '&deal=' + encodeURIComponent(dealId || '')).then(function (p) {
-        if (!p.success || !p.available) { view.replaceChildren(h('div', { class: 'tka-note', text: p.error || p.note || 'Could not load this client' })); return; }
-        drawProfile(p);
+        if (!p.success || !p.available) {
+          if (ticketId) { view.replaceChildren(ticketPanel(ticketId)); return; }
+          view.replaceChildren(h('div', { class: 'tka-note', text: p.error || p.note || 'Could not load this client' })); return;
+        }
+        drawProfile(p, ticketId);
       });
     }
-    function drawProfile(p) {
+    function drawProfile(p, ticketId) {
       var a = p.account || {};
       var strip = h('div', { class: 'tka-cl-strip' }, [dealLine(p.header)]);
       var facts = [];
@@ -1095,11 +1167,12 @@
         rail.push(h('div', { class: 'tka-card tka-cl-rc' }, [h('div', { class: 'tka-cl-rh' }, [h('h3', { text: 'People on this account' }), h('span', { class: 'tka-dp-cnt', text: String(ppl.length) })]), list, more]));
       }
       if ((p.deals || []).length > 1) rail.push(h('div', { class: 'tka-card tka-cl-rc' }, [h('div', { class: 'tka-cl-rh' }, [h('h3', { text: 'Deals on this account' }), h('span', { class: 'tka-dp-cnt', text: String(p.deals.length) })]), h('div', { class: 'tka-cl-deals' }, p.deals.map(function (d) {
-        return h('button', { type: 'button', class: 'tka-cl-dl' + (d.id === p.dealId ? ' on' : ''), onclick: function () { openProfile(p.accountId, d.id); } }, [h('span', { text: d.name || 'Deal' }), pill(d.stage || '', stageCls(d.stage) === 'good' ? 'st-approved' : '')]);
+        return h('button', { type: 'button', class: 'tka-cl-dl' + (d.id === p.dealId ? ' on' : ''), onclick: function () { openProfile(p.accountId, d.id, ticketId); } }, [h('span', { text: d.name || 'Deal' }), pill(d.stage || '', stageCls(d.stage) === 'good' ? 'st-approved' : '')]);
       }))]));
       var dealBox = h('div', { class: 'tka-dp tka-cl-deal' });
       if (p.detail) renderDeal(dealBox, p.detail, { wide: true }); else dealBox.replaceChildren(dpNote(p.detailNote || 'No support history yet.'));
       view.replaceChildren(h('div', { class: 'tka-card tka-cl-head' }, [strip, factRow]),
+        ticketId ? ticketPanel(ticketId) : null,
         h('div', { class: 'tka-cl-grid' }, [assist, rail.length ? h('div', { class: 'tka-cl-rail' }, rail) : null]),
         h('div', { class: 'tka-card tka-cl-hist' }, [h('h3', { text: 'Support history' }), dealBox]));
       try { view.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
