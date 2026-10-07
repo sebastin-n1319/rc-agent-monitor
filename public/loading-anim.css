@@ -1,0 +1,11 @@
+/* Loading animation, see loading-anim.js */
+.ldx-w{display:inline-flex;align-items:center;gap:9px;vertical-align:middle;color:inherit}
+.ldx-d{display:inline-flex;gap:4px;align-items:center}
+.ldx-d i{width:7px;height:7px;border-radius:50%;background:#21AAE0;display:block;animation:ldx-b 1s ease-in-out infinite}
+.ldx-d i:nth-child(2){background:#F4891F;animation-delay:.15s}
+.ldx-d i:nth-child(3){animation-delay:.3s}
+.ldx-t{background:linear-gradient(90deg,currentColor 0%,currentColor 40%,rgba(120,150,175,.45) 50%,currentColor 60%,currentColor 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:ldx-s 1.8s linear infinite}
+@keyframes ldx-b{0%,80%,100%{transform:translateY(0);opacity:.55}40%{transform:translateY(-6px);opacity:1}}
+@keyframes ldx-s{from{background-position:120% 0}to{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){.ldx-d i,.ldx-t{animation:none}
+.ldx-t{-webkit-text-fill-color:currentColor;background:none}}

@@ -397,7 +397,7 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 
 /* Batch 122: use the full page width */
 .tka-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:12px;align-items:start}
-.tka-cards>.tka-row.deal-open,.tka-cards>.tka-row:has(.tka-rv-form:not(:empty)){grid-column:1/-1}
+.tka-cards>.tka-row.deal-open,.tka-cards>.tka-row.an-open,.tka-cards>.tka-row:has(.tka-rv-form:not(:empty)){grid-column:1/-1}
 .tka-head p{max-width:none}
 
 /* Batch 123: Transfer review redesign (cards, deal panel, journey) */
@@ -753,3 +753,9 @@ body.ct-lock{overflow:hidden}
 html.dark-mode .tka-an-ck li.ok i{background:rgba(45,220,150,.2);color:#6be8b3}
 html.dark-mode .tka-an-ck li.warn i{background:rgba(245,162,74,.22);color:#f7b867}
 html.dark-mode .tka-an-ck li.bad i{background:rgba(238,92,98,.25);color:#ff9aa0}
+
+.tka-an-cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+.tka-an-cols.one{grid-template-columns:1fr}
+.tka-an-l,.tka-an-r{display:flex;flex-direction:column;gap:10px;min-width:0}
+.tka-an-r .tka-an-tl{max-height:520px}
+@media (max-width:1000px){.tka-an-cols{grid-template-columns:1fr}}

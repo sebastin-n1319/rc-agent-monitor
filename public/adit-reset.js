@@ -38,6 +38,7 @@
     'ticket-audits.css', // ticket audits
     'dark-fix.css', // Session 51
     'nx-icons.css', // Session 51
+    'loading-anim.css',
     'chart.umd',
     'cdnjs.cloudflare.com'
   ];
