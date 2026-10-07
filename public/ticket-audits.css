@@ -264,3 +264,24 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-dp-det{margin-top:6px}
 .tka-dp-det summary{cursor:pointer;font:500 13px 'Poppins',sans-serif;color:var(--tka-teal);padding:4px 0}
 .tka-dp-det summary:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
+
+/* Batch 113: colour-coded deal line, clickable journey marks, derived issue history */
+.tka-deal .k-account dd,.tka-deal .k-deal dd{font-weight:600}
+.tka-deal .k-csm dd,.tka-deal .k-ob dd{color:var(--tka-t2)}
+.tka-chipv{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;border:1px solid transparent}
+.tka-chipv.good{color:var(--tka-green);background:color-mix(in srgb,var(--tka-green) 14%,transparent);border-color:color-mix(in srgb,var(--tka-green) 40%,transparent)}
+.tka-chipv.warn{color:var(--tka-amber);background:color-mix(in srgb,var(--tka-amber) 16%,transparent);border-color:color-mix(in srgb,var(--tka-amber) 45%,transparent)}
+.tka-chipv.bad{color:var(--tka-red);background:color-mix(in srgb,var(--tka-red) 14%,transparent);border-color:color-mix(in srgb,var(--tka-red) 40%,transparent)}
+.tka-chipv.info{color:var(--tka-teal);background:var(--tka-teal-s);border-color:color-mix(in srgb,var(--tka-teal) 40%,transparent)}
+.tka-chipv.mute{color:var(--tka-t2);background:var(--tka-surface2);border-color:var(--tka-border)}
+.tka-dp-cause{padding:6px 9px;border-left:3px solid var(--tka-amber);background:color-mix(in srgb,var(--tka-amber) 10%,transparent);border-radius:0 6px 6px 0;color:var(--tka-t1)!important}
+.tka-jr-grid{stroke:var(--tka-border);stroke-width:1;stroke-dasharray:2 4}
+.tka-jr-band{fill:var(--tka-surface2)}
+.tka-jr-band.open{fill:color-mix(in srgb,var(--tka-red) 8%,transparent)}
+.tka-jr-band.onhold{fill:color-mix(in srgb,var(--tka-amber) 9%,transparent)}
+.tka-jr-band.closed{fill:color-mix(in srgb,var(--tka-green) 7%,transparent)}
+.tka-jr-today{stroke:var(--tka-teal);stroke-width:1.5;stroke-dasharray:4 3}
+.tka-jr-pt{cursor:default;outline:none}
+.tka-jr-pt.link{cursor:pointer}
+.tka-jr-pt:hover .tka-jr-mk,.tka-jr-pt:focus-visible .tka-jr-mk{stroke:var(--tka-t1);stroke-width:2.5}
+.tka-jr-pt:hover .tka-jr-hl{text-decoration:underline}

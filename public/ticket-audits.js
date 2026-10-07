@@ -193,19 +193,44 @@
       }).catch(function () { box.replaceChildren(h('span', { class: 'tka-when', text: 'AI help is not available right now' })); });
     }
     // Deal context: quick CRM line on the tile, full history when the tile is opened.
+    function stageCls(v) { v = String(v || ''); return /churn|lost|offboard/i.test(v) ? 'bad' : /onboard|getting started|setup/i.test(v) ? 'warn' : /csm|won|active/i.test(v) ? 'good' : /upgrade|expan/i.test(v) ? 'info' : 'mute'; }
+    function escCls(v) { v = String(v || ''); return /^escalated/i.test(v) ? 'bad' : /de-?escalated/i.test(v) ? 'warn' : /never/i.test(v) ? 'good' : 'mute'; }
     function dealLine(d) {
       if (!d) return null;
-      var items = [['Account', d.account], ['Deal', d.deal], ['Stage', d.stage], ['CSM', d.csm], ['OB', d.ob], ['Escalation', d.escalation]].filter(function (x) { return x[1]; });
+      var items = [['Account', d.account, 'account', ''], ['Deal', d.deal, 'deal', ''], ['Stage', d.stage, 'stage', stageCls(d.stage)], ['CSM', d.csm, 'csm', ''], ['OB', d.ob, 'ob', ''], ['Escalation', d.escalation, 'esc', escCls(d.escalation)]].filter(function (x) { return x[1]; });
       if (!items.length) return null;
       return h('dl', { class: 'tka-deal' }, items.map(function (x) {
-        var hot = x[0] === 'Escalation' && /^escalated/i.test(x[1]);
-        return h('div', { class: hot ? 'hot' : '' }, [h('dt', { text: x[0] }), h('dd', { text: x[1] })]);
+        return h('div', { class: 'k-' + x[2] }, [h('dt', { text: x[0] }), h('dd', null, [x[3] ? h('span', { class: 'tka-chipv ' + x[3], text: x[1] }) : x[1]])]);
       }));
     }
     function dpSec(title, kids) { return h('section', { class: 'tka-dp-sec' }, [h('h4', { text: title })].concat(kids.filter(Boolean))); }
     function dpNote(t) { return h('p', { class: 'tka-when', text: t }); }
     function stateCls(s) { return s === 'open' ? 'sev-high' : s === 'on hold' ? 'sev-medium' : 'st-approved'; }
-    // Support journey: a timeline with one mark per ticket, labels only on what is still live, and the full list in a dropdown.
+    function issueItem(i) {
+      var tone = /fixed|solved|resolved/i.test(i.status) ? 'st-approved' : /open|unsolved/i.test(i.status) ? 'sev-high' : 'sev-medium';
+      return h('div', { class: 'tka-dp-item' }, [h('div', { class: 'tka-inline' }, [pill(i.status || 'unknown', tone), i.product ? pill(String(i.product).replace(/_/g, ' '), 'dest') : null, h('span', { class: 'tka-when', text: [i.since ? 'since ' + i.since : '', i.times ? (i.times + (i.times === 1 ? ' ticket' : ' tickets')) : ''].filter(Boolean).join(', ') })]), h('p', { text: i.problem }), i.cause ? h('p', { class: 'tka-dp-cause', text: 'Likely cause: ' + i.cause }) : null]);
+    }
+    function renderDeal(box, d) {
+      if (!d.available) { box.replaceChildren(dpNote(d.note || 'No deal context for this ticket.')); return; }
+      var an = d.analysis || {}, dv = an.derived || { issues: [], modules: [] }, kids = [];
+      var live = (d.journey || []).filter(function (t) { return t.state !== 'closed'; });
+      if (an.available) {
+        kids.push(dpSec('Issue history', [an.headline ? h('p', { class: 'tka-dp-lead', text: an.headline }) : null].concat((an.issues || []).length ? an.issues.map(issueItem) : [dpNote('No issues recorded in the account analysis.')])));
+      } else {
+        kids.push(dpSec('Issue history', [dpNote('Built from this deal\'s ticket subjects. The written account analysis is not available to this tool yet.')].concat(dv.issues.length ? dv.issues.map(issueItem) : [dpNote('No clear pattern in the ticket subjects.')])));
+      }
+      kids.push(dpSec('Unsolved queries', (an.available && (an.open || []).length ? an.open.map(function (o) { return h('div', { class: 'tka-dp-item' }, [h('p', { text: o.item }), o.note ? h('span', { class: 'tka-when', text: o.note }) : null]); }) : []).concat(live.length ? [h('p', { class: 'tka-when', text: 'Open or on hold in Zoho Desk now:' })].concat(live.slice(0, 8).map(function (t) { return h('div', { class: 'tka-dp-row' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { text: t.subject }), pill(t.status, stateCls(t.state))]); })) : (an.available && (an.open || []).length ? [] : [dpNote('Nothing unsolved on record.')]))));
+      kids.push(dpSec('Previous satisfaction', [an.mood ? h('div', { class: 'tka-dp-item' }, [h('div', { class: 'tka-inline' }, [pill(an.mood.level || 'unknown', /happy|positive|good/i.test(an.mood.level) ? 'st-approved' : /unhappy|negative|angry|frustrated|upset/i.test(an.mood.level) ? 'sev-high' : 'sev-medium'), an.mood.asOf ? h('span', { class: 'tka-when', text: 'as of ' + an.mood.asOf }) : null]), h('p', { text: an.mood.why })]) : dpNote('No written mood read for this account yet. See the survey results below.')]));
+      var mods = (an.modules || []).length ? an.modules : dv.modules;
+      kids.push(dpSec('Usually reported modules', mods.length ? [h('div', { class: 'tka-inline' }, mods.map(function (m) { return pill(m.name + (m.n > 1 ? ' x' + m.n : ''), 'dest'); }))] : [dpNote('No module pattern on record.')]));
+      kids.push(journeySec(d));
+      kids.push(dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-inline' }, d.owners.map(function (o) { return pill(o.name + ' (' + o.tickets + ')', ''); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')]));
+      kids.push(dpSec('FCR and CSAT for this deal', [h('div', { class: 'tka-inline' }, [pill('FCR ' + (d.fcr.pct == null ? 'no data' : d.fcr.pct + '%'), d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'st-approved' : 'sev-medium'), d.fcr.closed ? h('span', { class: 'tka-when', text: d.fcr.achieved + ' of ' + d.fcr.closed + ' closed tickets solved first contact' }) : null]),
+        h('div', { class: 'tka-inline' }, [pill('CSAT ' + (d.csat.pct == null ? 'no surveys' : d.csat.pct + '%'), d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'st-approved' : 'sev-medium'), d.csat.total ? h('span', { class: 'tka-when', text: d.csat.good + ' good, ' + d.csat.bad + ' bad survey' + (d.csat.total === 1 ? '' : 's') }) : null])]));
+      if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
+      box.replaceChildren.apply(box, kids);
+    }
+    // Support journey: a timeline with one clickable mark per ticket (opens it in Zoho Desk), labels only on live tickets, full list in a dropdown.
     function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); return e; }
     function journeySec(d) {
       var rows = (d.journey || []).filter(function (t) { return t.created && !isNaN(Date.parse(t.created)); });
@@ -213,57 +238,47 @@
       if (!rows.length) return dpSec(title, [dpNote('No other tickets on this deal.')]);
       var now = Date.now(), t0 = Math.min.apply(null, rows.map(function (t) { return Date.parse(t.created); }));
       t0 = Math.min(t0, now - 30 * 864e5);
-      var W = 640, H = 128, L = 62, R = 14, lanes = { open: 24, 'on hold': 56, closed: 88 };
+      var W = 680, H = 168, L = 64, R = 22, lanes = { open: 46, 'on hold': 84, closed: 122 };
       var x = function (ms) { return L + (W - L - R) * ((ms - t0) / (now - t0)); };
       var COL = { open: 'var(--tka-red)', 'on hold': 'var(--tka-amber)', closed: 'var(--tka-green)' };
-      var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', class: 'tka-jr', 'aria-label': title });
+      var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'group', class: 'tka-jr', 'aria-label': title });
+      // month grid
+      var span = (now - t0) / 864e5, step = span > 300 ? 3 : span > 150 ? 2 : 1, dt = new Date(t0); dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 1);
+      for (var mi = 0; dt.getTime() < now; mi++, dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 1)) {
+        var gx = x(dt.getTime()); if (gx < L + 8 || gx > W - R - 8) continue;
+        svg.appendChild(svgEl('line', { x1: gx, x2: gx, y1: 18, y2: 140, class: 'tka-jr-grid' }));
+        if (mi % step === 0) { var mt = svgEl('text', { x: gx, y: H - 12, 'text-anchor': 'middle', class: 'tka-jr-ax' }); mt.textContent = dt.toLocaleDateString('en-US', { month: 'short' }) + (dt.getMonth() === 0 ? " '" + String(dt.getFullYear()).slice(2) : ''); svg.appendChild(mt); }
+      }
       Object.keys(lanes).forEach(function (k) {
-        svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: lanes[k], y2: lanes[k], class: 'tka-jr-lane' }));
-        var tx = svgEl('text', { x: L - 8, y: lanes[k] + 4, 'text-anchor': 'end', class: 'tka-jr-lab' }); tx.textContent = k === 'on hold' ? 'On hold' : k.charAt(0).toUpperCase() + k.slice(1); svg.appendChild(tx);
+        svg.appendChild(svgEl('rect', { x: L, y: lanes[k] - 15, width: W - L - R, height: 30, rx: 8, class: 'tka-jr-band ' + k.replace(' ', '') }));
+        var tx = svgEl('text', { x: L - 10, y: lanes[k] + 4, 'text-anchor': 'end', class: 'tka-jr-lab' }); tx.textContent = k === 'on hold' ? 'On hold' : k.charAt(0).toUpperCase() + k.slice(1); svg.appendChild(tx);
       });
-      [t0, now].forEach(function (ms, n) {
-        var tx = svgEl('text', { x: n ? W - R : L, y: H - 6, 'text-anchor': n ? 'end' : 'start', class: 'tka-jr-ax' });
-        tx.textContent = new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: n ? undefined : '2-digit' }); svg.appendChild(tx);
-      });
-      var placed = {};
-      rows.slice().sort(function (a, b) { return Date.parse(a.created) - Date.parse(b.created); }).forEach(function (t) {
+      var todayX = x(now); svg.appendChild(svgEl('line', { x1: todayX, x2: todayX, y1: 18, y2: 140, class: 'tka-jr-today' }));
+      var td = svgEl('text', { x: todayX, y: 12, 'text-anchor': 'end', class: 'tka-jr-ax' }); td.textContent = 'Today'; svg.appendChild(td);
+      var sorted = rows.slice().sort(function (a, b) { return Date.parse(a.created) - Date.parse(b.created); });
+      var lastX = [-999, -999, -999];
+      sorted.forEach(function (t) {
         var cx = x(Date.parse(t.created)), cy = lanes[t.state] || lanes.closed, live = t.state !== 'closed';
-        var g = svgEl('g', { class: 'tka-jr-pt' });
-        var tip = svgEl('title'); tip.textContent = '#' + t.number + ' ' + t.subject + ' (' + t.status + ', ' + when(t.created) + (t.agent ? ', ' + t.agent : '') + ')'; g.appendChild(tip);
-        // closed: circle, on hold: diamond, open: square, so state never rests on colour alone
-        var m = t.state === 'closed' ? svgEl('circle', { cx: cx, cy: cy, r: 5 })
-          : t.state === 'on hold' ? svgEl('rect', { x: cx - 5, y: cy - 5, width: 10, height: 10, transform: 'rotate(45 ' + cx + ' ' + cy + ')' })
-          : svgEl('rect', { x: cx - 5, y: cy - 5, width: 10, height: 10, rx: 1.5 });
-        m.setAttribute('fill', COL[t.state] || COL.closed); m.setAttribute('class', 'tka-jr-mk'); g.appendChild(m);
+        var wrap = t.url ? svgEl('a', { href: t.url, target: '_blank', rel: 'noopener', class: 'tka-jr-pt link', 'aria-label': 'Open #' + t.number + ' in Zoho Desk' }) : svgEl('g', { class: 'tka-jr-pt' });
+        var tip = svgEl('title'); tip.textContent = '#' + t.number + ' ' + t.subject + ' (' + t.status + ', ' + when(t.created) + (t.agent ? ', ' + t.agent : '') + ')' + (t.url ? '. Click to open.' : ''); wrap.appendChild(tip);
+        wrap.appendChild(svgEl('circle', { cx: cx, cy: cy, r: 11, fill: 'transparent' }));   // bigger hit area
+        var m = t.state === 'closed' ? svgEl('circle', { cx: cx, cy: cy, r: 5.5 })
+          : t.state === 'on hold' ? svgEl('rect', { x: cx - 5.5, y: cy - 5.5, width: 11, height: 11, transform: 'rotate(45 ' + cx + ' ' + cy + ')' })
+          : svgEl('rect', { x: cx - 6, y: cy - 6, width: 12, height: 12, rx: 2 });
+        m.setAttribute('fill', COL[t.state] || COL.closed); m.setAttribute('class', 'tka-jr-mk'); wrap.appendChild(m);
         if (live) {
-          var key = Math.round(cx / 46), lvl = (placed[key] = (placed[key] || 0) + 1) - 1;
-          var lb = svgEl('text', { x: cx, y: cy - 10 - lvl * 11, 'text-anchor': cx > W - 60 ? 'end' : 'middle', class: 'tka-jr-hl' }); lb.textContent = '#' + t.number; g.appendChild(lb);
+          var lx = Math.max(L + 18, Math.min(cx, W - R - 4)), lvl = 0;
+          while (lvl < 2 && lx - lastX[lvl] < 54) lvl++;
+          lastX[lvl] = lx;
+          var lb = svgEl('text', { x: lx, y: cy - 12 - lvl * 12, 'text-anchor': 'middle', class: 'tka-jr-hl' }); lb.textContent = '#' + t.number; wrap.appendChild(lb);
         }
-        svg.appendChild(g);
+        svg.appendChild(wrap);
       });
       var det = h('details', { class: 'tka-dp-det' }, [h('summary', { text: 'All tickets (' + d.ticketsShown + ')' })].concat(d.journey.map(function (t) {
-        return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + t.number }), h('span', { text: t.subject }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(' / ') })]);
-      })).concat(d.ticketsShown >= 25 ? [dpNote('Showing the latest 25.')] : []));
-      var legend = h('div', { class: 'tka-inline' }, [pill('Open ' + d.counts.open, 'sev-high'), pill('On hold ' + d.counts['on hold'], 'sev-medium'), pill('Closed ' + d.counts.closed, 'st-approved'), h('span', { class: 'tka-when', text: 'Labels show only tickets still open or on hold. Hover a mark for details.' })]);
+        return h('div', { class: 'tka-dp-row' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { text: t.subject }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(' / ') })]);
+      })));
+      var legend = h('div', { class: 'tka-inline' }, [pill('Open ' + d.counts.open, 'sev-high'), pill('On hold ' + d.counts['on hold'], 'sev-medium'), pill('Closed ' + d.counts.closed, 'st-approved'), h('span', { class: 'tka-when', text: 'Each mark is a ticket, placed by the day it was created. Click one to open it. Labels show only open or on hold tickets.' })]);
       return dpSec(title, [legend, h('div', { class: 'tka-jr-wrap' }, [svg]), det]);
-    }
-    function renderDeal(box, d) {
-      if (!d.available) { box.replaceChildren(dpNote(d.note || 'No deal context for this ticket.')); return; }
-      var an = d.analysis || {}, kids = [];
-      var live = (d.journey || []).filter(function (t) { return t.state !== 'closed'; });
-      kids.push(dpSec('Issue history', an.available ? [an.headline ? h('p', { class: 'tka-dp-lead', text: an.headline }) : null].concat((an.issues || []).length ? an.issues.map(function (i) {
-        return h('div', { class: 'tka-dp-item' }, [h('div', { class: 'tka-inline' }, [pill(i.status || 'unknown', /fixed|solved|resolved/i.test(i.status) ? 'st-approved' : /open|unsolved/i.test(i.status) ? 'sev-high' : 'sev-medium'), i.product ? pill(i.product.replace(/_/g, ' '), 'dest') : null, h('span', { class: 'tka-when', text: [i.since ? 'since ' + i.since : '', i.times ? 'raised ' + i.times + 'x' : ''].filter(Boolean).join(', ') })]), h('p', { text: i.problem })]);
-      }) : [dpNote('No issues recorded in the account analysis.')]) : [dpNote(an.note || 'No account analysis yet.')]));
-      kids.push(dpSec('Unsolved queries', (an.available && (an.open || []).length ? an.open.map(function (o) { return h('div', { class: 'tka-dp-item' }, [h('p', { text: o.item }), o.note ? h('span', { class: 'tka-when', text: o.note }) : null]); }) : []).concat(live.length ? [h('p', { class: 'tka-when', text: 'Open or on hold in Zoho Desk now:' })].concat(live.slice(0, 8).map(function (t) { return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + t.number }), h('span', { text: t.subject }), pill(t.status, stateCls(t.state))]); })) : (an.available && (an.open || []).length ? [] : [dpNote('Nothing unsolved on record.')]))));
-      kids.push(dpSec('Previous satisfaction', [an.mood ? h('div', { class: 'tka-dp-item' }, [h('div', { class: 'tka-inline' }, [pill(an.mood.level || 'unknown', /happy|positive|good/i.test(an.mood.level) ? 'st-approved' : /unhappy|negative|angry|frustrated|upset/i.test(an.mood.level) ? 'sev-high' : 'sev-medium'), an.mood.asOf ? h('span', { class: 'tka-when', text: 'as of ' + an.mood.asOf }) : null]), h('p', { text: an.mood.why })]) : dpNote('No mood read on record.'),
-        h('div', { class: 'tka-inline' }, [pill('CSAT ' + (d.csat.pct == null ? 'no surveys' : d.csat.pct + '%'), d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'st-approved' : 'sev-medium'), d.csat.total ? h('span', { class: 'tka-when', text: d.csat.good + ' good, ' + d.csat.bad + ' bad survey' + (d.csat.total === 1 ? '' : 's') }) : null])]));
-      kids.push(dpSec('Usually reported modules', (an.modules || []).length ? [h('div', { class: 'tka-inline' }, an.modules.map(function (m) { return pill(m.name + (m.n > 1 ? ' x' + m.n : ''), 'dest'); }))] : [dpNote('No module pattern on record.')]));
-      kids.push(journeySec(d));
-      kids.push(dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-inline' }, d.owners.map(function (o) { return pill(o.name + ' (' + o.tickets + ')', ''); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')]));
-      kids.push(dpSec('FCR and CSAT for this deal', [h('div', { class: 'tka-inline' }, [pill('FCR ' + (d.fcr.pct == null ? 'no data' : d.fcr.pct + '%'), d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'st-approved' : 'sev-medium'), d.fcr.closed ? h('span', { class: 'tka-when', text: d.fcr.achieved + ' of ' + d.fcr.closed + ' closed tickets solved first contact' }) : null]),
-        h('div', { class: 'tka-inline' }, [pill('CSAT ' + (d.csat.pct == null ? 'no surveys' : d.csat.pct + '%'), d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'st-approved' : 'sev-medium')])]));
-      if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
-      box.replaceChildren.apply(box, kids);
     }
     function reviewCard(r, buf, me) {
       var waiting = r.state === 'waiting';
@@ -307,6 +322,7 @@
       function toggleDeal() {
         var open = dealBox.hidden;
         dealBox.hidden = !open;
+        TA.dealOpen = TA.dealOpen || {}; if (open) TA.dealOpen[r.id] = true; else delete TA.dealOpen[r.id];
         if (dealBtn) { dealBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); dealBtn.textContent = open ? 'Hide deal history' : 'Deal history'; }
         if (open && !dealBox.dataset.loaded) {
           dealBox.dataset.loaded = '1';
@@ -328,12 +344,13 @@
           dealBox,
           form]),
         h('div', { class: 'tka-row-side' }, side)]);
+      if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
       if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp')) return; toggleDeal(); });
       return art;
     }
     load(false);
     clearInterval(TA._rvTimer);
-    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
+    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-dp:not([hidden])')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
   }
   function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
   function reviewSettings(host) {
