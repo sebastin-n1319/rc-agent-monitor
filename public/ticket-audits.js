@@ -513,13 +513,14 @@
           analysisCard(x);
         }).catch(function () { anBox.dataset.loaded = ''; anBox.replaceChildren(h('p', { class: 'tka-when', text: 'Could not read this ticket' }), btn('Try again', 'sm', function () { loadAn(false); })); });
       }
-      function toggleAn(force) {
+      function toggleAn(force, byUser) {
         var open = force == null ? !anOpen : !!force;
         if (open === anOpen) return;
+        if (byUser) { TA.anClosed = TA.anClosed || {}; if (open) delete TA.anClosed[r.id]; else TA.anClosed[r.id] = 1; art.classList.toggle('an-manual', open); }
         anOpen = open; anShell.hidden = !open; art.classList.toggle('an-open', open);
         if (anBtn) { anBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); anBtn.classList.toggle('on', open); }
         if (open && !anBox.dataset.loaded) loadAn(false);
-        if (open) revealEl(anShell, { whole: false });
+        if (open && byUser) revealEl(anShell, { whole: false });
       }
       var dealBox = h('div', { class: 'tka-dp' });
       var shell = h('div', { class: 'tka-dp-shell' }, [h('div', { class: 'tka-dp-clip' }, [dealBox])]);
@@ -556,7 +557,7 @@
       }
       var showDeal = waiting || r.state === 'moved';
       if (showDeal) { dealBtn = btn('', 'tka-dealbtn', function (ev) { ev.stopPropagation(); toggleDeal(); }, { 'aria-expanded': 'false' }); dealBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: 'Deal history' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
-      if (showDeal) { anBtn = btn('', 'tka-dealbtn tka-anbtn', function (ev) { ev.stopPropagation(); toggleAn(); }, { 'aria-expanded': 'false' }); anBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: asRow ? 'Analysis' : 'Ticket analysis' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
+      if (showDeal) { anBtn = btn('', 'tka-dealbtn tka-anbtn', function (ev) { ev.stopPropagation(); toggleAn(null, true); }, { 'aria-expanded': 'false' }); anBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: asRow ? 'Analysis' : 'Ticket analysis' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
       TA.seen = TA.seen || {}; var fresh = !TA.seen[r.id]; TA.seen[r.id] = 1;
       var numEl = r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number });
       var destTxt = [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ');
@@ -571,6 +572,7 @@
             h('div', { class: 'tka-lr-act' }, [anBtn, dealBtn, vrow])]),
           showDeal ? lineHost : null, anShell, shell, form].filter(Boolean));
         if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
+        if (showDeal && waiting && !(TA.anClosed && TA.anClosed[r.id])) setTimeout(function () { toggleAn(true); }, 0);
         if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-an-shell, .tka-deal')) return; toggleDeal(); });
         return art;
       }
@@ -587,12 +589,13 @@
           form]),
         side.length ? h('div', { class: 'tka-row-side' }, side) : null].filter(Boolean));
       if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
+      if (showDeal && waiting && !(TA.anClosed && TA.anClosed[r.id])) setTimeout(function () { toggleAn(true); }, 0);
       if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-an-shell')) return; toggleDeal(); });
       return art;
     }
     load(false);
     clearInterval(TA._rvTimer);
-    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-lf-q:focus') && !host.querySelector('.tka-row.deal-open') && !host.querySelector('.tka-row.an-open')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
+    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-lf-q:focus') && !host.querySelector('.tka-row.deal-open') && !host.querySelector('.tka-row.an-manual')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
   }
   function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
   // ── Review settings: a page of its own, admins only ────────────────────────────
