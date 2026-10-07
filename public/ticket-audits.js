@@ -102,6 +102,170 @@
 
   // ── Pending review (Session 88) ──────────────────────────────────────
   function mmLabel(m) { return m == null ? '' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
+  // Deal context: quick CRM line on the tile, full history when the tile is opened.
+  function stageCls(v) { v = String(v || ''); return /churn|lost|offboard/i.test(v) ? 'bad' : /onboard|getting started|setup/i.test(v) ? 'warn' : /csm|won|active/i.test(v) ? 'good' : /upgrade|expan/i.test(v) ? 'info' : 'mute'; }
+  function escCls(v) { v = String(v || ''); return /^escalated/i.test(v) ? 'bad' : /de-?escalated/i.test(v) ? 'warn' : /never/i.test(v) ? 'good' : 'mute'; }
+  function initials(n) { return String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join(''); }
+  function person(role, name, sub) { return h('div', { class: 'tka-df tka-df-p' }, [h('span', { class: 'tka-df-av', 'aria-hidden': 'true', text: initials(name) }), h('span', { class: 'tka-df-t' }, [h('span', { class: 'tka-df-l', text: role }), h('span', { class: 'tka-df-v', text: name }), sub ? h('span', { class: 'tka-st-s', text: sub }) : null])]); }
+  function dealLine(d) {
+    if (!d) return null;
+    if (!(d.account || d.deal || d.stage || d.csm || d.ob || d.escalation)) return null;
+    var main = [h('span', { class: 'tka-df-l', text: d.account ? 'Account' : 'Deal' }), h('b', { class: 'tka-deal-name', text: d.account || d.deal })];
+    if (d.account && d.deal && d.deal !== d.account) main.push(h('span', { class: 'tka-deal-dl', text: d.deal }));
+    var facts = [];
+    if (d.stage) facts.push(h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: 'Stage' }), h('span', { class: 'tka-chipv ' + stageCls(d.stage), text: d.stage })]));
+    if (d.escalation) facts.push(h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: 'Escalation' }), h('span', { class: 'tka-chipv ' + escCls(d.escalation), text: d.escalation })]));
+    if (d.escalationOwner && d.escalationOwner.owner) facts.push(person('Escalation owner', d.escalationOwner.owner, d.escalationOwner.since ? 'since ' + d.escalationOwner.since : ''));
+    if (d.csm) facts.push(person('CSM', d.csm));
+    if (d.ob) facts.push(person('OB', d.ob));
+    return h('div', { class: 'tka-deal e-' + escCls(d.escalation) }, [h('div', { class: 'tka-deal-main' }, main), facts.length ? h('div', { class: 'tka-deal-facts' }, facts) : null]);
+  }
+  function dpSec(title, kids, aside, cls) { return h('section', { class: 'tka-dp-sec' + (cls ? ' ' + cls : '') }, [h('div', { class: 'tka-dp-h' }, [h('h4', { text: title }), aside || null])].concat(kids.filter(Boolean))); }
+  function dpNote(t) { return h('p', { class: 'tka-when', text: t }); }
+  function stateCls(s) { return s === 'open' ? 'sev-high' : s === 'on hold' ? 'sev-medium' : 'st-approved'; }
+  function issueItem(i) {
+    var tone = /fixed|solved|resolved/i.test(i.status) ? 'st-approved' : /open|unsolved/i.test(i.status) ? 'sev-high' : 'sev-medium';
+    return h('div', { class: 'tka-iss-i' }, [
+      h('div', { class: 'tka-iss-top' }, [pill(i.status || 'unknown', tone), i.product ? pill(String(i.product).replace(/_/g, ' '), 'dest') : null, i.times ? h('span', { class: 'tka-iss-n', text: i.times + (i.times === 1 ? ' ticket' : ' tickets') }) : null]),
+      h('p', { text: i.problem }),
+      i.since ? h('span', { class: 'tka-when', text: 'Since ' + i.since }) : null,
+      i.cause ? h('p', { class: 'tka-dp-cause', text: 'Likely cause: ' + i.cause }) : null]);
+  }
+  function statBox(label, value, sub, tone) { return h('div', { class: 'tka-st' + (tone ? ' ' + tone : '') }, [h('span', { class: 'tka-df-l', text: label }), h('b', { class: 'tka-st-v', text: String(value) }), sub ? h('span', { class: 'tka-st-s', text: sub }) : null]); }
+  function ticketRow(t) {
+    return h('div', { class: 'tka-dp-row' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { class: 'tka-dp-subj', text: t.subject || '', title: t.subject || '' }), pill(t.status, stateCls(t.state))]);
+  }
+  function dealSkeleton(msg) {
+    return [h('p', { class: 'tka-when tka-dp-wait', role: 'status', text: msg }),
+      h('div', { class: 'tka-dp-stats' }, [0, 1, 2, 3, 4, 5].map(function () { return h('div', { class: 'tka-skel', style: 'height:62px' }); })),
+      h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-skel', style: 'height:170px' }), h('div', { class: 'tka-skel', style: 'height:170px' })])];
+  }
+  function renderDeal(box, d) {
+    if (!d.available) { box.replaceChildren(dpNote(d.note || 'No deal context for this ticket.')); return; }
+    var an = d.analysis || {}, dv = an.derived || { issues: [], modules: [] };
+    var live = (d.journey || []).filter(function (t) { return t.state !== 'closed'; });
+    var now = Date.now(), dated = (d.journey || []).filter(function (t) { return t.created && !isNaN(Date.parse(t.created)); });
+    var recent = dated.filter(function (t) { return now - Date.parse(t.created) < 14 * 864e5; }).length;
+    var first = dated.length ? new Date(Math.min.apply(null, dated.map(function (t) { return Date.parse(t.created); }))) : null;
+    var c = d.counts || { open: 0, 'on hold': 0, closed: 0 };
+    // Summary numbers first, so the reviewer reads the deal at a glance.
+    var stats = [statBox('Tickets', d.ticketsShown || dated.length, first ? 'since ' + first.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''),
+      statBox('Open', c.open, live.length ? 'in Zoho Desk now' : 'none open', c.open ? 'bad' : ''),
+      statBox('On hold', c['on hold'], '', c['on hold'] ? 'warn' : ''),
+      statBox('Closed', c.closed, '', 'good'),
+      statBox('Last 14 days', recent, recent >= 3 ? 'busy, check the pattern' : 'new tickets', recent >= 3 ? 'bad' : ''),
+      statBox('FCR', d.fcr.pct == null ? 'n/a' : d.fcr.pct + '%', d.fcr.closed ? d.fcr.achieved + ' of ' + d.fcr.closed + ' first contact' : 'no data', d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'good' : 'warn'),
+      statBox('CSAT', d.csat.pct == null ? 'n/a' : d.csat.pct + '%', d.csat.total ? d.csat.good + ' good, ' + d.csat.bad + ' bad' : 'no surveys', d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'good' : 'warn')];
+    if (an.health) stats.unshift(statBox('Account health', an.health, String(an.healthWhy || '').split(';').pop().trim(), /good|healthy|green|strong|stable/i.test(an.health) ? 'good' : /risk|poor|bad|red|critical|churn/i.test(an.health) ? 'bad' : 'warn'));
+    // Main column: journey and issue history. Side column: what is open now and who worked it.
+    var issues = an.available ? (an.issues || []) : dv.issues;
+    var issueSec = dpSec('Issue history', [
+      an.available && an.headline ? h('p', { class: 'tka-dp-lead', text: an.headline }) : null,
+      an.available && an.trigger ? h('p', { class: 'tka-dp-cause', text: 'What triggered it: ' + an.trigger }) : null,
+      an.available ? null : dpNote('Built from this deal\'s ticket subjects. ' + (an.note || 'The written account analysis is not available to this tool yet.')),
+      issues.length ? h('div', { class: 'tka-iss' }, issues.map(issueItem)) : dpNote(an.available ? 'No issues recorded in the account analysis.' : 'No clear pattern in the ticket subjects.')], issues.length ? h('span', { class: 'tka-dp-cnt', text: String(issues.length) }) : null);
+    var unsolved = (an.available && (an.open || []).length ? an.open.map(function (o) { return h('div', { class: 'tka-dp-item' }, [h('p', { text: o.item }), o.note ? h('span', { class: 'tka-when', text: o.note }) : null]); }) : [])
+      .concat(live.slice(0, 8).map(ticketRow));
+    var mods = (an.modules || []).length ? an.modules : dv.modules;
+    var side = [dpSec('Unsolved queries', unsolved.length ? unsolved : [dpNote('Nothing unsolved on record.')], unsolved.length ? h('span', { class: 'tka-dp-cnt bad', text: String(unsolved.length) }) : null),
+      dpSec('Usually reported modules', mods.length ? [h('div', { class: 'tka-mchips' }, mods.map(function (m) { return h('span', { class: 'tka-mod' }, [h('span', { text: m.name }), m.n > 1 ? h('b', { text: String(m.n) }) : null]); }))] : [dpNote('No module pattern on record.')]),
+      dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-mchips' }, d.owners.map(function (o) { return h('span', { class: 'tka-mod' }, [h('span', { class: 'tka-df-av sm', 'aria-hidden': 'true', text: initials(o.name) }), h('span', { text: o.name }), h('b', { text: String(o.tickets) })]); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')])];
+    if ((d.reviews || []).length) side.push(dpSec('Earlier transfer reviews', d.reviews.map(function (x) { return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + x.number }), h('span', { class: 'tka-dp-subj', text: (x.subject || '') + (x.team ? ' (to ' + x.team + ')' : ''), title: x.subject || '' }), pill(x.verdict === 'invalid' ? 'Needs rework' : x.verdict === 'good' ? 'Approved' : x.state === 'waiting' ? 'Waiting' : 'No verdict', x.verdict === 'invalid' ? 'sev-high' : x.verdict === 'good' ? 'st-approved' : 'sev-medium')]); })));
+    var findSec = an.available && (an.findings || []).length ? dpSec('Serious findings', [h('div', { class: 'tka-find' }, an.findings.map(function (f) {
+      return h('div', { class: 'tka-find-i' }, [h('div', { class: 'tka-iss-top' }, [pill('High', 'sev-high'), f.category ? pill(f.category, '') : null, f.product ? pill(f.product, 'dest') : null]), h('p', { text: f.claim })]);
+    }))].concat(an.findingsTotal > an.findings.length ? [dpNote('Showing ' + an.findings.length + ' of the high severity findings. The analysis holds ' + an.findingsTotal + ' findings in total.')] : []), h('span', { class: 'tka-dp-cnt bad', text: String(an.findings.length) })) : null;
+    var kids = [h('div', { class: 'tka-dp-stats' }, stats),
+      h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-dp-col' }, [journeySec(d), issueSec, findSec].filter(Boolean)), h('div', { class: 'tka-dp-col' }, side)])];
+    if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
+    box.replaceChildren.apply(box, kids);
+    Array.prototype.forEach.call(box.querySelectorAll('.tka-st, .tka-dp-sec'), function (el, n) { el.style.setProperty('--i', n); });
+  }
+  // Support journey: a compact timeline drawn at the real pixel width (text never scales up), one mark per ticket.
+  function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); return e; }
+  function journeySec(d) {
+    var rows = (d.journey || []).filter(function (t) { return t.created && !isNaN(Date.parse(t.created)); });
+    var title = 'Support journey';
+    if (!rows.length) return dpSec(title, [dpNote('No other tickets on this deal.')]);
+    var now = Date.now(), t0 = Math.min.apply(null, rows.map(function (t) { return Date.parse(t.created); }));
+    t0 = Math.min(t0, now - 30 * 864e5);
+    var COL = { open: 'var(--tka-red)', 'on hold': 'var(--tka-amber)', closed: 'var(--tka-green)' };
+    var sorted = rows.slice().sort(function (a, b) { return Date.parse(a.created) - Date.parse(b.created); });
+    var wrap = h('div', { class: 'tka-jr-wrap' });
+    var tip = h('div', { class: 'tka-jr-tip', role: 'tooltip', 'aria-hidden': 'true' });
+    var painted = false, lastW = 0;
+    function showTip(t, px, py, W, below) {
+      tip.replaceChildren(h('b', { text: '#' + t.number + ', ' + t.status }), h('span', { text: t.subject || '' }), h('span', { class: 'tka-when', text: [when(t.created), t.agent, t.channel].filter(Boolean).join(', ') + (t.url ? '. Click to open.' : '') }));
+      tip.classList.toggle('below', !!below);
+      tip.style.left = Math.max(130, Math.min(px, W - 130)) + 'px'; tip.style.top = (below ? py + 12 : py - 10) + 'px'; tip.classList.add('on');
+    }
+    function hideTip() { tip.classList.remove('on'); }
+    function draw(W) {
+      var H = 116, L = 62, R = 14, BH = 24, lanes = { open: 20, 'on hold': 50, closed: 80 }, AX = H - 6;
+      var x = function (ms) { return L + (W - L - R) * ((ms - t0) / (now - t0)); };
+      var svg = svgEl('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, role: 'group', class: 'tka-jr' + (painted ? '' : ' anim'), 'aria-label': 'Support journey: ' + d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed' });
+      Object.keys(lanes).forEach(function (k) {
+        svg.appendChild(svgEl('rect', { x: L, y: lanes[k] - BH / 2, width: W - L - R, height: BH, rx: 7, class: 'tka-jr-band ' + k.replace(' ', '') }));
+        var tx = svgEl('text', { x: L - 10, y: lanes[k] + 4, 'text-anchor': 'end', class: 'tka-jr-lab' }); tx.textContent = k === 'on hold' ? 'On hold' : k.charAt(0).toUpperCase() + k.slice(1); svg.appendChild(tx);
+      });
+      var todayX = x(now), lastLab = -999, dt = new Date(t0); dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 1);
+      for (var first = true; dt.getTime() < now; dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 1)) {
+        var gx = x(dt.getTime()); if (gx < L + 6 || gx > W - R - 6) continue;
+        svg.appendChild(svgEl('line', { x1: gx, x2: gx, y1: 6, y2: lanes.closed + BH / 2, class: 'tka-jr-grid' }));
+        if (gx - lastLab >= 58 && todayX - gx > 64) {
+          var mt = svgEl('text', { x: gx, y: AX, 'text-anchor': 'middle', class: 'tka-jr-ax' });
+          mt.textContent = dt.toLocaleDateString('en-US', { month: 'short' }) + (first || dt.getMonth() === 0 ? " '" + String(dt.getFullYear()).slice(2) : '');
+          svg.appendChild(mt); lastLab = gx; first = false;
+        }
+      }
+      svg.appendChild(svgEl('line', { x1: todayX, x2: todayX, y1: 4, y2: lanes.closed + BH / 2 + 2, class: 'tka-jr-today' }));
+      var td = svgEl('text', { x: todayX, y: AX, 'text-anchor': 'end', class: 'tka-jr-ax today' }); td.textContent = 'Today'; svg.appendChild(td);
+      // Spread marks that fall on nearly the same day across three rows of their lane, so they do not pile up.
+      var placed = { open: [], 'on hold': [], closed: [] }, liveMarks = [];
+      sorted.forEach(function (t) {
+        var st = lanes[t.state] ? t.state : 'closed', cx = x(Date.parse(t.created)), base = lanes[st], cy = base;
+        var tries = [0, -6, 6];
+        for (var k = 0; k < tries.length; k++) {
+          var yy = base + tries[k];
+          if (!placed[st].some(function (p) { return Math.abs(p.x - cx) < 9 && Math.abs(p.y - yy) < 9; })) { cy = yy; break; }
+        }
+        placed[st].push({ x: cx, y: cy });
+        var wrapEl = t.url ? svgEl('a', { href: t.url, target: '_blank', rel: 'noopener', class: 'tka-jr-pt link', 'aria-label': '#' + t.number + ', ' + t.status + ', ' + (t.subject || '') + '. Open in Zoho Desk' }) : svgEl('g', { class: 'tka-jr-pt', tabindex: '0', 'aria-label': '#' + t.number + ', ' + t.status + ', ' + (t.subject || '') });
+        wrapEl.appendChild(svgEl('circle', { cx: cx, cy: cy, r: 10, fill: 'transparent' }));
+        var m = st === 'closed' ? svgEl('circle', { cx: cx, cy: cy, r: 4.5 })
+          : st === 'on hold' ? svgEl('rect', { x: cx - 4.5, y: cy - 4.5, width: 9, height: 9, transform: 'rotate(45 ' + cx + ' ' + cy + ')' })
+          : svgEl('rect', { x: cx - 5, y: cy - 5, width: 10, height: 10, rx: 2 });
+        m.setAttribute('fill', COL[st]); m.setAttribute('class', 'tka-jr-mk'); m.setAttribute('style', '--d:' + Math.round((cx - L) / (W - L) * 420) + 'ms');
+        wrapEl.appendChild(m);
+        var on = function () { showTip(t, cx, cy, W, st === 'open'); }; wrapEl.addEventListener('pointerenter', on); wrapEl.addEventListener('focus', on);
+        wrapEl.addEventListener('pointerleave', hideTip); wrapEl.addEventListener('blur', hideTip);
+        svg.appendChild(wrapEl);
+        if (st !== 'closed') liveMarks.push({ t: t, x: cx, y: base, el: wrapEl });
+      });
+      // Labels for open and on hold tickets sit inside their lane, to the left of the mark, chained so they never overlap.
+      ['open', 'on hold'].forEach(function (st) {
+        var edge = W;
+        liveMarks.filter(function (p) { return p.t.state === st; }).sort(function (a, b) { return b.x - a.x; }).forEach(function (p) {
+          var txt = '#' + p.t.number, w = txt.length * 6.6, right = Math.min(p.x - 9, edge - 8);
+          if (right - w < L + 6) return;
+          var lb = svgEl('text', { x: right, y: p.y + 4, 'text-anchor': 'end', class: 'tka-jr-hl' }); lb.textContent = txt; p.el.appendChild(lb);
+          edge = right - w;
+        });
+      });
+      return svg;
+    }
+    function paint() {
+      var W = Math.round(wrap.clientWidth || 0); if (W < 40) return;
+      W = Math.max(380, W); if (painted && Math.abs(W - lastW) < 6) return;
+      lastW = W; hideTip(); wrap.replaceChildren(draw(W), tip); painted = true;
+    }
+    if (window.ResizeObserver) { var ro = new ResizeObserver(function () { if (painted && !wrap.isConnected) { ro.disconnect(); return; } paint(); }); ro.observe(wrap); }
+    else setTimeout(paint, 0);
+    var key = h('div', { class: 'tka-jr-key', 'aria-hidden': 'true' }, [h('span', null, [h('i', { class: 'o' }), 'Open']), h('span', null, [h('i', { class: 'hd' }), 'On hold']), h('span', null, [h('i', { class: 'c' }), 'Closed']), h('span', { class: 'tka-when', text: 'Hover a mark for details. Click to open it in Zoho Desk.' })]);
+    var det = h('details', { class: 'tka-dp-det' }, [h('summary', { text: 'All tickets (' + d.ticketsShown + ')' }), h('div', { class: 'tka-dp-list' }, d.journey.map(function (t) {
+      return h('div', { class: 'tka-dp-row wide' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { class: 'tka-dp-subj', text: t.subject || '', title: t.subject || '' }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(', ') })]);
+    }))]);
+    return dpSec(title, [key, wrap, det], h('span', { class: 'tka-when', text: d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed' }), 'tka-dp-jr');
+  }
   function viewReview(body) {
     var host = h('div', { class: 'tka-rv' });
     body.appendChild(host);
@@ -216,168 +380,6 @@
       }
       draft();
       return h('div', { class: 'tka-msg' }, [h('b', { text: 'Message to the agent' }), status, ta, h('div', { class: 'tka-actions' }, [send, again])]);
-    }
-    // Deal context: quick CRM line on the tile, full history when the tile is opened.
-    function stageCls(v) { v = String(v || ''); return /churn|lost|offboard/i.test(v) ? 'bad' : /onboard|getting started|setup/i.test(v) ? 'warn' : /csm|won|active/i.test(v) ? 'good' : /upgrade|expan/i.test(v) ? 'info' : 'mute'; }
-    function escCls(v) { v = String(v || ''); return /^escalated/i.test(v) ? 'bad' : /de-?escalated/i.test(v) ? 'warn' : /never/i.test(v) ? 'good' : 'mute'; }
-    function initials(n) { return String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w.charAt(0).toUpperCase(); }).join(''); }
-    function person(role, name) { return h('div', { class: 'tka-df tka-df-p' }, [h('span', { class: 'tka-df-av', 'aria-hidden': 'true', text: initials(name) }), h('span', { class: 'tka-df-t' }, [h('span', { class: 'tka-df-l', text: role }), h('span', { class: 'tka-df-v', text: name })])]); }
-    function dealLine(d) {
-      if (!d) return null;
-      if (!(d.account || d.deal || d.stage || d.csm || d.ob || d.escalation)) return null;
-      var main = [h('span', { class: 'tka-df-l', text: d.account ? 'Account' : 'Deal' }), h('b', { class: 'tka-deal-name', text: d.account || d.deal })];
-      if (d.account && d.deal && d.deal !== d.account) main.push(h('span', { class: 'tka-deal-dl', text: d.deal }));
-      var facts = [];
-      if (d.stage) facts.push(h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: 'Stage' }), h('span', { class: 'tka-chipv ' + stageCls(d.stage), text: d.stage })]));
-      if (d.escalation) facts.push(h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: 'Escalation' }), h('span', { class: 'tka-chipv ' + escCls(d.escalation), text: d.escalation })]));
-      if (d.csm) facts.push(person('CSM', d.csm));
-      if (d.ob) facts.push(person('OB', d.ob));
-      return h('div', { class: 'tka-deal e-' + escCls(d.escalation) }, [h('div', { class: 'tka-deal-main' }, main), facts.length ? h('div', { class: 'tka-deal-facts' }, facts) : null]);
-    }
-    function dpSec(title, kids, aside, cls) { return h('section', { class: 'tka-dp-sec' + (cls ? ' ' + cls : '') }, [h('div', { class: 'tka-dp-h' }, [h('h4', { text: title }), aside || null])].concat(kids.filter(Boolean))); }
-    function dpNote(t) { return h('p', { class: 'tka-when', text: t }); }
-    function stateCls(s) { return s === 'open' ? 'sev-high' : s === 'on hold' ? 'sev-medium' : 'st-approved'; }
-    function issueItem(i) {
-      var tone = /fixed|solved|resolved/i.test(i.status) ? 'st-approved' : /open|unsolved/i.test(i.status) ? 'sev-high' : 'sev-medium';
-      return h('div', { class: 'tka-iss-i' }, [
-        h('div', { class: 'tka-iss-top' }, [pill(i.status || 'unknown', tone), i.product ? pill(String(i.product).replace(/_/g, ' '), 'dest') : null, i.times ? h('span', { class: 'tka-iss-n', text: i.times + (i.times === 1 ? ' ticket' : ' tickets') }) : null]),
-        h('p', { text: i.problem }),
-        i.since ? h('span', { class: 'tka-when', text: 'Since ' + i.since }) : null,
-        i.cause ? h('p', { class: 'tka-dp-cause', text: 'Likely cause: ' + i.cause }) : null]);
-    }
-    function statBox(label, value, sub, tone) { return h('div', { class: 'tka-st' + (tone ? ' ' + tone : '') }, [h('span', { class: 'tka-df-l', text: label }), h('b', { class: 'tka-st-v', text: String(value) }), sub ? h('span', { class: 'tka-st-s', text: sub }) : null]); }
-    function ticketRow(t) {
-      return h('div', { class: 'tka-dp-row' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { class: 'tka-dp-subj', text: t.subject || '', title: t.subject || '' }), pill(t.status, stateCls(t.state))]);
-    }
-    function dealSkeleton(msg) {
-      return [h('p', { class: 'tka-when tka-dp-wait', role: 'status', text: msg }),
-        h('div', { class: 'tka-dp-stats' }, [0, 1, 2, 3, 4, 5].map(function () { return h('div', { class: 'tka-skel', style: 'height:62px' }); })),
-        h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-skel', style: 'height:170px' }), h('div', { class: 'tka-skel', style: 'height:170px' })])];
-    }
-    function renderDeal(box, d) {
-      if (!d.available) { box.replaceChildren(dpNote(d.note || 'No deal context for this ticket.')); return; }
-      var an = d.analysis || {}, dv = an.derived || { issues: [], modules: [] };
-      var live = (d.journey || []).filter(function (t) { return t.state !== 'closed'; });
-      var now = Date.now(), dated = (d.journey || []).filter(function (t) { return t.created && !isNaN(Date.parse(t.created)); });
-      var recent = dated.filter(function (t) { return now - Date.parse(t.created) < 14 * 864e5; }).length;
-      var first = dated.length ? new Date(Math.min.apply(null, dated.map(function (t) { return Date.parse(t.created); }))) : null;
-      var c = d.counts || { open: 0, 'on hold': 0, closed: 0 };
-      // Summary numbers first, so the reviewer reads the deal at a glance.
-      var stats = [statBox('Tickets', d.ticketsShown || dated.length, first ? 'since ' + first.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : ''),
-        statBox('Open', c.open, live.length ? 'in Zoho Desk now' : 'none open', c.open ? 'bad' : ''),
-        statBox('On hold', c['on hold'], '', c['on hold'] ? 'warn' : ''),
-        statBox('Closed', c.closed, '', 'good'),
-        statBox('Last 14 days', recent, recent >= 3 ? 'busy, check the pattern' : 'new tickets', recent >= 3 ? 'bad' : ''),
-        statBox('FCR', d.fcr.pct == null ? 'n/a' : d.fcr.pct + '%', d.fcr.closed ? d.fcr.achieved + ' of ' + d.fcr.closed + ' first contact' : 'no data', d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'good' : 'warn'),
-        statBox('CSAT', d.csat.pct == null ? 'n/a' : d.csat.pct + '%', d.csat.total ? d.csat.good + ' good, ' + d.csat.bad + ' bad' : 'no surveys', d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'good' : 'warn')];
-      if (an.health) stats.unshift(statBox('Account health', an.health, String(an.healthWhy || '').split(';').pop().trim(), /good|healthy|green|strong|stable/i.test(an.health) ? 'good' : /risk|poor|bad|red|critical|churn/i.test(an.health) ? 'bad' : 'warn'));
-      // Main column: journey and issue history. Side column: what is open now and who worked it.
-      var issues = an.available ? (an.issues || []) : dv.issues;
-      var issueSec = dpSec('Issue history', [
-        an.available && an.headline ? h('p', { class: 'tka-dp-lead', text: an.headline }) : null,
-        an.available && an.trigger ? h('p', { class: 'tka-dp-cause', text: 'What triggered it: ' + an.trigger }) : null,
-        an.available ? null : dpNote('Built from this deal\'s ticket subjects. ' + (an.note || 'The written account analysis is not available to this tool yet.')),
-        issues.length ? h('div', { class: 'tka-iss' }, issues.map(issueItem)) : dpNote(an.available ? 'No issues recorded in the account analysis.' : 'No clear pattern in the ticket subjects.')], issues.length ? h('span', { class: 'tka-dp-cnt', text: String(issues.length) }) : null);
-      var unsolved = (an.available && (an.open || []).length ? an.open.map(function (o) { return h('div', { class: 'tka-dp-item' }, [h('p', { text: o.item }), o.note ? h('span', { class: 'tka-when', text: o.note }) : null]); }) : [])
-        .concat(live.slice(0, 8).map(ticketRow));
-      var mods = (an.modules || []).length ? an.modules : dv.modules;
-      var side = [dpSec('Unsolved queries', unsolved.length ? unsolved : [dpNote('Nothing unsolved on record.')], unsolved.length ? h('span', { class: 'tka-dp-cnt bad', text: String(unsolved.length) }) : null),
-        dpSec('Usually reported modules', mods.length ? [h('div', { class: 'tka-mchips' }, mods.map(function (m) { return h('span', { class: 'tka-mod' }, [h('span', { text: m.name }), m.n > 1 ? h('b', { text: String(m.n) }) : null]); }))] : [dpNote('No module pattern on record.')]),
-        dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-mchips' }, d.owners.map(function (o) { return h('span', { class: 'tka-mod' }, [h('span', { class: 'tka-df-av sm', 'aria-hidden': 'true', text: initials(o.name) }), h('span', { text: o.name }), h('b', { text: String(o.tickets) })]); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')])];
-      if ((d.reviews || []).length) side.push(dpSec('Earlier transfer reviews', d.reviews.map(function (x) { return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + x.number }), h('span', { class: 'tka-dp-subj', text: (x.subject || '') + (x.team ? ' (to ' + x.team + ')' : ''), title: x.subject || '' }), pill(x.verdict === 'invalid' ? 'Needs rework' : x.verdict === 'good' ? 'Approved' : x.state === 'waiting' ? 'Waiting' : 'No verdict', x.verdict === 'invalid' ? 'sev-high' : x.verdict === 'good' ? 'st-approved' : 'sev-medium')]); })));
-      var findSec = an.available && (an.findings || []).length ? dpSec('Serious findings', [h('div', { class: 'tka-find' }, an.findings.map(function (f) {
-        return h('div', { class: 'tka-find-i' }, [h('div', { class: 'tka-iss-top' }, [pill('High', 'sev-high'), f.category ? pill(f.category, '') : null, f.product ? pill(f.product, 'dest') : null]), h('p', { text: f.claim })]);
-      }))].concat(an.findingsTotal > an.findings.length ? [dpNote('Showing ' + an.findings.length + ' of the high severity findings. The analysis holds ' + an.findingsTotal + ' findings in total.')] : []), h('span', { class: 'tka-dp-cnt bad', text: String(an.findings.length) })) : null;
-      var kids = [h('div', { class: 'tka-dp-stats' }, stats),
-        h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-dp-col' }, [journeySec(d), issueSec, findSec].filter(Boolean)), h('div', { class: 'tka-dp-col' }, side)])];
-      if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
-      box.replaceChildren.apply(box, kids);
-      Array.prototype.forEach.call(box.querySelectorAll('.tka-st, .tka-dp-sec'), function (el, n) { el.style.setProperty('--i', n); });
-    }
-    // Support journey: a compact timeline drawn at the real pixel width (text never scales up), one mark per ticket.
-    function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); return e; }
-    function journeySec(d) {
-      var rows = (d.journey || []).filter(function (t) { return t.created && !isNaN(Date.parse(t.created)); });
-      var title = 'Support journey';
-      if (!rows.length) return dpSec(title, [dpNote('No other tickets on this deal.')]);
-      var now = Date.now(), t0 = Math.min.apply(null, rows.map(function (t) { return Date.parse(t.created); }));
-      t0 = Math.min(t0, now - 30 * 864e5);
-      var COL = { open: 'var(--tka-red)', 'on hold': 'var(--tka-amber)', closed: 'var(--tka-green)' };
-      var sorted = rows.slice().sort(function (a, b) { return Date.parse(a.created) - Date.parse(b.created); });
-      var wrap = h('div', { class: 'tka-jr-wrap' });
-      var tip = h('div', { class: 'tka-jr-tip', role: 'tooltip', 'aria-hidden': 'true' });
-      var painted = false, lastW = 0;
-      function showTip(t, px, py, W) {
-        tip.replaceChildren(h('b', { text: '#' + t.number + ', ' + t.status }), h('span', { text: t.subject || '' }), h('span', { class: 'tka-when', text: [when(t.created), t.agent, t.channel].filter(Boolean).join(', ') + (t.url ? '. Click to open.' : '') }));
-        tip.style.left = Math.max(120, Math.min(px, W - 120)) + 'px'; tip.style.top = py + 'px'; tip.classList.add('on');
-      }
-      function hideTip() { tip.classList.remove('on'); }
-      function draw(W) {
-        var H = 116, L = 62, R = 14, BH = 24, lanes = { open: 20, 'on hold': 50, closed: 80 }, AX = H - 6;
-        var x = function (ms) { return L + (W - L - R) * ((ms - t0) / (now - t0)); };
-        var svg = svgEl('svg', { width: W, height: H, viewBox: '0 0 ' + W + ' ' + H, role: 'group', class: 'tka-jr' + (painted ? '' : ' anim'), 'aria-label': 'Support journey: ' + d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed' });
-        Object.keys(lanes).forEach(function (k) {
-          svg.appendChild(svgEl('rect', { x: L, y: lanes[k] - BH / 2, width: W - L - R, height: BH, rx: 7, class: 'tka-jr-band ' + k.replace(' ', '') }));
-          var tx = svgEl('text', { x: L - 10, y: lanes[k] + 4, 'text-anchor': 'end', class: 'tka-jr-lab' }); tx.textContent = k === 'on hold' ? 'On hold' : k.charAt(0).toUpperCase() + k.slice(1); svg.appendChild(tx);
-        });
-        var todayX = x(now), lastLab = -999, dt = new Date(t0); dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 1);
-        for (var first = true; dt.getTime() < now; dt = new Date(dt.getFullYear(), dt.getMonth() + 1, 1)) {
-          var gx = x(dt.getTime()); if (gx < L + 6 || gx > W - R - 6) continue;
-          svg.appendChild(svgEl('line', { x1: gx, x2: gx, y1: 6, y2: lanes.closed + BH / 2, class: 'tka-jr-grid' }));
-          if (gx - lastLab >= 58 && todayX - gx > 64) {
-            var mt = svgEl('text', { x: gx, y: AX, 'text-anchor': 'middle', class: 'tka-jr-ax' });
-            mt.textContent = dt.toLocaleDateString('en-US', { month: 'short' }) + (first || dt.getMonth() === 0 ? " '" + String(dt.getFullYear()).slice(2) : '');
-            svg.appendChild(mt); lastLab = gx; first = false;
-          }
-        }
-        svg.appendChild(svgEl('line', { x1: todayX, x2: todayX, y1: 4, y2: lanes.closed + BH / 2 + 2, class: 'tka-jr-today' }));
-        var td = svgEl('text', { x: todayX, y: AX, 'text-anchor': 'end', class: 'tka-jr-ax today' }); td.textContent = 'Today'; svg.appendChild(td);
-        // Spread marks that fall on nearly the same day across three rows of their lane, so they do not pile up.
-        var placed = { open: [], 'on hold': [], closed: [] }, liveMarks = [];
-        sorted.forEach(function (t) {
-          var st = lanes[t.state] ? t.state : 'closed', cx = x(Date.parse(t.created)), base = lanes[st], cy = base;
-          var tries = [0, -6, 6];
-          for (var k = 0; k < tries.length; k++) {
-            var yy = base + tries[k];
-            if (!placed[st].some(function (p) { return Math.abs(p.x - cx) < 9 && Math.abs(p.y - yy) < 9; })) { cy = yy; break; }
-          }
-          placed[st].push({ x: cx, y: cy });
-          var wrapEl = t.url ? svgEl('a', { href: t.url, target: '_blank', rel: 'noopener', class: 'tka-jr-pt link', 'aria-label': '#' + t.number + ', ' + t.status + ', ' + (t.subject || '') + '. Open in Zoho Desk' }) : svgEl('g', { class: 'tka-jr-pt', tabindex: '0', 'aria-label': '#' + t.number + ', ' + t.status + ', ' + (t.subject || '') });
-          wrapEl.appendChild(svgEl('circle', { cx: cx, cy: cy, r: 10, fill: 'transparent' }));
-          var m = st === 'closed' ? svgEl('circle', { cx: cx, cy: cy, r: 4.5 })
-            : st === 'on hold' ? svgEl('rect', { x: cx - 4.5, y: cy - 4.5, width: 9, height: 9, transform: 'rotate(45 ' + cx + ' ' + cy + ')' })
-            : svgEl('rect', { x: cx - 5, y: cy - 5, width: 10, height: 10, rx: 2 });
-          m.setAttribute('fill', COL[st]); m.setAttribute('class', 'tka-jr-mk'); m.setAttribute('style', '--d:' + Math.round((cx - L) / (W - L) * 420) + 'ms');
-          wrapEl.appendChild(m);
-          var on = function () { showTip(t, cx, cy - 10, W); }; wrapEl.addEventListener('pointerenter', on); wrapEl.addEventListener('focus', on);
-          wrapEl.addEventListener('pointerleave', hideTip); wrapEl.addEventListener('blur', hideTip);
-          svg.appendChild(wrapEl);
-          if (st !== 'closed') liveMarks.push({ t: t, x: cx, y: base, el: wrapEl });
-        });
-        // Labels for open and on hold tickets sit inside their lane, to the left of the mark, chained so they never overlap.
-        ['open', 'on hold'].forEach(function (st) {
-          var edge = W;
-          liveMarks.filter(function (p) { return p.t.state === st; }).sort(function (a, b) { return b.x - a.x; }).forEach(function (p) {
-            var txt = '#' + p.t.number, w = txt.length * 6.6, right = Math.min(p.x - 9, edge - 8);
-            if (right - w < L + 6) return;
-            var lb = svgEl('text', { x: right, y: p.y + 4, 'text-anchor': 'end', class: 'tka-jr-hl' }); lb.textContent = txt; p.el.appendChild(lb);
-            edge = right - w;
-          });
-        });
-        return svg;
-      }
-      function paint() {
-        var W = Math.round(wrap.clientWidth || 0); if (W < 40) return;
-        W = Math.max(380, W); if (painted && Math.abs(W - lastW) < 6) return;
-        lastW = W; hideTip(); wrap.replaceChildren(draw(W), tip); painted = true;
-      }
-      if (window.ResizeObserver) { var ro = new ResizeObserver(function () { if (painted && !wrap.isConnected) { ro.disconnect(); return; } paint(); }); ro.observe(wrap); }
-      else setTimeout(paint, 0);
-      var key = h('div', { class: 'tka-jr-key', 'aria-hidden': 'true' }, [h('span', null, [h('i', { class: 'o' }), 'Open']), h('span', null, [h('i', { class: 'hd' }), 'On hold']), h('span', null, [h('i', { class: 'c' }), 'Closed']), h('span', { class: 'tka-when', text: 'Hover a mark for details. Click to open it in Zoho Desk.' })]);
-      var det = h('details', { class: 'tka-dp-det' }, [h('summary', { text: 'All tickets (' + d.ticketsShown + ')' }), h('div', { class: 'tka-dp-list' }, d.journey.map(function (t) {
-        return h('div', { class: 'tka-dp-row wide' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { class: 'tka-dp-subj', text: t.subject || '', title: t.subject || '' }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(', ') })]);
-      }))]);
-      return dpSec(title, [key, wrap, det], h('span', { class: 'tka-when', text: d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed' }), 'tka-dp-jr');
     }
     // Moved tickets as a compact list: one line per ticket, a search box and agent chips with counts, details open in place.
     function movedList(rows, buf, me) {
@@ -916,18 +918,134 @@
       pol = h('div', { id: 'tka-policy-root', class: 'tka-page', style: 'display:none' });
       var b1 = h('button', { type: 'button', role: 'tab', class: 'tka-tab on', text: 'Ticket stats', 'aria-selected': 'true' });
       var b2 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Transfer policy', 'aria-selected': 'false' });
-      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2]);
+      var b3 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Client lookup', 'aria-selected': 'false' });
+      var look = h('div', { id: 'tka-lookup-root', class: 'tka-page', style: 'display:none' });
+      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2, b3]);
+      var drawnLook = false;
       function pick(which) {
-        var p = which === 'policy';
-        b1.classList.toggle('on', !p); b2.classList.toggle('on', p); b1.setAttribute('aria-selected', String(!p)); b2.setAttribute('aria-selected', String(p));
-        if (root) root.style.display = p ? 'none' : ''; pol.style.display = p ? '' : 'none';
+        var p = which === 'policy', l = which === 'lookup';
+        [[b1, !p && !l], [b2, p], [b3, l]].forEach(function (x) { x[0].classList.toggle('on', x[1]); x[0].setAttribute('aria-selected', String(x[1])); });
+        if (root) root.style.display = (p || l) ? 'none' : ''; pol.style.display = p ? '' : 'none'; look.style.display = l ? '' : 'none';
         if (p) drawPolicy(pol);
+        if (l && !drawnLook) { drawnLook = true; clientLookup(look); }
       }
       b1.addEventListener('click', function () { pick('stats'); });
       b2.addEventListener('click', function () { pick('policy'); });
-      sec.insertBefore(bar, sec.firstChild); sec.appendChild(pol);
+      b3.addEventListener('click', function () { pick('lookup'); });
+      sec.insertBefore(bar, sec.firstChild); sec.appendChild(pol); sec.appendChild(look);
     }
   };
+
+  // ── My Stats: Client lookup, for agents on a live call ───────────────
+  var CALL_TOPICS = [['Phone issue', 'phone calls not working'], ['EHR not syncing', 'ehr not syncing'], ['Online scheduling', 'online scheduling double booking'], ['Reminders and texts', 'reminders text messages'], ['Billing', 'billing invoice charge'], ['Login or access', 'cannot log in password'], ['Email campaign', 'email campaign'], ['Reviews', 'reviews reputation'], ['Forms', 'patient forms']];
+  function clientLookup(host) {
+    var input = h('input', { class: 'tka-input tka-cl-q', type: 'search', placeholder: 'Ticket #, deal name, account name, phone or email', 'aria-label': 'Search for a client', autocomplete: 'off' });
+    var results = h('div', { class: 'tka-cl-results' }), view = h('div', { class: 'tka-cl-view' });
+    var t = null, seq = 0;
+    host.replaceChildren(
+      h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Client lookup' }), h('p', { text: 'Find who is calling and see what we know before you speak. Search by ticket number, deal, account, phone or email.' })])]),
+      h('div', { class: 'tka-cl-bar' }, [input]), results, view);
+    function showResults(list, q) {
+      if (!list.length) { results.replaceChildren(h('p', { class: 'tka-empty', text: 'No client found for "' + q + '". Try the account name, or the last digits of the phone number.' })); return; }
+      results.replaceChildren.apply(results, list.map(function (r, n) {
+        var c = h('button', { type: 'button', class: 'tka-cl-card', style: '--i:' + n }, [
+          h('b', { text: r.deal || r.account || 'Client' }),
+          h('span', { class: 'tka-when', text: [r.deal ? r.account : '', r.stage].filter(Boolean).join(' · ') }),
+          h('span', { class: 'tka-cl-m', text: r.matchedOn || '' })]);
+        c.addEventListener('click', function () { openProfile(r.accountId, r.dealId); });
+        return c;
+      }));
+    }
+    function run() {
+      var q = input.value.trim(); if (q.length < 2) { results.replaceChildren(); return; }
+      var my = ++seq; results.replaceChildren(h('div', { class: 'tka-skel', style: 'height:58px' }));
+      api('/api/client-lookup/search?q=' + encodeURIComponent(q)).then(function (j) {
+        if (my !== seq) return;
+        if (!j.success) { results.replaceChildren(h('p', { class: 'tka-empty', text: j.error || 'Search failed' })); return; }
+        if (j.results.length === 1) { results.replaceChildren(); openProfile(j.results[0].accountId, j.results[0].dealId); return; }
+        showResults(j.results, q);
+      });
+    }
+    input.addEventListener('input', function () { clearTimeout(t); t = setTimeout(run, 400); });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(t); run(); } });
+
+    function openProfile(accountId, dealId) {
+      results.replaceChildren();
+      view.replaceChildren.apply(view, dealSkeleton('Loading client...'));
+      api('/api/client-lookup/profile?account=' + encodeURIComponent(accountId || '') + '&deal=' + encodeURIComponent(dealId || '')).then(function (p) {
+        if (!p.success || !p.available) { view.replaceChildren(h('div', { class: 'tka-note', text: p.error || p.note || 'Could not load this client' })); return; }
+        drawProfile(p);
+      });
+    }
+    function drawProfile(p) {
+      var a = p.account || {};
+      var strip = h('div', { class: 'tka-cl-strip' }, [dealLine(p.header)]);
+      var facts = [];
+      if (a.phone) facts.push(['Office line', a.phone]); if (a.city) facts.push(['Location', a.city]); if (a.ehr) facts.push(['EHR', a.ehr]);
+      if (a.locations) facts.push(['Locations', a.locations]); if (a.contractEnd) facts.push(['Contract ends', String(a.contractEnd).slice(0, 10)]); if (a.owner) facts.push(['Account owner', a.owner]);
+      var factRow = facts.length ? h('div', { class: 'tka-cl-facts' }, facts.map(function (f) { return h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: f[0] }), h('span', { text: f[1] })]); })) : null;
+      // Call assist
+      var topicIn = h('input', { class: 'tka-input', type: 'text', placeholder: 'What is the client calling about? e.g. phones keep dropping', 'aria-label': 'Reason for the call' });
+      var chips = h('div', { class: 'tka-chips' }, CALL_TOPICS.map(function (c) { return h('button', { type: 'button', class: 'tka-chip', text: c[0], onclick: function () { topicIn.value = c[1]; go(true); } }); }));
+      var out = h('div', { class: 'tka-cl-out' });
+      var goBtn = btn('Show me', 'primary', function () { go(true); });
+      var tt = null, tseq = 0;
+      topicIn.addEventListener('input', function () { clearTimeout(tt); tt = setTimeout(function () { go(false); }, 600); });
+      topicIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') { clearTimeout(tt); go(true); } });
+      function guideCard(g) {
+        if (!g) return null;
+        var list = function (title, arr, cls) { return arr && arr.length ? h('div', { class: 'tka-cl-g ' + (cls || '') }, [h('h5', { text: title })].concat(arr.map(function (x) { return h('div', { class: 'tka-pt' }, [h('i'), h('span', { text: x })]); }))) : null; };
+        return h('div', { class: 'tka-cl-guide' }, [
+          g.headsUp ? h('div', { class: 'tka-note', text: g.headsUp }) : null,
+          g.opener ? h('div', { class: 'tka-cl-open' }, [h('span', { class: 'tka-df-l', text: 'You can start with' }), h('p', { text: '"' + g.opener + '"' })]) : null,
+          h('div', { class: 'tka-cl-gg' }, [list('Check first', g.check), list('What you can do now', g.can), list('What to say', g.say)]),
+          g.escalate ? h('p', { class: 'tka-cl-esc' }, [h('b', { text: 'Escalate when: ' }), g.escalate]) : null,
+          h('p', { class: 'tka-when', text: g.ai ? 'Suggested by AI from this client\'s history. Check it against what the client tells you.' : 'General guidance for this topic.' })]);
+      }
+      function go(full) {
+        var q = topicIn.value.trim();
+        if (q.length < 3) { out.replaceChildren(); return; }
+        var my = ++tseq;
+        var gHost = h('div', { class: 'tka-cl-gh' });
+        if (full) gHost.appendChild(h('div', { class: 'tka-skel', style: 'height:120px' }));
+        var tHost = h('div', { class: 'tka-cl-th' }, [h('div', { class: 'tka-skel', style: 'height:90px' })]);
+        out.replaceChildren(gHost, tHost);
+        var base = '?account=' + encodeURIComponent(p.accountId || '') + '&deal=' + encodeURIComponent(p.dealId || '') + '&q=' + encodeURIComponent(q);
+        api('/api/client-lookup/topic' + base).then(function (r) {
+          if (my !== tseq) return;
+          var kids = [];
+          var tags = (r.themes || []);
+          kids.push(h('div', { class: 'tka-cl-tags' }, [h('span', { class: 'tka-df-l', text: 'Looks like' })].concat(tags.length ? tags.map(function (x) { return pill(x, 'dest'); }) : [h('span', { class: 'tka-when', text: 'no known topic, searching your words' })])));
+          kids.push(dpSec('Earlier tickets on this (' + (r.tickets || []).length + ')', (r.tickets || []).length ? r.tickets.map(ticketRow) : [dpNote('No earlier ticket on this topic for this client.')]));
+          if ((r.issues || []).length) kids.push(dpSec('Known issues on this topic', r.issues.map(issueItem)));
+          if ((r.findings || []).length) kids.push(dpSec('Serious findings', r.findings.map(function (f) { return h('div', { class: 'tka-iss-i' }, [h('p', { text: f.claim })]); })));
+          kids.push(dpSec('Earlier conversations', (r.convos || []).length ? r.convos.map(function (c) {
+            return h('details', { class: 'tka-cl-cv' }, [h('summary', null, ['#' + c.number + ' ', h('span', { class: 'tka-when', text: c.subject })]),
+              h('div', { class: 'tka-cl-msgs' }, c.messages.map(function (m) { return h('div', { class: 'tka-cl-msg ' + (m.who === 'Client' ? 'in' : 'out') }, [h('b', { text: m.who + (m.name && m.who !== 'Call' ? ' · ' + m.name : '') }), h('span', { text: m.text })]); }))]);
+          }) : [dpNote('No conversation found on this topic.')]));
+          tHost.replaceChildren.apply(tHost, kids);
+        });
+        if (full) api('/api/client-lookup/guide' + base).then(function (g) {
+          if (my !== tseq) return;
+          gHost.replaceChildren(g.success ? guideCard(g) : h('div', { class: 'tka-note', text: g.error || 'Could not get guidance' }));
+        });
+      }
+      var assist = h('div', { class: 'tka-card tka-cl-assist' }, [h('h3', { text: 'Client is calling about...' }), h('div', { class: 'tka-toolbar' }, [topicIn, goBtn]), chips, out]);
+      // Contacts and other deals
+      var side = [];
+      if ((p.contacts || []).length) side.push(h('div', { class: 'tka-card' }, [h('h3', { text: 'People on this account' })].concat(p.contacts.map(function (c) {
+        return h('div', { class: 'tka-cl-ct' }, [h('b', { text: c.name || c.email }), h('span', { class: 'tka-when', text: [c.title, c.phone, c.name ? c.email : ''].filter(Boolean).join(' · ') })]);
+      }))));
+      if ((p.deals || []).length > 1) side.push(h('div', { class: 'tka-card' }, [h('h3', { text: 'Other deals on this account' }), h('div', { class: 'tka-chips' }, p.deals.map(function (d) {
+        return h('button', { type: 'button', class: 'tka-chip' + (d.id === p.dealId ? ' on' : ''), onclick: function () { openProfile(p.accountId, d.id); } }, [d.name || 'Deal', h('b', { text: d.stage || '' })]);
+      }))]));
+      var dealBox = h('div', { class: 'tka-dp tka-cl-deal' });
+      if (p.detail) renderDeal(dealBox, p.detail); else dealBox.replaceChildren(dpNote(p.detailNote || 'No support history yet.'));
+      view.replaceChildren(h('div', { class: 'tka-card tka-cl-head' }, [strip, factRow]), assist, side.length ? h('div', { class: 'tka-cl-side' }, side) : null, h('div', { class: 'tka-card' }, [h('h3', { text: 'Support history' }), dealBox]));
+      try { view.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+      topicIn.focus();
+    }
+  }
   function drawPolicy(pol) {
     pol.replaceChildren(h('p', { class: 'tka-empty', text: 'Loading...' }));
     api('/api/review/my').then(function (j) {
