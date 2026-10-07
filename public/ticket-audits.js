@@ -46,9 +46,9 @@
   function busy(b, on, label) { if (!b) return; b.disabled = !!on; if (label) b.textContent = label; }
 
   // ── shell ────────────────────────────────────────────────────────────
-  var VERDICT_LABEL = { good: 'Good to go', invalid: 'Invalid', ignored: 'Ignored' }, VERDICT_CLS = { good: 'st-approved', invalid: 'st-returned', ignored: 'st-closed' };
+  var VERDICT_LABEL = { good: 'Approved', invalid: 'Needs rework', ignored: 'Skipped' }, VERDICT_CLS = { good: 'st-approved', invalid: 'st-returned', ignored: 'st-closed' };
   function verdictPill(r) {
-    if (r.verdict === 'invalid') return (r.severity || 'fatal') === 'fatal' ? pill('Invalid: fatal', 'sev-high', 'Counts as a strike') : pill('Invalid: feedback', 'sev-medium', 'No strike');
+    if (r.verdict === 'invalid') return (r.severity || 'fatal') === 'fatal' ? pill('Needs rework: fatal', 'sev-high', 'Counts as a strike') : pill('Needs rework: feedback', 'sev-medium', 'No strike');
     return pill(VERDICT_LABEL[r.verdict] || r.verdict, VERDICT_CLS[r.verdict] || 'cat');
   }
   function tabs() {
@@ -224,7 +224,7 @@
       kids.push(dpSec('Usually reported modules', mods.length ? [h('div', { class: 'tka-inline' }, mods.map(function (m) { return pill(m.name + (m.n > 1 ? ' x' + m.n : ''), 'dest'); }))] : [dpNote('No module pattern on record.')]));
       kids.push(journeySec(d));
       kids.push(dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-inline' }, d.owners.map(function (o) { return pill(o.name + ' (' + o.tickets + ')', ''); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')]));
-      if ((d.reviews || []).length) kids.push(dpSec('Earlier transfer reviews on this deal', d.reviews.map(function (x) { return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + x.number }), h('span', { text: x.subject || '' }), pill(x.verdict === 'invalid' ? 'Invalid' : x.verdict === 'good' ? 'Good to go' : x.state === 'waiting' ? 'Waiting' : 'No verdict', x.verdict === 'invalid' ? 'sev-high' : x.verdict === 'good' ? 'st-approved' : 'sev-medium'), x.team ? h('span', { class: 'tka-when', text: 'to ' + x.team }) : null]); })));
+      if ((d.reviews || []).length) kids.push(dpSec('Earlier transfer reviews on this deal', d.reviews.map(function (x) { return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + x.number }), h('span', { text: x.subject || '' }), pill(x.verdict === 'invalid' ? 'Needs rework' : x.verdict === 'good' ? 'Approved' : x.state === 'waiting' ? 'Waiting' : 'No verdict', x.verdict === 'invalid' ? 'sev-high' : x.verdict === 'good' ? 'st-approved' : 'sev-medium'), x.team ? h('span', { class: 'tka-when', text: 'to ' + x.team }) : null]); })));
       kids.push(dpSec('FCR and CSAT for this deal', [h('div', { class: 'tka-inline' }, [pill('FCR ' + (d.fcr.pct == null ? 'no data' : d.fcr.pct + '%'), d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'st-approved' : 'sev-medium'), d.fcr.closed ? h('span', { class: 'tka-when', text: d.fcr.achieved + ' of ' + d.fcr.closed + ' closed tickets solved first contact' }) : null]),
         h('div', { class: 'tka-inline' }, [pill('CSAT ' + (d.csat.pct == null ? 'no surveys' : d.csat.pct + '%'), d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'st-approved' : 'sev-medium'), d.csat.total ? h('span', { class: 'tka-when', text: d.csat.good + ' good, ' + d.csat.bad + ' bad survey' + (d.csat.total === 1 ? '' : 's') }) : null])]));
       if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
@@ -287,7 +287,7 @@
       var own = r.agent_email && me && r.agent_email === me;
       var form = h('div', { class: 'tka-rv-form' });
       function openForm(kind) {
-        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'What did the agent miss? The agent sees this.' : kind === 'ignored' ? 'Why ignore it? For example: set by mistake and moved back to Open' : 'Optional note', 'aria-label': 'Comments' });
+        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'What did the agent miss? The agent sees this.' : kind === 'ignored' ? 'Why skip it? For example: set by mistake and moved back to Open' : 'Optional note', 'aria-label': 'Comments' });
         var who = h('input', { class: 'tka-input', list: 'tka-people', placeholder: 'Moved to (person)', value: r.to_agent || '', 'aria-label': 'Moved to' });
         var dl = document.getElementById('tka-people') || h('datalist', { id: 'tka-people' });
         if (!dl.parentNode) document.body.appendChild(dl);
@@ -299,7 +299,7 @@
           rb.addEventListener('change', function () { sev.v = o[0]; save.textContent = o[0] === 'fatal' ? 'Save as fatal (strike)' : 'Save as feedback'; save.className = 'tka-btn ' + (o[0] === 'fatal' ? 'danger' : 'primary'); });
           return h('label', { class: 'tka-radio', for: sevName + '-' + o[0] }, [rb, h('span', null, [h('b', { text: o[1] }), h('span', { class: 'tka-when', text: ' ' + o[2] })])]);
         }));
-        var save = btn(kind === 'invalid' ? 'Choose Fatal or Feedback' : kind === 'ignored' ? 'Ignore this one' : 'Save as good to go', kind === 'invalid' ? 'danger' : 'primary', function () {
+        var save = btn(kind === 'invalid' ? 'Choose Fatal or Feedback' : kind === 'ignored' ? 'Skip this one' : 'Save as approved', kind === 'invalid' ? 'danger' : 'primary', function () {
           if (kind === 'invalid' && !sev.v) return toast('Choose Fatal (strike) or Feedback (no strike)', 'error');
           var label = save.textContent;
           busy(save, true, 'Saving...');
@@ -315,8 +315,9 @@
         form.replaceChildren.apply(form, [h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : kind === 'ignored' ? 'Not a transfer, for example the status was set by mistake. No strike, no feedback to the agent. It stays in History with your reason.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
           kind === 'good' ? who : null, ai, sevBox, c, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
       }
-      var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [btn('Good to go', 'primary', function () { openForm('good'); }), btn('Invalid', 'danger', function () { openForm('invalid'); })];
-      if (!own && !waiting) side.push(btn('Ignore', 'ghost sm', function () { openForm('ignored'); }));
+      function vb(cls, icon, label, hint, kind) { return h('button', { type: 'button', class: 'tka-vb ' + cls, title: hint, onclick: function () { openForm(kind); } }, [h('span', { class: 'tka-vb-i', 'aria-hidden': 'true', text: icon }), h('span', { text: label })]); }
+      var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [];
+      var vrow = own ? null : h('div', { class: 'tka-vrow', role: 'group', 'aria-label': 'Review decision' }, [vb('ok', '\u2713', 'Approved', 'The transfer was right', 'good'), vb('fix', '\u21BA', 'Needs rework', 'Send it back to the agent', 'invalid')].concat(waiting ? [] : [vb('skip', '\u2192', 'Skip', 'Not a transfer, no strike', 'ignored')]));
       var dealBox = h('div', { class: 'tka-dp', hidden: true });
       var lineHost = h('div', null, [dealLine(r.deal)]);
       var dealBtn = null;
@@ -342,9 +343,10 @@
             r.breach_count ? h('span', { class: 'tka-when', text: 'Escalated ' + r.breach_count + 'x' }) : null]),
           showDeal ? lineHost : null,
           showDeal ? h('div', { class: 'tka-actions' }, [dealBtn]) : null,
+          vrow,
           dealBox,
           form]),
-        h('div', { class: 'tka-row-side' }, side)]);
+        side.length ? h('div', { class: 'tka-row-side' }, side) : null].filter(Boolean));
       if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
       if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp')) return; toggleDeal(); });
       return art;
@@ -380,7 +382,7 @@
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Review within' }), buf, h('span', { text: 'minutes, then tag' }), esc]),
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Then remind every' }), rep, h('span', { text: 'minutes, stop after' }), mx, h('span', { text: 'reminders (0 means no limit)' }), h('label', { class: 'tka-inline', for: 'tka-al-on' }, [alOn, h('span', { text: 'Review alerts on' })])]),
         h('h3', { text: 'Department chat spaces' }),
-        h('p', { class: 'tka-hint', text: 'One per line: team name, an equals sign, then the Google Chat space link. Good to go shows an Open space button for the chosen team. Team names: ' + ((j.teams || []).slice(0, 12).join(', ') || 'not loaded yet') + ((j.teams || []).length > 12 ? ', and more' : '') + '.' }),
+        h('p', { class: 'tka-hint', text: 'One per line: team name, an equals sign, then the Google Chat space link. Approved shows an Open space button for the chosen team. Team names: ' + ((j.teams || []).slice(0, 12).join(', ') || 'not loaded yet') + ((j.teams || []).length > 12 ? ', and more' : '') + '.' }),
         spaces,
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Review hours (Central time)' }), hrFrom, h('span', { text: 'to' }), hrTo, h('span', { class: 'tka-when', text: 'The review clock and the Chat tags only run inside these hours, 24 hour clock (7 to 19 is 7 AM to 7 PM).' })]),
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Zoho status' }), stName, h('label', { class: 'tka-inline', for: 'tka-rv-on' }, [on, h('span', { text: 'Review on' })])]),
@@ -399,8 +401,8 @@
     api('/api/review/strikes').then(function (j) {
       if (!j.success) { body.appendChild(h('div', { class: 'tka-note', text: j.error || 'Could not load strikes' })); return; }
       var l30 = j.last30 || {};
-      body.appendChild(h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'Strikes (rolling ' + j.days + ' days)' }), h('p', { class: 'tka-hint', text: 'Only reviews marked Invalid: fatal are strikes (feedback is not). 5th: verbal warning, 6th: written warning, 7th: PIP for 30 days, more: disciplinary action. Last 30 days: ' + (l30.n || 0) + ' reviews, ' + (l30.good || 0) + ' good, ' + (l30.invalid || 0) + ' fatal, ' + (l30.feedback || 0) + ' feedback.' })])]));
-      if (!j.agents.length) { body.appendChild(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No strikes' }), h('p', { text: 'Invalid transfers show here once reviewers record them.' })])); return; }
+      body.appendChild(h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'Strikes (rolling ' + j.days + ' days)' }), h('p', { class: 'tka-hint', text: 'Only reviews marked Needs rework: fatal are strikes (feedback is not). 5th: verbal warning, 6th: written warning, 7th: PIP for 30 days, more: disciplinary action. Last 30 days: ' + (l30.n || 0) + ' reviews, ' + (l30.good || 0) + ' good, ' + (l30.invalid || 0) + ' fatal, ' + (l30.feedback || 0) + ' feedback.' })])]));
+      if (!j.agents.length) { body.appendChild(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No strikes' }), h('p', { text: 'Transfers marked Needs rework show here once reviewers record them.' })])); return; }
       j.agents.forEach(function (a) {
         var d = h('details', { class: 'tka-fold' }, [h('summary', null, [h('b', { text: a.name + '  ' }), pill(a.active + ' active', a.active >= 7 ? 'sev-high' : a.active >= 5 ? 'sev-medium' : 'sev-low'), a.level ? pill(a.level, a.active >= 5 ? 'sev-high' : 'cat') : null])]);
         a.strikes.forEach(function (s) {
@@ -419,7 +421,7 @@
     var iso = function (d) { return d.toISOString().slice(0, 10); };
     if (!f.from) f.from = iso(new Date(Date.now() - 30 * 864e5));
     var q = h('input', { class: 'tka-input', type: 'search', value: f.q, placeholder: 'Search ticket #, subject, agent, comment', 'aria-label': 'Search reviews' });
-    var verdict = h('select', { class: 'tka-input narrow', 'aria-label': 'Verdict' }, [['', 'All verdicts'], ['good', 'Good to go'], ['invalid', 'Invalid (all)'], ['fatal', 'Invalid: fatal'], ['feedback', 'Invalid: feedback'], ['ignored', 'Ignored'], ['none', 'No verdict yet'], ['skipped', 'Skipped review']].map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (o[0] === f.verdict) op.selected = true; return op; }));
+    var verdict = h('select', { class: 'tka-input narrow', 'aria-label': 'Verdict' }, [['', 'All verdicts'], ['good', 'Approved'], ['invalid', 'Needs rework (all)'], ['fatal', 'Needs rework: fatal'], ['feedback', 'Needs rework: feedback'], ['ignored', 'Skipped by reviewer'], ['none', 'No verdict yet'], ['skipped', 'Agent skipped review']].map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (o[0] === f.verdict) op.selected = true; return op; }));
     var reviewer = h('select', { class: 'tka-input narrow', 'aria-label': 'Reviewer' }, [h('option', { value: '', text: 'All reviewers' })]);
     var agent = h('select', { class: 'tka-input narrow', 'aria-label': 'Agent' }, [h('option', { value: '', text: 'All agents' })]);
     var from = h('input', { class: 'tka-input narrow', type: 'date', value: f.from, 'aria-label': 'From date' });
@@ -740,7 +742,7 @@
             j.excludedTeams && j.excludedTeams.length ? 'You may assign directly to: ' + j.excludedTeams.join(', ') + '.' : 'There are no teams you can assign to directly right now.'].map(function (t) { return h('div', { class: 'tka-pt' }, [h('i'), h('span', { text: t })]); }))]),
         h('div', { class: 'tka-tiles' }, [
           h('div', { class: 'tka-tile ' + (j.active >= 5 ? 'hot' : '') }, [h('span', { class: 'tka-tile-l', text: 'Your active strikes' }), h('b', { class: 'tka-tile-v', text: String(j.active) }), h('span', { class: 'tka-tile-s', text: j.level ? j.level : 'Clean record' })]),
-          h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Good to go' }), h('b', { class: 'tka-tile-v', text: String(j.good) }), h('span', { class: 'tka-tile-s', text: 'transfers in the last ' + j.days + ' days' })]),
+          h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Approved' }), h('b', { class: 'tka-tile-v', text: String(j.good) }), h('span', { class: 'tka-tile-s', text: 'transfers in the last ' + j.days + ' days' })]),
           h('div', { class: 'tka-tile' }, [h('span', { class: 'tka-tile-l', text: 'Next strike means' }), h('b', { class: 'tka-tile-v sm', text: j.nextLevel || '' }), h('span', { class: 'tka-tile-s', text: 'Strikes expire after ' + j.days + ' days' })])]),
         tipsCard,
         h('div', { class: 'tka-card' }, [h('h3', { text: 'The 5 strike policy' }), steps]),
@@ -1166,7 +1168,7 @@
         api('/api/audits/settings', { autoQueue: auto.checked, sinceDays: Number(since.value), autoAnalyze: aa.checked }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); });
       });
       body.append(
-        h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'SPOC management' }), h('p', { class: 'tka-hint', text: 'SPOCs are existing agents or admins. They review tickets in Pending Review - T1 and record Good to go or Invalid.' })])]),
+        h('div', { class: 'tka-sectionhead' }, [h('div', null, [h('h3', { text: 'SPOC management' }), h('p', { class: 'tka-hint', text: 'SPOCs are existing agents or admins. They review tickets in Pending Review - T1 and record Approved or Needs rework.' })])]),
         h('div', { class: 'tka-card' }, [h('div', { class: 'tka-inline' }, [sel, add])]),
         h('div', { class: 'tka-list' }, cards));
     });
