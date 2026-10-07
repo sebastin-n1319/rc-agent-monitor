@@ -239,10 +239,6 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 
 /* Batch 109: deal context on waiting tiles */
 .tka-clickable{cursor:pointer}
-.tka-deal{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 14px;margin:10px 0 0;padding:8px 10px;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface2)}
-.tka-deal dt{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tka-t3)}
-.tka-deal dd{margin:1px 0 0;font-size:13px;font-weight:500;color:var(--tka-t1);overflow-wrap:anywhere}
-.tka-deal .hot dd{color:var(--tka-red)}
 .tka-dp{margin-top:10px;display:grid;gap:10px}
 .tka-dp[hidden]{display:none}
 .tka-dp-sec{padding:10px 12px;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface)}
@@ -266,8 +262,6 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-dp-det summary:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
 
 /* Batch 113: colour-coded deal line, clickable journey marks, derived issue history */
-.tka-deal .k-account dd,.tka-deal .k-deal dd{font-weight:600}
-.tka-deal .k-csm dd,.tka-deal .k-ob dd{color:var(--tka-t2)}
 .tka-chipv{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.4;border:1px solid transparent}
 .tka-chipv.good{color:var(--tka-green);background:color-mix(in srgb,var(--tka-green) 14%,transparent);border-color:color-mix(in srgb,var(--tka-green) 40%,transparent)}
 .tka-chipv.warn{color:var(--tka-amber);background:color-mix(in srgb,var(--tka-amber) 16%,transparent);border-color:color-mix(in srgb,var(--tka-amber) 45%,transparent)}
@@ -286,15 +280,74 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-jr-pt:hover .tka-jr-mk,.tka-jr-pt:focus-visible .tka-jr-mk{stroke:var(--tka-t1);stroke-width:2.5}
 .tka-jr-pt:hover .tka-jr-hl{text-decoration:underline}
 
-/* Batch 116: side by side review decision buttons */
-.tka-vrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.tka-vb{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:999px;border:1.5px solid var(--tka-border);background:var(--tka-surface);color:var(--tka-t1);font:600 13px 'Poppins',sans-serif;cursor:pointer;transition:background .15s,border-color .15s}
-.tka-vb-i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;font-size:12px;line-height:1}
-.tka-vb.ok{color:var(--tka-green);border-color:color-mix(in srgb,var(--tka-green) 45%,transparent);background:color-mix(in srgb,var(--tka-green) 9%,transparent)}
+/* Batch 117: transfer review polish */
+.tka-tile-v{line-height:1.35;padding:1px 0}
+.tka-tile-l{line-height:1.4}
+.tka-head h2{line-height:1.3}
+.tka-rv .tka-tile{position:relative;overflow:hidden;gap:3px;padding:13px 16px;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.tka-rv .tka-tile::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tka-border)}
+.tka-rv .tka-tile.hot::before{background:var(--tka-red)}
+.tka-rv .tka-tile.warn::before{background:var(--tka-amber)}
+.tka-rv .tka-tile-v{font-size:26px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.tka-rv .tka-tile-l{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--tka-t3)}
+.tka-tab{transition:color .15s ease,border-color .15s ease,background .15s ease;border-radius:8px 8px 0 0}
+.tka-tab:hover{color:var(--tka-t1);background:var(--tka-surface2)}
+.tka-btn{transition:border-color .15s ease,background .15s ease,transform .1s ease,box-shadow .15s ease}
+.tka-btn:active{transform:scale(.97)}
+.tka-btn.sm{padding:4px 10px;font-size:12px}
+
+/* deal card */
+.tka-deal{margin:10px 0 0;border:1px solid var(--tka-border);border-left:3px solid var(--tka-border);border-radius:12px;background:var(--tka-surface2);overflow:hidden}
+.tka-deal.e-bad{border-left-color:var(--tka-red)}
+.tka-deal.e-warn{border-left-color:var(--tka-amber)}
+.tka-deal.e-good{border-left-color:var(--tka-green)}
+.tka-deal-main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:4px 24px;padding:11px 14px 10px}
+.tka-deal-acc,.tka-deal-dl{min-width:0;display:flex;flex-direction:column;gap:3px}
+.tka-deal-acc b{font-size:15px;font-weight:600;line-height:1.45;color:var(--tka-t1);overflow-wrap:anywhere}
+.tka-deal-dl span:last-child{font-size:13px;line-height:1.45;color:var(--tka-t2);overflow-wrap:anywhere}
+.tka-df-l{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tka-t3);line-height:1.3}
+.tka-deal-facts{display:flex;flex-wrap:wrap;gap:8px 26px;align-items:center;padding:9px 14px;border-top:1px solid var(--tka-border);background:color-mix(in srgb,var(--tka-surface) 70%,transparent)}
+.tka-df{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.tka-df-p{flex-direction:row;align-items:center;gap:8px}
+.tka-df-av{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--tka-teal-s);color:var(--tka-teal);font:600 10.5px 'Poppins',sans-serif;letter-spacing:.02em}
+.tka-df-t{display:flex;flex-direction:column;gap:1px}
+.tka-df-v{font-size:13px;font-weight:500;color:var(--tka-t1);line-height:1.35}
+.tka-chipv{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.5;border:1px solid transparent}
+@media (max-width:640px){.tka-deal-main{grid-template-columns:1fr}}
+
+/* compact decision buttons */
+.tka-acts{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;margin-top:10px}
+.tka-vrow{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.tka-vb{display:inline-flex;align-items:center;gap:6px;padding:5px 12px 5px 6px;border-radius:999px;border:1px solid var(--tka-border);background:var(--tka-surface);color:var(--tka-t1);font:600 12px/1.3 'Poppins',sans-serif;cursor:pointer;transition:transform .12s ease,background .15s ease,border-color .15s ease,box-shadow .15s ease}
+.tka-vb-i{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;font-size:11px;line-height:1}
+.tka-vb:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(7,43,64,.12)}
+.tka-vb:active{transform:scale(.96)}
+.tka-vb.ok{color:var(--tka-green);border-color:color-mix(in srgb,var(--tka-green) 40%,transparent);background:color-mix(in srgb,var(--tka-green) 8%,transparent)}
 .tka-vb.ok .tka-vb-i{background:var(--tka-green);color:#fff}
-.tka-vb.fix{color:var(--tka-red);border-color:color-mix(in srgb,var(--tka-red) 45%,transparent);background:color-mix(in srgb,var(--tka-red) 8%,transparent)}
+.tka-vb.fix{color:var(--tka-red);border-color:color-mix(in srgb,var(--tka-red) 40%,transparent);background:color-mix(in srgb,var(--tka-red) 7%,transparent)}
 .tka-vb.fix .tka-vb-i{background:var(--tka-red);color:#fff}
 .tka-vb.skip{color:var(--tka-t2);background:var(--tka-surface2)}
 .tka-vb.skip .tka-vb-i{background:var(--tka-border);color:var(--tka-t2)}
-.tka-vb:hover{border-color:currentColor}
 .tka-vb:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
+
+/* deal history toggle */
+.tka-dealbtn{display:inline-flex;align-items:center;gap:6px;padding:3px 4px;border:0;background:none;color:var(--tka-teal);font:500 12.5px 'Poppins',sans-serif;cursor:pointer;border-radius:6px}
+.tka-dealbtn:hover{background:var(--tka-teal-s)}
+.tka-dealbtn:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
+.tka-chev{display:inline-block;transition:transform .22s ease;font-size:11px}
+.tka-dealbtn[aria-expanded="true"] .tka-chev{transform:rotate(180deg)}
+
+/* motion */
+.tka-row.tka-clickable{transition:box-shadow .18s ease,border-color .18s ease}
+.tka-row.tka-clickable:hover{box-shadow:0 4px 14px rgba(7,43,64,.09)}
+.tka-row.tka-in{animation:tkaIn .32s ease both}
+.tka-dp:not([hidden]){animation:tkaDown .26s ease both}
+.tka-dp .tka-dp-sec{animation:tkaUp .3s ease both;animation-delay:calc(var(--i,0) * 45ms + 60ms)}
+.tka-rv-form:not(:empty){animation:tkaDown .22s ease both}
+.tka-jr-pt .tka-jr-mk{transform-box:fill-box;transform-origin:center;animation:tkaPop .35s ease both}
+.tka-jr-pt:hover .tka-jr-mk{transform:scale(1.25);transition:transform .12s ease}
+@keyframes tkaIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes tkaDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@keyframes tkaUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes tkaPop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.tka-row.tka-in,.tka-dp:not([hidden]),.tka-dp .tka-dp-sec,.tka-rv-form:not(:empty),.tka-jr-pt .tka-jr-mk{animation:none}.tka-btn,.tka-vb,.tka-chev,.tka-tab,.tka-rv .tka-tile{transition:none}}
