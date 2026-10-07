@@ -120,7 +120,7 @@
         tileBox('Reviewed today', (j.today.good || 0) + (j.today.invalid || 0), (j.today.good || 0) + ' good, ' + (j.today.invalid || 0) + ' invalid'),
         tileBox('Average review time', j.today.avgMin == null ? 'none' : j.today.avgMin + ' min', 'today')]);
       var bar = h('div', { class: 'tka-inline between' }, [
-        h('p', { class: 'tka-hint', text: 'Tickets in "' + (st.statusName || 'Pending Review - T1') + '". Review each within ' + buf + ' minutes: move it to the right person in Zoho Desk, then record your verdict here.' + (j.lastPollAt ? ' Checked ' + ago(j.lastPollAt) + '.' : '') }),
+        h('p', { class: 'tka-hint', text: 'Tickets in "' + (st.statusName || 'Pending Review - T1') + '". Review each within ' + buf + ' minutes (counted between ' + (st.startHour == null ? 7 : st.startHour) + ':00 and ' + (st.endHour == null ? 19 : st.endHour) + ':00 Central): move it to the right person in Zoho Desk, then record your verdict here.' + (j.lastPollAt ? ' Checked ' + ago(j.lastPollAt) + '.' : '') }),
         h('div', { class: 'tka-inline' }, [btn('Check Zoho now', '', function (ev) { busy(ev.currentTarget, true, 'Checking...'); load(true); }),
           isAdmin() ? btn('Settings', 'ghost sm', function () { reviewSettings(host); }) : null])]);
       var kids = [tiles, bar];
@@ -255,6 +255,8 @@
       var buf = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '240', value: String(st.bufferMin), 'aria-label': 'Buffer minutes' });
       var esc = h('input', { class: 'tka-input', value: (st.escalateEmails || []).join(', '), 'aria-label': 'People tagged when the buffer passes' });
       var stName = h('input', { class: 'tka-input', value: st.statusName, 'aria-label': 'Zoho status name' });
+      var hrFrom = h('input', { class: 'tka-input narrow', type: 'number', min: '0', max: '23', value: String(st.startHour == null ? 7 : st.startHour), 'aria-label': 'Review hours start' });
+      var hrTo = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '24', value: String(st.endHour == null ? 19 : st.endHour), 'aria-label': 'Review hours end' });
       var spaces = h('textarea', { class: 'tka-note-in', rows: '5', 'aria-label': 'Department space links', placeholder: 'Team name = https://chat.google.com/room/...' });
       spaces.value = Object.keys(st.deptSpaces || {}).map(function (k) { return k + ' = ' + st.deptSpaces[k]; }).join('\n');
       var on = h('input', { type: 'checkbox', id: 'tka-rv-on' }); on.checked = st.enabled !== false;
@@ -265,12 +267,13 @@
         h('h3', { text: 'Department chat spaces' }),
         h('p', { class: 'tka-hint', text: 'One per line: team name, an equals sign, then the Google Chat space link. Good to go shows an Open space button for the chosen team. Team names: ' + ((j.teams || []).slice(0, 12).join(', ') || 'not loaded yet') + ((j.teams || []).length > 12 ? ', and more' : '') + '.' }),
         spaces,
+        h('div', { class: 'tka-inline' }, [h('span', { text: 'Review hours (Central time)' }), hrFrom, h('span', { text: 'to' }), hrTo, h('span', { class: 'tka-when', text: 'The review clock and the Chat tags only run inside these hours, 24 hour clock (7 to 19 is 7 AM to 7 PM).' })]),
         h('div', { class: 'tka-inline' }, [h('span', { text: 'Zoho status' }), stName, h('label', { class: 'tka-inline', for: 'tka-rv-on' }, [on, h('span', { text: 'Review on' })])]),
         h('p', { class: 'tka-when', text: 'People directory ' + (j.peopleRefreshedAt ? 'updated ' + ago(j.peopleRefreshedAt) : 'not built yet') + ' (Zoho teams, staff list and the Who does what sheet).' }),
         h('div', { class: 'tka-actions' }, [
           btn('Save settings', 'primary', function () {
             var ex = Object.keys(picked).filter(function (k) { return picked[k]; });
-            api('/api/review/settings', { excludedTeams: ex, bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.checked, deptSpaces: parseSpaces(spaces.value) }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'review'; render(); } });
+            api('/api/review/settings', { excludedTeams: ex, bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.checked, startHour: Number(hrFrom.value), endHour: Number(hrTo.value), deptSpaces: parseSpaces(spaces.value) }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'review'; render(); } });
           }),
           btn('Rebuild people directory', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Rebuilding...'); api('/api/review/people/refresh', {}).then(function (r) { busy(b, false, 'Rebuild people directory'); toast(r.success ? 'Directory: ' + r.zoho + ' from Zoho teams, ' + r.staff + ' staff, ' + r.sheet + ' from the sheet' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); }),
           btn('Close', 'ghost sm', function () { card.remove(); })])]);
