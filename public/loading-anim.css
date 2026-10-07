@@ -10,18 +10,21 @@
 @media (prefers-reduced-motion:reduce){.ldx-d i,.ldx-t{animation:none}
 .ldx-t{-webkit-text-fill-color:currentColor;background:none}}
 
-/* Refresh loading screen (Batch 143): while the app boots, the page area shows the logo pulsing with a slim progress
-   bar on top, and the footer stays hidden so it never sits at the top of an empty page. loading-anim.js adds
-   html.app-booted when the first wave of data has arrived. The last rule is a safety net if the script never runs. */
+/* Refresh loading screen (Batch 143, logo version in 144): while the app boots, the page area shows the Adit wordmark
+   filling in with colour from left to right on a faint ghost copy, with a slim progress bar on top. The footer stays
+   hidden so it never sits at the top of an empty page. loading-anim.js adds html.app-booted when the first wave of data
+   has arrived. The bt-gone rules are a safety net if the script never runs. */
 html.app-authenticated:not(.app-booted) body::before{content:'';position:fixed;left:0;top:0;height:3px;width:40%;z-index:100000;pointer-events:none;border-radius:0 3px 3px 0;background:linear-gradient(90deg,#21AAE0,#F4891F);animation:bt-bar 1.3s ease-in-out infinite,bt-gone 0s 9s forwards}
-html.app-authenticated body::after{content:'';position:fixed;top:48px;right:0;bottom:0;left:0;z-index:60;pointer-events:none;background:#F7F8F8 url(/adit-icon-192.png) center 46%/56px no-repeat;opacity:1;transition:opacity .4s ease,visibility .4s}
+html.app-authenticated body::after{content:'';position:fixed;top:48px;right:0;bottom:0;left:0;z-index:60;pointer-events:none;background:#F7F8F8 url(/adit-logo-ghost-light.png) center/240px 119px no-repeat;opacity:1;transition:opacity .4s ease,visibility .4s}
 html.app-authenticated.role-admin body::after{left:70px}
-html.app-authenticated:not(.app-booted) body::after{animation:bt-pulse 1.4s ease-in-out infinite,bt-gone 0s 9s forwards}
-html.app-authenticated.app-booted body::after{opacity:0;visibility:hidden}
-html.dark-mode.app-authenticated body::after{background-color:#0B1A26}
+html.app-authenticated::before{content:'';position:fixed;z-index:61;pointer-events:none;width:240px;height:119px;top:calc(48px + (100vh - 48px) / 2 - 60px);left:calc(50% - 120px);background:url(/adit-logo-color.png) center/100% 100% no-repeat;opacity:1;transition:opacity .4s ease,visibility .4s;-webkit-mask-image:linear-gradient(90deg,#000 42%,transparent 58%);mask-image:linear-gradient(90deg,#000 42%,transparent 58%);-webkit-mask-size:300% 100%;mask-size:300% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+html.app-authenticated.role-admin::before{left:calc(50% + 35px - 120px)}
+html.app-authenticated:not(.app-booted)::before{animation:bt-fill 1.9s cubic-bezier(.5,0,.3,1) infinite,bt-gone 0s 9s forwards}
+html.app-authenticated.app-booted::before,html.app-authenticated.app-booted body::after{opacity:0;visibility:hidden}
+html.dark-mode.app-authenticated body::after{background-color:#0B1A26;background-image:url(/adit-logo-ghost-dark.png)}
 html:not(.app-booted) footer{visibility:hidden}
 @keyframes bt-bar{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
-@keyframes bt-pulse{0%,100%{background-size:50px}50%{background-size:62px}}
+@keyframes bt-fill{0%{-webkit-mask-position:100% 0;mask-position:100% 0;opacity:1}62%{-webkit-mask-position:0 0;mask-position:0 0;opacity:1}86%{-webkit-mask-position:0 0;mask-position:0 0;opacity:1}100%{-webkit-mask-position:0 0;mask-position:0 0;opacity:0}}
 @keyframes bt-gone{to{opacity:0;visibility:hidden}}
-@media (max-width:700px){html.app-authenticated.role-admin body::after{left:0}}
-@media (prefers-reduced-motion:reduce){html.app-authenticated:not(.app-booted) body::before,html.app-authenticated:not(.app-booted) body::after{animation:bt-gone 0s 9s forwards}}
+@media (max-width:700px){html.app-authenticated.role-admin body::after{left:0}html.app-authenticated.role-admin::before{left:calc(50% - 120px)}}
+@media (prefers-reduced-motion:reduce){html.app-authenticated:not(.app-booted) body::before{animation:bt-gone 0s 9s forwards}html.app-authenticated:not(.app-booted)::before{animation:bt-gone 0s 9s forwards;-webkit-mask-position:0 0;mask-position:0 0}}
