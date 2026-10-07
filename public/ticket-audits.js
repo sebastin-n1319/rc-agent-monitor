@@ -404,7 +404,7 @@
       function match(r) {
         var n = nameOf(r.agent_email, r.agent_name);
         if (TA.mvAgent && n !== TA.mvAgent) return false;
-        var t = (TA.mvQ || '').trim().toLowerCase();
+        var t = (TA.mvQ || '').trim().toLowerCase().replace(/^#+\s*/, '');
         return !t || [r.ticket_number, r.subject, n, r.to_agent, r.to_team, r.channel].join(' ').toLowerCase().indexOf(t) > -1;
       }
       function paintChips() {
