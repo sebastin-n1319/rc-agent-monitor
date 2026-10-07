@@ -29,6 +29,8 @@ The department hand-off draft fills Client Name, Practice Name, Account Number (
 
 Review settings live on their own admin-only tab (Transfer review, Settings): review window and reminders, the two webhooks, direct assign teams (filterable chips), department chat spaces (one row per team), and the people directory, with a save bar that shows unsaved changes. Webhooks: Review alerts is for idle tickets (falls back to the Live ops webhook), Reviewer messages is a separate space for the messages reviewers send to agents; both can be set here or on the Alerts page. Reviewer messages can be turned off with the switch on the Alerts page.
 
+AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
+
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.
 
 ## Transfer review and the 5 strike policy

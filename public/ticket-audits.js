@@ -360,11 +360,22 @@
         dealBox.hidden = !open;
         TA.dealOpen = TA.dealOpen || {}; if (open) TA.dealOpen[r.id] = true; else delete TA.dealOpen[r.id];
         if (dealBtn) { dealBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); dealBtn.querySelector('.tka-dealbtn-t').textContent = open ? 'Hide deal history' : 'Deal history'; }
-        if (open && !dealBox.dataset.loaded) {
-          dealBox.dataset.loaded = '1';
-          dealBox.replaceChildren(h('p', { class: 'tka-when', text: 'Loading deal history...' }));
-          api('/api/review/' + r.id + '/deal').then(function (x) { if (!x.success) { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not load deal history' })); return; } if (!r.deal && x.quick) lineHost.replaceChildren(dealLine(x.quick)); renderDeal(dealBox, x); });
-        }
+        if (open && !dealBox.dataset.loaded) loadDeal(0);
+      }
+      function loadDeal(attempt) {
+        dealBox.dataset.loaded = '1';
+        dealBox.replaceChildren(h('p', { class: 'tka-when', text: attempt ? 'AditKB is busy, trying again...' : 'Loading deal history...' }));
+        api('/api/review/' + r.id + '/deal').then(function (x) {
+          if (!x.success) { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not load deal history' })); return; }
+          if (x.busy) {
+            if (attempt < 2) { setTimeout(function () { if (!dealBox.hidden) loadDeal(attempt + 1); }, 3000 + attempt * 2500); return; }
+            dealBox.dataset.loaded = '';
+            dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.note }), btn('Try again', 'sm', function () { loadDeal(0); }));
+            return;
+          }
+          if (!r.deal && x.quick) lineHost.replaceChildren(dealLine(x.quick));
+          renderDeal(dealBox, x);
+        }).catch(function () { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: 'Could not load deal history' }), btn('Try again', 'sm', function () { loadDeal(0); })); });
       }
       var showDeal = waiting || r.state === 'moved';
       if (showDeal) { dealBtn = btn('', 'tka-dealbtn', function (ev) { ev.stopPropagation(); toggleDeal(); }, { 'aria-expanded': 'false' }); dealBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: 'Deal history' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }

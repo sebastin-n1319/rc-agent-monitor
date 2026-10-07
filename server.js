@@ -575,7 +575,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     await ticketAudits.initSchema();
     ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
     // Session 88: transfer review (Pending Review - T1), polled every minute.
-    require('./lib/deal-context').setKb(escalationWatch.kb);
+    require('./lib/deal-context').setKb(escalationWatch.kbHi);
     transferReview.setDB(db);
     await transferReview.initSchema();
     transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
