@@ -236,3 +236,20 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-sugg{margin:0;font-size:13.5px;color:var(--tka-t1);white-space:pre-wrap}
 .tka-sim{display:flex;flex-direction:column;gap:3px;padding-top:6px;border-top:1px solid var(--tka-border)}
 .tka-btn[hidden]{display:none}
+
+/* Batch 109: deal context on waiting tiles */
+.tka-clickable{cursor:pointer}
+.tka-deal{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 14px;margin:10px 0 0;padding:8px 10px;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface2)}
+.tka-deal dt{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tka-t3)}
+.tka-deal dd{margin:1px 0 0;font-size:13px;font-weight:500;color:var(--tka-t1);overflow-wrap:anywhere}
+.tka-deal .hot dd{color:var(--tka-red)}
+.tka-dp{margin-top:10px;display:grid;gap:10px}
+.tka-dp[hidden]{display:none}
+.tka-dp-sec{padding:10px 12px;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface)}
+.tka-dp-sec h4{margin:0 0 6px;font:600 12px 'Poppins',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--tka-t3)}
+.tka-dp-sec p{margin:4px 0;font-size:13px;color:var(--tka-t2);line-height:1.45}
+.tka-dp-lead{color:var(--tka-t1)!important;font-weight:500}
+.tka-dp-item{padding:6px 0;border-top:1px solid var(--tka-border)}
+.tka-dp-item:first-of-type{border-top:0}
+.tka-dp-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:5px 0;border-top:1px solid var(--tka-border);font-size:13px}
+.tka-dp-row span:nth-child(2){flex:1 1 220px;min-width:0;overflow-wrap:anywhere}

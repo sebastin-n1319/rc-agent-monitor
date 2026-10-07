@@ -75,3 +75,10 @@ html.dark-mode .ah-page{
 .ah-rules .ah-rule label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 .ah-rules .ah-num { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; opacity: .85; }
 .ah-card .ah-rules input[type=number].ah-in { width: 72px; flex: none; padding: 6px 8px; }
+
+/* Batch 109: timing block on each alert tile */
+.ah-timing { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--ah-border); border-radius: 10px; background: var(--ah-surface2); }
+.ah-tt { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ah-t3); margin-bottom: 6px; }
+.ah-tf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; padding: 4px 0; font-size: 13px; }
+.ah-tf .ah-num { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.ah-card .ah-tf input[type=number].ah-in { width: 72px; flex: none; padding: 6px 8px; }

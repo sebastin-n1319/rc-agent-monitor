@@ -575,6 +575,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     await ticketAudits.initSchema();
     ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
     // Session 88: transfer review (Pending Review - T1), polled every minute.
+    require('./lib/deal-context').setKb(escalationWatch.kb);
     transferReview.setDB(db);
     await transferReview.initSchema();
     transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
@@ -589,7 +590,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Session 90: escalation watch, every 15 minutes (does nothing until enabled with a webhook)
     escalationWatch.setDB(db);
     await escalationWatch.initSchema();
-    escalationWatch.setDeps({ ai: require('./lib/ai'), roster: () => deskLifecycleAgentRoster(),
+    escalationWatch.setDeps({ inAlertHours, ai: require('./lib/ai'), roster: () => deskLifecycleAgentRoster(),
       resolveChatId: async (email) => { const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id); return (a && a.chat_id) || await getGoogleSubForEmail(email).catch(() => null); } });
     setTimeout(() => {
       const tick = () => escalationWatch.scan().then(r => { if (r && (r.alerts || r.reminders || r.error)) console.log('🚨 Escalation watch:', JSON.stringify(r)); }).catch(e => console.warn('escalation watch failed:', e.message));
@@ -2595,25 +2596,38 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
     const bl = await one(`SELECT SUM(CASE WHEN notified=1 THEN 1 ELSE 0 END) AS sent, SUM(CASE WHEN notify_status NOT IN ('sent','disabled','filtered') AND notified=0 THEN 1 ELSE 0 END) AS failed, MAX(CASE WHEN notified=1 THEN created_at END) AS last FROM break_events WHERE created_at >= ?`, [todaySql()]);
     const sm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM chat_report_log WHERE created_at >= ?`, [todaySql()]);
     const sch = await one(`SELECT COUNT(*) AS n, SUM(enabled) AS on_n FROM chat_report_schedule`);
-    const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item'`, [todaySql()]);
+    const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item' AND kind != 'review_idle'`, [todaySql()]);
+    const rv = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind = 'review_idle'`, [todaySql()]);
+    const rvSt = await transferReview.settings().catch(() => null);
     const ast = await assessments.alertStatus().catch(() => ({ cfg: { enabled: true }, hook: '', sentToday: 0, failedToday: 0, last: null, due: [], recent: [] }));
     const missedToday = (_pollLog || []).reduce((n, e) => n + (Number(e && e.notified) || 0), 0);
     const lastPoll = (_pollLog || []).slice(-1)[0] || null;
     res.json({ success: true, channels: [
       { key: 'breakLog', label: 'Break log', desc: 'Every break, BRB, training, QA, internal call and shift start or end tap.', enabled: h.breakLogEnabled !== false,
         source: hookSource(h.breakLog, ENV_GOOGLE_CHAT_WEBHOOK_URL), masked: maskHook(GOOGLE_CHAT_WEBHOOK_URL), events: Array.isArray(h.breakEvents) ? h.breakEvents : ['shift', 'break', 'brb', 'training', 'qa', 'internal'],
-        sentToday: bl.sent || 0, failedToday: bl.failed || 0, last: bl.last || null },
+        sentToday: bl.sent || 0, failedToday: bl.failed || 0, last: bl.last || null, timing: { note: 'Posts the moment a tap is recorded. No repeat.' } },
       { key: 'missed', label: 'Missed calls', desc: 'A card for each missed or abandoned queue call, tagging the agent it rang when known.', enabled: missedEnabled,
-        source: hookSource(h.missedCall, ENV_MISSED_CALL_WEBHOOK_URL), masked: maskHook(MISSED_CALL_WEBHOOK_URL), sentToday: missedToday, countLabel: 'Sent in the last 30 checks', failedToday: (_pollLog || []).filter(e => e && e.error).length, last: lastPoll ? lastPoll.at : null, lastLabel: 'Last check' },
+        source: hookSource(h.missedCall, ENV_MISSED_CALL_WEBHOOK_URL), masked: maskHook(MISSED_CALL_WEBHOOK_URL), sentToday: missedToday, countLabel: 'Sent in the last 30 checks', failedToday: (_pollLog || []).filter(e => e && e.error).length, last: lastPoll ? lastPoll.at : null, lastLabel: 'Last check', timing: { note: 'Checked every minute. Each missed call posts once.' } },
       { key: 'summaries', label: 'Break and productivity summaries', desc: 'Summary posts you send from the composer, and scheduled daily, weekly or monthly reports.', enabled: h.summariesEnabled !== false,
         source: h.summaries ? 'app' : (process.env.REPORTS_CHAT_WEBHOOK_URL ? 'env' : (GOOGLE_CHAT_WEBHOOK_URL ? 'breaklog' : 'none')), masked: maskHook(h.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL),
-        sentToday: sm.sent || 0, failedToday: sm.failed || 0, last: sm.last || null, schedules: sch.n || 0, schedulesOn: sch.on_n || 0 },
+        sentToday: sm.sent || 0, failedToday: sm.failed || 0, last: sm.last || null, schedules: sch.n || 0, schedulesOn: sch.on_n || 0, timing: { note: 'Posts when you send one, or on each schedule you set.' } },
       { key: 'liveOps', label: 'Live ops', desc: 'Caller waiting in queue, nobody available, unassigned tickets and assigned tickets with no action.', enabled: t1cfg.enabled !== false,
         source: t1cfg.webhookUrl ? 'app' : 'none', masked: maskHook(t1cfg.webhookUrl), sentToday: lo.sent || 0, failedToday: lo.failed || 0, last: lo.last || null,
-        parts: { queue: t1cfg.queue.enabled, coverage: t1cfg.coverage.enabled, tickets: t1cfg.tickets.enabled } },
+        parts: { queue: t1cfg.queue.enabled, coverage: t1cfg.coverage.enabled, tickets: t1cfg.tickets.enabled },
+        timing: { fields: [
+          { path: 'queue.repeatMin', label: 'Caller in queue: repeat every', unit: 'min', value: t1cfg.queue.repeatMin, min: 1, max: 120 },
+          { path: 'coverage.repeatMin', label: 'Nobody available: repeat every', unit: 'min', value: t1cfg.coverage.repeatMin, min: 1, max: 240 },
+          { path: 'tickets.scanMin', label: 'Ticket check: every', unit: 'min', value: t1cfg.tickets.scanMin, min: 2, max: 120 } ] } },
+      { key: 'review', label: 'Review alerts', desc: 'Tickets sitting in Pending Review - T1 past the review window, tagging the people set in Review settings.', enabled: !rvSt || rvSt.alertsOn !== false,
+        source: t1cfg.webhookUrl ? 'liveops' : 'none', masked: '', noHook: true, sentToday: rv.sent || 0, failedToday: rv.failed || 0, last: rv.last || null,
+        timing: { fields: rvSt ? [
+          { path: '_.bufferMin', label: 'First alert after', unit: 'min', value: rvSt.bufferMin, min: 1, max: 240 },
+          { path: '_.repeatMin', label: 'Repeat every', unit: 'min', value: rvSt.repeatMin, min: 1, max: 480 },
+          { path: '_.maxReminders', label: 'Stop after', unit: 'reminders (0 = no limit)', value: rvSt.maxReminders, min: 0, max: 50 } ] : [],
+          note: `Review hours ${rvSt ? rvSt.startHour : 7} to ${rvSt ? rvSt.endHour : 19} Central. Tagged people are set in Review settings.` } },
       { key: 'assessments', label: 'Assessments', desc: 'Closing soon and not taken, overdue, low pass rate or average, and stuck or abandoned attempts.', enabled: ast.cfg.enabled,
         source: ast.hasOwnHook ? 'app' : (ast.fallbackHook ? 'assess' : 'none'), masked: maskHook(ast.hook), sentToday: ast.sentToday, failedToday: ast.failedToday, last: ast.last,
-        assess: { cfg: ast.cfg, due: ast.due, recent: ast.recent } },
+        assess: { cfg: ast.cfg, due: ast.due, recent: ast.recent }, timing: { note: 'Checked every 15 minutes. Each item posts once.' } },
     ] });
   } catch (e) { console.error('alert-hub status:', e.message); res.status(500).json({ success: false, error: 'Could not load alert status' }); }
 });
@@ -2622,13 +2636,19 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
   try {
     const b = req.body || {};
     const key = String(b.key || '');
-    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
+    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments', 'review'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
     const url = typeof b.webhookUrl === 'string' ? b.webhookUrl.trim() : '';
     if (url && !HOOK_URL_RE.test(url)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
     if (key === 'assessments') {
       await assessments.setAlertCfg({ webhook: url || undefined, clearWebhook: !!b.clearWebhook, enabled: typeof b.enabled === 'boolean' ? b.enabled : undefined, closing: b.closing, overdue: b.overdue, low: b.low, stuck: b.stuck });
+    } else if (key === 'review') {
+      await transferReview.saveSettings({ alertsOn: typeof b.enabled === 'boolean' ? b.enabled : undefined, bufferMin: b.bufferMin, repeatMin: b.repeatMin, maxReminders: b.maxReminders });
     } else if (key === 'liveOps') {
       const cur = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
+      const numIn = (v, lo, hi) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : null; };
+      for (const [g, f, lo, hi] of [['queue', 'repeatMin', 1, 120], ['coverage', 'repeatMin', 1, 240], ['tickets', 'scanMin', 2, 120]]) {
+        const n = b[g] && b[g][f] != null ? numIn(b[g][f], lo, hi) : null; if (n != null) cur[g][f] = n;
+      }
       if (url) cur.webhookUrl = url;
       if (b.clearWebhook) cur.webhookUrl = '';
       if (typeof b.enabled === 'boolean') cur.enabled = b.enabled;
@@ -8433,6 +8453,7 @@ app.get('/api/audits/agents', requireAuth, requireAuditAccess, auditWrap(async (
 // Session 88: transfer review (Pending Review - T1), strikes and the agent policy tab.
 app.get('/api/review/list', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.list()), me: req.audit.email }); }));
 app.post('/api/review/refresh', requireAuth, requireAuditAccess, rateLimit(10, 60000), auditWrap(async (req, res) => { res.json({ success: true, result: await transferReview.poll(), ...(await transferReview.list()) }); }));
+app.get('/api/review/:id/deal', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.dealDetail(Number(req.params.id))) }); }));
 app.post('/api/review/:id/assist', requireAuth, requireAuditAccess, rateLimit(40, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.assist(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.post('/api/review/:id/verdict', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.verdict(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.get('/api/review/people', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, people: await transferReview.people(String(req.query.q || '').slice(0, 60), 30) }); }));
