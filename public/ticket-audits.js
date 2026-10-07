@@ -192,6 +192,32 @@
         box.replaceChildren.apply(box, kids);
       }).catch(function () { box.replaceChildren(h('span', { class: 'tka-when', text: 'AI help is not available right now' })); });
     }
+    // Message to the agent: drafted from the ticket, edited by the reviewer, posted to the space only when they click Send.
+    function msgBox(r, kind, comment) {
+      var ta = h('textarea', { class: 'tka-note-in', rows: '6', 'aria-label': 'Message to the agent', placeholder: 'Drafting a message...' });
+      var status = h('span', { class: 'tka-when' });
+      var send = btn('Send to space', 'primary sm', function () {
+        var label = send.textContent; busy(send, true, 'Sending...');
+        api('/api/review/' + r.id + '/message', { text: ta.value }).then(function (x) {
+          busy(send, false, label);
+          if (!x.success) { status.textContent = ''; return toast(x.error || 'Could not send', 'error'); }
+          status.textContent = 'Sent to the space just now.'; send.textContent = 'Send again'; toast('Message sent to the space', 'success');
+        }).catch(function () { busy(send, false, label); toast('Could not send', 'error'); });
+      });
+      send.disabled = true;
+      var again = btn('Redraft', 'ghost sm', function () { draft(); });
+      function draft() {
+        ta.disabled = true; send.disabled = true; status.textContent = 'Drafting...';
+        api('/api/review/' + r.id + '/message-draft', { mode: kind === 'invalid' ? 'invalid' : 'good', comment: comment.value }).then(function (a) {
+          ta.disabled = false;
+          if (!a.success) { status.textContent = a.error || 'Could not draft a message'; return; }
+          ta.value = a.text || ''; send.disabled = false;
+          status.textContent = (a.ai && a.instruction ? 'AI drafted this from the ticket. ' : 'AI is not set up or had nothing to add, so write the instruction. ') + 'Check it, then click Send. It posts in the reviewer space and tags the agent.' + (a.sentAt ? ' Already sent once for this ticket.' : '');
+        }).catch(function () { ta.disabled = false; status.textContent = 'Could not draft a message'; });
+      }
+      draft();
+      return h('div', { class: 'tka-msg' }, [h('b', { text: 'Message to the agent' }), status, ta, h('div', { class: 'tka-actions' }, [send, again])]);
+    }
     // Deal context: quick CRM line on the tile, full history when the tile is opened.
     function stageCls(v) { v = String(v || ''); return /churn|lost|offboard/i.test(v) ? 'bad' : /onboard|getting started|setup/i.test(v) ? 'warn' : /csm|won|active/i.test(v) ? 'good' : /upgrade|expan/i.test(v) ? 'info' : 'mute'; }
     function escCls(v) { v = String(v || ''); return /^escalated/i.test(v) ? 'bad' : /de-?escalated/i.test(v) ? 'warn' : /never/i.test(v) ? 'good' : 'mute'; }
@@ -321,7 +347,7 @@
         var ai = kind === 'ignored' ? null : h('div', { class: 'tka-asst' }, [h('span', { class: 'tka-when', text: 'AI is reading the ticket...' })]);
         if (ai) assistFor(r, kind, ai, who, c, sev, function (v) { var rb = document.getElementById(sevName + '-' + v); if (rb) { rb.checked = true; rb.dispatchEvent(new Event('change')); } });
         form.replaceChildren.apply(form, [h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : kind === 'ignored' ? 'Not a transfer, for example the status was set by mistake. No strike, no feedback to the agent. It stays in History with your reason.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
-          kind === 'good' ? who : null, ai, sevBox, c, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
+          kind === 'good' ? who : null, ai, sevBox, c, kind === 'ignored' ? null : msgBox(r, kind, c), h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
       }
       function vb(cls, icon, label, hint, kind) { return h('button', { type: 'button', class: 'tka-vb ' + cls, title: hint, onclick: function () { openForm(kind); } }, [h('span', { class: 'tka-vb-i', 'aria-hidden': 'true', text: icon }), h('span', { text: label })]); }
       var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [];

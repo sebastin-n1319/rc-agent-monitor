@@ -351,3 +351,8 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 @keyframes tkaUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes tkaPop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.tka-row.tka-in,.tka-dp:not([hidden]),.tka-dp .tka-dp-sec,.tka-rv-form:not(:empty),.tka-jr-pt .tka-jr-mk{animation:none}.tka-btn,.tka-vb,.tka-chev,.tka-tab,.tka-rv .tka-tile{transition:none}}
+
+/* Batch 118: message to the agent */
+.tka-msg{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--tka-border);border-left:3px solid var(--tka-teal);border-radius:10px;background:var(--tka-surface2);margin-top:8px}
+.tka-msg .tka-note-in{width:100%;box-sizing:border-box;font:13px/1.5 'Poppins',sans-serif}
+.tka-msg .tka-actions{margin-top:0}

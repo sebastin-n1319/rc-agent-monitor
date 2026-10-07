@@ -581,7 +581,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
       roster: () => deskLifecycleAgentRoster(),
       spocs: async () => (await ticketAudits.listSpocs()).filter(x => x.active).map(x => x.email),
-      chat: { pendingIdle: (p) => t1Alerts().notifyPendingIdle(p), strike: (p) => t1Alerts().notifyStrike(p) } });
+      chat: { pendingIdle: (p) => t1Alerts().notifyPendingIdle(p), strike: (p) => t1Alerts().notifyStrike(p), message: (p) => t1Alerts().notifyReviewMessage(p) } });
     setTimeout(() => transferReview.refreshPeople().then(r => console.log('👥 Transfer review directory:', JSON.stringify(r))).catch(e => console.warn('directory refresh failed:', e.message)), 60000);
     setInterval(() => transferReview.refreshPeople().catch(() => {}), 12 * 3600 * 1000);
     setTimeout(() => {
@@ -2497,6 +2497,7 @@ function t1Alerts() {
     deskGet: (path) => ds.fetchRaw(path),
     fetchDepartments: () => ds.fetchDepartments(),
     inAlertHours, alertHoursLabel: ALERT_HOURS.label,
+    reviewHook: () => (ALERT_HOOKS && ALERT_HOOKS.review) || '',
     resolveChatId: async (email) => {
       const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id);
       return (a && a.chat_id) || await getGoogleSubForEmail(email);
@@ -2596,8 +2597,8 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
     const bl = await one(`SELECT SUM(CASE WHEN notified=1 THEN 1 ELSE 0 END) AS sent, SUM(CASE WHEN notify_status NOT IN ('sent','disabled','filtered') AND notified=0 THEN 1 ELSE 0 END) AS failed, MAX(CASE WHEN notified=1 THEN created_at END) AS last FROM break_events WHERE created_at >= ?`, [todaySql()]);
     const sm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM chat_report_log WHERE created_at >= ?`, [todaySql()]);
     const sch = await one(`SELECT COUNT(*) AS n, SUM(enabled) AS on_n FROM chat_report_schedule`);
-    const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item' AND kind != 'review_idle'`, [todaySql()]);
-    const rv = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind = 'review_idle'`, [todaySql()]);
+    const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item' AND kind NOT IN ('review_idle','review_msg')`, [todaySql()]);
+    const rv = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind IN ('review_idle','review_msg')`, [todaySql()]);
     const rvSt = await transferReview.settings().catch(() => null);
     const ast = await assessments.alertStatus().catch(() => ({ cfg: { enabled: true }, hook: '', sentToday: 0, failedToday: 0, last: null, due: [], recent: [] }));
     const missedToday = (_pollLog || []).reduce((n, e) => n + (Number(e && e.notified) || 0), 0);
@@ -2618,13 +2619,13 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
           { path: 'queue.repeatMin', label: 'Caller in queue: repeat every', unit: 'min', value: t1cfg.queue.repeatMin, min: 1, max: 120 },
           { path: 'coverage.repeatMin', label: 'Nobody available: repeat every', unit: 'min', value: t1cfg.coverage.repeatMin, min: 1, max: 240 },
           { path: 'tickets.scanMin', label: 'Ticket check: every', unit: 'min', value: t1cfg.tickets.scanMin, min: 2, max: 120 } ] } },
-      { key: 'review', label: 'Review alerts', desc: 'Tickets sitting in Pending Review - T1 past the review window, tagging the people set in Review settings.', enabled: !rvSt || rvSt.alertsOn !== false,
-        source: t1cfg.webhookUrl ? 'liveops' : 'none', masked: '', noHook: true, sentToday: rv.sent || 0, failedToday: rv.failed || 0, last: rv.last || null,
+      { key: 'review', label: 'Review alerts', desc: 'Tickets sitting in Pending Review - T1 past the review window, and the messages reviewers send to agents from the review form.', enabled: !rvSt || rvSt.alertsOn !== false,
+        source: h.review ? 'app' : (t1cfg.webhookUrl ? 'liveops' : 'none'), masked: maskHook(h.review), sentToday: rv.sent || 0, failedToday: rv.failed || 0, last: rv.last || null,
         timing: { fields: rvSt ? [
           { path: '_.bufferMin', label: 'First alert after', unit: 'min', value: rvSt.bufferMin, min: 1, max: 240 },
           { path: '_.repeatMin', label: 'Repeat every', unit: 'min', value: rvSt.repeatMin, min: 1, max: 480 },
           { path: '_.maxReminders', label: 'Stop after', unit: 'reminders (0 = no limit)', value: rvSt.maxReminders, min: 0, max: 50 } ] : [],
-          note: `Review hours ${rvSt ? rvSt.startHour : 7} to ${rvSt ? rvSt.endHour : 19} Central. Tagged people are set in Review settings.` } },
+          note: `Review hours ${rvSt ? rvSt.startHour : 7} to ${rvSt ? rvSt.endHour : 19} Central. Tagged people are set in Review settings. Reviewer messages post when a reviewer clicks Send, any time. Without a webhook here, idle alerts use the Live ops webhook and reviewer messages cannot be sent.` } },
       { key: 'assessments', label: 'Assessments', desc: 'Closing soon and not taken, overdue, low pass rate or average, and stuck or abandoned attempts.', enabled: ast.cfg.enabled,
         source: ast.hasOwnHook ? 'app' : (ast.fallbackHook ? 'assess' : 'none'), masked: maskHook(ast.hook), sentToday: ast.sentToday, failedToday: ast.failedToday, last: ast.last,
         assess: { cfg: ast.cfg, due: ast.due, recent: ast.recent }, timing: { note: 'Checked every 15 minutes. Each item posts once.' } },
@@ -2642,6 +2643,13 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
     if (key === 'assessments') {
       await assessments.setAlertCfg({ webhook: url || undefined, clearWebhook: !!b.clearWebhook, enabled: typeof b.enabled === 'boolean' ? b.enabled : undefined, closing: b.closing, overdue: b.overdue, low: b.low, stuck: b.stuck });
     } else if (key === 'review') {
+      if (url || b.clearWebhook) {
+        const hk = await loadAlertHooks();
+        if (url) hk.review = url;
+        if (b.clearWebhook) delete hk.review;
+        await setSetting('alert_hooks', JSON.stringify(hk), req.session.email);
+        await loadAlertHooks();
+      }
       await transferReview.saveSettings({ alertsOn: typeof b.enabled === 'boolean' ? b.enabled : undefined, bufferMin: b.bufferMin, repeatMin: b.repeatMin, maxReminders: b.maxReminders });
     } else if (key === 'liveOps') {
       const cur = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
@@ -2683,9 +2691,10 @@ app.post('/api/alert-hub/test', requireAdmin, rateLimit(8, 60000), async (req, r
   else if (key === 'missed') url = MISSED_CALL_WEBHOOK_URL;
   else if (key === 'summaries') url = ALERT_HOOKS.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL;
   else if (key === 'liveOps') url = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null)).webhookUrl;
+  else if (key === 'review') url = ALERT_HOOKS.review || t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null)).webhookUrl;
   if (key === 'assessments') { try { const r = await assessments.alertTest(); return res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` }); } catch (e) { return res.json({ success: false, error: e.message }); } }
   if (!url) return res.json({ success: false, error: 'No webhook set for this alert type' });
-  const label = { breakLog: 'Break log', missed: 'Missed call', summaries: 'Summary', liveOps: 'Live ops' }[key] || 'Alert';
+  const label = { breakLog: 'Break log', missed: 'Missed call', summaries: 'Summary', liveOps: 'Live ops', review: 'Review' }[key] || 'Alert';
   try {
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: `🔔 Test: ${label} alerts from T1 CS Stars will post in this space.` }), signal: AbortSignal.timeout(15000) });
     res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` });
@@ -8455,6 +8464,8 @@ app.get('/api/review/list', requireAuth, requireAuditAccess, auditWrap(async (re
 app.post('/api/review/refresh', requireAuth, requireAuditAccess, rateLimit(10, 60000), auditWrap(async (req, res) => { res.json({ success: true, result: await transferReview.poll(), ...(await transferReview.list()) }); }));
 app.get('/api/review/:id/deal', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.dealDetail(Number(req.params.id))) }); }));
 app.post('/api/review/:id/assist', requireAuth, requireAuditAccess, rateLimit(40, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.assist(Number(req.params.id), req.audit, req.body || {})) }); }));
+app.post('/api/review/:id/message-draft', requireAuth, requireAuditAccess, rateLimit(40, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.messageDraft(Number(req.params.id), req.audit, req.body || {})) }); }));
+app.post('/api/review/:id/message', requireAuth, requireAuditAccess, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.sendMessage(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.post('/api/review/:id/verdict', requireAuth, requireAuditAccess, rateLimit(60, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.verdict(Number(req.params.id), req.audit, req.body || {})) }); }));
 app.get('/api/review/people', requireAuth, requireAuditAccess, auditWrap(async (req, res) => { res.json({ success: true, people: await transferReview.people(String(req.query.q || '').slice(0, 60), 30) }); }));
 app.post('/api/review/people/refresh', requireAuth, requireAuditAdmin, rateLimit(3, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await transferReview.refreshPeople()) }); }));

@@ -68,7 +68,7 @@
         <input class="ah-in" type="url" data-url autocomplete="off" placeholder="${c.masked ? esc(c.masked) : 'Paste a Google Chat webhook URL'}" aria-label="${esc(c.label)} webhook URL">
         <button type="button" class="ah-btn ah-primary" data-save>Save</button>
         <button type="button" class="ah-btn" data-test>Send test</button>
-        ${c.source === 'app' ? `<button type="button" class="ah-btn ah-ghost" data-clear>${c.key === 'liveOps' ? 'Disconnect' : (c.key === 'assessments' ? 'Use assessment webhook' : 'Use Railway value')}</button>` : ''}
+        ${c.source === 'app' ? `<button type="button" class="ah-btn ah-ghost" data-clear>${c.key === 'liveOps' ? 'Disconnect' : (c.key === 'assessments' ? 'Use assessment webhook' : (c.key === 'review' ? 'Use Live ops webhook' : 'Use Railway value'))}</button>` : ''}
       </div>`}
       ${LINK[c.key] ? `<button type="button" class="ah-link" data-go="${LINK[c.key][0]}">${LINK[c.key][1]} →</button>` : ''}
     </article>`;

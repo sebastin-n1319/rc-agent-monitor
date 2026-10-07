@@ -25,6 +25,8 @@ Agents see unassigned tickets and their own tickets that are waiting for action,
 ## Tickets and lifecycle
 Ticket data syncs from Zoho Desk in the background: status, channel, classification, category, module, FCR and ownership changes. Agents can log a ticket with Log Ticket and see their own numbers in My Ticket Stats. Chat counts and response times come from Zoho SalesIQ. CSAT comes from Zoho Analytics.
 
+Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Review alerts webhook (Alerts page, Review alerts section, set by an admin), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. Idle review alerts use the same webhook, falling back to the Live ops one. A reviewer cannot send for a ticket they handled themselves.
+
 ## Transfer review and the 5 strike policy
 T1 agents do not move tickets to other teams or people themselves. They set the ticket status to the review status (default name Pending Review - T1). A reviewer (SPOC) checks it within the review window, moves it to the right person in Zoho Desk and records a verdict in the tool.
 Verdicts: Approved, Needs rework or Skip (Skip is only for tickets that already left the status, for example set by mistake). An invalid transfer is marked Fatal or Feedback. Fatal counts as a strike for the agent. Feedback is not a strike but the agent sees it. Strikes stay active for 90 days and a reviewer or admin can remove one.
