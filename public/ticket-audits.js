@@ -130,7 +130,7 @@
       if (j.waiting.length) kids.push(h('div', { class: 'tka-cards' }, j.waiting.map(function (r) { return reviewCard(r, buf, j.me); })));
       if (j.moved.length) {
         kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Moved, verdict missing' }), h('span', { class: 'tka-sech-n warn', text: String(j.moved.length) }), h('p', { class: 'tka-hint', text: 'These left the review status, or were moved by a T1 agent without it ("Skipped review"). Record a verdict so the agent gets feedback.' })]));
-        kids.push(h('div', { class: 'tka-cards' }, j.moved.map(function (r) { return reviewCard(r, buf, j.me); })));
+        kids.push(movedList(j.moved, buf, j.me));
       }
       if (j.done.length) {
         var d = h('details', { class: 'tka-fold' }, [h('summary', { text: 'Reviewed in the last 24 hours (' + j.done.length + ')' })]);
@@ -379,7 +379,40 @@
       }))]);
       return dpSec(title, [key, wrap, det], h('span', { class: 'tka-when', text: d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed' }), 'tka-dp-jr');
     }
-    function reviewCard(r, buf, me) {
+    // Moved tickets as a compact list: one line per ticket, a search box and agent chips with counts, details open in place.
+    function movedList(rows, buf, me) {
+      var q = h('input', { class: 'tka-input tka-lf-q', type: 'search', placeholder: 'Search ticket #, subject, agent, destination', 'aria-label': 'Search moved tickets', value: TA.mvQ || '' });
+      var chips = h('div', { class: 'tka-lf-chips', role: 'group', 'aria-label': 'Filter by agent' });
+      var count = h('span', { class: 'tka-when tka-lf-n' });
+      var head = h('div', { class: 'tka-lr-cols', 'aria-hidden': 'true' }, ['Ticket', 'Agent', 'Channel', 'Status', 'Now with', 'Decision'].map(function (t) { return h('span', { text: t }); }));
+      var list = h('div', { class: 'tka-lr-list' });
+      var byAgent = {}; rows.forEach(function (r) { var n = nameOf(r.agent_email, r.agent_name); byAgent[n] = (byAgent[n] || 0) + 1; });
+      var names = Object.keys(byAgent).sort(function (a, b) { return byAgent[b] - byAgent[a]; });
+      if (TA.mvAgent && !byAgent[TA.mvAgent]) TA.mvAgent = '';
+      function match(r) {
+        var n = nameOf(r.agent_email, r.agent_name);
+        if (TA.mvAgent && n !== TA.mvAgent) return false;
+        var t = (TA.mvQ || '').trim().toLowerCase();
+        return !t || [r.ticket_number, r.subject, n, r.to_agent, r.to_team, r.channel].join(' ').toLowerCase().indexOf(t) > -1;
+      }
+      function paintChips() {
+        chips.replaceChildren.apply(chips, [['', 'All', rows.length]].concat(names.map(function (n) { return [n, n, byAgent[n]]; })).map(function (c) {
+          var on = (TA.mvAgent || '') === c[0];
+          return h('button', { type: 'button', class: 'tka-chip' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: function () { TA.mvAgent = c[0]; paintChips(); fill(); } }, [h('span', { text: c[1] }), h('b', { text: String(c[2]) })]);
+        }));
+      }
+      function fill() {
+        var shown = rows.filter(match);
+        count.textContent = shown.length === rows.length ? '' : shown.length + ' of ' + rows.length + ' shown';
+        if (!shown.length) { list.replaceChildren(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No tickets match' }), h('p', { text: 'Clear the search or pick All.' })])); return; }
+        list.replaceChildren.apply(list, shown.map(function (r) { return reviewCard(r, buf, me, true); }));
+      }
+      var t = null;
+      q.addEventListener('input', function () { clearTimeout(t); t = setTimeout(function () { TA.mvQ = q.value; fill(); }, 120); });
+      paintChips(); fill();
+      return h('div', { class: 'tka-lr' }, [h('div', { class: 'tka-lf' }, [q, count]), chips, h('div', { class: 'tka-lr-box' }, [head, list])]);
+    }
+    function reviewCard(r, buf, me, asRow) {
       var waiting = r.state === 'waiting';
       var cls = waiting ? (r.minutes >= buf ? 'sev-high' : r.minutes >= buf - 5 ? 'sev-medium' : 'st-approved') : 'sev-low';
       var own = r.agent_email && me && r.agent_email === me;
@@ -420,7 +453,7 @@
       var shell = h('div', { class: 'tka-dp-shell' }, [h('div', { class: 'tka-dp-clip' }, [dealBox])]);
       shell.inert = true;
       var isOpen = false, art = null;
-      var lineHost = h('div', null, [dealLine(r.deal)]);
+      var lineHost = h('div', { class: 'tka-lr-line' }, [dealLine(r.deal)]);
       var dealBtn = null;
       function toggleDeal() {
         var open = isOpen = !isOpen;
@@ -431,7 +464,7 @@
           setTimeout(function () { if (!isOpen) art.classList.remove('deal-open'); }, calm ? 0 : 300);
         }
         TA.dealOpen = TA.dealOpen || {}; if (open) TA.dealOpen[r.id] = true; else delete TA.dealOpen[r.id];
-        if (dealBtn) { dealBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); dealBtn.querySelector('.tka-dealbtn-t').textContent = open ? 'Hide deal history' : 'Deal history'; }
+        if (dealBtn) { dealBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); dealBtn.querySelector('.tka-dealbtn-t').textContent = open ? (asRow ? 'Hide' : 'Hide deal history') : (asRow ? 'Deal history' : 'Deal history'); }
         if (open && !dealBox.dataset.loaded) loadDeal(0);
       }
       function loadDeal(attempt) {
@@ -452,6 +485,22 @@
       var showDeal = waiting || r.state === 'moved';
       if (showDeal) { dealBtn = btn('', 'tka-dealbtn', function (ev) { ev.stopPropagation(); toggleDeal(); }, { 'aria-expanded': 'false' }); dealBtn.replaceChildren(h('span', { class: 'tka-dealbtn-t', text: 'Deal history' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })); }
       TA.seen = TA.seen || {}; var fresh = !TA.seen[r.id]; TA.seen[r.id] = 1;
+      var numEl = r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number });
+      var destTxt = [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ');
+      if (asRow) {
+        art = h('article', { class: 'tka-row lr' + (showDeal ? ' tka-clickable' : '') + (fresh ? ' tka-in' : '') }, [
+          h('div', { class: 'tka-lr-head' }, [
+            h('div', { class: 'tka-lr-t' }, [numEl, h('span', { class: 'tka-sub', text: r.subject || '', title: r.subject || null })]),
+            h('span', { class: 'tka-lr-ag', text: nameOf(r.agent_email, r.agent_name) }),
+            h('span', { class: 'tka-lr-ch' }, [r.channel ? pill(r.channel, 'dest') : null]),
+            h('span', { class: 'tka-lr-st' }, [pill(r.source === 'bypass' ? 'Skipped review' : 'Left status', r.source === 'bypass' ? 'sev-high' : 'sev-medium')]),
+            h('span', { class: 'tka-lr-to', title: destTxt || null, text: destTxt || 'Not recorded' }),
+            h('div', { class: 'tka-lr-act' }, [dealBtn, vrow])]),
+          showDeal ? lineHost : null, shell, form].filter(Boolean));
+        if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
+        if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-deal')) return; toggleDeal(); });
+        return art;
+      }
       art = h('article', { class: 'tka-row' + (waiting && r.minutes >= buf ? ' hot' : '') + (showDeal ? ' tka-clickable' : '') + (fresh ? ' tka-in' : '') }, [
         h('div', { class: 'tka-row-main' }, [
           h('div', { class: 'tka-row-top' }, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number }), h('span', { class: 'tka-sub', text: r.subject || '', title: r.subject || null })]),
@@ -470,7 +519,7 @@
     }
     load(false);
     clearInterval(TA._rvTimer);
-    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-row.deal-open')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
+    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-lf-q:focus') && !host.querySelector('.tka-row.deal-open')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
   }
   function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
   // ── Review settings: a page of its own, admins only ────────────────────────────
