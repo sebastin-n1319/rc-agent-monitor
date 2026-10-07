@@ -33,6 +33,10 @@
       h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-tag bad', text: 'Escalated (Tier 2)' }), h('span', { class: 'ct-s-who', text: 'Owner: a named person, with the date it started' })]),
       h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-tag', text: '2 open' }), h('span', { class: 'ct-tag', text: '61 tickets' }), h('span', { class: 'ct-tag', text: 'Last: #413539' })]),
       h('div', { class: 'ct-s-bar' }, [h('i'), h('i'), h('i'), h('i'), h('i'), h('i'), h('i'), h('i')])]);
+    if (kind === 'ticket') return h('div', { class: 'ct-sample' }, [
+      h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-tag', text: '#413707' }), h('span', { class: 'ct-tag', text: 'Web' }), h('span', { class: 'ct-s-who', text: 'Waiting on: us' })]),
+      h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-chip on', text: 'Email reply' }), h('span', { class: 'ct-chip', text: 'Call guide (on request)' })]),
+      h('div', { class: 'ct-s-guide' }, [h('small', { text: 'DRAFT REPLY' }), h('p', { text: 'Hi, thanks for your patience. I checked the sync and here is what we did next...' }), h('small', { text: 'BASED ON' }), h('p', { text: 'Similar solved ticket, recent process update' })])]);
     return null;
   }
   var STEPS = [
@@ -40,6 +44,7 @@
     { title: 'Open it from Tkt Alerts', text: 'Your sidebar tile for ticket alerts is now called Tkt Alerts. Client lookup is the second tab on that page.', target: '#sb-agent-talerts', side: 'right' },
     { title: 'Search any way the client gives it', text: 'Type a ticket number, deal name, account name, phone number or email. If there is one match it opens straight away, otherwise pick the right client from the list.', target: '.tka-cl-q', side: 'bottom', before: goLookup },
     { title: 'Tell it why they are calling', text: 'After you open a client, write what the call is about, or tap a topic. You get earlier tickets and conversations on that topic, known issues, and suggested checks with what you can say and do.', sample: 'guide' },
+    { title: 'Got a ticket number? Get the next step', text: 'Search a ticket number and the page also reads that ticket and suggests the best next step. Email and web tickets get an email reply draft, always. Phone tickets get a call guide. Need the other one? Use the button on the panel, for example when the client asks for a call. It draws on similar solved tickets and recent updates, and lists what it used.', sample: 'ticket' },
     { title: 'Check the history first', text: 'The top of the page shows the escalation status and its owner, open tickets, the last ticket, and the full support history. If the client is escalated, keep the escalation owner informed.', sample: 'history' },
     { title: 'Use it as help, not a script', text: 'The suggestions come from our records and AI, so confirm every detail with the client. Do not read internal notes or escalation details out to the client, and do not promise a fix or a time you cannot guarantee.', last: true }
   ];

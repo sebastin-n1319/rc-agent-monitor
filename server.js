@@ -581,6 +581,11 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         summary: 'Type a ticket number, deal name, account name, phone number or email and see the client before you speak: escalation status and owner, open tickets, last conversations and who handled them. Tell it why the client is calling (for example phones not working) and it shows earlier tickets and conversations on that topic, with suggested checks and what you can say and do.',
         impact: 'On a live call, open Tkt Alerts, then Client lookup, and check the escalation status and owner, open tickets and earlier conversations on the same topic before you answer. Treat the suggestions as help and confirm everything with the client.',
         category: 'Product update', modules: ['Tkt Alerts', 'Client lookup'] });
+      await productUpdates.seedOnce('client-lookup-ticket-2026-10', 'system', 'T1 CS tools', {
+        title: 'New: Client lookup suggests the next step for a ticket',
+        summary: 'Search a ticket number in Client lookup and it now reads the ticket and suggests the best next step. Email and web tickets get an email reply draft, phone tickets get a call guide, and you can ask for the other one with a button. Suggestions use similar solved tickets and recent process and product updates, and show what they used.',
+        impact: 'Open the ticket in Client lookup before you reply. Edit the draft so it fits what the client asked, confirm every detail, and send it from Zoho Desk yourself. Do not read internal notes out to the client.',
+        category: 'Product update', modules: ['Tkt Alerts', 'Client lookup'] });
     } catch (e) { console.warn('client lookup update seed failed:', e.message); }
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
