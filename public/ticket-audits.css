@@ -671,3 +671,29 @@ body.ct-lock{overflow:hidden}
 .ct-btn:disabled{opacity:.45;cursor:not-allowed}
 .ct-btn:focus-visible{outline:2px solid var(--tka-teal,#0b8f8e);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.ct-card.in,.ct-ring{animation:none;transition:none}}
+
+/* Batch 134: loading card for Client lookup */
+.tka-ld{display:flex;flex-direction:column;gap:12px;padding:16px 18px;border-radius:14px;border:1px solid var(--tka-border);background:var(--tka-surface);overflow:hidden;animation:tka-cl-in .25s ease both}
+.tka-ld.sm{padding:12px 14px;gap:10px}
+.tka-ld-top{display:flex;align-items:center;gap:14px}
+.tka-ld-orb{position:relative;width:34px;height:34px;flex:none}
+.tka-ld-orb i{position:absolute;inset:0;border-radius:50%}
+.tka-ld-orb i:first-child{border:3px solid var(--tka-teal-s);border-top-color:var(--tka-teal);animation:tka-ld-spin .9s linear infinite}
+.tka-ld-orb i:last-child{inset:9px;background:var(--tka-teal);opacity:.85;animation:tka-ld-pulse 1.4s ease-in-out infinite}
+.tka-ld-txt{display:flex;align-items:baseline;gap:2px;min-width:0;font:500 14px 'Poppins',sans-serif;color:var(--tka-t1)}
+.tka-ld-msg.sw{animation:tka-cl-in .3s ease both}
+.tka-ld-dots{display:inline-flex;gap:3px;margin-left:4px}
+.tka-ld-dots i{width:4px;height:4px;border-radius:50%;background:var(--tka-teal);animation:tka-ld-dot 1.2s ease-in-out infinite}
+.tka-ld-dots i:nth-child(2){animation-delay:.15s}.tka-ld-dots i:nth-child(3){animation-delay:.3s}
+.tka-ld-bar{height:4px;border-radius:4px;background:var(--tka-teal-s);overflow:hidden}
+.tka-ld-bar i{display:block;height:100%;width:38%;border-radius:4px;background:linear-gradient(90deg,transparent,var(--tka-teal),transparent);animation:tka-ld-slide 1.3s ease-in-out infinite}
+.tka-ld-sk{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tka-ld-sk i{height:64px;border-radius:12px;background:linear-gradient(100deg,var(--tka-teal-s) 30%,rgba(255,255,255,.7) 50%,var(--tka-teal-s) 70%);background-size:220% 100%;animation:tka-ld-shim 1.4s ease-in-out infinite}
+.tka-ld-sk i:nth-child(2){animation-delay:.12s}.tka-ld-sk i:nth-child(3){animation-delay:.24s}
+@keyframes tka-ld-spin{to{transform:rotate(360deg)}}
+@keyframes tka-ld-pulse{0%,100%{transform:scale(.7);opacity:.5}50%{transform:scale(1);opacity:1}}
+@keyframes tka-ld-dot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@keyframes tka-ld-slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+@keyframes tka-ld-shim{0%{background-position:120% 0}100%{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){.tka-ld-orb i,.tka-ld-dots i,.tka-ld-bar i,.tka-ld-sk i,.tka-ld{animation:none}.tka-ld-bar i{width:100%;opacity:.5}}
+.tka-cl-results>.tka-ld{grid-column:1/-1}

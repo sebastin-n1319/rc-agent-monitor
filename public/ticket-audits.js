@@ -963,6 +963,21 @@
   };
   // ── Client lookup, for agents on a live call ───────────────
   var CALL_TOPICS = [['Phone issue', 'phone calls not working'], ['EHR not syncing', 'ehr not syncing'], ['Online scheduling', 'online scheduling double booking'], ['Reminders and texts', 'reminders text messages'], ['Billing', 'billing invoice charge'], ['Login or access', 'cannot log in password'], ['Email campaign', 'email campaign'], ['Reviews', 'reviews reputation'], ['Forms', 'patient forms']];
+
+  // A loading card that tells the person what is being read, so a slow lookup never looks stuck.
+  function loadingCard(stages, small) {
+    var msg = h('span', { class: 'tka-ld-msg', text: stages[0] });
+    var dots = h('span', { class: 'tka-ld-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]);
+    var box = h('div', { class: 'tka-ld' + (small ? ' sm' : ''), role: 'status', 'aria-live': 'polite' }, [
+      h('div', { class: 'tka-ld-top' }, [h('span', { class: 'tka-ld-orb', 'aria-hidden': 'true' }, [h('i'), h('i')]), h('div', { class: 'tka-ld-txt' }, [msg, dots])]),
+      h('div', { class: 'tka-ld-bar', 'aria-hidden': 'true' }, [h('i')])]);
+    if (!small) box.appendChild(h('div', { class: 'tka-ld-sk', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]));
+    var n = 0, t = setInterval(function () {
+      if (!box.isConnected && n > 0) { clearInterval(t); return; }
+      n++; if (n < stages.length) { msg.classList.remove('sw'); void msg.offsetWidth; msg.textContent = stages[n]; msg.classList.add('sw'); } else if (n > stages.length + 12) clearInterval(t);
+    }, 1400);
+    return box;
+  }
   function clientLookup(host) {
     var input = h('input', { class: 'tka-input tka-cl-q', type: 'search', placeholder: 'Ticket #, deal name, account name, phone or email', 'aria-label': 'Search for a client', autocomplete: 'off' });
     var results = h('div', { class: 'tka-cl-results' }), view = h('div', { class: 'tka-cl-view' });
@@ -983,7 +998,7 @@
     }
     function run() {
       var q = input.value.trim(); if (q.length < 2) { results.replaceChildren(); return; }
-      var my = ++seq; results.replaceChildren(h('div', { class: 'tka-skel', style: 'height:58px' }));
+      var my = ++seq; results.replaceChildren(loadingCard(['Searching clients...', 'Matching tickets and contacts...', 'Still looking, this can take a few seconds...'], true));
       api('/api/client-lookup/search?q=' + encodeURIComponent(q)).then(function (j) {
         if (my !== seq) return;
         if (!j.success) { results.replaceChildren(h('p', { class: 'tka-empty', text: j.error || 'Search failed' })); return; }
@@ -996,7 +1011,7 @@
 
     function openProfile(accountId, dealId) {
       results.replaceChildren();
-      view.replaceChildren.apply(view, dealSkeleton('Loading client...'));
+      view.replaceChildren(loadingCard(['Finding the account...', 'Reading tickets from Zoho Desk...', 'Checking escalations and owners...', 'Reading the account analysis...', 'Almost there...']));
       api('/api/client-lookup/profile?account=' + encodeURIComponent(accountId || '') + '&deal=' + encodeURIComponent(dealId || '')).then(function (p) {
         if (!p.success || !p.available) { view.replaceChildren(h('div', { class: 'tka-note', text: p.error || p.note || 'Could not load this client' })); return; }
         drawProfile(p);
@@ -1035,8 +1050,8 @@
         if (q.length < 3) { out.replaceChildren(); return; }
         var my = ++tseq;
         var gHost = h('div', { class: 'tka-cl-gh' });
-        if (full) gHost.appendChild(h('div', { class: 'tka-skel', style: 'height:120px' }));
-        var tHost = h('div', { class: 'tka-cl-th' }, [h('div', { class: 'tka-skel', style: 'height:90px' })]);
+        if (full) gHost.appendChild(loadingCard(['Reading what happened before...', 'Writing suggestions for this call...', 'Almost there...'], true));
+        var tHost = h('div', { class: 'tka-cl-th' }, [loadingCard(['Finding earlier tickets on this topic...', 'Reading conversations...', 'Almost there...'], true)]);
         out.replaceChildren(gHost, tHost);
         var base = '?account=' + encodeURIComponent(p.accountId || '') + '&deal=' + encodeURIComponent(p.dealId || '') + '&q=' + encodeURIComponent(q);
         api('/api/client-lookup/topic' + base).then(function (r) {

@@ -444,9 +444,11 @@ async function buildBreakChatPayload(event){
 // posts only between 7 AM and 7 PM US Central, every day. Scheduled
 // summaries keep their own times, and "Send test" always posts.
 const ALERT_HOURS = { start: 7, end: 19, tz: 'America/Chicago', label: '7 AM to 7 PM CST' };
-function inAlertHours(d = new Date()) {
-  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: ALERT_HOURS.tz, hour: 'numeric', hourCycle: 'h23' }).format(d));
-  return h >= ALERT_HOURS.start && h < ALERT_HOURS.end;
+// Break log alerts alone run on a wider window: 6 AM to 8 PM Central.
+const BREAK_ALERT_HOURS = { start: 6, end: 20, tz: 'America/Chicago', label: '6 AM to 8 PM CST' };
+function inAlertHours(d = new Date(), win = ALERT_HOURS) {
+  const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: win.tz, hour: 'numeric', hourCycle: 'h23' }).format(d));
+  return h >= win.start && h < win.end;
 }
 
 const BREAK_EVENT_GROUP = { LOGGED_IN: 'shift', LOGGED_OUT: 'shift', BREAK_OUT: 'break', BREAK_IN: 'break', BRB_OUT: 'brb', BRB_IN: 'brb',
@@ -455,8 +457,8 @@ async function sendBreakChatNotification(event){
   if(ALERT_HOOKS.breakLogEnabled === false){
     return { notified: false, status: 'disabled', response: 'Break log alerts are turned off on the Alerts page' };
   }
-  if(!inAlertHours()){
-    return { notified: false, status: 'off_hours', response: `Outside alert hours (${ALERT_HOURS.label})` };
+  if(!inAlertHours(new Date(), BREAK_ALERT_HOURS)){
+    return { notified: false, status: 'off_hours', response: `Outside break log alert hours (${BREAK_ALERT_HOURS.label})` };
   }
   const grp = BREAK_EVENT_GROUP[event.action];
   if(grp && Array.isArray(ALERT_HOOKS.breakEvents) && !ALERT_HOOKS.breakEvents.includes(grp)){
