@@ -227,9 +227,10 @@ html.dark-mode .tone-warn.aud-act,html.dark-mode .aud-chip.tone-warn b{color:#F0
 html.assess-lock,html.assess-lock body{overflow:hidden!important}
 
 /* Batch 128: sidebar count badge sits on the tile corner, not over the icon */
-#adit-admin-sidebar .sb-item .pu-badge{top:-3px;right:-5px;min-width:21px;height:21px;padding:0 6px;line-height:21px;font-size:11px;letter-spacing:.01em;background:linear-gradient(180deg,#EE5C62 0%,#D9464D 100%);box-shadow:0 0 0 2.5px #fff,0 3px 8px rgba(217,70,77,.38);z-index:2;transform-origin:center;animation:sbBadgeIn .4s cubic-bezier(.2,.9,.3,1.3) both}
-html.dark-mode #adit-admin-sidebar .sb-item .pu-badge{box-shadow:0 0 0 2.5px var(--sb-ring,#0B2536),0 3px 8px rgba(0,0,0,.4)}
-#adit-admin-sidebar .sb-item .pu-badge::after{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid #D9464D;opacity:0;animation:sbBadgePing 2.6s ease-out infinite;pointer-events:none}
+#adit-admin-sidebar .sb-item .pu-badge,#adit-agent-sidebar .sb-item .pu-badge{top:-3px;right:-5px;min-width:21px;height:21px;padding:0 6px;line-height:21px;font-size:11px;letter-spacing:.01em;background:linear-gradient(180deg,#EE5C62 0%,#D9464D 100%);box-shadow:0 0 0 2.5px #fff,0 3px 8px rgba(217,70,77,.38);z-index:2;transform-origin:center;animation:sbBadgeIn .4s cubic-bezier(.2,.9,.3,1.3) both}
+html.dark-mode #adit-admin-sidebar .sb-item .pu-badge,html.dark-mode #adit-agent-sidebar .sb-item .pu-badge{box-shadow:0 0 0 2.5px var(--sb-ring,#0B2536),0 3px 8px rgba(0,0,0,.4)}
+#adit-admin-sidebar .sb-item .pu-badge::after,#adit-agent-sidebar .sb-item .pu-badge::after{content:'';position:absolute;inset:0;border-radius:inherit;border:2px solid #D9464D;opacity:0;animation:sbBadgePing 2.6s ease-out infinite;pointer-events:none}
 @keyframes sbBadgeIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes sbBadgePing{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(1.7);opacity:0}}
-@media (prefers-reduced-motion:reduce){#adit-admin-sidebar .sb-item .pu-badge,#adit-admin-sidebar .sb-item .pu-badge::after{animation:none}}
+@media (prefers-reduced-motion:reduce){#adit-admin-sidebar .sb-item .pu-badge,#adit-agent-sidebar .sb-item .pu-badge,#adit-admin-sidebar .sb-item .pu-badge::after,#adit-agent-sidebar .sb-item .pu-badge::after{animation:none}}
+#adit-agent-sidebar .sb-item{position:relative}
