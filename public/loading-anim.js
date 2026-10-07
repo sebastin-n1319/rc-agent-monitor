@@ -48,3 +48,27 @@
   }
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
+
+// Refresh loading screen: marks the app as booted once the page has loaded and the first requests have settled.
+// Until then loading-anim.css shows the logo pulse and keeps the footer hidden. A 6 second cap guarantees it never sticks.
+(function () {
+  'use strict';
+  var root = document.documentElement, inflight = 0, loaded = document.readyState === 'complete', t0 = Date.now(), timer = null, done = false;
+  function finish() { if (done) return; done = true; clearTimeout(timer); root.classList.add('app-booted'); }
+  function check() {
+    if (done) return; clearTimeout(timer);
+    if (!loaded || inflight > 0) return;
+    timer = setTimeout(function () { if (inflight === 0) finish(); }, Math.max(350, 750 - (Date.now() - t0)));
+  }
+  try {
+    var of = window.fetch;
+    if (of) window.fetch = function () {
+      inflight++;
+      var p = of.apply(this, arguments), d = function () { inflight = Math.max(0, inflight - 1); check(); };
+      p.then(d, d); return p;
+    };
+  } catch (e) { /* keep the original fetch */ }
+  if (!loaded) window.addEventListener('load', function () { loaded = true; check(); });
+  setTimeout(finish, 6000);
+  check();
+})();
