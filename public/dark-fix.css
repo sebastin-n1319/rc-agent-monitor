@@ -110,3 +110,52 @@ html.dark-mode #tab-access .card, html.dark-mode #tab-access .card:last-child, h
 html.dark-mode #roster-admin-root .rx-legend .rx-lg-code{filter:brightness(1.6) saturate(1.1)}
 html.dark-mode #roster-admin-root .rx-lg-tip{color:var(--dk-t3)!important}
 html.dark-mode #tkt-dashboard-view [style*="background:#F8FAFC"], html.dark-mode #tkt-dashboard-view [style*="background:#f8fafc"]{background:var(--dk-surface2)!important}
+
+/* ── Batch 137: second dark mode audit (contrast + bright surfaces) ───────────── */
+/* Theme toggle and small chips used a light surface token in dark mode */
+html.dark-mode #darkModeBtn{background:#0D2A3E!important;border-color:rgba(255,255,255,.16)!important;box-shadow:none!important}
+html.dark-mode #darkModeBtn:hover{background:#12364F!important;border-color:rgba(255,255,255,.28)!important}
+html.dark-mode .chip,html.dark-mode #call-volume-chip,html.dark-mode #event-count,html.dark-mode #login-count{background:var(--dk-surface3)!important;border-color:var(--dk-border)!important;color:var(--dk-t2)!important}
+html.dark-mode #syncBtn,html.dark-mode .av2-btn.av2-btn-ghost,html.dark-mode #agent-section-dashboard .av2-btn:not(.av2-btn-primary){background:var(--dk-surface3)!important;border-color:#2E4A60!important;color:var(--dk-t1)!important}
+html.dark-mode [style*="background:#E8F9F2"],html.dark-mode [style*="background: #E8F9F2"]{background:rgba(45,220,150,.14)!important;border-color:rgba(45,220,150,.35)!important}
+
+/* Sidebar labels were 40% white at 8px */
+html.dark-mode .sb-item:not(.active) .sb-label{color:rgba(205,226,240,.82)!important}
+html.dark-mode .pu-badge{background:#D2384A!important;color:#fff!important}
+
+/* Text that sat at 1:1 to 3:1 */
+html.dark-mode .ld-pbar-row b{color:var(--dk-t1)!important}
+html.dark-mode th:not([style*="color"]){color:#A9BECF}
+html.dark-mode .no-data,html.dark-mode .il-nodata,html.dark-mode #dbg-notified-ids,html.dark-mode #dbg-scan-results{color:var(--dk-t3)!important}
+html.dark-mode .tl-q-btn.na,html.dark-mode .tl-period-btn{color:#A9BECF}
+html.dark-mode #tl-wkd-manual-btn{color:#F5A24A!important}
+html.dark-mode .awv2-panel-label{color:#A5A8FF!important}
+
+/* Command palette, shortcuts and daily check-in */
+html.dark-mode .cmd-esc-key{color:rgba(190,205,220,.85)!important}
+html.dark-mode .cmd-sec-lbl{color:rgba(190,205,220,.75)!important}
+html.dark-mode .cmd-item-hint{color:rgba(190,205,220,.82)!important}
+html.dark-mode .cmd-item-arrow{color:rgba(190,205,220,.7)!important}
+html.dark-mode .wellness-sub{color:rgba(190,205,220,.85)!important}
+html.dark-mode .wellness-opt span{color:rgba(215,225,235,.95)!important}
+html.dark-mode .wellness-skip{color:rgba(190,205,220,.9)!important;border-color:rgba(255,255,255,.22)!important}
+
+/* Break detail modal is always dark, its greys were too dark for it */
+#agentBreakModal [style*="color:#334155"]{color:#9FB2C6!important}
+#agentBreakModal [style*="color:#475569"]{color:#B4C4D2!important}
+#agentBreakModal [style*="color:#64748b"]{color:#B4C4D2!important}
+
+/* Bright fills (orange, blue, green) carry dark text so the label reads at 4.5:1 or better */
+html.dark-mode .logout-btn,html.dark-mode .btn-primary,html.dark-mode .pu-btn.primary,html.dark-mode .ah-btn.ah-primary,
+html.dark-mode .ta-btn.ta-primary,html.dark-mode .cr-btn.cr-primary,html.dark-mode .bx-cta,html.dark-mode .bx-cta *,
+html.dark-mode #aw-submit-btn,html.dark-mode #tl-submit-btn,html.dark-mode #tl-edit-save-btn,html.dark-mode #tkt-view-dash,
+html.dark-mode #tl-mode-single,html.dark-mode #la-analyze-btn,html.dark-mode #addSelectedBtn,html.dark-mode #addSelectedBtn *,
+html.dark-mode .pu-state.new{color:#06202F!important}
+
+/* Light-theme greens, oranges and faint blues written inline or at 45% alpha */
+html.dark-mode [style*="color:#0A7A4A"],html.dark-mode [style*="color: #0A7A4A"]{color:#4ADE9A!important}
+html.dark-mode [style*="color:#C2470A"],html.dark-mode [style*="color: #C2470A"],html.dark-mode [style*="color:#B45309"]{color:#FBA05C!important}
+html.dark-mode [style*="color:rgba(178,219,240,.45)"],html.dark-mode .nav-tab,html.dark-mode .metric-lbl,html.dark-mode .bbn-timer span{color:rgba(190,222,240,.78)!important}
+html.dark-mode .card th,html.dark-mode #mainApp th{color:#A9BECF!important}
+html.dark-mode [style*="c2470a" i]{color:#FBA05C!important}
+html.dark-mode .tka-vb-i{color:#06202F!important}

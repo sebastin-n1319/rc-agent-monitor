@@ -19,6 +19,13 @@
     if (body) { o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(body); }
     return fetch(BASE + path, o).then(function (r) { return r.json().catch(function () { return { success: false }; }); });
   }
+  // Pop-ups that must be dealt with first (update gate, review gate, daily mood check-in, break and lock screens).
+  var BLOCKERS = '#pu-gate,#tka-gate,#wellness-modal,#agentBreakModal,#autolock-overlay,#logoutOverlay,#agent-notes-modal,#tl-edit-modal';
+  function blocked() {
+    var l = document.querySelectorAll(BLOCKERS);
+    for (var k = 0; k < l.length; k++) { var cs = getComputedStyle(l[k]); var r = l[k].getBoundingClientRect(); if (cs.display !== 'none' && cs.visibility !== 'hidden' && r.width > 0 && r.height > 0) return true; }
+    return false;
+  }
   function goLookup() {
     try { if (typeof sbAgent === 'function') sbAgent('talerts', document.getElementById('sb-agent-talerts')); else if (typeof switchAgentSection === 'function') switchAgentSection('talerts', document.getElementById('agent-tab-talerts')); } catch (e) {}
     try { if (window.TA && TA.alertsTabs) TA.alertsTabs(); } catch (e) {}
@@ -123,6 +130,14 @@
       }).catch(function () { err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false; });
     });
     window.addEventListener('resize', place);
+    // If another pop-up appears while the tour is open (for example the mood check-in), step aside until it is dismissed.
+    var hidden = false;
+    var watch = setInterval(function () {
+      if (!document.getElementById('ct-root')) { clearInterval(watch); return; }
+      var b = blocked();
+      if (b && !hidden) { hidden = true; root.style.visibility = 'hidden'; }
+      else if (!b && hidden) { hidden = false; root.style.visibility = ''; place(); }
+    }, 400);
     show();
   }
 
@@ -134,7 +149,8 @@
     T.checked = true;
     var tries = 0;
     (function wait() {
-      if (document.getElementById('pu-gate') || document.getElementById('tka-gate')) { if (tries++ < 900) return setTimeout(wait, 800); }
+      // Give the other sign-in pop-ups (the mood check-in appears about 4 seconds after sign-in) time to show up first, then wait for them to close.
+      if ((performance.now() < 9000 || blocked()) && tries++ < 1800) return setTimeout(wait, 800);
       api('/api/tours/' + ID + '/status').then(function (r) { if (r && r.success && !r.done) start(); else if (!(r && r.success)) T.checked = false; }).catch(function () { T.checked = false; });
     })();
   };

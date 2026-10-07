@@ -70,3 +70,6 @@ AI Writer is a writing helper for agents. AI Agent and Debug is an admin page fo
 
 ## Offline mode
 The app works as an installed app (PWA). Some actions are queued when the connection drops and sent when it returns.
+
+
+Dark mode: public/dark-fix.css is the repair layer for dark mode (every rule scoped to html.dark-mode) and public/dark-fix.js is a small guard that gives bright button and badge fills a dark label when white text would fail contrast, and undoes it when dark mode is switched off. Batch 137 audited every admin and agent page plus the pop-ups (command palette, shortcuts, check-in, break and note modals, toasts) for text under 4.5:1 and bright light surfaces, and fixed the theme toggle, chips, sidebar labels, health numbers, table headers, orange and blue buttons, and the check-in and palette text. The Client lookup tour now waits for the daily mood check-in and the other sign-in pop-ups to close, and steps aside if one appears while it is open.
