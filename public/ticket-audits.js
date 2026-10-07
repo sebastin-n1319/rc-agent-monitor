@@ -430,8 +430,8 @@
       var own = r.agent_email && me && r.agent_email === me;
       var form = h('div', { class: 'tka-rv-form' });
       function openForm(kind) {
-        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'What did the agent miss? The agent sees this.' : kind === 'ignored' ? 'Why skip it? For example: set by mistake and moved back to Open' : 'Optional note', 'aria-label': 'Comments' });
-        var who = h('input', { class: 'tka-input', list: 'tka-people', placeholder: 'Moved to (person)', value: r.to_agent || '', 'aria-label': 'Moved to' });
+        var c = h('textarea', { class: 'tka-note-in', rows: '2', maxlength: '800', placeholder: kind === 'invalid' ? 'Required: what did the agent miss? The agent sees this.' : kind === 'ignored' ? 'Required: why skip it? For example: set by mistake and moved back to Open' : 'Required: what did you check, and where did the ticket go?', 'aria-label': 'Comments (required)', 'aria-required': 'true' });
+        var who = h('input', { class: 'tka-input', list: 'tka-people', placeholder: 'Required: moved to (person)', value: r.to_agent || '', 'aria-label': 'Moved to (required)', 'aria-required': 'true' });
         var dl = document.getElementById('tka-people') || h('datalist', { id: 'tka-people' });
         if (!dl.parentNode) document.body.appendChild(dl);
         var t = null;
@@ -443,7 +443,10 @@
           return h('label', { class: 'tka-radio', for: sevName + '-' + o[0] }, [rb, h('span', null, [h('b', { text: o[1] }), h('span', { class: 'tka-when', text: ' ' + o[2] })])]);
         }));
         var save = btn(kind === 'invalid' ? 'Choose Fatal or Feedback' : kind === 'ignored' ? 'Skip this one' : 'Save as approved', kind === 'invalid' ? 'danger' : 'primary', function () {
+          function need(el, msg) { el.classList.add('tka-bad'); try { el.focus(); } catch (e) {} toast(msg, 'error'); el.addEventListener('input', function () { el.classList.remove('tka-bad'); }, { once: true }); return false; }
           if (kind === 'invalid' && !sev.v) return toast('Choose Fatal (strike) or Feedback (no strike)', 'error');
+          if (kind === 'good' && who.value.trim().length < 2) return need(who, 'Say who the ticket was moved to');
+          if (c.value.trim().length < 5) return need(c, kind === 'invalid' ? 'Write what the agent missed' : kind === 'ignored' ? 'Say why you are skipping this ticket' : 'Write a short comment on what you checked and where it went');
           var label = save.textContent;
           busy(save, true, 'Saving...');
           api('/api/review/' + r.id + '/verdict', { verdict: kind, severity: sev.v, comment: c.value, toAgent: who.value }).then(function (x) {
@@ -524,6 +527,12 @@
         if (open && !anBox.dataset.loaded) loadAn(false);
         if (open && byUser) revealEl(anShell, { whole: false });
       }
+      var priorBox = null;
+      if (r.prior && r.prior.length) {
+        var pOpen = false, pList = h('div', { class: 'tka-rounds-box' }, [h('small', { text: 'EARLIER ROUNDS OF THIS TICKET, OLDEST FIRST' }), roundsList(r.prior, 0)]); pList.hidden = true;
+        var pBtn = h('button', { type: 'button', class: 'tka-rework-tg warn', 'aria-expanded': 'false', onclick: function (ev) { ev.stopPropagation(); pOpen = !pOpen; pBtn.setAttribute('aria-expanded', pOpen ? 'true' : 'false'); pList.hidden = !pOpen; } }, [h('span', { text: (r.reworks ? 'Came back after rework (reworked ' + r.reworks + (r.reworks === 1 ? ' time' : ' times') + ')' : 'Reviewed before (' + (r.prior.length + 1) + ' rounds)') + ', see earlier rounds' }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })]);
+        priorBox = h('div', { class: 'tka-rounds' }, [pBtn, pList]);
+      }
       var dealBox = h('div', { class: 'tka-dp' });
       var shell = h('div', { class: 'tka-dp-shell' }, [h('div', { class: 'tka-dp-clip' }, [dealBox])]);
       shell.inert = true;
@@ -572,7 +581,7 @@
             h('span', { class: 'tka-lr-st' }, [pill(r.source === 'bypass' ? 'Skipped review' : 'Left status', r.source === 'bypass' ? 'sev-high' : 'sev-medium')]),
             h('span', { class: 'tka-lr-to', title: destTxt || null, text: destTxt || 'Not recorded' }),
             h('div', { class: 'tka-lr-act' }, [anBtn, dealBtn, vrow])]),
-          showDeal ? lineHost : null, anShell, shell, form].filter(Boolean));
+          showDeal ? lineHost : null, priorBox, anShell, shell, form].filter(Boolean));
         if (showDeal && TA.dealOpen && TA.dealOpen[r.id]) setTimeout(toggleDeal, 0);
         if (showDeal && TA.anOn && TA.anOn[r.id]) setTimeout(function () { toggleAn(true); }, 0);
         if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp-shell, .tka-an-shell, .tka-deal')) return; toggleAn(null, true); });
@@ -586,6 +595,7 @@
             r.to_team || r.to_agent ? h('span', { class: 'tka-when', text: 'Now with ' + [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') }) : null,
             r.breach_count ? h('span', { class: 'tka-when', text: 'Escalated ' + r.breach_count + 'x' }) : null]),
           showDeal ? lineHost : null,
+          priorBox,
           (dealBtn || vrow) ? h('div', { class: 'tka-acts' }, [anBtn, dealBtn, vrow]) : null,
           anShell, shell,
           form]),
@@ -737,19 +747,26 @@
         if (agent.options.length === 1) j.agents.forEach(function (a) { var op = h('option', { value: a.email, text: a.name || a.email.split('@')[0] }); if (a.email === f.agent) op.selected = true; agent.appendChild(op); });
         if (!j.rows.length) { out.replaceChildren(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No reviews match' }), h('p', { text: 'Try a wider date range or clear the search.' })])); return; }
         var tbl = h('table', { class: 'tka-cov tka-hist' }, [h('thead', null, [h('tr', null, ['Ticket', 'Agent', 'Verdict', 'Moved to', 'Reviewer', 'When', 'Comment'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]),
-          h('tbody', null, j.rows.map(function (r) {
+          h('tbody', null, j.rows.reduce(function (acc, r) {
             var noV = !r.verdict;
             var v = r.verdict ? verdictPill(r) : pill(r.state === 'waiting' ? 'Waiting for review' : r.state === 'moved' ? 'Moved, verdict missing' : 'No verdict recorded', 'sev-medium');
             var none = function (t) { return h('span', { class: 'tka-when', text: t }); };
-            return h('tr', null, [
-              h('td', null, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { text: '#' + r.ticket_number }), h('div', { class: 'tka-when', text: (r.subject || '').slice(0, 60) })]),
+            var many = r.rounds && r.rounds.length > 1, open = false, extra = null, tg = null;
+            var tr = h('tr', null, [
+              h('td', null, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { text: '#' + r.ticket_number }), h('div', { class: 'tka-when', text: (r.subject || '').slice(0, 60) }),
+                many ? (tg = h('button', { type: 'button', class: 'tka-rework-tg', 'aria-expanded': 'false', onclick: function () {
+                  open = !open; tg.setAttribute('aria-expanded', open ? 'true' : 'false'); extra.hidden = !open;
+                } }, [h('span', { text: reworkLabel(r.reworks, r.rounds.length) }), h('span', { class: 'tka-chev', 'aria-hidden': 'true', text: '\u25BE' })])) : null]),
               h('td', { text: nameOf(r.agent_email, r.agent_name) }),
               h('td', null, [v, noV && r.state !== 'waiting' ? h('div', { class: 'tka-when', text: 'Record it under Pending review' }) : null, r.source === 'bypass' ? h('div', { class: 'tka-when', text: 'Skipped review' }) : null, r.voided ? h('div', { class: 'tka-when', text: 'Strike removed' }) : null]),
               h('td', null, [[r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') || none(r.state === 'waiting' ? 'Not moved yet' : 'Not recorded')]),
               h('td', null, [r.reviewer ? r.reviewer.split('@')[0] : none('Not reviewed yet')]),
               h('td', { text: when(r.reviewed_at || r.left_at || r.entered_at) }),
               h('td', { class: 'tka-hist-c' }, [r.comment || none(noV ? 'Added when reviewed' : 'No comment')])]);
-          }))]);
+            acc.push(tr);
+            if (many) { extra = h('tr', { class: 'tka-rounds-tr' }, [h('td', { colspan: '7' }, [h('div', { class: 'tka-rounds-box' }, [h('small', { text: 'ALL ROUNDS OF THIS TICKET, OLDEST FIRST' }), roundsList(r.rounds, r.id)])])]); extra.hidden = true; acc.push(extra); }
+            return acc;
+          }, []))]);
         var pages = h('div', { class: 'tka-toolbar' }, [h('span', { class: 'tka-when', text: (f.offset + 1) + ' to ' + (f.offset + j.rows.length) + ' of ' + j.total }),
           f.offset > 0 ? btn('Previous', 'ghost sm', function () { f.offset = Math.max(0, f.offset - 50); load(); }) : null,
           f.offset + j.rows.length < j.total ? btn('Next', 'ghost sm', function () { f.offset += 50; load(); }) : null]);
@@ -1102,6 +1119,19 @@
   var CALL_TOPICS = [['Phone issue', 'phone calls not working'], ['EHR not syncing', 'ehr not syncing'], ['Online scheduling', 'online scheduling double booking'], ['Reminders and texts', 'reminders text messages'], ['Billing', 'billing invoice charge'], ['Login or access', 'cannot log in password'], ['Email campaign', 'email campaign'], ['Reviews', 'reviews reputation'], ['Forms', 'patient forms']];
 
   // A loading card that tells the person what is being read, so a slow lookup never looks stuck.
+  // Earlier review rounds of a ticket that was sent back for rework and came back to review.
+  function roundsList(rounds, currentId) {
+    var table = h('div', { class: 'tka-rounds-list' }, rounds.map(function (q, i) {
+      var v = q.verdict ? verdictPill(q) : pill(q.state === 'waiting' ? 'Waiting for review' : q.state === 'moved' ? 'Moved, verdict missing' : 'No verdict', 'sev-medium');
+      var dest = [q.to_agent, q.to_team ? '(' + q.to_team + ')' : ''].filter(Boolean).join(' ');
+      return h('div', { class: 'tka-rounds-row' + (q.id === currentId ? ' now' : '') }, [
+        h('b', { class: 'tka-rounds-n', text: 'Round ' + (i + 1) }), v,
+        h('span', { class: 'tka-when', text: [q.reviewer ? 'by ' + q.reviewer.split('@')[0] : '', dest ? 'to ' + dest : '', when(q.reviewed_at || q.left_at || q.entered_at)].filter(Boolean).join(' · ') }),
+        q.comment ? h('p', { class: 'tka-rounds-c', text: q.comment }) : null]);
+    }));
+    return table;
+  }
+  function reworkLabel(n, rounds) { return n ? 'Reworked ' + n + (n === 1 ? ' time' : ' times') : rounds + ' rounds'; }
   // Bring an element into view only when it is not already comfortably visible. Instant, so a page that is still
   // growing (loaders swapping for content) cannot cancel or overshoot the scroll the way a smooth scroll does.
   function revealEl(el, opts) {

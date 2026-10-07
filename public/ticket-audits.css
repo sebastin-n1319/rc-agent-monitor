@@ -759,3 +759,20 @@ html.dark-mode .tka-an-ck li.bad i{background:rgba(238,92,98,.25);color:#ff9aa0}
 .tka-an-l,.tka-an-r{display:flex;flex-direction:column;gap:10px;min-width:0}
 .tka-an-r .tka-an-tl{max-height:520px}
 @media (max-width:1000px){.tka-an-cols{grid-template-columns:1fr}}
+
+/* Batch 142: required fields and rework rounds */
+.tka-bad{border-color:#d94646!important;box-shadow:0 0 0 3px rgba(217,70,70,.18)!important}
+.tka-rework-tg{display:inline-flex;align-items:center;gap:6px;margin-top:5px;padding:2px 9px;border:1px solid var(--tka-border);border-radius:20px;background:var(--tka-surface2,#f4f8fb);color:var(--tka-t2);font:500 11.5px 'Poppins',sans-serif;cursor:pointer}
+.tka-rework-tg.warn{border-color:#f0c58a;background:#fdf1dc;color:#8a5200;margin:8px 0 0}
+.tka-rework-tg:hover{filter:brightness(.97)}
+.tka-rework-tg[aria-expanded="true"] .tka-chev{transform:rotate(180deg)}
+.tka-rounds{margin-top:2px}
+.tka-rounds-box{margin-top:8px;border:1px solid var(--tka-border);border-radius:12px;padding:10px 12px;background:var(--tka-surface2,#f4f8fb);display:flex;flex-direction:column;gap:8px}
+.tka-rounds-box[hidden],.tka-rounds-tr[hidden]{display:none}
+.tka-rounds-box small{font-size:10.5px;letter-spacing:.07em;color:var(--tka-t3);font-weight:600}
+.tka-rounds-list{display:flex;flex-direction:column;gap:8px}
+.tka-rounds-row{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:6px 8px;border-radius:8px;background:var(--tka-surface,#fff);border:1px solid var(--tka-border)}
+.tka-rounds-row.now{border-color:var(--tka-teal)}
+.tka-rounds-n{font-size:12px;color:var(--tka-t1)}
+.tka-rounds-c{flex-basis:100%;margin:0;font-size:12.5px;line-height:1.45;color:var(--tka-t2)}
+html.dark-mode .tka-rework-tg.warn{background:rgba(245,162,74,.15);border-color:rgba(245,162,74,.4);color:#f7b867}
