@@ -239,8 +239,6 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 
 /* Batch 109: deal context on waiting tiles */
 .tka-clickable{cursor:pointer}
-.tka-dp{margin-top:10px;display:grid;gap:10px}
-.tka-dp[hidden]{display:none}
 .tka-dp-sec{padding:10px 12px;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface)}
 .tka-dp-sec h4{margin:0 0 6px;font:600 12px 'Poppins',sans-serif;text-transform:uppercase;letter-spacing:.05em;color:var(--tka-t3)}
 .tka-dp-sec p{margin:4px 0;font-size:13px;color:var(--tka-t2);line-height:1.45}
@@ -251,8 +249,8 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-dp-row span:nth-child(2){flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
 
 /* Batch 110: support journey timeline */
-.tka-jr-wrap{margin:6px 0;overflow-x:auto}
-.tka-jr{width:100%;min-width:420px;height:auto;display:block}
+.tka-jr-wrap{position:relative;margin:4px 0 2px;min-height:116px}
+.tka-jr{display:block;overflow:visible}
 .tka-jr-lane{stroke:var(--tka-border);stroke-width:1}
 .tka-jr-lab,.tka-jr-ax{fill:var(--tka-t3);font:500 10.5px 'Poppins',sans-serif}
 .tka-jr-hl{fill:var(--tka-t1);font:600 10.5px 'Poppins',sans-serif}
@@ -341,16 +339,15 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-row.tka-clickable{transition:box-shadow .18s ease,border-color .18s ease}
 .tka-row.tka-clickable:hover{box-shadow:0 4px 14px rgba(7,43,64,.09)}
 .tka-row.tka-in{animation:tkaIn .32s ease both}
-.tka-dp:not([hidden]){animation:tkaDown .26s ease both}
-.tka-dp .tka-dp-sec{animation:tkaUp .3s ease both;animation-delay:calc(var(--i,0) * 45ms + 60ms)}
 .tka-rv-form:not(:empty){animation:tkaDown .22s ease both}
-.tka-jr-pt .tka-jr-mk{transform-box:fill-box;transform-origin:center;animation:tkaPop .35s ease both}
+.tka-jr-pt .tka-jr-mk{transform-box:fill-box;transform-origin:center}
+.tka-jr.anim .tka-jr-mk{animation:tkaPop .35s cubic-bezier(.2,.8,.3,1.2) both;animation-delay:var(--d,0ms)}
 .tka-jr-pt:hover .tka-jr-mk{transform:scale(1.25);transition:transform .12s ease}
 @keyframes tkaIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes tkaDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 @keyframes tkaUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 @keyframes tkaPop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){.tka-row.tka-in,.tka-dp:not([hidden]),.tka-dp .tka-dp-sec,.tka-rv-form:not(:empty),.tka-jr-pt .tka-jr-mk{animation:none}.tka-btn,.tka-vb,.tka-chev,.tka-tab,.tka-rv .tka-tile{transition:none}}
+@media (prefers-reduced-motion:reduce){.tka-row.tka-in,.tka-rv-form:not(:empty),.tka-jr.anim .tka-jr-mk{animation:none}.tka-btn,.tka-vb,.tka-chev,.tka-tab,.tka-rv .tka-tile{transition:none}}
 
 /* Batch 118: message to the agent */
 .tka-msg{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--tka-border);border-left:3px solid var(--tka-teal);border-radius:10px;background:var(--tka-surface2);margin-top:8px}
@@ -399,8 +396,117 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-set .tka-inline .tka-input{flex:1 1 200px}
 
 /* Batch 122: use the full page width */
-.tka-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr));gap:12px;align-items:start}
-.tka-cards>.tka-row:has(.tka-dp:not([hidden])),.tka-cards>.tka-row:has(.tka-rv-form:not(:empty)){grid-column:1/-1}
-.tka-dp{grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));align-items:start}
-.tka-dp>.tka-dp-sec:has(.tka-jr-wrap),.tka-dp>p,.tka-dp>.tka-dp-note{grid-column:1/-1}
+.tka-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,520px),1fr));gap:12px;align-items:start}
+.tka-cards>.tka-row.deal-open,.tka-cards>.tka-row:has(.tka-rv-form:not(:empty)){grid-column:1/-1}
 .tka-head p{max-width:none}
+
+/* Batch 123: Transfer review redesign (cards, deal panel, journey) */
+.tka-sech{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin:22px 0 10px}
+.tka-sech h3{margin:0;font-size:15px;font-weight:600;color:var(--tka-t1)}
+.tka-sech .tka-hint{flex:1 1 100%;margin:0}
+.tka-sech-n{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 7px;border-radius:999px;background:var(--tka-surface2);border:1px solid var(--tka-border);font:600 12px/1 'Poppins',sans-serif;color:var(--tka-t2)}
+.tka-sech-n.hot{background:color-mix(in srgb,var(--tka-red) 12%,transparent);border-color:transparent;color:var(--tka-red)}
+.tka-sech-n.warn{background:color-mix(in srgb,var(--tka-amber) 14%,transparent);border-color:transparent;color:var(--tka-amber)}
+.tka-cards>.tka-row{padding:14px 16px 12px;margin:0}
+.tka-cards .tka-row-main{display:flex;flex-direction:column}
+.tka-cards .tka-acts{margin-top:auto;padding-top:10px}
+.tka-row-top{flex-wrap:nowrap;align-items:baseline;min-width:0}
+.tka-row-top .tka-num{flex:none}
+.tka-row-top .tka-sub{min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.tka-meta{row-gap:6px}
+.tka-row.deal-open{border-color:color-mix(in srgb,var(--tka-teal) 35%,var(--tka-border));box-shadow:0 6px 22px rgba(7,43,64,.08)}
+
+/* account strip: one row on wide cards, wraps on narrow ones */
+.tka-deal{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:10px 14px;margin:10px 0 0;border-radius:12px}
+.tka-deal-main{display:flex;flex-direction:column;gap:2px;padding:0;flex:1 1 260px;min-width:0}
+.tka-deal-name{font-size:14.5px;font-weight:600;line-height:1.4;color:var(--tka-t1);overflow-wrap:anywhere}
+.tka-deal-dl{font-size:12.5px;line-height:1.4;color:var(--tka-t3);overflow-wrap:anywhere}
+.tka-deal-facts{flex:0 1 auto;padding:0;border:0;background:none;gap:8px 22px}
+.tka-df-av.sm{width:20px;height:20px;font-size:9px}
+
+/* deal panel: smooth expand */
+.tka-dp-shell{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .3s cubic-bezier(.2,.7,.2,1),opacity .22s ease}
+.tka-dp-shell.open{grid-template-rows:1fr;opacity:1}
+.tka-dp-clip{min-height:0;overflow:hidden}
+.tka-dp{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+.tka-dp-wait{margin:0}
+.tka-skel{border-radius:10px;background:linear-gradient(90deg,var(--tka-surface2) 0%,color-mix(in srgb,var(--tka-border) 60%,var(--tka-surface2)) 50%,var(--tka-surface2) 100%);background-size:200% 100%;animation:tkaShim 1.2s linear infinite}
+@keyframes tkaShim{from{background-position:200% 0}to{background-position:-200% 0}}
+
+/* summary numbers */
+.tka-dp-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:8px}
+.tka-st{display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:10px;border:1px solid var(--tka-border);background:var(--tka-surface2);min-width:0;position:relative;overflow:hidden}
+.tka-st::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--tka-border)}
+.tka-st.good::before{background:var(--tka-green)}
+.tka-st.warn::before{background:var(--tka-amber)}
+.tka-st.bad::before{background:var(--tka-red)}
+.tka-st-v{font:600 19px/1.25 'Poppins',sans-serif;color:var(--tka-t1);overflow-wrap:anywhere}
+.tka-st.bad .tka-st-v{color:var(--tka-red)}
+.tka-st-s{font-size:11.5px;color:var(--tka-t3);line-height:1.35}
+
+/* two column body: journey and issues on the left, open work and people on the right */
+.tka-dp-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:12px;align-items:start}
+.tka-dp-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:1100px){.tka-dp-grid{grid-template-columns:minmax(0,1fr)}}
+.tka-dp-sec{padding:12px 14px;border-radius:12px;min-width:0}
+.tka-dp-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.tka-dp-h h4{margin:0}
+.tka-dp-cnt{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--tka-surface2);font:600 11px/1 'Poppins',sans-serif;color:var(--tka-t2)}
+.tka-dp-cnt.bad{background:color-mix(in srgb,var(--tka-red) 12%,transparent);color:var(--tka-red)}
+.tka-dp-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:4px 10px;padding:7px 0;border-top:1px solid var(--tka-border);font-size:13px}
+.tka-dp-row:first-of-type{border-top:0}
+.tka-dp-row span:nth-child(2){flex:none}
+.tka-dp-row a{font-weight:600;color:var(--tka-teal);text-decoration:none}
+.tka-dp-row a:hover{text-decoration:underline}
+.tka-dp-subj{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tka-t1)}
+.tka-dp-row.wide{grid-template-columns:auto minmax(0,1fr) auto minmax(0,240px)}
+.tka-dp-row.wide .tka-when{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
+@media (max-width:760px){.tka-dp-row.wide{grid-template-columns:auto minmax(0,1fr) auto}.tka-dp-row.wide .tka-when{grid-column:2/-1;text-align:left}}
+.tka-dp-list{max-height:300px;overflow:auto;margin-top:4px;padding-right:4px}
+
+/* issue history: masonry cards, no empty gaps */
+.tka-iss{columns:2 300px;column-gap:10px}
+.tka-iss-i{break-inside:avoid;display:flex;flex-direction:column;gap:4px;margin:0 0 10px;padding:10px 12px;border:1px solid var(--tka-border);border-radius:10px;background:var(--tka-surface2)}
+.tka-iss-i p{margin:0!important}
+.tka-iss-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tka-iss-n{margin-left:auto;font:600 11.5px 'Poppins',sans-serif;color:var(--tka-t2)}
+.tka-dp-cause{margin-top:4px!important;font-size:12.5px!important}
+
+/* chips with counts */
+.tka-mchips{display:flex;flex-wrap:wrap;gap:6px}
+.tka-mod{display:inline-flex;align-items:center;gap:6px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--tka-teal-s);color:var(--tka-teal);font:500 12px/1.4 'Poppins',sans-serif}
+.tka-mod b{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--tka-surface);color:var(--tka-t1);font-size:11px;font-weight:600}
+.tka-mod:not(:has(b)){padding-right:10px}
+.tka-mod:has(.tka-df-av){padding-left:3px;background:var(--tka-surface2);color:var(--tka-t1);border:1px solid var(--tka-border)}
+
+/* journey chart */
+.tka-jr-key{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:12px;color:var(--tka-t2)}
+.tka-jr-key>span{display:inline-flex;align-items:center;gap:6px}
+.tka-jr-key i{display:inline-block;width:9px;height:9px}
+.tka-jr-key i.o{background:var(--tka-red);border-radius:2px}
+.tka-jr-key i.hd{background:var(--tka-amber);transform:rotate(45deg) scale(.85)}
+.tka-jr-key i.c{background:var(--tka-green);border-radius:50%}
+.tka-jr-key .tka-when{margin-left:auto}
+.tka-jr-lab,.tka-jr-ax{fill:var(--tka-t3);font:500 11px 'Poppins',sans-serif}
+.tka-jr-ax.today{fill:var(--tka-teal);font-weight:600}
+.tka-jr-hl{fill:var(--tka-t1);font:600 11px 'Poppins',sans-serif;paint-order:stroke;stroke:var(--tka-surface);stroke-width:3px;stroke-linejoin:round}
+.tka-jr-mk{stroke:var(--tka-surface);stroke-width:1.5}
+.tka-jr-pt:focus-visible{outline:none}
+.tka-jr-pt:focus-visible .tka-jr-mk{stroke:var(--tka-teal);stroke-width:2.5}
+.tka-jr-tip{position:absolute;z-index:3;left:0;top:0;transform:translate(-50%,calc(-100% - 4px));display:flex;flex-direction:column;gap:2px;max-width:240px;padding:8px 10px;border-radius:10px;background:var(--tka-surface);border:1px solid var(--tka-border);box-shadow:0 8px 24px rgba(7,43,64,.16);font-size:12px;color:var(--tka-t1);pointer-events:none;opacity:0;transition:opacity .14s ease,transform .14s ease}
+.tka-jr-tip.on{opacity:1;transform:translate(-50%,calc(-100% - 8px))}
+.tka-jr-tip b{font-size:12px}
+.tka-jr-tip span{overflow-wrap:anywhere}
+.tka-dp-det summary{font-size:12.5px}
+.tka-dp-det[open] .tka-dp-list{animation:tkaDown .2s ease both}
+.tka-dp .tka-st,.tka-dp .tka-dp-sec{animation:tkaUp .32s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 30ms + 40ms)}
+@media (prefers-reduced-motion:reduce){.tka-dp-shell{transition:none}.tka-skel,.tka-dp .tka-st,.tka-dp .tka-dp-sec,.tka-dp-det[open] .tka-dp-list{animation:none}.tka-jr-tip{transition:none}}
+.tka-cards .tka-row-main{container-type:inline-size}
+@container (max-width:760px){
+.tka-deal{gap:8px 18px;padding:9px 12px}
+.tka-deal-facts{gap:6px 16px}
+.tka-deal-facts .tka-df{flex-direction:row;align-items:center;gap:6px}
+.tka-deal-facts .tka-df-p .tka-df-t{flex-direction:row;align-items:baseline;gap:6px}
+.tka-deal-name{font-size:14px}
+}
+.tka-dp-col:last-child .tka-dp-subj{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
