@@ -253,3 +253,14 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-dp-item:first-of-type{border-top:0}
 .tka-dp-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:5px 0;border-top:1px solid var(--tka-border);font-size:13px}
 .tka-dp-row span:nth-child(2){flex:1 1 220px;min-width:0;overflow-wrap:anywhere}
+
+/* Batch 110: support journey timeline */
+.tka-jr-wrap{margin:6px 0;overflow-x:auto}
+.tka-jr{width:100%;min-width:420px;height:auto;display:block}
+.tka-jr-lane{stroke:var(--tka-border);stroke-width:1}
+.tka-jr-lab,.tka-jr-ax{fill:var(--tka-t3);font:500 10.5px 'Poppins',sans-serif}
+.tka-jr-hl{fill:var(--tka-t1);font:600 10.5px 'Poppins',sans-serif}
+.tka-jr-mk{stroke:var(--tka-surface);stroke-width:2}
+.tka-dp-det{margin-top:6px}
+.tka-dp-det summary{cursor:pointer;font:500 13px 'Poppins',sans-serif;color:var(--tka-teal);padding:4px 0}
+.tka-dp-det summary:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}

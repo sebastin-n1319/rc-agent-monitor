@@ -195,7 +195,7 @@
     // Deal context: quick CRM line on the tile, full history when the tile is opened.
     function dealLine(d) {
       if (!d) return null;
-      var items = [['Account', d.account], ['Deal', d.deal], ['Stage', d.stage], ['CSM', d.csm], ['Escalation', d.escalation]].filter(function (x) { return x[1]; });
+      var items = [['Account', d.account], ['Deal', d.deal], ['Stage', d.stage], ['CSM', d.csm], ['OB', d.ob], ['Escalation', d.escalation]].filter(function (x) { return x[1]; });
       if (!items.length) return null;
       return h('dl', { class: 'tka-deal' }, items.map(function (x) {
         var hot = x[0] === 'Escalation' && /^escalated/i.test(x[1]);
@@ -205,6 +205,48 @@
     function dpSec(title, kids) { return h('section', { class: 'tka-dp-sec' }, [h('h4', { text: title })].concat(kids.filter(Boolean))); }
     function dpNote(t) { return h('p', { class: 'tka-when', text: t }); }
     function stateCls(s) { return s === 'open' ? 'sev-high' : s === 'on hold' ? 'sev-medium' : 'st-approved'; }
+    // Support journey: a timeline with one mark per ticket, labels only on what is still live, and the full list in a dropdown.
+    function svgEl(tag, attrs) { var e = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); }); return e; }
+    function journeySec(d) {
+      var rows = (d.journey || []).filter(function (t) { return t.created && !isNaN(Date.parse(t.created)); });
+      var title = 'Support journey: ' + d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed';
+      if (!rows.length) return dpSec(title, [dpNote('No other tickets on this deal.')]);
+      var now = Date.now(), t0 = Math.min.apply(null, rows.map(function (t) { return Date.parse(t.created); }));
+      t0 = Math.min(t0, now - 30 * 864e5);
+      var W = 640, H = 128, L = 62, R = 14, lanes = { open: 24, 'on hold': 56, closed: 88 };
+      var x = function (ms) { return L + (W - L - R) * ((ms - t0) / (now - t0)); };
+      var COL = { open: 'var(--tka-red)', 'on hold': 'var(--tka-amber)', closed: 'var(--tka-green)' };
+      var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', class: 'tka-jr', 'aria-label': title });
+      Object.keys(lanes).forEach(function (k) {
+        svg.appendChild(svgEl('line', { x1: L, x2: W - R, y1: lanes[k], y2: lanes[k], class: 'tka-jr-lane' }));
+        var tx = svgEl('text', { x: L - 8, y: lanes[k] + 4, 'text-anchor': 'end', class: 'tka-jr-lab' }); tx.textContent = k === 'on hold' ? 'On hold' : k.charAt(0).toUpperCase() + k.slice(1); svg.appendChild(tx);
+      });
+      [t0, now].forEach(function (ms, n) {
+        var tx = svgEl('text', { x: n ? W - R : L, y: H - 6, 'text-anchor': n ? 'end' : 'start', class: 'tka-jr-ax' });
+        tx.textContent = new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: n ? undefined : '2-digit' }); svg.appendChild(tx);
+      });
+      var placed = {};
+      rows.slice().sort(function (a, b) { return Date.parse(a.created) - Date.parse(b.created); }).forEach(function (t) {
+        var cx = x(Date.parse(t.created)), cy = lanes[t.state] || lanes.closed, live = t.state !== 'closed';
+        var g = svgEl('g', { class: 'tka-jr-pt' });
+        var tip = svgEl('title'); tip.textContent = '#' + t.number + ' ' + t.subject + ' (' + t.status + ', ' + when(t.created) + (t.agent ? ', ' + t.agent : '') + ')'; g.appendChild(tip);
+        // closed: circle, on hold: diamond, open: square, so state never rests on colour alone
+        var m = t.state === 'closed' ? svgEl('circle', { cx: cx, cy: cy, r: 5 })
+          : t.state === 'on hold' ? svgEl('rect', { x: cx - 5, y: cy - 5, width: 10, height: 10, transform: 'rotate(45 ' + cx + ' ' + cy + ')' })
+          : svgEl('rect', { x: cx - 5, y: cy - 5, width: 10, height: 10, rx: 1.5 });
+        m.setAttribute('fill', COL[t.state] || COL.closed); m.setAttribute('class', 'tka-jr-mk'); g.appendChild(m);
+        if (live) {
+          var key = Math.round(cx / 46), lvl = (placed[key] = (placed[key] || 0) + 1) - 1;
+          var lb = svgEl('text', { x: cx, y: cy - 10 - lvl * 11, 'text-anchor': cx > W - 60 ? 'end' : 'middle', class: 'tka-jr-hl' }); lb.textContent = '#' + t.number; g.appendChild(lb);
+        }
+        svg.appendChild(g);
+      });
+      var det = h('details', { class: 'tka-dp-det' }, [h('summary', { text: 'All tickets (' + d.ticketsShown + ')' })].concat(d.journey.map(function (t) {
+        return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + t.number }), h('span', { text: t.subject }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(' / ') })]);
+      })).concat(d.ticketsShown >= 25 ? [dpNote('Showing the latest 25.')] : []));
+      var legend = h('div', { class: 'tka-inline' }, [pill('Open ' + d.counts.open, 'sev-high'), pill('On hold ' + d.counts['on hold'], 'sev-medium'), pill('Closed ' + d.counts.closed, 'st-approved'), h('span', { class: 'tka-when', text: 'Labels show only tickets still open or on hold. Hover a mark for details.' })]);
+      return dpSec(title, [legend, h('div', { class: 'tka-jr-wrap' }, [svg]), det]);
+    }
     function renderDeal(box, d) {
       if (!d.available) { box.replaceChildren(dpNote(d.note || 'No deal context for this ticket.')); return; }
       var an = d.analysis || {}, kids = [];
@@ -216,9 +258,7 @@
       kids.push(dpSec('Previous satisfaction', [an.mood ? h('div', { class: 'tka-dp-item' }, [h('div', { class: 'tka-inline' }, [pill(an.mood.level || 'unknown', /happy|positive|good/i.test(an.mood.level) ? 'st-approved' : /unhappy|negative|angry|frustrated|upset/i.test(an.mood.level) ? 'sev-high' : 'sev-medium'), an.mood.asOf ? h('span', { class: 'tka-when', text: 'as of ' + an.mood.asOf }) : null]), h('p', { text: an.mood.why })]) : dpNote('No mood read on record.'),
         h('div', { class: 'tka-inline' }, [pill('CSAT ' + (d.csat.pct == null ? 'no surveys' : d.csat.pct + '%'), d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'st-approved' : 'sev-medium'), d.csat.total ? h('span', { class: 'tka-when', text: d.csat.good + ' good, ' + d.csat.bad + ' bad survey' + (d.csat.total === 1 ? '' : 's') }) : null])]));
       kids.push(dpSec('Usually reported modules', (an.modules || []).length ? [h('div', { class: 'tka-inline' }, an.modules.map(function (m) { return pill(m.name + (m.n > 1 ? ' x' + m.n : ''), 'dest'); }))] : [dpNote('No module pattern on record.')]));
-      kids.push(dpSec('Support journey (' + d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed)', (d.journey || []).length ? d.journey.map(function (t) {
-        return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + t.number }), h('span', { text: t.subject }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(' / ') })]);
-      }).concat(d.ticketsShown >= 25 ? [dpNote('Showing the latest 25.')] : []) : [dpNote('No other tickets on this deal.')]));
+      kids.push(journeySec(d));
       kids.push(dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-inline' }, d.owners.map(function (o) { return pill(o.name + ' (' + o.tickets + ')', ''); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')]));
       kids.push(dpSec('FCR and CSAT for this deal', [h('div', { class: 'tka-inline' }, [pill('FCR ' + (d.fcr.pct == null ? 'no data' : d.fcr.pct + '%'), d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'st-approved' : 'sev-medium'), d.fcr.closed ? h('span', { class: 'tka-when', text: d.fcr.achieved + ' of ' + d.fcr.closed + ' closed tickets solved first contact' }) : null]),
         h('div', { class: 'tka-inline' }, [pill('CSAT ' + (d.csat.pct == null ? 'no surveys' : d.csat.pct + '%'), d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'st-approved' : 'sev-medium')])]));
@@ -273,20 +313,21 @@
           api('/api/review/' + r.id + '/deal').then(function (x) { if (!x.success) { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not load deal history' })); return; } renderDeal(dealBox, x); });
         }
       }
-      if (waiting) dealBtn = btn('Deal history', 'ghost sm', function (ev) { ev.stopPropagation(); toggleDeal(); }, { 'aria-expanded': 'false' });
-      var art = h('article', { class: 'tka-row' + (waiting && r.minutes >= buf ? ' hot' : '') + (waiting ? ' tka-clickable' : '') }, [
+      var showDeal = waiting || r.state === 'moved';
+      if (showDeal) dealBtn = btn('Deal history', 'ghost sm', function (ev) { ev.stopPropagation(); toggleDeal(); }, { 'aria-expanded': 'false' });
+      var art = h('article', { class: 'tka-row' + (waiting && r.minutes >= buf ? ' hot' : '') + (showDeal ? ' tka-clickable' : '') }, [
         h('div', { class: 'tka-row-main' }, [
           h('div', { class: 'tka-row-top' }, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { class: 'tka-num', text: '#' + r.ticket_number }), h('span', { class: 'tka-sub', text: r.subject || '' })]),
           h('div', { class: 'tka-meta' }, [h('span', { text: nameOf(r.agent_email, r.agent_name) }), r.channel ? pill(r.channel, 'dest') : null,
             waiting ? pill('Waiting ' + mmLabel(r.minutes), cls) : pill(r.source === 'bypass' ? 'Skipped review' : 'Left review status', r.source === 'bypass' ? 'sev-high' : 'sev-medium'),
             r.to_team || r.to_agent ? h('span', { class: 'tka-when', text: 'Now with ' + [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') }) : null,
             r.breach_count ? h('span', { class: 'tka-when', text: 'Escalated ' + r.breach_count + 'x' }) : null]),
-          waiting ? dealLine(r.deal) : null,
-          waiting ? h('div', { class: 'tka-actions' }, [dealBtn]) : null,
+          showDeal ? dealLine(r.deal) : null,
+          showDeal ? h('div', { class: 'tka-actions' }, [dealBtn]) : null,
           dealBox,
           form]),
         h('div', { class: 'tka-row-side' }, side)]);
-      if (waiting) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp')) return; toggleDeal(); });
+      if (showDeal) art.addEventListener('click', function (ev) { if (ev.target.closest('a, button, input, textarea, select, label, .tka-rv-form, .tka-dp')) return; toggleDeal(); });
       return art;
     }
     load(false);
