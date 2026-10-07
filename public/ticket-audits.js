@@ -270,12 +270,13 @@
         statBox('Last 14 days', recent, recent >= 3 ? 'busy, check the pattern' : 'new tickets', recent >= 3 ? 'bad' : ''),
         statBox('FCR', d.fcr.pct == null ? 'n/a' : d.fcr.pct + '%', d.fcr.closed ? d.fcr.achieved + ' of ' + d.fcr.closed + ' first contact' : 'no data', d.fcr.pct == null ? '' : d.fcr.pct >= 70 ? 'good' : 'warn'),
         statBox('CSAT', d.csat.pct == null ? 'n/a' : d.csat.pct + '%', d.csat.total ? d.csat.good + ' good, ' + d.csat.bad + ' bad' : 'no surveys', d.csat.pct == null ? '' : d.csat.pct >= 80 ? 'good' : 'warn')];
-      if (an.health) stats.unshift(statBox('Account health', an.health, '', /good|healthy|green|strong/i.test(an.health) ? 'good' : /risk|poor|bad|red|critical|churn/i.test(an.health) ? 'bad' : 'warn'));
+      if (an.health) stats.unshift(statBox('Account health', an.health, String(an.healthWhy || '').split(';').pop().trim(), /good|healthy|green|strong|stable/i.test(an.health) ? 'good' : /risk|poor|bad|red|critical|churn/i.test(an.health) ? 'bad' : 'warn'));
       // Main column: journey and issue history. Side column: what is open now and who worked it.
       var issues = an.available ? (an.issues || []) : dv.issues;
       var issueSec = dpSec('Issue history', [
         an.available && an.headline ? h('p', { class: 'tka-dp-lead', text: an.headline }) : null,
-        an.available ? null : dpNote('Built from this deal\'s ticket subjects. The written account analysis is not available to this tool yet.'),
+        an.available && an.trigger ? h('p', { class: 'tka-dp-cause', text: 'What triggered it: ' + an.trigger }) : null,
+        an.available ? null : dpNote('Built from this deal\'s ticket subjects. ' + (an.note || 'The written account analysis is not available to this tool yet.')),
         issues.length ? h('div', { class: 'tka-iss' }, issues.map(issueItem)) : dpNote(an.available ? 'No issues recorded in the account analysis.' : 'No clear pattern in the ticket subjects.')], issues.length ? h('span', { class: 'tka-dp-cnt', text: String(issues.length) }) : null);
       var unsolved = (an.available && (an.open || []).length ? an.open.map(function (o) { return h('div', { class: 'tka-dp-item' }, [h('p', { text: o.item }), o.note ? h('span', { class: 'tka-when', text: o.note }) : null]); }) : [])
         .concat(live.slice(0, 8).map(ticketRow));
@@ -284,8 +285,11 @@
         dpSec('Usually reported modules', mods.length ? [h('div', { class: 'tka-mchips' }, mods.map(function (m) { return h('span', { class: 'tka-mod' }, [h('span', { text: m.name }), m.n > 1 ? h('b', { text: String(m.n) }) : null]); }))] : [dpNote('No module pattern on record.')]),
         dpSec('Agents who worked tickets', (d.owners || []).length ? [h('div', { class: 'tka-mchips' }, d.owners.map(function (o) { return h('span', { class: 'tka-mod' }, [h('span', { class: 'tka-df-av sm', 'aria-hidden': 'true', text: initials(o.name) }), h('span', { text: o.name }), h('b', { text: String(o.tickets) })]); }))].concat((an.agents || []).length ? [h('p', { class: 'tka-when', text: 'Replying on tickets: ' + an.agents.map(function (a) { return a.name + ' (' + a.messages + ')'; }).join(', ') })] : []) : [dpNote('No ticket owners on record.')])];
       if ((d.reviews || []).length) side.push(dpSec('Earlier transfer reviews', d.reviews.map(function (x) { return h('div', { class: 'tka-dp-row' }, [h('b', { text: '#' + x.number }), h('span', { class: 'tka-dp-subj', text: (x.subject || '') + (x.team ? ' (to ' + x.team + ')' : ''), title: x.subject || '' }), pill(x.verdict === 'invalid' ? 'Needs rework' : x.verdict === 'good' ? 'Approved' : x.state === 'waiting' ? 'Waiting' : 'No verdict', x.verdict === 'invalid' ? 'sev-high' : x.verdict === 'good' ? 'st-approved' : 'sev-medium')]); })));
+      var findSec = an.available && (an.findings || []).length ? dpSec('Serious findings', [h('div', { class: 'tka-find' }, an.findings.map(function (f) {
+        return h('div', { class: 'tka-find-i' }, [h('div', { class: 'tka-iss-top' }, [pill('High', 'sev-high'), f.category ? pill(f.category, '') : null, f.product ? pill(f.product, 'dest') : null]), h('p', { text: f.claim })]);
+      }))].concat(an.findingsTotal > an.findings.length ? [dpNote('Showing ' + an.findings.length + ' of the high severity findings. The analysis holds ' + an.findingsTotal + ' findings in total.')] : []), h('span', { class: 'tka-dp-cnt bad', text: String(an.findings.length) })) : null;
       var kids = [h('div', { class: 'tka-dp-stats' }, stats),
-        h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-dp-col' }, [journeySec(d), issueSec]), h('div', { class: 'tka-dp-col' }, side)])];
+        h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-dp-col' }, [journeySec(d), issueSec, findSec].filter(Boolean)), h('div', { class: 'tka-dp-col' }, side)])];
       if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
       box.replaceChildren.apply(box, kids);
       Array.prototype.forEach.call(box.querySelectorAll('.tka-st, .tka-dp-sec'), function (el, n) { el.style.setProperty('--i', n); });

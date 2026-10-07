@@ -510,3 +510,7 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-deal-name{font-size:14px}
 }
 .tka-dp-col:last-child .tka-dp-subj{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.tka-dp-lead{white-space:pre-line;line-height:1.55!important;margin:0 0 10px!important}
+.tka-find{display:flex;flex-direction:column;gap:8px}
+.tka-find-i{display:flex;flex-direction:column;gap:5px;padding:9px 12px;border-radius:10px;border:1px solid color-mix(in srgb,var(--tka-red) 22%,var(--tka-border));background:color-mix(in srgb,var(--tka-red) 4%,var(--tka-surface))}
+.tka-find-i p{margin:0!important;color:var(--tka-t1)!important}
