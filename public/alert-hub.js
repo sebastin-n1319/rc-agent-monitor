@@ -27,12 +27,13 @@
     missed: ic('<path d="M5.5 4h3l1.8 4.6-2.3 1.4a10.6 10.6 0 0 0 5.9 5.9l1.4-2.3 4.6 1.8v3a1.8 1.8 0 0 1-1.9 1.8A15.2 15.2 0 0 1 3.7 5.9 1.8 1.8 0 0 1 5.5 4z"/><path d="M15 4l5 5M20 4l-5 5"/>'),
     summaries: ic('<path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.6L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z"/><path d="M8.5 14.5v-2M12 14.5V9M15.5 14.5v-4"/>'),
     assessments: ic('<path d="M9 4h8a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V8z"/><path d="M9 4v4H5M9 13h6M9 17h4"/>'),
+    reviewMsg: ic('<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>'),
     review: ic('<path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="8.5"/><path d="M8.5 3.5L6 6M15.5 3.5L18 6"/>'),
     liveOps: ic('<path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M12 3v1.5"/>'),
   };
   const EVENTS = [['shift', 'Shift start and end'], ['break', 'Break'], ['brb', 'BRB'], ['training', 'Training'], ['qa', 'QA session'], ['internal', 'Internal call']];
   const SRC = { assess: 'Using the assessment webhook', app: 'Set here', env: 'From Railway', breaklog: 'Using the break log space', none: 'Not set', liveops: 'Using the live ops space' };
-  const LINK = { review: ['audits', 'Open Review settings'], liveOps: ['ticket-alerts', 'Open live ops settings'], summaries: ['digest', 'Open summary composer'], breakLog: ['alerts-breaklog', 'Open break log'], missed: ['alerts-missed', 'Open missed call log'] };
+  const LINK = { review: ['audits', 'Open Review settings'], reviewMsg: ['audits', 'Open Review settings'], liveOps: ['ticket-alerts', 'Open live ops settings'], summaries: ['digest', 'Open summary composer'], breakLog: ['alerts-breaklog', 'Open break log'], missed: ['alerts-missed', 'Open missed call log'] };
 
   const RULES = [['closing', 'Closing soon and not taken', 'hours', 'hours before it closes', 1, 72], ['overdue', 'Overdue, closed with people who never took it'], ['low', 'Low pass rate or average'], ['stuck', 'Stuck or abandoned attempts', 'hours', 'hours open or locked', 1, 48]];
   function assessBlock(c) {

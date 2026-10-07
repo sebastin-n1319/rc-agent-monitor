@@ -356,3 +356,43 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-msg{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--tka-border);border-left:3px solid var(--tka-teal);border-radius:10px;background:var(--tka-surface2);margin-top:8px}
 .tka-msg .tka-note-in{width:100%;box-sizing:border-box;font:13px/1.5 'Poppins',sans-serif}
 .tka-msg .tka-actions{margin-top:0}
+
+/* Batch 120: Review settings page */
+.tka-setpage{display:grid;gap:14px;padding-bottom:84px;max-width:860px}
+.tka-set{background:var(--tka-surface);border:1px solid var(--tka-border);border-radius:14px;padding:16px 18px;box-shadow:0 1px 2px rgba(7,43,64,.05)}
+.tka-set h3{margin:0 0 4px;font-size:15px;font-weight:600;line-height:1.4}
+.tka-set>.tka-hint{margin:0 0 12px}
+.tka-fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px 16px;margin-bottom:12px}
+.tka-fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.tka-fld-l{font-size:12px;font-weight:600;color:var(--tka-t2);line-height:1.4}
+.tka-fld-h{font-size:11.5px;color:var(--tka-t3);line-height:1.4}
+.tka-fld .tka-input,.tka-hook-r .tka-input,.tka-sprow .tka-input{width:100%;box-sizing:border-box}
+.tka-swrow{display:flex;flex-wrap:wrap;gap:12px 28px;margin-top:14px}
+.tka-sw{display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.tka-sw input{margin-top:3px;width:16px;height:16px;accent-color:var(--tka-teal)}
+.tka-sw-t{display:flex;flex-direction:column;gap:1px;font-size:12px;color:var(--tka-t3);line-height:1.4}
+.tka-sw-t b{font-size:13px;color:var(--tka-t1);font-weight:600}
+.tka-hook{padding:12px 0;border-top:1px solid var(--tka-border)}
+.tka-hook:first-of-type{border-top:0;padding-top:2px}
+.tka-hook-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tka-hook p{margin:2px 0 8px}
+.tka-hook-r{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tka-hook-r .tka-input{flex:1 1 280px;width:auto}
+.tka-chips2{display:flex;flex-wrap:wrap;gap:6px;max-height:260px;overflow:auto;padding:4px 2px;margin-top:8px}
+.tka-tg{padding:4px 11px;border-radius:999px;border:1px solid var(--tka-border);background:var(--tka-surface);color:var(--tka-t2);font:500 12px/1.4 'Poppins',sans-serif;cursor:pointer;transition:background .15s,border-color .15s,color .15s,transform .1s}
+.tka-tg:hover{border-color:var(--tka-teal)}
+.tka-tg:active{transform:scale(.96)}
+.tka-tg.on{background:var(--tka-teal-s);border-color:var(--tka-teal);color:var(--tka-teal);font-weight:600}
+.tka-tg:focus-visible{outline:2px solid var(--tka-teal);outline-offset:2px}
+.tka-sprows{display:grid;gap:8px}
+.tka-sprow{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr) auto;gap:8px;align-items:center}
+@media (max-width:640px){.tka-sprow{grid-template-columns:1fr}}
+.tka-savebar{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 14px;margin-top:-70px;background:color-mix(in srgb,var(--tka-surface) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--tka-border);border-radius:12px;box-shadow:0 -4px 16px rgba(7,43,64,.08);max-width:860px;box-sizing:border-box}
+.tka-savebar .grow{flex:1}
+.tka-savebar .tka-unsaved{display:none;color:var(--tka-amber);font-weight:600}
+.tka-savebar.dirty .tka-unsaved{display:inline}
+.tka-savebar.dirty>.tka-when:first-child{display:none}
+@media (prefers-reduced-motion:reduce){.tka-tg{transition:none}}
+.tka-set .tka-input{flex:0 0 auto}
+.tka-hook-r .tka-input{flex:1 1 280px}
+.tka-set .tka-inline .tka-input{flex:1 1 200px}

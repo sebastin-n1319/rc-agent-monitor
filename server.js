@@ -2497,7 +2497,8 @@ function t1Alerts() {
     deskGet: (path) => ds.fetchRaw(path),
     fetchDepartments: () => ds.fetchDepartments(),
     inAlertHours, alertHoursLabel: ALERT_HOURS.label,
-    reviewHook: () => (ALERT_HOOKS && ALERT_HOOKS.review) || '',
+    reviewMsgOn: () => !(ALERT_HOOKS && ALERT_HOOKS.reviewMsgEnabled === false),
+    reviewHook: (kind) => (ALERT_HOOKS && (kind === 'review_msg' ? ALERT_HOOKS.reviewMsg : ALERT_HOOKS.review)) || '',
     resolveChatId: async (email) => {
       const a = (await getMonitoredAgents().catch(() => [])).find(x => (x.email || '').toLowerCase() === email && x.chat_id);
       return (a && a.chat_id) || await getGoogleSubForEmail(email);
@@ -2598,7 +2599,8 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
     const sm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM chat_report_log WHERE created_at >= ?`, [todaySql()]);
     const sch = await one(`SELECT COUNT(*) AS n, SUM(enabled) AS on_n FROM chat_report_schedule`);
     const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item' AND kind NOT IN ('review_idle','review_msg')`, [todaySql()]);
-    const rv = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind IN ('review_idle','review_msg')`, [todaySql()]);
+    const rv = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind = 'review_idle'`, [todaySql()]);
+    const rm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind = 'review_msg'`, [todaySql()]);
     const rvSt = await transferReview.settings().catch(() => null);
     const ast = await assessments.alertStatus().catch(() => ({ cfg: { enabled: true }, hook: '', sentToday: 0, failedToday: 0, last: null, due: [], recent: [] }));
     const missedToday = (_pollLog || []).reduce((n, e) => n + (Number(e && e.notified) || 0), 0);
@@ -2619,13 +2621,16 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
           { path: 'queue.repeatMin', label: 'Caller in queue: repeat every', unit: 'min', value: t1cfg.queue.repeatMin, min: 1, max: 120 },
           { path: 'coverage.repeatMin', label: 'Nobody available: repeat every', unit: 'min', value: t1cfg.coverage.repeatMin, min: 1, max: 240 },
           { path: 'tickets.scanMin', label: 'Ticket check: every', unit: 'min', value: t1cfg.tickets.scanMin, min: 2, max: 120 } ] } },
-      { key: 'review', label: 'Review alerts', desc: 'Tickets sitting in Pending Review - T1 past the review window, and the messages reviewers send to agents from the review form.', enabled: !rvSt || rvSt.alertsOn !== false,
+      { key: 'review', label: 'Review alerts', desc: 'Tickets sitting in Pending Review - T1 past the review window, tagging the people set in Review settings.', enabled: !rvSt || rvSt.alertsOn !== false,
         source: h.review ? 'app' : (t1cfg.webhookUrl ? 'liveops' : 'none'), masked: maskHook(h.review), sentToday: rv.sent || 0, failedToday: rv.failed || 0, last: rv.last || null,
         timing: { fields: rvSt ? [
           { path: '_.bufferMin', label: 'First alert after', unit: 'min', value: rvSt.bufferMin, min: 1, max: 240 },
           { path: '_.repeatMin', label: 'Repeat every', unit: 'min', value: rvSt.repeatMin, min: 1, max: 480 },
           { path: '_.maxReminders', label: 'Stop after', unit: 'reminders (0 = no limit)', value: rvSt.maxReminders, min: 0, max: 50 } ] : [],
-          note: `Review hours ${rvSt ? rvSt.startHour : 7} to ${rvSt ? rvSt.endHour : 19} Central. Tagged people are set in Review settings. Reviewer messages post when a reviewer clicks Send, any time. Without a webhook here, idle alerts use the Live ops webhook and reviewer messages cannot be sent.` } },
+          note: `Review hours ${rvSt ? rvSt.startHour : 7} to ${rvSt ? rvSt.endHour : 19} Central. Tagged people are set in Review settings. Without a webhook here, idle alerts use the Live ops webhook.` } },
+      { key: 'reviewMsg', label: 'Reviewer messages', desc: 'Messages a reviewer sends to an agent from the review form (tag, instruction, ticket details). Nothing posts until the reviewer clicks Send.', enabled: h.reviewMsgEnabled !== false,
+        source: h.reviewMsg ? 'app' : 'none', masked: maskHook(h.reviewMsg), sentToday: rm.sent || 0, failedToday: rm.failed || 0, last: rm.last || null,
+        timing: { note: 'Posts the moment a reviewer clicks Send, at any hour. Without a webhook here, reviewers see an error when they try to send.' } },
       { key: 'assessments', label: 'Assessments', desc: 'Closing soon and not taken, overdue, low pass rate or average, and stuck or abandoned attempts.', enabled: ast.cfg.enabled,
         source: ast.hasOwnHook ? 'app' : (ast.fallbackHook ? 'assess' : 'none'), masked: maskHook(ast.hook), sentToday: ast.sentToday, failedToday: ast.failedToday, last: ast.last,
         assess: { cfg: ast.cfg, due: ast.due, recent: ast.recent }, timing: { note: 'Checked every 15 minutes. Each item posts once.' } },
@@ -2637,7 +2642,7 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
   try {
     const b = req.body || {};
     const key = String(b.key || '');
-    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments', 'review'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
+    if (!['breakLog', 'missed', 'summaries', 'liveOps', 'assessments', 'review', 'reviewMsg'].includes(key)) return res.status(400).json({ success: false, error: 'Unknown alert type' });
     const url = typeof b.webhookUrl === 'string' ? b.webhookUrl.trim() : '';
     if (url && !HOOK_URL_RE.test(url)) return res.status(400).json({ success: false, error: 'That does not look like a Google Chat webhook URL (it starts with https://chat.googleapis.com/v1/spaces/).' });
     if (key === 'assessments') {
@@ -2666,7 +2671,7 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
       await setSetting('missed_call_notify_enabled', b.enabled ? '1' : '0', req.session.email);
     } else {
       const h = await loadAlertHooks();
-      const field = { breakLog: 'breakLog', missed: 'missedCall', summaries: 'summaries' }[key];
+      const field = { breakLog: 'breakLog', missed: 'missedCall', summaries: 'summaries', reviewMsg: 'reviewMsg' }[key];
       if (url) h[field] = url;
       if (b.clearWebhook) delete h[field];
       if (typeof b.enabled === 'boolean') {
@@ -2674,6 +2679,7 @@ app.post('/api/alert-hub/channel', requireAdmin, rateLimit(30, 60000), async (re
         if (key === 'summaries') h.summariesEnabled = b.enabled;
         if (key === 'missed') await setSetting('missed_call_notify_enabled', b.enabled ? '1' : '0', req.session.email);
       }
+      if (key === 'reviewMsg' && typeof b.enabled === 'boolean') h.reviewMsgEnabled = b.enabled;
       if (key === 'breakLog' && Array.isArray(b.events)) h.breakEvents = b.events.filter(e => ['shift', 'break', 'brb', 'training', 'qa', 'internal'].includes(e));
       await setSetting('alert_hooks', JSON.stringify(h), req.session.email);
       await loadAlertHooks();
@@ -2691,10 +2697,11 @@ app.post('/api/alert-hub/test', requireAdmin, rateLimit(8, 60000), async (req, r
   else if (key === 'missed') url = MISSED_CALL_WEBHOOK_URL;
   else if (key === 'summaries') url = ALERT_HOOKS.summaries || process.env.REPORTS_CHAT_WEBHOOK_URL || GOOGLE_CHAT_WEBHOOK_URL;
   else if (key === 'liveOps') url = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null)).webhookUrl;
+  else if (key === 'reviewMsg') url = ALERT_HOOKS.reviewMsg || '';
   else if (key === 'review') url = ALERT_HOOKS.review || t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null)).webhookUrl;
   if (key === 'assessments') { try { const r = await assessments.alertTest(); return res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` }); } catch (e) { return res.json({ success: false, error: e.message }); } }
   if (!url) return res.json({ success: false, error: 'No webhook set for this alert type' });
-  const label = { breakLog: 'Break log', missed: 'Missed call', summaries: 'Summary', liveOps: 'Live ops', review: 'Review' }[key] || 'Alert';
+  const label = { breakLog: 'Break log', missed: 'Missed call', summaries: 'Summary', liveOps: 'Live ops', review: 'Review', reviewMsg: 'Reviewer message' }[key] || 'Alert';
   try {
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify({ text: `🔔 Test: ${label} alerts from T1 CS Stars will post in this space.` }), signal: AbortSignal.timeout(15000) });
     res.json({ success: r.ok, error: r.ok ? null : `Google Chat returned HTTP ${r.status}` });

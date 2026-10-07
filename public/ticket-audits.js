@@ -53,7 +53,7 @@
   }
   function tabs() {
     var t = [['review', 'Pending review'], ['history', 'History']];
-    if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['escalations', 'Escalation watch'], ['spocs', 'SPOC management']]);
+    if (isAdmin()) t = t.concat([['strikes', 'Strikes'], ['escalations', 'Escalation watch'], ['spocs', 'SPOC management'], ['reviewSettings', 'Settings']]);
     return t;
   }
   TA.open = function (mode) {
@@ -80,7 +80,7 @@
       h('div', { class: 'tka-head' }, [h('div', null, [h('h2', { text: 'Transfer review' }), h('p', { text: 'Every transfer out of T1 is reviewed before it reaches another team.' })])]),
       bar, body);
     if (TA.auditId) return viewAudit(body, TA.auditId);
-    ({ review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
+    ({ review: viewReview, history: viewHistory, strikes: viewStrikes, escalations: viewEscalations, queue: viewQueue, rules: viewRules, spocs: viewSpocs, reviewSettings: viewReviewSettings, updates: viewUpdates, insights: viewInsights })[TA.tab](body);
   }
   function setBadge(n) {
     ['sb-agent-audits', 'agent-tab-audits', 'sb-audits'].forEach(function (id) {
@@ -122,7 +122,7 @@
       var bar = h('div', { class: 'tka-inline between' }, [
         h('p', { class: 'tka-hint', text: 'Tickets in "' + (st.statusName || 'Pending Review - T1') + '". Review each within ' + buf + ' minutes (counted between ' + (st.startHour == null ? 7 : st.startHour) + ':00 and ' + (st.endHour == null ? 19 : st.endHour) + ':00 Central): move it to the right person in Zoho Desk, then record your verdict here.' + (j.lastPollAt ? ' Checked ' + ago(j.lastPollAt) + '.' : '') }),
         h('div', { class: 'tka-inline' }, [btn('Check Zoho now', 'sm', function (ev) { busy(ev.currentTarget, true, 'Checking...'); load(true); }),
-          isAdmin() ? btn('Settings', 'ghost sm', function () { reviewSettings(host); }) : null])]);
+          isAdmin() ? btn('Settings', 'ghost sm', function () { TA.tab = 'reviewSettings'; render(); }) : null])]);
       var kids = [tiles, bar];
       if (j.lastPollError) kids.push(h('div', { class: 'tka-note', text: 'Could not read Zoho: ' + j.lastPollError }));
       kids.push(h('h3', { class: 'tka-sec', text: 'Waiting for review (' + j.waiting.length + ')' }));
@@ -390,46 +390,91 @@
     TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-dp:not([hidden])')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
   }
   function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
-  function reviewSettings(host) {
-    api('/api/review/settings').then(function (j) {
-      if (!j.success) return toast(j.error || 'Could not load settings', 'error');
-      var st = j.settings, picked = {}; (st.excludedTeams || []).forEach(function (t) { picked[t] = true; });
-      var box = h('div', { class: 'tka-picks' }, (j.teams || []).map(function (t, i) {
-        var cb = h('input', { type: 'checkbox', id: 'tka-ex-' + i }); cb.checked = !!picked[t];
-        cb.addEventListener('change', function () { picked[t] = cb.checked; });
-        return h('label', { for: 'tka-ex-' + i, class: 'tka-pick' }, [cb, h('span', { text: t })]);
-      }));
-      var buf = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '240', value: String(st.bufferMin), 'aria-label': 'Buffer minutes' });
-      var rep = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '480', value: String(st.repeatMin || st.bufferMin), 'aria-label': 'Repeat every minutes' });
-      var mx = h('input', { class: 'tka-input narrow', type: 'number', min: '0', max: '50', value: String(st.maxReminders || 0), 'aria-label': 'Stop after reminders' });
-      var alOn = h('input', { type: 'checkbox', id: 'tka-al-on' }); alOn.checked = st.alertsOn !== false;
-      var esc = h('input', { class: 'tka-input', value: (st.escalateEmails || []).join(', '), 'aria-label': 'People tagged when the buffer passes' });
-      var stName = h('input', { class: 'tka-input', value: st.statusName, 'aria-label': 'Zoho status name' });
-      var hrFrom = h('input', { class: 'tka-input narrow', type: 'number', min: '0', max: '23', value: String(st.startHour == null ? 7 : st.startHour), 'aria-label': 'Review hours start' });
-      var hrTo = h('input', { class: 'tka-input narrow', type: 'number', min: '1', max: '24', value: String(st.endHour == null ? 19 : st.endHour), 'aria-label': 'Review hours end' });
-      var spaces = h('textarea', { class: 'tka-note-in', rows: '5', 'aria-label': 'Department space links', placeholder: 'Team name = https://chat.google.com/room/...' });
-      spaces.value = Object.keys(st.deptSpaces || {}).map(function (k) { return k + ' = ' + st.deptSpaces[k]; }).join('\n');
-      var on = h('input', { type: 'checkbox', id: 'tka-rv-on' }); on.checked = st.enabled !== false;
-      var card = h('div', { class: 'tka-card' }, [h('h3', { text: 'Review settings' }),
-        h('p', { class: 'tka-hint', text: 'Assign directly: T1 agents may assign tickets straight to people in these teams without review. Everything else must go through ' + st.statusName + '.' }),
-        box,
-        h('div', { class: 'tka-inline' }, [h('span', { text: 'Review within' }), buf, h('span', { text: 'minutes, then tag' }), esc]),
-        h('div', { class: 'tka-inline' }, [h('span', { text: 'Then remind every' }), rep, h('span', { text: 'minutes, stop after' }), mx, h('span', { text: 'reminders (0 means no limit)' }), h('label', { class: 'tka-inline', for: 'tka-al-on' }, [alOn, h('span', { text: 'Review alerts on' })])]),
-        h('h3', { text: 'Department chat spaces' }),
-        h('p', { class: 'tka-hint', text: 'One per line: team name, an equals sign, then the Google Chat space link. Approved shows an Open space button for the chosen team. Team names: ' + ((j.teams || []).slice(0, 12).join(', ') || 'not loaded yet') + ((j.teams || []).length > 12 ? ', and more' : '') + '.' }),
-        spaces,
-        h('div', { class: 'tka-inline' }, [h('span', { text: 'Review hours (Central time)' }), hrFrom, h('span', { text: 'to' }), hrTo, h('span', { class: 'tka-when', text: 'The review clock and the Chat tags only run inside these hours, 24 hour clock (7 to 19 is 7 AM to 7 PM).' })]),
-        h('div', { class: 'tka-inline' }, [h('span', { text: 'Zoho status' }), stName, h('label', { class: 'tka-inline', for: 'tka-rv-on' }, [on, h('span', { text: 'Review on' })])]),
-        h('p', { class: 'tka-when', text: 'People directory ' + (j.peopleRefreshedAt ? 'updated ' + ago(j.peopleRefreshedAt) : 'not built yet') + ' (Zoho teams, staff list and the Who does what sheet).' }),
-        h('div', { class: 'tka-actions' }, [
-          btn('Save settings', 'primary', function () {
-            var ex = Object.keys(picked).filter(function (k) { return picked[k]; });
-            api('/api/review/settings', { excludedTeams: ex, bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.checked, startHour: Number(hrFrom.value), endHour: Number(hrTo.value), repeatMin: Number(rep.value), maxReminders: Number(mx.value), alertsOn: alOn.checked, deptSpaces: parseSpaces(spaces.value) }, 'PUT').then(function (r) { toast(r.success ? 'Saved' : (r.error || 'Failed'), r.success ? 'success' : 'error'); if (r.success) { TA.tab = 'review'; render(); } });
-          }),
-          btn('Rebuild people directory', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Rebuilding...'); api('/api/review/people/refresh', {}).then(function (r) { busy(b, false, 'Rebuild people directory'); toast(r.success ? 'Directory: ' + r.zoho + ' from Zoho teams, ' + r.staff + ' staff, ' + r.sheet + ' from the sheet' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); }),
-          btn('Close', 'ghost sm', function () { card.remove(); })])]);
-      host.insertBefore(card, host.firstChild);
-    });
+  // ── Review settings: a page of its own, admins only ────────────────────────────
+  function viewReviewSettings(body) {
+    body.appendChild(h('p', { class: 'tka-empty', text: 'Loading settings...' }));
+    Promise.all([api('/api/review/settings'), api('/api/alert-hub/status').catch(function () { return { success: false }; })]).then(function (res) {
+      var j = res[0], hub = res[1];
+      if (!j.success) { body.replaceChildren(h('div', { class: 'tka-note', text: j.error || 'Could not load settings' })); return; }
+      var st = j.settings, teams = Array.from(new Set(j.teams || [])).sort(function (a, b) { return a.localeCompare(b); });
+      var picked = {}; (st.excludedTeams || []).forEach(function (t) { picked[t] = true; });
+      var dirty = false, saveBar;
+      function touch() { if (!dirty) { dirty = true; if (saveBar) saveBar.classList.add('dirty'); } }
+      function field(label, input, hint) { return h('label', { class: 'tka-fld' }, [h('span', { class: 'tka-fld-l', text: label }), input, hint ? h('span', { class: 'tka-fld-h', text: hint }) : null]); }
+      function num(v, min, max, aria) { var e = h('input', { class: 'tka-input', type: 'number', min: String(min), max: String(max), value: String(v), 'aria-label': aria }); e.addEventListener('input', touch); return e; }
+      function toggle(label, checked, hint) { var cb = h('input', { type: 'checkbox' }); cb.checked = !!checked; cb.addEventListener('change', touch); return { cb: cb, el: h('label', { class: 'tka-sw' }, [cb, h('span', { class: 'tka-sw-t' }, [h('b', { text: label }), hint ? h('span', { text: hint }) : null])]) }; }
+      function card(title, hint, kids) { return h('section', { class: 'tka-set' }, [h('h3', { text: title }), hint ? h('p', { class: 'tka-hint', text: hint }) : null].concat(kids)); }
+
+      // 1. Review window and reminders
+      var buf = num(st.bufferMin, 1, 240, 'Review within minutes'), rep = num(st.repeatMin || st.bufferMin, 1, 480, 'Remind every minutes'), mx = num(st.maxReminders || 0, 0, 50, 'Stop after reminders');
+      var hrFrom = num(st.startHour == null ? 7 : st.startHour, 0, 23, 'Review hours start'), hrTo = num(st.endHour == null ? 19 : st.endHour, 1, 24, 'Review hours end');
+      var esc = h('input', { class: 'tka-input', value: (st.escalateEmails || []).join(', '), 'aria-label': 'People tagged when the review window passes', placeholder: 'name@adit.com, name@adit.com' }); esc.addEventListener('input', touch);
+      var stName = h('input', { class: 'tka-input', value: st.statusName, 'aria-label': 'Zoho status name' }); stName.addEventListener('input', touch);
+      var on = toggle('Review is on', st.enabled !== false, 'Watch the Zoho status and list tickets for review'), alOn = toggle('Idle review alerts', st.alertsOn !== false, 'Tag the people below in the review alerts space');
+      var c1 = card('Review window and reminders', 'How long a ticket may wait, who is tagged when it waits too long, and the hours the clock runs.', [
+        h('div', { class: 'tka-fgrid' }, [field('Review within', buf, 'minutes before the first alert'), field('Remind every', rep, 'minutes'), field('Stop after', mx, 'reminders (0 means no limit)'),
+          field('Review hours start', hrFrom, 'Central time, 24 hour clock'), field('Review hours end', hrTo, '7 to 19 is 7 AM to 7 PM'), field('Zoho status', stName, 'the status agents set to request review')]),
+        field('Tag these people', esc, 'comma separated emails, tagged in the review alerts space'),
+        h('div', { class: 'tka-swrow' }, [on.el, alOn.el])]);
+
+      // 2. Webhooks
+      var chans = {}; ((hub && hub.channels) || []).forEach(function (c) { chans[c.key] = c; });
+      function hookRow(key, title, desc) {
+        var c = chans[key] || {}, inp = h('input', { class: 'tka-input', type: 'url', autocomplete: 'off', placeholder: c.masked || 'Paste a Google Chat webhook URL', 'aria-label': title + ' webhook URL' });
+        var src = h('span', { class: 'tka-pill ' + (c.source === 'app' ? 'st-approved' : 'sev-medium'), text: c.source === 'app' ? 'Connected' : (c.source === 'liveops' ? 'Using the Live ops webhook' : 'Not connected') });
+        function save(clear) { var body2 = { key: key }; if (clear) body2.clearWebhook = true; else if (inp.value.trim()) body2.webhookUrl = inp.value.trim(); else return toast('Paste a webhook URL first', 'error'); api('/api/alert-hub/channel', body2).then(function (r) { toast(r.success ? (clear ? 'Webhook removed' : 'Webhook saved') : (r.error || 'Could not save'), r.success ? 'success' : 'error'); if (r.success) render(); }); }
+        return h('div', { class: 'tka-hook' }, [h('div', { class: 'tka-hook-h' }, [h('b', { text: title }), src]), h('p', { class: 'tka-fld-h', text: desc }),
+          h('div', { class: 'tka-hook-r' }, [inp, btn('Save', 'primary sm', function () { save(false); }), btn('Send test', 'sm', function (ev) { var b = ev.currentTarget; busy(b, true, 'Sending...'); api('/api/alert-hub/test', { key: key }).then(function (r) { busy(b, false, 'Send test'); toast(r.success ? 'Test message sent' : (r.error || 'Test failed'), r.success ? 'success' : 'error'); }); }), c.source === 'app' ? btn('Remove', 'ghost sm', function () { save(true); }) : null])]);
+      }
+      var c2 = card('Webhooks', 'Two different spaces. Webhooks are saved on their own with Save, not with the settings below.', hub && hub.success ? [
+        hookRow('review', 'Review alerts', 'Idle tickets: tickets waiting in the review status too long. Falls back to the Live ops webhook.'),
+        hookRow('reviewMsg', 'Reviewer messages', 'Messages reviewers send to agents from the review form. Nothing posts until the reviewer clicks Send.')] : [h('p', { class: 'tka-when', text: 'Webhooks could not be loaded. Open the Alerts page to manage them.' })]);
+
+      // 3. Direct assign teams
+      var q = h('input', { class: 'tka-input', type: 'search', placeholder: 'Filter teams', 'aria-label': 'Filter teams' });
+      var count = h('span', { class: 'tka-when' }), grid = h('div', { class: 'tka-chips2' });
+      function paintTeams() {
+        var f = q.value.trim().toLowerCase(), n = 0; Object.keys(picked).forEach(function (k) { if (picked[k]) n++; });
+        count.textContent = n + ' of ' + teams.length + ' selected';
+        grid.replaceChildren.apply(grid, teams.filter(function (t) { return !f || t.toLowerCase().indexOf(f) >= 0; }).map(function (t) {
+          return h('button', { type: 'button', class: 'tka-tg' + (picked[t] ? ' on' : ''), 'aria-pressed': picked[t] ? 'true' : 'false', text: t, onclick: function (ev) { picked[t] = !picked[t]; touch(); ev.currentTarget.classList.toggle('on', picked[t]); ev.currentTarget.setAttribute('aria-pressed', picked[t] ? 'true' : 'false'); var m = 0; Object.keys(picked).forEach(function (k) { if (picked[k]) m++; }); count.textContent = m + ' of ' + teams.length + ' selected'; } });
+        }));
+        if (!grid.children.length) grid.appendChild(h('span', { class: 'tka-when', text: teams.length ? 'No team matches.' : 'No teams loaded yet. Rebuild the people directory below.' }));
+      }
+      q.addEventListener('input', paintTeams); paintTeams();
+      var c3 = card('Direct assign teams', 'T1 agents may assign tickets straight to people in the selected teams without review. Everything else must go through ' + st.statusName + '.', [
+        h('div', { class: 'tka-inline' }, [q, count, btn('Clear all', 'ghost sm', function () { picked = {}; touch(); paintTeams(); })]), grid]);
+
+      // 4. Department chat spaces
+      var rows = h('div', { class: 'tka-sprows' });
+      function spaceRow(team, url) {
+        var sel = h('select', { class: 'tka-input', 'aria-label': 'Team' }, [h('option', { value: '', text: 'Choose a team' })].concat(teams.concat(team && teams.indexOf(team) < 0 ? [team] : []).map(function (t) { var o = h('option', { value: t, text: t }); if (t === team) o.selected = true; return o; })));
+        var u = h('input', { class: 'tka-input', type: 'url', value: url || '', placeholder: 'https://chat.google.com/room/...', 'aria-label': 'Space link' });
+        var row = h('div', { class: 'tka-sprow' }, [sel, u, btn('Remove', 'ghost sm', function () { row.remove(); touch(); })]);
+        sel.addEventListener('change', touch); u.addEventListener('input', touch); return row;
+      }
+      Object.keys(st.deptSpaces || {}).forEach(function (k) { rows.appendChild(spaceRow(k, st.deptSpaces[k])); });
+      var c4 = card('Department chat spaces', 'Approved shows an Open space button for the chosen team on the hand-off message.', [rows, h('div', { class: 'tka-actions' }, [btn('Add a team', 'sm', function () { rows.appendChild(spaceRow('', '')); })])]);
+
+      // 5. People directory
+      var c5 = card('People directory', 'Who is in which team, built from Zoho teams, the staff list and the Who does what sheet. ' + (j.peopleRefreshedAt ? 'Updated ' + ago(j.peopleRefreshedAt) + '.' : 'Not built yet.'), [
+        h('div', { class: 'tka-actions' }, [btn('Rebuild people directory', 'sm', function (ev) { var b = ev.currentTarget; busy(b, true, 'Rebuilding...'); api('/api/review/people/refresh', {}).then(function (r) { busy(b, false, 'Rebuild people directory'); toast(r.success ? 'Directory: ' + r.zoho + ' from Zoho teams, ' + r.staff + ' staff, ' + r.sheet + ' from the sheet' : (r.error || 'Failed'), r.success ? 'success' : 'error'); }); })])]);
+
+      var note = h('span', { class: 'tka-when', text: 'All saved' });
+      saveBar = h('div', { class: 'tka-savebar' }, [note, h('span', { class: 'tka-when tka-unsaved', text: 'Unsaved changes' }), h('span', { class: 'grow' }),
+        btn('Discard changes', 'ghost sm', function () { TA.tab = 'reviewSettings'; render(); }),
+        btn('Save settings', 'primary', function (ev) {
+          var b = ev.currentTarget, spacesMap = {};
+          Array.prototype.forEach.call(rows.children, function (r) { var t = r.querySelector('select').value, u = r.querySelector('input').value.trim(); if (t && u) spacesMap[t] = u; });
+          busy(b, true, 'Saving...');
+          api('/api/review/settings', { excludedTeams: Object.keys(picked).filter(function (k) { return picked[k]; }), bufferMin: Number(buf.value), escalateEmails: esc.value.split(/[,\s]+/).filter(Boolean), statusName: stName.value, enabled: on.cb.checked, startHour: Number(hrFrom.value), endHour: Number(hrTo.value), repeatMin: Number(rep.value), maxReminders: Number(mx.value), alertsOn: alOn.cb.checked, deptSpaces: spacesMap }, 'PUT').then(function (r) {
+            busy(b, false, 'Save settings');
+            if (!r.success) return toast(r.error || 'Could not save', 'error');
+            toast('Settings saved', 'success'); dirty = false; saveBar.classList.remove('dirty'); TA.tab = 'reviewSettings'; render();
+          });
+        })]);
+      body.replaceChildren(h('div', { class: 'tka-setpage' }, [c1, c2, c3, c4, c5]), saveBar);
+    }).catch(function () { body.replaceChildren(h('div', { class: 'tka-note', text: 'Could not load settings' })); });
   }
   function viewStrikes(body) {
     api('/api/review/strikes').then(function (j) {
