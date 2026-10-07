@@ -127,11 +127,11 @@
       if (j.lastPollError) kids.push(h('div', { class: 'tka-note', text: 'Could not read Zoho: ' + j.lastPollError }));
       kids.push(h('h3', { class: 'tka-sec', text: 'Waiting for review (' + j.waiting.length + ')' }));
       if (!j.waiting.length) kids.push(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'Nothing waiting' }), h('p', { text: 'When a T1 agent sets a ticket to ' + (st.statusName || 'Pending Review - T1') + ', it shows here within a minute.' })]));
-      j.waiting.forEach(function (r) { kids.push(reviewCard(r, buf, j.me)); });
+      if (j.waiting.length) kids.push(h('div', { class: 'tka-cards' }, j.waiting.map(function (r) { return reviewCard(r, buf, j.me); })));
       if (j.moved.length) {
         kids.push(h('h3', { class: 'tka-sec', text: 'Moved, verdict missing (' + j.moved.length + ')' }));
         kids.push(h('p', { class: 'tka-hint', text: 'These left the review status, or were moved by a T1 agent without it ("Skipped review"). Record a verdict so the agent gets feedback.' }));
-        j.moved.forEach(function (r) { kids.push(reviewCard(r, buf, j.me)); });
+        kids.push(h('div', { class: 'tka-cards' }, j.moved.map(function (r) { return reviewCard(r, buf, j.me); })));
       }
       if (j.done.length) {
         var d = h('details', { class: 'tka-fold' }, [h('summary', { text: 'Reviewed in the last 24 hours (' + j.done.length + ')' })]);

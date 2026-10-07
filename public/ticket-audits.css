@@ -1,5 +1,5 @@
 /* Ticket audits */
-.tka-page{--tka-surface:#fff;--tka-surface2:#F6F9FC;--tka-border:#E3E9F0;--tka-t1:#072B40;--tka-t2:#3A5068;--tka-t3:#6B849A;--tka-teal:#1D9BCF;--tka-teal-s:rgba(29,155,207,.12);--tka-green:#16A970;--tka-red:#D9464D;--tka-amber:#C98F06;color:var(--tka-t1);font-family:'Poppins',system-ui,sans-serif;max-width:1040px;padding:4px 0 36px}
+.tka-page{--tka-surface:#fff;--tka-surface2:#F6F9FC;--tka-border:#E3E9F0;--tka-t1:#072B40;--tka-t2:#3A5068;--tka-t3:#6B849A;--tka-teal:#1D9BCF;--tka-teal-s:rgba(29,155,207,.12);--tka-green:#16A970;--tka-red:#D9464D;--tka-amber:#C98F06;color:var(--tka-t1);font-family:'Poppins',system-ui,sans-serif;max-width:none;width:100%;padding:4px 0 36px}
 html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-border:#22384A;--tka-t1:#E6EEF5;--tka-t2:#B4C4D2;--tka-t3:#8FA6B8;--tka-teal:#3BB8EA;--tka-teal-s:rgba(59,184,234,.16);--tka-green:#34D399;--tka-red:#F07378;--tka-amber:#F2C14E}
 .tka-head h2{font-size:22px;font-weight:600;margin:0 0 4px}
 .tka-head p{margin:0 0 14px;color:var(--tka-t3);font-size:13px;max-width:640px}
@@ -134,7 +134,7 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-ai-sum{margin:6px 0 0;font-size:13px;color:var(--tka-t1);font-style:italic}
 .tka-row.warm{box-shadow:inset 3px 0 0 var(--tka-amber)}
 /* simple audit page */
-.tka-page.tka-wide{max-width:1280px}
+.tka-page.tka-wide{max-width:none}
 .tka-body.tka-audit{display:flex;flex-direction:column;gap:12px}
 .tka-audit .tka-btn.ghost{margin-bottom:0;align-self:flex-start}
 .tka-audit h3{margin:0 0 6px;font-size:15px}
@@ -179,7 +179,7 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 /* transfer review and policy */
 .tka-sec{margin:16px 0 8px;font-size:15px}
 .tka-rv .tka-row{margin-bottom:10px}
-.tka-rv-form{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-width:640px}
+.tka-rv-form{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-width:820px}
 .tka-rv-form:empty{display:none}
 .tka-tile-v.sm{font-size:16px}
 .tka-tl.off{opacity:.55;text-decoration:line-through}
@@ -358,7 +358,8 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-msg .tka-actions{margin-top:0}
 
 /* Batch 120: Review settings page */
-.tka-setpage{display:grid;gap:14px;padding-bottom:84px;max-width:860px}
+.tka-setpage{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:14px;align-items:start;padding-bottom:84px}
+.tka-setpage>.tka-set:nth-child(3){grid-column:1/-1}
 .tka-set{background:var(--tka-surface);border:1px solid var(--tka-border);border-radius:14px;padding:16px 18px;box-shadow:0 1px 2px rgba(7,43,64,.05)}
 .tka-set h3{margin:0 0 4px;font-size:15px;font-weight:600;line-height:1.4}
 .tka-set>.tka-hint{margin:0 0 12px}
@@ -387,7 +388,7 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-sprows{display:grid;gap:8px}
 .tka-sprow{display:grid;grid-template-columns:minmax(150px,220px) minmax(0,1fr) auto;gap:8px;align-items:center}
 @media (max-width:640px){.tka-sprow{grid-template-columns:1fr}}
-.tka-savebar{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 14px;margin-top:-70px;background:color-mix(in srgb,var(--tka-surface) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--tka-border);border-radius:12px;box-shadow:0 -4px 16px rgba(7,43,64,.08);max-width:860px;box-sizing:border-box}
+.tka-savebar{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 14px;margin-top:-70px;background:color-mix(in srgb,var(--tka-surface) 92%,transparent);backdrop-filter:blur(6px);border:1px solid var(--tka-border);border-radius:12px;box-shadow:0 -4px 16px rgba(7,43,64,.08);box-sizing:border-box}
 .tka-savebar .grow{flex:1}
 .tka-savebar .tka-unsaved{display:none;color:var(--tka-amber);font-weight:600}
 .tka-savebar.dirty .tka-unsaved{display:inline}
@@ -396,3 +397,10 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-set .tka-input{flex:0 0 auto}
 .tka-hook-r .tka-input{flex:1 1 280px}
 .tka-set .tka-inline .tka-input{flex:1 1 200px}
+
+/* Batch 122: use the full page width */
+.tka-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr));gap:12px;align-items:start}
+.tka-cards>.tka-row:has(.tka-dp:not([hidden])),.tka-cards>.tka-row:has(.tka-rv-form:not(:empty)){grid-column:1/-1}
+.tka-dp{grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));align-items:start}
+.tka-dp>.tka-dp-sec:has(.tka-jr-wrap),.tka-dp>p,.tka-dp>.tka-dp-note{grid-column:1/-1}
+.tka-head p{max-width:none}
