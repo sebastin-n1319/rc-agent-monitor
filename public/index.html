@@ -76,7 +76,7 @@
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
-<script src="/ticket-audits.js?v=1.27.1" defer></script>
+<script src="/ticket-audits.js?v=1.28.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
 <script src="/notice-center.js?v=1.2.2" defer></script>
@@ -805,10 +805,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">My Stats</span>
   </div>
   <!-- Session 51: ticket alerts for agents -->
-  <div class="sb-item" id="sb-agent-talerts" title="Ticket alerts: unassigned tickets and your tickets waiting for action"
+  <div class="sb-item" id="sb-agent-talerts" title="Tickets and Alerts: unassigned tickets, your tickets waiting for action, and Client lookup"
        onclick="sbAgent('talerts',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path class="nx-wave" d="M2.8 8.5a9 9 0 0 1 2-3.7M21.2 8.5a9 9 0 0 0-2-3.7"/></svg>
-    <span class="sb-label">Alerts</span>
+    <span class="sb-label">Tkt Alerts</span>
   </div>
   <!-- Session 76: Ticket audits for SPOCs (shown only to SPOCs and admins) -->
   <div class="sb-item ap-hidden" id="sb-agent-audits" title="Transfer review"
@@ -2404,7 +2404,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
       My Stats
     </button>
-    <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Alerts</button>
+    <button class="agent-shell-btn" id="agent-tab-talerts" onclick="switchAgentSection('talerts',this)">Tickets and Alerts</button>
     <button class="agent-shell-btn" id="agent-tab-updates" onclick="switchAgentSection('updates',this)">Updates</button>
     <button class="agent-shell-btn ap-hidden" id="agent-tab-audits" onclick="switchAgentSection('audits',this)">Review</button>
   </div>
@@ -4800,7 +4800,7 @@ function switchAgentSection(section,el){
     if (wkdToggleWrap) wkdToggleWrap.style.display = currentRole === 'admin' ? 'flex' : 'none';
   }
   if(section==='mystats'){ if(typeof openDeskLifecycleAgent==='function') openDeskLifecycleAgent(); if(window.TA&&TA.policyTab) TA.policyTab(); }
-  if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); }
+  if(section==='talerts'){ if(typeof window.openT1AlertsAgent==='function') window.openT1AlertsAgent(); if(window.TA&&TA.alertsTabs) TA.alertsTabs(); }
   if(section==='updates'){ if(window.PU) window.PU.open(); }
   if(section==='audits'){ if(window.TA) window.TA.open('agent'); }
   if(section==='assess') loadAssessFrame('agent-section-assess');

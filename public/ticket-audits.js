@@ -918,25 +918,40 @@
       pol = h('div', { id: 'tka-policy-root', class: 'tka-page', style: 'display:none' });
       var b1 = h('button', { type: 'button', role: 'tab', class: 'tka-tab on', text: 'Ticket stats', 'aria-selected': 'true' });
       var b2 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Transfer policy', 'aria-selected': 'false' });
-      var b3 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Client lookup', 'aria-selected': 'false' });
-      var look = h('div', { id: 'tka-lookup-root', class: 'tka-page', style: 'display:none' });
-      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2, b3]);
-      var drawnLook = false;
+      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2]);
       function pick(which) {
-        var p = which === 'policy', l = which === 'lookup';
-        [[b1, !p && !l], [b2, p], [b3, l]].forEach(function (x) { x[0].classList.toggle('on', x[1]); x[0].setAttribute('aria-selected', String(x[1])); });
-        if (root) root.style.display = (p || l) ? 'none' : ''; pol.style.display = p ? '' : 'none'; look.style.display = l ? '' : 'none';
+        var p = which === 'policy';
+        b1.classList.toggle('on', !p); b2.classList.toggle('on', p); b1.setAttribute('aria-selected', String(!p)); b2.setAttribute('aria-selected', String(p));
+        if (root) root.style.display = p ? 'none' : ''; pol.style.display = p ? '' : 'none';
         if (p) drawPolicy(pol);
-        if (l && !drawnLook) { drawnLook = true; clientLookup(look); }
       }
       b1.addEventListener('click', function () { pick('stats'); });
       b2.addEventListener('click', function () { pick('policy'); });
-      b3.addEventListener('click', function () { pick('lookup'); });
-      sec.insertBefore(bar, sec.firstChild); sec.appendChild(pol); sec.appendChild(look);
+      sec.insertBefore(bar, sec.firstChild); sec.appendChild(pol);
     }
   };
 
-  // ── My Stats: Client lookup, for agents on a live call ───────────────
+
+  // ── Tickets and Alerts page (agents): Ticket alerts + Client lookup ──
+  TA.alertsTabs = function () {
+    var sec = document.getElementById('agent-section-talerts'); if (!sec) return;
+    var root = document.getElementById('t1-alerts-agent-root');
+    if (document.getElementById('tka-alerts-tabs')) return;
+    var look = h('div', { id: 'tka-lookup-root', class: 'tka-page', style: 'display:none' });
+    var b1 = h('button', { type: 'button', role: 'tab', class: 'tka-tab on', text: 'Ticket alerts', 'aria-selected': 'true' });
+    var b2 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Client lookup', 'aria-selected': 'false' });
+    var bar = h('div', { id: 'tka-alerts-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2]);
+    var drawn = false;
+    function pick(l) {
+      b1.classList.toggle('on', !l); b2.classList.toggle('on', l); b1.setAttribute('aria-selected', String(!l)); b2.setAttribute('aria-selected', String(l));
+      if (root) root.style.display = l ? 'none' : ''; look.style.display = l ? '' : 'none';
+      if (l && !drawn) { drawn = true; clientLookup(look); }
+    }
+    b1.addEventListener('click', function () { pick(false); });
+    b2.addEventListener('click', function () { pick(true); });
+    sec.insertBefore(bar, sec.firstChild); sec.appendChild(look);
+  };
+  // ── Client lookup, for agents on a live call ───────────────
   var CALL_TOPICS = [['Phone issue', 'phone calls not working'], ['EHR not syncing', 'ehr not syncing'], ['Online scheduling', 'online scheduling double booking'], ['Reminders and texts', 'reminders text messages'], ['Billing', 'billing invoice charge'], ['Login or access', 'cannot log in password'], ['Email campaign', 'email campaign'], ['Reviews', 'reviews reputation'], ['Forms', 'patient forms']];
   function clientLookup(host) {
     var input = h('input', { class: 'tka-input tka-cl-q', type: 'search', placeholder: 'Ticket #, deal name, account name, phone or email', 'aria-label': 'Search for a client', autocomplete: 'off' });
