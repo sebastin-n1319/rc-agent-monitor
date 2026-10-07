@@ -738,15 +738,17 @@
         if (!j.rows.length) { out.replaceChildren(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'No reviews match' }), h('p', { text: 'Try a wider date range or clear the search.' })])); return; }
         var tbl = h('table', { class: 'tka-cov tka-hist' }, [h('thead', null, [h('tr', null, ['Ticket', 'Agent', 'Verdict', 'Moved to', 'Reviewer', 'When', 'Comment'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]),
           h('tbody', null, j.rows.map(function (r) {
-            var v = r.verdict ? verdictPill(r) : pill(r.state === 'waiting' ? 'Waiting' : 'No verdict', 'sev-medium');
+            var noV = !r.verdict;
+            var v = r.verdict ? verdictPill(r) : pill(r.state === 'waiting' ? 'Waiting for review' : r.state === 'moved' ? 'Moved, verdict missing' : 'No verdict recorded', 'sev-medium');
+            var none = function (t) { return h('span', { class: 'tka-when', text: t }); };
             return h('tr', null, [
               h('td', null, [r.web_url ? h('a', { class: 'tka-num', href: r.web_url, target: '_blank', rel: 'noopener', text: '#' + r.ticket_number }) : h('b', { text: '#' + r.ticket_number }), h('div', { class: 'tka-when', text: (r.subject || '').slice(0, 60) })]),
               h('td', { text: nameOf(r.agent_email, r.agent_name) }),
-              h('td', null, [v, r.source === 'bypass' ? h('div', { class: 'tka-when', text: 'Skipped review' }) : null, r.voided ? h('div', { class: 'tka-when', text: 'Strike removed' }) : null]),
-              h('td', { text: [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') || '' }),
-              h('td', { text: r.reviewer ? r.reviewer.split('@')[0] : '' }),
+              h('td', null, [v, noV && r.state !== 'waiting' ? h('div', { class: 'tka-when', text: 'Record it under Pending review' }) : null, r.source === 'bypass' ? h('div', { class: 'tka-when', text: 'Skipped review' }) : null, r.voided ? h('div', { class: 'tka-when', text: 'Strike removed' }) : null]),
+              h('td', null, [[r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') || none(r.state === 'waiting' ? 'Not moved yet' : 'Not recorded')]),
+              h('td', null, [r.reviewer ? r.reviewer.split('@')[0] : none('Not reviewed yet')]),
               h('td', { text: when(r.reviewed_at || r.left_at || r.entered_at) }),
-              h('td', { class: 'tka-hist-c', text: r.comment || '' })]);
+              h('td', { class: 'tka-hist-c' }, [r.comment || none(noV ? 'Added when reviewed' : 'No comment')])]);
           }))]);
         var pages = h('div', { class: 'tka-toolbar' }, [h('span', { class: 'tka-when', text: (f.offset + 1) + ' to ' + (f.offset + j.rows.length) + ' of ' + j.total }),
           f.offset > 0 ? btn('Previous', 'ghost sm', function () { f.offset = Math.max(0, f.offset - 50); load(); }) : null,
