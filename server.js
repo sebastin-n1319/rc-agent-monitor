@@ -571,6 +571,15 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     productUpdates.setDB(db);
     await productUpdates.initSchema();
     productUpdates.setNotices(notices);
+    try {
+      // Batch 133: tell agents about Client lookup once (update, bell notice and the must-finish tour).
+      require('./lib/tours').setDB(db); await require('./lib/tours').initSchema();
+      await productUpdates.seedOnce('client-lookup-2026-10', 'system', 'T1 CS tools', {
+        title: 'New: Client lookup on Tkt Alerts',
+        summary: 'Type a ticket number, deal name, account name, phone number or email and see the client before you speak: escalation status and owner, open tickets, last conversations and who handled them. Tell it why the client is calling (for example phones not working) and it shows earlier tickets and conversations on that topic, with suggested checks and what you can say and do.',
+        impact: 'On a live call, open Tkt Alerts, then Client lookup, and check the escalation status and owner, open tickets and earlier conversations on the same topic before you answer. Treat the suggestions as help and confirm everything with the client.',
+        category: 'Product update', modules: ['Tkt Alerts', 'Client lookup'] });
+    } catch (e) { console.warn('client lookup update seed failed:', e.message); }
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
     ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
@@ -8491,6 +8500,8 @@ app.get('/api/review/history', requireAuth, requireAuditAccess, auditWrap(async 
   res.setHeader('Content-Disposition', 'attachment; filename="transfer-reviews.csv"');
   res.send([cols.join(',')].concat(r.rows.map(x => cols.map(c => esc(x[c])).join(','))).join('\n'));
 }));
+app.get('/api/tours/:id/status', requireAuth, auditWrap(async (req, res) => { res.json({ success: true, ...(await require('./lib/tours').status(req.session.email, req.params.id)) }); }));
+app.post('/api/tours/:id/done', requireAuth, rateLimit(20, 60000), auditWrap(async (req, res) => { res.json({ success: true, ...(await require('./lib/tours').done(req.session.email, req.params.id)) }); }));
 // Batch 130: client lookup for agents on a live call (My Stats).
 const clientLookup = require('./lib/client-lookup');
 const dbAllLocal = (sql, params = []) => new Promise((rs, rj) => require('./database').db.all(sql, params, (e, r) => e ? rj(e) : rs(r || [])));

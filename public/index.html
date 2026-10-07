@@ -70,13 +70,14 @@
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
-<link rel="stylesheet" href="/ticket-audits.css?v=1.18.0" id="ticket-audits-link">
+<link rel="stylesheet" href="/ticket-audits.css?v=1.19.0" id="ticket-audits-link">
 <link rel="stylesheet" href="/access-control.css?v=1.4.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
-<script src="/ticket-audits.js?v=1.28.0" defer></script>
+<script src="/ticket-audits.js?v=1.29.0" defer></script>
+<script src="/client-tour.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
 <script src="/notice-center.js?v=1.2.2" defer></script>
@@ -4516,6 +4517,7 @@ function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false
   // Unread process and product updates must be acknowledged before agents start
   setTimeout(()=>{ try{ if(window.PU) window.PU.gate(role); }catch(e){} }, 1200);
   setTimeout(()=>{ try{ if(window.TA) window.TA.gate(); }catch(e){} }, 1500);
+  setTimeout(()=>{ try{ if(window.ClientTour) window.ClientTour.maybe(role); }catch(e){} }, 2400);
 
   const loginEl=document.getElementById('loginScreen');
   const appEl=document.getElementById('mainApp');
@@ -4715,6 +4717,7 @@ function toggleView(){
   if(currentRole!=='admin') return;
   const newView = currentViewMode==='admin' ? 'agent' : 'admin';
   applyView(newView);
+  if(newView==='agent'){ setTimeout(()=>{ try{ if(window.ClientTour) window.ClientTour.maybe('admin'); }catch(e){} }, 600); }
   // applyView() strips .page.active when LEAVING admin (to prevent tab
   // bleed-through) but has no symmetric restore when RETURNING to admin,
   // without this, the admin content area comes back completely blank until

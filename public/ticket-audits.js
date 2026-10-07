@@ -140,7 +140,15 @@
       h('div', { class: 'tka-dp-stats' }, [0, 1, 2, 3, 4, 5].map(function () { return h('div', { class: 'tka-skel', style: 'height:62px' }); })),
       h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-skel', style: 'height:170px' }), h('div', { class: 'tka-skel', style: 'height:170px' })])];
   }
-  function renderDeal(box, d) {
+  // Long analysis summaries stay readable: a few lines, then "Show the full summary".
+  function leadBlock(text) {
+    var p = h('p', { class: 'tka-dp-lead clamp', text: text });
+    if (text.length < 420 && text.split('\n').length < 7) { p.classList.remove('clamp'); return p; }
+    var b = h('button', { type: 'button', class: 'tka-link', text: 'Show the full summary', 'aria-expanded': 'false' });
+    b.addEventListener('click', function () { var open = p.classList.toggle('clamp') === false; b.textContent = open ? 'Show less' : 'Show the full summary'; b.setAttribute('aria-expanded', String(open)); });
+    return h('div', { class: 'tka-dp-leadbox' }, [p, b]);
+  }
+  function renderDeal(box, d, opts) {
     if (!d.available) { box.replaceChildren(dpNote(d.note || 'No deal context for this ticket.')); return; }
     var an = d.analysis || {}, dv = an.derived || { issues: [], modules: [] };
     var live = (d.journey || []).filter(function (t) { return t.state !== 'closed'; });
@@ -160,7 +168,7 @@
     // Main column: journey and issue history. Side column: what is open now and who worked it.
     var issues = an.available ? (an.issues || []) : dv.issues;
     var issueSec = dpSec('Issue history', [
-      an.available && an.headline ? h('p', { class: 'tka-dp-lead', text: an.headline }) : null,
+      an.available && an.headline ? leadBlock(an.headline) : null,
       an.available && an.trigger ? h('p', { class: 'tka-dp-cause', text: 'What triggered it: ' + an.trigger }) : null,
       an.available ? null : dpNote('Built from this deal\'s ticket subjects. ' + (an.note || 'The written account analysis is not available to this tool yet.')),
       issues.length ? h('div', { class: 'tka-iss' }, issues.map(issueItem)) : dpNote(an.available ? 'No issues recorded in the account analysis.' : 'No clear pattern in the ticket subjects.')], issues.length ? h('span', { class: 'tka-dp-cnt', text: String(issues.length) }) : null);
@@ -174,8 +182,10 @@
     var findSec = an.available && (an.findings || []).length ? dpSec('Serious findings', [h('div', { class: 'tka-find' }, an.findings.map(function (f) {
       return h('div', { class: 'tka-find-i' }, [h('div', { class: 'tka-iss-top' }, [pill('High', 'sev-high'), f.category ? pill(f.category, '') : null, f.product ? pill(f.product, 'dest') : null]), h('p', { text: f.claim })]);
     }))].concat(an.findingsTotal > an.findings.length ? [dpNote('Showing ' + an.findings.length + ' of the high severity findings. The analysis holds ' + an.findingsTotal + ' findings in total.')] : []), h('span', { class: 'tka-dp-cnt bad', text: String(an.findings.length) })) : null;
-    var kids = [h('div', { class: 'tka-dp-stats' }, stats),
-      h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-dp-col' }, [journeySec(d), issueSec, findSec].filter(Boolean)), h('div', { class: 'tka-dp-col' }, side)])];
+    var kids = opts && opts.wide
+      ? [h('div', { class: 'tka-dp-stats' }, stats), journeySec(d), issueSec, findSec, h('div', { class: 'tka-dp-trio' }, side)].filter(Boolean)
+      : [h('div', { class: 'tka-dp-stats' }, stats),
+        h('div', { class: 'tka-dp-grid' }, [h('div', { class: 'tka-dp-col' }, [journeySec(d), issueSec, findSec].filter(Boolean)), h('div', { class: 'tka-dp-col' }, side)])];
     if (an.available && an.savedAt) kids.push(dpNote('Account analysis from ' + when(an.savedAt) + '. Tickets are live from Zoho Desk.'));
     box.replaceChildren.apply(box, kids);
     Array.prototype.forEach.call(box.querySelectorAll('.tka-st, .tka-dp-sec'), function (el, n) { el.style.setProperty('--i', n); });
@@ -998,6 +1008,9 @@
       var facts = [];
       if (a.phone) facts.push(['Office line', a.phone]); if (a.city) facts.push(['Location', a.city]); if (a.ehr) facts.push(['EHR', a.ehr]);
       if (a.locations) facts.push(['Locations', a.locations]); if (a.contractEnd) facts.push(['Contract ends', String(a.contractEnd).slice(0, 10)]); if (a.owner) facts.push(['Account owner', a.owner]);
+      var jr = p.detail && p.detail.journey && p.detail.journey[0];
+      if (p.detail) { var cn = p.detail.counts || {}; facts.push(['Open now', String((cn.open || 0) + (cn['on hold'] || 0)) + ' ticket' + (((cn.open || 0) + (cn['on hold'] || 0)) === 1 ? '' : 's')]); }
+      if (jr) facts.push(['Last ticket', '#' + jr.number + (jr.created ? ', ' + String(jr.created).slice(0, 10) : '')]);
       var factRow = facts.length ? h('div', { class: 'tka-cl-facts' }, facts.map(function (f) { return h('div', { class: 'tka-df' }, [h('span', { class: 'tka-df-l', text: f[0] }), h('span', { text: f[1] })]); })) : null;
       // Call assist
       var topicIn = h('input', { class: 'tka-input', type: 'text', placeholder: 'What is the client calling about? e.g. phones keep dropping', 'aria-label': 'Reason for the call' });
@@ -1046,17 +1059,34 @@
         });
       }
       var assist = h('div', { class: 'tka-card tka-cl-assist' }, [h('h3', { text: 'Client is calling about...' }), h('div', { class: 'tka-toolbar' }, [topicIn, goBtn]), chips, out]);
-      // Contacts and other deals
-      var side = [];
-      if ((p.contacts || []).length) side.push(h('div', { class: 'tka-card' }, [h('h3', { text: 'People on this account' })].concat(p.contacts.map(function (c) {
-        return h('div', { class: 'tka-cl-ct' }, [h('b', { text: c.name || c.email }), h('span', { class: 'tka-when', text: [c.title, c.phone, c.name ? c.email : ''].filter(Boolean).join(' · ') })]);
-      }))));
-      if ((p.deals || []).length > 1) side.push(h('div', { class: 'tka-card' }, [h('h3', { text: 'Other deals on this account' }), h('div', { class: 'tka-chips' }, p.deals.map(function (d) {
-        return h('button', { type: 'button', class: 'tka-chip' + (d.id === p.dealId ? ' on' : ''), onclick: function () { openProfile(p.accountId, d.id); } }, [d.name || 'Deal', h('b', { text: d.stage || '' })]);
+      // Right rail: people (compact) and other deals
+      var rail = [];
+      var ppl = p.contacts || [];
+      if (ppl.length) {
+        var list = h('div', { class: 'tka-cl-people' });
+        var more = null;
+        var draw = function (all) {
+          list.replaceChildren.apply(list, (all ? ppl : ppl.slice(0, 5)).map(function (c) {
+            var line = [];
+            if (c.phone) line.push(h('a', { href: 'tel:' + c.phone.replace(/[^0-9+]/g, ''), text: c.phone }));
+            if (c.email) line.push(h('a', { href: 'mailto:' + c.email, text: c.email }));
+            return h('div', { class: 'tka-cl-pr' }, [h('span', { class: 'tka-df-av', 'aria-hidden': 'true', text: initials(c.name || c.email) }),
+              h('div', { class: 'tka-cl-pi' }, [h('b', { text: c.name || c.email }), c.title ? h('span', { class: 'tka-when', text: c.title }) : null, h('div', { class: 'tka-cl-pl' }, line)])]);
+          }));
+          if (more) more.textContent = all ? 'Show fewer' : 'Show all ' + ppl.length;
+        };
+        if (ppl.length > 5) { more = h('button', { type: 'button', class: 'tka-link', onclick: function () { draw(more.textContent.indexOf('all') > -1); } }); }
+        draw(false);
+        rail.push(h('div', { class: 'tka-card tka-cl-rc' }, [h('div', { class: 'tka-cl-rh' }, [h('h3', { text: 'People on this account' }), h('span', { class: 'tka-dp-cnt', text: String(ppl.length) })]), list, more]));
+      }
+      if ((p.deals || []).length > 1) rail.push(h('div', { class: 'tka-card tka-cl-rc' }, [h('div', { class: 'tka-cl-rh' }, [h('h3', { text: 'Deals on this account' }), h('span', { class: 'tka-dp-cnt', text: String(p.deals.length) })]), h('div', { class: 'tka-cl-deals' }, p.deals.map(function (d) {
+        return h('button', { type: 'button', class: 'tka-cl-dl' + (d.id === p.dealId ? ' on' : ''), onclick: function () { openProfile(p.accountId, d.id); } }, [h('span', { text: d.name || 'Deal' }), pill(d.stage || '', stageCls(d.stage) === 'good' ? 'st-approved' : '')]);
       }))]));
       var dealBox = h('div', { class: 'tka-dp tka-cl-deal' });
-      if (p.detail) renderDeal(dealBox, p.detail); else dealBox.replaceChildren(dpNote(p.detailNote || 'No support history yet.'));
-      view.replaceChildren(h('div', { class: 'tka-card tka-cl-head' }, [strip, factRow]), assist, side.length ? h('div', { class: 'tka-cl-side' }, side) : null, h('div', { class: 'tka-card' }, [h('h3', { text: 'Support history' }), dealBox]));
+      if (p.detail) renderDeal(dealBox, p.detail, { wide: true }); else dealBox.replaceChildren(dpNote(p.detailNote || 'No support history yet.'));
+      view.replaceChildren(h('div', { class: 'tka-card tka-cl-head' }, [strip, factRow]),
+        h('div', { class: 'tka-cl-grid' }, [assist, rail.length ? h('div', { class: 'tka-cl-rail' }, rail) : null]),
+        h('div', { class: 'tka-card tka-cl-hist' }, [h('h3', { text: 'Support history' }), dealBox]));
       try { view.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
       topicIn.focus();
     }
