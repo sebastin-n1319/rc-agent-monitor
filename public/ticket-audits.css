@@ -776,3 +776,6 @@ html.dark-mode .tka-an-ck li.bad i{background:rgba(238,92,98,.25);color:#ff9aa0}
 .tka-rounds-n{font-size:12px;color:var(--tka-t1)}
 .tka-rounds-c{flex-basis:100%;margin:0;font-size:12.5px;line-height:1.45;color:var(--tka-t2)}
 html.dark-mode .tka-rework-tg.warn{background:rgba(245,162,74,.15);border-color:rgba(245,162,74,.4);color:#f7b867}
+
+/* Batch 145: the save button stays faded until the verdict form is complete */
+.tka-btn.tka-wait,.tka-btn.tka-wait:disabled{opacity:.38;cursor:not-allowed;filter:grayscale(.35);box-shadow:none;transform:none}

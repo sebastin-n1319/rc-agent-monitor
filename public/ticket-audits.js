@@ -448,18 +448,30 @@
           if (kind === 'good' && who.value.trim().length < 2) return need(who, 'Say who the ticket was moved to');
           if (c.value.trim().length < 5) return need(c, kind === 'invalid' ? 'Write what the agent missed' : kind === 'ignored' ? 'Say why you are skipping this ticket' : 'Write a short comment on what you checked and where it went');
           var label = save.textContent;
-          busy(save, true, 'Saving...');
+          save.setAttribute('data-busy', '1'); busy(save, true, 'Saving...');
           api('/api/review/' + r.id + '/verdict', { verdict: kind, severity: sev.v, comment: c.value, toAgent: who.value }).then(function (x) {
-            busy(save, false, label);
+            save.removeAttribute('data-busy'); busy(save, false, label); syncSave();
             if (!x.success) return toast(x.error || 'Could not save', 'error');
             toast(x.strike ? 'Saved. Strike ' + x.strike.count + ' (' + x.strike.level + ') for the agent' + (x.strike.chat && !x.strike.chat.ok ? ', group message not sent' : '') : x.severity === 'feedback' ? 'Saved. Feedback sent to the agent, no strike' : 'Saved');
             load(false);
           });
         });
+        // Save stays faded and disabled until everything the verdict needs is filled in (the AI helper can fill fields without an input event, so it is re-checked on a short timer while the form is open).
+        function ready() { return c.value.trim().length >= 5 && (kind !== 'good' || who.value.trim().length >= 2) && (kind !== 'invalid' || !!sev.v); }
+        function syncSave() {
+          if (!save.isConnected) return false;
+          if (save.getAttribute('data-busy')) return true;
+          var ok = ready(); save.disabled = !ok; save.classList.toggle('tka-wait', !ok);
+          save.title = ok ? '' : kind === 'invalid' ? 'Choose Fatal or Feedback and write what the agent missed' : kind === 'ignored' ? 'Write why you are skipping this ticket' : 'Say who it moved to and write what you checked';
+          return true;
+        }
+        ['input', 'change'].forEach(function (ev) { c.addEventListener(ev, syncSave); who.addEventListener(ev, syncSave); });
+        var syncT = setInterval(function () { if (!syncSave()) clearInterval(syncT); }, 300);
+        save.disabled = true; save.classList.add('tka-wait');
         var ai = kind === 'ignored' ? null : h('div', { class: 'tka-asst' }, [h('span', { class: 'tka-when', text: 'AI is reading the ticket...' })]);
         if (ai) assistFor(r, kind, ai, who, c, sev, function (v) { var rb = document.getElementById(sevName + '-' + v); if (rb) { rb.checked = true; rb.dispatchEvent(new Event('change')); } });
         form.replaceChildren.apply(form, [h('p', { class: 'tka-hint', text: kind === 'invalid' ? 'Send the ticket back to the agent in Zoho Desk (owner and status), then save.' : kind === 'ignored' ? 'Not a transfer, for example the status was set by mistake. No strike, no feedback to the agent. It stays in History with your reason.' : 'Move the ticket to the right person in Zoho Desk, then save.' }),
-          kind === 'good' ? who : null, ai, sevBox, c, kind === 'ignored' ? null : msgBox(r, kind, c), h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
+          kind === 'good' ? who : null, ai, sevBox, c, kind === 'invalid' ? msgBox(r, kind, c) : null, h('div', { class: 'tka-actions' }, [save, btn('Cancel', 'ghost sm', function () { form.replaceChildren(); })])].filter(Boolean));
       }
       function vb(cls, icon, label, hint, kind) { return h('button', { type: 'button', class: 'tka-vb ' + cls, title: hint, onclick: function () {
         // The deal history is no longer needed once a decision is being made: fold it away and bring the feedback form into view.
