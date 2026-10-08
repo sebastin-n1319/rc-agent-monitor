@@ -480,8 +480,8 @@
         var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         setTimeout(function () { revealEl(form, { whole: true, block: 'start' }); var f = form.querySelector('textarea, input'); if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} } }, wasOpen && !calm ? 340 : 30);
       } }, [h('span', { class: 'tka-vb-i', 'aria-hidden': 'true', text: icon }), h('span', { text: label })]); }
-      var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket' })] : [];
-      var vrow = own ? null : h('div', { class: 'tka-vrow', role: 'group', 'aria-label': 'Review decision' }, [vb('ok', '\u2713', 'Approved', 'The transfer was right', 'good'), vb('fix', '\u21BA', 'Needs rework', 'Send it back to the agent', 'invalid')].concat(waiting ? [] : [vb('skip', '\u2192', 'Skip', 'Not a transfer, no strike', 'ignored')]));
+      var side = own ? [h('span', { class: 'tka-when', text: 'Your own ticket, you can review it' })] : [];
+      var vrow = h('div', { class: 'tka-vrow', role: 'group', 'aria-label': 'Review decision' }, [vb('ok', '\u2713', 'Approved', 'The transfer was right', 'good'), vb('fix', '\u21BA', 'Needs rework', 'Send it back to the agent', 'invalid')].concat(waiting ? [] : [vb('skip', '\u2192', 'Skip', 'Not a transfer, no strike', 'ignored')]));
       var anBox = h('div', { class: 'tka-an' }), anOpen = false, anBtn = null;
       var anShell = h('div', { class: 'tka-an-shell' }, [anBox]); anShell.hidden = true;
       function timeLabel(at) { if (!at) return ''; var d = new Date(String(at).replace(' ', 'T')); return isNaN(d) ? '' : d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
