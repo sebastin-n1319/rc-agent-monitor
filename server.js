@@ -527,6 +527,11 @@ async function pruneHeavyData() {
   const run = (sql, params = []) => new Promise((res, rej) => _d.run(sql, params, function (e) { e ? rej(e) : res(this.changes || 0); }));
   const out = {};
   const cut = d => new Date(Date.now() - d * 86400000).toISOString();
+  try {
+    const es = require('./lib/emergency-space');
+    const q = { run, all: (sql, p = []) => new Promise((res, rej) => _d.all(sql, p, (e, r) => e ? rej(e) : res(r))) };
+    out.ticket_mirror = await es.pruneTickets(q, es.TICKET_KEEP_DAYS);
+  } catch (e) { out.ticket_mirror = 'skipped: ' + e.message; }
   for (const [key, sql, params] of [
     ['desk_ticket_events', `DELETE FROM desk_ticket_events WHERE event_time < ?`, [cut(30)]],
     ['detail_text', `UPDATE desk_ticket_activity SET detail_text = NULL WHERE detail_text IS NOT NULL AND created_time < ?`, [cut(30)]],
