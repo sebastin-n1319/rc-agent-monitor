@@ -1996,6 +1996,9 @@ async function pruneOldData({ vacuum = 'auto' } = {}) {
     results.dbMB = Math.round(pages * size / 1048576);
     results.freeMB = Math.round(free * size / 1048576);
     if (vacuum === 'auto' && pages && free / pages > 0.2 && free * size > 50 * 1048576) doVacuum = true;
+    // Never auto-VACUUM while the journal is held in memory (full-disk mode): a VACUUM rewrites the whole file and an
+    // interrupted rewrite without a disk journal can corrupt it.
+    if (doVacuum && vacuum === 'auto') { const jm = await get(`PRAGMA journal_mode`); if (jm && /memory|off/i.test(String(Object.values(jm)[0]))) { doVacuum = false; results.vacuumSkipped = 'full-disk mode'; } }
   } catch (e) { /* non-fatal */ }
   if (doVacuum) {
     const t0 = Date.now();

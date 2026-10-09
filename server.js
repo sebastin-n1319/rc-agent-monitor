@@ -554,7 +554,8 @@ const _emergencyFree = (async () => {
 _emergencyFree.then(() => initDB()).then(async () => {
   console.log('DB ready');
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
-  try { console.log('🧹 Heavy-data trim:', JSON.stringify(await pruneHeavyData())); } catch(e) { log.error('heavy_prune_failed', e); }
+  // Run in the background: trimming a large old-ticket backlog takes minutes and must not hold up the rest of start-up.
+  pruneHeavyData().then(r => console.log('🧹 Heavy-data trim:', JSON.stringify(r))).catch(e => log.error('heavy_prune_failed', e));
   try {
     const r = await pruneOldData();
     console.log('🧹 Startup prune+vacuum:', JSON.stringify(r));
