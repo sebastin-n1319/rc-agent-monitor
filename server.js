@@ -625,6 +625,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
     ticketAudits.setDeps({ notices, ai: require('./lib/ai'), chat: (payload) => t1Alerts().notifyAuditReturn(payload), history: (tid) => fetchTicketHistoryItems(tid) });
+    ticketAudits.setDeps({ pin: (x) => require('./lib/cold-store').pinTickets(x) });
+    // Batch 152: reviewed and audited tickets keep their ticket copy on the volume whatever their age.
+    setTimeout(() => require('./lib/cold-store').restorePinned().then(r => { if (r.missing) console.log('📌 Reviewed/audited tickets restored:', JSON.stringify(r)); }).catch(e => console.warn('📌 restore pinned failed:', e.message)), 90000);
     // Session 88: transfer review (Pending Review - T1), polled every minute.
     require('./lib/deal-context').setKb(escalationWatch.kbHi);
     require('./lib/client-lookup').setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid) });
@@ -2441,7 +2444,7 @@ function chatReports() {
   _chatReports = createChatReports({
     getDateWindow, getBreakReportData,
     perfRoster: () => deskLifecycleAgentRoster(),
-    agentSummary: (args) => deskLifecycle.agentSummary(args),
+    agentSummary: async (args) => (await coldStore.pick(deskLifecycle, args.from, args.to)).agentSummary(args),
     callAndChatStats: (emails, from, to) => callAndChatStatsForAgents(emails, from, to),
     db: dbm, fetchFn: fetch,
     getWebhook: () => ALERT_HOOKS.summaries || '',
@@ -6965,6 +6968,16 @@ app.post('/api/admin/roster/reseed', requireAdmin, async (req, res) => {
 const deskLifecycle = require('./lib/desk-lifecycle');
 const deskService = require('./lib/desk-service');
 const aditkbService = require('./lib/aditkb-service');
+// Batch 152: ranges older than the volume holds are served from a scratch-disk cache filled from AditKB (lib/cold-store.js).
+const coldStore = require('./lib/cold-store');
+coldStore.configure({
+  aditkb: aditkbService,
+  upsertRow: (row, target) => upsertAditkbRow(row, target),
+  roster: () => deskLifecycleAgentRoster(),
+  hotAll: (sql, params = []) => new Promise((res, rej) => require('./database').db.all(sql, params, (e, r) => e ? rej(e) : res(r || []))),
+  hotFloor: async () => (await deskLifecycle.getSyncState('hot_floor')) || null,
+  hot: deskLifecycle,
+});
 const aditkbCallsService = require('./lib/aditkb-calls-service');
 const aditkbActivityService = require('./lib/aditkb-activity-service'); // Session 42: ticket replies/comments -> "tickets handled"
 const analyticsService = require('./lib/analytics-service');
@@ -7236,11 +7249,11 @@ async function runAditkbSnapshotSync() {
  *  exposed as a flat warehouse column (see lib/aditkb-service.js) so it's
  *  left null for AditKB-sourced rows -- not used anywhere in
  *  agentSummary()'s breakdowns, so this doesn't affect reporting. */
-async function upsertAditkbRow(row) {
+async function upsertAditkbRow(row, target = deskLifecycle) {
   const manual = pickManualCategory(row); // AditKB's cf_* keys match MANUAL_CATEGORY_FIELDS exactly
   const contactName = [row.contact_first_name, row.contact_last_name].filter(Boolean).join(' ') || null;
   try {
-    await deskLifecycle.upsertTicketSnapshot({
+    await target.upsertTicketSnapshot({
       ticket_id: row.id, ticket_number: row.ticket_number, subject: row.subject,
       contact_name: contactName, contact_email: row.email || null, account_name: row.contact_account_name || null,
       status: row.status, status_type: row.status_type, priority: row.priority,
@@ -7586,7 +7599,7 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
-    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
+    const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
     const extra = await callAndChatStatsForAgents(emails, from, to);
     const out = summary.map(s => ({ ...s, ...extra[s.email], pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
     res.json({ success: true, from, to, agents: out });
@@ -7604,7 +7617,7 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
-    const summary = await deskLifecycle.agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
+    const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
 
     const extra = await callAndChatStatsForAgents(emails, from, to);
     const header = [
@@ -7727,7 +7740,9 @@ async function runCsatSync() {
   if (!analyticsService.isConfigured()) return;
   _csatSyncRunning = true;
   try {
-    const since = await deskLifecycle.getSyncState('csat_last_survey_time_utc');
+    // Batch 152: one full re-read restores CSAT rows the 9 Oct 2026 emergency trim removed (survey rows are now kept for all time).
+    const resync = !(await deskLifecycle.getSyncState('csat_resync_b152'));
+    const since = resync ? null : await deskLifecycle.getSyncState('csat_last_survey_time_utc');
     const rows = await analyticsService.fetchSurveyRows(since || null);
     let maxTime = since || null;
     for (const r of rows) {
@@ -7735,6 +7750,7 @@ async function runCsatSync() {
       if (r.survey_time_utc && (!maxTime || r.survey_time_utc > maxTime)) maxTime = r.survey_time_utc;
     }
     if (maxTime) await deskLifecycle.setSyncState('csat_last_survey_time_utc', maxTime);
+    if (resync) await deskLifecycle.setSyncState('csat_resync_b152', new Date().toISOString());
     await deskLifecycle.setSyncState('csat_last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('csat_last_error', null);
     console.log(`⭐ CSAT sync: ${rows.length} survey row(s) synced`);
@@ -7900,7 +7916,7 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     const match = monitored.find(a => (a.email || '').toLowerCase() === email);
     const agentNames = match ? { [email]: match.name } : undefined;
     const rosterNames = monitored.map(a => a.name).filter(Boolean);
-    const summary = await deskLifecycle.agentSummary({ from, to, emails: [email], agentNames, q, rosterNames });
+    const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails: [email], agentNames, q, rosterNames });
 
     // Session 21: RingCentral call stats + SalesIQ chat stats, same
     // from/to window as the ticket summary above, so all three sections
@@ -8307,7 +8323,7 @@ app.get('/api/desk-lifecycle/my-tickets', requireAuth, async (req, res) => {
     if (!email) return res.status(400).json({ success: false, error: 'No session email' });
     const monitored = await getMonitoredAgents();
     const match = monitored.find(a => (a.email || '').toLowerCase() === email);
-    const tickets = await deskLifecycle.agentTicketList({ email, from, to, limit: 200, q, agentName: match ? match.name : null });
+    const tickets = await (await coldStore.pick(deskLifecycle, from, to)).agentTicketList({ email, from, to, limit: 200, q, agentName: match ? match.name : null });
     res.json({ success: true, from, to, tickets });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -8359,7 +8375,7 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
     const agentName = agentNames[targetEmail];
     const rosterNames = Object.values(agentNames);
 
-    const tickets = await deskLifecycle.agentTicketsForMetric({
+    const tickets = await (await coldStore.pick(deskLifecycle, from, to)).agentTicketsForMetric({
       metric, from, to, email: targetEmail, agentName, rosterNames, q, limit: 500,
     });
 
@@ -8410,7 +8426,7 @@ app.get('/api/desk-lifecycle/explain-ticket', requireAuth, rateLimit(20, 60000),
       }
     } catch (e) { console.warn('explain-ticket live read failed:', e.message); }
 
-    const out = await deskLifecycle.explainTicketForAgent({ ticketNumber: num, email: targetEmail, agentName: agentNames[targetEmail], from, to, live });
+    const out = await (await coldStore.pick(deskLifecycle, from, to)).explainTicketForAgent({ ticketNumber: num, email: targetEmail, agentName: agentNames[targetEmail], from, to, live });
     res.json({ success: true, from, to, agentEmail: targetEmail, agentName: byEmail[targetEmail]?.full_name || agentNames[targetEmail] || targetEmail, ...out });
   } catch (e) { console.error('explain-ticket:', e.message); res.status(500).json({ success: false, error: 'Could not check this ticket' }); }
 });
@@ -8449,13 +8465,13 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
         for (const ev of live.historyEvents) (historyTouches[ev.email] = historyTouches[ev.email] || []).push({ at: ev.at, text: ev.text });
       } catch (e) { console.warn('verify-ticket history read failed:', e.message); }
     }
-    const involvedBase = await deskLifecycle.ticketInvolvedEmails({ ticketNumber: num, live, emails, agentNames });
+    const involvedBase = await (await coldStore.pick(deskLifecycle, from, to)).ticketInvolvedEmails({ ticketNumber: num, live, emails, agentNames });
     const involved = [...new Set([...involvedBase, ...Object.keys(historyTouches)])];
     let ticket = null, found = false, sync = null, liveChecked = !!live;
     const agents = [];
     const targets = involved.length ? involved.slice(0, 12) : [];
     for (const email of targets) {
-      const out = await deskLifecycle.explainTicketForAgent({ ticketNumber: num, email, agentName: agentNames[email], from, to, live });
+      const out = await (await coldStore.pick(deskLifecycle, from, to)).explainTicketForAgent({ ticketNumber: num, email, agentName: agentNames[email], from, to, live });
       if (!out.found) continue;
       found = true; ticket = out.ticket; sync = out.sync; liveChecked = out.liveChecked;
       const third = (x) => String(x == null ? '' : x).replace(/\b(by|from|to|shows|show|add|adds|for|of|than|assigning it to) you\b/g, '$1 them').replace(/\byou are\b/g, 'they are').replace(/\bYou are\b/g, 'They are').replace(/\byou\b/g, 'they').replace(/\bYou\b/g, 'They').replace(/\byour\b/g, 'their').replace(/\bYour\b/g, 'Their');
@@ -8467,7 +8483,7 @@ app.get('/api/admin/desk-lifecycle/verify-ticket', requireAdmin, rateLimit(20, 6
       // No monitored agent involved: still describe the ticket itself.
       const first = emails[0];
       if (first) {
-        const out = await deskLifecycle.explainTicketForAgent({ ticketNumber: num, email: first, agentName: agentNames[first], from, to, live });
+        const out = await (await coldStore.pick(deskLifecycle, from, to)).explainTicketForAgent({ ticketNumber: num, email: first, agentName: agentNames[first], from, to, live });
         if (!out.found) return res.json({ success: true, from, to, found: false, reason: out.reason });
         ticket = out.ticket; found = true; sync = out.sync; liveChecked = out.liveChecked;
       } else return res.json({ success: true, from, to, found: false, reason: 'No monitored agents are set up.' });
