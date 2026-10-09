@@ -537,7 +537,16 @@ async function pruneHeavyData() {
   return out;
 }
 
-initDB().then(async () => {
+// Batch 148: if the volume is nearly full, free space first (journal in memory, delete rebuildable data) so initDB and sign-ins can write again.
+const _emergencyFree = (async () => {
+  try {
+    const { db: _d, volumeUsage: _vu } = require('./database');
+    const r = await require('./lib/emergency-space').freeSpace(_d, _vu);
+    if (r.ran || r.error) console.warn('🆘 Emergency space:', JSON.stringify(r));
+  } catch (e) { console.warn('⚠️ Emergency space skipped:', e.message); }
+})();
+
+_emergencyFree.then(() => initDB()).then(async () => {
   console.log('DB ready');
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
   try { console.log('🧹 Heavy-data trim:', JSON.stringify(await pruneHeavyData())); } catch(e) { log.error('heavy_prune_failed', e); }
@@ -4858,15 +4867,15 @@ async function startScheduler() {
   async function diskWatch() {
     try {
       const v = await volumeUsage();
-      if (v.pct < 80) return;
+      if (v.livePct < 80) return;
       const big = await tableSizes(4).catch(() => []);
-      const level = v.pct >= 90 ? 90 : 80, day = new Date().toISOString().slice(0, 10);
+      const level = v.livePct >= 90 ? 90 : 80, day = new Date().toISOString().slice(0, 10);
       const key = day + ':' + level;
       if (diskWatch._noted !== key) {
         diskWatch._noted = key;
-        await notices.notifyAudience('admins', { title: 'Storage is ' + v.pct + '% full (' + v.usedMB + ' of ' + v.totalMB + ' MB)', body: (big.length ? 'Largest tables: ' + big.map(t => t.name + ' ' + t.mb + ' MB').join(', ') + '. ' : '') + 'At 100% the app cannot save anything and agents see errors. Raise the Railway volume size or clear old data.', category: 'general', urgent: v.pct >= 90, days: 3 });
+        await notices.notifyAudience('admins', { title: 'Storage is ' + v.livePct + '% full (' + (v.usedMB - v.reclaimMB) + ' of ' + v.totalMB + ' MB in use)', body: (big.length ? 'Largest tables: ' + big.map(t => t.name + ' ' + t.mb + ' MB').join(', ') + '. ' : '') + 'At 100% the app cannot save anything and agents see errors. Raise the Railway volume size or clear old data.', category: 'general', urgent: v.livePct >= 90, days: 3 });
       }
-      console.warn('💾 disk watch: volume ' + v.pct + '% full', JSON.stringify(big));
+      console.warn('💾 disk watch: volume ' + v.pct + '% full, ' + v.livePct + '% in use after free pages', JSON.stringify(big));
     } catch (e) { console.error('❌ disk watch:', e.message); }
   }
   cron.schedule('*/30 * * * *', () => { diskWatch(); });

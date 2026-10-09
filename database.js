@@ -2056,7 +2056,10 @@ async function volumeUsage() {
   } catch (e) { /* fall through to the configured size */ }
   if (!totalBytes) { totalBytes = (Number(process.env.VOLUME_MB) || 500) * 1048576; freeBytes = Math.max(0, totalBytes - dbBytes); }
   const usedBytes = totalBytes - freeBytes;
-  return { totalMB: Math.round(totalBytes / 1048576), usedMB: Math.round(usedBytes / 1048576), freeMB: Math.round(freeBytes / 1048576), dbMB: Math.round(dbBytes / 1048576), pct: Math.round(usedBytes / totalBytes * 100) };
+  // Free pages inside the database file are empty space the app can reuse even though the file (and Railway's graph) stays the same size.
+  let reclaimBytes = 0;
+  try { const fl = await get(`PRAGMA freelist_count`), ps = await get(`PRAGMA page_size`); reclaimBytes = Object.values(fl || {n: 0})[0] * Object.values(ps || {n: 4096})[0]; } catch (e) {}
+  return { totalMB: Math.round(totalBytes / 1048576), usedMB: Math.round(usedBytes / 1048576), freeMB: Math.round(freeBytes / 1048576), dbMB: Math.round(dbBytes / 1048576), pct: Math.round(usedBytes / totalBytes * 100), reclaimMB: Math.round(reclaimBytes / 1048576), livePct: Math.round(Math.max(0, usedBytes - reclaimBytes) / totalBytes * 100) };
 }
 
 // ── Break thresholds ─────────────────────────────────────────────────────────
