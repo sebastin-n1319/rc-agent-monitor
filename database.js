@@ -2022,7 +2022,41 @@ async function getDbStats() {
   const freePages = await get(`PRAGMA freelist_count`);
   const dbSizeMB = ((pageSize.page_size * pageCount.page_count) / 1048576).toFixed(2);
   const freeMB   = ((pageSize.page_size * freePages.freelist_count) / 1048576).toFixed(2);
-  return { counts, dbSizeMB, freeMB, path: dbPath };
+  let volume = null, biggest = null;
+  try { volume = await volumeUsage(); } catch (e) {}
+  try { biggest = await tableSizes(10); } catch (e) {}
+  return { counts, dbSizeMB, freeMB, path: dbPath, volume, biggest };
+}
+
+// ── Disk watch (Batch 146) ───────────────────────────────────────────────────
+// Reports how full the volume is and which tables are biggest, so a full volume (SQLITE_FULL) is seen coming.
+// Uses SQLite's dbstat table when this build has it, otherwise sizes the known blob tables and counts rows.
+async function tableSizes(limit = 6) {
+  try {
+    const rows = await all(`SELECT name, SUM(pgsize) AS bytes FROM dbstat GROUP BY name ORDER BY bytes DESC LIMIT 60`);
+    const idx = await all(`SELECT name, tbl_name FROM sqlite_master WHERE type = 'index'`);
+    const owner = {}; idx.forEach(i => { owner[i.name] = i.tbl_name; });
+    const by = {}; rows.forEach(r => { const t = owner[r.name] || r.name; by[t] = (by[t] || 0) + (r.bytes || 0); });
+    return Object.keys(by).map(t => ({ name: t, mb: +(by[t] / 1048576).toFixed(1) })).sort((x, y) => y.mb - x.mb).slice(0, limit);
+  } catch (e) {
+    const out = [];
+    for (const [t, col] of [['assess_snapshots', 'img'], ['assess_audio', 'mp3']]) {
+      try { const r = await get(`SELECT COALESCE(SUM(LENGTH(${col})),0) AS b, COUNT(*) AS n FROM ${t}`); out.push({ name: t, mb: +(r.b / 1048576).toFixed(1), rows: r.n }); } catch (e2) { /* table may not exist */ }
+    }
+    return out.sort((x, y) => y.mb - x.mb).slice(0, limit);
+  }
+}
+async function volumeUsage() {
+  const fs = require('fs');
+  const size = f => { try { return fs.statSync(f).size; } catch (e) { return 0; } };
+  const dbBytes = size(dbPath) + size(dbPath + '-wal') + size(dbPath + '-shm');
+  let totalBytes = 0, freeBytes = 0;
+  try {
+    if (fs.statfsSync) { const st = fs.statfsSync(path.dirname(dbPath)); totalBytes = st.blocks * st.bsize; freeBytes = st.bavail * st.bsize; }
+  } catch (e) { /* fall through to the configured size */ }
+  if (!totalBytes) { totalBytes = (Number(process.env.VOLUME_MB) || 500) * 1048576; freeBytes = Math.max(0, totalBytes - dbBytes); }
+  const usedBytes = totalBytes - freeBytes;
+  return { totalMB: Math.round(totalBytes / 1048576), usedMB: Math.round(usedBytes / 1048576), freeMB: Math.round(freeBytes / 1048576), dbMB: Math.round(dbBytes / 1048576), pct: Math.round(usedBytes / totalBytes * 100) };
 }
 
 // ── Break thresholds ─────────────────────────────────────────────────────────
@@ -2617,7 +2651,7 @@ module.exports={
   getSetting,setSetting,deleteSetting,getAllSettings,
   getBreakThresholds,setBreakThreshold,getBreakPlans,setBreakPlan,deleteBreakPlan,
   getBreakReportData,
-  pruneOldData,getDbStats,
+  pruneOldData,getDbStats,volumeUsage,tableSizes,
   insertTicketFeedback,getTicketFeedback,getFeedbackStats,getWrongPatterns,
   upsertLearnedPattern,getLearnedPatterns,updatePatternFeedback
 };

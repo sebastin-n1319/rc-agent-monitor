@@ -25,7 +25,7 @@ const {
   insertAuditLog, getAuditLog,
   getBreakThresholds, setBreakThreshold, getBreakPlans, setBreakPlan, deleteBreakPlan,
   getBreakReportData,
-  pruneOldData, getDbStats,
+  pruneOldData, getDbStats, volumeUsage, tableSizes,
   insertTicketFeedback, getTicketFeedback, getFeedbackStats, getWrongPatterns,
   upsertLearnedPattern, getLearnedPatterns, updatePatternFeedback,
   createHandoff, getRecentHandoffs, getUnreadHandoffs, ackHandoff,
@@ -4830,6 +4830,23 @@ async function startScheduler() {
       console.log('🧹 Prune+vacuum done:', JSON.stringify(r));
     } catch(e) { console.error('❌ scheduled prune/archive:', e.message); }
   });
+  // Batch 146: disk watch. When the volume passes 80% (and again at 90%) the admins get one notice a day naming the biggest tables, before SQLITE_FULL stops writes.
+  async function diskWatch() {
+    try {
+      const v = await volumeUsage();
+      if (v.pct < 80) return;
+      const big = await tableSizes(4).catch(() => []);
+      const level = v.pct >= 90 ? 90 : 80, day = new Date().toISOString().slice(0, 10);
+      const key = day + ':' + level;
+      if (diskWatch._noted !== key) {
+        diskWatch._noted = key;
+        await notices.notifyAudience('admins', { title: 'Storage is ' + v.pct + '% full (' + v.usedMB + ' of ' + v.totalMB + ' MB)', body: (big.length ? 'Largest tables: ' + big.map(t => t.name + ' ' + t.mb + ' MB').join(', ') + '. ' : '') + 'At 100% the app cannot save anything and agents see errors. Raise the Railway volume size or clear old data.', category: 'general', urgent: v.pct >= 90, days: 3 });
+      }
+      console.warn('💾 disk watch: volume ' + v.pct + '% full', JSON.stringify(big));
+    } catch (e) { console.error('❌ disk watch:', e.message); }
+  }
+  cron.schedule('*/30 * * * *', () => { diskWatch(); });
+  setTimeout(diskWatch, 60000);
   // Session 19: ticket lifecycle sync -- every 20 min, paged across ticks
   cron.schedule('*/20 * * * *', async () => {
     runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
