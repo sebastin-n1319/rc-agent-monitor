@@ -4298,8 +4298,8 @@
           xList,
         ]));
         if (!me.owner) return;
-        var pd = h('select', { class: 'sel', 'aria-label': 'Keep camera photos for' }, [30, 60, 90, 180].map(function (n) { return h('option', { value: String(n), text: n + ' days' }); }));
-        pd.value = String([30, 60, 90, 180].indexOf(j.photoDays) >= 0 ? j.photoDays : 90);
+        var pd = h('select', { class: 'sel', 'aria-label': 'Keep camera photos for' }, [7, 14, 30, 60, 90, 180].map(function (n) { return h('option', { value: String(n), text: n + ' days' }); }));
+        pd.value = String([7, 14, 30, 60, 90, 180].indexOf(j.photoDays) >= 0 ? j.photoDays : 14);
         pd.addEventListener('change', function () { api('/api/assess/admin/access/photo-days', { method: 'PUT', body: { days: pd.value } }).then(function (r) { toast('Saved' + (r.purged ? ', ' + r.purged + ' older photos deleted' : '')); }).catch(function (e) { toast(e.message); }); });
         var ps = j.photoStats || { n: 0, bytes: 0 };
         grid.appendChild(h('div', { class: 'card pad wide stack' }, [

@@ -515,9 +515,32 @@ function escapeHtml(str) {
   } catch(e) { console.warn('⚠️ Pre-init prune error (non-fatal):', e.message); }
 })();
 
+// ── Heavy-data trim (Batch 147) ───────────────────────────────────────────────
+// Keeps the 500 MB volume from filling. Everything here is either rebuilt on demand or is a mirror that AditKB/Zoho still hold:
+//   - desk_ticket_events: legacy event cache, no longer written and read by nothing, cleared after 30 days.
+//   - desk_ticket_activity.detail_text: full status-change text, only the transfer review reads it (recent tickets), emptied after 30 days.
+//     The row itself (who, when, kind, destination) stays, so counts and reports are unchanged.
+//   - assess_audio: cached read-aloud audio, regenerated on the next play, cleared after 60 days.
+// Assessment camera photos are trimmed by their own setting (default 14 days) in lib/assessments.js.
+async function pruneHeavyData() {
+  const { db: _d } = require('./database');
+  const run = (sql, params = []) => new Promise((res, rej) => _d.run(sql, params, function (e) { e ? rej(e) : res(this.changes || 0); }));
+  const out = {};
+  const cut = d => new Date(Date.now() - d * 86400000).toISOString();
+  for (const [key, sql, params] of [
+    ['desk_ticket_events', `DELETE FROM desk_ticket_events WHERE event_time < ?`, [cut(30)]],
+    ['detail_text', `UPDATE desk_ticket_activity SET detail_text = NULL WHERE detail_text IS NOT NULL AND created_time < ?`, [cut(30)]],
+    ['assess_audio', `DELETE FROM assess_audio WHERE created_at < datetime('now', '-60 days')`, []],
+  ]) {
+    try { out[key] = await run(sql, params); } catch (e) { out[key] = 'skipped: ' + e.message; }
+  }
+  return out;
+}
+
 initDB().then(async () => {
   console.log('DB ready');
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
+  try { console.log('🧹 Heavy-data trim:', JSON.stringify(await pruneHeavyData())); } catch(e) { log.error('heavy_prune_failed', e); }
   try {
     const r = await pruneOldData();
     console.log('🧹 Startup prune+vacuum:', JSON.stringify(r));
@@ -4826,6 +4849,7 @@ async function startScheduler() {
         insertAuditLog('system', 'auto_archive', 'google_sheets', JSON.stringify(archiveResult)).catch(()=>{});
       }
       // 2. Always prune + VACUUM regardless
+      try { console.log('🧹 Heavy-data trim:', JSON.stringify(await pruneHeavyData())); } catch(e) { console.error('❌ heavy trim:', e.message); }
       const r = await pruneOldData();
       console.log('🧹 Prune+vacuum done:', JSON.stringify(r));
     } catch(e) { console.error('❌ scheduled prune/archive:', e.message); }
