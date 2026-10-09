@@ -4873,6 +4873,12 @@ async function startScheduler() {
   async function diskWatch() {
     try {
       const v = await volumeUsage();
+      // Always log one storage line so growth can be traced (main database, free pages inside it, cold cache location).
+      try {
+        const cs = await require('./lib/cold-store').status();
+        const big = await tableSizes(5).catch(() => []);
+        console.log('💾 storage: volume ' + v.usedMB + '/' + v.totalMB + ' MB, db file ' + v.dbMB + ' MB, free pages ' + v.reclaimMB + ' MB, cold cache ' + (cs.path || 'off') + ' ' + (cs.sizeMB || 0) + ' MB', JSON.stringify(big));
+      } catch (e) {}
       if (v.livePct < 80) return;
       const big = await tableSizes(4).catch(() => []);
       const level = v.livePct >= 90 ? 90 : 80, day = new Date().toISOString().slice(0, 10);
