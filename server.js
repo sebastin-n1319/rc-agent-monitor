@@ -547,7 +547,7 @@ const _emergencyFree = (async () => {
   try {
     const { db: _d, volumeUsage: _vu } = require('./database');
     const r = await require('./lib/emergency-space').freeSpace(_d, _vu);
-    if (r.ran || r.error) console.warn('🆘 Emergency space:', JSON.stringify(r));
+    if (r.ran || r.error || r.journal) console.warn('🆘 Emergency space:', JSON.stringify(r));
   } catch (e) { console.warn('⚠️ Emergency space skipped:', e.message); }
 })();
 
