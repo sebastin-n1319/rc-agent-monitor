@@ -8153,7 +8153,7 @@ app.get('/api/topic-support', requireAdmin, async (req, res) => {
   try {
     const ts = require('./lib/topic-support');
     const to = req.query.to || new Date().toISOString();
-    const from = req.query.from || '2026-10-01T05:00:00.000Z';
+    const from = req.query.from || '2026-09-08T05:00:00.000Z';
     const { agentNames } = await deskLifecycleAgentRoster();
     const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
     const data = {};
@@ -8178,7 +8178,7 @@ app.post('/api/topic-support/review', requireAdmin, rateLimit(20, 60000), async 
 app.get('/api/topic-support/export', requireAdmin, async (req, res) => {
   try {
     const ts = require('./lib/topic-support');
-    const to = req.query.to || new Date().toISOString(), from = req.query.from || '2026-10-01T05:00:00.000Z';
+    const to = req.query.to || new Date().toISOString(), from = req.query.from || '2026-09-08T05:00:00.000Z';
     const { agentNames } = await deskLifecycleAgentRoster();
     const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
     const sums = [];

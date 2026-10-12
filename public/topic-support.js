@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var S = { grain: 'day', topic: 'ai', preset: 'golive', from: '', to: '', data: null, busy: false, filter: 'all', q: '', auditing: {}, reviewing: {}, openRow: {}, weekly: null };
-  var GOLIVE = { ai: '2026-10-01', voip: '2026-10-12' };
+  var GOLIVE = { ai: '2026-09-08', voip: '2026-10-12' };
   function h(tag, attrs, kids) {
     var e = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
@@ -56,7 +56,7 @@
       h('div', null, [h('h2', { class: 'tsd-h1', text: 'AI & VoIP support' }),
         h('p', { class: 'tsd-sub', text: 'How much basic AI and VoIP support T1 now handles, what T1 resolves, and what still gets transferred. Built from Zoho Desk tickets; calls and chats are the Phone and Chat tickets T1 logs for them. Each ticket is sorted against the support guide.' })]),
       h('div', { class: 'tsd-ctrl' }, [
-        seg([['golive', 'Since 1 Oct'], ['7d', 'Last 7 days'], ['today', 'Today'], ['custom', 'Custom']], S.preset, function (v) { S.preset = v; if (v !== 'custom') load(); else draw(); }),
+        seg([['golive', 'Since go-live'], ['7d', 'Last 7 days'], ['today', 'Today'], ['custom', 'Custom']], S.preset, function (v) { S.preset = v; if (v !== 'custom') load(); else draw(); }),
         S.preset === 'custom' ? h('span', { class: 'tsd-dates' }, [
           h('input', { type: 'date', 'aria-label': 'From', value: S.from || GOLIVE.ai, min: '2026-07-12', onchange: function (e) { S.from = e.target.value; } }),
           h('span', { text: 'to' }),
