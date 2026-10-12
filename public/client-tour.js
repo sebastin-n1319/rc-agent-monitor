@@ -71,12 +71,26 @@
     { title: 'Ticket numbers open in Zoho Desk', text: 'Ticket numbers in the guides and in Ask AI answers are links. Click one to open that ticket in Zoho Desk and see how it was handled.' },
     { title: 'Check before you act', text: 'Open the linked section before you act on a live call, and confirm details with the client. If the guides do not cover the issue, Ask AI says so; follow the usual process and escalate when needed.', last: true }
   ];
+  function visibleSidebar() {
+    var a = document.getElementById('adit-admin-sidebar'), b = document.getElementById('adit-agent-sidebar');
+    if (a && getComputedStyle(a).display !== 'none') return a;
+    return b && getComputedStyle(b).display !== 'none' ? b : null;
+  }
+  var HD_STEPS = [
+    { title: 'Getting around', text: 'A quick look at the header, your profile menu and the sidebar, so you can find anything in the tool in a couple of clicks.', mark: 'TOUR' },
+    { title: 'Clock and time zone', text: 'The live clock shows the time in the zone you pick. Switch between CST and IST here; times across the tool follow your choice.', target: '#hmTime', side: 'bottom' },
+    { title: 'Notifications', text: 'The bell collects announcements, what is new in the tool, assessment updates and items meant just for you. A number shows what you have not read.', target: '#ncBell', side: 'bottom' },
+    { title: 'Your profile menu', text: 'Click your name to replay any tour, jump to any page, search everything, see keyboard shortcuts, turn on dark mode or sign out. Admins also switch between admin and agent view here.', target: '#hmMe', side: 'bottom' },
+    { title: 'Your pages', text: 'Every page you can open is in the sidebar on the left. The highlighted item is the page you are on.', target: visibleSidebar, side: 'right' },
+    { title: 'Search from anywhere', text: 'Press Ctrl K (or /) on any page to search pages and actions, and press ? to see all keyboard shortcuts.', last: true }
+  ];
   var TOURS = [
-    { id: 'client-lookup', steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
-    { id: 'support-guides', steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' }
+    { id: 'client-lookup', title: 'Client lookup', blurb: 'Find a client before you answer', icon: 'lookup', agent: true, steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
+    { id: 'support-guides', title: 'Support guides', blurb: 'VoIP and AI guides with Ask AI', icon: 'guides', agent: true, steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' },
+    { id: 'getting-around', title: 'Getting around', blurb: 'Header, profile menu and sidebar', icon: 'header', optional: true, steps: HD_STEPS, toast: 'Tour finished. Replay it any time from your profile menu.' }
   ];
 
-  function start(tour, then) {
+  function start(tour, then, replay) {
     if (T.running || document.getElementById('ct-root')) return;
     T.running = true;
     var STEPS = tour.steps, ID = tour.id;
@@ -86,17 +100,17 @@
     var title = h('h2', { id: 'ct-t' }), text = h('p', { class: 'ct-text' }), extra = h('div', { class: 'ct-extra' });
     var dots = h('div', { class: 'ct-dots', 'aria-hidden': 'true' }, STEPS.map(function () { return h('i'); }));
     var ack = h('input', { type: 'checkbox', id: 'ct-ack' });
-    var ackRow = h('label', { class: 'ct-ack', for: 'ct-ack' }, [ack, tour.ack]);
+    var ackRow = h('label', { class: 'ct-ack', for: 'ct-ack' }, [ack, tour.ack || ' I understand']);
     var err = h('p', { class: 'ct-err', role: 'alert' });
     var prev = h('button', { type: 'button', class: 'ct-btn', text: 'Back' });
     var next = h('button', { type: 'button', class: 'ct-btn primary' });
-    var card = h('div', { class: 'ct-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'ct-t', tabindex: '-1' }, [h('div', { class: 'ct-top' }, [h('span', { class: 'ct-pill', text: 'New feature' }), h('span', { class: 'ct-count' })]), title, text, extra, ackRow, err, h('div', { class: 'ct-foot' }, [dots, h('div', { class: 'ct-btns' }, [prev, next])])]);
+    var card = h('div', { class: 'ct-card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'ct-t', tabindex: '-1' }, [h('div', { class: 'ct-top' }, [h('span', { class: 'ct-pill', text: replay ? 'Tour' : 'New feature' }), h('span', { class: 'ct-top-r' }, [h('span', { class: 'ct-count' }), replay ? h('button', { type: 'button', class: 'ct-x', 'aria-label': 'Close tour', title: 'Close tour (Esc)', text: '\u00d7', onclick: function () { finish(false); } }) : null])]), title, text, extra, ackRow, err, h('div', { class: 'ct-foot' }, [dots, h('div', { class: 'ct-btns' }, [prev, next])])]);
     var root = h('div', { class: 'ct-root', id: 'ct-root' }, [back, ring, card]);
     document.body.appendChild(root); document.body.classList.add('ct-lock');
     function block(e) { if (!card.contains(e.target)) { e.stopPropagation(); e.preventDefault(); } }
     ['mousedown', 'click', 'touchstart'].forEach(function (ev) { root.addEventListener(ev, block, true); });
     function onKey(e) {
-      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return; }
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); if (replay) finish(false); return; }
       if (e.key === 'Tab') {
         var f = card.querySelectorAll('button:not([disabled]), input:not([disabled])'); if (!f.length) { e.preventDefault(); return; }
         var first = f[0], last = f[f.length - 1];
@@ -107,7 +121,7 @@
     }
     document.addEventListener('keydown', onKey, true);
     function place() {
-      var s = STEPS[i], el = s.target ? document.querySelector(s.target) : null;
+      var s = STEPS[i], el = s.target ? (typeof s.target === 'function' ? s.target() : document.querySelector(s.target)) : null;
       if (el && el.offsetParent !== null) {
         try { el.scrollIntoView({ block: 'center', behavior: 'instant' }); } catch (e) {}
         var r = el.getBoundingClientRect(), pad = 8;
@@ -129,11 +143,11 @@
       card.querySelector('.ct-count').textContent = 'Step ' + (i + 1) + ' of ' + STEPS.length;
       Array.prototype.forEach.call(dots.children, function (d, n) { d.className = n === i ? 'on' : n < i ? 'past' : ''; });
       prev.style.visibility = i ? 'visible' : 'hidden';
-      ackRow.style.display = s.last ? '' : 'none'; err.textContent = '';
+      ackRow.style.display = s.last && !replay ? '' : 'none'; err.textContent = '';
       next.textContent = s.last ? 'Finish' : 'Next';
       // A short pause on each step so the tour is read, not clicked through.
-      var wait = i === 0 ? 0 : 1500; next.disabled = true;
-      function ready() { next.disabled = s.last ? !ack.checked : false; }
+      var wait = i === 0 || replay ? 0 : 1500; next.disabled = true;
+      function ready() { next.disabled = s.last && !replay ? !ack.checked : false; }
       timer = setTimeout(ready, wait); ack.onchange = ready;
       card.classList.remove('in'); void card.offsetWidth; card.classList.add('in');
       setTimeout(function () { place(); try { (next.disabled ? card : next).focus({ preventScroll: true }); } catch (e) {} }, s.before ? 450 : 30);
@@ -143,18 +157,24 @@
       if (i < STEPS.length - 1) { i++; show(); return; }
       next.disabled = true; err.textContent = '';
       api('/api/tours/' + ID + '/done', {}).then(function (r) {
-        if (r && r.success) {
-          clearTimeout(timer); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', place);
-          root.remove(); document.body.classList.remove('ct-lock'); T.running = false;
-          try { if (typeof showToast === 'function') showToast(tour.toast, 'success'); } catch (e) {}
-          if (then) setTimeout(then, 1200);
-        } else { err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false; }
-      }).catch(function () { err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false; });
+        if (r && r.success) finish(true);
+        else if (replay) finish(true);
+        else { err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false; }
+      }).catch(function () {
+        if (replay) { finish(true); return; }
+        err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false;
+      });
     });
+    function finish(completed) {
+      clearTimeout(timer); clearInterval(watch); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', place);
+      root.remove(); document.body.classList.remove('ct-lock'); T.running = false;
+      if (completed) { try { if (typeof showToast === 'function') showToast(tour.toast, 'success'); } catch (e) {} }
+      if (then) setTimeout(then, 1200);
+    }
     window.addEventListener('resize', place);
     // If another pop-up appears while the tour is open (for example the mood check-in), step aside until it is dismissed.
-    var hidden = false;
-    var watch = setInterval(function () {
+    var hidden = false, watch;
+    watch = setInterval(function () {
       if (!document.getElementById('ct-root')) { clearInterval(watch); return; }
       var b = blocked();
       if (b && !hidden) { hidden = true; root.style.visibility = 'hidden'; }
@@ -163,6 +183,17 @@
     show();
   }
 
+  T.list = function () { return TOURS.map(function (t) { return { id: t.id, title: t.title, blurb: t.blurb, icon: t.icon, steps: t.steps.length, status: true }; }); };
+  T.status = function (id) { return api('/api/tours/' + id + '/status').then(function (r) { return !!(r && r.success && r.done); }); };
+  // Replay from the profile menu: can be closed at any time. Agent tours open agent view first.
+  T.replay = function (id) {
+    var t = TOURS.filter(function (x) { return x.id === id; })[0];
+    if (!t || T.running) return;
+    var admin = typeof currentRole !== 'undefined' && currentRole === 'admin';
+    var inAdminView = admin && typeof currentViewMode !== 'undefined' && currentViewMode === 'admin';
+    if (t.agent && inAdminView && typeof toggleView === 'function') { toggleView(); return setTimeout(function () { start(t, null, true); }, 900); }
+    start(t, null, true);
+  };
   // Wait for the update and review screens that appear at sign-in, then check whether this person has finished the tour.
   T.maybe = function (role) {
     if (T.checked || T.running || role === 'assessment') return;
@@ -178,6 +209,7 @@
     // Run each unfinished tour in turn, oldest first.
     function next(k) {
       if (k >= TOURS.length) return;
+      if (TOURS[k].optional) return next(k + 1);
       api('/api/tours/' + TOURS[k].id + '/status').then(function (r) {
         if (r && r.success && !r.done) start(TOURS[k], function () { next(k + 1); });
         else if (r && r.success) next(k + 1);

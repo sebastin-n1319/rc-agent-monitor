@@ -78,10 +78,12 @@
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
 <script src="/ticket-audits.js?v=1.37.2" defer></script>
-<script src="/client-tour.js?v=1.3.0" defer></script>
+<script src="/client-tour.js?v=1.4.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
-<script src="/notice-center.js?v=1.2.2" defer></script>
+<script src="/notice-center.js?v=1.2.3" defer></script>
+<link rel="stylesheet" href="/app-header.css?v=1.0.0">
+<script src="/app-header.js?v=1.0.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -855,42 +857,69 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
 <!-- APP -->
 <div id="mainApp">
-<header>
-  <div class="hdr-left">
-    <!-- Actual Adit logo PNG -->
-    <img src="/adit-logo.png" alt="Adit" style="height:32px;width:auto;flex-shrink:0;display:block;">
-    <div class="hdr-sep"></div>
-    <div class="hdr-sub" style="font-size:11px;color:rgba(178,219,240,.55)">T1 CS Stars &nbsp;&middot;&nbsp; <span id="roleLabel">--</span></div>
+<header class="hm-bar">
+  <div class="hdr-left hm-left">
+    <img src="/adit-logo.png" alt="Adit" class="hm-logo">
+    <div class="hm-sep" aria-hidden="true"></div>
+    <div class="hm-brand">
+      <span class="hm-title">T1 CS Stars</span>
+      <span class="hm-ws"><span id="hmWs">Workspace</span><span id="roleLabel" hidden>--</span></span>
+    </div>
   </div>
-  <div class="hdr-right">
-    <button class="hdr-chip" onclick="toggleTZ()">
-      <span id="tzLabel" class="tz-on">CST</span>
-      <span style="color:var(--text3)">/</span>
-      <span id="tzOther">IST</span>
-    </button>
-    <div class="hdr-chip" style="cursor:default">
-      <span class="live-dot"></span>
-      <span id="clock" style="font-family:'Poppins',sans-serif;font-variant-numeric:tabular-nums;font-weight:600;font-size:12px;">--:--:--</span>
+  <div class="hdr-right hm-right">
+    <div class="hm-time" id="hmTime" role="group" aria-label="Clock and time zone">
+      <span class="live-dot" aria-hidden="true"></span>
+      <span id="clock" class="hm-clock">--:--:--</span>
+      <span class="hm-seg" role="group" aria-label="Time zone">
+        <button type="button" class="hm-tz" data-tz="CST" aria-pressed="true" onclick="hmSetTZ('CST')">CST</button>
+        <button type="button" class="hm-tz" data-tz="IST" aria-pressed="false" onclick="hmSetTZ('IST')">IST</button>
+      </span>
+      <span id="tzLabel" hidden>CST</span><span id="tzOther" hidden>IST</span>
     </div>
-    <div class="hdr-user">
-      <img id="userAvatar" class="hdr-avatar" src="" alt="" style="display:none">
-      <span id="userLabel">--</span>
-      <span id="userRoleTag" class="role-pill role-admin">ADMIN</span>
-    </div>
-    <button class="btn btn-sm" id="viewToggleBtn" onclick="toggleView()" style="display:none;background:rgba(244,137,31,.08);border:1px solid rgba(244,137,31,.25);color:#F4891F;font-size:11px;border-radius:6px;padding:5px 11px;font-weight:600;cursor:pointer;">Switch to Agent View</button>
-    <!-- Dark mode toggle -->
-    <button id="darkModeBtn" onclick="toggleDarkMode()" title="Toggle dark mode"
-      style="width:32px;height:32px;border-radius:50%;border:1px solid rgb(222,225,230);background:#F7F8F8;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;">
-      <!-- Sun icon (shown in dark mode) -->
-      <svg id="dm-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:none;color:#FBC84B;">
-        <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-      </svg>
-      <!-- Moon icon (shown in light mode) -->
-      <svg id="dm-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:#6B849A;">
-        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-      </svg>
+    <button id="darkModeBtn" class="hm-icon" type="button" onclick="toggleDarkMode()" title="Dark mode" aria-label="Toggle dark mode">
+      <svg id="dm-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg id="dm-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
     </button>
-    <button class="logout-btn" onclick="doLogout()">Logout</button>
+    <div class="hm-me-wrap" id="hmMeWrap">
+      <button type="button" class="hm-me" id="hmMe" aria-haspopup="dialog" aria-expanded="false" aria-controls="hmMenu" onclick="hmToggle()">
+        <span class="hm-av"><img id="userAvatar" src="" alt="" style="display:none"><span class="hm-init" id="hmInit" aria-hidden="true">?</span></span>
+        <span class="hm-who"><span id="userLabel" class="hm-name">--</span><span class="hm-sub" id="hmSub">Signed in</span></span>
+        <svg class="hm-chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+      </button>
+      <div class="hm-menu" id="hmMenu" role="dialog" aria-label="Profile menu" hidden>
+        <div class="hm-view" data-view="main">
+          <div class="hm-card">
+            <span class="hm-av lg" id="hmCardAv" aria-hidden="true"></span>
+            <div class="hm-card-t">
+              <strong id="hmFull">--</strong>
+              <span id="hmEmail"></span>
+              <span class="hm-card-tags"><span id="userRoleTag" class="role-pill role-admin">ADMIN</span><span class="hm-tag" id="hmViewTag">Admin view</span></span>
+            </div>
+          </div>
+          <div class="hm-list">
+            <button type="button" class="hm-row hm-switch" data-ic="swap" id="viewToggleBtn" onclick="hmClose();toggleView()" style="display:none">Switch to Agent View</button>
+            <button type="button" class="hm-row" onclick="hmShow('tours')" data-ic="tour"><span>Take a tour</span><small id="hmTourHint">Replay feature walkthroughs</small><i class="hm-go" aria-hidden="true"></i></button>
+            <button type="button" class="hm-row" onclick="hmShow('pages')" data-ic="pages"><span>Go to a page</span><small>Every page you can open</small><i class="hm-go" aria-hidden="true"></i></button>
+            <button type="button" class="hm-row" onclick="hmClose();window.openCmdPalette&&openCmdPalette()" data-ic="search"><span>Search everything</span><kbd>Ctrl K</kbd></button>
+            <button type="button" class="hm-row" onclick="hmClose();window.showKbdModal&&showKbdModal()" data-ic="keys"><span>Keyboard shortcuts</span><kbd>?</kbd></button>
+            <button type="button" class="hm-row" role="switch" id="hmDark" aria-checked="false" onclick="toggleDarkMode();hmSync()" data-ic="moon"><span>Dark mode</span><i class="hm-sw" aria-hidden="true"></i></button>
+          </div>
+          <div class="hm-list hm-foot">
+            <button type="button" class="hm-row hm-out" onclick="hmClose();doLogout()" data-ic="out"><span>Sign out</span></button>
+          </div>
+        </div>
+        <div class="hm-view" data-view="tours" hidden>
+          <div class="hm-vhead"><button type="button" class="hm-back" onclick="hmShow('main')" aria-label="Back"></button><strong>Take a tour</strong></div>
+          <p class="hm-note">Short walkthroughs you can replay any time. Press Escape to leave a tour.</p>
+          <div class="hm-list" id="hmTours"></div>
+        </div>
+        <div class="hm-view" data-view="pages" hidden>
+          <div class="hm-vhead"><button type="button" class="hm-back" onclick="hmShow('main')" aria-label="Back"></button><strong>Go to a page</strong></div>
+          <label class="hm-find"><span class="hm-sr">Filter pages</span><input type="search" id="hmPageQ" placeholder="Type to filter pages" autocomplete="off"></label>
+          <div class="hm-list hm-pages" id="hmPages"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </header>
 

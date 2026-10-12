@@ -190,7 +190,7 @@
   function poll() { if (!document.hidden && bell && bell.isConnected) load(); }
   function mount() {
     var right = document.querySelector('header .hdr-right');
-    var logout = right && right.querySelector('.logout-btn');
+    var logout = right && (right.querySelector('.logout-btn') || right.querySelector('#darkModeBtn'));
     if (!right || !logout || document.getElementById('ncBell')) return !!document.getElementById('ncBell');
     bell = el('button', { id: 'ncBell', class: 'nc-bell', type: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false', 'aria-label': 'Notifications', title: 'Notifications', onclick: function (e) { e.stopPropagation(); toggle(); } });
     bell.innerHTML = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2a6 6 0 0 1 6 6c0 3.5 1.5 5 1.5 5h-15S4 11.5 4 8a6 6 0 0 1 6-6z"/><path d="M8.7 17a1.4 1.4 0 0 0 2.6 0"/></svg>';
