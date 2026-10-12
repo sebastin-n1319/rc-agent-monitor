@@ -1,7 +1,7 @@
 /* Batch 165: AI and VoIP support handled by T1 (admin, under Tickets). Data: /api/topic-support. */
 (function () {
   'use strict';
-  var S = { topic: 'ai', preset: 'golive', from: '', to: '', data: null, busy: false, filter: 'all', q: '', auditing: {}, reviewing: {}, openRow: {}, weekly: null };
+  var S = { grain: 'day', topic: 'ai', preset: 'golive', from: '', to: '', data: null, busy: false, filter: 'all', q: '', auditing: {}, reviewing: {}, openRow: {}, weekly: null };
   var GOLIVE = { ai: '2026-10-01', voip: '2026-10-12' };
   function h(tag, attrs, kids) {
     var e = document.createElement(tag);
@@ -112,7 +112,7 @@
         h('div', null, [h('span', { class: 'tsd-ba-l', text: 'Before (' + fmtDay(base.from) + ' to ' + fmtDay(new Date(Date.parse(base.to) - 1).toISOString()) + ')' }), h('b', { text: pct(base.toTopicTeam, base.inTopic) }), h('span', { class: 'tsd-ba-s', text: base.toTopicTeam + ' of ' + base.inTopic + ' tickets went to ' + d.teamLabel })]),
         h('div', null, [h('span', { class: 'tsd-ba-l', text: 'Now, of what T1 handled' }), h('b', { class: nowRate < baseRate ? 'good' : '', text: pct(t.transferred, t.t1Touched) }), h('span', { class: 'tsd-ba-s', text: t.transferred + ' of ' + t.t1Touched + ' transferred, ' + t.resolvedByT1 + ' resolved by T1' })])]))]));
     // Trend
-    out.push(card('By day', 'Tickets T1 handled each day: kept by T1 against transferred.', trend(d.byDay)));
+    out.push(trendCard(d.byDay));
     // Agents + categories
     var ag = d.byAgent.map(function (a) {
       var flags = d.tickets.filter(function (x) { return x.agent === a.name && x.audit && x.audit.verdict === 'could_handle'; }).length;
@@ -187,20 +187,89 @@
   }
   function empty(t) { return h('p', { class: 'tsd-empty', text: t }); }
   function card(title, sub, content) { return h('section', { class: 'tsd-card' }, [h('h3', { class: 'tsd-h3', text: title }), sub ? h('p', { class: 'tsd-card-sub', text: sub }) : null, content]); }
-  function trend(days) {
-    if (!days.length) return empty('No tickets in this range yet.');
-    var max = Math.max.apply(null, days.map(function (x) { return x.handled + x.transferred; })) || 1;
-    return h('div', null, [
-      h('div', { class: 'tsd-trend', role: 'img', 'aria-label': days.map(function (x) { return fmtDay(x.day + 'T12:00:00Z') + ': ' + x.handled + ' kept, ' + x.transferred + ' transferred'; }).join('; ') },
-        days.map(function (x) {
-          var tot = x.handled + x.transferred;
-          return h('div', { class: 'tsd-bar', title: fmtDay(x.day + 'T12:00:00Z') + ': ' + x.handled + ' kept by T1, ' + x.transferred + ' transferred' }, [
-            h('div', { class: 'tsd-bar-col', style: 'height:' + Math.max(4, Math.round(tot / max * 100)) + '%' }, [h('i', { class: 'tr', style: 'flex:' + x.transferred }), h('i', { class: 'kp', style: 'flex:' + x.handled })]),
-            h('span', { class: 'tsd-bar-l', text: fmtDay(x.day + 'T12:00:00Z') })]);
-        })),
+  // ── Over time: day, week, month or quarter, with a total on each bar and a breakdown on hover or focus ──
+  var GRAINS = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['quarter', 'Quarter']];
+  function ymd(dt) { return dt.toISOString().slice(0, 10); }
+  function periodKey(day, g) {
+    var dt = new Date(day + 'T12:00:00Z');
+    if (g === 'week') { var w = (dt.getUTCDay() + 6) % 7; dt.setUTCDate(dt.getUTCDate() - w); return ymd(dt); }
+    if (g === 'month') return day.slice(0, 7);
+    if (g === 'quarter') return day.slice(0, 4) + '-Q' + (Math.floor((+day.slice(5, 7) - 1) / 3) + 1);
+    return day;
+  }
+  function nextKey(k, g) {
+    if (g === 'day' || g === 'week') { var dt = new Date(k + 'T12:00:00Z'); dt.setUTCDate(dt.getUTCDate() + (g === 'week' ? 7 : 1)); return ymd(dt); }
+    if (g === 'month') { var y = +k.slice(0, 4), m = +k.slice(5, 7) + 1; if (m > 12) { m = 1; y++; } return y + '-' + (m < 10 ? '0' : '') + m; }
+    var yq = +k.slice(0, 4), q = +k.slice(-1) + 1; if (q > 4) { q = 1; yq++; } return yq + '-Q' + q;
+  }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function periodLabel(k, g, long) {
+    if (g === 'day') return MON[+k.slice(5, 7) - 1] + ' ' + (+k.slice(8, 10));
+    if (g === 'week') { var e = new Date(k + 'T12:00:00Z'); e.setUTCDate(e.getUTCDate() + 6); var el = ymd(e);
+      return (long ? 'Week of ' : '') + MON[+k.slice(5, 7) - 1] + ' ' + (+k.slice(8, 10)) + (long ? ' to ' + MON[+el.slice(5, 7) - 1] + ' ' + (+el.slice(8, 10)) : ''); }
+    if (g === 'month') return MON[+k.slice(5, 7) - 1] + ' ' + k.slice(0, 4);
+    return k.slice(-2) + ' ' + k.slice(0, 4);
+  }
+  function groupDays(days, g) {
+    var m = {}, keys = [];
+    days.forEach(function (x) {
+      var k = periodKey(x.day, g);
+      var p = m[k] || (m[k] = { key: k, handled: 0, transferred: 0, resolved: 0, open: 0, call: 0, chat: 0, ticket: 0 });
+      ['handled', 'transferred', 'resolved', 'open', 'call', 'chat', 'ticket'].forEach(function (f) { p[f] += x[f] || 0; });
+    });
+    keys = Object.keys(m).sort();
+    if (!keys.length) return [];
+    var out = [], k = keys[0], guard = 0;
+    while (k <= keys[keys.length - 1] && guard++ < 400) { out.push(m[k] || { key: k, handled: 0, transferred: 0, resolved: 0, open: 0, call: 0, chat: 0, ticket: 0 }); k = nextKey(k, g); }
+    return out;
+  }
+  function trendCard(days) {
+    var g = S.grain;
+    var seg = h('div', { class: 'tsd-seg', role: 'group', 'aria-label': 'Group by' }, GRAINS.map(function (x) {
+      return h('button', { type: 'button', 'aria-pressed': g === x[0] ? 'true' : 'false', text: x[1], onclick: function () { S.grain = x[0]; draw(); } }); }));
+    var noun = { day: 'day', week: 'week', month: 'month', quarter: 'quarter' }[g];
+    return h('section', { class: 'tsd-card' }, [
+      h('div', { class: 'tsd-card-hd' }, [h('div', null, [h('h3', { class: 'tsd-h3', text: 'Over time' }),
+        h('p', { class: 'tsd-card-sub', text: 'What T1 handled each ' + noun + ': kept by T1 against transferred. Point at a bar for the breakdown.' })]), seg]),
+      trend(groupDays(days, g), g)]);
+  }
+  function trend(periods, g) {
+    if (!periods.length) return empty('No tickets in this range yet.');
+    var max = Math.max.apply(null, periods.map(function (x) { return x.handled + x.transferred; })) || 1;
+    var tip = h('div', { class: 'tsd-tip', role: 'status' }); tip.hidden = true;
+    var wrap = h('div', { class: 'tsd-trend-wrap' }, []);
+    function pc(n, d) { return d ? Math.round(n / d * 100) + '%' : '0%'; }
+    function show(el, x) {
+      var tot = x.handled + x.transferred;
+      tip.replaceChildren(
+        h('b', { text: periodLabel(x.key, g, true) }),
+        h('div', { class: 'tsd-tip-row' }, [h('span', { text: 'Handled by T1' }), h('strong', { text: String(tot) })]),
+        h('div', { class: 'tsd-tip-row' }, [h('span', null, [h('i', { class: 'kp' }), 'Resolved by T1']), h('strong', { text: x.resolved + ' (' + pc(x.resolved, tot) + ')' })]),
+        h('div', { class: 'tsd-tip-row' }, [h('span', null, [h('i', { class: 'kp lt' }), 'Still with T1']), h('strong', { text: String(x.open) })]),
+        h('div', { class: 'tsd-tip-row' }, [h('span', null, [h('i', { class: 'tr' }), 'Transferred']), h('strong', { text: x.transferred + ' (' + pc(x.transferred, tot) + ')' })]),
+        h('div', { class: 'tsd-tip-sub', text: x.call + ' calls · ' + x.chat + ' chats · ' + x.ticket + ' tickets' }));
+      tip.hidden = false;
+      var wr = wrap.getBoundingClientRect(), r = el.getBoundingClientRect();
+      var left = r.left - wr.left + wrap.scrollLeft + r.width / 2;
+      tip.style.left = Math.max(90, Math.min(left, wrap.scrollWidth - 90)) + 'px';
+      wrap.querySelectorAll('.tsd-bar.on').forEach(function (b) { b.classList.remove('on'); }); el.classList.add('on');
+    }
+    function hide() { tip.hidden = true; wrap.querySelectorAll('.tsd-bar.on').forEach(function (b) { b.classList.remove('on'); }); }
+    var bars = h('div', { class: 'tsd-trend' + (periods.length > 20 ? ' dense' : '') }, periods.map(function (x) {
+      var tot = x.handled + x.transferred;
+      var el = h('div', { class: 'tsd-bar', tabindex: '0', role: 'img', 'aria-label': periodLabel(x.key, g, true) + ': ' + tot + ' handled, ' + x.handled + ' kept by T1, ' + x.transferred + ' transferred' }, [
+        h('span', { class: 'tsd-bar-v', text: tot ? String(tot) : '' }),
+        h('div', { class: 'tsd-bar-col', style: 'height:' + (tot ? Math.max(4, Math.round(tot / max * 100)) : 0) + '%' }, [h('i', { class: 'tr', style: 'flex:' + x.transferred }), h('i', { class: 'kp', style: 'flex:' + x.handled })]),
+        h('span', { class: 'tsd-bar-l', text: periodLabel(x.key, g) })]);
+      el.addEventListener('mouseenter', function () { show(el, x); });
+      el.addEventListener('focus', function () { show(el, x); });
+      el.addEventListener('mouseleave', hide); el.addEventListener('blur', hide);
+      return el;
+    }));
+    wrap.appendChild(bars); wrap.appendChild(tip);
+    return h('div', null, [wrap,
       h('div', { class: 'tsd-legend' }, [h('span', null, [h('i', { class: 'kp' }), 'Kept by T1']), h('span', null, [h('i', { class: 'tr' }), 'Transferred'])])]);
   }
-
   function auditCard(d) {
     var list = d.tickets.filter(function (x) {
       if (S.filter === 'transferred' && !(x.outcome === 'toTopicTeam' || x.outcome === 'toOther')) return false;
