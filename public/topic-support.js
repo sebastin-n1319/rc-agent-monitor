@@ -79,7 +79,7 @@
   function body(d) {
     var t = d.totals, out = [];
     if (Date.parse(d.to) <= Date.parse(d.from)) out.push(h('div', { class: 'tsd-note', text: 'T1 starts ' + d.label + ' on ' + fmtDay(chiDate(d.goLive).toISOString()) + '. Pick a range that includes that date.' }));
-    out.push(h('p', { class: 'tsd-range', text: 'Counting tickets created ' + fmtWhen(d.from) + ' to ' + fmtWhen(d.to) + ' Central. ' + d.label + ' moved to T1 on ' + fmtDay(chiDate(d.goLive).toISOString()) + ', so earlier dates are left out.' }));
+    out.push(h('p', { class: 'tsd-range', text: 'Counting tickets created ' + fmtWhen(d.from) + ' to ' + fmtWhen(d.to) + ' Central. ' + d.label + ' moved to T1 on ' + fmtDay(chiDate(d.goLive).toISOString()) + ', so earlier dates are left out. ' + (d.source === 'aditkb' ? 'Read live from AditKB.' : (d.sourceNote || 'From the tickets synced into the tool.')) }));
     out.push(h('div', { class: 'tsd-tiles' }, [
       tile('Handled by T1', t.t1Touched, t.inTopic + ' ' + d.label + ' tickets in all'),
       tile('Resolved by T1', t.resolvedByT1, pct(t.resolvedByT1, t.t1Touched) + ' of what T1 handled', 'ok'),

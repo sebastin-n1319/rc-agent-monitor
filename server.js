@@ -669,7 +669,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     guides.setDB(db); await guides.initSchema(); // Batch 156: Support guides guest list
     // Batch 165: AI and VoIP support handled by T1 (admin dashboard under Tickets)
     { const ts = require('./lib/topic-support'); ts.setDB(db); await ts.initSchema();
-      ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, ticketContext: (tid) => escalationWatch.ticketContext(tid) }); }
+      ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid) }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
