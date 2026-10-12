@@ -254,3 +254,12 @@ html.dark-mode #adit-admin-sidebar .sb-item .pu-badge,html.dark-mode #adit-agent
 .acx-share-in:focus-visible{outline:2px solid #21AAE0;outline-offset:2px;border-radius:4px}
 #acx-guides-list .acx-actions{display:flex;gap:6px;align-items:center}
 @media (max-width:640px){.acx-share{flex-wrap:wrap}.acx-share-l{width:100%}}
+
+/* Support guides guests: long list */
+.acx-gtools{padding:0 16px 8px}
+.acx-gfind input{width:100%;box-sizing:border-box;height:36px;padding:0 12px;border:1px solid var(--acx-line);border-radius:8px;background:var(--acx-soft);color:var(--acx-t1);font:400 13px 'Poppins',sans-serif;outline:none}
+.acx-gfind input:focus{border-color:#21AAE0;box-shadow:0 0 0 3px rgba(33,170,224,.18)}
+.acx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.acx-more{display:block;width:calc(100% - 32px);margin:6px 16px 14px;padding:9px;border:1px dashed var(--acx-line);border-radius:8px;background:transparent;color:#1E8DBB;font:600 12.5px 'Poppins',sans-serif;cursor:pointer}
+.acx-more:hover{background:var(--acx-soft)}
+.acx-more:focus-visible{outline:2px solid #21AAE0;outline-offset:2px}

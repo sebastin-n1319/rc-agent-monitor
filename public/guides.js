@@ -112,31 +112,62 @@
   }
   // Layout only: the guide's words are not changed. Parts become banners, each section a numbered block,
   // each sub-topic a card, and every "Who handles it" line a callout, like the AI runbook.
+  // Sections (and the query catalog's topics) fold up so the guide reads as a list of headings first.
+  var UNTIL_FOUND = 'onbeforematch' in document.documentElement;
+  function toggler(hd) {
+    var b = h('button', { type: 'button', class: 'gd-tg', 'aria-expanded': 'false' });
+    while (hd.firstChild) b.appendChild(hd.firstChild);
+    hd.appendChild(b); return b;
+  }
+  function setOpen(col, on) {
+    if (!col) return;
+    col.classList.toggle('open', !!on);
+    var b = col.querySelector('.gd-tg'), body = col.querySelector('.gd-body');
+    if (b) b.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (body) { if (on) body.removeAttribute('hidden'); else if (UNTIL_FOUND) body.setAttribute('hidden', 'until-found'); else body.hidden = true; }
+  }
+  function openTo(el) { var c = el && el.closest ? el.closest('.gd-col') : null; while (c) { setOpen(c, true); c = c.parentElement && c.parentElement.closest('.gd-col'); } }
   function structure(doc) {
     var nodes = Array.prototype.slice.call(doc.childNodes);
     var intro = h('div', { class: 'gd-lede' }), part = null, partNo = 0, sec = null, secNo = 0, card = null, counts = [];
+    var secBody = null, cardBody = null, secs = [];
     var frag = document.createDocumentFragment();
     nodes.forEach(function (n) {
       var tag = n.nodeType === 1 ? n.tagName : '';
       if (tag === 'H1') {
-        partNo++; secNo = 0; sec = null; card = null; counts[partNo - 1] = 0;
+        partNo++; secNo = 0; sec = null; card = null; secBody = null; cardBody = null; counts[partNo - 1] = 0;
         part = h('div', { class: 'gd-part gd-part-' + partNo });
         part.appendChild(h('div', { class: 'gd-part-hd' }, [h('span', { class: 'gd-eyebrow', text: 'Part ' + partNo }), n]));
         frag.appendChild(part); return;
       }
       if (tag === 'H2') {
-        secNo++; card = null; if (partNo) counts[partNo - 1]++;
+        secNo++; card = null; cardBody = null; if (partNo) counts[partNo - 1]++;
         var num = (secNo < 10 ? '0' : '') + secNo;
         n.setAttribute('data-num', num);
-        sec = h('section', { class: 'gd-sec' }, [h('div', { class: 'gd-sec-hd' }, [h('span', { class: 'gd-num', 'aria-hidden': 'true', text: num }), n])]);
+        var tg = toggler(n);
+        secBody = h('div', { class: 'gd-body' });
+        var meta = h('span', { class: 'gd-meta' });
+        tg.appendChild(meta); tg.appendChild(h('span', { class: 'gd-chev', 'aria-hidden': 'true' }));
+        sec = h('section', { class: 'gd-sec gd-col' }, [h('div', { class: 'gd-sec-hd' }, [h('span', { class: 'gd-num', 'aria-hidden': 'true', text: num }), n]), secBody]);
+        secs.push({ sec: sec, meta: meta });
         (part || frag).appendChild(sec); return;
       }
       if (tag === 'H3') {
-        card = h('div', { class: 'gd-card' }, [n]);
-        (sec || part || frag).appendChild(card); return;
+        if (partNo === 2) {
+          var ctg = toggler(n); ctg.appendChild(h('span', { class: 'gd-chev', 'aria-hidden': 'true' }));
+          cardBody = h('div', { class: 'gd-body' });
+          card = h('div', { class: 'gd-card gd-col' }, [n, cardBody]);
+        } else { card = h('div', { class: 'gd-card' }, [n]); cardBody = card; }
+        (secBody || part || frag).appendChild(card); return;
       }
       if (tag === 'P' && /^\s*Who handles it:/.test(n.textContent)) n.className = 'gd-who';
-      (card || sec || part || intro).appendChild(n);
+      (cardBody || secBody || part || intro).appendChild(n);
+    });
+    secs.forEach(function (x) { var k = x.sec.querySelectorAll('.gd-card').length; x.meta.textContent = k ? k + (k === 1 ? ' topic' : ' topics') : ''; });
+    Array.prototype.forEach.call(frag.querySelectorAll('.gd-col'), function (c) { setOpen(c, false); });
+    Array.prototype.forEach.call(frag.querySelectorAll('.gd-part'), function (p) {
+      var k = p.querySelectorAll('.gd-sec').length, hd = p.querySelector('.gd-part-hd');
+      if (hd && k) hd.appendChild(h('span', { class: 'gd-part-n', text: k + ' sections' }));
     });
     var facts = h('dl', { class: 'gd-facts' }, [
       h('div', null, [h('dt', { text: 'Part 1' }), h('dd', { text: 'Support guide, ' + (counts[0] || 0) + ' sections' })]),
@@ -153,12 +184,29 @@
     var toc = h('ul', { class: 'gd-toc' });
     var heads = Array.prototype.slice.call(doc.querySelectorAll('h1[id],h2[id],h3[id]'));
     var items = heads.map(function (hd) {
-      var label = hd.textContent.replace(/\s+/g, ' ').trim();
+      var lc = hd.cloneNode(true); Array.prototype.forEach.call(lc.querySelectorAll('.gd-meta'), function (m) { m.remove(); });
+      var label = lc.textContent.replace(/\s+/g, ' ').trim();
       var a = h('a', { href: '#voip/' + hd.id, class: 'l' + hd.tagName.charAt(1), onclick: function (ev) { ev.preventDefault(); go('voip', hd.id); } });
       if (hd.getAttribute('data-num')) a.appendChild(h('span', { class: 'gd-toc-n', text: hd.getAttribute('data-num') }));
       a.appendChild(document.createTextNode(label));
-      var li = h('li', null, [a]); toc.appendChild(li); return { hd: hd, a: a, li: li };
+      var li = h('li', { class: hd.tagName === 'H3' ? 'sub' : null }, [a]); toc.appendChild(li); return { hd: hd, a: a, li: li };
     });
+    // Sub-topics show in the contents only while their section is open.
+    function syncToc() { items.forEach(function (it) { if (it.hd.tagName !== 'H3') return; var sc = it.hd.closest('.gd-sec'); it.li.classList.toggle('shut', !!sc && !sc.classList.contains('open')); }); }
+    doc.addEventListener('click', function (ev) {
+      var b = ev.target.closest && ev.target.closest('.gd-tg'); if (!b || !doc.contains(b)) return;
+      var col = b.closest('.gd-col'); setOpen(col, !col.classList.contains('open')); syncToc();
+    });
+    doc.addEventListener('beforematch', function (ev) { openTo(ev.target); syncToc(); });
+    function all(on) { Array.prototype.forEach.call(doc.querySelectorAll(on ? '.gd-sec' : '.gd-col'), function (c) { setOpen(c, on); }); syncToc(); say(on ? 'All sections open' : 'All sections closed'); }
+    var bulk = h('div', { class: 'gd-bulk', role: 'group', 'aria-label': 'Sections' }, [
+      h('button', { type: 'button', class: 'gd-link', text: 'Open all', onclick: function () { all(true); } }),
+      h('button', { type: 'button', class: 'gd-link', text: 'Close all', onclick: function () { all(false); } })
+    ]);
+    var saved = null;
+    function remember() { if (!saved) saved = Array.prototype.filter.call(doc.querySelectorAll('.gd-col'), function (c) { return c.classList.contains('open'); }); }
+    function restore() { if (!saved) return; var keep = saved; saved = null; Array.prototype.forEach.call(doc.querySelectorAll('.gd-col'), function (c) { setOpen(c, keep.indexOf(c) > -1); }); syncToc(); }
+    syncToc();
     var count = h('span', { class: 'gd-find-n', 'aria-live': 'polite' });
     var input = h('input', { type: 'search', placeholder: 'Search the VoIP guide', 'aria-label': 'Search the VoIP guide' });
     var timer = null, hits = [], hitAt = -1;
@@ -188,7 +236,7 @@
       heads = Array.prototype.slice.call(doc.querySelectorAll('h1[id],h2[id],h3[id]'));
       items.forEach(function (it, i) { it.hd = heads[i]; });
       hits = []; hitAt = -1;
-      if (q.length < 2) { items.forEach(function (it) { it.li.classList.remove('hide'); }); count.textContent = ''; return; }
+      if (q.length < 2) { items.forEach(function (it) { it.li.classList.remove('hide'); }); count.textContent = ''; syncToc(); return; }
       var ql = q.toLowerCase(), found = 0;
       items.forEach(function (it, i) {
         var txt = it.hd.textContent + ' ' + sectionOf(i).map(function (n) { return n.textContent || ''; }).join(' ');
@@ -203,6 +251,7 @@
         frag.appendChild(document.createTextNode(t.slice(at))); node.parentNode.replaceChild(frag, node);
       });
       count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Ask AI.';
+      hits.forEach(function (mk) { openTo(mk); }); syncToc();
       if (hits.length) { hitAt = 0; hits[0].scrollIntoView({ block: 'center' }); }
       spy();
     }
@@ -210,7 +259,8 @@
       index();
       hits = []; hitAt = -1;
       CSS.highlights.delete('gd-find'); CSS.highlights.delete('gd-cur');
-      if (q.length < 2) { items.forEach(function (it) { it.li.classList.remove('hide'); }); count.textContent = ''; return; }
+      if (q.length < 2) { items.forEach(function (it) { it.li.classList.remove('hide'); }); count.textContent = ''; restore(); return; }
+      remember();
       var ql = q.toLowerCase(), found = 0;
       items.forEach(function (it, i) { var on = itemText[i].indexOf(ql) > -1; it.li.classList.toggle('hide', !on); if (on) found++; });
       for (var t = 0; t < texts.length && hits.length < 2000; t++) {
@@ -218,10 +268,13 @@
         while (k > -1) { var r = document.createRange(); r.setStart(texts[t].node, k); r.setEnd(texts[t].node, k + ql.length); hits.push(r); k = low.indexOf(ql, k + ql.length); }
       }
       if (hits.length) { var hl = new Highlight(); hits.forEach(function (r) { hl.add(r); }); CSS.highlights.set('gd-find', hl); }
+      // Open only the sections and topics that hold a match; clearing the search puts them back.
+      Array.prototype.forEach.call(doc.querySelectorAll('.gd-col'), function (c) { setOpen(c, false); });
+      var seen = []; hits.forEach(function (r) { var el = r.startContainer.parentElement; if (el && seen.indexOf(el) < 0) { seen.push(el); openTo(el); } }); syncToc();
       count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Ask AI.';
       if (hits.length) { hitAt = 0; showHit(0); }
     }
-    var side = h('aside', { class: 'gd-side', 'aria-label': 'Contents' }, [h('div', { class: 'gd-find' }, [icon(IC.search), input, count]), h('nav', { 'aria-label': 'Guide sections' }, [toc])]);
+    var side = h('aside', { class: 'gd-side', 'aria-label': 'Contents' }, [h('div', { class: 'gd-find' }, [icon(IC.search), input, count]), bulk, h('nav', { 'aria-label': 'Guide sections' }, [toc])]);
     var root = h('div', { class: 'gd-reader' }, [side, doc]);
     var obs = null;
     function spy() {
@@ -233,11 +286,12 @@
       items.forEach(function (it) { obs.observe(it.hd); });
     }
     setTimeout(spy, 50);
-    reader = { root: root, doc: doc };
+    reader = { root: root, doc: doc, syncToc: syncToc };
   }
   function jump(id) {
     var el = reader && reader.doc.querySelector('[id="' + String(id).replace(/"/g, '') + '"]');
     if (!el) return;
+    openTo(el); if (reader.syncToc) reader.syncToc();
     setTimeout(function () { el.scrollIntoView({ block: 'start' }); el.classList.remove('gd-flash'); void el.offsetWidth; el.classList.add('gd-flash'); }, 30);
   }
 

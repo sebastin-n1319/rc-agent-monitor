@@ -14,9 +14,6 @@ html.dark-mode header.hm-bar,html.dark-mode .hm-menu{
 :is(header.hm-bar,.hm-menu) .hm-left{display:flex;align-items:center;gap:14px;min-width:0}
 :is(header.hm-bar,.hm-menu) .hm-logo{height:28px;width:auto;display:block;flex-shrink:0}
 :is(header.hm-bar,.hm-menu) .hm-sep{width:1px;height:26px;background:var(--hm-line);flex-shrink:0}
-:is(header.hm-bar,.hm-menu) .hm-brand{display:flex;flex-direction:column;line-height:1.2;min-width:0}
-:is(header.hm-bar,.hm-menu) .hm-title{font-size:13px;font-weight:600;color:var(--hm-ink);letter-spacing:-.005em;white-space:nowrap}
-:is(header.hm-bar,.hm-menu) .hm-ws{font-size:11px;color:var(--hm-mute);white-space:nowrap}
 :is(header.hm-bar,.hm-menu) .hm-right{display:flex !important;align-items:center;gap:6px !important}
 
 /* Clock and time zone */
@@ -160,3 +157,25 @@ html.dark-mode :is(header.hm-bar,.hm-menu) #viewToggleBtn.hm-switch{color:#F7A85
 .ct-x:hover{background:rgba(7,43,64,.06)}
 .ct-x:focus-visible{outline:2px solid var(--tka-teal,#0b8f8e)}
 .hm-menu .hm-tour > small{white-space:normal}
+
+/* Brand and current page (Batch 160) */
+header.hm-bar .hm-logo{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+header.hm-bar .hm-logo:hover{transform:scale(1.05) rotate(-2deg)}
+header.hm-bar .hm-brand{display:flex;flex-direction:column;justify-content:center;gap:3px;min-width:0}
+header.hm-bar .hm-eyebrow{display:flex;align-items:center;gap:8px;line-height:1}
+header.hm-bar .hm-title{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--hm-mute);white-space:nowrap}
+header.hm-bar .hm-ws{font-size:10px;font-weight:600;letter-spacing:.03em;padding:2px 8px;border-radius:999px;white-space:nowrap;background:rgba(33,170,224,.1);color:#1878A3;transition:background-color .3s ease,color .3s ease}
+header.hm-bar .hm-ws[data-v="admin"]{background:rgba(244,137,31,.12);color:#B8620C}
+header.hm-bar .hm-ws:empty{display:none}
+html.dark-mode header.hm-bar .hm-ws{color:#7DD3F5}
+html.dark-mode header.hm-bar .hm-ws[data-v="admin"]{color:#F7A85A}
+header.hm-bar .hm-page{position:relative;display:block;height:22px;overflow:hidden;min-width:200px}
+header.hm-bar .hm-page-t{display:block;font-size:16px;font-weight:600;line-height:22px;color:var(--hm-ink);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.hm-bar .hm-page-t.in{animation:hmPageIn .34s cubic-bezier(.2,.8,.2,1) both}
+header.hm-bar .hm-page-t.out{position:absolute;left:0;top:0;right:0;animation:hmPageOut .24s ease both}
+@keyframes hmPageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes hmPageOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(-12px)}}
+header.hm-bar .hm-progress{position:absolute;left:0;right:0;bottom:-1px;height:2px;pointer-events:none;background:linear-gradient(90deg,rgba(244,137,31,0),#F4891F 35%,#21AAE0 75%,rgba(33,170,224,0));transform:scaleX(0);transform-origin:left;opacity:0}
+header.hm-bar .hm-progress.run{animation:hmBar .7s cubic-bezier(.4,0,.2,1)}
+@keyframes hmBar{0%{transform:scaleX(0);opacity:1}65%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+@media (prefers-reduced-motion: reduce){header.hm-bar .hm-page-t.in,header.hm-bar .hm-page-t.out,header.hm-bar .hm-progress.run{animation:none}header.hm-bar .hm-logo{transition:none}}

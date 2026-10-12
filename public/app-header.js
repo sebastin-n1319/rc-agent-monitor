@@ -35,7 +35,7 @@
     }
     var vText = role === 'admin' ? (isAdminView() ? 'Admin view' : 'Agent view') : (role === 'agent' ? 'Agent' : '');
     if ($('hmSub')) $('hmSub').textContent = role === 'admin' ? (isAdminView() ? 'Admin' : 'Admin in agent view') : (role ? 'Agent' : 'Signed in');
-    if ($('hmWs')) $('hmWs').textContent = role === 'admin' ? (isAdminView() ? 'Admin workspace' : 'Agent view') : 'Agent workspace';
+    if ($('hmWs')) { var ws = role === 'admin' ? (isAdminView() ? 'Admin' : 'Agent view') : (role ? 'Agent' : ''); if ($('hmWs').textContent !== ws) $('hmWs').textContent = ws; $('hmWs').setAttribute('data-v', role === 'admin' && isAdminView() ? 'admin' : 'agent'); }
     if ($('hmViewTag')) { $('hmViewTag').textContent = vText; $('hmViewTag').hidden = role !== 'admin'; }
     var tz = g('currentTZ', 'CST');
     document.querySelectorAll('.hm-tz').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-tz') === tz ? 'true' : 'false'); });
@@ -147,6 +147,29 @@
     if (e.key === 'Enter' && document.activeElement === $('hmPageQ')) { var first = document.querySelector('#hmPages .hm-page'); if (first) { e.preventDefault(); first.click(); } }
   }
 
+  // ── Current page name in the header, with a short slide when it changes ──
+  var lastPage = '';
+  function pageName() {
+    var sb = sidebar(); var it = sb && sb.querySelector('.sb-item.active');
+    if (!it) return '';
+    var t = (it.getAttribute('title') || '').split(':')[0].split(',')[0].trim();
+    var l = it.querySelector('.sb-label'); var lab = l ? l.textContent.trim() : '';
+    return (t && t.length <= 32 ? t : lab) || lab;
+  }
+  function syncPage() {
+    var host = document.querySelector('.hm-page'); if (!host) return;
+    var name = pageName(); if (!name || name === lastPage) return;
+    var first = !lastPage; lastPage = name;
+    var cur = host.querySelector('.hm-page-t:not(.out)');
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (first || reduce || !cur) { if (cur) cur.textContent = name; else { var c = document.createElement('span'); c.className = 'hm-page-t'; c.textContent = name; host.appendChild(c); } return; }
+    var nx = document.createElement('span'); nx.className = 'hm-page-t in'; nx.textContent = name;
+    cur.classList.add('out'); cur.removeAttribute('id');
+    host.appendChild(nx); nx.id = 'hmPage';
+    setTimeout(function () { if (cur.parentNode) cur.remove(); nx.classList.remove('in'); }, 320);
+    var bar = $('hmProgress'); if (bar) { bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run'); }
+  }
+
   function setTZ(z) { if (g('currentTZ', 'CST') !== z && typeof window.toggleTZ === 'function') window.toggleTZ(); sync(); }
 
   function init() {
@@ -160,7 +183,10 @@
     var mo = new MutationObserver(function () { if (pending) return; pending = true; requestAnimationFrame(function () { pending = false; sync(); }); });
     ['userLabel', 'userRoleTag', 'viewToggleBtn', 'userAvatar'].forEach(function (id) { var el = $(id); if (el) mo.observe(el, { attributes: true, childList: true, characterData: true, subtree: true }); });
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    sync();
+    // Watch the sidebars for the active page.
+    var po = new MutationObserver(function () { requestAnimationFrame(syncPage); });
+    ['adit-admin-sidebar', 'adit-agent-sidebar'].forEach(function (id) { var el = $(id); if (el) po.observe(el, { attributes: true, attributeFilter: ['class', 'style'], subtree: true }); });
+    sync(); syncPage();
   }
 
   window.hmToggle = function () { toggle(); };

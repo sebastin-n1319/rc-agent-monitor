@@ -72,7 +72,7 @@
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
 <link rel="stylesheet" href="/ticket-audits.css?v=1.25.0" id="ticket-audits-link">
-<link rel="stylesheet" href="/access-control.css?v=1.5.1">
+<link rel="stylesheet" href="/access-control.css?v=1.5.2">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
@@ -82,8 +82,8 @@
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
 <script src="/notice-center.js?v=1.2.3" defer></script>
-<link rel="stylesheet" href="/app-header.css?v=1.0.0">
-<script src="/app-header.js?v=1.0.0" defer></script>
+<link rel="stylesheet" href="/app-header.css?v=1.1.0">
+<script src="/app-header.js?v=1.1.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -862,9 +862,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <img src="/adit-logo.png" alt="Adit" class="hm-logo">
     <div class="hm-sep" aria-hidden="true"></div>
     <div class="hm-brand">
-      <span class="hm-title">T1 CS Stars</span>
-      <span class="hm-ws"><span id="hmWs">Workspace</span><span id="roleLabel" hidden>--</span></span>
+      <span class="hm-eyebrow"><span class="hm-title">T1 CS Stars</span><span class="hm-ws" id="hmWs">Workspace</span><span id="roleLabel" hidden>--</span></span>
+      <span class="hm-page" aria-live="polite"><span class="hm-page-t" id="hmPage">Home</span></span>
     </div>
+    <span class="hm-progress" id="hmProgress" aria-hidden="true"></span>
   </div>
   <div class="hdr-right hm-right">
     <div class="hm-time" id="hmTime" role="group" aria-label="Clock and time zone">
@@ -12191,12 +12192,28 @@ async function loadGuideGuests(){
     const g=j.guests||[];
     const cnt=document.getElementById('acx-guides-count'); if(cnt) cnt.textContent=g.length+(g.length===1?' person':' people');
     if(!g.length){ box.innerHTML='<div class="acx-empty">No guests yet. Add emails above to share the Support guides outside your team.</div>'; return; }
-    box.innerHTML=g.map(r=>{
+    window._acxGuests=g; drawGuideGuests();
+  }catch(e){ box.innerHTML='<div class="acx-empty">Could not load the guest list.</div>'; }
+}
+// Long guest lists: newest first, five rows until "Show all", with a filter once there are more than five.
+let _acxGuestsAll=false;
+function drawGuideGuests(){
+  const box=document.getElementById('acx-guides-list'); const all=window._acxGuests||[]; if(!box) return;
+  const qEl=document.getElementById('acx-guides-q'); const q=((qEl&&qEl.value)||'').trim().toLowerCase();
+  const LIMIT=5;
+  const list=all.slice().sort((a,b)=>String(b.added_at||'').localeCompare(String(a.added_at||''))).filter(r=>!q||(r.email+' '+deriveRoleName(r.email)+' '+(r.note||'')).toLowerCase().includes(q));
+  const shown=(q||_acxGuestsAll)?list:list.slice(0,LIMIT);
+  const tools=all.length>LIMIT?'<div class="acx-gtools"><label class="acx-gfind"><span class="acx-sr">Find a guest</span><input type="search" id="acx-guides-q" placeholder="Find a guest by name, email or note" autocomplete="off" value="'+esc(q)+'" oninput="drawGuideGuests()"></label></div>':'';
+  const rows=shown.map(r=>{
       const nm=deriveRoleName(r.email);
       return '<div class="acx-req-row"><div class="acx-req-av"><span>'+esc(nm.charAt(0).toUpperCase())+'</span></div><div class="acx-person"><span class="acx-name">'+esc(nm)+'</span><span class="acx-email">'+esc(r.email)+'</span><span class="acx-req-meta">Added '+acxAgo(r.added_at)+(r.added_by?' by '+esc(r.added_by):'')+(r.note?' · '+esc(r.note):'')+'</span></div>'+
         '<div class="acx-actions"><button type="button" class="acx-btn acx-btn-sm" data-email="'+esc(r.email)+'" data-name="'+esc(nm)+'" onclick="copyGuidesInvite(this)" title="Copy a short message with the link to send them">Copy invite</button><button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="removeGuideGuest(this)">Remove</button></div></div>';
     }).join('');
-  }catch(e){ box.innerHTML='<div class="acx-empty">Could not load the guest list.</div>'; }
+  const more=!q&&list.length>LIMIT?'<button type="button" class="acx-more" aria-expanded="'+(_acxGuestsAll?'true':'false')+'" onclick="_acxGuestsAll=!_acxGuestsAll;drawGuideGuests()">'+(_acxGuestsAll?'Show fewer':'Show all '+list.length+' guests')+'</button>':'';
+  const none=q&&!list.length?'<div class="acx-empty">No guest matches "'+esc(q)+'".</div>':'';
+  const had=document.activeElement&&document.activeElement.id==='acx-guides-q';
+  box.innerHTML=tools+rows+none+more;
+  if(had){ const i=document.getElementById('acx-guides-q'); if(i){ i.focus(); i.setSelectionRange(i.value.length,i.value.length); } }
 }
 async function addGuideGuests(){
   const inp=document.getElementById('acx-guides-emails'), note=document.getElementById('acx-guides-note');

@@ -178,3 +178,35 @@ html.embed{--top:48px}
 .gd-card{box-shadow:none}
 .gd-toc a{transition:background-color .12s}
 html{scroll-behavior:auto}
+
+/* Batch 160: sections and query catalog topics fold up */
+.gd-bulk{display:flex;gap:4px;margin:0 4px 10px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.gd-link{border:0;background:transparent;color:var(--blue);font-size:12.5px;font-weight:500;font-family:inherit;padding:4px 8px;border-radius:6px;cursor:pointer}
+.gd-link:hover{background:var(--surface-3)}
+.gd-link:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.gd-toc li.shut{display:none}
+.gd-part-hd{position:relative}
+.gd-part-n{position:absolute;right:20px;top:18px;font-size:12px;font-weight:500;color:var(--t3)}
+.gd-sec{margin:0 0 8px;padding:0}
+.gd-sec-hd{align-items:center;gap:12px;margin:0;padding:0 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface);transition:border-color .12s,background-color .12s}
+.gd-sec-hd:hover{border-color:var(--border-strong)}
+.gd-sec.open > .gd-sec-hd{position:sticky;top:var(--top);z-index:3;border-radius:12px 12px 0 0;background:var(--surface-2);box-shadow:0 1px 0 var(--border)}
+.gd-doc .gd-sec-hd h2{flex:1;min-width:0;margin:0;font-size:16px}
+.gd-tg{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:10px 0;margin:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.gd-tg:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:6px}
+.gd-meta{margin-left:auto;flex:none;font-size:12px;font-weight:500;color:var(--t3);white-space:nowrap}
+.gd-chev{flex:none;width:18px;height:18px;background:currentColor;color:var(--t3);transition:transform .15s;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") center/contain no-repeat}
+.gd-col.open > .gd-sec-hd .gd-chev,.gd-col.open > h3 .gd-chev{transform:rotate(180deg)}
+.gd-sec > .gd-body{padding:8px 16px 14px;border:1px solid var(--border);border-top:0;border-radius:0 0 12px 12px;background:var(--surface-2)}
+.gd-card.gd-col{padding:0}
+.gd-doc .gd-card.gd-col > h3{margin:0;font-size:14.5px}
+.gd-card.gd-col > h3 .gd-tg{min-height:44px;padding:10px 16px}
+.gd-card.gd-col > .gd-body{padding:0 18px 6px}
+.gd-card.gd-col.open > h3 .gd-tg{border-bottom:1px solid var(--border)}
+.gd-card.gd-col.open > .gd-body{padding-top:10px}
+.gd-sec > .gd-body > .gd-card.gd-col{margin:8px 0}
+@media (prefers-reduced-motion:reduce){.gd-chev{transition:none}}
+@media (max-width:820px){.gd-part-n{position:static;display:block;margin-top:6px}.gd-meta{display:none}}
+.gd-card .gd-chev{margin-left:auto}
+.gd-col:not(.open) > .gd-body{padding:0 !important;border:0 !important;margin:0}
+.gd-sec:not(.open) > .gd-sec-hd{border-radius:12px}
