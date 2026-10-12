@@ -92,6 +92,8 @@ html.embed{--top:48px}
 .gd-doc th,.gd-doc td{padding:9px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;color:var(--t2)}
 .gd-doc th{background:var(--surface-3);color:var(--t1);font-weight:600}
 .gd-doc a{color:var(--blue)}
+.gd-tk{color:var(--blue);text-decoration:underline;text-decoration-style:dotted;text-underline-offset:3px;font-variant-numeric:tabular-nums}
+.gd-tk:hover{text-decoration-style:solid}
 .gd-doc mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 1px}
 .gd-doc .gd-flash{animation:gdflash 1.6s ease-out}
 @keyframes gdflash{0%{background:var(--accent-soft)}100%{background:transparent}}

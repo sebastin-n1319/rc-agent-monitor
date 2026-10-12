@@ -1889,6 +1889,28 @@ app.get('/guides/doc/ai', async (req, res) => {
     res.type('html').send(guides.docHtml('ai') || '<p>Guide not found.</p>');
   } catch (e) { res.status(500).send('Could not open the guide'); }
 });
+// Ticket numbers in the guides open the ticket in Zoho Desk: looked up in the app's own ticket copy first, then in AditKB.
+const _guideTicketUrl = new Map();
+app.get('/guides/ticket/:num', async (req, res) => {
+  try {
+    if (!(await guideViewer(req))) return res.redirect('/guides');
+    const num = String(req.params.num || '').replace(/\D/g, '');
+    if (!/^\d{4,7}$/.test(num)) return res.status(400).send('Not a ticket number');
+    let url = _guideTicketUrl.get(num) || null;
+    if (!url) {
+      const row = await new Promise(r => require('./database').db.get(`SELECT ticket_id, web_url FROM desk_ticket_snapshot WHERE ticket_number = ?`, [num], (e, x) => r(e ? null : x)));
+      url = row && (row.web_url || (row.ticket_id ? 'https://help.adit.com/support/aditadvertising/ShowHomePage.do#Cases/dv/' + row.ticket_id : null));
+      if (!url && aditkbService.isConfigured()) {
+        const q = await aditkbService.query(`SELECT id, web_url FROM desk_tickets WHERE ticket_number = '${num}' LIMIT 1`, 1).catch(() => ({ rows: [] }));
+        const t = q.rows && q.rows[0];
+        url = t && (t.web_url || (t.id ? 'https://help.adit.com/support/aditadvertising/ShowHomePage.do#Cases/dv/' + t.id : null));
+      }
+      if (url && /^https:\/\/(help\.adit\.com|desk\.zoho\.com)\//.test(url)) _guideTicketUrl.set(num, url); else url = null;
+    }
+    if (!url) return res.status(404).type('html').send(`<p style="font-family:sans-serif;padding:24px">Ticket #${num} was not found in Zoho Desk.</p>`);
+    res.redirect(302, url);
+  } catch (e) { res.status(500).send('Could not open the ticket'); }
+});
 app.get('/api/guides/docs', requireAuth, async (req, res) => {
   try {
     const email = String(req.session.email || '').toLowerCase();

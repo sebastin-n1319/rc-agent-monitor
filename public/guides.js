@@ -23,6 +23,19 @@
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
     send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>'
   };
+  // Six-digit Zoho Desk ticket numbers open the ticket (the server finds it in AditKB).
+  function linkTickets(text) {
+    var frag = document.createDocumentFragment(), re = /(^|[^\d.#\/=-])(\d{6})(?![\d.])/g, at = 0, m;
+    text = String(text || '');
+    while ((m = re.exec(text))) {
+      var start = m.index + m[1].length;
+      frag.appendChild(document.createTextNode(text.slice(at, start)));
+      frag.appendChild(h('a', { class: 'gd-tk', href: '/guides/ticket/' + m[2], target: '_blank', rel: 'noopener', title: 'Open ticket #' + m[2] + ' in Zoho Desk', text: m[2] }));
+      at = start + 6;
+    }
+    frag.appendChild(document.createTextNode(text.slice(at)));
+    return frag;
+  }
   function say(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 30); }
   function api(path, body) {
     return fetch(path, { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : undefined, body: body ? JSON.stringify(body) : undefined })
@@ -174,7 +187,7 @@
       var wait = bubble('bot'); wait.appendChild(h('span', { class: 'gd-dots', 'aria-label': 'Finding the answer' }, [h('i'), h('i'), h('i')]));
       var history = S.thread.slice(-6);
       api('/api/guides/ask', { question: q, history: history, doc: S.scope || null }).then(function (j) {
-        wait.replaceChildren(document.createTextNode(j.answer));
+        wait.replaceChildren(linkTickets(j.answer));
         if (j.sources && j.sources.length) {
           wait.appendChild(h('div', { class: 'gd-src' }, [h('span', { class: 'gd-src-l', text: 'From the guide:' })].concat(j.sources.map(function (s) {
             return h('a', { href: '#' + s.doc + '/' + encodeURIComponent(s.id), text: s.docTitle + ': ' + s.title, onclick: function (ev) { ev.preventDefault(); go(s.doc, s.id); } });
