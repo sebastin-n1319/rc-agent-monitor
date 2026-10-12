@@ -166,3 +166,15 @@ html.embed{--top:48px}
 .gd-toc-n{display:inline-block;min-width:24px;margin-right:6px;font:600 11px ui-monospace,Menlo,Consolas,monospace;color:var(--t3)}
 .gd-toc a.on .gd-toc-n{color:var(--accent-ink)}
 @media (max-width:820px){.gd-facts{grid-template-columns:1fr 1fr}.gd-card{padding:12px 14px 4px}}
+
+/* Smoothness (Batch 158): tabs stay mounted and are only hidden; off-screen guide blocks skip rendering
+   until they come near the viewport; search highlights are painted without changing the page. */
+.gd-panel[hidden]{display:none!important}
+.gd-fab[hidden]{display:none}
+.gd-card{content-visibility:auto;contain-intrinsic-size:auto 280px}
+.gd-sec-hd + p, .gd-lede{contain:content}
+::highlight(gd-find){background-color:rgba(244,137,31,.3);color:inherit}
+::highlight(gd-cur){background-color:rgba(244,137,31,.75);color:#1F1305}
+.gd-card{box-shadow:none}
+.gd-toc a{transition:background-color .12s}
+html{scroll-behavior:auto}

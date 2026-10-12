@@ -71,25 +71,44 @@
     if (location.hash !== hash) { try { history.pushState(null, '', hash); } catch (e) { location.hash = hash; } }
     route();
   }
+  // Each tab is built once and then kept: switching only hides and shows panels, so the VoIP guide is never
+  // laid out again, the AI runbook frame never reloads, Ask AI keeps its conversation, and each tab keeps its scroll.
+  var panels = {}, scrollAt = {}, fabEl = null;
+  function panel(tab) {
+    if (!panels[tab]) { panels[tab] = h('div', { class: 'gd-panel', 'data-tab': tab, hidden: true }); main.appendChild(panels[tab]); }
+    return panels[tab];
+  }
   function route() {
     var m = /^#(voip|ai|ask)(?:\/(.+))?$/.exec(location.hash || '');
-    S.tab = m ? m[1] : 'voip';
+    var prev = S.tab, next = m ? m[1] : 'voip';
     var anchor = m && m[2] ? decodeURIComponent(m[2]) : null;
+    if (S.started && prev !== next) scrollAt[prev] = window.scrollY;
+    S.tab = next; S.started = true;
+    var empty = main.querySelector('.gd-empty'); if (empty && empty.parentNode === main) empty.remove();
+    Object.keys(panels).forEach(function (k) { panels[k].hidden = k !== next; });
+    panel(next).hidden = false;
     renderNav();
-    if (S.tab === 'voip') showVoip(anchor);
-    else if (S.tab === 'ai') showAi(anchor);
+    if (!fabEl && S.ai) { fabEl = h('button', { type: 'button', class: 'gd-fab', onclick: function () { go('ask'); } }, [icon(IC.spark), 'Ask AI']); document.body.appendChild(fabEl); }
+    if (fabEl) fabEl.hidden = next === 'ask';
+    if (next === 'voip') showVoip(anchor);
+    else if (next === 'ai') showAi(anchor);
     else showAsk();
+    if (!anchor && prev !== next) window.scrollTo(0, scrollAt[next] || 0);
   }
   window.addEventListener('popstate', route);
-  function fab() { return S.ai ? h('button', { type: 'button', class: 'gd-fab', onclick: function () { go('ask'); } }, [icon(IC.spark), 'Ask AI']) : null; }
 
   // ── VoIP guide ──────────────────────────────────────────────────────
   var reader = null;
+  var voipLoading = null;
   function showVoip(anchor) {
-    if (reader && S.voipHtml) { main.replaceChildren(reader.root, fab()); if (anchor) jump(anchor); return; }
-    main.replaceChildren(h('p', { class: 'gd-empty', text: 'Loading the VoIP guide...' }));
-    api('/api/guides/doc/voip').then(function (j) { S.voipHtml = j.html; buildReader(); main.replaceChildren(reader.root, fab()); if (anchor) jump(anchor); })
-      .catch(function (e) { main.replaceChildren(h('div', { class: 'gd-note', text: 'Could not load the guide: ' + e.message })); });
+    var box = panel('voip');
+    if (reader) { if (anchor) jump(anchor); return; }
+    if (!voipLoading) {
+      box.replaceChildren(h('p', { class: 'gd-empty', text: 'Loading the VoIP guide...' }));
+      voipLoading = api('/api/guides/doc/voip').then(function (j) { S.voipHtml = j.html; buildReader(); box.replaceChildren(reader.root); })
+        .catch(function (e) { voipLoading = null; box.replaceChildren(h('div', { class: 'gd-note', text: 'Could not load the guide: ' + e.message })); });
+    }
+    voipLoading.then(function () { if (anchor && S.tab === 'voip') jump(anchor); });
   }
   // Layout only: the guide's words are not changed. Parts become banners, each section a numbered block,
   // each sub-topic a card, and every "Who handles it" line a callout, like the AI runbook.
@@ -143,11 +162,27 @@
     var count = h('span', { class: 'gd-find-n', 'aria-live': 'polite' });
     var input = h('input', { type: 'search', placeholder: 'Search the VoIP guide', 'aria-label': 'Search the VoIP guide' });
     var timer = null, hits = [], hitAt = -1;
-    input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { find(input.value); }, 200); });
-    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && hits.length) { ev.preventDefault(); hitAt = (hitAt + 1) % hits.length; hits[hitAt].scrollIntoView({ block: 'center' }); } });
+    var HL = !!(window.CSS && CSS.highlights && window.Highlight);
+    var texts = null, itemText = null;
+    function index() {
+      if (texts) return;
+      texts = []; var w = document.createTreeWalker(doc, NodeFilter.SHOW_TEXT, null), n;
+      while ((n = w.nextNode())) texts.push({ node: n, low: n.nodeValue.toLowerCase() });
+      itemText = items.map(function (it, i) { return (it.hd.textContent + ' ' + sectionOf(i).map(function (b) { return b.textContent || ''; }).join(' ')).toLowerCase(); });
+    }
+    function showHit(i) {
+      var x = hits[i]; if (!x) return;
+      if (HL) {
+        CSS.highlights.set('gd-cur', new Highlight(x));
+        var el = x.startContainer.parentElement; if (el) el.scrollIntoView({ block: 'center' });
+      } else x.scrollIntoView({ block: 'center' });
+    }
+    input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { find(input.value); }, 220); });
+    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && hits.length) { ev.preventDefault(); hitAt = (hitAt + 1) % hits.length; showHit(hitAt); } });
     function sectionOf(i) { var hd = items[i].hd; var box = hd.tagName === 'H1' ? null : hd.closest('.gd-card, .gd-sec'); return box ? [box] : []; }
     function find(q) {
       q = String(q || '').trim();
+      if (HL) return findFast(q);
       doc.innerHTML = S.voipHtml;
       structure(doc);
       heads = Array.prototype.slice.call(doc.querySelectorAll('h1[id],h2[id],h3[id]'));
@@ -170,6 +205,21 @@
       count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Ask AI.';
       if (hits.length) { hitAt = 0; hits[0].scrollIntoView({ block: 'center' }); }
       spy();
+    }
+    function findFast(q) {
+      index();
+      hits = []; hitAt = -1;
+      CSS.highlights.delete('gd-find'); CSS.highlights.delete('gd-cur');
+      if (q.length < 2) { items.forEach(function (it) { it.li.classList.remove('hide'); }); count.textContent = ''; return; }
+      var ql = q.toLowerCase(), found = 0;
+      items.forEach(function (it, i) { var on = itemText[i].indexOf(ql) > -1; it.li.classList.toggle('hide', !on); if (on) found++; });
+      for (var t = 0; t < texts.length && hits.length < 2000; t++) {
+        var low = texts[t].low, k = low.indexOf(ql);
+        while (k > -1) { var r = document.createRange(); r.setStart(texts[t].node, k); r.setEnd(texts[t].node, k + ql.length); hits.push(r); k = low.indexOf(ql, k + ql.length); }
+      }
+      if (hits.length) { var hl = new Highlight(); hits.forEach(function (r) { hl.add(r); }); CSS.highlights.set('gd-find', hl); }
+      count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Ask AI.';
+      if (hits.length) { hitAt = 0; showHit(0); }
     }
     var side = h('aside', { class: 'gd-side', 'aria-label': 'Contents' }, [h('div', { class: 'gd-find' }, [icon(IC.search), input, count]), h('nav', { 'aria-label': 'Guide sections' }, [toc])]);
     var root = h('div', { class: 'gd-reader' }, [side, doc]);
@@ -195,17 +245,15 @@
   var aiFrame = null;
   function showAi(anchor) {
     var src = '/guides/doc/ai' + (anchor ? '#' + encodeURIComponent(anchor) : '');
-    if (!aiFrame) aiFrame = h('iframe', { class: 'gd-frame', title: 'T1 AI Support Runbook', src: src });
+    if (!aiFrame) { aiFrame = h('iframe', { class: 'gd-frame', title: 'T1 AI Support Runbook', src: src }); panel('ai').appendChild(aiFrame); }
     else if (anchor) { try { aiFrame.contentWindow.location.hash = anchor; } catch (e) { aiFrame.src = src; } }
-    main.replaceChildren(aiFrame, fab());
   }
 
   // ── Ask AI ──────────────────────────────────────────────────────────
   var askView = null;
   var SUGG = ['Client says the desk phone shows "No Account". What do I check?', 'How do I change the greeting or voicemail message?', 'The AI is texting patients but the SMS Agent is off. Who handles it?', 'Calls go straight to voicemail. What are the checks?', 'What do I attach before routing an AI call issue to AI Support?'];
   function showAsk() {
-    if (!askView) askView = buildAsk();
-    main.replaceChildren(askView.root);
+    if (!askView) { askView = buildAsk(); panel('ask').appendChild(askView.root); }
     setTimeout(function () { askView.input.focus(); }, 30);
   }
   function buildAsk() {
