@@ -302,6 +302,16 @@
       kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Waiting for review' }), h('span', { class: 'tka-sech-n' + (over ? ' hot' : ''), text: String(j.waiting.length) })]));
       if (!j.waiting.length) kids.push(h('div', { class: 'tka-empty-card' }, [h('b', { text: 'Nothing waiting' }), h('p', { text: 'When a T1 agent sets a ticket to ' + (st.statusName || 'Pending Review - T1') + ', it shows here within a minute.' })]));
       if (j.waiting.length) kids.push(h('div', { class: 'tka-cards' }, j.waiting.map(function (r) { return reviewCard(r, buf, j.me); })));
+      if (j.stale && j.stale.length) {
+        // Batch 159: verdict recorded here, but the ticket was never moved out of the review status in Zoho Desk.
+        kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Reviewed, still in ' + (st.statusName || 'Pending Review - T1') + ' in Zoho' }), h('span', { class: 'tka-sech-n warn', text: String(j.stale.length) }), h('p', { class: 'tka-hint', text: 'A verdict is recorded, but the ticket was not moved in Zoho Desk. Open it and move it to the person or team in the verdict. If the agent set it to review again, use Check Zoho now after they change it.' })]));
+        var sl = h('div', { class: 'tka-fold' });
+        j.stale.forEach(function (r) {
+          sl.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(r.reviewed_at).replace(' ', 'T') + 'Z') }),
+            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', verdictPill(r), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.reviewer ? ', reviewed by ' + nameOf(r.reviewer) : ''])]));
+        });
+        kids.push(sl);
+      }
       if (j.moved.length) {
         kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Moved, verdict missing' }), h('span', { class: 'tka-sech-n warn', text: String(j.moved.length) }), h('p', { class: 'tka-hint', text: 'These left the review status, or were moved by a T1 agent without it ("Skipped review"). Record a verdict so the agent gets feedback.' })]));
         kids.push(movedList(j.moved, buf, j.me));
