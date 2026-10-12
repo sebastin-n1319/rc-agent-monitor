@@ -667,6 +667,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     accessReq.setDB(db);
     await accessReq.initSchema();
     guides.setDB(db); await guides.initSchema(); // Batch 156: Support guides guest list
+    // Batch 165: AI and VoIP support handled by T1 (admin dashboard under Tickets)
+    { const ts = require('./lib/topic-support'); ts.setDB(db); await ts.initSchema();
+      ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, ticketContext: (tid) => escalationWatch.ticketContext(tid) }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -8131,6 +8134,30 @@ app.get('/api/live-floor/now', requireAuth, async (req, res) => {
     }
     res.json({ success: true, data, chatsError: chats.error || null, at: new Date().toISOString() });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Batch 165: AI support and VoIP support handled by T1, with transfer audits against the support guides.
+app.get('/api/topic-support', requireAdmin, async (req, res) => {
+  try {
+    const ts = require('./lib/topic-support');
+    const to = req.query.to || new Date().toISOString();
+    const from = req.query.from || '2026-10-01T05:00:00.000Z';
+    const { agentNames } = await deskLifecycleAgentRoster();
+    const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
+    const data = {};
+    for (const t of topics) data[t] = await ts.topicSummary({ topic: t, from, to, agentNames });
+    res.json({ success: true, from, to, data });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.post('/api/topic-support/audit', requireAdmin, rateLimit(40, 60000), async (req, res) => {
+  try {
+    const b = req.body || {}; const ts = require('./lib/topic-support');
+    const ids = (Array.isArray(b.ticketIds) ? b.ticketIds : [b.ticketId]).filter(Boolean).map(String).slice(0, 10);
+    if (!ids.length) return res.status(400).json({ success: false, error: 'Pick a ticket to audit' });
+    const results = [];
+    for (const id of ids) { try { results.push(await ts.auditTicket({ topic: String(b.topic || ''), ticketId: id, by: req.session.email })); } catch (e) { results.push({ ticketId: id, error: e.message }); } }
+    res.json({ success: true, results });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
 
 // Session 45: drill-downs for the call and chat tiles on My Stats. Always

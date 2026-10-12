@@ -35,6 +35,7 @@
     'illus.css', // Session 63
     'notice-center.css', // Session 68
     'app-header.css', // Batch 159: new header and profile menu
+    'topic-support.css', // Batch 165: AI and VoIP support dashboard
     'updates.css', // process and product updates
     'ticket-audits.css', // ticket audits
     'dark-fix.css', // Session 51

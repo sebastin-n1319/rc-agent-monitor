@@ -1,0 +1,193 @@
+/* Batch 165: AI and VoIP support handled by T1 (admin, under Tickets). Data: /api/topic-support. */
+(function () {
+  'use strict';
+  var S = { topic: 'ai', preset: 'golive', from: '', to: '', data: null, busy: false, filter: 'all', q: '', auditing: {} };
+  var GOLIVE = { ai: '2026-10-01', voip: '2026-10-12' };
+  function h(tag, attrs, kids) {
+    var e = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      var v = attrs[k]; if (v == null || v === false) return;
+      if (k === 'text') e.textContent = v; else if (k === 'class') e.className = v;
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    (kids || []).forEach(function (c) { if (c != null && c !== false) e.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c); });
+    return e;
+  }
+  function api(path, body) {
+    var o = { credentials: 'include', method: body ? 'POST' : 'GET' };
+    if (body) { o.headers = { 'Content-Type': 'application/json' }; o.body = JSON.stringify(body); }
+    return fetch(path, o).then(function (r) { return r.json(); });
+  }
+  function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '0%'; }
+  function chiDate(d) { return new Date(d + 'T05:00:00.000Z'); } // midnight Central (CDT)
+  function todayChi() { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }); }
+  function range() {
+    var t = todayChi();
+    if (S.preset === 'today') return { from: chiDate(t).toISOString(), to: new Date().toISOString() };
+    if (S.preset === '7d') return { from: new Date(chiDate(t).getTime() - 6 * 864e5).toISOString(), to: new Date().toISOString() };
+    if (S.preset === 'custom' && S.from) return { from: chiDate(S.from).toISOString(), to: S.to ? new Date(chiDate(S.to).getTime() + 864e5).toISOString() : new Date().toISOString() };
+    return { from: chiDate(GOLIVE.ai).toISOString(), to: new Date().toISOString() };
+  }
+  function fmtDay(iso) { try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }); } catch (e) { return iso; } }
+  function fmtWhen(iso) { try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }); } catch (e) { return iso; } }
+  var OUT = { resolved: ['Resolved by T1', 'ok'], open: ['Still with T1', 'info'], toTopicTeam: ['Transferred', 'warn'], toOther: ['Transferred elsewhere', 'warn'], bypassed: ['Went straight to team', 'mute'] };
+  var VERD = { could_handle: ['T1 could have handled', 'bad'], right_transfer: ['Right transfer', 'ok'], unclear: ['Unclear', 'mute'] };
+
+  function load() {
+    var root = document.getElementById('tsd-root'); if (!root) return;
+    if (S.busy) return; S.busy = true;
+    draw(true);
+    var r = range();
+    api('/api/topic-support?from=' + encodeURIComponent(r.from) + '&to=' + encodeURIComponent(r.to))
+      .then(function (j) { S.busy = false; if (!j.success) throw new Error(j.error || 'Could not load'); S.data = j; draw(); })
+      .catch(function (e) { S.busy = false; S.err = e.message; draw(); });
+  }
+
+  function draw(loading) {
+    var root = document.getElementById('tsd-root'); if (!root) return;
+    var d = S.data && S.data.data && S.data.data[S.topic];
+    var head = h('div', { class: 'tsd-head' }, [
+      h('div', null, [h('h2', { class: 'tsd-h1', text: 'AI & VoIP support' }),
+        h('p', { class: 'tsd-sub', text: 'How much basic AI and VoIP support T1 now handles, what T1 resolves, and what still gets transferred. Built from Desk tickets synced from AditKB; calls and chats are the Phone and Chat tickets T1 logs for them.' })]),
+      h('div', { class: 'tsd-ctrl' }, [
+        seg([['golive', 'Since 1 Oct'], ['7d', 'Last 7 days'], ['today', 'Today'], ['custom', 'Custom']], S.preset, function (v) { S.preset = v; if (v !== 'custom') load(); else draw(); }),
+        S.preset === 'custom' ? h('span', { class: 'tsd-dates' }, [
+          h('input', { type: 'date', 'aria-label': 'From', value: S.from || GOLIVE.ai, min: '2026-07-12', onchange: function (e) { S.from = e.target.value; } }),
+          h('span', { text: 'to' }),
+          h('input', { type: 'date', 'aria-label': 'To', value: S.to || todayChi(), onchange: function (e) { S.to = e.target.value; } }),
+          h('button', { type: 'button', class: 'tsd-btn', text: 'Apply', onclick: function () { if (!S.from) S.from = GOLIVE.ai; load(); } })]) : null,
+        h('button', { type: 'button', class: 'tsd-btn', text: loading ? 'Loading...' : 'Refresh', disabled: loading, onclick: load })])]);
+    var tabs = h('div', { class: 'tsd-tabs', role: 'tablist' }, [['ai', 'AI support'], ['voip', 'VoIP support']].map(function (t) {
+      var dd = S.data && S.data.data && S.data.data[t[0]];
+      return h('button', { type: 'button', role: 'tab', 'aria-selected': S.topic === t[0] ? 'true' : 'false', class: 'tsd-tab', onclick: function () { S.topic = t[0]; S.filter = 'all'; draw(); } },
+        [t[1], h('span', { class: 'tsd-live', text: 'T1 since ' + fmtDay(chiDate(GOLIVE[t[0]]).toISOString()) }), dd ? h('span', { class: 'tsd-n', text: String(dd.totals.t1Touched) }) : null]);
+    }));
+    var kids = [head, tabs];
+    if (S.err && !d) kids.push(h('div', { class: 'tsd-note', text: 'Could not load: ' + S.err }));
+    else if (!d) kids.push(h('div', { class: 'tsd-skel' }, [h('i'), h('i'), h('i'), h('i')]));
+    else kids = kids.concat(body(d));
+    root.replaceChildren.apply(root, kids);
+  }
+  function seg(opts, cur, fn) {
+    return h('div', { class: 'tsd-seg', role: 'group', 'aria-label': 'Date range' }, opts.map(function (o) {
+      return h('button', { type: 'button', 'aria-pressed': cur === o[0] ? 'true' : 'false', text: o[1], onclick: function () { fn(o[0]); } });
+    }));
+  }
+  function tile(label, value, sub, cls) { return h('div', { class: 'tsd-tile ' + (cls || '') }, [h('span', { class: 'tsd-tile-l', text: label }), h('b', { class: 'tsd-tile-v', text: String(value) }), sub ? h('span', { class: 'tsd-tile-s', text: sub }) : null]); }
+
+  function body(d) {
+    var t = d.totals, out = [];
+    if (Date.parse(d.to) <= Date.parse(d.from)) out.push(h('div', { class: 'tsd-note', text: 'T1 starts ' + d.label + ' on ' + fmtDay(chiDate(d.goLive).toISOString()) + '. Pick a range that includes that date.' }));
+    out.push(h('p', { class: 'tsd-range', text: 'Counting tickets created ' + fmtWhen(d.from) + ' to ' + fmtWhen(d.to) + ' Central. ' + d.label + ' moved to T1 on ' + fmtDay(chiDate(d.goLive).toISOString()) + ', so earlier dates are left out.' }));
+    out.push(h('div', { class: 'tsd-tiles' }, [
+      tile('Handled by T1', t.t1Touched, t.inTopic + ' ' + d.label + ' tickets in all'),
+      tile('Resolved by T1', t.resolvedByT1, pct(t.resolvedByT1, t.t1Touched) + ' of what T1 handled', 'ok'),
+      tile('Still with T1', t.openWithT1, 'open or on hold with a T1 agent'),
+      tile('Transferred', t.transferred, pct(t.transferred, t.t1Touched) + ' of what T1 handled · ' + t.toTopicTeam + ' to ' + d.teamLabel, t.transferred ? 'warn' : ''),
+      tile('Went straight to team', t.bypassedT1, 'never reached a T1 agent', 'mute')]));
+    // Calls, chats, tickets
+    var chRows = [['call', 'Calls'], ['chat', 'Chats'], ['ticket', 'Email and web tickets']].map(function (c) {
+      var x = d.byChannel[c[0]], rate = x.t1Touched ? x.transferred / x.t1Touched : 0;
+      return h('tr', null, [h('th', { scope: 'row', text: c[1] }), h('td', { text: String(x.t1Touched) }), h('td', { text: String(x.resolvedByT1) }), h('td', { text: String(x.openWithT1) }), h('td', { text: String(x.transferred) }),
+        h('td', null, [h('span', { class: 'tsd-rate' }, [h('i', { style: 'width:' + Math.round(rate * 100) + '%' })]), h('span', { class: 'tsd-rate-t', text: pct(x.transferred, x.t1Touched) })])]);
+    });
+    var base = d.baseline, nowRate = t.t1Touched ? t.transferred / t.t1Touched : 0, baseRate = base.inTopic ? base.toTopicTeam / base.inTopic : 0;
+    out.push(h('div', { class: 'tsd-grid2' }, [
+      card('Calls, chats and tickets', 'What T1 handled on each channel, and how much was transferred.',
+        h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Channel', 'Handled', 'Resolved', 'Still with T1', 'Transferred', 'Transfer rate'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, chRows)])),
+      card('Before and after', 'The two weeks before T1 took over, against the range above.', h('div', { class: 'tsd-ba' }, [
+        h('div', null, [h('span', { class: 'tsd-ba-l', text: 'Before (' + fmtDay(base.from) + ' to ' + fmtDay(new Date(Date.parse(base.to) - 1).toISOString()) + ')' }), h('b', { text: pct(base.toTopicTeam, base.inTopic) }), h('span', { class: 'tsd-ba-s', text: base.toTopicTeam + ' of ' + base.inTopic + ' tickets went to ' + d.teamLabel })]),
+        h('div', null, [h('span', { class: 'tsd-ba-l', text: 'Now, of what T1 handled' }), h('b', { class: nowRate < baseRate ? 'good' : '', text: pct(t.transferred, t.t1Touched) }), h('span', { class: 'tsd-ba-s', text: t.transferred + ' of ' + t.t1Touched + ' transferred, ' + t.resolvedByT1 + ' resolved by T1' })])]))]));
+    // Trend
+    out.push(card('By day', 'Tickets T1 handled each day: kept by T1 against transferred.', trend(d.byDay)));
+    // Agents + categories
+    var ag = d.byAgent.map(function (a) {
+      var flags = d.tickets.filter(function (x) { return x.agent === a.name && x.audit && x.audit.verdict === 'could_handle'; }).length;
+      return h('tr', null, [h('th', { scope: 'row', text: a.name }), h('td', { text: String(a.touched) }), h('td', { text: a.calls + ' / ' + a.chats + ' / ' + a.tickets }), h('td', { text: String(a.resolved) }), h('td', { text: String(a.open) }), h('td', { text: String(a.transferred) }), h('td', { text: pct(a.transferred, a.touched) }), h('td', { class: flags ? 'bad' : '', text: flags ? String(flags) : '-' })]);
+    });
+    var cats = d.byCategory.map(function (c) { return h('tr', null, [h('th', { scope: 'row', text: c.category }), h('td', { text: String(c.touched) }), h('td', { text: String(c.transferred) }), h('td', { text: pct(c.transferred, c.touched) })]); });
+    out.push(h('div', { class: 'tsd-grid2 wide' }, [
+      card('By agent', 'Calls / chats / tickets T1 handled. "Could have handled" counts audited transfers the guide says T1 could have solved.', ag.length ? h('div', { class: 'tsd-scroll' }, [h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Agent', 'Handled', 'Calls / chats / tickets', 'Resolved', 'With T1', 'Transferred', 'Rate', 'Could have handled'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, ag)])]) : empty('No T1 agent has handled one of these yet.')),
+      card('Topics', 'The ticket topic (from Desk) and how often T1 transferred it.', cats.length ? h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Topic', 'Handled', 'Transferred', 'Rate'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, cats)]) : empty('Nothing yet.'))]));
+    if (d.destinations.length) out.push(card('Where transfers went', null, h('div', { class: 'tsd-dest' }, d.destinations.map(function (x) { return h('span', { class: 'tsd-chip' }, [x.team, h('b', { text: String(x.n) })]); }))));
+    out.push(auditCard(d));
+    return out;
+  }
+  function empty(t) { return h('p', { class: 'tsd-empty', text: t }); }
+  function card(title, sub, content) { return h('section', { class: 'tsd-card' }, [h('h3', { class: 'tsd-h3', text: title }), sub ? h('p', { class: 'tsd-card-sub', text: sub }) : null, content]); }
+  function trend(days) {
+    if (!days.length) return empty('No tickets in this range yet.');
+    var max = Math.max.apply(null, days.map(function (x) { return x.handled + x.transferred; })) || 1;
+    return h('div', null, [
+      h('div', { class: 'tsd-trend', role: 'img', 'aria-label': days.map(function (x) { return fmtDay(x.day + 'T12:00:00Z') + ': ' + x.handled + ' kept, ' + x.transferred + ' transferred'; }).join('; ') },
+        days.map(function (x) {
+          var tot = x.handled + x.transferred;
+          return h('div', { class: 'tsd-bar', title: fmtDay(x.day + 'T12:00:00Z') + ': ' + x.handled + ' kept by T1, ' + x.transferred + ' transferred' }, [
+            h('div', { class: 'tsd-bar-col', style: 'height:' + Math.max(4, Math.round(tot / max * 100)) + '%' }, [h('i', { class: 'tr', style: 'flex:' + x.transferred }), h('i', { class: 'kp', style: 'flex:' + x.handled })]),
+            h('span', { class: 'tsd-bar-l', text: fmtDay(x.day + 'T12:00:00Z') })]);
+        })),
+      h('div', { class: 'tsd-legend' }, [h('span', null, [h('i', { class: 'kp' }), 'Kept by T1']), h('span', null, [h('i', { class: 'tr' }), 'Transferred'])])]);
+  }
+
+  function auditCard(d) {
+    var list = d.tickets.filter(function (x) {
+      if (S.filter === 'transferred' && !(x.outcome === 'toTopicTeam' || x.outcome === 'toOther')) return false;
+      if (S.filter === 'resolved' && x.outcome !== 'resolved') return false;
+      if (S.filter === 'open' && x.outcome !== 'open') return false;
+      if (S.filter === 'bypassed' && x.outcome !== 'bypassed') return false;
+      if (S.filter === 'could' && !(x.audit && x.audit.verdict === 'could_handle')) return false;
+      if (S.q) { var q = S.q.toLowerCase(); if ((String(x.number) + ' ' + (x.subject || '') + ' ' + (x.agent || '') + ' ' + (x.category || '')).toLowerCase().indexOf(q) < 0) return false; }
+      return true;
+    });
+    var pending = d.tickets.filter(function (x) { return (x.outcome === 'toTopicTeam' || x.outcome === 'toOther') && !x.audit; });
+    var au = d.audits;
+    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['bypassed', 'Went straight to team'], ['could', 'Could have handled']];
+    var tools = h('div', { class: 'tsd-tools' }, [
+      h('div', { class: 'tsd-seg', role: 'group', 'aria-label': 'Show' }, filters.map(function (f) { return h('button', { type: 'button', 'aria-pressed': S.filter === f[0] ? 'true' : 'false', text: f[1], onclick: function () { S.filter = f[0]; draw(); } }); })),
+      h('input', { type: 'search', class: 'tsd-q', placeholder: 'Find a ticket, agent or topic', 'aria-label': 'Find a ticket, agent or topic', value: S.q, oninput: function (e) { S.q = e.target.value; clearTimeout(S._qt); S._qt = setTimeout(function () { var p = e.target.selectionStart; draw(); var n = document.querySelector('#tsd-root .tsd-q'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (er) {} } }, 200); } }),
+      h('button', { type: 'button', class: 'tsd-btn primary', disabled: !pending.length || S.bulk, text: S.bulk ? 'Auditing...' : (pending.length ? 'Audit ' + Math.min(10, pending.length) + ' transfers' : 'All transfers audited'), onclick: function () { audit(pending.slice(0, 10).map(function (x) { return x.ticketId; }), true); } })]);
+    var rows = list.slice(0, 200).map(function (x) {
+      var o = OUT[x.outcome] || [x.outcome, 'mute'], v = x.audit && VERD[x.audit.verdict];
+      var canAudit = x.outcome === 'toTopicTeam' || x.outcome === 'toOther';
+      return h('tr', null, [
+        h('td', null, [x.url ? h('a', { href: x.url, target: '_blank', rel: 'noopener', class: 'tsd-num', text: '#' + x.number }) : '#' + x.number]),
+        h('td', { class: 'tsd-subj' }, [h('span', { text: x.subject || '' }), h('small', { text: x.category })]),
+        h('td', { text: x.channel === 'call' ? 'Call' : x.channel === 'chat' ? 'Chat' : 'Ticket' }),
+        h('td', { text: x.agent || '-' }),
+        h('td', null, [h('span', { class: 'tsd-pill ' + o[1], text: o[0] }), x.dest ? h('small', { class: 'tsd-dest-t', text: 'to ' + x.dest }) : null]),
+        h('td', { class: 'num', text: fmtWhen(x.created) }),
+        h('td', null, [v ? h('span', { class: 'tsd-pill ' + v[1], title: x.audit.reason + (x.audit.guide ? ' (Guide: ' + x.audit.guide + ')' : ''), text: v[0] }) : null,
+          v ? h('small', { class: 'tsd-why', text: x.audit.reason }) : null,
+          canAudit ? h('button', { type: 'button', class: 'tsd-link', disabled: !!S.auditing[x.ticketId], text: S.auditing[x.ticketId] ? 'Checking...' : (v ? 'Re-check' : 'Audit'), onclick: function () { audit([x.ticketId]); } }) : null])]);
+    });
+    return h('section', { class: 'tsd-card' }, [
+      h('div', { class: 'tsd-card-hd' }, [h('div', null, [h('h3', { class: 'tsd-h3', text: 'Tickets and transfer audits' }),
+        h('p', { class: 'tsd-card-sub', text: 'Every ticket counted above. Audit asks AI, using the support guide and the ticket conversation from AditKB, whether T1 could have handled a transferred ticket. Check the reason before acting on it.' })]),
+        h('div', { class: 'tsd-aud' }, [h('span', { class: 'tsd-pill bad', text: au.couldHandle + ' could have handled' }), h('span', { class: 'tsd-pill ok', text: au.rightTransfer + ' right transfers' }), au.unclear ? h('span', { class: 'tsd-pill mute', text: au.unclear + ' unclear' }) : null])]),
+      tools,
+      rows.length ? h('div', { class: 'tsd-scroll' }, [h('table', { class: 'tsd-table tsd-list' }, [h('thead', null, [h('tr', null, ['Ticket', 'Subject and topic', 'Channel', 'T1 agent', 'Outcome', 'Created', 'Audit'].map(function (x) { return h('th', { scope: 'col', class: x === 'Created' ? 'num' : '', text: x }); }))]), h('tbody', null, rows)])]) : empty('No tickets match.'),
+      list.length > 200 ? h('p', { class: 'tsd-empty', text: 'Showing the newest 200 of ' + list.length + '. Narrow the range or search to see the rest.' }) : null]);
+  }
+
+  function audit(ids, bulk) {
+    if (!ids.length) return;
+    ids.forEach(function (id) { S.auditing[id] = true; }); if (bulk) S.bulk = true; draw();
+    api('/api/topic-support/audit', { topic: S.topic, ticketIds: ids }).then(function (j) {
+      if (!j.success) throw new Error(j.error || 'Audit failed');
+      var d = S.data.data[S.topic];
+      (j.results || []).forEach(function (r) {
+        var x = d.tickets.filter(function (t) { return t.ticketId === r.ticketId; })[0];
+        if (x && !r.error) x.audit = { verdict: r.verdict, reason: r.reason, guide: r.guide };
+      });
+      d.audits = { couldHandle: d.tickets.filter(function (x) { return x.audit && x.audit.verdict === 'could_handle'; }).length,
+        rightTransfer: d.tickets.filter(function (x) { return x.audit && x.audit.verdict === 'right_transfer'; }).length,
+        unclear: d.tickets.filter(function (x) { return x.audit && x.audit.verdict === 'unclear'; }).length };
+      var bad = (j.results || []).filter(function (r) { return r.error; });
+      if (bad.length && typeof showToast === 'function') showToast(bad.length + ' could not be audited: ' + bad[0].error, 'warning');
+    }).catch(function (e) { if (typeof showToast === 'function') showToast(e.message, 'error'); })
+      .then(function () { ids.forEach(function (id) { delete S.auditing[id]; }); S.bulk = false; draw(); });
+  }
+
+  window.openTopicSupport = function () { if (!S.data || Date.now() - (S.at || 0) > 5 * 60000) { S.at = Date.now(); load(); } else draw(); };
+})();
