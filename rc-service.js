@@ -389,6 +389,8 @@ function buildSessionSummary(sessionCalls, lookups) {
   let voicemailResult = false;
   let abandonedResult = false;
   let connected = false;
+  let answered = false;
+  const resultsSeen = [];
   let inboundSeen = false;
   let outboundSeen = false;
   let ringDuration = 0;
@@ -410,6 +412,10 @@ function buildSessionSummary(sessionCalls, lookups) {
     voicemailResult = voicemailResult || parsed.isVoicemail || isVoicemailResult(call.result);
     abandonedResult = abandonedResult || isAbandonedStyleResult(call.result);
     const resultNorm = normalizeCallResult(call.result);
+    if (resultNorm) resultsSeen.push(resultNorm);
+    // Batch 163: answered means someone picked up, not just that the line was open (a caller hearing the
+    // queue greeting has a duration too).
+    answered = answered || ['accepted', 'call connected', 'connected', 'completed'].includes(resultNorm);
     connected = connected ||
       resultNorm === 'call connected' ||
       resultNorm === 'connected' ||
@@ -454,6 +460,8 @@ function buildSessionSummary(sessionCalls, lookups) {
     voicemailResult,
     abandonedResult,
     connected,
+    answered,
+    resultsSeen,
     transferred,
     ringDuration,
     holdDuration,
@@ -705,7 +713,11 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
 
     for (const sessionCalls of sessions.values()) {
       const session = buildSessionSummary(sessionCalls, lookups);
-      const { owner, relevantInbound, relevantOutbound, voicemailResult, abandonedResult, transferred } = session;
+      const { owner, relevantInbound, relevantOutbound, voicemailResult, transferred } = session;
+      // Batch 163: like RingCentral Live Reports, an inbound queue call that nobody answered and that did not go to
+      // voicemail is abandoned, whatever the result says ("Missed", "Hang Up", "No Answer"...).
+      const abandonedResult = session.abandonedResult || (session.queueTouched && !session.answered && !voicemailResult);
+      if (relevantInbound && !voicemailResult && abandonedResult) { const rk = (session.resultsSeen || []).join('>') || 'none'; summary.abandonResults = summary.abandonResults || {}; summary.abandonResults[rk] = (summary.abandonResults[rk] || 0) + 1; }
       if (!relevantInbound && !relevantOutbound) continue;
 
       const effectiveRing = session.ringDuration || 0;
@@ -763,7 +775,7 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
 
     lastQueueDashboardSummary = summary;
     lastQueueDashboardAt = now;
-    console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount}`);
+    console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount} ${JSON.stringify(summary.abandonResults || {})}`);
     return summary;
   } catch (e) {
     if (lastQueueDashboardSummary && lastQueueDashboardSummary.date === dateStr && lastQueueDashboardSummary.timeZone === timeZone) {

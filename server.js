@@ -8094,6 +8094,45 @@ app.get('/api/live-floor/chats-today', requireAuth, async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Batch 163: who is on a call right now (Call Wing) and how many chats each person has open (Chat Wing).
+// Phone state comes from the live presence snapshot; open chats are read from SalesIQ, cached for 45 seconds.
+let _activeChats = { at: 0, data: {}, error: null };
+async function activeChatsByEmail() {
+  if (Date.now() - _activeChats.at < 45000) return _activeChats;
+  if (!salesiqService.isConfigured()) return (_activeChats = { at: Date.now(), data: {}, error: 'SalesIQ is not set up' });
+  try {
+    const now = Date.now(), from = now - 8 * 3600e3, data = {};
+    for (let index = 1; index <= 3; index++) {
+      const pg = await salesiqService.fetchConversationsPage({ fromTimeMs: from, toTimeMs: now, index, limit: 100 });
+      for (const c of pg.conversations) {
+        const email = c.attender && String(c.attender.email || '').toLowerCase();
+        if (!email || c.end_time) continue;
+        const st = String(c.status || '') + ' ' + String((c.chat_status && (c.chat_status.label || c.chat_status.state_key)) || '');
+        if (/end|close|miss|declin|block|archiv/i.test(st)) continue;
+        data[email] = (data[email] || 0) + 1;
+      }
+      if (!pg.moreDataAvailable) break;
+    }
+    _activeChats = { at: Date.now(), data, error: null };
+  } catch (e) { _activeChats = { at: Date.now(), data: _activeChats.data || {}, error: e.message }; }
+  return _activeChats;
+}
+app.get('/api/live-floor/now', requireAuth, async (req, res) => {
+  try {
+    const [snap, monitored, chats] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), activeChatsByEmail()]);
+    const data = {};
+    for (const a of monitored) {
+      const email = String(a.email || '').toLowerCase(); if (!email) continue;
+      const s = (snap && snap[String(a.rc_id)]) || {};
+      const st = String(s.normalizedStatus || '');
+      data[email] = { onCall: !!s.isOnCall || /on call|ringing/i.test(st), ringing: /ringing/i.test(st) || String(s.telephonyStatus || '') === 'Ringing',
+        status: st || null, direction: s.direction || null, callStartTime: s.isOnCall ? (s.callStartTime || null) : null,
+        activeChats: chats.data[email] || 0 };
+    }
+    res.json({ success: true, data, chatsError: chats.error || null, at: new Date().toISOString() });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // Session 45: drill-downs for the call and chat tiles on My Stats. Always
 // scoped to the logged-in agent's own session email, same as my-summary.
 app.get('/api/desk-lifecycle/my-calls', requireAuth, async (req, res) => {

@@ -243,7 +243,10 @@
     const sumOut = rows.reduce((a, r) => a + (r.op.outboundCalls || 0), 0);
     const inbound = Math.max(q.inboundCount || 0, sumIn);
     const outbound = Math.max(q.outboundCount || 0, sumOut);
-    const missed = rows.reduce((a, r) => a + (r.op.missedCalls || 0), 0);
+    // Batch 163: missed today is the queue's own count (abandoned plus voicemail), like RingCentral Live Reports.
+    const agentMissed = rows.reduce((a, r) => a + (r.op.missedCalls || 0), 0);
+    const abd = Math.max(q.abandonedCount || 0, (g('abandonedCalls', []) || []).length), vm = q.voicemailCount || 0;
+    const missed = Math.max(abd + vm, agentMissed);
     const calls = Math.max(1, inbound + outbound);
     const k = [
       ['Available', n('avail'), n('avail') / team, 'var(--lf-green)'],
@@ -251,10 +254,10 @@
       ['Unavailable', n('busy') + n('break'), (n('busy') + n('break')) / team, 'var(--lf-red)'],
       ['Inbound today', inbound, inbound / calls, 'var(--lf-teal)'],
       ['Outbound today', outbound, outbound / calls, 'var(--lf-purple)'],
-      ['Missed today', missed, inbound ? missed / inbound : 0, 'var(--lf-orange)'],
+      ['Missed today', missed, inbound ? missed / inbound : 0, 'var(--lf-orange)', `${abd} abandoned · ${vm} voicemail`],
     ];
-    return `<div class="lf-kpis" role="group" aria-label="Floor summary">${k.map(([l, v, p, c]) => `
-      <div class="lf-card lf-kpi"><div class="lf-kpi-label">${l}</div><div class="lf-kpi-val lf-mono">${v}</div>
+    return `<div class="lf-kpis" role="group" aria-label="Floor summary">${k.map(([l, v, p, c, sub]) => `
+      <div class="lf-card lf-kpi"${sub ? ` title="${e(sub)}"` : ''}><div class="lf-kpi-label">${l}${sub ? `<span class="lf-kpi-sub">${e(sub)}</span>` : ''}</div><div class="lf-kpi-val lf-mono">${v}</div>
       <div class="lf-bar" aria-hidden="true"><i style="width:${Math.round(Math.min(1, p) * 100)}%;background:${c}"></i></div></div>`).join('')}</div>`;
   }
 
@@ -343,6 +346,7 @@
         <div class="lf-kv"><span>On call</span><b class="lf-mono">${n('call')}</b></div>
         <div class="lf-kv"><span>Unavailable / away</span><b class="lf-mono">${n('busy') + n('break')}</b></div>
         <div class="lf-kv"><span>Abandoned today</span><b class="lf-mono">${Math.max(q.abandonedCount || 0, (g('abandonedCalls', []) || []).length)}</b></div>
+        <div class="lf-kv"><span>Voicemail today</span><b class="lf-mono">${q.voicemailCount || 0}</b></div>
         <div class="lf-sub" style="margin-top:10px">Your card is outlined in orange.</div>
       </section>`;
   }
@@ -378,13 +382,15 @@
   }
 
   // ── paint ───────────────────────────────────────────────────────────────
-  const ORDER = { call: 0, avail: 1, busy: 2, break: 3, off: 4 };
+  const ORDER = { call: 0, avail: 1, chat: 2, busy: 2, break: 3, off: 4 };
 
   function paint(ctx) {
     const mode = ctx.mode;
     const root = document.getElementById(mode === 'admin' ? 'lf-admin-root' : 'lf-agent-root');
     if (!root) return;
-    const rows = (ctx.agentOps || []).map(op => ({ op, st: stateOf(op), wing: wingOf(op) }))
+    // Batch 163: Chat Wing agents are not expected to take calls, so being unavailable on the phone is
+    // normal for them: shown as "Chat duty" and left out of the unavailable counts and alerts.
+    const rows = (ctx.agentOps || []).map(op => { const wing = wingOf(op); let st = stateOf(op); if (wing === 'chat' && st.key === 'busy') st = Object.assign({}, st, { key: 'chat', label: 'Chat duty' }); return { op, st, wing }; })
       .sort((a, b) => (ORDER[a.st.key] - ORDER[b.st.key]) || String(a.op.agent.name).localeCompare(String(b.op.agent.name)));
     const myEmail = String(g('currentEmail', '') || '').toLowerCase();
     const me = mode === 'agent' ? rows.find(r => String(r.op.agent.email || '').toLowerCase() === myEmail) : null;
@@ -399,7 +405,7 @@
       const list = rows.filter(r => r.wing === key);
       if (!list.length) return '';
       const n = k => list.filter(r => r.st.key === k).length;
-      const sub = [`${n('avail')} available`, `${n('call')} on call`, `${n('busy') + n('break')} away`].join(' · ');
+      const sub = (key === 'chat' ? [`${n('chat') + n('avail') + n('call')} on chat duty`, `${n('break')} away`] : [`${n('avail')} available`, `${n('call')} on call`, `${n('busy') + n('break')} away`]).join(' · ');
       return `<section class="lf-wing" aria-label="${e(title)}">
         <h3 class="lf-wing-t">${e(title)} <span class="lf-wing-n">${list.length}</span><span class="lf-wing-sub">${e(sub)}</span></h3>
         <div class="lf-grid">${list.map(r => agentCard(r, me && r === me, mode === 'admin')).join('')}</div>

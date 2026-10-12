@@ -169,3 +169,12 @@ html.dark-mode .rg-msg{color:#FF8C92}
 .rg-dlg .bx-btn:disabled{opacity:.6;cursor:default}
 html.dark-mode .rg-dlg .bx-btn{background:#152634;border-color:#22384A;color:#E6EEF5}
 html.dark-mode .rg-dlg .bx-btn.rg-ok{background:#3BB8EA;border-color:#3BB8EA;color:#072B40}
+
+/* Batch 163: live phone state and open chats on the board */
+.bx-live{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--bx-grey-s);color:var(--bx-t3)}
+.bx-live i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.bx-live-call{background:var(--bx-teal-s);color:var(--bx-teal)}
+.bx-live-call i{animation:bxLive 1.6s ease-in-out infinite}
+.bx-live-chat{background:var(--bx-purple-s);color:var(--bx-purple)}
+@keyframes bxLive{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.bx-live-call i{animation:none}}

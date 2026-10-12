@@ -109,3 +109,8 @@ html.dark-mode .lf-root{
 .lf-avt b{color:var(--lf-t1);font-weight:600}
 .lf-av-g b{color:var(--lf-green)}
 .lf-av-r b{color:var(--lf-red)}
+
+/* Batch 163: Chat Wing on chat duty, missed split */
+.lf-chat{color:var(--lf-purple);background:color-mix(in srgb,var(--lf-purple) 12%,transparent)} .lf-chat .lf-dot{background:var(--lf-purple)}
+.lf-b-chat{border-left-color:var(--lf-purple)}
+.lf-kpi-sub{display:block;margin-top:2px;font-size:11px;font-weight:400;color:var(--lf-t3)}

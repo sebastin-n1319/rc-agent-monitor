@@ -155,6 +155,32 @@
     return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${ampm} IST · ${plan.minutes}m`;
   }
 
+  // Batch 163: live phone state (Call Wing) and open chats (Chat Wing) for the board, every 20 seconds.
+  let liveNow = null, liveAt = 0;
+  async function loadLiveNow() {
+    if (Date.now() - liveAt < 15000) return;
+    liveAt = Date.now();
+    try {
+      const j = await fetch('/api/live-floor/now', { credentials: 'include' }).then(r => r.json());
+      if (j && j.success) { liveNow = j; render(); }
+    } catch (err) { /* the line just stays hidden */ }
+  }
+  function liveLine(r) {
+    if (!liveNow || !liveNow.data || r.currentStatus === 'Logged Out') return '';
+    const x = liveNow.data[String(r.email || '').toLowerCase()];
+    if (!x) return '';
+    if (wingOf(r.email) === 'chat') {
+      const n = x.activeChats || 0;
+      return `<div class="bx-live ${n ? 'bx-live-chat' : 'bx-live-idle'}"><i aria-hidden="true"></i>${liveNow.chatsError && !n ? 'Open chats unavailable' : n ? `${n} open chat${n === 1 ? '' : 's'}` : 'No open chats'}</div>`;
+    }
+    if (x.onCall) {
+      const since = x.callStartTime ? parseTs(x.callStartTime) : null;
+      const dir = x.direction ? String(x.direction).replace(/^\w/, c => c.toUpperCase()) : '';
+      return `<div class="bx-live bx-live-call"><i aria-hidden="true"></i>${x.ringing ? 'Ringing' : 'On a call'}${dir ? ' · ' + e(dir) : ''}${since ? ` · <span class="bx-mono" data-bx-since="${since}">${clock((Date.now() - since) / 1000)}</span>` : ''}</div>`;
+    }
+    return `<div class="bx-live bx-live-idle"><i aria-hidden="true"></i>Not on a call${x.status ? ' · ' + e(x.status) : ''}</div>`;
+  }
+
   async function loadMonitored() {
     if (monitored) return;
     monitored = [];
@@ -398,6 +424,7 @@
         <div class="bx-row bx-between"><b>${e(r.username || r.email)}</b><span class="bx-mono bx-strong" data-bx-since="${isToday() && since && r.currentStatus !== 'Logged Out' ? since : ''}">${isToday() && since && r.currentStatus !== 'Logged Out' ? clock((Date.now() - since) / 1000) : '-'}</span></div>
         <div class="bx-sub">${wingOf(r.email) === 'chat' ? 'Chat' : 'Call'} wing · ${(LANES[r.currentStatus] || {}).label || ''}</div>
         <div class="bx-sub">Breaks ${laneCount(r, 'Break')} (${dur(laneSecs(r, 'Break', 'breakSeconds'))}) · BRB ${laneCount(r, 'BRB')} (${dur(laneSecs(r, 'BRB', 'brbSeconds'))})</div>
+        ${isToday() ? liveLine(r) : ''}
         ${flags.length ? `<div class="bx-over-line">⚠ ${flags.map(e).join(' · ')}</div>` : ''}
       </div>`;
     };
@@ -487,7 +514,7 @@
     const view = g('view', 'admin');
     try {
       if (agent && view === 'agent') agent.innerHTML = agentHTML();
-      if (admin && view === 'admin') admin.innerHTML = adminHTML();
+      if (admin && view === 'admin') { admin.innerHTML = adminHTML(); loadLiveNow(); }
     } catch (err) { console.error('breaks-v2 render', err); }
     startTick();
   }
@@ -504,6 +531,7 @@
     }, TICK_MS);
     // Rings, budgets and flags move with time too; redraw once a minute.
     setInterval(() => { if (!document.hidden) render(); }, 60000);
+    setInterval(() => { const ad = roots().admin; if (!document.hidden && ad && ad.offsetParent !== null && g('view', 'admin') === 'admin') loadLiveNow(); }, 20000);
   }
 
   document.addEventListener('click', async ev => {
