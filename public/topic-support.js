@@ -149,7 +149,7 @@
       if (S.filter === 'open' && x.outcome !== 'open') return false;
       if (S.filter === 'bypassed' && x.outcome !== 'bypassed') return false;
       if (S.filter === 'could' && !(x.audit && x.audit.verdict === 'could_handle')) return false;
-      if (S.filter === 'against' && !(x.guide && ((x.guide.expected === 't1' && (x.outcome === 'toTopicTeam' || x.outcome === 'toOther')) || (x.guide.expected === 'commercial' && (x.outcome === 'resolved' || x.outcome === 'open'))))) return false;
+      if (S.filter === 'against' && !(x.guide && ((x.guide.expected === 't1' && (x.outcome === 'toTopicTeam' || x.outcome === 'toOther') && !(x.audit && x.audit.verdict === 'right_transfer')) || (x.guide.expected === 'commercial' && (x.outcome === 'resolved' || x.outcome === 'open'))))) return false;
       if (S.q) { var q = S.q.toLowerCase(); if ((String(x.number) + ' ' + (x.subject || '') + ' ' + (x.agent || '') + ' ' + (x.category || '')).toLowerCase().indexOf(q) < 0) return false; }
       return true;
     });
