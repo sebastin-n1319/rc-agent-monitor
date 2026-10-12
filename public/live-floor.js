@@ -333,6 +333,7 @@
         <div class="lf-kv"><span>AHT inbound</span><b class="lf-mono">${fmtS(q.ahtInbound)}</b></div>
         <div class="lf-kv"><span>Voicemails</span><b class="lf-mono">${q.voicemailCount || 0}</b></div>
         <div class="lf-kv"><span>Transfers</span><b class="lf-mono">${q.transferCount || 0}</b></div>
+        ${q.queueSource && q.queueSource.queue ? `<div class="lf-sub" style="margin-top:8px">Counted from the RingCentral queue "${e(q.queueSource.queue)}": ${q.queueSource.inbound || 0} inbound today.</div>` : ''}
       </section>`;
   }
 

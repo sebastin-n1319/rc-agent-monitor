@@ -767,6 +767,33 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
       }
     }
 
+    // Batch 164: the queue's own call log is the source RingCentral Live Reports uses for a queue, so the
+    // inbound, abandoned and voicemail totals come from it when it can be read. Every inbound call the queue
+    // received counts; answered = Accepted / Call connected, voicemail = Voicemail, anything else = abandoned.
+    try {
+      if (customerServiceQueueId) {
+        const qcalls = await listExtensionCallLogRecords(customerServiceQueueId, { dateFrom: start.toISOString(), dateTo: end.toISOString(), type: 'Voice', view: 'Simple', perPage: 250 });
+        const seenQ = new Set(); const byResult = {}; let qin = 0, qvm = 0, qab = 0; const qabList = [];
+        for (const c of qcalls) {
+          if (normalizeCallResult(c.direction) !== 'inbound') continue;
+          const key = c.sessionId || c.telephonySessionId || c.id; if (seenQ.has(key)) continue; seenQ.add(key);
+          const r = normalizeCallResult(c.result); byResult[r || 'none'] = (byResult[r || 'none'] || 0) + 1;
+          qin++;
+          if (r.includes('voicemail')) { qvm++; continue; }
+          if (['accepted', 'call connected', 'connected', 'completed'].includes(r)) continue;
+          qab++;
+          qabList.push({ agentId: `queue:${customerServiceQueueId}`, agentName: customerServiceQueueName, extension: null, callId: c.id, result: c.result, ringDuration: c.duration || 0, holdDuration: 0, startTime: c.startTime });
+        }
+        summary.queueSource = { queue: customerServiceQueueName, inbound: qin, voicemail: qvm, abandoned: qab, byResult };
+        if (qin) {
+          summary.inboundCount = Math.max(summary.inboundCount, qin);
+          summary.voicemailCount = qvm;
+          summary.abandonedCount = qab;
+          summary.abandonedCalls = qabList;
+        }
+      }
+    } catch (e) { console.warn('queue call log read failed:', e.message); }
+
     summary.ahtInbound = inboundTalkCount ? Math.round(inboundTalkTotal / inboundTalkCount) : 0;
     summary.ahtOutbound = outboundTalkCount ? Math.round(outboundTalkTotal / outboundTalkCount) : 0;
     summary.avgRingTime = ringCount ? Math.round(ringTotal / ringCount) : 0;
@@ -775,7 +802,7 @@ async function fetchQueueDashboardSummary(dateStr, force = false, timeZone = 'Am
 
     lastQueueDashboardSummary = summary;
     lastQueueDashboardAt = now;
-    console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount} ${JSON.stringify(summary.abandonResults || {})}`);
+    console.log(`📊 Queue dashboard summary: in ${summary.inboundCount} / out ${summary.outboundCount} / vm ${summary.voicemailCount} / abd ${summary.abandonedCount} ${JSON.stringify(summary.abandonResults || {})} queue ${JSON.stringify(summary.queueSource || null)}`);
     return summary;
   } catch (e) {
     if (lastQueueDashboardSummary && lastQueueDashboardSummary.date === dateStr && lastQueueDashboardSummary.timeZone === timeZone) {
