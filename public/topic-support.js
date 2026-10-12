@@ -93,6 +93,7 @@
       tile('Transferred', t.transferred, pct(t.transferred, t.t1Touched) + ' of what T1 handled · ' + t.toTopicTeam + ' to ' + d.teamLabel, t.transferred ? 'warn' : ''),
       tile('Went straight to team', t.bypassedT1, 'never reached a T1 agent', 'mute'),
       tile('Average rating', d.ratings && d.ratings.reviewed ? stars(d.ratings.avg.overall) + ' / 5' : '-', d.ratings ? d.ratings.reviewed + ' reviewed' + (d.ratings.pending ? ' · ' + d.ratings.pending + ' waiting' : '') : '', d.ratings && d.ratings.avg.overall != null ? rateCls(d.ratings.avg.overall) : 'mute'),
+      tile('Needs attention', d.flagged || 0, d.flagged ? 'possible mishandling, see the list below' : 'nothing flagged', d.flagged ? 'bad' : 'ok'),
       tile('Against the guide', (t.againstGuide || 0) + (t.commercialKept || 0), (t.againstGuide || 0) + ' transferred though the guide says T1 resolves' + (t.commercialKept ? ' · ' + t.commercialKept + ' commercial kept by T1' : ''), (t.againstGuide || t.commercialKept) ? 'bad' : 'ok')]));
     if (d.classifying) {
       out.push(h('div', { class: 'tsd-note' }, [d.classifying + ' tickets are still being sorted against the support guide. This page refreshes by itself in a moment.']));
@@ -129,10 +130,24 @@
       areas.length ? card('By guide area', 'Each ticket sorted against the support guide, with who the guide says should handle it. Red means T1 transferred something the guide says T1 resolves.', h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Area', 'Guide says', 'Handled', 'Resolved', 'Transferred'].map(function (x, i) { return h('th', { scope: 'col', class: i > 1 ? 'num' : '', text: x }); }))]), h('tbody', null, areas)]))
         : card('Topics', 'The ticket topic (from Desk) and how often T1 transferred it.', cats.length ? h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Topic', 'Handled', 'Transferred', 'Rate'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, cats)]) : empty('Nothing yet.'))]));
     if (d.destinations.length) out.push(card('Where transfers went', null, h('div', { class: 'tsd-dest' }, d.destinations.map(function (x) { return h('span', { class: 'tsd-chip' }, [x.team, h('b', { text: String(x.n) })]); }))));
+    if (d.flagged) out.push(attention(d));
     out.push(scorecards(d));
     out.push(auditCard(d));
     out.push(weeklyCard());
     return out;
+  }
+  function attention(d) {
+    var list = d.tickets.filter(function (x) { return x.flags && x.flags.length; }).slice(0, 12);
+    return h('section', { class: 'tsd-card tsd-att' }, [
+      h('div', { class: 'tsd-card-hd' }, [h('div', null, [h('h3', { class: 'tsd-h3', text: 'Needs attention' }),
+        h('p', { class: 'tsd-card-sub', text: 'Tickets the guide checks or the ticket review say may be mishandled: wrong team, a transfer T1 should have resolved, a cancellation kept by T1, a weak hand-off, a low rating, or stuck with T1. Admins and SPOCs get a bell alert for each new one.' })]),
+        h('button', { type: 'button', class: 'tsd-btn', text: 'Show all ' + d.flagged, onclick: function () { S.filter = 'flagged'; draw(); var el = document.querySelector('#tsd-root .tsd-list'); if (el) el.scrollIntoView({ block: 'start' }); } })]),
+      h('div', { class: 'tsd-att-list' }, list.map(function (x) {
+        return h('div', { class: 'tsd-att-row' }, [
+          x.url ? h('a', { href: x.url, target: '_blank', rel: 'noopener', class: 'tsd-num', text: '#' + x.number }) : h('span', { text: '#' + x.number }),
+          h('div', null, [h('b', { text: x.subject || '' }), h('small', { text: (x.agent || 'No T1 agent') + ' · ' + (OUT[x.outcome] || [x.outcome])[0] + (x.dest ? ' to ' + x.dest : '') }),
+            h('ul', null, x.flags.map(function (f) { return h('li', null, [h('span', { class: 'tsd-pill bad', text: f.label }), f.why ? h('span', { class: 'tsd-why-in', text: ' ' + f.why }) : null]); }))])]);
+      }))]);
   }
   function scorecards(d) {
     var list = d.byAgent.filter(function (a) { return a.reviewed; });
@@ -193,6 +208,7 @@
       if (S.filter === 'resolved' && x.outcome !== 'resolved') return false;
       if (S.filter === 'open' && x.outcome !== 'open') return false;
       if (S.filter === 'bypassed' && x.outcome !== 'bypassed') return false;
+      if (S.filter === 'flagged' && !(x.flags && x.flags.length)) return false;
       if (S.filter === 'low' && !(x.review && x.review.overall <= 2)) return false;
       if (S.filter === 'could' && !(x.audit && x.audit.verdict === 'could_handle')) return false;
       if (S.filter === 'against' && !(x.guide && ((x.guide.expected === 't1' && (x.outcome === 'toTopicTeam' || x.outcome === 'toOther') && !(x.audit && x.audit.verdict === 'right_transfer')) || (x.guide.expected === 'commercial' && (x.outcome === 'resolved' || x.outcome === 'open'))))) return false;
@@ -201,7 +217,7 @@
     });
     var pending = d.tickets.filter(function (x) { return (x.outcome === 'toTopicTeam' || x.outcome === 'toOther') && !x.audit; });
     var au = d.audits;
-    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['bypassed', 'Went straight to team'], ['against', 'Against the guide'], ['could', 'Could have handled'], ['low', 'Rated 1 or 2']];
+    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['bypassed', 'Went straight to team'], ['flagged', 'Needs attention'], ['against', 'Against the guide'], ['could', 'Could have handled'], ['low', 'Rated 1 or 2']];
     var tools = h('div', { class: 'tsd-tools' }, [
       h('div', { class: 'tsd-seg', role: 'group', 'aria-label': 'Show' }, filters.map(function (f) { return h('button', { type: 'button', 'aria-pressed': S.filter === f[0] ? 'true' : 'false', text: f[1], onclick: function () { S.filter = f[0]; draw(); } }); })),
       h('input', { type: 'search', class: 'tsd-q', placeholder: 'Find a ticket, agent or topic', 'aria-label': 'Find a ticket, agent or topic', value: S.q, oninput: function (e) { S.q = e.target.value; clearTimeout(S._qt); S._qt = setTimeout(function () { var p = e.target.selectionStart; draw(); var n = document.querySelector('#tsd-root .tsd-q'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (er) {} } }, 200); } }),
@@ -217,7 +233,8 @@
           x.guide && EXP[x.guide.expected] ? h('span', { class: 'tsd-pill ' + EXP[x.guide.expected][1] + ' tsd-gp', title: x.guide.why || '', text: EXP[x.guide.expected][0] }) : null]),
         h('td', { text: x.channel === 'call' ? 'Call' : x.channel === 'chat' ? 'Chat' : 'Ticket' }),
         h('td', { text: x.agent || '-' }),
-        h('td', null, [h('span', { class: 'tsd-pill ' + o[1], text: o[0] }), x.dest ? h('small', { class: 'tsd-dest-t', text: 'to ' + x.dest }) : null]),
+        h('td', null, [h('span', { class: 'tsd-pill ' + o[1], text: o[0] }), x.dest ? h('small', { class: 'tsd-dest-t', text: 'to ' + x.dest }) : null,
+          (x.flags || []).length ? h('span', { class: 'tsd-pill bad tsd-gp', title: x.flags.map(function (f) { return f.label + (f.why ? ': ' + f.why : ''); }).join('\n'), text: x.flags.length === 1 ? x.flags[0].label : x.flags.length + ' problems' }) : null]),
         h('td', { class: 'num', text: fmtWhen(x.created) }),
         h('td', null, [v ? h('span', { class: 'tsd-pill ' + v[1], title: x.audit.reason + (x.audit.guide ? ' (Guide: ' + x.audit.guide + ')' : ''), text: v[0] }) : null,
           v ? h('small', { class: 'tsd-why', text: x.audit.reason }) : null,

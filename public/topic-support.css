@@ -127,3 +127,12 @@ a.tsd-btn{display:inline-flex;align-items:center;text-decoration:none}
 .tsd-tiles{grid-template-columns:repeat(auto-fit,minmax(160px,1fr)) !important}
 
 .tsd-why-list{margin:0;padding-left:18px;font-size:12.5px;line-height:1.6}
+
+/* Batch 168: needs attention */
+.tsd-att{border-color:color-mix(in srgb,var(--tsd-red) 35%,var(--tsd-line));border-left:4px solid var(--tsd-red)}
+.tsd-att-list{display:grid;gap:10px}
+.tsd-att-row{display:grid;grid-template-columns:80px 1fr;gap:10px;padding:10px 0;border-top:1px solid var(--tsd-line);font-size:13px}
+.tsd-att-row small{display:block;color:var(--tsd-t3);font-size:12px;margin:2px 0 6px}
+.tsd-att-row ul{margin:0;padding:0;list-style:none;display:grid;gap:4px}
+.tsd-why-in{font-size:12px;color:var(--tsd-t2)}
+.tsd-pill{white-space:normal}

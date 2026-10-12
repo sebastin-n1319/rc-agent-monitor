@@ -670,15 +670,17 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 165: AI and VoIP support handled by T1 (admin dashboard under Tickets)
     { const ts = require('./lib/topic-support'); ts.setDB(db); await ts.initSchema();
       ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
-        kb: (t, o) => escalationWatch.kb(t, o), notices });
+        kb: (t, o) => escalationWatch.kb(t, o), notices,
+        spocs: async () => (await ticketAudits.listSpocs()).filter(x => x.active).map(x => x.email) });
       // Batch 167: review T1-handled AI and VoIP tickets in the background, and build the weekly report once a week.
       setTimeout(() => {
         const tick = async () => {
           try { const { agentNames } = await deskLifecycleAgentRoster(); const r = await ts.reviewSweep({ agentNames, max: 12 }); if (r && r.reviewed) console.log('⭐ Topic reviews:', JSON.stringify(r));
+            const al = await ts.alertSweep({ agentNames }); if (al && al.sent) console.log('🚩 Topic alerts:', JSON.stringify(al));
             const w = await ts.buildWeekly({ agentNames }); if (w && w.created) console.log('📰 Weekly AI & VoIP report built for', w.week); }
           catch (e) { console.warn('topic review sweep failed:', e.message); }
         };
-        tick(); setInterval(tick, 30 * 60 * 1000);
+        tick(); setInterval(tick, 10 * 60 * 1000);
       }, 5 * 60 * 1000); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
