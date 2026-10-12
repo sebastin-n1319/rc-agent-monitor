@@ -87,11 +87,10 @@
     if (Date.parse(d.to) <= Date.parse(d.from)) out.push(h('div', { class: 'tsd-note', text: 'T1 starts ' + d.label + ' on ' + fmtDay(chiDate(d.goLive).toISOString()) + '. Pick a range that includes that date.' }));
     out.push(h('p', { class: 'tsd-range', text: 'Counting tickets created ' + fmtWhen(d.from) + ' to ' + fmtWhen(d.to) + ' Central. ' + d.label + ' moved to T1 on ' + fmtDay(chiDate(d.goLive).toISOString()) + ', so earlier dates are left out. ' + (d.source === 'live' ? 'Live from Zoho Desk.' : (d.sourceNote || 'From the Zoho tickets synced into the tool.')) }));
     out.push(h('div', { class: 'tsd-tiles' }, [
-      tile('Handled by T1', t.t1Touched, t.inTopic + ' ' + d.label + ' tickets in all'),
+      tile('Handled by T1', t.t1Touched, 'calls, chats and tickets a T1 agent worked'),
       tile('Resolved by T1', t.resolvedByT1, pct(t.resolvedByT1, t.t1Touched) + ' of what T1 handled', 'ok'),
       tile('Still with T1', t.openWithT1, 'open or on hold with a T1 agent'),
       tile('Transferred', t.transferred, pct(t.transferred, t.t1Touched) + ' of what T1 handled · ' + t.toTopicTeam + ' to ' + d.teamLabel, t.transferred ? 'warn' : ''),
-      tile('Went straight to team', t.bypassedT1, 'never reached a T1 agent', 'mute'),
       tile('Average rating', d.ratings && d.ratings.reviewed ? stars(d.ratings.avg.overall) + ' / 5' : '-', d.ratings ? d.ratings.reviewed + ' reviewed' + (d.ratings.pending ? ' · ' + d.ratings.pending + ' waiting' : '') : '', d.ratings && d.ratings.avg.overall != null ? rateCls(d.ratings.avg.overall) : 'mute'),
       tile('Needs attention', d.flagged || 0, d.flagged ? 'possible mishandling, see the list below' : 'nothing flagged', d.flagged ? 'bad' : 'ok'),
       tile('Against the guide', (t.againstGuide || 0) + (t.commercialKept || 0), (t.againstGuide || 0) + ' transferred though the guide says T1 resolves' + (t.commercialKept ? ' · ' + t.commercialKept + ' commercial kept by T1' : ''), (t.againstGuide || t.commercialKept) ? 'bad' : 'ok')]));
@@ -217,7 +216,7 @@
     });
     var pending = d.tickets.filter(function (x) { return (x.outcome === 'toTopicTeam' || x.outcome === 'toOther') && !x.audit; });
     var au = d.audits;
-    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['bypassed', 'Went straight to team'], ['flagged', 'Needs attention'], ['against', 'Against the guide'], ['could', 'Could have handled'], ['low', 'Rated 1 or 2']];
+    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['flagged', 'Needs attention'], ['against', 'Against the guide'], ['could', 'Could have handled'], ['low', 'Rated 1 or 2']];
     var tools = h('div', { class: 'tsd-tools' }, [
       h('div', { class: 'tsd-seg', role: 'group', 'aria-label': 'Show' }, filters.map(function (f) { return h('button', { type: 'button', 'aria-pressed': S.filter === f[0] ? 'true' : 'false', text: f[1], onclick: function () { S.filter = f[0]; draw(); } }); })),
       h('input', { type: 'search', class: 'tsd-q', placeholder: 'Find a ticket, agent or topic', 'aria-label': 'Find a ticket, agent or topic', value: S.q, oninput: function (e) { S.q = e.target.value; clearTimeout(S._qt); S._qt = setTimeout(function () { var p = e.target.selectionStart; draw(); var n = document.querySelector('#tsd-root .tsd-q'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (er) {} } }, 200); } }),
