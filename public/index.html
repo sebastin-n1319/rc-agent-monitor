@@ -72,7 +72,7 @@
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
 <link rel="stylesheet" href="/ticket-audits.css?v=1.25.0" id="ticket-audits-link">
-<link rel="stylesheet" href="/access-control.css?v=1.5.0">
+<link rel="stylesheet" href="/access-control.css?v=1.5.1">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
@@ -1309,6 +1309,11 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           <button class="acx-btn acx-btn-primary" type="button" onclick="addGuideGuests()">Give access</button>
         </div>
         <p class="acx-note">People outside your team who sign in with these @adit.com accounts see only the Support guides page (VoIP and AI guides, Ask AI), nothing else in the tool. Everyone on your team already has the Guides page.</p>
+        <div class="acx-share" role="group" aria-label="Link to share">
+          <span class="acx-share-l">Link to share</span>
+          <input type="text" id="acx-guides-link" class="acx-share-in" readonly aria-label="Support guides link" onfocus="this.select()">
+          <button class="acx-btn acx-btn-sm" type="button" id="acx-guides-copy" onclick="copyGuidesLink()">Copy link</button>
+        </div>
         <div id="acx-guides-list" class="acx-req-list"><div class="acx-empty">Loading...</div></div>
       </section>
 
@@ -12165,8 +12170,21 @@ function acxPeopleSuggest(input, multi){
 }
 (function(){ const go=()=>{ acxPeopleSuggest(document.getElementById('roleEmail'),false); acxPeopleSuggest(document.getElementById('acx-guides-emails'),true); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go(); })();
 // Batch 156: Support guides guest list
+function guidesLink(){ return location.origin+'/guides'; }
+function acxCopy(text, btn, done){
+  const ok=()=>{ showToast(done,'success'); if(btn){ const t=btn.textContent; btn.textContent='Copied'; setTimeout(()=>{ btn.textContent=t; },1600); } };
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(ok).catch(()=>fallback()); } else fallback();
+  function fallback(){ const ta=document.createElement('textarea'); ta.value=text; ta.setAttribute('readonly',''); ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); ok(); }catch(e){ showToast('Could not copy. Select the link and copy it yourself.','warning'); } ta.remove(); }
+}
+function copyGuidesLink(){ acxCopy(guidesLink(), document.getElementById('acx-guides-copy'), 'Link copied'); }
+function copyGuidesInvite(btn){
+  const first=(btn.dataset.name||'').split(' ')[0];
+  const msg='Hi'+(first?' '+first:'')+', you now have access to the Adit Support guides (VoIP and AI guides, with Ask AI): '+guidesLink()+' . Sign in with your @adit.com Google account.';
+  acxCopy(msg, btn, 'Invite copied, paste it in Chat or email');
+}
 async function loadGuideGuests(){
   const box=document.getElementById('acx-guides-list'); if(!box) return;
+  const li=document.getElementById('acx-guides-link'); if(li) li.value=guidesLink();
   try{
     const j=await fetch(BACKEND+'/api/guides/access',{credentials:'include'}).then(r=>r.json());
     if(!j.success) throw new Error(j.error||'Could not load');
@@ -12176,7 +12194,7 @@ async function loadGuideGuests(){
     box.innerHTML=g.map(r=>{
       const nm=deriveRoleName(r.email);
       return '<div class="acx-req-row"><div class="acx-req-av"><span>'+esc(nm.charAt(0).toUpperCase())+'</span></div><div class="acx-person"><span class="acx-name">'+esc(nm)+'</span><span class="acx-email">'+esc(r.email)+'</span><span class="acx-req-meta">Added '+acxAgo(r.added_at)+(r.added_by?' by '+esc(r.added_by):'')+(r.note?' · '+esc(r.note):'')+'</span></div>'+
-        '<div class="acx-actions"><button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="removeGuideGuest(this)">Remove</button></div></div>';
+        '<div class="acx-actions"><button type="button" class="acx-btn acx-btn-sm" data-email="'+esc(r.email)+'" data-name="'+esc(nm)+'" onclick="copyGuidesInvite(this)" title="Copy a short message with the link to send them">Copy invite</button><button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="removeGuideGuest(this)">Remove</button></div></div>';
     }).join('');
   }catch(e){ box.innerHTML='<div class="acx-empty">Could not load the guest list.</div>'; }
 }
