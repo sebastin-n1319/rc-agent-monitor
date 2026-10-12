@@ -295,7 +295,8 @@
         tileBox('Average review time', j.today.avgMin == null ? 'none' : j.today.avgMin + ' min', 'today')]);
       var bar = h('div', { class: 'tka-inline between' }, [
         h('p', { class: 'tka-hint', text: 'Tickets in "' + (st.statusName || 'Pending Review - T1') + '". Review each within ' + buf + ' minutes (counted between ' + (st.startHour == null ? 7 : st.startHour) + ':00 and ' + (st.endHour == null ? 19 : st.endHour) + ':00 Central): move it to the right person in Zoho Desk, then record your verdict here.' + (j.lastPollAt ? ' Checked ' + ago(j.lastPollAt) + '.' : '') }),
-        h('div', { class: 'tka-inline' }, [btn('Check Zoho now', 'sm', function (ev) { busy(ev.currentTarget, true, 'Checking...'); load(true); }),
+        h('div', { class: 'tka-inline' }, [btn('Check Zoho now', 'sm', function (ev) { busy(ev.currentTarget, true, 'Checking...'); TA._rvZohoAt = Date.now(); load(true); }),
+          h('span', { class: 'tka-auto', title: 'The page also checks Zoho by itself every 30 minutes while it is open', text: 'Auto check ' + (function () { var m = Math.max(0, Math.ceil(((TA._rvZohoAt || Date.now()) + 30 * 60000 - Date.now()) / 60000)); return m <= 1 ? 'in about a minute' : 'in ' + m + ' min'; })() }),
           isAdmin() ? btn('Settings', 'ghost sm', function () { TA.tab = 'reviewSettings'; render(); }) : null])]);
       var kids = [tiles, bar];
       if (j.lastPollError) kids.push(h('div', { class: 'tka-note', text: 'Could not read Zoho: ' + j.lastPollError }));
@@ -304,11 +305,18 @@
       if (j.waiting.length) kids.push(h('div', { class: 'tka-cards' }, j.waiting.map(function (r) { return reviewCard(r, buf, j.me); })));
       if (j.stale && j.stale.length) {
         // Batch 159: verdict recorded here, but the ticket was never moved out of the review status in Zoho Desk.
-        kids.push(h('div', { class: 'tka-sech' }, [h('h3', { text: 'Reviewed, still in ' + (st.statusName || 'Pending Review - T1') + ' in Zoho' }), h('span', { class: 'tka-sech-n warn', text: String(j.stale.length) }), h('p', { class: 'tka-hint', text: 'A verdict is recorded, but the ticket was not moved in Zoho Desk. Open it and move it to the person or team in the verdict. If the agent set it to review again, use Check Zoho now after they change it.' })]));
-        var sl = h('div', { class: 'tka-fold' });
+        var stName = st.statusName || 'Pending Review - T1';
+        var sl = h('section', { class: 'tka-stale', role: 'alert', 'aria-label': 'Reviewed tickets still in ' + stName }, [
+          h('div', { class: 'tka-stale-hd' }, [h('span', { class: 'tka-stale-ic', 'aria-hidden': 'true', text: '!' }),
+            h('div', null, [h('h3', { text: j.stale.length + (j.stale.length === 1 ? ' reviewed ticket is' : ' reviewed tickets are') + ' still in ' + stName }),
+              h('p', { text: 'The verdict is recorded but the ticket was not moved in Zoho Desk, so the agent and the next team are still waiting. Open each one and move it to the person or team in the verdict. The reviewer gets a bell alert after 15 minutes and the SPOCs after an hour. If the agent set it to review again, use Check Zoho now after they change it.' })])])]);
         j.stale.forEach(function (r) {
-          sl.appendChild(h('div', { class: 'tka-tl' }, [h('span', { class: 'tka-when', text: when(String(r.reviewed_at).replace(' ', 'T') + 'Z') }),
-            h('span', null, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', verdictPill(r), r.to_agent ? ' to ' + r.to_agent + (r.to_team ? ' (' + r.to_team + ')' : '') : '', r.reviewer ? ', reviewed by ' + nameOf(r.reviewer) : ''])]));
+          var mins = Math.max(0, Math.round((Date.now() - Date.parse(String(r.reviewed_at).replace(' ', 'T') + 'Z')) / 60000));
+          var age = mins < 60 ? mins + ' min' : Math.floor(mins / 60) + ' h ' + (mins % 60) + ' min';
+          sl.appendChild(h('div', { class: 'tka-stale-row' + (mins >= 60 ? ' late' : '') }, [
+            h('span', { class: 'tka-stale-age', title: 'Time since the verdict was recorded', text: age }),
+            h('span', { class: 'tka-stale-t' }, [r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-num', text: '#' + r.ticket_number }) : '#' + r.ticket_number, ' ' + nameOf(r.agent_email, r.agent_name) + ': ', verdictPill(r), r.to_agent || r.to_team ? ' move to ' + [r.to_agent, r.to_team ? '(' + r.to_team + ')' : ''].filter(Boolean).join(' ') : '', r.reviewer ? ', reviewed by ' + nameOf(r.reviewer) + ' ' + when(String(r.reviewed_at).replace(' ', 'T') + 'Z') : '']),
+            r.web_url ? h('a', { href: r.web_url, target: '_blank', rel: 'noopener', class: 'tka-btn sm', text: 'Open in Zoho' }) : null]));
         });
         kids.push(sl);
       }
@@ -628,8 +636,17 @@
       return art;
     }
     load(false);
+    // Batch 161: the list reloads every 30 seconds; every 30 minutes it also runs "Check Zoho now" by itself.
+    var ZOHO_EVERY = 30 * 60000;
+    if (!TA._rvZohoAt) TA._rvZohoAt = Date.now();
     clearInterval(TA._rvTimer);
-    TA._rvTimer = setInterval(function () { if (TA.tab === 'review' && !TA.auditId && document.body.contains(host) && !host.querySelector('.tka-rv-form textarea') && !host.querySelector('.tka-lf-q:focus') && !host.querySelector('.tka-row.deal-open') && !host.querySelector('.tka-row.an-open')) load(false); else if (!document.body.contains(host)) clearInterval(TA._rvTimer); }, 30000);
+    TA._rvTimer = setInterval(function () {
+      if (!document.body.contains(host)) { clearInterval(TA._rvTimer); return; }
+      if (TA.tab !== 'review' || TA.auditId || host.querySelector('.tka-rv-form textarea') || host.querySelector('.tka-lf-q:focus') || host.querySelector('.tka-row.deal-open') || host.querySelector('.tka-row.an-open')) return;
+      var zoho = !document.hidden && Date.now() - TA._rvZohoAt >= ZOHO_EVERY;
+      if (zoho) TA._rvZohoAt = Date.now();
+      load(zoho);
+    }, 30000);
   }
   function parseSpaces(t) { var o = {}; String(t || '').split(/\n+/).forEach(function (l) { var i = l.indexOf('='); if (i < 1) return; var k = l.slice(0, i).trim(), v = l.slice(i + 1).trim(); if (k && v) o[k] = v; }); return o; }
   // ── Review settings: a page of its own, admins only ────────────────────────────

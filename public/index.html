@@ -71,19 +71,19 @@
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
-<link rel="stylesheet" href="/ticket-audits.css?v=1.25.0" id="ticket-audits-link">
+<link rel="stylesheet" href="/ticket-audits.css?v=1.26.0" id="ticket-audits-link">
 <link rel="stylesheet" href="/access-control.css?v=1.5.2">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
-<script src="/ticket-audits.js?v=1.37.2" defer></script>
+<script src="/ticket-audits.js?v=1.38.0" defer></script>
 <script src="/client-tour.js?v=1.4.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
 <script src="/notice-center.js?v=1.2.3" defer></script>
-<link rel="stylesheet" href="/app-header.css?v=1.1.0">
-<script src="/app-header.js?v=1.1.0" defer></script>
+<link rel="stylesheet" href="/app-header.css?v=1.3.0">
+<script src="/app-header.js?v=1.3.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
 <script src="/a11y-focus-trap.js?v=1.19.8" defer></script>
@@ -861,12 +861,18 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <div class="hdr-left hm-left">
     <img src="/adit-logo.png" alt="Adit" class="hm-logo">
     <div class="hm-sep" aria-hidden="true"></div>
-    <div class="hm-brand">
-      <span class="hm-eyebrow"><span class="hm-title">T1 CS Stars</span><span class="hm-ws" id="hmWs">Workspace</span><span id="roleLabel" hidden>--</span></span>
-      <span class="hm-page" aria-live="polite"><span class="hm-page-t" id="hmPage">Home</span></span>
+    <div class="hm-brand" aria-label="T1 CS Stars">
+      <span class="hm-star" aria-hidden="true"><svg viewBox="0 0 24 24"><defs><linearGradient id="hmStarG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDB55C"/><stop offset="1" stop-color="#F4891F"/></linearGradient></defs><path d="M12 2.8l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 16.8l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="url(#hmStarG)"/></svg><i class="hm-spark s1"></i><i class="hm-spark s2"></i></span>
+      <span class="hm-name-t"><span class="hm-t1">T1 CS</span> <span class="hm-stars">Stars</span></span>
+      <span class="hm-ws" id="hmWs"></span><span id="roleLabel" hidden>--</span>
     </div>
     <span class="hm-progress" id="hmProgress" aria-hidden="true"></span>
   </div>
+  <button type="button" class="hm-search" id="hmSearch" onclick="window.openCmdPalette&&openCmdPalette()" aria-label="Search pages and actions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+    <span>Search pages and actions</span>
+    <kbd id="hmSearchKbd">Ctrl K</kbd>
+  </button>
   <div class="hdr-right hm-right">
     <div class="hm-time" id="hmTime" role="group" aria-label="Clock and time zone">
       <span class="live-dot" aria-hidden="true"></span>

@@ -157,16 +157,9 @@
     return (t && t.length <= 32 ? t : lab) || lab;
   }
   function syncPage() {
-    var host = document.querySelector('.hm-page'); if (!host) return;
     var name = pageName(); if (!name || name === lastPage) return;
     var first = !lastPage; lastPage = name;
-    var cur = host.querySelector('.hm-page-t:not(.out)');
-    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (first || reduce || !cur) { if (cur) cur.textContent = name; else { var c = document.createElement('span'); c.className = 'hm-page-t'; c.textContent = name; host.appendChild(c); } return; }
-    var nx = document.createElement('span'); nx.className = 'hm-page-t in'; nx.textContent = name;
-    cur.classList.add('out'); cur.removeAttribute('id');
-    host.appendChild(nx); nx.id = 'hmPage';
-    setTimeout(function () { if (cur.parentNode) cur.remove(); nx.classList.remove('in'); }, 320);
+    if (first || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var bar = $('hmProgress'); if (bar) { bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run'); }
   }
 
@@ -184,6 +177,12 @@
     ['userLabel', 'userRoleTag', 'viewToggleBtn', 'userAvatar'].forEach(function (id) { var el = $(id); if (el) mo.observe(el, { attributes: true, childList: true, characterData: true, subtree: true }); });
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     // Watch the sidebars for the active page.
+    var kb = $('hmSearchKbd'); if (kb && /Mac|iPhone|iPad/.test(navigator.platform || '')) kb.textContent = '\u2318 K';
+    // Header items arrive one after another the first time the app opens.
+    var hdr = document.querySelector('header.hm-bar');
+    function enter() { if (hdr && !hdr.classList.contains('hm-in')) { hdr.classList.add('hm-enter'); requestAnimationFrame(function () { hdr.classList.add('hm-in'); }); } }
+    if (document.documentElement.classList.contains('app-authenticated')) enter();
+    else new MutationObserver(function (m, o) { if (document.documentElement.classList.contains('app-authenticated')) { o.disconnect(); enter(); } }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     var po = new MutationObserver(function () { requestAnimationFrame(syncPage); });
     ['adit-admin-sidebar', 'adit-agent-sidebar'].forEach(function (id) { var el = $(id); if (el) po.observe(el, { attributes: true, attributeFilter: ['class', 'style'], subtree: true }); });
     sync(); syncPage();
