@@ -1,7 +1,6 @@
-/* Guided tour for Client lookup. Agents must finish it once: no close button, no Escape, no click-away. */
+/* Guided tours for new features (Client lookup, Support guides). Agents must finish each once: no close button, no Escape, no click-away. */
 (function () {
   'use strict';
-  var ID = 'client-lookup';
   var BASE = (typeof BACKEND !== 'undefined' ? BACKEND : '');
   var T = window.ClientTour = { running: false, checked: false };
   function h(tag, attrs, kids) {
@@ -44,9 +43,18 @@
       h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-tag', text: '#413707' }), h('span', { class: 'ct-tag', text: 'Web' }), h('span', { class: 'ct-s-who', text: 'Waiting on: us' })]),
       h('div', { class: 'ct-s-row' }, [h('span', { class: 'ct-chip on', text: 'Email reply' }), h('span', { class: 'ct-chip', text: 'Call guide (on request)' })]),
       h('div', { class: 'ct-s-guide' }, [h('small', { text: 'DRAFT REPLY' }), h('p', { text: 'Hi, thanks for your patience. I checked the sync and here is what we did next...' }), h('small', { text: 'BASED ON' }), h('p', { text: 'Similar solved ticket, recent process update' })])]);
+    if (kind === 'gtabs') return h('div', { class: 'ct-sample' }, [
+      h('div', { class: 'ct-s-row' }, ['VoIP support', 'AI support', 'Ask AI'].map(function (t, i) { return h('span', { class: 'ct-chip' + (i === 0 ? ' on' : ''), text: t }); })),
+      h('div', { class: 'ct-s-guide' }, [h('small', { text: 'SEARCH THE VOIP GUIDE' }), h('p', { text: '"one way audio"  3 matches in 2 sections. Press Enter for the next one.' })])]);
+    if (kind === 'gask') return h('div', { class: 'ct-sample' }, [
+      h('div', { class: 'ct-s-row' }, ['All guides', 'VoIP only', 'AI only'].map(function (t, i) { return h('span', { class: 'ct-chip' + (i === 0 ? ' on' : ''), text: t }); })),
+      h('div', { class: 'ct-s-guide' }, [h('small', { text: 'YOUR QUESTION' }), h('p', { text: 'Calls drop after 30 seconds, what should I check?' }), h('small', { text: 'FROM THE GUIDE' }), h('p', { text: 'A short answer, a link to the section it came from, and past tickets like #409238 that open in Zoho Desk.' })])]);
     return null;
   }
-  var STEPS = [
+  function goGuides() {
+    try { if (typeof sbAgent === 'function') sbAgent('guides', document.getElementById('sb-agent-guides')); } catch (e) {}
+  }
+  var CL_STEPS = [
     { title: 'Meet Client lookup', text: 'New on your Tkt Alerts page. Before you answer a call, find the client and see what we already know about them: who they are, whether they are escalated, what is open, and what was said before.', mark: 'NEW' },
     { title: 'Open it from Tkt Alerts', text: 'Your sidebar tile for ticket alerts is now called Tkt Alerts. Client lookup is the second tab on that page.', target: '#sb-agent-talerts', side: 'right' },
     { title: 'Search any way the client gives it', text: 'Type a ticket number, deal name, account name, phone number or email. If there is one match it opens straight away, otherwise pick the right client from the list.', target: '.tka-cl-q', side: 'bottom', before: goLookup },
@@ -55,17 +63,30 @@
     { title: 'Check the history first', text: 'The top of the page shows the escalation status and its owner, open tickets, the last ticket, and the full support history. If the client is escalated, keep the escalation owner informed.', sample: 'history' },
     { title: 'Use it as help, not a script', text: 'The suggestions come from our records and AI, so confirm every detail with the client. Do not read internal notes or escalation details out to the client, and do not promise a fix or a time you cannot guarantee.', last: true }
   ];
+  var GD_STEPS = [
+    { title: 'Meet Support guides', text: 'The VoIP support guide and the AI support runbook now live inside the tool, with Ask AI to find answers quickly while you are on a ticket or a call.', mark: 'NEW' },
+    { title: 'Open it from Guides', text: 'Guides is in your sidebar. It opens the guides right here in the tool, so you do not need another tab or file.', target: '#sb-agent-guides', side: 'right' },
+    { title: 'Two guides, one place', text: 'VoIP support covers phone setup, troubleshooting and the query catalog. AI support is the AI runbook. Use the search box on the left to jump to every match; press Enter for the next one.', sample: 'gtabs', before: goGuides },
+    { title: 'Ask AI for a quick answer', text: 'Open the Ask AI tab and type the question the way the client put it. Choose All guides, VoIP only or AI only. Answers come only from the guides and link to the section they came from.', sample: 'gask' },
+    { title: 'Ticket numbers open in Zoho Desk', text: 'Ticket numbers in the guides and in Ask AI answers are links. Click one to open that ticket in Zoho Desk and see how it was handled.' },
+    { title: 'Check before you act', text: 'Open the linked section before you act on a live call, and confirm details with the client. If the guides do not cover the issue, Ask AI says so; follow the usual process and escalate when needed.', last: true }
+  ];
+  var TOURS = [
+    { id: 'client-lookup', steps: CL_STEPS, ack: ' I understand how to use Client lookup', toast: 'Client lookup is ready to use under Tkt Alerts' },
+    { id: 'support-guides', steps: GD_STEPS, ack: ' I understand how to use Support guides', toast: 'Support guides are ready under Guides in your sidebar' }
+  ];
 
-  function start() {
+  function start(tour, then) {
     if (T.running || document.getElementById('ct-root')) return;
     T.running = true;
+    var STEPS = tour.steps, ID = tour.id;
     var i = 0, timer = null;
     var ring = h('div', { class: 'ct-ring' });
     var back = h('div', { class: 'ct-back' });
     var title = h('h2', { id: 'ct-t' }), text = h('p', { class: 'ct-text' }), extra = h('div', { class: 'ct-extra' });
     var dots = h('div', { class: 'ct-dots', 'aria-hidden': 'true' }, STEPS.map(function () { return h('i'); }));
     var ack = h('input', { type: 'checkbox', id: 'ct-ack' });
-    var ackRow = h('label', { class: 'ct-ack', for: 'ct-ack' }, [ack, ' I understand how to use Client lookup']);
+    var ackRow = h('label', { class: 'ct-ack', for: 'ct-ack' }, [ack, tour.ack]);
     var err = h('p', { class: 'ct-err', role: 'alert' });
     var prev = h('button', { type: 'button', class: 'ct-btn', text: 'Back' });
     var next = h('button', { type: 'button', class: 'ct-btn primary' });
@@ -125,7 +146,8 @@
         if (r && r.success) {
           clearTimeout(timer); document.removeEventListener('keydown', onKey, true); window.removeEventListener('resize', place);
           root.remove(); document.body.classList.remove('ct-lock'); T.running = false;
-          try { if (typeof showToast === 'function') showToast('Client lookup is ready to use under Tkt Alerts', 'success'); } catch (e) {}
+          try { if (typeof showToast === 'function') showToast(tour.toast, 'success'); } catch (e) {}
+          if (then) setTimeout(then, 1200);
         } else { err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false; }
       }).catch(function () { err.textContent = 'Could not save that. Check your connection and press Finish again.'; next.disabled = false; });
     });
@@ -151,7 +173,16 @@
     (function wait() {
       // Give the other sign-in pop-ups (the mood check-in appears about 4 seconds after sign-in) time to show up first, then wait for them to close.
       if ((performance.now() < 9000 || blocked()) && tries++ < 1800) return setTimeout(wait, 800);
-      api('/api/tours/' + ID + '/status').then(function (r) { if (r && r.success && !r.done) start(); else if (!(r && r.success)) T.checked = false; }).catch(function () { T.checked = false; });
+      next(0);
     })();
+    // Run each unfinished tour in turn, oldest first.
+    function next(k) {
+      if (k >= TOURS.length) return;
+      api('/api/tours/' + TOURS[k].id + '/status').then(function (r) {
+        if (r && r.success && !r.done) start(TOURS[k], function () { next(k + 1); });
+        else if (r && r.success) next(k + 1);
+        else T.checked = false;
+      }).catch(function () { T.checked = false; });
+    }
   };
 })();

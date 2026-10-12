@@ -621,6 +621,12 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         summary: 'Search a ticket number in Client lookup and it now reads the ticket and suggests the best next step. Email and web tickets get an email reply draft, phone tickets get a call guide, and you can ask for the other one with a button. Suggestions use similar solved tickets and recent process and product updates, and show what they used.',
         impact: 'Open the ticket in Client lookup before you reply. Edit the draft so it fits what the client asked, confirm every detail, and send it from Zoho Desk yourself. Do not read internal notes out to the client.',
         category: 'Product update', modules: ['Tkt Alerts', 'Client lookup'] });
+      // Batch 158: announce Support guides (update, bell notice; the tour runs from client-tour.js).
+      await productUpdates.seedOnce('support-guides-2026-10', 'system', 'T1 CS tools', {
+        title: 'New: Support guides with Ask AI',
+        summary: 'The VoIP support guide and the AI support runbook are now inside the tool under Guides in the sidebar. Search either guide, or open Ask AI and type the question the way the client put it to get a short answer from the guides with a link to the section it came from. Ticket numbers in the guides and in answers open in Zoho Desk.',
+        impact: 'When a VoIP or AI support question comes in, open Guides and search, or ask Ask AI. Check the linked section and confirm details with the client before you act. If the guides do not cover it, follow the usual process and escalate when needed.',
+        category: 'Product update', modules: ['Guides', 'Ask AI'] });
     } catch (e) { console.warn('client lookup update seed failed:', e.message); }
     ticketAudits.setDB(db);
     await ticketAudits.initSchema();
@@ -2512,6 +2518,27 @@ async function assessDirectory() {
   return rows;
 }
 setTimeout(() => { assessDirectory().catch(() => {}); }, 2 * 60 * 1000); // warm the cache after boot
+// Batch 160: people suggestions for Access Control email fields (same org directory, admins only).
+app.get('/api/people/suggest', requireAdmin, async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim().toLowerCase().slice(0, 60);
+    if (q.length < 2) return res.json({ success: true, people: [] });
+    const rows = await assessDirectory();
+    const members = await toolMemberSet();
+    const guides = new Set((await guides_listSafe()).map(g => g.email));
+    const words = q.split(/\s+/).filter(Boolean);
+    const scored = [];
+    for (const r of rows) {
+      const name = String(r.name || '').toLowerCase(), email = r.email;
+      if (!words.every(w => name.includes(w) || email.includes(w))) continue;
+      const score = (email.startsWith(q) ? 0 : name.startsWith(q) ? 1 : name.split(/\s+/).some(p => p.startsWith(words[0])) ? 2 : 3);
+      scored.push({ score, p: { email, name: r.name || '', team: r.team || (r.deskTeams || [])[0] || '', member: members.has(email), guidesGuest: guides.has(email) } });
+    }
+    scored.sort((a, b) => a.score - b.score || (a.p.name || a.p.email).localeCompare(b.p.name || b.p.email));
+    res.json({ success: true, people: scored.slice(0, 8).map(x => x.p) });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not search people' }); }
+});
+async function guides_listSafe() { try { return await guides.listGuests(); } catch (e) { return []; } }
 app.get('/api/assess/admin/directory', ...RV, assessWrap(async (req, res) => {
   if (req.query.refresh === '1') _assessDirCache = { at: 0, rows: null };
   const rows = await assessDirectory();

@@ -234,3 +234,15 @@ html.dark-mode #adit-admin-sidebar .sb-item .pu-badge,html.dark-mode #adit-agent
 @keyframes sbBadgePing{0%{transform:scale(1);opacity:.55}70%,100%{transform:scale(1.7);opacity:0}}
 @media (prefers-reduced-motion:reduce){#adit-admin-sidebar .sb-item .pu-badge,#adit-agent-sidebar .sb-item .pu-badge,#adit-admin-sidebar .sb-item .pu-badge::after,#adit-agent-sidebar .sb-item .pu-badge::after{animation:none}}
 #adit-agent-sidebar .sb-item{position:relative}
+
+/* Batch 160: people suggestions under Access Control email fields */
+.acx-sug-host{position:relative}
+.acx-sug{position:absolute;left:0;right:0;top:100%;z-index:40;margin:4px 0 0;padding:4px;list-style:none;max-height:300px;overflow:auto;background:var(--acx-bg);border:1px solid var(--acx-line2);border-radius:10px;box-shadow:0 12px 30px rgba(7,43,64,.14)}
+.acx-sug[hidden]{display:none}
+.acx-sug li{display:flex;align-items:center;gap:10px;padding:7px 9px;border-radius:8px;cursor:pointer}
+.acx-sug li:hover,.acx-sug li[aria-selected="true"]{background:var(--acx-acc-soft)}
+.acx-sug-av{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--acx-soft);color:var(--acx-t2)}
+.acx-sug-t{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
+.acx-sug-t b{font-size:13px;font-weight:600;color:var(--acx-t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acx-sug-t span{font-size:12px;color:var(--acx-t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acx-sug em{flex:none;font-style:normal;font-size:11px;font-weight:600;color:var(--acx-t3);background:var(--acx-soft);border:1px solid var(--acx-line);border-radius:999px;padding:1px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

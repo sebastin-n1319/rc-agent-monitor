@@ -72,13 +72,13 @@
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
 <link rel="stylesheet" href="/updates.css?v=1.2.0">
 <link rel="stylesheet" href="/ticket-audits.css?v=1.25.0" id="ticket-audits-link">
-<link rel="stylesheet" href="/access-control.css?v=1.4.0">
+<link rel="stylesheet" href="/access-control.css?v=1.5.0">
 <link rel="stylesheet" href="/illus.css?v=1.0.0">
 <script src="/illus.js?v=1.0.0" defer></script>
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
 <script src="/ticket-audits.js?v=1.37.2" defer></script>
-<script src="/client-tour.js?v=1.2.0" defer></script>
+<script src="/client-tour.js?v=1.3.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.0.4">
 <script src="/notice-center.js?v=1.2.2" defer></script>
@@ -12089,6 +12089,52 @@ async function pollAccessRequests(){
 setInterval(pollAccessRequests,60000);
 setTimeout(pollAccessRequests,4000);
 
+// Batch 160: people suggestions while typing in Access Control email fields (name or email, from the org directory).
+// multi: the field takes several emails separated by commas; the suggestion replaces the part being typed.
+function acxPeopleSuggest(input, multi){
+  if(!input || input.dataset.sug) return; input.dataset.sug='1';
+  const host=input.parentNode; host.classList.add('acx-sug-host');
+  const list=document.createElement('ul'); list.className='acx-sug'; list.setAttribute('role','listbox'); list.id=input.id+'-sug'; list.hidden=true;
+  host.appendChild(list);
+  input.setAttribute('role','combobox'); input.setAttribute('aria-autocomplete','list'); input.setAttribute('aria-controls',list.id); input.setAttribute('aria-expanded','false');
+  let items=[], at=-1, timer=null, seq=0;
+  const part=()=>{ const v=input.value; if(!multi) return {pre:'',q:v.trim()}; const i=Math.max(v.lastIndexOf(','),v.lastIndexOf(';')); return {pre:i<0?'':v.slice(0,i+1)+' ',q:v.slice(i+1).trim()}; };
+  const close=()=>{ list.hidden=true; input.setAttribute('aria-expanded','false'); input.removeAttribute('aria-activedescendant'); at=-1; };
+  const mark=()=>{ [...list.children].forEach((li,i)=>li.setAttribute('aria-selected',i===at?'true':'false')); if(at>=0){ input.setAttribute('aria-activedescendant',list.children[at].id); list.children[at].scrollIntoView({block:'nearest'}); } };
+  const pick=(p)=>{ const {pre}=part(); input.value=multi?(pre+p.email+', '):p.email; close(); input.focus(); };
+  const draw=()=>{
+    list.innerHTML='';
+    if(!items.length){ close(); return; }
+    items.forEach((p,i)=>{
+      const li=document.createElement('li'); li.id=list.id+'-'+i; li.setAttribute('role','option');
+      const tag=p.member?'On your team':p.guidesGuest?'Guides guest':(p.team||'');
+      li.innerHTML='<span class="acx-sug-av">'+esc((p.name||p.email).charAt(0).toUpperCase())+'</span><span class="acx-sug-t"><b>'+esc(p.name||p.email.split('@')[0])+'</b><span>'+esc(p.email)+'</span></span>'+(tag?'<em>'+esc(tag)+'</em>':'');
+      li.addEventListener('mousedown',e=>{ e.preventDefault(); pick(p); });
+      list.appendChild(li);
+    });
+    list.hidden=false; input.setAttribute('aria-expanded','true'); at=-1; mark();
+  };
+  input.addEventListener('input',()=>{
+    clearTimeout(timer); const {q}=part();
+    if(q.length<2 || q.indexOf('@')>-1 && /\.[a-z]{2,}$/i.test(q)){ items=[]; draw(); return; }
+    timer=setTimeout(async()=>{
+      const my=++seq;
+      try{ const j=await fetch(BACKEND+'/api/people/suggest?q='+encodeURIComponent(q),{credentials:'include'}).then(r=>r.json()); if(my!==seq) return; items=(j&&j.people)||[]; draw(); }
+      catch(e){ items=[]; draw(); }
+    },180);
+  });
+  // Captured on the label, so a highlighted suggestion wins over the field's own Enter (save) action.
+  host.addEventListener('keydown',e=>{
+    if(e.target!==input || list.hidden) return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); at=Math.min(items.length-1,at+1); mark(); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); at=Math.max(0,at-1); mark(); }
+    else if(e.key==='Enter' && at>=0){ e.preventDefault(); e.stopPropagation(); pick(items[at]); }
+    else if(e.key==='Tab' && at>=0){ e.preventDefault(); pick(items[at]); }
+    else if(e.key==='Escape'){ e.stopPropagation(); close(); }
+  },true);
+  input.addEventListener('blur',()=>setTimeout(close,120));
+}
+(function(){ const go=()=>{ acxPeopleSuggest(document.getElementById('roleEmail'),false); acxPeopleSuggest(document.getElementById('acx-guides-emails'),true); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',go); else go(); })();
 // Batch 156: Support guides guest list
 async function loadGuideGuests(){
   const box=document.getElementById('acx-guides-list'); if(!box) return;
