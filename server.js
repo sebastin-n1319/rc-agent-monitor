@@ -669,7 +669,17 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     guides.setDB(db); await guides.initSchema(); // Batch 156: Support guides guest list
     // Batch 165: AI and VoIP support handled by T1 (admin dashboard under Tickets)
     { const ts = require('./lib/topic-support'); ts.setDB(db); await ts.initSchema();
-      ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid) }); }
+      ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
+        kb: (t, o) => escalationWatch.kb(t, o), notices });
+      // Batch 167: review T1-handled AI and VoIP tickets in the background, and build the weekly report once a week.
+      setTimeout(() => {
+        const tick = async () => {
+          try { const { agentNames } = await deskLifecycleAgentRoster(); const r = await ts.reviewSweep({ agentNames, max: 12 }); if (r && r.reviewed) console.log('⭐ Topic reviews:', JSON.stringify(r));
+            const w = await ts.buildWeekly({ agentNames }); if (w && w.created) console.log('📰 Weekly AI & VoIP report built for', w.week); }
+          catch (e) { console.warn('topic review sweep failed:', e.message); }
+        };
+        tick(); setInterval(tick, 30 * 60 * 1000);
+      }, 5 * 60 * 1000); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -8148,6 +8158,46 @@ app.get('/api/topic-support', requireAdmin, async (req, res) => {
     for (const t of topics) data[t] = await ts.topicSummary({ topic: t, from, to, agentNames });
     res.json({ success: true, from, to, data });
   } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.post('/api/topic-support/review', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const b = req.body || {}; const ts = require('./lib/topic-support');
+    const items = (Array.isArray(b.items) ? b.items : []).slice(0, 5);
+    if (!items.length) return res.status(400).json({ success: false, error: 'Pick a ticket to review' });
+    const { agentNames } = await deskLifecycleAgentRoster();
+    const results = [];
+    for (const it of items) {
+      try { results.push(await ts.reviewTicket({ ticketId: it.ticketId, topic: String(b.topic || ''), agent: it.agent, outcome: it.outcome, dest: it.dest, agentEmails: Object.keys(agentNames), by: req.session.email })); }
+      catch (e) { results.push({ ticketId: String(it.ticketId), error: e.message }); }
+    }
+    res.json({ success: true, results });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/topic-support/export', requireAdmin, async (req, res) => {
+  try {
+    const ts = require('./lib/topic-support');
+    const to = req.query.to || new Date().toISOString(), from = req.query.from || '2026-10-01T05:00:00.000Z';
+    const { agentNames } = await deskLifecycleAgentRoster();
+    const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
+    const sums = [];
+    for (const t of topics) sums.push(await ts.topicSummary({ topic: t, from, to, agentNames, limit: 20000, skipBaseline: true }));
+    const name = `t1-ai-voip-${String(from).slice(0, 10)}-to-${String(to).slice(0, 10)}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
+    res.send(ts.toCSV(sums));
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/topic-support/why', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/topic-support').explainTicket({ number: req.query.ticket, agentNames })) }); }
+  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
+app.get('/api/topic-support/weekly', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, reports: await require('./lib/topic-support').listWeekly() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/topic-support/weekly/run', requireAdmin, rateLimit(3, 60000), async (req, res) => {
+  try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/topic-support').buildWeekly({ agentNames, force: true, by: req.session.email })) }); }
+  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
 app.post('/api/topic-support/audit', requireAdmin, rateLimit(40, 60000), async (req, res) => {
   try {

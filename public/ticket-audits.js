@@ -510,7 +510,7 @@
           h('div', null, [h('b', { text: 'Ticket analysis' }), h('span', { class: 'tka-when', text: ' ' + [t.channel, t.status, t.department ? 'Dept: ' + t.department : '', t.movedTo ? 'Moved to ' + t.movedTo : ''].filter(Boolean).join(' · ') })]),
           h('div', { class: 'tka-an-acts' }, [lean ? pill(lean === 'approve' ? 'Looks right to approve' : 'Looks like it needs rework', lean === 'approve' ? 'st-approved' : 'sev-high', 'A suggestion from the ticket. You decide.') : null,
             btn('Refresh', 'ghost sm', function () { loadAn(true); })])]));
-        if (!x.readable) kids.push(h('p', { class: 'tka-when', text: 'The ticket conversation could not be read right now (AditKB may not have it yet).' }));
+        if (!x.readable) kids.push(h('p', { class: 'tka-when', text: 'The ticket conversation could not be read right now (Zoho may not have synced it yet).' }));
         if (A) {
           kids.push(h('div', { class: 'tka-an-grid' }, [
             h('div', { class: 'tka-an-box' }, [h('small', { text: 'THE CLIENT ASKED' }), h('p', { text: A.clientAsked || 'Not clear from the ticket' })]),
@@ -583,7 +583,7 @@
       }
       function loadDeal(attempt) {
         dealBox.dataset.loaded = '1';
-        dealBox.replaceChildren.apply(dealBox, dealSkeleton(attempt ? 'AditKB is busy, trying again...' : 'Loading deal history...'));
+        dealBox.replaceChildren.apply(dealBox, dealSkeleton(attempt ? 'Zoho data is busy, trying again...' : 'Loading deal history...'));
         api('/api/review/' + r.id + '/deal').then(function (x) {
           if (!x.success) { dealBox.dataset.loaded = ''; dealBox.replaceChildren(h('p', { class: 'tka-when', text: x.error || 'Could not load deal history' })); return; }
           if (x.busy) {
@@ -832,7 +832,7 @@
       var tbl = h('table', { class: 'tka-cov' }, [h('thead', null, [h('tr', null, ['Agent', 'Tickets', 'SalesIQ chats', 'Calls'].map(function (x) { return h('th', { text: x, scope: 'col' }); }))]),
         h('tbody', null, ag.map(function (a) { return h('tr', null, [h('td', null, [h('b', { text: a.name }), h('span', { class: 'tka-when', text: ' ' + a.email })]), h('td', { text: String(a.tickets) }), h('td', { text: String(a.chats) }), h('td', { text: String(a.calls) })]); }))]);
       covHost.replaceChildren(h('details', { class: 'tka-card tka-fold' }, [h('summary', null, [h('b', { text: 'Agents watched (' + ag.length + ')  ' }), h('span', { class: 'tka-when', text: 'what was read for each agent in the last 7 days' })]),
-        h('p', { class: 'tka-hint', text: 'This is the agent list on the Team page. Add or remove agents there to change who is watched. Calls are read only for these agents, even though AditKB also tags some other people as T1.' }),
+        h('p', { class: 'tka-hint', text: 'This is the agent list on the Team page. Add or remove agents there to change who is watched. Calls are read only for these agents, even though the data source also tags some other people as T1.' }),
         ag.length ? tbl : h('p', { class: 'tka-empty', text: 'No agents on the Team page yet.' })]));
     });
     api('/api/escalations/settings').then(function (j) { if (j.success) drawEscSettings(setHost, j.settings); else setHost.appendChild(h('div', { class: 'tka-note', text: j.error || 'Could not load settings' })); });
@@ -1033,7 +1033,7 @@
       h('p', { class: 'tka-hint', id: 'tka-esc-kw-l', text: 'Escalation keywords, separated by commas. Any of these in a client message, chat, private note or call raises an alert on its own, whatever the AI confidence. Use * for word endings (cancel* also catches cancelling). Cancel next to appointment, patient, reminder or similar words is ignored.' }),
       kw,
       h('div', { class: 'tka-inline' }, [h('span', { text: 'AI alone alerts at' }), conf, h('span', { text: '% confidence or more (when no keyword matched)' }), h('label', { class: 'tka-inline', for: 'tka-esc-on' }, [on, h('span', { text: 'Watch on' })])]),
-      blocked.length ? h('div', { class: 'tka-note', text: 'AditKB did not allow: ' + blocked.map(function (t) { return t + ' (' + acc[t] + ')'; }).join(', ') + '. Ask for access to these tables for the key the server uses, or set ADITKB_ESC_API_KEY.' }) : null,
+      blocked.length ? h('div', { class: 'tka-note', text: 'The Zoho data service did not allow: ' + blocked.map(function (t) { return t + ' (' + acc[t] + ')'; }).join(', ') + '. Ask for access to these tables for the key the server uses, or set ADITKB_ESC_API_KEY.' }) : null,
       h('div', { class: 'tka-actions' }, [
         btn('Save settings', 'primary', function () { save(); }),
         btn('Send test', '', function (ev) { var b = ev.currentTarget; busy(b, true, 'Sending...'); api('/api/escalations/test', {}).then(function (r) { busy(b, false, 'Send test'); toast(!r.success ? (r.error || 'Failed') : (r.unresolved && r.unresolved.length) ? 'Posted, but no Google Chat ID yet for ' + r.unresolved.join(', ') + ' (they need to sign in to this tool once), so they show as plain text' : 'Test posted to Google Chat' + (r.tags ? ' with tags' : ''), !r.success ? 'error' : (r.unresolved && r.unresolved.length) ? 'warning' : 'success'); }); }),

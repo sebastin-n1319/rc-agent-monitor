@@ -485,7 +485,7 @@
       case 'module': return 'Adit App Module\n\nWhich Adit product area the ticket relates to (Adit Pay, Adit Voice, Adit AI Agent, EHR/PMS integrations, etc).';
       case 'category': return 'Category\n\nZoho Desk\'s own ticket category field.';
       case 'classification': return 'Classification\n\nZoho Desk\'s own ticket classification field.';
-      case 'departments': return 'Transferred to\n\nWhich team group this agent\'s Transferred tickets went to: T1, T2, VoIP, CSM, Pod (Tech OB), T3/Dev or Other. Grouped from AditKB\'s staff teams and Zoho Desk teams.';
+      case 'departments': return 'Transferred to\n\nWhich team group this agent\'s Transferred tickets went to: T1, T2, VoIP, CSM, Pod (Tech OB), T3/Dev or Other. Grouped from the staff directory\'s teams and Zoho Desk teams.';
       default: return '';
     }
   }

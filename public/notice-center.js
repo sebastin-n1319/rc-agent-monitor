@@ -64,6 +64,14 @@
       } catch (e) {}
       return;
     }
+    if (i.link === 'app:topic-support') {
+      S.open = false; draw();
+      try {
+        if (typeof currentViewMode !== 'undefined' && currentViewMode === 'agent' && typeof applyView === 'function') applyView('admin');
+        if (typeof sbAdmin === 'function') sbAdmin('topic-support');
+      } catch (e) {}
+      return;
+    }
     if (i.link === 'app:audits') {
       S.open = false; draw();
       if (!(window.TA && window.TA.me && window.TA.me.access)) return;
