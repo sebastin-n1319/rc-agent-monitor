@@ -95,7 +95,7 @@
       tile('Needs attention', d.flagged || 0, d.flagged ? 'possible mishandling, see the list below' : 'nothing flagged', d.flagged ? 'bad' : 'ok'),
       tile('Against the guide', (t.againstGuide || 0) + (t.commercialKept || 0), (t.againstGuide || 0) + ' transferred though the guide says T1 resolves' + (t.commercialKept ? ' · ' + t.commercialKept + ' commercial kept by T1' : ''), (t.againstGuide || t.commercialKept) ? 'bad' : 'ok')]));
     if (d.classifying) {
-      out.push(h('div', { class: 'tsd-note' }, [d.classifying + ' tickets are still being sorted against the support guide. This page refreshes by itself in a moment.']));
+      out.push(h('div', { class: 'tsd-note' }, [d.classifying + ' tickets are still being read (notes, comments and conversation) and sorted against the support guide. This page refreshes by itself in a moment.']));
       clearTimeout(S._ct); S._ct = setTimeout(function () { if (document.getElementById('tsd-root') && document.getElementById('tsd-root').offsetParent !== null) load(); }, 25000);
     }
     // Calls, chats, tickets
