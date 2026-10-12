@@ -91,13 +91,53 @@
     api('/api/guides/doc/voip').then(function (j) { S.voipHtml = j.html; buildReader(); main.replaceChildren(reader.root, fab()); if (anchor) jump(anchor); })
       .catch(function (e) { main.replaceChildren(h('div', { class: 'gd-note', text: 'Could not load the guide: ' + e.message })); });
   }
+  // Layout only: the guide's words are not changed. Parts become banners, each section a numbered block,
+  // each sub-topic a card, and every "Who handles it" line a callout, like the AI runbook.
+  function structure(doc) {
+    var nodes = Array.prototype.slice.call(doc.childNodes);
+    var intro = h('div', { class: 'gd-lede' }), part = null, partNo = 0, sec = null, secNo = 0, card = null, counts = [];
+    var frag = document.createDocumentFragment();
+    nodes.forEach(function (n) {
+      var tag = n.nodeType === 1 ? n.tagName : '';
+      if (tag === 'H1') {
+        partNo++; secNo = 0; sec = null; card = null; counts[partNo - 1] = 0;
+        part = h('div', { class: 'gd-part gd-part-' + partNo });
+        part.appendChild(h('div', { class: 'gd-part-hd' }, [h('span', { class: 'gd-eyebrow', text: 'Part ' + partNo }), n]));
+        frag.appendChild(part); return;
+      }
+      if (tag === 'H2') {
+        secNo++; card = null; if (partNo) counts[partNo - 1]++;
+        var num = (secNo < 10 ? '0' : '') + secNo;
+        n.setAttribute('data-num', num);
+        sec = h('section', { class: 'gd-sec' }, [h('div', { class: 'gd-sec-hd' }, [h('span', { class: 'gd-num', 'aria-hidden': 'true', text: num }), n])]);
+        (part || frag).appendChild(sec); return;
+      }
+      if (tag === 'H3') {
+        card = h('div', { class: 'gd-card' }, [n]);
+        (sec || part || frag).appendChild(card); return;
+      }
+      if (tag === 'P' && /^\s*Who handles it:/.test(n.textContent)) n.className = 'gd-who';
+      (card || sec || part || intro).appendChild(n);
+    });
+    var facts = h('dl', { class: 'gd-facts' }, [
+      h('div', null, [h('dt', { text: 'Part 1' }), h('dd', { text: 'Support guide, ' + (counts[0] || 0) + ' sections' })]),
+      h('div', null, [h('dt', { text: 'Part 2' }), h('dd', { text: 'Query catalog, ' + (counts[1] || 0) + ' topics' })]),
+      h('div', null, [h('dt', { text: 'Tickets' }), h('dd', { text: 'Numbers open the ticket in Zoho Desk' })])
+    ]);
+    var mast = h('div', { class: 'gd-mast' }, [h('div', null, [h('span', { class: 'gd-eyebrow', text: 'Tier 1 Support · Adit Voice' }), h('h1', { class: 'gd-title', text: 'T1 CS VoIP Support Guide and Query Catalog' }), intro]), facts]);
+    doc.replaceChildren(mast, frag);
+  }
   function buildReader() {
     var doc = h('article', { class: 'gd-doc', 'aria-label': 'VoIP support guide' });
     doc.innerHTML = S.voipHtml; // static guide content, cleaned when it was imported
+    structure(doc);
     var toc = h('ul', { class: 'gd-toc' });
     var heads = Array.prototype.slice.call(doc.querySelectorAll('h1[id],h2[id],h3[id]'));
     var items = heads.map(function (hd) {
-      var a = h('a', { href: '#voip/' + hd.id, class: 'l' + hd.tagName.charAt(1), text: hd.textContent.replace(/\s+/g, ' ').trim(), onclick: function (ev) { ev.preventDefault(); go('voip', hd.id); } });
+      var label = hd.textContent.replace(/\s+/g, ' ').trim();
+      var a = h('a', { href: '#voip/' + hd.id, class: 'l' + hd.tagName.charAt(1), onclick: function (ev) { ev.preventDefault(); go('voip', hd.id); } });
+      if (hd.getAttribute('data-num')) a.appendChild(h('span', { class: 'gd-toc-n', text: hd.getAttribute('data-num') }));
+      a.appendChild(document.createTextNode(label));
       var li = h('li', null, [a]); toc.appendChild(li); return { hd: hd, a: a, li: li };
     });
     var count = h('span', { class: 'gd-find-n', 'aria-live': 'polite' });
@@ -105,10 +145,11 @@
     var timer = null, hits = [], hitAt = -1;
     input.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { find(input.value); }, 200); });
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && hits.length) { ev.preventDefault(); hitAt = (hitAt + 1) % hits.length; hits[hitAt].scrollIntoView({ block: 'center' }); } });
-    function sectionOf(i) { var out = []; var n = items[i].hd.nextSibling, stop = items[i + 1] ? items[i + 1].hd : null; while (n && n !== stop) { out.push(n); n = n.nextSibling; } return out; }
+    function sectionOf(i) { var hd = items[i].hd; var box = hd.tagName === 'H1' ? null : hd.closest('.gd-card, .gd-sec'); return box ? [box] : []; }
     function find(q) {
       q = String(q || '').trim();
       doc.innerHTML = S.voipHtml;
+      structure(doc);
       heads = Array.prototype.slice.call(doc.querySelectorAll('h1[id],h2[id],h3[id]'));
       items.forEach(function (it, i) { it.hd = heads[i]; });
       hits = []; hitAt = -1;
