@@ -32,6 +32,7 @@
   function fmtDay(iso) { try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Chicago' }); } catch (e) { return iso; } }
   function fmtWhen(iso) { try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }); } catch (e) { return iso; } }
   var OUT = { resolved: ['Resolved by T1', 'ok'], open: ['Still with T1', 'info'], toTopicTeam: ['Transferred', 'warn'], toOther: ['Transferred elsewhere', 'warn'], bypassed: ['Went straight to team', 'mute'] };
+  var EXP = { t1: ['Guide: T1 resolves', 'ok'], t1_first: ['Guide: T1 checks first', 'info'], team: ['Guide: owning team', 'mute'], commercial: ['Guide: AI leads only', 'warn'] };
   var VERD = { could_handle: ['T1 could have handled', 'bad'], right_transfer: ['Right transfer', 'ok'], unclear: ['Unclear', 'mute'] };
 
   function load() {
@@ -85,7 +86,12 @@
       tile('Resolved by T1', t.resolvedByT1, pct(t.resolvedByT1, t.t1Touched) + ' of what T1 handled', 'ok'),
       tile('Still with T1', t.openWithT1, 'open or on hold with a T1 agent'),
       tile('Transferred', t.transferred, pct(t.transferred, t.t1Touched) + ' of what T1 handled · ' + t.toTopicTeam + ' to ' + d.teamLabel, t.transferred ? 'warn' : ''),
-      tile('Went straight to team', t.bypassedT1, 'never reached a T1 agent', 'mute')]));
+      tile('Went straight to team', t.bypassedT1, 'never reached a T1 agent', 'mute'),
+      tile('Against the guide', (t.againstGuide || 0) + (t.commercialKept || 0), (t.againstGuide || 0) + ' transferred though the guide says T1 resolves' + (t.commercialKept ? ' · ' + t.commercialKept + ' commercial kept by T1' : ''), (t.againstGuide || t.commercialKept) ? 'bad' : 'ok')]));
+    if (d.classifying) {
+      out.push(h('div', { class: 'tsd-note' }, [d.classifying + ' tickets are still being sorted against the support guide. This page refreshes by itself in a moment.']));
+      clearTimeout(S._ct); S._ct = setTimeout(function () { if (document.getElementById('tsd-root') && document.getElementById('tsd-root').offsetParent !== null) load(); }, 25000);
+    }
     // Calls, chats, tickets
     var chRows = [['call', 'Calls'], ['chat', 'Chats'], ['ticket', 'Email and web tickets']].map(function (c) {
       var x = d.byChannel[c[0]], rate = x.t1Touched ? x.transferred / x.t1Touched : 0;
@@ -106,10 +112,16 @@
       var flags = d.tickets.filter(function (x) { return x.agent === a.name && x.audit && x.audit.verdict === 'could_handle'; }).length;
       return h('tr', null, [h('th', { scope: 'row', text: a.name }), h('td', { text: String(a.touched) }), h('td', { text: a.calls + ' / ' + a.chats + ' / ' + a.tickets }), h('td', { text: String(a.resolved) }), h('td', { text: String(a.open) }), h('td', { text: String(a.transferred) }), h('td', { text: pct(a.transferred, a.touched) }), h('td', { class: flags ? 'bad' : '', text: flags ? String(flags) : '-' })]);
     });
+    var areas = (d.byArea || []).map(function (c) {
+      var e = EXP[c.expected] || ['', 'mute'];
+      var bad = c.expected === 't1' && c.transferred;
+      return h('tr', null, [h('th', { scope: 'row', text: c.label }), h('td', null, [h('span', { class: 'tsd-pill ' + e[1], text: e[0].replace('Guide: ', '') })]), h('td', { text: String(c.touched) }), h('td', { text: String(c.resolved) }), h('td', { class: bad ? 'bad' : '', text: String(c.transferred) })]);
+    });
     var cats = d.byCategory.map(function (c) { return h('tr', null, [h('th', { scope: 'row', text: c.category }), h('td', { text: String(c.touched) }), h('td', { text: String(c.transferred) }), h('td', { text: pct(c.transferred, c.touched) })]); });
     out.push(h('div', { class: 'tsd-grid2 wide' }, [
       card('By agent', 'Calls / chats / tickets T1 handled. "Could have handled" counts audited transfers the guide says T1 could have solved.', ag.length ? h('div', { class: 'tsd-scroll' }, [h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Agent', 'Handled', 'Calls / chats / tickets', 'Resolved', 'With T1', 'Transferred', 'Rate', 'Could have handled'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, ag)])]) : empty('No T1 agent has handled one of these yet.')),
-      card('Topics', 'The ticket topic (from Desk) and how often T1 transferred it.', cats.length ? h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Topic', 'Handled', 'Transferred', 'Rate'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, cats)]) : empty('Nothing yet.'))]));
+      areas.length ? card('By guide area', 'Each ticket sorted against the support guide, with who the guide says should handle it. Red means T1 transferred something the guide says T1 resolves.', h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Area', 'Guide says', 'Handled', 'Resolved', 'Transferred'].map(function (x, i) { return h('th', { scope: 'col', class: i > 1 ? 'num' : '', text: x }); }))]), h('tbody', null, areas)]))
+        : card('Topics', 'The ticket topic (from Desk) and how often T1 transferred it.', cats.length ? h('table', { class: 'tsd-table' }, [h('thead', null, [h('tr', null, ['Topic', 'Handled', 'Transferred', 'Rate'].map(function (x, i) { return h('th', { scope: 'col', class: i ? 'num' : '', text: x }); }))]), h('tbody', null, cats)]) : empty('Nothing yet.'))]));
     if (d.destinations.length) out.push(card('Where transfers went', null, h('div', { class: 'tsd-dest' }, d.destinations.map(function (x) { return h('span', { class: 'tsd-chip' }, [x.team, h('b', { text: String(x.n) })]); }))));
     out.push(auditCard(d));
     return out;
@@ -137,22 +149,24 @@
       if (S.filter === 'open' && x.outcome !== 'open') return false;
       if (S.filter === 'bypassed' && x.outcome !== 'bypassed') return false;
       if (S.filter === 'could' && !(x.audit && x.audit.verdict === 'could_handle')) return false;
+      if (S.filter === 'against' && !(x.guide && ((x.guide.expected === 't1' && (x.outcome === 'toTopicTeam' || x.outcome === 'toOther')) || (x.guide.expected === 'commercial' && (x.outcome === 'resolved' || x.outcome === 'open'))))) return false;
       if (S.q) { var q = S.q.toLowerCase(); if ((String(x.number) + ' ' + (x.subject || '') + ' ' + (x.agent || '') + ' ' + (x.category || '')).toLowerCase().indexOf(q) < 0) return false; }
       return true;
     });
     var pending = d.tickets.filter(function (x) { return (x.outcome === 'toTopicTeam' || x.outcome === 'toOther') && !x.audit; });
     var au = d.audits;
-    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['bypassed', 'Went straight to team'], ['could', 'Could have handled']];
+    var filters = [['all', 'All'], ['transferred', 'Transferred'], ['resolved', 'Resolved by T1'], ['open', 'Still with T1'], ['bypassed', 'Went straight to team'], ['against', 'Against the guide'], ['could', 'Could have handled']];
     var tools = h('div', { class: 'tsd-tools' }, [
       h('div', { class: 'tsd-seg', role: 'group', 'aria-label': 'Show' }, filters.map(function (f) { return h('button', { type: 'button', 'aria-pressed': S.filter === f[0] ? 'true' : 'false', text: f[1], onclick: function () { S.filter = f[0]; draw(); } }); })),
       h('input', { type: 'search', class: 'tsd-q', placeholder: 'Find a ticket, agent or topic', 'aria-label': 'Find a ticket, agent or topic', value: S.q, oninput: function (e) { S.q = e.target.value; clearTimeout(S._qt); S._qt = setTimeout(function () { var p = e.target.selectionStart; draw(); var n = document.querySelector('#tsd-root .tsd-q'); if (n) { n.focus(); try { n.setSelectionRange(p, p); } catch (er) {} } }, 200); } }),
-      h('button', { type: 'button', class: 'tsd-btn primary', disabled: !pending.length || S.bulk, text: S.bulk ? 'Auditing...' : (pending.length ? 'Audit ' + Math.min(10, pending.length) + ' transfers' : 'All transfers audited'), onclick: function () { audit(pending.slice(0, 10).map(function (x) { return x.ticketId; }), true); } })]);
+      h('button', { type: 'button', class: 'tsd-btn primary', disabled: !pending.length || S.bulk, text: S.bulk ? 'Auditing...' : (pending.length ? 'Audit ' + Math.min(10, pending.length) + (Math.min(10, pending.length) === 1 ? ' transfer' : ' transfers') : 'All transfers audited'), onclick: function () { audit(pending.slice(0, 10).map(function (x) { return x.ticketId; }), true); } })]);
     var rows = list.slice(0, 200).map(function (x) {
       var o = OUT[x.outcome] || [x.outcome, 'mute'], v = x.audit && VERD[x.audit.verdict];
       var canAudit = x.outcome === 'toTopicTeam' || x.outcome === 'toOther';
       return h('tr', null, [
         h('td', null, [x.url ? h('a', { href: x.url, target: '_blank', rel: 'noopener', class: 'tsd-num', text: '#' + x.number }) : '#' + x.number]),
-        h('td', { class: 'tsd-subj' }, [h('span', { text: x.subject || '' }), h('small', { text: x.category })]),
+        h('td', { class: 'tsd-subj' }, [h('span', { text: x.subject || '' }), h('small', { text: x.guide ? x.guide.label : x.category }),
+          x.guide && EXP[x.guide.expected] ? h('span', { class: 'tsd-pill ' + EXP[x.guide.expected][1] + ' tsd-gp', title: x.guide.why || '', text: EXP[x.guide.expected][0] }) : null]),
         h('td', { text: x.channel === 'call' ? 'Call' : x.channel === 'chat' ? 'Chat' : 'Ticket' }),
         h('td', { text: x.agent || '-' }),
         h('td', null, [h('span', { class: 'tsd-pill ' + o[1], text: o[0] }), x.dest ? h('small', { class: 'tsd-dest-t', text: 'to ' + x.dest }) : null]),

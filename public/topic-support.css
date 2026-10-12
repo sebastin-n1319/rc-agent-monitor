@@ -80,3 +80,11 @@ html.dark-mode #tsd-root{--tsd-surf:#111F2B;--tsd-soft:#152634;--tsd-line:#22384
 @media (prefers-reduced-motion:reduce){.tsd-skel i{animation:none}}
 @media (max-width:1200px){.tsd-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}.tsd-grid2,.tsd-grid2.wide{grid-template-columns:1fr}}
 @media (max-width:640px){.tsd-tiles{grid-template-columns:1fr 1fr}.tsd-ba{grid-template-columns:1fr}}
+
+/* Batch 166: guide scope */
+.tsd-tiles{grid-template-columns:repeat(6,minmax(0,1fr))}
+.tsd-tile.bad .tsd-tile-v{color:var(--tsd-red)}
+.tsd-gp{margin-top:4px;display:inline-block}
+.tsd-subj .tsd-pill{display:inline-block}
+@media (max-width:1400px){.tsd-tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.tsd-tiles{grid-template-columns:1fr 1fr}}
