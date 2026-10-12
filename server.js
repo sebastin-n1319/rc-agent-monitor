@@ -8201,6 +8201,10 @@ app.post('/api/topic-support/weekly/run', requireAdmin, rateLimit(3, 60000), asy
   try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/topic-support').buildWeekly({ agentNames, force: true, by: req.session.email })) }); }
   catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
+app.post('/api/topic-support/exclude', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json({ success: true, ...(await require('./lib/topic-support').setExcluded({ ticketId: b.ticketId, exclude: b.exclude !== false, reason: b.reason, by: req.session.email })) }); }
+  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
 app.post('/api/topic-support/audit', requireAdmin, rateLimit(40, 60000), async (req, res) => {
   try {
     const b = req.body || {}; const ts = require('./lib/topic-support');

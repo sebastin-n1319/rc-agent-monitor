@@ -239,7 +239,8 @@
           v ? h('small', { class: 'tsd-why', text: x.audit.reason }) : null,
           canAudit ? h('button', { type: 'button', class: 'tsd-link', disabled: !!S.auditing[x.ticketId], text: S.auditing[x.ticketId] ? 'Checking...' : (v ? 'Re-check' : 'Audit'), onclick: function () { audit([x.ticketId]); } }) : null]),
         h('td', null, [rv ? h('button', { type: 'button', class: 'tsd-score ' + rateCls(rv.overall), 'aria-expanded': open ? 'true' : 'false', title: 'Show the review', text: rv.overall + ' / 5', onclick: function () { S.openRow[x.ticketId] = !open; draw(); } }) : null,
-          canReview ? h('button', { type: 'button', class: 'tsd-link', disabled: !!S.reviewing[x.ticketId], text: S.reviewing[x.ticketId] ? 'Reviewing...' : (rv ? 'Review again' : 'Review'), onclick: function () { review([x]); } }) : null])]));
+          canReview ? h('button', { type: 'button', class: 'tsd-link', disabled: !!S.reviewing[x.ticketId], text: S.reviewing[x.ticketId] ? 'Reviewing...' : (rv ? 'Review again' : 'Review'), onclick: function () { review([x]); } }) : null,
+          h('button', { type: 'button', class: 'tsd-link tsd-mute', title: 'Leave this ticket out of every count, for example a test ticket. You can count it again below the list.', text: 'Test ticket, leave out', onclick: function () { exclude(x.ticketId, true); } })])]));
       if (open && rv) rows.push(h('tr', { class: 'tsd-detail' }, [h('td', { colspan: '8' }, [reviewDetail(rv)])]));
     });
     return h('section', { class: 'tsd-card' }, [
@@ -249,7 +250,17 @@
       tools,
       !rows.length && /^#?\d{5,}$/.test(S.q.trim()) ? whyBox(S.q.trim()) : null,
       rows.length ? h('div', { class: 'tsd-scroll' }, [h('table', { class: 'tsd-table tsd-list' }, [h('thead', null, [h('tr', null, ['Ticket', 'Subject and topic', 'Channel', 'T1 agent', 'Outcome', 'Created', 'Audit', 'Rating'].map(function (x) { return h('th', { scope: 'col', class: x === 'Created' ? 'num' : '', text: x }); }))]), h('tbody', null, rows)])]) : empty('No tickets match.'),
-      list.length > 200 ? h('p', { class: 'tsd-empty', text: 'Showing the newest 200 of ' + list.length + '. Narrow the range or search to see the rest.' }) : null]);
+      list.length > 200 ? h('p', { class: 'tsd-empty', text: 'Showing the newest 200 of ' + list.length + '. Narrow the range or search to see the rest.' }) : null,
+      (d.excluded || []).length ? h('div', { class: 'tsd-note' }, [h('span', { text: d.excluded.length + ' left out of the counts: ' }),
+        h('ul', { class: 'tsd-why-list' }, d.excluded.map(function (e) { return h('li', null, [e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener', text: '#' + e.number }) : '#' + e.number, ' ' + (e.subject || '') + ' (' + (e.reason || 'Test ticket') + (e.by ? ', ' + e.by : '') + ') ',
+          h('button', { type: 'button', class: 'tsd-link', style: 'display:inline', text: 'Count it again', onclick: function () { exclude(e.ticketId, false); } })]); }))]) : null]);
+  }
+  function exclude(id, on) {
+    api('/api/topic-support/exclude', { ticketId: id, exclude: on, reason: 'Test ticket' }).then(function (j) {
+      if (!j.success) throw new Error(j.error || 'Could not save');
+      if (typeof showToast === 'function') showToast(on ? 'Left out of the counts' : 'Counted again', 'success');
+      load();
+    }).catch(function (e) { if (typeof showToast === 'function') showToast(e.message, 'error'); });
   }
 
   function whyBox(num) {

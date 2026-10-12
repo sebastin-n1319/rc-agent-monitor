@@ -89,6 +89,8 @@ AI & VoIP counts: Zoho's own Desk topic now decides first. A ticket Zoho files u
 
 AI & VoIP shows only T1 work: the page now counts only calls, chats and tickets a T1 agent handled whose topic, by the guides, is AI or VoIP. Tickets that went straight to the AI or VoIP team without reaching T1 (for example #415487) are left out, and the Went straight to team tile and filter are gone.
 
+AI & VoIP test tickets: each ticket row has Test ticket, leave out. It takes that ticket out of every count, rating, alert and the weekly report. Left-out tickets are listed under the ticket list with Count it again, and Check why says when a ticket was left out.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.

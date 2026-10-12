@@ -74,6 +74,7 @@ html.dark-mode #tsd-root{--tsd-surf:#111F2B;--tsd-soft:#152634;--tsd-line:#22384
 .tsd-aud{display:flex;gap:6px;flex-wrap:wrap}
 .tsd-link{display:block;margin-top:4px;border:0;background:transparent;color:var(--tsd-blue);font:600 12px 'Poppins',sans-serif;padding:0;cursor:pointer}
 .tsd-link:disabled{color:var(--tsd-t3);cursor:default}
+.tsd-link.tsd-mute{color:var(--tsd-t3);font-weight:500}.tsd-link.tsd-mute:hover{color:var(--tsd-blue)}
 .tsd-empty{margin:4px 0;font-size:12.5px;color:var(--tsd-t3)}
 .tsd-skel{display:grid;grid-template-columns:repeat(4,1fr);gap:12px} .tsd-skel i{height:96px;border-radius:14px;background:linear-gradient(90deg,var(--tsd-soft),var(--tsd-line),var(--tsd-soft));background-size:200% 100%;animation:tsdSk 1.3s linear infinite}
 @keyframes tsdSk{to{background-position:-200% 0}}
