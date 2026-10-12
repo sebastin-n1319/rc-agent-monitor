@@ -37,7 +37,8 @@
 </script>
 <!-- Session 37: global 401 handler -- catches a dead server session
      (see session-guard.js) before every module downstream has to. -->
-<script src="/session-guard.js?v=1.0.2"></script>
+<script src="/session-guard.js?v=1.0.3"></script>
+<script>try{ if(new URLSearchParams(location.search).get('next') === '/guides'){ sessionStorage.setItem('rcNext','/guides'); } }catch(e){}</script>
 <script>try{ if(new URLSearchParams(location.search).get('next') === '/assess'){ sessionStorage.setItem('rcNext','/assess'); var _g=Number(sessionStorage.getItem('rcAssessGo')||0); /* sent here by /assess moments after we sent the person there: the saved sign-in is stale, so drop it and show the login instead of bouncing again */ if(_g && Date.now()-_g < 20000){ localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); ['rcUser','rcRole','rcEmail','rcPicture','rcBreakbotEnabled'].forEach(function(k){sessionStorage.removeItem(k);}); sessionStorage.removeItem('rcAssessGo'); } } }catch(e){}</script>
 <link rel="stylesheet" href="/adit-theme.css?v=1.19.109" id="adit-theme-link">
 <link rel="stylesheet" href="/agent-view-v2.css?v=1.19.8" id="agent-view-v2-link">
@@ -761,6 +762,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="du" x="5" y="4" width="14" height="17" rx="2.6"/><rect x="5" y="4" width="14" height="17" rx="2.6"/><path d="M9 4V2.8h6V4"/><path d="M8.5 10.2l1.5 1.5 3-3M8.5 15.5l1.5 1.5 3-3"/><path class="nx-scan" d="M6.5 7.5h11"/></svg>
     <span class="sb-label">Tests</span>
   </div>
+  <!-- Batch 156: Support guides (VoIP, AI) with Ask AI -->
+  <div class="sb-item" id="sb-guides" title="Support guides: VoIP and AI support, with Ask AI"
+       onclick="sbAdmin('guides',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/><path d="M6.5 8h2.5M6.5 11h2.5M15.5 8h2"/><path class="nx-spark" d="M16.5 12.3l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg>
+    <span class="sb-label">Guides</span>
+  </div>
   <!-- Session 17: Settings (pause controls + admin settings) -->
   <div class="sb-item" id="sb-settings" title="Settings"
        onclick="sbAdmin('settings',this);if(typeof openSettingsAdmin==='function')openSettingsAdmin();">
@@ -832,6 +839,12 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="du" x="5" y="4" width="14" height="17" rx="2.6"/><rect x="5" y="4" width="14" height="17" rx="2.6"/><path d="M9 4V2.8h6V4"/><path d="M8.5 10.2l1.5 1.5 3-3M8.5 15.5l1.5 1.5 3-3"/><path class="nx-scan" d="M6.5 7.5h11"/></svg>
     <span class="sb-label">Tests</span>
   </div>
+  <!-- Batch 156: Support guides (VoIP, AI) with Ask AI -->
+  <div class="sb-item" id="sb-agent-guides" title="Support guides: VoIP and AI support, with Ask AI"
+       onclick="sbAgent('guides',this)">
+    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/><path d="M6.5 8h2.5M6.5 11h2.5M15.5 8h2"/><path class="nx-spark" d="M16.5 12.3l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg>
+    <span class="sb-label">Guides</span>
+  </div>
   <!-- HOF enabled for Q2 2026, visible to all agents -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
        onclick="sbAgent('hall',this)" data-hof-enabled="Q2-2026">
@@ -894,6 +907,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <button class="nav-tab" data-tab="ticket-alerts" onclick="switchTab('ticket-alerts',this)">Ticket Alerts</button>
     <button class="nav-tab" data-tab="alerts" onclick="switchTab('alerts',this)">Alerts</button>
     <button class="nav-tab" data-tab="assess" onclick="switchTab('assess',this)">Assessments</button>
+    <button class="nav-tab" data-tab="guides" onclick="switchTab('guides',this)">Support guides</button>
     <button class="nav-tab" data-tab="alerts-breaklog" onclick="switchTab('alerts-breaklog',this)">Break log alerts</button>
     <button class="nav-tab" data-tab="alerts-missed" onclick="switchTab('alerts-missed',this)">Missed call alerts</button>
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
@@ -1257,6 +1271,18 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
         </section>
       </div>
 
+      <!-- Batch 156: people outside the team who may open Support guides (and nothing else) -->
+      <section class="acx-card" id="acx-guides-card" aria-labelledby="acx-guides-h">
+        <div class="acx-card-hd"><h3 id="acx-guides-h">Support guides guests</h3><span class="acx-chip" id="acx-guides-count">0 people</span></div>
+        <div class="acx-form">
+          <label class="acx-field acx-field-grow"><span>Emails</span><input type="text" id="acx-guides-emails" placeholder="name@adit.com, another@adit.com" autocomplete="off" onkeydown="if(event.key==='Enter')addGuideGuests()"></label>
+          <label class="acx-field"><span>Note (optional)</span><input type="text" id="acx-guides-note" placeholder="Team or reason" maxlength="120" autocomplete="off"></label>
+          <button class="acx-btn acx-btn-primary" type="button" onclick="addGuideGuests()">Give access</button>
+        </div>
+        <p class="acx-note">People outside your team who sign in with these @adit.com accounts see only the Support guides page (VoIP and AI guides, Ask AI), nothing else in the tool. Everyone on your team already has the Guides page.</p>
+        <div id="acx-guides-list" class="acx-req-list"><div class="acx-empty">Loading...</div></div>
+      </section>
+
       <section class="acx-card acx-board" aria-labelledby="acx-board-h">
         <div class="acx-card-hd"><h3 id="acx-board-h">People</h3><span class="acx-chip" id="roleCount">0 people</span></div>
         <div class="acx-toolbar">
@@ -1391,6 +1417,8 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <div class="page" id="tab-alerts"><div id="alert-hub-root"></div></div>
   <!-- Session 57: Assessments, embedded -->
   <div class="page" id="tab-assess"><iframe class="assess-frame" data-src="/assess?embed=1#manage" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
+  <!-- Batch 156: Support guides, embedded -->
+  <div class="page" id="tab-guides"><iframe class="assess-frame" data-src="/guides?embed=1" title="Support guides" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <div class="page" id="tab-alerts-breaklog"><div id="alert-breaklog-root"></div></div>
   <div class="page" id="tab-alerts-missed"><div id="alert-missed-root"></div></div>
 
@@ -3178,6 +3206,8 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <div class="agent-shell-page av2" id="agent-section-audits"><div id="tka-agent-root"></div></div>
   <!-- Session 57: assessments, embedded -->
   <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
+  <!-- Batch 156: Support guides, embedded -->
+  <div class="agent-shell-page" id="agent-section-guides"><iframe class="assess-frame" data-src="/guides?embed=1" title="Support guides" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Session 20: self-service Ticket Lifecycle stats (My Ticket Stats) -->
   <div class="agent-shell-page av2" id="agent-section-mystats">
     <div id="desk-lifecycle-agent-root"></div>
@@ -4363,7 +4393,7 @@ function breakbotTabEnabled(){
 // Session 58: agent page availability, set on Team > Access Control.
 // Agents only see pages the server allows; admins keep every page in Agent
 // View so they can preview, with pages hidden from agents marked.
-const AGENT_PAGE_KEYS=['breakbot','bonus','writer','tickets','mystats','talerts','assess','hall'];
+const AGENT_PAGE_KEYS=['breakbot','bonus','writer','tickets','mystats','talerts','assess','hall','guides'];
 let agentPagesAllowed=(()=>{ try{ return JSON.parse(localStorage.getItem('rcAgentPages')||'null'); }catch(e){ return null; } })();
 let agentPagesGlobal=null;
 function agentPageOn(p){
@@ -4457,9 +4487,18 @@ function goAssessChecked(){
     else { forgetSavedSignIn(); try{ sessionStorage.setItem('rcNext','/assess'); }catch(e){} window.location.replace('/?next=/assess'); }
   }).catch(()=>{ window.location.replace('/assess'); });
 }
+// Batch 156: Support guides guests (and a sign-in that started from /guides) go to /guides.
+function goGuidesChecked(){
+  fetch('/api/session',{credentials:'include'}).then(r=>r.json()).then(s=>{
+    if(s && s.success) window.location.replace('/guides');
+    else { forgetSavedSignIn(); try{ sessionStorage.setItem('rcNext','/guides'); }catch(e){} window.location.replace('/?next=/guides'); }
+  }).catch(()=>{ window.location.replace('/guides'); });
+}
 function startApp(username,role,picture,breakbotEnabled=true,skipAnimation=false){
   // Session 56: accounts outside the tool only get the Assessments page,
   // and a sign-in that started from /assess goes back there.
+  if(role === 'guides'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} goGuidesChecked(); return; }
+  try{ if(sessionStorage.getItem('rcNext') === '/guides'){ sessionStorage.removeItem('rcNext'); goGuidesChecked(); return; } }catch(e){}
   if(role === 'assessment'){ try{ sessionStorage.removeItem('rcNext'); }catch(e){} goAssessChecked(); return; }
   try{ if(sessionStorage.getItem('rcNext') === '/assess'){ sessionStorage.removeItem('rcNext'); goAssessChecked(); return; } }catch(e){}
   // DO NOT clear rcActiveView here, agents need it to restore their last page.
@@ -4810,6 +4849,7 @@ function switchAgentSection(section,el){
   if(section==='updates'){ if(window.PU) window.PU.open(); }
   if(section==='audits'){ if(window.TA) window.TA.open('agent'); }
   if(section==='assess') loadAssessFrame('agent-section-assess');
+  if(section==='guides') loadAssessFrame('agent-section-guides');
   setTimeout(syncAssessLock, 0);
   // Session 44: populate the agent Dashboard right away when it opens.
   if(section==='dashboard' && currentUser && typeof refresh==='function'){ setTimeout(()=>{ try{ refresh(); }catch(e){} },0); }
@@ -7865,6 +7905,7 @@ async function loadSession(){
             if(s && s.accessRequest){ showAccessGate(s); return; }
             if(s.success && s.role){
               if(s.role === 'assessment'){ try{ localStorage.removeItem('rcSession'); }catch(_){} window.location.replace('/assess'); return; }
+              if(s.role === 'guides'){ try{ localStorage.removeItem('rcSession'); }catch(_){} window.location.replace('/guides'); return; }
               if(s.role !== cached.role) sessionStorage.setItem('rcRole', s.role);
               try{ localStorage.setItem('rcSession', JSON.stringify({
                 name:s.name||cached.name, role:s.role, email:s.email||cached.email,
@@ -9983,6 +10024,7 @@ function switchTab(tab,el){
   if(tab==='ticket-alerts' && typeof window.openT1AlertsAdmin==='function') window.openT1AlertsAdmin();
   if(tab==='alerts' && typeof window.openAlertHub==='function') window.openAlertHub();
   if(tab==='assess') loadAssessFrame('tab-assess');
+  if(tab==='guides') loadAssessFrame('tab-guides');
   setTimeout(syncAssessLock, 0);
   if(tab==='alerts-breaklog' && typeof window.openAlertBreakLog==='function') window.openAlertBreakLog();
   if(tab==='alerts-missed' && typeof window.openAlertMissed==='function') window.openAlertMissed();
@@ -11671,7 +11713,8 @@ const ACX_PAGES={
   mystats:{label:'My Stats',desc:'Personal ticket stats'},
   talerts:{label:'Alerts',desc:'Unassigned and waiting tickets'},
   assess:{label:'Tests',desc:'Assigned assessments'},
-  hall:{label:'HOF',desc:'Hall of Fame'}
+  hall:{label:'HOF',desc:'Hall of Fame'},
+  guides:{label:'Guides',desc:'VoIP and AI support guides, Ask AI'}
 };
 let acxPageCfg={pages:Object.keys(ACX_PAGES),global:{},users:{}};
 let acxOpenEmail=null;
@@ -11988,15 +12031,15 @@ function renderAccessRequests(){
     let meta, acts;
     if(r.status==='pending'){
       meta='Asked '+acxAgo(r.requested_at)+(r.attempts>1?' · tried '+r.attempts+' times, last '+acxAgo(r.last_attempt_at):'');
-      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option></select>'+
+      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option><option value="guides">Guest (support guides only)</option></select>'+
         '<button type="button" class="acx-btn acx-btn-primary acx-btn-sm" data-email="'+esc(r.email)+'" onclick="approveRequest(this)">Approve</button>'+
         '<button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="denyRequest(this)">Decline</button>';
     } else if(r.status==='denied'){
       meta='Declined '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'')+(r.note?' · '+esc(r.note):'')+(r.attempts>1?' · tried '+r.attempts+' times':'');
-      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option></select>'+
+      acts='<select class="acx-role-sel" aria-label="Role for '+esc(r.email)+'"><option value="agent">Agent</option><option value="admin">Admin</option><option value="guest">Guest (assessments only)</option><option value="guides">Guest (support guides only)</option></select>'+
         '<button type="button" class="acx-btn acx-btn-ghost acx-btn-sm" data-email="'+esc(r.email)+'" onclick="approveRequest(this)">Approve instead</button>';
     } else {
-      meta=(r.status==='approved'?'Approved as '+esc(r.decided_role==='guest'?'guest (assessments only)':(r.decided_role||'agent')):'Removed')+' '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'');
+      meta=(r.status==='approved'?'Approved as '+esc(r.decided_role==='guest'?'guest (assessments only)':r.decided_role==='guides'?'guest (support guides only)':(r.decided_role||'agent')):'Removed')+' '+acxAgo(r.decided_at)+(r.decided_by?' by '+esc(r.decided_by):'');
       acts='<span class="acx-tag '+(r.status==='approved'?'acx-tag-ok':'')+'">'+(r.status==='approved'?'Approved':'Removed')+'</span>';
     }
     return '<div class="acx-req-row" style="--i:'+Math.min(i,10)+'"><div class="acx-req-av">'+av+'</div><div class="acx-person"><span class="acx-name">'+esc(nm)+'</span><span class="acx-email">'+esc(r.email)+'</span><span class="acx-req-meta">'+meta+'</span></div><div class="acx-actions">'+acts+'</div></div>';
@@ -12009,7 +12052,7 @@ async function approveRequest(btn){
     const j=await fetch(BACKEND+'/api/access-requests/'+encodeURIComponent(email)+'/approve',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({role})}).then(r=>r.json());
     if(!j.success) throw new Error(j.error||'Could not approve');
     row.classList.add('is-leaving');
-    showToast(email+' approved as '+(role==='admin'?'an admin':role==='guest'?'an assessment guest':'an agent'),'success');
+    showToast(email+' approved as '+(role==='admin'?'an admin':role==='guest'?'an assessment guest':role==='guides'?'a support guides guest':'an agent'),'success');
     setTimeout(()=>loadRoles(),260);
   }catch(e){ showToast(e.message,'error'); row.querySelectorAll('button,select').forEach(x=>x.disabled=false); }
 }
@@ -12046,8 +12089,46 @@ async function pollAccessRequests(){
 setInterval(pollAccessRequests,60000);
 setTimeout(pollAccessRequests,4000);
 
+// Batch 156: Support guides guest list
+async function loadGuideGuests(){
+  const box=document.getElementById('acx-guides-list'); if(!box) return;
+  try{
+    const j=await fetch(BACKEND+'/api/guides/access',{credentials:'include'}).then(r=>r.json());
+    if(!j.success) throw new Error(j.error||'Could not load');
+    const g=j.guests||[];
+    const cnt=document.getElementById('acx-guides-count'); if(cnt) cnt.textContent=g.length+(g.length===1?' person':' people');
+    if(!g.length){ box.innerHTML='<div class="acx-empty">No guests yet. Add emails above to share the Support guides outside your team.</div>'; return; }
+    box.innerHTML=g.map(r=>{
+      const nm=deriveRoleName(r.email);
+      return '<div class="acx-req-row"><div class="acx-req-av"><span>'+esc(nm.charAt(0).toUpperCase())+'</span></div><div class="acx-person"><span class="acx-name">'+esc(nm)+'</span><span class="acx-email">'+esc(r.email)+'</span><span class="acx-req-meta">Added '+acxAgo(r.added_at)+(r.added_by?' by '+esc(r.added_by):'')+(r.note?' · '+esc(r.note):'')+'</span></div>'+
+        '<div class="acx-actions"><button type="button" class="acx-btn acx-btn-danger acx-btn-sm" data-email="'+esc(r.email)+'" onclick="removeGuideGuest(this)">Remove</button></div></div>';
+    }).join('');
+  }catch(e){ box.innerHTML='<div class="acx-empty">Could not load the guest list.</div>'; }
+}
+async function addGuideGuests(){
+  const inp=document.getElementById('acx-guides-emails'), note=document.getElementById('acx-guides-note');
+  const emails=(inp.value||'').trim();
+  if(!emails){ showToast('Enter at least one email address','warning'); inp.focus(); return; }
+  try{
+    const j=await fetch(BACKEND+'/api/guides/access',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({emails,note:note.value.trim()})}).then(r=>r.json());
+    if(!j.success) throw new Error(j.error||'Could not save');
+    showToast(j.added?('Support guides shared with '+j.added+(j.added===1?' person':' people')):'Already on the list','success');
+    inp.value=''; note.value=''; loadGuideGuests(); loadAccessRequests();
+  }catch(e){ showToast(e.message,'error'); }
+}
+async function removeGuideGuest(btn){
+  const email=btn.dataset.email;
+  if(!confirm('Remove '+email+' from the Support guides guests? If they are not on your team they are signed out now.')) return;
+  btn.disabled=true;
+  try{
+    const j=await fetch(BACKEND+'/api/guides/access/'+encodeURIComponent(email),{method:'DELETE',credentials:'include'}).then(r=>r.json());
+    if(!j.success) throw new Error(j.error||'Could not remove');
+    showToast('Removed '+email,'success'); loadGuideGuests();
+  }catch(e){ showToast(e.message,'error'); btn.disabled=false; }
+}
 async function loadRoles(){
   loadAccessRequests();
+  loadGuideGuests();
   try{
     const [res]=await Promise.all([fetch(BACKEND+'/api/roles',{credentials:'include'}).then(r=>r.json()), loadAgentPageConfig()]);
     roleDirectory=(res && res.data)||[];

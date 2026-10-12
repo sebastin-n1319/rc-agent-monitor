@@ -660,6 +660,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     await notices.importWhatsNew().catch(e => console.warn('whats-new import failed:', e.message));
     accessReq.setDB(db);
     await accessReq.initSchema();
+    guides.setDB(db); await guides.initSchema(); // Batch 156: Support guides guest list
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -780,6 +781,8 @@ async function sessionRoleFor(email) {
   if (!(await isToolMember(email))) {
     // Session 63: outside the tool, only the Assessments guest list (or an
     // open assessment link) lets someone in, and only to /assess.
+    // Batch 156: the Support guides guest list opens /guides (and only /guides).
+    if (await guides.isGuest(email)) return { role: 'guides', breakbotEnabled: false };
     const acc = await assessments.accessFor(email, false).catch(() => ({ allowed: false }));
     return acc.allowed ? { role: 'assessment', breakbotEnabled: false } : { role: null, breakbotEnabled: false };
   }
@@ -796,6 +799,9 @@ async function requireAuth(req, res, next) {
     req.session = session;
     // Session 56: people outside the tool only reach /api/assess/*.
     if (!String(req.path || '').startsWith('/api/assess/') && !(await isToolMember(session.email))) {
+      // Batch 156: Support guides guests reach /api/guides/* only.
+      if (String(req.path || '').startsWith('/api/guides/') && (await guides.isGuest(session.email))) return next();
+      if (await guides.isGuest(session.email)) return res.status(403).json({ success: false, guidesOnly: true, error: 'This account can only use the Support guides page.' });
       return res.status(403).json({ success: false, assessmentOnly: true, error: 'This account can only use the Assessments page.' });
     }
     next();
@@ -1409,7 +1415,7 @@ app.delete('/api/roles/:email', requireAdmin, async (req, res) => {
 // Session 58: which agent-view pages agents can open (Access Control tab).
 // app_settings 'agent_pages' = { global: {page: bool}, users: {email: {page: bool}} }.
 // Home is always on. Break Bot also respects the per-person breakbot_enabled column.
-const AGENT_PAGES = ['breakbot', 'bonus', 'writer', 'tickets', 'mystats', 'talerts', 'assess', 'hall'];
+const AGENT_PAGES = ['breakbot', 'bonus', 'writer', 'tickets', 'mystats', 'talerts', 'assess', 'hall', 'guides'];
 async function readAgentPages() {
   let raw = {};
   try { raw = JSON.parse((await getSetting('agent_pages')) || '{}') || {}; } catch (e) { raw = {}; }
@@ -1480,8 +1486,15 @@ app.post('/api/access-requests/:email/approve', requireAdmin, async (req, res) =
   const email = decodeURIComponent(req.params.email).trim().toLowerCase();
   const { role = 'agent', breakbotEnabled = true } = req.body || {};
   if (!EMAIL_RE.test(email)) return res.status(400).json({ success: false, error: 'Invalid email' });
-  if (!['admin', 'agent', 'guest'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent or guest' });
+  if (!['admin', 'agent', 'guest', 'guides'].includes(role)) return res.status(400).json({ success: false, error: 'Role must be admin, agent, guest or guides' });
   try {
+    if (role === 'guides') {
+      // Batch 156: Support guides only, no other page of the tool
+      await guides.addGuests(email, 'Approved from access requests', req.session.email);
+      await accessReq.decide(email, 'approved', req.session.email, { role: 'guides' });
+      insertAuditLog(req.session.email, 'access_approved', email, 'role:guides').catch(() => {});
+      return res.json({ success: true });
+    }
     if (role === 'guest') {
       // Assessment-only guest: no tool access, only assigned assessments
       await assessments.addGuests(email, 'Approved from access requests', req.session.email);
@@ -1849,6 +1862,7 @@ app.post('/api/break-report/send', requireAdmin, rateLimit(10,60000), async (req
 // assessments, access and results.
 const assessments = require('./lib/assessments');
 const accessReq = require('./lib/access'); // Session 63: access requests
+const guides = require('./lib/guides'); // Batch 156: Support guides (VoIP, AI) with Ask AI
 const notices = require('./lib/notices'); // Session 68: tool-wide notification centre
 const productUpdates = require('./lib/product-updates');
 const ticketAudits = require('./lib/ticket-audits'); // Session 76: ticket audits
@@ -1856,6 +1870,71 @@ const transferReview = require('./lib/transfer-review'); // Session 88: pending 
 const escalationWatch = require('./lib/escalation-watch'); // Session 90: T1 escalation signals to Google Chat
 const regularise = require('./lib/regularise'); // Session 68: break regularise requests
 app.get(['/assess', '/assess/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'assess.html')));
+// ── Batch 156: Support guides (VoIP, AI) with Ask AI ────────────────────
+// Tool members and the Support guides guest list (Access Control) can open /guides; guests see nothing else.
+app.get(['/guides', '/guides/'], (req, res) => res.sendFile(path.join(__dirname, 'public', 'guides.html')));
+async function guideViewer(req) {
+  const token = req.cookies && req.cookies[SESSION_COOKIE];
+  if (!token) return null;
+  const session = await getAppSession(token).catch(() => null);
+  if (!session) return null;
+  if ((await isToolMember(session.email)) || (await guides.isGuest(session.email))) return session;
+  return null;
+}
+// The AI Support Runbook keeps its own design, so it is served as a page of its own (framed by /guides), signed-in viewers only.
+app.get('/guides/doc/ai', async (req, res) => {
+  try {
+    if (!(await guideViewer(req))) return res.redirect('/guides');
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.type('html').send(guides.docHtml('ai') || '<p>Guide not found.</p>');
+  } catch (e) { res.status(500).send('Could not open the guide'); }
+});
+app.get('/api/guides/docs', requireAuth, async (req, res) => {
+  try {
+    const email = String(req.session.email || '').toLowerCase();
+    const member = await isToolMember(email);
+    const admin = member ? await isAdminSession(req).catch(() => false) : false;
+    let assess = false;
+    try { assess = (await assessments.accessFor(email, member)).allowed; } catch (e) {}
+    res.json({ success: true, docs: guides.docList(), me: { email, name: req.session.name || '', member, admin, assess }, ai: require('./lib/ai').anyConfigured() });
+  } catch (e) { res.status(500).json({ success: false, error: 'Could not load the guides' }); }
+});
+app.get('/api/guides/doc/:id', requireAuth, (req, res) => {
+  const html = req.params.id === 'voip' ? guides.docHtml('voip') : null;
+  if (!html) return res.status(404).json({ success: false, error: 'Guide not found' });
+  res.json({ success: true, html });
+});
+app.post('/api/guides/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const ai = require('./lib/ai');
+    if (!ai.anyConfigured()) return res.status(503).json({ success: false, error: 'Ask AI is not set up yet.' });
+    const b = req.body || {};
+    const out = await guides.ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 800 }), doc: ['voip', 'ai'].includes(b.doc) ? b.doc : null, ai });
+    res.json({ success: true, ...out });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status === 400 ? e.message : 'Ask AI is busy right now, please try again in a moment.' }); }
+});
+app.get('/api/guides/access', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, guests: await guides.listGuests() }); }
+  catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.post('/api/guides/access', requireAdmin, async (req, res) => {
+  try {
+    const b = req.body || {};
+    const out = await guides.addGuests(b.emails, b.note, req.session.email);
+    if (!out.emails.length) return res.status(400).json({ success: false, error: 'Enter at least one email address' });
+    for (const e of out.emails) { const st = await accessReq.statusOf(e).catch(() => null); if (st && st.status === 'pending') await accessReq.decide(e, 'approved', req.session.email, { role: 'guides' }).catch(() => {}); insertAuditLog(req.session.email, 'guides_access_added', e).catch(() => {}); }
+    res.json({ success: true, ...out });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+app.delete('/api/guides/access/:email', requireAdmin, async (req, res) => {
+  try {
+    const email = decodeURIComponent(req.params.email).trim().toLowerCase();
+    await guides.removeGuest(email);
+    if (!(await isToolMember(email))) await require('./database').deleteSessionsForEmail(email).catch(() => {});
+    insertAuditLog(req.session.email, 'guides_access_removed', email).catch(() => {});
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 async function requireAssessAccess(req, res, next) {
   try {
     const acc = await assessments.accessFor(req.session.email, await isToolMember(req.session.email));

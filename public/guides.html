@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Adit Support Guides</title>
+<link rel="icon" href="/adit-icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/guides.css?v=1.0.0">
+<script>
+try{
+  var q=new URLSearchParams(location.search);
+  if(q.get('embed')==='1') document.documentElement.classList.add('embed');
+  var d=localStorage.getItem('aditDarkMode'); if(d==='1') document.documentElement.setAttribute('data-theme','dark'); else if(d==='0') document.documentElement.setAttribute('data-theme','light');
+}catch(e){}
+</script>
+</head>
+<body>
+<div class="gd-app" id="gd-app">
+  <div class="gd-top" role="banner">
+    <a class="gd-brand" href="/guides"><img src="/adit-icon-32.png" alt="" width="26" height="26"><span>Support guides</span></a>
+    <nav class="gd-nav" id="gd-nav" aria-label="Guides"></nav>
+    <div class="gd-user" id="gd-user"></div>
+  </div>
+  <main class="gd-main" id="gd-main" tabindex="-1">
+    <p class="gd-empty">Loading...</p>
+  </main>
+</div>
+<div class="sr-only" id="gd-live" aria-live="polite"></div>
+<script src="/guides.js?v=1.0.0" defer></script>
+</body>
+</html>

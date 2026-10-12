@@ -1,0 +1,4079 @@
+<p>This document has two parts. Part 1 is the T1 support guide: where
+each Adit Voice setting lives, the requests T1 can finish on the first
+call, the checks the Phones team runs in order, and when a ticket goes
+to the VoIP queue. Part 2 is the query catalog: the queries clients
+raised with the Phones (VoIP Support) team between 15 April and 12
+October 2026 and how the Phones agents resolved each one.</p>
+<p>The numbers in brackets throughout are Zoho Desk ticket numbers.
+Search them in Desk to read how the Phones agent worked the case end to
+end. Every ticket number cited was checked and is a Phones team
+ticket.</p>
+
+<h1 id="v-part-1-support-guide">Part 1: Support guide</h1>
+<p>This guide gives T1 CS what it needs to take basic Adit Voice calls
+and chats: where each setting lives, the requests we can finish on the
+first call, the checks the Phones team runs in order, and when a ticket
+goes to the VoIP queue. It is built from the two T1 VoIP training
+sessions, the Adit Voice master document, the VoIP assessment, and the
+Phones team's Zoho Desk tickets and recorded client calls.</p>
+<p>Part 2 lists the queries clients raised with the Phones team and how
+the Phones agents resolved each one, with the Zoho Desk ticket numbers
+to read.</p>
+<h2 id="v-your-scope-and-approach">Your scope and approach</h2>
+<p>T1 handles configuration requests and first-line checks; the Phones
+team (VoIP queue) handles anything that needs the phone server, device
+management or the developers. As Shubham put it in training, most of
+what clients ask can be closed in two to five minutes once you know
+where the setting lives.</p>
+<p>What T1 resolves: greeting and voicemail changes, business hours and
+schedules, call override on or off, line labels and user association,
+blocked callers, hold music, audio library uploads, call recording
+toggles, extra voicemail boxes on V4 accounts, eFax how-to, finding
+calls and recordings in Call Tracking, softphone and mobile app setup,
+DND, and basic phone checks such as power, cable, Wi-Fi, reboot and
+cordless re-pairing.</p>
+<p>What goes to the VoIP queue: phones that stay "Account not
+registered" after basic checks, several phones down at once, any factory
+reset through GDMS, voicemail boxes on V2 or V3, missing recordings when
+both recording toggles are on, headset faults, repeating audio problems
+or call drops, and fax failures that repeat across different numbers.
+The full list is in the hand-over section.</p>
+<h3 id="v-for-a-how-to-or-change-request">For a how-to or change
+request</h3>
+<ol type="1">
+<li><blockquote>
+<p>Understand what the client wants, including which hours or which
+branch it applies to.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Find the right feature.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Take a screenshot of the current setup and add it to the ticket
+comments before you change anything.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Make the change and click Update. Unsaved call flow changes are
+silently lost.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Place a test call and check the result.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Tell the client anything they need to do themselves, such as
+rebooting a phone, and confirm it is resolved.</p>
+</blockquote></li>
+</ol>
+<h3 id="v-for-a-fault">For a fault</h3>
+<p>The Phones team follows the same order every time: Identify, check
+basics, reproduce, isolate, fix, verify, document.</p>
+<ol type="1">
+<li><blockquote>
+<p>Identify: the device model, the user, the extension, the exact
+symptom or on-screen error, and when it started. Confirm the phone is a
+supported model before troubleshooting it.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Check basics: power, network, registration, permissions, settings and
+physical connections.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reproduce: place a controlled test call to see the problem
+yourself.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Isolate: decide whether it is the device, the user, the network, the
+configuration or the service.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fix: apply only an approved fix. A factory reset is never the first
+step.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Verify: re-test the original function, in both directions for
+audio.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Document: symptoms, checks done, action taken and final status in the
+ticket.</p>
+</blockquote></li>
+</ol>
+<h2 id="v-know-the-system">Know the system</h2>
+<p>About 80% of practices use Grandstream phones and the rest use
+Yealink. Always check the model in Lines before troubleshooting, because
+Wi-Fi, reset steps and cordless pairing differ by model.</p>
+<table>
+<colgroup>
+<col/>
+<col/>
+<col/>
+</colgroup>
+<thead>
+<tr>
+<th>Model</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+<tr>
+<th>Grandstream GRP2613</th>
+<th>Desk phone</th>
+<th>One screen, cable only, no Wi-Fi</th>
+</tr>
+<tr>
+<th>Grandstream GRP2616</th>
+<th>Desk phone</th>
+<th>Two screens, supports Wi-Fi and Bluetooth</th>
+</tr>
+<tr>
+<th>Grandstream GRP2603P, GXP2140</th>
+<th>Desk phone</th>
+<th>Also supported</th>
+</tr>
+<tr>
+<th>Grandstream DP750 + DP720</th>
+<th>Cordless base + handset</th>
+<th>Up to 5 handsets per base</th>
+</tr>
+<tr>
+<th>Grandstream WP810</th>
+<th>Cordless Wi-Fi handset</th>
+<th>Supported</th>
+</tr>
+<tr>
+<th>Yealink T53W, T54W</th>
+<th>Desk phone</th>
+<th>Both support Wi-Fi; T54W has a colour screen</th>
+</tr>
+<tr>
+<th>Yealink W60B / W70B + W56H</th>
+<th>Cordless base + handset</th>
+<th>W60B holds 8 handsets, W70B holds 10</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p>Things that confuse new agents:</p>
+<ul>
+<li><blockquote>
+<p>Extensions starting with 0 (001, 007) are softphones in the Adit app.
+Extensions starting with 1 (101 to 109) are physical phones.</p>
+</blockquote></li>
+<li><blockquote>
+<p>If a user is associated with a hard phone and turns on the softphone,
+the softphone can take the same extension number instead of a new 00x
+number.</p>
+</blockquote></li>
+<li><blockquote>
+<p>In Lines, every cordless handset shows the base model DP750, never
+DP720. Five DP750 rows means one base with five handsets.</p>
+</blockquote></li>
+<li><blockquote>
+<p>The Voice version (V2, V3 or V4) shows on the account. It matters for
+extra voicemail boxes and for the lunch-hours schedule issue.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Every account comes with one landline number and one fax number.
+Tracking numbers are extra numbers that can have their own call
+flow.</p>
+</blockquote></li>
+</ul>
+<h3 id="v-user-roles">User roles</h3>
+<p>Owner and Manager users can change settings, including schedules and
+call override. Staff users cannot, so a staff member who asks to change
+hours needs an owner to raise their role first (385817, 395616). Only
+Owner and Manager users can port numbers or buy tracking and fax
+numbers. Read-only users can view but not edit.</p>
+<h3 id="v-where-settings-live">Where settings live</h3>
+<p>Everything below is under the Settings gear (top right) in the Voice
+section. On multi-location accounts you must pick the location
+first.</p>
+<ul>
+<li><blockquote>
+<p>Phone System: the landline and fax numbers for each location. Click
+the landline number to open its call flow, which also holds the Record
+Inbound Calls toggle. Click the fax number to set where incoming faxes
+are emailed.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Call Flow Templates: saved extra call flows, and Copy Flow to apply
+one to a number.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Lines / Prefixes: each extension's label, user, voicemail box, model
+and MAC address.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Blocked Callers, Hold Music, Call Override, Audio Library, Call
+Recording (outbound) and Voicemail Boxes each have their own page.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Tracking Numbers: route each tracking number to a call flow.</p>
+</blockquote></li>
+</ul>
+<p>Call Tracking is the headset-with-lines icon on the left panel of the
+home screen. Orange icons are outbound calls, green are inbound, red are
+missed calls and voicemails. A solid blue recording icon means nobody
+has played that recording yet.</p>
+<h2 id="v-how-a-call-flow-works">How a call flow works</h2>
+<p>Every inbound call checks call override first, then runs the call
+flow from the top: greeting, schedule, and the branch that matches the
+day and time. Most "phones not ringing" calls come down to one step in
+this path being set the wrong way.</p>
+<p>The order a call follows:</p>
+<ol type="1">
+<li><blockquote>
+<p>Incoming call.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Is call override on? If yes, the call goes straight to the override
+destination (a message, a recording or a forward) and the call flow is
+skipped.</p>
+</blockquote></li>
+<li><blockquote>
+<p>If no, the greeting plays. It is always first in the flow.</p>
+</blockquote></li>
+<li><blockquote>
+<p>The schedule checks the day and time and sends the call to the
+matching branch.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Branch A (before lunch, open hours): Simulring to lines, users or a
+cell; if no one answers, voicemail, which is always last.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Branch B (lunch, closed): the lunch voicemail message.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Branch C (after lunch, open hours): Simulring; if no one answers,
+voicemail.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Any Other Time (after hours and weekends): voicemail, a menu, or an
+AI answering line.</p>
+</blockquote></li>
+</ol>
+<p>This is the lunch-closure layout the Phones team now uses: three
+branches for before lunch, lunch and after lunch, with each weekday
+entered once per branch. Rules from the training:</p>
+<ul>
+<li><blockquote>
+<p>Greeting always goes first and voicemail always last. A voicemail
+placed at the top plays to every caller and then hangs up.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Ring rings one line or one external number. Simulring rings several
+lines, users or external numbers at once, and choosing a user rings
+every extension associated with that user.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Ring time is about 5 seconds per ring, with a minimum of 10 seconds
+and a maximum of 60.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Anything a schedule branch does not cover falls into Any Other
+Time.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Do not insert a new step between existing steps; it can make the flow
+unstable. Take a screenshot, clear the flow and rebuild it in the right
+order. Changing times inside a schedule step is fine.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Nothing is saved until you click Update.</p>
+</blockquote></li>
+</ul>
+<h2 id="v-requests-you-can-finish-on-the-first-call">Requests you can
+finish on the first call</h2>
+<p>These are the requests the Phones team listed as first call
+resolution work. Each one ends the same way: click Update or Save, then
+test.</p>
+<h3 id="v-change-a-phone-s-label-or-who-it-belongs-to">Change a phone's
+label or who it belongs to</h3>
+<p>Labels are the names shown on the phone, such as "Front Desk 1",
+which make transfers easier.</p>
+<ol type="1">
+<li><blockquote>
+<p>Voice, then Lines / Prefixes.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Click the pencil next to the extension. Most fields are locked
+because asset management controls them.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Change the label, or pick a user under user association, and
+save.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Ask the client to reboot that phone: Menu, scroll to the bottom,
+Reboot. If they cannot find it, unplug and replug. The new label does
+not appear, and the phone can misbehave, until it reboots.</p>
+</blockquote></li>
+</ol>
+<p>Only associate a user with an extension if that person always sits at
+that phone. Most practices rotate desks, so lines usually stay under the
+practice name.</p>
+<h3 id="v-change-the-greeting-or-voicemail-message">Change the greeting or
+voicemail message</h3>
+<ol type="1">
+<li><blockquote>
+<p>Upload or record the audio first if it is new (see Audio Library
+below).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Voice, then Phone System, pick the location and click the landline
+number.</p>
+</blockquote></li>
+<li><blockquote>
+<p>For the greeting, open the Greeting step at the top. For voicemail,
+scroll to the Voicemail step at the end of the branch.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Choose Play Recording and pick the file, or Read Message and type
+text for the system to read in a computer voice.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Click Save inside the step, then Update at the bottom of the call
+flow.</p>
+</blockquote></li>
+</ol>
+<p>Always ask which voicemail they mean. Business hours, lunch and "Any
+Other Time" (after hours) each have their own voicemail, and changing
+the wrong one is a common repeat call (409833, 405363).</p>
+<h3 id="v-upload-or-record-audio">Upload or record audio</h3>
+<p>Voice, then Audio Library. Use Record Your Own with a headset or
+microphone connected, name the file, record and click Upload. Or use
+Upload to add a file from the computer. The mobile app can also record
+under Settings, then Audio Library. The file only appears in call flow
+drop-downs once it is in the library.</p>
+<h3 id="v-change-business-hours-lunch-or-a-one-off-day">Change business
+hours, lunch or a one-off day</h3>
+<ol type="1">
+<li><blockquote>
+<p>Open the call flow and click the Schedule step.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Branch A holds the open hours. Anything not listed falls into "Any
+Other Time", which is after hours.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Update the days and times and click Update.</p>
+</blockquote></li>
+</ol>
+<p>For offices that close for lunch, use three branches: A before lunch,
+B lunch (voicemail only), C after lunch, with each weekday entered once
+per branch. The older setup that listed the same day twice in branch A
+causes phones not to ring, especially on V4.</p>
+<p>For a one-off change, such as staff arriving at 6 AM when the
+schedule opens at 7, change the time, click Update, and remind them to
+change it back, or show them how on a remote session. Friday afternoon
+"calls go to voicemail" tickets are often a practice working later than
+its Friday closing time.</p>
+<h3 id="v-turn-call-override-on-or-off">Turn call override on or off</h3>
+<p>Call override sends every call somewhere else for a while, for
+holidays, weather closures or unexpected closures.</p>
+<ol type="1">
+<li><blockquote>
+<p>Voice, then Call Override, and pick the location (it can also be
+toggled from the Call Pop settings).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Toggle it on and accept the popup.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Choose Read Message, Play Recording or Call Forward to an external
+number, then click Update.</p>
+</blockquote></li>
+</ol>
+<p>Remind the client it stays on until someone turns it off. A forgotten
+override is the first thing to check when a practice says the phones
+stopped ringing after a holiday (410686, 405215). Override cannot offer
+menu options. If they want "press 1 for the doctor, press 2 for
+voicemail" while closed, build a holiday call flow instead (below). The
+same external number can sit in both the call flow and the override
+without a conflict.</p>
+<h3 id="v-switch-between-saved-call-flows">Switch between saved call
+flows</h3>
+<p>Use Call Flow Templates when a practice has alternate-day schedules,
+a holiday menu, or wants a backup before changes.</p>
+<ol type="1">
+<li><blockquote>
+<p>Voice, then Call Flow Templates, pick the location, Create Call Flow,
+build and save it. Name it clearly, for example "Mon Wed Fri" or
+"Holiday".</p>
+</blockquote></li>
+<li><blockquote>
+<p>To apply it, open the template, click Copy Flow at the bottom, pick
+the number and click Apply. The top number is usually the main line.</p>
+</blockquote></li>
+<li><blockquote>
+<p>To go back, apply the original flow the same way. For complex flows,
+save a copy of the main flow as a template first, or there is nothing to
+switch back to.</p>
+</blockquote></li>
+</ol>
+<p>Editing a template does not change the live flow until you Copy Flow.
+A tracking number can use a different template under Tracking Numbers,
+pencil, Route To, Call Flow.</p>
+<h3 id="v-add-a-menu-or-an-external-number">Add a menu or an external
+number</h3>
+<p>For a menu, add a Greeting that reads the options, then a Menu step
+with each option pointing to an extension or voicemail, then Update. For
+an external number, such as a cell phone or AI answering service, add a
+Ring step with the external number and a ring time, then Update
+(403525).</p>
+<h3 id="v-block-a-caller-and-change-hold-music">Block a caller and change
+hold music</h3>
+<p>Voice, then Blocked Callers, pick the location, enter the number and
+click Block. Voice, then Hold Music, pick the location, Custom Hold
+Music, select audio from the library and click Update.</p>
+<h3 id="v-turn-call-recording-on-or-off">Turn call recording on or
+off</h3>
+<p>Inbound and outbound recording live in different places. Inbound is
+per number: open the landline's call flow and use the Record Inbound
+Calls toggle. Outbound is per location: Voice, then Call Recording. Ask
+which direction the client means before changing anything; most
+practices keep both on.</p>
+<h3 id="v-add-a-voicemail-box">Add a voicemail box</h3>
+<ol type="1">
+<li><blockquote>
+<p>Check the Voice version on the account. On V4 you can switch on
+multiple voicemail boxes yourself. On V2 or V3 send it to the VoIP
+queue, because the developers must enable it.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Voice, then Voicemail Boxes, Add Voicemail Box. Name it, choose which
+users can see it, and add email or text alerts.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Assign the box in the call flow at the point where voicemail should
+play.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Assign the same box to the extension in Lines / Prefixes. It must
+match in both places, or messages land in the default box (390072,
+411976, 385942).</p>
+</blockquote></li>
+</ol>
+<h3 id="v-send-and-track-an-efax">Send and track an eFax</h3>
+<ol type="1">
+<li><blockquote>
+<p>Home screen, blue + icon, fax machine icon.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Choose the contact type, enter name and fax number, and attach the
+document as a PDF.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Check the number and the attachment, then Send. Do not leave the fax
+window open for 20 minutes or more, or it times out and shows as
+failed.</p>
+</blockquote></li>
+</ol>
+<p>To see sent and received faxes, open Call Tracking, then Fax. Blue
+icons are incoming, orange are outgoing. A failed fax shows an i icon;
+hover over it to see why. To email incoming faxes, open the fax number
+under Phone System and add an address in "Send incoming faxes to". Staff
+who cannot open eFax need Call Tracking access on their user profile
+(399338).</p>
+<h3 id="v-find-a-call-or-play-a-recording">Find a call or play a
+recording</h3>
+<p>Call Tracking, Calls. Set the date range first, then use filters
+(direction, missed, voicemail, extension) or search by the caller's
+number. Open the call to see the extension that answered, the duration
+and the recording. Voicemails have a transcript and a short AI summary
+on the call detail page. Archived voicemails move to the Archived tab
+and can be unarchived.</p>
+<h2 id="v-using-the-phones-and-apps">Using the phones and apps</h2>
+<p>Clients often call simply to ask how to do something on the phone.
+Grandstream and Yealink work almost the same way; the button positions
+differ by model.</p>
+<h3 id="v-desk-and-cordless-phones">Desk and cordless phones</h3>
+<ul>
+<li><blockquote>
+<p>Hold: press the Hold (two vertical bars) key; press it again to
+resume. On a DP720 handset, use the right soft key.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Transfer: press Transfer, dial the extension, then press Transfer
+again. Clients who press it only once leave the caller on hold until the
+call drops. Blind transfer sends the call straight through; attended
+transfer lets them speak to the colleague first, then press Transfer to
+hand over.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Park: press the Park key; a red light shows on every phone and the
+call can be picked up from any phone with the same key. Grandstream park
+slots are 901 and 902. On a DP720, park by blind transferring to 901 or
+902. Yealink phones use the green park keys or *7.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Internal calls: dial the extension directly (for example 103), or use
+Intercom or 999 on Grandstream. Hard phones and softphones can call each
+other.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Conference: press Conference, dial the second person, then Conference
+again once they answer.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Voicemail on the phone: press the Message key and follow the prompts.
+The default password is usually the extension number.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Mute: a short press. If a patient says they cannot hear the staff
+member, check mute first.</p>
+</blockquote></li>
+<li><blockquote>
+<p>DND: press and hold Mute for 5 to 7 seconds. A red circle with a
+minus sign means the phone will not ring. Hold Mute again to turn it
+off. The same works on cordless handsets.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reboot: Menu (the round centre button), scroll to the bottom, Reboot.
+Unplug and replug if they cannot find it.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Ringtone: centre button, Preferences, Sounds, choose a ringtone with
+left and right, then Save.</p>
+</blockquote></li>
+</ul>
+<h3 id="v-cables-and-wi-fi">Cables and Wi-Fi</h3>
+<p>The wall cable goes into the LAN port (three small boxes on
+Grandstream, labelled Internet on Yealink). The port with a computer
+icon passes internet on to the PC, so if the phone goes offline the PC
+can lose internet too. Power is a round-pin adapter, or PoE where the
+switch supports it.</p>
+<p>The GRP2616 and Yealink T53W and T54W can join Wi-Fi when there is no
+free wall port. GRP2616: Menu, System, Wi-Fi settings, enable, Scan,
+choose the network and enter the password; a Wi-Fi icon appears top
+right when connected. Yealink: Menu, Network, WiFi. The GRP2613 cannot
+use Wi-Fi.</p>
+<h3 id="v-headset">Headset</h3>
+<p>Adit supplies the Plantronics CS540. To connect it, unplug the
+handset's spiral cable from the back of the phone, connect the supplied
+cable from that port to the headset base, plug the handset cable into
+the small box on that cable, and connect the base's power. Headset
+faults go to the VoIP queue.</p>
+<h3 id="v-softphone-on-the-computer">Softphone on the computer</h3>
+<p>The desktop app downloads from the profile menu (top right) on
+adit.com, Download Desktop App. The softphone is the Call Pop icon at
+the top.</p>
+<ul>
+<li><blockquote>
+<p>Turn it on: toggle the softphone in Call Pop, pick the line and save.
+It must be green.</p>
+</blockquote></li>
+<li><blockquote>
+<p>It must also be in the call flow, by line or by user name, or it will
+never ring and the call pop will not show (391313, 408456, 413248).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Pause calls without logging out: click the half-moon for DND. Turn it
+off completely from the line drop-down, Turn Off Softphone.</p>
+</blockquote></li>
+<li><blockquote>
+<p>A red phone icon with a slash means the computer has no microphone.
+Plug in a headset or earbuds (402835).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Call Pop settings also hold call waiting and park notifications.</p>
+</blockquote></li>
+</ul>
+<h3 id="v-adit-mobile-app">Adit mobile app</h3>
+<ul>
+<li><blockquote>
+<p>Download "Adit" from the App Store or Play Store. Staff outside the
+countries Adit allows may not see the app in their store.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Allow microphone and notifications. On iPhone allow Background App
+Refresh; on Android turn off battery optimisation for Adit. Missing
+permissions are the main reason calls do not ring on mobile.</p>
+</blockquote></li>
+<li><blockquote>
+<p>To make a call, use the dial pad at the top right or the Patients
+tab.</p>
+</blockquote></li>
+<li><blockquote>
+<p>A user logged in on both desktop and mobile with the same extension
+rings on both. If a doctor does not want office calls on their cell,
+turn on DND in the mobile app (Settings, Do Not Disturb). The mobile app
+has no softphone toggle, only DND (409745, 394450).</p>
+</blockquote></li>
+<li><blockquote>
+<p>If the user logs in with someone else's credentials, the call flow
+must list that account's name or extension, not theirs.</p>
+</blockquote></li>
+</ul>
+<h2 id="v-phones-not-ringing-or-calls-going-straight-to-vo">Phones
+not ringing or calls going straight to voicemail</h2>
+<p>T1 will hear this complaint often, and in many tickets the cause was
+a setting T1 can fix. Before you start, ask whether it is one phone or
+all of them, and whether the phone can still make outbound calls.</p>
+<p>Work through these checks in order. The first one that answers yes is
+usually the cause.</p>
+<ol type="1">
+<li><blockquote>
+<p>Is call override on? Check Voice, Call Override, or the Call Pop
+settings. If yes, turn it off and click Update. This is often the cause
+after a holiday.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Is a phone offline or unregistered? The screen shows No Account, an X
+icon or offline. If it is one phone, check the cable, Wi-Fi and reboot.
+If it is every phone, treat it as an outage and send it to the VoIP
+queue.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Is the phone on DND? A red circle with a minus sign shows on screen.
+Hold Mute for 5 to 7 seconds. On the softphone click the half-moon; on
+mobile use Settings.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Is the call outside the schedule? Check the practice's time zone and
+the day. Correct the times and click Update. A practice working past its
+Friday closing time is a frequent cause.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Is the extension missing from the branch? The line, user or softphone
+must be in the Ring or Simulring step. Add it and click Update. This
+also fixes a missing call pop.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Is the account on V4 with lunch inside one branch, meaning the same
+weekday is listed twice in branch A? Split it into branches A, B and C:
+before lunch, lunch, after lunch.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Did the caller hang up within seconds? Call Tracking shows a very
+short missed call. Explain this to the client; no change is needed
+(408155, 395952).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Still not ringing: send it to the VoIP queue with call examples and
+what you checked.</p>
+</blockquote></li>
+</ol>
+<p>A softphone being on or off never affects the desk phones; they are
+separate endpoints. When several checks look fine but calls still go to
+voicemail, look again at the times in the schedule against the
+practice's local time before escalating.</p>
+
+<h2 id="v-other-repeat-issues-and-how-they-were-fixed">Other repeat issues
+and how they were fixed</h2>
+<p>Ticket numbers in brackets are Zoho Desk tickets where you can read
+the Phones team's full notes.</p>
+<h3 id="v-one-desk-phone-offline-frozen-or-showing-no-acco">One desk
+phone offline, frozen, or showing "No Account"</h3>
+<ol type="1">
+<li><blockquote>
+<p>Ask what the screen says and whether one phone or all are affected.
+If every phone shows "Account not registered" at once, it is an outage
+or server issue: send it to the VoIP queue straight away.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Check the cable at both ends, swap the cable, and make sure it is in
+the LAN port, not the PC port (413854, 392554). An IP of 0.0.0.0 means
+the phone is getting no network from the office, so the problem is their
+cabling or internet (395856).</p>
+</blockquote></li>
+<li><blockquote>
+<p>On a GRP2616 or Yealink, try Wi-Fi if there is no working wall port;
+reconnect Wi-Fi if a reboot dropped it (401247, 399441).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reboot, or power cycle and leave it unplugged for a few minutes
+(391663).</p>
+</blockquote></li>
+<li><blockquote>
+<p>If it is still offline or unregistered, send it to the VoIP queue.
+They check the phone in GDMS (Grandstream) or the Yealink portal, push a
+reboot, reprovision or update firmware (403507, 409314, 406025,
+385833).</p>
+</blockquote></li>
+</ol>
+<p>Do not factory reset through GDMS without the Phones team agreeing
+first: a reset can wipe the phone's provisioning so it comes online but
+does not work. A manual reset (Grandstream: centre button, Settings,
+System Settings, Factory Reset; Yealink: hold OK for 5 seconds) is only
+for a frozen phone when the Phones team has asked for it, and "Account
+not registered" afterwards always goes to them. A phone that is online
+and registered but still not working also goes to them.</p>
+<h3 id="v-cordless-phone-not-working-or-out-of-range">Cordless phone not
+working or "Out of range"</h3>
+<p>The base is the antenna; if it is offline every handset on it stops.
+The DP750 base has five lights: power, internet, registration, and two
+for handsets. A second light that is not solid means the base has no
+internet.</p>
+<ol type="1">
+<li><blockquote>
+<p>Check the base has power and its network cable is in; restart the
+base (395853, 403539).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Check the handset for DND (hold Mute 5 to 7 seconds) and for a
+charged battery; a battery pull and restart often fixes it (385443,
+396130, 409839).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Re-pair the handset: hold the base's single back button for 5 to 7
+seconds to open pairing, then on a DP720 press the left soft key,
+Registration, Register, choose Base 1, Subscribe. On Yealink, hold the
+base button with the Wi-Fi symbol, then register from the handset. The
+Phones team can also open pairing remotely from GDMS.</p>
+</blockquote></li>
+<li><blockquote>
+<p>If it still says out of range after pairing, ask how far the handset
+is from the base. Walls cut the range a lot, so keep handsets reasonably
+close.</p>
+</blockquote></li>
+</ol>
+<p>"Call release 502" or the base losing its SIP registration needs the
+Phones team (395507, 394925, 412322).</p>
+<h3 id="v-adit-app-or-softphone-problems">Adit app or softphone
+problems</h3>
+<ul>
+<li><blockquote>
+<p>App shows Offline: completely close and reopen it, log in again, then
+check the network, that the softphone is on, that the right line is
+picked, and the permissions, then test a call. If the error persists on
+desktop, uninstall from Control Panel and reinstall; on mobile, delete
+and reinstall.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Call pop not showing: log out and back in, check notification
+settings, update Chrome, and confirm a user is assigned to the extension
+(409645, 394443, 397066, 414010).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Softphone rings but cannot call, or works on one laptop but not
+another: the computer is the problem, so check its microphone and audio
+devices (396396).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Mobile app not ringing: permissions, battery optimisation on Android,
+and that the extension is in the call flow (393513).</p>
+</blockquote></li>
+</ul>
+<h3 id="v-users-and-lines">Users and lines</h3>
+<p>A user cannot be deleted while they still have an active phone line.
+Remove or reassign the line first, then delete the user (393155, 392746,
+402631, 385704).</p>
+<h3 id="v-call-park">Call park</h3>
+<p>Missing park keys on some phones are fixed by the Phones team
+re-pushing the configuration and rebooting (401483, 393879, 411934).
+Sometimes the client is simply pressing the wrong key on a new phone
+(404062). If park fails on several phones or locations on the same day,
+it is likely a platform issue: escalate rather than troubleshoot
+(386404).</p>
+<h3 id="v-audio-problems-and-dropped-calls">Audio problems and dropped
+calls</h3>
+<p>Many audio tickets close with no fault found because it was one call
+or the caller's own line (391176, 403456). Before escalating, collect a
+pattern: two or three examples with time, number and extension; whether
+it is all phones or one; wired or Wi-Fi; and whether it happens at a
+certain time of day.</p>
+<p>Tell apart delayed audio and one-way audio. If the caller says
+"hello, hello" and hangs up, ask the practice to stay on the line 10
+seconds or more next time; true one-way audio is rare. Calls that drop
+after being on hold or mute are a known pattern the developers
+handle.</p>
+<p>Causes found so far: SIP ALG switched on in the client's router
+(385555), the client's internet provider (405622, 389744), old firmware
+(393729, 412787), and server-side issues fixed by the Phones team or
+developers (402243, 407718). Codec, jitter buffer and firewall changes
+are done by the Phones team, not T1.</p>
+<h3 id="v-caller-id-shows-as-spam-wrong-caller-name-roboca">Caller ID
+shows as spam, wrong caller name, robocalls</h3>
+<p>Numbers flagged "Potential Spam" are re-registered with the anti-spam
+databases by the Phones team; tell the client it takes 5 to 7 days to
+clear (387923, 385042, 396897). A wrong outbound business name is a CNAM
+update, which can take up to 72 hours (401862, 387454). For a surge of
+robocalls, add a "press 1 to reach the office" step to the call flow
+(403495) or block the specific numbers.</p>
+
+
+<h3 id="v-efax-failures">eFax failures</h3>
+<p>Hover over the i icon on the failed fax in Call Tracking to read the
+reason.</p>
+<ul>
+<li><blockquote>
+<p>Timed out: the fax window was left open too long. Send it again
+straight away.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Declined by the receiver or receiver carrier: the problem is on the
+recipient's side, for example their fax line was busy (394818).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Improper format: the file was not a PDF.</p>
+</blockquote></li>
+<li><blockquote>
+<p>File too large: compress the PDF (411106).</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fax arrived but no email: check the email in "Send incoming faxes to"
+(397268).</p>
+</blockquote></li>
+</ul>
+<p>If the same error repeats across different numbers over several days,
+send it to the VoIP queue with examples.</p>
+<h3 id="v-voicemail-and-recordings">Voicemail and recordings</h3>
+<p>Voicemails not loading in the app are fixed by logging out and in
+(398615). Voicemails visible in Call Tracking but not on the desk phone
+mean the extension has no voicemail box assigned (390072). A message
+light that stays on after messages are heard has needed a developer fix
+before (387351, 385765). If a recording is missing while both recording
+toggles are on, send it to the VoIP queue with the call details, as it
+may be a known bug.</p>
+<h3 id="v-time-labels-and-speed-dials">Time, labels and speed dials</h3>
+<p>Wrong time or time zone on the phones (395756, 411540) and speed dial
+or line key setup (396070) are done by the Phones team from the device
+portal. Take the request with the exact extensions and what they want,
+then hand it over. Label changes you can do yourself in Lines.</p>
+<h2 id="v-when-to-hand-over-to-the-phones-team">When to hand over to the
+Phones team</h2>
+<p>Resolve at T1 when the fix is on the client's side or in the Adit
+app: power cycles, cables and Wi-Fi, base station restarts, DND, call
+override, call flow and schedule changes, voicemail greetings, app
+log-outs and notification settings, user and line clean-up, and eFax
+file size or access.</p>
+<p>Send the ticket to the VoIP queue when:</p>
+<ul>
+<li><blockquote>
+<p>A phone or cordless base still shows "No Account" or "Account not
+registered" after the cable, Wi-Fi and reboot checks, or a phone is
+online and registered but still not working.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Several phones or every phone at a practice go offline at once.</p>
+</blockquote></li>
+<li><blockquote>
+<p>A factory reset through GDMS looks necessary. Ask the Phones team
+before any reset.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Calls go to voicemail although override is off, the phones are online
+and not on DND, and the call flow and hours look right.</p>
+</blockquote></li>
+<li><blockquote>
+<p>The account is on V2 or V3 and needs an extra voicemail box.</p>
+</blockquote></li>
+<li><blockquote>
+<p>A recording is missing while both recording toggles are on.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Audio problems or drops repeat, sent with your examples.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Spam flags, caller name (CNAM), time zone, speed dials or park keys
+need changing.</p>
+</blockquote></li>
+<li><blockquote>
+<p>A headset is faulty, or the message light stays on.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fax failures repeat across different numbers over several days.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Anything else you have checked without finding the cause.</p>
+</blockquote></li>
+</ul>
+<p>In the ticket, include the extension numbers, the phone model, what
+the screen says, when it started, whether one phone or all are affected,
+what you already checked, any screenshot of the call flow before you
+changed it, and the best callback contact. Every question the Phones
+team does not need to ask again saves the client a call. If you notice a
+how-to or setting request that this guide does not cover, add it to the
+team's list so the Phones team can include it in the next training.</p>
+<h2 id="v-quick-reference">Quick reference</h2>
+<h3 id="v-phones-team">Phones team</h3>
+<p>These are the VoIP Support agents, listed by the name you see on Zoho
+Desk tickets with their HR name in brackets where it differs. Shubham
+(Simon S) ran the T1 training sessions, and Sumitha (Samantha Shine) is
+Assistant Manager, VoIP Operations.</p>
+<p>Kenny Wallace (Kshitij Sharma), Linet Young (Preksha Pant), Percy
+Graham (Priyank Gupta), Talia Adams (Taiba Anjum), Harvey T (Tejas
+Pagare), Paul Mason (Paul Mani), Claire Summers (Punam Sharma), Chloe
+Finn (Misbah Qayoom), Simon S (Shubham Singh), Riley Sanders (Ritika
+Sahni), Omar L (Umar Lone), Bruce Merrick (Akash Mukherjee), Jay
+Adesara, Samantha Shine (Sumitha Sudhan) and Abhishek Desai, Associate
+Head of Technical Support.</p>
+<h3 id="v-tickets-to-read-first">Tickets to read first</h3>
+<table>
+<colgroup>
+<col/>
+<col/>
+</colgroup>
+<thead>
+<tr>
+<th>Issue</th>
+<th>Tickets</th>
+</tr>
+<tr>
+<th>Calls not ringing or going to voicemail</th>
+<th>410686, 405215, 413248, 408155</th>
+</tr>
+<tr>
+<th>Changing greetings, voicemail and hours</th>
+<th>409833, 407182, 394083, 392939</th>
+</tr>
+<tr>
+<th>Voicemail boxes</th>
+<th>390072, 385942, 411976</th>
+</tr>
+<tr>
+<th>Desk phone offline or "No Account"</th>
+<th>391663, 413854, 401247, 392554</th>
+</tr>
+<tr>
+<th>Cordless phones</th>
+<th>395853, 385443, 395507, 405460</th>
+</tr>
+<tr>
+<th>App, softphone and call pop</th>
+<th>409645, 414010, 402835, 409745</th>
+</tr>
+<tr>
+<th>Users and lines</th>
+<th>393155, 399338</th>
+</tr>
+<tr>
+<th>Call park</th>
+<th>401483, 404062, 386404</th>
+</tr>
+<tr>
+<th>Audio and call drops</th>
+<th>385555, 393729, 410683</th>
+</tr>
+<tr>
+<th>Spam and caller ID</th>
+<th>387923, 401862, 403495</th>
+</tr>
+<tr>
+<th>eFax</th>
+<th>411106, 397268, 394818</th>
+</tr>
+<tr>
+<th>Outages</th>
+<th>400275, 409314</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+</table>
+<p>Search the number in Zoho Desk to read the full thread.</p>
+
+
+
+<h2 id="v-points-to-confirm-with-the-phones-team">Points to confirm with
+the Phones team</h2>
+<p>The sources disagree or leave a gap on these, so treat them as open
+until Sumitha's team confirms.</p>
+<ul>
+<li><blockquote>
+<p>eFax file size: the training said a PDF can be up to 20 MB, but
+ticket 411106 was closed because a 15 MB file was over a 10 MB
+limit.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Blocked callers: the master document says blocked calls are rejected
+and do not appear in reports, but tickets 411942 and 414323 told clients
+blocked numbers still show in Call Tracking as missed calls.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Park slots: the Grandstream quick start lists two slots (901 and
+902), while ticket 384050 says four park lines is the maximum.</p>
+</blockquote></li>
+<li><blockquote>
+<p>GDMS access: the training checks registration and opens cordless
+pairing in GDMS, but T1 does not have GDMS access today. Decide whether
+T1 should get view access.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Manual factory resets: the training showed the steps, but also said
+to ask the Phones team before any reset. Confirm when T1 may walk a
+client through one.</p>
+</blockquote></li>
+<li><blockquote>
+<p>Mobile app outside the US: the training suggested a VPN for staff who
+cannot find the app in their country's store. Confirm whether that is
+approved advice before T1 gives it.</p>
+</blockquote></li>
+</ul>
+
+
+
+
+
+
+
+<h1 id="v-part-2-query-catalog">Part 2: Query catalog</h1>
+<p>Each entry gives the query in the client's words, the fixes that
+worked, and who should handle it.</p>
+<h2 id="v-desk-phones-offline-no-account-frozen-or-faulty">Desk phones
+offline, No Account, frozen or faulty</h2>
+<p>Most "phone not working" reports come down to one of three things:
+the phone lost its registration, it has no network (cable, port, Wi-Fi
+or ISP), or its firmware is out of date. Truly defective units are a
+small share, mostly phones that will not power on.</p>
+<h3 id="v-desk-phone-shows-no-account-or-account-not-regis">Desk
+phone shows "No Account" or "Account not registered"</h3>
+<p>Usually the phone lost its registration after an internet or power
+blip, or it is online in GDMS but not registered to its SIP account.</p>
+<ul>
+<li><blockquote>
+<p>Power cycled the phone (unplugged power and LAN for about 30 seconds)
+or rebooted it from GDMS, and it re-registered (411253, 403011, 396794,
+389738)</p>
+</blockquote></li>
+<li><blockquote>
+<p>When the phone was online in GDMS but unregistered: manually
+provisioned it, or re-pushed the configuration in GDMS and rebooted
+(412904, 411655, 407188, 391544)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phone was pointing at the wrong server version (V2, V3 or V4) or had
+no provisioning URL: added the correct config file or provisioning URL
+and the phone registered (403483, 390700, 379775, 368519)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phone's SIP profile did not match the rest of the office: changed it
+to the same PJSIP profile the other phones use (414429, 385376)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Wrong MAC address on the extension, or a label change broke the
+device link: corrected the MAC or label and refreshed the configuration
+(388794, 395709)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Keeps coming back every few days: upgraded firmware on all phones and
+scheduled a daily after-hours automatic reboot (391647, 371103)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Every phone in the office at once: checked for an Adit outage or an
+internet outage at the practice before troubleshooting individual phones
+(399893, 383465, 400849). In one case service had been suspended and
+came back once Billing confirmed payment (407803).</p>
+</blockquote></li>
+</ul>
+<p>Calls also show a phone can display "No Account" for a few minutes
+during a firmware upgrade; that is expected and clears when the upgrade
+finishes.</p>
+<p>Who handles it: T1 first: one phone or all, known outage, power
+cycle, cable or Wi-Fi. Then the Phones team for GDMS reprovisioning,
+server or PJSIP config fixes and MAC corrections.</p>
+
+
+
+
+
+
+<h3 id="v-phone-not-ringing-showing-an-x-icon-or-needing-s">Phone
+not ringing, showing an X icon, or needing several reboots a day (old
+firmware)</h3>
+<p>Older firmware causes missed rings, registration drops, freezing and
+calls that keep ringing after they are answered.</p>
+<ul>
+<li><blockquote>
+<p>Upgraded the phones to the approved firmware (1.0.13.127) in GDMS and
+they registered and started ringing (399628, 399581, 391956, 407539)</p>
+</blockquote></li>
+<li><blockquote>
+<p>X icon on every corded phone: rebooted and upgraded the firmware
+(406025)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phones needed several reboots a day: upgraded the firmware, which
+fixed the connection drops, and set a daily scheduled reboot (393397,
+397969)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phones kept ringing after the call was answered: pushed a firmware
+upgrade (401125)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-phone-is-dead-or-defective-and-needs-a-replaceme">Phone is
+dead or defective and needs a replacement</h3>
+<p>Mostly phones that will not power on, or that stay stuck on a boot
+screen after every reset.</p>
+<ul>
+<li><blockquote>
+<p>Confirmed the fault and shipped a replacement under warranty (391263,
+386075, 388453, 404213)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set up the replacement: Asset Management added it to the account,
+then the Phones team reprovisioned it, upgraded firmware and added the
+extension to the call flow (406729, 392459, 412420, 401493)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Out-of-warranty phone that would not power on: gave the client
+replacement pricing (387371)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Client asked for return labels for old phones: phones past the 90-day
+return period do not need to be returned (414440, 414266)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: power cycle, swap the cable and port, try
+another outlet. Then the Phones team for warranty checks, replacements
+and setup.</p>
+<h3 id="v-phone-is-frozen-stuck-on-initializing-or-the-but">Phone
+is frozen, stuck on "Initializing", or the buttons do not respond</h3>
+<ul>
+<li><blockquote>
+<p>Power cycled the phone by unplugging power and LAN for about 30
+seconds (385436, 385246, 405190)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Still freezing: factory reset and reconfigured it (406732, 412199,
+409389)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Kept going blank or restarting during calls: reprovisioned and
+rebooted (412312)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Menu key or keypad did nothing: the Menu key was set to Locked and
+was set to Unlocked in the phone settings (405318, 387946)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Stuck on "Network Initializing" even after resets: replaced as
+defective (391097)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: guide the power cycle. Then the Phones team
+for the factory reset, config and key settings.</p>
+
+
+<h3 id="v-phone-shows-no-lan-cable-network-down-offline-or">Phone
+shows "No LAN Cable", "Network Down", offline, or IP 0.0.0.0</h3>
+<p>The cause is almost always physical: the cable, the port, the switch
+or the practice internet.</p>
+<ul>
+<li><blockquote>
+<p>Cable was in the PC port on the back of the phone: moved it to the
+LAN port (410684, 405562, 413854)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reseated or replugged the Ethernet cable (409619, 403898, 389674,
+388540)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Faulty wall jack or switch port: moved the phone to a known-good port
+(414120, 407904, 409447, 405057)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Faulty cable: client replaced it. One phone was proven fine by
+connecting it to a mobile hotspot (384342, 410579, 383652)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Ethernet not passing internet: connected the phone to Wi-Fi as a
+workaround (393678, 402680)</p>
+</blockquote></li>
+<li><blockquote>
+<p>ISP outage or new ISP: waited for service to return, and rebooted all
+phones after the switch (389744, 358934, 391988)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Practice firewall blocking phones: the client's IT whitelisted Adit's
+domains, then the phones were reconfigured (391556, 383558)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: LAN port, another port and cable, power
+cycle, ask about internet outages. Then the Phones team for whitelisting
+and reprovisioning.</p>
+<h3 id="v-wrong-time-showing-on-the-phones">Wrong time showing on the
+phones</h3>
+<p>Automatic time zone detection picked the wrong zone, or the time zone
+or DST setting was never configured.</p>
+<ul>
+<li><blockquote>
+<p>Corrected the time zone in GDMS and pushed it to all phones (414415,
+411540, 395756)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Auto-detection kept reverting: set a fixed custom time zone in GDMS
+(400437, 394847)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Some phones in 24-hour format: updated the time settings in GDMS and
+rebooted (389766)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A reboot alone corrected it (413659); once a firmware upgrade was
+needed too (355400)</p>
+</blockquote></li>
+</ul>
+<p>If calls also route at the wrong hours, check the schedule time zone
+in the call flow as well (410495).</p>
+<p>Who handles it: Phones team for the phone display. T1 for the call
+flow schedule.</p>
+<h3 id="v-desk-phone-will-not-connect-to-wi-fi-or-dropped-">Desk
+phone will not connect to Wi-Fi, or dropped off Wi-Fi</h3>
+<p>Usually the network changed, Wi-Fi is off on the phone, or the
+password cannot be typed in.</p>
+<ul>
+<li><blockquote>
+<p>Guided the client through the phone's Wi-Fi settings to reconnect or
+join a new network (414878, 413012, 396834, 401247)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Wi-Fi was disabled on the phone: turned it on (396427, 395175); or
+the phone was on the wrong network (402991)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Password too long to type on the keypad: plugged the phone into LAN
+briefly, opened its web GUI from a computer and entered the password
+there (406021, 395856)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Unstable connection: set the Wi-Fi band to 2.4 GHz (408980), and
+turned on saving the password so it reconnects automatically
+(407409)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Choppy audio on Wi-Fi: advised moving the phone to Ethernet (411211,
+401543)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 for reconnecting on the phone. Phones team for web
+GUI or GDMS changes.</p>
+<h3 id="v-phone-will-not-power-on">Phone will not power on</h3>
+<p>Usually the power source (PoE switch or adapter) rather than the
+phone.</p>
+<ul>
+<li><blockquote>
+<p>The client rebooted the PoE switch and the phone powered up
+(390841)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phone plugged into a switch without PoE: it needs a PoE port or a
+power adapter (seen on calls)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Shipped a replacement power cord or adapter (397597, 387594)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Still dead: replaced as defective (391196, 388928, 376742)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: PoE switch, outlet and adapter. Then the
+Phones team to ship parts or a replacement.</p>
+<h3 id="v-receiver-or-handset-cord-problem">Receiver or handset cord
+problem</h3>
+<p>Static, no audio or a dead handset is often the coiled cord.</p>
+<ul>
+<li><blockquote>
+<p>Shipped a replacement receiver cord (384899, 385144, 410070)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Client swapped in a spare cord and the phone worked, so no
+replacement phone was needed (398114)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: try a different cord. Then the Phones team
+to ship one.</p>
+<h3 id="v-one-button-stopped-working-or-line-keys-changed">One button
+stopped working, or line keys changed</h3>
+<ul>
+<li><blockquote>
+<p>Left-side Call Park 1 button was defective: reassigned park to a
+right-side button (409278)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Line keys had been changed to Forward and Call Park: restored the
+programmable key settings (397336)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h2 id="v-cordless-phones-and-base-stations">Cordless phones and base
+stations</h2>
+<p>Most fixes are one of four steps: re-subscribe the handset, bring the
+base back online, turn off DND, or update the base firmware.</p>
+<h3 id="v-handset-says-not-subscribed-out-of-range-or-sear">Handset
+says "Not Subscribed", "Out of Range" or "Searching for base"</h3>
+<p>The handset has lost its pairing with the base.</p>
+<ul>
+<li><blockquote>
+<p>Re-subscribed the handset to the base: on the handset, Menu,
+Registration, Subscribe (414859, 414451, 414687, 405398)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Would not re-subscribe: factory reset the handset (Menu, Settings,
+System Settings, PIN 0000), then subscribed it again (413394, 410202,
+402532, 402166)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Handset asked for a PIN on reboot: factory reset and subscribed it
+(414385)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Handset was paired to the wrong base: reset it and subscribed it to
+the correct base (410904, 385504)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Stuck searching even after re-pairing: upgraded the base to the
+official firmware, reset base and handset, and paired again (397360,
+401082)</p>
+</blockquote></li>
+</ul>
+<p>Calls note that pulling and reinserting the handset battery sometimes
+lets a stuck subscription go through.</p>
+<p>Who handles it: T1 first: re-subscribe and handset factory reset.
+Then the Phones team for base firmware and base resets.</p>
+<h3 id="v-all-cordless-phones-are-down-base-offline-no-lig">All
+cordless phones are down: base offline, no lights or orange light</h3>
+<p>When every handset shows "Out of Range" at once, the base has lost
+power or network.</p>
+<ul>
+<li><blockquote>
+<p>Had the client unplug and reconnect the base's power and Ethernet,
+and it came back online (413438, 412704, 410188, 405360)</p>
+</blockquote></li>
+<li><blockquote>
+<p>"Out of Range" on every handset was the base being unpowered:
+reconnected power (403539, 399383)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Bad cable or port: swapped the LAN cable or moved the base to another
+port (406112, 389643, 387361)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Base on unstable internet or a separate network: moved it to a stable
+connection on the same network as the other phones (394711, 400804)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Base would not stay powered and was out of warranty: power port
+likely faulty, client advised to repair it (394708)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: power and Ethernet on the base, another
+port and cable. Then the Phones team if handsets still do not
+register.</p>
+<h3 id="v-dial-tone-but-cannot-call-out-call-release-error">Dial
+tone but cannot call out: "Call Release" error, 520 or 502, or "Account
+Disabled"</h3>
+<p>The SIP account on the base is disabled or not registered.</p>
+<ul>
+<li><blockquote>
+<p>SIP account was disabled on the DP750: enabled it in the base's web
+GUI and the line registered (410927, 413824, 414594, 398311)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Base was not registered: reprovisioned it (414566, 412322)</p>
+</blockquote></li>
+<li><blockquote>
+<p>"Call Release 502" or "520": enabled Account 1 on the base and
+rebooted base and handset, or registered the SIP account from the web
+GUI (395507, 405811)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Call release errors with drops on a healthy base: PingPlotter showed
+heavy packet loss, client referred to their ISP (414606)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-cordless-does-not-ring-or-shows-a-dnd-symbol">Cordless does not
+ring, or shows a DND symbol</h3>
+<p>DND was turned on by accident; on DP720 the Mute key toggles DND when
+idle and a minus symbol shows.</p>
+<ul>
+<li><blockquote>
+<p>Turned off DND with the Mute key on the idle handset (403377, 400938,
+387687, 385443)</p>
+</blockquote></li>
+<li><blockquote>
+<p>DND would not clear: factory reset and re-subscribed the handset
+(398544, 395336, 393025)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Not DND: the cordless extension was missing from the call flow and
+was added (397979, 401056)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+<h3 id="v-two-handsets-show-the-same-extension-or-a-handse">Two
+handsets show the same extension, or a handset is on the wrong line</h3>
+<p>The handset-to-line assignment on the base is wrong.</p>
+<ul>
+<li><blockquote>
+<p>Reassigned handsets to the correct account lines on the base through
+GDMS or the base web UI (391943, 398135, 390918)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reset base and handsets and re-subscribed them with the correct
+assignments (404883)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The cordless line had been added as a desk line in the Adit app:
+corrected the line type, reset and paired again (387980)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-cordless-drops-calls-keeps-ringing-after-answer-">Cordless
+drops calls, keeps ringing after answer, reboots when dialing, or has no
+audio</h3>
+<p>Outdated firmware on the base or handsets.</p>
+<ul>
+<li><blockquote>
+<p>Upgraded the DP750 base firmware, which fixed drops a few minutes in,
+ringing after answer, missing ringtone and audio problems (382305,
+400599, 398649, 406159)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Handset rebooted on every outbound call: factory reset it, put the
+base on official firmware, re-subscribed (396746)</p>
+</blockquote></li>
+<li><blockquote>
+<p>No audio or ringing after answer: factory reset base and handsets and
+paired again (389404, 389439)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Base would not take firmware or settings: removed and re-added it
+through the backend tool, then upgraded (400815, 408897)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-adding-a-new-cordless-handset-or-base-or-moving-">Adding a
+new cordless handset or base, or moving one</h3>
+<ul>
+<li><blockquote>
+<p>Asset Management added the base to the account and GDMS, then the
+Phones team registered it, subscribed the handsets and added the
+extension to the call flow (402521, 410124, 403620, 412648)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Base bought from a third-party marketplace: configured manually, then
+subscribed handsets (405050)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Moving a base and handset to another location: reconfigured the
+extension for the new location (396323, 415073)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: physical setup and pairing. Then the Phones
+team to add and provision the base.</p>
+<h3 id="v-handset-will-not-turn-on-reboots-on-its-own-or-t">Handset
+will not turn on, reboots on its own, or the battery drains</h3>
+<ul>
+<li><blockquote>
+<p>Handset blinked green but would not turn on: removed the battery,
+wiped the contacts, reinserted and subscribed it (379969)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Intermittent disconnects or reboots: restarted handsets and reseated
+batteries (400590, 396130)</p>
+</blockquote></li>
+<li><blockquote>
+<p>New handsets: charged fully before resetting and registering
+(387914)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-how-do-i-transfer-or-park-from-the-cordless-phon">How do I
+transfer or park from the cordless phone?</h3>
+<ul>
+<li><blockquote>
+<p>Walked the client through blind and attended transfer and park on the
+handset (395881, 393229)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Pick up parked calls on the handset by dialing 901 or 902
+(401715)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Transfers failed outright: reset and reconfigured the base and
+re-subscribed the handsets (411081)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 for the how-to, Phones team if transfers still
+fail.</p>
+<h3 id="v-wrong-time-on-cordless-handsets-or-a-wp810-dropp">Wrong
+time on cordless handsets, or a WP810 dropping off Wi-Fi</h3>
+<ul>
+<li><blockquote>
+<p>Handsets kept jumping six hours ahead: the base time zone was on Auto
+and was set to the practice's zone (387647); a single handset was fixed
+by a reboot (405502)</p>
+</blockquote></li>
+<li><blockquote>
+<p>WP810 kept leaving the practice Wi-Fi but stayed on a mobile hotspot,
+which pointed to the practice network; upgraded it to official firmware
+and added it to the call flow (391254)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team, after T1 tries a reboot or a hotspot
+test.</p>
+<h2 id="v-phones-not-ringing-missed-calls-and-incoming-cal">Phones
+not ringing, missed calls and incoming call problems</h2>
+<p>Most cases come from the call flow, not the hardware: an extension
+missing from the call flow, a wrong schedule or a call override left on.
+Offline desk phones and cordless handsets that dropped off their base
+come next; see the two sections above for those.</p>
+<h3 id="v-one-phone-or-the-softphone-never-rings-the-other">"One phone
+(or the softphone) never rings, the others do"</h3>
+<p>The extension is not in the active call flow: never added, dropped
+during an edit, or lost after a user's login email changed. Sometimes an
+empty element was left in the flow.</p>
+<ul>
+<li><blockquote>
+<p>Added the missing extension to the ring (Simulring) step and placed a
+test call (398246, 394173, 401728, 410144)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed an empty external-number or routing element that made calls
+bypass the phones (403587, 398493)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Filled in empty menu options that had no extension or voicemail
+behind them (398138)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Recreated the call flow when edits would not take or the server had
+not picked up the change (408290, 410471, 414913)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: add the extension to the ring step and
+test. Then the Phones team if a rebuilt flow still does not ring.</p>
+
+
+
+
+<h3 id="v-phones-stopped-ringing-every-call-goes-straight-">"Phones
+stopped ringing, every call goes straight to voicemail"</h3>
+<p>Almost always a call override left on after a weekend or closure.</p>
+<ul>
+<li><blockquote>
+<p>Turned off call override and confirmed with a test call (403463,
+402299, 395197, 413322)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned off a weekend override still active and had the user log out
+and in to refresh (391639)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Override stayed stuck after the client turned it off: fixed on the
+server side (394159, 414288)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first (Manager role needed to change override).
+Phones team if it still behaves as active.</p>
+<h3 id="v-phones-don-t-ring-on-a-certain-day-or-at-certain">"Phones
+don't ring on a certain day or at certain times"</h3>
+<p>A day is missing (often Monday), AM and PM are swapped, two schedules
+conflict, or extensions are missing from one branch.</p>
+<ul>
+<li><blockquote>
+<p>Added the missing day to the schedule (412791, 404940)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Corrected an end time entered as 5:30 AM instead of 5:30 PM
+(407478)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed conflicting business-hours schedules that sent calls to
+voicemail (388939, 393265)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Split before-lunch and after-lunch hours, or added extensions missing
+from that branch (411468, 415117, 386510)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-phone-doesn-t-ring-because-of-do-not-disturb">"Phone doesn't ring
+because of Do Not Disturb"</h3>
+<ul>
+<li><blockquote>
+<p>Turned off DND and showed the front desk the DND and Mute key
+(411997, 391213, 405382, 387687)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-we-see-a-missed-call-but-the-phone-never-rang">"We see a missed
+call but the phone never rang"</h3>
+<p>The caller hung up within 1 to 10 seconds, often during the greeting,
+which logs as a missed call.</p>
+<ul>
+<li><blockquote>
+<p>Checked the call in the carrier logs, showed the caller disconnected
+within seconds, and explained it (410766, 398492, 409303, 387033)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Asked for more call samples if it keeps happening (412196,
+396649)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A cell phone in the Simulring step was conflicting with the desk
+phones; set it to ring after them instead (398737)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: collect 2 or 3 samples (time and caller)
+and check the call flow. Then the Phones team for carrier logs.</p>
+<h3 id="v-calls-ring-on-the-desk-phones-but-not-in-the-adi">"Calls
+ring on the desk phones but not in the Adit app"</h3>
+<ul>
+<li><blockquote>
+<p>Added the softphone extension to the main call flow (407928, 395116,
+391692)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned on call waiting in the softphone settings (394700)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Had the user log out and back in to refresh permissions (396352)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Deleted and re-added the softphone line (390391)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-calls-to-our-main-number-don-t-reach-the-new-adi">"Calls
+to our main number don't reach the new Adit phones" (before porting
+finishes)</h3>
+<p>While the number is still with the old carrier, calls depend on
+forwarding to the temporary Adit number.</p>
+<ul>
+<li><blockquote>
+<p>Turned forwarding to the temporary number back on in the old
+carrier's portal, or had the client do it (410200, 399011, 405969)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Pointed the client to the old carrier when its forwarding was failing
+(413399)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added the main number on the PBX and assigned it to the call flow
+(410792)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: port status and forwarding check. Then the
+Phones team for number setup.</p>
+<h3 id="v-nothing-is-coming-in-at-all-or-callers-get-a-bus">"Nothing
+is coming in at all, or callers get a busy tone"</h3>
+<p>Usually a carrier or platform outage, or the number's routing at the
+carrier.</p>
+<ul>
+<li><blockquote>
+<p>Confirmed an outage, fixed on the backend, and checked in once it
+cleared (410542, 400275, 388203)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Moved the number's routing in the carrier portal after a rebuilt call
+flow did not clear the busy tone (406980)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Two softphones calling the same destination at once can get a busy
+signal (399109)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team. T1 can check for an outage and test call
+first.</p>
+<h3 id="v-the-wrong-phones-ring-or-we-want-all-phones-to-r">"The
+wrong phones ring, or we want all phones to ring together"</h3>
+<ul>
+<li><blockquote>
+<p>Removed a softphone extension that was ringing a cell phone on every
+call (406411)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Left only the requested extension in the ring step (406230)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added extensions to Simulring so all phones ring together (393081,
+413486)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added the client's cell phone to ring at the same time (411941)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-calls-ring-at-the-wrong-office-multi-location">"Calls ring at
+the wrong office" (multi-location)</h3>
+<ul>
+<li><blockquote>
+<p>Fixed a weekday schedule sending one office's calls to the sister
+office (387751)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed phone-to-location assignments and updated the call flow
+(390661)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added the softphone extensions to the second location's call flow
+(404662)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set both locations to ring at the same time, as asked (395599)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: each location's call flow and schedule.
+Then the Phones team to reassign phones between locations.</p>
+
+
+
+
+<h3 id="v-calls-aren-t-reaching-our-ai-front-desk-or-the-t">"Calls
+aren't reaching our AI Front Desk, or the transfer from the AI is
+slow"</h3>
+<p>Usually a schedule or ring-time setting, not the AI.</p>
+<ul>
+<li><blockquote>
+<p>Fixed an AI hand-off time entered as 9 PM instead of 9 AM, and added
+missing Friday hours (395844, 403774)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set the office to ring for 20 seconds before handing off to the AI
+(413298, 399596)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added users missing from the call tree (407800)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A live test showed forwarding to the AI was working (411838)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: schedule and ring time before the AI step.
+Then the Phones team for transfer delays.</p>
+<h3 id="v-a-second-call-doesn-t-show-while-we-re-on-a-call">"A
+second call doesn't show while we're on a call" (call waiting)</h3>
+<ul>
+<li><blockquote>
+<p>Turned on call waiting and its ringtone on the desk phone, reset it
+and upgraded firmware (395926)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned call waiting on or off in the softphone settings (394700,
+391438)</p>
+</blockquote></li>
+<li><blockquote>
+<p>An automatic waiting queue with a custom message is not supported;
+answer and place the caller on hold instead (403270)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 for softphone settings. Phones team for desk phone
+call waiting.</p>
+<h2 id="v-call-flow-schedules-greetings-menus-and-override">Call
+flow, schedules, greetings, menus and override requests</h2>
+<p>Nearly all are Adit app changes T1 can make. The most common
+confusion is between the main Phone System call flow, the call flow
+templates and call override.</p>
+<h3 id="v-change-our-business-hours-days-times-saturday-ho">"Change our
+business hours" (days, times, Saturday hours)</h3>
+<p>Routine edits to the Schedule step under Settings, Phone System,
+location.</p>
+<ul>
+<li><blockquote>
+<p>Walked the client through editing the schedule so they can do it
+themselves next time (410909, 394011, 398398)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Updated the schedule for winter or Friday hours and placed a test
+call (403431, 393839, 407060)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Used a workaround when the first scheduled day could not be deleted,
+a known limitation (401724, 391716)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+
+
+<h3 id="v-change-our-greeting-or-voicemail-message">"Change our greeting
+or voicemail message"</h3>
+<ul>
+<li><blockquote>
+<p>Replaced the greeting or after-hours message in the call flow and
+test-called it (404461, 397044, 405363)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed an old recording still sitting in the after-hours branch
+(410962)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Downloaded the greeting, raised its volume and re-uploaded it
+(408659)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Client's computer had no microphone: recorded the greeting on a phone
+and uploaded the file (394732)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed a main greeting that overlapped the AI voice, or recreated it
+with the same AI voice (396571, 400758)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Put back a voicemail step lost while the client edited the greeting,
+which had been dropping calls (392214)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-turn-call-override-on-or-off-or-forward-the-main">"Turn
+call override on or off" or "forward the main line somewhere else"</h3>
+<ul>
+<li><blockquote>
+<p>Turned on override to an external number and test-called it
+(411642)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set an override with a voicemail greeting and showed how to turn it
+off (396739)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned off an override no longer needed (406960, 403369)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Changed the user from Staff to Manager in User Management, because
+only Managers can change override (395616)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed the setting that stopped the client turning on override from
+the mobile app during an internet outage (388812)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Number not on Adit: told the client to set forwarding with their
+other provider (414810)</p>
+</blockquote></li>
+</ul>
+<p>Tell clients: override cannot be scheduled for a future date yet, and
+the mobile app only offers send-to-voicemail or forward.</p>
+<p>Who handles it: T1 first. Phones team when override will not turn on
+or save.</p>
+<h3 id="v-set-up-a-holiday-closure-or-holiday-message">"Set up a holiday
+closure or holiday message"</h3>
+<ul>
+<li><blockquote>
+<p>Trained the client on override and the holiday voicemail message in a
+remote session (399833, 401967)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed a holiday flow covering the whole weekend so it only affected
+the Monday holiday (401332)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned off the holiday message and override afterwards to restore the
+normal flow (394083)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Built normal and holiday call flow templates and showed how to apply
+each (392939, 401653)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+
+<h3 id="v-add-lunch-hours-or-change-the-phones-for-one-day">"Add
+lunch hours" or "change the phones for one day only"</h3>
+<ul>
+<li><blockquote>
+<p>Added lunch closures for the requested days (409337, 387654)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set one-off hours for a single day (414766, 399428)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set a one-hour forward to a cell phone for a lunch meeting
+(403704)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Saved the main flow as a template, removed one day so it fell into
+after-hours, then restored the original from the copy (414654)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-set-up-or-change-our-phone-menu-press-1-press-2">"Set up or
+change our phone menu" (press 1, press 2)</h3>
+<ul>
+<li><blockquote>
+<p>Built a new menu and routing to match the request (402345)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Remapped the options, for example 1 voicemail, 2 AI, 3 emergency
+(401994)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed a recorded prompt that did not match the menu options (398374,
+399121)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed an option forwarding to the wrong number (392905)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed the menu so phones ring for 30 seconds then go to voicemail
+(409450)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Explained that callers who do not pick an option show as missed
+calls, and must press 1 to leave a voicemail (391614, 392669)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-forward-calls-to-a-cell-phone-an-answering-servi">"Forward
+calls to a cell phone, an answering service or our AI"</h3>
+<ul>
+<li><blockquote>
+<p>Added the AI receptionist's external number for after-hours and
+missed calls (391755, 403525)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set after-hours forwarding to a mobile number (413102)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Office extension rings first, then rolls to the cell phone
+(400860)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added the user's extension before the external number so missed calls
+reach the office voicemail (412852)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Raised the ring time to 60 seconds for the external number
+(392413)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Forwarding worked but the AI provider's notification never arrived:
+sent the client to the provider and reverted the setup (401221)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-phones-should-ring-longer-or-shorter-before-voic">"Phones
+should ring longer or shorter before voicemail"</h3>
+<ul>
+<li><blockquote>
+<p>Set ring time to 10 seconds (about 3 rings) or 20 seconds as asked
+(407182, 408826, 403650)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Front phones ring 10 seconds, then a second extension for 20 seconds
+(408945)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Unanswered calls forward after a set ring time (409644)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+
+<h3 id="v-i-changed-the-call-flow-but-nothing-happened-tem">"I
+changed the call flow but nothing happened" (templates)</h3>
+<p>The client edited a template instead of the main call flow, or copied
+a template badly.</p>
+<ul>
+<li><blockquote>
+<p>Made the change in the main call flow after finding the client had
+edited the template (401900)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Showed how to apply a template to the main line and switch back
+(401653, 401875, 401053)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed a copied template routing to an unintended number (402164)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Rebuilt a blank call flow from a template using Copy Flow
+(401635)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-update-our-after-hours-routing-or-emergency-opti">"Update our
+after-hours routing or emergency option"</h3>
+<ul>
+<li><blockquote>
+<p>Updated the emergency number on after-hours option 2 (407412)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Restored an emergency voicemail option removed from the flow
+(415153)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set after-hours and weekend calls to ring chosen users in the app
+first (391491)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Moved forwarding to a cell phone that was firing outside the intended
+schedule (401760)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed the after-hours message so the office and doctor details play
+(402158)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-restore-our-call-flow-after-the-ai-was-added-or-">"Restore
+our call flow after the AI was added or removed"</h3>
+<p>Cancelling or changing an AI service does not restore the old flow
+automatically.</p>
+<ul>
+<li><blockquote>
+<p>Rebuilt business-hours and after-hours flows after the AI was removed
+(397836, 410338)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed options that let callers reach the AI during business hours
+(414683)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-please-train-us-on-the-call-flow">"Please train us on the call
+flow"</h3>
+<ul>
+<li><blockquote>
+<p>Explained how the main call flow and templates differ (386703,
+387394)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Walked the client through after-hours routing and greetings until
+they could do it themselves (391367)</p>
+</blockquote></li>
+<li><blockquote>
+<p>General phone system and call flow training for new office managers
+(397737, 392939)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-make-location-b-s-call-flow-match-location-a-mul">"Make
+location B's call flow match location A" (multi-location)</h3>
+<ul>
+<li><blockquote>
+<p>Copied one location's call flow to the other (400837)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Shared routing for two locations: a main extension first, then a
+rollover (396626)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Made schedule changes for the client where the web interface would
+not remove the default day (391716)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set up forwarding separately for each clinic (382226)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team when the interface blocks the
+change.</p>
+
+<h3 id="v-route-our-tracking-number-google-ads-differently">"Route our
+tracking number (Google, ads) differently"</h3>
+<p>Tracking numbers have their own call flow, and override on the main
+line does not cover them.</p>
+<ul>
+<li><blockquote>
+<p>Duplicated the landline call flow onto the tracking number
+(393218)</p>
+</blockquote></li>
+<li><blockquote>
+<p>One tracking number rings a chosen extension, the rest forward to the
+landline (403940)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Changed a tracking number from forwarding to ringing the practice
+extensions (401464, 394502)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed the tracking number's schedule so it rings the office
+(400767)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h2 id="v-voicemail-boxes-access-notifications-and-the-mes">Voicemail:
+boxes, access, notifications and the message light</h2>
+<p>Most are setup: which box a call lands in and who can see it. The
+next biggest group is the message light staying on, which was a known
+sync defect the developers fixed. Greeting changes are in the call flow
+section.</p>
+<h3 id="v-we-need-separate-voicemail-boxes-for-the-doctor-">"We
+need separate voicemail boxes for the doctor, a department or each staff
+member"</h3>
+<p>Usually only the default box exists, or a new box was never assigned
+to an extension or added to the call flow.</p>
+<ul>
+<li><blockquote>
+<p>Created the boxes asked for and added them to the call flow (403117,
+392710, 406592, 413903)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Assigned the box to the right extensions so unanswered or transferred
+calls land there (411976, 409577, 385942)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Explained that one shared default box works for the whole office, and
+how boxes behave on transfer (409415, 412379)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Emergency voicemails landing in the default box after a move to V4:
+created the box and assigned it to the doctor's softphone (403176)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A call transferred to another extension's voicemail rings that
+extension and then returns to the front desk; this is by design
+(378725), and a custom transfer straight to an extension's voicemail is
+not available (365790)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 on V4 accounts. Phones team for V2 or V3 and for
+boxes missing after a migration.</p>
+
+
+
+
+
+<h3 id="v-the-voicemail-light-keeps-blinking-but-there-are">"The
+voicemail light keeps blinking but there are no messages"</h3>
+<ul>
+<li><blockquote>
+<p>Developers fixed the message light sync issue; the agent then
+confirmed the light had cleared (387747, 390549, 385880, 394891)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Upgraded all phones to the latest firmware, which cleared the light
+and hold problems (386963)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed duplicate BLF keys and corrected line labels on the phone
+(410906)</p>
+</blockquote></li>
+<li><blockquote>
+<p>On calls, agents also found old unread voicemails in the box and
+archived them, which turned the light off</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: archive old unread voicemails in that
+extension's box and reboot. Then the Phones team for firmware or a
+developer fix.</p>
+<h3 id="v-i-get-access-denied-or-can-t-listen-to-voicemail">"I
+get Access Denied or can't listen to voicemails in the app"</h3>
+<p>The user has no access to the box, or their app is on the wrong
+extension.</p>
+<ul>
+<li><blockquote>
+<p>Gave the user access to the default or front desk box (413211,
+414277, 387629)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Doctor's app was linked to the wrong extension: linked the right one,
+refreshed and tested (389730)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Playback from Call Pop failed because the softphone was off: turned
+it on (400341)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Enabled Call Tracking access for the user so they can open voicemails
+and faxes (405175)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Playback failed on one computer only: worked on another, client asked
+to reboot (406089)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-callers-can-t-leave-a-voicemail-or-the-box-is-fu">"Callers
+can't leave a voicemail" or "the box is full"</h3>
+<ul>
+<li><blockquote>
+<p>Added the missing voicemail step back to the business-hours or
+after-hours flow and test-called (414405, 387405, 415153)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Box full: moved old voicemails (about 2,000 in one case) to the
+archive and left a test message (398047, 403044)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Developers raised the voicemail storage limit (396995)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The after-hours greeting asks callers to press 1 to leave a message;
+explained and tested, or fixed a recording with no menu option (392669,
+385998)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The emergency option looped because the after-hours external number
+forwarded back to the office; recreated and tested the flow (394776)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: voicemail step, greeting prompt, archive
+old messages. Then the Phones team for loops and storage limits.</p>
+
+
+
+
+
+<h3 id="v-how-do-i-delete-voicemails-or-deleted-voicemails">"How
+do I delete voicemails?" or "deleted voicemails keep coming back"</h3>
+<ul>
+<li><blockquote>
+<p>Showed how to archive in the app, Call Pop and Call Tracking, and
+where Archived and Unarchive are (401634, 392478)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Archiving from Call Pop gave "call not found": developers fixed it
+(408424, 408163, 406933)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Archived voicemails still showed for other users and desk phones:
+fixed by moving to V4 (387579) or a developer fix (349477, 384234)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 for how-to. Phones team for sync errors and V4
+moves.</p>
+<h3 id="v-i-want-voicemails-sent-to-my-email">"I want voicemails sent to
+my email"</h3>
+<ul>
+<li><blockquote>
+<p>Added the email addresses to the voicemail email alert settings
+(406779, 401170)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Transcripts cannot be emailed; offered voicemail email alerts instead
+(398891)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Unwanted after-hours alerts: removed the voicemail option from the
+after-hours menu at the client's request (413719)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-voicemails-show-in-the-app-but-not-on-the-desk-p">"Voicemails
+show in the app but not on the desk phone"</h3>
+<ul>
+<li><blockquote>
+<p>Assigned the box to the lines, and the other lines to the default box
+(390072, 389485, 411976)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Personal voicemail settings on the extensions blocked the shared box:
+switched them to the default box and tested (406785)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Longer voicemails can take a little longer to appear on the desk
+phone (401275)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 on V4. Phones team for V2 or V3.</p>
+<h3 id="v-voicemail-transcription-is-missing">"Voicemail transcription is
+missing"</h3>
+<p>Messages under 10 seconds or with heavy static are not transcribed,
+and Call Pop shows a summary rather than the full transcript.</p>
+<ul>
+<li><blockquote>
+<p>Explained the 10-second rule (398891, 384942)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The sample had static and background noise, so no transcript was
+produced (402388)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Showed the full transcript in Call Tracking, Voicemails, Play,
+Transcript (411097)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+
+
+<h3 id="v-blank-voicemails-moving-voicemails-between-boxes">Blank
+voicemails, moving voicemails between boxes, and the voicemail
+password</h3>
+<ul>
+<li><blockquote>
+<p>Blank voicemail alerts: the caller hung up during the greeting, so an
+empty voicemail was logged (391472, 401275)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A voicemail cannot be moved or forwarded to another box (415046,
+406579), and a shared box cannot show each user only their own messages
+(408126)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Voicemail password removed on request (402245)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 explains; Phones team removes passwords.</p>
+<h2 id="v-adit-app-softphone-call-pop-and-notifications">Adit app,
+softphone, call pop and notifications</h2>
+<p>Most are fixed in Adit app settings: the extension is not in the call
+flow, the softphone is not enabled, or the user is not assigned to the
+extension. Logging out and in and reinstalling the desktop app come
+next.</p>
+<h3 id="v-calls-don-t-ring-on-my-softphone-or-adit-app">"Calls don't ring
+on my softphone or Adit app"</h3>
+<ul>
+<li><blockquote>
+<p>Added the extension to the call flow, the right menu option or the
+missing day, then test-called (412713, 408456, 404913, 402443)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The app shows the incoming call alert, but the extension only rings
+after the caller presses the menu option it sits behind (407944)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Enabled the softphone and added the extension to the call flow
+(406567, 398578)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Softphone stuck on DND: toggled its settings (406130); another needed
+the extension added to the "Calls For" list after the V4 move
+(398587)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Logged the user out and back in to refresh permissions (396352,
+409458)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reinstalled the app and ran a server isolation script (413580); one
+case only worked over a VPN and needed IP whitelisting checks
+(389301)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: call flow, enable softphone, DND, log out
+and in. Then the Phones team for network, IP or server issues.</p>
+<h3 id="v-call-pop-or-the-patient-card-doesn-t-show">"Call pop or the
+patient card doesn't show"</h3>
+<p>The user is not assigned to the extension taking the call, call pop
+is off, or they are on the browser instead of the desktop app.</p>
+<ul>
+<li><blockquote>
+<p>Assigned the user to the extension and enabled call pop (414010,
+414801, 394774)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Installed the Adit desktop app in place of the browser and enabled
+call pop (410378, 364731, 404081)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Enabled the softphone so the caller name or patient card pops
+(405619)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reset the app's notification settings and logged out and in (409645,
+400713)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed Windows notification settings (405450) or updated Chrome
+(397066)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Uninstalled and reinstalled the app (397150, 392659)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The call must be answered on the user's assigned desk phone for the
+patient card to open (398915)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-desktop-call-or-text-notifications-stopped-or-co">"Desktop
+call or text notifications stopped or come late"</h3>
+<ul>
+<li><blockquote>
+<p>Uninstalled and reinstalled the desktop app; for delayed alerts also
+cleared the app data and prefetch first (393024, 392384, 403358)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned the in-app desktop notification toggle back on (405501,
+396297, 414004)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned all notifications off for a client who did not want pop-ups
+(397422)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Developer fix released (399416, 402307)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team if a reinstall does not fix
+it.</p>
+<h3 id="v-can-t-make-outbound-calls-from-the-app">"Can't make outbound
+calls from the app"</h3>
+<ul>
+<li><blockquote>
+<p>Logged out and in, reassigned the extension, or refreshed the user's
+permissions (410392, 409942, 409081, 402173)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reinstalled the app, or updated the phone's operating system and then
+the app (402026, 409792, 410864)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Client was logging into the old account after a migration: gave the
+correct login (399426)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Outage or temporary backend patch (403063, 404784)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Softphone only worked over a VPN because the client's IP was blocked:
+sent to backend (402189)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team for IP blocks and backend
+fixes.</p>
+<h3 id="v-red-phone-icon-or-callers-can-t-hear-me-on-the-s">"Red
+phone icon" or "callers can't hear me on the softphone"</h3>
+<ul>
+<li><blockquote>
+<p>Reconnected the microphone and restarted the computer (405137,
+402835)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Selected the right headset in the softphone audio settings and
+refreshed the login (410730)</p>
+</blockquote></li>
+<li><blockquote>
+<p>User ran the app on a remote office computer: run it on the local
+computer with the headset (411859, 401918)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Headset not detected by the computer at all: outside Adit support
+(398602)</p>
+</blockquote></li>
+<li><blockquote>
+<p>On calls, Zoom or Teams was holding the microphone, or microphone
+access was missing and fixed by reinstalling and allowing
+permissions</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-the-mobile-app-doesn-t-receive-calls">"The mobile app doesn't
+receive calls"</h3>
+<ul>
+<li><blockquote>
+<p>iPhone: notifications, Focus and DND, microphone and cellular data
+permissions, Background App Refresh, Low Power Mode off, then log out,
+in and force-close (402237, 404133)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added the mobile app extension to the call flow (395116, 391615,
+386850)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reinstalled the app and logged in again (398565)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Developer fix for calls from unknown numbers not ringing (399146)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+<h3 id="v-office-calls-ring-on-the-doctor-s-cell-phone-or-">"Office
+calls ring on the doctor's cell phone" (or "make them ring there")</h3>
+<ul>
+<li><blockquote>
+<p>Turned on DND in the mobile app ("block all inbound calls") so only
+the app goes quiet (409745, 394450, 397206)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed the softphone extension from the call flow (406411)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Set the cell to ring after the desk phones instead of with them
+(398737, 371562)</p>
+</blockquote></li>
+<li><blockquote>
+<p>For after-hours calls on the cell, added the mobile app extension to
+the flow and fixed app permissions (393524, 401802)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-can-t-log-into-the-adit-app">"Can't log into the Adit app"</h3>
+<ul>
+<li><blockquote>
+<p>Reset the password and gave the correct username (408905, 412195)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed duplicate users tied to the same email (412195)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed the username: an extra space, or an email typed instead of the
+lowercase username (399069, 412400)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-set-up-a-softphone-for-a-remote-employee-or-remo">"Set
+up a softphone for a remote employee, or remove an old one"</h3>
+<ul>
+<li><blockquote>
+<p>Removed the old user from the extension and logged the new user in
+(407030)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Created new softphone credentials, or deleted the old softphone and
+created a new one (401454, 398720)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added the new extension to the call flow (412842, 410810)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Walked the user through softphone setup (393238)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed the softphone line first, then deleted the user (402631,
+395179)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-transfers-bouncing-back-wrong-patient-on-call-po">Transfers
+bouncing back, wrong patient on call pop, and "softphone not
+enabled"</h3>
+<ul>
+<li><blockquote>
+<p>Transfers from the softphone dropping: reinstalled the app for the
+current version and retested (397509, 396911), or logged out and in
+(409458)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Call pop showing the wrong patient: work on the computer where the
+practice software is logged in (401830), and send screenshots with call
+times if it continues (408204)</p>
+</blockquote></li>
+<li><blockquote>
+<p>"Softphone not enabled" on mobile: the Call Tracking app was off for
+the location and was turned on (386223)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first, Phones team for the last two if they
+persist.</p>
+
+
+
+<h2 id="v-installs-new-phones-labels-users-and-lines">Installs, new
+phones, labels, users and lines</h2>
+<p>Most of this is admin: adding a phone in the Adit app and GDMS,
+removing staff who still hold a line, and renaming labels. Only the
+device-side steps need the Phones team.</p>
+<h3 id="v-we-got-a-new-phone-please-set-it-up">"We got a new phone, please
+set it up"</h3>
+<p>The device has not been added to the account and GDMS yet, or it was
+added but has old firmware or is missing from the call flow.</p>
+<ul>
+<li><blockquote>
+<p>Collected a photo of the label with MAC and serial, added the phone
+in the Adit app and GDMS, upgraded firmware, provisioned it and
+test-called both ways (399775, 398269, 406414, 412420)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Cordless kits: added the base in the app and GDMS, upgraded it, then
+subscribed the handset; third-party kits needed manual base setup first
+(404319, 410124, 405050, 407762)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phones online but not ringing: added the new extension to the call
+flow, or recreated the flow when changes had not reached the server
+(401493, 410471)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Partial install: finished the remaining phones and set labels and
+extensions at the same time (398982, 398427)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: collect the MAC and serial photo, confirm a
+cable or Wi-Fi, add the extension to the call flow. Then the Phones team
+for GDMS, firmware and provisioning.</p>
+<h3 id="v-how-do-we-return-these-phones-or-we-need-an-exch">"How do we
+return these phones" or "we need an exchange"</h3>
+<ul>
+<li><blockquote>
+<p>Checked the purchase date; past the 90-day return period the client
+does not need to send phones back (414440, 409269, 399597)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Within the window, issued the return label or exchange (392680,
+395540, 397728)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Before replacing a "faulty" phone, checked the cord and firmware; a
+new cord or the right firmware fixed it (398114, 393558)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: purchase date, return or fault. Then the
+Phones team and Asset Management.</p>
+<h3 id="v-remove-this-staff-member-the-app-won-t-let-me-de">"Remove
+this staff member, the app won't let me delete them"</h3>
+<ul>
+<li><blockquote>
+<p>Removed the user's line association or softphone line, then deleted
+the user (401473, 402631, 403865, 412231)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Desk line had to stay: reassigned it from the departing user to the
+practice user (409074)</p>
+</blockquote></li>
+<li><blockquote>
+<p>After removing a softphone line, updated the phone configuration and
+rebooted the desk phones so the old line disappeared (412886,
+400456)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+
+<h3 id="v-how-do-we-order-more-phones-or-a-headset-and-wha">"How
+do we order more phones or a headset, and what do they cost"</h3>
+<ul>
+<li><blockquote>
+<p>Sent the additional equipment form with models and prices; the order
+is placed when it comes back (398654, 396563)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Confirmed the order was sent or delivered (412111, 396719,
+413640)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Answered model questions with the supported models list (413036)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: share the form and supported models. Then
+the Phones team and Asset Management.</p>
+<h3 id="v-please-change-the-names-showing-on-our-phones">"Please change
+the names showing on our phones"</h3>
+<ul>
+<li><blockquote>
+<p>Updated the label names in the Adit app and confirmed with the front
+desk (413862, 413043, 398046)</p>
+</blockquote></li>
+<li><blockquote>
+<p>New name not showing: rebooted the phone (411069, 414300, 387030)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Labels and extensions mismatched: re-added the phones with the right
+extension and label, reprovisioned and added them back to the call flow
+(407655)</p>
+</blockquote></li>
+</ul>
+<p>A call showed that label names must be unique; a name another
+practice already uses is rejected.</p>
+<p>Who handles it: T1, then have the client reboot. Phones team only for
+re-adding or reprovisioning.</p>
+<h3 id="v-add-a-softphone-line-for-a-new-staff-member">"Add a softphone
+line for a new staff member"</h3>
+<ul>
+<li><blockquote>
+<p>Created new softphone credentials, had the user log in and
+test-called (401454)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed the old line and explained how to create a softphone line for
+new users (395179)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-set-up-speed-dials-or-add-line-keys-blf">"Set up speed dials" or
+"add line keys (BLF)"</h3>
+<ul>
+<li><blockquote>
+<p>Collected the list of names and numbers, configured speed dials and
+had the client test (411434, 396070, 414723)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Applied BLF configuration to all phones, removed duplicate keys,
+fixed the order and rebooted (405128, 392198, 406601)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 collects the list; the Phones team pushes the
+keys.</p>
+<h3 id="v-our-headset-won-t-connect-or-which-headset-shoul">"Our
+headset won't connect" or "which headset should we buy"</h3>
+<ul>
+<li><blockquote>
+<p>The GRP2613 has no Bluetooth, so a Bluetooth headset cannot pair with
+it (410959)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Recommended the Plantronics CS540 and explained volume is set on the
+phone (395855, 401756)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Sent the headset setup KB article (409704)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A computer headset not detected by the desktop app is out of scope
+(398602)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team if a compatible headset still
+fails.</p>
+
+<h3 id="v-a-staff-member-can-t-change-a-setting-roles-and-">"A
+staff member can't change a setting" (roles and permissions)</h3>
+<ul>
+<li><blockquote>
+<p>Call Override needs Manager access; guided the owner to change the
+user from Staff to Manager (395616)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Only an Owner can edit a Manager role; a Manager can edit Staff roles
+(409238)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Enabled missing app access and had users log out and in, for example
+Call Tracking for eFax and Practice Analytics for a patient list
+(399338, 405752)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-we-moved-a-phone-to-our-other-office">"We moved a phone to our
+other office"</h3>
+<p>The device is still assigned to the old location in the app and
+GDMS.</p>
+<ul>
+<li><blockquote>
+<p>Moved the phone to the correct location in the app and GDMS, upgraded
+firmware, rebooted and tested (392055, 396552)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Cordless: added the extension at the new location, factory reset base
+and handset, re-subscribed (396323, 415073)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-there-is-no-network-cable-where-the-phone-goes">"There is no
+network cable where the phone goes"</h3>
+<ul>
+<li><blockquote>
+<p>Guided the front desk to connect the GRP2616 to Wi-Fi and tested
+(414878, 413012, 408885)</p>
+</blockquote></li>
+<li><blockquote>
+<p>"No Service" on Wi-Fi: factory reset, reconnected and configured
+through the web GUI (412936, 398532)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team for the reset and web GUI.</p>
+<h3 id="v-can-we-use-our-own-yealink-phones-phones-from-a-">"Can
+we use our own Yealink phones?" (phones from a previous provider)</h3>
+<p>The phones are still locked to the previous provider's
+configuration.</p>
+<ul>
+<li><blockquote>
+<p>Reset previously used Yealink T54W phones, provisioned them for Adit
+and assigned extensions (410344)</p>
+</blockquote></li>
+<li><blockquote>
+<p>BYOP Yealinks not working after being added: reprovisioned each one
+manually (394257)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Configured an unsupported Grandstream W826 manually, and reset and
+configured a BYOP W60 base before registering handsets (394253,
+409775)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+
+
+
+
+<h2 id="v-call-park-transfer-hold-and-phone-features">Call park, transfer,
+hold and phone features</h2>
+<p>Most park problems are device configuration (keys missing or wrong
+after a reset or move) or users pressing the wrong key, plus one
+platform-wide park bug in late July.</p>
+<h3 id="v-we-can-t-pick-up-parked-calls-or-parked-calls-dr">"We
+can't pick up parked calls" or "parked calls drop or play music"</h3>
+<ul>
+<li><blockquote>
+<p>Re-pushed the park key configuration from GDMS and rebooted the
+affected phones (411450, 386340, 377212)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Updated park keys to match the Voice V4 setup, or corrected wrong
+values in a custom four-park-line setup (387959, 403002)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Upgraded firmware, factory reset and reprovisioned to push park
+settings again (413266, 384548)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Single phone with a dead button: moved park to working buttons
+(409278)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: confirm they use the Park 1 or Park 2 key,
+reboot the phone. Then the Phones team for GDMS, firmware and
+resets.</p>
+<h3 id="v-call-park-stopped-working-on-all-our-phones-24-t">"Call
+park stopped working on all our phones" (24 to 29 July 2026)</h3>
+<p>A platform-side park issue, not the clients' phones.</p>
+<ul>
+<li><blockquote>
+<p>Developers applied a backend fix; the Phones team then called each
+practice and ran a live park-and-retrieve test (386769, 386944, 387027,
+386478)</p>
+</blockquote></li>
+<li><blockquote>
+<p>While the fix was pending, agents told practices to use hold or
+transfer instead</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team. T1 can suggest hold or transfer
+meanwhile.</p>
+<h3 id="v-how-do-i-park-and-pick-up-a-call">"How do I park and pick up a
+call?"</h3>
+<ul>
+<li><blockquote>
+<p>Use the Park 1 or Park 2 key rather than the feature code, then test
+park and pickup (384967, 404062)</p>
+</blockquote></li>
+<li><blockquote>
+<p>From a cordless, dial 901 or 902 to pick up (401715, 393229)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Park is a shared pool and does not show who is on the parked call
+(412744)</p>
+</blockquote></li>
+<li><blockquote>
+<p>From calls: a parked call rings back to the extension that parked it
+after about two minutes, then goes to voicemail, and the park key lights
+on every phone while a call is parked</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+
+
+
+<h3 id="v-the-park-keys-are-missing-from-some-phones-or-we">"The
+park keys are missing from some phones" or "we need more park
+lines"</h3>
+<ul>
+<li><blockquote>
+<p>Configured park lines on the affected extensions (393879, 388367,
+395786)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Restored park and line keys after a device reset, then re-pushed and
+rebooted (399414, 401483)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Keys kept disappearing after reboots: restored them and turned off
+GDMS Push Configuration on those phones (411934)</p>
+</blockquote></li>
+<li><blockquote>
+<p>GRP2616 kept falling back to two park lines: factory reset, updated
+firmware and applied the four-line settings per phone (414545)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Configured four park lines on every phone (402485, 398959, 390887);
+four is the maximum (384050). On small screens the extra lines are on a
+second page</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 tries one reboot. Phones team for the
+configuration.</p>
+<h3 id="v-transfers-fail-or-drop-on-the-desk-or-cordless-p">"Transfers
+fail or drop on the desk or cordless phone"</h3>
+<ul>
+<li><blockquote>
+<p>Restarted the extension and retested (397036, 410830)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Factory reset phones when transfers kept dropping (398709)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Cordless: reset and reconfigured the base and re-subscribed all
+handsets (411081)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: reboot and re-pair. Then the Phones
+team.</p>
+<h3 id="v-how-do-i-transfer-a-call-blind-vs-attended">"How do I transfer a
+call?" (blind vs attended)</h3>
+<ul>
+<li><blockquote>
+<p>Walked the user through blind and attended transfer and park with
+live test calls (395881, 407961, 388457, 371032)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Sent the steps by email when asked (391078)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-transfers-between-our-locations-don-t-work">"Transfers between
+our locations don't work"</h3>
+<ul>
+<li><blockquote>
+<p>Enabled multi-location calling and explained it (401051)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Re-enabled inter-office transfer prefixes after one office moved to a
+new server (411439)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Rebooted all phones at both locations and retested (400378)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 tries reboots. Phones team for multi-location
+calling and prefixes.</p>
+<h3 id="v-transfers-from-the-adit-app-fail-or-bounce-back">"Transfers from
+the Adit app fail or bounce back"</h3>
+<ul>
+<li><blockquote>
+<p>Reinstalled the desktop app for the current version and tested
+(397602, 397509, 396911)</p>
+</blockquote></li>
+<li><blockquote>
+<p>On slow connections, wait a second after pressing Transfer so the
+extension list loads (398628)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Receiving softphone could not take transfers: logged out and in
+(409458)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+
+<h3 id="v-callers-on-hold-get-disconnected-or-hear-silence">"Callers on
+hold get disconnected or hear silence"</h3>
+<ul>
+<li><blockquote>
+<p>Upgraded all phones to the latest firmware (386963)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Isolated it to one extension and corrected it remotely (399924)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Packet capture showed the disconnect came from the user's end
+(395383)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Developer fix for calls that could not be taken off hold (392516)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: one extension or all, reboot. Then the
+Phones team.</p>
+<h3 id="v-there-s-a-loud-beep-while-callers-are-on-hold">"There's a loud
+beep while callers are on hold"</h3>
+<p>The on-hold reminder tone is on.</p>
+<ul>
+<li><blockquote>
+<p>Disabled the on-hold reminder tone and tested (414711, 397316,
+389686)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-we-can-t-change-the-ringtone-or-volume-or-it-kee">"We
+can't change the ringtone or volume" or "it keeps resetting"</h3>
+<ul>
+<li><blockquote>
+<p>Guided the user to Preferences on the phone (396484, 388111,
+413267)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Menu locked: set the keypad menu to Unrestricted in the phone web UI,
+or updated the configuration (386121, 385444)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A separate internal-call ringtone is not available, but the ringtone
+can be changed on the phone (401051); calls confirm the softphone
+ringtone cannot be changed</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team when the menu is locked.</p>
+<h3 id="v-our-phone-isn-t-ringing-and-it-shows-dnd">"Our phone isn't
+ringing" and it shows DND</h3>
+<ul>
+<li><blockquote>
+<p>Turned off DND, explained the DND and Mute keys, retested (411997,
+399127, 400678)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Explained using DND with call override for holiday closures
+(401889)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Softphone switching to DND by itself: moved to V4 and added the
+extension to the "Calls For" list (398587)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1. Phones team for the self-enabling softphone.</p>
+<h3 id="v-intercom-transfer-to-voicemail-and-warm-transfer">Intercom,
+transfer to voicemail, and warm transfers</h3>
+<ul>
+<li><blockquote>
+<p>Intercom is for office-wide announcements; to reach one person, dial
+their extension (395845, 392225). Recurring paging failures on calls
+were fixed with a firmware update</p>
+</blockquote></li>
+<li><blockquote>
+<p>An unanswered transfer returns to the sender rather than going to
+voicemail, by design (378725); developers fixed external transfers to
+individual voicemail boxes (371755)</p>
+</blockquote></li>
+<li><blockquote>
+<p>During a warm transfer the caller could hear the staff: reproduced
+and fixed by a backend change (383228)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 explains. Phones team for failures and fixes.</p>
+
+
+<h2 id="v-audio-quality-one-way-audio-and-dropped-calls">Audio quality,
+one-way audio and dropped calls</h2>
+<p>When every phone is affected, the cause is the practice network or
+Adit's server side; when one phone is affected, it is the handset, the
+cord or the firmware. Many reported "drops" are the caller hanging
+up.</p>
+<h3 id="v-calls-keep-dropping-after-answering-mid-call-or-">"Calls
+keep dropping" (after answering, mid-call or at random)</h3>
+<p>Most often the caller ended the call; then old firmware, unstable
+office internet or a server-side fault.</p>
+<ul>
+<li><blockquote>
+<p>Got the caller's number and time, checked the Adit and Telnyx logs
+and packet capture, found the caller ended the call, and explained
+(391114, 410605, 413453, 378877)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Upgraded firmware on the affected phones and monitored for a few days
+(409195, 412787, 384562, 396968)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Isolated the account's devices on a dedicated server, or migrated it
+to V4 (387138, 364328, 366270)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Developers applied a backend fix after packet capture review (403564,
+406678)</p>
+</blockquote></li>
+<li><blockquote>
+<p>PingPlotter in a remote session found packet loss on the practice
+internet; client contacted their ISP (414606, 407821, 348781)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: two or three example calls with number and
+time, check Call Tracking for calls ending within seconds, reboot,
+confirm wired. Then the Phones team.</p>
+<h3 id="v-audio-cuts-in-and-out-sounds-choppy-or-robotic-u">"Audio
+cuts in and out, sounds choppy or robotic" (usually all phones)</h3>
+<ul>
+<li><blockquote>
+<p>Network diagnostics found SIP ALG enabled on the router; walked the
+client through turning it off (385555, 391151, 398176)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Sent whitelisting instructions to the practice's IT and firewall team
+(357627, 357457, 355463)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The ISP fixed the line or replaced a faulty router or modem (353327,
+408319, 407769)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Isolated the devices to a dedicated server and optimised the
+extensions (354994, 357632, 384538)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Migrated the account to the V4 servers (366242, 402243, 398097)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Moved phones from Wi-Fi to wired Ethernet (405841, 380490)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: one phone or all, Wi-Fi or wired, restart
+router and phones, collect examples. Then the Phones team.</p>
+
+
+
+
+
+<h3 id="v-caller-can-t-hear-us-or-nothing-for-the-first-10">"Caller
+can't hear us" or "nothing for the first 10 to 15 seconds" (one-way or
+no audio)</h3>
+<p>All phones: a server or codec setting. One phone: usually the handset
+or cord.</p>
+<ul>
+<li><blockquote>
+<p>Isolated the numbers on one server and updated the codec
+configuration (407718, 403762, 407643, 403059)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Yealink: turned off SRTP and removed OPUS (352449)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed a bad configuration from the phone and restarted (407948)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Migrated to V4 (407809, 365300, 362247)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Single phone: faulty receiver or cord, replacement shipped (410070,
+380642)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Carrier (Plivo) fixed an upstream issue (375112)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: one phone or all, test speaker then handset
+(clear on speaker points to the handset), reseat the cord, reboot. Then
+the Phones team.</p>
+<h3 id="v-there-s-a-delay-or-lag-on-calls">"There's a delay or lag on
+calls"</h3>
+<ul>
+<li><blockquote>
+<p>Phone on the wrong firmware: upgraded it, or rebooted all phones and
+monitored (412861, 393558, 395287, 407864)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Optimised extensions or isolated desk phones to one server (384825,
+378902, 351227)</p>
+</blockquote></li>
+<li><blockquote>
+<p>High latency on the practice network: sent whitelisting details to
+their IT (412315, 371262)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Migrated to V4 (379809, 364323)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A 2 to 3 second pause on answering is normal (352584)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: reboot, confirm wired, set expectations.
+Then the Phones team.</p>
+<h3 id="v-calls-drop-when-we-put-them-on-hold-or-park-them">"Calls drop
+when we put them on hold or park them"</h3>
+<ul>
+<li><blockquote>
+<p>Packet capture showed the far end (user or carrier) ended the call
+(395383, 376652)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reprovisioned the devices (380544)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Upgraded handset firmware, or factory reset and re-pushed park lines
+(374027, 389346)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reseated a loose LAN cable (390632)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Unstable ISP internet, fixed by the ISP resetting the router
+(348781)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: park keys showing, reboot, cables. Then the
+Phones team.</p>
+<h3 id="v-static-crackling-or-buzzing-on-one-phone">"Static, crackling or
+buzzing on one phone"</h3>
+<ul>
+<li><blockquote>
+<p>Swapped the cord or receiver, or swapped phones between desks, and
+shipped a replacement cord (379006, 398966, 411739, 385702)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Factory reset and updated firmware in GDMS; one phone had a
+memory-filling core dump (411234, 391193, 400926)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Updated firmware and had the client clean and reseat the cord
+(394086, 386040)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The practice replaced the LAN cable at that desk (387250)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Several extensions affected: isolated and optimised them (348622,
+371454)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: reseat or swap the cord, swap phones
+between desks to see if the fault follows the phone, reboot. Then the
+Phones team.</p>
+<h3 id="v-the-cordless-phone-breaks-up-or-drops-calls">"The cordless phone
+breaks up or drops calls"</h3>
+<ul>
+<li><blockquote>
+<p>Updated the DP750 base firmware and ran a 4-minute test call (406159,
+382305)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Factory reset base and handset and upgraded both (384333)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Handset too far from the base: keep it within about 20 metres without
+walls between (369463, 400590)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Re-subscribed the handset and applied the configuration fix (369132,
+392908)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: distance, power-cycle base, reseat battery,
+re-pair. Then the Phones team.</p>
+<h3 id="v-patients-say-we-sound-muffled-faint-or-can-t-hea">"Patients
+say we sound muffled, faint or can't hear us"</h3>
+<ul>
+<li><blockquote>
+<p>In GDMS, turned off Noise Shield, raised TX gain (and RX where
+needed), set the headset type to Plantronics, and rebooted (408942,
+403459, 387530, 384111)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Raised in-call volume on the extension (389746)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Adjusted noise cancellation and recommended a headset (361454)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Desktop app: fixed microphone and headset settings in a remote
+session (364284, 388165, 407633)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Swapped the handset (404114)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: volume, handset swap, app audio settings.
+Then the Phones team for GDMS gain changes.</p>
+<h3 id="v-calls-disconnect-before-the-menu">"Calls disconnect before the
+menu"</h3>
+<p>Usually the caller hung up during the greeting.</p>
+<ul>
+<li><blockquote>
+<p>Checked the logs: caller left during the greeting or menu, so the
+call never reached the phones and shows as missed (396375, 406181,
+413991, 392804)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed lunch hours that were cutting calls off (395021)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Removed and rebuilt a misconfigured call flow (408890, 389717)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Backend fixed failed call dispositions (386280)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: call flow, schedules, Call Tracking. Then
+the Phones team for carrier logs.</p>
+
+
+
+
+
+
+
+<h3 id="v-audio-drops-on-the-softphone-echo-voicemail-cuts">"Audio
+drops on the softphone", "echo", "voicemail cuts off after 30 seconds",
+"beeping during calls"</h3>
+<ul>
+<li><blockquote>
+<p>Softphone audio: router restart (409233); removed softphone lines,
+re-logged users and re-added extensions to the call flow (390168);
+recreated the softphone (355870); put softphone users in their own
+Simulring group (377573); reinstalled the mobile app (379933)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Echo: caller was on speakerphone (385538); reseated the receiver
+cable and power-cycled (371127); codec change and server isolation
+(388409); V4 migration (354831)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Voicemail cutting callers off at about 30 seconds: devices moved to
+another server or migrated to V4 (357115, 353997, 354612, 384403)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Beeping during calls: turned off the call waiting tone (365469) or
+the hold reminder tone with a firmware update (411437)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 for the softphone steps and the speakerphone
+question. Phones team for the rest.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+<h2 id="v-outbound-calling-carrier-and-number-problems-out">Outbound
+calling, carrier and number problems, outages</h2>
+<p>Whole-office failures are usually a short platform outage, a server
+registration problem or the practice's internet. Failures limited to
+certain numbers or carriers are fixed with carrier route changes or by
+switching the trunk between Telnyx and Plivo.</p>
+<h3 id="v-our-phones-are-down-whole-office-platform-outage">"Our phones
+are down" (whole office, platform outage)</h3>
+<p>Mostly short Adit or carrier incidents that clear in minutes, with a
+few phones staying unregistered afterwards.</p>
+<ul>
+<li><blockquote>
+<p>Confirmed the incident, told the client, and checked in once it
+cleared; each incident has a parent outage report listing the related
+tickets (399909, 399904, 383465, 387340)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phones still unregistered afterwards: reprovisioned, or rebooted and
+re-pushed configuration (409314, 407992, 348081)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Showed the client how to use call override in the app to forward the
+main line to a mobile while the office has no service (406678)</p>
+</blockquote></li>
+<li><blockquote>
+<p>After planned emergency maintenance: restored the practice's own call
+flow and overrides (414264, 414195)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: check for a known outage, tell the client,
+set override to a mobile, power-cycle phones once it clears. Then the
+Phones team for phones that stay unregistered.</p>
+<h3 id="v-calls-to-certain-numbers-fail-not-in-service-bus">"Calls
+to certain numbers fail: not in service, busy, or silence"</h3>
+<p>Carrier routing to particular numbers, carriers (often T-Mobile),
+toll-free numbers or area codes.</p>
+<ul>
+<li><blockquote>
+<p>Raised it with Telnyx, which changed the routes; the agent retested
+from their own phone on the account (396020, 411626, 384506, 395134)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Switched the outbound trunk between Telnyx and Plivo (350125, 357005,
+357680)</p>
+</blockquote></li>
+<li><blockquote>
+<p>T-Mobile destinations: the carrier fixed its routing (377012, 365910,
+360100)</p>
+</blockquote></li>
+<li><blockquote>
+<p>1-800 numbers or certain area codes: carrier routing updated (395456,
+395852, 411060, 379997)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: exact numbers dialled, time, error message,
+test from the mobile app. Then the Phones team.</p>
+<h3 id="v-one-phone-or-the-cordless-can-t-dial-out">"One phone (or the
+cordless) can't dial out"</h3>
+<p>A device problem: firmware, provisioning, a disabled SIP account, a
+handset off its base, or dial timing.</p>
+<ul>
+<li><blockquote>
+<p>Rebooted the phone (392940, 404057, 414495)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Factory reset it (405374, 412158, 412083)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Upgraded firmware (391956, 411569, 397685)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Added a missing provisioning URL and pushed the configuration
+(397472)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Cordless: enabled the disabled SIP account, reprovisioned an
+unregistered base, or re-subscribed a "Not Subscribed" handset (413824,
+410927, 414566, 414687)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phones dialled before all digits were entered: raised the Dial Out
+Rule delay or adjusted the dial plan (397512, 395802)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Mobile app: reassigned the user's extension and added it to the call
+flow (409942)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: reboot, power-cycle the base (412704),
+cable, app logout and call flow. Then the Phones team.</p>
+<h3 id="v-keypad-presses-aren-t-recognised-on-insurance-ph">"Keypad
+presses aren't recognised on insurance phone menus" (DTMF)</h3>
+<ul>
+<li><blockquote>
+<p>Switched the carrier from Telnyx to Plivo (406246, 406162, 348116),
+or back to Telnyx when that worked (390427)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Telnyx changed the route after finding a downstream carrier problem
+(409755)</p>
+</blockquote></li>
+<li><blockquote>
+<p>In GDMS, set DTMF to SIP INFO together with RFC 2833 (396852)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Migrated to V4 (363883, 379726)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team.</p>
+<h3 id="v-all-phones-show-no-account-no-outage">"All phones show No
+Account" (no outage)</h3>
+<p>Server registration faults or practice network blocks (DNS, firewall,
+DHCP).</p>
+<ul>
+<li><blockquote>
+<p>Moved the phones to another SIP server (383459, 375079, 390008)</p>
+</blockquote></li>
+<li><blockquote>
+<p>DNS on the practice network was not resolving: set up OpenVPN on the
+phones and re-registered (352115, 352155, 352119)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Practice IT whitelisted the required domains, then the phones were
+configured or rebooted (383558, 391556)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Assigned static IPs when the practice's DHCP was failing (372961)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: rule out an outage, power and cables,
+restart router and phones. Then the Phones team.</p>
+<h3 id="v-phones-are-down-and-our-internet-is-also-out">"Phones are down
+and our internet is also out"</h3>
+<ul>
+<li><blockquote>
+<p>Waited for the ISP to restore service, then re-registered the
+cordless (410101)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The ISP reset the router remotely, or the modem was restarted
+(388900, 411993)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The practice's IT rebooted the network after replacing the office
+server (386673)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Confirmed it was the practice internet and closed once service
+returned (389744, 362652)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-nobody-in-the-office-can-make-outbound-calls">"Nobody in the
+office can make outbound calls"</h3>
+<p>Two outbound-only incidents affected many practices in a single day
+(377672, 372865).</p>
+<ul>
+<li><blockquote>
+<p>The carrier (Plivo) had blocked IPs after a spam-scanner
+misconfiguration, and fixed it (374787, 374220, 373945)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Changed the outbound trunk on the number, for example after "408
+Request Timeout", or moved it to the other carrier (411314, 373724,
+374162, 411403)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Refreshed the dial plan on the backend after "404 Not Found" errors
+(403303)</p>
+</blockquote></li>
+<li><blockquote>
+<p>New account still in Getting Started: finished setup and verification
+(408038)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: known outage, test from the mobile app.
+Then the Phones team.</p>
+
+<h3 id="v-patients-get-a-busy-tone-or-not-in-service-calli">"Patients
+get a busy tone or "not in service" calling our main number"</h3>
+<ul>
+<li><blockquote>
+<p>Moved the number to the other server group in Telnyx after a rebuilt
+call flow did not help (406980)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Changed the number's SIP trunk to the West server (383435, 382257,
+373619)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Telnyx changed its routing (379188, 378025)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A Plivo outage affecting inbound calls and texting (388203)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: test-call from a mobile, check call flow
+and override, turn on override to a mobile if needed. Then the Phones
+team.</p>
+<h3 id="v-callers-on-one-carrier-can-t-reach-us-calls-flag">Callers
+on one carrier can't reach us, calls flagged by carriers, and problems
+after a V4 move or port</h3>
+<ul>
+<li><blockquote>
+<p>Verizon, Bell or Frontier callers unable to reach the practice: test
+calls from other carriers worked, so it was monitored or fixed by that
+carrier (414682, 414625, 396941); leftover Bell routing after a port
+needed Bell to clean it up (391405); Telnyx traced others to the calling
+carrier (379176, 383651)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Outbound calls flagged or blocked by patients' carriers: registered
+the number on anti-spam sites, 24 to 48 hours (391396, 358410); changed
+the outbound caller ID when T-Mobile blocked it (372728)</p>
+</blockquote></li>
+<li><blockquote>
+<p>After a V4 migration or number port: updated the provisioning URL and
+call flow (362093), turned off an RTP setting on the phones (367833),
+added the outgoing number (378825), restored inbound calls on porting
+day (349882), fixed a version mismatch on the landline (348751,
+378682)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Phones cut off over a billing problem: once Billing confirmed updated
+payment, service was reinstated (407803)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: Phones team, with Billing for the last one.</p>
+
+
+
+
+
+
+
+
+<h2 id="v-caller-id-spam-flags-cnam-and-blocked-callers">Caller ID, spam
+flags, CNAM and blocked callers</h2>
+<p>The two biggest groups are outbound numbers labelled as spam and
+floods of robocalls coming in, followed by caller name (CNAM) changes
+and names not showing on incoming calls.</p>
+<h3 id="v-our-number-shows-as-spam-likely-when-we-call-pat">"Our
+number shows as Spam Likely when we call patients"</h3>
+<p>The number is not registered with the carrier anti-spam databases, or
+a carrier flagged it by mistake.</p>
+<ul>
+<li><blockquote>
+<p>The porting team registered the main line on the anti-spam and caller
+registry sites; the client was told it takes 72 hours to 5 to 7 business
+days to reach all carriers (397960, 400893, 403911, 411481)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Where the name was also wrong, updated the CNAM and re-registered in
+the same request (402247, 389773)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Still flagged after an earlier removal: a new removal request went to
+the carriers through the backend team (400323, 412660)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Retested afterwards, for example by deleting the office number from a
+cell phone's contacts and calling from it; if it returns, ask for a
+screenshot and the patient's number (398223, 410341)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: the affected number, a screenshot, the
+recipient's carrier, and the 72-hour expectation. Then the Phones
+team.</p>
+<h3 id="v-we-are-getting-a-surge-of-spam-or-robocalls">"We are getting a
+surge of spam or robocalls"</h3>
+<ul>
+<li><blockquote>
+<p>Added a "press 1 to reach the office" menu at the start of the call
+flow; robocallers cannot press a key (403495, 399141, 398698,
+386345)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Turned on carrier spam screening through Telnyx, labelling or
+rejecting spam as the client chose (388501, 403697)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Client declined the menu: showed how to block individual numbers
+(387289, 393019)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Suspected spoofing of the practice's own number: raised a carrier
+ticket and monitored for a week (402576, 381126)</p>
+</blockquote></li>
+<li><blockquote>
+<p>From calls: if the menu blocks expected verification calls
+(insurance, Google), a temporary override lets them through</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: offer the menu and show blocking. Then the
+Phones team for carrier screening or spoofing.</p>
+
+
+
+
+
+<h3 id="v-change-the-name-patients-see-when-we-call-cnam">"Change the name
+patients see when we call" (CNAM)</h3>
+<ul>
+<li><blockquote>
+<p>Updated the CNAM; names are limited to 15 characters, so long names
+were shortened (400507, 388164, 407557, 353087)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Takes up to 72 hours to show on all networks; the agent called back
+to confirm (394662, 387454, 407404)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Number not fully ported yet: CNAM cannot change until the port
+completes (393389)</p>
+</blockquote></li>
+<li><blockquote>
+<p>CNAM on Canadian numbers cannot be updated from Adit's side
+(395544)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Patients seeing a city and state instead of the name: the receiving
+carrier does no CNAM lookup, and that location cannot be changed
+(405131)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 confirms the exact name (15 characters or fewer)
+and port status; the Phones team makes the change.</p>
+<h3 id="v-caller-name-not-showing-on-incoming-calls">"Caller name not
+showing on incoming calls"</h3>
+<p>Desk phones show a name only if the caller's carrier publishes one;
+the app shows the PMS name when the number matches a patient.</p>
+<ul>
+<li><blockquote>
+<p>CNAM lookup was off on the Telnyx account and was turned on (414306);
+where it was on, confirmed with test calls (385984)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Explained desk phone versus app name sources (397742, 369676,
+398471)</p>
+</blockquote></li>
+<li><blockquote>
+<p>App pop-up: turned on the softphone and re-logged (411992), turned on
+notifications (348513), or reinstalled the app (407431)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team to check carrier CNAM
+lookup.</p>
+<h3 id="v-our-outbound-caller-id-shows-the-wrong-number-or">"Our
+outbound caller ID shows the wrong number or name"</h3>
+<p>A per-device setting, or a temporary number still in use during
+porting.</p>
+<ul>
+<li><blockquote>
+<p>Corrected the caller ID on every phone and updated firmware
+(387630)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Mobile app caller ID was the user's personal cell: changed it to the
+practice line (401935)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reconfigured the outbound caller ID on the account (395012, 402268,
+353244, 381764)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A temporary masking number had to be verified with the carrier before
+it would display (414506)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Wrong name on calls between offices: tested and fixed on the
+extension (409830)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 confirms which device and number. Phones team for
+the fix.</p>
+<h3 id="v-blocking-numbers">Blocking numbers</h3>
+<ul>
+<li><blockquote>
+<p>How to block a caller in the app (399090, 378417, 372134); added
+numbers for the client (396877, 375336); blocking failed until the user
+logged out and in (394408)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Blocked numbers still showing as missed calls: expected, the blocked
+call does not ring but is logged; a feature request is raised for a
+separate indicator (411942, 414323)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Blocking all anonymous callers is possible at the carrier but was
+advised against because genuine patients can be blocked (405066);
+one-click blocking from the call log is not available (408864)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Call pop showing the wrong patient from temporary records: an update
+now merges them into the matching patient (403928, 397770, 408204)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h2 id="v-efax-sending-receiving-and-access">eFax sending, receiving and
+access</h2>
+<p>Most "failed fax" reports are the sending or receiving carrier
+cancelling or declining the transmission, not an Adit fault. User
+permissions and the PDF type choice come next.</p>
+<h3 id="v-incoming-faxes-are-failing-or-not-arriving">"Incoming faxes are
+failing or not arriving"</h3>
+<ul>
+<li><blockquote>
+<p>Checked the failure reason in the fax log (the info icon); the
+sender's carrier cancelled early, so the sender should resend (414656,
+412007, 404171, 397043)</p>
+</blockquote></li>
+<li><blockquote>
+<p>"Bad Data" or invalid-data errors are on the sending side, no change
+needed at Adit (413469, 406977)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Sent a test fax to prove inbound faxing works (412007, 391942)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Repeated failures: sent examples to the carrier (Telnyx), which
+confirmed a sender-side cause (409387, 349751, 348554)</p>
+</blockquote></li>
+<li><blockquote>
+<p>After a port the fax line sat on the wrong number: swapped it and
+sent a test fax (412072)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: read the reason, explain sender-side
+cancellations, ask for a resend. Then the Phones team for repeats,
+carrier escalation or a wrong mapping.</p>
+<h3 id="v-our-outbound-fax-failed">"Our outbound fax failed"</h3>
+<ul>
+<li><blockquote>
+<p>"Declined by Carrier" or "not in service": confirm the recipient's
+fax number (402855, 401345, 406929, 394818)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Timeouts from a busy recipient fax server: resend later (412814)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Reviewed the log, resent and confirmed delivery (406977, 385055)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The fax provider had dropped the number; it was added back
+(382045)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team if every outbound fax
+fails.</p>
+<h3 id="v-the-send-button-is-greyed-out">"The Send button is greyed
+out"</h3>
+<ul>
+<li><blockquote>
+<p>No PDF Type selected ("With Images" or "Without Images"); picking one
+enabled Send (386936, 387180, 392146)</p>
+</blockquote></li>
+<li><blockquote>
+<p>First and Last Name are required; for insurers or offices enter "N/A"
+or "Doctor" (377169, 376608)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Logging out and in cleared it (396400)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The form was cut off at the user's screen resolution; changing
+display size showed the fields (396006)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-the-file-is-too-big-and-faxes-arrive-blurry-or-b">"The
+file is too big" and "faxes arrive blurry or blacked out"</h3>
+<ul>
+<li><blockquote>
+<p>The limit is 10 MB; compressing the PDF below that let it send
+(411106, 385586)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Blurry or blacked-out faxes: choose "Without Images" for text-only
+documents, "With Images" only for logos or signatures (390557, 386410,
+389320); some were fixed by an engineering release (383126, 381409,
+369521)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-staff-can-t-open-efax-or-some-users-can-t-see-fa">"Staff
+can't open eFax" or "some users can't see failed faxes"</h3>
+<p>eFax is part of the Call Tracking module, and failed-fax logs show
+only to Owner or Manager users.</p>
+<ul>
+<li><blockquote>
+<p>Gave the user Call Tracking access and had them log in again (399338,
+401574, 382084, 405175)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Failed faxes show only to Owners and Managers; the practice upgraded
+the users who need them (384683, 384304, 413739)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-old-failed-faxes-are-flooding-our-inbox-or-i-can">"Old
+failed faxes are flooding our inbox" or "I can't delete a fax"</h3>
+<ul>
+<li><blockquote>
+<p>Backend reverted a change that brought old failed faxes back (388854,
+396072, 393064)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Cleaned out old failed-fax records for the client (392638,
+401553)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Faxes can be archived, not deleted; showed how (403072, 400334); one
+deletion was done by engineering on request (405990)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Archive showing success but leaving the fax in place was fixed
+(409879)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 shows archiving. Phones team for cleanup and
+bugs.</p>
+<h3 id="v-we-re-not-getting-fax-email-notifications-or-cha">"We're
+not getting fax email notifications" or "change who gets them"</h3>
+<ul>
+<li><blockquote>
+<p>Added, changed or removed the notification addresses on the fax
+number, then sent a test fax (393336, 392103, 392735, 397268)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Only one address missing alerts: the others worked, so the client
+checked that mailbox (403733)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The user had been clearing notifications without reading them
+(392683)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team to change recipients if T1
+cannot.</p>
+<h3 id="v-i-can-t-see-or-open-a-fax-that-came-in">"I can't see or open a
+fax that came in"</h3>
+<ul>
+<li><blockquote>
+<p>Removed a fax log filter hiding faxes (411323, 384304)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The client was looking in Archive instead of Inbox (387459)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Opened in the desktop app but not the browser: use the app, open from
+Call Tracking, Faxes in Chrome, or restart the browser (400563, 389921,
+396744, 396372)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-how-do-i-send-a-fax-from-adit-fax-numbers-and-fa">"How
+do I send a fax from Adit?", fax numbers and fax feature requests</h3>
+<ul>
+<li><blockquote>
+<p>How-to: showed Create Request in the app (399034, 403772, 379243);
+sending by email (the old V1 method) is no longer supported (397606);
+Adit supports web fax only, not a physical machine (411931); how to
+check a fax was sent (401640) and save fax contacts (413401)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fax numbers: activated the number and sent instructions (398193,
+399048, 412672); for ports, gave the scheduled FOC date (387152,
+385614); faxing stays with the old provider until the port completes
+(394137)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Not supported: automatic or custom cover sheets, attach manually each
+time (408948, 391606, 365158); fax forwarding (405542); colour faxes
+(387206); deleting saved fax contacts (387450); a fax directory request
+was logged (410754)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1, with the Phones team for activating and porting
+numbers.</p>
+<h2 id="v-call-tracking-recordings-reports-porting-and-fea">Call
+tracking, recordings, reports, porting and feature requests</h2>
+<p>Recordings are usually "missing" because the recording toggle was
+off; calls are "missing" from the logs because of porting, number
+configuration, or calls that never connected.</p>
+<h3 id="v-calls-still-go-to-the-old-phones-or-when-will-my">"Calls
+still go to the old phones" or "when will my number port?"</h3>
+<p>Until the port completes, the old carrier still owns the number.</p>
+<ul>
+<li><blockquote>
+<p>Calls reach the old phones while the port is pending; the agent
+chased the porting team and calls switched once it completed (407900,
+402581)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Number "not operational" on install day: the port had not been
+accepted, client told to contact the losing carrier (377701)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A port-out still routing through Adit: the porting team confirmed and
+scheduled the date, then tested calls (401627)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Confirmed the number is active with Adit, or gave the FOC date
+(395603, 387152)</p>
+</blockquote></li>
+<li><blockquote>
+<p>From calls: forwarding to the temporary Adit number stops once the
+number moves, so routing must move to the ported number</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: port status, FOC date, temporary number
+behaviour. Then the Phones team.</p>
+<h3 id="v-call-recording-is-missing-or-won-t-play">"Call recording is
+missing or won't play"</h3>
+<ul>
+<li><blockquote>
+<p>"Inbound Call Recording" was set to No in the call flow; turned it
+on, including for tracking-number calls passing through the main flow,
+and test-called (405927, 401383)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Calls made before recording was turned on were never recorded and
+cannot be retrieved (401561, 397924)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Engineering fixed a server-to-app sync and restored missing
+recordings (406552, 409267, 395137)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A garbled recording could not be recovered; the account moved to V4
+to prevent repeats (396667); playback issues cleared after a V4 move
+(401226)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: inbound and outbound recording toggles.
+Then the Phones team.</p>
+<h3 id="v-i-can-only-hear-one-side-of-the-recording">"I can only hear one
+side of the recording"</h3>
+<ul>
+<li><blockquote>
+<p>Changed the computer's audio output or headset, or played it on
+another PC (407633, 408881)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Played fine on Adit's side and another computer; client told to
+reboot (406089)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+
+<h3 id="v-call-or-voicemail-transcripts-aren-t-showing">"Call or voicemail
+transcripts aren't showing"</h3>
+<ul>
+<li><blockquote>
+<p>Unanswered outbound calls and voicemails of 10 seconds or less are
+not transcribed (384942)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Transcripts appear 5 to 10 minutes after the call (up to 30 at busy
+times); find them in Call Tracking, Play, Transcript, since Call Pop
+does not show every one (406274, 411097)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Static and background noise produced no transcript (402388)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A recorded call with no recording, summary or transcript was fixed by
+developers (404136)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first. Phones team if nothing appears after 30
+minutes.</p>
+<h3 id="v-a-call-is-missing-from-call-tracking">"A call is missing from
+Call Tracking"</h3>
+<ul>
+<li><blockquote>
+<p>During a port, outbound calls go out on a temporary masked number and
+do not appear until the port completes (385859)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Caller ID on the lines was set to a number not on the account;
+setting it to the main landline brought entries back (393489,
+412151)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A call that failed on congestion is never logged, as expected
+(401111)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Engineering checked PBX and carrier records to confirm which calls
+took place (402787)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 first: date filter and port status. Then the
+Phones team.</p>
+<h3 id="v-how-do-i-filter-or-export-call-logs-or-count-cal">"How do
+I filter or export call logs, or count calls per user?"</h3>
+<ul>
+<li><blockquote>
+<p>Showed Call Tracking filters by date, direction and user (413950,
+403067, 396597, 355507)</p>
+</blockquote></li>
+<li><blockquote>
+<p>A "missed only" filter made calls look missing (414783)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Export: Call Tracking, Call Logs, Table Settings to pick columns,
+then the menu, Export CSV; the file is emailed (397553, 410122)</p>
+</blockquote></li>
+<li><blockquote>
+<p>The User column comes from voice and transcript identification, so it
+can differ from the extension's assigned user (408241)</p>
+</blockquote></li>
+<li><blockquote>
+<p>An Insights report that would not load for long ranges was fixed
+(384252)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>
+<h3 id="v-tracking-numbers">Tracking numbers</h3>
+<ul>
+<li><blockquote>
+<p>Built a dedicated call flow for the tracking number, for example ring
+extensions then voicemail (390551), or copied the landline flow onto it
+(393218)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Fixed the flow so tracking-number calls reach the right extension
+(395797, 371707)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Moved tracking numbers to the correct server after a mismatch
+(383658)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Desk phones show only the caller's name and number, not which number
+was dialled; check Call Tracking for the source (394617, 409299); a
+custom caller name per ad number is not supported (411951)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Bought a tracking number for the client (390405), showed how to order
+one (409883), explained extra numbers cost extra (413037), and sent a
+video on where to find them (405770)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1 for call flow and how-to. Phones team for purchase
+and server issues.</p>
+<h3 id="v-feature-requests-clients-raised-and-what-agents-">Feature
+requests clients raised, and what agents told them</h3>
+<ul>
+<li><blockquote>
+<p>Custom tags in Call Tracking: only built-in tags; feature request
+submitted (386696, 359717)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Internal extension-to-extension calls cannot be recorded (397394)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Recording cannot be paused while card details are taken; turn
+recording off for that outbound call, or ask the team to delete that
+call's log (370350)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Limiting who hears recordings: Staff users cannot play recordings,
+and Call Tracking can be turned off per user (412377)</p>
+</blockquote></li>
+<li><blockquote>
+<p>Personal voicemail greetings per extension are not supported
+(390707)</p>
+</blockquote></li>
+</ul>
+<p>Who handles it: T1.</p>

@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="noindex, nofollow" name="robots"/>
+<meta content="Tier 1 standard operating procedure for Adit AI products." name="description"/>
+<title>T1 AI Support Runbook</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ground:#F4F8FB;
+  --surface:#FFFFFF;
+  --surface-2:#EAF2F7;
+  --ink:#092A3D;
+  --ink-2:#4E6A7B;
+  --ink-3:#7D96A5;
+  --line:#D5E3EC;
+  --line-strong:#B3CBDA;
+  --brand:#1B8FC6;
+  --brand-fill:#25A8E0;
+  --brand-bg:#E4F4FC;
+  --teal:#2E9EA4;
+  --go:#00873C;
+  --go-bg:#E1F7EC;
+  --warn:#8A5B00;
+  --warn-bg:#FFF3D6;
+  --stop:#C4291D;
+  --stop-bg:#FDE7E5;
+  --shadow:0 1px 2px rgba(9,42,61,.06), 0 8px 24px -18px rgba(9,42,61,.5);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#04141E;
+    --surface:#0A2938;
+    --surface-2:#0F384C;
+    --ink:#E9F3F9;
+    --ink-2:#9EBACB;
+    --ink-3:#6F8FA2;
+    --line:#1B4760;
+    --line-strong:#2A6486;
+    --brand:#5ACEFF;
+    --brand-fill:#25A8E0;
+    --brand-bg:#0C3B55;
+    --teal:#42C1C7;
+    --go:#2DDC96;
+    --go-bg:#0B3D2E;
+    --warn:#FDB913;
+    --warn-bg:#3E2E05;
+    --stop:#FF8A7E;
+    --stop-bg:#431914;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -20px rgba(0,0,0,.9);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#04141E;
+  --surface:#0A2938;
+  --surface-2:#0F384C;
+  --ink:#E9F3F9;
+  --ink-2:#9EBACB;
+  --ink-3:#6F8FA2;
+  --line:#1B4760;
+  --line-strong:#2A6486;
+  --brand:#5ACEFF;
+  --brand-fill:#25A8E0;
+  --brand-bg:#0C3B55;
+  --teal:#42C1C7;
+  --go:#2DDC96;
+  --go-bg:#0B3D2E;
+  --warn:#FDB913;
+  --warn-bg:#3E2E05;
+  --stop:#FF8A7E;
+  --stop-bg:#431914;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -20px rgba(0,0,0,.9);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Poppins",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:15px;
+  line-height:1.6;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{margin:0;text-wrap:balance;font-weight:600;letter-spacing:-.01em}
+p{margin:0}
+ol,ul{margin:0;padding-left:1.15em}
+li{margin:.28em 0}
+a{color:var(--brand)}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+code{font-size:.86em;background:var(--surface-2);padding:.12em .38em;border-radius:4px;color:var(--ink)}
+
+/* ---------- masthead ---------- */
+.masthead{
+  background:var(--surface);
+  border-bottom:1px solid var(--line);
+}
+.masthead-in{
+  max-width:1180px;margin:0 auto;padding:34px 28px 26px;
+  display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:22px;
+}
+.eyebrow{
+  font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);
+  display:flex;align-items:center;gap:9px;
+}
+.eyebrow::before{content:"";width:22px;height:3px;border-radius:2px;background:var(--brand-fill)}
+h1{font-size:clamp(28px,4.4vw,42px);font-weight:700;line-height:1.1;margin:10px 0 8px}
+.lede{color:var(--ink-2);max-width:56ch;font-size:15.5px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 26px;font-size:12.5px}
+.fact{display:flex;flex-direction:column;gap:1px}
+.fact dt{color:var(--ink-3);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+.fact dd{margin:0;font-weight:500}
+
+/* ---------- shell ---------- */
+.shell{max-width:1180px;margin:0 auto;padding:0 28px 90px;display:grid;grid-template-columns:212px minmax(0,1fr);gap:44px;align-items:start}
+nav.toc{position:sticky;top:24px;padding-top:34px;font-size:13px}
+nav.toc .toc-label{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:10px}
+nav.toc ol{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:1px;counter-reset:toc}
+nav.toc a{
+  display:flex;gap:9px;text-decoration:none;color:var(--ink-2);padding:5px 9px;border-radius:6px;
+  border-left:2px solid transparent;
+}
+nav.toc a:hover{background:var(--surface-2);color:var(--ink)}
+nav.toc a:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+nav.toc li{counter-increment:toc}
+nav.toc a::before{content:counter(toc);color:var(--ink-3);font-family:"IBM Plex Mono",monospace;font-size:11px}
+main{padding-top:34px;display:flex;flex-direction:column;gap:52px;min-width:0}
+
+/* ---------- sections ---------- */
+section{scroll-margin-top:20px;display:flex;flex-direction:column;gap:18px}
+.sec-head{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.sec-num{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brand);letter-spacing:.08em}
+h2{font-size:23px;font-weight:600}
+.sec-head p{color:var(--ink-2);font-size:14px;max-width:70ch}
+h3{font-size:16px;font-weight:600}
+h4{font-size:13.5px;font-weight:600}
+
+/* ---------- rules ---------- */
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px}
+.rule{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow)}
+.rule .rk{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-3);letter-spacing:.08em}
+.rule strong{font-size:14.5px;font-weight:600;line-height:1.35}
+.rule p{font-size:13px;color:var(--ink-2)}
+
+/* ---------- figures ---------- */
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 20px 14px;box-shadow:var(--shadow);overflow-x:auto}
+figure svg{display:block;width:100%;height:auto;color:var(--ink);min-width:560px}
+figcaption{margin-top:12px;font-size:12.5px;color:var(--ink-2);line-height:1.5;border-top:1px solid var(--line);padding-top:10px}
+.n-box{fill:var(--surface-2);stroke:var(--line-strong)}
+.n-brand{fill:var(--brand-bg);stroke:var(--brand)}
+.n-go{fill:var(--go-bg);stroke:var(--go)}
+.n-warn{fill:var(--warn-bg);stroke:var(--warn)}
+.n-stop{fill:var(--stop-bg);stroke:var(--stop)}
+.s-line{stroke:var(--line-strong);fill:none}
+.s-brand{stroke:var(--brand);fill:none}
+.t{fill:currentColor;font-family:"Poppins",sans-serif;font-size:12.5px}
+.t-sm{fill:var(--ink-2);font-family:"Poppins",sans-serif;font-size:11px}
+.t-mono{fill:var(--ink-2);font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em}
+.t-b{font-weight:600}
+.t-brand{fill:var(--brand)}
+.t-stop{fill:var(--stop)}
+.t-go{fill:var(--go)}
+
+/* ---------- tables ---------- */
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;min-width:660px;font-size:13.5px}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{
+  font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600;
+  background:var(--surface-2);border-bottom:1px solid var(--line-strong);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:none}
+td strong{font-weight:600}
+.owner{white-space:nowrap;font-weight:500}
+
+/* ---------- authority lists ---------- */
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.panel{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+.panel-head{padding:11px 16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-head.go{background:var(--go-bg);color:var(--go)}
+.panel-head.stop{background:var(--stop-bg);color:var(--stop)}
+.panel ul{list-style:none;padding:6px 0;margin:0}
+.panel li{padding:8px 16px;border-bottom:1px solid var(--line);font-size:13.5px;display:flex;gap:10px}
+.panel li:last-child{border-bottom:none}
+.panel li .mk{flex:0 0 auto;font-weight:700;line-height:1.5}
+.panel li.g .mk{color:var(--go)}
+.panel li.s .mk{color:var(--stop)}
+.panel li em{font-style:normal;display:block;color:var(--ink-2);font-size:12.5px}
+
+/* ---------- triage cases ---------- */
+.cases{display:flex;flex-direction:column;gap:14px}
+.case{border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.case-top{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:baseline;padding:14px 18px;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.case-id{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brand);font-weight:500}
+.case-title{font-size:15px;font-weight:600;flex:1 1 220px}
+.chip{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:600;padding:3px 9px;border-radius:999px;border:1px solid}
+.chip.urgent{color:var(--stop);background:var(--stop-bg);border-color:var(--stop)}
+.chip.high{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.chip.normal{color:var(--ink-2);background:var(--surface);border-color:var(--line-strong)}
+.case-body{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:0}
+.case-checks{padding:16px 18px;border-right:1px solid var(--line);min-width:0}
+.case-side{padding:16px 18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.says{font-size:13px;color:var(--ink-2);font-style:italic;border-left:2px solid var(--brand-fill);padding-left:11px;margin-bottom:12px}
+.case-checks ol{padding-left:1.2em;font-size:13.5px}
+.side-block .lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);font-weight:600;margin-bottom:4px}
+.side-block .val{font-size:13px}
+.side-block .val strong{font-weight:600}
+.route{background:var(--brand-bg);border:1px solid var(--brand);border-radius:8px;padding:10px 12px}
+.route .lbl{color:var(--brand)}
+
+/* ---------- runbooks ---------- */
+.rb{border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);padding:16px 18px;display:flex;flex-direction:column;gap:9px}
+.rb-top{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline}
+.rb-id{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brand);font-weight:500}
+.rb-title{font-size:15px;font-weight:600}
+.rb-owner{margin-left:auto;font-size:11.5px;color:var(--ink-2)}
+.rb ol{font-size:13.5px;padding-left:1.25em}
+.note{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:9px 12px}
+.note.warn{background:var(--warn-bg);color:var(--warn);font-weight:500}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+
+/* ---------- billing ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.tile{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:3px}
+.tile .pk{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.tile .big{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15}
+.tile .sub{font-size:13px;color:var(--ink-2)}
+.tile .rate{font-size:13.5px;font-weight:600;color:var(--brand)}
+
+/* ---------- templates ---------- */
+.tpl{border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.tpl-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline;padding:11px 15px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.tpl-id{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brand)}
+.tpl-name{font-weight:600;font-size:14px}
+.tpl-route{margin-left:auto;font-size:11.5px;color:var(--ink-2)}
+.tpl pre{margin:0;padding:13px 15px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.75;color:var(--ink-2);white-space:pre-wrap;word-break:break-word}
+
+/* ---------- footer ---------- */
+footer{border-top:1px solid var(--line);margin-top:10px;padding-top:16px;font-size:12.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:8px 22px}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr;gap:0;padding:0 20px 70px}
+  nav.toc{position:static;padding-top:24px}
+  nav.toc ol{flex-direction:row;flex-wrap:wrap;gap:6px}
+  nav.toc a{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px}
+  main{padding-top:28px;gap:44px}
+  .case-body{grid-template-columns:1fr}
+  .case-checks{border-right:none;border-bottom:1px solid var(--line)}
+  .masthead-in{padding:26px 20px 22px}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- auth gate ---------- */
+body:not(.authed)>:not(#gate){display:none!important}
+body.authed #gate{display:none}
+#gate{min-height:100vh;display:grid;place-items:center;padding:24px}
+.gate-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:40px 36px;max-width:400px;width:100%;text-align:center}
+.gate-card h1{font-size:22px;margin:14px 0 6px}
+.gate-card p{color:var(--ink-2);font-size:14px}
+#gbtn{margin-top:26px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 16px;font:500 14px Poppins,sans-serif;color:var(--ink);background:var(--surface);border:1px solid var(--line-strong);border-radius:10px;cursor:pointer}
+#gbtn:hover{background:var(--surface-2)}
+#gerr{color:var(--stop);font-size:13px;min-height:20px;margin-top:14px}
+#signout{position:fixed;top:12px;right:16px;z-index:50;font:500 12px Poppins,sans-serif;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer}
+</style>
+</head>
+<body class="authed">
+
+
+<header class="masthead">
+<div class="masthead-in">
+<div>
+<div class="eyebrow">Tier 1 Support · Standard Operating Procedure</div>
+<h1>T1 AI Support Runbook</h1>
+<p class="lede">How Tier 1 supports clients on AI Front Desk, AI SMS Agent, AI Webchat and Call Intelligence, what to check, what you may change yourself, and what goes to the AI team.</p>
+</div>
+<dl class="facts">
+<div class="fact"><dt>Version</dt><dd>1.0</dd></div>
+<div class="fact"><dt>Owner</dt><dd>AI Support (T2)</dd></div>
+<div class="fact"><dt>Audience</dt><dd>Tier 1 Support floor</dd></div>
+<div class="fact"><dt>Review cycle</dt><dd>Quarterly</dd></div>
+</dl>
+</div>
+</header>
+<div class="shell">
+<nav aria-label="Contents" class="toc">
+<div class="toc-label">Contents</div>
+<ol>
+<li><a href="#scope">Scope &amp; ground rules</a></li>
+<li><a href="#routing">Routing map</a></li>
+<li><a href="#ownership">Who owns what</a></li>
+<li><a href="#authority">T1 authority</a></li>
+<li><a href="#triage">Triage cases</a></li>
+<li><a href="#callflow">Call flow &amp; AI</a></li>
+<li><a href="#runbooks">Runbooks</a></li>
+<li><a href="#billing">Billing &amp; minutes</a></li>
+<li><a href="#cancel">Cancellation</a></li>
+<li><a href="#templates">Ticket templates</a></li>
+<li><a href="#quick">Quick reference</a></li>
+</ol>
+</nav>
+<main>
+<!-- 1 SCOPE -->
+<section id="scope">
+<div class="sec-head">
+<div class="sec-num">01</div>
+<h2>Scope &amp; ground rules</h2>
+<p>Products in scope: <strong>AI Front Desk</strong> (After Hours and Full Time), <strong>AI SMS Agent</strong>, <strong>AI Webchat</strong> and <strong>Call Intelligence</strong>. Automated Reminders and Automated Forms are <em>not</em> AI products, even when the client says they are.</p>
+</div>
+<div class="rules">
+<div class="rule">
+<span class="rk">RULE 01</span>
+<strong>“The AI did it” is not a diagnosis</strong>
+<p>Most AI tickets turn out to be Online Scheduling, EHR sync, call flow or Automated Reminders. Prove the AI agent is involved before routing to the AI team, misrouting is the single biggest cause of delay.</p>
+</div>
+<div class="rule">
+<span class="rk">RULE 02</span>
+<strong>Existing SOPs still apply in full</strong>
+<p>AI Front Desk changes nothing in the Online Scheduling SOP or the call-flow SOP. AI is a layer added at the end of the call tree, not a replacement for either process.</p>
+</div>
+<div class="rule">
+<span class="rk">RULE 03</span>
+<strong>Authorised still means notify</strong>
+<p>SMS buffer changes, call-flow edits and emergency AI removal are all T1 actions, and all require an intimation to AI Support so every team knows the current configuration.</p>
+</div>
+<div class="rule">
+<span class="rk">RULE 04</span>
+<strong>No call link, no ticket</strong>
+<p>Any suspected AI behaviour issue needs patient name, patient callback number, date and time, and the call link from the AI Agent module. Tickets without them come back to T1.</p>
+</div>
+</div>
+<div class="note">Where you work in the product: <code>Settings &gt; AI Agent</code> (agent settings, Test the Call Flow, SMS Agent settings) · <code>Call Flow</code> and <code>Call Flow Templates</code> · <code>AI Agent Insights</code> · <code>Settings &gt; Billing &gt; Invoice &gt; Overages</code>. Raise an access request if any of the four is missing.</div>
+</section>
+<!-- 2 ROUTING -->
+<section id="routing">
+<div class="sec-head">
+<div class="sec-num">02</div>
+<h2>Routing map</h2>
+<p>Work the gates top to bottom. The order matters: the upper gates catch the tickets that look like AI faults but are not, so a ticket only reaches the AI team once the cheaper explanations are ruled out.</p>
+</div>
+<figure>
+<svg aria-label="Triage ladder: ten symptom gates checked in order, each routing to an owning team, with booking and sync checked first and the AI team reached only after configuration is cleared" role="img" viewbox="0 0 940 900">
+<defs>
+<marker id="ar" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10">
+<path d="M0,0 L10,5 L0,10 z" fill="var(--line-strong)"></path>
+</marker>
+<marker id="arb" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10">
+<path d="M0,0 L10,5 L0,10 z" fill="var(--brand)"></path>
+</marker>
+</defs>
+<!-- inbound -->
+<rect class="n-brand" height="46" rx="8" width="300" x="24" y="16"></rect>
+<text class="t t-b t-brand" x="44" y="38">Ticket on an AI-product account</text>
+<text class="t-sm" x="44" y="54">Any symptom, however the client describes it</text>
+<line class="s-line" stroke-dasharray="4 4" stroke-width="1.5" x1="60" x2="60" y1="62" y2="852"></line>
+<text class="t-mono" x="72" y="80">CHECK IN THIS ORDER</text>
+<!-- rows -->
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="118" y2="118"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="96"></rect>
+<text class="t" x="134" y="123">Booking, double booking or EHR sync</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="118" y2="118"></line>
+<rect class="n-go" height="44" rx="8" width="350" x="566" y="96"></rect>
+<text class="t t-b" x="582" y="115">Online Scheduling SOP, in full</text>
+<text class="t-sm" x="582" y="131">AI only after checks 1-6 are clean</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="192" y2="192"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="170"></rect>
+<text class="t" x="134" y="197">Call tree, override or out-of-office</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="192" y2="192"></line>
+<rect class="n-go" height="44" rx="8" width="350" x="566" y="170"></rect>
+<text class="t t-b" x="582" y="189">T1 Support or VoIP T1</text>
+<text class="t-sm" x="582" y="205">Standard SOP; AI number stays last</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="266" y2="266"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="244"></rect>
+<text class="t" x="134" y="271">SMS agent replies too fast, too slow, or off</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="266" y2="266"></line>
+<rect class="n-go" height="44" rx="8" width="350" x="566" y="244"></rect>
+<text class="t t-b" x="582" y="263">T1 changes buffer or toggle</text>
+<text class="t-sm" x="582" y="279">Intimation to AI Support is mandatory</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="340" y2="340"></line>
+<rect class="n-warn" height="44" rx="8" width="378" x="118" y="318"></rect>
+<text class="t" x="134" y="337">“The AI is texting patients”</text>
+<text class="t-sm" x="134" y="353">- but SMS Agent is disabled</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="340" y2="340"></line>
+<rect class="n-box" height="44" rx="8" width="350" x="566" y="318"></rect>
+<text class="t t-b" x="582" y="337">Automated Reminders / Forms owner</text>
+<text class="t-sm" x="582" y="353">Not the AI team. Prove the sender first.</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="414" y2="414"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="392"></rect>
+<text class="t" x="134" y="419">Call Intelligence, any symptom</text>
+<line class="s-brand" marker-end="url(#arb)" stroke-width="1.5" x1="496" x2="562" y1="414" y2="414"></line>
+<rect class="n-brand" height="44" rx="8" width="350" x="566" y="392"></rect>
+<text class="t t-b t-brand" x="582" y="411">AI Support, Antony &amp; Liam</text>
+<text class="t-sm" x="582" y="427">First intimation before anything else</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="488" y2="488"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="466"></rect>
+<text class="t" x="134" y="493">Recording missing / missed-call mismatch</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="488" y2="488"></line>
+<rect class="n-box" height="44" rx="8" width="350" x="566" y="466"></rect>
+<text class="t t-b" x="582" y="485">VoIP Support</text>
+<text class="t-sm" x="582" y="501">They decide whether QA is needed</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="562" y2="562"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="540"></rect>
+<text class="t" x="134" y="567">AI announced a transfer, phones stayed silent</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="562" y2="562"></line>
+<rect class="n-warn" height="44" rx="8" width="350" x="566" y="540"></rect>
+<text class="t t-b" x="582" y="559">T1 checks “AI Agent Transfer” template</text>
+<text class="t-sm" x="582" y="575">Only then to AI Support</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="636" y2="636"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="614"></rect>
+<text class="t" x="134" y="641">AI captured wrong appointment or insurance data</text>
+<line class="s-brand" marker-end="url(#arb)" stroke-width="1.5" x1="496" x2="562" y1="636" y2="636"></line>
+<rect class="n-brand" height="44" rx="8" width="350" x="566" y="614"></rect>
+<text class="t t-b t-brand" x="582" y="633">AI Support (T2)</text>
+<text class="t-sm" x="582" y="649">With patient, number, time and call link</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="710" y2="710"></line>
+<rect class="n-box" height="44" rx="8" width="378" x="118" y="688"></rect>
+<text class="t" x="134" y="715">Billing, overage or upgrade question</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="710" y2="710"></line>
+<rect class="n-go" height="44" rx="8" width="350" x="566" y="688"></rect>
+<text class="t t-b" x="582" y="707">T1 explains from Overages + Insights</text>
+<text class="t-sm" x="582" y="723">Upgrades: ticket to AI Support</text>
+</g>
+<g>
+<line class="s-line" stroke-width="1.5" x1="60" x2="118" y1="784" y2="784"></line>
+<rect class="n-stop" height="44" rx="8" width="378" x="118" y="762"></rect>
+<text class="t" x="134" y="789">Cancellation or downgrade</text>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="496" x2="562" y1="784" y2="784"></line>
+<rect class="n-stop" height="44" rx="8" width="350" x="566" y="762"></rect>
+<text class="t t-b t-stop" x="582" y="781">AI leads only, never T1</text>
+<text class="t-sm" x="582" y="797">Client name and email mandatory</text>
+</g>
+<line class="s-line" marker-end="url(#ar)" stroke-width="1.5" x1="60" x2="120" y1="852" y2="852"></line>
+<text class="t-sm" x="130" y="857">Nothing matched? Capture the evidence pack and raise it to AI Support (T2) rather than guessing.</text>
+</svg>
+<figcaption><strong>Triage ladder.</strong> Gates are checked in sequence, not in parallel. Green destinations are resolved by T1; blue go to the AI team; amber means T1 verifies configuration first and escalates only if it is already correct; red is commercial and leaves support entirely.</figcaption>
+</figure>
+</section>
+<!-- 3 OWNERSHIP -->
+<section id="ownership">
+<div class="sec-head">
+<div class="sec-num">03</div>
+<h2>Who owns what</h2>
+<p>Decide the owning team before you work the ticket. T1 owns every AI ticket until it is proven to be an AI product defect or a commercial request.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Team</th><th>Owns</th><th>Escalate to them when</th></tr></thead>
+<tbody>
+<tr><td class="owner"><strong>T1 Support</strong></td><td>First touch on all AI tickets: triage, verification, evidence capture, permitted configuration changes.</td><td>- you are the first line.</td></tr>
+<tr><td class="owner"><strong>VoIP T1 / VoIP Support</strong></td><td>Call routing, call trees, overrides, out-of-office, recordings, missed-call data.</td><td>A call-flow change is beyond T1 comfort, recordings are missing, missed-call data does not match, or the fault is telephony-side.</td></tr>
+<tr><td class="owner"><strong>AI Support (T2)</strong></td><td>AI product behaviour and defects across Front Desk, SMS Agent, Webchat and Call Intelligence.</td><td>Configuration is verified correct and the fault sits with the AI agent itself.</td></tr>
+<tr><td class="owner"><strong>Online Scheduling</strong></td><td>Appointment booking, availability, double booking, EHR/PMS appointment sync.</td><td>Any booking, double-booking or sync symptom, regardless of whether the client blames the AI.</td></tr>
+<tr><td class="owner"><strong>AI Leads</strong></td><td>Cancellations, downgrades, package changes.</td><td>Any cancellation or downgrade request, immediately.</td></tr>
+</tbody>
+</table>
+</div>
+<h3>Named escalation owners</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Request</th><th>Primary</th><th>If no response</th><th>Rule</th></tr></thead>
+<tbody>
+<tr><td>Call Intelligence, any issue</td><td class="owner">Antony &amp; Liam</td><td class="owner">AI Support queue</td><td>Intimation to AI Support <strong>first</strong>, before any other action.</td></tr>
+<tr><td>Call Intelligence, cancellation</td><td class="owner">Aijaz &amp; Antony</td><td class="owner">Zarka / Padma</td><td>Route immediately. No retention attempt, no counter-offer.</td></tr>
+<tr><td>AI Front Desk / SMS / Webchat, cancellation</td><td class="owner">Zarka &amp; Aijaz</td><td class="owner">Antony / Padma</td><td>Route immediately.</td></tr>
+<tr><td>Any downgrade</td><td class="owner">Aijaz &amp; Zarka</td><td class="owner">Antony &amp; Padma</td><td>Straight to the AI leads; they own the process from there.</td></tr>
+<tr><td>Package upgrade / more minutes</td><td class="owner">AI Support ticket</td><td class="owner">AI leads</td><td>Not a downgrade. Normal upgrade ticket, no pricing quoted by T1.</td></tr>
+<tr><td>AI behaviour / wrong data captured</td><td class="owner">AI Support (T2)</td><td class="owner">-</td><td>Full evidence pack attached, including the call link.</td></tr>
+<tr><td>Recordings / missed-call data</td><td class="owner">VoIP Support</td><td class="owner">AI Support if VoIP confirms AI-side</td><td>VoIP decides whether a QA review is required.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="note warn">Name spellings (Aijaz, Zarka, Antony, Liam, Padma) are as dictated, confirm the exact spellings and handles before this goes out to the floor.</div>
+</section>
+<!-- 4 AUTHORITY -->
+<section id="authority">
+<div class="sec-head">
+<div class="sec-num">04</div>
+<h2>T1 authority</h2>
+<p>What you may change on a live AI account without waiting for the AI team, and what never leaves their hands.</p>
+</div>
+<div class="split">
+<div class="panel">
+<div class="panel-head go">T1 may do this</div>
+<ul>
+<li class="g"><span class="mk">✓</span><span>Call-tree changes, overrides and out-of-office setup <em>Standard SOP. The AI number stays as the last external element.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Add the AI number as an external element at the end of the tree <em>Number from Settings &gt; AI Agent &gt; Test the Call Flow.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Change the SMS Agent buffer time <em>On client request. Intimation to AI Support mandatory.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Turn the SMS Agent on or off <em>On client request. Intimation to AI Support mandatory.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Emergency removal of AI Front Desk from the call flow <em>Replace with voicemail, then inform the AI team immediately.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Explain billing and overages <em>Facts and figures only, from Overages and Insights.</em></span></li>
+</ul>
+</div>
+<div class="panel">
+<div class="panel-head stop">Never T1</div>
+<ul>
+<li class="s"><span class="mk">×</span><span>Change the AI agent script, prompts or behaviour <em>AI Support only.</em></span></li>
+<li class="s"><span class="mk">×</span><span>Process, confirm or negotiate a cancellation <em>Named owners only.</em></span></li>
+<li class="s"><span class="mk">×</span><span>Process or quote a downgrade <em>AI leads own the whole conversation.</em></span></li>
+<li class="s"><span class="mk">×</span><span>Upgrade a package or add minutes <em>Raise a ticket to AI Support instead.</em></span></li>
+<li class="s"><span class="mk">×</span><span>Promise pricing, credits or an effective date <em>Commercial commitments are not a support decision.</em></span></li>
+<li class="s"><span class="mk">×</span><span>Leave the end of a call tree empty <em>If the AI number comes out, voicemail goes in.</em></span></li>
+</ul>
+</div>
+</div>
+</section>
+<!-- 5 TRIAGE -->
+<section id="triage">
+<div class="sec-head">
+<div class="sec-num">05</div>
+<h2>Triage cases</h2>
+<p>Fourteen cases covering everything that reaches T1 on an AI account. Complete every check in order before routing, a case is only escalated once its checks are documented as clean.</p>
+</div>
+<div class="cases">
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 01</span><span class="case-title">Online Scheduling wearing an AI costume</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“Appointments aren’t booking correctly.” · “We had a double booking.” · “It never synced to the EHR.” · “The AI put it in the wrong slot.”</p>
+<ol>
+<li>Treat this as an <strong>Online Scheduling</strong> issue and apply that SOP in full, exactly as for a non-AI client.</li>
+<li>Verify provider, operatory and column mapping, and the availability rules.</li>
+<li>Verify the appointment types and durations exposed to online booking.</li>
+<li>Verify the EHR/PMS sync: agent connected and running, errors or queued items, time of the last successful sync.</li>
+<li>Reproduce with the specific appointments, date, time, patient, provider, and compare Adit against the EHR.</li>
+<li>Check for a disabled double-booking rule or block-out, and for manual EHR bookings that never synced back.</li>
+<li>Only once 1-6 are clean and documented, consider whether the fault is AI-specific (for example the agent captured the wrong appointment type from the caller).</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">Online Scheduling SOP owner. AI Support <strong>only</strong> if checks 1-6 are clean and the fault is provably AI-side.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Patient name · appointment date, time and provider · EHR screenshot · Adit screenshot · sync status or log · call link if the booking came through the AI agent.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 02</span><span class="case-title">Out-of-office, overrides and call-tree changes</span><span class="chip normal">Normal</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“Set up an out-of-office for the holiday.” · “Change our call tree.” · “Route after-hours calls differently.”</p>
+<ol>
+<li>Confirm this is a standard call-flow request. Having AI Front Desk changes nothing about how the tree is built.</li>
+<li>The one difference: where a non-AI client ends the tree in voicemail, an AI Front Desk client ends it in the AI Agent number, <strong>AI Front Desk replaces the voicemail</strong>.</li>
+<li>Get the number from <code>Settings &gt; AI Agent &gt; Test the Call Flow</code>.</li>
+<li>Confirm it sits as an <strong>external element at the end</strong> of the tree. Everything above it follows the existing SOP.</li>
+<li>Make the change yourself, or hand to VoIP T1 with the AI number stated on the ticket.</li>
+<li>Test the flow with a live call, then record the before and after states.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">T1 Support, or VoIP T1 Support.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Requested schedule · call tree before and after · the AI number used · test-call result.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 03</span><span class="case-title">SMS Agent timing or on/off</span><span class="chip normal">Normal</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“It replies to patients too quickly.” · “It’s answering wrong.” · “Turn the SMS agent off.”</p>
+<ol>
+<li>Confirm the SMS Agent is actually enabled in <code>Settings &gt; AI Agent &gt; SMS Agent settings</code>. If it is off, go to Case 09.</li>
+<li>Replying too quickly → increase the <strong>buffer time</strong>. Too slowly → reduce it. Agree the value with the client before saving.</li>
+<li>For stop/start, toggle the SMS Agent as requested.</li>
+<li>Save, reload, and confirm the value persisted.</li>
+<li>Send the intimation to AI Support: client, change, old value, new value, requester, reason.</li>
+<li>If the complaint is about <em>what</em> the agent said rather than <em>when</em>, buffer time is the wrong lever, capture the thread and escalate.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">T1 makes the change. <strong>Intimation to AI Support is mandatory.</strong> Content and accuracy complaints go to AI Support (T2).</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Setting changed · old and new buffer value · requester · SMS thread screenshots if accuracy is disputed.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 04</span><span class="case-title">Call Intelligence, any symptom</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“Calls aren’t being recognised.” · “Wrong user on the call.” · “Call entry not found.” · “Recording not found.” · “The data doesn’t match.”</p>
+<ol>
+<li>Call Intelligence is a static product. T1 does not reconfigure it, do not attempt fixes.</li>
+<li>Send the first intimation to AI Support (<strong>Antony and Liam</strong>) immediately.</li>
+<li>In parallel, capture the calls: date, time, direction, caller number, the user it was attributed to, and what the client expected.</li>
+<li>Name the sub-symptom explicitly: user recognition, call recognition, call entry not found, recording not found, or data discrepancy.</li>
+<li>Record how many calls are affected, and whether it is a one-off or ongoing since a date.</li>
+<li>If the symptom is a missing recording or missed-call mismatch, also run Case 05.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">AI Support, <strong>Antony &amp; Liam</strong>. Intimation before anything else; speed matters more than a complete diagnosis.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Call date and time · caller number · expected vs actual user · screenshots · count of affected calls · start date.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 05</span><span class="case-title">Recordings missing or missed-call data mismatch</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“The recording isn’t there.” · “Our missed-call numbers don’t match.”</p>
+<ol>
+<li>Pin the exact calls: date, time, direction, numbers, and where the client is looking.</li>
+<li>Check whether the recording is absent everywhere or only in one view.</li>
+<li>Route to VoIP Support, they take ownership and decide whether a QA review is required.</li>
+<li>Keep AI Support informed if the same calls also show a Call Intelligence discrepancy.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">VoIP Support. Copy AI Support when Call Intelligence data is affected too.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Call list with date, time and numbers · screenshots · historical or ongoing.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 06</span><span class="case-title">AI transfers the call, office phones stay silent</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“The AI says it’s transferring us to the front office, but our phones never ring.”</p>
+<ol>
+<li>Do not escalate on sight, this is usually a call-flow template problem.</li>
+<li>Open <strong>Call Flow Templates</strong> and find the <code>AI Agent Transfer</code> template. AI clients always have one.</li>
+<li>Verify destination extensions or ring group, devices included, ring duration, and that the template is active and assigned.</li>
+<li>Confirm the main call flow still ends in the AI number as an external element.</li>
+<li>Confirm the destination phones are registered and online, not in DND or covered by an override.</li>
+<li>Place a test call through the AI agent and request a transfer. Watch whether the office phones ring.</li>
+<li>Only if all of the above is correct, escalate to AI Support with the test-call evidence.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">T1 verifies the template. AI Support (T2) if it is already correct.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Template screenshot · destination extensions · test-call date, time and result · call link of a failed transfer.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 07</span><span class="case-title">AI captured the wrong information</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“It booked the wrong appointment type.” · “The insurance details it took are wrong.” · “It got the patient’s details wrong.”</p>
+<ol>
+<li>Rule out Online Scheduling first: if it is about the slot, availability, double booking or sync, this is Case 01.</li>
+<li>If it is about the information the agent <em>collected</em>, build the evidence pack: patient name; patient callback number; date and time of the call.</li>
+<li>Record what the AI captured against what it should have been, field by field.</li>
+<li>Attach the <strong>call link</strong> from the AI Agent module so the team can listen without going back to the client.</li>
+<li>Raise the ticket to AI Support (T2) using template T-01.</li>
+<li>Tell the client the AI team will review the call and respond on the ticket. Do not speculate about the cause.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">AI Support (T2).</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Patient name · callback number · call date and time · <strong>call link</strong> · captured value vs correct value.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 08</span><span class="case-title">AI Front Desk did not answer</span><span class="chip urgent">Urgent</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“Nobody answered after hours.” · “The AI didn’t pick up.”</p>
+<ol>
+<li>Is the AI number still the external element at the end of the tree? Compare against <code>Test the Call Flow</code>.</li>
+<li>Is an override or out-of-office bypassing the AI leg?</li>
+<li>Check business hours, the After Hours package only answers outside configured hours.</li>
+<li>Place a test call from Test the Call Flow and confirm the agent answers.</li>
+<li>Check usage and overage status in case the account has hit a limit.</li>
+<li>If configuration is correct and it still does not answer, escalate to AI Support with the test-call details.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">T1 verifies configuration; AI Support if configuration is clean.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Test-call result · call flow screenshot · business hours configuration · example affected calls.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 09</span><span class="case-title">Reminders and forms mistaken for the AI</span><span class="chip normal">Normal</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“The AI is texting our patients.” · “The AI sent a form.”, on an account with no SMS Agent.</p>
+<ol>
+<li>Check whether the SMS Agent is enabled at all in <code>Settings &gt; AI Agent &gt; SMS Agent settings</code>.</li>
+<li>If it is not, the messages come from <strong>Automated Reminders and Automated Forms</strong>. This confusion is common.</li>
+<li>Prove it: match the message content and send time against the reminder/form configuration.</li>
+<li>Tell the client plainly which system sent the message and why.</li>
+<li>Route the ticket to the Automated Reminders / Forms owner, not the AI team.</li>
+<li>Only with evidence that the AI agent sent it, or sent something wrong, raise a ticket to AI Support (T2).</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">Automated Reminders / Forms owner. AI Support only when the AI agent is proven to be the sender.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Screenshot of the message · send timestamp · SMS Agent on/off status · matching reminder or form configuration.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 10</span><span class="case-title">Billing dispute or overage question</span><span class="chip normal">Normal</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“We were charged extra for the AI.” · “What is this overage?”</p>
+<ol>
+<li>Open <code>Settings &gt; Billing &gt; Invoice</code> and read the <strong>Overages</strong> section for the disputed period.</li>
+<li>Identify the package, After Hours (200 minutes, then $1.00/min) or Full Time (1,000 minutes, then $0.50/min).</li>
+<li>Pull actual usage from <code>AI Agent Insights &gt; Front Desk</code> for the same period.</li>
+<li>Reconcile: (minutes used − included minutes) × rate, and show the client the arithmetic.</li>
+<li>Explain that included minutes reset monthly and never roll over, each month restarts at zero.</li>
+<li>Wants more minutes? Raise an upgrade ticket to AI Support. Figures genuinely don’t reconcile? Escalate with both screenshots.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">T1 explains. AI Support for upgrades or genuine discrepancies.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Overages screenshot · Insights usage screenshot · package type · the figure the client expected.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 11</span><span class="case-title">Emergency, “take the AI off our phones now”</span><span class="chip urgent">Urgent</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“Remove AI Front Desk from our call flow immediately.”</p>
+<ol>
+<li>Confirm with the client that they want the AI leg removed now, this is a live phone change.</li>
+<li>Open the call flow settings and locate the AI Agent number at the bottom of the flow.</li>
+<li>Remove that element and put <strong>voicemail</strong> back in its place, so callers still land somewhere.</li>
+<li>Save, then test-call to confirm callers reach voicemail.</li>
+<li>Inform the AI team immediately so they can take further action.</li>
+<li>Document who asked, when, and exactly what was removed. This is not a cancellation, if they want to cancel, also run Case 13.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">T1 performs it under emergency authority. Immediate notification to the AI team is mandatory.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Requester and time · call flow before and after · test-call result · reason given.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 12</span><span class="case-title">Package upgrade or more minutes</span><span class="chip normal">Normal</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“We keep going over, can we get more minutes?” · “Move us to full time.”</p>
+<ol>
+<li>Confirm the current package and pull current usage from Insights.</li>
+<li>Explain the inclusions and the per-minute rate so the client can compare.</li>
+<li>Raise a ticket to AI Support with client, current package, requested package and usage figures.</li>
+<li>AI Support processes the upgrade. Do not promise a price or an effective date.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">AI Support team.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Current package · requested package · last one to three months of usage.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 13</span><span class="case-title">Cancellation request</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“We want to cancel Call Intelligence / AI Front Desk / AI SMS / AI Webchat.”</p>
+<ol>
+<li>Do not process it, do not negotiate, do not confirm any date.</li>
+<li>Capture the client name requesting the cancellation and a proper contact email, both mandatory on the ticket.</li>
+<li>Capture the products, the stated reason and the requested effective date.</li>
+<li>Route: Call Intelligence to <strong>Aijaz and Antony</strong>; AI Front Desk, SMS or Webchat to <strong>Zarka and Aijaz</strong>.</li>
+<li>Tell the client the request has gone to the AI team, who will contact them.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">Named owners only, see section 09.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Practice name · requester name · <strong>requester email</strong> · products · reason · requested date.</div></div>
+</div>
+</div>
+</article>
+<article class="case">
+<div class="case-top"><span class="case-id">CASE 14</span><span class="case-title">Downgrade request</span><span class="chip high">High</span></div>
+<div class="case-body">
+<div class="case-checks">
+<p class="says">“We want to move to a smaller package.”</p>
+<ol>
+<li>Do not process or quote anything.</li>
+<li>Capture client name, contact email, current package, requested package and reason.</li>
+<li>Send directly to the AI leads: <strong>Aijaz and Zarka</strong>.</li>
+<li>If they do not respond, escalate to <strong>Antony and Padma</strong>.</li>
+<li>The AI team owns the process from that point.</li>
+</ol>
+</div>
+<div class="case-side">
+<div class="route side-block"><div class="lbl">Route to</div><div class="val">AI leads, Aijaz &amp; Zarka. Backup: Antony &amp; Padma.</div></div>
+<div class="side-block"><div class="lbl">Attach</div><div class="val">Practice name · requester and email · current and requested package · reason.</div></div>
+</div>
+</div>
+</article>
+</div>
+</section>
+<!-- 6 CALL FLOW -->
+<section id="callflow">
+<div class="sec-head">
+<div class="sec-num">06</div>
+<h2>Call flow &amp; AI</h2>
+<p>Adding AI Front Desk changes exactly one node in the call tree. Knowing which one is most of what T1 needs for call-flow, out-of-office and emergency-removal work.</p>
+</div>
+<figure>
+<svg aria-label="Comparison of a standard call tree and an AI Front Desk call tree: every node is identical except the final one, where voicemail is replaced by the AI agent number added as an external element" role="img" viewbox="0 0 900 400">
+<defs>
+<marker id="ar2" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10">
+<path d="M0,0 L10,5 L0,10 z" fill="var(--line-strong)"></path>
+</marker>
+</defs>
+<text class="t-mono" x="24" y="26">STANDARD CLIENT</text>
+<text class="t-mono" x="492" y="26">AI FRONT DESK CLIENT</text>
+<line class="s-line" stroke-dasharray="3 5" stroke-width="1" x1="452" x2="452" y1="8" y2="392"></line>
+<g>
+<rect class="n-box" height="40" rx="8" width="330" x="24" y="44"></rect><text class="t" x="40" y="69">Inbound call</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="189" x2="189" y1="84" y2="104"></line>
+<rect class="n-box" height="40" rx="8" width="330" x="24" y="108"></rect><text class="t" x="40" y="133">Business hours check</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="189" x2="189" y1="148" y2="168"></line>
+<rect class="n-box" height="40" rx="8" width="330" x="24" y="172"></rect><text class="t" x="40" y="197">IVR options &amp; overrides</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="189" x2="189" y1="212" y2="232"></line>
+<rect class="n-box" height="40" rx="8" width="330" x="24" y="236"></rect><text class="t" x="40" y="261">Ring group, no answer</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="189" x2="189" y1="276" y2="296"></line>
+<rect class="n-box" height="48" rx="8" width="330" x="24" y="300"></rect>
+<text class="t t-b" x="40" y="322">Voicemail</text>
+<text class="t-sm" x="40" y="338">Last node in the tree</text>
+</g>
+<g>
+<rect class="n-box" height="40" rx="8" width="384" x="492" y="44"></rect><text class="t" x="508" y="69">Inbound call</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="684" x2="684" y1="84" y2="104"></line>
+<rect class="n-box" height="40" rx="8" width="384" x="492" y="108"></rect><text class="t" x="508" y="133">Business hours check</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="684" x2="684" y1="148" y2="168"></line>
+<rect class="n-box" height="40" rx="8" width="384" x="492" y="172"></rect><text class="t" x="508" y="197">IVR options &amp; overrides</text>
+<line class="s-line" marker-end="url(#ar2)" stroke-width="1.5" x1="684" x2="684" y1="212" y2="232"></line>
+<rect class="n-box" height="40" rx="8" width="384" x="492" y="236"></rect><text class="t" x="508" y="261">Ring group, no answer</text>
+<line class="s-brand" marker-end="url(#ar2)" stroke-width="2" x1="684" x2="684" y1="276" y2="296"></line>
+<rect class="n-brand" height="62" rx="8" stroke-width="2" width="384" x="492" y="300"></rect>
+<text class="t t-b t-brand" x="508" y="322">AI Agent number</text>
+<text class="t-sm" x="508" y="338">Added as an external element, last in the tree</text>
+<text class="t-mono" x="508" y="354">SETTINGS &gt; AI AGENT &gt; TEST THE CALL FLOW</text>
+</g>
+<text class="t-sm" x="24" y="378">Identical above this point, overrides, out-of-office and IVR follow the existing SOP unchanged.</text>
+</svg>
+<figcaption><strong>One node changes.</strong> AI Front Desk replaces the voicemail at the end of the tree and nothing else. Emergency removal (RB-07) is this diagram in reverse: pull the AI element out, put voicemail back.</figcaption>
+</figure>
+<figure>
+<svg aria-label="Path of a transferred call from caller through the AI agent and the AI Agent Transfer template to the ring group and desk phones, with the three checkpoints T1 must verify before escalating" role="img" viewbox="0 0 940 330">
+<defs>
+<marker id="ar3" markerheight="7" markerwidth="7" orient="auto-start-reverse" refx="9" refy="5" viewbox="0 0 10 10">
+<path d="M0,0 L10,5 L0,10 z" fill="var(--line-strong)"></path>
+</marker>
+</defs>
+<text class="t-mono" x="20" y="26">WHERE A FAILED TRANSFER ACTUALLY BREAKS</text>
+<rect class="n-box" height="54" rx="8" width="150" x="20" y="48"></rect>
+<text class="t" x="36" y="72">Caller</text><text class="t-sm" x="36" y="89">asks for the office</text>
+<line class="s-line" marker-end="url(#ar3)" stroke-width="1.5" x1="170" x2="212" y1="75" y2="75"></line>
+<rect class="n-brand" height="54" rx="8" width="164" x="216" y="48"></rect>
+<text class="t t-b t-brand" x="232" y="72">AI agent</text><text class="t-sm" x="232" y="89">announces transfer</text>
+<line class="s-line" marker-end="url(#ar3)" stroke-width="1.5" x1="380" x2="422" y1="75" y2="75"></line>
+<rect class="n-warn" height="54" rx="8" width="230" x="426" y="48"></rect>
+<text class="t t-b" x="442" y="72">“AI Agent Transfer”</text><text class="t-sm" x="442" y="89">Call Flow Templates</text>
+<line class="s-line" marker-end="url(#ar3)" stroke-width="1.5" x1="656" x2="698" y1="75" y2="75"></line>
+<rect class="n-box" height="54" rx="8" width="218" x="702" y="48"></rect>
+<text class="t" x="718" y="72">Ring group / extensions</text><text class="t-sm" x="718" y="89">desk phones ring</text>
+<line class="s-line" stroke-dasharray="3 4" stroke-width="1" x1="290" x2="290" y1="102" y2="146"></line>
+<line class="s-line" stroke-dasharray="3 4" stroke-width="1" x1="540" x2="540" y1="102" y2="146"></line>
+<line class="s-line" stroke-dasharray="3 4" stroke-width="1" x1="810" x2="810" y1="102" y2="146"></line>
+<rect class="n-box" height="76" rx="8" width="220" x="180" y="150"></rect>
+<text class="t-mono" x="196" y="171">CHECK 1</text>
+<text class="t" x="196" y="190">Main flow still ends</text>
+<text class="t" x="196" y="207">in the AI number</text>
+<rect class="n-box" height="76" rx="8" width="220" x="430" y="150"></rect>
+<text class="t-mono" x="446" y="171">CHECK 2</text>
+<text class="t" x="446" y="190">Template active, assigned,</text>
+<text class="t" x="446" y="207">right extensions and ring time</text>
+<rect class="n-box" height="76" rx="8" width="220" x="700" y="150"></rect>
+<text class="t-mono" x="716" y="171">CHECK 3</text>
+<text class="t" x="716" y="190">Phones registered, online,</text>
+<text class="t" x="716" y="207">not DND or overridden</text>
+<rect class="n-go" height="56" rx="8" width="740" x="180" y="248"></rect>
+<text class="t t-b t-go" x="200" y="272">All three clear, and a test transfer still fails?</text>
+<text class="t-sm" x="200" y="291">Escalate to AI Support with the template screenshot, the destinations, and the call link of the failed transfer.</text>
+</svg>
+<figcaption><strong>Failed transfers are configuration until proven otherwise.</strong> Two of the three checkpoints sit outside the AI product entirely, which is why this case is verified by T1 before it reaches the AI team.</figcaption>
+</figure>
+</section>
+<!-- 7 RUNBOOKS -->
+<section id="runbooks">
+<div class="sec-head">
+<div class="sec-num">07</div>
+<h2>Runbooks</h2>
+<p>Step-by-step procedures for every action T1 is authorised to perform. Record the outcome of each on the ticket.</p>
+</div>
+<div class="grid-2">
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-01</span><span class="rb-title">Add or verify the AI number in the call flow</span><span class="rb-owner">T1 / VoIP T1</span></div>
+<ol>
+<li>Open <code>Settings &gt; AI Agent</code> on the correct client account.</li>
+<li>Open <strong>Test the Call Flow</strong>; the number shown is the client’s AI Agent number.</li>
+<li>Copy it exactly and record it on the ticket.</li>
+<li>Open the client’s call flow.</li>
+<li>Add the number as an <strong>external element at the end</strong> of the tree, where a non-AI client has voicemail.</li>
+<li>Build the rest of the tree per the existing SOP, nothing else changes.</li>
+<li>Save, then place a test call through to the end of the tree and confirm the agent answers.</li>
+<li>Screenshot before and after; attach with the test result.</li>
+<li>Notify AI Support whenever the AI element is added, changed or removed.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-02</span><span class="rb-title">Out-of-office and overrides on an AI account</span><span class="rb-owner">T1 / VoIP T1</span></div>
+<ol>
+<li>Get the requested schedule in writing on the ticket: dates, times, desired behaviour.</li>
+<li>Apply the existing override SOP exactly as for a non-AI client.</li>
+<li>Confirm the AI number remains the last external element unless removal was requested.</li>
+<li>If the override is meant to bypass the AI, confirm that explicitly with the client and notify the AI team.</li>
+<li>Save, test inside and outside the override window where possible, and document.</li>
+<li>Not comfortable? Hand to VoIP T1 with the AI number and schedule on the ticket, never leave it unassigned.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-03</span><span class="rb-title">SMS Agent buffer and enable/disable</span><span class="rb-owner">T1 Support</span></div>
+<ol>
+<li>Open <code>Settings &gt; AI Agent &gt; SMS Agent settings</code> and check whether the agent is enabled.</li>
+<li>Disabled, but the client says the AI is texting? Stop, run RB-06.</li>
+<li>Agree the exact change and target value with the client; record who asked.</li>
+<li>Note the old value, then adjust the buffer time (up to slow it down, down to speed it up) or toggle the agent.</li>
+<li>Save, reload, screenshot the persisted value.</li>
+<li>Send the intimation to AI Support: client, change, old and new value, requester, reason.</li>
+<li>Complaint about content rather than timing? Buffer is the wrong lever, escalate with the thread.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-04</span><span class="rb-title">Transfer fails, office phones do not ring</span><span class="rb-owner">T1 verifies → AI Support</span></div>
+<ol>
+<li>Open <strong>Call Flow Templates</strong> and find <code>AI Agent Transfer</code>.</li>
+<li>Verify destinations, devices, ring duration, active state and assignment; screenshot it.</li>
+<li>Verify the main flow still ends in the AI number.</li>
+<li>Confirm the destination phones are registered, online, not in DND or overridden.</li>
+<li>Test-call through the agent and request a transfer; record date, time and result.</li>
+<li>All correct and still failing? Ticket to AI Support with the screenshots and a failed-transfer call link.</li>
+</ol>
+<div class="note">Do not escalate before steps 1-5 are complete and documented.</div>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-05</span><span class="rb-title">Evidence pack for wrong information</span><span class="rb-owner">T1 captures → AI Support</span></div>
+<ol>
+<li>Rule out Online Scheduling (Case 01) before anything else.</li>
+<li>Capture the patient name.</li>
+<li>Capture the patient callback number, this is how the AI team finds the interaction.</li>
+<li>Capture the date and time of the call.</li>
+<li>Record captured value vs correct value, field by field.</li>
+<li>Attach the call link from the AI Agent module.</li>
+<li>Raise to AI Support (T2) with template T-01, and set the client’s expectation that the team will review the recording.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-06</span><span class="rb-title">AI agent, or Automated Reminders?</span><span class="rb-owner">Reminders owner unless proven</span></div>
+<ol>
+<li>Check whether the SMS Agent is enabled for the client.</li>
+<li>If not, the sender is Automated Reminders or Automated Forms.</li>
+<li>Match content and send timestamp against that configuration; screenshot both.</li>
+<li>Explain to the client which system sent the message and why.</li>
+<li>Route to the Automated Reminders / Forms owner.</li>
+<li>Only with evidence that the AI agent sent it, raise a ticket to AI Support.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-07</span><span class="rb-title">Emergency, remove AI from the call flow</span><span class="rb-owner">T1 emergency authority</span></div>
+<ol>
+<li>Confirm the request and requester on the ticket; note the time. This is a live phone change.</li>
+<li>Open call flow settings and locate the AI Agent number at the bottom of the flow.</li>
+<li>Remove that element.</li>
+<li>Replace it with <strong>voicemail</strong>, never leave the end of the tree empty.</li>
+<li>Save and test-call to confirm callers reach voicemail.</li>
+<li>Inform the AI team immediately so they can take further action.</li>
+<li>Document the before and after flow. If the client wants to cancel, additionally run the cancellation process.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-08</span><span class="rb-title">Billing and overage explanation</span><span class="rb-owner">T1 Support</span></div>
+<ol>
+<li>Open <code>Settings &gt; Billing &gt; Invoice &gt; Overages</code> for the disputed period.</li>
+<li>Identify the package and its included minutes and rate.</li>
+<li>Open <code>AI Agent Insights &gt; Front Desk</code> and pull usage for the same period.</li>
+<li>Reconcile and show the arithmetic to the client.</li>
+<li>State that included minutes reset monthly and do not roll over.</li>
+<li>Upgrade wanted? Ticket to AI Support, never quote pricing yourself.</li>
+<li>Figures don’t reconcile? Escalate with invoice, overage and usage screenshots.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-09</span><span class="rb-title">Call Intelligence intimation</span><span class="rb-owner">AI Support, Antony &amp; Liam</span></div>
+<ol>
+<li>Make no configuration changes, the product is static.</li>
+<li>Send the first intimation to Antony and Liam straight away.</li>
+<li>Capture the affected calls: date, time, direction, caller number, attributed user, expected vs actual.</li>
+<li>State the sub-symptom explicitly.</li>
+<li>Note one-off vs ongoing, and the start date.</li>
+<li>Missing recording or missed-call mismatch? Also run RB-10.</li>
+</ol>
+</div>
+<div class="rb">
+<div class="rb-top"><span class="rb-id">RB-10</span><span class="rb-title">Missing recordings and missed-call mismatches</span><span class="rb-owner">VoIP Support</span></div>
+<ol>
+<li>Collect the exact calls with date, time, direction and numbers.</li>
+<li>Note where the client is looking and whether the recording is missing in every view.</li>
+<li>Route to VoIP Support, they take over and decide whether QA is required.</li>
+<li>Copy AI Support if the same calls also show a Call Intelligence discrepancy.</li>
+</ol>
+</div>
+</div>
+</section>
+<!-- 8 BILLING -->
+<section id="billing">
+<div class="sec-head">
+<div class="sec-num">08</div>
+<h2>Billing &amp; minutes</h2>
+<p>Quote these figures exactly. Included minutes refresh at the start of every month and start again from zero, nothing rolls over, which is where most disputes come from.</p>
+</div>
+<div class="tiles">
+<div class="tile">
+<span class="pk">After Hours</span>
+<span class="big">200 min</span>
+<span class="sub">included each month</span>
+<span class="rate">then $1.00 / minute</span>
+</div>
+<div class="tile">
+<span class="pk">Full Time</span>
+<span class="big">1,000 min</span>
+<span class="sub">included each month</span>
+<span class="rate">then $0.50 / minute</span>
+</div>
+<div class="tile">
+<span class="pk">Reset</span>
+<span class="big">Monthly</span>
+<span class="sub">counter restarts at zero</span>
+<span class="rate">no roll-over, ever</span>
+</div>
+<div class="tile">
+<span class="pk">Where to look</span>
+<span class="sub" style="margin-top:4px"><strong>Why charged:</strong> Settings &gt; Billing &gt; Invoice &gt; Overages</span>
+<span class="sub"><strong>How much used:</strong> AI Agent Insights &gt; Front Desk</span>
+</div>
+</div>
+<figure>
+<svg aria-label="Bar chart of two worked examples: an After Hours account using 350 of 200 included minutes incurs 150 chargeable minutes at one dollar, and a Full Time account using 1240 of 1000 included minutes incurs 240 chargeable minutes at fifty cents" role="img" viewbox="0 0 900 300">
+<line class="s-line" stroke-width="1" x1="150" x2="150" y1="60" y2="212"></line>
+<line class="s-line" stroke-width="1" x1="150" x2="866" y1="212" y2="212"></line>
+<text class="t-sm" text-anchor="middle" x="150" y="234">0</text>
+<text class="t-sm" text-anchor="middle" x="252" y="234">200</text>
+<text class="t-sm" text-anchor="middle" x="329" y="234">350</text>
+<text class="t-sm" text-anchor="middle" x="661" y="234">1,000</text>
+<text class="t-sm" text-anchor="middle" x="784" y="234">1,240</text>
+<text class="t-sm" text-anchor="middle" x="508" y="256">minutes used in the billing month</text>
+<text class="t t-b" x="20" y="94">After Hours</text>
+<rect class="n-box" height="34" rx="3" width="102" x="150" y="72"></rect>
+<rect class="n-warn" height="34" rx="3" width="77" x="252" y="72"></rect>
+<text class="t-sm" x="160" y="94">200 included</text>
+<text class="t-sm t-b" x="341" y="94">150 × $1.00 = $150</text>
+<line class="s-brand" stroke-dasharray="3 3" stroke-width="1.5" x1="252" x2="252" y1="64" y2="114"></line>
+<text class="t t-b" x="20" y="170">Full Time</text>
+<rect class="n-box" height="34" rx="3" width="511" x="150" y="148"></rect>
+<rect class="n-warn" height="34" rx="3" width="123" x="661" y="148"></rect>
+<text class="t-sm" x="160" y="170">1,000 included</text>
+<text class="t-sm t-b" x="796" y="170">240 × $0.50 = $120</text>
+<line class="s-brand" stroke-dasharray="3 3" stroke-width="1.5" x1="661" x2="661" y1="140" y2="190"></line>
+<rect class="n-box" height="12" rx="2" width="14" x="150" y="272"></rect>
+<text class="t-sm" x="172" y="282">included minutes</text>
+<rect class="n-warn" height="12" rx="2" width="14" x="300" y="272"></rect>
+<text class="t-sm" x="322" y="282">chargeable overage</text>
+<line class="s-brand" stroke-dasharray="3 3" stroke-width="1.5" x1="470" x2="490" y1="278" y2="278"></line>
+<text class="t-sm" x="498" y="282">package allowance</text>
+</svg>
+<figcaption><strong>Two worked examples on one scale.</strong> Say it to the client as arithmetic: “You used 350 minutes against 200 included, so 150 minutes were billed at $1.00, $150. The allowance resets next month.”</figcaption>
+</figure>
+</section>
+<!-- 9 CANCELLATION -->
+<section id="cancel">
+<div class="sec-head">
+<div class="sec-num">09</div>
+<h2>Cancellation &amp; downgrade</h2>
+<p>T1 captures and routes. Nothing else. Support does not own this conversation at any point.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Request</th><th>Goes to</th><th>If no response</th></tr></thead>
+<tbody>
+<tr><td>Cancel <strong>Call Intelligence</strong></td><td class="owner">Aijaz &amp; Antony</td><td class="owner">Zarka / Padma</td></tr>
+<tr><td>Cancel <strong>AI Front Desk</strong></td><td class="owner">Zarka &amp; Aijaz</td><td class="owner">Antony / Padma</td></tr>
+<tr><td>Cancel <strong>AI SMS</strong></td><td class="owner">Zarka &amp; Aijaz</td><td class="owner">Antony / Padma</td></tr>
+<tr><td>Cancel <strong>AI Webchat</strong></td><td class="owner">Zarka &amp; Aijaz</td><td class="owner">Antony / Padma</td></tr>
+<tr><td><strong>Downgrade</strong>, any AI product</td><td class="owner">Aijaz &amp; Zarka</td><td class="owner">Antony &amp; Padma</td></tr>
+<tr><td><strong>Upgrade</strong> / more minutes</td><td class="owner">AI Support ticket</td><td class="owner">AI leads</td></tr>
+</tbody>
+</table>
+</div>
+<div class="split">
+<div class="panel">
+<div class="panel-head go">Mandatory on the ticket</div>
+<ul>
+<li class="g"><span class="mk">✓</span><span>Practice / client name <em>The ticket must name the client requesting it.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Name of the person requesting</span></li>
+<li class="g"><span class="mk">✓</span><span>Contact email address <em>A proper email, so the AI team can reach them.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Products affected <em>This decides the routing owner.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Current and requested package <em>Downgrades only.</em></span></li>
+<li class="g"><span class="mk">✓</span><span>Reason given, and requested effective date</span></li>
+</ul>
+</div>
+<div class="panel">
+<div class="panel-head stop">Do not</div>
+<ul>
+<li class="s"><span class="mk">×</span><span>Confirm a cancellation date or a final charge</span></li>
+<li class="s"><span class="mk">×</span><span>Switch off or remove the product as a way of cancelling it <em>Emergency removal (RB-07) is an operational action, not a cancellation.</em></span></li>
+<li class="s"><span class="mk">×</span><span>Negotiate, discount or offer an alternative package</span></li>
+<li class="s"><span class="mk">×</span><span>Close the ticket before the named owner acknowledges it</span></li>
+</ul>
+</div>
+</div>
+<div class="note">What you say: “Thank you, I’ve logged your request and passed it directly to our AI team, who own this process. They’ll contact you at the email on file to confirm next steps and timelines.”</div>
+</section>
+<!-- 10 TEMPLATES -->
+<section id="templates">
+<div class="sec-head">
+<div class="sec-num">10</div>
+<h2>Ticket templates</h2>
+<p>Copy these verbatim. A ticket missing a mandatory field comes back to T1, which costs the client a full cycle.</p>
+</div>
+<div class="grid-2">
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-01</span><span class="tpl-name">AI captured wrong information</span><span class="tpl-route">→ AI Support (T2)</span></div>
+<pre>Client / Practice:
+Product:                     AI Front Desk / SMS / Webchat
+Patient name:
+Patient callback number:
+Date &amp; time of call:
+CALL LINK:
+What the AI captured:
+What it should have been:
+Occurrences / since when:
+Online Scheduling ruled out: Y / N
+EHR sync verified:           Y / N
+Client impact:</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-02</span><span class="tpl-name">Scheduling / sync on an AI client</span><span class="tpl-route">→ Online Scheduling</span></div>
+<pre>Client / Practice:
+Symptom:            not booking / double booking / not syncing
+Appointments:       patient, date, time, provider
+Booking source:     AI agent / online scheduler / manual
+SOP steps completed:
+Availability &amp; operatory verified: Y / N
+EHR sync status &amp; last success:
+Adit vs EHR screenshots:           Y / N
+Call link (if booked by AI):</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-03</span><span class="tpl-name">Call-flow change on an AI client</span><span class="tpl-route">→ VoIP T1</span></div>
+<pre>Client / Practice:
+Requested change:
+Effective dates &amp; times:
+AI Agent number:            (Test the Call Flow)
+AI number last element:     Y / N
+Call flow BEFORE:           screenshot
+Call flow AFTER:            screenshot
+Test call date/time &amp; result:
+AI team notified:           Y / N</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-04</span><span class="tpl-name">SMS Agent change, intimation</span><span class="tpl-route">→ AI Support</span></div>
+<pre>Client / Practice:
+Change made:        buffer time / enable / disable
+Old value:
+New value:
+Requested by:       name &amp; role
+Reason given:
+Date &amp; time of change:
+Performed by:       T1 agent
+Saved setting screenshot:  Y / N</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-05</span><span class="tpl-name">Transfer failing, phones silent</span><span class="tpl-route">→ AI Support (after checks)</span></div>
+<pre>Client / Practice:
+AI Agent Transfer template reviewed: Y / N + screenshot
+Destination extensions / ring group:
+Devices registered &amp; online:         Y / N
+DND / override active:               Y / N
+AI number last element in main flow: Y / N
+Test call date/time, number, result:
+Call link of failed transfer:</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-06</span><span class="tpl-name">Call Intelligence issue</span><span class="tpl-route">→ Antony &amp; Liam</span></div>
+<pre>Client / Practice:
+Sub-symptom:  user recognition / call recognition /
+              call entry not found / recording not found /
+              data discrepancy
+Affected calls: date, time, direction, caller number
+User attributed vs expected:
+Data shown vs expected:
+One-off or ongoing (start date):
+Number of calls affected:
+Also routed to VoIP:   Y / N</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-07</span><span class="tpl-name">Recordings / missed-call data</span><span class="tpl-route">→ VoIP Support</span></div>
+<pre>Client / Practice:
+Symptom:            recording missing / data mismatch
+Call list:          date, time, direction, numbers
+Where client is looking:
+Missing in all views:   Y / N
+Historical or ongoing (start date):
+Screenshots:            Y / N
+QA review:              VoIP to determine</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-08</span><span class="tpl-name">Billing / overage query</span><span class="tpl-route">→ T1, then AI Support</span></div>
+<pre>Client / Practice:
+Package:      After Hours (200 min, $1.00)
+              Full Time  (1,000 min, $0.50)
+Billing period:
+Overages screenshot:     Y / N
+Usage from Insights:
+Calculation shown to client:
+Client accepts explanation: Y / N
+Discrepancy described:
+Upgrade requested:       Y / N</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-09</span><span class="tpl-name">Emergency AI removal</span><span class="tpl-route">→ AI team, immediate</span></div>
+<pre>Client / Practice:
+Requested by &amp; time of request:
+Nature of the emergency:
+AI number removed from call flow:  Y / N
+Replaced with voicemail:           Y / N
+Test call result:
+Before / after screenshots:        Y / N
+Performed by &amp; time completed:
+Also requesting cancellation:      Y / N (raise T-10)</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-10</span><span class="tpl-name">Cancellation request</span><span class="tpl-route">→ named owners</span></div>
+<pre>Client / Practice name:
+Person requesting cancellation:
+Contact email address:
+Product(s) to cancel:
+Current package:
+Reason given:
+Requested effective date:
+Date request received:
+T1 agent logging it:
+Client told the AI team will contact them: Y / N</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-11</span><span class="tpl-name">Downgrade request</span><span class="tpl-route">→ Aijaz &amp; Zarka</span></div>
+<pre>Client / Practice name:
+Person requesting:
+Contact email address:
+Current package:
+Requested package:
+Reason given:
+Current usage (Insights):
+Requested effective date:
+T1 agent logging it:</pre>
+</div>
+<div class="tpl">
+<div class="tpl-head"><span class="tpl-id">T-12</span><span class="tpl-name">Package upgrade request</span><span class="tpl-route">→ AI Support</span></div>
+<pre>Client / Practice name:
+Requested by (name &amp; email):
+Current package:
+Requested package / extra minutes:
+Usage, last 1-3 months:
+Recent overage amounts:
+Urgency:</pre>
+</div>
+</div>
+</section>
+<!-- 11 QUICK -->
+<section id="quick">
+<div class="sec-head">
+<div class="sec-num">11</div>
+<h2>Quick reference</h2>
+<p>The floor card. Everything above is the detail behind these twelve lines.</p>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Ask yourself</th><th>Then</th></tr></thead>
+<tbody>
+<tr><td>Booking, double booking or EHR sync?</td><td>Online Scheduling ticket. Run that SOP in full, whatever the client calls it.</td></tr>
+<tr><td>Call tree, override or out-of-office?</td><td>Standard call-flow SOP. Only difference: the AI number sits last, in place of voicemail.</td></tr>
+<tr><td>SMS timing, or on/off?</td><td>SMS Agent settings, buffer or toggle. Then notify AI Support.</td></tr>
+<tr><td>Is the client even on the SMS Agent?</td><td>If not, it’s Automated Reminders or Forms. Explain it, route it there.</td></tr>
+<tr><td>Call Intelligence, in any form?</td><td>First intimation to Antony and Liam, before anything else.</td></tr>
+<tr><td>Recording missing or missed-call mismatch?</td><td>VoIP Support. They decide whether QA is needed.</td></tr>
+<tr><td>Transfer announced, phones silent?</td><td>Check the <code>AI Agent Transfer</code> template first. Escalate only if it is correct.</td></tr>
+<tr><td>AI captured wrong info?</td><td>Patient, callback number, date/time, call link, then AI Support (T2).</td></tr>
+<tr><td>Billing question?</td><td>Overages plus Insights. 200/$1.00 or 1,000/$0.50. Resets monthly, never rolls over.</td></tr>
+<tr><td>“Take the AI off our phones now”?</td><td>Remove the AI number, put voicemail back, test, tell the AI team immediately.</td></tr>
+<tr><td>Cancellation?</td><td>Call Intelligence → Aijaz &amp; Antony. Front Desk / SMS / Webchat → Zarka &amp; Aijaz. Name and email mandatory.</td></tr>
+<tr><td>Downgrade?</td><td>Aijaz &amp; Zarka. No response → Antony &amp; Padma.</td></tr>
+</tbody>
+</table>
+</div>
+<footer>
+<span>T1 AI Support Runbook · v1.0</span>
+<span>Owner: AI Support (T2)</span>
+<span>Escalation names pending confirmation</span>
+</footer>
+</section>
+</main>
+</div>
+
+</body>
+</html>
