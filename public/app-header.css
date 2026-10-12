@@ -232,3 +232,17 @@ header.hm-bar .hm-ws{margin-left:2px}
 @media (prefers-reduced-motion: reduce){header.hm-bar .hm-star::after,header.hm-bar .hm-spark,header.hm-bar .hm-stars{animation:none}header.hm-bar .hm-star svg{transition:none}}
 @media (max-width: 900px){header.hm-bar .hm-brand{display:flex !important}header.hm-bar .hm-name-t,header.hm-bar .hm-ws{display:none}}
 header.hm-bar .hm-brand .hm-ws{display:none !important}
+
+/* Batch 162: sparkle mark (replaces the star badge) */
+header.hm-bar .hm-star{display:none}
+header.hm-bar .hm-brand{gap:8px}
+header.hm-bar .hm-mark{flex:none;width:24px;height:24px;display:inline-flex}
+header.hm-bar .hm-mark svg{width:24px;height:24px;overflow:visible}
+header.hm-bar .hm-sp1{transform-origin:12px 10px;animation:hmSp1 4.8s ease-in-out infinite}
+header.hm-bar .hm-sp2{transform-origin:19px 18px;animation:hmSp2 4.8s ease-in-out infinite}
+@keyframes hmSp1{0%,100%{transform:scale(1) rotate(0)}45%{transform:scale(.86) rotate(-8deg)}55%{transform:scale(1.06) rotate(4deg)}}
+@keyframes hmSp2{0%,100%{transform:scale(1);opacity:1}40%{transform:scale(.4);opacity:.35}60%{transform:scale(1.25);opacity:1}}
+header.hm-bar .hm-brand:hover .hm-sp1{animation-duration:1.2s}
+header.hm-bar .hm-brand:hover .hm-sp2{animation-duration:1.2s}
+html.dark-mode header.hm-bar .hm-sp2{fill:#5CC3EC}
+@media (prefers-reduced-motion: reduce){header.hm-bar .hm-sp1,header.hm-bar .hm-sp2{animation:none}}
