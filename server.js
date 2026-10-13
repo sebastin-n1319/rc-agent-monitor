@@ -7897,16 +7897,19 @@ async function runCsatSync() {
   _csatSyncRunning = true;
   try {
     // Batch 152: one full re-read restores CSAT rows the 9 Oct 2026 emergency trim removed (survey rows are now kept for all time).
-    const resync = !(await deskLifecycle.getSyncState('csat_resync_b152'));
-    const since = resync ? null : await deskLifecycle.getSyncState('csat_last_survey_time_utc');
+    // Read everything once more, then each tick re-reads the last 3 days too: Zoho Analytics adds survey rows in
+    // batches, so a rating whose Survey Time is older than our last seen one would otherwise never arrive.
+    const resync = !(await deskLifecycle.getSyncState('csat_resync_b160'));
+    const last = resync ? null : await deskLifecycle.getSyncState('csat_last_survey_time_utc');
+    const since = last ? new Date(Date.parse(last) - 3 * 86400000).toISOString() : null;
     const rows = await analyticsService.fetchSurveyRows(since || null);
-    let maxTime = since || null;
+    let maxTime = last || null;
     for (const r of rows) {
       await deskLifecycle.upsertSurveyRow(r);
       if (r.survey_time_utc && (!maxTime || r.survey_time_utc > maxTime)) maxTime = r.survey_time_utc;
     }
     if (maxTime) await deskLifecycle.setSyncState('csat_last_survey_time_utc', maxTime);
-    if (resync) await deskLifecycle.setSyncState('csat_resync_b152', new Date().toISOString());
+    if (resync) await deskLifecycle.setSyncState('csat_resync_b160', new Date().toISOString());
     await deskLifecycle.setSyncState('csat_last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('csat_last_error', null);
     console.log(`⭐ CSAT sync: ${rows.length} survey row(s) synced`);

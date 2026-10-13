@@ -621,6 +621,7 @@
     };
     for (const a of agents) {
       t.unique += a.unique_tickets || 0;
+      if (Array.isArray(a.unique_ids)) { t._ids = t._ids || new Set(); a.unique_ids.forEach((id) => t._ids.add(id)); } else t._noIds = true;
       t.closed += a.closed_count || 0;
       t.handling += a.currently_handling || 0;
       t.pending += a.review_pending || 0;
@@ -630,6 +631,10 @@
       t.csatGood += a.csat_good || 0;
       t.csatTotal += a.csat_total || 0;
     }
+    // A ticket two shown agents worked counts once in the team total.
+    t.uniqueSum = t.unique;
+    if (t._ids && !t._noIds) t.unique = t._ids.size;
+    delete t._ids;
     t.fcrPct = t.fcrTotal ? Math.round((t.fcrYes / t.fcrTotal) * 1000) / 10 : null;
     t.csatPct = t.csatTotal ? Math.round((t.csatGood / t.csatTotal) * 1000) / 10 : null;
     return t;
@@ -657,7 +662,7 @@
         delta: '',
       },
       {
-        n: t.unique, l: 'Total unique tickets', tip: 'Total unique tickets\n\nSum of every shown agent\'s Unique tickets. A ticket touched by two shown agents is counted once for each of them, so this can exceed the ticket count in Zoho.',
+        n: t.unique, l: 'Total unique tickets', tip: `Total unique tickets\n\nDistinct tickets the shown agents worked, created in this range. A ticket two agents worked counts once here${t.uniqueSum !== t.unique ? ` (adding each agent\'s Unique gives ${t.uniqueSum})` : ''}.`,
         delta: prevT ? deltaChip(t.unique, prevT.unique, { higherIsBetter: null }) : '',
       },
       {
