@@ -8167,7 +8167,10 @@ app.get('/api/topic-support', requireAdmin, async (req, res) => {
     const { agentNames } = await deskLifecycleAgentRoster();
     const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
     const data = {};
-    const sums = await Promise.all(topics.map((t) => ts.topicSummary({ topic: t, from, to, agentNames })));
+    // Never leave the page spinning: answer within 45 seconds. The read carries on and is kept for the next refresh.
+    const work = Promise.all(topics.map((t) => ts.topicSummary({ topic: t, from, to, agentNames })));
+    work.catch(() => {});
+    const sums = await Promise.race([work, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Zoho is slow right now. The numbers are still being read; press Refresh in a minute.'), { status: 503 })), 45000))]);
     topics.forEach((t, i) => { data[t] = sums[i]; });
     res.json({ success: true, from, to, data });
   } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
