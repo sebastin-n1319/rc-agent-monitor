@@ -272,7 +272,18 @@
     else setTimeout(paint, 0);
     var key = h('div', { class: 'tka-jr-key', 'aria-hidden': 'true' }, [h('span', null, [h('i', { class: 'o' }), 'Open']), h('span', null, [h('i', { class: 'hd' }), 'On hold']), h('span', null, [h('i', { class: 'c' }), 'Closed']), h('span', { class: 'tka-when', text: 'Hover a mark for details. Click to open it in Zoho Desk.' })]);
     var det = h('details', { class: 'tka-dp-det' }, [h('summary', { text: 'All tickets (' + d.ticketsShown + ')' }), h('div', { class: 'tka-dp-list' }, d.journey.map(function (t) {
-      return h('div', { class: 'tka-dp-row wide' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { class: 'tka-dp-subj', text: t.subject || '', title: t.subject || '' }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(', ') })]);
+      // Open and on-hold tickets get a suggested reply (email or call guide) that opens under the row.
+      var sug = null;
+      if (t.state !== 'closed' && (t.id || t.number)) {
+        var slot = null;
+        sug = h('button', { type: 'button', class: 'tka-link tka-dp-sug', 'aria-expanded': 'false', text: 'Suggest reply', onclick: function (ev) {
+          var b = ev.currentTarget, row = b.closest('.tka-dp-row');
+          if (slot && slot.isConnected) { slot.remove(); slot = null; b.setAttribute('aria-expanded', 'false'); b.textContent = 'Suggest reply'; return; }
+          slot = h('div', { class: 'tka-dp-sugbox' }, [ticketPanel(t.id || t.number)]);
+          row.parentNode.insertBefore(slot, row.nextSibling); b.setAttribute('aria-expanded', 'true'); b.textContent = 'Hide reply';
+        } });
+      }
+      return h('div', { class: 'tka-dp-row wide' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : h('b', { text: '#' + t.number }), h('span', { class: 'tka-dp-subj', text: t.subject || '', title: t.subject || '' }), pill(t.status, stateCls(t.state)), h('span', { class: 'tka-when', text: [t.channel, t.created ? when(t.created) : '', t.agent].filter(Boolean).join(', ') }), sug || h('span', { 'aria-hidden': 'true' })]);
     }))]);
     return dpSec(title, [key, wrap, det], h('span', { class: 'tka-when', text: d.counts.open + ' open, ' + d.counts['on hold'] + ' on hold, ' + d.counts.closed + ' closed' }), 'tka-dp-jr');
   }
@@ -1120,7 +1131,26 @@
       if (a.email || r.mode !== 'call') {
         var subj = h('input', { class: 'tka-input', value: a.email ? a.email.subject : '', 'aria-label': 'Email subject', readonly: true });
         var body = h('textarea', { class: 'tka-note-in tka-tk-body', rows: '10', 'aria-label': 'Email reply draft' }); body.value = a.email ? a.email.body : '';
-        panes.email = a.email ? h('div', { class: 'tka-tk-pane' }, [h('div', { class: 'tka-tk-row' }, [subj, copyBtn(function () { return subj.value; }, 'Copy subject')]), body,
+        // Redraft: the agent says how to change it and AI rewrites it from the same ticket.
+        var ask = h('input', { class: 'tka-input', type: 'text', placeholder: 'How should it change? e.g. shorter, mention the 30 day notice, more formal', 'aria-label': 'How to change the email', maxlength: '600' });
+        var rdNote = h('p', { class: 'tka-when', role: 'status', 'aria-live': 'polite' });
+        var history = [];
+        var undoBtn = btn('Undo', 'ghost sm', function () { var prev = history.pop(); if (!prev) return; subj.value = prev.s; body.value = prev.b; rdNote.textContent = 'Back to the earlier draft.'; undoBtn.hidden = !history.length; });
+        undoBtn.hidden = true;
+        var rdBtn = btn('Redraft', 'primary sm', function () {
+          var req = ask.value.trim(); if (!req) { ask.focus(); rdNote.textContent = 'Type how you want the email changed.'; return; }
+          rdBtn.disabled = true; rdBtn.textContent = 'Redrafting...'; rdNote.textContent = '';
+          api('/api/client-lookup/redraft', { id: t.id || t.number, subject: subj.value, body: body.value, request: req }).then(function (j) {
+            if (!j.success) throw new Error(j.error || 'Could not redraft');
+            history.push({ s: subj.value, b: body.value }); undoBtn.hidden = false;
+            subj.value = j.subject || subj.value; body.value = j.body; ask.value = '';
+            rdNote.textContent = j.note ? 'Note: ' + j.note : 'Redrafted. Check it before you send.';
+          }).catch(function (e) { rdNote.textContent = e.message; })
+            .then(function () { rdBtn.disabled = false; rdBtn.textContent = 'Redraft'; });
+        });
+        ask.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); rdBtn.click(); } });
+        var rdRow = h('div', { class: 'tka-tk-rd' }, [h('span', { class: 'tka-df-l', text: 'Change this draft' }), h('div', { class: 'tka-tk-row' }, [ask, rdBtn, undoBtn]), rdNote]);
+        panes.email = a.email ? h('div', { class: 'tka-tk-pane' }, [h('div', { class: 'tka-tk-row' }, [subj, copyBtn(function () { return subj.value; }, 'Copy subject')]), body, rdRow,
           h('div', { class: 'tka-actions' }, [copyBtn(function () { return body.value; }, 'Copy reply'), h('span', { class: 'tka-when', text: 'A draft only. Edit it, then send it from the ticket in Zoho Desk.' })])]) : h('div', { class: 'tka-tk-pane' }, [h('p', { class: 'tka-empty', text: a.why || 'No email draft yet.' })]);
         tabs.push(['email', 'Email reply']);
       }

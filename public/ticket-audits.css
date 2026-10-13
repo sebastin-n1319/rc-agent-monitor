@@ -459,9 +459,16 @@ html.dark-mode .tka-page{--tka-surface:#111F2B;--tka-surface2:#152634;--tka-bord
 .tka-dp-row a{font-weight:600;color:var(--tka-teal);text-decoration:none}
 .tka-dp-row a:hover{text-decoration:underline}
 .tka-dp-subj{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tka-t1)}
-.tka-dp-row.wide{grid-template-columns:auto minmax(0,1fr) auto minmax(0,240px)}
+.tka-dp-row.wide{grid-template-columns:auto minmax(0,1fr) auto minmax(0,240px) minmax(0,auto)}
+.tka-dp-sug{margin:0;white-space:nowrap;font-size:12.5px}
+.tka-dp-sugbox{padding:10px 0 14px}
+.tka-dp-sugbox > .tka-card{margin:0}
+.tka-tk-rd{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding:10px 12px;border:1px dashed var(--tka-border);border-radius:10px}
+.tka-tk-rd .tka-tk-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tka-tk-rd .tka-input{flex:1 1 260px;min-width:0}
+.tka-tk-rd .tka-when{margin:0}
 .tka-dp-row.wide .tka-when{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right}
-@media (max-width:760px){.tka-dp-row.wide{grid-template-columns:auto minmax(0,1fr) auto}.tka-dp-row.wide .tka-when{grid-column:2/-1;text-align:left}}
+@media (max-width:760px){.tka-dp-row.wide{grid-template-columns:auto minmax(0,1fr) auto}.tka-dp-row.wide .tka-dp-sug{grid-column:1/-1;justify-self:start}.tka-dp-row.wide .tka-when{grid-column:2/-1;text-align:left}}
 .tka-dp-list{max-height:300px;overflow:auto;margin-top:4px;padding-right:4px}
 
 /* issue history: masonry cards, no empty gaps */
