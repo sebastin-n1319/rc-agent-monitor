@@ -154,6 +154,7 @@
 #desk-lifecycle-root .tkt-pill-live .tkt-pill-n { color:var(--tkt-blue) !important; }
 #desk-lifecycle-root .tkt-pill-warn .tkt-pill-n { color:var(--tkt-amber) !important; }
 #desk-lifecycle-root .tkt-pill-good .tkt-pill-n { color:var(--tkt-green) !important; }
+#desk-lifecycle-root .tkt-pill-bad .tkt-pill-n { color:var(--tkt-red) !important; }
 
 #desk-lifecycle-root .tkt-expand-btn { border:1px solid var(--tkt-border) !important; background:var(--tkt-surface) !important; color:var(--tkt-ink2) !important; border-radius:var(--tkt-radius-sm) !important; padding:7px 12px !important; font-size:12px !important; font-weight:600 !important; cursor:pointer !important; font-family:inherit !important; white-space:nowrap !important; transition:border-color .15s var(--tkt-ease), color .15s var(--tkt-ease) !important; }
 #desk-lifecycle-root .tkt-expand-btn:hover { border-color:var(--tkt-accent) !important; color:var(--tkt-accent) !important; }

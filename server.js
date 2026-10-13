@@ -7346,6 +7346,12 @@ async function runAditkbSnapshotSync() {
     // Steady state: only rows AditKB shows as modified since our last
     // watermark, ordered by modified_time so the watermark can advance
     // to the latest value actually seen.
+    // One-time catch-up: the sync used to read with contact columns (capped at 25 rows a page) and the /rows
+    // filter (which dropped yesterday's changes), so the local copy fell behind. Re-read the last 45 days once.
+    if ((await deskLifecycle.getSyncState('aditkb_resync_sql_v1')) !== '1') {
+      await deskLifecycle.setSyncState('aditkb_synced_through_ms', String(Date.now() - 45 * 86400000));
+      await deskLifecycle.setSyncState('aditkb_resync_sql_v1', '1');
+    }
     const storedThrough = await deskLifecycle.getSyncState('aditkb_synced_through_ms');
     const sinceMs = storedThrough ? Number(storedThrough) : Date.now() - 24 * 3600 * 1000;
     const sinceIso = new Date(sinceMs).toISOString();
@@ -7750,7 +7756,8 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
     const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
     const extra = await callAndChatStatsForAgents(emails, from, to);
-    const out = summary.map(s => ({ ...s, ...extra[s.email], pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
+    const rv = await transferReview.agentReviewStats(emails, from, to).catch(() => ({}));
+    const out = summary.map(s => ({ ...s, ...extra[s.email], ...(rv[String(s.email).toLowerCase()] || {}), pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
     res.json({ success: true, from, to, agents: out });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -8157,7 +8164,8 @@ app.get('/api/topic-support', requireAdmin, async (req, res) => {
     const { agentNames } = await deskLifecycleAgentRoster();
     const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
     const data = {};
-    for (const t of topics) data[t] = await ts.topicSummary({ topic: t, from, to, agentNames });
+    const sums = await Promise.all(topics.map((t) => ts.topicSummary({ topic: t, from, to, agentNames })));
+    topics.forEach((t, i) => { data[t] = sums[i]; });
     res.json({ success: true, from, to, data });
   } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });

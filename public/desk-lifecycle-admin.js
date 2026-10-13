@@ -459,6 +459,12 @@
         return 'Transferred\n\nTickets this agent handed to another team (anyone outside T1 CS, or a team queue). See "Transferred to" below for which team group.';
       case 'handed_off':
         return 'Handed off (T1)\n\nTickets this agent handed directly to another monitored T1 agent, stayed inside the team, so it does NOT count as a cross-team Transfer. The receiving agent logs it as their own Reassigned.';
+      case 'review_pending':
+        return 'Pending verdict\n\nTransfers this agent put in Pending Review - T1 (or moved without it) that a SPOC has not judged yet. Live, not limited to the date range.';
+      case 'moved_no_review':
+        return 'Moved without review\n\nTickets this agent moved to another team without setting Pending Review - T1 first, in this date range. Teams that may be assigned directly are left out.';
+      case 'review_verdicts':
+        return 'Valid / invalid\n\nSPOC verdicts given in this date range on this agent\'s transfers: valid transfers / invalid transfers.';
       case 'closed':
         return 'Closed\n\nTickets now Closed in Zoho Desk, closed within this date range, credited to whoever is the CURRENT owner, even if it passed through other hands first.';
       case 'handling':
@@ -560,6 +566,9 @@
       pillHtml('tkt-pill-warn', a.reassigned || 0, 'Reassigned', 'reassigned', a),
       pillHtml('tkt-pill-warn', a.transferred || 0, 'Transferred', 'transferred', a),
       pillHtml('', a.handed_off_internal || 0, 'Handed off (T1)', 'handed_off', a),
+      pillHtml(a.review_pending ? 'tkt-pill-warn' : '', a.review_pending || 0, 'Pending verdict', 'review_pending', a),
+      pillHtml(a.moved_no_review ? 'tkt-pill-bad' : '', a.moved_no_review || 0, 'Moved without review', 'moved_no_review', a),
+      pillHtml(a.review_invalid ? 'tkt-pill-bad' : '', (a.review_valid || 0) + ' / ' + (a.review_invalid || 0), 'Valid / invalid', 'review_verdicts', a),
     ].join('');
     const outcomePills = [
       pillHtml('', a.closed_count || 0, 'Closed', 'closed', a),
@@ -607,13 +616,15 @@
   // different ticket volumes, same convention as each agent's own %.
   function poolTeamTotals(agents) {
     const t = {
-      count: agents.length, unique: 0, closed: 0, handling: 0,
+      count: agents.length, unique: 0, closed: 0, handling: 0, pending: 0, noReview: 0,
       fcrYes: 0, fcrTotal: 0, csatGood: 0, csatTotal: 0,
     };
     for (const a of agents) {
       t.unique += a.unique_tickets || 0;
       t.closed += a.closed_count || 0;
       t.handling += a.currently_handling || 0;
+      t.pending += a.review_pending || 0;
+      t.noReview += a.moved_no_review || 0;
       t.fcrYes += a.fcr_yes || 0;
       t.fcrTotal += a.fcr_total || 0;
       t.csatGood += a.csat_good || 0;
@@ -656,6 +667,14 @@
       {
         n: t.handling, l: 'Handling now', tip: 'Handling now\n\nSum of every shown agent\'s currently-open ticket count. Live, not windowed by date.',
         delta: '',
+      },
+      {
+        n: t.pending, l: 'Pending verdict', tip: 'Pending verdict\n\nTransfers by shown agents still waiting for a SPOC verdict. Live, not windowed by date.',
+        delta: '',
+      },
+      {
+        n: t.noReview, l: 'Moved without review', tip: 'Moved without review\n\nTickets shown agents moved to another team without setting Pending Review - T1 first, in this range.',
+        delta: prevT ? deltaChip(t.noReview, prevT.noReview, { higherIsBetter: false }) : '',
       },
       {
         n: fmtPct(t.fcrPct), l: `Team FCR${t.fcrTotal ? ` (${t.fcrYes}/${t.fcrTotal})` : ''}`,
