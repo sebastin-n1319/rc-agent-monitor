@@ -1,4 +1,7 @@
 require('dotenv').config();
+// Speed: sqlite queries, gzip and file reads share libuv's thread pool (4 by default); a few slow queries used to
+// stall every page. Must be set before the first async I/O.
+if (!process.env.UV_THREADPOOL_SIZE) process.env.UV_THREADPOOL_SIZE = '16';
 const express = require('express');
 const ai = require('./lib/ai'); // Session 46: shared OpenAI client
 const _ticketAiCache = ai.makeCache(400);
@@ -224,10 +227,9 @@ app.use(express.static(path.join(__dirname, 'public'), {
       res.setHeader('Cache-Control', 'public, max-age=86400');
     }
     if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      res.setHeader('Surrogate-Control', 'no-store');
+      // no-cache (not no-store): the browser still checks every load, but gets a quick "not modified" when nothing
+      // changed instead of downloading the 1 MB page again.
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
   }
 }));
@@ -509,7 +511,8 @@ function escapeHtml(str) {
   try {
     const { db: _preDb } = require('./database');
     await new Promise(rs => _preDb.run(
-      `DELETE FROM call_logs WHERE date(start_time) < date('now', ?)`, [`-${CALL_LOGS_RETENTION_DAYS} days`], () => rs()
+      // Plain comparison on start_time (ISO text) so the index is used instead of reading every row.
+      `DELETE FROM call_logs WHERE start_time < date('now', ?)`, [`-${CALL_LOGS_RETENTION_DAYS} days`], () => rs()
     ));
     console.log('🧹 Pre-init prune: old call_logs cleared');
   } catch(e) { console.warn('⚠️ Pre-init prune error (non-fatal):', e.message); }
@@ -552,11 +555,12 @@ _emergencyFree.then(() => initDB()).then(async () => {
   console.log('DB ready');
   // Run cleanup immediately on startup to reclaim space (volume limit = 500MB)
   // Run in the background: trimming a large old-ticket backlog takes minutes and must not hold up the rest of start-up.
-  pruneHeavyData().then(r => console.log('🧹 Heavy-data trim:', JSON.stringify(r))).catch(e => log.error('heavy_prune_failed', e));
-  try {
-    const r = await pruneOldData();
-    console.log('🧹 Startup prune+vacuum:', JSON.stringify(r));
-  } catch(e) { log.error('startup_prune_failed', e); }
+  // Speed: the startup trims read whole tables and used to hold up start-up and every page right after a deploy.
+  // They now run 10 minutes after boot; the 2-hourly job covers them as well.
+  setTimeout(() => {
+    pruneHeavyData().then(r => console.log('🧹 Heavy-data trim:', JSON.stringify(r))).catch(e => log.error('heavy_prune_failed', e))
+      .then(() => pruneOldData()).then(r => r && console.log('🧹 Startup prune:', JSON.stringify(r))).catch(e => log.error('startup_prune_failed', e));
+  }, 10 * 60 * 1000);
   // Session 16: roster module bootstrap. Shares the sqlite handle so it
   // sits in the same db file with the rest of the app.
   try {
@@ -849,7 +853,8 @@ app.get('/api/summary', requireAuth, async (req, res) => {
   // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
   const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
-  try { res.json({ success: true, date, timeZone: tz, data: await getAgentSummary(date, tz) }); }
+  // Every open dashboard polls this every 30 s: share one result for 10 s instead of rerunning the per-agent queries.
+  try { res.json({ success: true, date, timeZone: tz, data: await sharedWrap('summary:' + date + ':' + tz, 10000, () => getAgentSummary(date, tz)) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -878,7 +883,7 @@ app.get('/api/presence-events', requireAuth, async (req, res) => {
   // an empty dashboard for the rest of the night.
   const tz = req.query.tz || 'America/Chicago';
   const date = req.query.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
-  try { res.json({ success: true, date, timeZone: tz, data: await getPresenceEvents(date, tz) }); }
+  try { res.json({ success: true, date, timeZone: tz, data: await sharedWrap('presence:' + date + ':' + tz, 10000, () => getPresenceEvents(date, tz)) }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -1236,7 +1241,7 @@ app.get('/api/break-tracker', requireAuth, async (req, res) => {
         enabled: !!GOOGLE_CHAT_WEBHOOK_URL,
         target: GOOGLE_CHAT_SPACE_LABEL
       },
-      data: await getBreakTracker(date, tz, email)
+      data: await sharedWrap('breaks:' + date + ':' + tz + ':' + (email || ''), 10000, () => getBreakTracker(date, tz, email))
     });
   } catch(e) {
     res.status(500).json({ success: false, error: e.message });
@@ -5019,7 +5024,10 @@ async function startScheduler() {
       // Always log one storage line so growth can be traced (main database, free pages inside it, cold cache location).
       try {
         const cs = await require('./lib/cold-store').status();
-        const big = await tableSizes(5).catch(() => []);
+        // tableSizes reads every page of the database: once a day here, more often only when the volume is filling up.
+        const today = new Date().toISOString().slice(0, 10);
+        const big = (diskWatch._sizedOn !== today || v.livePct >= 80) ? await tableSizes(5).catch(() => []) : [];
+        diskWatch._sizedOn = today;
         console.log('💾 storage: volume ' + v.usedMB + '/' + v.totalMB + ' MB, db file ' + v.dbMB + ' MB, free pages ' + v.reclaimMB + ' MB, cold cache ' + (cs.path || 'off') + ' ' + (cs.sizeMB || 0) + ' MB', JSON.stringify(big));
       } catch (e) {}
       if (v.livePct < 80) return;
@@ -5036,11 +5044,13 @@ async function startScheduler() {
   cron.schedule('*/30 * * * *', () => { diskWatch(); });
   setTimeout(diskWatch, 60000);
   // Session 19: ticket lifecycle sync -- every 20 min, paged across ticks
-  cron.schedule('*/20 * * * *', async () => {
-    runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
-    runCsatSync().catch(e => console.error('❌ CSAT sync cron:', e.message));
-    salesiqLifecycle.runChatConversationSync().catch(e => console.error('❌ chat conversation sync cron:', e.message));
-    runAditkbCallsSync().catch(e => console.error('❌ calls history sync cron:', e.message));
+  // Speed: off the :00/:20/:40 minutes the other jobs use, and one sync after another instead of five at once, so the
+  // database is never flooded with writes from all of them while people load pages.
+  cron.schedule('7,27,47 * * * *', async () => {
+    await runDeskLifecycleSync().catch(e => console.error('❌ desk lifecycle cron:', e.message));
+    await runCsatSync().catch(e => console.error('❌ CSAT sync cron:', e.message));
+    await salesiqLifecycle.runChatConversationSync().catch(e => console.error('❌ chat conversation sync cron:', e.message));
+    await runAditkbCallsSync().catch(e => console.error('❌ calls history sync cron:', e.message));
     // Session 40: Sebastin only needed this daily, but it's windowed/
     // idempotent and self-gated (_fcrSyncRunning), so riding this existing
     // 20-min cron instead of adding a separate one finishes the ~2-year
@@ -5496,6 +5506,16 @@ function cacheGet(key) {
 }
 function cacheSet(key, val, ttlMs) {
   _cache.set(key, { val, exp: Date.now() + ttlMs });
+}
+// Like cacheWrap, but callers that arrive while the first one is still running share its answer (no duplicate queries).
+const _inflight = new Map();
+function sharedWrap(key, ttlMs, fn) {
+  const hit = cacheGet(key);
+  if (hit !== null) return Promise.resolve(hit);
+  if (_inflight.has(key)) return _inflight.get(key);
+  const p = Promise.resolve().then(fn).then((v) => { cacheSet(key, v, ttlMs); return v; }).finally(() => _inflight.delete(key));
+  _inflight.set(key, p);
+  return p;
 }
 async function cacheWrap(key, ttlMs, fn) {
   const hit = cacheGet(key);
@@ -7824,7 +7844,8 @@ app.post('/api/admin/desk-lifecycle/activity-sync-now', requireAdmin, async (req
 
 app.get('/api/desk-lifecycle/status', requireAuth, async (req, res) => {
   try {
-    const status = await deskLifecycle.syncStatus();
+    // The counts read the whole 300k-row ticket table; the page polls this every few seconds during a sync.
+    const status = await sharedWrap('desk-sync-status', 60000, () => deskLifecycle.syncStatus());
     // Kept as "syncProgressPct" for the existing admin UI field name --
     // this is only THIS tick's own small phase budget, not the real
     // backlog. See backfillComplete below for genuine completeness.

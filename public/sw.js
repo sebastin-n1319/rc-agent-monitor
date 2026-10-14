@@ -25,7 +25,7 @@
  *   old shell that no longer matched the deployed modules. v1.8 forces a
  *   clean re-fetch of every shell+asset on first navigation.
  */
-const CACHE_VERSION = 'adit-v1.19.324'; // Security: API responses never cached (mobile PWA data protection)
+const CACHE_VERSION = 'adit-v1.19.325'; // Security: API responses never cached (mobile PWA data protection)
 const SHELL_CACHE  = `shell-${CACHE_VERSION}`;
 const ASSETS_CACHE = `assets-${CACHE_VERSION}`;
 // API_CACHE intentionally removed: API responses contain sensitive agent data
@@ -140,7 +140,8 @@ async function navigationStrategy(req) {
   try {
     // Always bypass all caches for HTML navigation so new deployments
     // are picked up immediately without needing a hard refresh
-    const res = await fetch(req, { cache: 'no-store' });
+    // no-cache: still checked with the server every time, but an unchanged page comes back as a quick 304.
+    const res = await fetch(req, { cache: 'no-cache' });
     return res;
   } catch (e) {
     const cached = await caches.match('/index.html');

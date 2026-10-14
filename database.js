@@ -3,6 +3,13 @@ const path = require('path');
 const { log } = require('./lib/logger');
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'productivity.db');
 const db = new sqlite3.Database(dbPath);
+// Speed: WAL lets page reads run while a sync is writing, and synchronous=NORMAL drops the disk flush on every single
+// write (safe with WAL). busy_timeout waits briefly instead of failing when the file is busy. journal_size_limit keeps
+// the WAL file small on the 500 MB volume. Set SQLITE_WAL=0 to keep the old journal.
+if (process.env.SQLITE_WAL !== '0') {
+  db.exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=5000; PRAGMA temp_store=MEMORY;
+    PRAGMA cache_size=-20000; PRAGMA journal_size_limit=67108864;`, (e) => { if (e) console.warn('SQLite speed settings skipped:', e.message); });
+}
 console.log('Using DB at:', dbPath);
 const run = (sql, params=[]) => new Promise((res,rej) => db.run(sql, params, function(err){err?rej(err):res(this);}));
 const get = (sql, params=[]) => new Promise((res,rej) => db.get(sql, params, (err,row)=>err?rej(err):res(row)));
@@ -760,6 +767,7 @@ async function initDB() {
   // ── Performance indexes on high-query columns (added SEC/PERF audit) ─────────
   for (const sql of [
     `CREATE INDEX IF NOT EXISTS idx_call_logs_agent_time ON call_logs(agent_id, start_time DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_call_logs_start ON call_logs(start_time)`,
     `CREATE INDEX IF NOT EXISTS idx_presence_agent_time  ON presence_events(agent_id, timestamp DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_login_logs_email      ON login_logs(email)`,
   ]) { try { await run(sql); } catch(e) {} }
@@ -1785,8 +1793,10 @@ async function getAppSession(token){
     run(`DELETE FROM app_sessions WHERE token=?`, [token]).catch(()=>{});
     return null;
   }
-  // Rolling expiry, extend on each use
-  run(`UPDATE app_sessions SET expires_at=? WHERE token=?`, [Date.now() + SESSION_TTL_MS, token]).catch(()=>{});
+  // Rolling expiry, extended at most every 10 minutes (it used to write on every single API call).
+  if (row.expires_at - Date.now() < SESSION_TTL_MS - 10 * 60 * 1000) {
+    run(`UPDATE app_sessions SET expires_at=? WHERE token=?`, [Date.now() + SESSION_TTL_MS, token]).catch(()=>{});
+  }
   return row;
 }
 
@@ -2000,9 +2010,15 @@ async function pruneOldData({ vacuum = 'auto' } = {}) {
     // interrupted rewrite without a disk journal can corrupt it.
     if (doVacuum && vacuum === 'auto') { const jm = await get(`PRAGMA journal_mode`); if (jm && /memory|off/i.test(String(Object.values(jm)[0]))) { doVacuum = false; results.vacuumSkipped = 'full-disk mode'; } }
   } catch (e) { /* non-fatal */ }
+  // In WAL mode a VACUUM writes a copy of the whole file into the WAL first, which a nearly full volume cannot hold:
+  // the automatic one is skipped (freed pages are reused anyway); a manual one switches the journal back for the run.
+  let walMode = false;
+  try { const jm = await get(`PRAGMA journal_mode`); walMode = /wal/i.test(String(Object.values(jm || {})[0])); } catch (e) {}
+  if (doVacuum && walMode && vacuum === 'auto') { doVacuum = false; results.vacuumSkipped = 'wal'; }
   if (doVacuum) {
     const t0 = Date.now();
-    await run(`VACUUM`);
+    if (walMode) await run(`PRAGMA journal_mode=DELETE`).catch(() => {});
+    await run(`VACUUM`).finally(() => walMode ? run(`PRAGMA journal_mode=WAL`).catch(() => {}) : null);
     results.vacuumMs = Date.now() - t0;
   }
   results.vacuumed = doVacuum;

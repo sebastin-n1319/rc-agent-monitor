@@ -351,7 +351,7 @@
     renderBanner(root, status);
     if (status.configured && status.syncRunning) {
       _wasSyncRunning = true;
-      if (!_pollHandle) _pollHandle = setInterval(() => pollStatusOnce(root), 2500);
+      if (!_pollHandle) _pollHandle = setInterval(() => pollStatusOnce(root), 10000);
     } else {
       stopPolling();
       if (_wasSyncRunning) {
@@ -1143,7 +1143,7 @@
       render(root, status, summaryData, prevSummaryData);
       if (status.configured && status.syncRunning) {
         _wasSyncRunning = true;
-        if (!_pollHandle) _pollHandle = setInterval(() => pollStatusOnce(root), 2500);
+        if (!_pollHandle) _pollHandle = setInterval(() => pollStatusOnce(root), 10000);
       }
     } catch (e) {
       root.innerHTML = `<div class="tkt-error">❌ ${esc(e.message)}</div>`;
