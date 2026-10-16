@@ -75,6 +75,8 @@
         h('button', { type: 'button', class: 'bnc-btn', text: S.busy ? 'Loading...' : 'Refresh', disabled: S.busy, onclick: load }),
         h('a', { class: 'bnc-btn primary', href: '/api/bonus/export?kind=calc&period=' + encodeURIComponent(period()), text: 'Download calculation' }),
         h('a', { class: 'bnc-btn', href: '/api/bonus/export?kind=cards&period=' + encodeURIComponent(period()), text: 'Download report cards' }),
+        h('a', { class: 'bnc-btn', href: '/api/bonus/export?kind=fincalc&period=' + encodeURIComponent(period()), text: 'Finance: calculation', title: 'Calculation Only sheet for the finance team (slabs, eligibility, bonus summary, CSAT ratings)' }),
+        h('a', { class: 'bnc-btn', href: '/api/bonus/export?kind=findata&period=' + encodeURIComponent(period()), text: 'Finance: data', title: 'Bonus Data workbook for the finance team (calls, chats, FCR, ticket surveys, attendance, QA)' }),
       ]),
     ]);
     var kids = [head];

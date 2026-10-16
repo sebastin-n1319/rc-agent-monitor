@@ -8227,11 +8227,19 @@ app.get('/api/bonus/export', requireAdmin, rateLimit(20, 60000), async (req, res
     const { agentNames } = await deskLifecycleAgentRoster();
     const R = await require('./lib/bonus').report({ period: req.query.period, agentNames });
     const X = require('./lib/bonus-export');
-    const cards = req.query.kind === 'cards';
-    const buf = cards ? await X.cardsWorkbook(R) : await X.calcWorkbook(R);
+    const kind = String(req.query.kind || 'calc');
     const tag = String(R.period || 'period').replace(/[^A-Za-z0-9-]/g, '_');
+    const lbl = String(R.label || tag).replace(/\s*\(.*\)$/, '').replace(/[^A-Za-z0-9 -]/g, '').trim();
+    // Batch 168: fincalc / findata are the two workbooks laid out like the Q2 2026 Finance sheets.
+    const K = {
+      cards: [() => X.cardsWorkbook(R), `${tag}_T1_CS_Agent_Report_Card.xlsx`],
+      fincalc: [() => X.financeCalcWorkbook(R), `${lbl} Calculation Only - T1 CS.xlsx`],
+      findata: [() => X.financeDataWorkbook(R), `${lbl} - T1 CS Bonus Data.xlsx`],
+      calc: [() => X.calcWorkbook(R), `${tag}_T1_CS_Bonus_Calculation.xlsx`],
+    }[kind] || [() => X.calcWorkbook(R), `${tag}_T1_CS_Bonus_Calculation.xlsx`];
+    const buf = await K[0]();
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${tag}_T1_CS_${cards ? 'Agent_Report_Card' : 'Bonus_Calculation'}.xlsx"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${K[1]}"`);
     res.send(buf);
   } catch (e) { bonusErr(res, e); }
 });
