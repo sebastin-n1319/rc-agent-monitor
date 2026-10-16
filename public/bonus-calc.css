@@ -77,3 +77,11 @@ html.dark-mode .bnc-note.bad{background:#3A1A1D;border-color:#6E2A30;color:#F6A5
 .bnc-lock{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--bnc-line);border-radius:10px;font-size:12.5px;background:var(--bnc-soft)}
 .bnc-lock.done{background:var(--bnc-s1bg);color:var(--bnc-s1fg);border-color:transparent}
 .bnc-btn.small{height:28px;padding:0 10px;font-size:12px}
+
+/* Batch 167: operator report upload */
+.bnc-upload{display:flex;align-items:center;gap:8px}
+.bnc-upload label.bnc-btn{cursor:pointer}
+.bnc-file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.bnc-upload:focus-within label{outline:2px solid var(--bnc-t1);outline-offset:2px}
+.bnc-chg{font-weight:700}
+.bnc-was{font-weight:400;color:var(--bnc-t2);font-size:12px}

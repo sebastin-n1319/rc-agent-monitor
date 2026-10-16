@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  var S = { type: 'quarter', value: '', data: null, busy: false, err: '', tab: 'summary', inMonth: '', open: {}, agents: null, saving: false, edits: {} };
+  var S = { type: 'quarter', value: '', data: null, busy: false, err: '', tab: 'summary', inMonth: '', open: {}, agents: null, saving: false, edits: {}, op: null };
   function h(tag, attrs, kids) {
     var e = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
@@ -67,7 +67,7 @@
     var d = S.data;
     var head = h('div', { class: 'bnc-head' }, [
       h('div', null, [h('h2', { class: 'bnc-h1', text: 'Bonus calculator' }),
-        h('p', { class: 'bnc-sub', text: 'T1 CS bonus by the 2026 structure. Calls, tickets, FCR, ticket CSAT, chats and chat ratings come from the tool; enter QA scores and attendance on the Inputs tab (attendance marked on the Roster is filled in for you).' })]),
+        h('p', { class: 'bnc-sub', text: 'T1 CS bonus by the 2026 structure. Calls, tickets, FCR and ticket CSAT come from the tool. On the Inputs tab, enter QA scores and attendance (attendance marked on the Roster is filled in for you) and upload the SalesIQ operator report for chats and chat ratings.' })]),
       h('div', { class: 'bnc-ctrl' }, [
         seg([['month', 'Month'], ['quarter', 'Quarter'], ['year', 'Year'], ['mtd', 'Month to date']], S.type, function (v) { S.type = v; S.value = defaultValue(v); load(); }, 'Period type'),
         S.type !== 'mtd' ? h('select', { class: 'bnc-sel', 'aria-label': 'Period', onchange: function (e) { S.value = e.target.value; load(); } },
@@ -88,7 +88,7 @@
         Object.keys(byMonth).map(function (k) { return k + ': ' + byMonth[k].join('; '); }).join('.  '),
         ' ', h('button', { type: 'button', class: 'bnc-link', text: 'Open Inputs', onclick: function () { S.tab = 'inputs'; draw(); } })]));
     }
-    var tabs = h('div', { class: 'bnc-tabs', role: 'tablist' }, [['summary', 'Summary'], ['inputs', 'Inputs (QA & attendance)'], ['agents', 'Agents']].map(function (t) {
+    var tabs = h('div', { class: 'bnc-tabs', role: 'tablist' }, [['summary', 'Summary'], ['inputs', 'Inputs (QA, attendance, chats)'], ['agents', 'Agents']].map(function (t) {
       return h('button', { type: 'button', role: 'tab', class: 'bnc-tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', text: t[1], onclick: function () { S.tab = t[0]; if (t[0] === 'agents' && !S.agents) loadAgents(); draw(); } });
     }));
     kids.push(tabs);
@@ -216,6 +216,46 @@
       h('details', { class: 'bnc-pastebox' }, [h('summary', { text: 'Paste from Excel' }), paste,
         h('button', { type: 'button', class: 'bnc-btn', text: 'Fill the grid from paste', onclick: function () { fillFromPaste(d, paste.value); } })]),
     ]));
+    var wrap = h('div', null, [opCard(d), card]);
+    return wrap;
+  }
+  // Batch 167: upload the SalesIQ Operator Reports export (.xlsx, one month) to fill chat team chats and ratings.
+  function opMonthLabel(k) { var p = String(k || '').split('-'); return p.length === 2 ? MON[Number(p[1]) - 1] + ' ' + p[0] : k; }
+  function opSend(file, dry) {
+    S.op = Object.assign({}, S.op || {}, { busy: true, file: file, err: '' }); draw();
+    return fetch('/api/bonus/operator-report' + (dry ? '?dry=1' : ''), { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/octet-stream' }, body: file })
+      .then(function (r) { return r.json(); }).then(function (j) {
+        if (!j.success) throw new Error(j.error || 'Could not read the file');
+        if (dry) { S.op = { busy: false, file: file, data: j }; draw(); return; }
+        S.op = null; S.inMonth = j.month;
+        toast('Chats and ratings saved for ' + opMonthLabel(j.month) + ' (' + j.saved + ' agent' + (j.saved === 1 ? '' : 's') + ')', 'success'); load();
+      }).catch(function (e) { S.op = Object.assign({}, S.op || {}, { busy: false, err: e.message }); draw(); });
+  }
+  function opCard(d) {
+    var op = S.op || {};
+    var fileIn = h('input', { type: 'file', accept: '.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', class: 'bnc-file', id: 'bnc-op-file',
+      onchange: function (e) { var f = e.target.files && e.target.files[0]; if (f) opSend(f, true); } });
+    var card = h('div', { class: 'bnc-card' }, [h('div', { class: 'bnc-card-hd' }, [h('div', null, [h('h3', { class: 'bnc-h3', text: 'Chats and chat ratings from SalesIQ' }),
+      h('p', { class: 'bnc-card-sub', text: 'In SalesIQ open Reports > Operator Reports, pick one whole month (1st to last day), export as Excel and upload it here. Chats Owned and Good, Ok and Bad ratings are filled in for the chat team; QA and attendance already entered stay as they are. You see a preview before anything is saved.' })]),
+      h('div', { class: 'bnc-upload' }, [h('label', { class: 'bnc-btn primary', for: 'bnc-op-file', text: op.busy ? 'Reading...' : 'Upload operator report' }), fileIn])])]);
+    if (op.err) card.appendChild(h('div', { class: 'bnc-note bad', role: 'alert', text: op.err }));
+    var j = op.data; if (!j) return card;
+    var inPeriod = d.months.some(function (m) { return m.key === j.month; });
+    card.appendChild(h('p', { class: 'bnc-line' }, [h('b', { text: opMonthLabel(j.month) + '. ' }), 'Report range ' + j.range + (j.timeZone ? ' (' + j.timeZone + ')' : '') + (j.operators ? ', operators: ' + j.operators : '') + (j.departments ? ', departments: ' + j.departments : '') + '.']));
+    if (j.locked) card.appendChild(h('div', { class: 'bnc-note warn', text: opMonthLabel(j.month) + ' is finalised. Reopen it on the Summary tab before saving.' }));
+    if (!inPeriod) card.appendChild(h('div', { class: 'bnc-note warn', text: opMonthLabel(j.month) + ' is not in the period shown above. It is saved all the same; pick that period to see it.' }));
+    var cell = function (now, was) { var changed = was != null && now != null && Number(was) !== Number(now); return h('td', { class: 'num' + (changed ? ' bnc-chg' : '') }, [now == null ? '-' : String(now), changed ? h('span', { class: 'bnc-was', text: ' (was ' + was + ')' }) : null]); };
+    var tb = h('tbody');
+    j.rows.filter(function (r) { return r.team === 'chat'; }).forEach(function (r) {
+      tb.appendChild(h('tr', null, [h('th', { scope: 'row', text: r.name }), cell(r.chats, r.before.chats), cell(r.happy, r.before.happy), cell(r.ok, r.before.ok), cell(r.bad, r.before.bad),
+        h('td', { class: 'small' + (r.found ? '' : ' mute'), text: r.found ? 'Will be saved' : 'Not in this report, left as it is' })]));
+    });
+    card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table' }, [h('thead', null, [h('tr', null, ['Chat agent', 'Chats owned', 'Good', 'Ok', 'Bad', ''].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb])]));
+    var calls = j.rows.filter(function (r) { return r.team !== 'chat' && r.found && r.chats; });
+    if (calls.length) card.appendChild(h('p', { class: 'bnc-line mute', text: 'Calls team agents with chats in this report (not used, their bonus has no chat metric): ' + calls.map(function (r) { return r.name + ' ' + r.chats; }).join(', ') + '.' }));
+    card.appendChild(h('div', { class: 'bnc-actions' }, [
+      h('button', { type: 'button', class: 'bnc-btn primary', text: op.busy ? 'Saving...' : 'Save to ' + opMonthLabel(j.month), disabled: op.busy || j.locked || !j.rows.some(function (r) { return r.use; }), onclick: function () { opSend(op.file, false); } }),
+      h('button', { type: 'button', class: 'bnc-btn', text: 'Cancel', disabled: op.busy, onclick: function () { S.op = null; draw(); } })]));
     return card;
   }
   function fillFromPaste(d, text) {

@@ -8212,6 +8212,16 @@ app.post('/api/bonus/inputs', requireAdmin, rateLimit(60, 60000), async (req, re
   try { const b = req.body || {}; res.json({ success: true, ...(await require('./lib/bonus').saveInputs({ month: b.month, rows: b.rows, by: req.session.email })) }); }
   catch (e) { bonusErr(res, e); }
 });
+// Batch 167: SalesIQ operator report (.xlsx, one month) fills chat team Chats Owned and Good/Ok/Bad. ?dry=1 previews only.
+app.post('/api/bonus/operator-report', requireAdmin, rateLimit(20, 60000), express.raw({ type: () => true, limit: '15mb' }), async (req, res) => {
+  try {
+    if (!req.body || !req.body.length) return res.status(400).json({ success: false, error: 'Choose the exported .xlsx file' });
+    const dry = req.query.dry === '1';
+    const r = await require('./lib/bonus').operatorReport({ buf: req.body, dry, by: req.session.email });
+    if (!dry) insertAuditLog(req.session.email, 'bonus_operator_report', r.month, `saved:${r.saved}`).catch(() => {});
+    res.json({ success: true, ...r });
+  } catch (e) { bonusErr(res, e); }
+});
 app.get('/api/bonus/export', requireAdmin, rateLimit(20, 60000), async (req, res) => {
   try {
     const { agentNames } = await deskLifecycleAgentRoster();
