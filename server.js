@@ -8269,6 +8269,15 @@ app.get('/api/bonus/debug', requireAdmin, rateLimit(20, 60000), async (req, res)
     res.status(400).json({ success: false, error: 'what = analytics | salesiq | operators' });
   } catch (e) { bonusErr(res, e); }
 });
+// Batch 166c: finalise (lock) a month so later source changes cannot move a paid bonus; reopen to recalculate.
+app.post('/api/bonus/lock', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try {
+    const b = req.body || {}; const bonus = require('./lib/bonus');
+    if (b.unlock) return res.json({ success: true, ...(await bonus.unlockMonth({ month: b.month })) });
+    const { agentNames } = await deskLifecycleAgentRoster();
+    res.json({ success: true, ...(await bonus.lockMonth({ month: b.month, by: req.session.email, agentNames, force: !!b.force })) });
+  } catch (e) { bonusErr(res, e); }
+});
 let _bonusRereadRunning = false;
 app.post('/api/bonus/chat-ratings/reread', requireAdmin, rateLimit(3, 60000), async (req, res) => {
   if (_bonusRereadRunning) return res.json({ success: true, started: false, running: true });

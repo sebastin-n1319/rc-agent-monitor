@@ -72,3 +72,8 @@ html.dark-mode .bnc-note.bad{background:#3A1A1D;border-color:#6E2A30;color:#F6A5
 .bnc-paste{display:block;width:min(640px,90vw);margin:6px 0 8px;padding:8px 10px;border:1px solid var(--bnc-line);border-radius:8px;background:var(--bnc-surf);color:var(--bnc-t1);font:400 12.5px 'Poppins',sans-serif}
 @media (max-width:1100px){.bnc-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.bnc-tiles{grid-template-columns:1fr}.bnc-head{align-items:flex-start}}
+
+.bnc-locks{display:flex;gap:10px;flex-wrap:wrap}
+.bnc-lock{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--bnc-line);border-radius:10px;font-size:12.5px;background:var(--bnc-soft)}
+.bnc-lock.done{background:var(--bnc-s1bg);color:var(--bnc-s1fg);border-color:transparent}
+.bnc-btn.small{height:28px;padding:0 10px;font-size:12px}

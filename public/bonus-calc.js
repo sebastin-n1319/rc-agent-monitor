@@ -99,6 +99,24 @@
   }
   function paint(root, kids) { root.innerHTML = ''; kids.forEach(function (k) { if (k) root.appendChild(k); }); }
 
+  function lockAction(m, unlock) {
+    var msg = unlock ? 'Reopen ' + m.label + '? Its numbers will be worked out again from the live data.' : 'Finalise ' + m.label + '? Its numbers and amounts are kept as they are now, even if Zoho, RingCentral or SalesIQ data changes later.';
+    if (!window.confirm(msg)) return;
+    api('/api/bonus/lock', { month: m.key, unlock: !!unlock }).then(function (j) {
+      if (!j.success) throw new Error(j.error || 'Could not save');
+      toast(unlock ? m.label + ' reopened' : m.label + ' finalised (' + rs(j.total) + ')', 'success'); load();
+    }).catch(function (e) { toast(e.message, 'error'); });
+  }
+  function monthsCard(d) {
+    return h('div', { class: 'bnc-card bnc-lockcard' }, [h('h3', { class: 'bnc-h3', text: 'Finalise months' }),
+      h('p', { class: 'bnc-card-sub', text: 'Finalise a month once its bonus is agreed. It then keeps these exact numbers and amounts, even if a ticket is reopened or data changes later. Reopen it only to recalculate.' }),
+      h('div', { class: 'bnc-locks' }, d.months.map(function (m) {
+        if (m.partial) return h('span', { class: 'bnc-lock open' }, [h('b', { text: m.label }), ' in progress']);
+        if (m.locked) return h('span', { class: 'bnc-lock done' }, [h('b', { text: m.label }), ' finalised' + (m.lockedBy ? ' by ' + m.lockedBy.split('@')[0] : '') + (m.lockedAt ? ' on ' + String(m.lockedAt).slice(0, 10) : '') + ' ',
+          h('button', { type: 'button', class: 'bnc-link', text: 'Reopen', onclick: function () { lockAction(m, true); } })]);
+        return h('span', { class: 'bnc-lock open' }, [h('b', { text: m.label }), ' not finalised ', h('button', { type: 'button', class: 'bnc-btn small', text: 'Finalise ' + m.label, onclick: function () { lockAction(m, false); } })]);
+      }))]);
+  }
   function summary(d) {
     var wrap = h('div');
     var am = 0, el = 0; d.agents.forEach(function (a) { d.months.forEach(function (m) { am++; if (a.months[m.key].eligible && a.months[m.key].slab) el++; }); });
@@ -109,11 +127,12 @@
       tile('Eligible months', el + ' of ' + am, 'Agent-months at 70+ points and 18+ days', el ? 'ok' : 'mute'),
       tile('Still to enter', (d.missing || []).length, 'Agent-months missing QA or attendance', (d.missing || []).length ? 'warn' : 'ok'),
     ]));
+    wrap.appendChild(monthsCard(d));
     ['calls', 'chat'].forEach(function (team) {
       var list = d.agents.filter(function (a) { return a.team === team; }); if (!list.length) return;
       var card = h('div', { class: 'bnc-card' }, [h('h3', { class: 'bnc-h3', text: team === 'chat' ? 'Chat Team' : 'Calls Team' }),
         h('p', { class: 'bnc-card-sub', text: 'Points out of 100, the slab reached, and the amount for each month. Select an agent to see every metric and why.' })]);
-      var thead = h('tr', null, [h('th', { scope: 'col', text: 'Agent' })].concat(d.months.map(function (m) { return h('th', { scope: 'col', text: m.label + (m.partial ? ' (to date)' : '') }); }))
+      var thead = h('tr', null, [h('th', { scope: 'col', text: 'Agent' })].concat(d.months.map(function (m) { return h('th', { scope: 'col', text: m.label + (m.partial ? ' (to date)' : m.locked ? ' (final)' : '') }); }))
         .concat([h('th', { scope: 'col', class: 'num', text: 'Slab' }), h('th', { scope: 'col', class: 'num', text: 'CSAT' }), h('th', { scope: 'col', class: 'num', text: 'Total' })]));
       var tb = h('tbody');
       list.forEach(function (a) {
@@ -191,8 +210,9 @@
     });
     card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table inputs' }, [h('thead', null, [head]), tb])]));
     var paste = h('textarea', { class: 'bnc-paste', rows: '4', 'aria-label': 'Paste from Excel', placeholder: 'Optional: paste rows from Excel, one agent per line: Agent name, QA %, Present days, Planned, Half-day planned, Sick, Half-day sick, Unplanned, Half-day unplanned, NCNS' });
+    if (month.locked) card.appendChild(h('div', { class: 'bnc-note', text: month.label + ' is finalised, so its inputs cannot be changed. Reopen it on the Summary tab to edit.' }));
     card.appendChild(h('div', { class: 'bnc-actions' }, [
-      h('button', { type: 'button', class: 'bnc-btn primary', text: S.saving ? 'Saving...' : 'Save ' + month.label, disabled: S.saving, onclick: function () { save(d, month); } }),
+      h('button', { type: 'button', class: 'bnc-btn primary', text: S.saving ? 'Saving...' : 'Save ' + month.label, disabled: S.saving || month.locked, onclick: function () { save(d, month); } }),
       h('details', { class: 'bnc-pastebox' }, [h('summary', { text: 'Paste from Excel' }), paste,
         h('button', { type: 'button', class: 'bnc-btn', text: 'Fill the grid from paste', onclick: function () { fillFromPaste(d, paste.value); } })]),
     ]));
