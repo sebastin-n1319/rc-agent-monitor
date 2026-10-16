@@ -689,7 +689,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 166: T1 CS bonus calculator (admin, under Bonus).
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
-        roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange }); }
+        roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service') }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -8223,6 +8223,39 @@ app.get('/api/bonus/export', requireAdmin, rateLimit(20, 60000), async (req, res
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${tag}_T1_CS_${cards ? 'Agent_Report_Card' : 'Bonus_Calculation'}.xlsx"`);
     res.send(buf);
+  } catch (e) { bonusErr(res, e); }
+});
+// Batch 166b: admin checks of the raw sources behind the bonus (column names, one sample, counts). No visitor details.
+app.get('/api/bonus/debug', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const what = String(req.query.what || '');
+    if (what === 'analytics') {
+      const an = require('./lib/analytics-service');
+      const from = String(req.query.from || '2026-04-01 00:00:00'), to = String(req.query.to || '2026-04-01 03:00:00');
+      const cfg = { criteria: req.query.criteria ? String(req.query.criteria) : `"Ticket Closed Time" >= '${from}' AND "Ticket Closed Time" < '${to}'` };
+      if (req.query.columns) cfg.selectedColumns = String(req.query.columns).split('|');
+      const rows = await an.fetchTicketsView(cfg);
+      if (req.query.groupBy) {
+        const g = {}; for (const r of rows) { const k = String(r[req.query.groupBy] ?? ''); g[k] = (g[k] || 0) + 1; }
+        return res.json({ success: true, rows: rows.length, groups: g });
+      }
+      return res.json({ success: true, rows: rows.length, columns: rows[0] ? Object.keys(rows[0]) : [], sample: rows.slice(0, Number(req.query.n || 2)) });
+    }
+    if (what === 'salesiq') {
+      const siq = require('./lib/salesiq-service');
+      const fromMs = Date.parse(String(req.query.from || '2026-04-15T14:00:00Z')), toMs = Date.parse(String(req.query.to || '2026-04-15T16:00:00Z'));
+      const page = await siq.fetchConversationsPage({ fromTimeMs: fromMs, toTimeMs: toMs, index: 1, limit: 100, operatorIds: req.query.operator || null });
+      const cs = page.conversations || [];
+      const by = {}; for (const c of cs) { const e = (c.attender && (c.attender.email || c.attender.name)) || '(none)'; by[e] = (by[e] || 0) + 1; }
+      const pick = (c) => ({ id: c.id, start: c.start_time, status: c.status, chat_status: c.chat_status, attender: c.attender && { id: c.attender.id, email: c.attender.email, name: c.attender.name },
+        rating: c.rating, feedback: c.feedback, visitor_rating: c.visitor_rating, owner: c.owner && { id: c.owner.id, email: c.owner.email }, participants: Array.isArray(c.participants) ? c.participants.length : c.participants });
+      return res.json({ success: true, count: cs.length, more: page.moreDataAvailable, byAttender: by, keys: cs[0] ? Object.keys(cs[0]) : [], sample: cs.slice(0, 4).map(pick) });
+    }
+    if (what === 'operators') {
+      const rows = await new Promise((rs) => require('./database').db.all(`SELECT operator_id, email, name FROM chat_operators`, [], (e, r) => rs(r || [])));
+      return res.json({ success: true, operators: rows });
+    }
+    res.status(400).json({ success: false, error: 'what = analytics | salesiq | operators' });
   } catch (e) { bonusErr(res, e); }
 });
 let _bonusRereadRunning = false;

@@ -1590,6 +1590,29 @@ async function repairCallLogs(days = 45) {
   return { days, fetched, added, failed };
 }
 
+// Batch 166b: one agent's inbound / outbound call counts for a window, read straight from RingCentral (used by the bonus
+// for months the tool's own call copy no longer holds). Same direction rules as the call log sync.
+async function agentCallCountsFromRC(agent, fromIso, toIso) {
+  const params = { dateFrom: fromIso, dateTo: toIso, perPage: 1000, view: 'Detailed', type: 'Voice' };
+  let calls;
+  try { calls = await listExtensionCallLogRecords(agent.rc_id, params); }
+  catch (e) {
+    if (!isRateLimitError(e, e.rcData)) throw e;
+    await sleep(65000);
+    calls = await listExtensionCallLogRecords(agent.rc_id, params);
+  }
+  let inbound = 0, answered = 0, outbound = 0, missed = 0;
+  for (const call of calls) {
+    const dir = inferAgentScopedDirection(agent, call, normalizeRecordedDirection(call.direction, null));
+    const { isVoicemail } = parseCallDetails(call);
+    const r = String(call.result || '').trim().toLowerCase();
+    const miss = r === 'missed' || r === 'abandoned';
+    if (dir === 'Inbound') { inbound++; if (miss) missed++; else if (!isVoicemail) answered++; }
+    else if (dir === 'Outbound') outbound++;
+  }
+  return { inbound, answered, missed, outbound, records: calls.length };
+}
+
 async function fetchLiveCallStatus() {
   try {
     const hasSnapshot = Object.keys(lastLiveStatusSnapshot).length > 0;
@@ -2267,6 +2290,7 @@ async function fetchAuditTrail(fromIso, toIso, maxPages = 40) {
 }
 
 module.exports = {
+  agentCallCountsFromRC, // Batch 166b
   fetchAuditTrail,
   fetchQueueWaiting, // Session 51
   repairCallLogs, // Session 42
