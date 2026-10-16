@@ -689,7 +689,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 166: T1 CS bonus calculator (admin, under Bonus).
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
-        roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service') }); }
+        roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service'), analytics: require('./lib/analytics-service'), salesiq: require('./lib/salesiq-service') }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -8250,6 +8250,16 @@ app.get('/api/bonus/debug', requireAdmin, rateLimit(20, 60000), async (req, res)
       const pick = (c) => ({ id: c.id, start: c.start_time, status: c.status, chat_status: c.chat_status, attender: c.attender && { id: c.attender.id, email: c.attender.email, name: c.attender.name },
         rating: c.rating, feedback: c.feedback, visitor_rating: c.visitor_rating, owner: c.owner && { id: c.owner.id, email: c.owner.email }, participants: Array.isArray(c.participants) ? c.participants.length : c.participants });
       return res.json({ success: true, count: cs.length, more: page.moreDataAvailable, byAttender: by, keys: cs[0] ? Object.keys(cs[0]) : [], sample: cs.slice(0, 4).map(pick) });
+    }
+    if (what === 'siqraw') {
+      // Read-only GET on the SalesIQ API (admin check of fields such as chat ratings). Path is under /api/v2/{portal}/.
+      const pth = String(req.query.path || '').replace(/^\/+/, '');
+      if (!/^[A-Za-z0-9_\-\/?=&.,%]+$/.test(pth)) return res.status(400).json({ success: false, error: 'bad path' });
+      const siqLib = require('./lib/salesiq-service');
+      const data = await siqLib.rawGet(pth);
+      const strip = (o, d = 0) => { if (!o || typeof o !== 'object' || d > 6) return o; if (Array.isArray(o)) return o.slice(0, 5).map((x) => strip(x, d + 1));
+        const r = {}; for (const [k, v] of Object.entries(o)) r[k] = /visitor|email|phone|ip|question|message|name/i.test(k) && k !== 'attender' && k !== 'owner' ? '(hidden)' : strip(v, d + 1); return r; };
+      return res.json({ success: true, data: strip(data) });
     }
     if (what === 'operators') {
       const rows = await new Promise((rs) => require('./database').db.all(`SELECT operator_id, email, name FROM chat_operators`, [], (e, r) => rs(r || [])));
