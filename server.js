@@ -686,6 +686,10 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         };
         tick(); setInterval(tick, 10 * 60 * 1000);
       }, 5 * 60 * 1000); }
+    // Batch 166: T1 CS bonus calculator (admin, under Bonus).
+    { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
+      bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
+        roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -745,6 +749,15 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       console.log(`💬 Chat re-crawl: ${JSON.stringify(r)}`);
     } catch (e) { log.error('chat_recrawl_failed', e); }
   }, 4 * 60 * 1000);
+  // Batch 166: chat ratings are new; read every chat again once from 1 Jul 2026 (start of Q3) so the bonus chat CSAT has them.
+  setTimeout(async () => {
+    try {
+      if ((await salesiqLifecycle.getSyncState('rating_recrawl_v166')) === '1') return;
+      const r = await salesiqLifecycle.recrawlSince(Date.parse('2026-07-01T05:00:00Z'));
+      if (r && r.complete) await salesiqLifecycle.setSyncState('rating_recrawl_v166', '1');
+      console.log(`💬 Chat ratings re-read: ${JSON.stringify(r)}`);
+    } catch (e) { log.error('chat_rating_recrawl_failed', e); }
+  }, 12 * 60 * 1000);
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
@@ -8180,6 +8193,49 @@ app.get('/api/live-floor/now', requireAuth, async (req, res) => {
 });
 
 // Batch 165: AI support and VoIP support handled by T1, with transfer audits against the support guides.
+// ── Batch 166: T1 CS bonus calculator ──
+// The bonus for any month, quarter (Q3-2026), year (2026) or month to date (MTD), from the tool's own numbers plus the QA
+// scores and attendance entered on the page. Admin only; the report cards download has no rupee amounts.
+function bonusErr(res, e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+app.get('/api/bonus', requireAdmin, async (req, res) => {
+  try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/bonus').report({ period: req.query.period, agentNames })) }); }
+  catch (e) { bonusErr(res, e); }
+});
+app.get('/api/bonus/agents', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, agents: await require('./lib/bonus').agentList() }); } catch (e) { bonusErr(res, e); }
+});
+app.post('/api/bonus/agents', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json({ success: true, agent: await require('./lib/bonus').saveAgent({ email: b.email, team: b.team, include: b.include, eligible: b.eligible, by: req.session.email }) }); }
+  catch (e) { bonusErr(res, e); }
+});
+app.post('/api/bonus/inputs', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json({ success: true, ...(await require('./lib/bonus').saveInputs({ month: b.month, rows: b.rows, by: req.session.email })) }); }
+  catch (e) { bonusErr(res, e); }
+});
+app.get('/api/bonus/export', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const { agentNames } = await deskLifecycleAgentRoster();
+    const R = await require('./lib/bonus').report({ period: req.query.period, agentNames });
+    const X = require('./lib/bonus-export');
+    const cards = req.query.kind === 'cards';
+    const buf = cards ? await X.cardsWorkbook(R) : await X.calcWorkbook(R);
+    const tag = String(R.period || 'period').replace(/[^A-Za-z0-9-]/g, '_');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${tag}_T1_CS_${cards ? 'Agent_Report_Card' : 'Bonus_Calculation'}.xlsx"`);
+    res.send(buf);
+  } catch (e) { bonusErr(res, e); }
+});
+let _bonusRereadRunning = false;
+app.post('/api/bonus/chat-ratings/reread', requireAdmin, rateLimit(3, 60000), async (req, res) => {
+  if (_bonusRereadRunning) return res.json({ success: true, started: false, running: true });
+  const from = Date.parse(String((req.body || {}).from || '2026-07-01T05:00:00Z'));
+  _bonusRereadRunning = true;
+  salesiqLifecycle.recrawlSince(isFinite(from) ? from : Date.parse('2026-07-01T05:00:00Z'))
+    .then((r) => console.log('💬 Chat ratings re-read (manual):', JSON.stringify(r))).catch((e) => console.warn('chat ratings re-read failed:', e.message))
+    .finally(() => { _bonusRereadRunning = false; });
+  res.json({ success: true, started: true });
+});
+
 app.get('/api/topic-support', requireAdmin, async (req, res) => {
   try {
     const ts = require('./lib/topic-support');
