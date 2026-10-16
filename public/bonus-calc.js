@@ -160,7 +160,7 @@
     var month = d.months.filter(function (m) { return m.key === S.inMonth; })[0] || d.months[0];
     var card = h('div', { class: 'bnc-card' }, [
       h('div', { class: 'bnc-card-hd' }, [h('div', null, [h('h3', { class: 'bnc-h3', text: 'QA scores and attendance' }),
-        h('p', { class: 'bnc-card-sub', text: 'Grey numbers are what the tool already has (attendance from the Roster, chat ratings and a chat count from SalesIQ); type a number to use yours instead, clear it to go back. For the Chat team enter Chats Owned from the SalesIQ operator report: SalesIQ\'s API counts fewer chats than its own report. Half days count 0.5 toward planned leave; any unplanned day, half day or NCNS removes the month\'s bonus.' })]),
+        h('p', { class: 'bnc-card-sub', text: 'Grey numbers are what the tool already has (attendance from the Roster, chat ratings and a chat count from SalesIQ); type a number to use yours instead, clear it to go back. Half days count 0.5 toward planned leave; any unplanned day, half day or NCNS removes the month\'s bonus.' })]),
         d.months.length > 1 ? seg(d.months.map(function (m) { return [m.key, m.label]; }), month.key, function (v) { S.inMonth = v; draw(); }, 'Month') : null]),
     ]);
     var hasChat = d.agents.some(function (a) { return a.team === 'chat'; });
