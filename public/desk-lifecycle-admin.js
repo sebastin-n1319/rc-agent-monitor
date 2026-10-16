@@ -448,7 +448,7 @@
         return c ? `Calls (RingCentral)\n\nInbound ${c.inboundCalls || 0} · Outbound ${c.outboundCalls || 0} · Missed ${c.missedCalls || 0}` : 'Calls\n\nNo RingCentral extension linked.';
       }
       case 'chats':
-        return a.chatStats ? 'Chats (SalesIQ)\n\nChats this agent was the attender on, by chat start time.' : 'Chats\n\nSalesIQ not configured.';
+        return a.chatStats ? 'Chats (SalesIQ)\n\nChats this agent owned (as SalesIQ counts Chats owned), by chat start time.' : 'Chats\n\nSalesIQ not configured.';
       case 'unique':
         return 'Unique tickets\n\nEvery ticket this agent appears in anywhere in its ownership history, even one hand-off counts, once. Counted by when the ticket was CREATED.';
       case 'solely':

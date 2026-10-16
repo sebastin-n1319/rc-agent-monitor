@@ -758,6 +758,16 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       console.log(`💬 Chat ratings re-read: ${JSON.stringify(r)}`);
     } catch (e) { log.error('chat_rating_recrawl_failed', e); }
   }, 12 * 60 * 1000);
+  // Batch 169: the chat sync stopped after about 75 chats a phase (SalesIQ gives ~5 per read), so per-day counts ran
+  // short of SalesIQ's Chats owned. Read every chat again once from 1 Jul 2026 with the fixed loop (owner included).
+  setTimeout(async () => {
+    try {
+      if ((await salesiqLifecycle.getSyncState('recrawl_v169')) === '1') return;
+      const r = await salesiqLifecycle.recrawlSince(Date.parse('2026-07-01T05:00:00Z'));
+      if (r && r.complete) await salesiqLifecycle.setSyncState('recrawl_v169', '1');
+      console.log(`💬 Chat re-read (owner, full paging): ${JSON.stringify(r)}`);
+    } catch (e) { log.error('chat_recrawl_v169_failed', e); }
+  }, 6 * 60 * 1000);
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
