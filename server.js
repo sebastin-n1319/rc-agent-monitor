@@ -8261,6 +8261,7 @@ app.get('/api/bonus/debug', requireAdmin, rateLimit(20, 60000), async (req, res)
         const r = {}; for (const [k, v] of Object.entries(o)) r[k] = /visitor|email|phone|ip|question|message|name/i.test(k) && k !== 'attender' && k !== 'owner' ? '(hidden)' : strip(v, d + 1); return r; };
       return res.json({ success: true, data: strip(data) });
     }
+    if (what === 'chatdiag') return res.json({ success: true, diag: require('./lib/bonus').chatDiag() });
     if (what === 'operators') {
       const rows = await new Promise((rs) => require('./database').db.all(`SELECT operator_id, email, name FROM chat_operators`, [], (e, r) => rs(r || [])));
       return res.json({ success: true, operators: rows });
