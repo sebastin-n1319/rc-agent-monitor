@@ -154,13 +154,13 @@
   }
 
   var COLS = [['qa', 'QA %'], ['present', 'Present days'], ['pl', 'Planned'], ['hd_pl', 'Half-day planned'], ['sl', 'Sick'], ['hd_sl', 'Half-day sick'], ['upl', 'Unplanned'], ['hd_upl', 'Half-day unplanned'], ['ncns', 'NCNS']];
-  var CHATCOLS = [['chat_happy', 'Happy'], ['chat_ok', 'Ok'], ['chat_bad', 'Bad']];
+  var CHATCOLS = [['chats', 'Owned'], ['chat_happy', 'Happy'], ['chat_ok', 'Ok'], ['chat_bad', 'Bad']];
   function editKey(email, k) { return S.inMonth + '|' + email + '|' + k; }
   function inputs(d) {
     var month = d.months.filter(function (m) { return m.key === S.inMonth; })[0] || d.months[0];
     var card = h('div', { class: 'bnc-card' }, [
       h('div', { class: 'bnc-card-hd' }, [h('div', null, [h('h3', { class: 'bnc-h3', text: 'QA scores and attendance' }),
-        h('p', { class: 'bnc-card-sub', text: 'Grey numbers are what the tool already has (attendance from the Roster, chat ratings from SalesIQ); type a number to use yours instead, clear it to go back. Half days count 0.5 toward planned leave; any unplanned day, half day or NCNS removes the month\'s bonus.' })]),
+        h('p', { class: 'bnc-card-sub', text: 'Grey numbers are what the tool already has (attendance from the Roster, chat ratings and a chat count from SalesIQ); type a number to use yours instead, clear it to go back. For the Chat team enter Chats Owned from the SalesIQ operator report: SalesIQ\'s API counts fewer chats than its own report. Half days count 0.5 toward planned leave; any unplanned day, half day or NCNS removes the month\'s bonus.' })]),
         d.months.length > 1 ? seg(d.months.map(function (m) { return [m.key, m.label]; }), month.key, function (v) { S.inMonth = v; draw(); }, 'Month') : null]),
     ]);
     var hasChat = d.agents.some(function (a) { return a.team === 'chat'; });
@@ -181,7 +181,7 @@
         if (a.team !== 'chat') { tds.push(h('td', { class: 'mute', text: '-' })); return; }
         var k = editKey(a.email, c[0]);
         var val = S.edits[k] != null ? S.edits[k] : (inp[c[0]] != null ? String(inp[c[0]]) : '');
-        var ph = String(x.data.chatSource === 'entered' ? '' : (c[0] === 'chat_happy' ? x.data.happy : c[0] === 'chat_ok' ? x.data.ok : x.data.bad));
+        var ph = c[0] === 'chats' ? String(x.data.chatsApi != null ? x.data.chatsApi : '') : String(x.data.chatSource === 'entered' ? '' : (c[0] === 'chat_happy' ? x.data.happy : c[0] === 'chat_ok' ? x.data.ok : x.data.bad));
         tds.push(h('td', null, [h('input', { class: 'bnc-in', inputmode: 'numeric', 'aria-label': 'Chat ' + c[1] + ' for ' + a.name, value: val, placeholder: ph, oninput: function (e) { S.edits[k] = e.target.value; } })]));
       });
       tds.push(h('td', { class: 'mute small', text: a.team === 'chat'
