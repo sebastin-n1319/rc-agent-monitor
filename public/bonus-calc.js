@@ -119,6 +119,31 @@
         return h('span', { class: 'bnc-lock open' }, [h('b', { text: m.label }), ' not finalised ', h('button', { type: 'button', class: 'bnc-btn small', text: 'Finalise ' + m.label, onclick: function () { lockAction(m, false); } })]);
       }))]);
   }
+  // Batch 170: what the Hall of Fame shows agents, with the status tag on top of it.
+  function hofCard(d) {
+    var card = h('div', { class: 'bnc-card' }, [h('h3', { class: 'bnc-h3', text: 'Hall of Fame' }),
+      h('p', { class: 'bnc-card-sub', text: 'The Hall of Fame shows points, slabs and eligibility (never amounts). Agents see the board and only their own breakdown. While the numbers are being checked it carries a "yet to be confirmed" tag; switch it to Validated and confirmed once they are final.' })]);
+    var body = h('div', { class: 'bnc-hof' }, [h('span', { class: 'bnc-card-sub', text: 'Loading...' })]);
+    card.appendChild(body);
+    function paintHof(c) {
+      body.innerHTML = '';
+      var showing = c.period ? c.period : 'nothing yet';
+      var save = function (patch) { api('/api/bonus/hof', patch).then(function (j) { if (!j.success) throw new Error(j.error || 'Could not save'); toast('Hall of Fame updated', 'success'); paintHof(j); }).catch(function (e) { toast(e.message, 'error'); }); };
+      body.appendChild(h('p', { class: 'bnc-line' }, [h('b', { text: 'Showing: ' }), showing + '. ', c.visible ? 'Visible to agents.' : 'Hidden from agents (admins can preview it).',
+        c.at ? ' Last changed ' + String(c.at).slice(0, 16) + (c.by ? ' by ' + c.by.split('@')[0] : '') + '.' : '']));
+      body.appendChild(h('div', { class: 'bnc-actions' }, [
+        h('button', { type: 'button', class: 'bnc-btn' + (c.period === period() ? '' : ' primary'), text: c.period === period() ? 'Showing ' + d.label : 'Show ' + d.label + ' on the Hall of Fame', disabled: c.period === period() || S.type === 'mtd',
+          onclick: function () { save({ period: period() }); } }),
+        seg([['in_progress', 'In progress (not confirmed)'], ['confirmed', 'Validated and confirmed']], c.status, function (v) {
+          if (v === c.status) return;
+          if (v === 'confirmed') { var open = d.months.filter(function (m) { return !m.locked; }); if (open.length && !window.confirm('Mark the numbers as validated and confirmed? ' + open.map(function (m) { return m.label; }).join(', ') + ' are not finalised yet, so they can still change. Finalise them first if these are the final numbers.')) return; }
+          save({ status: v }); }, 'Hall of Fame status'),
+        h('label', { class: 'bnc-check' }, [(function () { var i = h('input', { type: 'checkbox', onchange: function (e) { save({ visible: e.target.checked }); } }); i.checked = !!c.visible; return i; })(), ' Visible to agents']),
+      ]));
+    }
+    api('/api/bonus/hof').then(function (j) { if (j.success) paintHof(j); else body.textContent = j.error || 'Could not load'; });
+    return card;
+  }
   function summary(d) {
     var wrap = h('div');
     var am = 0, el = 0; d.agents.forEach(function (a) { d.months.forEach(function (m) { am++; if (a.months[m.key].eligible && a.months[m.key].slab) el++; }); });
@@ -130,6 +155,7 @@
       tile('Still to enter', (d.missing || []).length, 'Agent-months missing QA or attendance', (d.missing || []).length ? 'warn' : 'ok'),
     ]));
     wrap.appendChild(monthsCard(d));
+    wrap.appendChild(hofCard(d));
     ['calls', 'chat'].forEach(function (team) {
       var list = d.agents.filter(function (a) { return a.team === team; }); if (!list.length) return;
       var card = h('div', { class: 'bnc-card' }, [h('h3', { class: 'bnc-h3', text: team === 'chat' ? 'Chat Team' : 'Calls Team' }),
@@ -141,6 +167,7 @@
         var open = !!S.open[a.email];
         var tr = h('tr', { class: 'bnc-row' + (open ? ' on' : '') }, [h('th', { scope: 'row' }, [h('button', { type: 'button', class: 'bnc-name', 'aria-expanded': open ? 'true' : 'false', onclick: function () { S.open[a.email] = !open; draw(); } }, [a.name, a.eligible ? null : h('span', { class: 'bnc-tag', text: 'Not eligible this period' })])])]
           .concat(d.months.map(function (m) { var x = a.months[m.key];
+            if (x.outside) return h('td', null, [h('div', { class: 'bnc-cell' }, [h('span', { class: 'bnc-miss', text: 'Not in T1 CS this month' })])]);
             return h('td', null, [h('div', { class: 'bnc-cell' }, [h('b', { text: x.points + ' pts' }), chip(x.slab, x.eligible), h('span', { class: 'bnc-amt', text: x.total ? rs(x.total) : '-' }), x.missing.length ? h('span', { class: 'bnc-miss', text: 'Needs ' + x.missing.join(' and ') }) : null])]); }))
           .concat([h('td', { class: 'num', text: rs(a.totals.slab) }), h('td', { class: 'num', text: rs(a.totals.csat) }), h('td', { class: 'num strong', text: rs(a.totals.total) })]));
         tb.appendChild(tr);
@@ -163,7 +190,7 @@
           h('td', { class: 'num', text: mt.points + ' / ' + mt.max })]);
       });
       var L = x.leave, leaveTxt = 'Present ' + (x.present == null ? 'not entered' : x.present) + ' (' + (x.attendanceSource === 'roster' ? 'from Roster' : x.attendanceSource) + ')'
-        + ', planned ' + L.pl + ', sick ' + L.sl + ', half days ' + (L.hd_pl + L.hd_sl + L.hd_upl) + ', unplanned ' + L.upl + (L.ncns ? ', NCNS ' + L.ncns : '') + '. Leave count ' + x.leaveCount + '.';
+        + ', planned ' + L.pl + ', sick ' + L.sl + ', half days ' + (L.hd_pl + L.hd_sl + L.hd_upl) + ', unplanned ' + L.upl + (L.ncns ? ', NCNS ' + L.ncns : '') + (L.fl ? ', floater ' + L.fl + ' (not counted)' : '') + '. Leave count ' + x.leaveCount + '.';
       return h('div', { class: 'bnc-month' }, [h('h4', { text: m.long + (m.partial ? ' (to date)' : '') }),
         h('table', { class: 'bnc-mini' }, [h('thead', null, [h('tr', null, ['Metric', 'Result', 'Slab 1 / Slab 2', 'Outcome', 'Points'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), h('tbody', null, rows)]),
         h('p', { class: 'bnc-line' }, [h('b', { text: x.points + ' / 100. ' }), x.eligible ? 'Eligible, ' + (x.slab === 's1' ? 'Slab 1' : 'Slab 2') + '. ' : 'Not eligible. ' + x.why.join(' '), x.leaveNote ? ' ' + x.leaveNote : '', x.slabAmt ? ' Slab bonus ' + rs(x.slabAmt) + '.' : '']),
@@ -174,14 +201,14 @@
     }));
   }
 
-  var COLS = [['qa', 'QA %'], ['present', 'Present days'], ['pl', 'Planned'], ['hd_pl', 'Half-day planned'], ['sl', 'Sick'], ['hd_sl', 'Half-day sick'], ['upl', 'Unplanned'], ['hd_upl', 'Half-day unplanned'], ['ncns', 'NCNS']];
+  var COLS = [['qa', 'QA %'], ['present', 'Present days'], ['pl', 'Planned'], ['hd_pl', 'Half-day planned'], ['sl', 'Sick'], ['hd_sl', 'Half-day sick'], ['upl', 'Unplanned'], ['hd_upl', 'Half-day unplanned'], ['ncns', 'NCNS'], ['fl', 'Floater']];
   var CHATCOLS = [['chats', 'Owned'], ['chat_happy', 'Happy'], ['chat_ok', 'Ok'], ['chat_bad', 'Bad']];
   function editKey(email, k) { return S.inMonth + '|' + email + '|' + k; }
   function inputs(d) {
     var month = d.months.filter(function (m) { return m.key === S.inMonth; })[0] || d.months[0];
     var card = h('div', { class: 'bnc-card' }, [
       h('div', { class: 'bnc-card-hd' }, [h('div', null, [h('h3', { class: 'bnc-h3', text: 'QA scores and attendance' }),
-        h('p', { class: 'bnc-card-sub', text: 'Grey numbers are what the tool already has (attendance from the Roster, chat ratings and a chat count from SalesIQ); type a number to use yours instead, clear it to go back. Half days count 0.5 toward planned leave; any unplanned day, half day or NCNS removes the month\'s bonus.' })]),
+        h('p', { class: 'bnc-card-sub', text: 'Grey numbers are what the tool already has (attendance from the Roster, chat ratings and a chat count from SalesIQ); type a number to use yours instead, clear it to go back. Half days count 0.5 toward planned leave and floater leave is not counted; any unplanned day, half day or NCNS removes the month\'s bonus.' })]),
         d.months.length > 1 ? seg(d.months.map(function (m) { return [m.key, m.label]; }), month.key, function (v) { S.inMonth = v; draw(); }, 'Month') : null]),
     ]);
     var hasChat = d.agents.some(function (a) { return a.team === 'chat'; });
@@ -211,7 +238,7 @@
       tb.appendChild(h('tr', null, tds));
     });
     card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table inputs' }, [h('thead', null, [head]), tb])]));
-    var paste = h('textarea', { class: 'bnc-paste', rows: '4', 'aria-label': 'Paste from Excel', placeholder: 'Optional: paste rows from Excel, one agent per line: Agent name, QA %, Present days, Planned, Half-day planned, Sick, Half-day sick, Unplanned, Half-day unplanned, NCNS' });
+    var paste = h('textarea', { class: 'bnc-paste', rows: '4', 'aria-label': 'Paste from Excel', placeholder: 'Optional: paste rows from Excel, one agent per line: Agent name, QA %, Present days, Planned, Half-day planned, Sick, Half-day sick, Unplanned, Half-day unplanned, NCNS, Floater' });
     if (month.locked) card.appendChild(h('div', { class: 'bnc-note', text: month.label + ' is finalised, so its inputs cannot be changed. Reopen it on the Summary tab to edit.' }));
     card.appendChild(h('div', { class: 'bnc-actions' }, [
       h('button', { type: 'button', class: 'bnc-btn primary', text: S.saving ? 'Saving...' : 'Save ' + month.label, disabled: S.saving || month.locked, onclick: function () { save(d, month); } }),
@@ -287,7 +314,7 @@
 
   function agentsTab() {
     var card = h('div', { class: 'bnc-card' }, [h('h3', { class: 'bnc-h3', text: 'Who is in the bonus' }),
-      h('p', { class: 'bnc-card-sub', text: 'Include an agent, pick the team their metrics are scored on, and switch off bonus eligibility (for example during probation). Changes apply to every period.' })]);
+      h('p', { class: 'bnc-card-sub', text: 'Include an agent, pick the team their metrics are scored on, and switch off bonus eligibility (for example during probation). Set the months someone was in T1 CS when they joined or moved team mid-quarter (blank = no limit); months outside are not worked out or paid. Untick Hall of Fame to keep someone off the agents\' Hall of Fame while still paying them.' })]);
     if (!S.agents) { card.appendChild(h('p', { class: 'bnc-card-sub', text: 'Loading...' })); return card; }
     var tb = h('tbody');
     S.agents.forEach(function (a) {
@@ -295,9 +322,24 @@
       var team = h('select', { class: 'bnc-sel', 'aria-label': 'Team for ' + a.name, onchange: function (e) { upd({ team: e.target.value }); } }, [['calls', 'Calls'], ['chat', 'Chat']].map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (a.team === o[0]) op.selected = true; return op; }));
       var inc = h('input', { type: 'checkbox', 'aria-label': 'Include ' + a.name, onchange: function (e) { upd({ include: e.target.checked }); } }); inc.checked = !!a.include;
       var el = h('input', { type: 'checkbox', 'aria-label': 'Bonus eligible: ' + a.name, onchange: function (e) { upd({ eligible: e.target.checked }); } }); el.checked = !!a.eligible;
-      tb.appendChild(h('tr', null, [h('th', { scope: 'row', text: a.name }), h('td', { text: a.empId || '-' }), h('td', { text: a.doj || '-' }), h('td', null, [inc]), h('td', null, [team]), h('td', null, [el])]));
+      var hof = h('input', { type: 'checkbox', 'aria-label': 'Show ' + a.name + ' on the Hall of Fame', onchange: function (e) { upd({ hof: e.target.checked }); } }); hof.checked = a.hof !== false;
+      var monIn = function (k, lbl) { return h('input', { type: 'month', class: 'bnc-in month', 'aria-label': lbl + ' for ' + a.name, value: a[k] || '', onchange: function (e) { var p = {}; p[k] = e.target.value || ''; upd(p); } }); };
+      tb.appendChild(h('tr', null, [h('th', { scope: 'row' }, [a.name, a.monitored === false ? h('span', { class: 'bnc-tag', text: 'Not on the call monitor' }) : null]), h('td', { text: a.empId || '-' }), h('td', { text: a.doj || '-' }), h('td', null, [inc]), h('td', null, [team]), h('td', null, [el]),
+        h('td', null, [monIn('fromMonth', 'In T1 CS from')]), h('td', null, [monIn('toMonth', 'In T1 CS until')]), h('td', null, [hof])]));
     });
-    card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table' }, [h('thead', null, [h('tr', null, ['Agent', 'Emp Id', 'DOJ', 'Included', 'Team', 'Bonus eligible'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb])]));
+    card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table' }, [h('thead', null, [h('tr', null, ['Agent', 'Emp Id', 'DOJ', 'Included', 'Team', 'Bonus eligible', 'In T1 CS from', 'In T1 CS until', 'Hall of Fame'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), tb])]));
+    var addEmail = h('input', { class: 'bnc-in wide', type: 'email', placeholder: 'name@adit.com', 'aria-label': 'Email of the agent to add' });
+    var addName = h('input', { class: 'bnc-in wide', placeholder: 'Name as in Zoho (e.g. Debra Horton)', 'aria-label': 'Name of the agent to add' });
+    var addTeam = h('select', { class: 'bnc-sel', 'aria-label': 'Team of the agent to add' }, [h('option', { value: 'calls', text: 'Calls' }), h('option', { value: 'chat', text: 'Chat' })]);
+    card.appendChild(h('details', { class: 'bnc-pastebox' }, [h('summary', { text: 'Add someone who is not on the call monitor (moved to another team)' }),
+      h('div', { class: 'bnc-actions' }, [addEmail, addName, addTeam, h('button', { type: 'button', class: 'bnc-btn primary', text: 'Find in RingCentral and add', onclick: function () {
+        var em = addEmail.value.trim(), nm = addName.value.trim(); if (!em || !nm) { toast('Enter the email and the name', 'warning'); return; }
+        api('/api/rc-search?q=' + encodeURIComponent(nm)).then(function (r) {
+          var hit = (r.data || []).filter(function (x) { return String(x.email || '').toLowerCase() === em.toLowerCase(); })[0];
+          return api('/api/bonus/agents', { email: em, name: nm, team: addTeam.value, include: true, eligible: true, rcId: hit ? hit.id : '', extension: hit ? hit.extension : '' }).then(function (j) {
+            if (!j.success) throw new Error(j.error || 'Could not add'); toast('Added ' + nm + (hit ? ' (RingCentral extension ' + hit.extension + ')' : ' (no RingCentral extension found, calls will be blank)'), hit ? 'success' : 'warning'); S.agents = null; loadAgents(); S.data = null; load(); });
+        }).catch(function (e) { toast(e.message, 'error'); });
+      } })])]));
     card.appendChild(h('div', { class: 'bnc-actions' }, [h('button', { type: 'button', class: 'bnc-btn', text: 'Read chat ratings again from 1 Jul', onclick: function () {
       api('/api/bonus/chat-ratings/reread', { from: '2026-07-01T05:00:00Z' }).then(function (j) { toast(j.running ? 'Already reading chats; refresh in a few minutes.' : 'Reading chats from SalesIQ in the background; refresh in a few minutes.', 'info'); });
     } })]));

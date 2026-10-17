@@ -85,3 +85,8 @@ html.dark-mode .bnc-note.bad{background:#3A1A1D;border-color:#6E2A30;color:#F6A5
 .bnc-upload:focus-within label{outline:2px solid var(--bnc-t1);outline-offset:2px}
 .bnc-chg{font-weight:700}
 .bnc-was{font-weight:400;color:var(--bnc-t2);font-size:12px}
+
+/* Batch 170-171: Hall of Fame card, months on the Agents tab */
+.bnc-check{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--bnc-t1)}
+.bnc-in.month{width:150px}
+.bnc-in.wide{width:220px}

@@ -49,6 +49,7 @@ const {
   // Session 17, admin settings (pause controls, etc.)
   getSetting, setSetting, deleteSetting, getAllSettings,
 } = require('./database');
+const statsAlign = require('./lib/stats-align'); // Batch 170: Lifecycle / My Stats numbers = bonus numbers
 const { evaluateAll: evaluateAllAlerts, ALERT_KEYS } = require('./lib/alerts');
 const ANOMALY = require('./lib/anomaly');
 const {
@@ -701,6 +702,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     const salesiqLifecycle = require('./lib/salesiq-lifecycle');
     salesiqLifecycle.setDB(db);
     await salesiqLifecycle.initSchema();
+    statsAlign.setDB(db); await statsAlign.initSchema(); // Batch 170
     console.log('💬 Chat (SalesIQ) lifecycle schema ready');
   } catch(e) { log.error('salesiq_lifecycle_init_failed', e); console.error('salesiq_lifecycle_init_failed', e); }
   // Session 40: one-time reset so the AditKB calls history backfill
@@ -768,6 +770,29 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       console.log(`💬 Chat re-read (owner, full paging): ${JSON.stringify(r)}`);
     } catch (e) { log.error('chat_recrawl_v169_failed', e); }
   }, 6 * 60 * 1000);
+  // Batch 170: fill the Zoho Analytics closed-ticket copy month by month from Oct 2025, then switch Ticket Lifecycle /
+  // My Stats closed and FCR onto it (the floor is set only once every month is in).
+  setTimeout(async () => {
+    try {
+      if (await statsAlign.getState('floor')) return;
+      if (!analyticsService.isConfigured()) return;
+      let y = 2025, m = 10; const now = new Date();
+      while (true) {
+        const ny = m === 12 ? y + 1 : y, nm = m === 12 ? 1 : m + 1;
+        const fromStr = `${y}-${String(m).padStart(2, '0')}-01 00:00:00`, toStr = `${ny}-${String(nm).padStart(2, '0')}-01 00:00:00`;
+        const fromIso = analyticsService.centralWallTimeToUtcIso(fromStr);
+        if (new Date(fromIso) > now) break;
+        const rows = await analyticsService.fetchTicketFcrRows(fromStr, toStr);
+        await statsAlign.storeWindow(fromIso, analyticsService.centralWallTimeToUtcIso(toStr), rows);
+        console.log(`🎯 Closed-ticket copy ${fromStr.slice(0, 7)}: ${rows.length} ticket(s)`);
+        y = ny; m = nm;
+        await new Promise((r) => setTimeout(r, 15000));
+      }
+      await statsAlign.setState('synced_through', new Date().toISOString());
+      await statsAlign.setState('floor', analyticsService.centralWallTimeToUtcIso('2025-10-01 00:00:00'));
+      console.log('🎯 Closed-ticket copy ready: Ticket Lifecycle and My Stats now count closed tickets and FCR like the bonus');
+    } catch (e) { log.error('closed_ticket_copy_failed', e); }
+  }, 8 * 60 * 1000);
 }).catch(e => {
   // Prevent unhandled rejection crash (Node v22 exits on unhandled rejections).
   // Server will still start via start() below; DB-dependent routes may error until
@@ -2615,7 +2640,7 @@ function chatReports() {
   _chatReports = createChatReports({
     getDateWindow, getBreakReportData,
     perfRoster: () => deskLifecycleAgentRoster(),
-    agentSummary: async (args) => (await coldStore.pick(deskLifecycle, args.from, args.to)).agentSummary(args),
+    agentSummary: async (args) => { const r = await deskLifecycleAgentRoster().catch(() => ({ byEmail: {} })); return statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, args.from, args.to)).agentSummary(args), { from: args.from, to: args.to, agentNames: args.agentNames, byEmail: r.byEmail, q: args.q }); },
     callAndChatStats: (emails, from, to) => callAndChatStatsForAgents(emails, from, to),
     db: dbm, fetchFn: fetch,
     getWebhook: () => ALERT_HOOKS.summaries || '',
@@ -7784,7 +7809,7 @@ async function callAndChatStatsForAgents(emails, from, to) {
   for (const email of emails) {
     const m = byEmail[email];
     let callStats = null;
-    try { if (m && (m.rc_id || m.extension)) callStats = await getAgentCallStatsRange({ agentId: m.rc_id || m.extension, from, to }); }
+    try { if (m && (m.rc_id || m.extension)) callStats = await statsAlign.applyMonthCalls(email, from, to, await getAgentCallStatsRange({ agentId: m.rc_id || m.extension, from, to })); }
     catch (e) { console.warn('⚠️ call stats (admin summary):', e.message); }
     out[email] = { callStats, chatStats: chats[email] || (salesiqService.isConfigured() ? { chatCount: 0, avgResponseSeconds: null } : null) };
   }
@@ -7797,7 +7822,7 @@ app.get('/api/desk-lifecycle/summary', requireAuth, async (req, res) => {
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
-    const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
+    const summary = await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) }), { from, to, agentNames, byEmail, q });
     const extra = await callAndChatStatsForAgents(emails, from, to);
     const rv = await transferReview.agentReviewStats(emails, from, to).catch(() => ({}));
     const out = summary.map(s => ({ ...s, ...extra[s.email], ...(rv[String(s.email).toLowerCase()] || {}), pseudo: byEmail[s.email]?.pseudo || null, full_name: byEmail[s.email]?.full_name || null }));
@@ -7816,8 +7841,7 @@ app.get('/api/desk-lifecycle/summary/export', requireAdmin, async (req, res) => 
     const to = req.query.to || new Date().toISOString();
     const q = req.query.q ? String(req.query.q).trim() : null;
     const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
-    const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) });
-
+    const summary = await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, q, agentNames, rosterNames: Object.values(agentNames) }), { from, to, agentNames, byEmail, q });
     const extra = await callAndChatStatsForAgents(emails, from, to);
     const header = [
       'Agent', 'Email', 'Tickets Handled', 'Handled: New', 'Handled: Follow-up', 'Calls', 'Chats',
@@ -8033,10 +8057,13 @@ async function runFcrAnalyticsSync() {
     // of history again.
     const fromStr = analyticsService.utcIsoToChicagoWallTime(new Date(Date.now() - FCR_SYNC_STEADY_TRAILING_DAYS * 86400000).toISOString());
     const toStr = analyticsService.utcIsoToChicagoWallTime(new Date().toISOString());
+    const steadyFromIso = new Date(Date.now() - FCR_SYNC_STEADY_TRAILING_DAYS * 86400000).toISOString(), steadyToIso = new Date().toISOString();
     const rows = await analyticsService.fetchTicketFcrRows(fromStr, toStr);
     for (const r of rows) {
       if (r.ticket_id) await deskLifecycle.upsertZohoFcrFields(r);
     }
+    // Batch 170: the same rows feed the closed-ticket copy Ticket Lifecycle / My Stats share with the bonus.
+    await statsAlign.storeWindow(analyticsService.centralWallTimeToUtcIso(fromStr) || steadyFromIso, analyticsService.centralWallTimeToUtcIso(toStr) || steadyToIso, rows).catch(e => console.warn('closed-ticket copy:', e.message));
     await deskLifecycle.setSyncState('fcr_last_sync_at', new Date().toISOString());
     await deskLifecycle.setSyncState('fcr_last_error', null);
     console.log(`🎯 FCR Analytics sync (steady state): ${rows.length} ticket(s) synced`);
@@ -8119,7 +8146,8 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     const match = monitored.find(a => (a.email || '').toLowerCase() === email);
     const agentNames = match ? { [email]: match.name } : undefined;
     const rosterNames = monitored.map(a => a.name).filter(Boolean);
-    const summary = await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails: [email], agentNames, q, rosterNames });
+    const _roster170 = await deskLifecycleAgentRoster().catch(() => ({ byEmail: {} }));
+    const summary = await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails: [email], agentNames, q, rosterNames }), { from, to, agentNames, byEmail: _roster170.byEmail, q });
 
     // Session 21: RingCentral call stats + SalesIQ chat stats, same
     // from/to window as the ticket summary above, so all three sections
@@ -8129,7 +8157,7 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     try {
       if (match) {
         const agentId = match.rc_id || match.extension;
-        callStats = await getAgentCallStatsRange({ agentId, from, to });
+        callStats = await statsAlign.applyMonthCalls(email, from, to, await getAgentCallStatsRange({ agentId, from, to }));
       }
     } catch (e) { console.warn('⚠️ call stats lookup failed for my-summary:', e.message); }
 
@@ -8215,12 +8243,34 @@ app.get('/api/bonus/agents', requireAdmin, async (req, res) => {
   try { res.json({ success: true, agents: await require('./lib/bonus').agentList() }); } catch (e) { bonusErr(res, e); }
 });
 app.post('/api/bonus/agents', requireAdmin, rateLimit(60, 60000), async (req, res) => {
-  try { const b = req.body || {}; res.json({ success: true, agent: await require('./lib/bonus').saveAgent({ email: b.email, team: b.team, include: b.include, eligible: b.eligible, by: req.session.email }) }); }
+  try { const b = req.body || {}; res.json({ success: true, agent: await require('./lib/bonus').saveAgent({ email: b.email, team: b.team, include: b.include, eligible: b.eligible, hof: b.hof, fromMonth: b.fromMonth, toMonth: b.toMonth, name: b.name, rcId: b.rcId, extension: b.extension, by: req.session.email }) }); }
   catch (e) { bonusErr(res, e); }
 });
 app.post('/api/bonus/inputs', requireAdmin, rateLimit(60, 60000), async (req, res) => {
   try { const b = req.body || {}; res.json({ success: true, ...(await require('./lib/bonus').saveInputs({ month: b.month, rows: b.rows, by: req.session.email })) }); }
   catch (e) { bonusErr(res, e); }
+});
+// Batch 170: Hall of Fame. Admin picks the period, whether agents can see it, and the status tag (in progress / confirmed).
+app.get('/api/bonus/hof', requireAdmin, async (req, res) => {
+  try { res.json({ success: true, ...(await require('./lib/bonus').getHof()) }); } catch (e) { bonusErr(res, e); }
+});
+app.post('/api/bonus/hof', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try {
+    const b = req.body || {};
+    const r = await require('./lib/bonus').setHof({ period: b.period, status: b.status, visible: b.visible, by: req.session.email });
+    insertAuditLog(req.session.email, 'hof_updated', String(r.period || ''), `status:${r.status} visible:${r.visible}`).catch(() => {});
+    res.json({ success: true, ...r });
+  } catch (e) { bonusErr(res, e); }
+});
+// What the Hall of Fame page shows the signed-in person: everyone sees the board and awards; an agent sees only their own
+// breakdown, an admin sees everyone's. No rupee amounts.
+app.get('/api/hof', requireAuth, rateLimit(60, 60000), async (req, res) => {
+  try {
+    const settings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+    const isAdmin = !!(settings && settings.role === 'admin');
+    const { agentNames } = await deskLifecycleAgentRoster();
+    res.json({ success: true, ...(await require('./lib/bonus').hofView({ viewerEmail: req.session.email, isAdmin, agentNames })) });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
 // Batch 167: SalesIQ operator report (.xlsx, one month) fills chat team Chats Owned and Good/Ok/Bad. ?dry=1 previews only.
 app.post('/api/bonus/operator-report', requireAdmin, rateLimit(20, 60000), express.raw({ type: () => true, limit: '15mb' }), async (req, res) => {
@@ -8278,6 +8328,29 @@ app.get('/api/bonus/debug', requireAdmin, rateLimit(20, 60000), async (req, res)
       const pick = (c) => ({ id: c.id, start: c.start_time, status: c.status, chat_status: c.chat_status, attender: c.attender && { id: c.attender.id, email: c.attender.email, name: c.attender.name },
         rating: c.rating, feedback: c.feedback, visitor_rating: c.visitor_rating, owner: c.owner && { id: c.owner.id, email: c.owner.email }, participants: Array.isArray(c.participants) ? c.participants.length : c.participants });
       return res.json({ success: true, count: cs.length, more: page.moreDataAvailable, byAttender: by, keys: cs[0] ? Object.keys(cs[0]) : [], sample: cs.slice(0, 4).map(pick) });
+    }
+    if (what === 'chatcheck') {
+      // Batch 171: one agent's chats in a window, straight from SalesIQ next to what the tool stored (owner / attender).
+      const siqLib = require('./lib/salesiq-service');
+      const em = String(req.query.email || '').toLowerCase(), fMs = Date.parse(req.query.from), tMs = Date.parse(req.query.to);
+      if (!em || !isFinite(fMs) || !isFinite(tMs) || tMs - fMs > 3 * 86400000) return res.status(400).json({ success: false, error: 'email, from, to (max 3 days)' });
+      const live = new Map(); let index = 1, guard = 0;
+      while (guard++ < 400) {
+        const page = await siqLib.fetchConversationsPage({ fromTimeMs: fMs, toTimeMs: tMs, index, limit: 100 });
+        const list = page.conversations || [];
+        for (const c of list) live.set(String(c.id), c);
+        if (!list.length || (list.length < 5 && !page.moreDataAvailable)) break;
+        index += list.length;
+      }
+      const pick = (c) => ({ id: String(c.id), start: c.start_time ? new Date(Number(c.start_time)).toISOString() : null, owner: (c.owner && c.owner.email || '').toLowerCase(), attender: (c.attender && c.attender.email || '').toLowerCase(), status: c.status || null, department: c.department ? c.department.name : null });
+      const mineLive = [...live.values()].map(pick).filter((c) => c.owner === em || c.attender === em);
+      const { db: _d } = require('./database');
+      const stored = await new Promise((r) => _d.all(`SELECT conversation_id AS id, start_time AS start, owner_email AS owner, attender_email AS attender, status FROM chat_conversation_snapshot
+        WHERE (owner_email = ? OR attender_email = ?) AND start_time >= ? AND start_time < ?`, [em, em, new Date(fMs).toISOString(), new Date(tMs).toISOString()], (e, x) => r(x || [])));
+      const sIds = new Set(stored.map((x) => String(x.id))), lIds = new Set(mineLive.map((x) => x.id));
+      return res.json({ success: true, liveTotal: live.size, live: mineLive.length, stored: stored.length,
+        missingFromTool: mineLive.filter((x) => !sIds.has(x.id)), onlyInTool: stored.filter((x) => !lIds.has(String(x.id))),
+        ownerCountLive: mineLive.filter((c) => (c.owner || c.attender) === em).length, ownerCountTool: stored.filter((c) => (c.owner || c.attender) === em).length });
     }
     if (what === 'siqraw') {
       // Read-only GET on the SalesIQ API (admin check of fields such as chat ratings). Path is under /api/v2/{portal}/.
@@ -8803,7 +8876,9 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
     const agentName = agentNames[targetEmail];
     const rosterNames = Object.values(agentNames);
 
-    const tickets = await (await coldStore.pick(deskLifecycle, from, to)).agentTicketsForMetric({
+    // Batch 170: Closed / FCR lists come from the same Zoho Analytics copy as the counts (and the bonus).
+    const aligned = (metric === 'closed' || metric === 'fcr') ? await statsAlign.closedTicketList({ email: targetEmail, from, to, agentNames, byEmail, q, limit: 500 }).catch(() => null) : null;
+    const tickets = aligned || await (await coldStore.pick(deskLifecycle, from, to)).agentTicketsForMetric({
       metric, from, to, email: targetEmail, agentName, rosterNames, q, limit: 500,
     });
 
