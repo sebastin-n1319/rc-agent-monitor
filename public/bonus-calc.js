@@ -37,6 +37,8 @@
     alert: '<path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
     bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+    send: '<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/>',
     ext: '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
   };
   function ico(n, sz) { var w = document.createElement('span'); w.style.display = 'inline-flex'; w.setAttribute('aria-hidden', 'true');
@@ -201,10 +203,11 @@
     var run = function () { S.ai = { period: period(), busy: true }; draw();
       api('/api/bonus/ai-review', { period: period() }).then(function (j) { if (!j.success) throw new Error(j.error || 'Could not get the AI review'); S.ai = { period: period(), r: j.review }; draw(); })
         .catch(function (e) { S.ai = { period: period(), err: e.message }; draw(); }); };
-    card.appendChild(h('div', { class: 'bnc-ai-hd' }, [h('div', null, [h('span', { class: 'bnc-ai-badge' }, [ico('spark', 13), 'AI review']),
+    card.appendChild(h('div', { class: 'bnc-ai-hd' }, [h('div', null, [h('span', { class: 'bnc-ai-badge' }, [ico('spark', 13), 'AI assistant']),
       h('h3', { class: 'bnc-h3', text: 'What stands out in ' + d.label }),
-      h('p', { class: 'bnc-card-sub', text: 'Highlights, numbers to double-check and a coaching tip per agent, written from the calculation below. It only reads the numbers; it never changes them.' })]),
+      h('p', { class: 'bnc-card-sub', text: 'Generate a review (highlights, numbers to double-check, a coaching tip per agent) or ask anything about this period below. The AI only reads the calculation; it never changes a number.' })]),
       h('button', { type: 'button', class: 'bnc-btn' + (st && st.r ? '' : ' primary'), disabled: !!(st && st.busy), onclick: run }, [ico('spark', 14), st && st.busy ? 'Thinking...' : st && st.r ? 'Run again' : 'Generate AI review'])]));
+    card.appendChild(aiChat(d));
     if (!st) return card;
     if (st.busy) { card.appendChild(h('div', { 'aria-live': 'polite', 'aria-busy': 'true' }, [h('div', { class: 'bnc-skel', style: 'width:70%' }), h('div', { class: 'bnc-skel', style: 'width:92%' }), h('div', { class: 'bnc-skel', style: 'width:55%' })])); return card; }
     if (st.err) { card.appendChild(h('div', { class: 'bnc-note bad', role: 'alert', text: st.err })); return card; }
@@ -216,7 +219,43 @@
       h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('bulb', 13), 'Coaching']), h('ul', null, (r.coaching || []).map(function (c) { return h('li', null, [h('b', { text: c.agent + ': ' }), c.tip]); }))]),
     ]));
     card.appendChild(h('p', { class: 'bnc-ai-foot', text: 'AI-written from this calculation' + (r.at ? ' at ' + new Date(r.at).toLocaleTimeString() : '') + '. Check anything important against the numbers below.' }));
+    card.appendChild(card.querySelector('.bnc-chat'));
     return card;
+  }
+  // Batch 176: ask the AI about this period (admin). Same numbers as the table; it never changes them.
+  var ADMIN_STARTERS = ['Who is closest to the next slab?', 'Which numbers look unusual?', 'Explain each not-eligible month', 'Draft a Google Chat note for the Hall of Fame (no amounts)'];
+  function fmtAns(t) {
+    var wrap = h('div'), list = null;
+    String(t || '').split(/\n+/).filter(Boolean).forEach(function (l) { var m = l.match(/^\s*[-*\u2022]\s+(.*)$/);
+      if (m) { if (!list) { list = h('ul'); wrap.appendChild(list); } list.appendChild(h('li', { text: m[1] })); }
+      else { list = null; wrap.appendChild(h('p', { text: l })); } });
+    return wrap;
+  }
+  function askAI(q) {
+    var c = S.chat; if (!c || c.asking || !q) return;
+    var history = c.msgs.slice(-8); c.msgs.push({ role: 'user', content: q }); c.asking = true; c.followups = []; c.open = true; draw();
+    api('/api/bonus/ai-ask', { period: period(), question: q, history: history }).then(function (j) {
+      if (!j.success) throw new Error(j.error || 'The AI is not available right now.');
+      c.msgs.push({ role: 'assistant', content: j.reply.answer }); c.followups = j.reply.followups || [];
+    }).catch(function (e) { c.msgs.push({ role: 'assistant', content: e.message }); })
+      .then(function () { c.asking = false; draw(); var i = document.getElementById('bnc-chat-in'); if (i) i.focus(); });
+  }
+  function aiChat(d) {
+    if (!S.chat || S.chat.period !== period()) S.chat = { period: period(), msgs: [], open: false };
+    var c = S.chat;
+    var box = h('div', { class: 'bnc-chat' });
+    var thread = c.msgs.length || c.asking ? h('div', { class: 'bnc-thread', 'aria-live': 'polite' }, c.msgs.map(function (m) {
+      return h('div', { class: 'bnc-msg ' + (m.role === 'user' ? 'me' : 'bot') }, [m.role === 'user' ? m.content : fmtAns(m.content)]); }).concat(c.asking ? [h('div', { class: 'bnc-msg bot typing', 'aria-label': 'AI is typing' }, [h('i'), h('i'), h('i')])] : [])) : null;
+    if (thread) box.appendChild(h('div', { class: 'bnc-chat-hd' }, [h('b', null, [ico('chat', 14), ' Questions about ' + d.label]),
+      h('button', { type: 'button', class: 'bnc-link', text: 'Clear', onclick: function () { S.chat = null; draw(); } })]));
+    if (thread) box.appendChild(thread);
+    var chips = (c.followups && c.followups.length ? c.followups : (c.msgs.length ? [] : ADMIN_STARTERS)).slice(0, 4);
+    if (chips.length && !c.asking) box.appendChild(h('div', { class: 'bnc-chips' }, chips.map(function (q) { return h('button', { type: 'button', class: 'bnc-chip-q', text: q, onclick: function () { askAI(q); } }); })));
+    var inp = h('input', { id: 'bnc-chat-in', class: 'bnc-chat-in', type: 'text', maxlength: '500', placeholder: 'Ask about any agent, month, slab or amount...', 'aria-label': 'Ask the AI about this bonus period', disabled: c.asking });
+    box.appendChild(h('form', { class: 'bnc-ask', onsubmit: function (e) { e.preventDefault(); var q = inp.value.trim(); if (q) askAI(q); } }, [inp,
+      h('button', { type: 'submit', class: 'bnc-send', 'aria-label': 'Send', disabled: c.asking }, [ico('send', 16)])]));
+    if (thread) requestAnimationFrame(function () { thread.scrollTop = thread.scrollHeight; });
+    return box;
   }
   function summary(d) {
     var wrap = h('div');
@@ -261,6 +300,12 @@
     return wrap;
   }
   function detail(d, a) {
+    var ex = h('div', { class: 'bnc-explain' }, [h('button', { type: 'button', class: 'bnc-btn small ai', onclick: function () {
+      askAI('Explain ' + a.name + '\'s bonus for ' + d.label + ' month by month: points, slab, leave factor, CSAT, and what would have moved them up.');
+      var el = document.querySelector('#bnc-root .bnc-ai'); if (el) el.scrollIntoView({ behavior: REDUCED ? 'auto' : 'smooth', block: 'start' }); } }, [ico('spark', 13), 'Explain ' + a.name.split(' ')[0] + ' with AI'])]);
+    return h('div', null, [ex, detailGrid(d, a)]);
+  }
+  function detailGrid(d, a) {
     return h('div', { class: 'bnc-months' }, d.months.map(function (m) {
       var x = a.months[m.key];
       var rows = x.metrics.map(function (mt) {

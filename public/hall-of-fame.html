@@ -253,6 +253,51 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
 .skel{height:10px;border-radius:5px;margin:7px 0;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));background-size:400px 100%;animation:shimmerGold 1.3s linear infinite}
 #confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+/* Batch 176: icons, AI recap, AI coach chat */
+.aw-icon svg{width:19px;height:19px}
+.pod-star{display:inline-flex;align-items:center;gap:5px}
+.pod-star svg{fill:currentColor}
+.bp-insight{display:flex;gap:8px;align-items:flex-start}
+.bp-ins-ic{color:var(--gold);flex-shrink:0;margin-top:2px}
+.ai-pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;color:#d8b4fe;background:linear-gradient(120deg,rgba(249,115,22,.14),rgba(168,85,247,.18),rgba(59,130,246,.14));border:1px solid rgba(168,85,247,.25)}
+.ai-recap{margin:16px 0 4px;padding:16px 18px;border-radius:12px;border:1px solid transparent;background:linear-gradient(var(--bg2),var(--bg2)) padding-box,linear-gradient(120deg,rgba(249,115,22,.6),rgba(168,85,247,.6),rgba(59,130,246,.6)) border-box;animation:fadeUp .45s ease both}
+.ai-recap-t{font-family:'Poppins',sans-serif;font-weight:800;font-size:17px;margin:10px 0 6px;color:var(--t1)}
+.ai-recap p{font-size:13px;color:var(--t2);line-height:1.65;max-width:900px}
+.ai-recap-tip,.bp-ai-goal{display:flex;gap:8px;align-items:flex-start}
+.ai-recap-tip{margin-top:10px;font-size:12.5px;color:var(--t1)}
+.ai-recap-tip svg,.bp-ai-goal svg{color:var(--green);flex-shrink:0;margin-top:1px}
+.bp-ai-panel{margin-top:2px;border-radius:10px;border:1px solid rgba(168,85,247,.25);background:linear-gradient(135deg,rgba(168,85,247,.07),rgba(59,130,246,.04));animation:fadeUp .3s ease both;overflow:hidden}
+.bp-ai-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 8px 8px 12px;border-bottom:1px solid rgba(168,85,247,.15)}
+.bp-ai-panel.min .bp-ai-bar{border-bottom:0}
+.bp-ai-acts{display:flex;gap:2px}
+.ai-ic{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:7px;background:transparent;color:var(--t2);cursor:pointer;transition:background .15s,color .15s}
+.ai-ic:hover:not(:disabled){background:rgba(255,255,255,.07);color:var(--t1)}
+.ai-ic:disabled{opacity:.4;cursor:default}
+.ai-ic:focus-visible,.ai-chip:focus-visible,.ai-send:focus-visible,.ai-ask input:focus-visible{outline:2px solid var(--blue-light);outline-offset:2px}
+.bp-ai-minline{padding:0 12px 10px;font-size:12px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-ai-body{padding:12px 13px}
+.bp-ai-body ul{padding-left:16px;font-size:12px;color:var(--t2);line-height:1.6}
+.bp-ai-body li b{color:var(--t1);font-weight:600}
+.bp-ai-err{font-size:12px;color:#fca5a5}
+.ai-thread{margin-top:12px;display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;padding-right:2px}
+.ai-msg{max-width:92%;padding:8px 11px;border-radius:12px;font-size:12.5px;line-height:1.55;animation:fadeUp .25s ease both}
+.ai-msg p+p{margin-top:6px}
+.ai-msg ul{margin-top:4px}
+.ai-msg.me{align-self:flex-end;background:rgba(59,130,246,.2);color:var(--t1);border-bottom-right-radius:4px}
+.ai-msg.bot{align-self:flex-start;background:rgba(255,255,255,.05);color:var(--t2);border:1px solid var(--border);border-bottom-left-radius:4px}
+.ai-msg.typing{display:flex;gap:4px;padding:11px 12px}
+.ai-msg.typing i{width:6px;height:6px;border-radius:50%;background:#c084fc;animation:aiDot 1s infinite ease-in-out}
+.ai-msg.typing i:nth-child(2){animation-delay:.15s}.ai-msg.typing i:nth-child(3){animation-delay:.3s}
+@keyframes aiDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.ai-chip{border:1px solid rgba(168,85,247,.3);background:rgba(168,85,247,.08);color:#e9d5ff;font:500 11.5px 'Inter',sans-serif;padding:5px 10px;border-radius:999px;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}
+.ai-chip:hover{background:rgba(168,85,247,.18);border-color:rgba(168,85,247,.5)}
+.ai-ask{display:flex;gap:6px;margin-top:10px}
+.ai-ask input{flex:1;min-width:0;height:36px;padding:0 12px;border-radius:9px;border:1px solid var(--border2);background:rgba(0,0,0,.25);color:var(--t1);font:400 12.5px 'Inter',sans-serif}
+.ai-ask input::placeholder{color:var(--t3)}
+.ai-send{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:9px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#a855f7,#3b82f6);transition:transform .15s,opacity .15s}
+.ai-send:hover:not(:disabled){transform:translateY(-1px)}
+.ai-send:disabled,.ai-ask input:disabled{opacity:.5;cursor:default}
 </style>
 </head>
 <body>
@@ -335,7 +380,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     var order = [[list[1], 2, 'silver'], [list[0], 1, 'gold'], [list[2], 3, 'bronze']];
     return '<div class="podium">' + order.filter(function(o){ return o[0]; }).map(function(o){
       var a = o[0];
-      return '<div class="pod-slot pod-' + o[1] + '">' + (o[1] === 1 ? '<div class="pod-star">★ Star of ' + esc(D.label.split(' ')[0]) + '</div>' : '') +
+      return '<div class="pod-slot pod-' + o[1] + '">' + (o[1] === 1 ? '<div class="pod-star">' + ic('star', 12, 2) + ' Star of ' + esc(D.label.split(' ')[0]) + '</div>' : '') +
         '<div class="pod-rank ' + o[2] + '">' + (o[1] === 1 ? '1st' : o[1] === 2 ? '2nd' : '3rd') + '</div><div class="pod-card">' +
         '' + avatar(a, 'pod-av pod-av-' + o[2]) + '<div class="pod-name">' + esc(a.name) + '</div>' +
         '<div class="pod-chip ' + (a.team === 'chat' ? 'chip-chat">Chat' : 'chip-calls">Calls') + '</div><div class="pod-pts">' + a.total + ' <span>pts</span></div>' +
@@ -353,7 +398,23 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
         '<div class="champ-pts">' + a.total + ' <span>pts</span></div></div>';
     }).join('') + '</div>';
   }
-  var AW_ICON = { star: '🏆', improved: '📈', iron: '🛡️', perfect: '💯', fcr: '🎯', qa: '✅' };
+  // Batch 176: one line-icon set (24px grid, 1.8 stroke) instead of emoji.
+  var IC = {
+    trophy: '<path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+    trend: '<path d="m3 17 6-6 4 4 8-8"/><path d="M15 7h6v6"/>',
+    shield: '<path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+    medal: '<circle cx="12" cy="14" r="6"/><path d="m9 3 3 5 3-5"/><path d="m12 11 1 2 2 .3-1.5 1.4.4 2.1-1.9-1-1.9 1 .4-2.1L9 13.3l2-.3z"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+    badge: '<path d="M12 3l2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.8 1 2.8-2.4 1.8-.9 2.9-3-.2L12 21l-2.4-1.8-3 .2-.9-2.9L3.3 14.7l1-2.8-1-2.8 2.4-1.8.9-2.9 3 .2z"/><path d="m9 12 2 2 4-4"/>',
+    bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.8 10.6c.6.5.8 1.2.8 1.9V16h6v-.5c0-.7.2-1.4.8-1.9A6 6 0 0 0 12 3z"/>',
+    star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    spark: '<path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/>',
+    send: '<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>',
+    chevup: '<path d="m6 15 6-6 6 6"/>', chevdown: '<path d="m6 9 6 6 6-6"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>', x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  };
+  function ic(n, sz, sw){ return '<svg width="' + (sz || 18) + '" height="' + (sz || 18) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 1.8) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (IC[n] || '') + '</svg>'; }
+  var AW_ICON = { star: ic('trophy'), improved: ic('trend'), iron: ic('shield'), perfect: ic('medal'), fcr: ic('target'), qa: ic('badge') };
   var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function countUps(root){
     if (REDUCED) return;
@@ -379,7 +440,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function awards(){
     if (!(D.awards || []).length) return '';
     return '<div class="sec-label">Awards</div><div class="awards-grid">' + D.awards.map(function(w, i){
-      return '<div class="award-card ' + (AW_CLS[w.key] || 'aw-blue') + '" style="--i:' + i + '"><div class="aw-icon" aria-hidden="true">' + (AW_ICON[w.key] || '★') + '</div><div class="aw-body"><div class="aw-title">' + esc(w.title) + '</div><div class="aw-winner">' + esc(w.winners.join(' · ')) + '</div><div class="aw-desc">' + esc(w.desc) + '</div></div></div>';
+      return '<div class="award-card ' + (AW_CLS[w.key] || 'aw-blue') + '" style="--i:' + i + '"><div class="aw-icon" aria-hidden="true">' + (AW_ICON[w.key] || ic('star')) + '</div><div class="aw-body"><div class="aw-title">' + esc(w.title) + '</div><div class="aw-winner">' + esc(w.winners.join(' · ')) + '</div><div class="aw-desc">' + esc(w.desc) + '</div></div></div>';
     }).join('') + '</div>';
   }
   function board(team, list){
@@ -397,7 +458,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   }
   function champions(){
     var calls = D.board.filter(function(a){ return a.team !== 'chat'; }), chat = D.board.filter(function(a){ return a.team === 'chat'; });
-    return '<div class="sec-label">Calls Team · Top 3</div>' + podium(calls) + '<div class="sec-label">Chat Team Champions</div>' + champs(chat) + awards() +
+    return '<div id="ai-recap"></div><div class="sec-label">Calls Team · Top 3</div>' + podium(calls) + '<div class="sec-label">Chat Team Champions</div>' + champs(chat) + awards() +
       '<div class="sec-label">Full Scoreboard</div><div class="sb-grid">' + board('calls', calls) + board('chat', chat) + '</div>' +
       '<p class="bp-sub" style="margin-top:10px">Points are out of 100 a month. Eligible means 70 points or more and at least 18 present days in that month.</p>';
   }
@@ -423,7 +484,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     var prog = a.months.map(function(m){ var c = m.points >= 100 ? 'var(--gold)' : m.eligible ? 'var(--green)' : 'var(--blue)';
       return '<div class="bp-prow"><span class="bp-mon">' + esc(monShort(m)) + '</span><div class="bp-bar"><div class="bp-fill" style="--w:' + m.points + '%;--c:' + c + '"></div></div><span class="bp-pscore" style="color:' + c + '">' + m.points + '</span></div>'; }).join('');
     var months = a.months.map(function(m){
-      var head = esc(monShort(m)) + (m.partial ? ' (to date)' : '') + ' · ' + (m.onLeave ? (m.why && m.why[0] ? m.why[0].replace(/\.$/, '') : 'On leave') : m.points >= 100 ? 'Perfect ⭐' : m.eligible ? (a.inBonus ? 'Eligible, ' + (m.slab === 's1' ? 'Slab 1' : 'Slab 2') : 'Met the bar') : 'Not eligible');
+      var head = esc(monShort(m)) + (m.partial ? ' (to date)' : '') + ' · ' + (m.onLeave ? (m.why && m.why[0] ? m.why[0].replace(/\.$/, '') : 'On leave') : m.points >= 100 ? 'Perfect score' : m.eligible ? (a.inBonus ? 'Eligible, ' + (m.slab === 's1' ? 'Slab 1' : 'Slab 2') : 'Met the bar') : 'Not eligible');
       var rows = m.metrics.map(function(mt){ return '<div class="bp-mrow"><span>' + esc(short(mt.label)) + ' <span style="color:var(--t3)">(' + (mt.pct ? mt.s1 + '% / ' + mt.s2 + '%' : mt.s1 + ' / ' + mt.s2) + ')</span></span><span class="bp-mval">' + fmtVal(mt) + '</span>' + slabTag(mt.outcome) + '</div>'; }).join('');
       return '<div class="bp-msec"><div class="bp-mhdr"><span>' + head + '</span><span class="bp-mscore-badge" style="color:' + (m.eligible ? 'var(--green)' : 'var(--t2)') + '">' + m.points + ' pts</span></div>' +
         '<div class="bp-mdetail">' + rows + '</div>' +
@@ -434,7 +495,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     return '<div class="bp-card" style="--i:' + i + '" data-agent="' + esc(a.name) + '"><div class="bp-head">' + avatar(a, 'bp-av', 'background:' + grad(i)) + '<div class="bp-info"><div class="bp-name">' + esc(a.name) + '</div>' +
       '<div class="bp-meta"><span class="' + (a.team === 'chat' ? 'chip-chat' : 'chip-calls') + ' pod-chip">' + (a.team === 'chat' ? 'Chat' : 'Calls') + '</span><span class="ep ' + cls + '">' + a.eligibleMonths + '/' + mc + ' Eligible</span>' + (a.inBonus ? '' : '<span class="ep ep-none">Not in the bonus this quarter</span>') + '</div></div>' +
       '<div class="bp-qtotal"><div class="bp-qval">' + a.total + '</div><span class="bp-qsub">' + esc(D.label.split(' ')[0]) + ' Total</span></div></div>' +
-      '<div class="bp-prog">' + prog + '</div><div class="bp-months">' + months + '</div><div class="bp-insight">💡 ' + esc(a.insight) + '</div>' +
+      '<div class="bp-prog">' + prog + '</div><div class="bp-months">' + months + '</div><div class="bp-insight"><span class="bp-ins-ic">' + ic('bulb', 14) + '</span><span>' + esc(a.insight) + '</span></div>' +
       '<div class="bp-ai"><button type="button" class="bp-ai-btn" data-coach="' + esc(a.name) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>' + (a.self || !D.isAdmin ? 'Ask your AI coach' : 'AI coach for ' + esc(a.name.split(' ')[0])) + '</button><div class="bp-ai-slot" aria-live="polite"></div></div></div>';
   }
   function blueprint(){
@@ -463,30 +524,92 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     document.title = 'T1 CS Stars · ' + D.label + ' Hall of Fame';
     hero(); champ.innerHTML = champions(); bp.innerHTML = blueprint();
     if (D.status === 'confirmed') confetti();
+    recap();
     document.getElementById('btn-blueprint').style.display = '';
     var sel = document.getElementById('agent-select');
     if (sel) sel.addEventListener('change', function(){ var v = this.value; document.querySelectorAll('.bp-card').forEach(function(c){ c.style.display = !v || c.dataset.agent === v ? '' : 'none'; }); });
     var h = (window.location.hash || '').replace('#', '');
     if (h === 'blueprint') switchTab('blueprint', document.getElementById('btn-blueprint'));
   }
-  // Batch 175: AI coach on a Growth Blueprint card (an agent only ever gets their own; no amounts).
+  // Batch 176: AI quarter recap (same for everyone, no amounts).
+  function recap(){
+    var el = document.getElementById('ai-recap'); if (!el) return;
+    el.innerHTML = '<div class="ai-recap" aria-busy="true"><div class="ai-pill">' + ic('spark', 13) + 'AI recap</div><div class="skel" style="width:40%"></div><div class="skel" style="width:90%"></div><div class="skel" style="width:70%"></div></div>';
+    fetch('/api/hof/story', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' }).then(function(r){ return r.json(); }).then(function(j){
+      if (!j.success || !j.story || !j.story.story) { el.innerHTML = ''; return; }
+      var st = j.story;
+      el.innerHTML = '<div class="ai-recap"><div class="ai-pill">' + ic('spark', 13) + 'AI recap of ' + esc(D.label) + '</div><div class="ai-recap-t">' + esc(st.title) + '</div><p>' + esc(st.story) + '</p>' +
+        (st.teamTip ? '<div class="ai-recap-tip">' + ic('target', 15) + '<span><b>Team focus:</b> ' + esc(st.teamTip) + '</span></div>' : '') + '<div class="bp-ai-note">Written by AI from the board below.</div></div>';
+    }).catch(function(){ el.innerHTML = ''; });
+  }
+  // Batch 176: AI coach on a Growth Blueprint card: a first note, then a chat the agent can minimise, refresh or close.
+  // An agent only ever reaches their own card (the server checks); no amounts.
+  var COACH = {};
+  function post(url, body){ return fetch(url, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function(r){ return r.json(); }).then(function(j){ if (!j.success) throw new Error(j.error || 'The AI coach is not available right now.'); return j; }); }
+  function fmtAnswer(t){
+    var lines = String(t || '').split(/\n+/).filter(Boolean), out = '', inList = false;
+    lines.forEach(function(l){ var m = l.match(/^\s*[-*•]\s+(.*)$/);
+      if (m) { if (!inList) { out += '<ul>'; inList = true; } out += '<li>' + esc(m[1]) + '</li>'; }
+      else { if (inList) { out += '</ul>'; inList = false; } out += '<p>' + esc(l) + '</p>'; } });
+    return out + (inList ? '</ul>' : '');
+  }
+  var STARTERS = ['What should I focus on next month?', 'How many tickets a day do I need for Slab 1?', 'Why was a month not eligible?', 'What did I do best this quarter?'];
+  function sel(name){ return '.bp-card[data-agent="' + (window.CSS && CSS.escape ? CSS.escape(name) : name) + '"]'; }
+  function coachView(name){
+    var c = COACH[name]; if (!c) return '';
+    var n = c.note || {};
+    var note = c.loading ? '<div aria-busy="true"><div class="skel" style="width:75%"></div><div class="skel" style="width:95%"></div><div class="skel" style="width:60%"></div></div>'
+      : c.err && !c.note ? '<div class="bp-ai-err" role="alert">' + esc(c.err) + '</div>'
+      : '<div class="bp-ai-h">' + esc(n.headline) + '</div>' +
+        ((n.wins || []).length ? '<div class="bp-ai-k">What went well</div><ul>' + n.wins.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') +
+        ((n.focus || []).length ? '<div class="bp-ai-k">Daily habits to try</div><ul>' + n.focus.map(function(f){ return '<li><b>' + esc(f.metric) + ':</b> ' + esc(f.action) + '</li>'; }).join('') + '</ul>' : '') +
+        (n.goal ? '<div class="bp-ai-goal">' + ic('target', 15) + '<span><b>Next month:</b> ' + esc(n.goal) + '</span></div>' : '');
+    var msgs = (c.msgs || []).map(function(m){ return '<div class="ai-msg ' + (m.role === 'user' ? 'me' : 'bot') + '">' + (m.role === 'user' ? esc(m.content) : fmtAnswer(m.content)) + '</div>'; }).join('') +
+      (c.asking ? '<div class="ai-msg bot typing" aria-label="AI is typing"><i></i><i></i><i></i></div>' : '');
+    var chips = (c.followups && c.followups.length ? c.followups : (c.msgs && c.msgs.length ? [] : STARTERS)).slice(0, 4);
+    var nm = esc(name);
+    return '<div class="bp-ai-panel' + (c.min ? ' min' : '') + '">' +
+      '<div class="bp-ai-bar"><span class="ai-pill">' + ic('spark', 13) + 'AI coach</span><span class="bp-ai-acts">' +
+        '<button type="button" class="ai-ic" data-act="refresh" data-name="' + nm + '" title="Write the note again" aria-label="Write the note again"' + (c.loading ? ' disabled' : '') + '>' + ic('refresh', 15) + '</button>' +
+        '<button type="button" class="ai-ic" data-act="min" data-name="' + nm + '" title="' + (c.min ? 'Expand' : 'Minimise') + '" aria-label="' + (c.min ? 'Expand the AI coach' : 'Minimise the AI coach') + '" aria-expanded="' + (c.min ? 'false' : 'true') + '">' + ic(c.min ? 'chevdown' : 'chevup', 15) + '</button>' +
+        '<button type="button" class="ai-ic" data-act="close" data-name="' + nm + '" title="Close" aria-label="Close the AI coach">' + ic('x', 15) + '</button></span></div>' +
+      (c.min ? '<div class="bp-ai-minline">' + esc(n.headline || 'AI coach') + (c.msgs.length ? ' · ' + (c.msgs.length / 2 | 0) + ' question(s) asked' : '') + '</div>' :
+      '<div class="bp-ai-body">' + note + (msgs ? '<div class="ai-thread" aria-live="polite">' + msgs + '</div>' : '') +
+        (chips.length && !c.loading ? '<div class="ai-chips">' + chips.map(function(q){ return '<button type="button" class="ai-chip" data-act="ask" data-name="' + nm + '" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' : '') +
+        '<form class="ai-ask" data-name="' + nm + '"><input type="text" maxlength="400" placeholder="Ask your coach about your numbers..." aria-label="Ask the AI coach a question"' + (c.asking ? ' disabled' : '') + '><button type="submit" class="ai-send" aria-label="Send"' + (c.asking ? ' disabled' : '') + '>' + ic('send', 16) + '</button></form>' +
+        '<div class="bp-ai-note">Written by AI from your own numbers on this page. Your team lead has the final word.</div></div>') +
+      '</div>';
+  }
+  function paintCoach(name){
+    var card = document.querySelector(sel(name)); if (!card) return;
+    var slot = card.querySelector('.bp-ai-slot'), btn = card.querySelector('.bp-ai-btn');
+    slot.innerHTML = coachView(name); btn.style.display = COACH[name] ? 'none' : '';
+    var th = slot.querySelector('.ai-thread'); if (th) th.scrollTop = th.scrollHeight;
+  }
+  function loadNote(name){
+    COACH[name] = Object.assign(COACH[name] || { msgs: [] }, { loading: true, err: '', min: false }); paintCoach(name);
+    post('/api/hof/coach', { name: name }).then(function(j){ COACH[name].note = j.coach; })
+      .catch(function(e){ COACH[name].err = e.message; }).then(function(){ if (COACH[name]) { COACH[name].loading = false; paintCoach(name); } });
+  }
+  function ask(name, q){
+    var c = COACH[name]; if (!c || c.asking || !q) return;
+    var history = c.msgs.slice(-8); c.msgs.push({ role: 'user', content: q }); c.asking = true; c.followups = []; paintCoach(name);
+    post('/api/hof/coach', { name: name, question: q, history: history }).then(function(j){ c.msgs.push({ role: 'assistant', content: j.reply.answer }); c.followups = j.reply.followups || []; })
+      .catch(function(e){ c.msgs.push({ role: 'assistant', content: e.message }); }).then(function(){ c.asking = false; if (COACH[name]) { paintCoach(name);
+        var inp = document.querySelector(sel(name) + ' .ai-ask input'); if (inp) inp.focus(); } });
+  }
   document.addEventListener('click', function(e){
-    var btn = e.target.closest && e.target.closest('.bp-ai-btn'); if (!btn) return;
-    var slot = btn.parentNode.querySelector('.bp-ai-slot'), name = btn.getAttribute('data-coach');
-    btn.disabled = true; var label = btn.lastChild.textContent; btn.lastChild.textContent = 'Thinking...';
-    slot.innerHTML = '<div class="bp-ai-out" aria-busy="true"><div class="skel" style="width:75%"></div><div class="skel" style="width:95%"></div><div class="skel" style="width:60%"></div></div>';
-    fetch('/api/hof/coach', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
-      .then(function(r){ return r.json(); }).then(function(j){
-        if (!j.success) throw new Error(j.error || 'The AI coach is not available right now.');
-        var c = j.coach || {};
-        slot.innerHTML = '<div class="bp-ai-out"><div class="bp-ai-h">' + esc(c.headline) + '</div>' +
-          ((c.wins || []).length ? '<div class="bp-ai-k">What went well</div><ul>' + c.wins.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') +
-          ((c.focus || []).length ? '<div class="bp-ai-k">Daily habits to try</div><ul>' + c.focus.map(function(f){ return '<li><b>' + esc(f.metric) + ':</b> ' + esc(f.action) + '</li>'; }).join('') + '</ul>' : '') +
-          (c.goal ? '<div class="bp-ai-goal">🎯 <b>Next month:</b> ' + esc(c.goal) + '</div>' : '') +
-          '<div class="bp-ai-note">Written by AI from your own numbers on this page. Your team lead has the final word.</div></div>';
-        btn.lastChild.textContent = 'Ask again';
-      }).catch(function(err){ slot.innerHTML = '<div class="bp-ai-out" role="alert">' + esc(err.message) + '</div>'; btn.lastChild.textContent = label; })
-      .then(function(){ btn.disabled = false; });
+    var t = e.target.closest && e.target.closest('.bp-ai-btn,[data-act]'); if (!t) return;
+    if (t.classList.contains('bp-ai-btn')) { loadNote(t.getAttribute('data-coach')); return; }
+    var name = t.getAttribute('data-name'), act = t.getAttribute('data-act'), c = COACH[name]; if (!c) return;
+    if (act === 'min') { c.min = !c.min; paintCoach(name); }
+    else if (act === 'close') { delete COACH[name]; paintCoach(name); var b = document.querySelector(sel(name) + ' .bp-ai-btn'); if (b) b.focus(); }
+    else if (act === 'refresh') loadNote(name);
+    else if (act === 'ask') ask(name, t.getAttribute('data-q'));
+  });
+  document.addEventListener('submit', function(e){
+    var f = e.target.closest && e.target.closest('.ai-ask'); if (!f) return; e.preventDefault();
+    var i = f.querySelector('input'), q = i.value.trim(); if (q) { i.value = ''; ask(f.getAttribute('data-name'), q); }
   });
   function load(){
     fetch('/api/hof', { credentials: 'include' }).then(function(r){ return r.json(); }).then(function(j){
