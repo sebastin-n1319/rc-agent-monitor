@@ -216,6 +216,8 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
 .bp-defs b{color:var(--t1)}
 .archive-link{display:block;text-align:center;margin:26px 0 0;font-size:11px;color:var(--t3)}
 .archive-link a{color:var(--blue-light)}
+.has-photo{padding:0!important;overflow:hidden}
+.has-photo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
 .tag-na{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--t3);border:1px solid var(--border);white-space:nowrap}
 </style>
 </head>
@@ -252,6 +254,14 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function monShort(m){ return String(m.label || '').split("'")[0]; }
   var GRAD = ['#f59e0b,#d97706','#3b82f6,#1d4ed8','#0ea5e9,#0369a1','#22c55e,#15803d','#a855f7,#7c3aed','#f97316,#c2410c','#14b8a6,#0f766e','#ec4899,#be185d'];
   function grad(i){ return 'linear-gradient(135deg,' + GRAD[i % GRAD.length] + ')'; }
+  // Agent photos (public/hof-photos/<name>.jpg); initials stay as the fallback if a photo is missing.
+  var PHOTOS = ['anold-fernandes','audrey-miles','evan-cruz','greg-dawson','henry-p','leo-clayton','lincy-tabita','sabrina-quinn','sky-gibson','tabbie-shine','zeff-austin'];
+  function photo(a){ var slug = String(a.name || '').toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-|-$/g, ''); return PHOTOS.indexOf(slug) >= 0 ? '/hof-photos/' + slug + '.jpg' : null; }
+  function avatar(a, cls, style){
+    var src = photo(a);
+    if (!src) return '<div class="' + cls + '"' + (style ? ' style="' + style + '"' : '') + '>' + esc(a.initials) + '</div>';
+    return '<div class="' + cls + ' has-photo"' + (style ? ' style="' + style + '"' : '') + ' data-initials="' + esc(a.initials) + '"><img src="' + src + '" alt="' + esc(a.name) + '" loading="lazy" onerror="this.parentNode.classList.remove(\'has-photo\');this.parentNode.textContent=this.parentNode.dataset.initials"></div>';
+  }
 
   window.switchTab = function(id, btn){
     document.querySelectorAll('.tab-content').forEach(function(t){ t.classList.remove('active'); });
@@ -292,7 +302,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
       var a = o[0];
       return '<div class="pod-slot pod-' + o[1] + '">' + (o[1] === 1 ? '<div class="pod-star">★ Star of ' + esc(D.label.split(' ')[0]) + '</div>' : '') +
         '<div class="pod-rank ' + o[2] + '">' + (o[1] === 1 ? '1st' : o[1] === 2 ? '2nd' : '3rd') + '</div><div class="pod-card">' +
-        '<div class="pod-av pod-av-' + o[2] + '">' + esc(a.initials) + '</div><div class="pod-name">' + esc(a.name) + '</div>' +
+        '' + avatar(a, 'pod-av pod-av-' + o[2]) + '<div class="pod-name">' + esc(a.name) + '</div>' +
         '<div class="pod-chip ' + (a.team === 'chat' ? 'chip-chat">Chat' : 'chip-calls">Calls') + '</div><div class="pod-pts">' + a.total + ' <span>pts</span></div>' +
         '<div class="pod-note">Eligible ' + a.eligibleMonths + '/' + a.months.length + '</div><div class="pod-rows">' +
         a.months.map(function(m){ return '<div class="pod-row"><span>' + esc(monShort(m)) + '</span><strong>' + m.points + '</strong></div>'; }).join('') +
@@ -303,7 +313,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     if (!list.length) return '<div class="hof-empty">No agents yet.</div>';
     return '<div class="champ-list">' + list.slice(0, 3).map(function(a, i){
       return '<div class="champ-card"><div class="champ-rank" style="color:' + (i === 0 ? 'var(--gold)' : i === 1 ? 'var(--silver)' : 'var(--bronze)') + '">#' + (i + 1) + '</div>' +
-        '<div class="champ-av" style="background:' + grad(i + 4) + '">' + esc(a.initials) + '</div><div class="champ-info"><div class="champ-name">' + esc(a.name) + '</div>' +
+        '' + avatar(a, 'champ-av', 'background:' + grad(i + 4)) + '<div class="champ-info"><div class="champ-name">' + esc(a.name) + '</div>' +
         '<div class="champ-note">' + a.months.map(function(m){ return m.points; }).join(' → ') + ' pts · Eligible ' + a.eligibleMonths + '/' + a.months.length + '</div></div>' +
         '<div class="champ-pts">' + a.total + ' <span>pts</span></div></div>';
     }).join('') + '</div>';
@@ -364,7 +374,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
         '<div class="bp-sub">' + esc(countsLine(a.team, m)) + '</div><div class="bp-sub">' + esc(leaveLine(m)) + '</div></div>';
     }).join('');
     var cls = a.eligibleMonths === mc ? 'ep-full' : a.eligibleMonths ? 'ep-part' : 'ep-none';
-    return '<div class="bp-card" data-agent="' + esc(a.name) + '"><div class="bp-head"><div class="bp-av" style="background:' + grad(i) + '">' + esc(a.initials) + '</div><div class="bp-info"><div class="bp-name">' + esc(a.name) + '</div>' +
+    return '<div class="bp-card" data-agent="' + esc(a.name) + '"><div class="bp-head">' + avatar(a, 'bp-av', 'background:' + grad(i)) + '<div class="bp-info"><div class="bp-name">' + esc(a.name) + '</div>' +
       '<div class="bp-meta"><span class="' + (a.team === 'chat' ? 'chip-chat' : 'chip-calls') + ' pod-chip">' + (a.team === 'chat' ? 'Chat' : 'Calls') + '</span><span class="ep ' + cls + '">' + a.eligibleMonths + '/' + mc + ' Eligible</span>' + (a.inBonus ? '' : '<span class="ep ep-none">Not in the bonus this quarter</span>') + '</div></div>' +
       '<div class="bp-qtotal"><div class="bp-qval">' + a.total + '</div><span class="bp-qsub">' + esc(D.label.split(' ')[0]) + ' Total</span></div></div>' +
       '<div class="bp-prog">' + prog + '</div><div class="bp-months">' + months + '</div><div class="bp-insight">💡 ' + esc(a.insight) + '</div></div>';
