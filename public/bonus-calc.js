@@ -233,8 +233,8 @@
         tds.push(h('td', null, [h('input', { class: 'bnc-in', inputmode: 'numeric', 'aria-label': 'Chat ' + c[1] + ' for ' + a.name, value: val, placeholder: ph, oninput: function (e) { S.edits[k] = e.target.value; } })]));
       });
       tds.push(h('td', { class: 'mute small', text: a.team === 'chat'
-        ? x.data.chats + ' chats, ' + x.data.closed + ' tickets, FCR ' + (x.data.closed ? Math.round(x.data.fcrYes / x.data.closed * 100) + '%' : '-')
-        : x.data.inbound + ' calls, ' + x.data.closed + ' tickets, FCR ' + (x.data.closed ? Math.round(x.data.fcrYes / x.data.closed * 100) + '%' : '-') + ', CSAT ' + x.data.csatGood + '/' + x.data.csatTotal }));
+        ? x.data.chats + ' chats, ' + x.data.closed + ' tickets, FCR ' + (x.data.closed ? (Math.floor(x.data.fcrYes / x.data.closed * 10000 + 1e-9) / 100).toFixed(2) + '%' : '-')
+        : x.data.inbound + ' calls, ' + x.data.closed + ' tickets, FCR ' + (x.data.closed ? (Math.floor(x.data.fcrYes / x.data.closed * 10000 + 1e-9) / 100).toFixed(2) + '%' : '-') + ', CSAT ' + x.data.csatGood + '/' + x.data.csatTotal }));
       tb.appendChild(h('tr', null, tds));
     });
     card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table inputs' }, [h('thead', null, [head]), tb])]));

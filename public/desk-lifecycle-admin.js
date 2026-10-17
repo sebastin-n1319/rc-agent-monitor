@@ -635,8 +635,8 @@
     t.uniqueSum = t.unique;
     if (t._ids && !t._noIds) t.unique = t._ids.size;
     delete t._ids;
-    t.fcrPct = t.fcrTotal ? Math.round((t.fcrYes / t.fcrTotal) * 1000) / 10 : null;
-    t.csatPct = t.csatTotal ? Math.round((t.csatGood / t.csatTotal) * 1000) / 10 : null;
+    t.fcrPct = t.fcrTotal ? Math.floor((t.fcrYes / t.fcrTotal) * 10000 + 1e-9) / 100 : null; // Batch 174: 2 decimals, not rounded
+    t.csatPct = t.csatTotal ? Math.floor((t.csatGood / t.csatTotal) * 10000 + 1e-9) / 100 : null;
     return t;
   }
 
@@ -649,7 +649,7 @@
     const good = opts.higherIsBetter == null ? null : (up === opts.higherIsBetter);
     const cls = good == null ? '' : (good ? ' tkt-delta-good' : ' tkt-delta-bad');
     const sign = up ? '▲' : '▼';
-    const magnitude = opts.pct ? `${Math.abs(Math.round(diff * 10) / 10)}pt` : Math.abs(Math.round(diff));
+    const magnitude = opts.pct ? `${Math.abs(Math.round(diff * 100) / 100)}pt` : Math.abs(Math.round(diff * 100) / 100);
     return `<span class="tkt-delta${cls}">${sign} ${magnitude}</span>`;
   }
 

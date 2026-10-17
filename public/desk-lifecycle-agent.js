@@ -356,7 +356,7 @@
     const good = opts.higherIsBetter == null ? null : (up === opts.higherIsBetter);
     const cls = good == null ? '' : (good ? ' av2-tkt-delta-good' : ' av2-tkt-delta-bad');
     const sign = up ? '▲' : '▼';
-    const magnitude = opts.pct ? `${Math.abs(Math.round(diff * 10) / 10)}pt` : Math.abs(Math.round(diff * 10) / 10);
+    const magnitude = opts.pct ? `${Math.abs(Math.round(diff * 100) / 100)}pt` : Math.abs(Math.round(diff * 100) / 100);
     return `<span class="av2-tkt-delta${cls}">${sign} ${magnitude}</span>`;
   }
 
