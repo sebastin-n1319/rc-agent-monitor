@@ -182,3 +182,7 @@ html.dark-mode .bnc-ai-badge{color:#B9A7FF}
 .bnc-skel{height:12px;border-radius:6px;margin:8px 0;background:linear-gradient(90deg,var(--bnc-line) 0,var(--bnc-soft) 50%,var(--bnc-line) 100%);background-size:800px 100%;animation:bncShimmer 1.2s linear infinite}
 .bnc-ai-foot{margin-top:10px;font-size:11px;color:var(--bnc-t3)}
 @media (prefers-reduced-motion: reduce){#bnc-root *,#bnc-root *::before,#bnc-root *::after{animation:none!important;transition:none!important}}
+#bnc-root select.bnc-sel{width:auto;max-width:280px}
+#bnc-root .bnc-toolbar .bnc-ctrl{flex-wrap:nowrap}
+#bnc-root .bnc-table tbody th{font-size:13px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--bnc-t1);white-space:nowrap}
+@media (max-width:760px){#bnc-root .bnc-toolbar .bnc-ctrl{flex-wrap:wrap}}
