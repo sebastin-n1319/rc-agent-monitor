@@ -247,7 +247,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   var D = null;
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function slabTag(o){ return o === 's1' ? '<span class="tag-ok">Slab 1</span>' : o === 's2' ? '<span class="tag-s2">Slab 2</span>' : o === 'na' ? '<span class="tag-na">Not entered</span>' : '<span class="tag-no">Missed</span>'; }
-  function fmtVal(mt){ if (mt.value == null) return '-'; return mt.pct ? Number(mt.value).toFixed(1) + '%' : Number(mt.value).toFixed(1); }
+  function fmtVal(mt){ if (mt.value == null) return '-'; return mt.pct ? Number(mt.value).toFixed(2) + '%' : Number(mt.value).toFixed(2); }
   function short(lbl){ return String(lbl).replace(' / day', '/day').replace('Inbound Calls', 'Calls').replace('Tickets Closed', 'Tickets').replace('Chats Handled', 'Chats'); }
   function monShort(m){ return String(m.label || '').split("'")[0]; }
   var GRAD = ['#f59e0b,#d97706','#3b82f6,#1d4ed8','#0ea5e9,#0369a1','#22c55e,#15803d','#a855f7,#7c3aed','#f97316,#c2410c','#14b8a6,#0f766e','#ec4899,#be185d'];

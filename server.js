@@ -7811,7 +7811,8 @@ async function callAndChatStatsForAgents(emails, from, to) {
     let callStats = null;
     try { if (m && (m.rc_id || m.extension)) callStats = await statsAlign.applyMonthCalls(email, from, to, await getAgentCallStatsRange({ agentId: m.rc_id || m.extension, from, to })); }
     catch (e) { console.warn('⚠️ call stats (admin summary):', e.message); }
-    out[email] = { callStats, chatStats: chats[email] || (salesiqService.isConfigured() ? { chatCount: 0, avgResponseSeconds: null } : null) };
+    const chatBase = chats[email] || (salesiqService.isConfigured() ? { chatCount: 0, avgResponseSeconds: null } : null);
+    out[email] = { callStats, chatStats: chatBase ? await statsAlign.applyMonthChats(email, from, to, chatBase) : chatBase };
   }
   return out;
 }
@@ -8164,7 +8165,7 @@ app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
     let chatStats = null, chatPresence = null;
     try {
       if (salesiqService.isConfigured()) {
-        chatStats = await salesiqLifecycle.agentChatStats({ email, from, to });
+        chatStats = await statsAlign.applyMonthChats(email, from, to, await salesiqLifecycle.agentChatStats({ email, from, to }));
         chatPresence = await salesiqLifecycle.agentChatPresenceStats({ email, from, to });
       }
     } catch (e) { console.warn('⚠️ chat stats lookup failed for my-summary:', e.message); }

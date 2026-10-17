@@ -183,7 +183,7 @@
     return h('div', { class: 'bnc-months' }, d.months.map(function (m) {
       var x = a.months[m.key];
       var rows = x.metrics.map(function (mt) {
-        var v = mt.value == null ? (mt.key === 'qa' ? 'Not entered' : '-') : mt.pct ? mt.value.toFixed(1) + '%' : mt.value.toFixed(1) + ' ' + mt.unit;
+        var v = mt.value == null ? (mt.key === 'qa' ? 'Not entered' : '-') : mt.pct ? mt.value.toFixed(2) + '%' : mt.value.toFixed(2) + ' ' + mt.unit;
         var raw = mt.raw != null ? ' (' + mt.raw + ')' : '';
         return h('tr', null, [h('td', { text: mt.label }), h('td', { text: v + raw }), h('td', { text: (mt.pct ? mt.s1 + '% / ' + mt.s2 + '%' : mt.s1 + ' / ' + mt.s2) }),
           h('td', null, [mt.outcome === 's1' || mt.outcome === 's2' ? h('span', { class: 'bnc-chip ' + mt.outcome, text: mt.outcome === 's1' ? 'Slab 1' : 'Slab 2' }) : h('span', { class: 'bnc-chip no', text: mt.outcome === 'na' ? 'Not entered' : 'Missed' })]),
