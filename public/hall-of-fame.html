@@ -348,7 +348,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function countsLine(team, m){
     var c = m.counts || {};
     if (team === 'chat') return 'Chats owned ' + (c.chats || 0) + ' (ratings: ' + (c.happy || 0) + ' Good, ' + (c.ok || 0) + ' Ok, ' + (c.bad || 0) + ' Bad) · Tickets closed ' + (c.closed || 0) + ' · FCR ' + (c.fcrYes || 0) + ' of ' + (c.closed || 0);
-    return 'Inbound calls ' + (c.inbound == null ? '-' : c.inbound) + (c.answered != null ? ' (' + c.answered + ' answered)' : '') + ' · Tickets closed ' + (c.closed || 0) + ' · FCR ' + (c.fcrYes || 0) + ' of ' + (c.closed || 0) + ' · Ticket surveys ' + (c.surveysGood || 0) + ' Good of ' + (c.surveys || 0);
+    return 'Inbound calls ' + (c.inbound == null ? '-' : c.inbound) + ' · Tickets closed ' + (c.closed || 0) + ' · FCR ' + (c.fcrYes || 0) + ' of ' + (c.closed || 0) + ' · Ticket surveys ' + (c.surveysGood || 0) + ' Good of ' + (c.surveys || 0);
   }
   function leaveLine(m){
     var L = m.leave || {}, p = [];
@@ -366,7 +366,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     var prog = a.months.map(function(m){ var c = m.points >= 100 ? 'var(--gold)' : m.eligible ? 'var(--green)' : 'var(--blue)';
       return '<div class="bp-prow"><span class="bp-mon">' + esc(monShort(m)) + '</span><div class="bp-bar"><div class="bp-fill" style="--w:' + m.points + '%;--c:' + c + '"></div></div><span class="bp-pscore" style="color:' + c + '">' + m.points + '</span></div>'; }).join('');
     var months = a.months.map(function(m){
-      var head = esc(monShort(m)) + (m.partial ? ' (to date)' : '') + ' · ' + (m.points >= 100 ? 'Perfect ⭐' : m.eligible ? 'Eligible, ' + (m.slab === 's1' ? 'Slab 1' : 'Slab 2') : 'Not eligible');
+      var head = esc(monShort(m)) + (m.partial ? ' (to date)' : '') + ' · ' + (m.onLeave ? (m.why && m.why[0] ? m.why[0].replace(/\.$/, '') : 'On leave') : m.points >= 100 ? 'Perfect ⭐' : m.eligible ? (a.inBonus ? 'Eligible, ' + (m.slab === 's1' ? 'Slab 1' : 'Slab 2') : 'Met the bar') : 'Not eligible');
       var rows = m.metrics.map(function(mt){ return '<div class="bp-mrow"><span>' + esc(short(mt.label)) + ' <span style="color:var(--t3)">(' + (mt.pct ? mt.s1 + '% / ' + mt.s2 + '%' : mt.s1 + ' / ' + mt.s2) + ')</span></span><span class="bp-mval">' + fmtVal(mt) + '</span>' + slabTag(mt.outcome) + '</div>'; }).join('');
       return '<div class="bp-msec"><div class="bp-mhdr"><span>' + head + '</span><span class="bp-mscore-badge" style="color:' + (m.eligible ? 'var(--green)' : 'var(--t2)') + '">' + m.points + ' pts</span></div>' +
         '<div class="bp-mdetail">' + rows + '</div>' +
@@ -386,7 +386,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
       : '<div class="not-found" style="display:block">You are not part of this quarter\u2019s bonus. Please contact your team lead.</div>';
     else top = '<div class="bp-filters"><select id="agent-select" class="bp-pill" aria-label="Agent"><option value="">All agents</option>' + list.map(function(a){ return '<option>' + esc(a.name) + '</option>'; }).join('') + '</select></div>';
     var defs = '<div class="bp-defs"><b>How each number is counted</b> (the same data your My Stats and the bonus use, by Central time month):<br>' +
-      '<b>Inbound calls</b>: every inbound RingCentral call on your extension, including missed ones; per day = inbound calls / present days.<br>' +
+      '<b>Inbound calls</b>: RingCentral calls you accepted (from the queue or transferred to you). Rings another agent picked up, missed rings and voicemails are not counted; per day = inbound calls / present days.<br>' +
       '<b>Tickets closed</b>: Zoho tickets you own whose Ticket Closed Time falls in the month; per day = tickets closed / present days.<br>' +
       '<b>FCR</b>: closed tickets resolved within 24 business hours (Mon-Fri 7 AM-7 PM Central) and never reopened, out of tickets closed.<br>' +
       '<b>Ticket CSAT</b>: survey ratings on the tickets you closed that month. <b>Chats and chat ratings</b>: SalesIQ operator report (Chats owned, Good / Ok / Bad).<br>' +

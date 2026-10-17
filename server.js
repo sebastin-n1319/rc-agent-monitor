@@ -8878,7 +8878,8 @@ app.get('/api/desk-lifecycle/verify-tickets', requireAuth, async (req, res) => {
     const rosterNames = Object.values(agentNames);
 
     // Batch 170: Closed / FCR lists come from the same Zoho Analytics copy as the counts (and the bonus).
-    const aligned = (metric === 'closed' || metric === 'fcr') ? await statsAlign.closedTicketList({ email: targetEmail, from, to, agentNames, byEmail, q, limit: 500 }).catch(() => null) : null;
+    const aligned = (metric === 'closed' || metric === 'fcr') ? await statsAlign.closedTicketList({ email: targetEmail, from, to, agentNames, byEmail, q, limit: 500 }).catch(() => null)
+      : metric === 'csat' ? await statsAlign.csatTicketList({ email: targetEmail, from, to, agentNames, byEmail, q, limit: 500 }).catch(() => null) : null; // Batch 173
     const tickets = aligned || await (await coldStore.pick(deskLifecycle, from, to)).agentTicketsForMetric({
       metric, from, to, email: targetEmail, agentName, rosterNames, q, limit: 500,
     });

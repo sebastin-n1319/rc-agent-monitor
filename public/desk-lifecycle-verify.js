@@ -211,7 +211,7 @@
     },
     csat: {
       label: 'Customer Satisfaction (CSAT)', basis: 'survey',
-      def: 'Survey responses on this agent\'s tickets, submitted in this period (by survey time, not ticket close time). Ratings: Good / Okay / Bad.',
+      def: 'Survey ratings on the tickets this agent owns that closed in this period (the same rule as the bonus). Ratings: Good / Okay / Bad.',
     },
     currently_handling: {
       label: 'Handling now', basis: 'live',
