@@ -956,20 +956,20 @@ async function refreshMonthlySummary(month){
       SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) AS missed,
       SUM(CASE WHEN direction='Inbound' AND lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) AS inbound_missed,
       COUNT(DISTINCT CASE WHEN direction='Inbound'
-        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
         AND COALESCE(is_voicemail,0)=0 THEN call_id END) AS answered_inbound,
       COUNT(DISTINCT CASE WHEN direction='Outbound'
-        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
         AND COALESCE(is_voicemail,0)=0 THEN call_id END) AS answered_outbound,
       SUM(CASE WHEN direction='Inbound'
-        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
         AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS inbound_talk_time,
       SUM(CASE WHEN direction='Outbound'
-        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
         AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS outbound_talk_time,
-      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
         AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration ELSE 0 END) AS total_talk_time,
-      ROUND(AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+      ROUND(AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
         AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END)) AS aht_seconds,
       SUM(COALESCE(transferred,0)) AS transfers,
       SUM(COALESCE(hold_duration,0)) AS hold_time,
@@ -1090,8 +1090,8 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
     // handled). Offered rings stay available as inboundOffered.
     const inb=await get(`SELECT
       COUNT(*) as total,
-      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
-      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
+      AVG(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN duration END) as avgDur,
       AVG(CASE WHEN ring_duration>0 THEN ring_duration END) as avgRing,
       SUM(hold_duration) as totalHold,
       SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed,
@@ -1102,7 +1102,7 @@ async function getAgentSummary(date,timeZone='America/Chicago'){
     const out=await get(`SELECT
       COUNT(*) as total,
       AVG(CASE
-        WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned')
+        WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere')
           AND COALESCE(is_voicemail,0)=0
           AND duration>0
         THEN duration
@@ -1197,8 +1197,8 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
   const zeroAgg = { total: 0, talkSeconds: 0, answered: 0, missed: 0, voicemails: 0, totalHold: 0 };
   const inb = needLogs ? await get(`SELECT
       COUNT(*) as total,
-      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
-      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
       SUM(CASE WHEN lower(COALESCE(result,'')) IN ('missed','abandoned') THEN 1 ELSE 0 END) as missed,
       SUM(CASE WHEN COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail' THEN 1 ELSE 0 END) as voicemails,
       SUM(COALESCE(hold_duration,0)) as totalHold
@@ -1206,8 +1206,8 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
     WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Inbound'`, [agentId, logsFrom, to]) : zeroAgg;
   const out = needLogs ? await get(`SELECT
       COUNT(*) as total,
-      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
-      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 THEN COALESCE(duration,0) ELSE 0 END) as talkSeconds,
+      SUM(CASE WHEN lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0 THEN 1 ELSE 0 END) as answered,
       SUM(COALESCE(hold_duration,0)) as totalHold
     FROM call_logs
     WHERE agent_id=? AND start_time >= ? AND start_time < ? AND direction='Outbound'`, [agentId, logsFrom, to]) : zeroAgg;
@@ -1273,14 +1273,14 @@ async function getAgentCallStatsRange({ agentId, from, to }) {
 const CALL_LIST_FILTERS = {
   // Session 54: "all" and "inbound" match the tiles, which now count
   // answered inbound calls (missed/voicemail legs have their own lists).
-  all:       `(direction='Outbound' OR (direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0))`,
-  inbound:   `direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  all:       `(direction='Outbound' OR (direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0))`,
+  inbound:   `direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
   outbound:  `direction='Outbound'`,
   missed:    `direction='Inbound' AND lower(COALESCE(result,'')) IN ('missed','abandoned')`,
   voicemail: `direction='Inbound' AND (COALESCE(is_voicemail,0)=1 OR lower(COALESCE(result,''))='voicemail')`,
-  talk:      `lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
-  aht_in:    `direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
-  aht_out:   `direction='Outbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  talk:      `lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  aht_in:    `direction='Inbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
+  aht_out:   `direction='Outbound' AND lower(COALESCE(result,'')) NOT IN ('missed','voicemail','abandoned','answered elsewhere') AND COALESCE(is_voicemail,0)=0 AND duration>0`,
   transfers: `COALESCE(transferred,0)>0`,
 };
 async function getAgentCallListRange({ agentId, from, to, kind = 'all' }) {

@@ -1607,7 +1607,8 @@ async function agentCallCountsFromRC(agent, fromIso, toIso) {
     const { isVoicemail } = parseCallDetails(call);
     const r = String(call.result || '').trim().toLowerCase();
     const miss = r === 'missed' || r === 'abandoned';
-    if (dir === 'Inbound') { inbound++; if (miss) missed++; else if (!isVoicemail) answered++; }
+    // Batch 172: 'Answered Elsewhere' is a queue ring another agent picked up, not a call this agent took.
+    if (dir === 'Inbound') { inbound++; if (miss) missed++; else if (!isVoicemail && r !== 'voicemail' && r !== 'answered elsewhere') answered++; }
     else if (dir === 'Outbound') outbound++;
   }
   return { inbound, answered, missed, outbound, records: calls.length };
