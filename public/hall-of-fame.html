@@ -298,6 +298,53 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
 .ai-send{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:9px;cursor:pointer;color:#fff;background:linear-gradient(135deg,#a855f7,#3b82f6);transition:transform .15s,opacity .15s}
 .ai-send:hover:not(:disabled){transform:translateY(-1px)}
 .ai-send:disabled,.ai-ask input:disabled{opacity:.5;cursor:default}
+/* Batch 177: personal Growth Blueprint page */
+.me-card{border:0;background:transparent;overflow:visible}
+.me-card:hover{transform:none}
+.me-wrap{display:grid;grid-template-columns:minmax(280px,340px) 1fr;gap:18px;align-items:start}
+.me-side{position:sticky;top:64px;border-radius:14px;border:1px solid var(--border);background:var(--bg2);padding:18px;display:flex;flex-direction:column;gap:14px}
+.me-id{display:flex;gap:12px;align-items:center}
+.me-av{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:800;color:#fff;overflow:hidden;flex-shrink:0}
+.me-av img{width:100%;height:100%;object-fit:cover}
+.me-name{font-family:'Poppins',sans-serif;font-weight:800;font-size:17px;color:var(--t1);margin-bottom:4px}
+.me-total{display:flex;align-items:baseline;gap:8px;padding:12px 14px;border-radius:10px;background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(249,115,22,.04));border:1px solid rgba(245,158,11,.2)}
+.me-total span{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t2)}
+.me-total b{font-family:'Poppins',sans-serif;font-weight:800;font-size:30px;color:var(--gold);line-height:1;margin-left:auto}
+.me-total em{font-style:normal;font-size:11px;color:var(--t3)}
+.me-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.me-stat{padding:9px 8px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid var(--border);text-align:center}
+.me-stat b{display:block;font-family:'Poppins',sans-serif;font-weight:700;font-size:15px;color:var(--t1)}
+.me-stat span{font-size:9.5px;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.me-prog{padding:0;border:0}
+.me-ins{border-radius:9px;border:1px solid var(--border)}
+.me-main{min-width:0}
+.me-main .sec-label:first-child{margin-top:4px}
+.me-ai{border:1px solid rgba(168,85,247,.25);border-radius:14px;padding:14px 16px;background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(59,130,246,.04))}
+.me-ai-intro{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.me-ai-intro b{display:block;font-size:13px;color:var(--t1);font-weight:600}
+.me-ai-intro span{font-size:11.5px;color:var(--t3)}
+.me-ai .bp-ai-panel{margin-top:12px}
+.me-ai .ai-thread{max-height:440px}
+.me-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.me-metric{padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg2)}
+.me-mt{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.me-mt span:first-child{font-weight:700;font-size:12.5px;color:var(--t1)}
+.me-tg{font-size:10.5px;color:var(--t3)}
+.me-brow{display:grid;grid-template-columns:30px 1fr 62px;gap:8px;align-items:center;padding:3px 0}
+.me-bm{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase}
+.me-bv{font-size:11.5px;font-weight:700;color:var(--t1);text-align:right}
+.me-track{position:relative;height:8px;border-radius:4px;background:rgba(255,255,255,.06)}
+.me-fill{position:absolute;left:0;top:0;bottom:0;width:var(--w);border-radius:4px;animation:barGrow .8s cubic-bezier(.2,.7,.2,1) both}
+.me-mark{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;z-index:1;transform:translateX(-1px)}
+.me-mark.s2{background:var(--blue-light);opacity:.8}.me-mark.s1{background:var(--green)}
+.me-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px;font-size:10.5px;color:var(--t3)}
+.me-legend span{display:inline-flex;align-items:center;gap:5px}
+.me-legend .lg{width:2px;height:10px;display:inline-block}.me-legend .lg.s2{background:var(--blue-light)}.me-legend .lg.s1{background:var(--green)}
+.me-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.me-months{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.me-months .bp-msec{border:1px solid var(--border);background:var(--bg2);border-radius:12px}
+.me-start{margin-top:10px}
+@media(max-width:900px){.me-wrap{grid-template-columns:1fr}.me-side{position:static}}
 </style>
 </head>
 <body>
@@ -498,6 +545,66 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
       '<div class="bp-prog">' + prog + '</div><div class="bp-months">' + months + '</div><div class="bp-insight"><span class="bp-ins-ic">' + ic('bulb', 14) + '</span><span>' + esc(a.insight) + '</span></div>' +
       '<div class="bp-ai"><button type="button" class="bp-ai-btn" data-coach="' + esc(a.name) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>' + (a.self || !D.isAdmin ? 'Ask your AI coach' : 'AI coach for ' + esc(a.name.split(' ')[0])) + '</button><div class="bp-ai-slot" aria-live="polite"></div></div></div>';
   }
+  // Batch 177: one agent's Growth Blueprint as a full-width page (agents always; admins when they pick an agent).
+  function monthSecs(a){
+    return a.months.map(function(m){
+      var head = esc(monShort(m)) + (m.partial ? ' (to date)' : '') + ' · ' + (m.onLeave ? (m.why && m.why[0] ? m.why[0].replace(/\.$/, '') : 'On leave') : m.points >= 100 ? 'Perfect score' : m.eligible ? (a.inBonus ? 'Eligible, ' + (m.slab === 's1' ? 'Slab 1' : 'Slab 2') : 'Met the bar') : 'Not eligible');
+      var rows = m.metrics.map(function(mt){ return '<div class="bp-mrow"><span>' + esc(short(mt.label)) + ' <span style="color:var(--t3)">(' + (mt.pct ? mt.s1 + '% / ' + mt.s2 + '%' : mt.s1 + ' / ' + mt.s2) + ')</span></span><span class="bp-mval">' + fmtVal(mt) + '</span>' + slabTag(mt.outcome) + '</div>'; }).join('');
+      return '<div class="bp-msec"><div class="bp-mhdr"><span>' + head + '</span><span class="bp-mscore-badge" style="color:' + (m.eligible ? 'var(--green)' : 'var(--t2)') + '">' + m.points + ' pts</span></div>' +
+        '<div class="bp-mdetail">' + rows + '</div>' +
+        (m.why && m.why.length ? '<div class="bp-why">' + esc(m.why.join(' ')) + '</div>' : (m.leaveNote ? '<div class="bp-sub">' + esc(m.leaveNote) + '</div>' : '')) +
+        '<div class="bp-sub">' + esc(countsLine(a.team, m)) + '</div><div class="bp-sub">' + esc(leaveLine(m)) + '</div></div>';
+    });
+  }
+  // For each metric: a row per month with the value on a scale, the Slab 2 and Slab 1 lines marked.
+  function metricBars(a){
+    var keys = (a.months[0] && a.months[0].metrics || []).map(function(mt){ return mt.key; });
+    return keys.map(function(k){
+      var ms = a.months.map(function(m){ return { m: m, mt: (m.metrics || []).filter(function(x){ return x.key === k; })[0] }; }).filter(function(r){ return r.mt; });
+      if (!ms.length) return '';
+      var mt0 = ms[0].mt, vals = ms.map(function(r){ return r.mt.value || 0; });
+      var max = mt0.pct ? 100 : Math.max(mt0.s1 * 1.6, Math.max.apply(null, vals) * 1.08);
+      var pos = function(v){ return Math.max(0, Math.min(100, v / max * 100)); };
+      var rows = ms.map(function(r){
+        var v = r.mt.value, o = r.mt.outcome, col = o === 's1' ? 'var(--green)' : o === 's2' ? 'var(--blue-light)' : o === 'na' ? 'var(--t3)' : '#f87171';
+        return '<div class="me-brow"><span class="me-bm">' + esc(monShort(r.m)) + '</span><div class="me-track">' +
+          '<i class="me-mark s2" style="left:' + pos(mt0.s2) + '%"></i><i class="me-mark s1" style="left:' + pos(mt0.s1) + '%"></i>' +
+          (v == null ? '' : '<b class="me-fill" style="--w:' + pos(v) + '%;background:' + col + '"></b>') + '</div><span class="me-bv">' + (v == null ? (r.m.onLeave ? 'Leave' : '-') : fmtVal(r.mt)) + '</span></div>';
+      }).join('');
+      return '<div class="me-metric"><div class="me-mt"><span>' + esc(short(mt0.label)) + '</span><span class="me-tg">Slab 2 ' + mt0.s2 + (mt0.pct ? '%' : '') + ' · Slab 1 ' + mt0.s1 + (mt0.pct ? '%' : '') + '</span></div>' + rows + '</div>';
+    }).join('');
+  }
+  function personal(a){
+    var mc = a.months.length, due = a.months.filter(function(m){ return !m.onLeave && m.present > 0; });
+    var best = due.slice().sort(function(x, y){ return y.points - x.points; })[0];
+    var avg = due.length ? Math.round(due.reduce(function(t, m){ return t + m.points; }, 0) / due.length) : 0;
+    var s1 = 0, tot = 0; due.forEach(function(m){ (m.metrics || []).forEach(function(mt){ if (mt.outcome !== 'na') { tot++; if (mt.outcome === 's1') s1++; } }); });
+    var prog = a.months.map(function(m){ var c = m.points >= 100 ? 'var(--gold)' : m.eligible ? 'var(--green)' : 'var(--blue)';
+      return '<div class="bp-prow"><span class="bp-mon">' + esc(monShort(m)) + '</span><div class="bp-bar"><div class="bp-fill" style="--w:' + m.points + '%;--c:' + c + '"></div></div><span class="bp-pscore" style="color:' + c + '">' + m.points + '</span></div>'; }).join('');
+    var stat = function(v, l){ return '<div class="me-stat"><b>' + esc(v) + '</b><span>' + esc(l) + '</span></div>'; };
+    var cls = a.eligibleMonths === mc ? 'ep-full' : a.eligibleMonths ? 'ep-part' : 'ep-none';
+    return '<div class="bp-card me-card" data-agent="' + esc(a.name) + '"><div class="me-wrap">' +
+      '<aside class="me-side">' +
+        '<div class="me-id">' + avatar(a, 'me-av', 'background:' + grad(0)) + '<div><div class="me-name">' + esc(a.name) + '</div><div class="bp-meta"><span class="' + (a.team === 'chat' ? 'chip-chat' : 'chip-calls') + ' pod-chip">' + (a.team === 'chat' ? 'Chat' : 'Calls') + '</span><span class="ep ' + cls + '">' + a.eligibleMonths + '/' + mc + ' Eligible</span>' + (a.inBonus ? '' : '<span class="ep ep-none">Not in the bonus this quarter</span>') + '</div></div></div>' +
+        '<div class="me-total"><span>' + esc(D.label.split(' ')[0]) + ' total</span><b>' + a.total + '</b><em>of ' + (mc * 100) + ' points</em></div>' +
+        '<div class="me-stats">' + stat(avg, 'Avg points / month') + stat(best ? monShort(best) + ' ' + best.points : '-', 'Best month') + stat(s1 + '/' + tot, 'Metrics at Slab 1') + '</div>' +
+        '<div class="bp-prog me-prog">' + prog + '</div>' +
+        '<div class="bp-insight me-ins"><span class="bp-ins-ic">' + ic('bulb', 14) + '</span><span>' + esc(a.insight) + '</span></div>' +
+      '</aside>' +
+      '<div class="me-main">' +
+        '<div class="sec-label">' + ic('spark', 13) + ' Your AI coach</div>' +
+        '<div class="bp-ai me-ai"><div class="me-ai-intro"><div><b>Get a coaching note on your quarter, or ask anything about your numbers.</b><span>It only sees your own points and metrics, never amounts or anyone else.</span></div>' +
+          '<button type="button" class="bp-ai-btn" data-coach="' + esc(a.name) + '">' + ic('spark', 14) + 'Get my coaching note</button></div>' +
+          '<div class="bp-ai-slot" aria-live="polite">' + starterBlock(a.name) + '</div></div>' +
+        '<div class="sec-label">Where you stand on each metric</div><div class="me-metrics">' + metricBars(a) + '</div>' +
+        '<div class="me-legend"><span><i class="lg s2"></i>Slab 2 line</span><span><i class="lg s1"></i>Slab 1 line</span><span><i class="dot" style="background:var(--green)"></i>Slab 1</span><span><i class="dot" style="background:var(--blue-light)"></i>Slab 2</span><span><i class="dot" style="background:#f87171"></i>Missed</span></div>' +
+        '<div class="sec-label">Month by month</div><div class="me-months">' + monthSecs(a).join('') + '</div>' +
+      '</div></div></div>';
+  }
+  function starterBlock(name){
+    return '<div class="me-start"><div class="ai-chips">' + STARTERS.map(function(q){ return '<button type="button" class="ai-chip" data-act="ask" data-name="' + esc(name) + '" data-q="' + esc(q) + '">' + esc(q) + '</button>'; }).join('') + '</div>' +
+      '<form class="ai-ask" data-name="' + esc(name) + '"><input type="text" maxlength="400" placeholder="Ask your coach about your numbers..." aria-label="Ask the AI coach a question"><button type="submit" class="ai-send" aria-label="Send">' + ic('send', 16) + '</button></form></div>';
+  }
   function blueprint(){
     var list = D.blueprints || [];
     var top = '';
@@ -510,7 +617,8 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
       '<b>FCR</b>: closed tickets resolved within 24 business hours (Mon-Fri 7 AM-7 PM Central) and never reopened, out of tickets closed.<br>' +
       '<b>Ticket CSAT</b>: survey ratings on the tickets you closed that month. <b>Chats and chat ratings</b>: SalesIQ operator report (Chats owned, Good / Ok / Bad).<br>' +
       '<b>QA</b>: calls from the CRM Call Audits, chats from the chat audit form. <b>Present days</b>: from the team roster; a half day counts 0.5, floater leave does not count toward the leave count.</div>';
-    return top + '<div class="bp-grid">' + list.map(blueprintCard).join('') + '</div>' + defs;
+    if (!D.isAdmin) return top + (list.length ? personal(list[0]) : '') + defs;
+    return top + '<div id="bp-one"></div><div class="bp-grid" id="bp-all">' + list.map(blueprintCard).join('') + '</div>' + defs;
   }
 
   function render(){
@@ -527,7 +635,9 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     recap();
     document.getElementById('btn-blueprint').style.display = '';
     var sel = document.getElementById('agent-select');
-    if (sel) sel.addEventListener('change', function(){ var v = this.value; document.querySelectorAll('.bp-card').forEach(function(c){ c.style.display = !v || c.dataset.agent === v ? '' : 'none'; }); });
+    if (sel) sel.addEventListener('change', function(){ var v = this.value, one = document.getElementById('bp-one'), all = document.getElementById('bp-all');
+      var a = (D.blueprints || []).filter(function(x){ return x.name === v; })[0];
+      one.innerHTML = a ? personal(a) : ''; all.style.display = a ? 'none' : ''; if (a && COACH[a.name]) paintCoach(a.name); });
     var h = (window.location.hash || '').replace('#', '');
     if (h === 'blueprint') switchTab('blueprint', document.getElementById('btn-blueprint'));
   }
@@ -558,7 +668,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function coachView(name){
     var c = COACH[name]; if (!c) return '';
     var n = c.note || {};
-    var note = c.loading ? '<div aria-busy="true"><div class="skel" style="width:75%"></div><div class="skel" style="width:95%"></div><div class="skel" style="width:60%"></div></div>'
+    var note = !c.note && !c.loading && !c.err ? '' : c.loading ? '<div aria-busy="true"><div class="skel" style="width:75%"></div><div class="skel" style="width:95%"></div><div class="skel" style="width:60%"></div></div>'
       : c.err && !c.note ? '<div class="bp-ai-err" role="alert">' + esc(c.err) + '</div>'
       : '<div class="bp-ai-h">' + esc(n.headline) + '</div>' +
         ((n.wins || []).length ? '<div class="bp-ai-k">What went well</div><ul>' + n.wins.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') +
@@ -583,7 +693,8 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function paintCoach(name){
     var card = document.querySelector(sel(name)); if (!card) return;
     var slot = card.querySelector('.bp-ai-slot'), btn = card.querySelector('.bp-ai-btn');
-    slot.innerHTML = coachView(name); btn.style.display = COACH[name] ? 'none' : '';
+    slot.innerHTML = COACH[name] ? coachView(name) : (card.classList.contains('me-card') ? starterBlock(name) : '');
+    btn.style.display = COACH[name] && (COACH[name].note || COACH[name].loading) ? 'none' : '';
     var th = slot.querySelector('.ai-thread'); if (th) th.scrollTop = th.scrollHeight;
   }
   function loadNote(name){
@@ -592,7 +703,8 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
       .catch(function(e){ COACH[name].err = e.message; }).then(function(){ if (COACH[name]) { COACH[name].loading = false; paintCoach(name); } });
   }
   function ask(name, q){
-    var c = COACH[name]; if (!c || c.asking || !q) return;
+    if (!COACH[name]) COACH[name] = { msgs: [] };
+    var c = COACH[name]; if (c.asking || !q) return;
     var history = c.msgs.slice(-8); c.msgs.push({ role: 'user', content: q }); c.asking = true; c.followups = []; paintCoach(name);
     post('/api/hof/coach', { name: name, question: q, history: history }).then(function(j){ c.msgs.push({ role: 'assistant', content: j.reply.answer }); c.followups = j.reply.followups || []; })
       .catch(function(e){ c.msgs.push({ role: 'assistant', content: e.message }); }).then(function(){ c.asking = false; if (COACH[name]) { paintCoach(name);
@@ -601,7 +713,9 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   document.addEventListener('click', function(e){
     var t = e.target.closest && e.target.closest('.bp-ai-btn,[data-act]'); if (!t) return;
     if (t.classList.contains('bp-ai-btn')) { loadNote(t.getAttribute('data-coach')); return; }
-    var name = t.getAttribute('data-name'), act = t.getAttribute('data-act'), c = COACH[name]; if (!c) return;
+    var name = t.getAttribute('data-name'), act = t.getAttribute('data-act'), c = COACH[name];
+    if (act === 'ask') { ask(name, t.getAttribute('data-q')); return; }
+    if (!c) return;
     if (act === 'min') { c.min = !c.min; paintCoach(name); }
     else if (act === 'close') { delete COACH[name]; paintCoach(name); var b = document.querySelector(sel(name) + ' .bp-ai-btn'); if (b) b.focus(); }
     else if (act === 'refresh') loadNote(name);
