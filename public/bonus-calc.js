@@ -22,6 +22,42 @@
   }
   function toast(m, t) { if (typeof showToast === 'function') showToast(m, t || 'info'); }
   function rs(n) { return 'Rs. ' + Math.round(n || 0).toLocaleString('en-IN'); }
+  // Batch 175: icons, switches, count-up numbers and first-paint motion.
+  var ICONS = {
+    refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>',
+    download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+    chev: '<path d="m9 6 6 6-6 6"/>',
+    lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    unlock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
+    sheet: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
+    card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h6M7 14h10"/>',
+    spark: '<path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/>',
+    trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    alert: '<path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+    ext: '<path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>',
+  };
+  function ico(n, sz) { var w = document.createElement('span'); w.style.display = 'inline-flex'; w.setAttribute('aria-hidden', 'true');
+    w.innerHTML = '<svg width="' + (sz || 15) + '" height="' + (sz || 15) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (ICONS[n] || '') + '</svg>'; return w; }
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function anim(el, i) { if (S.fresh && el) { el.classList.add('bnc-anim'); el.style.setProperty('--i', i || 0); } return el; }
+  function countUp(el, to, fmt) {
+    if (!S.fresh || REDUCED || !isFinite(to) || to === 0) { el.textContent = fmt(to); return el; }
+    var t0 = null, dur = 700; el.textContent = fmt(0);
+    function step(t) { if (!t0) t0 = t; var p = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(p < 1 ? Math.round(to * e) : to); if (p < 1) requestAnimationFrame(step); }
+    requestAnimationFrame(step); return el;
+  }
+  function toggle(on, label, onchange, o) {
+    o = o || {};
+    var b = h('button', { type: 'button', role: 'switch', class: 'bnc-switch' + (o.compact ? ' compact' : ''), 'aria-checked': on ? 'true' : 'false', 'aria-label': o.aria || label, disabled: o.disabled,
+      onclick: function () { var v = b.getAttribute('aria-checked') !== 'true'; b.setAttribute('aria-checked', v ? 'true' : 'false'); if (st) st.textContent = v ? (o.onText || 'On') : (o.offText || 'Off'); onchange(v); } });
+    b.appendChild(h('span', { class: 'trk', 'aria-hidden': 'true' }));
+    var st = null;
+    if (!o.compact) { b.appendChild(h('span', null, [label, ' '])); st = h('span', { class: 'st', text: on ? (o.onText || 'On') : (o.offText || 'Off') }); b.appendChild(st); }
+    return b;
+  }
   function nowChi() { var p = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }).split('-').map(Number); return { y: p[0], m: p[1] }; }
   function options(type) {
     var n = nowChi(), out = [], i, y, m;
@@ -43,7 +79,7 @@
     if (S.busy) return; S.busy = true; S.err = ''; draw();
     api('/api/bonus?period=' + encodeURIComponent(period())).then(function (j) {
       S.busy = false; if (!j.success) throw new Error(j.error || 'Could not load');
-      S.data = j; S.edits = {};
+      S.data = j; S.edits = {}; S.fresh = true; S.ai = null;
       if (!S.inMonth || !j.months.some(function (m) { return m.key === S.inMonth; })) S.inMonth = j.months[j.months.length - 1].key;
       draw();
     }).catch(function (e) { S.busy = false; S.err = e.message; draw(); });
@@ -55,7 +91,9 @@
       return h('button', { type: 'button', 'aria-pressed': cur === o[0] ? 'true' : 'false', text: o[1], onclick: function () { fn(o[0]); } });
     }));
   }
-  function tile(label, value, sub, cls) { return h('div', { class: 'bnc-tile ' + (cls || '') }, [h('span', { class: 'bnc-tile-l', text: label }), h('b', { class: 'bnc-tile-v', text: String(value) }), sub ? h('span', { class: 'bnc-tile-s', text: sub }) : null]); }
+  function tile(label, value, sub, cls, num, fmt) {
+    var v = h('b', { class: 'bnc-tile-v' }); if (num != null) countUp(v, num, fmt || function (x) { return String(x); }); else v.textContent = String(value);
+    return h('div', { class: 'bnc-tile ' + (cls || '') }, [h('span', { class: 'bnc-tile-l', text: label }), v, sub ? h('span', { class: 'bnc-tile-s', text: sub }) : null]); }
   function chip(slab, eligible) {
     if (!eligible || !slab) return h('span', { class: 'bnc-chip no', text: 'Not eligible' });
     return h('span', { class: 'bnc-chip ' + slab, text: slab === 's1' ? 'Slab 1' : 'Slab 2' });
@@ -65,21 +103,29 @@
     var root = document.getElementById('bnc-root'); if (!root) return;
     if (!S.value) S.value = defaultValue(S.type);
     var d = S.data;
+    var pq = encodeURIComponent(period());
+    function dl(kind, title, sub, ic) { return h('a', { class: 'bnc-menu-item', href: '/api/bonus/export?kind=' + kind + '&period=' + pq, role: 'menuitem' }, [h('span', { class: 'ic' }, [ico(ic)]), h('span', null, [h('b', { text: title }), h('span', { text: sub })])]); }
+    var menu = h('details', { class: 'bnc-menu' }, [h('summary', { class: 'bnc-btn primary', 'aria-haspopup': 'menu' }, [ico('download'), 'Download']),
+      h('div', { class: 'bnc-menu-list', role: 'menu' }, [h('div', { class: 'bnc-menu-h', text: 'For you' }),
+        dl('calc', 'Full calculation', 'Every metric, slab, leave factor and amount', 'sheet'),
+        dl('cards', 'Agent report cards', 'One card per agent, no rupee amounts', 'card'),
+        h('div', { class: 'bnc-menu-sep' }), h('div', { class: 'bnc-menu-h', text: 'For the finance team' }),
+        dl('fincalc', 'Finance: calculation', 'Slabs, eligibility, slab split and CSAT, with notes on each cell', 'sheet'),
+        dl('findata', 'Finance: data', 'Calls, chats, FCR, ticket surveys, attendance and QA', 'sheet')])]);
     var head = h('div', { class: 'bnc-head' }, [
       h('div', null, [h('h2', { class: 'bnc-h1', text: 'Bonus calculator' }),
         h('p', { class: 'bnc-sub', text: 'T1 CS bonus by the 2026 structure. Calls, tickets, FCR and ticket CSAT come from the tool. On the Inputs tab, enter QA scores and attendance (attendance marked on the Roster is filled in for you) and upload the SalesIQ operator report for chats and chat ratings.' })]),
+    ]);
+    var toolbar = h('div', { class: 'bnc-toolbar' }, [
       h('div', { class: 'bnc-ctrl' }, [
         seg([['month', 'Month'], ['quarter', 'Quarter'], ['year', 'Year'], ['mtd', 'Month to date']], S.type, function (v) { S.type = v; S.value = defaultValue(v); load(); }, 'Period type'),
-        S.type !== 'mtd' ? h('select', { class: 'bnc-sel', 'aria-label': 'Period', onchange: function (e) { S.value = e.target.value; load(); } },
+        S.type !== 'mtd' ? h('select', { class: 'bnc-sel period', 'aria-label': 'Period', onchange: function (e) { S.value = e.target.value; load(); } },
           options(S.type).map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (o[0] === S.value) op.selected = true; return op; })) : null,
-        h('button', { type: 'button', class: 'bnc-btn', text: S.busy ? 'Loading...' : 'Refresh', disabled: S.busy, onclick: load }),
-        h('a', { class: 'bnc-btn primary', href: '/api/bonus/export?kind=calc&period=' + encodeURIComponent(period()), text: 'Download calculation' }),
-        h('a', { class: 'bnc-btn', href: '/api/bonus/export?kind=cards&period=' + encodeURIComponent(period()), text: 'Download report cards' }),
-        h('a', { class: 'bnc-btn', href: '/api/bonus/export?kind=fincalc&period=' + encodeURIComponent(period()), text: 'Finance: calculation', title: 'Calculation Only sheet for the finance team (slabs, eligibility, bonus summary, CSAT ratings)' }),
-        h('a', { class: 'bnc-btn', href: '/api/bonus/export?kind=findata&period=' + encodeURIComponent(period()), text: 'Finance: data', title: 'Bonus Data workbook for the finance team (calls, chats, FCR, ticket surveys, attendance, QA)' }),
+        h('button', { type: 'button', class: 'bnc-btn icon', title: 'Refresh', 'aria-label': S.busy ? 'Loading' : 'Refresh', disabled: S.busy, onclick: load }, [(function () { var i = ico('refresh'); if (S.busy) i.classList.add('bnc-spin'); return i; })()]),
       ]),
+      h('div', { class: 'bnc-ctrl' }, [menu]),
     ]);
-    var kids = [head];
+    var kids = [head, toolbar];
     if (S.err) kids.push(h('div', { class: 'bnc-note bad', role: 'alert', text: S.err }));
     if (!d) { kids.push(h('div', { class: 'bnc-note', text: S.busy ? 'Working out the bonus...' : 'Pick a period.' })); return paint(root, kids); }
     kids.push(h('p', { class: 'bnc-range', text: d.label + '. ' + (d.months.some(function (m) { return m.partial; }) ? 'The current month is to date only. ' : '') + 'Report cards have no rupee amounts; the calculation does.' }));
@@ -99,7 +145,7 @@
     else kids.push(agentsTab());
     paint(root, kids);
   }
-  function paint(root, kids) { root.innerHTML = ''; kids.forEach(function (k) { if (k) root.appendChild(k); }); }
+  function paint(root, kids) { root.innerHTML = ''; kids.forEach(function (k) { if (k) root.appendChild(k); }); S.fresh = false; }
 
   function lockAction(m, unlock) {
     var msg = unlock ? 'Reopen ' + m.label + '? Its numbers will be worked out again from the live data.' : 'Finalise ' + m.label + '? Its numbers and amounts are kept as they are now, even if Zoho, RingCentral or SalesIQ data changes later.';
@@ -113,10 +159,10 @@
     return h('div', { class: 'bnc-card bnc-lockcard' }, [h('h3', { class: 'bnc-h3', text: 'Finalise months' }),
       h('p', { class: 'bnc-card-sub', text: 'Finalise a month once its bonus is agreed. It then keeps these exact numbers and amounts, even if a ticket is reopened or data changes later. Reopen it only to recalculate.' }),
       h('div', { class: 'bnc-locks' }, d.months.map(function (m) {
-        if (m.partial) return h('span', { class: 'bnc-lock open' }, [h('b', { text: m.label }), ' in progress']);
-        if (m.locked) return h('span', { class: 'bnc-lock done' }, [h('b', { text: m.label }), ' finalised' + (m.lockedBy ? ' by ' + m.lockedBy.split('@')[0] : '') + (m.lockedAt ? ' on ' + String(m.lockedAt).slice(0, 10) : '') + ' ',
+        if (m.partial) return h('span', { class: 'bnc-lock open' }, [ico('unlock'), h('b', { text: m.label }), ' in progress']);
+        if (m.locked) return h('span', { class: 'bnc-lock done' }, [ico('lock'), h('b', { text: m.label }), ' finalised' + (m.lockedBy ? ' by ' + m.lockedBy.split('@')[0] : '') + (m.lockedAt ? ' on ' + String(m.lockedAt).slice(0, 10) : '') + ' ',
           h('button', { type: 'button', class: 'bnc-link', text: 'Reopen', onclick: function () { lockAction(m, true); } })]);
-        return h('span', { class: 'bnc-lock open' }, [h('b', { text: m.label }), ' not finalised ', h('button', { type: 'button', class: 'bnc-btn small', text: 'Finalise ' + m.label, onclick: function () { lockAction(m, false); } })]);
+        return h('span', { class: 'bnc-lock open' }, [ico('unlock'), h('b', { text: m.label }), ' not finalised ', h('button', { type: 'button', class: 'bnc-btn small', text: 'Finalise',  'aria-label': 'Finalise ' + m.label, onclick: function () { lockAction(m, false); } })]);
       }))]);
   }
   // Batch 170: what the Hall of Fame shows agents, with the status tag on top of it.
@@ -129,31 +175,61 @@
       body.innerHTML = '';
       var showing = c.period ? c.period : 'nothing yet';
       var save = function (patch) { api('/api/bonus/hof', patch).then(function (j) { if (!j.success) throw new Error(j.error || 'Could not save'); toast('Hall of Fame updated', 'success'); paintHof(j); }).catch(function (e) { toast(e.message, 'error'); }); };
-      body.appendChild(h('p', { class: 'bnc-line' }, [h('b', { text: 'Showing: ' }), showing + '. ', c.visible ? 'Visible to agents.' : 'Hidden from agents (admins can preview it).',
-        c.at ? ' Last changed ' + String(c.at).slice(0, 16) + (c.by ? ' by ' + c.by.split('@')[0] : '') + '.' : '']));
-      body.appendChild(h('div', { class: 'bnc-actions' }, [
-        h('button', { type: 'button', class: 'bnc-btn' + (c.period === period() ? '' : ' primary'), text: c.period === period() ? 'Showing ' + d.label : 'Show ' + d.label + ' on the Hall of Fame', disabled: c.period === period() || S.type === 'mtd',
-          onclick: function () { save({ period: period() }); } }),
-        seg([['in_progress', 'In progress (not confirmed)'], ['confirmed', 'Validated and confirmed']], c.status, function (v) {
+      var same = c.period === period();
+      body.appendChild(h('div', { class: 'bnc-hof-row' }, [
+        h('span', { class: 'bnc-live' + (c.visible ? ' on' : '') }, [h('i'), c.visible ? 'Live for agents' : 'Hidden from agents']),
+        h('span', { class: 'bnc-live' + (c.status === 'confirmed' ? ' on' : ' prov') }, [h('i'), c.status === 'confirmed' ? 'Validated and confirmed' : 'Yet to be confirmed']),
+        h('span', { class: 'bnc-line mute' }, [h('b', { text: 'Showing ' + showing + '.' }), c.at ? ' Last changed ' + String(c.at).slice(0, 16).replace('T', ' ') + (c.by ? ' by ' + c.by.split('@')[0] : '') + '.' : '']),
+      ]));
+      body.appendChild(h('div', { class: 'bnc-hof-row' }, [
+        same ? null : h('button', { type: 'button', class: 'bnc-btn primary', text: 'Show ' + d.label + ' on the Hall of Fame', disabled: S.type === 'mtd', onclick: function () { save({ period: period() }); } }),
+        seg([['in_progress', 'In progress'], ['confirmed', 'Validated and confirmed']], c.status, function (v) {
           if (v === c.status) return;
           if (v === 'confirmed') { var open = d.months.filter(function (m) { return !m.locked; }); if (open.length && !window.confirm('Mark the numbers as validated and confirmed? ' + open.map(function (m) { return m.label; }).join(', ') + ' are not finalised yet, so they can still change. Finalise them first if these are the final numbers.')) return; }
           save({ status: v }); }, 'Hall of Fame status'),
-        h('label', { class: 'bnc-check' }, [(function () { var i = h('input', { type: 'checkbox', onchange: function (e) { save({ visible: e.target.checked }); } }); i.checked = !!c.visible; return i; })(), ' Visible to agents']),
+        toggle(!!c.visible, 'Visible to agents', function (v) { save({ visible: v }); }, { onText: 'On', offText: 'Off' }),
+        h('a', { class: 'bnc-btn', href: '/hall-of-fame.html', target: '_blank', rel: 'noopener' }, [ico('trophy'), 'Open Hall of Fame', ico('ext', 12)]),
       ]));
     }
     api('/api/bonus/hof').then(function (j) { if (j.success) paintHof(j); else body.textContent = j.error || 'Could not load'; });
+    return card;
+  }
+  // Batch 175: AI review of the period (reads the same numbers; never changes one).
+  function aiCard(d) {
+    var card = h('div', { class: 'bnc-card bnc-ai' });
+    var st = S.ai && S.ai.period === period() ? S.ai : null;
+    var run = function () { S.ai = { period: period(), busy: true }; draw();
+      api('/api/bonus/ai-review', { period: period() }).then(function (j) { if (!j.success) throw new Error(j.error || 'Could not get the AI review'); S.ai = { period: period(), r: j.review }; draw(); })
+        .catch(function (e) { S.ai = { period: period(), err: e.message }; draw(); }); };
+    card.appendChild(h('div', { class: 'bnc-ai-hd' }, [h('div', null, [h('span', { class: 'bnc-ai-badge' }, [ico('spark', 13), 'AI review']),
+      h('h3', { class: 'bnc-h3', text: 'What stands out in ' + d.label }),
+      h('p', { class: 'bnc-card-sub', text: 'Highlights, numbers to double-check and a coaching tip per agent, written from the calculation below. It only reads the numbers; it never changes them.' })]),
+      h('button', { type: 'button', class: 'bnc-btn' + (st && st.r ? '' : ' primary'), disabled: !!(st && st.busy), onclick: run }, [ico('spark', 14), st && st.busy ? 'Thinking...' : st && st.r ? 'Run again' : 'Generate AI review'])]));
+    if (!st) return card;
+    if (st.busy) { card.appendChild(h('div', { 'aria-live': 'polite', 'aria-busy': 'true' }, [h('div', { class: 'bnc-skel', style: 'width:70%' }), h('div', { class: 'bnc-skel', style: 'width:92%' }), h('div', { class: 'bnc-skel', style: 'width:55%' })])); return card; }
+    if (st.err) { card.appendChild(h('div', { class: 'bnc-note bad', role: 'alert', text: st.err })); return card; }
+    var r = st.r, list = function (arr) { return h('ul', null, arr.map(function (t) { return h('li', { text: t }); })); };
+    card.appendChild(h('p', { class: 'bnc-ai-head', text: r.headline }));
+    card.appendChild(h('div', { class: 'bnc-ai-grid' }, [
+      h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('check', 13), 'Highlights']), list(r.highlights || [])]),
+      h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('alert', 13), 'Worth checking']), list(r.watch || [])]),
+      h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('bulb', 13), 'Coaching']), h('ul', null, (r.coaching || []).map(function (c) { return h('li', null, [h('b', { text: c.agent + ': ' }), c.tip]); }))]),
+    ]));
+    card.appendChild(h('p', { class: 'bnc-ai-foot', text: 'AI-written from this calculation' + (r.at ? ' at ' + new Date(r.at).toLocaleTimeString() : '') + '. Check anything important against the numbers below.' }));
     return card;
   }
   function summary(d) {
     var wrap = h('div');
     var am = 0, el = 0; d.agents.forEach(function (a) { d.months.forEach(function (m) { am++; if (a.months[m.key].eligible && a.months[m.key].slab) el++; }); });
     wrap.appendChild(h('div', { class: 'bnc-tiles' }, [
-      tile('Total bonus', rs(d.totals.total), 'Slab bonus + CSAT incentive'),
-      tile('Slab bonus', rs(d.totals.slab), 'After planned-leave cuts'),
-      tile('CSAT incentive', rs(d.totals.csat), 'Rs. 150 per Good ticket, Rs. 50 per Happy chat'),
-      tile('Eligible months', el + ' of ' + am, 'Agent-months at 70+ points and 18+ days', el ? 'ok' : 'mute'),
-      tile('Still to enter', (d.missing || []).length, 'Agent-months missing QA or attendance', (d.missing || []).length ? 'warn' : 'ok'),
+      tile('Total bonus', '', 'Slab bonus + CSAT incentive', 'acc', d.totals.total, rs),
+      tile('Slab bonus', '', 'After planned-leave cuts', 'blue', d.totals.slab, rs),
+      tile('CSAT incentive', '', 'Rs. 150 per Good ticket, Rs. 50 per Happy chat', 'blue', d.totals.csat, rs),
+      tile('Eligible months', '', 'Agent-months at 70+ points and 18+ days', el ? 'ok' : 'mute', el, function (x) { return x + ' of ' + am; }),
+      tile('Still to enter', '', 'Agent-months missing QA or attendance', (d.missing || []).length ? 'warn' : 'ok', (d.missing || []).length),
     ]));
+    Array.prototype.forEach.call(wrap.firstChild.children, function (t, i) { anim(t, i); });
+    wrap.appendChild(aiCard(d));
     wrap.appendChild(monthsCard(d));
     wrap.appendChild(hofCard(d));
     ['calls', 'chat'].forEach(function (team) {
@@ -165,16 +241,21 @@
       var tb = h('tbody');
       list.forEach(function (a) {
         var open = !!S.open[a.email];
-        var tr = h('tr', { class: 'bnc-row' + (open ? ' on' : '') }, [h('th', { scope: 'row' }, [h('button', { type: 'button', class: 'bnc-name', 'aria-expanded': open ? 'true' : 'false', onclick: function () { S.open[a.email] = !open; draw(); } }, [a.name, a.eligible ? null : h('span', { class: 'bnc-tag', text: 'Not eligible this period' })])])]
+        var tr = h('tr', { class: 'bnc-row' + (open ? ' on' : '') }, [h('th', { scope: 'row' }, [h('button', { type: 'button', class: 'bnc-name', 'aria-expanded': open ? 'true' : 'false', onclick: function () { S.open[a.email] = !open; draw(); } }, [h('span', { class: 'bnc-chev' }, [ico('chev', 12)]), a.name]), a.eligible ? null : h('span', { class: 'bnc-tag', text: 'Not eligible this period' })])]
           .concat(d.months.map(function (m) { var x = a.months[m.key];
             if (x.outside) return h('td', null, [h('div', { class: 'bnc-cell' }, [h('span', { class: 'bnc-miss', text: 'Not in T1 CS this month' })])]);
-            return h('td', null, [h('div', { class: 'bnc-cell' }, [h('b', { text: x.points + ' pts' }), chip(x.slab, x.eligible), h('span', { class: 'bnc-amt', text: x.total ? rs(x.total) : '-' }), x.missing.length ? h('span', { class: 'bnc-miss', text: 'Needs ' + x.missing.join(' and ') }) : null])]); }))
+            var bar = h('span', { class: 'bnc-bar ' + (x.points >= 100 ? 'full' : x.eligible ? (x.slab === 's2' ? 's2' : 'ok') : ''), 'aria-hidden': 'true' }, [h('i', { style: 'width:' + Math.min(100, x.points) + '%' })]);
+            var whyShort = !x.eligible && x.present === 0 ? 'On leave' : !x.eligible && x.why && x.why.length ? x.why.map(function (w) { return w.replace(/Points below 70 \(scored \d+\)\.?\s*Need (\d+) more\.?/, '$1 pts short of 70').replace(/Present days below 18 \(was ([\d.]+)\)\.?/, '$1 days, needs 18').replace(/\.$/, ''); }).join(', ') : '';
+            var amt = x.total ? h('span', { class: 'bnc-amt' }, [rs(x.slabAmt), x.csat && x.csat.amount ? h('small', { text: ' + ' + Math.round(x.csat.amount).toLocaleString('en-IN') + ' CSAT' }) : null]) : h('span', { class: 'bnc-amt', text: '-' });
+            if (x.eligible && x.slab && x.slabAmt && x.factor < 1) amt.appendChild(h('small', { text: ' (' + Math.round(x.factor * 100) + '% leave)' }));
+            if (x.eligible && x.slab && !x.slabAmt && x.unplanned) amt.appendChild(h('small', { text: ' (unplanned leave)' }));
+            return h('td', null, [h('div', { class: 'bnc-cell' }, [h('b', { text: x.points + ' pts' }), bar, chip(x.slab, x.eligible), whyShort ? h('span', { class: 'bnc-why', text: whyShort }) : null, amt, x.missing.length ? h('span', { class: 'bnc-miss', text: 'Needs ' + x.missing.join(' and ') }) : null])]); }))
           .concat([h('td', { class: 'num', text: rs(a.totals.slab) }), h('td', { class: 'num', text: rs(a.totals.csat) }), h('td', { class: 'num strong', text: rs(a.totals.total) })]));
         tb.appendChild(tr);
         if (open) tb.appendChild(h('tr', { class: 'bnc-detail' }, [h('td', { colspan: String(d.months.length + 4) }, [detail(d, a)])]));
       });
       card.appendChild(h('div', { class: 'bnc-scroll' }, [h('table', { class: 'bnc-table' }, [h('thead', null, [thead]), tb])]));
-      wrap.appendChild(card);
+      wrap.appendChild(anim(card, 6));
     });
     if (d.rawRatings && d.rawRatings.length) wrap.appendChild(h('p', { class: 'bnc-range', text: 'Chat rating values seen from SalesIQ: ' + d.rawRatings.map(function (r) { return '"' + r.raw + '" as ' + (r.rating || 'unknown') + ' (' + r.n + ')'; }).join(', ') + '.' }));
     return wrap;
@@ -320,9 +401,9 @@
     S.agents.forEach(function (a) {
       function upd(patch) { api('/api/bonus/agents', Object.assign({ email: a.email }, patch)).then(function (j) { if (!j.success) throw new Error(j.error); Object.assign(a, j.agent); toast('Saved ' + a.name, 'success'); S.data = null; load(); }).catch(function (e) { toast(e.message, 'error'); }); }
       var team = h('select', { class: 'bnc-sel', 'aria-label': 'Team for ' + a.name, onchange: function (e) { upd({ team: e.target.value }); } }, [['calls', 'Calls'], ['chat', 'Chat']].map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (a.team === o[0]) op.selected = true; return op; }));
-      var inc = h('input', { type: 'checkbox', 'aria-label': 'Include ' + a.name, onchange: function (e) { upd({ include: e.target.checked }); } }); inc.checked = !!a.include;
-      var el = h('input', { type: 'checkbox', 'aria-label': 'Bonus eligible: ' + a.name, onchange: function (e) { upd({ eligible: e.target.checked }); } }); el.checked = !!a.eligible;
-      var hof = h('input', { type: 'checkbox', 'aria-label': 'Show ' + a.name + ' on the Hall of Fame', onchange: function (e) { upd({ hof: e.target.checked }); } }); hof.checked = a.hof !== false;
+      var inc = toggle(!!a.include, 'Included', function (v) { upd({ include: v }); }, { compact: true, aria: 'Include ' + a.name });
+      var el = toggle(!!a.eligible, 'Bonus eligible', function (v) { upd({ eligible: v }); }, { compact: true, aria: 'Bonus eligible: ' + a.name });
+      var hof = toggle(a.hof !== false, 'Hall of Fame', function (v) { upd({ hof: v }); }, { compact: true, aria: 'Show ' + a.name + ' on the Hall of Fame' });
       var monIn = function (k, lbl) { return h('input', { type: 'month', class: 'bnc-in month', 'aria-label': lbl + ' for ' + a.name, value: a[k] || '', onchange: function (e) { var p = {}; p[k] = e.target.value || ''; upd(p); } }); };
       tb.appendChild(h('tr', null, [h('th', { scope: 'row' }, [a.name, a.monitored === false ? h('span', { class: 'bnc-tag', text: 'Not on the call monitor' }) : null]), h('td', { text: a.empId || '-' }), h('td', { text: a.doj || '-' }), h('td', null, [inc]), h('td', null, [team]), h('td', null, [el]),
         h('td', null, [monIn('fromMonth', 'In T1 CS from')]), h('td', null, [monIn('toMonth', 'In T1 CS until')]), h('td', null, [hof])]));
@@ -346,5 +427,7 @@
     return card;
   }
 
+  document.addEventListener('click', function (e) { document.querySelectorAll('#bnc-root details.bnc-menu[open]').forEach(function (m) { if (!m.contains(e.target)) m.removeAttribute('open'); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('#bnc-root details.bnc-menu[open]').forEach(function (m) { m.removeAttribute('open'); var sm = m.querySelector('summary'); if (sm) sm.focus(); }); });
   window.openBonusCalc = function () { if (!S.data || Date.now() - (S.at || 0) > 5 * 60000) { S.at = Date.now(); if (!S.value) S.value = defaultValue(S.type); load(); } else draw(); };
 })();

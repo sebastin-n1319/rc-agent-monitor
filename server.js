@@ -8273,6 +8273,28 @@ app.get('/api/hof', requireAuth, rateLimit(60, 60000), async (req, res) => {
     res.json({ success: true, ...(await require('./lib/bonus').hofView({ viewerEmail: req.session.email, isAdmin, agentNames })) });
   } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
+// Batch 175: AI review of a bonus period (admin) and an AI coach note on an agent's own Growth Blueprint card.
+app.post('/api/bonus/ai-review', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try {
+    const { agentNames } = await deskLifecycleAgentRoster();
+    const R = await require('./lib/bonus').report({ period: String(req.body && req.body.period || ''), agentNames });
+    res.json({ success: true, review: await require('./lib/bonus-ai').review(R) });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'The AI review is not available right now. Please try again in a moment.' }); }
+});
+app.post('/api/hof/coach', requireAuth, rateLimit(8, 60000), async (req, res) => {
+  try {
+    const settings = await getRoleSettingsForEmail(req.session.email).catch(() => null);
+    const isAdmin = !!(settings && settings.role === 'admin');
+    const { agentNames } = await deskLifecycleAgentRoster();
+    const v = await require('./lib/bonus').hofView({ viewerEmail: req.session.email, isAdmin, agentNames });
+    if (!v.ready) return res.status(404).json({ success: false, error: 'The Hall of Fame is not open yet.' });
+    // An agent only ever gets their own card (hofView already returns just theirs); an admin picks by name.
+    const want = String(req.body && req.body.name || '').trim().toLowerCase();
+    const card = (v.blueprints || []).find((b) => (isAdmin ? b.name.toLowerCase() === want : b.self));
+    if (!card) return res.status(404).json({ success: false, error: 'No Growth Blueprint found for you this quarter.' });
+    res.json({ success: true, coach: await require('./lib/bonus-ai').coach(card, v.longLabel || v.label) });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'The AI coach is not available right now. Please try again in a moment.' }); }
+});
 // Batch 167: SalesIQ operator report (.xlsx, one month) fills chat team Chats Owned and Good/Ok/Bad. ?dry=1 previews only.
 app.post('/api/bonus/operator-report', requireAdmin, rateLimit(20, 60000), express.raw({ type: () => true, limit: '15mb' }), async (req, res) => {
   try {

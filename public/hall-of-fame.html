@@ -219,6 +219,39 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
 .has-photo{padding:0!important;overflow:hidden}
 .has-photo img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
 .tag-na{font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--t3);border:1px solid var(--border);white-space:nowrap}
+/* Batch 175: legibility, award icons, AI coach, celebration, reduced motion */
+.awards-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+@media(min-width:1180px){.awards-grid{grid-template-columns:repeat(3,1fr)}}
+.aw-icon{font-size:18px;line-height:1}
+.aw-gold .aw-icon{background:rgba(245,158,11,.12);color:var(--gold)} .aw-green .aw-icon{background:rgba(34,197,94,.1);color:var(--green)}
+.aw-orange .aw-icon{background:rgba(249,115,22,.1);color:var(--orange-light)} .aw-purple .aw-icon{background:rgba(168,85,247,.12);color:#c084fc}
+.aw-blue .aw-icon{background:rgba(59,130,246,.12);color:var(--blue-light)} .aw-teal .aw-icon{background:rgba(14,165,233,.1);color:var(--teal)}
+.aw-title{font-size:10px} .aw-desc{font-size:11.5px}
+.award-card,.champ-card,.bp-card,.sb-card{animation:fadeUp .45s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0) * 60ms)}
+.bp-mrow span:first-child,.bp-mval{font-size:11.5px}
+.tag-ok,.tag-s1,.tag-s2,.tag-no,.tag-na{font-size:9.5px;padding:1px 6px}
+.bp-insight{font-size:12px;line-height:1.6;padding:10px 14px}
+.bp-sub{font-size:11px}
+.hstat{min-width:96px}
+.hstat-lbl{font-size:10px}
+.tab-btn:focus-visible,.bp-ai-btn:focus-visible,.bp-pill:focus-visible{outline:2px solid var(--blue-light);outline-offset:2px}
+/* AI coach */
+.bp-ai{border-top:1px solid var(--border);padding:10px 14px 12px}
+.bp-ai-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:8px;border:1px solid transparent;cursor:pointer;font:600 12px 'Inter',sans-serif;color:#fff;
+  background:linear-gradient(var(--bg2),var(--bg2)) padding-box,linear-gradient(120deg,#f97316,#a855f7,#3b82f6) border-box;transition:transform .15s,box-shadow .2s}
+.bp-ai-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(168,85,247,.25)}
+.bp-ai-btn:disabled{opacity:.7;cursor:default}
+.bp-ai-btn svg{color:#c084fc}
+.bp-ai-out{margin-top:10px;padding:12px 13px;border-radius:9px;background:linear-gradient(135deg,rgba(168,85,247,.08),rgba(59,130,246,.05));border:1px solid rgba(168,85,247,.2);animation:fadeUp .35s ease both}
+.bp-ai-h{font-family:'Poppins',sans-serif;font-weight:700;font-size:13px;color:var(--t1);margin-bottom:8px;line-height:1.45}
+.bp-ai-k{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#c084fc;margin:8px 0 4px}
+.bp-ai-out ul{padding-left:16px;font-size:12px;color:var(--t2);line-height:1.6}
+.bp-ai-out li b{color:var(--t1);font-weight:600}
+.bp-ai-goal{margin-top:8px;padding:8px 10px;border-radius:7px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.18);font-size:12px;color:var(--t1)}
+.bp-ai-note{font-size:10px;color:var(--t3);margin-top:8px}
+.skel{height:10px;border-radius:5px;margin:7px 0;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));background-size:400px 100%;animation:shimmerGold 1.3s linear infinite}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:50}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
@@ -291,8 +324,9 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     document.getElementById('hero-badge').textContent = D.label + ' · ' + D.months.map(monShort).join(' - ') + ' · T1 Customer Support';
     document.getElementById('hero-sub').textContent = 'Recognizing the best performers of ' + D.label;
     var top = b.length ? b[0].total : 0, full = b.filter(function(x){ return x.eligibleMonths === D.months.length; }).length, em = b.reduce(function(t, x){ return t + x.eligibleMonths; }, 0);
-    document.getElementById('hero-stats').innerHTML = [[b.length, 'Agents'], [top, 'Top Score'], [full, D.months.length + '/' + D.months.length + ' Eligible'], [em, 'Eligible Months']]
-      .map(function(s){ return '<div class="hstat"><span class="hstat-val">' + esc(s[0]) + '</span><span class="hstat-lbl">' + esc(s[1]) + '</span></div>'; }).join('');
+    document.getElementById('hero-stats').innerHTML = [[b.length, 'Agents'], [top, 'Top Score'], [full, 'Eligible every month'], [em, 'Eligible Months']]
+      .map(function(s){ return '<div class="hstat"><span class="hstat-val" data-to="' + esc(s[0]) + '">' + esc(s[0]) + '</span><span class="hstat-lbl">' + esc(s[1]) + '</span></div>'; }).join('');
+    countUps(document.getElementById('hero-stats'));
   }
 
   function podium(list){
@@ -312,17 +346,39 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function champs(list){
     if (!list.length) return '<div class="hof-empty">No agents yet.</div>';
     return '<div class="champ-list">' + list.slice(0, 3).map(function(a, i){
-      return '<div class="champ-card"><div class="champ-rank" style="color:' + (i === 0 ? 'var(--gold)' : i === 1 ? 'var(--silver)' : 'var(--bronze)') + '">#' + (i + 1) + '</div>' +
+      return '<div class="champ-card" style="--i:' + i + '"><div class="champ-rank" style="color:' + (i === 0 ? 'var(--gold)' : i === 1 ? 'var(--silver)' : 'var(--bronze)') + '">#' + (i + 1) + '</div>' +
         '' + avatar(a, 'champ-av', 'background:' + grad(i + 4)) + '<div class="champ-info"><div class="champ-name">' + esc(a.name) + '</div>' +
         '<div class="champ-note">' + a.months.map(function(m){ return m.points; }).join(' → ') + ' pts · Eligible ' + a.eligibleMonths + '/' + a.months.length + '</div></div>' +
         '<div class="champ-pts">' + a.total + ' <span>pts</span></div></div>';
     }).join('') + '</div>';
   }
+  var AW_ICON = { star: '🏆', improved: '📈', iron: '🛡️', perfect: '💯', fcr: '🎯', qa: '✅' };
+  var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function countUps(root){
+    if (REDUCED) return;
+    root.querySelectorAll('[data-to]').forEach(function(el){
+      var to = Number(el.getAttribute('data-to')); if (!isFinite(to) || to <= 0) return;
+      var t0 = null; el.textContent = '0';
+      (function step(t){ if (!t0) t0 = t; var p = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - p, 3); el.textContent = String(p < 1 ? Math.round(to * e) : to); if (p < 1) requestAnimationFrame(step); })(performance.now());
+    });
+  }
+  // A short confetti burst the first time someone opens a validated Hall of Fame in this browser session.
+  function confetti(){
+    if (REDUCED) return;
+    try { var k = 'hof-cf-' + D.period + '-' + D.statusAt; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) {}
+    var c = document.createElement('canvas'); c.id = 'confetti'; c.setAttribute('aria-hidden', 'true'); document.body.appendChild(c);
+    var x = c.getContext('2d'), W = c.width = innerWidth, H = c.height = innerHeight, cols = ['#f59e0b','#fde68a','#3b82f6','#22c55e','#a855f7','#f97316'];
+    var P = Array.from({ length: 140 }, function(){ return { x: W / 2 + (Math.random() - .5) * 160, y: H * .28, vx: (Math.random() - .5) * 12, vy: -Math.random() * 11 - 4, r: Math.random() * 6 + 3, c: cols[Math.floor(Math.random() * cols.length)], a: Math.random() * 6, s: (Math.random() - .5) * .3 }; });
+    var t0 = performance.now();
+    (function f(t){ x.clearRect(0, 0, W, H); var done = t - t0 > 2600;
+      P.forEach(function(p){ p.vy += .28; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.a += p.s; x.save(); x.translate(p.x, p.y); x.rotate(p.a); x.globalAlpha = Math.max(0, 1 - (t - t0) / 2600); x.fillStyle = p.c; x.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); x.restore(); });
+      if (!done) requestAnimationFrame(f); else c.remove(); })(t0);
+  }
   var AW_CLS = { star: 'aw-gold', improved: 'aw-green', iron: 'aw-orange', perfect: 'aw-purple', fcr: 'aw-blue', qa: 'aw-teal' };
   function awards(){
     if (!(D.awards || []).length) return '';
-    return '<div class="sec-label">Awards</div><div class="awards-grid">' + D.awards.map(function(w){
-      return '<div class="award-card ' + (AW_CLS[w.key] || 'aw-blue') + '"><div class="aw-body"><div class="aw-title">' + esc(w.title) + '</div><div class="aw-winner">' + esc(w.winners.join(' · ')) + '</div><div class="aw-desc">' + esc(w.desc) + '</div></div></div>';
+    return '<div class="sec-label">Awards</div><div class="awards-grid">' + D.awards.map(function(w, i){
+      return '<div class="award-card ' + (AW_CLS[w.key] || 'aw-blue') + '" style="--i:' + i + '"><div class="aw-icon" aria-hidden="true">' + (AW_ICON[w.key] || '★') + '</div><div class="aw-body"><div class="aw-title">' + esc(w.title) + '</div><div class="aw-winner">' + esc(w.winners.join(' · ')) + '</div><div class="aw-desc">' + esc(w.desc) + '</div></div></div>';
     }).join('') + '</div>';
   }
   function board(team, list){
@@ -374,10 +430,11 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
         '<div class="bp-sub">' + esc(countsLine(a.team, m)) + '</div><div class="bp-sub">' + esc(leaveLine(m)) + '</div></div>';
     }).join('');
     var cls = a.eligibleMonths === mc ? 'ep-full' : a.eligibleMonths ? 'ep-part' : 'ep-none';
-    return '<div class="bp-card" data-agent="' + esc(a.name) + '"><div class="bp-head">' + avatar(a, 'bp-av', 'background:' + grad(i)) + '<div class="bp-info"><div class="bp-name">' + esc(a.name) + '</div>' +
+    return '<div class="bp-card" style="--i:' + i + '" data-agent="' + esc(a.name) + '"><div class="bp-head">' + avatar(a, 'bp-av', 'background:' + grad(i)) + '<div class="bp-info"><div class="bp-name">' + esc(a.name) + '</div>' +
       '<div class="bp-meta"><span class="' + (a.team === 'chat' ? 'chip-chat' : 'chip-calls') + ' pod-chip">' + (a.team === 'chat' ? 'Chat' : 'Calls') + '</span><span class="ep ' + cls + '">' + a.eligibleMonths + '/' + mc + ' Eligible</span>' + (a.inBonus ? '' : '<span class="ep ep-none">Not in the bonus this quarter</span>') + '</div></div>' +
       '<div class="bp-qtotal"><div class="bp-qval">' + a.total + '</div><span class="bp-qsub">' + esc(D.label.split(' ')[0]) + ' Total</span></div></div>' +
-      '<div class="bp-prog">' + prog + '</div><div class="bp-months">' + months + '</div><div class="bp-insight">💡 ' + esc(a.insight) + '</div></div>';
+      '<div class="bp-prog">' + prog + '</div><div class="bp-months">' + months + '</div><div class="bp-insight">💡 ' + esc(a.insight) + '</div>' +
+      '<div class="bp-ai"><button type="button" class="bp-ai-btn" data-coach="' + esc(a.name) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>' + (a.self || !D.isAdmin ? 'Ask your AI coach' : 'AI coach for ' + esc(a.name.split(' ')[0])) + '</button><div class="bp-ai-slot" aria-live="polite"></div></div></div>';
   }
   function blueprint(){
     var list = D.blueprints || [];
@@ -404,12 +461,32 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
     }
     document.title = 'T1 CS Stars · ' + D.label + ' Hall of Fame';
     hero(); champ.innerHTML = champions(); bp.innerHTML = blueprint();
+    if (D.status === 'confirmed') confetti();
     document.getElementById('btn-blueprint').style.display = '';
     var sel = document.getElementById('agent-select');
     if (sel) sel.addEventListener('change', function(){ var v = this.value; document.querySelectorAll('.bp-card').forEach(function(c){ c.style.display = !v || c.dataset.agent === v ? '' : 'none'; }); });
     var h = (window.location.hash || '').replace('#', '');
     if (h === 'blueprint') switchTab('blueprint', document.getElementById('btn-blueprint'));
   }
+  // Batch 175: AI coach on a Growth Blueprint card (an agent only ever gets their own; no amounts).
+  document.addEventListener('click', function(e){
+    var btn = e.target.closest && e.target.closest('.bp-ai-btn'); if (!btn) return;
+    var slot = btn.parentNode.querySelector('.bp-ai-slot'), name = btn.getAttribute('data-coach');
+    btn.disabled = true; var label = btn.lastChild.textContent; btn.lastChild.textContent = 'Thinking...';
+    slot.innerHTML = '<div class="bp-ai-out" aria-busy="true"><div class="skel" style="width:75%"></div><div class="skel" style="width:95%"></div><div class="skel" style="width:60%"></div></div>';
+    fetch('/api/hof/coach', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name }) })
+      .then(function(r){ return r.json(); }).then(function(j){
+        if (!j.success) throw new Error(j.error || 'The AI coach is not available right now.');
+        var c = j.coach || {};
+        slot.innerHTML = '<div class="bp-ai-out"><div class="bp-ai-h">' + esc(c.headline) + '</div>' +
+          ((c.wins || []).length ? '<div class="bp-ai-k">What went well</div><ul>' + c.wins.map(function(w){ return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') +
+          ((c.focus || []).length ? '<div class="bp-ai-k">Daily habits to try</div><ul>' + c.focus.map(function(f){ return '<li><b>' + esc(f.metric) + ':</b> ' + esc(f.action) + '</li>'; }).join('') + '</ul>' : '') +
+          (c.goal ? '<div class="bp-ai-goal">🎯 <b>Next month:</b> ' + esc(c.goal) + '</div>' : '') +
+          '<div class="bp-ai-note">Written by AI from your own numbers on this page. Your team lead has the final word.</div></div>';
+        btn.lastChild.textContent = 'Ask again';
+      }).catch(function(err){ slot.innerHTML = '<div class="bp-ai-out" role="alert">' + esc(err.message) + '</div>'; btn.lastChild.textContent = label; })
+      .then(function(){ btn.disabled = false; });
+  });
   function load(){
     fetch('/api/hof', { credentials: 'include' }).then(function(r){ return r.json(); }).then(function(j){
       if (!j.success) throw new Error(j.error || 'Could not load');
