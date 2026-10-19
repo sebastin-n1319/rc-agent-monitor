@@ -2235,19 +2235,18 @@ app.post('/api/admin/notices/compose', requireAdmin, rateLimit(20, 60000), notic
   const b = req.body || {};
   const gist = String(b.gist || '').trim().slice(0, 1200);
   if (gist.length < 6) { const e = new Error('Write a few words about what you want to announce.'); e.status = 400; throw e; }
-  const cats = notices.CATEGORIES.map(c => c.key + ' (' + c.label + ')').join(', ');
-  const system = 'You write short internal announcements for the T1 customer support team at Adit (dental, optometry and other practice software). The reader is a support agent or team lead reading a notification. '
-    + 'Turn the sender\'s rough notes into a clear announcement. Rules: plain, warm and direct; short sentences; say what changed or what to do, and by when if the notes say so; do not invent facts, dates, names, links or numbers that are not in the notes; no emojis; never use em dashes or en dashes (use commas, periods or parentheses). '
-    + 'The title is at most 80 characters. The body is at most 480 characters, 1 to 4 short sentences, no markdown. '
-    + 'Choose the category key from: ' + cats + '. Choose audience from: all, agents, admins (use all unless the notes clearly address one group). Set urgent true only if the notes say it is urgent or time critical. '
-    + 'Return JSON only: {"title": string, "body": string, "category": string, "audience": string, "urgent": boolean}.';
-  const user = 'Notes from the sender:\n' + gist + (b.tone ? '\nTone: ' + String(b.tone).slice(0, 40) : '') + (b.audience ? '\nIntended audience: ' + String(b.audience).slice(0, 20) : '');
-  const r = await ai.bestJSON({ system, user, maxTokens: 700, feature: 'analyze', timeoutMs: 45000 });
+  // Batch 179: the writer knows the tool guide, the live Hall of Fame and the product; it can also revise a draft.
+  const { agentNames } = await deskLifecycleAgentRoster().catch(() => ({ agentNames: {} }));
+  const r = { json: await require('./lib/notice-compose').compose({ ai, notices, gist, audience: b.audience ? String(b.audience).slice(0, 20) : '', tone: b.tone ? String(b.tone).slice(0, 40) : '',
+    previous: b.previous, instruction: b.instruction ? String(b.instruction).slice(0, 300) : '', hofView: require('./lib/bonus').hofView, agentNames }) };
   const j = r.json || {};
   const tidy = (s, n) => String(s || '').replace(/[\u2014\u2013]/g, ',').replace(/\s+/g, ' ').trim().slice(0, n);
   const catKeys = notices.CATEGORIES.map(c => c.key);
   if (!tidy(j.title, 140) || !tidy(j.body, 600)) { const e = new Error('The AI did not return a usable draft. Try adding a little more detail.'); e.status = 502; throw e; }
-  res.json({ success: true, draft: { title: tidy(j.title, 140), body: tidy(j.body, 600), category: catKeys.includes(j.category) ? j.category : 'general', audience: ['all', 'agents', 'admins'].includes(j.audience) ? j.audience : 'all', urgent: j.urgent === true } });
+  const tidyBody = (x) => String(x || '').replace(/[\u2014\u2013]/g, ',').replace(/(Rs\.?|\u20b9|INR)\s?[\d,]+/gi, '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 600);
+  const link = String(j.link || '').trim();
+  res.json({ success: true, draft: { title: tidy(j.title, 140), body: tidyBody(j.body), category: catKeys.includes(j.category) ? j.category : 'general', audience: ['all', 'agents', 'admins'].includes(j.audience) ? j.audience : 'all', urgent: j.urgent === true,
+    link: link === 'app:hof' || /^https:\/\//.test(link) ? link.slice(0, 200) : '' } });
 }));
 app.delete('/api/admin/notices/:id', requireAdmin, noticeWrap(async (req, res) => { res.json({ success: true, removed: await notices.deleteNotice(req.params.id) }); }));
 

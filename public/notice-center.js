@@ -72,6 +72,15 @@
       } catch (e) {}
       return;
     }
+    if (i.link === 'app:hof') {
+      S.open = false; draw();
+      try {
+        if (typeof isAdminRole === 'function' && isAdminRole() && typeof currentViewMode !== 'undefined' && currentViewMode !== 'agent' && typeof applyView === 'function') applyView('agent');
+        var hb = document.querySelector('[onclick^="sbAgent(\'hall\'"]');
+        if (typeof sbAgent === 'function') sbAgent('hall', hb); else window.location.href = '/hall-of-fame.html';
+      } catch (e) { window.location.href = '/hall-of-fame.html'; }
+      return;
+    }
     if (i.link === 'app:audits') {
       S.open = false; draw();
       if (!(window.TA && window.TA.me && window.TA.me.access)) return;
@@ -93,6 +102,120 @@
     api('/api/notices/prefs', { method: 'PUT', body: { muted: m } }).catch(function () {});
   }
 
+  // Batch 179: the announcement composer is a proper dialog (the bell panel was too small to use).
+  // Tell the AI what you want ("send an announcement about HOF"); it writes the whole thing from the tool guide,
+  // the live Hall of Fame and the product brief. Refine it with one click, check the preview, then post.
+  var STARTS = [
+    ['Hall of Fame is live', 'Send an announcement that the Hall of Fame for this quarter is live, who leads it, and that agents can open their Growth Blueprint and AI coach'],
+    ['Bonus numbers confirmed', 'Announce that this quarter\'s Hall of Fame points and slabs are validated and confirmed'],
+    ['New tool feature', 'Announce the newest feature in the tool and how agents use it'],
+    ['Process change', 'Announce a process change for T1 agents: '],
+    ['Assessment reminder', 'Remind agents to finish their pending assessments before the due date'],
+  ];
+  var REFINE = [['Shorter', 'Make it shorter and punchier'], ['More celebratory', 'Make it warmer and more celebratory'], ['More formal', 'Make it more formal'], ['Add next steps', 'End with clear next steps for the reader']];
+  var DESTS = [['', 'No link'], ['app:hof', 'Hall of Fame'], ['app:updates', 'Updates page'], ['custom', 'Custom link...']];
+  function openComposer() {
+    if (document.getElementById('ncx-ov')) return;
+    S.open = false; draw(); loadPosted();
+    var last = document.activeElement, draft = null;
+    var gist = el('textarea', { class: 'ncx-gist', maxlength: 1200, rows: '3', placeholder: 'e.g. "send an announcement about HOF", or "new rule: stay in full screen during assessments from Monday"', 'aria-label': 'What do you want to announce?' });
+    var aiStat = el('div', { class: 'ncx-stat', role: 'status', 'aria-live': 'polite' });
+    var aiBtn = el('button', { type: 'button', class: 'ncx-ai' }, ['Write it with AI']);
+    var title = el('input', { type: 'text', maxlength: 140, placeholder: 'Title', 'aria-label': 'Title' });
+    var body = el('textarea', { maxlength: 600, rows: '6', placeholder: 'What should people know?', 'aria-label': 'Message' });
+    var tCount = el('span', { class: 'ncx-count' }), bCount = el('span', { class: 'ncx-count' });
+    var aud = el('select', { 'aria-label': 'Audience' }, [['all', 'Everyone'], ['agents', 'Agents only'], ['admins', 'Admins only'], ['people', 'Chosen people']].map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+    var people = el('input', { type: 'text', placeholder: 'Emails, separated by commas', 'aria-label': 'People', style: 'display:none' });
+    var cat = el('select', { 'aria-label': 'Category' }, S.cats.map(function (c) { return el('option', { value: c.key, text: c.label }); }));
+    var dest = el('select', { 'aria-label': 'Link' }, DESTS.map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+    var custom = el('input', { type: 'text', placeholder: 'https://...', 'aria-label': 'Custom link', style: 'display:none' });
+    var exp = el('select', { 'aria-label': 'Expires' }, [['', 'No expiry'], ['3', 'Expires in 3 days'], ['7', 'Expires in 7 days'], ['14', 'Expires in 14 days'], ['30', 'Expires in 30 days']].map(function (o) { return el('option', { value: o[0], text: o[1] }); }));
+    var urgent = el('button', { type: 'button', role: 'switch', class: 'ncx-switch', 'aria-checked': 'false' }, [el('span', { class: 'trk', 'aria-hidden': 'true' }), 'Urgent', el('small', { text: 'shows even if muted' })]);
+    var refine = el('div', { class: 'ncx-refine' });
+    var prev = el('div', { class: 'ncx-prev' });
+    var recent = el('div', { class: 'ncx-recent' });
+    var postMsg = el('div', { class: 'ncx-stat', role: 'status', 'aria-live': 'polite' });
+    var post = el('button', { type: 'button', class: 'ncx-post' }, ['Post announcement']);
+    function link() { return dest.value === 'custom' ? custom.value.trim() : dest.value; }
+    function paintPreview() {
+      tCount.textContent = title.value.length + '/140'; bCount.textContent = body.value.length + '/600';
+      prev.textContent = '';
+      prev.appendChild(el('div', { class: 'ncx-ph' }, ['How it will look']));
+      prev.appendChild(el('div', { class: 'nc-item unread' + (urgent.getAttribute('aria-checked') === 'true' ? ' urgent' : '') }, [
+        el('div', { class: 'nc-t', text: title.value || 'Your title' }), el('div', { class: 'nc-b', text: body.value || 'Your message appears here.' }),
+        el('div', { class: 'nc-m' }, [el('span', { class: 'nc-chip', text: catLabel(cat.value) }), el('span', { text: 'just now' }), link() ? el('span', { text: 'Opens: ' + (dest.options[dest.selectedIndex].text === 'Custom link...' ? link() : dest.options[dest.selectedIndex].text) }) : null])]));
+      prev.appendChild(el('div', { class: 'ncx-ph sm', text: 'Sent to: ' + aud.options[aud.selectedIndex].text + (exp.value ? ', ' + exp.options[exp.selectedIndex].text.toLowerCase() : '') }));
+    }
+    function paintRecent() {
+      recent.textContent = '';
+      if (!S.posted.length) return;
+      recent.appendChild(el('div', { class: 'ncx-ph' }, ['Your recent announcements']));
+      S.posted.slice(0, 6).forEach(function (p) {
+        recent.appendChild(el('div', { class: 'ncx-rec' }, [el('span', { text: p.title }), el('em', { text: p.reads + ' read' }),
+          el('button', { type: 'button', class: 'nc-link', text: 'Delete', 'aria-label': 'Delete ' + p.title, onclick: function () { if (!window.confirm('Delete "' + p.title + '"? It disappears for everyone.')) return; api('/api/admin/notices/' + p.id, { method: 'DELETE' }).then(function () { return Promise.all([load(), loadPosted()]); }).then(paintRecent).catch(function () {}); } })]));
+      });
+    }
+    function setDraft(d) {
+      title.value = d.title || ''; body.value = d.body || '';
+      if (d.category && S.cats.some(function (c) { return c.key === d.category; })) cat.value = d.category;
+      if (aud.value !== 'people' && d.audience) aud.value = d.audience;
+      urgent.setAttribute('aria-checked', d.urgent ? 'true' : 'false');
+      if (d.link) { if (DESTS.some(function (x) { return x[0] === d.link; })) { dest.value = d.link; custom.style.display = 'none'; } else { dest.value = 'custom'; custom.value = d.link; custom.style.display = ''; } }
+      draft = { title: title.value, body: body.value };
+      refine.textContent = '';
+      REFINE.forEach(function (r) { refine.appendChild(el('button', { type: 'button', class: 'ncx-chip', text: r[0], onclick: function () { run(r[1]); } })); });
+      paintPreview();
+    }
+    function run(instruction) {
+      var g = gist.value.trim();
+      if (g.length < 6 && !instruction) { aiStat.textContent = 'Write a few words first, or pick a starting point.'; gist.focus(); return; }
+      aiBtn.disabled = true; aiBtn.classList.add('busy'); aiBtn.lastChild.textContent = instruction ? 'Rewriting...' : 'Writing...'; aiStat.textContent = '';
+      var bodyReq = { gist: g || 'Rewrite the current draft', audience: aud.value };
+      if (instruction) { bodyReq.instruction = instruction; bodyReq.previous = { title: title.value, body: body.value }; }
+      api('/api/admin/notices/compose', { method: 'POST', body: bodyReq }).then(function (r) { setDraft(r.draft || {}); aiStat.textContent = 'Drafted from the tool guide' + (/hof|hall|fame|bonus|award/i.test(g) ? ' and the live Hall of Fame' : '') + '. Check it, edit anything, then post.'; })
+        .catch(function (e) { aiStat.textContent = e.message; })
+        .then(function () { aiBtn.disabled = false; aiBtn.classList.remove('busy'); aiBtn.lastChild.textContent = 'Write it again'; });
+    }
+    aiBtn.addEventListener('click', function () { run(''); });
+    gist.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) run(''); });
+    [title, body, cat, exp, custom].forEach(function (n) { n.addEventListener('input', paintPreview); n.addEventListener('change', paintPreview); });
+    aud.addEventListener('change', function () { people.style.display = aud.value === 'people' ? '' : 'none'; paintPreview(); });
+    dest.addEventListener('change', function () { custom.style.display = dest.value === 'custom' ? '' : 'none'; paintPreview(); });
+    urgent.addEventListener('click', function () { urgent.setAttribute('aria-checked', urgent.getAttribute('aria-checked') === 'true' ? 'false' : 'true'); paintPreview(); });
+    post.addEventListener('click', function () {
+      if (!title.value.trim()) { postMsg.textContent = 'Add a title.'; title.focus(); return; }
+      if (dest.value === 'custom' && !/^https:\/\//.test(custom.value.trim())) { postMsg.textContent = 'A custom link must start with https://'; custom.focus(); return; }
+      post.disabled = true; postMsg.textContent = '';
+      api('/api/admin/notices', { method: 'POST', body: { title: title.value, body: body.value, link: link(), audience: aud.value, category: cat.value, urgent: urgent.getAttribute('aria-checked') === 'true',
+        expiresInDays: Number(exp.value) || 0, people: people.value.split(/[,\s;]+/).filter(Boolean) } })
+        .then(function () { close(); if (typeof showToast === 'function') showToast('Announcement posted', 'success'); return Promise.all([load(), loadPosted()]); })
+        .catch(function (e) { postMsg.textContent = e.message; post.disabled = false; });
+    });
+    var starts = el('div', { class: 'ncx-starts' }, STARTS.map(function (s) { return el('button', { type: 'button', class: 'ncx-chip', text: s[0], onclick: function () { gist.value = s[1]; if (/: $/.test(s[1])) gist.focus(); else run(''); } }); }));
+    var dlg = el('div', { class: 'ncx', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'ncx-h' }, [
+      el('div', { class: 'ncx-hd' }, [el('div', null, [el('h2', { id: 'ncx-h', text: 'New announcement' }), el('p', { text: 'Tell the AI what you want to say. It knows the tool, the T1 process, the products and the live Hall of Fame, and writes the whole announcement for you to check.' })]),
+        el('button', { type: 'button', class: 'ncx-x', 'aria-label': 'Close', onclick: function () { close(); } }, ['×'])]),
+      el('div', { class: 'ncx-body' }, [
+        el('div', { class: 'ncx-main' }, [
+          el('label', { class: 'ncx-l', text: 'What do you want to announce?' }), gist, starts,
+          el('div', { class: 'ncx-row' }, [aiBtn, aiStat]), refine,
+          el('div', { class: 'ncx-sep' }),
+          el('label', { class: 'ncx-l' }, ['Title ', tCount]), title,
+          el('label', { class: 'ncx-l' }, ['Message ', bCount]), body,
+          el('div', { class: 'ncx-grid' }, [el('label', { class: 'ncx-f' }, ['Audience', aud]), el('label', { class: 'ncx-f' }, ['Category', cat]), el('label', { class: 'ncx-f' }, ['Link', dest]), el('label', { class: 'ncx-f' }, ['Expiry', exp])]),
+          people, custom, urgent]),
+        el('aside', { class: 'ncx-side' }, [prev, recent])]),
+      el('div', { class: 'ncx-ft' }, [postMsg, el('button', { type: 'button', class: 'ncx-cancel', text: 'Cancel', onclick: function () { close(); } }), post])]);
+    aiBtn.insertBefore(el('span', { class: 'ncx-spark', 'aria-hidden': 'true' }), aiBtn.firstChild);
+    var ov = el('div', { id: 'ncx-ov', class: 'ncx-ov', onclick: function (e) { if (e.target === ov) close(); } }, [dlg]);
+    function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close(); } else if (e.key === 'Tab') { var f = dlg.querySelectorAll('button:not([disabled]),input:not([style*="none"]),textarea,select'); if (!f.length) return; var a = f[0], z = f[f.length - 1]; if (e.shiftKey && document.activeElement === a) { e.preventDefault(); z.focus(); } else if (!e.shiftKey && document.activeElement === z) { e.preventDefault(); a.focus(); } } }
+    function close() { document.removeEventListener('keydown', onKey, true); ov.remove(); document.body.classList.remove('ncx-lock'); if (last && last.focus) try { last.focus(); } catch (e) {} }
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(ov); document.body.classList.add('ncx-lock');
+    paintPreview(); paintRecent();
+    var t = setInterval(function () { if (!ov.isConnected) return clearInterval(t); paintRecent(); }, 1500); setTimeout(function () { clearInterval(t); }, 6000);
+    setTimeout(function () { gist.focus(); }, 30);
+  }
   function formBox() {
     var f = {};
     function fld(name, node) { f[name] = node; return node; }
@@ -186,8 +309,8 @@
       g.items.forEach(function (i) { nodes.push(itemNode(i)); });
     });
     var body = el('div', { class: 'nc-list' }, nodes.length ? nodes : [el('div', { class: 'nc-empty', text: S.err ? 'Could not load notifications. Retrying soon.' : 'Nothing new. You are all caught up.' })]);
-    var foot = S.admin ? el('div', { class: 'nc-foot' }, [el('button', { class: 'nc-btn', type: 'button', text: S.showForm ? 'Close form' : 'New announcement', onclick: function () { S.showForm = !S.showForm; if (S.showForm) loadPosted(); draw(); } })]) : null;
-    [top, mute, stale, S.admin && S.showForm ? formBox() : null, S.admin && S.showForm ? postedBox() : null, body, foot].forEach(function (n) { if (n) panel.appendChild(n); });
+    var foot = S.admin ? el('div', { class: 'nc-foot' }, [el('button', { class: 'nc-btn', type: 'button', text: 'New announcement', onclick: function () { openComposer(); } })]) : null;
+    [top, mute, stale, body, foot].forEach(function (n) { if (n) panel.appendChild(n); });
   }
 
   function toggle(force) {
@@ -226,5 +349,5 @@
     }, 1000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  window.ToolNotices = { refresh: load, open: function () { toggle(true); } };
+  window.ToolNotices = { refresh: load, open: function () { toggle(true); }, compose: openComposer };
 })();
