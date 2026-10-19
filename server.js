@@ -603,6 +603,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     assessments.purgePreviews().catch(() => {});
     const studio = require('./lib/assess-studio'); studio.setDB(db, assessments); await studio.initSchema();
     const builder = require('./lib/assess-builder'); builder.setDB(db, assessments, studio); await builder.initSchema(); // Batch 180
+    const quality = require('./lib/assess-quality'); quality.setDB(db, assessments, builder, studio); await quality.initSchema(); // Batch 181
     console.log('📝 Assessments schema ready');
   } catch(e) { log.error('assessments_init_failed', e); console.error('assessments_init_failed', e); }
   // Session 63: access requests, and the one-time copy of everyone who
@@ -2364,8 +2365,31 @@ app.put('/api/assess/admin/questions/:id/image', ...RV, express.raw({ type: () =
   await assessments.setQuestionImage(req.params.id, Buffer.isBuffer(req.body) ? req.body : null, String(req.get('content-type') || '').split(';')[0]); res.json({ success: true });
 }));
 app.delete('/api/assess/admin/questions/:id/image', ...RV, assessWrap(async (req, res) => { await assessments.setQuestionImage(req.params.id, null); res.json({ success: true }); }));
+const assessQ = require('./lib/assess-quality'); // Batch 181
+const assessStats = (ids) => assessments.statsWithFlags(ids);
 app.get('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => {
-  res.json({ success: true, questions: await assessments.listQuestions({ q: req.query.q ? String(req.query.q).slice(0, 100) : '', tag: req.query.tag || '', status: req.query.status || '', type: req.query.type || '', module: req.query.module || '', source: req.query.source || '', difficulty: req.query.difficulty || '', from: req.query.from || '', to: req.query.to || '', used: req.query.used || '' }), facets: await assessments.questionFacets(), tags: await assessments.allTags() });
+  const queue = ['drafts', 'quality', 'stats', 'dupes', 'reported', 'unused'].includes(req.query.queue) ? req.query.queue : '';
+  const ids = queue ? await assessQ.queueIds(queue, assessStats) : undefined;
+  let list = await assessments.listQuestions({ q: req.query.q ? String(req.query.q).slice(0, 100) : '', tag: req.query.tag || '', status: req.query.status || '', type: req.query.type || '', module: req.query.module || '', source: req.query.source || '', difficulty: req.query.difficulty || '', from: req.query.from || '', to: req.query.to || '', used: req.query.used || '', ids });
+  list = assessQ.sortList(await assessQ.annotate(list, assessStats), String(req.query.sort || (queue === 'quality' || queue === 'reported' ? 'quality' : 'newest')));
+  res.json({ success: true, questions: list, facets: await assessments.questionFacets(), tags: await assessments.allTags(), queues: await assessQ.counts(assessStats) });
+}));
+app.post('/api/assess/admin/questions/quality', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessQ.aiCheck((req.body || {}).ids, require('./lib/ai'))) })));
+app.post('/api/assess/admin/questions/quality/dismiss', ...RV, assessWrap(async (req, res) => res.json({ success: true, n: await assessQ.dismissQuality((req.body || {}).ids) })));
+app.post('/api/assess/admin/questions/:id/apply-fix', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessQ.applyFix(req.params.id, req.session.email) })));
+app.post('/api/assess/admin/questions/:id/undo-fix', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessQ.undoFix(req.params.id, req.session.email) })));
+app.get('/api/assess/admin/questions/:id/insight', ...RV, assessWrap(async (req, res) => {
+  const list = await assessQ.annotate(await assessments.listQuestions({ ids: [Number(req.params.id)], status: '' }), assessStats);
+  res.json({ success: true, analysis: await assessQ.optionAnalysis(req.params.id), question: list[0] || null, family: await assessQ.family(req.params.id) });
+}));
+app.post('/api/assess/admin/questions/:id/resolve-reports', ...RV, assessWrap(async (req, res) => res.json({ success: true, n: await assessQ.resolveReports(req.params.id, req.body || {}, req.session.email) })));
+app.post('/api/assess/admin/questions/:id/variants', ...RV, rateLimit(15, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessQ.variants(req.params.id, (req.body || {}).count, require('./lib/ai'), req.session.email)) })));
+app.post('/api/assess/admin/questions/bulk-set', ...RV, assessWrap(async (req, res) => res.json({ success: true, changed: await assessQ.bulkSet((req.body || {}).ids, req.body || {}) })));
+app.get('/api/assess/admin/weak-topics', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessQ.weakTopics(assessStats)), ai: require('./lib/ai').anyConfigured() })));
+app.post('/api/assess/admin/weak-topics/build', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessQ.weakBuild(req.body || {}, req.session.email, require('./lib/ai'), assessStats)) })));
+app.post('/api/assess/attempts/:id/report', requireAuth, requireAssessAccess, rateLimit(30, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {};
+  res.json({ success: true, ...(await assessQ.report({ attemptId: req.params.id, idx: b.idx, email: req.session.email, reason: b.reason, note: b.note })) });
 }));
 app.post('/api/assess/admin/questions', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveQuestion(null, req.body, req.session.email) })));
 app.put('/api/assess/admin/questions/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, id: await assessments.saveQuestion(req.params.id, req.body, req.session.email) })));
@@ -2418,7 +2442,11 @@ app.post('/api/assess/admin/generate', ...RV, rateLimit(10, 60000), express.raw(
 const assessStudio = require('./lib/assess-studio');
 // ── Batch 180: Assessment Builder (document -> N questions for an audience -> parts on a release plan) ──
 const assessBuilder = require('./lib/assess-builder');
-app.get('/api/assess/admin/builds', ...RV, assessWrap(async (req, res) => res.json({ success: true, builds: await assessBuilder.list(), audiences: assessBuilder.audiences(), ai: require('./lib/ai').anyConfigured() })));
+app.get('/api/assess/admin/builds', ...RV, assessWrap(async (req, res) => res.json({ success: true, builds: await assessBuilder.list(), audiences: assessBuilder.audiences(), sources: await assessBuilder.sources(), ai: require('./lib/ai').anyConfigured() })));
+app.post('/api/assess/admin/builds/from-source', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => {
+  const b = req.body || {}; if (!b.fromBuild) { const er = new Error('Pick a document'); er.status = 400; throw er; }
+  res.json({ success: true, id: await assessBuilder.create({ ...b, fromBuild: Number(b.fromBuild) }, req.session.email, require('./lib/ai')) });
+}));
 app.post('/api/assess/admin/builds', ...RV, rateLimit(6, 60000), express.raw({ type: () => true, limit: '25mb' }), assessWrap(async (req, res) => {
   const q = req.query || {};
   if (!Buffer.isBuffer(req.body) || !req.body.length) { const er = new Error('Upload a document or paste some text'); er.status = 400; throw er; }

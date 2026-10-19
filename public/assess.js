@@ -378,12 +378,16 @@
     return { ctx: ctx, w: w, h: cssH };
   }
   function wrapLines(ctx, text, maxW) {
-    var words = String(text).split(/\s+/).filter(Boolean), lines = [], line = '';
-    words.forEach(function (wd) {
-      var test = line ? line + ' ' + wd : wd;
-      if (line && ctx.measureText(test).width > maxW) { lines.push(line); line = wd; } else line = test;
+    var lines = [];
+    String(text).split(/\n\s*\n/).forEach(function (para, pi) {
+      if (pi) lines.push('');
+      var line = '';
+      para.split(/\s+/).filter(Boolean).forEach(function (wd) {
+        var test = line ? line + ' ' + wd : wd;
+        if (line && ctx.measureText(test).width > maxW) { lines.push(line); line = wd; } else line = test;
+      });
+      if (line) lines.push(line);
     });
-    if (line) lines.push(line);
     return lines;
   }
   function drawText(c, text, opts) {
@@ -658,7 +662,7 @@
       });
     } }));
   }
-  var SECTIONS = [['', 'My assessments', 'clipboard'], ['manage', 'Assessments', 'layers'], ['build', 'Build from a doc', 'spark'], ['studio', 'AI Studio', 'bot'], ['reports', 'Reports', 'chart'], ['live', 'Live', 'eye'], ['bank', 'Question bank', 'list'], ['access', 'Access', 'shield']];
+  var SECTIONS = [['', 'My assessments', 'clipboard'], ['manage', 'Assessments', 'layers'], ['studio', 'AI Studio', 'bot'], ['reports', 'Reports', 'chart'], ['live', 'Live', 'eye'], ['bank', 'Question bank', 'list'], ['access', 'Access', 'shield']];
   function renderNav(cur) {
     clear(nav);
     var scopedOnly = !me.reviewer && me.reviewTests && me.reviewTests.length;
@@ -674,7 +678,7 @@
     var sec = parts[0] || '', arg = parts[1];
     var scopedOnly = !me.reviewer && me.reviewTests && me.reviewTests.length;
     if (!me.reviewer && !(scopedOnly && (sec === 'manage' || sec === 'results' || sec === 'attempt'))) sec = '';
-    var top = { edit: 'manage', results: 'manage', attempt: 'manage', archived: 'manage', insights: 'reports' }[sec] || sec;
+    var top = { edit: 'manage', results: 'manage', attempt: 'manage', archived: 'manage', insights: 'reports', build: 'studio', weak: 'studio', scenario: 'studio' }[sec] || sec;
     renderNav(top);
     clear(main); main.focus({ preventScroll: true }); window.scrollTo(0, 0);
     if (sec === 'manage') return viewManage();
@@ -687,7 +691,9 @@
     if (sec === 'reports') return viewReports(hashQuery().get('tab') || 'overview');
     if (sec === 'archived') return viewArchived();
     if (sec === 'build') return arg ? viewBuild(Number(arg)) : viewBuildHome();
-    if (sec === 'studio') return arg ? viewStudio(Number(arg)) : viewStudioHome();
+    if (sec === 'studio') return arg === 'plan' ? viewStudioPlanner() : arg ? viewStudio(Number(arg)) : viewStudioHub();
+    if (sec === 'weak') return viewWeak();
+    if (sec === 'scenario') return viewScenario();
     if (sec === 'access') return viewAccess();
     return viewHome();
   }
@@ -828,7 +834,7 @@
         var ans = h('div', { class: 'ans' });
         (it.chosen && it.chosen.length ? it.chosen : ['No answer']).forEach(function (c) { var ok = it.correctAnswer.indexOf(c) >= 0; ans.appendChild(h('div', { class: ok ? 'right' : 'wrong' }, [icon(ok ? 'check' : 'x', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Your answer: ' }), c])])); });
         if (!it.correct) it.correctAnswer.forEach(function (c) { if (!(it.chosen || []).includes(c)) ans.appendChild(h('div', { class: 'right' }, [icon('check', 'sm'), h('span', null, [h('span', { class: 'muted', text: 'Correct answer: ' }), c])])); });
-        holder.appendChild(h('div', { class: 'card item' }, [h('div', { class: 'hd' }, [h('b', { text: 'Q' + (i + 1) }), it.correct ? pill('Correct', 'ok') : pill(it.late ? 'Timed out' : 'Wrong', 'bad')]), h('div', { class: 'q', text: it.prompt }), ans,
+        holder.appendChild(h('div', { class: 'card item' }, [h('div', { class: 'hd' }, [h('b', { text: 'Q' + (i + 1) }), it.correct ? pill('Correct', 'ok') : pill(it.late ? 'Timed out' : 'Wrong', 'bad'), h('span', { class: 'spacer' }), it.idx != null ? h('button', { class: 'linkbtn', type: 'button', onclick: function (e) { var b = e.currentTarget; var dlg = openDrawer('Report a problem', reportForm(attemptId, it.idx, null, function (sent) { dlg.close(); if (sent) { b.disabled = true; b.lastChild.textContent = 'Reported'; } }), null); } }, [icon('flag', 'sm'), 'Report']) : null]), h('div', { class: 'q', text: it.prompt }), ans,
           it.explanation ? h('p', { class: 'small muted', style: 'margin:10px 0 0', text: 'Why: ' + it.explanation }) : null]));
       });
     }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
@@ -1574,6 +1580,15 @@
       var savedEl = h('span', { class: 'saved', 'aria-live': 'polite' });
       var foot = h('div', { class: 'in' });
       exam.appendChild(h('div', { class: 'xfoot' }, [foot]));
+      // Batch 181: report a problem with this question (the clock keeps running)
+      function openExamReport() {
+        var old = exam.querySelector('.rep-pop'); if (old) { old.remove(); return; }
+        var pop = h('div', { class: 'rep-pop' });
+        pop.appendChild(reportForm(attemptId, q.idx, token, function (sent) { pop.remove(); if (sent && repBtn) { repBtn.disabled = true; repBtn.lastChild.textContent = 'Reported'; } }));
+        exam.appendChild(pop);
+        var f = pop.querySelector('button'); if (f) f.focus();
+      }
+      var repBtn = q.kind !== 'explain' ? h('button', { class: 'btn lg ghost repbtn', type: 'button', title: 'Report a problem with this question. The clock keeps running.', onclick: openExamReport }, [icon('warn', 'sm'), h('span', { class: 'lbl', text: 'Report' })]) : null;
 
       if (bank) {
         var hasPrev = false, nextOpenIdx = -1;
@@ -1590,7 +1605,7 @@
         clear(primary);
         if (nextOpenIdx >= 0) { primary.appendChild(document.createTextNode('Next')); primary.appendChild(icon('arrowR', 'sm')); primary.onclick = function () { move('next'); }; }
         else { primary.appendChild(icon('list', 'sm')); primary.appendChild(document.createTextNode('Review answers')); primary.onclick = function () { move('review'); }; }
-        foot.appendChild(prevBtn); foot.appendChild(flagBtn); foot.appendChild(h('span', { class: 'spacer' })); foot.appendChild(savedEl); foot.appendChild(primary);
+        foot.appendChild(prevBtn); foot.appendChild(flagBtn); if (repBtn) foot.appendChild(repBtn); foot.appendChild(h('span', { class: 'spacer' })); foot.appendChild(savedEl); foot.appendChild(primary);
         afterSelect = function () {
           savedEl.textContent = 'Saving…'; savedEl.className = 'saved ing';
           var nb = center.querySelector('.qn.cur'); if (nb) nb.classList.toggle('ans', hasSel());
@@ -1615,7 +1630,7 @@
         primary.disabled = true;
         primary.onclick = function () { send(false); };
         foot.appendChild(h('span', { class: 'hint' }, (q.kind === 'explain' || q.type === 'matching') ? ['Answers lock when you submit.'] : [h('span', { class: 'kbd', text: '1' }), ' to ', h('span', { class: 'kbd', text: String(q.options.length) }), ' to choose, ', h('span', { class: 'kbd', text: 'Enter' }), ' to submit. Answers lock when you submit.']));
-        foot.appendChild(h('span', { class: 'spacer' })); foot.appendChild(primary);
+        if (repBtn) foot.appendChild(repBtn); foot.appendChild(h('span', { class: 'spacer' })); foot.appendChild(primary);
         qState.canSubmit = function () { return !primary.disabled; };
         qState.submit = send;
       }
@@ -3082,8 +3097,9 @@
   }
   function viewBuildHome() {
     main.appendChild(pageHead('Build from a document', 'Upload your KB articles or any document, say who the assessment is for and how many questions you want. The AI writes exactly that many, split into parts if you like. You review, then release the parts together or one after another.',
-      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Advanced: AI Studio'])]));
-    var o = { audience: 'newjoinee', audienceNote: '', level: 'foundation', total: 25, partSize: 25, types: ['single', 'multi', 'truefalse'], focus: '', avoid: '', order: 'document', title: '' };
+      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'More AI tools'])]));
+    var o = { audience: 'newjoinee', audienceNote: '', level: 'foundation', total: 25, partSize: 25, types: ['single', 'multi', 'truefalse'], focus: '', avoid: '', order: 'document', title: '', style: 'standard', perCase: 3, channel: 'both' };
+    if (buildPreset) { Object.assign(o, buildPreset); buildPreset = null; }
     var wrap = h('div', { class: 'bld-wrap' }); main.appendChild(wrap);
     var form = h('div', { class: 'card pad bld-form' }); wrap.appendChild(form);
     var side = h('div', { class: 'card pad stack bld-list' }, [h('h2', { text: 'Your builds' }), h('p', { class: 'small muted', style: 'margin:0', text: 'Each build is a named question set. Open one to review, add more or release it.' })]);
@@ -3144,8 +3160,9 @@
     var focusIn = h('input', { class: 'inp', maxlength: '600', placeholder: 'Optional, e.g. "Engage texting, appointment reminders, transfers to VoIP"' });
     var avoidIn = h('input', { class: 'inp', maxlength: '600', placeholder: 'Optional, e.g. "billing, anything for T2"' });
     var titleIn = h('input', { class: 'inp', maxlength: '140', placeholder: 'e.g. New joinee starter: KB basics' });
-    var more = h('details', { class: 'bld-more' }, [h('summary', { text: 'More options (question types, focus, title)' }), h('div', { class: 'stack' }, [field('Question types', typeBox), field('Focus on', focusIn), field('Leave out', avoidIn), field('Name', titleIn, 'Used for the question set and the assessments.')])]);
+    var more = h('details', { class: 'bld-more' }, [h('summary', { text: 'More options (style, question types, focus, title)' }), h('div', { class: 'stack' }, [field('Question style', chipsPick(STYLE_OPTS, o.style, false, function (v) { o.style = v; })), field('Calls or chats', chipsPick([['both', 'Both'], ['call', 'Calls'], ['chat', 'Chats']], o.channel, false, function (v) { o.channel = v; }), 'Used by Real moments and Customer cases.'), field('Question types', typeBox), field('Focus on', focusIn), field('Leave out', avoidIn), field('Name', titleIn, 'Used for the question set and the assessments.')])]);
     form.appendChild(step(4, 'Anything else?', null, [more]));
+    if (o.style !== 'standard') more.open = true;
     var err = h('div'), goBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), 'Write the questions']);
     form.appendChild(h('div', { class: 'bld-go' }, [err, goBtn]));
     paintSum();
@@ -3225,7 +3242,7 @@
       B.parts.forEach(function (p) {
         var ap = p.questions.filter(function (q) { return q.status === 'approved'; }).length, open = openPart[p.n] !== false;
         var list = h('ol', { class: 'bld-qs', start: String((p.n - 1) * B.options.partSize + 1) });
-        p.questions.forEach(function (q, i) { list.appendChild(qRow(q)); });
+        var lastCase = null; p.questions.forEach(function (q) { list.appendChild(qRow(q, !!q.case && q.case !== lastCase)); lastCase = q.case; });
         holder.appendChild(h('div', { class: 'card bld-part' }, [
           h('div', { class: 'bld-part-hd' }, [h('button', { class: 'bld-part-t', type: 'button', 'aria-expanded': String(open), onclick: function () { openPart[p.n] = !open; draw(); } }, [icon(open ? 'arrowR' : 'arrowR', 'sm'), h('b', { text: B.parts.length > 1 ? 'Part ' + p.n + ' of ' + B.parts.length : 'All questions' }), h('span', { class: 'small muted', text: p.questions.length + ' questions · ' + ap + ' approved' })]),
             h('button', { class: 'btn sm ghost', type: 'button', disabled: ap === p.questions.length, onclick: function () { act('/bulk', { ids: p.questions.map(function (q) { return q.id; }), action: 'approve' }, 'Part ' + p.n + ' approved'); } }, [icon('check', 'sm'), 'Approve part'])]),
@@ -3237,7 +3254,8 @@
           h('button', { class: 'btn sm', type: 'button', onclick: function (e) { e.stopPropagation(); go('results/' + t.id); } }, [icon('chart', 'sm'), 'Results'])]);
       }))]));
     }
-    function qRow(q) {
+    function qRow(q, firstOfCase) {
+      var sc = splitCase(q.prompt);
       var TYPE = { single: 'One answer', multi: 'Select all', truefalse: 'True/False', ordering: 'Order', matching: 'Match' };
       var opts = q.type === 'ordering' ? h('ol', { class: 'bld-opts' }, q.correct.map(function (k) { return h('li', { class: showKey ? 'ok' : '', text: q.options[k] }); }))
         : q.type === 'matching' ? h('ul', { class: 'bld-opts' }, q.options.map(function (t, k) { return h('li', { text: t + (showKey ? '  →  ' + (q.matches[k] || '') : '') }); }))
@@ -3245,7 +3263,8 @@
       var row = h('li', { class: 'bld-q' + (q.status === 'approved' ? ' approved' : '') }, [
         h('div', { class: 'bld-q-hd' }, [pill(TYPE[q.type] || q.type), q.difficulty ? pill(q.difficulty, q.difficulty === 'hard' ? 'warn' : q.difficulty === 'easy' ? 'ok' : '') : null, q.section ? h('span', { class: 'bld-sec', text: q.section }) : null,
           h('span', { class: 'spacer' }), q.status === 'approved' ? pill('Approved', 'ok', true) : pill('Draft', '', true)]),
-        h('p', { class: 'bld-prompt', text: q.prompt }), opts,
+        sc && firstOfCase ? h('div', { class: 'bld-case' }, [h('b', { text: 'Customer case' }), h('p', { text: sc.scenario })]) : null,
+        h('p', { class: 'bld-prompt', text: sc ? sc.ask : q.prompt }), opts,
         showKey && q.explanation ? h('p', { class: 'bld-expl', text: q.explanation }) : null,
         h('div', { class: 'bld-q-acts' }, [
           h('button', { class: 'btn sm ' + (q.status === 'approved' ? 'ghost' : 'primary'), type: 'button', onclick: function () { act('/bulk', { ids: [q.id], action: q.status === 'approved' ? 'draft' : 'approve' }); } }, [icon(q.status === 'approved' ? 'x' : 'check', 'sm'), q.status === 'approved' ? 'Unapprove' : 'Approve']),
@@ -3325,7 +3344,304 @@
     load();
   }
 
-  function viewStudioHome() {
+  // ── Batch 181: AI Studio hub, case sets, weak topics ─────────────────
+  var buildPreset = null;
+  var STYLE_OPTS = [['standard', 'Straight questions', 'Clear knowledge checks'], ['situations', 'Real moments', 'Every question opens with a short call or chat moment'], ['cases', 'Customer cases', 'One case, 3 to 5 linked questions']];
+  function viewStudioHub() {
+    main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'What do you want to make?' }),
+      h('p', { text: 'Pick a tool. Each one ends the same way: you review the questions part by part, then release them as one assessment or several.' })]), h('div', { class: 'hero-art' }, [art('radar', 170)])]));
+    var TOOLS = [
+      { ic: 'doc', t: 'Build from a document', d: 'Upload KB articles or an SOP, pick who it is for and how many questions. Split into parts released a day or an hour apart.', cta: 'Start', fn: function () { go('build'); }, main: true },
+      { ic: 'chat', t: 'Customer case sets', d: 'A realistic call or chat with 3 to 5 linked questions, from the first reply to the right transfer.', cta: 'Write cases', fn: function () { go('scenario'); } },
+      { ic: 'chart', t: 'Fix weak topics', d: 'The topics your team scores lowest on, from real results. Write fresh questions that target the mistakes.', cta: 'See weak topics', fn: function () { go('weak'); } },
+      { ic: 'shield', t: 'Quality check', d: 'AI reviews questions for unclear wording, giveaway answers and wrong keys, and suggests a fix you apply in one click.', cta: 'Check the bank', fn: function () { bankFilter.queue = 'quality'; go('bank'); } },
+      { ic: 'copy', t: 'Variants', d: 'Reworded versions that test the same point, so shared answers stop working. Random pools draw one per family.', cta: 'Pick questions', fn: function () { bankFilter.queue = ''; go('bank'); setTimeout(function () { toast('Tick some questions, then choose Write variants'); }, 400); } },
+      { ic: 'layers', t: 'Document planner', d: 'The original studio: plan several assessments from one long document and chat with the AI about each.', cta: 'Open planner', fn: function () { go('studio/plan'); }, adv: true },
+    ];
+    var grid = h('div', { class: 'hub-grid stagger' });
+    TOOLS.forEach(function (t, i) {
+      grid.appendChild(h('button', { type: 'button', class: 'card hub-card' + (t.main ? ' main' : '') + (t.adv ? ' adv' : ''), style: '--i:' + i, onclick: t.fn }, [
+        h('span', { class: 'hub-ic' }, [icon(t.ic, 'lg')]), h('b', { text: t.t }), h('span', { class: 'hub-d', text: t.d }), h('span', { class: 'hub-cta' }, [t.cta, icon('arrowR', 'sm')])]));
+    });
+    main.appendChild(grid);
+    var row = h('div', { class: 'hub-row' }); main.appendChild(row);
+    var att = h('div', { class: 'card pad stack' }, [h('h2', { text: 'Needs attention in the bank' })]); row.appendChild(att);
+    var rec = h('div', { class: 'card pad stack' }, [h('h2', { text: 'Recent builds' })]); row.appendChild(rec);
+    api('/api/assess/admin/questions?queue=reported').then(function (j) {
+      var Q = j.queues || {}, any = false, lst = h('div', { class: 'att-list' });
+      QUEUES.forEach(function (x) { if (!x[0] || !Q[x[0]]) return; any = true; lst.appendChild(h('button', { type: 'button', class: 'att-row', onclick: function () { bankFilter.queue = x[0]; go('bank'); } }, [icon(x[2], 'sm'), h('span', { text: x[1] }), h('b', { text: String(Q[x[0]]) }), icon('arrowR', 'sm')])); });
+      att.appendChild(any ? lst : h('p', { class: 'small muted', style: 'margin:0', text: 'Nothing waiting. The bank looks healthy.' }));
+    }).catch(function (e) { att.appendChild(errBox(e.message)); });
+    api('/api/assess/admin/builds').then(function (j) {
+      if (!j.builds.length) { rec.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'Nothing yet. Your first build will show here.' })); return; }
+      var pl = h('div', { class: 'plist' });
+      j.builds.slice(0, 6).forEach(function (b) {
+        var tag = b.origin === 'weak' ? 'Weak topics' : b.style === 'cases' ? 'Cases' : b.style === 'situations' ? 'Real moments' : 'Document';
+        pl.appendChild(h('div', { class: 'click', onclick: function () { go('build/' + b.id); } }, [h('span', { class: 'ic-round' }, [icon(b.tests ? 'check' : 'doc', 'sm')]),
+          h('div', { class: 'who' }, [h('b', { text: b.title }), h('span', { text: tag + ' · ' + b.questions + ' questions · ' + fmtWhen(b.createdAt) })]),
+          b.status === 'writing' || b.status === 'queued' ? pill('Writing', 'accent', true) : b.tests ? pill(b.tests + ' released', 'ok', true) : pill('To review', 'accent', true)]));
+      });
+      rec.appendChild(pl);
+    }).catch(function (e) { rec.appendChild(errBox(e.message)); });
+  }
+
+  function audienceBox(AUDS, o, onLevel) {
+    var box = h('div', { class: 'bld-aud' });
+    function paint() {
+      clear(box);
+      AUDS.forEach(function (a) {
+        box.appendChild(h('button', { type: 'button', class: 'bld-acard' + (o.audience === a.key ? ' on' : ''), 'aria-pressed': String(o.audience === a.key), onclick: function () { o.audience = a.key; if (a.level && onLevel) onLevel(a.level); paint(); } }, [h('b', { text: a.label }), h('span', { text: a.guide })]));
+      });
+    }
+    paint();
+    return box;
+  }
+  function stepBox(n, title, sub, kids) { return h('section', { class: 'bld-step' }, [h('div', { class: 'bld-num', 'aria-hidden': 'true', text: String(n) }), h('div', { class: 'bld-body' }, [h('h3', { text: title }), sub ? h('p', { class: 'small muted', text: sub }) : null].concat(kids))]); }
+
+  function viewScenario() {
+    main.appendChild(pageHead('Customer case sets', 'Each case is a short call or chat with an Adit customer. Its questions follow the case in order: the first reply, what to check, what to tell them, when to transfer. Cases always stay together in one part.',
+      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('studio'); } }, [icon('arrowL', 'sm'), 'AI Studio'])]));
+    var o = { audience: 'newjoinee', audienceNote: '', level: 'foundation', channel: 'both', cases: 5, perCase: 3, casesPerPart: 0, focus: '', title: '', fromBuild: '' };
+    var form = h('div', { class: 'card pad bld-form', style: 'max-width:920px' }); main.appendChild(form);
+    var srcSel = h('select', { class: 'sel', 'aria-label': 'Document' }, [h('option', { value: '', text: 'Loading your documents...' })]);
+    var upl = h('button', { class: 'linkbtn', type: 'button', onclick: function () { buildPreset = { style: 'cases' }; go('build'); } }, [icon('upload', 'sm'), 'Upload a new document instead']);
+    form.appendChild(stepBox(1, 'Which document?', 'Cases are written from a document you already uploaded in Build from a document.', [srcSel, upl]));
+    var audWrap = h('div'), levelBox = h('div');
+    function paintLevels() { clear(levelBox); levelBox.appendChild(chipsPick(BUILD_LEVELS, o.level, false, function (v) { o.level = v; })); }
+    paintLevels();
+    var note = h('textarea', { class: 'ta', style: 'min-height:56px', maxlength: '600', placeholder: 'Optional: anything about them' });
+    form.appendChild(stepBox(2, 'Who is it for?', null, [audWrap, note, h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Level' }), levelBox])]));
+    var casesIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '1', max: '40', value: '5', 'aria-label': 'Number of cases' });
+    var sum = h('p', { class: 'bld-sum' });
+    var partBox = h('div');
+    function paint() {
+      o.cases = Math.max(1, Math.min(40, Number(casesIn.value) || 5));
+      var total = Math.min(200, o.cases * o.perCase), parts = o.casesPerPart ? Math.ceil(o.cases / o.casesPerPart) : 1;
+      sum.textContent = o.cases + ' case' + (o.cases === 1 ? '' : 's') + ' with ' + o.perCase + ' questions each: ' + total + ' questions' + (parts > 1 ? ' in ' + parts + ' parts of about ' + o.casesPerPart + ' cases.' : ' in one assessment.');
+    }
+    casesIn.addEventListener('input', paint);
+    partBox.appendChild(chipsPick([[0, 'One assessment'], [2, '2 cases a part'], [3, '3 cases a part'], [5, '5 cases a part']], o.casesPerPart, false, function (v) { o.casesPerPart = v; paint(); }));
+    form.appendChild(stepBox(3, 'How many cases?', null, [
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Channel' }), chipsPick([['both', 'Calls and chats'], ['call', 'Calls only'], ['chat', 'Chats only']], o.channel, false, function (v) { o.channel = v; })]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Cases' }), casesIn]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Per case' }), chipsPick([[2, '2 questions'], [3, '3 questions'], [4, '4 questions'], [5, '5 questions']], o.perCase, false, function (v) { o.perCase = v; paint(); })]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Split' }), partBox]), sum]));
+    var focusIn = h('input', { class: 'inp', maxlength: '600', placeholder: 'Optional, e.g. "reminders not sending, two-way texting, when to send to VoIP"' });
+    var titleIn = h('input', { class: 'inp', maxlength: '140', placeholder: 'e.g. Engage cases for new joinees' });
+    form.appendChild(stepBox(4, 'Anything else?', null, [field('Focus on', focusIn), field('Name', titleIn)]));
+    var err = h('div'), goBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), 'Write the cases']);
+    form.appendChild(h('div', { class: 'bld-go' }, [err, goBtn]));
+    paint();
+    api('/api/assess/admin/builds').then(function (j) {
+      audWrap.appendChild(audienceBox(j.audiences || [], o, function (lv) { o.level = lv; paintLevels(); }));
+      clear(srcSel);
+      if (!(j.sources || []).length) { srcSel.appendChild(h('option', { value: '', text: 'No documents yet. Upload one first.' })); srcSel.disabled = true; goBtn.disabled = true; return; }
+      j.sources.forEach(function (s) { srcSel.appendChild(h('option', { value: String(s.id), text: (s.sourceName || s.title) + ' · ' + fmtWhen(s.createdAt) })); });
+      if (!j.ai) err.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: 'AI is not configured on the server.' })]));
+    }).catch(function (e) { err.appendChild(errBox(e.message)); });
+    goBtn.addEventListener('click', function () {
+      clear(err);
+      if (!srcSel.value) { err.appendChild(errBox('Pick a document')); return; }
+      var total = Math.min(200, o.cases * o.perCase);
+      goBtn.disabled = true;
+      api('/api/assess/admin/builds/from-source', { method: 'POST', body: { fromBuild: Number(srcSel.value), style: 'cases', perCase: o.perCase, channel: o.channel, total: total, partSize: o.casesPerPart ? Math.min(total, o.casesPerPart * o.perCase) : total,
+        audience: o.audience, audienceNote: note.value.trim(), level: o.level, focus: focusIn.value.trim(), title: titleIn.value.trim() || '', types: ['single', 'multi', 'truefalse'], order: 'document', origin: 'scenario' } })
+        .then(function (r) { go('build/' + r.id); })
+        .catch(function (e) { goBtn.disabled = false; err.appendChild(errBox(e.message)); });
+    });
+  }
+
+  function viewWeak() {
+    main.appendChild(pageHead('Fix weak topics', 'From real results: the modules and topics your team gets wrong most. Pick some and the AI writes new questions on them, using the matching parts of your uploaded documents and the questions people miss.',
+      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('studio'); } }, [icon('arrowL', 'sm'), 'AI Studio'])]));
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    Promise.all([api('/api/assess/admin/weak-topics'), api('/api/assess/admin/builds')]).then(function (rs) {
+      var j = rs[0], AUDS = rs[1].audiences || []; clear(holder);
+      if (!j.modules.length && !j.tags.length) { holder.appendChild(h('div', { class: 'empty' }, [art('tests'), h('b', { text: 'Not enough results yet' }), h('span', { text: 'Topics show here once a topic has at least 8 answers. Run an assessment first, then come back.' })])); return; }
+      var picked = [], o = { audience: 'agent', level: 'intermediate', total: 15, partSize: 15, style: 'situations' };
+      var wrap = h('div', { class: 'bld-wrap' }); holder.appendChild(wrap);
+      var lists = h('div', { class: 'stack' }); wrap.appendChild(lists);
+      var side = h('div', { class: 'card pad stack bld-list' }); wrap.appendChild(side);
+      var chosenEl = h('div', { class: 'chips' }), goBtn = h('button', { class: 'btn primary lg', type: 'button', disabled: true }, [icon('spark', 'sm'), 'Write questions']);
+      function paintPicked() { clear(chosenEl); if (!picked.length) chosenEl.appendChild(h('span', { class: 'small muted', text: 'Tick one or more topics.' })); picked.forEach(function (t) { chosenEl.appendChild(pill(t.label, 'accent')); }); goBtn.disabled = !picked.length; }
+      function block(title, items) {
+        if (!items.length) return;
+        var card = h('div', { class: 'card pad stack' }, [h('h2', { text: title })]);
+        items.forEach(function (t) {
+          var cb = h('input', { type: 'checkbox', 'aria-label': 'Pick ' + t.label });
+          cb.addEventListener('change', function () { var i = picked.findIndex(function (x) { return x.kind === t.kind && x.key === t.key; }); if (cb.checked && i < 0) picked.push(t); if (!cb.checked && i >= 0) picked.splice(i, 1); paintPicked(); });
+          var tone = t.pct >= 75 ? 'ok' : t.pct >= 55 ? 'warn' : 'bad';
+          var miss = t.missed.length ? h('details', { class: 'wk-miss' }, [h('summary', { text: 'Most missed (' + t.missed.length + ')' }), h('ul', null, t.missed.map(function (m) { return h('li', null, [h('span', { text: m.prompt }), h('em', { text: ' ' + m.pct + '% correct' })]); }))]) : null;
+          card.appendChild(h('div', { class: 'wk-row' }, [h('label', { class: 'wk-hd' }, [cb, h('b', { text: t.label }), h('span', { class: 'small muted', text: t.shown + ' answers · ' + t.questions + ' question' + (t.questions === 1 ? '' : 's') })]),
+            h('div', { class: 'topicbar' }, [h('div', { class: 'b', role: 'img', 'aria-label': t.label + ' ' + t.pct + ' percent correct' }, [h('i', { class: tone, style: 'width:' + Math.max(3, t.pct) + '%' })]), h('span', { class: 'num small', text: t.pct + '%' })]), miss]));
+        });
+        lists.appendChild(card);
+      }
+      block('By module', j.modules); block('By topic tag', j.tags);
+      var totalIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '5', max: '100', value: '15', 'aria-label': 'Questions' });
+      var partIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '5', max: '100', value: '15', 'aria-label': 'Per part' });
+      var audSel = h('select', { class: 'sel', 'aria-label': 'Audience' }, AUDS.map(function (a) { return h('option', { value: a.key, text: a.label }); })); audSel.value = o.audience;
+      var err = h('div');
+      side.appendChild(h('h2', { text: 'Write new questions' }));
+      side.appendChild(chosenEl);
+      side.appendChild(h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Questions' }), totalIn]));
+      side.appendChild(h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Per part' }), partIn]));
+      side.appendChild(field('For', audSel));
+      side.appendChild(field('Style', chipsPick(STYLE_OPTS, o.style, false, function (v) { o.style = v; })));
+      side.appendChild(err); side.appendChild(goBtn);
+      side.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'You review them before anyone sees them, like any build.' }));
+      paintPicked();
+      goBtn.addEventListener('click', function () {
+        clear(err); goBtn.disabled = true; goBtn.lastChild.textContent = 'Finding material...';
+        var a = AUDS.find(function (x) { return x.key === audSel.value; }) || {};
+        var total = Math.max(5, Math.min(100, Number(totalIn.value) || 15));
+        api('/api/assess/admin/weak-topics/build', { method: 'POST', body: { topics: picked.map(function (t) { return { kind: t.kind, key: t.key, label: t.label }; }), total: total, partSize: Math.max(5, Math.min(total, Number(partIn.value) || total)),
+          audience: audSel.value, level: a.level || 'mixed', style: o.style, perCase: 3, types: ['single', 'multi', 'truefalse'] } })
+          .then(function (r) { toast('Using ' + r.passages + ' passage' + (r.passages === 1 ? '' : 's') + ' from your documents'); go('build/' + r.id); })
+          .catch(function (e) { goBtn.disabled = false; goBtn.lastChild.textContent = 'Write questions'; err.appendChild(errBox(e.message)); });
+      });
+    }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); });
+  }
+
+  // ── Batch 181: Question bank health, quality, reports, variants ──────
+  var QUEUES = [['', 'All questions', 'list'], ['drafts', 'Drafts to review', 'edit'], ['quality', 'Quality issues', 'shield'], ['stats', 'Stats warnings', 'chart'], ['dupes', 'Near duplicates', 'copy'], ['reported', 'Reported by agents', 'flag'], ['unused', 'Never used', 'archive']];
+  var BANK_SORTS = [['', 'Best order for this view'], ['newest', 'Newest first'], ['oldest', 'Oldest first'], ['updated', 'Recently edited'], ['hardest', 'Hardest first (lowest % correct)'], ['easiest', 'Easiest first'], ['used', 'Most used first'], ['weakest', 'Weakest separation first'], ['quality', 'Most problems first']];
+  var REPORT_REASONS = [['wrong', 'The marked answer is wrong'], ['two', 'More than one answer is right'], ['unclear', 'The question is unclear'], ['outdated', 'It is out of date'], ['typo', 'Typo or wording'], ['other', 'Something else']];
+  function splitCase(p) { var m = /^Case: ([\s\S]*?)\n\n([\s\S]*)$/.exec(String(p || '')); return m ? { scenario: m[1], ask: m[2] } : null; }
+
+  function resolveReports(q, outcome, after) {
+    var reply = prompt(outcome === 'fixed' ? 'Optional note to the people who reported it (for example what you changed):' : 'Optional note on why it is correct as written:', '');
+    if (reply === null) return;
+    api('/api/assess/admin/questions/' + q.id + '/resolve-reports', { method: 'POST', body: { outcome: outcome, reply: reply } })
+      .then(function (r) { toast(r.n + ' report' + (r.n === 1 ? '' : 's') + ' closed. The reporters were told.'); if (after) after(); }).catch(function (e) { toast(e.message); });
+  }
+  function openFixPreview(q, after) {
+    var f = q.quality && q.quality.fix; if (!f) return;
+    function col(title, p, opts, corr, ex) {
+      return h('div', { class: 'fx-col' }, [h('span', { class: 'eyebrow', text: title }), h('p', { class: 'fx-p', text: p }), h('ul', { class: 'bld-opts' }, opts.map(function (t, k) { var ok = corr.indexOf(k) >= 0; return h('li', { class: ok ? 'ok' : '' }, [ok ? icon('check', 'sm') : h('i', { class: 'bld-dot' }), t]); })), ex ? h('p', { class: 'bld-expl', text: ex }) : null]);
+    }
+    var body = h('div', { class: 'stack' }, [q.quality.issues.length ? h('div', { class: 'alert info' }, [icon('shield'), h('span', { text: 'AI found: ' + q.quality.issues.join('; ') })]) : null,
+      h('div', { class: 'fx-grid' }, [col('Now', q.prompt, q.options, q.correct, q.explanation), col('Suggested', f.prompt, f.options, f.correct, f.explanation)]),
+      h('p', { class: 'small muted', style: 'margin:0', text: 'Applying moves the question back to drafts so you approve it again. You can undo it.' })]);
+    var apply = h('button', { class: 'btn primary', type: 'button' }, [icon('check', 'sm'), 'Apply the fix']);
+    var dlg = openDrawer('Suggested fix', body, [h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), apply]);
+    apply.addEventListener('click', function () { apply.disabled = true; api('/api/assess/admin/questions/' + q.id + '/apply-fix', { method: 'POST', body: {} }).then(function () { toast('Fix applied. It is back in drafts.'); dlg.close(); if (after) after(); }).catch(function (e) { apply.disabled = false; toast(e.message); }); });
+  }
+  function openCompare(aId, bId, after) {
+    var body = h('div', { class: 'fx-grid' }, [skeleton()]);
+    var dlg = openDrawer('Near duplicates', body, [h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Close', onclick: function () { dlg.close(); } })]);
+    Promise.all([api('/api/assess/admin/questions/' + aId + '/insight'), api('/api/assess/admin/questions/' + bId + '/insight')]).then(function (rs) {
+      clear(body);
+      rs.forEach(function (r) {
+        var q = r.question; if (!q) { body.appendChild(h('div', { class: 'fx-col' }, [h('p', { text: 'Already removed.' })])); return; }
+        var st = q.stats && q.stats.shown ? 'Seen ' + q.stats.shown + 'x · ' + q.stats.pctCorrect + '% correct' : 'Not used yet';
+        body.appendChild(h('div', { class: 'fx-col' }, [h('span', { class: 'eyebrow', text: '#' + q.id + ' · ' + (q.status === 'approved' ? 'Approved' : 'Draft') }), h('p', { class: 'fx-p', text: q.prompt }),
+          h('ul', { class: 'bld-opts' }, q.options.map(function (t, k) { var ok = q.correct.indexOf(k) >= 0; return h('li', { class: ok ? 'ok' : '' }, [ok ? icon('check', 'sm') : h('i', { class: 'bld-dot' }), t]); })),
+          h('p', { class: 'small muted', text: st + (q.usedIn.length ? ' · in ' + q.usedIn.join(', ') : '') }),
+          h('button', { class: 'btn sm ghost danger', type: 'button', onclick: function () { if (!confirm('Remove #' + q.id + '? If it was used it is retired, so past results keep it.')) return; api('/api/assess/admin/questions/' + q.id, { method: 'DELETE' }).then(function () { toast('Removed #' + q.id); dlg.close(); if (after) after(); }).catch(function (e) { toast(e.message); }); } }, [icon('trash', 'sm'), 'Remove this one'])]));
+      });
+    }).catch(function (e) { clear(body); body.appendChild(errBox(e.message)); });
+  }
+  function rowNotes(q, reload) {
+    var box = h('div', { class: 'qnotes' });
+    if (q.reports && q.reports.length) {
+      var r0 = q.reports[0];
+      box.appendChild(h('div', { class: 'qnote qn-rep' }, [icon('flag', 'sm'), h('span', { text: q.reports.length + ' agent report' + (q.reports.length === 1 ? '' : 's') + ': ' + r0.reason + (r0.note ? ' "' + r0.note.slice(0, 140) + '"' : '') }),
+        h('button', { class: 'linkbtn', type: 'button', text: 'Fixed', onclick: function () { resolveReports(q, 'fixed', reload); } }), h('button', { class: 'linkbtn', type: 'button', text: 'Correct as is', onclick: function () { resolveReports(q, 'dismissed', reload); } })]));
+    }
+    if (q.quality && q.quality.fixed) box.appendChild(h('div', { class: 'qnote qn-ai' }, [icon('check', 'sm'), h('span', { text: 'AI fix applied.' }), h('button', { class: 'linkbtn', type: 'button', text: 'Undo', onclick: function () { api('/api/assess/admin/questions/' + q.id + '/undo-fix', { method: 'POST', body: {} }).then(function () { toast('Undone'); reload(); }).catch(function (e) { toast(e.message); }); } })]));
+    else if (q.quality && q.quality.score != null && q.quality.score <= 4) box.appendChild(h('div', { class: 'qnote qn-ai' }, [h('span', { class: 'qn-score s' + q.quality.score, text: 'AI ' + q.quality.score + '/5' }), h('span', { text: q.quality.issues.join('; ') || 'Minor polish' }),
+      q.quality.hasFix ? h('button', { class: 'linkbtn', type: 'button', text: 'See the fix', onclick: function () { openFixPreview(q, reload); } }) : null,
+      h('button', { class: 'linkbtn', type: 'button', text: 'Looks fine', onclick: function () { api('/api/assess/admin/questions/quality/dismiss', { method: 'POST', body: { ids: [q.id] } }).then(function () { reload(); }); } })]));
+    var lint = (q.lint || []).slice().sort(function (a, b) { return ({ high: 0, med: 1, low: 2 }[a.sev]) - ({ high: 0, med: 1, low: 2 }[b.sev]); }).filter(function (x) { return x.code !== 'expl' || q.status === 'draft'; }).slice(0, 2);
+    lint.forEach(function (x) { box.appendChild(h('div', { class: 'qnote qn-lint ' + x.sev }, [icon(x.sev === 'high' ? 'warn' : 'spark', 'sm'), h('span', { text: x.msg })])); });
+    if (q.dupOf) box.appendChild(h('div', { class: 'qnote qn-dup' }, [icon('copy', 'sm'), h('span', { text: 'Very close to question #' + q.dupOf.id + '.' }), h('button', { class: 'linkbtn', type: 'button', text: 'Compare', onclick: function () { openCompare(q.id, q.dupOf.id, reload); } })]));
+    return box.children.length ? box : null;
+  }
+  function openBulkEdit(ids, done) {
+    var diff = h('select', { class: 'sel' }, [['', 'Keep as is'], ['easy', 'Easy'], ['medium', 'Medium'], ['hard', 'Hard']].map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    var mod = h('select', { class: 'sel' }, [h('option', { value: '', text: 'Keep as is' }), h('option', { value: '__clear', text: 'Remove the module' })].concat((MODS || []).map(function (m) { return h('option', { value: m.key, text: m.group + ': ' + m.name }); })));
+    var sub = h('input', { class: 'inp', maxlength: '60', placeholder: 'Optional' });
+    var addT = h('input', { class: 'inp', placeholder: 'e.g. engage, texting' }), delT = h('input', { class: 'inp', placeholder: 'e.g. old-topic' });
+    var setIn = h('input', { class: 'inp', maxlength: '200', placeholder: 'Leave empty to keep. e.g. "Engage starter set"' });
+    var err = h('div');
+    var body = h('div', { class: 'stack' }, [h('p', { class: 'small muted', style: 'margin:0', text: 'Only the fields you fill in change. ' + ids.length + ' question' + (ids.length === 1 ? '' : 's') + ' selected.' }),
+      h('div', { class: 'fgrid' }, [field('Difficulty', diff), field('Module', mod)]), field('Sub-module', sub), h('div', { class: 'fgrid' }, [field('Add tags', addT, 'Comma separated'), field('Remove tags', delT, 'Comma separated')]),
+      field('Move to set', setIn, 'Sets are the groups shown above the bank list.'), err]);
+    var save = h('button', { class: 'btn primary', type: 'button' }, [icon('check', 'sm'), 'Apply']);
+    var dlg = openDrawer('Edit ' + ids.length + ' question' + (ids.length === 1 ? '' : 's'), body, [h('span', { class: 'spacer' }), h('button', { class: 'btn', type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), save]);
+    save.addEventListener('click', function () {
+      clear(err); save.disabled = true;
+      api('/api/assess/admin/questions/bulk-set', { method: 'POST', body: { ids: ids, difficulty: diff.value, module: mod.value, subModule: sub.value.trim(), addTags: addT.value, removeTags: delT.value, setName: setIn.value.trim() } })
+        .then(function (r) { toast(r.changed + ' updated'); dlg.close(); if (done) done(); }).catch(function (e) { save.disabled = false; err.appendChild(errBox(e.message)); });
+    });
+  }
+  function runQualityCheck(ids, btn, done) {
+    if (!ids.length) return;
+    if (ids.length > 120) { toast('Checking the first 120. Run it again for the rest.'); ids = ids.slice(0, 120); }
+    if (btn) { btn.disabled = true; btn.classList.add('busy'); }
+    toast('AI is reviewing ' + ids.length + ' question' + (ids.length === 1 ? '' : 's') + '. About ' + Math.max(1, Math.round(ids.length / 12)) + ' min.');
+    api('/api/assess/admin/questions/quality', { method: 'POST', body: { ids: ids } }).then(function (r) { toast(r.checked + ' checked, ' + r.flagged + ' need a fix'); if (done) done(); })
+      .catch(function (e) { toast(e.message); }).then(function () { if (btn) { btn.disabled = false; btn.classList.remove('busy'); } });
+  }
+  function writeVariants(ids, btn, done) {
+    var list = ids.slice(0, 10); if (ids.length > 10) toast('Writing variants for the first 10');
+    if (btn) { btn.disabled = true; btn.classList.add('busy'); }
+    var made = 0, i = 0;
+    (function next() {
+      if (i >= list.length) { toast(made + ' variant' + (made === 1 ? '' : 's') + ' written as drafts'); if (btn) { btn.disabled = false; btn.classList.remove('busy'); } if (done) done(); return; }
+      api('/api/assess/admin/questions/' + list[i++] + '/variants', { method: 'POST', body: { count: 2 } }).then(function (r) { made += r.ids.length; }).catch(function () {}).then(next);
+    })();
+  }
+  /** Inside the question editor: how people answer, agent reports, AI review, rule checks and variants. */
+  function questionInsight(q, host) {
+    if (!q || !q.id) return;
+    host.appendChild(skeleton());
+    function load() {
+      api('/api/assess/admin/questions/' + q.id + '/insight').then(function (j) {
+        clear(host);
+        var a = j.analysis, qq = j.question || q;
+        if (a && a.n && a.choice) {
+          var box = h('div', { class: 'ins-card' }, [h('b', { text: 'How people answer (' + a.n + ' answers, ' + a.pctCorrect + '% right)' })]);
+          a.options.forEach(function (o) { box.appendChild(h('div', { class: 'ins-opt' + (o.correct ? ' ok' : '') }, [h('span', { class: 'ins-t', text: o.text }), h('span', { class: 'ins-bar' }, [h('i', { style: 'width:' + Math.max(2, o.pct) + '%' })]), h('b', { text: o.pct + '%' })])); });
+          if (a.blank) box.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: a.blank + ' left it blank or ran out of time.' }));
+          a.notes.slice(0, 3).forEach(function (n) { box.appendChild(h('div', { class: 'qnote qn-lint med' }, [icon('spark', 'sm'), h('span', { text: n })])); });
+          host.appendChild(box);
+        }
+        var notes = rowNotes(qq, load); if (notes) host.appendChild(notes);
+        var acts = h('div', { class: 'row', style: 'flex-wrap:wrap;gap:8px' });
+        var chk = h('button', { class: 'btn sm', type: 'button' }, [icon('shield', 'sm'), 'AI quality check']);
+        chk.addEventListener('click', function () { runQualityCheck([q.id], chk, load); });
+        var vb = h('button', { class: 'btn sm', type: 'button' }, [icon('copy', 'sm'), 'Write 2 variants']);
+        vb.addEventListener('click', function () { writeVariants([q.id], vb, load); });
+        acts.appendChild(chk); acts.appendChild(vb);
+        host.appendChild(acts);
+        if (j.family && j.family.length > 1) host.appendChild(h('div', { class: 'ins-card' }, [h('b', { text: 'Variants (' + j.family.length + ' in this family, a random pool uses one)' }),
+          h('ul', { class: 'ins-fam' }, j.family.map(function (f) { return h('li', { class: f.id === q.id ? 'cur' : '' }, [h('span', { text: '#' + f.id + (f.root ? ' (original)' : '') + ': ' }), f.prompt, f.status === 'draft' ? pill('Draft', 'warn') : null]); }))]));
+      }).catch(function () { clear(host); });
+    }
+    load();
+  }
+  /** Agents: report a problem with one question (from the exam or from the result). */
+  function reportForm(attemptId, idx, token, onClose) {
+    var reason = 'wrong';
+    var note = h('textarea', { class: 'ta', style: 'min-height:64px', maxlength: '600', placeholder: 'Optional: what is wrong, for example the right answer and where you saw it' });
+    note.addEventListener('keydown', function (e) { e.stopPropagation(); });
+    var err = h('div');
+    var send = h('button', { class: 'btn primary', type: 'button' }, [icon('send', 'sm'), 'Send report']);
+    var box = h('div', { class: 'rep-form', role: 'group', 'aria-label': 'Report a problem with this question' }, [h('b', { text: 'What is wrong with this question?' }),
+      chipsPick(REPORT_REASONS, reason, false, function (v) { reason = v; }), note, err,
+      h('div', { class: 'row', style: 'justify-content:flex-end;gap:8px' }, [h('button', { class: 'btn ghost', type: 'button', text: 'Cancel', onclick: function () { onClose(false); } }), send])]);
+    box.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.stopPropagation(); onClose(false); } });
+    send.addEventListener('click', function () {
+      send.disabled = true; clear(err);
+      api('/api/assess/attempts/' + attemptId + '/report', { method: 'POST', token: token, body: { idx: idx, reason: reason, note: note.value.trim() } })
+        .then(function () { toast('Thanks. Your reviewer will check it.'); onClose(true); }).catch(function (e) { send.disabled = false; err.appendChild(errBox(e.message)); });
+    });
+    return box;
+  }
+
+  function viewStudioPlanner() {
     main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'Turn a document into assessments' }), h('p', { text: 'Upload an SOP, a guide or any long document, paste text, or give a web link. The AI reads it, splits it into sections, suggests how many assessments to make, writes the questions, and works through them with you. Nothing reaches agents until you publish.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)])]));
     var grid = h('div', { class: 'studio-start' });
     main.appendChild(grid);
@@ -3939,7 +4255,7 @@
   }
 
   // ── Reviewer: question bank ──────────────────────────────────────────
-  var bankFilter = { q: '', status: '', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' };
+  var bankFilter = { q: '', status: '', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '', queue: '', sort: '' };
   var bankSel = [], bankAutoTagged = false;
   function viewBank() {
     var dlq = function (ans) { var qs = new URLSearchParams({ answers: ans ? '1' : '0' }); if (bankFilter.status) qs.set('status', bankFilter.status); if (bankFilter.tag) qs.set('tag', bankFilter.tag); if (bankFilter.q) qs.set('q', bankFilter.q); return '/api/assess/admin/questions/export?' + qs; };
@@ -3999,9 +4315,21 @@
     typeSel.addEventListener('change', function () { bankFilter.type = typeSel.value; load(); });
     tagSel.addEventListener('change', function () { bankFilter.tag = tagSel.value; load(); });
     var st = 0; search.addEventListener('input', function () { clearTimeout(st); st = setTimeout(function () { bankFilter.q = search.value.trim(); load(); }, 250); });
+    var qStrip = h('div', { class: 'queue-strip', role: 'group', 'aria-label': 'Needs attention' }); main.appendChild(qStrip);
+    function paintQueues(Q) {
+      clear(qStrip);
+      QUEUES.forEach(function (x) {
+        var n = x[0] ? (Q[x[0]] || 0) : null, on = (bankFilter.queue || '') === x[0];
+        if (x[0] && !n && !on) return;
+        qStrip.appendChild(h('button', { type: 'button', class: 'qchip' + (on ? ' on' : '') + (x[0] === 'reported' || x[0] === 'quality' ? ' hot' : ''), 'aria-pressed': String(on), onclick: function () { bankFilter.queue = x[0]; bankFilter.sort = ''; sortSel.value = ''; sel.length = 0; load(); } },
+          [icon(x[2], 'sm'), h('span', { text: x[1] }), n != null ? h('b', { text: String(n) }) : null]));
+      });
+    }
+    var sortSel = h('select', { class: 'sel', 'aria-label': 'Sort' }, BANK_SORTS.map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+    sortSel.value = bankFilter.sort || ''; sortSel.addEventListener('change', function () { bankFilter.sort = sortSel.value; load(); });
     main.appendChild(h('div', { class: 'toolbar' }, [h('div', { class: 'search' }, [icon('search', 'sm'), search]), seg, typeSel, modSel, tagSel]));
-    var clearF = h('button', { class: 'btn ghost sm', type: 'button', text: 'Clear filters', onclick: function () { bankFilter = { q: '', status: '', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '' }; route(); } });
-    main.appendChild(h('div', { class: 'toolbar' }, [srcSel, whenSel, fromIn, toIn, diffSel, usedSel, clearF]));
+    var clearF = h('button', { class: 'btn ghost sm', type: 'button', text: 'Clear filters', onclick: function () { bankFilter = { q: '', status: '', type: '', tag: '', module: '', source: '', difficulty: '', used: '', from: '', to: '', when: '', queue: '', sort: '' }; route(); } });
+    main.appendChild(h('div', { class: 'toolbar' }, [srcSel, whenSel, fromIn, toIn, diffSel, usedSel, sortSel, clearF]));
     var tagNote = h('div'); main.appendChild(tagNote);
     var selRow = h('div', { style: 'position:relative;z-index:30' }); main.appendChild(selRow);
     var bulk = h('div'); main.appendChild(bulk);
@@ -4052,7 +4380,13 @@
         tagMods.disabled = true; tagMods.classList.add('busy');
         api('/api/assess/admin/questions/tag', { method: 'POST', body: { ids: sel, force: true } }).then(function (r) { toast(r.tagged + ' question' + (r.tagged === 1 ? '' : 's') + ' tagged'); loadMods(true).then(function () { load(); }); }).catch(function (e) { toast(e.message); tagMods.disabled = false; tagMods.classList.remove('busy'); });
       });
-      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, addTo, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel.length = 0; load(); } })]));
+      var editB = h('button', { class: 'btn', type: 'button' }, [icon('edit', 'sm'), 'Edit fields']);
+      editB.addEventListener('click', function () { openBulkEdit(sel.slice(), function () { loadMods(true).then(function () { load(); }); }); });
+      var qcB = h('button', { class: 'btn', type: 'button' }, [icon('shield', 'sm'), 'Check quality']);
+      qcB.addEventListener('click', function () { runQualityCheck(sel.slice(), qcB, load); });
+      var varB = h('button', { class: 'btn', type: 'button' }, [icon('copy', 'sm'), 'Write variants']);
+      varB.addEventListener('click', function () { writeVariants(sel.slice(), varB, load); });
+      bulk.appendChild(h('div', { class: 'bulk' }, [h('b', { text: sel.length + ' selected' }), h('span', { class: 'spacer' }), mkAssess, addTo, editB, qcB, varB, tagMods, act('approve', 'Approve'), act('draft', 'Move to drafts'), act('delete', 'Delete'), h('button', { class: 'btn', type: 'button', text: 'Clear', onclick: function () { sel.length = 0; load(); } })]));
     }
     function load() {
       var p = new URLSearchParams(bankFilter);
@@ -4062,6 +4396,7 @@
         j.tags.forEach(function (t) { tagSel.appendChild(h('option', { value: t.tag, text: t.tag + ' (' + t.n + ')' })); }); tagSel.value = cur;
         shownQs = j.questions; rowBoxes = {};
         var fac = j.facets || { sources: [], untagged: 0 };
+        paintQueues(j.queues || {});
         var keepSrc = bankFilter.source || ''; clear(srcSel); srcSel.appendChild(h('option', { value: '', text: 'All uploads' }));
         (fac.sources || []).forEach(function (x) { srcSel.appendChild(h('option', { value: x.name, text: x.name.replace(/^AI draft: /, '') + ' (' + x.n + ')' })); });
         srcSel.value = keepSrc;
@@ -4073,11 +4408,18 @@
           sets.forEach(function (x) { var on = bankFilter.source === x.name; strip.appendChild(h('button', { type: 'button', class: 'set-chip' + (on ? ' on' : ''), 'aria-pressed': String(on), title: x.name, onclick: function () { bankFilter.source = on ? '' : x.name; srcSel.value = bankFilter.source; load(); } }, [icon(/^Set #/.test(x.name) ? 'spark' : 'doc', 'sm'), h('span', { text: x.name.replace(/^AI draft: /, '').replace(/^Set #\d+: /, '') }), h('em', { text: String(x.n) })])); });
           tagNote.appendChild(strip);
         }
+        var QN = { drafts: 'Drafts waiting for review. Check each one, then approve it or tick several and approve them together.', quality: 'Questions with a known item-writing flaw or a low AI review score. Most problems first.', stats: 'Real results look off: too easy, too hard, or stronger agents do worse than weaker ones. Check the wording and the answer key.', dupes: 'Pairs that ask nearly the same thing. Compare and keep the better one. Variants of one question are not counted.', reported: 'Agents reported these during or after an assessment. Fix the question or mark it correct; they are told either way.', unused: 'Not in any assessment and never answered.' };
+        if (bankFilter.queue) {
+          var qIds = j.questions.map(function (x) { return x.id; });
+          var qb = bankFilter.queue === 'quality' ? h('button', { class: 'btn sm primary', type: 'button' }, [icon('shield', 'sm'), 'AI check the ' + Math.min(120, qIds.length) + ' shown']) : null;
+          if (qb) qb.addEventListener('click', function () { runQualityCheck(qIds, qb, load); });
+          tagNote.appendChild(h('div', { class: 'note queue-note' }, [icon((QUEUES.find(function (x) { return x[0] === bankFilter.queue; }) || [0, 0, 'list'])[2], 'sm'), h('span', { text: QN[bankFilter.queue] || '' }), qb]));
+        }
         if (fac.untagged) tagNote.appendChild(h('div', { class: 'note', style: 'margin-bottom:12px' }, [icon('layers', 'sm'), h('span', { text: fac.untagged + ' question' + (fac.untagged === 1 ? ' has' : 's have') + ' no module yet. ' }), h('button', { class: 'btn sm', type: 'button', text: 'Tag them all', onclick: function (e) { autoTag(e.currentTarget); } })]));
         if (fac.untagged && !bankAutoTagged) { bankAutoTagged = true; autoTag(null); }
         renderBulk();
         if (!j.questions.length) {
-          holder.appendChild(h('div', { class: 'empty' }, [art('log'), h('b', { text: bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type || bankFilter.module || bankFilter.source || bankFilter.from || bankFilter.to || bankFilter.difficulty || bankFilter.used ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
+          holder.appendChild(h('div', { class: 'empty' }, [art('log'), h('b', { text: bankFilter.queue ? 'Nothing here. Nice.' : bankFilter.q || bankFilter.status || bankFilter.tag || bankFilter.type || bankFilter.module || bankFilter.source || bankFilter.from || bankFilter.to || bankFilter.difficulty || bankFilter.used ? 'No questions match' : 'The bank is empty' }), h('span', { text: 'Draft questions from an SOP or KB document, import a CSV, or write one.' })]));
           return;
         }
         var drafts = j.questions.filter(function (q) { return q.status === 'draft'; }).length;
@@ -4097,9 +4439,10 @@
           list.appendChild(h('div', { class: 'qrow' }, [cb,
             h('div', { style: 'min-width:0' }, [
               h('div', { class: 'p', role: 'button', tabindex: '0', text: q.prompt, onclick: function () { openQuestion(q); }, onkeydown: function (e) { if (e.key === 'Enter') openQuestion(q); } }),
-              h('div', { class: 'm' }, [q.module ? modChip({ key: q.module }, q.subModule) : null, pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium'), q.hasImage ? pill('Image') : null].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
+              h('div', { class: 'm' }, [q.module ? modChip({ key: q.module }, q.subModule) : null, pill(TYPE_SHORT[q.type] || q.type), pill(q.difficulty || 'medium'), q.hasImage ? pill('Image') : null, q.familySize > 1 ? pill(q.familySize + ' versions') : null].concat(q.tags.map(function (t) { return pill('#' + t, 'accent'); })).concat(q.source ? [h('span', { class: 'small muted', text: q.source })] : [])),
               h('div', { class: 's', text: stats + (q.usedIn.length ? ' · in ' + q.usedIn.join(', ') : '') }),
               q.stats && q.stats.flag ? h('div', { class: 'flag' }, [icon('warn', 'sm'), q.stats.flag]) : null,
+              rowNotes(q, load),
             ]),
             h('div', { class: 'row', style: 'flex-wrap:nowrap' }, [q.status === 'draft' ? pill('Draft', 'warn', true) : pill('Approved', 'ok', true), h('button', { class: 'btn sm', type: 'button', text: 'Edit', onclick: function () { openQuestion(q); } })]),
           ]));
@@ -4242,6 +4585,7 @@
     body.appendChild(h('div', { class: 'fgrid' }, [field('Topics (tags)', tags, 'Comma separated'), field('Difficulty', diff)]));
     if (!studioOpts) body.appendChild(field('Status', stat, 'Only approved questions go into random pools.'));
     if (d.stats && d.stats.shown) body.appendChild(h('div', { class: 'alert info' }, [icon('chart'), h('span', { text: 'Seen ' + d.stats.shown + ' times, ' + d.stats.pctCorrect + '% correct' + (d.stats.avgSec != null ? ', ' + d.stats.avgSec + 's on average' : '') + (d.stats.disc != null ? ', separation ' + d.stats.disc : '') + '.' + (d.stats.flag ? ' ' + d.stats.flag : '') })]));
+    if (q && q.id && !studioOpts) { var insHost = h('div', { class: 'ins' }); body.appendChild(insHost); questionInsight(q, insHost); }
     body.appendChild(err);
     var save = h('button', { class: 'btn primary', type: 'button', text: 'Save question' });
     var del = q && !studioOpts ? h('button', { class: 'btn ghost danger', type: 'button' }, [icon('trash', 'sm'), 'Delete']) : null;
