@@ -658,7 +658,7 @@
       });
     } }));
   }
-  var SECTIONS = [['', 'My assessments', 'clipboard'], ['manage', 'Assessments', 'layers'], ['studio', 'AI Studio', 'bot'], ['reports', 'Reports', 'chart'], ['live', 'Live', 'eye'], ['bank', 'Question bank', 'list'], ['access', 'Access', 'shield']];
+  var SECTIONS = [['', 'My assessments', 'clipboard'], ['manage', 'Assessments', 'layers'], ['build', 'Build from a doc', 'spark'], ['studio', 'AI Studio', 'bot'], ['reports', 'Reports', 'chart'], ['live', 'Live', 'eye'], ['bank', 'Question bank', 'list'], ['access', 'Access', 'shield']];
   function renderNav(cur) {
     clear(nav);
     var scopedOnly = !me.reviewer && me.reviewTests && me.reviewTests.length;
@@ -686,6 +686,7 @@
     if (sec === 'insights') return viewReports('topics');
     if (sec === 'reports') return viewReports(hashQuery().get('tab') || 'overview');
     if (sec === 'archived') return viewArchived();
+    if (sec === 'build') return arg ? viewBuild(Number(arg)) : viewBuildHome();
     if (sec === 'studio') return arg ? viewStudio(Number(arg)) : viewStudioHome();
     if (sec === 'access') return viewAccess();
     return viewHome();
@@ -760,18 +761,21 @@
       }
       var grid = h('div', { class: 'grid-cards stagger' });
       j.tests.forEach(function (t) {
-        var status = t.stopped ? pill('Stopped: camera', 'bad', true) : t.inProgress ? pill('In progress', 'warn', true) : t.windowState === 'upcoming' ? pill('Opens ' + fmtWhen(t.opensAt), '', true)
+        var status = t.stopped ? pill('Stopped: camera', 'bad', true) : t.inProgress ? pill('In progress', 'warn', true) : (t.locked && !t.last) ? pill('Locked', '', true) : t.windowState === 'upcoming' ? pill('Opens ' + fmtWhen(t.opensAt), '', true)
           : (t.last ? pill('Completed', 'ok', true) : t.windowState === 'closed' ? pill('Closed', 'bad', true) : pill('Not started', 'accent', true));
-        var btnText = t.stopped ? 'Waiting for a retest' : t.inProgress ? 'Resume' : t.windowState === 'upcoming' ? 'Not open yet' : (t.canStart ? (t.last ? 'Take again' : 'Start') : (t.last ? 'Completed' : 'Closed'));
+        var btnText = t.stopped ? 'Waiting for a retest' : t.inProgress ? 'Resume' : (t.locked && !t.last) ? 'Locked' : t.windowState === 'upcoming' ? 'Not open yet' : (t.canStart ? (t.last ? 'Take again' : 'Start') : (t.last ? 'Completed' : 'Closed'));
         var viewBtn = t.last && t.lastAttemptId && (t.releaseMode !== 'none' || t.last.score != null) ? h('button', { class: 'btn', type: 'button', onclick: function () { viewMyResult(t.lastAttemptId); } }, [icon('eye', 'sm'), 'View result']) : null;
         var due = t.inProgress && t.autoSubmitAt ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Resume before ' + fmtWhen(t.autoSubmitAt) + '. After that it is submitted automatically and unanswered questions count as wrong.' })
           : (!t.last && t.closesAt && t.windowState === 'open' ? h('p', { class: 'small', style: 'margin:0;color:var(--warn)', text: 'Due by ' + fmtWhen(t.closesAt) }) : null);
         var result = null;
+        var lockNote = t.locked && !t.last && t.lockReason ? h('p', { class: 'lock-note' }, [icon('lock', 'sm'), t.lockReason]) : null;
+        var partPill = t.series && t.series.of > 1 ? pill('Part ' + t.series.part + ' of ' + t.series.of, 'part-pill') : null;
         if (t.stopped) result = h('p', { class: 'small', style: 'margin:0;color:var(--bad)', text: 'This test was stopped because the camera rules were not followed. Your reviewer can send you a retest.' });
         else if (t.last) result = h('p', { class: 'small muted', text: 'Submitted ' + fmtWhen(t.last.finishedAt) + (t.last.score != null ? '. Score ' + t.last.score + ' of ' + t.last.maxScore + '.' : '. Your reviewer will share the result.') });
         var tone = t.stopped ? 'warn' : t.inProgress ? 'warn' : (t.last ? 'ok' : (t.canStart ? 'accent' : 'mute'));
         grid.appendChild(h('div', { class: 'card tcard tone-' + tone }, [
           h('div', { class: 'top' }, [h('div', { class: 'ic' }, [icon('clipboard', 'lg')]), h('h2', { text: t.title }), status]),
+          partPill ? h('div', { class: 'chips' }, [partPill]) : null,
           t.description ? h('p', { class: 'tdesc', text: t.description }) : null,
           modChips(t.modules),
           h('dl', { class: 'facts' }, [
@@ -779,7 +783,7 @@
             h('div', null, [h('dt', { text: t.navigation === 'locked' ? 'Per question' : 'Clock each' }), h('dd', { text: t.secondsPerQuestion + 's' })]),
             h('div', null, [h('dt', { text: 'About' }), h('dd', { text: t.estMinutes + ' min' })]),
           ]),
-          result, due,
+          result, due, lockNote,
           h('div', { class: 'foot' }, [
             h('span', { class: 'small muted', text: 'Attempts ' + t.attemptsUsed + ' of ' + t.attemptsAllowed + (t.extraPct ? ' · +' + t.extraPct + '% time' : '') }),
             h('span', { class: 'foot-acts' }, [viewBtn,
@@ -1864,7 +1868,7 @@
     main.appendChild(pageHead('Assessments', me.reviewer ? 'Build assessments from the question bank, choose who takes them, and review results.' : 'You review these assessments. Open one to see results and mark answers.',
       !me.reviewer ? null : [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('archived'); } }, [icon('archive', 'sm'), 'Archived']),
        h('button', { class: 'btn', type: 'button', onclick: function () { combineDialog(); } }, [icon('layers', 'sm'), 'Combine']),
-       h('button', { class: 'btn', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Build from a document']),
+       h('button', { class: 'btn', type: 'button', onclick: function () { go('build'); } }, [icon('spark', 'sm'), 'Build from a document']),
        h('button', { class: 'btn primary', type: 'button', onclick: function () { go('edit/new'); } }, [icon('plus', 'sm'), 'New assessment'])]));
     if (me.reviewer) {
       var livebar = h('div', { class: 'livebar', role: 'status' }); main.appendChild(livebar);
@@ -3060,6 +3064,267 @@
   }
 
   // ── Session 64: AI Studio ────────────────────────────────────────────
+  // ── Batch 180: Build from a document (simple builder) ────────────────
+  var BUILD_LEVELS = [['foundation', 'Foundation', 'Mostly easy, plain basics'], ['intermediate', 'Intermediate', 'Mostly medium, applied'], ['advanced', 'Advanced', 'Mostly hard, edge cases'], ['mixed', 'Mixed', 'Even mix']];
+  var BUILD_TYPES = [['single', 'One answer'], ['multi', 'Select all that apply'], ['truefalse', 'True or false'], ['ordering', 'Put in order'], ['matching', 'Match pairs']];
+  function chipsPick(opts, cur, multi, onChange) {
+    var box = h('div', { class: 'bld-chips', role: multi ? 'group' : 'radiogroup' });
+    opts.forEach(function (o) {
+      var on = multi ? cur.indexOf(o[0]) >= 0 : cur === o[0];
+      box.appendChild(h('button', { type: 'button', class: 'bld-chip' + (on ? ' on' : ''), role: multi ? null : 'radio', 'aria-pressed': multi ? String(on) : null, 'aria-checked': multi ? null : String(on), title: o[2] || null, onclick: function () {
+        if (multi) { var i = cur.indexOf(o[0]); if (i >= 0) { if (cur.length > 1) cur.splice(i, 1); } else cur.push(o[0]); }
+        else cur = o[0];
+        Array.prototype.forEach.call(box.children, function (b, k) { var v = opts[k][0], on2 = multi ? cur.indexOf(v) >= 0 : cur === v; b.classList.toggle('on', on2); if (multi) b.setAttribute('aria-pressed', String(on2)); else b.setAttribute('aria-checked', String(on2)); });
+        onChange(cur);
+      } }, [o[1]]));
+    });
+    return box;
+  }
+  function viewBuildHome() {
+    main.appendChild(pageHead('Build from a document', 'Upload your KB articles or any document, say who the assessment is for and how many questions you want. The AI writes exactly that many, split into parts if you like. You review, then release the parts together or one after another.',
+      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('studio'); } }, [icon('bot', 'sm'), 'Advanced: AI Studio'])]));
+    var o = { audience: 'newjoinee', audienceNote: '', level: 'foundation', total: 25, partSize: 25, types: ['single', 'multi', 'truefalse'], focus: '', avoid: '', order: 'document', title: '' };
+    var wrap = h('div', { class: 'bld-wrap' }); main.appendChild(wrap);
+    var form = h('div', { class: 'card pad bld-form' }); wrap.appendChild(form);
+    var side = h('div', { class: 'card pad stack bld-list' }, [h('h2', { text: 'Your builds' }), h('p', { class: 'small muted', style: 'margin:0', text: 'Each build is a named question set. Open one to review, add more or release it.' })]);
+    var lst = h('div', { class: 'plist' }); side.appendChild(lst); wrap.appendChild(side);
+    // 1. Source
+    var mode = 'file', file = null;
+    var seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'Source' }), panes = {};
+    [['file', 'Upload a file', 'upload'], ['text', 'Paste text', 'doc'], ['url', 'Web link', 'link']].forEach(function (x) {
+      seg.appendChild(h('button', { type: 'button', 'aria-pressed': String(mode === x[0]), onclick: function () { mode = x[0]; Array.prototype.forEach.call(seg.children, function (b) { b.setAttribute('aria-pressed', String(b === this)); }, this); Object.keys(panes).forEach(function (k) { panes[k].hidden = k !== mode; }); } }, [icon(x[2], 'sm'), x[1]]));
+    });
+    var fin = h('input', { type: 'file', accept: '.pdf,.docx,.txt,.md,.html,.htm', hidden: true });
+    var fname = h('span', { class: 'small muted', text: 'PDF, Word (.docx), text or HTML, up to 25 MB. A file with all your KB articles is fine.' });
+    var drop = h('label', { class: 'drop bld-drop' }, [icon('upload', 'lg'), h('b', { text: 'Drop a document here or choose a file' }), fname, fin]);
+    ['dragover', 'dragenter'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function () { drop.classList.remove('over'); }); });
+    function pickFile(f) { file = f; fname.textContent = f.name + ' · ' + Math.max(1, Math.round(f.size / 1024)) + ' KB'; drop.classList.add('has'); if (!titleIn.value) titleIn.placeholder = 'e.g. ' + (o.audience === 'newjoinee' ? 'New joinee starter: ' : '') + f.name.replace(/\.[a-z0-9]+$/i, ''); }
+    drop.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer.files[0]) pickFile(e.dataTransfer.files[0]); });
+    fin.addEventListener('change', function () { if (fin.files[0]) pickFile(fin.files[0]); });
+    panes.file = h('div', null, [drop]);
+    var ta = h('textarea', { class: 'ta', style: 'min-height:160px', placeholder: 'Paste the text of your KB articles, an SOP or training notes. Headings help.' });
+    var taName = h('input', { class: 'inp', placeholder: 'Name for this source, e.g. "KB articles, October"' });
+    panes.text = h('div', { hidden: true, class: 'stack' }, [field('Name', taName), field('Text', ta)]);
+    var urlIn = h('input', { class: 'inp', type: 'url', placeholder: 'https://…' });
+    panes.url = h('div', { hidden: true }, [field('Web page', urlIn, 'Public pages only. For Google Docs or Zoho, download the file and upload it instead.')]);
+    function step(n, title, sub, kids) { return h('section', { class: 'bld-step' }, [h('div', { class: 'bld-num', 'aria-hidden': 'true', text: String(n) }), h('div', { class: 'bld-body' }, [h('h3', { text: title }), sub ? h('p', { class: 'small muted', text: sub }) : null].concat(kids))]); }
+    form.appendChild(step(1, 'Source', null, [seg, panes.file, panes.text, panes.url]));
+    // 2. Audience
+    var audBox = h('div', { class: 'bld-aud' }), audNote = h('textarea', { class: 'ta', style: 'min-height:60px', maxlength: '600', placeholder: 'Optional: anything about them, e.g. "joined this week, has not taken live calls yet, knows dental basics"' });
+    var levelBox = h('div');
+    function paintLevels() { clear(levelBox); levelBox.appendChild(chipsPick(BUILD_LEVELS, o.level, false, function (v) { o.level = v; })); }
+    var AUDS = [];
+    function paintAud() {
+      clear(audBox);
+      AUDS.concat([{ key: 'custom', label: 'Someone else', guide: 'Describe them below and the questions follow your description.' }]).forEach(function (a) {
+        audBox.appendChild(h('button', { type: 'button', class: 'bld-acard' + (o.audience === a.key ? ' on' : ''), 'aria-pressed': String(o.audience === a.key), onclick: function () { o.audience = a.key; if (a.level) { o.level = a.level; paintLevels(); } paintAud(); } }, [h('b', { text: a.label }), h('span', { text: a.guide })]));
+      });
+    }
+    form.appendChild(step(2, 'Who is it for?', 'Questions are written for this reader: a new joinee gets the day-one basics in plain words, an experienced agent gets scenarios and edge cases.', [audBox, audNote, h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Level' }), levelBox])]));
+    // 3. How many
+    var totalIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '5', max: '200', value: '25', 'aria-label': 'Total questions' });
+    var partIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '5', max: '200', value: '25', 'aria-label': 'Questions per part' });
+    var splitSum = h('p', { class: 'bld-sum' });
+    function paintSum() {
+      o.total = Math.max(5, Math.min(200, Number(totalIn.value) || 25)); o.partSize = Math.max(5, Math.min(o.total, Number(partIn.value) || o.total));
+      var parts = Math.ceil(o.total / o.partSize);
+      splitSum.textContent = parts > 1 ? o.total + ' questions in ' + parts + ' assessments of about ' + Math.round(o.total / parts) + ' each. You choose when each part opens in the last step.' : o.total + ' questions in one assessment.';
+    }
+    totalIn.addEventListener('input', paintSum); partIn.addEventListener('input', paintSum);
+    var quick = h('div', { class: 'bld-chips' }, [10, 25, 50, 100].map(function (n) { return h('button', { type: 'button', class: 'bld-chip', onclick: function () { totalIn.value = n; if (Number(partIn.value) > n || n <= 25) partIn.value = Math.min(n, 25); paintSum(); } }, [n + ' questions']); }));
+    var splitQuick = h('div', { class: 'bld-chips' }, [['all', 'One assessment'], [10, 'Parts of 10'], [15, 'Parts of 15'], [25, 'Parts of 25']].map(function (x) { return h('button', { type: 'button', class: 'bld-chip', onclick: function () { partIn.value = x[0] === 'all' ? totalIn.value : x[0]; paintSum(); } }, [x[1]]); }));
+    var orderBox = chipsPick([['document', 'Follow the document', 'Part 1 covers the first topics, part 2 the next, and so on'], ['mixed', 'Mix topics in every part', 'Each part samples the whole document']], o.order, false, function (v) { o.order = v; });
+    form.appendChild(step(3, 'How many questions?', 'You get the number you ask for (up to 200). Split them into parts, for example 50 as two of 25, released a day or an hour apart.', [
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Total' }), totalIn, quick]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Per part' }), partIn, splitQuick]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Order' }), orderBox]), splitSum]));
+    // 4. Details
+    var typeBox = chipsPick(BUILD_TYPES, o.types, true, function (v) { o.types = v; });
+    var focusIn = h('input', { class: 'inp', maxlength: '600', placeholder: 'Optional, e.g. "Engage texting, appointment reminders, transfers to VoIP"' });
+    var avoidIn = h('input', { class: 'inp', maxlength: '600', placeholder: 'Optional, e.g. "billing, anything for T2"' });
+    var titleIn = h('input', { class: 'inp', maxlength: '140', placeholder: 'e.g. New joinee starter: KB basics' });
+    var more = h('details', { class: 'bld-more' }, [h('summary', { text: 'More options (question types, focus, title)' }), h('div', { class: 'stack' }, [field('Question types', typeBox), field('Focus on', focusIn), field('Leave out', avoidIn), field('Name', titleIn, 'Used for the question set and the assessments.')])]);
+    form.appendChild(step(4, 'Anything else?', null, [more]));
+    var err = h('div'), goBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), 'Write the questions']);
+    form.appendChild(h('div', { class: 'bld-go' }, [err, goBtn]));
+    paintSum();
+    goBtn.addEventListener('click', function () {
+      clear(err);
+      o.audienceNote = audNote.value.trim(); o.focus = focusIn.value.trim(); o.avoid = avoidIn.value.trim(); o.title = titleIn.value.trim();
+      if (o.audience === 'custom' && o.audienceNote.length < 8) { err.appendChild(errBox('Describe who it is for in a few words.')); audNote.focus(); return; }
+      var qs = new URLSearchParams({ kind: mode, opts: JSON.stringify(o) }), body;
+      if (mode === 'file') { if (!file) { err.appendChild(errBox('Choose a file first')); return; } qs.set('name', file.name); body = file; }
+      else if (mode === 'text') { if (ta.value.trim().length < 300) { err.appendChild(errBox('Paste a bit more text (a few paragraphs at least)')); return; } qs.set('name', taName.value.trim() || 'Pasted text'); body = new Blob([ta.value], { type: 'text/plain' }); }
+      else { if (!/^https?:\/\//.test(urlIn.value.trim())) { err.appendChild(errBox('Enter a web address starting with https://')); return; } body = new Blob([urlIn.value.trim()], { type: 'text/plain' }); }
+      goBtn.disabled = true; goBtn.lastChild.textContent = 'Reading the document...';
+      api('/api/assess/admin/builds?' + qs, { method: 'POST', raw: body, contentType: body.type || 'application/octet-stream' })
+        .then(function (j) { go('build/' + j.id); })
+        .catch(function (e) { goBtn.disabled = false; goBtn.lastChild.textContent = 'Write the questions'; err.appendChild(errBox(e.message)); });
+    });
+    api('/api/assess/admin/builds').then(function (j) {
+      AUDS = j.audiences || []; paintAud();
+      if (!j.ai) err.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: 'AI is not configured on the server, so questions cannot be written yet.' })]));
+      if (!j.builds.length) { lst.appendChild(h('div', { class: 'empty' }, [art('inbox'), h('b', { text: 'No builds yet' }), h('span', { text: 'Your first build will appear here.' })])); return; }
+      j.builds.forEach(function (b) {
+        var st = b.status === 'writing' || b.status === 'queued' ? pill('Writing ' + (b.progress.done || 0) + '/' + (b.progress.total || b.total), 'accent', true)
+          : b.status === 'paused' ? pill('Paused', 'warn', true) : b.tests ? pill(b.tests + ' assessment' + (b.tests === 1 ? '' : 's'), 'ok', true) : pill('Ready to review', 'accent', true);
+        lst.appendChild(h('div', { class: 'click', onclick: function () { go('build/' + b.id); } }, [h('span', { class: 'ic-round' }, [icon(b.tests ? 'check' : 'doc', 'sm')]),
+          h('div', { class: 'who' }, [h('b', { text: b.title }), h('span', { text: (b.audienceLabel || '') + ' · ' + b.questions + ' questions (' + b.approved + ' approved)' + (b.partSize < b.total ? ' · parts of ' + b.partSize : '') + ' · ' + fmtWhen(b.createdAt) })]), st]));
+      });
+    }).catch(function (e) { lst.appendChild(errBox(e.message)); });
+  }
+
+  function viewBuild(id) {
+    var holder = h('div'); main.appendChild(holder); holder.appendChild(skeleton());
+    var B = null, showKey = true, pollT = null, openPart = {}, release = null;
+    function load() { api('/api/assess/admin/builds/' + id).then(function (j) { B = j.build; draw(); }).catch(function (e) { clear(holder); holder.appendChild(errBox(e.message)); }); }
+    function act(path, body, msg) { return api('/api/assess/admin/builds/' + id + path, { method: 'POST', body: body || {} }).then(function (j) { B = j.build || (j.view) || B; if (msg) toast(msg); draw(); return j; }).catch(function (e) { toast(e.message); }); }
+    function draw() {
+      if (!document.body.contains(holder)) return;
+      clear(holder);
+      var writing = B.status === 'writing' || B.status === 'queued';
+      clearTimeout(pollT); if (writing) pollT = setTimeout(load, 3000);
+      var titleIn = h('input', { class: 'bld-title', value: B.title, 'aria-label': 'Name', maxlength: '140' });
+      titleIn.addEventListener('change', function () { api('/api/assess/admin/builds/' + id, { method: 'PUT', body: { title: titleIn.value } }).then(function (j) { B = j.build; toast('Renamed'); draw(); }).catch(function (e) { toast(e.message); }); });
+      holder.appendChild(h('div', { class: 'ph-wrap' }, [h('button', { class: 'crumb', type: 'button', onclick: function () { go('build'); } }, [icon('arrowL', 'sm'), 'Build from a document']),
+        h('div', { class: 'ph' }, [h('div', null, [titleIn, h('p', { class: 'bld-meta' }, [pill(B.audienceLabel || 'Audience'), pill(B.options.level ? B.options.level[0].toUpperCase() + B.options.level.slice(1) : ''), pill(B.sourceName || 'Document'),
+          h('button', { class: 'linkbtn', type: 'button', onclick: function () { bankFilter.source = B.setName; go('bank'); } }, [icon('list', 'sm'), 'Open in Question bank'])])]),
+          h('div', { class: 'acts' }, [h('button', { class: 'btn ghost danger sm', type: 'button', onclick: function () { if (!confirm('Delete this build? Its questions stay in the Question bank and its assessments stay too.')) return; api('/api/assess/admin/builds/' + id, { method: 'DELETE' }).then(function () { go('build'); }); } }, [icon('trash', 'sm'), 'Delete build'])])])]));
+      // progress / status
+      var pr = B.progress || {}, pct = pr.total ? Math.round((pr.done || 0) / pr.total * 100) : 0;
+      if (writing) holder.appendChild(h('div', { class: 'card pad bld-prog', role: 'status', 'aria-live': 'polite' }, [h('div', { class: 'row' }, [icon('spark'), h('b', { text: 'Writing ' + (pr.done || 0) + ' of ' + pr.total + ' questions' }), h('span', { class: 'small muted', text: pr.msg || '' })]),
+        h('div', { class: 'bld-bar' }, [h('i', { style: 'width:' + Math.max(3, pct) + '%' })]), h('p', { class: 'small muted', style: 'margin:0', text: 'You can leave this page; it keeps going. Near-duplicates of each other or of the bank are dropped and replaced' + (pr.dropped ? ' (' + pr.dropped + ' so far)' : '') + '.' })]));
+      if (B.status === 'paused') holder.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: (B.error || 'Writing stopped.') + ' ' }), h('button', { class: 'btn sm', type: 'button', onclick: function () { act('/resume', {}, 'Continuing'); } }, [icon('refresh', 'sm'), 'Continue'])]));
+      else if (B.error && !writing) holder.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: B.error })]));
+      // stats + part controls
+      var c = B.counts;
+      var partSel = h('select', { class: 'sel', 'aria-label': 'Questions per part' }, [5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 200].concat([B.options.partSize]).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) { return a - b; }).map(function (v) { return h('option', { value: String(v), text: v >= c.total && v === 200 ? 'One assessment' : 'Parts of ' + v }); }));
+      partSel.value = String(B.options.partSize);
+      partSel.addEventListener('change', function () { api('/api/assess/admin/builds/' + id, { method: 'PUT', body: { partSize: Number(partSel.value) } }).then(function (j) { B = j.build; draw(); }); });
+      var orderSel = h('select', { class: 'sel', 'aria-label': 'Order' }, [h('option', { value: 'document', text: 'Follow the document' }), h('option', { value: 'mixed', text: 'Mix topics in every part' })]);
+      orderSel.value = B.options.order || 'document';
+      orderSel.addEventListener('change', function () { api('/api/assess/admin/builds/' + id, { method: 'PUT', body: { order: orderSel.value } }).then(function (j) { B = j.build; draw(); }); });
+      var moreIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '1', max: '100', value: '10', 'aria-label': 'How many more' });
+      holder.appendChild(h('div', { class: 'bld-stats' }, [
+        h('div', { class: 'card bld-stat' }, [h('b', { text: String(c.total) }), h('span', { text: 'Questions' })]),
+        h('div', { class: 'card bld-stat ok' }, [h('b', { text: String(c.approved) }), h('span', { text: 'Approved' })]),
+        h('div', { class: 'card bld-stat' }, [h('b', { text: String(c.total - c.approved) }), h('span', { text: 'To review' })]),
+        h('div', { class: 'card bld-stat' }, [h('b', { text: String(B.parts.length) }), h('span', { text: B.parts.length === 1 ? 'Assessment' : 'Parts' })]),
+      ]));
+      holder.appendChild(h('div', { class: 'toolbar bld-tools' }, [partSel, orderSel,
+        h('label', { class: 'bld-inline' }, [h('span', { text: 'Show answers' }), (function () { var cb = h('input', { type: 'checkbox', checked: showKey ? true : null }); cb.addEventListener('change', function () { showKey = cb.checked; draw(); }); return cb; })()]),
+        h('span', { class: 'spacer' }),
+        h('span', { class: 'bld-inline' }, [moreIn, h('button', { class: 'btn sm', type: 'button', disabled: writing, onclick: function () { act('/more', { count: Number(moreIn.value) || 10 }, 'Writing more questions'); } }, [icon('plus', 'sm'), 'Add more'])]),
+        h('button', { class: 'btn sm', type: 'button', disabled: writing || !c.total, onclick: function () { act('/bulk', { ids: 'all', action: 'approve' }, 'All approved'); } }, [icon('check', 'sm'), 'Approve all'])]));
+      // coverage
+      var covered = B.sections.filter(function (s) { return s.include; });
+      if (covered.length > 1) holder.appendChild(h('details', { class: 'card pad bld-cov' }, [h('summary', { text: 'Coverage: ' + covered.filter(function (s) { return s.questions; }).length + ' of ' + covered.length + ' sections have questions' }),
+        h('div', { class: 'bld-covlist' }, covered.map(function (s) { return h('div', { class: 'bld-cov-row' }, [h('span', { text: s.title }), h('i', { style: 'width:' + Math.min(100, s.questions * 12) + 'px' }), h('b', { text: String(s.questions) })]); }))]));
+      // parts
+      B.parts.forEach(function (p) {
+        var ap = p.questions.filter(function (q) { return q.status === 'approved'; }).length, open = openPart[p.n] !== false;
+        var list = h('ol', { class: 'bld-qs', start: String((p.n - 1) * B.options.partSize + 1) });
+        p.questions.forEach(function (q, i) { list.appendChild(qRow(q)); });
+        holder.appendChild(h('div', { class: 'card bld-part' }, [
+          h('div', { class: 'bld-part-hd' }, [h('button', { class: 'bld-part-t', type: 'button', 'aria-expanded': String(open), onclick: function () { openPart[p.n] = !open; draw(); } }, [icon(open ? 'arrowR' : 'arrowR', 'sm'), h('b', { text: B.parts.length > 1 ? 'Part ' + p.n + ' of ' + B.parts.length : 'All questions' }), h('span', { class: 'small muted', text: p.questions.length + ' questions · ' + ap + ' approved' })]),
+            h('button', { class: 'btn sm ghost', type: 'button', disabled: ap === p.questions.length, onclick: function () { act('/bulk', { ids: p.questions.map(function (q) { return q.id; }), action: 'approve' }, 'Part ' + p.n + ' approved'); } }, [icon('check', 'sm'), 'Approve part'])]),
+          open ? list : null]));
+      });
+      if (!writing && c.total) holder.appendChild(releaseCard());
+      if (B.tests.length) holder.appendChild(h('div', { class: 'card pad stack' }, [h('h2', { text: 'Assessments from this build' }), h('div', { class: 'plist' }, B.tests.map(function (t) {
+        return h('div', { class: 'click', onclick: function () { go('edit/' + t.id); } }, [h('span', { class: 'ic-round' }, [icon('clipboard', 'sm')]), h('div', { class: 'who' }, [h('b', { text: t.title }), h('span', { text: (t.status === 'published' ? 'Published' : 'Draft') + (t.opensAt ? ' · opens ' + fmtWhen(t.opensAt) : '') + (t.series && t.series.gate !== 'none' ? ' · after the previous part' + (t.series.gate === 'pass' ? ' is passed' : '') : '') })]),
+          h('button', { class: 'btn sm', type: 'button', onclick: function (e) { e.stopPropagation(); go('results/' + t.id); } }, [icon('chart', 'sm'), 'Results'])]);
+      }))]));
+    }
+    function qRow(q) {
+      var TYPE = { single: 'One answer', multi: 'Select all', truefalse: 'True/False', ordering: 'Order', matching: 'Match' };
+      var opts = q.type === 'ordering' ? h('ol', { class: 'bld-opts' }, q.correct.map(function (k) { return h('li', { class: showKey ? 'ok' : '', text: q.options[k] }); }))
+        : q.type === 'matching' ? h('ul', { class: 'bld-opts' }, q.options.map(function (t, k) { return h('li', { text: t + (showKey ? '  →  ' + (q.matches[k] || '') : '') }); }))
+        : h('ul', { class: 'bld-opts' }, q.options.map(function (t, k) { var ok = showKey && q.correct.indexOf(k) >= 0; return h('li', { class: ok ? 'ok' : '' }, [ok ? icon('check', 'sm') : h('i', { class: 'bld-dot' }), t]); }));
+      var row = h('li', { class: 'bld-q' + (q.status === 'approved' ? ' approved' : '') }, [
+        h('div', { class: 'bld-q-hd' }, [pill(TYPE[q.type] || q.type), q.difficulty ? pill(q.difficulty, q.difficulty === 'hard' ? 'warn' : q.difficulty === 'easy' ? 'ok' : '') : null, q.section ? h('span', { class: 'bld-sec', text: q.section }) : null,
+          h('span', { class: 'spacer' }), q.status === 'approved' ? pill('Approved', 'ok', true) : pill('Draft', '', true)]),
+        h('p', { class: 'bld-prompt', text: q.prompt }), opts,
+        showKey && q.explanation ? h('p', { class: 'bld-expl', text: q.explanation }) : null,
+        h('div', { class: 'bld-q-acts' }, [
+          h('button', { class: 'btn sm ' + (q.status === 'approved' ? 'ghost' : 'primary'), type: 'button', onclick: function () { act('/bulk', { ids: [q.id], action: q.status === 'approved' ? 'draft' : 'approve' }); } }, [icon(q.status === 'approved' ? 'x' : 'check', 'sm'), q.status === 'approved' ? 'Unapprove' : 'Approve']),
+          h('button', { class: 'btn sm ghost', type: 'button', onclick: function () { editQ(q); } }, [icon('edit', 'sm'), 'Edit']),
+          h('button', { class: 'btn sm ghost', type: 'button', onclick: function () { rewriteQ(q, this); } }, [icon('wand', 'sm'), 'Improve with AI']),
+          h('button', { class: 'btn sm ghost', type: 'button', onclick: function (e) { var b = e.currentTarget; b.disabled = true; b.lastChild.textContent = 'Writing...'; act('/replace', { questionId: q.id }, 'Replaced with a new question'); } }, [icon('refresh', 'sm'), 'New question']),
+          h('button', { class: 'btn sm ghost danger', type: 'button', onclick: function () { if (confirm('Remove this question?')) act('/bulk', { ids: [q.id], action: 'remove' }, 'Removed'); } }, [icon('trash', 'sm'), 'Remove']),
+        ])]);
+      return row;
+    }
+    function saveQ(q, payload) { return api('/api/assess/admin/questions/' + q.id, { method: 'PUT', body: Object.assign({}, payload, { status: payload.status || q.status }) }).then(function () { load(); }); }
+    function editQ(q) { openQuestion(q, { onSave: function (payload) { return saveQ(q, payload); } }); }
+    function rewriteQ(q, btn) {
+      var ins = prompt('What should change? (leave empty to just tidy it up)\nFor example: "make it a scenario for a new joinee", "make the wrong options more realistic", "simpler words".', '');
+      if (ins === null) return;
+      btn.disabled = true;
+      api('/api/assess/admin/questions/improve', { method: 'POST', body: { question: { type: q.type, prompt: q.prompt, options: q.options, correct: q.correct, explanation: q.explanation, tags: q.tags, difficulty: q.difficulty }, instruction: ins } })
+        .then(function (r) { var nq = r.question; return saveQ(q, { type: nq.type, prompt: nq.prompt, options: nq.options, correct: nq.correct || [], explanation: nq.explanation, tags: (nq.tags || q.tags || []).join(','), difficulty: nq.difficulty || q.difficulty, status: 'draft' }); })
+        .then(function () { toast('Improved. Check it and approve.'); }).catch(function (e) { toast(e.message); btn.disabled = false; });
+    }
+    function releaseCard() {
+      var n = B.parts.length;
+      release = release || { mode: n > 1 ? 'days' : 'together', every: 1, start: '', secs: 45, pass: 70, attempts: 1, openDays: n > 1 ? 7 : 0, results: 'score', everyone: false, emails: '', publish: false, approveAll: true };
+      var r = release;
+      var card = h('div', { class: 'card pad stack bld-rel' }, [h('h2', { text: n > 1 ? 'Release the ' + n + ' parts' : 'Create the assessment' }),
+        h('p', { class: 'small muted', style: 'margin:0', text: 'Each part becomes its own assessment, named "' + B.title + (n > 1 ? ' · Part 1 of ' + n + '"' : '"') + '. Agents see the part number and when the next one unlocks.' })]);
+      var modes = n > 1 ? [['together', 'All at once'], ['hours', 'One part every few hours'], ['days', 'One part a day (or every few days)'], ['after', 'Next part after the previous is finished'], ['afterPass', 'Next part only after the previous is passed']] : [['together', 'Open now or at a set time']];
+      var everyIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '1', max: '720', value: String(r.every) });
+      everyIn.addEventListener('input', function () { r.every = Number(everyIn.value) || 1; paint(); });
+      var startIn = h('input', { class: 'inp', type: 'datetime-local', value: r.start, 'aria-label': 'First part opens at' });
+      startIn.addEventListener('change', function () { r.start = startIn.value; paint(); });
+      var everyRow = h('div', { class: 'bld-row' });
+      var plan = h('ol', { class: 'bld-plan' });
+      function paint() {
+        clear(everyRow);
+        if (r.mode === 'hours' || r.mode === 'days') everyRow.appendChild(h('span', { class: 'bld-inline' }, [h('span', { text: 'Every' }), everyIn, h('span', { text: r.mode === 'hours' ? 'hour(s)' : 'day(s)' })]));
+        clear(plan);
+        var t0 = r.start ? new Date(r.start).getTime() : Date.now();
+        for (var k = 0; k < n; k++) {
+          var when = r.mode === 'hours' ? t0 + k * r.every * 3600e3 : r.mode === 'days' ? t0 + k * r.every * 86400e3 : t0;
+          var txt = (n > 1 ? 'Part ' + (k + 1) + ': ' : '') + (r.mode === 'after' && k ? 'unlocks when Part ' + k + ' is finished' : r.mode === 'afterPass' && k ? 'unlocks when Part ' + k + ' is passed' : (when <= Date.now() + 60e3 ? 'opens right away' : 'opens ' + new Date(when).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })));
+          plan.appendChild(h('li', { text: txt + (r.openDays ? ', open for ' + r.openDays + ' day' + (r.openDays === 1 ? '' : 's') : '') }));
+        }
+      }
+      var modeBox = chipsPick(modes, r.mode, false, function (v) { r.mode = v; paint(); });
+      function num(label, key, min, max, suffix) { var i = h('input', { class: 'inp bld-num-in', type: 'number', min: String(min), max: String(max), value: String(r[key]) }); i.addEventListener('input', function () { r[key] = Number(i.value); paint(); }); return h('label', { class: 'bld-field' }, [h('span', { text: label }), h('span', { class: 'bld-inline' }, [i, suffix ? h('span', { class: 'small muted', text: suffix }) : null])]); }
+      var resSel = h('select', { class: 'sel' }, [['none', 'Do not show results'], ['score', 'Show the score'], ['answers', 'Show score and answers']].map(function (x) { return h('option', { value: x[0], text: x[1] }); }));
+      resSel.value = r.results; resSel.addEventListener('change', function () { r.results = resSel.value; });
+      var everyoneT = toggle('Assign to the whole team', r.everyone, 'Or list people below (for example the new joinees).');
+      everyoneT.input.addEventListener('change', function () { r.everyone = everyoneT.input.checked; emailsTa.disabled = r.everyone; });
+      var emailsTa = h('textarea', { class: 'ta', style: 'min-height:60px', placeholder: 'Emails of the people who should take it, separated by commas', disabled: r.everyone ? true : null }); emailsTa.value = r.emails;
+      emailsTa.addEventListener('input', function () { r.emails = emailsTa.value; });
+      var pubT = toggle('Publish now', r.publish, 'Off: saved as drafts you can check and publish from Assessments.');
+      pubT.input.addEventListener('change', function () { r.publish = pubT.input.checked; goB.lastChild.textContent = r.publish ? 'Create and publish' : 'Create as drafts'; });
+      var apT = toggle('Approve all questions in these parts', r.approveAll, 'Off: every question must be approved first.');
+      apT.input.addEventListener('change', function () { r.approveAll = apT.input.checked; });
+      var err = h('div');
+      var goB = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), r.publish ? 'Create and publish' : 'Create as drafts']);
+      goB.addEventListener('click', function () {
+        clear(err);
+        var emails = r.emails.split(/[\s,;]+/).filter(Boolean);
+        if (r.publish && !r.everyone && !emails.length) { err.appendChild(errBox('Choose who takes it: the whole team or some emails.')); return; }
+        goB.disabled = true;
+        api('/api/assess/admin/builds/' + id + '/tests', { method: 'POST', body: { release: r.mode, every: r.every, startAt: r.start ? new Date(r.start).toISOString() : '', secondsPerQuestion: r.secs, passPct: r.pass, attempts: r.attempts, openDays: r.openDays, releaseResults: r.results, assign: { everyone: r.everyone, emails: emails }, publish: r.publish, approveAll: r.approveAll } })
+          .then(function (j) { B = j.view; toast(j.ids.length + ' assessment' + (j.ids.length === 1 ? '' : 's') + ' created'); draw(); })
+          .catch(function (e) { goB.disabled = false; err.appendChild(errBox(e.message)); });
+      });
+      card.appendChild(h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Release' }), modeBox]));
+      card.appendChild(everyRow);
+      card.appendChild(h('div', { class: 'bld-grid' }, [h('label', { class: 'bld-field' }, [h('span', { text: n > 1 ? 'First part opens' : 'Opens' }), startIn, h('span', { class: 'small muted', text: 'Empty = now' })]), num('Open for', 'openDays', 0, 60, 'days (0 = no end)'), num('Time per question', 'secs', 15, 180, 'seconds'), num('Pass mark', 'pass', 0, 100, '%'), num('Attempts', 'attempts', 1, 10, null), h('label', { class: 'bld-field' }, [h('span', { text: 'After submitting' }), resSel])]));
+      card.appendChild(h('div', { class: 'bld-planbox' }, [h('b', { text: 'Plan' }), plan]));
+      card.appendChild(everyoneT); card.appendChild(emailsTa); card.appendChild(apT); card.appendChild(pubT);
+      card.appendChild(h('div', { class: 'bld-go' }, [err, goB]));
+      paint();
+      return card;
+    }
+    load();
+  }
+
   function viewStudioHome() {
     main.appendChild(h('div', { class: 'hero studio-hero' }, [h('div', { class: 'hero-tx' }, [h('span', { class: 'eyebrow', text: 'AI Studio' }), h('h1', { text: 'Turn a document into assessments' }), h('p', { text: 'Upload an SOP, a guide or any long document, paste text, or give a web link. The AI reads it, splits it into sections, suggests how many assessments to make, writes the questions, and works through them with you. Nothing reaches agents until you publish.' })]), h('div', { class: 'hero-art' }, [art('tests', 190)])]));
     var grid = h('div', { class: 'studio-start' });
@@ -3802,6 +4067,12 @@
         srcSel.value = keepSrc;
         loadMods(true).then(function () { fillMods(fac.untagged); });
         clear(tagNote);
+        var sets = (fac.sources || []).slice().sort(function (x, y) { return (/^Set #/.test(y.name) ? 1 : 0) - (/^Set #/.test(x.name) ? 1 : 0); }).slice(0, 14);
+        if (sets.length > 1) {
+          var strip = h('div', { class: 'sets-strip', role: 'group', 'aria-label': 'Question sets' }, [h('button', { type: 'button', class: 'set-chip' + (!bankFilter.source ? ' on' : ''), 'aria-pressed': String(!bankFilter.source), onclick: function () { bankFilter.source = ''; srcSel.value = ''; load(); } }, [icon('layers', 'sm'), h('span', { text: 'All sets' })])]);
+          sets.forEach(function (x) { var on = bankFilter.source === x.name; strip.appendChild(h('button', { type: 'button', class: 'set-chip' + (on ? ' on' : ''), 'aria-pressed': String(on), title: x.name, onclick: function () { bankFilter.source = on ? '' : x.name; srcSel.value = bankFilter.source; load(); } }, [icon(/^Set #/.test(x.name) ? 'spark' : 'doc', 'sm'), h('span', { text: x.name.replace(/^AI draft: /, '').replace(/^Set #\d+: /, '') }), h('em', { text: String(x.n) })])); });
+          tagNote.appendChild(strip);
+        }
         if (fac.untagged) tagNote.appendChild(h('div', { class: 'note', style: 'margin-bottom:12px' }, [icon('layers', 'sm'), h('span', { text: fac.untagged + ' question' + (fac.untagged === 1 ? ' has' : 's have') + ' no module yet. ' }), h('button', { class: 'btn sm', type: 'button', text: 'Tag them all', onclick: function (e) { autoTag(e.currentTarget); } })]));
         if (fac.untagged && !bankAutoTagged) { bankAutoTagged = true; autoTag(null); }
         renderBulk();

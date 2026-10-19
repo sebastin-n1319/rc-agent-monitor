@@ -602,6 +602,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     assessments.startAliveBeat();
     assessments.purgePreviews().catch(() => {});
     const studio = require('./lib/assess-studio'); studio.setDB(db, assessments); await studio.initSchema();
+    const builder = require('./lib/assess-builder'); builder.setDB(db, assessments, studio); await builder.initSchema(); // Batch 180
     console.log('📝 Assessments schema ready');
   } catch(e) { log.error('assessments_init_failed', e); console.error('assessments_init_failed', e); }
   // Session 63: access requests, and the one-time copy of everyone who
@@ -2415,6 +2416,28 @@ app.post('/api/assess/admin/generate', ...RV, rateLimit(10, 60000), express.raw(
 
 // ── Session 64: AI Studio, retest, archive/delete, downloads, reports ──
 const assessStudio = require('./lib/assess-studio');
+// ── Batch 180: Assessment Builder (document -> N questions for an audience -> parts on a release plan) ──
+const assessBuilder = require('./lib/assess-builder');
+app.get('/api/assess/admin/builds', ...RV, assessWrap(async (req, res) => res.json({ success: true, builds: await assessBuilder.list(), audiences: assessBuilder.audiences(), ai: require('./lib/ai').anyConfigured() })));
+app.post('/api/assess/admin/builds', ...RV, rateLimit(6, 60000), express.raw({ type: () => true, limit: '25mb' }), assessWrap(async (req, res) => {
+  const q = req.query || {};
+  if (!Buffer.isBuffer(req.body) || !req.body.length) { const er = new Error('Upload a document or paste some text'); er.status = 400; throw er; }
+  let opts = {}; try { opts = JSON.parse(String(q.opts || '{}')); } catch (e) { opts = {}; }
+  let text, name = String(q.name || '').slice(0, 160), kind = q.kind || 'file';
+  if (kind === 'text') { text = req.body.toString('utf8'); name = name || 'Pasted text'; }
+  else if (kind === 'url') { const url = req.body.toString('utf8').trim(); text = await assessFetchUrl(url); name = name || url.replace(/^https?:\/\//, '').slice(0, 120); }
+  else text = await assessExtractText(req.body, q.name);
+  const id = await assessBuilder.create({ ...opts, text, sourceName: name }, req.session.email, require('./lib/ai'));
+  res.json({ success: true, id });
+}));
+app.get('/api/assess/admin/builds/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, build: await assessBuilder.view(req.params.id) })));
+app.put('/api/assess/admin/builds/:id', ...RV, assessWrap(async (req, res) => res.json({ success: true, build: await assessBuilder.update(req.params.id, req.body || {}) })));
+app.delete('/api/assess/admin/builds/:id', ...RV, assessWrap(async (req, res) => { await assessBuilder.remove(req.params.id); res.json({ success: true }); }));
+app.post('/api/assess/admin/builds/:id/more', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, build: await assessBuilder.more(req.params.id, (req.body || {}).count, require('./lib/ai')) })));
+app.post('/api/assess/admin/builds/:id/resume', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, build: await assessBuilder.resume(req.params.id, require('./lib/ai')) })));
+app.post('/api/assess/admin/builds/:id/bulk', ...RV, assessWrap(async (req, res) => res.json({ success: true, build: await assessBuilder.bulk(req.params.id, req.body || {}) })));
+app.post('/api/assess/admin/builds/:id/replace', ...RV, rateLimit(20, 60000), assessWrap(async (req, res) => res.json({ success: true, build: await assessBuilder.replace(req.params.id, (req.body || {}).questionId, require('./lib/ai')) })));
+app.post('/api/assess/admin/builds/:id/tests', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessBuilder.createTests(req.params.id, req.body || {}, req.session.email)) })));
 function assessHtmlToText(html) {
   return String(html || '')
     .replace(/<(script|style|noscript|svg|nav|footer)[\s\S]*?<\/\1>/gi, ' ')
