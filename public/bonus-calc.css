@@ -214,3 +214,5 @@ html.dark-mode .bnc-chip-q{color:#C9BBFF}
 .bnc-explain{margin-bottom:10px}
 .bnc-btn.ai{border-color:rgba(124,92,255,.35);color:#5B3FD0}
 html.dark-mode .bnc-btn.ai{color:#C9BBFF}
+/* Batch 178: Show amounts toggle */
+.bnc-btn.on{background:var(--bnc-s1bg);border-color:transparent;color:var(--bnc-s1fg)}

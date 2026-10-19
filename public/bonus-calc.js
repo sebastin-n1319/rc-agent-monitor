@@ -21,7 +21,10 @@
     return fetch(path, o).then(function (r) { return r.json(); });
   }
   function toast(m, t) { if (typeof showToast === 'function') showToast(m, t || 'info'); }
-  function rs(n) { return 'Rs. ' + Math.round(n || 0).toLocaleString('en-IN'); }
+  // Batch 178: amounts are masked until an admin presses Show amounts (safe for screen sharing). Never remembered.
+  var MASK = 'Rs. ******';
+  function rs(n) { return S.showAmt ? 'Rs. ' + Math.round(n || 0).toLocaleString('en-IN') : MASK; }
+  function mask(t) { return S.showAmt ? String(t == null ? '' : t) : String(t == null ? '' : t).replace(/(Rs\.?|\u20b9|INR)\s?[\d,]+(\.\d+)?/gi, MASK); }
   // Batch 175: icons, switches, count-up numbers and first-paint motion.
   var ICONS = {
     refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>',
@@ -33,6 +36,7 @@
     card: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 10h6M7 14h10"/>',
     spark: '<path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.8 1.9 1.9.8-1.9.8L19 20.4l-.8-1.9-1.9-.8 1.9-.8z"/>',
     trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
+    eyeoff: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
     eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     alert: '<path d="M12 3 2 21h20z"/><path d="M12 10v5M12 18h.01"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
@@ -125,7 +129,10 @@
           options(S.type).map(function (o) { var op = h('option', { value: o[0], text: o[1] }); if (o[0] === S.value) op.selected = true; return op; })) : null,
         h('button', { type: 'button', class: 'bnc-btn icon', title: 'Refresh', 'aria-label': S.busy ? 'Loading' : 'Refresh', disabled: S.busy, onclick: load }, [(function () { var i = ico('refresh'); if (S.busy) i.classList.add('bnc-spin'); return i; })()]),
       ]),
-      h('div', { class: 'bnc-ctrl' }, [menu]),
+      h('div', { class: 'bnc-ctrl' }, [
+        h('button', { type: 'button', class: 'bnc-btn' + (S.showAmt ? ' on' : ''), 'aria-pressed': S.showAmt ? 'true' : 'false', title: S.showAmt ? 'Hide the rupee amounts again' : 'Amounts are hidden so they are safe on a shared screen',
+          onclick: function () { S.showAmt = !S.showAmt; draw(); } }, [ico(S.showAmt ? 'eyeoff' : 'eye', 15), S.showAmt ? 'Hide amounts' : 'Show amounts']),
+        menu]),
     ]);
     var kids = [head, toolbar];
     if (S.err) kids.push(h('div', { class: 'bnc-note bad', role: 'alert', text: S.err }));
@@ -211,12 +218,12 @@
     if (!st) return card;
     if (st.busy) { card.appendChild(h('div', { 'aria-live': 'polite', 'aria-busy': 'true' }, [h('div', { class: 'bnc-skel', style: 'width:70%' }), h('div', { class: 'bnc-skel', style: 'width:92%' }), h('div', { class: 'bnc-skel', style: 'width:55%' })])); return card; }
     if (st.err) { card.appendChild(h('div', { class: 'bnc-note bad', role: 'alert', text: st.err })); return card; }
-    var r = st.r, list = function (arr) { return h('ul', null, arr.map(function (t) { return h('li', { text: t }); })); };
-    card.appendChild(h('p', { class: 'bnc-ai-head', text: r.headline }));
+    var r = st.r, list = function (arr) { return h('ul', null, arr.map(function (t) { return h('li', { text: mask(t) }); })); };
+    card.appendChild(h('p', { class: 'bnc-ai-head', text: mask(r.headline) }));
     card.appendChild(h('div', { class: 'bnc-ai-grid' }, [
       h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('check', 13), 'Highlights']), list(r.highlights || [])]),
       h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('alert', 13), 'Worth checking']), list(r.watch || [])]),
-      h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('bulb', 13), 'Coaching']), h('ul', null, (r.coaching || []).map(function (c) { return h('li', null, [h('b', { text: c.agent + ': ' }), c.tip]); }))]),
+      h('div', { class: 'bnc-ai-col' }, [h('h4', null, [ico('bulb', 13), 'Coaching']), h('ul', null, (r.coaching || []).map(function (c) { return h('li', null, [h('b', { text: c.agent + ': ' }), mask(c.tip)]); }))]),
     ]));
     card.appendChild(h('p', { class: 'bnc-ai-foot', text: 'AI-written from this calculation' + (r.at ? ' at ' + new Date(r.at).toLocaleTimeString() : '') + '. Check anything important against the numbers below.' }));
     card.appendChild(card.querySelector('.bnc-chat'));
@@ -245,7 +252,7 @@
     var c = S.chat;
     var box = h('div', { class: 'bnc-chat' });
     var thread = c.msgs.length || c.asking ? h('div', { class: 'bnc-thread', 'aria-live': 'polite' }, c.msgs.map(function (m) {
-      return h('div', { class: 'bnc-msg ' + (m.role === 'user' ? 'me' : 'bot') }, [m.role === 'user' ? m.content : fmtAns(m.content)]); }).concat(c.asking ? [h('div', { class: 'bnc-msg bot typing', 'aria-label': 'AI is typing' }, [h('i'), h('i'), h('i')])] : [])) : null;
+      return h('div', { class: 'bnc-msg ' + (m.role === 'user' ? 'me' : 'bot') }, [m.role === 'user' ? m.content : fmtAns(mask(m.content))]); }).concat(c.asking ? [h('div', { class: 'bnc-msg bot typing', 'aria-label': 'AI is typing' }, [h('i'), h('i'), h('i')])] : [])) : null;
     if (thread) box.appendChild(h('div', { class: 'bnc-chat-hd' }, [h('b', null, [ico('chat', 14), ' Questions about ' + d.label]),
       h('button', { type: 'button', class: 'bnc-link', text: 'Clear', onclick: function () { S.chat = null; draw(); } })]));
     if (thread) box.appendChild(thread);
@@ -263,7 +270,7 @@
     wrap.appendChild(h('div', { class: 'bnc-tiles' }, [
       tile('Total bonus', '', 'Slab bonus + CSAT incentive', 'acc', d.totals.total, rs),
       tile('Slab bonus', '', 'After planned-leave cuts', 'blue', d.totals.slab, rs),
-      tile('CSAT incentive', '', 'Rs. 150 per Good ticket, Rs. 50 per Happy chat', 'blue', d.totals.csat, rs),
+      tile('CSAT incentive', '', S.showAmt ? 'Rs. 150 per Good ticket, Rs. 50 per Happy chat' : 'Per Good ticket survey and Happy chat', 'blue', d.totals.csat, rs),
       tile('Eligible months', '', 'Agent-months at 70+ points and 18+ days', el ? 'ok' : 'mute', el, function (x) { return x + ' of ' + am; }),
       tile('Still to enter', '', 'Agent-months missing QA or attendance', (d.missing || []).length ? 'warn' : 'ok', (d.missing || []).length),
     ]));
@@ -285,7 +292,7 @@
             if (x.outside) return h('td', null, [h('div', { class: 'bnc-cell' }, [h('span', { class: 'bnc-miss', text: 'Not in T1 CS this month' })])]);
             var bar = h('span', { class: 'bnc-bar ' + (x.points >= 100 ? 'full' : x.eligible ? (x.slab === 's2' ? 's2' : 'ok') : ''), 'aria-hidden': 'true' }, [h('i', { style: 'width:' + Math.min(100, x.points) + '%' })]);
             var whyShort = !x.eligible && x.present === 0 ? 'On leave' : !x.eligible && x.why && x.why.length ? x.why.map(function (w) { return w.replace(/Points below 70 \(scored \d+\)\.?\s*Need (\d+) more\.?/, '$1 pts short of 70').replace(/Present days below 18 \(was ([\d.]+)\)\.?/, '$1 days, needs 18').replace(/\.$/, ''); }).join(', ') : '';
-            var amt = x.total ? h('span', { class: 'bnc-amt' }, [rs(x.slabAmt), x.csat && x.csat.amount ? h('small', { text: ' + ' + Math.round(x.csat.amount).toLocaleString('en-IN') + ' CSAT' }) : null]) : h('span', { class: 'bnc-amt', text: '-' });
+            var amt = x.total ? h('span', { class: 'bnc-amt' }, [rs(x.slabAmt), x.csat && x.csat.amount ? h('small', { text: ' + ' + (S.showAmt ? Math.round(x.csat.amount).toLocaleString('en-IN') : '******') + ' CSAT' }) : null]) : h('span', { class: 'bnc-amt', text: '-' });
             if (x.eligible && x.slab && x.slabAmt && x.factor < 1) amt.appendChild(h('small', { text: ' (' + Math.round(x.factor * 100) + '% leave)' }));
             if (x.eligible && x.slab && !x.slabAmt && x.unplanned) amt.appendChild(h('small', { text: ' (unplanned leave)' }));
             return h('td', null, [h('div', { class: 'bnc-cell' }, [h('b', { text: x.points + ' pts' }), bar, chip(x.slab, x.eligible), whyShort ? h('span', { class: 'bnc-why', text: whyShort }) : null, amt, x.missing.length ? h('span', { class: 'bnc-miss', text: 'Needs ' + x.missing.join(' and ') }) : null])]); }))
@@ -319,8 +326,8 @@
         + ', planned ' + L.pl + ', sick ' + L.sl + ', half days ' + (L.hd_pl + L.hd_sl + L.hd_upl) + ', unplanned ' + L.upl + (L.ncns ? ', NCNS ' + L.ncns : '') + (L.fl ? ', floater ' + L.fl + ' (not counted)' : '') + '. Leave count ' + x.leaveCount + '.';
       return h('div', { class: 'bnc-month' }, [h('h4', { text: m.long + (m.partial ? ' (to date)' : '') }),
         h('table', { class: 'bnc-mini' }, [h('thead', null, [h('tr', null, ['Metric', 'Result', 'Slab 1 / Slab 2', 'Outcome', 'Points'].map(function (t) { return h('th', { scope: 'col', text: t }); }))]), h('tbody', null, rows)]),
-        h('p', { class: 'bnc-line' }, [h('b', { text: x.points + ' / 100. ' }), x.eligible ? 'Eligible, ' + (x.slab === 's1' ? 'Slab 1' : 'Slab 2') + '. ' : 'Not eligible. ' + x.why.join(' '), x.leaveNote ? ' ' + x.leaveNote : '', x.slabAmt ? ' Slab bonus ' + rs(x.slabAmt) + '.' : '']),
-        h('p', { class: 'bnc-line' }, [x.csat.why, x.csat.amount ? ' ' + rs(x.csat.amount) + '.' : '']),
+        h('p', { class: 'bnc-line' }, [h('b', { text: x.points + ' / 100. ' }), x.eligible ? 'Eligible, ' + (x.slab === 's1' ? 'Slab 1' : 'Slab 2') + '. ' : 'Not eligible. ' + x.why.join(' '), x.leaveNote ? ' ' + mask(x.leaveNote) : '', x.slabAmt ? ' Slab bonus ' + rs(x.slabAmt) + '.' : '']),
+        h('p', { class: 'bnc-line' }, [mask(x.csat.why), x.csat.amount ? ' ' + rs(x.csat.amount) + '.' : '']),
         h('p', { class: 'bnc-line mute', text: leaveTxt }),
         h('p', { class: 'bnc-line mute', text: a.team === 'chat' ? 'Chat ratings ' + x.data.happy + ' Happy, ' + x.data.ok + ' Ok, ' + x.data.bad + ' Bad (' + (x.data.chatSource === 'entered' ? 'entered' : 'SalesIQ') + '). Tickets closed ' + x.data.closed + ', FCR ' + x.data.fcrYes + '.' : 'Ticket surveys ' + x.data.csatGood + ' Good of ' + x.data.csatTotal + '. Tickets closed ' + x.data.closed + ', FCR ' + x.data.fcrYes + '. Inbound calls ' + x.data.inbound + '.' }),
       ]);
@@ -474,5 +481,5 @@
 
   document.addEventListener('click', function (e) { document.querySelectorAll('#bnc-root details.bnc-menu[open]').forEach(function (m) { if (!m.contains(e.target)) m.removeAttribute('open'); }); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') document.querySelectorAll('#bnc-root details.bnc-menu[open]').forEach(function (m) { m.removeAttribute('open'); var sm = m.querySelector('summary'); if (sm) sm.focus(); }); });
-  window.openBonusCalc = function () { if (!S.data || Date.now() - (S.at || 0) > 5 * 60000) { S.at = Date.now(); if (!S.value) S.value = defaultValue(S.type); load(); } else draw(); };
+  window.openBonusCalc = function () { S.showAmt = false; if (!S.data || Date.now() - (S.at || 0) > 5 * 60000) { S.at = Date.now(); if (!S.value) S.value = defaultValue(S.type); load(); } else draw(); };
 })();
