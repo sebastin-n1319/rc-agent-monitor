@@ -148,6 +148,7 @@
         j.plan && j.plan.module ? h('span', { class: 'ax-badge mod' }, [j.plan.module]) : null]);
       var card = h('article', { class: 'ax-card ax-ans' + (j.found ? '' : ' nf') });
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
+      if (j.live) card.appendChild(liveBox(j.live));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
       if (a.steps && a.steps.length) card.appendChild(section('list', 'Steps', [h('ol', { class: 'ax-ol' }, a.steps.map(function (s) { return h('li', null, [linkTickets(String(s).replace(/^\d+[.)]\s*/, ''))]); })), h('div', { class: 'ax-row' }, [copyBtn(a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'), 'Copy steps')])]));
@@ -160,6 +161,14 @@
       if (a.follow_ups && a.follow_ups.length) card.appendChild(h('div', { class: 'ax-fu' }, a.follow_ups.map(function (f) { return h('button', { type: 'button', class: 'ax-chip', onclick: function () { input.value = f; submit(); } }, [f]); })));
       card.appendChild(feedbackRow(j, q));
       return card;
+    }
+    function liveBox(L) {
+      var ago = function (iso) { var m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
+      return h('div', { class: 'ax-live', role: 'alert' }, [
+        h('div', { class: 'ax-live-hd' }, [icon('warn'), h('b', { text: 'Possible outage: ' + L.today + ' similar ticket' + (L.today === 1 ? '' : 's') + ' in the last 24 hours' + (L.offices ? ' from ' + L.offices + ' offices' : '') }),
+          h('span', { class: 'ax-muted', text: L.count + ' in 48 hours' })]),
+        h('p', { text: 'Confirm with your lead or the incident channel whether there is a known issue before troubleshooting, and link this ticket to the ones below.' }),
+        h('div', { class: 'ax-live-tk' }, L.tickets.map(function (t) { return h('a', { href: '/guides/ticket/' + t.number, target: '_blank', rel: 'noopener', title: t.subject }, [h('b', { text: '#' + t.number }), h('span', { text: t.subject }), h('em', { text: ago(t.at) })]); }))]);
     }
     function plain(a, j) {
       var out = [a.answer];
