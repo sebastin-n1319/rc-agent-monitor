@@ -252,3 +252,19 @@ html.widget .gd-nav button{padding:0 10px;font-size:13px}
 .ax-live-tk a b{color:var(--blue);font-variant-numeric:tabular-nums}
 .ax-live-tk a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ax-live-tk a em{font-style:normal;color:var(--t3);font-size:11.5px;white-space:nowrap}
+
+/* Conversation focus (Batch 187): bar with Refresh, New, End and Full screen; suggestions fade while typing */
+.ax-hero{transition:opacity .25s ease,transform .25s ease}
+.ax-hero.fade{opacity:0;transform:translateY(-8px);pointer-events:none}
+.ax-cbar{position:sticky;top:0;z-index:4;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 -8px 4px;padding:10px 8px;background:linear-gradient(var(--bg) 80%,transparent)}
+.ax-cbar[hidden]{display:none}
+.ax-cbar-t{display:inline-flex;align-items:center;gap:8px;font-size:13px}
+.ax-cbar-t svg{color:var(--accent-ink)}
+.ax-newnote{margin:24px 0;text-align:center;color:var(--t3);font-size:13px}
+html.ax-full .gd-top{display:none}
+html.ax-full{--top:0px}
+html.ax-full .ax{grid-template-columns:minmax(0,1fr)!important;min-height:100vh}
+html.ax-full .ax-rail,html.ax-full .gd-fab{display:none!important}
+html.ax-full .ax-col{max-width:1100px;padding-top:12px}
+@media (max-width:820px){.ax-cbar .ax-mini span{display:none}}
+@media (prefers-reduced-motion:reduce){.ax-hero{transition:none}}

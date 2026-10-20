@@ -27,7 +27,7 @@
     user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>', warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.01"/>',
     list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
     chat: '<path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>', refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
-    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>', trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6V17h4v-.5c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>', trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6V17h4v-.5c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>',
   };
   function icon(n, cls) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'i ' + (cls || '')); s.setAttribute('aria-hidden', 'true'); s.innerHTML = P[n] || ''; return s; }
   function clear(el) { while (el && el.firstChild) el.removeChild(el.firstChild); }
@@ -84,7 +84,24 @@
     var col = h('div', { class: 'ax-col' }); root.appendChild(col);
     var intro = h('section', { class: 'ax-hero' });
     var thread = h('div', { class: 'ax-thread', role: 'log', 'aria-label': 'Answers', 'aria-live': 'polite' });
-    col.appendChild(intro); col.appendChild(thread);
+    // Conversation bar: shown once a conversation starts. Refresh re-asks the last question fresh; New starts over
+    // (and stays in focus); End closes the conversation and goes back to the start page; Full screen gives the
+    // conversation the whole screen (Esc leaves it).
+    var cbTitle = h('b', { text: 'Conversation' }), cbCount = h('span', { class: 'ax-muted' });
+    var refreshB = h('button', { type: 'button', class: 'ax-mini', title: 'Ask the last question again for a fresh answer', onclick: function () { refresh(); } }, [icon('refresh', 'sm'), h('span', { text: 'Refresh answer' })]);
+    var newB = h('button', { type: 'button', class: 'ax-mini', title: 'Start a new conversation', onclick: function () { reset(true); } }, [icon('plus', 'sm'), h('span', { text: 'New conversation' })]);
+    var endB = h('button', { type: 'button', class: 'ax-mini', title: 'End this conversation', onclick: function () { endConvo(); } }, [icon('x', 'sm'), h('span', { text: 'End' })]);
+    var fullB = h('button', { type: 'button', class: 'ax-mini', title: 'Full screen (Esc to leave)', 'aria-pressed': 'false', onclick: function () { setFull(!S.full); } }, [icon('expand', 'sm'), h('span', { text: 'Full screen' })]);
+    var cbar = h('div', { class: 'ax-cbar', hidden: true }, [h('span', { class: 'ax-cbar-t' }, [icon('chat', 'sm'), cbTitle, cbCount]), h('span', { class: 'ax-sp' }), refreshB, newB, endB, fullB]);
+    function paintBar() { var n = S.thread.length / 2 + (S.busy ? 1 : 0); cbar.hidden = !n; cbCount.textContent = n ? Math.ceil(n) + ' question' + (Math.ceil(n) === 1 ? '' : 's') : ''; refreshB.disabled = S.busy || !S.lastQ; }
+    function setFull(v) {
+      S.full = !!v; document.documentElement.classList.toggle('ax-full', S.full); fullB.setAttribute('aria-pressed', String(S.full));
+      fullB.lastChild.textContent = S.full ? 'Exit full screen' : 'Full screen';
+      try { if (S.full && !document.fullscreenElement && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {}); else if (!S.full && document.fullscreenElement) document.exitFullscreen().catch(function () {}); } catch (e) {}
+    }
+    document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement && S.full) { S.full = false; document.documentElement.classList.remove('ax-full'); fullB.setAttribute('aria-pressed', 'false'); fullB.lastChild.textContent = 'Full screen'; } });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.full && !document.querySelector('dialog[open]')) setFull(false); });
+    col.appendChild(cbar); col.appendChild(intro); col.appendChild(thread);
     // composer
     var input = h('textarea', { rows: '3', placeholder: 'What is the client asking? Paste their message or describe the situation.', 'aria-label': 'Question' });
     var send = h('button', { type: 'submit', class: 'gd-btn primary ax-send', 'aria-label': 'Ask' }, [icon('send'), 'Ask']);
@@ -96,6 +113,14 @@
       h('div', { class: 'ax-comp-bar' }, [modeBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
     col.appendChild(form);
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
+    // As soon as the agent types, the side bar folds and the suggestions fade, so the page is about the conversation.
+    var fadeT = null;
+    input.addEventListener('input', function () {
+      var typing = !!input.value.trim();
+      if (typing && !S.folded) setFold(true);
+      if (typing && !intro.hidden) { intro.classList.add('fade'); clearTimeout(fadeT); fadeT = setTimeout(function () { if (intro.classList.contains('fade')) intro.hidden = true; }, 260); }
+      else if (!typing && !S.thread.length && !S.busy) { clearTimeout(fadeT); intro.hidden = false; requestAnimationFrame(function () { intro.classList.remove('fade'); }); }
+    });
     function paintScope() { clear(scopeChip); if (S.module) scopeChip.appendChild(h('button', { type: 'button', class: 'ax-chip on', title: 'Search everything', onclick: function () { S.module = ''; paintMods(); paintScope(); } }, [S.module, icon('x', 'sm')])); }
     function paintMods() {
       clear(modList);
@@ -111,7 +136,27 @@
         h('p', { text: 'Answers come from ' + n + ' Help Center articles, the VoIP and AI guides, your team\'s rules, and how the team solved similar tickets, chats and calls. A second AI double-checks every answer against those sources.' })]));
       intro.appendChild(h('div', { class: 'ax-ex' }, EXAMPLES.map(function (e) { return h('button', { type: 'button', class: 'ax-excard', onclick: function () { input.value = e[0]; submit(); } }, [h('span', { class: 'ax-extag', text: e[1] }), h('span', { text: e[0] })]); })));
     }
-    function reset() { S.thread = []; clear(thread); heroPaint(); input.value = ''; input.focus(); }
+    function reset(keepFocus) {
+      if (S.busy) return;
+      S.thread = []; S.lastQ = null; S.lastCard = null; clear(thread); input.value = '';
+      heroPaint(); intro.classList.remove('fade');
+      if (keepFocus) { intro.hidden = true; thread.appendChild(h('p', { class: 'ax-newnote', text: 'New conversation. Ask your question below.' })); }
+      paintBar(); input.focus();
+    }
+    function endConvo() {
+      if (S.busy) return;
+      if (S.full) setFull(false);
+      reset(false); if (store.get('fold', null) !== true) setFold(false);
+      ctx.toast && ctx.toast('Conversation ended');
+    }
+    function refresh() {
+      if (S.busy || !S.lastQ) return;
+      // drop the last turn and ask the same question again, skipping any saved answer
+      S.thread = S.thread.slice(0, -2);
+      if (S.lastCard && S.lastCard.parentNode) S.lastCard.remove();
+      var me = thread.lastElementChild; if (me && me.classList.contains('ax-me')) me.remove();
+      submit(S.lastQ, true);
+    }
     // progress
     var PHASES = ['Understanding the question', 'Searching the Help Center and guides', 'Checking how the team solved it before', 'Writing the answer', 'Double-checking with a second AI'];
     function progress() {
@@ -120,22 +165,23 @@
       var k = 0, tm = setInterval(function () { var li = list.children; if (k < li.length - 1) { li[k].className = 'done'; k++; li[k].className = 'on'; } }, 2600);
       return { el: box, stop: function () { clearInterval(tm); } };
     }
-    function submit() {
-      var q = input.value.trim(); if (!q || S.busy) return;
+    function submit(again, fresh) {
+      var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
+      var nn = thread.querySelector('.ax-newnote'); if (nn) nn.remove();
       if (!ctx.ai) { ctx.toast && ctx.toast('AI is not set up on the server yet.'); return; }
-      S.busy = true; send.disabled = true; intro.hidden = true;
+      S.busy = true; send.disabled = true; intro.hidden = true; S.lastQ = q; paintBar();
       if (store.get('fold', null) === null && !S.folded) setFold(true);
       var rec = store.get('recent', []).filter(function (x) { return x !== q; }); rec.unshift(q); store.set('recent', rec.slice(0, 12)); paintRecent();
       thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: (MODES.find(function (m) { return m[0] === S.mode; }) || MODES[0])[1] + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
       var pg = progress(); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
-      input.value = '';
+      if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
-      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: S.mode, module: S.module, useHistory: S.useHistory }).then(function (j) {
-        pg.stop(); var card = answerCard(j, q); thread.replaceChild(card, pg.el);
+      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: S.mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh }).then(function (j) {
+        pg.stop(); var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card;
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
       }).catch(function (e) { pg.stop(); thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
-        .then(function () { S.busy = false; send.disabled = false; input.focus(); });
+        .then(function () { S.busy = false; send.disabled = false; paintBar(); input.focus(); });
     }
     function section(ic, title, kids, cls) { return h('section', { class: 'ax-sec ' + (cls || '') }, [h('h4', null, [icon(ic), title])].concat(kids)); }
     function copyBtn(text, label) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label || 'Copy']); b.addEventListener('click', function () { copy(text, b); }); return b; }

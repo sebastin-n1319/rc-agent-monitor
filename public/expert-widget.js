@@ -43,7 +43,7 @@
   function dark() { var t = document.documentElement.getAttribute('data-theme'); return t === 'dark' || (!t && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) || document.body.classList.contains('dark-mode'); }
   function setOpen(v) {
     open = v;
-    if (v && !frame) { frame = document.createElement('iframe'); frame.title = 'Adit Expert'; frame.src = '/guides?embed=1&widget=1#ask'; panel.appendChild(frame); }
+    if (v && !frame) { frame = document.createElement('iframe'); frame.title = 'Adit Expert'; frame.setAttribute('allow', 'fullscreen'); frame.src = '/guides?embed=1&widget=1#ask'; panel.appendChild(frame); }
     document.documentElement.classList.toggle('axw-dark', dark());
     panel.classList.toggle('open', v); btn.classList.toggle('on', v); btn.setAttribute('aria-expanded', String(v));
     var bw = document.getElementById('brain-fab-wrap'); if (bw) bw.style.visibility = v ? 'hidden' : '';
