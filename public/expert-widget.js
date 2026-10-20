@@ -5,13 +5,14 @@
   'use strict';
   if (window.__aditExpertWidget) return; window.__aditExpertWidget = true;
   var css = [
-    /* A twin of the Brain tab: same size, shape and colour, docked just above it; it slides out on hover. */
-    '.axw-btn{position:fixed;right:0;bottom:148px;z-index:2147483646;display:flex;align-items:center;justify-content:flex-start;width:46px;height:48px;padding:0 0 0 6px;border:0;border-radius:24px 0 0 24px;cursor:pointer;',
-    'background:#0B2A5B;box-shadow:0 4px 14px rgba(7,43,64,.18);transform:translateX(6px);opacity:.82;transition:transform .2s ease,opacity .2s ease}',
-    '.axw-btn:hover,.axw-btn:focus-visible{transform:none;opacity:1}.axw-btn.on{display:none}',
+    /* A slim edge tab above the Brain tab: brain icon on top, "Expert" written down the tab, always fully on screen. */
+    '.axw-btn{position:fixed;right:0;bottom:152px;z-index:2147483646;display:flex;flex-direction:column;align-items:center;gap:8px;width:40px;padding:8px 0 12px;border:0;border-radius:14px 0 0 14px;cursor:pointer;',
+    'background:#0B2A5B;color:#fff;box-shadow:-4px 6px 18px rgba(7,43,64,.22);transition:width .2s ease,background .2s ease}',
+    '.axw-btn:hover,.axw-btn:focus-visible{width:46px;background:#0E3570}.axw-btn.on,.axw-btn[hidden]{display:none!important}',
     '.axw-btn:focus-visible{outline:2px solid #F4891F;outline-offset:2px}',
-    '.axw-ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#F7A452,#E5671B);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}',
-    '.axw-ic svg{width:24px;height:24px}',
+    '.axw-ic{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#F7A452,#E5671B);color:#fff;flex:none}',
+    '.axw-ic svg{width:19px;height:19px}',
+    '.axw-lb{writing-mode:vertical-rl;transform:rotate(180deg);font:600 12px/1 Poppins,system-ui,sans-serif;letter-spacing:.06em;color:#fff;white-space:nowrap}',
     '.axw-panel{position:fixed;top:12px;right:12px;bottom:46px;z-index:2147483646;width:min(480px,calc(100vw - 24px));display:flex;flex-direction:column;border-radius:18px;overflow:hidden;',
     'background:#F4F6F9;border:1px solid rgba(11,42,63,.12);box-shadow:0 24px 70px rgba(7,43,64,.28);transform:translateX(calc(100% + 24px));transition:transform .28s cubic-bezier(.2,.8,.2,1);visibility:hidden}',
     '.axw-panel.open{transform:none;visibility:visible}',
@@ -33,7 +34,7 @@
   var btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'axw-btn'; btn.hidden = true;
   btn.setAttribute('aria-label', 'Ask Adit Expert'); btn.title = 'Ask Adit Expert (Alt+E)';
-  btn.innerHTML = '<span class="axw-ic">' + BRAIN + '</span>';
+  btn.innerHTML = '<span class="axw-ic">' + BRAIN + '</span><span class="axw-lb">Expert</span>';
   var panel = document.createElement('aside');
   panel.className = 'axw-panel'; panel.setAttribute('aria-label', 'Adit Expert'); panel.setAttribute('role', 'dialog');
   panel.innerHTML = '<div class="axw-hd">' + BRAIN + '<span>Adit Expert</span><span class="sp"></span><a href="/guides" target="_blank" rel="noopener">Full page</a><button type="button" aria-label="Close">Close</button></div>';
@@ -54,9 +55,15 @@
     if (e.key === 'Escape' && open) setOpen(false);
     if (e.altKey && (e.key === 'e' || e.key === 'E' || e.code === 'KeyE') && allowed && !btn.hidden) { e.preventDefault(); setOpen(!open); }
   });
-  // No help during a test, and no second copy on the Expert page itself.
-  var HIDE_ON = ['tab-assess', 'agent-section-assess', 'tab-guides', 'agent-section-guides'];
-  function blocked() { return HIDE_ON.some(function (id) { var el = document.getElementById(id); return el && el.offsetParent !== null && getComputedStyle(el).display !== 'none'; }) || !!document.fullscreenElement; }
+  // No help during a test, and no second copy where Adit Expert is already on screen. The app shows those pages in
+  // frames (/assess, /guides), so look for a visible frame rather than a page id.
+  function visible(el) { if (!el) return false; var r = el.getBoundingClientRect(); if (r.width < 40 || r.height < 40) return false; for (var n = el; n && n !== document; n = n.parentNode) { if (n.nodeType === 1) { var cs = getComputedStyle(n); if (cs.display === 'none' || cs.visibility === 'hidden') return false; } } return true; }
+  function blocked() {
+    if (document.fullscreenElement || /^\/(assess|guides)/.test(location.pathname)) return true;
+    var fr = document.querySelectorAll('iframe');
+    for (var i = 0; i < fr.length; i++) { if (frame && fr[i] === frame) continue; var src = fr[i].getAttribute('src') || fr[i].getAttribute('data-src') || ''; if (/\/(assess|guides)\b/.test(src) && visible(fr[i])) return true; }
+    return false;
+  }
   function sync() { var hide = !allowed || blocked(); btn.hidden = hide; if (hide && open) setOpen(false); }
   function check() {
     fetch('/api/guides/expert/meta', { credentials: 'same-origin' }).then(function (r) { allowed = r.ok; sync(); if (!allowed) setTimeout(check, 30000); }).catch(function () { setTimeout(check, 30000); });
