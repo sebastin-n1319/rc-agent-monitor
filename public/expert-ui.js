@@ -27,7 +27,7 @@
     user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>', warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.01"/>',
     list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
     chat: '<path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>', refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
-    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6V17h4v-.5c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>', trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6V17h4v-.5c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>',
   };
   function icon(n, cls) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'i ' + (cls || '')); s.setAttribute('aria-hidden', 'true'); s.innerHTML = P[n] || ''; return s; }
   function clear(el) { while (el && el.firstChild) el.removeChild(el.firstChild); }
@@ -64,12 +64,23 @@
     var rail = h('aside', { class: 'ax-rail', 'aria-label': 'Filters and history' });
     var modList = h('div', { class: 'ax-mods', role: 'radiogroup', 'aria-label': 'Product' });
     var popBox = h('div', { class: 'ax-pop' }), recBox = h('div', { class: 'ax-pop' });
-    var newBtn = h('button', { type: 'button', class: 'gd-btn ax-new', onclick: function () { reset(); } }, [icon('plus'), 'New question']);
-    rail.appendChild(newBtn);
+    var newBtn = h('button', { type: 'button', class: 'gd-btn ax-new', title: 'New question', onclick: function () { reset(); } }, [icon('plus'), h('span', { text: 'New question' })]);
+    // The side bar folds to a thin strip so the conversation gets the room; it folds by itself once a question is asked
+    // unless the person opened it again, and the choice is remembered on this device.
+    var foldBtn = h('button', { type: 'button', class: 'ax-fold', 'aria-label': 'Collapse the side bar', title: 'Collapse the side bar', onclick: function () { setFold(!S.folded, true); } }, [icon('panel')]);
+    rail.appendChild(h('div', { class: 'ax-rail-top' }, [foldBtn, newBtn]));
     rail.appendChild(h('h3', { text: 'Product' })); rail.appendChild(modList);
     rail.appendChild(h('h3', { text: 'Asked a lot this week' })); rail.appendChild(popBox);
     rail.appendChild(h('h3', { text: 'Your recent questions' })); rail.appendChild(recBox);
     root.appendChild(rail);
+    S.folded = store.get('fold', null);
+    function setFold(v, byHand) {
+      S.folded = !!v; root.classList.toggle('folded', S.folded);
+      foldBtn.setAttribute('aria-label', S.folded ? 'Expand the side bar' : 'Collapse the side bar'); foldBtn.title = foldBtn.getAttribute('aria-label');
+      foldBtn.setAttribute('aria-expanded', String(!S.folded));
+      if (byHand) store.set('fold', S.folded);
+    }
+    setFold(S.folded === true);
     var col = h('div', { class: 'ax-col' }); root.appendChild(col);
     var intro = h('section', { class: 'ax-hero' });
     var thread = h('div', { class: 'ax-thread', role: 'log', 'aria-label': 'Answers', 'aria-live': 'polite' });
@@ -113,6 +124,7 @@
       var q = input.value.trim(); if (!q || S.busy) return;
       if (!ctx.ai) { ctx.toast && ctx.toast('AI is not set up on the server yet.'); return; }
       S.busy = true; send.disabled = true; intro.hidden = true;
+      if (store.get('fold', null) === null && !S.folded) setFold(true);
       var rec = store.get('recent', []).filter(function (x) { return x !== q; }); rec.unshift(q); store.set('recent', rec.slice(0, 12)); paintRecent();
       thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: (MODES.find(function (m) { return m[0] === S.mode; }) || MODES[0])[1] + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
       var pg = progress(); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });

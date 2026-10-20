@@ -224,3 +224,18 @@ html.widget .ax-kb-side{position:static;height:auto;max-height:40vh;border-right
 html.widget .ax-stats{grid-template-columns:1fr 1fr}
 html.widget .ax-know-g{grid-template-columns:1fr}
 html.widget .gd-nav button{padding:0 10px;font-size:13px}
+
+/* Folding side bar (Batch 185) */
+.ax{transition:grid-template-columns .22s ease}
+.ax-rail-top{display:flex;align-items:center;gap:8px}
+.ax-rail-top .ax-new{flex:1;width:auto}
+.ax-fold{flex:none;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border-strong);background:var(--surface);color:var(--t2);cursor:pointer}
+.ax-fold:hover{color:var(--t1);border-color:var(--t3)}
+.ax.folded{grid-template-columns:64px minmax(0,1fr)}
+.ax.folded .ax-rail{padding:14px 11px;overflow:hidden}
+.ax.folded .ax-rail-top{flex-direction:column}
+.ax.folded .ax-new{width:40px;height:40px;padding:0;flex:none}
+.ax.folded .ax-new span,.ax.folded .ax-rail h3,.ax.folded .ax-mods,.ax.folded .ax-pop{display:none}
+.ax-col{max-width:1180px}
+.ax.folded .ax-col{max-width:1240px}
+@media (prefers-reduced-motion:reduce){.ax{transition:none}}
