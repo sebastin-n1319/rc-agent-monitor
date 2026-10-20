@@ -769,10 +769,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">Tests</span>
   </div>
   <!-- Batch 156: Support guides (VoIP, AI) with Ask AI -->
-  <div class="sb-item" id="sb-guides" title="Support guides: VoIP and AI support, with Ask AI"
+  <div class="sb-item" id="sb-guides" title="Adit Expert: ask any product or process question, Help Center, VoIP and AI guides"
        onclick="sbAdmin('guides',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/><path d="M6.5 8h2.5M6.5 11h2.5M15.5 8h2"/><path class="nx-spark" d="M16.5 12.3l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg>
-    <span class="sb-label">Guides</span>
+    <span class="sb-label">Expert</span>
   </div>
   <!-- Session 17: Settings (pause controls + admin settings) -->
   <div class="sb-item" id="sb-settings" title="Settings"
@@ -846,10 +846,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <span class="sb-label">Tests</span>
   </div>
   <!-- Batch 156: Support guides (VoIP, AI) with Ask AI -->
-  <div class="sb-item" id="sb-agent-guides" title="Support guides: VoIP and AI support, with Ask AI"
+  <div class="sb-item" id="sb-agent-guides" title="Adit Expert: ask any product or process question, Help Center, VoIP and AI guides"
        onclick="sbAgent('guides',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/><path d="M6.5 8h2.5M6.5 11h2.5M15.5 8h2"/><path class="nx-spark" d="M16.5 12.3l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg>
-    <span class="sb-label">Guides</span>
+    <span class="sb-label">Expert</span>
   </div>
   <!-- HOF enabled for Q2 2026, visible to all agents -->
   <div class="sb-item" id="sb-agent-hall" title="Hall of Fame"
@@ -947,7 +947,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     <button class="nav-tab" data-tab="ticket-alerts" onclick="switchTab('ticket-alerts',this)">Ticket Alerts</button>
     <button class="nav-tab" data-tab="alerts" onclick="switchTab('alerts',this)">Alerts</button>
     <button class="nav-tab" data-tab="assess" onclick="switchTab('assess',this)">Assessments</button>
-    <button class="nav-tab" data-tab="guides" onclick="switchTab('guides',this)">Support guides</button>
+    <button class="nav-tab" data-tab="guides" onclick="switchTab('guides',this)">Adit Expert</button>
     <button class="nav-tab" data-tab="alerts-breaklog" onclick="switchTab('alerts-breaklog',this)">Break log alerts</button>
     <button class="nav-tab" data-tab="alerts-missed" onclick="switchTab('alerts-missed',this)">Missed call alerts</button>
     <button class="nav-tab" data-tab="calllogs" onclick="switchTab('calllogs',this)">Call Logs</button>
@@ -1319,7 +1319,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           <label class="acx-field"><span>Note (optional)</span><input type="text" id="acx-guides-note" placeholder="Team or reason" maxlength="120" autocomplete="off"></label>
           <button class="acx-btn acx-btn-primary" type="button" onclick="addGuideGuests()">Give access</button>
         </div>
-        <p class="acx-note">People outside your team who sign in with these @adit.com accounts see only the Support guides page (VoIP and AI guides, Ask AI), nothing else in the tool. Everyone on your team already has the Guides page.</p>
+        <p class="acx-note">People outside your team who sign in with these @adit.com accounts see only the Adit Expert page (Adit Expert, Help Center, VoIP and AI guides), nothing else in the tool. Everyone on your team already has it.</p>
         <div class="acx-share" role="group" aria-label="Link to share">
           <span class="acx-share-l">Link to share</span>
           <input type="text" id="acx-guides-link" class="acx-share-in" readonly aria-label="Support guides link" onfocus="this.select()">
@@ -1463,7 +1463,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- Session 57: Assessments, embedded -->
   <div class="page" id="tab-assess"><iframe class="assess-frame" data-src="/assess?embed=1#manage" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Batch 156: Support guides, embedded -->
-  <div class="page" id="tab-guides"><iframe class="assess-frame" data-src="/guides?embed=1" title="Support guides" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
+  <div class="page" id="tab-guides"><iframe class="assess-frame" data-src="/guides?embed=1" title="Adit Expert" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <div class="page" id="tab-alerts-breaklog"><div id="alert-breaklog-root"></div></div>
   <div class="page" id="tab-alerts-missed"><div id="alert-missed-root"></div></div>
 
@@ -3256,7 +3256,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- Session 57: assessments, embedded -->
   <div class="agent-shell-page" id="agent-section-assess"><iframe class="assess-frame" data-src="/assess?embed=1&as=agent" title="Assessments" allow="fullscreen; camera" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Batch 156: Support guides, embedded -->
-  <div class="agent-shell-page" id="agent-section-guides"><iframe class="assess-frame" data-src="/guides?embed=1" title="Support guides" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
+  <div class="agent-shell-page" id="agent-section-guides"><iframe class="assess-frame" data-src="/guides?embed=1" title="Adit Expert" style="display:block;width:100%;height:calc(100vh - 130px);min-height:420px;border:0;background:transparent"></iframe></div>
   <!-- Session 20: self-service Ticket Lifecycle stats (My Ticket Stats) -->
   <div class="agent-shell-page av2" id="agent-section-mystats">
     <div id="desk-lifecycle-agent-root"></div>
@@ -11770,7 +11770,7 @@ const ACX_PAGES={
   talerts:{label:'Alerts',desc:'Unassigned and waiting tickets'},
   assess:{label:'Tests',desc:'Assigned assessments'},
   hall:{label:'HOF',desc:'Hall of Fame'},
-  guides:{label:'Guides',desc:'VoIP and AI support guides, Ask AI'}
+  guides:{label:'Adit Expert',desc:'Ask any product or process question; Help Center, VoIP and AI guides'}
 };
 let acxPageCfg={pages:Object.keys(ACX_PAGES),global:{},users:{}};
 let acxOpenEmail=null;
@@ -12201,7 +12201,7 @@ function acxCopy(text, btn, done){
 function copyGuidesLink(){ acxCopy(guidesLink(), document.getElementById('acx-guides-copy'), 'Link copied'); }
 function copyGuidesInvite(btn){
   const first=(btn.dataset.name||'').split(' ')[0];
-  const msg='Hi'+(first?' '+first:'')+', you now have access to the Adit Support guides (VoIP and AI guides, with Ask AI): '+guidesLink()+' . Sign in with your @adit.com Google account.';
+  const msg='Hi'+(first?' '+first:'')+', you now have access to Adit Expert (ask any Adit product or process question, plus the Help Center and the VoIP and AI guides): '+guidesLink()+' . Sign in with your @adit.com Google account.';
   acxCopy(msg, btn, 'Invite copied, paste it in Chat or email');
 }
 async function loadGuideGuests(){

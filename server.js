@@ -689,6 +689,11 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         };
         tick(); setInterval(tick, 10 * 60 * 1000);
       }, 5 * 60 * 1000); }
+    // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.
+    { const expert = require('./lib/expert'); expert.setDB(db);
+      expert.setDeps({ ai: require('./lib/ai'), guides, productUpdates, query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kb: (t, o) => escalationWatch.kb(t, o) });
+      await expert.initSchema();
+      if (require('./lib/aditkb-service').isConfigured()) setTimeout(() => { const t = () => expert.syncCalls().then(r => { if (r.added) console.log('🧠 Expert learned from calls:', JSON.stringify(r)); }).catch(e => console.warn('expert call sync:', e.message)); t(); setInterval(t, 6 * 3600 * 1000); }, 3 * 60 * 1000); }
     // Batch 166: T1 CS bonus calculator (admin, under Bonus).
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
@@ -2011,6 +2016,34 @@ app.post('/api/guides/ask', requireAuth, rateLimit(20, 60000), async (req, res) 
     res.json({ success: true, ...out });
   } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status === 400 ? e.message : 'Ask AI is busy right now, please try again in a moment.' }); }
 });
+// ── Batch 182: Adit Expert ─────────────────────────────────────────────
+// Under /api/guides/ so the Support guides guest list can use it too.
+const expertMod = () => require('./lib/expert');
+const expertErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : msg });
+app.get('/api/guides/expert/meta', requireAuth, async (req, res) => {
+  try { const ex = expertMod(); res.json({ success: true, ...ex.meta(), popular: await ex.popular(), ai: require('./lib/ai').anyConfigured() }); } catch (e) { expertErr(res, e, 'Could not load'); }
+});
+app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const b = req.body || {}, ai = require('./lib/ai');
+    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : 'answer',
+      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, email: req.session.email });
+    res.json({ success: true, ...out });
+  } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
+});
+app.post('/api/guides/expert/feedback', requireAuth, rateLimit(30, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json({ success: true, ...(await expertMod().feedback({ logId: b.logId, vote: b.vote, comment: b.comment, correction: b.correction, email: req.session.email })) }); } catch (e) { expertErr(res, e, 'Could not save'); }
+});
+app.get('/api/guides/expert/kb', requireAuth, (req, res) => { try { res.json({ success: true, modules: expertMod().catalog() }); } catch (e) { expertErr(res, e, 'Could not load'); } });
+app.get('/api/guides/expert/kb/:id', requireAuth, (req, res) => { const a = expertMod().article(req.params.id); if (!a) return res.status(404).json({ success: false, error: 'Article not found' }); res.json({ success: true, article: a }); });
+app.get('/api/guides/expert/admin', requireAdmin, async (req, res) => {
+  try { const ex = expertMod(); res.json({ success: true, insights: await ex.insights(), notes: await ex.notes(), feedback: await ex.feedbackQueue() }); } catch (e) { expertErr(res, e, 'Could not load'); }
+});
+app.post('/api/guides/expert/notes', requireAdmin, async (req, res) => { try { res.json({ success: true, id: await expertMod().saveNote(null, req.body || {}, req.session.email) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.put('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, id: await expertMod().saveNote(req.params.id, req.body || {}, req.session.email) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.delete('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { await expertMod().deleteNote(req.params.id); res.json({ success: true }); } catch (e) { expertErr(res, e, 'Could not delete'); } });
+app.post('/api/guides/expert/feedback/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await expertMod().handleFeedback(req.params.id, req.body || {}, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.post('/api/guides/expert/sync-calls', requireAdmin, rateLimit(3, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncCalls()) }); } catch (e) { expertErr(res, e, 'Could not sync'); } });
 app.get('/api/guides/access', requireAdmin, async (req, res) => {
   try { res.json({ success: true, guests: await guides.listGuests() }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }

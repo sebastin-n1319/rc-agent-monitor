@@ -1,4 +1,4 @@
-/* Batch 156: Support guides (/guides). VoIP guide, AI runbook and Ask AI. Also embedded in the app (?embed=1). */
+/* Batch 156: Support guides (/guides). VoIP guide, AI runbook. Batch 182: Adit Expert and the Help Center (public/expert-ui.js). Also embedded in the app (?embed=1). */
 (function () {
   'use strict';
   var EMBED = document.documentElement.classList.contains('embed');
@@ -21,7 +21,9 @@
     bot: '<rect x="4" y="7" width="16" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6"/>',
     spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
-    send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>'
+    send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>',
+    book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
+    school: '<path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/>'
   };
   // Six-digit Zoho Desk ticket numbers open the ticket (the server finds it in AditKB).
   function linkTickets(text) {
@@ -37,8 +39,9 @@
     return frag;
   }
   function say(t) { live.textContent = ''; setTimeout(function () { live.textContent = t; }, 30); }
-  function api(path, body) {
-    return fetch(path, { method: body ? 'POST' : 'GET', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : undefined, body: body ? JSON.stringify(body) : undefined })
+  function api(path, body, method) {
+    var m = method || (body ? 'POST' : 'GET'), withBody = body && m !== 'GET' && m !== 'DELETE';
+    return fetch(path, { method: m, credentials: 'same-origin', headers: withBody ? { 'Content-Type': 'application/json' } : undefined, body: withBody ? JSON.stringify(body) : undefined })
       .then(function (r) {
         if (r.status === 401) { try { localStorage.removeItem('rcSession'); localStorage.removeItem('rcLastUser'); } catch (e) {} location.replace(EMBED ? '/' : '/?next=/guides'); throw new Error('Please sign in'); }
         return r.json().catch(function () { return { success: false, error: 'The server is busy, try again in a moment.' }; }).then(function (j) {
@@ -50,9 +53,11 @@
   }
 
   // ── shell ───────────────────────────────────────────────────────────
-  var TABS = [['voip', 'VoIP support', 'phone'], ['ai', 'AI support', 'bot'], ['ask', 'Ask AI', 'spark']];
+  // Batch 182: Adit Expert first, then the Help Center and the two guides; Teach for admins.
+  var TABS = [['ask', 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
   function renderNav() {
-    nav.replaceChildren.apply(nav, TABS.map(function (t) {
+    var tabs = TABS.concat(S.me && S.me.admin ? [['teach', 'Teach', 'school']] : []);
+    nav.replaceChildren.apply(nav, tabs.map(function (t) {
       return h('button', { type: 'button', 'aria-current': S.tab === t[0] ? 'page' : null, onclick: function () { go(t[0]); } }, [icon(IC[t[2]], t[0] === 'ask' ? 'gd-spark' : ''), t[1]]);
     }));
   }
@@ -79,8 +84,9 @@
     return panels[tab];
   }
   function route() {
-    var m = /^#(voip|ai|ask)(?:\/(.+))?$/.exec(location.hash || '');
-    var prev = S.tab, next = m ? m[1] : 'voip';
+    var m = /^#(ask|kb|voip|ai|teach)(?:\/(.+))?$/.exec(location.hash || '');
+    var prev = S.tab, next = m ? m[1] : 'ask';
+    if (next === 'teach' && !(S.me && S.me.admin)) next = 'ask';
     var anchor = m && m[2] ? decodeURIComponent(m[2]) : null;
     if (S.started && prev !== next) scrollAt[prev] = window.scrollY;
     S.tab = next; S.started = true;
@@ -88,10 +94,12 @@
     Object.keys(panels).forEach(function (k) { panels[k].hidden = k !== next; });
     panel(next).hidden = false;
     renderNav();
-    if (!fabEl && S.ai) { fabEl = h('button', { type: 'button', class: 'gd-fab', onclick: function () { go('ask'); } }, [icon(IC.spark), 'Ask AI']); document.body.appendChild(fabEl); }
-    if (fabEl) fabEl.hidden = next === 'ask';
+    if (!fabEl && S.ai) { fabEl = h('button', { type: 'button', class: 'gd-fab', onclick: function () { go('ask'); } }, [icon(IC.spark), 'Ask Adit Expert']); document.body.appendChild(fabEl); }
+    if (fabEl) fabEl.hidden = next === 'ask' || next === 'teach';
     if (next === 'voip') showVoip(anchor);
     else if (next === 'ai') showAi(anchor);
+    else if (next === 'kb') showKb(anchor);
+    else if (next === 'teach') showTeach();
     else showAsk();
     if (!anchor && prev !== next) window.scrollTo(0, scrollAt[next] || 0);
   }
@@ -250,7 +258,7 @@
         while ((k = low.indexOf(ql, at)) > -1) { frag.appendChild(document.createTextNode(t.slice(at, k))); var mk = h('mark', { text: t.slice(k, k + q.length) }); frag.appendChild(mk); hits.push(mk); at = k + q.length; }
         frag.appendChild(document.createTextNode(t.slice(at))); node.parentNode.replaceChild(frag, node);
       });
-      count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Ask AI.';
+      count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Adit Expert.';
       hits.forEach(function (mk) { openTo(mk); }); syncToc();
       if (hits.length) { hitAt = 0; hits[0].scrollIntoView({ block: 'center' }); }
       spy();
@@ -271,7 +279,7 @@
       // Open only the sections and topics that hold a match; clearing the search puts them back.
       Array.prototype.forEach.call(doc.querySelectorAll('.gd-col'), function (c) { setOpen(c, false); });
       var seen = []; hits.forEach(function (r) { var el = r.startContainer.parentElement; if (el && seen.indexOf(el) < 0) { seen.push(el); openTo(el); } }); syncToc();
-      count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Ask AI.';
+      count.textContent = hits.length ? hits.length + ' match' + (hits.length === 1 ? '' : 'es') + ' in ' + found + ' section' + (found === 1 ? '' : 's') + '. Press Enter for the next one.' : 'No matches. Try Adit Expert.';
       if (hits.length) { hitAt = 0; showHit(0); }
     }
     var side = h('aside', { class: 'gd-side', 'aria-label': 'Contents' }, [h('div', { class: 'gd-find' }, [icon(IC.search), input, count]), bulk, h('nav', { 'aria-label': 'Guide sections' }, [toc])]);
@@ -303,50 +311,30 @@
     else if (anchor) { try { aiFrame.contentWindow.location.hash = anchor; } catch (e) { aiFrame.src = src; } }
   }
 
-  // ── Ask AI ──────────────────────────────────────────────────────────
-  var askView = null;
-  var SUGG = ['Client says the desk phone shows "No Account". What do I check?', 'How do I change the greeting or voicemail message?', 'The AI is texting patients but the SMS Agent is off. Who handles it?', 'Calls go straight to voicemail. What are the checks?', 'What do I attach before routing an AI call issue to AI Support?'];
-  function showAsk() {
-    if (!askView) { askView = buildAsk(); panel('ask').appendChild(askView.root); }
-    setTimeout(function () { askView.input.focus(); }, 30);
+  // ── Adit Expert (Batch 182, public/expert-ui.js) ─────────────────────
+  var askView = null, kbView = null, teachView = null, toastEl = null;
+  function toast(t) {
+    if (!toastEl) { toastEl = h('div', { class: 'ax-toast', role: 'status' }); document.body.appendChild(toastEl); }
+    toastEl.textContent = t; toastEl.classList.add('on'); clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove('on'); }, 2600);
   }
-  function buildAsk() {
-    var thread = h('div', { class: 'gd-thread', role: 'log', 'aria-label': 'Answers' });
-    var input = h('textarea', { rows: '2', placeholder: S.ai ? 'Ask about a VoIP or AI support issue...' : 'Ask AI is not set up yet', 'aria-label': 'Your question', disabled: !S.ai });
-    var send = h('button', { type: 'submit', class: 'gd-btn primary', disabled: !S.ai, 'aria-label': 'Ask' }, [icon(IC.send), 'Ask']);
-    var scopes = [['', 'All guides'], ['voip', 'VoIP only'], ['ai', 'AI only']];
-    var scopeBox = h('div', { class: 'gd-scope', role: 'group', 'aria-label': 'Search in' });
-    function drawScopes() { scopeBox.replaceChildren.apply(scopeBox, scopes.map(function (s) { return h('button', { type: 'button', class: 'gd-chip', 'aria-pressed': S.scope === s[0] ? 'true' : 'false', text: s[1], onclick: function () { S.scope = s[0]; drawScopes(); } }); })); }
-    drawScopes();
-    var sugg = h('div', { class: 'gd-sugg' }, SUGG.map(function (q) { return h('button', { type: 'button', text: q, onclick: function () { input.value = q; submit(); } }); }));
-    var form = h('form', { class: 'gd-form', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input, send]);
-    input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
-    function bubble(kind, text) { var b = h('div', { class: 'gd-msg ' + kind }); if (text != null) b.textContent = text; thread.appendChild(b); b.scrollIntoView({ block: 'end' }); return b; }
-    function submit() {
-      var q = input.value.trim();
-      if (!q || S.busy) return;
-      S.busy = true; send.disabled = true; sugg.remove();
-      bubble('me', q); input.value = '';
-      var wait = bubble('bot'); wait.appendChild(h('span', { class: 'gd-dots', 'aria-label': 'Finding the answer' }, [h('i'), h('i'), h('i')]));
-      var history = S.thread.slice(-6);
-      api('/api/guides/ask', { question: q, history: history, doc: S.scope || null }).then(function (j) {
-        wait.replaceChildren(linkTickets(j.answer));
-        if (j.sources && j.sources.length) {
-          wait.appendChild(h('div', { class: 'gd-src' }, [h('span', { class: 'gd-src-l', text: 'From the guide:' })].concat(j.sources.map(function (s) {
-            return h('a', { href: '#' + s.doc + '/' + encodeURIComponent(s.id), text: s.docTitle + ': ' + s.title, onclick: function (ev) { ev.preventDefault(); go(s.doc, s.id); } });
-          }))));
-        }
-        S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.answer });
-        say('Answer ready');
-      }).catch(function (e) { wait.className = 'gd-msg bot err'; wait.textContent = e.message || 'Something went wrong, try again.'; })
-        .then(function () { S.busy = false; send.disabled = !S.ai; input.focus(); });
-    }
-    var root = h('section', { class: 'gd-ask', 'aria-labelledby': 'gd-ask-h' }, [
-      h('div', { class: 'gd-ask-hd' }, [h('h1', { id: 'gd-ask-h', text: 'Ask AI' }), h('p', { text: 'Answers come only from the VoIP and AI support guides, with links to the part of the guide they came from.' })]),
-      scopeBox, thread, sugg, form,
-      h('p', { class: 'gd-fine', text: 'Check the linked section before you act on a live call. If the guide does not cover it, Ask AI says so.' })
-    ]);
-    return { root: root, input: input };
+  var ctx = {
+    api: api, go: go, toast: toast, get ai() { return S.ai; },
+    openArticle: function (id) { go('kb', id); },
+    askAbout: function (t) { go('ask'); if (askView) askView.prefill(t); },
+  };
+  function showAsk() {
+    if (!window.AditExpert) return;
+    if (!askView) askView = window.AditExpert.Ask(panel('ask'), ctx);
+    setTimeout(function () { askView.focus(); }, 30);
+  }
+  function showKb(anchor) {
+    if (!window.AditExpert) return;
+    if (!kbView) kbView = window.AditExpert.Kb(panel('kb'), ctx);
+    if (anchor) kbView.open(anchor);
+  }
+  function showTeach() {
+    if (!window.AditExpert) return;
+    if (!teachView) teachView = window.AditExpert.Teach(panel('teach'), ctx); else teachView.reload();
   }
 
   // ── start ───────────────────────────────────────────────────────────
@@ -355,6 +343,6 @@
     renderUser(); route();
   }).catch(function (e) {
     if (/sign in|No access/i.test(e.message)) return;
-    main.replaceChildren(h('div', { class: 'gd-note', text: 'You do not have access to the Support guides yet. Ask Sebastin to add you in Access Control.' }));
+    main.replaceChildren(h('div', { class: 'gd-note', text: 'You do not have access to Adit Expert yet. Ask Sebastin to add you in Access Control.' }));
   });
 })();
