@@ -1,192 +1,182 @@
 /**
- * Brain v5: grounded in live app data (Session 46). Branded design system.
- * Uses the Brain robot character, brand colors, and design language from the style guide
+ * Brain v6 (Batch 184): redesigned to match Adit Expert. A slim edge tab (avatar and the word "Brain") docks on the
+ * right edge below the Expert tab; the panel opens as a side sheet like the Expert panel, with the same navy header,
+ * suggestion cards, clean message cards and composer, in light and dark. Behaviour is unchanged: grounded answers
+ * from POST /api/brain/chat, page context, and the announcement drafts admins approve before anything is sent.
  */
-(function() {
+(function () {
   'use strict';
 
-  var BRAIN_VERSION = '5.3';
+  var BRAIN_VERSION = '6.0';
   var msgs = [];
   var busy = false;
   var isOpen = false;
-  var bubbleTimer = null;
-  var lastPage = '';
-  var sessionGreeted = false;
+  var AVATAR = '/brain-avatar.png?v=2';
 
-  /* ── Brand Images, from uploaded design system ────────── */
-  var IMG = {
-    logo:     '/brain-logo.png?v=2',
-    avatar:   '/brain-avatar.png?v=2',
-    thinking: '/brain-thinking.png?v=2',
-    search:   '/brain-search.png?v=2',
-    success:  '/brain-success.png?v=2',
-    error:    '/brain-error.png?v=2',
-    widget:   '/brain-widget.png?v=2',
-    learning: '/brain-learning.png?v=2',
-  };
-
-  var ROBOT_XS = '<img src="' + IMG.avatar + '" width="30" height="30" style="border-radius:50%;object-fit:cover;" alt="Brain"/>';
-  var ROBOT_SVG = function(w, h) {
-    return '<img src="' + IMG.avatar + '" width="'+(w||40)+'" height="'+(h||40)+'" style="border-radius:50%;object-fit:cover;" alt="Brain"/>';
-  };
-  var ROBOT_HI = '<img src="' + IMG.thinking + '" width="160" height="140" style="object-fit:contain;filter:drop-shadow(0 8px 24px rgba(249,115,22,.3));" alt="Brain thinking"/>';
-
-  /* ── CSS Injection ─────────────────────────────────────── */
+  /* ── Styles ─────────────────────────────────────────────── */
   function injectCSS() {
     if (document.getElementById('brain-injected-css')) return;
     var s = document.createElement('style');
     s.id = 'brain-injected-css';
     s.textContent = [
-      '#brain-fab-wrap{position:fixed!important;bottom:28px!important;right:28px!important;z-index:2147483647!important;display:flex!important;flex-direction:column!important;align-items:flex-end!important;gap:12px!important;pointer-events:none!important;}',
-      '#brain-fab-wrap>*{pointer-events:auto!important;}',
-      /* Session 49: Brain docks as a small tab on the right edge so it never
-         covers content; it slides out on hover and the panel opens beside it. */
-      '#brain-fab-wrap{right:0!important;bottom:90px!important;gap:10px!important;}',
-      '#brain-fab{width:46px!important;height:48px!important;border-radius:24px 0 0 24px!important;background:#0B2A5B!important;padding:0 0 0 6px!important;justify-content:flex-start!important;transform:translateX(6px);opacity:.82;box-shadow:0 4px 14px rgba(7,43,64,.18)!important;transition:transform .2s ease,opacity .2s ease!important;}',
-      '#brain-fab:hover,#brain-fab:focus-visible{transform:translateX(0)!important;opacity:1;}',
-      '#brain-fab>div{display:none!important;}',
-      '#brain-fab img{width:38px!important;height:38px!important;border-radius:50%!important;object-fit:contain!important;}',
-      '#brain-panel{margin-right:14px;max-height:calc(100vh - 140px);}',
+      '#brain-fab-wrap{--b-bg:#F4F6F9;--b-sf:#fff;--b-sf2:#F8FAFC;--b-sf3:#EEF2F6;--b-bd:#E2E8F0;--b-bd2:#CBD5E1;--b-t1:#0B2A3F;--b-t2:#3A5068;--b-t3:#5E7386;--b-ac:#F4891F;--b-ac-ink:#A6520A;--b-ac-soft:rgba(244,137,31,.12);--b-ok:#0E7C52;--b-bad:#B4323A;}',
+      'html[data-theme="dark"] #brain-fab-wrap,body.dark-mode #brain-fab-wrap{--b-bg:#061520;--b-sf:#0B1F2E;--b-sf2:#0E2536;--b-sf3:#15324A;--b-bd:#1D3A52;--b-bd2:#2A4D69;--b-t1:#E8F1F7;--b-t2:#B0C4D4;--b-t3:#8AA2B5;--b-ac:#F59A3C;--b-ac-ink:#F7A452;--b-ac-soft:rgba(245,154,60,.14);--b-ok:#42CF97;--b-bad:#F27F86;}',
+      '#brain-fab-wrap{position:static!important;}',
       '#brain-bubble{display:none!important;}',
-      // FAB button
-      '#brain-fab{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;position:relative;display:flex;align-items:center;justify-content:center;outline:none;background:linear-gradient(135deg,#FF8C00,#F97316);box-shadow:0 8px 28px rgba(249,115,22,.5),0 2px 8px rgba(0,0,0,.2);padding:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s;}',
-      '#brain-fab:hover{transform:scale(1.1) translateY(-2px);box-shadow:0 14px 40px rgba(249,115,22,.6);}',
-      '#brain-fab-pulse{position:absolute;inset:-6px;border-radius:50%;border:2.5px solid rgba(249,115,22,.5);animation:brain-pulse-ring 2s ease-out infinite;}',
-      '#brain-fab-pulse2{position:absolute;inset:-12px;border-radius:50%;border:1.5px solid rgba(249,115,22,.25);animation:brain-pulse-ring 2s ease-out .6s infinite;}',
-      '@keyframes brain-pulse-ring{0%{opacity:.8;transform:scale(1)}100%{opacity:0;transform:scale(1.35)}}',
-      // Bubble
-      '#brain-bubble{background:#fff;border-radius:18px 18px 4px 18px;padding:12px 38px 12px 14px;box-shadow:0 8px 28px rgba(26,31,60,.15);max-width:260px;font-size:12.5px;color:#1A1F3C;line-height:1.55;border:1.5px solid #F0F2F5;animation:brain-bub-in .4s cubic-bezier(.34,1.56,.64,1) both;}',
-      '@keyframes brain-bub-in{from{opacity:0;transform:scale(.8) translateY(14px)}to{opacity:1;transform:scale(1) translateY(0)}}',
-      // Panel
-      '#brain-panel{width:400px;height:580px;border-radius:24px;overflow:hidden;border:1.5px solid #F0F2F5;box-shadow:0 24px 60px rgba(26,31,60,.18),0 4px 16px rgba(26,31,60,.1);display:none;flex-direction:column;background:#fff;}',
-      '#brain-panel.bopen{display:flex;animation:brain-panel-in .4s cubic-bezier(.34,1.56,.64,1) both;}',
-      '@keyframes brain-panel-in{from{opacity:0;transform:scale(.6) translateY(28px)}to{opacity:1;transform:scale(1) translateY(0)}}',
-      // Chip hover
-      '.brain-chip-btn:hover{background:#FFF3E0!important;border-color:#F97316!important;color:#F97316!important;transform:translateY(-1px);}',
-      // Message animation
-      '.brain-msg-row{animation:brain-msg-in .25s cubic-bezier(.34,1.56,.64,1) both;}',
-      '@keyframes brain-msg-in{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}',
-      // Typing dots
-      '.brain-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#F97316;animation:brain-dot-bounce .8s ease-in-out infinite;}',
-      '.brain-dot:nth-child(2){animation-delay:.16s;}.brain-dot:nth-child(3){animation-delay:.32s;}',
-      '@keyframes brain-dot-bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-8px);opacity:1}}',
-      // Input focus
-      '#brain-input-el:focus{border-color:#F97316!important;box-shadow:0 0 0 3px rgba(249,115,22,.15)!important;}',
-      // Send btn hover
-      '#brain-send-btn:hover{transform:scale(1.08);box-shadow:0 6px 18px rgba(249,115,22,.45)!important;}',
-      '#brain-send-btn:disabled{opacity:.45;transform:none!important;}',
-      // Scrollbar
-      '#brain-msgs::-webkit-scrollbar{width:5px;}#brain-msgs::-webkit-scrollbar-thumb{background:#E8EBF0;border-radius:99px;}',
+      /* Launcher: the same slim edge tab as Expert, below it */
+      '#brain-fab{position:fixed!important;right:0!important;bottom:44px!important;z-index:2147483646!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;width:40px!important;height:auto!important;padding:8px 0 12px!important;margin:0!important;border:0!important;border-radius:14px 0 0 14px!important;background:#0B2A5B!important;color:#fff!important;box-shadow:-4px 6px 18px rgba(7,43,64,.22)!important;cursor:pointer;transform:none!important;opacity:1!important;transition:width .2s ease,background .2s ease!important;}',
+      '#brain-fab:hover,#brain-fab:focus-visible{width:46px!important;background:#0E3570!important;}',
+      '#brain-fab:focus-visible{outline:2px solid #F4891F;outline-offset:2px}',
+      '#brain-fab .bf-av{width:28px;height:28px;border-radius:50%;object-fit:cover;display:block;box-shadow:0 0 0 2px rgba(255,255,255,.25)}',
+      '#brain-fab .bf-lb{writing-mode:vertical-rl;transform:rotate(180deg);font:600 12px/1 Poppins,system-ui,sans-serif;letter-spacing:.06em;color:#fff;white-space:nowrap}',
+      'html.brain-open #brain-fab,html.brain-open .axw-btn{display:none!important}',
+      /* Panel: a side sheet like the Expert panel */
+      '#brain-panel{position:fixed!important;top:12px;right:12px;bottom:46px;z-index:2147483647;width:min(440px,calc(100vw - 24px));margin:0!important;max-height:none!important;display:flex!important;flex-direction:column;border-radius:18px;overflow:hidden;background:var(--b-bg);border:1px solid var(--b-bd);box-shadow:0 24px 70px rgba(7,43,64,.28);font-family:Poppins,system-ui,sans-serif;color:var(--b-t1);transform:translateX(calc(100% + 24px));visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s linear .28s}',
+      '#brain-panel.bopen{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1)}',
+      '.bp-hd{display:flex;align-items:center;gap:10px;min-height:56px;padding:0 10px 0 14px;background:#0B2A3F;color:#fff;flex:none}',
+      '.bp-hd img{width:32px;height:32px;border-radius:50%;object-fit:cover;box-shadow:0 0 0 2px rgba(255,255,255,.2)}',
+      '.bp-hd b{display:block;font-size:15px;font-weight:600;line-height:1.1}',
+      '.bp-hd small{display:flex;align-items:center;gap:6px;font-size:11px;color:#B8CCDA;margin-top:2px}',
+      '.bp-hd small i{width:7px;height:7px;border-radius:50%;background:#42CF97;box-shadow:0 0 0 3px rgba(66,207,151,.18)}',
+      '.bp-sp{flex:1}',
+      '.bp-hbtn{display:inline-flex;align-items:center;justify-content:center;height:32px;padding:0 10px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff;font:500 12.5px Poppins,system-ui,sans-serif;cursor:pointer}',
+      '.bp-hbtn:hover{background:rgba(255,255,255,.1)}',
+      '.bp-body{flex:1;overflow-y:auto;padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px}',
+      '.bp-body::-webkit-scrollbar{width:6px}.bp-body::-webkit-scrollbar-thumb{background:var(--b-bd2);border-radius:99px}',
+      '.bp-hello{padding:6px 2px 4px}',
+      '.bp-hello h2{margin:0 0 4px;font-size:19px;font-weight:600;line-height:1.25;color:var(--b-t1)}',
+      '.bp-hello p{margin:0;font-size:13px;line-height:1.55;color:var(--b-t2)}',
+      '.bp-sugg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}',
+      '.bp-card{display:flex;flex-direction:column;gap:4px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--b-bd);background:var(--b-sf);cursor:pointer;font:400 12.5px/1.4 Poppins,system-ui,sans-serif;color:var(--b-t1);transition:border-color .15s,transform .15s}',
+      '.bp-card:hover{border-color:var(--b-ac);transform:translateY(-1px)}',
+      '.bp-card em{font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--b-t3)}',
+      '.bp-me{align-self:flex-end;max-width:86%;padding:10px 14px;border-radius:16px 16px 4px 16px;background:var(--b-t1);color:var(--b-bg);font-size:13px;line-height:1.55;white-space:pre-wrap;word-wrap:break-word;animation:bpin .22s ease-out both}',
+      '.bp-ai{display:flex;gap:8px;align-items:flex-start;animation:bpin .22s ease-out both}',
+      '.bp-ai>img{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none;margin-top:2px}',
+      '.bp-ai-c{min-width:0;flex:1;padding:12px 14px;border-radius:4px 16px 16px 16px;border:1px solid var(--b-bd);background:var(--b-sf);font-size:13px;line-height:1.6;color:var(--b-t1);word-wrap:break-word}',
+      '.bp-ai-c strong{font-weight:600;color:var(--b-t1)}',
+      '.bp-ai-c .bp-li{display:flex;gap:6px;margin:3px 0}.bp-ai-c .bp-li::before{content:"";flex:none;width:5px;height:5px;border-radius:50%;background:var(--b-ac);margin-top:8px}',
+      '.bp-time{display:block;font-size:10.5px;color:var(--b-t3);margin-top:6px}',
+      '.bp-dots{display:inline-flex;gap:4px;align-items:center}.bp-dots i{width:7px;height:7px;border-radius:50%;background:var(--b-ac);animation:bpdot 1s infinite ease-in-out}.bp-dots i:nth-child(2){animation-delay:.15s}.bp-dots i:nth-child(3){animation-delay:.3s}',
+      '@keyframes bpdot{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}',
+      '@keyframes bpin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}',
+      '.bp-chips{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 0;flex:none;scrollbar-width:none}.bp-chips::-webkit-scrollbar{display:none}',
+      '.bp-chip{flex:none;border:1px solid var(--b-bd2);background:var(--b-sf);border-radius:999px;padding:5px 12px;font:500 12px Poppins,system-ui,sans-serif;color:var(--b-t2);cursor:pointer;white-space:nowrap}',
+      '.bp-chip:hover{border-color:var(--b-ac);color:var(--b-t1)}',
+      '.bp-comp{flex:none;margin:8px 12px 12px;border:1px solid var(--b-bd2);border-radius:16px;background:var(--b-sf);box-shadow:0 1px 2px rgba(7,43,64,.05)}',
+      '.bp-comp:focus-within{border-color:var(--b-ac)}',
+      '#brain-input-el{display:block;width:100%;box-sizing:border-box;min-height:46px;max-height:120px;resize:none;border:0;outline:0;background:transparent;padding:12px 14px 4px;font:400 13.5px/1.5 Poppins,system-ui,sans-serif;color:var(--b-t1)}',
+      '.bp-bar{display:flex;align-items:center;gap:8px;padding:4px 8px 8px 14px}',
+      '.bp-bar span{flex:1;font-size:11px;color:var(--b-t3)}',
+      '#brain-send-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border:0;border-radius:10px;background:var(--b-ac);color:#1F1305;font:600 13px Poppins,system-ui,sans-serif;cursor:pointer}',
+      '#brain-send-btn:hover{filter:brightness(1.05)}#brain-send-btn:disabled{opacity:.5;cursor:default}',
+      '#brain-send-btn svg{width:15px;height:15px}',
+      /* Announcement draft card */
+      '.bp-prop{margin-top:8px;padding:12px;border-radius:12px;border:1px solid var(--b-ac);background:var(--b-sf2)}',
+      '.bp-prop.sent{border-color:var(--b-ok)}.bp-prop.gone{border-color:var(--b-bd);opacity:.7}',
+      '.bp-prop em{display:block;font-style:normal;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--b-ac-ink)}',
+      '.bp-prop b{display:block;margin-top:4px;font-size:13px}.bp-prop small{display:block;font-size:11.5px;color:var(--b-t3);margin:2px 0 8px}',
+      '.bp-prop textarea{width:100%;box-sizing:border-box;border:1px solid var(--b-bd2);border-radius:10px;padding:8px 10px;font:400 12.5px/1.5 Poppins,system-ui,sans-serif;color:var(--b-t1);background:var(--b-sf);resize:vertical}',
+      '.bp-prop .bp-warn{font-size:12px;color:var(--b-bad);margin:0 0 8px}',
+      '.bp-prop .bp-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}',
+      '.bp-btn{height:32px;padding:0 14px;border-radius:9px;border:1px solid var(--b-bd2);background:var(--b-sf);color:var(--b-t1);font:500 12.5px Poppins,system-ui,sans-serif;cursor:pointer}',
+      '.bp-btn.pri{background:var(--b-ac);border-color:var(--b-ac);color:#1F1305;font-weight:600}.bp-btn:disabled{opacity:.5;cursor:default}',
+      '.bp-ok{font-size:12.5px;color:var(--b-ok);font-weight:500}',
+      '@media (max-width:600px){#brain-panel{top:0;right:0;bottom:0;width:100vw;border-radius:0}.bp-sugg{grid-template-columns:1fr}}',
+      '@media (prefers-reduced-motion:reduce){#brain-panel,#brain-fab,.bp-me,.bp-ai,.bp-card{transition:none!important;animation:none!important}}',
     ].join('');
     document.head.appendChild(s);
   }
 
   /* ── Helpers ─────────────────────────────────────────────── */
-  function fn(){var u=(typeof currentUser!=='undefined'?currentUser:'');return u?u.split(' ')[0]:'there';}
-  function hr(){return new Date().getHours();}
-  function greet(){var h=hr();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
-  function ts(){return new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).format(new Date());}
-  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-  // Assistant replies come verbatim from POST /api/brain/chat's `reply`
-  // field (an LLM completion) and are rendered via innerHTML in msgHTML()
-  // below, so they MUST be HTML-escaped before any markdown-lite
-  // formatting is layered on, exactly like user messages already are via
-  // esc(). Escaping first is safe: none of the patterns below match `&`,
-  // `<`, `>` or `"`, so escaping doesn't interfere with markdown detection.
-  function md(t){
-    return esc(t)
-      .replace(/\*\*(.+?)\*\*/g,'<strong style="color:#F97316;font-weight:700;">$1</strong>')
-      .replace(/\n- /g,'<br><span style="color:#F97316;font-weight:700;margin-right:4px;">›</span>')
-      .replace(/^- /,'<span style="color:#F97316;font-weight:700;margin-right:4px;">›</span>')
-      .replace(/\n\n/g,'<br><br>')
-      .replace(/\n/g,'<br>');
+  function fn() { var u = (typeof currentUser !== 'undefined' ? currentUser : ''); return u ? u.split(' ')[0] : ''; }
+  function greet() { var h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; }
+  function ts() { return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).format(new Date()); }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  // Replies come from an LLM and are shown with innerHTML, so they are escaped first and only then formatted.
+  function md(t) {
+    var lines = esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').split('\n'), out = '', prevLi = false;
+    lines.forEach(function (l, i) {
+      if (/^[-*] /.test(l)) { out += '<span class="bp-li"><span>' + l.slice(2) + '</span></span>'; prevLi = true; }
+      else { if (i > 0 && !prevLi) out += '<br>'; out += l; prevLi = false; }
+    });
+    return out;
   }
-  function ctx(){
-    var user=(typeof currentUser!=='undefined'?currentUser:'');
-    var role=(typeof currentRole!=='undefined'?currentRole:'');
-    var view=(typeof currentViewMode!=='undefined'?currentViewMode:'');
-    var section=(typeof currentAgentSection!=='undefined'?currentAgentSection:'');
-    var tab='';var at=document.querySelector('.nav-tab.active');if(at)tab=at.getAttribute('data-tab')||'';
-    return {user:user,role:role,view:view,page:view==='admin'?'admin/'+tab:'agent/'+section};
+  function ctx() {
+    var view = (typeof currentViewMode !== 'undefined' ? currentViewMode : '');
+    var section = (typeof currentAgentSection !== 'undefined' ? currentAgentSection : '');
+    var tab = ''; var at = document.querySelector('.nav-tab.active'); if (at) tab = at.getAttribute('data-tab') || '';
+    return { page: view === 'admin' ? 'admin/' + tab : 'agent/' + section };
   }
-
-  var PAGE_TIPS = {
-    'admin/live':   'Live Dashboard is open: I can explain any metric or flag what needs attention.',
-    'admin/roster': 'Roster open, left-click cycles status, right-click opens the full palette. Need help?',
-    'admin/tickets':'Viewing ticket reports, ask me about ticket type patterns or AI Learning feedback.',
-    'agent/tickets':'Ready to log? Enter your Zoho ticket number and I\'ll walk you through it.',
-    'agent/breakbot':'Break Bot ready, tap a break type to start. Supervisor sees it live.',
-    'agent/writer': 'AI Writer is open, paste any draft and ask me to transform it.',
-  };
-
-  var CHIPS = [
-    {e:'🐛',l:'Report bug',  m:'I found a bug. Here\'s what\'s happening:'},
-    {e:'📅',l:'Roster help', m:'Walk me through the Roster attendance features.'},
-    {e:'🎫',l:'Log ticket',  m:'Walk me through logging a ticket step by step.'},
-    {e:'🔍',l:'Zoho issue',  m:'My Zoho ticket number isn\'t loading, what should I do?'},
-    {e:'⏰',l:'Break Bot',   m:'How does the Break Bot work?'},
-    {e:'📖',l:'Full guide',  m:'Give me a full overview of this tool and all its features.'},
-  ];
-
-  /* ── Build message HTML with contextual state images ─── */
-  function msgHTML(m) {
-    var isAI = m.role === 'assistant';
-    if (isAI) {
-      // Detect message context for appropriate illustration
-      var content = m.content || '';
-      var contextImg = '';
-      if (m.showImg === 'success' || /✅|found|success|done|fixed|resolved/i.test(content.slice(0,60))) {
-        contextImg = '<img src="'+IMG.success+'" width="80" height="70" style="object-fit:contain;margin:6px 0 4px;display:block;filter:drop-shadow(0 4px 10px rgba(16,185,129,.2));" alt=""/>';
-      } else if (m.showImg === 'error' || /❌|error|not found|failed|issue|broken/i.test(content.slice(0,60))) {
-        contextImg = '<img src="'+IMG.error+'" width="80" height="70" style="object-fit:contain;margin:6px 0 4px;display:block;filter:drop-shadow(0 4px 10px rgba(239,68,68,.2));" alt=""/>';
-      } else if (m.showImg === 'search' || /search|lookup|scan|looking|checking/i.test(content.slice(0,60))) {
-        contextImg = '<img src="'+IMG.search+'" width="80" height="70" style="object-fit:contain;margin:6px 0 4px;display:block;" alt=""/>';
-      }
-      return '<div class="brain-msg-row" style="display:flex;gap:8px;align-items:flex-start;">' +
-        '<img src="'+IMG.avatar+'" width="30" height="30" style="border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 2px 8px rgba(249,115,22,.3);" alt="Brain"/>' +
-        '<div style="max-width:80%;">' +
-          '<div style="background:#F8F9FC;border:1.5px solid #F0F2F5;border-radius:4px 16px 16px 16px;padding:10px 14px;font-size:12.5px;line-height:1.65;color:#1A1F3C;">' +
-            md(m.content) +
-          '</div>' +
-          (m.proposal ? propHTML(m.proposal) : '') +
-          '<div style="font-size:9.5px;color:#9BA3B2;margin-top:4px;padding-left:4px;">' + esc(m.time||'') + '</div>' +
-        '</div>' +
-      '</div>';
-    } else {
-      return '<div class="brain-msg-row" style="display:flex;gap:8px;align-items:flex-start;flex-direction:row-reverse;">' +
-        '<div style="width:30px;height:30px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#1A1F3C,#2D3561);display:flex;align-items:center;justify-content:center;">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
-        '</div>' +
-        '<div style="max-width:80%;">' +
-          '<div style="background:linear-gradient(135deg,#F97316,#FF8C00);border-radius:16px 4px 16px 16px;padding:10px 14px;font-size:12.5px;line-height:1.65;color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.25);">' +
-            esc(m.content) +
-          '</div>' +
-          '<div style="font-size:9.5px;color:#9BA3B2;margin-top:4px;padding-right:4px;text-align:right;">' + esc(m.time||'') + '</div>' +
-        '</div>' +
-      '</div>';
-    }
+  function isAdmin() { return typeof currentRole !== 'undefined' && currentRole === 'admin'; }
+  function suggestions() {
+    var s = [
+      ['My numbers', 'How am I doing today?'],
+      ['Breaks', 'How does the Break Bot work?'],
+      ['Tickets', 'Walk me through logging a ticket step by step.'],
+      ['Assessments', isAdmin() ? 'Who has not taken their assessment yet?' : 'Which assessments do I still have to take?'],
+    ];
+    if (isAdmin()) s.splice(0, 1, ['Team', 'Who needs attention on the team right now?'], ['Announce', 'Help me announce something to the team']);
+    return s.slice(0, 4);
   }
+  var CHIPS = [['Report a bug', 'I found a bug. Here is what is happening:'], ['Roster help', 'Walk me through the Roster attendance features.'], ['Zoho issue', 'My Zoho ticket number is not loading, what should I do?'], ['Full guide', 'Give me a full overview of this tool and all its features.']];
 
-  /* ── Announcement card: Brain drafts, the admin approves and presses Send ── */
+  /* ── Rendering ───────────────────────────────────────────── */
   function propHTML(p) {
     var st = p.state || '';
-    var head = '<div style="font-size:10px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Announcement draft</div>' +
-      '<div style="font-size:12.5px;font-weight:700;color:#1A1F3C;">' + esc(p.title || 'Announcement') + '</div>' +
-      '<div style="font-size:10.5px;color:#6B7280;margin:2px 0 8px;">Posts to the ' + esc(p.target || 'Google Chat space') + (p.audience ? ' · For: ' + esc(p.audience) : '') + '</div>';
-    var box = 'margin-top:8px;background:#fff;border:1.5px solid #F97316;border-radius:12px;padding:10px 12px;';
-    if (st === 'sent') return '<div style="' + box + 'border-color:#10B981;">' + head + '<div style="font-size:12px;color:#059669;font-weight:700;">Sent to Google Chat.</div></div>';
-    if (st === 'discarded') return '<div style="' + box + 'border-color:#E8EBF0;opacity:.7;">' + head + '<div style="font-size:12px;color:#6B7280;">Discarded. Nothing was sent.</div></div>';
-    var id = esc(p.id);
-    var busyNow = st === 'sending';
-    return '<div style="' + box + '">' + head +
-      (p.blocker ? '<div style="font-size:11px;color:#B45309;background:#FEF3C7;border-radius:8px;padding:6px 8px;margin-bottom:8px;">' + esc(p.blocker) + '</div>' : '') +
-      '<textarea id="brain-prop-' + id + '" rows="6" aria-label="Announcement text, you can edit it" style="width:100%;box-sizing:border-box;border:1.5px solid #E8EBF0;border-radius:10px;padding:8px 10px;font-size:12px;line-height:1.5;font-family:inherit;color:#1A1F3C;resize:vertical;"' + (busyNow ? ' disabled' : '') + '>' + esc(p.text) + '</textarea>' +
-      (st === 'error' ? '<div style="font-size:11px;color:#DC2626;margin-top:6px;">' + esc(p.error || 'Could not send.') + '</div>' : '') +
-      '<div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">' +
-        '<button type="button" onclick="Brain.discardProposal(\'' + id + '\')" style="padding:7px 14px;border-radius:10px;border:1.5px solid #E8EBF0;background:#fff;color:#4B5563;font-size:12px;font-weight:600;cursor:pointer;"' + (busyNow ? ' disabled' : '') + '>Discard</button>' +
-        '<button type="button" onclick="Brain.sendProposal(\'' + id + '\')" style="padding:7px 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#F97316,#FF8C00);color:#fff;font-size:12px;font-weight:700;cursor:pointer;"' + (busyNow || p.blocker ? ' disabled' : '') + '>' + (busyNow ? 'Sending...' : 'Approve and send') + '</button>' +
-      '</div></div>';
+    var head = '<em>Announcement draft</em><b>' + esc(p.title || 'Announcement') + '</b><small>Posts to the ' + esc(p.target || 'Google Chat space') + (p.audience ? ' · For: ' + esc(p.audience) : '') + '</small>';
+    if (st === 'sent') return '<div class="bp-prop sent">' + head + '<div class="bp-ok">Sent to Google Chat.</div></div>';
+    if (st === 'discarded') return '<div class="bp-prop gone">' + head + '<div style="font-size:12.5px;color:var(--b-t3)">Discarded. Nothing was sent.</div></div>';
+    var id = esc(p.id), sending = st === 'sending';
+    return '<div class="bp-prop">' + head +
+      (p.blocker ? '<p class="bp-warn">' + esc(p.blocker) + '</p>' : '') +
+      '<textarea id="brain-prop-' + id + '" rows="6" aria-label="Announcement text, you can edit it"' + (sending ? ' disabled' : '') + '>' + esc(p.text || '') + '</textarea>' +
+      (st === 'error' ? '<p class="bp-warn" style="margin:6px 0 0">' + esc(p.error || 'Could not send.') + '</p>' : '') +
+      '<div class="bp-acts"><button type="button" class="bp-btn" onclick="Brain.discardProposal(\'' + id + '\')"' + (sending ? ' disabled' : '') + '>Discard</button>' +
+      '<button type="button" class="bp-btn pri" onclick="Brain.sendProposal(\'' + id + '\')"' + (sending || p.blocker ? ' disabled' : '') + '>' + (sending ? 'Sending...' : 'Send to Google Chat') + '</button></div></div>';
   }
+  function msgHTML(m) {
+    if (m.role === 'assistant') return '<div class="bp-ai"><img src="' + AVATAR + '" alt=""><div class="bp-ai-c">' + md(m.content) + (m.proposal ? propHTML(m.proposal) : '') + '<span class="bp-time">' + esc(m.time || '') + '</span></div></div>';
+    return '<div class="bp-me">' + esc(m.content) + '</div>';
+  }
+  function helloHTML() {
+    var n = fn();
+    return '<div class="bp-hello"><h2>' + greet() + (n ? ', ' + esc(n) : '') + '</h2><p>I know your live numbers and how this tool works. Ask about your stats, breaks, tickets, assessments or anything on this page. For Adit product and process questions, use Adit Expert.</p>' +
+      '<div class="bp-sugg">' + suggestions().map(function (s) { return '<button type="button" class="bp-card" data-q="' + esc(s[1]) + '"><em>' + esc(s[0]) + '</em><span>' + esc(s[1]) + '</span></button>'; }).join('') + '</div></div>';
+  }
+  function render() {
+    var panel = document.getElementById('brain-panel');
+    if (!panel) return;
+    var keep = document.getElementById('brain-input-el'), draft = keep ? keep.value : '';
+    panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Brain');
+    panel.innerHTML =
+      '<div class="bp-hd"><img src="' + AVATAR + '" alt=""><div><b>Brain</b><small><i></i>Knows your live numbers</small></div><span class="bp-sp"></span>' +
+        (msgs.length ? '<button type="button" class="bp-hbtn" data-act="new">New chat</button>' : '') +
+        '<button type="button" class="bp-hbtn" data-act="close" aria-label="Close Brain">Close</button></div>' +
+      '<div class="bp-body" id="brain-msgs" role="log" aria-live="polite">' + (msgs.length ? msgs.map(msgHTML).join('') : helloHTML()) + '</div>' +
+      (msgs.length ? '<div class="bp-chips">' + CHIPS.map(function (c) { return '<button type="button" class="bp-chip" data-q="' + esc(c[1]) + '">' + esc(c[0]) + '</button>'; }).join('') + '</div>' : '') +
+      '<div class="bp-comp"><textarea id="brain-input-el" rows="1" placeholder="Ask Brain anything..." aria-label="Message Brain" onkeydown="Brain.key(event)" oninput="Brain.resize(this)"></textarea>' +
+        '<div class="bp-bar"><span>Enter to send · Shift+Enter for a new line</span><button type="button" id="brain-send-btn" onclick="Brain.send()"' + (busy ? ' disabled' : '') + '>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>Send</button></div></div>';
+    var inp = document.getElementById('brain-input-el'); if (inp && draft) inp.value = draft;
+    panel.onclick = function (e) {
+      var t = e.target.closest('[data-q],[data-act]'); if (!t) return;
+      var a = t.getAttribute('data-act');
+      if (a === 'close') return closePanel();
+      if (a === 'new') { msgs = []; render(); var i2 = document.getElementById('brain-input-el'); if (i2) i2.focus(); return; }
+      var q = t.getAttribute('data-q'); if (q && !busy) callAI(q);
+    };
+    scroll();
+  }
+  function scroll() { setTimeout(function () { var e = document.getElementById('brain-msgs'); if (e) e.scrollTop = e.scrollHeight; }, 60); }
+  function addTyping() {
+    var el = document.getElementById('brain-msgs'); if (!el) return;
+    var d = document.createElement('div'); d.id = 'brain-typing-el'; d.className = 'bp-ai';
+    d.innerHTML = '<img src="' + AVATAR + '" alt=""><div class="bp-ai-c"><span class="bp-dots" aria-label="Brain is thinking"><i></i><i></i><i></i></span></div>';
+    el.appendChild(d); scroll();
+  }
+
+  /* ── Announcement drafts ─────────────────────────────────── */
   function findProp(id) { for (var i = 0; i < msgs.length; i++) if (msgs[i].proposal && msgs[i].proposal.id === id) return msgs[i].proposal; return null; }
   async function sendProposal(id) {
     var p = findProp(id); if (!p || p.state === 'sending' || p.state === 'sent') return;
@@ -201,242 +191,74 @@
   }
   function discardProposal(id) { var p = findProp(id); if (!p) return; var ta = document.getElementById('brain-prop-' + id); if (ta) p.text = ta.value; p.state = 'discarded'; render(); }
 
-  /* ── State illustrations ─────────────────────────────── */
-  function stateImg(src, alt, w, h, extra) {
-    return '<img src="'+src+'" width="'+(w||120)+'" height="'+(h||100)+'" alt="'+(alt||'Brain')+'" style="object-fit:contain;'+(extra||'')+'">';
-  }
-
-  function welcomeHTML() {
-    var n=fn(), g=greet(), h=hr();
-    var emoji = h<12?'🌅':h<17?'☀️':'🌙';
-    return '<div style="display:flex;flex-direction:column;align-items:center;padding:16px 20px 8px;text-align:center;">' +
-      // Title brand
-      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
-        '<img src="'+IMG.avatar+'" width="36" height="36" style="border-radius:10px;object-fit:cover;" alt="Brain"/>' +
-        '<div style="text-align:left;"><div style="font-size:18px;font-weight:900;color:#1A1F3C;letter-spacing:-.02em;">Brain</div><div style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain v'+BRAIN_VERSION+' · knows your live numbers</div></div>' +
-      '</div>' +
-      // Thinking illustration
-      '<div style="position:relative;margin-bottom:10px;">' +
-        stateImg(IMG.thinking, 'Brain working', 180, 140, 'filter:drop-shadow(0 6px 20px rgba(249,115,22,.25));') +
-      '</div>' +
-      '<div style="font-size:15px;font-weight:800;color:#1A1F3C;margin-bottom:3px;">' + emoji + ' ' + g + ', ' + esc(n) + '!</div>' +
-      '<div style="font-size:11px;color:#6B7280;line-height:1.5;max-width:280px;margin-bottom:12px;">Your AI co-pilot for Adit Agent Monitor. Ask me anything.</div>' +
-      // Capability pills using image icons
-      '<div style="display:flex;flex-wrap:wrap;gap:7px;justify-content:center;">' +
-        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#FFF3E0;border:1.5px solid rgba(249,115,22,.25);border-radius:99px;font-size:10px;font-weight:700;color:#F97316;">' +
-          '<img src="'+IMG.search+'" width="14" height="14" style="border-radius:3px;object-fit:cover;">Diagnose issues</span>' +
-        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#ECFDF5;border:1.5px solid rgba(16,185,129,.25);border-radius:99px;font-size:10px;font-weight:700;color:#059669;">' +
-          '<img src="'+IMG.success+'" width="14" height="14" style="border-radius:3px;object-fit:cover;">Instant fixes</span>' +
-        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;background:#EEF2FF;border:1.5px solid rgba(99,102,241,.2);border-radius:99px;font-size:10px;font-weight:700;color:#6366F1;">' +
-          '<img src="'+IMG.learning+'" width="14" height="14" style="border-radius:3px;object-fit:cover;">AI Learning</span>' +
-      '</div>' +
-    '</div>';
-  }
-
-  /* ── Main render ─────────────────────────────────────────── */
-  function render() {
-    var panel = document.getElementById('brain-panel');
-    if (!panel) return;
-
-    var isAdm=(typeof currentRole!=='undefined'&&currentRole==='admin');
-    var chipList=CHIPS.slice(0,4).concat([{e:'📝',l:'Assessments',m:isAdm?'Who has not taken their assessment yet?':'Which assessments do I still have to take?'}],isAdm?[{e:'📣',l:'Announce',m:'Help me announce something to the team'}]:[],CHIPS.slice(4));
-    var chipsHTML = chipList.map(function(c){
-      return '<button class="brain-chip-btn" style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:999px;font-size:10.5px;font-weight:600;background:#F8F9FC;border:1.5px solid #E8EBF0;color:#4B5563;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .18s;" onclick="Brain.quick(' + JSON.stringify(c.m) + ')">' + c.e + ' ' + c.l + '</button>';
-    }).join('');
-
-    var msgsHTML = msgs.length === 0 ? welcomeHTML() : msgs.map(msgHTML).join('');
-
-    panel.innerHTML =
-      // ── Header ─────────────────────────────────────────
-      '<div style="background:linear-gradient(135deg,#1A1F3C 0%,#2D3561 100%);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;cursor:grab;position:relative;overflow:hidden;" id="brain-drag-h">' +
-        '<div style="position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(249,115,22,.08);pointer-events:none;"></div>' +
-        // Avatar
-        '<img src="'+IMG.avatar+'" width="42" height="42" style="border-radius:12px;object-fit:cover;flex-shrink:0;box-shadow:0 3px 12px rgba(249,115,22,.4);position:relative;z-index:1;" alt="Brain"/>' +
-        '<div style="position:relative;z-index:1;flex:1;">' +
-          '<div style="font-size:16px;font-weight:800;color:#fff;letter-spacing:-.01em;line-height:1;">Brain</div>' +
-          '<div style="display:flex;align-items:center;gap:5px;margin-top:3px;">' +
-            '<div style="width:6px;height:6px;border-radius:50%;background:#F97316;box-shadow:0 0 6px #F97316;flex-shrink:0;animation:brain-dot-bounce 1.4s ease-in-out infinite;"></div>' +
-            '<span style="font-size:9px;font-weight:800;color:#F97316;text-transform:uppercase;letter-spacing:.1em;">Brain v'+BRAIN_VERSION+' · knows your live numbers</span>' +
-          '</div>' +
-        '</div>' +
-        '<button style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.7);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;position:relative;z-index:1;" onclick="Brain.close()">&#8722;</button>' +
-      '</div>' +
-      // Quick chips
-      '<div style="display:flex;gap:6px;padding:10px 14px 8px;flex-wrap:wrap;flex-shrink:0;border-bottom:1.5px solid #F0F2F5;background:#FAFBFC;">' + chipsHTML + '</div>' +
-      // Messages
-      '<div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:#fff;" id="brain-msgs">' + msgsHTML + '</div>' +
-      // Input row
-      '<div style="display:flex;gap:8px;padding:12px 14px;flex-shrink:0;align-items:flex-end;background:#FAFBFC;border-top:1.5px solid #F0F2F5;">' +
-        '<textarea id="brain-input-el" style="flex:1;padding:10px 14px;border-radius:14px;border:1.5px solid #E8EBF0;background:#fff;color:#1A1F3C;font-size:12.5px;font-family:inherit;outline:none;resize:none;max-height:100px;min-height:40px;line-height:1.5;transition:border-color .2s,box-shadow .2s;" placeholder="Ask anything, features, bugs, how-to…" onkeydown="Brain.key(event)" oninput="Brain.resize(this)" rows="1"></textarea>' +
-        '<button id="brain-send-btn" style="width:40px;height:40px;border-radius:12px;flex-shrink:0;border:none;cursor:pointer;background:linear-gradient(135deg,#F97316,#FF8C00);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(249,115,22,.4);transition:transform .2s,box-shadow .2s;" onclick="Brain.send()">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" style="width:15px;height:15px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
-        '</button>' +
-      '</div>';
-
-    scroll();
-    drag();
-  }
-
-  function scroll(){setTimeout(function(){var e=document.getElementById('brain-msgs');if(e)e.scrollTop=e.scrollHeight;},70);}
-
-  function addTyping(){
-    var el=document.getElementById('brain-msgs');
-    if(!el) return;
-    var d=document.createElement('div');
-    d.id='brain-typing-el';
-    d.className='brain-msg-row';
-    d.style.cssText='display:flex;gap:8px;align-items:flex-start;';
-    d.innerHTML=
-      '<div style="width:30px;height:30px;flex-shrink:0;border-radius:50%;background:linear-gradient(135deg,#FF8C00,#F97316);display:flex;align-items:center;justify-content:center;">' + ROBOT_XS + '</div>' +
-      '<div style="background:#F8F9FC;border:1.5px solid #F0F2F5;border-radius:4px 16px 16px 16px;padding:12px 16px;display:flex;gap:5px;align-items:center;">' +
-        '<span class="brain-dot"></span><span class="brain-dot"></span><span class="brain-dot"></span>' +
-        '<span style="font-size:11px;color:#9BA3B2;margin-left:4px;">Thinking…</span>' +
-      '</div>';
-    el.appendChild(d);
-    scroll();
-  }
-  function rmTyping(){var e=document.getElementById('brain-typing-el');if(e)e.remove();}
-
-  function drag(){
-    var h=document.getElementById('brain-drag-h'),w=document.getElementById('brain-fab-wrap');
-    if(!h||!w) return;
-    h.onmousedown=function(e){
-      if(e.target.tagName==='BUTTON') return;
-      e.preventDefault();
-      var sx=e.clientX,sy=e.clientY,sr=parseInt(w.style.right)||28,sb=parseInt(w.style.bottom)||28;
-      function mv(ev){
-        w.style.right=Math.max(8,Math.min(window.innerWidth-100,sr+(sx-ev.clientX)))+'px';
-        w.style.bottom=Math.max(8,Math.min(window.innerHeight-100,sb+(sy-ev.clientY)))+'px';
-      }
-      function up(){document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);}
-      document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);
-    };
-  }
-
   /* ── AI call ─────────────────────────────────────────────── */
   async function callAI(userMsg) {
-    msgs.push({role:'user',content:userMsg,time:ts()});
-    busy=true; render(); addTyping();
-    var btn=document.getElementById('brain-send-btn'); if(btn) btn.disabled=true;
+    msgs.push({ role: 'user', content: userMsg, time: ts() });
+    busy = true; render(); addTyping();
     try {
-      var c=ctx();
-      // Session 46: identity/role now come from the server session; only the
-      // page is sent as context. Last 12 turns, 30s timeout.
-      var ctl=('AbortController' in window)?new AbortController():null;
-      var tmr=ctl?setTimeout(function(){ctl.abort();},30000):null;
-      var res=await fetch('/api/brain/chat',{
-        method:'POST',credentials:'include',
-        headers:{'Content-Type':'application/json'},
-        signal:ctl?ctl.signal:undefined,
-        body:JSON.stringify({
-          messages:msgs.slice(-12).map(function(m){return{role:m.role,content:String(m.content).slice(0,2000)};}),
-          context:c.page
-        })
+      var ctl = ('AbortController' in window) ? new AbortController() : null;
+      var tmr = ctl ? setTimeout(function () { ctl.abort(); }, 30000) : null;
+      var res = await fetch('/api/brain/chat', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, signal: ctl ? ctl.signal : undefined,
+        body: JSON.stringify({ messages: msgs.slice(-12).map(function (m) { return { role: m.role, content: String(m.content).slice(0, 2000) }; }), context: ctx().page }),
       });
-      if(tmr) clearTimeout(tmr);
-      var data=await res.json();
-      rmTyping();
-      msgs.push({role:'assistant',content:data.success?data.reply:(data.error||'Having trouble connecting, please try again.'),time:ts(),proposal:(data.success&&data.proposal)?data.proposal:null});
-      if(msgs.length>60) msgs=msgs.slice(-40);
-    } catch(e){
-      rmTyping();
-      msgs.push({role:'assistant',content:'Connection issue, check your internet and retry.',time:ts()});
+      if (tmr) clearTimeout(tmr);
+      var data = await res.json();
+      msgs.push({ role: 'assistant', content: data.success ? data.reply : (data.error || 'Having trouble connecting, please try again.'), time: ts(), proposal: (data.success && data.proposal) ? data.proposal : null });
+      if (msgs.length > 60) msgs = msgs.slice(-40);
+    } catch (e) {
+      msgs.push({ role: 'assistant', content: 'Connection issue, check your internet and try again.', time: ts() });
     }
-    busy=false; render();
-    var b2=document.getElementById('brain-send-btn'); if(b2) b2.disabled=false;
+    busy = false; render();
+    var inp = document.getElementById('brain-input-el'); if (inp) inp.focus();
   }
 
-  /* ── Proactive bubble ───────────────────────────────────── */
-  function showBubble(text,delay){
-    return; // Session 49: no unsolicited pop-ups; Brain waits to be opened.
-    clearTimeout(bubbleTimer);
-    bubbleTimer=setTimeout(function(){
-      if(isOpen) return;
-      var el=document.getElementById('brain-bubble'),txt=document.getElementById('brain-bubble-text');
-      if(!el||!txt) return;
-      txt.textContent=text; el.style.display='block'; el.style.opacity='1';
-      clearTimeout(bubbleTimer);
-      bubbleTimer=setTimeout(function(){
-        el.style.transition='opacity .5s'; el.style.opacity='0';
-        setTimeout(function(){el.style.display='none';el.style.opacity='';el.style.transition='';},500);
-      },8000);
-    },delay||0);
-  }
-
-  /* ── Open / close ─────────────────────────────────────────── */
-  function openPanel(){
-    isOpen=true;
-    var p=document.getElementById('brain-panel'),f=document.getElementById('brain-fab'),b=document.getElementById('brain-bubble');
-    if(p){
-      p.style.display='flex'; // override inline display:none
-      p.style.flexDirection='column';
-      requestAnimationFrame(function(){ p.classList.add('bopen'); });
-    }
-    if(f){f.style.transform='scale(.88)';f.style.boxShadow='0 4px 16px rgba(249,115,22,.4)';}
-    if(b) b.style.display='none';
+  /* ── Open / close ────────────────────────────────────────── */
+  function openPanel() {
+    isOpen = true;
+    // One side panel at a time: close Adit Expert if it is open.
+    var ex = document.querySelector('.axw-panel.open .axw-hd button'); if (ex) ex.click();
+    document.documentElement.classList.add('brain-open');
+    var p = document.getElementById('brain-panel');
     render();
-    setTimeout(function(){
-      var inp=document.getElementById('brain-input-el'); if(inp) inp.focus();
-      if(!sessionGreeted){
-        sessionGreeted=true;
-        msgs.push({role:'assistant',content:greet()+', **'+fn()+'**! I\'m Brain, your AI co-pilot for Adit Agent Monitor.\n\nI can see you\'re on the **'+ctx().page+'** page. What can I help you with today?',time:ts()});
-        render();
-      }
-    },160);
+    if (p) requestAnimationFrame(function () { p.classList.add('bopen'); });
+    var f = document.getElementById('brain-fab'); if (f) f.setAttribute('aria-expanded', 'true');
+    setTimeout(function () { var inp = document.getElementById('brain-input-el'); if (inp) inp.focus(); }, 200);
   }
-  function closePanel(){
-    isOpen=false;
-    var p=document.getElementById('brain-panel'),f=document.getElementById('brain-fab');
-    if(p){
-      p.classList.remove('bopen');
-      setTimeout(function(){ if(!isOpen) p.style.display='none'; }, 420); // after animation
-    }
-    if(f){f.style.transform='';f.style.boxShadow='';}
+  function closePanel() {
+    isOpen = false;
+    var p = document.getElementById('brain-panel'); if (p) p.classList.remove('bopen');
+    document.documentElement.classList.remove('brain-open');
+    var f = document.getElementById('brain-fab'); if (f) { f.setAttribute('aria-expanded', 'false'); f.focus(); }
   }
 
-  /* ── Page watcher ─────────────────────────────────────────── */
-  function watchPage(){
-    setInterval(function(){
-      var c=ctx();
-      if(c.page && c.page!==lastPage){
-        var prev=lastPage; lastPage=c.page;
-        if(prev){
-          var tip=PAGE_TIPS[c.page];
-          if(tip && !isOpen) showBubble(tip,1000);
-        }
-      }
-    },1200);
-  }
-
-  /* ── Public API ───────────────────────────────────────────── */
-  window.Brain={
-    toggle:function(){isOpen?closePanel():openPanel();},
+  /* ── Public API (used by onclick handlers in index.html) ─── */
+  window.Brain = {
+    toggle: function () { isOpen ? closePanel() : openPanel(); },
     close: closePanel,
-    send:function(){
-      if(busy) return;
-      var inp=document.getElementById('brain-input-el');
-      var msg=inp?inp.value.trim():''; if(!msg) return;
-      inp.value=''; inp.style.height='';
-      callAI(msg);
-    },
-    sendProposal:sendProposal,
-    discardProposal:discardProposal,
-    quick:function(msg){if(!busy){if(!isOpen)openPanel();setTimeout(function(){callAI(msg);},200);}},
-    key:function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();Brain.send();}},
-    resize:function(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';},
-    dismissBubble:function(){var e=document.getElementById('brain-bubble');if(e)e.style.display='none';}
+    send: function () { if (busy) return; var inp = document.getElementById('brain-input-el'); var m = inp ? inp.value.trim() : ''; if (!m) return; inp.value = ''; callAI(m); },
+    sendProposal: sendProposal,
+    discardProposal: discardProposal,
+    quick: function (m) { if (busy) return; if (!isOpen) openPanel(); setTimeout(function () { callAI(m); }, 200); },
+    key: function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.Brain.send(); } },
+    resize: function (el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; },
+    dismissBubble: function () {},
+    version: BRAIN_VERSION,
   };
 
-  /* ── Init ─────────────────────────────────────────────────── */
-  function init(){
+  /* ── Init ────────────────────────────────────────────────── */
+  function init() {
     injectCSS();
-    var p=document.getElementById('brain-panel');if(p) p.classList.remove('bopen');
-    setTimeout(function(){
-      var n=fn(); if(n) showBubble(greet()+', '+n+'! I\'m Brain, tap me anytime 🤖',0);
-    },2500);
-    watchPage();
+    var f = document.getElementById('brain-fab');
+    if (f) {
+      f.removeAttribute('style');
+      f.innerHTML = '<img class="bf-av" src="' + AVATAR + '" alt=""><span class="bf-lb">Brain</span>';
+      f.setAttribute('aria-label', 'Open Brain, your AI co-pilot for this tool'); f.title = 'Brain: your live numbers and how this tool works';
+      f.setAttribute('aria-expanded', 'false');
+    }
+    var p = document.getElementById('brain-panel'); if (p) { p.classList.remove('bopen'); p.removeAttribute('style'); }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen) closePanel(); });
   }
-
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init);}
-  else{setTimeout(init,800);}
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else setTimeout(init, 0);
 })();
