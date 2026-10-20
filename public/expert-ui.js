@@ -159,7 +159,7 @@
       if (j.share) out.push('', 'Help Center: ' + j.share.url);
       return out.join('\n');
     }
-    var TYPE = { kb: ['Help Center', 'book'], guide: ['Guide', 'book'], case: ['Solved ticket', 'ticket'], call: ['Support call', 'phone'], rule: ['Team rule', 'rule'], note: ['Team note', 'rule'], update: ['Update', 'news'] };
+    var TYPE = { kb: ['Help Center', 'book'], guide: ['Guide', 'book'], case: ['Solved ticket', 'ticket'], call: ['Support call', 'phone'], rule: ['Team rule', 'rule'], note: ['Team note', 'rule'], update: ['Update', 'news'], review: ['Reviewer decision', 'shield'], qa: ['QA rule', 'rule'], learned: ['Answered before', 'spark'] };
     function sourcesBox(list) {
       var box = h('details', { class: 'ax-srcs' }, [h('summary', null, [h('span', { text: 'Sources (' + list.length + ')' }), h('span', { class: 'ax-src-types' }, uniq(list.map(function (s) { return s.type; })).map(function (t) { return h('span', { class: 'ax-st t-' + t, text: (TYPE[t] || [t])[0] }); }))])]);
       var ul = h('ul');
@@ -167,7 +167,7 @@
         var t = TYPE[s.type] || [s.type, 'book'], main;
         if (s.type === 'kb') main = h('button', { type: 'button', class: 'ax-src-t', onclick: function () { ctx.openArticle(s.id); } }, [s.title + (s.section ? ' › ' + s.section : '')]);
         else if (s.type === 'guide') main = h('button', { type: 'button', class: 'ax-src-t', onclick: function () { ctx.go(s.doc, s.id); } }, [s.title]);
-        else if (s.type === 'case' && s.number) main = h('a', { class: 'ax-src-t', href: '/guides/ticket/' + s.number, target: '_blank', rel: 'noopener', text: '#' + s.number + ' ' + s.title });
+        else if ((s.type === 'case' || s.type === 'review') && s.number) main = h('a', { class: 'ax-src-t', href: '/guides/ticket/' + s.number, target: '_blank', rel: 'noopener', text: (s.type === 'case' ? '#' + s.number + ' ' : '') + s.title + (s.type === 'review' ? ' (#' + s.number + ')' : '') });
         else main = h('span', { class: 'ax-src-t', text: s.title });
         ul.appendChild(h('li', { class: 't-' + s.type }, [h('span', { class: 'ax-src-ic' }, [icon(t[1], 'sm')]), h('div', null, [main, h('span', { class: 'ax-src-m', text: [t[0], s.module, s.at, s.channel].filter(Boolean).join(' · ') }), s.snippet ? h('span', { class: 'ax-src-s', text: s.snippet }) : null]),
           s.url ? h('a', { class: 'ax-mini', href: s.url, target: '_blank', rel: 'noopener', title: 'Open on help.adit.com' }, [icon('ext', 'sm')]) : null]));
@@ -272,7 +272,8 @@
       root.appendChild(h('section', { class: 'ax-card ax-know' }, [h('h2', { text: 'What it knows' }), h('div', { class: 'ax-know-g' }, [
         kn('book', K.articles + ' Help Center articles', K.modules + ' product modules, from the KB document'), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
         kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in AditKB for every question' : 'AditKB not connected'),
-        kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', 'Product and process updates', 'From the Updates feed; newest wins')])]));
+        kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', 'Product and process updates', 'From the Updates feed and published QA updates; newest wins'),
+        kn('shield', (K.reviews || 0) + ' reviewer decisions', 'Transfer reviews, AI and VoIP audits and reviews, QA audits. New ones are learned within 10 minutes.'), kn('rule', (K.qa || 0) + ' QA rules', 'From Ticket audits'), kn('spark', (K.learned || 0) + ' helpful answers', 'Answers agents marked helpful are reused for the same scenario')])]));
       // feedback
       var fb = h('section', { class: 'ax-card' }, [h('h2', { text: 'Corrections from agents (' + d.feedback.length + ')' })]);
       if (!d.feedback.length) fb.appendChild(h('p', { class: 'ax-muted', text: 'Nothing waiting.' }));

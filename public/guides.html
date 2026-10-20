@@ -10,11 +10,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/guides.css?v=1.5.0">
-<link rel="stylesheet" href="/expert.css?v=1.1.0">
+<link rel="stylesheet" href="/expert.css?v=1.2.0">
 <script>
 try{
   var q=new URLSearchParams(location.search);
   if(q.get('embed')==='1') document.documentElement.classList.add('embed');
+  if(q.get('widget')==='1') document.documentElement.classList.add('embed','widget');
   var d=localStorage.getItem('aditDarkMode'); if(d==='1') document.documentElement.setAttribute('data-theme','dark'); else if(d==='0') document.documentElement.setAttribute('data-theme','light');
 }catch(e){}
 </script>
@@ -31,7 +32,7 @@ try{
   </main>
 </div>
 <div class="sr-only" id="gd-live" aria-live="polite"></div>
-<script src="/expert-ui.js?v=1.1.0" defer></script>
+<script src="/expert-ui.js?v=1.2.0" defer></script>
 <script src="/guides.js?v=1.5.1" defer></script>
 </body>
 </html>
