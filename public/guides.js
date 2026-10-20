@@ -23,6 +23,7 @@
     search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
     send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>',
     book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
+    rule: '<path d="M6 4h12v16l-6-4-6 4z"/>',
     school: '<path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/>'
   };
   // Six-digit Zoho Desk ticket numbers open the ticket (the server finds it in AditKB).
@@ -54,7 +55,7 @@
 
   // ── shell ───────────────────────────────────────────────────────────
   // Batch 182: Adit Expert first, then the Help Center and the two guides; Teach for admins.
-  var TABS = [['ask', 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
+  var TABS = [['ask', 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['rules', 'Rule list', 'rule'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
   function renderNav() {
     var tabs = TABS.concat(S.me && S.me.admin ? [['teach', 'Teach', 'school']] : []);
     nav.replaceChildren.apply(nav, tabs.map(function (t) {
@@ -84,7 +85,7 @@
     return panels[tab];
   }
   function route() {
-    var m = /^#(ask|kb|voip|ai|teach)(?:\/(.+))?$/.exec(location.hash || '');
+    var m = /^#(ask|kb|rules|voip|ai|teach)(?:\/(.+))?$/.exec(location.hash || '');
     var prev = S.tab, next = m ? m[1] : 'ask';
     if (next === 'teach' && !(S.me && S.me.admin)) next = 'ask';
     var anchor = m && m[2] ? decodeURIComponent(m[2]) : null;
@@ -100,6 +101,7 @@
     else if (next === 'ai') showAi(anchor);
     else if (next === 'kb') showKb(anchor);
     else if (next === 'teach') showTeach();
+    else if (next === 'rules') showRules();
     else showAsk();
     if (!anchor && prev !== next) window.scrollTo(0, scrollAt[next] || 0);
   }
@@ -331,6 +333,11 @@
     if (!window.AditExpert) return;
     if (!kbView) kbView = window.AditExpert.Kb(panel('kb'), ctx);
     if (anchor) kbView.open(anchor);
+  }
+  var rulesView = null;
+  function showRules() {
+    if (!window.AditExpert) return;
+    if (!rulesView) rulesView = window.AditExpert.Rules(panel('rules'), ctx); else rulesView.reload();
   }
   function showTeach() {
     if (!window.AditExpert) return;

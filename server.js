@@ -2034,6 +2034,9 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
 app.post('/api/guides/expert/feedback', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try { const b = req.body || {}; res.json({ success: true, ...(await expertMod().feedback({ logId: b.logId, vote: b.vote, comment: b.comment, correction: b.correction, email: req.session.email })) }); } catch (e) { expertErr(res, e, 'Could not save'); }
 });
+app.get('/api/guides/expert/rules', requireAuth, async (req, res) => {
+  try { const admin = (await isToolMember(req.session.email)) ? await isAdminSession(req).catch(() => false) : false; res.json({ success: true, admin: !!admin, rules: await expertMod().rules(!!admin) }); } catch (e) { expertErr(res, e, 'Could not load the rules'); }
+});
 app.get('/api/guides/expert/kb', requireAuth, (req, res) => { try { res.json({ success: true, modules: expertMod().catalog() }); } catch (e) { expertErr(res, e, 'Could not load'); } });
 app.get('/api/guides/expert/kb/:id', requireAuth, (req, res) => { const a = expertMod().article(req.params.id); if (!a) return res.status(404).json({ success: false, error: 'Article not found' }); res.json({ success: true, article: a }); });
 app.get('/api/guides/expert/admin', requireAdmin, async (req, res) => {

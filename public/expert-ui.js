@@ -264,14 +264,14 @@
       clear(root);
       var L = d.insights.last30, K = d.insights.knowledge;
       root.appendChild(h('div', { class: 'ax-teach-hd' }, [h('div', null, [h('h1', { text: 'Teach Adit Expert' }), h('p', { class: 'ax-muted', text: 'Rules and notes you write here outrank everything else it reads. Corrections from agents land in the queue for you to approve.' })]),
-        h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { editNote(null); } }, [icon('plus', 'sm'), 'New rule or note'])]));
+        h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { noteDialog(ctx, modules, load, null); } }, [icon('plus', 'sm'), 'New note'])]));
       root.appendChild(h('div', { class: 'ax-stats' }, [stat(L.asked, 'Questions, 30 days', L.people + ' people'), stat(pct(L.found, L.asked), 'Answered from sources'), stat(pct(L.verified, L.asked), 'Double-checked'),
         stat(L.up + ' / ' + L.down, 'Helpful / not'), stat(L.avgSec != null ? L.avgSec + 's' : '-', 'Average time')]));
       var syncB = h('button', { type: 'button', class: 'ax-mini' }, [icon('refresh', 'sm'), 'Learn from new calls now']);
       syncB.addEventListener('click', function () { syncB.disabled = true; ctx.api('/api/guides/expert/sync-calls', {}).then(function (r) { ctx.toast(r.added + ' call' + (r.added === 1 ? '' : 's') + ' learned'); load(); }).catch(function (e) { syncB.disabled = false; ctx.toast(e.message); }); });
       root.appendChild(h('section', { class: 'ax-card ax-know' }, [h('h2', { text: 'What it knows' }), h('div', { class: 'ax-know-g' }, [
         kn('book', K.articles + ' Help Center articles', K.modules + ' product modules, from the KB document'), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
-        kn('rule', K.notes + ' team rules and notes', 'Written here; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in AditKB for every question' : 'AditKB not connected'),
+        kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in AditKB for every question' : 'AditKB not connected'),
         kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', 'Product and process updates', 'From the Updates feed; newest wins')])]));
       // feedback
       var fb = h('section', { class: 'ax-card' }, [h('h2', { text: 'Corrections from agents (' + d.feedback.length + ')' })]);
@@ -280,7 +280,7 @@
         fb.appendChild(h('div', { class: 'ax-q' }, [h('div', { class: 'ax-q-hd' }, [h('b', { text: f.question || '(question)' }), h('span', { class: 'ax-muted', text: (f.email || '') + ' · ' + String(f.at || '').slice(0, 16) })]),
           f.answer ? h('p', { class: 'ax-q-a' }, [h('em', { text: 'It said: ' }), f.answer]) : null,
           f.correction || f.comment ? h('p', { class: 'ax-q-c' }, [h('em', { text: 'Agent says: ' }), f.correction || f.comment]) : null,
-          h('div', { class: 'ax-row' }, [h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { editNote(null, { title: f.question ? f.question.slice(0, 120) : 'Correction', body: f.correction || f.comment || '', module: f.module || '' }, f.id); } }, [icon('check', 'sm'), 'Make it a note']),
+          h('div', { class: 'ax-row' }, [h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { noteDialog(ctx, modules, load, null, { title: f.question ? f.question.slice(0, 120) : 'Correction', body: f.correction || f.comment || '', module: f.module || '' }, f.id); } }, [icon('check', 'sm'), 'Make it a note']),
             h('button', { type: 'button', class: 'gd-btn', onclick: function () { ctx.api('/api/guides/expert/feedback/' + f.id, { action: 'dismiss' }).then(load); } }, ['Dismiss'])])]));
       });
       root.appendChild(fb);
@@ -289,46 +289,80 @@
       if (!d.insights.gaps.length) gp.appendChild(h('p', { class: 'ax-muted', text: 'None in the last 30 days.' }));
       d.insights.gaps.slice(0, 20).forEach(function (g) {
         gp.appendChild(h('div', { class: 'ax-gap' }, [h('span', { class: 'ax-badge conf-' + (g.found ? g.confidence : 'low'), text: g.found ? g.confidence : 'not found' }), h('span', { class: 'ax-gap-q', text: g.question }),
-          h('button', { type: 'button', class: 'ax-mini', onclick: function () { editNote(null, { title: g.question.slice(0, 120), body: '', module: g.module || '' }); } }, [icon('edit', 'sm'), 'Answer it'])]));
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { noteDialog(ctx, modules, load, null, { title: g.question.slice(0, 120), body: '', module: g.module || '' }); } }, [icon('edit', 'sm'), 'Answer it'])]));
       });
       root.appendChild(gp);
       // notes
-      var nt = h('section', { class: 'ax-card' }, [h('h2', { text: 'Rules and notes (' + d.notes.length + ')' })]);
-      d.notes.forEach(function (n) {
+      var notesOnly = d.notes.filter(function (n) { return n.kind !== 'rule'; });
+      var nt = h('section', { class: 'ax-card' }, [h('h2', { text: 'Notes (' + notesOnly.length + ')' }), h('p', { class: 'ax-muted', style: 'margin:-6px 0 8px' }, ['Rules that apply to every answer are in ', h('button', { type: 'button', class: 'gd-link', text: 'Rule list', onclick: function () { ctx.go('rules'); } }), '.'])]);
+      notesOnly.forEach(function (n) {
         nt.appendChild(h('div', { class: 'ax-note' + (n.status === 'off' ? ' off' : '') }, [h('span', { class: 'ax-badge ' + (n.kind === 'rule' ? 'rule' : 'mod'), text: n.kind === 'rule' ? 'Rule' : 'Note' }),
           h('div', null, [h('b', { text: n.title }), h('p', { text: n.body }), h('span', { class: 'ax-muted', text: [n.module, n.status === 'off' ? 'Off' : '', n.source === 'feedback' ? 'From agent feedback' : ''].filter(Boolean).join(' · ') })]),
-          h('button', { type: 'button', class: 'ax-mini', onclick: function () { editNote(n); } }, [icon('edit', 'sm'), 'Edit'])]));
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { noteDialog(ctx, modules, load, n); } }, [icon('edit', 'sm'), 'Edit'])]));
       });
       root.appendChild(nt);
     }
     function kn(ic, t, s, extra) { return h('div', { class: 'ax-kn' }, [h('span', { class: 'ax-kn-ic' }, [icon(ic)]), h('div', null, [h('b', { text: t }), h('span', { text: s }), extra || null])]); }
-    function editNote(n, pre, feedbackId) {
-      var d = n || pre || {};
-      var title = h('input', { class: 'ax-in', value: d.title || '', maxlength: '160', placeholder: 'e.g. Callback requests go to VoIP' });
-      var body = h('textarea', { class: 'ax-in', rows: '6', placeholder: 'Write it the way you would explain it to a new agent: the rule, the steps, who owns it.' }); body.value = d.body || '';
-      var mod = h('select', { class: 'ax-in' }, [h('option', { value: '', text: 'Any product' })].concat(modules.concat(['Process', 'VoIP', 'AI Front Desk']).map(function (m) { return h('option', { value: m, text: m }); }))); mod.value = d.module || '';
-      var kind = h('select', { class: 'ax-in' }, [h('option', { value: 'note', text: 'Note: used when relevant' }), h('option', { value: 'rule', text: 'Rule: always applied' })]); kind.value = d.kind || 'note';
-      var on = h('input', { type: 'checkbox', checked: d.status === 'off' ? null : true });
-      var err = h('p', { class: 'ax-err-t' });
-      var dlg = h('dialog', { class: 'ax-dlg', 'aria-label': n ? 'Edit note' : 'New note' });
-      var save = h('button', { type: 'button', class: 'gd-btn primary' }, ['Save']);
-      dlg.appendChild(h('div', { class: 'ax-dlg-in' }, [h('h2', { text: n ? 'Edit' : 'New rule or note' }), lab('Title', title), lab('What Adit Expert should know', body), h('div', { class: 'ax-2' }, [lab('Product', mod), lab('Type', kind)]),
-        h('label', { class: 'ax-tog' }, [on, h('span', { text: 'Active' })]), err,
-        h('div', { class: 'ax-row' }, [n ? h('button', { type: 'button', class: 'gd-btn danger', onclick: function () { if (!confirm('Delete this note?')) return; ctx.api('/api/guides/expert/notes/' + n.id, null, 'DELETE').then(function () { dlg.close(); load(); }); } }, [icon('trash', 'sm'), 'Delete']) : null,
-          h('span', { class: 'ax-sp' }), h('button', { type: 'button', class: 'gd-btn', text: 'Cancel', onclick: function () { dlg.close(); } }), save])]));
-      save.addEventListener('click', function () {
-        err.textContent = ''; save.disabled = true;
-        var payload = { title: title.value, body: body.value, module: mod.value, kind: kind.value, status: on.checked ? 'active' : 'off' };
-        var p = feedbackId ? ctx.api('/api/guides/expert/feedback/' + feedbackId, Object.assign({ action: 'apply' }, payload)) : n ? ctx.api('/api/guides/expert/notes/' + n.id, payload, 'PUT') : ctx.api('/api/guides/expert/notes', payload);
-        p.then(function () { dlg.close(); ctx.toast('Saved. Adit Expert uses it from now on.'); load(); }).catch(function (e) { save.disabled = false; err.textContent = e.message; });
-      });
-      dlg.addEventListener('close', function () { dlg.remove(); });
-      document.body.appendChild(dlg); dlg.showModal(); title.focus();
-    }
     function lab(t, el) { return h('label', { class: 'ax-lab' }, [h('span', { text: t }), el]); }
     load();
     return { reload: load };
   }
 
-  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach };
+  function dlab(t, el) { return h('label', { class: 'ax-lab' }, [h('span', { text: t }), el]); }
+function noteDialog(ctx, modules, done, n, pre, feedbackId) {
+    var d = n || pre || {};
+    var title = h('input', { class: 'ax-in', value: d.title || '', maxlength: '160', placeholder: 'e.g. Callback requests go to VoIP' });
+    var body = h('textarea', { class: 'ax-in', rows: '6', placeholder: 'Write it the way you would explain it to a new agent: the rule, the steps, who owns it.' }); body.value = d.body || '';
+    var mod = h('select', { class: 'ax-in' }, [h('option', { value: '', text: 'Any product' })].concat(modules.concat(['Process', 'VoIP', 'AI Front Desk']).map(function (m) { return h('option', { value: m, text: m }); }))); mod.value = d.module || '';
+    var kind = h('select', { class: 'ax-in' }, [h('option', { value: 'note', text: 'Note: used when relevant' }), h('option', { value: 'rule', text: 'Rule: always applied' })]); kind.value = d.kind || 'note';
+    var on = h('input', { type: 'checkbox', checked: d.status === 'off' ? null : true });
+    var err = h('p', { class: 'ax-err-t' });
+    var dlg = h('dialog', { class: 'ax-dlg', 'aria-label': n ? 'Edit note' : 'New note' });
+    var save = h('button', { type: 'button', class: 'gd-btn primary' }, ['Save']);
+    dlg.appendChild(h('div', { class: 'ax-dlg-in' }, [h('h2', { text: n ? 'Edit' : d.kind === 'rule' ? 'New rule' : 'New rule or note' }), dlab('Title', title), dlab('What Adit Expert should know', body), h('div', { class: 'ax-2' }, [dlab('Product', mod), dlab('Type', kind)]),
+      h('label', { class: 'ax-tog' }, [on, h('span', { text: 'Active' })]), err,
+      h('div', { class: 'ax-row' }, [n ? h('button', { type: 'button', class: 'gd-btn danger', onclick: function () { if (!confirm('Delete this note?')) return; ctx.api('/api/guides/expert/notes/' + n.id, null, 'DELETE').then(function () { dlg.close(); done(); }); } }, [icon('trash', 'sm'), 'Delete']) : null,
+        h('span', { class: 'ax-sp' }), h('button', { type: 'button', class: 'gd-btn', text: 'Cancel', onclick: function () { dlg.close(); } }), save])]));
+    save.addEventListener('click', function () {
+      err.textContent = ''; save.disabled = true;
+      var payload = { title: title.value, body: body.value, module: mod.value, kind: kind.value, status: on.checked ? 'active' : 'off' };
+      var p = feedbackId ? ctx.api('/api/guides/expert/feedback/' + feedbackId, Object.assign({ action: 'apply' }, payload)) : n ? ctx.api('/api/guides/expert/notes/' + n.id, payload, 'PUT') : ctx.api('/api/guides/expert/notes', payload);
+      p.then(function () { dlg.close(); ctx.toast('Saved. Adit Expert uses it from now on.'); done(); }).catch(function (e) { save.disabled = false; err.textContent = e.message; });
+    });
+    dlg.addEventListener('close', function () { dlg.remove(); });
+    document.body.appendChild(dlg); dlg.showModal(); title.focus();
+  }
+
+  // ── Rule list (everyone reads, admins edit) ─────────────────────────
+  function Rules(panel, ctx) {
+    var root = h('div', { class: 'ax-teach' }); panel.appendChild(root);
+    var modules = [];
+    function load() {
+      clear(root); root.appendChild(h('p', { class: 'gd-empty', text: 'Loading...' }));
+      Promise.all([ctx.api('/api/guides/expert/rules'), ctx.api('/api/guides/expert/meta')]).then(function (rs) { modules = rs[1].modules || []; paint(rs[0]); })
+        .catch(function (e) { clear(root); root.appendChild(h('div', { class: 'gd-note', text: e.message })); });
+    }
+    function paint(d) {
+      clear(root);
+      var admin = !!d.admin, act = d.rules.filter(function (r) { return r.status !== 'off'; }).length;
+      root.appendChild(h('div', { class: 'ax-teach-hd' }, [h('div', null, [h('h1', { text: 'Rule list' }),
+        h('p', { class: 'ax-muted', text: 'Adit Expert follows every active rule in every answer, ahead of the Help Center, the guides and past tickets. ' + (admin ? 'Add, edit or switch off a rule here; the next question uses the change.' : 'Only admins can change them; ask your lead if a rule looks wrong.') })]),
+        admin ? h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { noteDialog(ctx, modules, load, null, { kind: 'rule', module: 'Process' }); } }, [icon('plus', 'sm'), 'Add rule']) : null]));
+      var card = h('section', { class: 'ax-card' }, [h('h2', { text: act + ' active rule' + (act === 1 ? '' : 's') })]);
+      if (!d.rules.length) card.appendChild(h('p', { class: 'ax-muted', text: 'No rules yet.' }));
+      var ol = h('ol', { class: 'ax-rlist' });
+      d.rules.forEach(function (r) {
+        var tools = admin ? h('div', { class: 'ax-row' }, [
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { noteDialog(ctx, modules, load, r); } }, [icon('edit', 'sm'), 'Edit']),
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { ctx.api('/api/guides/expert/notes/' + r.id, { title: r.title, body: r.body, module: r.module || '', kind: 'rule', status: r.status === 'off' ? 'active' : 'off' }, 'PUT').then(function () { ctx.toast(r.status === 'off' ? 'Rule switched on' : 'Rule switched off'); load(); }).catch(function (e) { ctx.toast(e.message); }); } }, [r.status === 'off' ? 'Switch on' : 'Switch off'])]) : null;
+        ol.appendChild(h('li', { class: 'ax-rule' + (r.status === 'off' ? ' off' : '') }, [h('div', { class: 'ax-rule-b' }, [h('b', { text: r.title }), h('p', { text: r.body }),
+          h('span', { class: 'ax-muted', text: [r.module, r.status === 'off' ? 'Switched off' : '', r.updated_at ? 'Updated ' + String(r.updated_at).slice(0, 10) : ''].filter(Boolean).join(' · ') })]), tools]));
+      });
+      card.appendChild(ol); root.appendChild(card);
+    }
+    load();
+    return { reload: load };
+  }
+
+  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules };
 })();
