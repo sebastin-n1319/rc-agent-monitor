@@ -5,15 +5,13 @@
   'use strict';
   if (window.__aditExpertWidget) return; window.__aditExpertWidget = true;
   var css = [
-    /* Docks on the right edge above the Brain tab, the same way: a small tab that slides out on hover. */
-    '.axw-btn{position:fixed;right:0;bottom:150px;z-index:2147483646;display:flex;align-items:center;gap:8px;height:48px;padding:0 16px 0 9px;border:0;border-radius:24px 0 0 24px;cursor:pointer;',
-    'background:linear-gradient(135deg,#F4891F,#E5671B);color:#1F1305;font:600 13.5px/1 Poppins,system-ui,sans-serif;box-shadow:0 8px 24px rgba(229,103,27,.35);transform:translateX(calc(100% - 48px));transition:transform .22s cubic-bezier(.2,.8,.2,1)}',
-    '.axw-btn:hover,.axw-btn:focus-visible,.axw-btn.mini{transform:none}',
-    '.axw-btn:focus-visible{outline:3px solid #0B2A3F;outline-offset:3px}',
-    '.axw-btn svg{width:28px;height:28px;flex:none}',
-    '.axw-btn .axw-pulse{position:absolute;inset:0;border-radius:24px 0 0 24px;box-shadow:0 0 0 0 rgba(244,137,31,.5);animation:axwp 2.6s 3}',
-    '@keyframes axwp{0%{box-shadow:0 0 0 0 rgba(244,137,31,.45)}70%{box-shadow:0 0 0 14px rgba(244,137,31,0)}100%{box-shadow:0 0 0 0 rgba(244,137,31,0)}}',
-    '.axw-btn.mini span{display:none}.axw-btn.mini{padding:0 10px 0 9px;right:min(492px,calc(100vw - 60px))}',
+    /* A twin of the Brain tab: same size, shape and colour, docked just above it; it slides out on hover. */
+    '.axw-btn{position:fixed;right:0;bottom:148px;z-index:2147483646;display:flex;align-items:center;justify-content:flex-start;width:46px;height:48px;padding:0 0 0 6px;border:0;border-radius:24px 0 0 24px;cursor:pointer;',
+    'background:#0B2A5B;box-shadow:0 4px 14px rgba(7,43,64,.18);transform:translateX(6px);opacity:.82;transition:transform .2s ease,opacity .2s ease}',
+    '.axw-btn:hover,.axw-btn:focus-visible{transform:none;opacity:1}.axw-btn.on{display:none}',
+    '.axw-btn:focus-visible{outline:2px solid #F4891F;outline-offset:2px}',
+    '.axw-ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#F7A452,#E5671B);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,.25)}',
+    '.axw-ic svg{width:24px;height:24px}',
     '.axw-panel{position:fixed;top:12px;right:12px;bottom:46px;z-index:2147483646;width:min(480px,calc(100vw - 24px));display:flex;flex-direction:column;border-radius:18px;overflow:hidden;',
     'background:#F4F6F9;border:1px solid rgba(11,42,63,.12);box-shadow:0 24px 70px rgba(7,43,64,.28);transform:translateX(calc(100% + 24px));transition:transform .28s cubic-bezier(.2,.8,.2,1);visibility:hidden}',
     '.axw-panel.open{transform:none;visibility:visible}',
@@ -24,8 +22,8 @@
     '.axw-hd a:hover,.axw-hd button:hover{background:rgba(255,255,255,.1)}',
     '.axw-panel iframe{flex:1;width:100%;border:0;background:#F4F6F9}',
     '.axw-dark .axw-panel,.axw-dark .axw-panel iframe{background:#061520;border-color:#1D3A52}',
-    '@media (max-width:600px){.axw-panel{top:0;right:0;bottom:0;width:100vw;border-radius:0}.axw-btn.mini{display:none}}',
-    '@media (prefers-reduced-motion:reduce){.axw-btn,.axw-panel{transition:none}.axw-btn .axw-pulse{animation:none}}',
+    '@media (max-width:600px){.axw-panel{top:0;right:0;bottom:0;width:100vw;border-radius:0}.axw-btn.on{display:none}}',
+    '@media (prefers-reduced-motion:reduce){.axw-btn,.axw-panel{transition:none}}',
   ].join('');
   var BRAIN = '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
     + '<path d="M13 6.5a3.5 3.5 0 0 0-6.6 1.7A4 4 0 0 0 4.5 15a4 4 0 0 0 1.8 6.6A4 4 0 0 0 13 24.5V6.5z" fill="rgba(255,255,255,.35)"/>'
@@ -35,7 +33,7 @@
   var btn = document.createElement('button');
   btn.type = 'button'; btn.className = 'axw-btn'; btn.hidden = true;
   btn.setAttribute('aria-label', 'Ask Adit Expert'); btn.title = 'Ask Adit Expert (Alt+E)';
-  btn.innerHTML = '<i class="axw-pulse" aria-hidden="true"></i>' + BRAIN + '<span>Ask Expert</span>';
+  btn.innerHTML = '<span class="axw-ic">' + BRAIN + '</span>';
   var panel = document.createElement('aside');
   panel.className = 'axw-panel'; panel.setAttribute('aria-label', 'Adit Expert'); panel.setAttribute('role', 'dialog');
   panel.innerHTML = '<div class="axw-hd">' + BRAIN + '<span>Adit Expert</span><span class="sp"></span><a href="/guides" target="_blank" rel="noopener">Full page</a><button type="button" aria-label="Close">Close</button></div>';
@@ -46,7 +44,7 @@
     open = v;
     if (v && !frame) { frame = document.createElement('iframe'); frame.title = 'Adit Expert'; frame.src = '/guides?embed=1&widget=1#ask'; panel.appendChild(frame); }
     document.documentElement.classList.toggle('axw-dark', dark());
-    panel.classList.toggle('open', v); btn.classList.toggle('mini', v); btn.setAttribute('aria-expanded', String(v));
+    panel.classList.toggle('open', v); btn.classList.toggle('on', v); btn.setAttribute('aria-expanded', String(v));
     var bw = document.getElementById('brain-fab-wrap'); if (bw) bw.style.visibility = v ? 'hidden' : '';
     if (v && frame) setTimeout(function () { try { frame.focus(); } catch (e) {} }, 300); else if (!v) btn.focus();
   }

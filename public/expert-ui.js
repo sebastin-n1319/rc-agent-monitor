@@ -58,7 +58,7 @@
   ];
   var MODES = [['answer', 'Answer', 'Straight answer with steps'], ['troubleshoot', 'Troubleshoot', 'Checks in order, live on a call'], ['reply', 'Reply to client', 'A ready to send message']];
   function Ask(panel, ctx) {
-    var S = { thread: [], busy: false, mode: store.get('mode', 'answer'), module: '', useHistory: store.get('hist', true), meta: null };
+    var S = { thread: [], busy: false, mode: store.get('mode', 'answer'), module: '', useHistory: true, meta: null };
     var root = h('div', { class: 'ax' }); panel.appendChild(root);
     // rail
     var rail = h('aside', { class: 'ax-rail', 'aria-label': 'Filters and history' });
@@ -80,10 +80,9 @@
     var modeBox = h('div', { class: 'ax-seg', role: 'radiogroup', 'aria-label': 'Answer style' });
     function paintModes() { clear(modeBox); MODES.forEach(function (m) { modeBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.mode === m[0]), title: m[2], onclick: function () { S.mode = m[0]; store.set('mode', S.mode); paintModes(); } }, [m[1]])); }); }
     paintModes();
-    var histT = h('label', { class: 'ax-tog' }, [h('input', { type: 'checkbox', checked: S.useHistory ? true : null, onchange: function (e) { S.useHistory = e.target.checked; store.set('hist', S.useHistory); } }), h('span', { text: 'Learn from past tickets and calls' })]);
     var scopeChip = h('span', { class: 'ax-scope' });
     var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input,
-      h('div', { class: 'ax-comp-bar' }, [modeBox, histT, scopeChip, h('span', { class: 'ax-sp' }), send])]);
+      h('div', { class: 'ax-comp-bar' }, [modeBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
     col.appendChild(form);
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
     function paintScope() { clear(scopeChip); if (S.module) scopeChip.appendChild(h('button', { type: 'button', class: 'ax-chip on', title: 'Search everything', onclick: function () { S.module = ''; paintMods(); paintScope(); } }, [S.module, icon('x', 'sm')])); }
