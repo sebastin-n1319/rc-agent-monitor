@@ -693,6 +693,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     { const expert = require('./lib/expert'); expert.setDB(db);
       expert.setDeps({ ai: require('./lib/ai'), guides, productUpdates, query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kb: (t, o) => escalationWatch.kb(t, o) });
       await expert.initSchema();
+      // Batch 185: the Help Center is read live from help.adit.com, 30 seconds after start and then every 30 minutes.
+      { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
+        setTimeout(() => { k(); setInterval(k, 30 * 60 * 1000); }, 30 * 1000); }
       if (require('./lib/aditkb-service').isConfigured()) setTimeout(() => { const t = () => expert.syncCalls().then(r => { if (r.added) console.log('🧠 Expert learned from calls:', JSON.stringify(r)); }).catch(e => console.warn('expert call sync:', e.message)); t(); setInterval(t, 6 * 3600 * 1000); }, 3 * 60 * 1000); }
     // Batch 166: T1 CS bonus calculator (admin, under Bonus).
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
@@ -2046,6 +2049,7 @@ app.post('/api/guides/expert/notes', requireAdmin, async (req, res) => { try { r
 app.put('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, id: await expertMod().saveNote(req.params.id, req.body || {}, req.session.email) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
 app.delete('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { try { await expertMod().deleteNote(req.params.id); res.json({ success: true }); } catch (e) { expertErr(res, e, 'Could not delete'); } });
 app.post('/api/guides/expert/feedback/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await expertMod().handleFeedback(req.params.id, req.body || {}, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.post('/api/guides/expert/kb-sync', requireAdmin, rateLimit(4, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncKb({ force: !!(req.body && req.body.force) })) }); } catch (e) { expertErr(res, e, 'Could not read the Help Center'); } });
 app.post('/api/guides/expert/sync-calls', requireAdmin, rateLimit(3, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncCalls()) }); } catch (e) { expertErr(res, e, 'Could not sync'); } });
 app.get('/api/guides/access', requireAdmin, async (req, res) => {
   try { res.json({ success: true, guests: await guides.listGuests() }); }

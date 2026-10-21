@@ -319,10 +319,10 @@
   // ── Teach (admins) ───────────────────────────────────────────────────
   function Teach(panel, ctx) {
     var root = h('div', { class: 'ax-teach' }); panel.appendChild(root);
-    var modules = [];
+    var modules = [], metaD = {};
     function load() {
       clear(root); root.appendChild(h('p', { class: 'gd-empty', text: 'Loading...' }));
-      Promise.all([ctx.api('/api/guides/expert/admin'), ctx.api('/api/guides/expert/meta')]).then(function (rs) { modules = rs[1].modules || []; paint(rs[0]); }).catch(function (e) { clear(root); root.appendChild(h('div', { class: 'gd-note', text: e.message })); });
+      Promise.all([ctx.api('/api/guides/expert/admin'), ctx.api('/api/guides/expert/meta')]).then(function (rs) { metaD = rs[1] || {}; modules = metaD.modules || []; paint(rs[0]); }).catch(function (e) { clear(root); root.appendChild(h('div', { class: 'gd-note', text: e.message })); });
     }
     function stat(n, l, sub) { return h('div', { class: 'ax-stat' }, [h('b', { text: n == null ? '-' : String(n) }), h('span', { text: l }), sub ? h('em', { text: sub }) : null]); }
     function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '-'; }
@@ -335,8 +335,11 @@
         stat(L.up + ' / ' + L.down, 'Helpful / not'), stat(L.avgSec != null ? L.avgSec + 's' : '-', 'Average time')]));
       var syncB = h('button', { type: 'button', class: 'ax-mini' }, [icon('refresh', 'sm'), 'Learn from new calls now']);
       syncB.addEventListener('click', function () { syncB.disabled = true; ctx.api('/api/guides/expert/sync-calls', {}).then(function (r) { ctx.toast(r.added + ' call' + (r.added === 1 ? '' : 's') + ' learned'); load(); }).catch(function (e) { syncB.disabled = false; ctx.toast(e.message); }); });
+      var kbB = h('button', { type: 'button', class: 'ax-mini' }, [icon('refresh', 'sm'), 'Read the Help Center now']);
+      kbB.addEventListener('click', function () { kbB.disabled = true; ctx.toast('Reading help.adit.com...'); ctx.api('/api/guides/expert/kb-sync', {}).then(function (r) { ctx.toast(r.ok === false ? (r.error || 'Could not read the Help Center') : (r.fetched ? r.fetched + ' article' + (r.fetched === 1 ? '' : 's') + ' updated' : 'Already up to date') + (r.removed ? ', ' + r.removed + ' removed' : '')); load(); }).catch(function (e) { kbB.disabled = false; ctx.toast(e.message); }); });
+      var kbSub = K.modules + ' product modules, ' + (metaD.kbLive ? 'read live from help.adit.com every 30 minutes' + (metaD.kbSyncedAt ? '. Last read ' + new Date(metaD.kbSyncedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') : 'from the KB export until the first live read finishes');
       root.appendChild(h('section', { class: 'ax-card ax-know' }, [h('h2', { text: 'What it knows' }), h('div', { class: 'ax-know-g' }, [
-        kn('book', K.articles + ' Help Center articles', K.modules + ' product modules, from the KB document'), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
+        kn('book', K.articles + ' Help Center articles', kbSub, kbB), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
         kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in AditKB for every question' : 'AditKB not connected'),
         kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', 'Product and process updates', 'From the Updates feed and published QA updates; newest wins'),
         kn('shield', (K.reviews || 0) + ' reviewer decisions', 'Transfer reviews, AI and VoIP audits and reviews, QA audits. New ones are learned within 10 minutes.'), kn('rule', (K.qa || 0) + ' QA rules', 'From Ticket audits'), kn('spark', (K.learned || 0) + ' helpful answers', 'Answers agents marked helpful are reused for the same scenario')])]));
