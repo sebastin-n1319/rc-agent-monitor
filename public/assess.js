@@ -678,7 +678,7 @@
     var sec = parts[0] || '', arg = parts[1];
     var scopedOnly = !me.reviewer && me.reviewTests && me.reviewTests.length;
     if (!me.reviewer && !(scopedOnly && (sec === 'manage' || sec === 'results' || sec === 'attempt'))) sec = '';
-    var top = { edit: 'manage', results: 'manage', attempt: 'manage', archived: 'manage', insights: 'reports', build: 'studio', weak: 'studio', scenario: 'studio' }[sec] || sec;
+    var top = { edit: 'manage', results: 'manage', attempt: 'manage', archived: 'manage', insights: 'reports', build: 'studio', weak: 'studio', scenario: 'studio', real: 'studio' }[sec] || sec;
     renderNav(top);
     clear(main); main.focus({ preventScroll: true }); window.scrollTo(0, 0);
     if (sec === 'manage') return viewManage();
@@ -694,6 +694,7 @@
     if (sec === 'studio') return arg === 'plan' ? viewStudioPlanner() : arg ? viewStudio(Number(arg)) : viewStudioHub();
     if (sec === 'weak') return viewWeak();
     if (sec === 'scenario') return viewScenario();
+    if (sec === 'real') return viewReal();
     if (sec === 'access') return viewAccess();
     return viewHome();
   }
@@ -3352,6 +3353,7 @@
       h('p', { text: 'Pick a tool. Each one ends the same way: you review the questions part by part, then release them as one assessment or several.' })]), h('div', { class: 'hero-art' }, [art('radar', 170)])]));
     var TOOLS = [
       { ic: 'doc', t: 'Build from a document', d: 'Upload KB articles or an SOP, pick who it is for and how many questions. Split into parts released a day or an hour apart.', cta: 'Start', fn: function () { go('build'); }, main: true },
+      { ic: 'headphones', t: 'Real scenarios', d: 'From the team\'s own solved tickets, calls, chats, escalations and reviewer decisions. Tracks for new joinees, existing agents, mistakes and leads.', cta: 'Pick real cases', fn: function () { go('real'); }, main: true },
       { ic: 'chat', t: 'Customer case sets', d: 'A realistic call or chat with 3 to 5 linked questions, from the first reply to the right transfer.', cta: 'Write cases', fn: function () { go('scenario'); } },
       { ic: 'chart', t: 'Fix weak topics', d: 'The topics your team scores lowest on, from real results. Write fresh questions that target the mistakes.', cta: 'See weak topics', fn: function () { go('weak'); } },
       { ic: 'shield', t: 'Quality check', d: 'AI reviews questions for unclear wording, giveaway answers and wrong keys, and suggests a fix you apply in one click.', cta: 'Check the bank', fn: function () { bankFilter.queue = 'quality'; go('bank'); } },
@@ -3376,7 +3378,7 @@
       if (!j.builds.length) { rec.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'Nothing yet. Your first build will show here.' })); return; }
       var pl = h('div', { class: 'plist' });
       j.builds.slice(0, 6).forEach(function (b) {
-        var tag = b.origin === 'weak' ? 'Weak topics' : b.style === 'cases' ? 'Cases' : b.style === 'situations' ? 'Real moments' : 'Document';
+        var tag = b.origin === 'real' ? 'Real scenarios' : b.origin === 'weak' ? 'Weak topics' : b.style === 'cases' ? 'Cases' : b.style === 'situations' ? 'Real moments' : 'Document';
         pl.appendChild(h('div', { class: 'click', onclick: function () { go('build/' + b.id); } }, [h('span', { class: 'ic-round' }, [icon(b.tests ? 'check' : 'doc', 'sm')]),
           h('div', { class: 'who' }, [h('b', { text: b.title }), h('span', { text: tag + ' · ' + b.questions + ' questions · ' + fmtWhen(b.createdAt) })]),
           b.status === 'writing' || b.status === 'queued' ? pill('Writing', 'accent', true) : b.tests ? pill(b.tests + ' released', 'ok', true) : pill('To review', 'accent', true)]));
@@ -3449,6 +3451,119 @@
         .then(function (r) { go('build/' + r.id); })
         .catch(function (e) { goBtn.disabled = false; err.appendChild(errBox(e.message)); });
     });
+  }
+
+  // ── Batch 186: Real scenarios (from the team's own tickets, calls, chats, escalations and reviewer decisions) ──
+  var REAL_TRACKS = [
+    { key: 'new', t: 'New joinee training', d: 'The most common real issues, in plain words, as short moments. Mostly easy.', o: { audience: 'newjoinee', level: 'foundation', style: 'situations', sources: ['tickets', 'calls', 'chats'], days: 90, cases: 10, perCase: 2 } },
+    { key: 'agent', t: 'Existing agents', d: 'Recent real cases with linked questions, from the first reply to the right owner.', o: { audience: 'agent', level: 'intermediate', style: 'cases', sources: ['tickets', 'calls', 'chats', 'reviews'], days: 30, cases: 6, perCase: 3 } },
+    { key: 'mistakes', t: 'Learn from mistakes', d: 'Wrong transfers, tickets T1 could have handled and QA fixes, turned into the right way.', o: { audience: 'refresher', level: 'intermediate', style: 'cases', sources: ['reviews', 'escalations'], days: 90, cases: 6, perCase: 3 } },
+    { key: 'lead', t: 'Leads and SPOCs', d: 'Escalations and tricky handovers: ownership, coaching and judgement calls.', o: { audience: 'lead', level: 'advanced', style: 'cases', sources: ['escalations', 'reviews', 'tickets'], days: 180, cases: 5, perCase: 4 } },
+  ];
+  var REAL_SOURCES = [['tickets', 'Tickets', 'Solved email, web and app tickets'], ['calls', 'Calls', 'Phone tickets and T1 call notes'], ['chats', 'Chats', 'Solved chats'], ['escalations', 'Escalations', 'Escalated accounts and how they were settled'], ['reviews', 'Reviewer decisions', 'Transfer reviews, AI and VoIP audits, QA audits']];
+  function viewReal() {
+    main.appendChild(pageHead('Real scenarios', 'Scenarios from what actually happens on the floor: solved tickets, calls, chats, escalations and what reviewers decided. Names and numbers are removed. Every answer is checked against the Help Center and the team rules, so agents learn the right way, not just what one person did.',
+      [h('button', { class: 'btn ghost', type: 'button', onclick: function () { go('studio'); } }, [icon('arrowL', 'sm'), 'AI Studio'])]));
+    var o = { includeUpdates: true, track: 'new', audience: 'newjoinee', level: 'foundation', style: 'situations', sources: ['tickets', 'calls', 'chats'], days: 90, cases: 10, perCase: 2, casesPerPart: 0, channel: 'both', modules: [], keywords: '', title: '', focus: '' };
+    var form = h('div', { class: 'card pad bld-form', style: 'max-width:980px' }); main.appendChild(form);
+    var trackBox = h('div', { class: 'bld-aud' }), srcBox = h('div'), dayBox = h('div'), modBox = h('div', { class: 'bld-chips', role: 'group', 'aria-label': 'Topics' }), styleBox = h('div'), levelBox = h('div'), perBox = h('div'), partBox = h('div'), audSel = h('select', { class: 'sel', 'aria-label': 'Who it is for' });
+    var casesIn = h('input', { class: 'inp bld-num-in', type: 'number', min: '1', max: '40', value: '10', 'aria-label': 'Number of cases' });
+    var kwIn = h('input', { class: 'inp', maxlength: '200', placeholder: 'Optional words to narrow it, e.g. "reminders not sending" or "terminal offline"' });
+    var focusIn = h('input', { class: 'inp', maxlength: '400', placeholder: 'Optional, e.g. "stress what to ask before transferring"' });
+    var titleIn = h('input', { class: 'inp', maxlength: '140', placeholder: 'e.g. Real phone cases for new joinees' });
+    var sum = h('p', { class: 'bld-sum' }), MODS = [], AUDS = [];
+    function paintTracks() {
+      clear(trackBox);
+      REAL_TRACKS.forEach(function (t) {
+        trackBox.appendChild(h('button', { type: 'button', class: 'bld-acard' + (o.track === t.key ? ' on' : ''), 'aria-pressed': String(o.track === t.key), onclick: function () { o.track = t.key; Object.keys(t.o).forEach(function (k) { o[k] = Array.isArray(t.o[k]) ? t.o[k].slice() : t.o[k]; }); casesIn.value = String(o.cases); paintAll(); } }, [h('b', { text: t.t }), h('span', { text: t.d })]));
+      });
+    }
+    function paintMods() {
+      clear(modBox);
+      modBox.appendChild(h('button', { type: 'button', class: 'bld-chip' + (!o.modules.length ? ' on' : ''), 'aria-pressed': String(!o.modules.length), onclick: function () { o.modules = []; paintMods(); } }, ['Top issues']));
+      MODS.forEach(function (m) {
+        var on = o.modules.indexOf(m.key) >= 0;
+        modBox.appendChild(h('button', { type: 'button', class: 'bld-chip' + (on ? ' on' : ''), 'aria-pressed': String(on), title: m.n ? m.n + ' solved cases in the last 90 days' : '', onclick: function () { var i = o.modules.indexOf(m.key); if (i >= 0) o.modules.splice(i, 1); else o.modules.push(m.key); paintMods(); } }, [m.label + (m.n ? ' · ' + m.n : '')]));
+      });
+    }
+    function paintSum() {
+      o.cases = Math.max(1, Math.min(40, Number(casesIn.value) || 8));
+      var total = o.style === 'cases' ? o.cases * o.perCase : o.cases * o.perCase, parts = o.casesPerPart ? Math.ceil(o.cases / o.casesPerPart) : 1;
+      sum.textContent = o.cases + ' real case' + (o.cases === 1 ? '' : 's') + ', ' + o.perCase + ' question' + (o.perCase === 1 ? '' : 's') + ' each: ' + total + ' questions' + (parts > 1 ? ' in ' + parts + ' parts.' : ' in one assessment.') + ' You pick the cases before anything is written.';
+    }
+    function paintAll() {
+      paintTracks(); paintMods();
+      clear(srcBox); srcBox.appendChild(chipsPick(REAL_SOURCES, o.sources, true, function (v) { o.sources = v; }));
+      clear(dayBox); dayBox.appendChild(chipsPick([[30, 'Last 30 days'], [90, '90 days'], [180, '6 months'], [365, 'A year']], o.days, false, function (v) { o.days = v; }));
+      clear(styleBox); styleBox.appendChild(chipsPick([['situations', 'Real moments', 'Each question opens with a short moment from the case'], ['cases', 'Customer cases', 'The case, then linked questions in order']], o.style, false, function (v) { o.style = v; paintSum(); }));
+      clear(levelBox); levelBox.appendChild(chipsPick(BUILD_LEVELS, o.level, false, function (v) { o.level = v; }));
+      clear(perBox); perBox.appendChild(chipsPick([[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']], o.perCase, false, function (v) { o.perCase = v; paintSum(); }));
+      clear(partBox); partBox.appendChild(chipsPick([[0, 'One assessment'], [2, '2 cases a part'], [3, '3 a part'], [5, '5 a part']], o.casesPerPart, false, function (v) { o.casesPerPart = v; paintSum(); }));
+      if (AUDS.length) audSel.value = o.audience;
+      paintSum();
+    }
+    casesIn.addEventListener('input', paintSum);
+    audSel.addEventListener('change', function () { o.audience = audSel.value; });
+    form.appendChild(stepBox(1, 'Who is it for?', 'Pick a track. It sets sensible defaults below, which you can change.', [trackBox, h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Reader' }), audSel]), h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Level' }), levelBox])]));
+    var upCb = h('input', { type: 'checkbox' }); upCb.checked = true; upCb.addEventListener('change', function () { o.includeUpdates = upCb.checked; });
+    var upNote = h('span', { class: 'small muted', text: 'Adds a part on what changed recently in the same modules, so answers match how things work today.' });
+    form.appendChild(stepBox(2, 'Where do the scenarios come from?', 'Only solved cases are used. Names, offices, numbers and emails are removed before the AI sees them.', [srcBox, h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Period' }), dayBox]),
+      h('label', { class: 'rl-opt' }, [upCb, h('span', null, [h('b', { text: 'Also use recent product and process updates' }), upNote])])]));
+    form.appendChild(stepBox(3, 'Which topics?', 'Top issues spreads the cases over the modules with the most cases right now. Or pick the modules to train on.', [modBox, kwIn]));
+    form.appendChild(stepBox(4, 'How should it look?', null, [h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Style' }), styleBox]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Cases' }), casesIn]), h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Per case' }), perBox]),
+      h('div', { class: 'bld-row' }, [h('span', { class: 'bld-lbl', text: 'Split' }), partBox]), sum, field('Focus on', focusIn), field('Name', titleIn)]));
+    var err = h('div'), findBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('search', 'sm'), 'Find real cases']);
+    form.appendChild(h('div', { class: 'bld-go' }, [err, findBtn]));
+    var pick = h('div'); main.appendChild(pick);
+    api('/api/assess/admin/real/options').then(function (j) {
+      MODS = j.modules || []; AUDS = j.audiences || [];
+      if (j.updates) upNote.textContent = 'From ' + j.updates + ' updates on the Adit Updates site. Adds a part on what changed recently in the same modules, so answers match how things work today.';
+      clear(audSel); AUDS.forEach(function (a) { audSel.appendChild(h('option', { value: a.key, text: a.label })); });
+      paintAll();
+      if (!j.cases) err.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: 'Solved tickets and chats are not reachable right now. Reviewer decisions and call notes still work.' })]));
+      if (!j.ai) err.appendChild(h('div', { class: 'alert warn' }, [icon('warn'), h('span', { text: 'AI is not configured on the server.' })]));
+    }).catch(function (e) { err.appendChild(errBox(e.message)); });
+    paintAll();
+    var last = null;
+    function find() {
+      clear(err); findBtn.disabled = true; findBtn.lastChild.textContent = 'Looking through real cases...';
+      api('/api/assess/admin/real/preview', { method: 'POST', body: { sources: o.sources, days: o.days, modules: o.modules, keywords: kwIn.value.trim(), cases: o.cases } })
+        .then(function (r) { last = r; findBtn.disabled = false; findBtn.lastChild.textContent = 'Find real cases'; paintPick(); pick.scrollIntoView({ behavior: 'smooth', block: 'start' }); })
+        .catch(function (e) { findBtn.disabled = false; findBtn.lastChild.textContent = 'Find real cases'; err.appendChild(errBox(e.message)); });
+    }
+    findBtn.addEventListener('click', find);
+    function paintPick() {
+      clear(pick); if (!last) return;
+      var card = h('div', { class: 'card pad stack', style: 'max-width:980px' }); pick.appendChild(card);
+      var count = h('b'), goBtn = h('button', { class: 'btn primary lg', type: 'button' }, [icon('spark', 'sm'), 'Write the assessment']), err2 = h('div');
+      function picked() { return last.items.filter(function (x) { return x.picked; }); }
+      function paintCount() { var n = picked().length; count.textContent = n + ' of ' + last.items.length + ' picked'; goBtn.disabled = !n; }
+      card.appendChild(h('div', { class: 'rl-head' }, [h('div', null, [h('h2', { text: 'Pick the cases' }), h('p', { class: 'small muted', style: 'margin:2px 0 0', text: (last.topIssues ? 'Top issues: ' : 'Topics: ') + last.modules.map(function (m) { return m.label; }).join(', ') + '. The first ' + o.cases + ' are ticked; swap any you do not want.' })]),
+        h('div', { class: 'rl-acts' }, [count, h('button', { class: 'btn ghost sm', type: 'button', onclick: function () { last.items.forEach(function (x) { x.picked = false; }); paintPick(); } }, ['Clear']), h('button', { class: 'btn ghost sm', type: 'button', onclick: find }, [icon('refresh', 'sm'), 'Find others'])])]));
+      var list = h('div', { class: 'rl-list' }); card.appendChild(list);
+      last.items.forEach(function (x) {
+        var cb = h('input', { type: 'checkbox', 'aria-label': 'Use this case: ' + x.title }); cb.checked = !!x.picked;
+        cb.addEventListener('change', function () { x.picked = cb.checked; row.classList.toggle('on', cb.checked); paintCount(); });
+        var tags = [pill(x.channel, x.kind === 'review' ? (x.mistake ? 'warn' : 'ok') : 'accent'), pill(x.moduleLabel), x.at ? h('span', { class: 'small muted', text: x.at }) : null, x.mistake ? pill('Mistake to learn from', 'warn', true) : null];
+        var row = h('label', { class: 'rl-case' + (x.picked ? ' on' : '') }, [cb, h('div', { class: 'rl-body' }, [h('div', { class: 'rl-tags' }, tags), h('b', { text: x.title }),
+          h('p', { class: 'rl-p' }, [h('em', { text: x.kind === 'review' ? 'What happened: ' : x.kind === 'call' ? 'On the call: ' : 'Problem: ' }), x.problem]),
+          x.fix ? h('p', { class: 'rl-p' }, [h('em', { text: 'How it was solved: ' }), x.fix]) : null])]);
+        list.appendChild(row);
+      });
+      card.appendChild(h('div', { class: 'bld-go' }, [err2, goBtn]));
+      card.appendChild(h('p', { class: 'small muted', style: 'margin:0', text: 'Each case is sent with the Help Center articles and team rules that match it. You review every question before anyone sees it, then release it like any build.' }));
+      paintCount();
+      goBtn.addEventListener('click', function () {
+        clear(err2); goBtn.disabled = true; goBtn.lastChild.textContent = 'Starting...';
+        var ids = picked().map(function (x) { return x.id; });
+        var total = ids.length * o.perCase;
+        api('/api/assess/admin/real/build', { method: 'POST', body: { token: last.token, ids: ids, style: o.style, perCase: o.perCase, total: total, partSize: o.casesPerPart ? Math.min(total, o.casesPerPart * o.perCase) : total,
+          channel: o.channel, audience: o.audience, level: o.level, includeUpdates: o.includeUpdates, title: titleIn.value.trim(), focus: focusIn.value.trim(), types: ['single', 'multi', 'truefalse'] } })
+          .then(function (r) { toast('Writing ' + r.total + ' questions from ' + r.cases + ' real case' + (r.cases === 1 ? '' : 's') + (r.updates ? ' and ' + r.updates + ' recent update' + (r.updates === 1 ? '' : 's') : '')); go('build/' + r.id); })
+          .catch(function (e) { goBtn.disabled = false; goBtn.lastChild.textContent = 'Write the assessment'; err2.appendChild(errBox(e.message)); });
+      });
+    }
   }
 
   function viewWeak() {

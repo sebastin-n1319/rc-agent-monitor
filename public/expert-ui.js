@@ -341,7 +341,7 @@
       root.appendChild(h('section', { class: 'ax-card ax-know' }, [h('h2', { text: 'What it knows' }), h('div', { class: 'ax-know-g' }, [
         kn('book', K.articles + ' Help Center articles', kbSub, kbB), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
         kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in AditKB for every question' : 'AditKB not connected'),
-        kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', 'Product and process updates', 'From the Updates feed and published QA updates; newest wins'),
+        kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', (K.updates || 0) + ' product and process updates', 'Every update on the Adit Updates site, plus published QA updates; newest wins'),
         kn('shield', (K.reviews || 0) + ' reviewer decisions', 'Transfer reviews, AI and VoIP audits and reviews, QA audits. New ones are learned within 10 minutes.'), kn('rule', (K.qa || 0) + ' QA rules', 'From Ticket audits'), kn('spark', (K.learned || 0) + ' helpful answers', 'Answers agents marked helpful are reused for the same scenario')])]));
       // feedback
       var fb = h('section', { class: 'ax-card' }, [h('h2', { text: 'Corrections from agents (' + d.feedback.length + ')' })]);

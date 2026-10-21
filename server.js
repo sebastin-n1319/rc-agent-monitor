@@ -2483,6 +2483,12 @@ const assessStudio = require('./lib/assess-studio');
 // ── Batch 180: Assessment Builder (document -> N questions for an audience -> parts on a release plan) ──
 const assessBuilder = require('./lib/assess-builder');
 app.get('/api/assess/admin/builds', ...RV, assessWrap(async (req, res) => res.json({ success: true, builds: await assessBuilder.list(), audiences: assessBuilder.audiences(), sources: await assessBuilder.sources(), ai: require('./lib/ai').anyConfigured() })));
+// Batch 186: Real scenarios. Assessments from the team's own solved tickets, calls, chats, escalations and reviewer decisions.
+const assessReal = require('./lib/assess-real');
+function assessRealDeps() { const kb = require('./lib/aditkb-service'); assessReal.setDeps({ expert: expertMod(), builder: assessBuilder, query: kb.isConfigured() ? (sql, n) => kb.query(sql, n) : null }); return assessReal; }
+app.get('/api/assess/admin/real/options', ...RV, assessWrap(async (req, res) => res.json({ success: true, ...(await assessRealDeps().options()), audiences: assessBuilder.audiences(), ai: require('./lib/ai').anyConfigured() })));
+app.post('/api/assess/admin/real/preview', ...RV, rateLimit(12, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessRealDeps().preview(req.body || {}, req.session.email)) })));
+app.post('/api/assess/admin/real/build', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => res.json({ success: true, ...(await assessRealDeps().build(req.body || {}, req.session.email, require('./lib/ai'))) })));
 app.post('/api/assess/admin/builds/from-source', ...RV, rateLimit(6, 60000), assessWrap(async (req, res) => {
   const b = req.body || {}; if (!b.fromBuild) { const er = new Error('Pick a document'); er.status = 400; throw er; }
   res.json({ success: true, id: await assessBuilder.create({ ...b, fromBuild: Number(b.fromBuild) }, req.session.email, require('./lib/ai')) });
