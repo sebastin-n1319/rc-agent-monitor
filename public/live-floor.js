@@ -46,6 +46,8 @@
   let _availKey = '';
   let _tick = null;
   let _last = null;
+  let _pres = null;          // /api/live-floor/presence: four availability dots per agent
+  let _presFetchedAt = 0;
 
   function e(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -225,6 +227,29 @@
     return `<div class="lf-avt" title="${_avail.source === 'audit' ? 'From the RingCentral Audit Trail, CST day, from first Take all calls' : 'From presence data (Audit Trail not available)'}"><span class="lf-av-g">Avail <b class="lf-mono">${shortDur(a.availSec)}</b></span><span class="lf-sep"></span><span class="lf-av-r">Unavail <b class="lf-mono">${shortDur(a.unavailSec)}</b></span></div>`;
   }
 
+  // Batch 184: Availability, RC, Desk and Chat dots. Green online, red offline, grey when unknown.
+  async function refreshPresence() {
+    if (Date.now() - _presFetchedAt < 30000) return;
+    _presFetchedAt = Date.now();
+    try {
+      const r = await fetch('/api/live-floor/presence', { credentials: 'include' });
+      const j = await r.json();
+      if (j && j.success) { _pres = j; if (_last) paint(_last); }
+    } catch (err) { /* the dots just stay hidden */ }
+  }
+  const DOTS = [['avail', 'Availability'], ['rc', 'RC'], ['desk', 'Desk'], ['chat', 'Chat']];
+  function presenceDots(email) {
+    if (!_pres || !_pres.data) return '';
+    const p = _pres.data[String(email || '').toLowerCase()];
+    if (!p) return '';
+    return `<div class="lf-avl" role="list" aria-label="Availability">${DOTS.map(([k, name]) => {
+      const x = p[k] || {}, st = x.state === 'on' ? 'on' : x.state === 'off' ? 'off' : 'na';
+      const word = st === 'on' ? 'online' : st === 'off' ? 'offline' : 'unknown';
+      const tip = `${name}: ${word}${x.label ? ' (' + x.label + ')' : ''}${k === 'desk' && _pres.deskError ? ' · ' + _pres.deskError : ''}`;
+      return `<span class="lf-avl-i lf-avl-${st}" role="listitem" title="${e(tip)}"><i aria-hidden="true"></i>${name}<span class="lf-vh">: ${word}</span></span>`;
+    }).join('')}</div>`;
+  }
+
   function chatsFor(email) {
     const v = _chats[String(email || '').toLowerCase()];
     return typeof v === 'number' ? v : null;
@@ -268,6 +293,7 @@
     return `<article class="lf-card lf-agent lf-b-${st.key}${isMe ? ' lf-me' : ''}" aria-label="${e(op.agent.name)}, ${e(st.label)}">
       <div class="lf-agent-name">${e(op.agent.name)}${isMe ? ' <span class="lf-you">You</span>' : ''}</div>
       <div class="lf-agent-pill">${pill(st)}</div>
+      ${presenceDots(op.agent.email)}
       <div class="lf-timer lf-mono" data-lf-since="${st.sinceMs || ''}" title="${st.sinceMs ? 'Since ' + e(shortTime(st.sinceMs)) : ''}">${since == null ? '-' : clock(since)}</div>
       <div class="lf-mini">
         ${r.wing === 'chat' ? `
@@ -376,7 +402,7 @@
     ];
     return `<div class="lf-card lf-mecard">
       <div class="lf-me-id"><div class="lf-av">${e(initials)}</div><div>
-        <div class="lf-me-hi">Hi ${e(first)}</div>${pill(st)}
+        <div class="lf-me-hi">Hi ${e(first)}</div>${pill(st)}${presenceDots(op.agent.email)}
         <div class="lf-sub lf-mono" style="margin-top:4px">in this state for <span data-lf-since="${st.sinceMs || ''}">${since == null ? '-' : clock(since)}</span></div></div></div>
       <div class="lf-me-stats">${stats.map(([v, l]) => `<div><b class="lf-mono">${e(v)}</b><span>${e(l)}</span></div>`).join('')}</div>
     </div>`;
@@ -443,6 +469,7 @@
       paint(ctx);
       startTicker();
       refreshChats();
+      refreshPresence();
       if (ctx.mode === 'agent') refreshMine();
       if (ctx.mode === 'admin') refreshAvail();
     } catch (err) {

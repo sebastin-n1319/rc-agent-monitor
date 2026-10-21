@@ -8317,6 +8317,76 @@ app.get('/api/live-floor/now', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Batch 184: availability dots on the agent dashboard. Four per agent, green when online, red when offline:
+// Availability (the Zoho Desk Online/Offline toggle), RC (ready for queue calls), Desk (ticket assignment status)
+// and Chat (SalesIQ operator status). Desk is read live every 60 seconds; RC and chat come from data already polled.
+let _deskAvail = { at: 0, data: {}, error: null }, _deskAgentEmails = { at: 0, map: {} };
+async function deskAgentEmailMap() {
+  if (Date.now() - _deskAgentEmails.at < 3600e3 && Object.keys(_deskAgentEmails.map).length) return _deskAgentEmails.map;
+  const desk = require('./lib/desk-service'), map = {};
+  for (let from = 0; from < 2000; from += 200) {
+    const r = await desk.fetchRaw(`/agents?limit=200&from=${from}`);
+    const list = (r && (r.data || r.agents)) || [];
+    for (const a of list) if (a && a.id && (a.emailId || a.email)) map[String(a.id)] = String(a.emailId || a.email).toLowerCase();
+    if (list.length < 200) break;
+  }
+  _deskAgentEmails = { at: Date.now(), map };
+  return map;
+}
+async function deskAvailabilityByEmail() {
+  if (Date.now() - _deskAvail.at < 60000) return _deskAvail;
+  const desk = require('./lib/desk-service');
+  if (!desk.isConfigured()) return (_deskAvail = { at: Date.now(), data: {}, error: 'Zoho Desk is not set up' });
+  try {
+    const ids = await deskAgentEmailMap(), data = {};
+    for (let from = 0; from < 1000; from += 200) {
+      const r = await desk.fetchRaw(`/agentAvailability?departmentId=-1&include=presenceStatus,mailStatus,chatStatus,phoneStatus&limit=200&from=${from}`);
+      const list = (r && r.data) || [];
+      for (const a of list) {
+        const id = String(a.agentId || a.id || '');
+        const email = String(a.emailId || a.email || ids[id] || '').toLowerCase();
+        if (!email) continue;
+        const presence = String(a.presenceStatus || a.status || '').toUpperCase();
+        const mail = String(a.mailStatus || '').toUpperCase();
+        // Several departments can list the same agent: online anywhere counts as online.
+        const cur = data[email] || {};
+        data[email] = { presence: cur.presence === 'ONLINE' ? 'ONLINE' : (presence || null), mail: cur.mail === 'ONLINE' ? 'ONLINE' : (mail || null), chat: a.chatStatus || cur.chat || null, phone: a.phoneStatus || cur.phone || null };
+      }
+      if (!r || !r.hasMore || list.length < 200) break;
+    }
+    _deskAvail = { at: Date.now(), data, error: null };
+  } catch (e) { _deskAvail = { at: Date.now(), data: _deskAvail.data || {}, error: String(e.message || e).slice(0, 200) }; }
+  return _deskAvail;
+}
+async function latestChatStatusByEmail() {
+  return new Promise((resolve) => _sharedDb.all(
+    `SELECT e.operator_email AS email, e.status, e.timestamp FROM chat_presence_events e
+       JOIN (SELECT operator_email, MAX(datetime(timestamp)) AS t FROM chat_presence_events WHERE operator_email IS NOT NULL GROUP BY operator_email) m
+         ON m.operator_email = e.operator_email AND datetime(e.timestamp) = m.t`, [],
+    (err, rows) => { const out = {}; for (const r of (err ? [] : rows || [])) out[String(r.email).toLowerCase()] = { status: r.status, since: r.timestamp }; resolve(out); }));
+}
+app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
+  try {
+    const [snap, monitored, desk, chat] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), latestChatStatusByEmail()]);
+    const onOff = (v) => v == null || v === '' ? null : (String(v).toUpperCase() === 'ONLINE' ? 'on' : 'off');
+    const data = {};
+    for (const a of monitored) {
+      const email = String(a.email || '').toLowerCase(); if (!email) continue;
+      const s = (snap && snap[String(a.rc_id)]) || null;
+      const rcLabel = s ? String(s.normalizedStatus || s.displayStatus || s.presenceStatus || '') : '';
+      const rcOn = s ? (/^(available|on call|ringing|talking)$/i.test(rcLabel) || !!s.isOnCall) : null;
+      const d = desk.data[email] || null, c = chat[email] || null;
+      data[email] = {
+        avail: { state: d ? onOff(d.presence) : null, label: d && d.presence ? (d.presence === 'ONLINE' ? 'Online in Zoho Desk' : 'Offline in Zoho Desk') : 'Not found in Zoho Desk' },
+        rc: { state: rcOn == null ? null : (rcOn ? 'on' : 'off'), label: rcLabel || 'No RingCentral status' },
+        desk: { state: d ? onOff(d.mail) : null, label: d && d.mail ? (d.mail === 'ONLINE' ? 'Taking tickets' : 'Not taking tickets') : 'Not found in Zoho Desk' },
+        chat: { state: c ? (/^available$/i.test(c.status) ? 'on' : 'off') : null, label: c ? String(c.status) : 'No SalesIQ status', since: c ? c.since : null },
+      };
+    }
+    res.json({ success: true, data, deskError: desk.error || null, at: new Date().toISOString() });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // Batch 165: AI support and VoIP support handled by T1, with transfer audits against the support guides.
 // ── Batch 166: T1 CS bonus calculator ──
 // The bonus for any month, quarter (Q3-2026), year (2026) or month to date (MTD), from the tool's own numbers plus the QA
