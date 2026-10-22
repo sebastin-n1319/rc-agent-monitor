@@ -2293,6 +2293,7 @@ async function fetchAuditTrail(fromIso, toIso, maxPages = 40) {
 module.exports = {
   agentCallCountsFromRC, // Batch 166b
   fetchAuditTrail,
+  rcGet, // Batch 187: 1025 Call Flow reads the company call log with legs
   fetchQueueWaiting, // Session 51
   repairCallLogs, // Session 42
   authenticate,

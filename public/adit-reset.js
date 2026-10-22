@@ -27,6 +27,7 @@
     'desk-lifecycle-agent.css',
     'desk-lifecycle-verify.css',
     'live-floor.css', // Session 45
+    'cf1025.css', // Batch 187
     'breaks-v2.css', // Session 47
     'chat-reports.css', // Session 50
     't1-alerts.css', // Session 51

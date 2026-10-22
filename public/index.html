@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.123"></script>
+<script src="/adit-reset.js?v=1.19.124"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -64,6 +64,8 @@
 <script src="/desk-lifecycle-verify.js?v=1.6.1" defer></script>
 <link rel="stylesheet" href="/live-floor.css?v=1.6.0">
 <script src="/live-floor.js?v=1.5.0" defer></script>
+<link rel="stylesheet" href="/cf1025.css?v=1.0.0">
+<script src="/cf1025.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="/breaks-v2.css?v=1.3.0">
 <script src="/regularise.js?v=1.0.2" defer></script>
 <script src="/breaks-v2.js?v=1.4.0" defer></script>
@@ -1213,6 +1215,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
 
 
   <!-- AGENTS -->
+  <div class="page" id="tab-cf1025"><div id="cf1025-root"></div></div>
   <div class="page" id="tab-agents">
     <div class="card">
       <div class="card-hdr">
@@ -9986,6 +9989,10 @@ function initTlTooltips(){
 // Admin sidebar merge: groups of tabs that now share one sidebar entry,
 // navigated between via a sub-tab bar rendered at the top of each page.
 const ADMIN_TAB_GROUPS = [
+  { primary: 'live', members: [
+      { tab: 'live',   label: 'Live Dashboard' },
+      { tab: 'cf1025', label: '1025 Call Flow' },
+  ]},
   { primary: 'agents', members: [
       { tab: 'agents',    label: 'Manage Agents' },
       { tab: 'access',    label: 'Access Control' },
@@ -10085,6 +10092,7 @@ function switchTab(tab,el){
   setTimeout(syncAssessLock, 0);
   if(tab==='alerts-breaklog' && typeof window.openAlertBreakLog==='function') window.openAlertBreakLog();
   if(tab==='alerts-missed' && typeof window.openAlertMissed==='function') window.openAlertMissed();
+  if(tab==='cf1025' && typeof window.openCf1025==='function') window.openCf1025();
   if(tab==='debug') loadDebugPanel();
   // Remember the active tab and restore its saved scroll position
   try{

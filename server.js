@@ -697,6 +697,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
         setTimeout(() => { k(); setInterval(k, 30 * 60 * 1000); }, 30 * 1000); }
       if (require('./lib/aditkb-service').isConfigured()) setTimeout(() => { const t = () => expert.syncCalls().then(r => { if (r.added) console.log('🧠 Expert learned from calls:', JSON.stringify(r)); }).catch(e => console.warn('expert call sync:', e.message)); t(); setInterval(t, 6 * 3600 * 1000); }, 3 * 60 * 1000); }
+    // Batch 187: 1025 Call Flow & Capacity.
+    { const cf = require('./lib/cf1025'); cf.setDB(db); await cf.initSchema(); }
     // Batch 166: T1 CS bonus calculator (admin, under Bonus).
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
@@ -5210,6 +5212,35 @@ async function startScheduler() {
       return salesiqLifecycle.syncChatPresenceOnce();
     }).catch(e => log.error('chat_presence_sync_failed', e));
   }, Number(process.env.SALESIQ_PRESENCE_POLL_MS || 45000));
+  // Batch 187: 1025 Call Flow. Hourly: last 2 hours of the RingCentral call log, then the via-person spike check.
+  // Nightly: AditKB users (team mapping) and T1 tickets, then prune to 180 days. 7 PM Central: the daily digest.
+  cron.schedule('7 * * * *', async () => {
+    try {
+      const p = await getPauseStatus().catch(() => ({})); if (p.rcSyncPaused) return;
+      const cf = require('./lib/cf1025'); const r = await cf.syncFromRC(require('./rc-service').rcGet, { hours: 2 });
+      if (r.stored) console.log('📞 1025 call flow:', JSON.stringify(r));
+      const msg = await cf.checkSpike(); const c = await cf.config();
+      if (msg && c.alert.on && c.digest.email) await require('./lib/gchat-dm').sendBotDM({ toEmail: c.digest.email, text: msg }).catch(e => console.warn('1025 spike alert:', e.message));
+    } catch (e) { console.warn('1025 hourly sync:', e.message); }
+  }, { timezone: 'America/Chicago' });
+  cron.schedule('15 2 * * *', async () => {
+    const cf = require('./lib/cf1025'); const kb = require('./lib/aditkb-service');
+    if (kb.isConfigured()) {
+      await cf.refreshExtMap((sql, n) => kb.query(sql, n)).then(n => console.log('📞 1025 team map:', n)).catch(e => console.warn('1025 team map (kept the last copy):', e.message));
+      await cf.refreshTickets((sql, n) => kb.query(sql, n)).then(n => console.log('📞 1025 T1 tickets:', n)).catch(e => console.warn('1025 tickets:', e.message));
+    }
+    await cf.prune(180).catch(e => console.warn('1025 prune:', e.message));
+  }, { timezone: 'America/Chicago' });
+  cron.schedule('1 * * * *', async () => {
+    try {
+      const cf = require('./lib/cf1025'); const c = await cf.config(); if (!c.digest.on || !c.digest.email) return;
+      const h = Number(new Intl.DateTimeFormat('en-US', { timeZone: 'America/Chicago', hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+      if (h !== Number(c.digest.hourCT || 19) || (await cf.getSetting('digestSent', '')) === today) return;
+      await cf.setSetting('digestSent', today);
+      await require('./lib/gchat-dm').sendBotDM({ toEmail: c.digest.email, text: await cf.digestText() });
+    } catch (e) { console.warn('1025 digest:', e.message); }
+  });
   console.log(`✅ Scheduler started (fallback sync every ${getFallbackSyncMs()}ms)`);
 }
 
@@ -8429,6 +8460,90 @@ app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
     if (req.query.debug && await isAdminSession(req)) out.debug = { deskSample: desk.raw, deskAgents: Object.keys(desk.data).length, chatSample: siq.raw, chatOperators: Object.keys(siq.data).length };
     res.json(out);
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ── Batch 187: 1025 Call Flow & Capacity (admin) ──
+const cfMod = () => require('./lib/cf1025');
+function cfErr(res, e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+const cfDate = (s, d) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) ? String(s) : d;
+function cfRange(q) {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const to = cfDate(q.to, today), from = cfDate(q.from, new Date(Date.parse(to + 'T12:00:00Z') - 29 * 864e5).toISOString().slice(0, 10));
+  return { from, to, weekdays: q.weekdays === '1', aFrom: cfDate(q.aFrom, null), aTo: cfDate(q.aTo, null), bFrom: cfDate(q.bFrom, null), bTo: cfDate(q.bTo, null) };
+}
+app.get('/api/cf1025/data', requireAdmin, async (req, res) => {
+  try { const a = await cfMod().analyse({ ...cfRange(req.query), manager: true }); if (req.query.detail !== '1') { a.detailCount = a.detail.length; delete a.detail; } res.json({ success: true, ...a, config: await cfMod().config() }); }
+  catch (e) { cfErr(res, e); }
+});
+app.get('/api/cf1025/calls', requireAdmin, async (req, res) => {
+  try { const a = await cfMod().analyse({ ...cfRange(req.query), manager: true }); res.json({ success: true, calls: a.detail }); } catch (e) { cfErr(res, e); }
+});
+app.post('/api/cf1025/upload', requireAdmin, rateLimit(6, 60000), express.raw({ type: () => true, limit: '120mb' }), async (req, res) => {
+  try {
+    if (!Buffer.isBuffer(req.body) || !req.body.length) throw Object.assign(new Error('Pick the RingCentral Call Log CSV'), { status: 400 });
+    const r = await cfMod().importCSV(req.body.toString('utf8'));
+    insertAuditLog(req.session.email, 'cf1025_upload', String(req.query.name || 'csv').slice(0, 80), JSON.stringify({ reach1025: r.reach1025, dupRows: r.dupRows })).catch(() => {});
+    res.json({ success: true, ...r });
+  } catch (e) { cfErr(res, e); }
+});
+app.post('/api/cf1025/sync', requireAdmin, rateLimit(4, 60000), async (req, res) => {
+  try { const hours = Math.max(1, Math.min(24 * 7, Number((req.body || {}).hours) || 2)); res.json({ success: true, ...(await cfMod().syncFromRC(require('./rc-service').rcGet, { hours })) }); } catch (e) { cfErr(res, e); }
+});
+app.post('/api/cf1025/aditkb', requireAdmin, rateLimit(4, 60000), async (req, res) => {
+  try {
+    const kb = require('./lib/aditkb-service'); if (!kb.isConfigured()) throw Object.assign(new Error('AditKB is not set up'), { status: 503 });
+    const q = (sql, n) => kb.query(sql, n); const out = {};
+    try { out.users = await cfMod().refreshExtMap(q); } catch (e) { out.usersError = e.message; }
+    try { out.tickets = await cfMod().refreshTickets(q); } catch (e) { out.ticketsError = e.message; }
+    res.json({ success: true, ...out });
+  } catch (e) { cfErr(res, e); }
+});
+app.post('/api/cf1025/fix', requireAdmin, async (req, res) => {
+  try {
+    const b = req.body || {}; const ext = String(b.ext || '').replace(/\D/g, '').slice(0, 6); if (!ext) throw Object.assign(new Error('Missing extension'), { status: 400 });
+    const df = cfDate(b.dateFixed, null);
+    await new Promise((rs, rj) => _sharedDb.run(`INSERT INTO cf_fix (ext, done, date_fixed, notes, updated_by, updated_at) VALUES (?,?,?,?,?,datetime('now')) ON CONFLICT(ext) DO UPDATE SET done=excluded.done, date_fixed=excluded.date_fixed, notes=excluded.notes, updated_by=excluded.updated_by, updated_at=excluded.updated_at`,
+      [ext, b.done ? 1 : 0, df, String(b.notes || '').slice(0, 500), req.session.email], (e) => e ? rj(e) : rs()));
+    res.json({ success: true });
+  } catch (e) { cfErr(res, e); }
+});
+app.post('/api/cf1025/config', requireAdmin, async (req, res) => {
+  try {
+    const cf = cfMod(), b = req.body || {}; const dbRun = (sql, p) => new Promise((rs, rj) => _sharedDb.run(sql, p, (e) => e ? rj(e) : rs()));
+    const num = (v) => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
+    if (Array.isArray(b.roster)) {
+      await dbRun(`DELETE FROM cf_roster`, []);
+      let i = 0; for (const a of b.roster.slice(0, 40)) { if (!a || !String(a.name || '').trim()) continue;
+        await dbRun(`INSERT INTO cf_roster (name, ext, zoho_id, wing, start_h, len_h, break_h, prop_start_h, prop_break_h, active, verify, sort) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [String(a.name).trim().slice(0, 80), String(a.ext || '').replace(/\D/g, '').slice(0, 6), String(a.zoho_id || '').replace(/\D/g, '').slice(0, 24), a.wing === 'Chat' ? 'Chat' : 'Calls', num(a.start_h), num(a.len_h) || 9, num(a.break_h), num(a.prop_start_h), num(a.prop_break_h), a.active === false || a.active === 0 ? 0 : 1, a.verify ? 1 : 0, i++]); }
+    }
+    if (Array.isArray(b.overrides)) { await dbRun(`DELETE FROM cf_ext_override`, []); for (const o of b.overrides.slice(0, 300)) { const ext = String(o.ext || '').replace(/\D/g, ''); if (ext) await dbRun(`INSERT OR REPLACE INTO cf_ext_override (ext, name, team, rc_department) VALUES (?,?,?,?)`, [ext, String(o.name || '').slice(0, 80), String(o.team || '').slice(0, 80), String(o.rc_department || '').slice(0, 80)]); } }
+    if (Array.isArray(b.groups)) await cf.setSetting('groups', b.groups.filter(g => Array.isArray(g) && g[0] && g[1]).map(g => [String(g[0]).slice(0, 80), String(g[1]).slice(0, 40)]).slice(0, 80));
+    if (Array.isArray(b.system)) await cf.setSetting('system', b.system.map(x => String(x).replace(/\D/g, '')).filter(Boolean).slice(0, 40));
+    if (b.params && typeof b.params === 'object') { const P = {}; for (const k of ['wrapMin', 'sl', 'answerSec', 'maxOcc', 'busyMult', 'hourFrom', 'hourTo']) if (num(b.params[k]) != null) P[k] = num(b.params[k]); await cf.setSetting('params', P); }
+    if (b.digest && typeof b.digest === 'object') await cf.setSetting('digest', { on: !!b.digest.on, email: String(b.digest.email || '').trim().toLowerCase().slice(0, 120), hourCT: Math.max(0, Math.min(23, Number(b.digest.hourCT) || 19)) });
+    if (b.alert && typeof b.alert === 'object') await cf.setSetting('alert', { on: !!b.alert.on, pct: Math.max(5, Math.min(90, Number(b.alert.pct) || 25)), minCalls: Math.max(1, Math.min(100, Number(b.alert.minCalls) || 8)) });
+    res.json({ success: true, config: await cf.config() });
+  } catch (e) { cfErr(res, e); }
+});
+app.post('/api/cf1025/digest-preview', requireAdmin, async (req, res) => { try { res.json({ success: true, text: await cfMod().digestText() }); } catch (e) { cfErr(res, e); } });
+app.post('/api/cf1025/narrative', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try {
+    const ai = require('./lib/ai'); if (!ai.anyConfigured()) throw Object.assign(new Error('AI is not configured on the server.'), { status: 503 });
+    const a = await cfMod().analyse({ ...cfRange(req.body || {}), manager: false });
+    const tables = { range: a.range, byPath: a.byPath, mechanisms: a.mechanisms, compare: { A: a.compare.A, B: a.compare.B, a: a.compare.a, b: a.compare.b }, topics: a.why.topics.slice(0, 10), topPeople: a.fixList.slice(0, 8).map(f => ({ name: f.name, team: f.team, total: f.total, last5: f.last5, priority: f.priority, done: f.done })), roster: { need: a.roster.need, current: a.roster.current, hours: a.roster.hourLabels, short: a.roster.shortCurrent } };
+    const r = await ai.bestJSON({ system: 'You write a short management summary for a support leader about calls reaching the T1 Customer Service queue (ext 1025). Use only the numbers given. Plain English, 5 to 8 short sentences: what changed, the likely reasons, what to fix first. Never use em dashes or en dashes. Return JSON {"text":"..."}.', user: JSON.stringify(tables), maxTokens: 900, feature: 'analyze' });
+    res.json({ success: true, text: String((r.json && r.json.text) || '').replace(/\s*[\u2014\u2013]\s*/g, ', ') });
+  } catch (e) { cfErr(res, e); }
+});
+app.get('/api/cf1025/export.xlsx', requireAdmin, async (req, res) => {
+  try {
+    const a = await cfMod().analyse({ ...cfRange(req.query), manager: true });
+    const buf = await require('./lib/cf1025-export').workbook(a);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="1025-call-flow-${a.range.from}-to-${a.range.to}.xlsx"`);
+    res.send(buf);
+  } catch (e) { cfErr(res, e); }
 });
 
 // Batch 165: AI support and VoIP support handled by T1, with transfer audits against the support guides.

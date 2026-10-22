@@ -1,0 +1,271 @@
+# ext|team|rc_department|status  (snapshot of AditKB adit_users, no names; refreshed nightly when AditKB allows)
+3003|DSO Team / RCM Team|CSM|active
+3007|Mark CS Team|CSM|active
+3016||Support|active
+3018|Tech OB Team|Tech OB|active
+3021|Tech OB Team|Support|active
+3025||Support|active
+3028|Sales AE Team|Sales Support|active
+3031||Billing|active
+4001|Sales AE Team|SDR|active
+4002|Sales AE Team|AE|active
+4010|Sales AE Team|AE|active
+5000|CEO||active
+5005|VOIP Team|VoIP|active
+5009|Mark CS Team|Marketing|active
+5015|Finance Team||active
+5028|Tech OB Team|Tech OB|active
+5035|Mark CS Team|CSR|active
+5036|DSO Team||active
+5056|Tech OB Team|CSM|active
+5070|Tech OB Team|Tech OB|active
+5072|||active
+5077|SDR Team||active
+5088|Practice Analytics Team|Practice Analytics Product|active
+5099|Sales AE Team||active
+5104|Server Install Team|TS|active
+5109|T2 CS Team|Core Tech T2|active
+5111|Porting Team|TS|active
+5112|AI Team||active
+5113|Server Install Team||active
+5117||Human Resource|disabled
+5122|Mark CS Team||active
+5126|||active
+5127|||active
+5135|Tech CS Team||active
+5136|VOIP Team|Core Tech T2|active
+5142|Tech CS Team|Tech CSM|active
+5149|T2 CS Team|Core Tech T2|active
+5151|Adit Pay Team|Adit Pay|active
+5155|Tech OB Team|Tech OB|active
+5157|AI Team||active
+5167|T2 CS Team|Core Tech T2|active
+5169|ISR Team||active
+5174|VOIP Team|VoIP|active
+5179|T2 CS Team||active
+5184|ISR Team||active
+5189|SDR Team||active
+5195|||active
+5208|T1 CS Team||active
+5210|Mark CS Team|Core Tech T2|active
+5216|ISR Team|SDR|active
+5219|T1 CS Team|TS|active
+5220|||active
+5229|DSO Team|Marketing OB|active
+5230|Upgrade AE Team|Upgrades|active
+5245|T1 CS Team|Marketing CSR|active
+5250||Implementation|active
+5258|SDR Team|SDR|active
+5260|SDR Team|SDR|active
+5267|VOIP Team|Core Tech T2|active
+5271|Server Install Team|Server Install Team|active
+5272||Customer Support|active
+5276||Technical Support|active
+5282|T1 CS Team|Support - QC|active
+5284|AI Team||active
+5285|Tech OB Team|Tech OB|active
+5288|T1 CS Team|T1 CS|active
+5289|AI Team|AI Team|active
+5294||OPS|active
+5295|Tech CS Team|Escalation - Tech CS|active
+5296|Practice Analytics Team|Tech CSM|active
+5297|Tech OB Team|Escalation - OB|active
+5304|SDR Team|SDR|active
+5305|Tech CS Team|Tech CSM|active
+5310|Adit Pay Team|T1 - CS Team|active
+5311|VOIP Team|VoIP Support|active
+5313|T1 CS Team|T1 CS|active
+5324|VOIP Team|VoIP Support|active
+5326|Sales AE Team|Sales|disabled
+5330|Sales AE Team|Sales|active
+5334|VOIP Team|VoIP Support|active
+5335|T2 CS Team|Core Tech T2|active
+5340|Sales AE Team|Sales|active
+5341|Sales AE Team|Sales|active
+5344|Tech OB Team|Tech OB|active
+5348|T1 CS Team|TS + Adit Pay|active
+5351|SDR Team|SDR|active
+5354|Practice Analytics Team|PA|active
+5355|SDR Team|SDR|active
+5357|T1 CS Team|CS Team|active
+5358|Sales AE Team|Sales|active
+5360|VOIP Team|VoIP Support|active
+5361|Tech CS Team|Tech CSM|active
+5367||Sales and Finance|active
+5370|Adit Pay Team|SDR|active
+5379|PMS Calling team|Sales Support|active
+5381|RCM Team|RCM|active
+5384|SDR Team|SDR|active
+5389|Bizdev Team||active
+5392|Tech CS Team|SDR|active
+5393|Tech OB Team|RCM|active
+5401||HR|disabled
+5402|Product Team|Product|active
+5403||OPS|active
+5404||Revenue Operations|active
+5406||CS Team|active
+5408|PMS Calling team|Sales Support|active
+5410|RCM Team|RCM|active
+5412|VOIP Team|VoIP Support|active
+5413|Tech OB Team|Tech OB|active
+5414|Tech CS Team|Escalation - Tech CS|active
+5415|Sales AE Team|Sales|active
+5418|Sales AE Team|Sales|active
+5419|SDR Team|SDR|active
+5421|Bizdev Team|Corporate Marketing Team|active
+5424|SDR Team|SDR|disabled
+5425|Tech CS Team|Tech CSM|active
+5431|Sales AE Team|Sales|active
+5433|Tech OB Team|Tech OB|active
+5434|Bizdev Team|Sales|active
+5439|Bizdev Team||active
+5442|Upgrade AE Team|Upgrades Specialist|active
+5446|SDR Team|SDR|active
+5448|SDR Team|SDR|active
+5449|Sales AE Team|Sales|active
+5450|Upgrade AE Team|Sales|active
+5451|VOIP Team|VoIP Support|active
+5452|Bizdev Team||active
+5454|Bizdev Team||active
+5455||Billing|active
+5456|T1 CS Team|CS Team|active
+5457|Upgrades AE Team||active
+5461|SDR Team|SDR|active
+5463|Tech CS Team|Tech CSM|active
+5464|Tech CS Team|Tech CSM|active
+5465|Sales AE Team|Corporate Marketing Team|disabled
+5466|T1 CS Team|CS Team|active
+5467|VOIP Team|VoIP Support|active
+5470|T1 CS Team|SDR|active
+5472|Tech OB Team|Tech OB|active
+5475|VOIP Team|VoIP Support|active
+5477|T2 CS Team|CS Team|active
+5484|Tech OB Team|Tech OB|active
+5486|Server Install Team|Server Install Team|active
+5487|Tech OB Team|Tech OB|active
+5489|Tech OB Team|Tech OB|disabled
+5491|SDR Team|SDR|active
+5493|SDR Team|SDR|active
+5494|Tech OB Team|Tech CSM|active
+5496|Product Team|Product|active
+5498|Product Team|Product|active
+5501||Revenue Operations|active
+5503|Sales AE Team|Sales|active
+5507|SDR Team|SDR|active
+5508|Sales AE Team||disabled
+5510|Sales AE Team|Sales|active
+5511|Sales AE Team|Sales|disabled
+5512|T1 CS Team|CS Team|active
+5515|Tech OB Team|Tech OB|active
+5516|Tech OB Team|Tech OB|active
+5517||OPS|active
+5520||Account|active
+5525|Sales AE Team|Sales|active
+5529|RCM Team||active
+5531|Bizdev Team||active
+5532|Bizdev Team||active
+5534|Mark CS Team|Mark. CSM|active
+5535|Tech OB Team|Tech OB|active
+5536|Tech CS Team|Tech OB|active
+5538|Tech OB Team|Tech OB|active
+5539|SDR Team|SDR|active
+5540|SDR Team|SDR|active
+5542|RCM Team|RCM|active
+5543|RCM Team|RCM|active
+5544|Bizdev Team|Sales|active
+5545|PMS Calling team|Sales Support|active
+5547|Sales AE Team|Sales|active
+5549|SDR Team|SDR|active
+5550|SDR Team|SDR|active
+5551|SDR Team|SDR|active
+5553||DevOps|active
+5554|ISR Team||active
+5555|Adit Pay Team|Adit Pay|active
+5556|RCM Team||active
+5560|Tech CS Team|Tech CSM|active
+5562|Sales AE Team||disabled
+5563|AI Team||active
+5567|Tech OB Team|Tech OB|active
+5569|Tech OB Team|Tech OB|active
+5571|SDR Team|SDR|disabled
+5573|Bizdev Team||active
+5574|T1 CS Team|T1 CS|active
+5575|SDR Team|SDR|active
+5576|SDR Team|SDR|active
+5577|SDR Team|SDR|active
+5580|PMS Calling team|Sales Support|disabled
+5581|Sales AE Team||active
+5583|Tech OB Team|Tech OB|active
+5584|Tech OB Team|Tech OB|active
+5587|SDR Team|SDR|active
+5590|||active
+5593|AI Team|Tech OB|active
+5594|Tech OB Team|Tech OB|active
+5599|SDR Team|SDR|active
+5600|SDR Team|SDR|active
+5602|Tech CS Team|Escalation - Tech CS|active
+5603|Tech CS Team|Tech CSM|active
+5607|Tech OB Team|Tech OB|active
+5608|Tech OB Team|Tech OB|active
+5609|Tech CS Team|Tech CSM|active
+5610|PMS Calling team|Sales Support|active
+5611|T1 CS Team|T1 CS|active
+5615|T1 CS Team||active
+5616|Tech CS Team|Tech CSM|active
+5619|Server Install Team||active
+5620|Sales AE Team||active
+5621|Sales AE Team||active
+5622|Upgrade AE Team|Upgrade Team|active
+5623|Sales AE Team|Sales|active
+5624|Sales AE Team|Sales|active
+5625|Sales AE Team|Sales|active
+5626|Sales AE Team|Sales|active
+5628|Bizdev Team|ISR|active
+5629|Sales AE Team|Sales|active
+5631|AI Team|AI Product Team|active
+5632|AI Team|AI Product Team|active
+5633|AI Team|AI Product Team|active
+5634|AI Team|AI Product Team|active
+5636|Tech CS Team|Escalation - Tech CS|active
+5637|ISR Team|ISR|active
+5638|ISR Team|ISR|disabled
+5639|SDR Team|SDR|active
+5640|SDR Team|SDR|active
+5641|SDR Team|SDR|active
+5643|RCM Team|RCM|active
+5644|AI Team|AI Product Team|active
+5645|AI Team|AI Team|active
+5646|Tech OB Team|Tech OB|active
+5647|Tech OB Team|Tech OB|active
+5648|Tech OB Team|Tech OB|active
+5649|AI Team|AI Product Team|active
+5651|VOIP Team|VoIP|active
+5652|Tech OB Team|Tech OB|active
+5654|RCM Team|RCM|active
+5656|||active
+5657|PMS Calling team|Sales Support|active
+5658|VOIP Team|VoIP|active
+5659|Tech CS Team|Tech CSM|active
+5660|SDR Team|SDR|active
+5661|SDR Team|SDR|active
+5663|T1 CS Team|CS Team|active
+5664|ISR Team|Sales|active
+5665|Sales AE Team|Corporate Marketing Team|active
+5666|Porting Team|Porting Team|active
+5667|Tech OB Team|Tech OB|active
+5668|Tech OB Team|Tech OB|active
+5669|SDR Team|SDR|active
+5671|SDR Team||active
+5672|SDR Team|SDR|active
+5673|Tech CS Team|Tech CSM|active
+5674|Mark CS Team|Tech CSM|disabled
+5675|Server Install Team|Server Install Team|active
+5677||VoIP Dev Team|active
+5678|Tech OB Team|RCM|active
+5679|Upgrade AE Team||active
+5680||Marketing Team|active
+5681|SDR Team|SDR|disabled
+5682|SDR Team|SDR|active
+5683|SDR Team|SDR|active
+5684|Tech CS Team|Tech CSM|active
+5685|Upgrade AE Team||active
