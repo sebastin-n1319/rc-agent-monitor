@@ -8346,27 +8346,54 @@ async function deskAgentEmailMap() {
 async function deskAvailabilityByEmail() {
   if (Date.now() - _deskAvail.at < 60000) return _deskAvail;
   const desk = require('./lib/desk-service');
-  if (!desk.isConfigured()) return (_deskAvail = { at: Date.now(), data: {}, error: 'Zoho Desk is not set up' });
-  try {
-    const ids = await deskAgentEmailMap(), data = {};
+  if (!desk.isConfigured()) return (_deskAvail = { at: Date.now(), data: {}, error: 'Zoho Desk is not set up', raw: null });
+  const data = {}, errors = []; let raw = null, ids = {};
+  try { ids = await deskAgentEmailMap(); } catch (e) { errors.push('agents: ' + String(e.message).slice(0, 140)); }
+  const add = (a) => {
+    const id = String(a.agentId || a.id || (a.agent && a.agent.id) || '');
+    const email = String(a.emailId || a.email || (a.agent && (a.agent.emailId || a.agent.email)) || ids[id] || '').toLowerCase();
+    if (!email) return;
+    const presence = String(a.presenceStatus || a.status || a.onlineStatus || '').toUpperCase();
+    const mail = String(a.mailStatus || a.ticketStatus || '').toUpperCase();
+    const cur = data[email] || {};
+    data[email] = { presence: cur.presence === 'ONLINE' ? 'ONLINE' : (presence || cur.presence || null), mail: cur.mail === 'ONLINE' ? 'ONLINE' : (mail || cur.mail || null) };
+  };
+  const readDept = async (dept) => {
     for (let from = 0; from < 1000; from += 200) {
-      const r = await desk.fetchRaw(`/agentAvailability?departmentId=-1&include=presenceStatus,mailStatus,chatStatus,phoneStatus&limit=200&from=${from}`);
-      const list = (r && r.data) || [];
-      for (const a of list) {
-        const id = String(a.agentId || a.id || '');
-        const email = String(a.emailId || a.email || ids[id] || '').toLowerCase();
-        if (!email) continue;
-        const presence = String(a.presenceStatus || a.status || '').toUpperCase();
-        const mail = String(a.mailStatus || '').toUpperCase();
-        // Several departments can list the same agent: online anywhere counts as online.
-        const cur = data[email] || {};
-        data[email] = { presence: cur.presence === 'ONLINE' ? 'ONLINE' : (presence || null), mail: cur.mail === 'ONLINE' ? 'ONLINE' : (mail || null), chat: a.chatStatus || cur.chat || null, phone: a.phoneStatus || cur.phone || null };
-      }
+      const r = await desk.fetchRaw(`/agentAvailability?departmentId=${dept}&include=presenceStatus,mailStatus,chatStatus,phoneStatus&limit=200&from=${from}`);
+      const list = (r && (r.data || r.agents)) || [];
+      if (!raw && list[0]) raw = list[0];
+      list.forEach(add);
       if (!r || !r.hasMore || list.length < 200) break;
     }
-    _deskAvail = { at: Date.now(), data, error: null };
-  } catch (e) { _deskAvail = { at: Date.now(), data: _deskAvail.data || {}, error: String(e.message || e).slice(0, 200) }; }
+  };
+  try { await readDept(-1); } catch (e) { errors.push('all departments: ' + String(e.message).slice(0, 160)); }
+  // Fall back to each department when "all departments" is refused or comes back empty.
+  if (!Object.keys(data).length) {
+    let depts = [];
+    try { depts = (await desk.fetchDepartments()).map(d => String(d.id)).filter(Boolean).slice(0, 20); } catch (e) { errors.push('departments: ' + String(e.message).slice(0, 120)); }
+    for (const d of depts) { try { await readDept(d); } catch (e) { errors.push('dept ' + d + ': ' + String(e.message).slice(0, 120)); break; } }
+  }
+  _deskAvail = { at: Date.now(), data: Object.keys(data).length ? data : (_deskAvail.data || {}), error: Object.keys(data).length ? null : (errors.join(' | ') || 'Zoho Desk returned no agent availability'), raw };
   return _deskAvail;
+}
+// SalesIQ: the operators' live status, read straight from SalesIQ every 45 seconds (the change log is only the fallback).
+let _siqOps = { at: 0, data: {}, error: null, raw: null };
+async function chatStatusByEmail() {
+  if (Date.now() - _siqOps.at < 45000) return _siqOps;
+  if (!salesiqService.isConfigured()) return (_siqOps = { at: Date.now(), data: {}, error: 'SalesIQ is not set up', raw: null });
+  try {
+    const ops = await salesiqService.fetchOperators(), data = {};
+    for (const op of ops) {
+      const email = String(op.email_id || op.email || '').toLowerCase(); if (!email) continue;
+      const avail = String((op.availability && op.availability.status) || op.status || '').toLowerCase();
+      const msg = String(op.status_message || '');
+      const online = !!avail && avail !== 'offline' && !/busy|away|break|lunch|meeting|offline|invisible/i.test(msg);
+      data[email] = { online, label: avail === 'offline' || !avail ? 'Offline' : (msg || avail) };
+    }
+    _siqOps = { at: Date.now(), data, error: null, raw: ops[0] ? { availability: ops[0].availability, status: ops[0].status, status_message: ops[0].status_message, email: !!ops[0].email_id } : null };
+  } catch (e) { _siqOps = { at: Date.now(), data: _siqOps.data || {}, error: String(e.message).slice(0, 200), raw: null }; }
+  return _siqOps;
 }
 async function latestChatStatusByEmail() {
   return new Promise((resolve) => _sharedDb.all(
@@ -8377,7 +8404,7 @@ async function latestChatStatusByEmail() {
 }
 app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
   try {
-    const [snap, monitored, desk, chat] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), latestChatStatusByEmail()]);
+    const [snap, monitored, desk, siq, chatLog, chats] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), chatStatusByEmail(), latestChatStatusByEmail(), activeChatsByEmail()]);
     const onOff = (v) => v == null || v === '' ? null : (String(v).toUpperCase() === 'ONLINE' ? 'on' : 'off');
     const data = {};
     for (const a of monitored) {
@@ -8385,15 +8412,22 @@ app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
       const s = (snap && snap[String(a.rc_id)]) || null;
       const rcLabel = s ? String(s.normalizedStatus || s.displayStatus || s.presenceStatus || '') : '';
       const rcOn = s ? (/^(available|on call|ringing|talking)$/i.test(rcLabel) || !!s.isOnCall) : null;
-      const d = desk.data[email] || null, c = chat[email] || null;
+      const d = desk.data[email] || null, live = siq.data[email] || null, c = chatLog[email] || null, open = (chats.data && chats.data[email]) || 0;
+      let chat;
+      if (open) chat = { state: 'on', label: open + ' open chat' + (open === 1 ? '' : 's') };
+      else if (live) chat = { state: live.online ? 'on' : 'off', label: live.label };
+      else if (c) chat = { state: /^available$/i.test(c.status) ? 'on' : 'off', label: String(c.status) };
+      else chat = { state: null, label: siq.error ? 'SalesIQ: ' + siq.error : 'Not a SalesIQ operator' };
       data[email] = {
-        avail: { state: d ? onOff(d.presence) : null, label: d && d.presence ? (d.presence === 'ONLINE' ? 'Online in Zoho Desk' : 'Offline in Zoho Desk') : 'Not found in Zoho Desk' },
+        avail: { state: d ? onOff(d.presence) : null, label: d && d.presence ? (d.presence === 'ONLINE' ? 'Online in Zoho Desk' : 'Offline in Zoho Desk') : (desk.error ? 'Zoho Desk: ' + desk.error : 'Not found in Zoho Desk') },
         rc: { state: rcOn == null ? null : (rcOn ? 'on' : 'off'), label: rcLabel || 'No RingCentral status' },
-        desk: { state: d ? onOff(d.mail) : null, label: d && d.mail ? (d.mail === 'ONLINE' ? 'Taking tickets' : 'Not taking tickets') : 'Not found in Zoho Desk' },
-        chat: { state: c ? (/^available$/i.test(c.status) ? 'on' : 'off') : null, label: c ? String(c.status) : 'No SalesIQ status', since: c ? c.since : null },
+        desk: { state: d ? onOff(d.mail || d.presence) : null, label: d && (d.mail || d.presence) ? ((d.mail || d.presence) === 'ONLINE' ? 'Taking tickets' : 'Not taking tickets') : (desk.error ? 'Zoho Desk: ' + desk.error : 'Not found in Zoho Desk') },
+        chat,
       };
     }
-    res.json({ success: true, data, deskError: desk.error || null, at: new Date().toISOString() });
+    const out = { success: true, data, deskError: desk.error || null, chatError: siq.error || null, at: new Date().toISOString() };
+    if (req.query.debug && await isAdminSession(req)) out.debug = { deskSample: desk.raw, deskAgents: Object.keys(desk.data).length, chatSample: siq.raw, chatOperators: Object.keys(siq.data).length };
+    res.json(out);
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
