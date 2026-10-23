@@ -8390,12 +8390,14 @@ async function deskAvailabilityByEmail() {
     data[email] = { presence: cur.presence === 'ONLINE' ? 'ONLINE' : (presence || cur.presence || null), mail: cur.mail === 'ONLINE' ? 'ONLINE' : (mail || cur.mail || null) };
   };
   const readDept = async (dept) => {
-    for (let from = 0; from < 1000; from += 200) {
-      const r = await desk.fetchRaw(`/agentAvailability?departmentId=${dept}&include=presenceStatus,mailStatus,chatStatus,phoneStatus&limit=200&from=${from}`);
+    // Zoho returns 50 agents per page whatever limit is asked for: keep reading while hasMore says so.
+    for (let from = 0, pages = 0; pages < 60; pages++) {
+      const r = await desk.fetchRaw(`/agentAvailability?departmentId=${dept}&include=presenceStatus,mailStatus,chatStatus,phoneStatus&limit=50&from=${from}`);
       const list = (r && (r.data || r.agents)) || [];
       if (!raw && list[0]) raw = list[0];
       list.forEach(add);
-      if (!r || !r.hasMore || list.length < 200) break;
+      if (!r || !list.length || String(r.hasMore) !== 'true') break;
+      from += list.length;
     }
   };
   try { await readDept(-1); } catch (e) { errors.push('all departments: ' + String(e.message).slice(0, 160)); }
