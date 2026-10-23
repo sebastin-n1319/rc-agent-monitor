@@ -160,6 +160,8 @@
     if (rc === 'unavailable' || rc === 'busy' || rc === 'dnd' || rc === 'away') {
       // Logged out of the break tracker + unavailable on RC = shift over.
       if (lane === 'Logged Out') return { key: 'off', label: 'Logged out', sinceMs: null, tr };
+      // Never logged in to the break tracker today + unavailable on RC = not on shift (no timer from yesterday's status).
+      if (!tr) return { key: 'off', label: 'Not logged in', sinceMs: null, tr, noLogin: true };
       return { key: 'busy', label: 'Unavailable', sinceMs: parseTs(op.sinceTs), tr };
     }
     return { key: 'off', label: 'Offline', sinceMs: null, tr };
@@ -417,7 +419,11 @@
     if (!root) return;
     // Batch 163: Chat Wing agents are not expected to take calls, so being unavailable on the phone is
     // normal for them: shown as "Chat duty" and left out of the unavailable counts and alerts.
-    const rows = (ctx.agentOps || []).map(op => { const wing = wingOf(op); let st = stateOf(op); if (wing === 'chat' && st.key === 'busy') st = Object.assign({}, st, { key: 'chat', label: 'Chat duty' }); return { op, st, wing }; })
+    const rows = (ctx.agentOps || []).map(op => { const wing = wingOf(op); let st = stateOf(op);
+      // Chat Wing: unavailable on the phone is normal. They are on chat duty once logged in, or while they have open chats.
+      const openChats = _pres && _pres.data && _pres.data[String(op.agent.email || '').toLowerCase()] && /open chat/.test(((_pres.data[String(op.agent.email || '').toLowerCase()].chat) || {}).label || '');
+      if (wing === 'chat' && (st.key === 'busy' || (st.noLogin && openChats))) st = Object.assign({}, st, { key: 'chat', label: 'Chat duty', sinceMs: st.sinceMs || parseTs(op.sinceTs) });
+      return { op, st, wing }; })
       .sort((a, b) => (ORDER[a.st.key] - ORDER[b.st.key]) || String(a.op.agent.name).localeCompare(String(b.op.agent.name)));
     const myEmail = String(g('currentEmail', '') || '').toLowerCase();
     const me = mode === 'agent' ? rows.find(r => String(r.op.agent.email || '').toLowerCase() === myEmail) : null;
