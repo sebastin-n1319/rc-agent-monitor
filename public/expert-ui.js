@@ -56,9 +56,12 @@
     ['The AI announced a transfer but the phones never rang', 'AI Front Desk'],
     ['Client wants to add a new staff user with limited access', 'Users'],
   ];
-  var MODES = [['answer', 'Answer', 'Straight answer with steps'], ['troubleshoot', 'Troubleshoot', 'Checks in order, live on a call'], ['reply', 'Reply to client', 'A ready to send message']];
+  // Batch 188: where the client is decides how the reply is written: a talk track for a call, an email for a ticket, short messages for a chat.
+  var MODES = [['call', 'Call', 'The client is on the phone: get a talk track to say'], ['email', 'Ticket (email)', 'Replying to a ticket: get a ready to send email'], ['chat', 'Chat', 'Live chat: get short messages to paste']];
+  var SAY = { call: ['What to say on the call', 'Copy talk track'], email: ['Email reply', 'Copy email'], chat: ['Chat reply', 'Copy messages'] };
   function Ask(panel, ctx) {
-    var S = { thread: [], busy: false, mode: store.get('mode', 'answer'), module: '', useHistory: true, meta: null };
+    var S = { thread: [], busy: false, mode: store.get('mode', 'call'), module: '', useHistory: true, meta: null, items: [] };
+    if (!SAY[S.mode]) S.mode = 'call';
     var root = h('div', { class: 'ax' }); panel.appendChild(root);
     // rail
     var rail = h('aside', { class: 'ax-rail', 'aria-label': 'Filters and history' });
@@ -92,7 +95,16 @@
     var newB = h('button', { type: 'button', class: 'ax-mini', title: 'Start a new conversation', onclick: function () { reset(true); } }, [icon('plus', 'sm'), h('span', { text: 'New conversation' })]);
     var endB = h('button', { type: 'button', class: 'ax-mini', title: 'End this conversation', onclick: function () { endConvo(); } }, [icon('x', 'sm'), h('span', { text: 'End' })]);
     var fullB = h('button', { type: 'button', class: 'ax-mini', title: 'Full screen (Esc to leave)', 'aria-pressed': 'false', onclick: function () { setFull(!S.full); } }, [icon('expand', 'sm'), h('span', { text: 'Full screen' })]);
-    var cbar = h('div', { class: 'ax-cbar', hidden: true }, [h('span', { class: 'ax-cbar-t' }, [icon('chat', 'sm'), cbTitle, cbCount]), h('span', { class: 'ax-sp' }), refreshB, newB, endB, fullB]);
+    var shareB = h('button', { type: 'button', class: 'ax-mini', title: 'Copy a link to this conversation for a colleague', onclick: function () { share(); } }, [icon('link', 'sm'), h('span', { text: 'Share' })]);
+    var cbar = h('div', { class: 'ax-cbar', hidden: true }, [h('span', { class: 'ax-cbar-t' }, [icon('chat', 'sm'), cbTitle, cbCount]), h('span', { class: 'ax-sp' }), shareB, refreshB, newB, endB, fullB]);
+    function share() {
+      if (!S.items.length || S.busy) return;
+      shareB.disabled = true;
+      ctx.api('/api/guides/expert/share', { items: S.items }).then(function (r) {
+        var url = location.origin + '/guides#ask/share/' + r.id;
+        copy(url, shareB); ctx.toast && ctx.toast('Link copied. Anyone on the team can open it and continue.');
+      }).catch(function (e) { ctx.toast && ctx.toast(e.message); }).then(function () { shareB.disabled = false; });
+    }
     function paintBar() { var n = S.thread.length / 2 + (S.busy ? 1 : 0); cbar.hidden = !n; cbCount.textContent = n ? Math.ceil(n) + ' question' + (Math.ceil(n) === 1 ? '' : 's') : ''; refreshB.disabled = S.busy || !S.lastQ; }
     function setFull(v) {
       S.full = !!v; document.documentElement.classList.toggle('ax-full', S.full); fullB.setAttribute('aria-pressed', String(S.full));
@@ -105,12 +117,12 @@
     // composer
     var input = h('textarea', { rows: '3', placeholder: 'What is the client asking? Paste their message or describe the situation.', 'aria-label': 'Question' });
     var send = h('button', { type: 'submit', class: 'gd-btn primary ax-send', 'aria-label': 'Ask' }, [icon('send'), 'Ask']);
-    var modeBox = h('div', { class: 'ax-seg', role: 'radiogroup', 'aria-label': 'Answer style' });
+    var modeBox = h('div', { class: 'ax-seg', role: 'radiogroup', 'aria-label': 'Where is the client?' });
     function paintModes() { clear(modeBox); MODES.forEach(function (m) { modeBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.mode === m[0]), title: m[2], onclick: function () { S.mode = m[0]; store.set('mode', S.mode); paintModes(); } }, [m[1]])); }); }
     paintModes();
     var scopeChip = h('span', { class: 'ax-scope' });
     var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input,
-      h('div', { class: 'ax-comp-bar' }, [modeBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
+      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
     col.appendChild(form);
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
     // As soon as the agent types, the side bar folds and the suggestions fade, so the page is about the conversation.
@@ -138,7 +150,7 @@
     }
     function reset(keepFocus) {
       if (S.busy) return;
-      S.thread = []; S.lastQ = null; S.lastCard = null; clear(thread); input.value = '';
+      S.thread = []; S.items = []; S.lastQ = null; S.lastCard = null; clear(thread); input.value = '';
       heroPaint(); intro.classList.remove('fade');
       if (keepFocus) { intro.hidden = true; thread.appendChild(h('p', { class: 'ax-newnote', text: 'New conversation. Ask your question below.' })); }
       paintBar(); input.focus();
@@ -152,7 +164,7 @@
     function refresh() {
       if (S.busy || !S.lastQ) return;
       // drop the last turn and ask the same question again, skipping any saved answer
-      S.thread = S.thread.slice(0, -2);
+      S.thread = S.thread.slice(0, -2); S.items = S.items.slice(0, -1);
       if (S.lastCard && S.lastCard.parentNode) S.lastCard.remove();
       var me = thread.lastElementChild; if (me && me.classList.contains('ax-me')) me.remove();
       submit(S.lastQ, true);
@@ -176,8 +188,9 @@
       var pg = progress(); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
-      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: S.mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh }).then(function (j) {
-        pg.stop(); var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card;
+      var mode = S.mode;
+      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh }).then(function (j) {
+        pg.stop(); j.mode = mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
       }).catch(function (e) { pg.stop(); thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
@@ -198,7 +211,12 @@
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
       if (a.steps && a.steps.length) card.appendChild(section('list', 'Steps', [h('ol', { class: 'ax-ol' }, a.steps.map(function (s) { return h('li', null, [linkTickets(String(s).replace(/^\d+[.)]\s*/, ''))]); })), h('div', { class: 'ax-row' }, [copyBtn(a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'), 'Copy steps')])]));
-      if (a.say) card.appendChild(section('chat', 'What to tell the client', [h('blockquote', { class: 'ax-say' }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, 'Copy message')].concat(j.share ? [copyBtn(a.say + '\n\nMore details: ' + j.share.url, 'Copy with Help Center link')] : []))], 'say'));
+      if (a.say) {
+        var sl = SAY[j.mode] || ['What to tell the client', 'Copy message'];
+        var withLink = j.share && j.mode !== 'call' ? [copyBtn(j.mode === 'email' ? a.say.replace(/\n*Thanks,?\s*$/i, '') + '\n\nHelp Center guide: ' + j.share.url + '\n\nThanks,' : a.say + '\n\n' + j.share.url, j.mode === 'email' ? 'Copy email with Help Center link' : 'Copy with Help Center link')] : [];
+        var other = MODES.filter(function (m) { return m[0] !== j.mode; }).map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Ask again for ' + m[1].toLowerCase(), onclick: function () { if (S.busy) return; S.mode = m[0]; store.set('mode', S.mode); paintModes(); submit(q); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); });
+        card.appendChild(section(j.mode === 'call' ? 'phone' : 'chat', sl[0], [h('blockquote', { class: 'ax-say' + (j.mode === 'call' ? ' call' : '') }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, sl[1])].concat(withLink).concat([h('span', { class: 'ax-sp' })]).concat(other))], 'say'));
+      }
       if (a.owner) card.appendChild(section('user', 'Who owns it', [h('p', { class: 'ax-owner' }, [h('b', { text: a.owner.who || 'T1' }), a.owner.when ? h('span', { text: ' · ' + a.owner.when }) : null])], 'own'));
       if (j.rulesUsed && j.rulesUsed.length) card.appendChild(h('p', { class: 'ax-rules' }, [icon('rule', 'sm'), 'Team rule applied: ' + j.rulesUsed.join('; ')]));
       if (a.cautions && a.cautions.length) card.appendChild(section('warn', 'Heads up', [h('ul', null, a.cautions.map(function (c) { return h('li', { text: c }); }))], 'warn'));
@@ -265,7 +283,23 @@
       clear(popBox); if (!m.popular.length) popBox.appendChild(h('p', { class: 'ax-muted', text: 'Not enough questions yet.' }));
       m.popular.forEach(function (q) { popBox.appendChild(h('button', { type: 'button', text: q, onclick: function () { input.value = q; submit(); } })); });
     }).catch(function () {});
-    return { focus: function () { input.focus(); }, prefill: function (t) { input.value = t; input.focus(); } };
+    // Open a shared conversation: the same answers, and the person can carry on asking from there.
+    function loadShare(id) {
+      if (S.busy || S.sharedId === id) return; S.sharedId = id;
+      ctx.api('/api/guides/expert/share/' + encodeURIComponent(id)).then(function (r) {
+        reset(false); intro.hidden = true; setFold(true);
+        thread.appendChild(h('p', { class: 'ax-newnote', text: 'Shared by ' + (r.by || 'a colleague') + (r.at ? ' on ' + String(r.at).slice(0, 16) + ' UTC' : '') + '. You can carry on asking below.' }));
+        r.items.forEach(function (it) {
+          var lab = (MODES.find(function (m) { return m[0] === it.mode; }) || [null, 'Question'])[1];
+          thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: lab }), h('p', { text: it.q })]));
+          it.j.mode = it.mode; thread.appendChild(answerCard(it.j, it.q));
+          S.thread.push({ role: 'user', content: it.q }, { role: 'assistant', content: [it.j.answer && it.j.answer.answer].concat((it.j.answer && it.j.answer.steps) || []).join('\n') });
+          S.items.push(it); S.lastQ = it.q;
+        });
+        paintBar();
+      }).catch(function (e) { ctx.toast && ctx.toast(e.message); });
+    }
+    return { focus: function () { input.focus(); }, prefill: function (t) { input.value = t; input.focus(); }, loadShare: loadShare };
   }
 
   // ── Help Center browser ──────────────────────────────────────────────

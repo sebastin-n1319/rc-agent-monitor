@@ -256,7 +256,7 @@ html.widget .gd-nav button{padding:0 10px;font-size:13px}
 /* Conversation focus (Batch 187): bar with Refresh, New, End and Full screen; suggestions fade while typing */
 .ax-hero{transition:opacity .25s ease,transform .25s ease}
 .ax-hero.fade{opacity:0;transform:translateY(-8px);pointer-events:none}
-.ax-cbar{position:sticky;top:0;z-index:4;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 -8px 4px;padding:10px 8px;background:linear-gradient(var(--bg) 80%,transparent)}
+.ax-cbar{position:sticky;top:var(--top,60px);z-index:15;display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 -8px 4px;padding:10px 8px;background:linear-gradient(var(--bg) 80%,transparent)}
 .ax-cbar[hidden]{display:none}
 .ax-cbar-t{display:inline-flex;align-items:center;gap:8px;font-size:13px}
 .ax-cbar-t svg{color:var(--accent-ink)}
@@ -268,3 +268,11 @@ html.ax-full .ax-rail,html.ax-full .gd-fab{display:none!important}
 html.ax-full .ax-col{max-width:1100px;padding-top:12px}
 @media (max-width:820px){.ax-cbar .ax-mini span{display:none}}
 @media (prefers-reduced-motion:reduce){.ax-hero{transition:none}}
+
+/* Batch 188: conversation bar stays under the page tabs while scrolling; channel picker label; call talk track */
+html.embed .ax-cbar{top:48px}
+html.ax-full .ax-cbar{top:0}
+.ax-cbar{background:var(--bg);box-shadow:0 1px 0 var(--border)}
+.ax-comp-l{font-size:12px;color:var(--t3);font-weight:500}
+.ax-say.call{white-space:pre-line;font-size:14.5px;line-height:1.7}
+.ax-say{white-space:pre-line}

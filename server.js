@@ -2031,10 +2031,30 @@ app.get('/api/guides/expert/meta', requireAuth, async (req, res) => {
 app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const b = req.body || {}, ai = require('./lib/ai');
-    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : 'answer',
+    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : 'call',
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
+});
+// Batch 188: share a conversation. A snapshot of the questions and answers is kept under a random id; anyone signed in
+// to the tool (or on the guides guest list) can open it and carry on from there.
+app.post('/api/guides/expert/share', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const items = (Array.isArray((req.body || {}).items) ? req.body.items : []).slice(0, 25).map(x => ({ q: String((x && x.q) || '').slice(0, 2000), mode: String((x && x.mode) || '').slice(0, 20), j: x && x.j && typeof x.j === 'object' ? x.j : null })).filter(x => x.q && x.j);
+    if (!items.length) throw Object.assign(new Error('Nothing to share yet'), { status: 400 });
+    const json = JSON.stringify(items); if (json.length > 600000) throw Object.assign(new Error('This conversation is too long to share'), { status: 413 });
+    const id = require('crypto').randomBytes(9).toString('base64url');
+    await new Promise((rs, rj) => _sharedDb.run(`CREATE TABLE IF NOT EXISTS expert_shares (id TEXT PRIMARY KEY, by_email TEXT, json TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`, [], e => e ? rj(e) : rs()));
+    await new Promise((rs, rj) => _sharedDb.run(`INSERT INTO expert_shares (id, by_email, json) VALUES (?,?,?)`, [id, String(req.session.email || '').toLowerCase(), json], e => e ? rj(e) : rs()));
+    res.json({ success: true, id });
+  } catch (e) { expertErr(res, e, 'Could not share'); }
+});
+app.get('/api/guides/expert/share/:id', requireAuth, async (req, res) => {
+  try {
+    const row = await new Promise((rs) => _sharedDb.get(`SELECT by_email, json, created_at FROM expert_shares WHERE id = ?`, [String(req.params.id || '').slice(0, 40)], (e, r) => rs(e ? null : r)));
+    if (!row) return res.status(404).json({ success: false, error: 'This shared conversation was not found' });
+    res.json({ success: true, by: row.by_email, at: row.created_at, items: JSON.parse(row.json) });
+  } catch (e) { expertErr(res, e, 'Could not open'); }
 });
 app.post('/api/guides/expert/feedback', requireAuth, rateLimit(30, 60000), async (req, res) => {
   try { const b = req.body || {}; res.json({ success: true, ...(await expertMod().feedback({ logId: b.logId, vote: b.vote, comment: b.comment, correction: b.correction, email: req.session.email })) }); } catch (e) { expertErr(res, e, 'Could not save'); }

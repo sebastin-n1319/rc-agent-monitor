@@ -102,7 +102,7 @@
     else if (next === 'kb') showKb(anchor);
     else if (next === 'teach') showTeach();
     else if (next === 'rules') showRules();
-    else showAsk();
+    else showAsk(anchor);
     if (!anchor && prev !== next) window.scrollTo(0, scrollAt[next] || 0);
   }
   window.addEventListener('popstate', route);
@@ -324,9 +324,10 @@
     openArticle: function (id) { go('kb', id); },
     askAbout: function (t) { go('ask'); if (askView) askView.prefill(t); },
   };
-  function showAsk() {
+  function showAsk(anchor) {
     if (!window.AditExpert) return;
     if (!askView) askView = window.AditExpert.Ask(panel('ask'), ctx);
+    if (anchor && /^share\//.test(anchor) && askView.loadShare) askView.loadShare(anchor.slice(6));
     setTimeout(function () { askView.focus(); }, 30);
   }
   function showKb(anchor) {
