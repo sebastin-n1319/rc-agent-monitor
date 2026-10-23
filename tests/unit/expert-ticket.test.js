@@ -17,3 +17,12 @@ describe('expert ticket number detection', () => {
     expect(detect('how to handle 2026 billing')).toBe(null);
   });
 });
+
+describe('expert ticket screenshots', () => {
+  const { _imagesIn } = require('../../lib/expert-ticket.js');
+  it('picks pasted and attached screenshots, skips logos, icons and other files', () => {
+    const f = { content: '<img width="280" height="67" src="/api/v1/threads/1/inlineImages/abc?et=1&amp;f=1.png"/><img src="https://ci3.googleusercontent.com/logo.png" width="100"/><img src="/api/v1/threads/1/inlineImages/x" width="16" height="16"/>',
+      attachments: [{ name: 'shot.JPG', size: 2000, href: 'https://desk.zoho.com/api/v1/tickets/9/threads/1/attachments/5/content' }, { name: 'a.pdf', size: 10, href: 'x' }] };
+    expect(_imagesIn(f)).toEqual(['/api/v1/threads/1/inlineImages/abc?et=1&amp;f=1.png', 'https://desk.zoho.com/api/v1/tickets/9/threads/1/attachments/5/content']);
+  });
+});
