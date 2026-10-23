@@ -245,7 +245,7 @@
         if (cols.length) box.appendChild(h('div', { class: 'ax-tk-cols' }, cols.map(function (c) { return h('div', { class: 'ax-tk-col' }, [h('h5', null, [icon(c[2], 'sm'), c[0]]), h(c[3], null, c[1].map(function (x) { return h('li', { text: x }); }))]); })));
       }
       if (T.timeline && T.timeline.length) {
-        var tl = h('details', { class: 'ax-tk-tl' }, [h('summary', { text: 'Timeline (' + (T.msgCount || 0) + ' message' + (T.msgCount === 1 ? '' : 's') + ', ' + (T.commentCount || 0) + ' internal note' + (T.commentCount === 1 ? '' : 's') + (T.images ? ', ' + T.images + ' screenshot' + (T.images === 1 ? '' : 's') + ' read' : '') + ')' })]);
+        var tl = h('details', { class: 'ax-tk-tl' }, [h('summary', { text: 'Timeline (' + (T.msgCount || 0) + ' message' + (T.msgCount === 1 ? '' : 's') + ', ' + (T.commentCount || 0) + ' internal note' + (T.commentCount === 1 ? '' : 's') + (T.images ? ', ' + T.images + ' screenshot' + (T.images === 1 ? '' : 's') + ' read' : '') + (!T.images && T.imageInfo && T.imageInfo.found ? ', screenshots could not be read' : '') + ')' })]);
         tl.appendChild(h('ol', null, T.timeline.map(function (e) { return h('li', { class: 'k-' + e.kind }, [h('time', { text: when(e.at) }), h('b', { text: e.kind === 'event' ? 'Update' : e.kind === 'comment' ? 'Note · ' + e.who : e.who + (e.channel ? ' · ' + String(e.channel).toLowerCase() : '') }), h('span', { text: e.text })]); })));
         box.appendChild(tl);
       }
