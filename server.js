@@ -8454,7 +8454,9 @@ app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
       data[email] = {
         avail: { state: d ? onOff(d.presence) : null, label: d && d.presence ? (d.presence === 'ONLINE' ? 'Online in Zoho Desk' : 'Offline in Zoho Desk') : (desk.error ? 'Zoho Desk: ' + desk.error : 'Not found in Zoho Desk') },
         rc: { state: rcOn == null ? null : (rcOn ? 'on' : 'off'), label: rcLabel || 'No RingCentral status' },
-        desk: { state: d ? onOff(d.mail || d.presence) : null, label: d && (d.mail || d.presence) ? ((d.mail || d.presence) === 'ONLINE' ? 'Taking tickets' : 'Not taking tickets') : (desk.error ? 'Zoho Desk: ' + desk.error : 'Not found in Zoho Desk') },
+        // Zoho keeps the ticket channel ONLINE while the agent is offline overall, so tickets only count when both are online.
+        desk: (() => { if (!d) return { state: null, label: desk.error ? 'Zoho Desk: ' + desk.error : 'Not found in Zoho Desk' }; const on = d.presence === 'ONLINE' && (d.mail || 'ONLINE') === 'ONLINE';
+          return { state: on ? 'on' : 'off', label: on ? 'Taking tickets' : d.presence !== 'ONLINE' ? 'Offline in Zoho Desk, not taking tickets' : 'Ticket channel offline' }; })(),
         chat,
       };
     }
