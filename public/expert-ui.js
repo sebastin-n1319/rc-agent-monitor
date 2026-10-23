@@ -171,8 +171,9 @@
     }
     // progress
     var PHASES = ['Understanding the question', 'Searching the Help Center and guides', 'Checking how the team solved it before', 'Writing the answer', 'Double-checking with a second AI'];
-    function progress() {
-      var list = h('ol', { class: 'ax-steps' }, PHASES.map(function (p, i) { return h('li', { class: i === 0 ? 'on' : '' }, [h('i'), p]); }));
+    function progress(q) {
+      var ph = /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i.test(String(q || '').trim()) ? ['Reading the ticket, its history and the client\'s earlier tickets'].concat(PHASES) : PHASES;
+      var list = h('ol', { class: 'ax-steps' }, ph.map(function (p, i) { return h('li', { class: i === 0 ? 'on' : '' }, [h('i'), p]); }));
       var box = h('div', { class: 'ax-card ax-wait' }, [h('div', { class: 'ax-wait-hd' }, [h('span', { class: 'ax-orb' }), h('b', { text: 'Working on it' })]), list]);
       var k = 0, tm = setInterval(function () { var li = list.children; if (k < li.length - 1) { li[k].className = 'done'; k++; li[k].className = 'on'; } }, 2600);
       return { el: box, stop: function () { clearInterval(tm); } };
@@ -185,7 +186,7 @@
       if (store.get('fold', null) === null && !S.folded) setFold(true);
       var rec = store.get('recent', []).filter(function (x) { return x !== q; }); rec.unshift(q); store.set('recent', rec.slice(0, 12)); paintRecent();
       thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: (MODES.find(function (m) { return m[0] === S.mode; }) || MODES[0])[1] + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
-      var pg = progress(); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      var pg = progress(q); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode;
@@ -208,6 +209,7 @@
       var card = h('article', { class: 'ax-card ax-ans' + (j.found ? '' : ' nf') });
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       if (j.live) card.appendChild(liveBox(j.live));
+      if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
       if (a.steps && a.steps.length) card.appendChild(section('list', 'Steps', [h('ol', { class: 'ax-ol' }, a.steps.map(function (s) { return h('li', null, [linkTickets(String(s).replace(/^\d+[.)]\s*/, ''))]); })), h('div', { class: 'ax-row' }, [copyBtn(a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'), 'Copy steps')])]));
@@ -226,6 +228,31 @@
       card.appendChild(feedbackRow(j, q));
       return card;
     }
+    // Batch 189: the ticket review: where the ticket stands, what the client waits for, what to do better, the timeline and earlier tickets.
+    function ticketBox(T, R) {
+      if (T.error) return h('div', { class: 'ax-tk ax-tk-err', role: 'note' }, [icon('warn'), h('span', { text: 'Ticket #' + T.number + ' could not be read: ' + T.error })]);
+      var M = T.meta || {}, when = function (iso) { if (!iso) return ''; var d = new Date(iso); return d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); };
+      var tk = function (n, txt) { return h('a', { href: '/guides/ticket/' + n, target: '_blank', rel: 'noopener', text: txt || '#' + n }); };
+      var facts = [M.status, M.channel, M.owner ? 'Owner ' + M.owner : 'Unassigned', M.team, M.account, M.module, M.reopened ? 'Reopened ' + M.reopened + 'x' : '', 'Opened ' + when(M.created)].filter(Boolean);
+      var box = h('section', { class: 'ax-tk' }, [h('div', { class: 'ax-tk-hd' }, [icon('ticket'), h('b', null, ['Ticket ', tk(M.number), ': ', M.subject || '']), h('span', { class: 'ax-sp' }),
+        R && R.sentiment ? h('span', { class: 'ax-badge s-' + String(R.sentiment).toLowerCase().split(/\W/)[0], text: 'Client: ' + R.sentiment }) : null]),
+        h('p', { class: 'ax-tk-facts', text: facts.join(' · ') })]);
+      if (R) {
+        if (R.summary) box.appendChild(h('p', { class: 'ax-tk-sum', text: R.summary }));
+        var kv = [['Waiting for', R.waiting], ['Stage', R.stage], ['Risk', R.risk]].filter(function (x) { return x[1]; });
+        if (kv.length) box.appendChild(h('dl', { class: 'ax-tk-kv' }, kv.map(function (x) { return h('div', null, [h('dt', { text: x[0] }), h('dd', { text: x[1] })]); })));
+        var cols = [['Next best steps', R.next, 'list', 'ol'], ['Do better', R.improve, 'warn', 'ul'], ['Went well', R.went_well, 'check', 'ul']].filter(function (x) { return x[1] && x[1].length; });
+        if (cols.length) box.appendChild(h('div', { class: 'ax-tk-cols' }, cols.map(function (c) { return h('div', { class: 'ax-tk-col' }, [h('h5', null, [icon(c[2], 'sm'), c[0]]), h(c[3], null, c[1].map(function (x) { return h('li', { text: x }); }))]); })));
+      }
+      if (T.timeline && T.timeline.length) {
+        var tl = h('details', { class: 'ax-tk-tl' }, [h('summary', { text: 'Timeline (' + (T.msgCount || 0) + ' message' + (T.msgCount === 1 ? '' : 's') + ', ' + (T.commentCount || 0) + ' internal note' + (T.commentCount === 1 ? '' : 's') + ')' })]);
+        tl.appendChild(h('ol', null, T.timeline.map(function (e) { return h('li', { class: 'k-' + e.kind }, [h('time', { text: when(e.at) }), h('b', { text: e.kind === 'event' ? 'Update' : e.kind === 'comment' ? 'Note · ' + e.who : e.who + (e.channel ? ' · ' + String(e.channel).toLowerCase() : '') }), h('span', { text: e.text })]); })));
+        box.appendChild(tl);
+      }
+      if (T.prior && T.prior.length) box.appendChild(h('details', { class: 'ax-tk-tl' }, [h('summary', { text: 'Earlier tickets from this client (' + T.prior.length + ')' }),
+        h('ul', { class: 'ax-tk-prior' }, T.prior.map(function (p) { return h('li', null, [tk(p.number), h('span', { text: ' ' + p.subject }), h('em', { text: ' ' + [p.status, when(p.created)].filter(Boolean).join(' · ') })]); }))]));
+      return box;
+    }
     function liveBox(L) {
       var ago = function (iso) { var m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; };
       return h('div', { class: 'ax-live', role: 'alert' }, [
@@ -235,7 +262,9 @@
         h('div', { class: 'ax-live-tk' }, L.tickets.map(function (t) { return h('a', { href: '/guides/ticket/' + t.number, target: '_blank', rel: 'noopener', title: t.subject }, [h('b', { text: '#' + t.number }), h('span', { text: t.subject }), h('em', { text: ago(t.at) })]); }))]);
     }
     function plain(a, j) {
-      var out = [a.answer];
+      var out = [];
+      if (a.ticket) { out.push('Ticket #' + ((j.ticket && j.ticket.meta && j.ticket.meta.number) || '') + ': ' + a.ticket.summary); if (a.ticket.waiting) out.push('Waiting for: ' + a.ticket.waiting); if (a.ticket.next && a.ticket.next.length) out.push('Next: ' + a.ticket.next.join('; ')); if (a.ticket.improve && a.ticket.improve.length) out.push('Do better: ' + a.ticket.improve.join('; ')); out.push(''); }
+      out.push(a.answer);
       if (a.checks && a.checks.length) out.push('', 'Check first:', a.checks.map(function (c) { return '- ' + c; }).join('\n'));
       if (a.steps && a.steps.length) out.push('', 'Steps:', a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'));
       if (a.say) out.push('', 'To the client:', a.say);

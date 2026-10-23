@@ -691,6 +691,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       }, 5 * 60 * 1000); }
     // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.
     { const expert = require('./lib/expert'); expert.setDB(db);
+      { const et = require('./lib/expert-ticket'); et.setDesk(require('./lib/desk-service')); expert.setDeps({ ticket: et }); }
       expert.setDeps({ ai: require('./lib/ai'), guides, productUpdates, query: (sql, n) => require('./lib/aditkb-service').query(sql, n), kb: (t, o) => escalationWatch.kb(t, o) });
       await expert.initSchema();
       // Batch 185: the Help Center is read live from help.adit.com, 30 seconds after start and then every 30 minutes.
