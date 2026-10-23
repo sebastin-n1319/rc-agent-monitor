@@ -237,6 +237,10 @@
       var box = h('section', { class: 'ax-tk' }, [h('div', { class: 'ax-tk-hd' }, [icon('ticket'), h('b', null, ['Ticket ', tk(M.number), ': ', M.subject || '']), h('span', { class: 'ax-sp' }),
         R && R.sentiment ? h('span', { class: 'ax-badge s-' + String(R.sentiment).toLowerCase().split(/\W/)[0], text: 'Client: ' + R.sentiment }) : null]),
         h('p', { class: 'ax-tk-facts', text: facts.join(' · ') })]);
+      var C = T.crm;
+      if (C) { var cf = [C.stage ? 'Stage ' + C.stage : '', C.csm ? 'CSM ' + C.csm : '', C.ob ? 'OB ' + C.ob : '', C.escalation && !/^none$/i.test(C.escalation) ? 'Escalation: ' + C.escalation : '', C.risk ? 'Risk ' + C.risk : '', C.contractEnd ? 'Contract ends ' + C.contractEnd : '', C.health ? 'Health ' + C.health : '', C.mood ? 'Mood ' + C.mood : '', C.fcr != null ? 'FCR ' + C.fcr + '%' : '', C.csat != null ? 'CSAT ' + C.csat + '%' : ''].filter(Boolean);
+        if (cf.length) box.appendChild(h('p', { class: 'ax-tk-facts ax-tk-crm', text: 'CRM: ' + cf.join(' · ') })); }
+      if (T.related && T.related.length) box.appendChild(h('p', { class: 'ax-tk-facts' }, ['Also read: '].concat(T.related.map(function (r, i) { return h('span', null, [i ? ', ' : '', tk(r.number), ' ' + (r.subject || '')]); }))));
       if (R) {
         if (R.summary) box.appendChild(h('p', { class: 'ax-tk-sum', text: R.summary }));
         var kv = [['Waiting for', R.waiting], ['Stage', R.stage], ['Risk', R.risk]].filter(function (x) { return x[1]; });

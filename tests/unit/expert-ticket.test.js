@@ -26,3 +26,21 @@ describe('expert ticket screenshots', () => {
     expect(_imagesIn(f)).toEqual(['/api/v1/threads/1/inlineImages/abc?et=1&amp;f=1.png', 'https://desk.zoho.com/api/v1/tickets/9/threads/1/attachments/5/content']);
   });
 });
+
+describe('expert keeps the ticket for the conversation', () => {
+  const T = require('../../lib/expert-ticket.js');
+  const { _pickTickets: pick } = require('../../lib/expert.js');
+  const h = [{ role: 'user', content: '420465 how to handle this' }, { role: 'assistant', content: 'answer' }];
+  it('reads a ticket the agent points to as related context, not instead', () => {
+    expect(pick('this client has a relevant ticket 417650 why didnt you check this', h, T)).toEqual({ tnum: '420465', relNums: ['417650'] });
+  });
+  it('keeps the ticket on follow-ups without a number', () => {
+    expect(pick('make it shorter', h, T)).toEqual({ tnum: '420465', relNums: [] });
+  });
+  it('a new ticket to review replaces the old one', () => {
+    expect(pick('420700 how to handle this', h, T)).toEqual({ tnum: '420700', relNums: [] });
+  });
+  it('first question with two tickets: first is reviewed, second is context', () => {
+    expect(pick('#420465 and earlier #417650', [], T)).toEqual({ tnum: '420465', relNums: ['417650'] });
+  });
+});
