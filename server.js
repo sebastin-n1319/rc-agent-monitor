@@ -8594,7 +8594,7 @@ app.post('/api/appraisals', requireAdmin, rateLimit(10, 60000), async (req, res)
 });
 app.get('/api/appraisals/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, appraisal: await apMod().get(apId(req)) }); } catch (e) { bonusErr(res, e); } });
 app.post('/api/appraisals/:id/save', requireAdmin, rateLimit(60, 60000), async (req, res) => {
-  try { const b = req.body || {}; res.json({ success: true, appraisal: await apMod().save({ id: apId(req), name: b.name, title: b.title, edits: b.edits, feedback: b.feedback, notes: b.notes, status: b.status, by: req.session.email }) }); } catch (e) { bonusErr(res, e); }
+  try { const b = req.body || {}; res.json({ success: true, appraisal: await apMod().save({ id: apId(req), name: b.name, title: b.title, edits: b.edits, feedback: b.feedback, notes: b.notes, status: b.status, show: b.show, by: req.session.email }) }); } catch (e) { bonusErr(res, e); }
 });
 app.post('/api/appraisals/:id/refresh', requireAdmin, rateLimit(10, 60000), async (req, res) => {
   try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, appraisal: await apMod().refresh({ id: apId(req), by: req.session.email, agentNames }) }); } catch (e) { bonusErr(res, e); }

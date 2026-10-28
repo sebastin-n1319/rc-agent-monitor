@@ -1,7 +1,7 @@
 /* Batch 193: agent appraisals (admin, under Bonus, next to the Bonus Calculator). Data: /api/appraisals. */
 (function () {
   'use strict';
-  var S = { view: 'list', items: null, agents: null, a: null, edits: {}, fb: {}, notes: '', name: '', title: '', status: 'draft', dirty: false, busy: '', err: '' };
+  var S = { view: 'list', items: null, agents: null, a: null, edits: {}, fb: {}, show: [], notes: '', name: '', title: '', status: 'draft', dirty: false, busy: '', err: '' };
   var KPIS = [
     { key: 'calls', kra: 'Productivity', label: 'No. Of Calls', perDay: true, steps: [7, 5, 4, 3] },
     { key: 'chats', kra: 'Productivity', label: 'No. Of Chats', perDay: true, steps: [4, 3.5, 3, 2.5] },
@@ -53,9 +53,11 @@
   }
   function avg(xs) { var v = xs.filter(function (x) { return x != null && x > 0; }); return v.length ? v.reduce(function (t, x) { return t + x; }, 0) / v.length : null; }
   function val(m, f) { var e = S.edits[m]; if (e && Object.prototype.hasOwnProperty.call(e, f)) return e[f] === '' || e[f] == null ? null : Number(e[f]); var a = S.a.auto[m] || {}; return a[f] == null ? null : a[f]; }
+  // the other wing's channel is hidden and not rated unless switched on for this appraisal (same as lib/appraisal.js)
+  function hidden() { var team = S.a && S.a.agent && S.a.agent.team; if (team === 'chat') return S.show.indexOf('calls') >= 0 ? [] : ['calls']; return S.show.indexOf('chats') >= 0 ? [] : ['chats']; }
   function scores() {
-    var keys = S.a.months.map(function (m) { return m.key; });
-    var kpis = KPIS.map(function (k) { var monthly = keys.map(function (m) { return rate(k, val(m, k.key), val(m, 'days')); }); return { key: k.key, kra: k.kra, monthly: monthly, raw: avg(monthly) }; });
+    var keys = S.a.months.map(function (m) { return m.key; }), hid = hidden();
+    var kpis = KPIS.filter(function (k) { return hid.indexOf(k.key) < 0; }).map(function (k) { var monthly = keys.map(function (m) { return rate(k, val(m, k.key), val(m, 'days')); }); return { key: k.key, kra: k.kra, monthly: monthly, raw: avg(monthly) }; });
     var kras = KRAS.map(function (n) { return { name: n, raw: avg(kpis.filter(function (k) { return k.kra === n; }).map(function (k) { return k.raw; })) }; });
     return { kpis: kpis, kras: kras, overall: avg(kras.map(function (k) { return k.raw; })) };
   }
@@ -65,11 +67,11 @@
     Promise.all([api('/api/appraisals'), S.agents ? Promise.resolve({ agents: S.agents }) : api('/api/bonus/agents')]).then(function (r) { S.items = r[0].items; S.agents = r[1].agents; })
       .catch(function (e) { S.err = e.message; }).then(function () { S.busy = ''; draw(); });
   }
-  function openOne(a) { S.a = a; S.edits = JSON.parse(JSON.stringify(a.edits || {})); S.fb = Object.assign({}, a.feedback || {}); S.notes = a.notes || ''; S.name = a.name || ''; S.title = a.title || ''; S.status = a.status || 'draft'; S.dirty = false; S.view = 'edit'; draw(); window.scrollTo(0, 0); }
+  function openOne(a) { S.a = a; S.edits = JSON.parse(JSON.stringify(a.edits || {})); S.fb = Object.assign({}, a.feedback || {}); S.notes = a.notes || ''; S.name = a.name || ''; S.title = a.title || ''; S.status = a.status || 'draft'; S.show = (a.show || []).slice(); S.dirty = false; S.view = 'edit'; draw(); window.scrollTo(0, 0); }
   function open(id) { S.busy = 'open'; draw(); api('/api/appraisals/' + id).then(function (j) { S.busy = ''; openOne(j.appraisal); }).catch(function (e) { S.busy = ''; toast(e.message, 'error'); draw(); }); }
   function save(then) {
     S.busy = 'save'; draw();
-    return api('/api/appraisals/' + S.a.id + '/save', { name: S.name, title: S.title, edits: S.edits, feedback: S.fb, notes: S.notes, status: S.status })
+    return api('/api/appraisals/' + S.a.id + '/save', { name: S.name, title: S.title, edits: S.edits, feedback: S.fb, notes: S.notes, status: S.status, show: S.show })
       .then(function (j) { S.busy = ''; openOne(j.appraisal); if (!then) toast('Appraisal saved', 'success'); return j; })
       .catch(function (e) { S.busy = ''; toast(e.message, 'error'); draw(); throw e; });
   }
@@ -90,7 +92,7 @@
     var from = h('input', { class: 'ap-in', type: 'month', id: 'ap-from', value: monthsAgo(6), 'aria-label': 'From month' });
     var to = h('input', { class: 'ap-in', type: 'month', id: 'ap-to', value: monthsAgo(1), 'aria-label': 'To month' });
     var title = h('input', { class: 'ap-in wide', type: 'text', id: 'ap-title', placeholder: 'Title (optional, for example Sabrina Appraisal 2026)', 'aria-label': 'Title' });
-    var btn = h('button', { type: 'button', class: 'ap-btn primary', disabled: S.busy === 'create' ? true : null, text: S.busy === 'create' ? 'Reading the numbers...' : 'Create appraisal',
+    var btn = h('button', { type: 'button', class: 'ap-btn primary', disabled: S.busy === 'create' ? true : null, text: S.busy === 'create' ? 'Reading the numbers and writing the feedback...' : 'Create appraisal',
       onclick: function () {
         if (!sel.value) { toast('Choose an agent', 'error'); sel.focus(); return; }
         if (!from.value || !to.value || from.value > to.value) { toast('Pick a start month before the end month', 'error'); return; }
@@ -146,7 +148,7 @@
 
     // scores table
     var tb = h('tbody');
-    var lines = KPIS.concat(INFO), seen = {};
+    var hid = hidden(), lines = KPIS.filter(function (k) { return hid.indexOf(k.key) < 0; }).concat(INFO), seen = {};
     lines.forEach(function (k) {
       var first = !seen[k.kra]; seen[k.kra] = true;
       var span = lines.filter(function (x) { return x.kra === k.kra; }).length;
@@ -168,6 +170,12 @@
       h('p', { class: 'ap-hint', text: 'Small chips are the month ratings (1 to 5). Clear a value to leave that month unrated, for example a month on another channel. Edited cells are outlined.' }),
       h('div', { class: 'ap-scroll' }, [h('table', { class: 'ap-table ap-scores' }, [
         h('thead', null, [h('tr', null, [h('th', { scope: 'col', text: 'KRA' }), h('th', { scope: 'col', text: 'KPI' })].concat(a.months.map(function (m) { return h('th', { scope: 'col', text: m.label + (m.partial ? ' (to date)' : '') }); })).concat([h('th', { scope: 'col', text: 'Rating' }), h('th', { scope: 'col', text: 'KRA rating' })]))]), tb])]),
+      (function () {
+        var other = a.agent && a.agent.team === 'chat' ? ['calls', 'Also rate calls (for months the agent took calls)'] : ['chats', 'Also rate chats (for months the agent was on chat)'];
+        var cb = h('input', { type: 'checkbox', checked: S.show.indexOf(other[0]) >= 0 ? true : null, onchange: function (e) {
+          S.show = S.show.filter(function (x) { return x !== other[0]; }); if (e.target.checked) S.show.push(other[0]); mark(); draw(); } });
+        return h('label', { class: 'ap-toggle' }, [cb, h('span', { text: other[1] })]);
+      })(),
       h('details', { class: 'ap-rules' }, [h('summary', { text: 'Rating rules' }), h('p', { text: 'Calls and tickets per working day: more than 7 is 5, more than 5 is 4, more than 4 is 3, more than 3 is 2, otherwise 1. Chats per working day: more than 4 is 5, 3.5 is 4, 3 is 3, 2.5 is 2. CSAT and QA: above 90% is 5, 85% is 4, 80% is 3, 75% is 2. FCR: above 75% is 5, 70% is 4, 65% is 3, 60% is 2. A KPI rating is the average of its rated months, a KRA rating the average of its KPIs, and the overall rating the average of the three KRAs. Working days and unplanned shrinkage are shown, not rated.' })])]));
 
     // feedback
@@ -185,6 +193,7 @@
     FB.forEach(function (g) {
       var grp = h('div', { class: 'ap-fbg' }, [h('h4', { text: g[0] })]);
       g[1].forEach(function (f) {
+        if ((f[0] === 'chats' || f[0] === 'calls') && hidden().indexOf(f[0]) >= 0) return;
         var ta = h('textarea', { class: 'ap-ta', rows: String(f[2]), 'aria-label': f[1], oninput: function (e) { S.fb[f[0]] = e.target.value; mark(); } }); ta.value = S.fb[f[0]] || '';
         grp.appendChild(h('label', null, [h('span', { text: f[1] }), ta]));
       });

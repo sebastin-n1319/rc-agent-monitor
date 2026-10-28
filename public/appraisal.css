@@ -71,3 +71,5 @@ html.dark-mode #ap-root{--ap-surf:#111F2B;--ap-soft:#152634;--ap-line:#22384A;--
 .ap-fbg label+label{margin-top:10px}
 @media (max-width:640px){.ap-card{padding:14px 12px}.ap-overall{width:100%}.ap-table td.acts{text-align:left}}
 @media (prefers-reduced-motion:reduce){#ap-root *{transition:none!important}}
+.ap-toggle{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:12.5px;color:var(--ap-t2);cursor:pointer}
+.ap-toggle input{width:16px;height:16px;accent-color:var(--ap-acc)}
