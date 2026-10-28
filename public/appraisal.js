@@ -67,7 +67,13 @@
     Promise.all([api('/api/appraisals'), S.agents ? Promise.resolve({ agents: S.agents }) : api('/api/bonus/agents')]).then(function (r) { S.items = r[0].items; S.agents = r[1].agents; })
       .catch(function (e) { S.err = e.message; }).then(function () { S.busy = ''; draw(); });
   }
-  function openOne(a) { S.a = a; S.edits = JSON.parse(JSON.stringify(a.edits || {})); S.fb = Object.assign({}, a.feedback || {}); S.notes = a.notes || ''; S.name = a.name || ''; S.title = a.title || ''; S.status = a.status || 'draft'; S.show = (a.show || []).slice(); S.dirty = false; S.view = 'edit'; draw(); window.scrollTo(0, 0); }
+  function autoRefresh(a) {
+    if (!a.stale || S.autoFor === a.id) return;
+    S.autoFor = a.id; S.busy = 'auto'; draw();
+    api('/api/appraisals/' + a.id + '/refresh', {}).then(function (j) { S.busy = ''; if (S.a && S.a.id === a.id && !S.dirty) openOne(j.appraisal); else draw(); })
+      .catch(function (e) { S.busy = ''; toast('Could not update the numbers: ' + e.message, 'error'); draw(); });
+  }
+  function openOne(a) { S.a = a; S.edits = JSON.parse(JSON.stringify(a.edits || {})); S.fb = Object.assign({}, a.feedback || {}); S.notes = a.notes || ''; S.name = a.name || ''; S.title = a.title || ''; S.status = a.status || 'draft'; S.show = (a.show || []).slice(); S.dirty = false; S.view = 'edit'; draw(); window.scrollTo(0, 0); autoRefresh(a); }
   function open(id) { S.busy = 'open'; draw(); api('/api/appraisals/' + id).then(function (j) { S.busy = ''; openOne(j.appraisal); }).catch(function (e) { S.busy = ''; toast(e.message, 'error'); draw(); }); }
   function save(then) {
     S.busy = 'save'; draw();
@@ -143,7 +149,8 @@
       h('button', { type: 'button', class: 'ap-btn', disabled: S.busy ? true : null, text: 'Download for HR (.xlsx)', onclick: download }),
       h('button', { type: 'button', class: 'ap-btn', disabled: S.busy ? true : null, text: S.busy === 'refresh' ? 'Reading...' : 'Refresh numbers', title: 'Read the tool\'s numbers again; values you edited stay as edited',
         onclick: function () { if (S.dirty && !window.confirm('Save your changes first? Unsaved edits will be lost.')) return; S.busy = 'refresh'; draw(); api('/api/appraisals/' + a.id + '/refresh', {}).then(function (j) { S.busy = ''; openOne(j.appraisal); toast('Numbers read again', 'success'); }).catch(function (e) { S.busy = ''; toast(e.message, 'error'); draw(); }); } }),
-      h('span', { class: 'ap-dirty', id: 'ap-dirty', hidden: S.dirty ? null : true, text: 'Unsaved changes' })]));
+      h('span', { class: 'ap-dirty', id: 'ap-dirty', hidden: S.dirty ? null : true, text: 'Unsaved changes' }),
+      h('span', { class: 'muted', 'aria-live': 'polite', text: S.busy === 'auto' ? 'Updating the numbers from the sources...' : (a.status === 'final' ? 'Final: numbers kept as they were when finalised' : (a.readAt ? 'Numbers read ' + new Date(a.readAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '')) })]));
     (a.warnings || []).forEach(function (w) { R.appendChild(h('div', { class: 'ap-note', text: w })); });
 
     // scores table

@@ -704,6 +704,15 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
         roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service'), analytics: require('./lib/analytics-service'), salesiq: require('./lib/salesiq-service') }); }
+    // Batch 195: the Roster follows the T1 CS Team Roster Google Sheet: the current and previous month every hour,
+    // the last 12 months every night (02:30 Central), and once 2 minutes after start.
+    { const rs = require('./lib/roster-sheet'); rs.setDeps({ roster: require('./lib/roster') });
+      const log = (r) => { if (!r.ok) console.warn('roster sheet sync:', r.error); else if (r.written || r.agentsAdded.length) console.log('roster sheet sync:', r.written, 'day(s) updated', r.agentsAdded.length ? 'added ' + r.agentsAdded.join(', ') : ''); };
+      setTimeout(() => rs.sync({ months: 2 }).then(log).catch(() => {}), 2 * 60 * 1000);
+      setInterval(() => rs.sync({ months: 2 }).then(log).catch(() => {}), 60 * 60 * 1000);
+      let lastNight = '';
+      setInterval(() => { const n = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })), day = n.toDateString();
+        if (n.getHours() === 2 && n.getMinutes() >= 30 && lastNight !== day) { lastNight = day; rs.sync({ months: 12 }).then(log).catch(() => {}); } }, 5 * 60 * 1000); }
     // Batch 193: agent appraisals (admin, next to the Bonus Calculator), filled from the bonus numbers.
     { const ap = require('./lib/appraisal'); ap.setDB(db); await ap.initSchema(); ap.setDeps({ bonus: require('./lib/bonus'), ai: require('./lib/ai'), crmQa: require('./lib/crm-qa') }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
@@ -7293,6 +7302,14 @@ app.post('/api/roster/day', requireAdmin, async (req, res) => {
   } catch(e) { res.status(400).json({ success:false, error: e.message }); }
 });
 
+// Batch 195: roster sheet sync status and a manual sync (admin). ?months=12 reads the last 12 months.
+app.get('/api/roster/sheet-sync', requireAdmin, (req, res) => { res.json({ success: true, ...require('./lib/roster-sheet').status() }); });
+app.post('/api/roster/sheet-sync', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try { const n = Math.min(24, Math.max(1, Number((req.body || {}).months || req.query.months || 2)));
+    const r = await require('./lib/roster-sheet').sync({ months: n, by: req.session.email });
+    insertAuditLog(req.session.email, 'roster_sheet_sync', String(n), r.ok ? String(r.written) : r.error).catch(() => {});
+    res.status(r.ok ? 200 : 502).json({ success: r.ok, ...r }); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
 app.post('/api/roster/bulk', requireAdmin, async (req, res) => {
   try {
     const actor = { email: req.session?.email, name: req.session?.user };
