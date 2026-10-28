@@ -90,6 +90,8 @@
 <script src="/topic-support.js?v=1.4.1" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
 <script src="/bonus-calc.js?v=1.8.0" defer></script>
+<link rel="stylesheet" href="/appraisal.css?v=1.0.0">
+<script src="/appraisal.js?v=1.0.0" defer></script>
 <script src="/app-header.js?v=1.3.0" defer></script>
 <script src="/alert-hub.js?v=1.4.1" defer></script>
 <!-- Session 9: a11y focus-trap for modals -->
@@ -1482,6 +1484,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   </div>
   <!-- Batch 166: bonus calculator (admin) -->
   <div class="page" id="tab-bonus-calc"><div id="bnc-root"></div></div>
+  <div class="page" id="tab-appraisals"><div id="ap-root"></div></div>
 
   <!-- CALL LOGS -->
   <!-- ══════════════════════════════════════════════════════════════════════
@@ -10006,6 +10009,7 @@ const ADMIN_TAB_GROUPS = [
   { primary: 'bonus', members: [
       { tab: 'bonus',      label: 'Bonus Guide' },
       { tab: 'bonus-calc', label: 'Bonus Calculator' },
+      { tab: 'appraisals', label: 'Appraisals' },
   ]},
   { primary: 'calllogs', members: [
       { tab: 'calllogs',    label: 'Call Logs' },
@@ -10082,6 +10086,7 @@ function switchTab(tab,el){
   if(tab==='ticket-lifecycle') { if(typeof openDeskLifecycleAdmin==='function') openDeskLifecycleAdmin(); }
   if(tab==='topic-support') { if(typeof openTopicSupport==='function') openTopicSupport(); }
   if(tab==='bonus-calc') { if(typeof openBonusCalc==='function') openBonusCalc(); }
+  if(tab==='appraisals') { if(typeof openAppraisals==='function') openAppraisals(); }
   if(tab==='audits'){ if(window.TA) window.TA.open('admin'); }
   if(tab==='ai-agent') laLoadStats();
   if(tab==='digest' && typeof window.openDigest==='function') window.openDigest();

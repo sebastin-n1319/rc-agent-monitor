@@ -704,6 +704,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     { const bonus = require('./lib/bonus'); bonus.setDB(db); await bonus.initSchema();
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
         roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service'), analytics: require('./lib/analytics-service'), salesiq: require('./lib/salesiq-service') }); }
+    // Batch 193: agent appraisals (admin, next to the Bonus Calculator), filled from the bonus numbers.
+    { const ap = require('./lib/appraisal'); ap.setDB(db); await ap.initSchema(); ap.setDeps({ bonus: require('./lib/bonus'), ai: require('./lib/ai') }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -8579,6 +8581,35 @@ function bonusErr(res, e) { res.status(e.status || 500).json({ success: false, e
 app.get('/api/bonus', requireAdmin, async (req, res) => {
   try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/bonus').report({ period: req.query.period, agentNames })) }); }
   catch (e) { bonusErr(res, e); }
+});
+// Batch 193: appraisals. Create one for an agent and a month range, edit the numbers and the feedback, download for HR.
+const apMod = () => require('./lib/appraisal');
+const apId = (req) => { const n = Number(req.params.id); if (!Number.isInteger(n) || n <= 0) throw Object.assign(new Error('Bad appraisal id'), { status: 400 }); return n; };
+app.get('/api/appraisals', requireAdmin, async (req, res) => { try { res.json({ success: true, items: await apMod().list() }); } catch (e) { bonusErr(res, e); } });
+app.post('/api/appraisals', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const b = req.body || {}; const { agentNames } = await deskLifecycleAgentRoster();
+    const a = await apMod().create({ email: String(b.email || ''), from: String(b.from || ''), to: String(b.to || ''), title: b.title, by: req.session.email, agentNames });
+    insertAuditLog(req.session.email, 'appraisal_created', String(a.id), `${a.email} ${a.from}..${a.to}`).catch(() => {});
+    res.json({ success: true, appraisal: a }); } catch (e) { bonusErr(res, e); }
+});
+app.get('/api/appraisals/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, appraisal: await apMod().get(apId(req)) }); } catch (e) { bonusErr(res, e); } });
+app.post('/api/appraisals/:id/save', requireAdmin, rateLimit(60, 60000), async (req, res) => {
+  try { const b = req.body || {}; res.json({ success: true, appraisal: await apMod().save({ id: apId(req), name: b.name, title: b.title, edits: b.edits, feedback: b.feedback, notes: b.notes, status: b.status, by: req.session.email }) }); } catch (e) { bonusErr(res, e); }
+});
+app.post('/api/appraisals/:id/refresh', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, appraisal: await apMod().refresh({ id: apId(req), by: req.session.email, agentNames }) }); } catch (e) { bonusErr(res, e); }
+});
+app.post('/api/appraisals/:id/ai', requireAdmin, rateLimit(6, 60000), async (req, res) => {
+  try { res.json({ success: true, feedback: await apMod().feedback({ id: apId(req) }) }); }
+  catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'The AI could not write the feedback right now. Please try again in a moment.' }); }
+});
+app.get('/api/appraisals/:id/xlsx', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try { const w = await apMod().workbook(apId(req));
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${w.filename.replace(/"/g, '')}"`); res.send(w.buf); } catch (e) { bonusErr(res, e); }
+});
+app.delete('/api/appraisals/:id', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+  try { const r = await apMod().remove({ id: apId(req) }); insertAuditLog(req.session.email, 'appraisal_deleted', String(r.id), '').catch(() => {}); res.json({ success: true, ...r }); } catch (e) { bonusErr(res, e); }
 });
 app.get('/api/bonus/agents', requireAdmin, async (req, res) => {
   try { res.json({ success: true, agents: await require('./lib/bonus').agentList() }); } catch (e) { bonusErr(res, e); }

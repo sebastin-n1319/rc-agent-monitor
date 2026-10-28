@@ -38,6 +38,7 @@
     'app-header.css', // Batch 159: new header and profile menu
     'topic-support.css', // Batch 165: AI and VoIP support dashboard
     'bonus-calc.css', // Batch 166: T1 CS bonus calculator
+    'appraisal.css', // Batch 193: agent appraisals
     'updates.css', // process and product updates
     'ticket-audits.css', // ticket audits
     'dark-fix.css', // Session 51
