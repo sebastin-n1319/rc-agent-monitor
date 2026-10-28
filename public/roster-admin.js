@@ -201,6 +201,7 @@
 #roster-admin-root .rx-st-holiday .rx-day-num  { background:#4CAF50!important; color:#fff!important; }
 #roster-admin-root .rx-st-pl      .rx-day-num  { background:#F4A23A!important; color:#fff!important; }
 #roster-admin-root .rx-st-fl      .rx-day-num  { background:#C77DDB!important; color:#fff!important; }
+#roster-admin-root .rx-st-ml      .rx-day-num  { background:#8B9BB4!important; color:#fff!important; }
 #roster-admin-root .rx-st-hd_pl   .rx-day-num  { background:#FBD09A!important; color:#7C4B00!important; }
 #roster-admin-root .rx-st-upl     .rx-day-num  { background:#CBD5E1!important; color:#475569!important; }
 #roster-admin-root .rx-st-hd_upl  .rx-day-num  { background:#E2E8F0!important; color:#64748B!important; }
@@ -291,21 +292,21 @@
     '': '-', present: 'P', off: 'OFF', pl: 'PL', hd_pl: '½PL',
     upl: 'UPL', hd_upl: '½UPL', sl: 'SL', hd_sl: '½SL',
     wfh: 'WFH', on_duty: 'OD', holiday: 'HOL',
-    ncns: 'NCNS', relieved: 'REL', absent: 'A', na: 'N/A', fl: 'FL',
+    ncns: 'NCNS', relieved: 'REL', absent: 'A', na: 'N/A', fl: 'FL', ml: 'ML',
   };
   const STATUS_LONG = {
     present: 'Present', off: 'Weekly Off', pl: 'Paid Leave',
     hd_pl: 'Half-Day PL', upl: 'Unpaid Leave', hd_upl: 'Half-Day UPL',
     sl: 'Sick Leave', hd_sl: 'Half-Day SL', wfh: 'Work From Home',
     on_duty: 'On Duty', holiday: 'Holiday', ncns: 'No Call No Show',
-    relieved: 'Relieved', absent: 'Absent', na: 'N/A', fl: 'Floater Leave',
+    relieved: 'Relieved', absent: 'Absent', na: 'N/A', fl: 'Floater Leave', ml: 'Maternity Leave',
   };
 
   // Palette groups for the right-click popover
   const PALETTE_GROUPS = [
     { label: 'Productive', statuses: ['present', 'wfh', 'on_duty'] },
     { label: 'Off / Holiday', statuses: ['off', 'holiday'] },
-    { label: 'Paid Leave', statuses: ['pl', 'hd_pl', 'fl'] },
+    { label: 'Paid Leave', statuses: ['pl', 'hd_pl', 'fl', 'ml'] },
     { label: 'Unpaid Leave', statuses: ['upl', 'hd_upl'] },
     { label: 'Sick Leave', statuses: ['sl', 'hd_sl'] },
     { label: 'Issues', statuses: ['ncns', 'absent'] },
@@ -321,6 +322,7 @@
     { s: 'pl',         label: 'PL',   name: 'Paid Leave',    group: 'leave'},
     { s: 'hd_pl',      label: '½PL',  name: 'Half-Day PL',   group: 'leave'},
     { s: 'fl',         label: 'FL',   name: 'Floater Leave', group: 'leave'},
+    { s: 'ml',         label: 'ML',   name: 'Maternity Leave', group: 'leave'},
     { s: 'sl',         label: 'SL',   name: 'Sick Leave',    group: 'leave'},
     { s: 'hd_sl',      label: '½SL',  name: 'Half-Day SL',   group: 'leave'},
     { s: 'upl',        label: 'UPL',  name: 'Unpaid Leave',  group: 'leave'},
@@ -449,7 +451,7 @@
         if (!s || s === 'na') continue;
         total++;
         if (s === 'present' || s === 'wfh' || s === 'on_duty') present++;
-        else if (s === 'pl' || s === 'hd_pl' || s === 'fl' || s === 'upl' || s === 'hd_upl' || s === 'sl' || s === 'hd_sl') leave++;
+        else if (s === 'pl' || s === 'hd_pl' || s === 'fl' || s === 'ml' || s === 'upl' || s === 'hd_upl' || s === 'sl' || s === 'hd_sl') leave++;
         else if (s === 'off' || s === 'holiday') off++;
         else if (s === 'ncns' || s === 'absent') ncns++;
       }
