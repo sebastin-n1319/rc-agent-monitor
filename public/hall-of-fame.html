@@ -406,7 +406,7 @@ select.bp-pill{appearance:none;padding:4px 24px 4px 10px;border-radius:50px;bord
   function statusTag(){
     var el = document.getElementById('status-tag'); if (!D || !D.ready) { el.innerHTML = ''; return; }
     if (D.status === 'confirmed') {
-      el.innerHTML = '<div class="status-tag status-conf"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><div><b>Validated and confirmed.</b> These ' + esc(D.label) + ' numbers have been checked and are final' + (D.statusAt ? ' (' + esc(String(D.statusAt).slice(0, 10)) + ')' : '') + '.</div></div>';
+      el.innerHTML = '<div class="status-tag status-conf"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg><div><b>Validated and confirmed.</b> These ' + esc(D.label) + ' numbers have been checked and are final' + (D.statusAt ? ' (' + esc(String(D.statusAt).slice(0, 10)) + ')' : '') + '. Please discuss your bonus values with your manager.</div></div>';
     } else {
       el.innerHTML = '<div class="status-tag status-prov"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><div><b>Work in progress: the calculations and numbers are yet to be confirmed.</b> They are still being validated and can change before they are final.</div></div>';
     }
