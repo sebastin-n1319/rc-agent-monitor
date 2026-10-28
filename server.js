@@ -8282,6 +8282,18 @@ app.get('/api/admin/desk-lifecycle/debug-metrics', requireAdmin, async (req, res
 // email. This is the automated replacement for the manual ticket-logging
 // form (POST /api/tickets above): once this is trusted, agents shouldn't
 // need to log tickets by hand at all.
+// Batch 194: the signed-in agent's own QA score per month for the last 12 months, from Zoho CRM Call Audits.
+app.get('/api/my-qa', requireAuth, rateLimit(20, 60000), async (req, res) => {
+  try {
+    const email = String(req.session.email || '').toLowerCase(); if (!email) return res.status(400).json({ success: false, error: 'No session email' });
+    const crmQa = require('./lib/crm-qa'), MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const p = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }).split('-').map(Number);
+    const months = [];
+    for (let i = 11; i >= 0; i--) { let y = p[0], m = p[1] - i; while (m < 1) { m += 12; y--; } months.push({ key: y + '-' + String(m).padStart(2, '0'), label: MON[m - 1] + "'" + String(y).slice(2), long: MON[m - 1] + ' ' + y, partial: i === 0 }); }
+    for (const m of months) { const q = (await crmQa.monthQA(m.key)).get(email); m.qa = q ? q.qa : null; m.audits = q ? q.audits : 0; }
+    res.json({ success: true, months });
+  } catch (e) { res.status(502).json({ success: false, error: 'Zoho CRM is not reachable right now' }); }
+});
 app.get('/api/desk-lifecycle/my-summary', requireAuth, async (req, res) => {
   try {
     const from = req.query.from || new Date(Date.now() - 30*24*3600*1000).toISOString();

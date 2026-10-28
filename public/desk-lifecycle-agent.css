@@ -279,3 +279,11 @@
 .av2-tkt-tooltip.av2-tkt-tooltip-below { transform: translateY(-6px) scale(.96); transform-origin: bottom center; }
 .av2-tkt-tooltip.av2-tkt-tooltip-visible { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
 @media (prefers-reduced-motion: reduce) { .av2-tkt-tooltip { transition: none; } }
+/* Batch 194: My QA scores (month by month, from Zoho CRM call audits) */
+.mystats-qa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+.mystats-qa-cell{padding:10px 12px;border:1px solid var(--av2-border);border-radius:var(--av2-r-md,10px);background:var(--av2-surface-2)}
+.mystats-qa-m{font-size:12px;font-weight:600;color:var(--av2-t2)}
+.mystats-qa-td{font-weight:500;color:var(--av2-t3);font-size:11px}
+.mystats-qa-v{margin-top:2px;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+.mystats-qa-v small{font-size:12px;font-weight:600;margin-left:1px}
+.mystats-qa-n{font-size:11.5px;color:var(--av2-t3)}

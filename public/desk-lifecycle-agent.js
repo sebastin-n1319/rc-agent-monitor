@@ -649,6 +649,36 @@
       </div>`;
   }
 
+  // Batch 194: my QA scores, month by month, from Zoho CRM Call Audits (the same numbers as the CRM QA report).
+  // Loaded after the page so a slow CRM read never holds up the rest of My Stats; kept for the session once read.
+  let _qa = null;
+  function qaPanel(body) {
+    return panel('My QA scores', 'From your call audits in Zoho CRM: the average score of the audits completed each month (audits marked Not Relevant or Disconnected are left out). For the bonus, Slab 1 needs 90% and Slab 2 needs 85%.', body, 'mystats-qa-section');
+  }
+  function qaHtml(j) {
+    const months = (j.months || []).slice().reverse();
+    if (!months.some(m => m.qa != null)) return qaPanel(emptyState('No audited calls yet', 'Your QA scores show here once your calls are audited.'));
+    const tone = (v) => v == null ? 'var(--av2-t4)' : v >= 90 ? 'var(--av2-green)' : v >= 85 ? 'var(--av2-teal)' : 'var(--av2-orange-strong)';
+    const cells = months.map(m => `
+      <div class="mystats-qa-cell" data-tip="${m.qa == null ? esc(m.long + ': no audits completed') : esc(m.long + ': ' + m.qa + '% from ' + m.audits + ' audit' + (m.audits === 1 ? '' : 's'))}">
+        <div class="mystats-qa-m">${esc(m.label)}${m.partial ? ' <span class="mystats-qa-td">to date</span>' : ''}</div>
+        <div class="mystats-qa-v" style="color:${tone(m.qa)}">${m.qa == null ? '-' : esc(String(m.qa)) + '<small>%</small>'}</div>
+        <div class="mystats-qa-n">${m.qa == null ? 'no audits' : m.audits + ' audit' + (m.audits === 1 ? '' : 's')}</div>
+      </div>`).join('');
+    return qaPanel(`<div class="mystats-qa-grid">${cells}</div>`);
+  }
+  async function loadQA(root) {
+    const slot = root.querySelector('#mystats-qa-slot'); if (!slot) return;
+    if (_qa) { slot.innerHTML = qaHtml(_qa); return; }
+    slot.innerHTML = qaPanel('<div class="av2-section-meta">Reading your audits from Zoho CRM...</div>');
+    try {
+      const r = await fetch('/api/my-qa', { credentials: 'include' });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.error || 'not available');
+      _qa = j; slot.innerHTML = qaHtml(j);
+    } catch (e) { slot.innerHTML = qaPanel(`<div class="av2-section-meta">QA scores could not be read from Zoho CRM right now (${esc(e.message)}). Try again later.</div>`); }
+  }
+
   function render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus) {
     root.innerHTML = `
       <div class="av2-container">
@@ -686,6 +716,7 @@
 
         ${workSection(summaryJson.summary, summaryJson.callStats, summaryJson.chatStats, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
+        <div id="mystats-qa-slot"></div>
         ${callStatsSection(summaryJson.callStats)}
         ${chatStatsSection(summaryJson.chatStats, summaryJson.chatPresence)}
         ${breakdownSection(summaryJson.summary)}
@@ -1034,6 +1065,7 @@
         loadSyncStatusSafe(),
       ]);
       render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus);
+      loadQA(root);
     } catch (e) {
       root.innerHTML = `
         <div class="av2-container">
