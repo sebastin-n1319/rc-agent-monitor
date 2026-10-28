@@ -705,7 +705,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       bonus.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), coldStore: require('./lib/cold-store'), salesiqLifecycle: require('./lib/salesiq-lifecycle'),
         roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service'), analytics: require('./lib/analytics-service'), salesiq: require('./lib/salesiq-service') }); }
     // Batch 193: agent appraisals (admin, next to the Bonus Calculator), filled from the bonus numbers.
-    { const ap = require('./lib/appraisal'); ap.setDB(db); await ap.initSchema(); ap.setDeps({ bonus: require('./lib/bonus'), ai: require('./lib/ai') }); }
+    { const ap = require('./lib/appraisal'); ap.setDB(db); await ap.initSchema(); ap.setDeps({ bonus: require('./lib/bonus'), ai: require('./lib/ai'), crmQa: require('./lib/crm-qa') }); }
     const mig = await accessReq.migrateExisting({ extraEmails: [...Object.keys(AGENT_SHEET_NAMES), ...TEST_ACCOUNTS], getSetting, setSetting });
     accessApprovalReady = true; invalidateMembers();
     console.log('🔐 Access approval on:', JSON.stringify(mig));
@@ -8591,6 +8591,11 @@ app.post('/api/appraisals', requireAdmin, rateLimit(10, 60000), async (req, res)
     const a = await apMod().create({ email: String(b.email || ''), from: String(b.from || ''), to: String(b.to || ''), title: b.title, by: req.session.email, agentNames });
     insertAuditLog(req.session.email, 'appraisal_created', String(a.id), `${a.email} ${a.from}..${a.to}`).catch(() => {});
     res.json({ success: true, appraisal: a }); } catch (e) { bonusErr(res, e); }
+});
+// Batch 194: monthly QA per agent from Zoho CRM Call Audits (admin check of the numbers appraisals use).
+app.get('/api/appraisals/qa-check', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const m = String(req.query.month || ''); const map = await require('./lib/crm-qa').monthQA(m); res.json({ success: true, month: m, agents: Object.fromEntries(map) }); }
+  catch (e) { res.status(e.message === 'Bad month' ? 400 : 502).json({ success: false, error: e.message }); }
 });
 app.get('/api/appraisals/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, appraisal: await apMod().get(apId(req)) }); } catch (e) { bonusErr(res, e); } });
 app.post('/api/appraisals/:id/save', requireAdmin, rateLimit(60, 60000), async (req, res) => {

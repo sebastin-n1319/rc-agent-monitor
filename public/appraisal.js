@@ -158,7 +158,7 @@
         var auto = (a.auto[m] || {})[k.key], edited = S.edits[m] && Object.prototype.hasOwnProperty.call(S.edits[m], k.key);
         var v = val(m, k.key), r = sk ? sk.monthly[i] : null;
         var inp = h('input', { class: 'ap-cell' + (edited ? ' edited' : ''), type: 'number', step: 'any', min: '0', value: v == null ? '' : String(t2(v)), 'aria-label': k.label + ' ' + a.months[i].label,
-          title: edited ? 'Edited. The tool had ' + (auto == null ? 'no value' : t2(auto) + (k.pct ? '%' : '')) : (auto == null ? 'No value in the tool. Type one to rate this month.' : 'From the tool'),
+          title: edited ? 'Edited. The tool had ' + (auto == null ? 'no value' : t2(auto) + (k.pct ? '%' : '')) : (auto == null ? 'No value in the tool. Type one to rate this month.' : (k.key === 'qa' && a.months[i].qaAudits ? 'From Zoho CRM Call Audits (' + a.months[i].qaAudits + ' audits)' : 'From the tool')),
           oninput: function (e) { (S.edits[m] = S.edits[m] || {})[k.key] = e.target.value === '' ? '' : Number(e.target.value); e.target.classList.add('edited'); mark(); refresh(); } });
         tr.appendChild(h('td', null, [h('div', { class: 'ap-cellwrap' }, [inp, k.pct ? h('span', { class: 'u', text: '%' }) : null]), sk ? h('span', { class: 'ap-r r' + (r || 0), id: 'ap-r-' + k.key + '-' + i, text: r == null ? '-' : String(r) }) : null]));
       });
