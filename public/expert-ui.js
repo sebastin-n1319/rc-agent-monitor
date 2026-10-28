@@ -36,6 +36,25 @@
     try { navigator.clipboard.writeText(text).then(done, function () { fallback(); }); } catch (e) { fallback(); }
     function fallback() { var t = h('textarea', { style: 'position:fixed;opacity:0' }); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); }
   }
+  // Batch 192: emails and private notes copy as formatted text too, so they paste into the Zoho Desk editor with
+  // their paragraphs and numbered lists (plain text stays on the clipboard for anything else).
+  function toHtml(text) {
+    var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+    return String(text || '').trim().split(/\n\s*\n/).map(function (block) {
+      var lines = block.split('\n').filter(function (l) { return l.trim(); });
+      if (lines.length && lines.every(function (l) { return /^\s*\d+[.)]\s+/.test(l); })) return '<ol>' + lines.map(function (l) { return '<li>' + esc(l.replace(/^\s*\d+[.)]\s+/, '')) + '</li>'; }).join('') + '</ol>';
+      if (lines.length && lines.every(function (l) { return /^\s*[-*•]\s+/.test(l); })) return '<ul>' + lines.map(function (l) { return '<li>' + esc(l.replace(/^\s*[-*•]\s+/, '')) + '</li>'; }).join('') + '</ul>';
+      return '<p>' + lines.map(esc).join('<br>') + '</p>';
+    }).join('');
+  }
+  function copyRich(text, btn) {
+    var done = function () { if (!btn) return; var old = btn.getAttribute('data-l') || btn.lastChild.textContent; btn.setAttribute('data-l', old); btn.lastChild.textContent = 'Copied'; btn.classList.add('ok'); setTimeout(function () { btn.lastChild.textContent = old; btn.classList.remove('ok'); }, 1400); };
+    try {
+      if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) return copy(text, btn);
+      var item = new ClipboardItem({ 'text/html': new Blob(['<div style="font-family:Arial,sans-serif;font-size:13px">' + toHtml(text) + '</div>'], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) });
+      navigator.clipboard.write([item]).then(done, function () { copy(text, btn); });
+    } catch (e) { copy(text, btn); }
+  }
   var store = { get: function (k, d) { try { var v = localStorage.getItem('ax-' + k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set: function (k, v) { try { localStorage.setItem('ax-' + k, JSON.stringify(v)); } catch (e) {} } };
   function linkTickets(text) {
     var frag = document.createDocumentFragment(), re = /(^|[^\d.#\/=-])#?(\d{6})(?![\d.])/g, at = 0, m;
@@ -189,16 +208,16 @@
       var pg = progress(q); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
-      var mode = S.mode;
-      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh }).then(function (j) {
-        pg.stop(); j.mode = mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: mode, j: j });
+      var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
+      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked }).then(function (j) {
+        pg.stop(); j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
       }).catch(function (e) { pg.stop(); thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
         .then(function () { S.busy = false; send.disabled = false; paintBar(); input.focus(); });
     }
     function section(ic, title, kids, cls) { return h('section', { class: 'ax-sec ' + (cls || '') }, [h('h4', null, [icon(ic), title])].concat(kids)); }
-    function copyBtn(text, label) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label || 'Copy']); b.addEventListener('click', function () { copy(text, b); }); return b; }
+    function copyBtn(text, label, rich) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label || 'Copy']); b.addEventListener('click', function () { (rich ? copyRich : copy)(text, b); }); return b; }
     function answerCard(j, q) {
       var a = j.answer || {}, conf = a.confidence || 'medium';
       var badges = h('div', { class: 'ax-badges' }, [
@@ -210,15 +229,17 @@
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
+      if (j.modeNote) card.appendChild(h('p', { class: 'ax-modenote' }, [icon('bulb', 'sm'), j.modeNote]));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
       if (a.steps && a.steps.length) card.appendChild(section('list', 'Steps', [h('ol', { class: 'ax-ol' }, a.steps.map(function (s) { return h('li', null, [linkTickets(String(s).replace(/^\d+[.)]\s*/, ''))]); })), h('div', { class: 'ax-row' }, [copyBtn(a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'), 'Copy steps')])]));
       if (a.say) {
         var sl = SAY[j.mode] || ['What to tell the client', 'Copy message'];
-        var withLink = j.share && j.mode !== 'call' ? [copyBtn(j.mode === 'email' ? a.say.replace(/\n*Thanks,?\s*$/i, '') + '\n\nHelp Center guide: ' + j.share.url + '\n\nThanks,' : a.say + '\n\n' + j.share.url, j.mode === 'email' ? 'Copy email with Help Center link' : 'Copy with Help Center link')] : [];
-        var other = MODES.filter(function (m) { return m[0] !== j.mode; }).map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Ask again for ' + m[1].toLowerCase(), onclick: function () { if (S.busy) return; S.mode = m[0]; store.set('mode', S.mode); paintModes(); submit(q); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); });
-        card.appendChild(section(j.mode === 'call' ? 'phone' : 'chat', sl[0], [h('blockquote', { class: 'ax-say' + (j.mode === 'call' ? ' call' : '') }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, sl[1])].concat(withLink).concat([h('span', { class: 'ax-sp' })]).concat(other))], 'say'));
+        var withLink = j.share && j.mode !== 'call' ? [copyBtn(j.mode === 'email' ? a.say.replace(/\n*Thanks,?\s*$/i, '') + '\n\nHelp Center guide: ' + j.share.url + '\n\nThanks,' : a.say + '\n\n' + j.share.url, j.mode === 'email' ? 'Copy email with Help Center link' : 'Copy with Help Center link', j.mode === 'email')] : [];
+        var other = MODES.filter(function (m) { return m[0] !== j.mode; }).map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Ask again for ' + m[1].toLowerCase(), onclick: function () { if (S.busy) return; S.mode = m[0]; S.lockOnce = true; store.set('mode', S.mode); paintModes(); submit(q); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); });
+        card.appendChild(section(j.mode === 'call' ? 'phone' : 'chat', sl[0], [h('blockquote', { class: 'ax-say' + (j.mode === 'call' ? ' call' : '') }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, sl[1], j.mode === 'email')].concat(withLink).concat([h('span', { class: 'ax-sp' })]).concat(other))], 'say'));
       }
+      if (a.note) card.appendChild(section('edit', 'Private note for Zoho Desk', [h('pre', { class: 'ax-note' }, [a.note]), h('div', { class: 'ax-row' }, [copyBtn(a.note, 'Copy private note', true)])], 'note'));
       if (a.owner) card.appendChild(section('user', 'Who owns it', [h('p', { class: 'ax-owner' }, [h('b', { text: a.owner.who || 'T1' }), a.owner.when ? h('span', { text: ' · ' + a.owner.when }) : null])], 'own'));
       if (j.rulesUsed && j.rulesUsed.length) card.appendChild(h('p', { class: 'ax-rules' }, [icon('rule', 'sm'), 'Team rule applied: ' + j.rulesUsed.join('; ')]));
       if (a.cautions && a.cautions.length) card.appendChild(section('warn', 'Heads up', [h('ul', null, a.cautions.map(function (c) { return h('li', { text: c }); }))], 'warn'));
@@ -272,6 +293,7 @@
       if (a.checks && a.checks.length) out.push('', 'Check first:', a.checks.map(function (c) { return '- ' + c; }).join('\n'));
       if (a.steps && a.steps.length) out.push('', 'Steps:', a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'));
       if (a.say) out.push('', 'To the client:', a.say);
+      if (a.note) out.push('', 'Private note:', a.note);
       if (a.owner) out.push('', 'Owner: ' + a.owner.who + (a.owner.when ? ' (' + a.owner.when + ')' : ''));
       if (j.share) out.push('', 'Help Center: ' + j.share.url);
       return out.join('\n');

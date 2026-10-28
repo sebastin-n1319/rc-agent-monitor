@@ -2033,7 +2033,7 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
   try {
     const b = req.body || {}, ai = require('./lib/ai');
     const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : 'call',
-      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, email: req.session.email });
+      module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
 });

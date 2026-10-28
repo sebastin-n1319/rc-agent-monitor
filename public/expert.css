@@ -299,3 +299,6 @@ html.ax-full .ax-cbar{top:0}
 .ax-tk-err{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--t2)}
 .ax-badge.s-frustrated,.ax-badge.s-angry{background:rgba(217,70,77,.12);color:#C0392B}.ax-badge.s-confused{background:rgba(233,174,28,.16);color:#9A6B00}.ax-badge.s-calm{background:rgba(22,169,112,.12);color:#11795A}
 @media (max-width:700px){.ax-tk-tl ol li{grid-template-columns:1fr}}
+/* Batch 192: private note for Zoho Desk and the channel note */
+.ax-note{margin:0 0 8px;padding:12px 14px;border-radius:12px;background:var(--surface-2);border-left:3px solid var(--amber,#d4892a);white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.6;color:var(--t1)}
+.ax-modenote{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:13px;color:var(--t2)}
