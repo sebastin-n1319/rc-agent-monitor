@@ -8634,7 +8634,7 @@ app.post('/api/appraisals/:id/refresh', requireAdmin, rateLimit(10, 60000), asyn
   try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, appraisal: await apMod().refresh({ id: apId(req), by: req.session.email, agentNames }) }); } catch (e) { bonusErr(res, e); }
 });
 app.post('/api/appraisals/:id/ai', requireAdmin, rateLimit(6, 60000), async (req, res) => {
-  try { res.json({ success: true, feedback: await apMod().feedback({ id: apId(req) }) }); }
+  try { res.json({ success: true, feedback: await apMod().feedback({ id: apId(req), instruction: (req.body || {}).instruction, current: (req.body || {}).current }) }); }
   catch (e) { res.status(e.status || 500).json({ success: false, error: e.status ? e.message : 'The AI could not write the feedback right now. Please try again in a moment.' }); }
 });
 app.get('/api/appraisals/:id/xlsx', requireAdmin, rateLimit(20, 60000), async (req, res) => {

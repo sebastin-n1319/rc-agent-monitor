@@ -187,16 +187,20 @@
 
     // feedback
     var fbBox = h('section', { class: 'ap-card' }, [h('h3', { class: 'ap-card-h', text: 'Feedback' })]);
-    var notes = h('textarea', { class: 'ap-ta', rows: '3', placeholder: 'Your context for the AI, for example: FCR drop is partly due to ticket handling negligence. January was a full month on chat.', oninput: function (e) { S.notes = e.target.value; mark(); } });
+    var notes = h('textarea', { class: 'ap-ta', rows: '6', placeholder: 'Write what you know about this agent in your own words: role and responsibilities (for example SPOC for VoIP), behaviour and attitude, achievements, concerns, the context behind any dip. The AI uses every point, checks it against the numbers and writes the feedback in the HR format.', oninput: function (e) { S.notes = e.target.value; mark(); } });
     notes.value = S.notes;
     var hasFb = Object.keys(S.fb).some(function (k) { return String(S.fb[k] || '').trim(); });
-    fbBox.appendChild(h('div', { class: 'ap-ai' }, [h('label', { class: 'grow' }, [h('span', { text: 'Your notes (the AI uses them, they are not in the download)' }), notes]),
-      h('button', { type: 'button', class: 'ap-btn primary', disabled: S.busy ? true : null, text: S.busy === 'ai' ? 'Writing...' : (hasFb ? 'Rewrite with AI' : 'Write with AI'), onclick: function () {
-        if (hasFb && !window.confirm('Replace the feedback below with a new AI draft?')) return;
-        var go = function () { S.busy = 'ai'; draw(); api('/api/appraisals/' + a.id + '/ai', {}).then(function (j) { S.busy = ''; S.fb = j.feedback; S.dirty = true; draw(); toast('Draft written. Read it, edit anything, then save.', 'success'); })
+    var ask = h('input', { class: 'ap-in wide', type: 'text', placeholder: hasFb ? 'How should the new version change? Optional, for example: more critical on tickets, shorter, mention her VoIP SPOC role in the summary' : 'Anything the AI should focus on? Optional', 'aria-label': 'Instruction for the AI', value: S.ask || '', oninput: function (e) { S.ask = e.target.value; } });
+    fbBox.appendChild(h('div', { class: 'ap-ai' }, [
+      h('label', { class: 'grow full' }, [h('span', { text: 'Your notes for the AI (not in the download)' }), notes]),
+      h('label', { class: 'grow' }, [h('span', { text: hasFb ? 'What to change' : 'Focus' }), ask]),
+      h('button', { type: 'button', class: 'ap-btn primary', disabled: S.busy ? true : null, text: S.busy === 'ai' ? 'Writing and checking...' : (hasFb ? 'Rewrite with AI' : 'Write with AI'), onclick: function () {
+        if (hasFb && !(S.ask || '').trim() && !window.confirm('Replace the feedback below with a new AI draft?')) return;
+        var go = function () { S.busy = 'ai'; draw(); api('/api/appraisals/' + a.id + '/ai', { instruction: S.ask || '', current: hasFb ? S.fb : null }).then(function (j) { S.busy = ''; S.fb = j.feedback; S.ask = ''; S.dirty = true; draw(); toast('Draft written and checked against the numbers. Read it, edit anything, then save.', 'success'); })
           .catch(function (e) { S.busy = ''; toast(e.message, 'error'); draw(); }); };
         if (S.dirty) save(true).then(go, function () {}); else go();
-      } })]));
+      } }),
+      h('p', { class: 'ap-hint full', text: 'The AI writes from every number on this page (monthly values, per-day rates, survey and audit counts, leave, trends and how the agent compares with the wing) plus your notes, then a second pass checks each number and fixes contradictions. It takes about a minute.' })]));
     FB.forEach(function (g) {
       var grp = h('div', { class: 'ap-fbg' }, [h('h4', { text: g[0] })]);
       g[1].forEach(function (f) {
