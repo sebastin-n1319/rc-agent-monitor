@@ -9792,10 +9792,11 @@ async function sendBreakAction(action, btn, opts){
     if(!json.success) throw new Error(json.error || 'Unable to save break event');
     const notifySuffix = json.notification?.notified
       ? ' + posted to '+(json.notification.target || 'Chat space')
-      : (json.notification?.status === 'disabled' ? ' (saved locally)' : '');
+      : (json.notification?.status === 'queued' ? ', posting to '+(json.notification.target || 'Google Chat')
+      : (json.notification?.status === 'disabled' ? ' (saved locally)' : ''));
     breakSelectedDate=breakTodayStr();
     syncBreakDateInputs();
-    showToast((json.data?.event?.actionLabel || 'Break event')+' saved'+notifySuffix, json.notification?.notified ? 'success' : 'info', 3600);
+    showToast((json.data?.event?.actionLabel || 'Break event')+' saved'+notifySuffix, (json.notification?.notified || json.notification?.status === 'queued') ? 'success' : 'info', 3600);
     // Session 46: refresh() is a no-op for agents off the Dashboard, so the
     // Breaks screen stayed stale for up to 30s after a tap (and the next tap
     // was often rejected). Reload the tracker directly, then the rest.

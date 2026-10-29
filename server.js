@@ -456,7 +456,7 @@ function inAlertHours(d = new Date(), win = ALERT_HOURS) {
 
 const BREAK_EVENT_GROUP = { LOGGED_IN: 'shift', LOGGED_OUT: 'shift', BREAK_OUT: 'break', BREAK_IN: 'break', BRB_OUT: 'brb', BRB_IN: 'brb',
   TRAINING_OUT: 'training', TRAINING_IN: 'training', QA_SESSION_OUT: 'qa', QA_SESSION_IN: 'qa', INTERNAL_CALL_OUT: 'internal', INTERNAL_CALL_IN: 'internal' };
-async function sendBreakChatNotification(event){
+async function sendBreakChatNotification(event, opts){
   if(ALERT_HOOKS.breakLogEnabled === false){
     return { notified: false, status: 'disabled', response: 'Break log alerts are turned off on the Alerts page' };
   }
@@ -470,19 +470,47 @@ async function sendBreakChatNotification(event){
   if(!GOOGLE_CHAT_WEBHOOK_URL){
     return { notified: false, status: 'disabled', response: 'GOOGLE_CHAT_WEBHOOK_URL not configured' };
   }
-  const payload = await buildBreakChatPayload(event);
-  const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-    body: JSON.stringify(payload)
-  });
-  const text = await resp.text();
-  return {
-    notified: resp.ok,
-    status: resp.ok ? 'sent' : `http_${resp.status}`,
-    response: text || resp.statusText || 'ok'
+  // Batch 197: Google Chat sometimes answers 500 "Internal error" for a while. Each post has a 10 s limit and is tried
+  // again after 3, 10 and 30 seconds; if the card keeps failing, a plain text message (no photo) is sent instead.
+  const post = async (body) => {
+    try {
+      const resp = await fetch(GOOGLE_CHAT_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
+      const text = await resp.text().catch(() => '');
+      return { ok: resp.ok, status: resp.ok ? 'sent' : `http_${resp.status}`, retry: resp.status >= 500 || resp.status === 429, response: (text || resp.statusText || 'ok').slice(0, 500) };
+    } catch (e) { return { ok: false, status: 'network', retry: true, response: String(e.message || e).slice(0, 300) }; }
   };
+  const payload = await buildBreakChatPayload(event);
+  let r = await post(payload);
+  for (const wait of (opts && opts.quick ? [] : [3000, 10000, 30000])) {
+    if (r.ok || !r.retry) break;
+    await new Promise((res) => setTimeout(res, wait));
+    r = await post(payload);
+  }
+  if (!r.ok && r.retry) {
+    const meta = getBreakChatMeta(event), stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
+    const plain = await post({ text: `${meta.emoji} *${event.username || 'Agent'}*: ${meta.detail} (${meta.lane})\n🕒 ${formatBreakTime(stamp, 'Asia/Kolkata', 'IST')} · ${formatBreakTime(stamp, 'America/Chicago', 'CST')}${event.linkedDurationSeconds ? '\n⏱ ' + formatBreakDuration(event.linkedDurationSeconds) : ''}${event.note ? '\nReason: ' + event.note : ''}` });
+    if (plain.ok) return { notified: true, status: 'sent_text', response: 'Card failed (' + r.status + '), sent as text' };
+  }
+  return { notified: r.ok, status: r.status, response: r.response };
 }
+
+// Catch-up: break posts from the last 30 minutes that still have not reached Google Chat are sent again, oldest first,
+// every 3 minutes, at most 5 tries each.
+const _breakRetryTries = new Map();
+async function retryFailedBreakNotifications() {
+  const dbm = require('./database');
+  const rows = await new Promise((rs, rj) => dbm.db.all(`SELECT id, username, email, action, action_label, note, created_at FROM break_events
+    WHERE notified = 0 AND (notify_status LIKE 'http_5%' OR notify_status IN ('http_429','network','failed','queued')) AND created_at >= datetime('now', '-30 minutes') ORDER BY id`, [], (e, r) => e ? rj(e) : rs(r || [])));
+  for (const r of rows) {
+    const n = (_breakRetryTries.get(r.id) || 0) + 1; if (n > 5) continue; _breakRetryTries.set(r.id, n);
+    const ev = { id: r.id, username: r.username, email: r.email, action: r.action, actionLabel: r.action_label, note: r.note, createdAt: r.created_at };
+    const res = await sendBreakChatNotification(ev, { quick: true }).catch((e) => ({ notified: false, status: 'failed', response: e.message }));
+    await updateBreakEventNotification(r.id, res.notified, res.notified ? res.status + '_late' : res.status, res.response).catch(() => {});
+    if (!res.notified) break; // Google still failing: try the rest next round
+  }
+  if (_breakRetryTries.size > 500) _breakRetryTries.clear();
+}
+setInterval(() => { retryFailedBreakNotifications().catch((e) => console.warn('break notification catch-up failed:', e.message)); }, 3 * 60 * 1000);
 
 // ── XSS-safe HTML escaper (used server-side for any reflected values) ─────────
 function escapeHtml(str) {
@@ -1421,14 +1449,18 @@ app.post('/api/break-events', requireAuth, async (req, res) => {
     let notification = { notified: false, status: 'skipped', response: 'Not attempted' };
     if(skipNotify || isTestAccount(email) || NOTIFICATION_BLOCKLIST.includes((email || '').toLowerCase().trim())) {
       notification = { notified: false, status: 'disabled', response: 'Notifications disabled for this user' };
+      await updateBreakEventNotification(event.id, notification.notified, notification.status, notification.response);
     } else {
-      try {
-        notification = await sendBreakChatNotification(event);
-      } catch (notifyError) {
-        notification = { notified: false, status: 'failed', response: notifyError.message };
-      }
+      // Batch 197: the agent's tap is saved and answered at once; the Google Chat post (with retries) runs after.
+      notification = { notified: false, status: 'queued', response: 'Posting to Google Chat' };
+      await updateBreakEventNotification(event.id, false, 'queued', notification.response).catch(() => {});
+      setImmediate(() => {
+        sendBreakChatNotification(event)
+          .catch((notifyError) => ({ notified: false, status: 'failed', response: notifyError.message }))
+          .then((n) => updateBreakEventNotification(event.id, n.notified, n.status, n.response))
+          .catch((e) => console.warn('break notification update failed:', e.message));
+      });
     }
-    await updateBreakEventNotification(event.id, notification.notified, notification.status, notification.response);
     const tz = req.body.tz || 'America/Chicago';
     const date = req.body.date || new Date().toLocaleDateString('en-CA', { timeZone: tz });
     res.json({
@@ -2976,7 +3008,7 @@ app.get('/api/alert-hub/status', requireAdmin, async (req, res) => {
     const one = async (sql, p = []) => { try { return await new Promise((rs, rj) => dbm.db.get(sql, p, (e, r) => e ? rj(e) : rs(r || {}))); } catch (e) { return {}; } };
     const t1cfg = t1Alerts().mergeConfig(await getSetting('t1_alerts_config').catch(() => null));
     const missedEnabled = ((await getSetting('missed_call_notify_enabled').catch(() => null)) ?? '1') === '1';
-    const bl = await one(`SELECT SUM(CASE WHEN notified=1 THEN 1 ELSE 0 END) AS sent, SUM(CASE WHEN notify_status NOT IN ('sent','disabled','filtered') AND notified=0 THEN 1 ELSE 0 END) AS failed, MAX(CASE WHEN notified=1 THEN created_at END) AS last FROM break_events WHERE created_at >= ?`, [todaySql()]);
+    const bl = await one(`SELECT SUM(CASE WHEN notified=1 THEN 1 ELSE 0 END) AS sent, SUM(CASE WHEN notify_status NOT IN ('sent','disabled','filtered','queued','off_hours') AND notified=0 THEN 1 ELSE 0 END) AS failed, MAX(CASE WHEN notified=1 THEN created_at END) AS last FROM break_events WHERE created_at >= ?`, [todaySql()]);
     const sm = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM chat_report_log WHERE created_at >= ?`, [todaySql()]);
     const sch = await one(`SELECT COUNT(*) AS n, SUM(enabled) AS on_n FROM chat_report_schedule`);
     const lo = await one(`SELECT SUM(ok) AS sent, SUM(1-ok) AS failed, MAX(CASE WHEN ok=1 THEN created_at END) AS last FROM t1_alert_log WHERE created_at >= ? AND kind NOT LIKE '%_item' AND kind NOT IN ('review_idle','review_msg')`, [todaySql()]);
