@@ -130,4 +130,16 @@ describe('Live chats', () => {
     expect(lc._acctKey({ visitor: {} }, [{ who: 'client', text: 'our account number is 64624' }])).toBe('64624');
     expect(lc._acctKey({ visitor: {} }, [{ who: 'client', text: 'hello' }])).toBeNull();
   });
+  it('works out the follow-up step from how long the client has been quiet', () => {
+    const at = (m) => new Date(Date.now() - m * 60000).toISOString();
+    const M = (who, m) => ({ who, at: at(m), text: 'x' });
+    expect(lc._silence([M('client', 10), M('agent', 1)]).due).toBe(0);
+    expect(lc._silence([M('client', 10), M('agent', 3)]).due).toBe(1);
+    const s2 = lc._silence([M('client', 10), M('agent', 6), M('agent', 3)]);
+    expect([s2.sent, s2.due]).toEqual([1, 2]);
+    const s3 = lc._silence([M('client', 12), M('agent', 8), M('agent', 5), M('agent', 2)]);
+    expect([s3.sent, s3.due]).toEqual([2, 3]);
+    expect(lc._silence([M('agent', 9), M('client', 1)])).toBeNull();
+    expect(lc._silence([M('client', 10), M('agent', 4), M('agent', 1)]).due).toBe(0); // follow-up 1 already sent, step 2 at 5 min
+  });
 });

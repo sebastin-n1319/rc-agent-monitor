@@ -991,6 +991,43 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function plain(reply) { return parts(reply).filter(function (p) { return p.text; }).map(function (p) { return p.text; }).join('\n\n'); }
     function copyIcon(text, label) { var b = h('button', { type: 'button', class: 'ax-lc-cp', 'aria-label': label, title: label }, [icon('copy', 'sm'), h('span', { text: 'Copy' })]); b.addEventListener('click', function () { copy(text, b); }); return b; }
     function mini(ic, label, fn, dis) { return h('button', { type: 'button', class: 'ax-mini', disabled: dis ? true : null, onclick: fn }, [icon(ic, 'sm'), label]); }
+    // ── Client gone quiet (Batch 223): 2, 5 and 7 minute follow-ups, in the team's own words learned from past chats ──
+    var FU_AT = [2, 5, 7], FU_NAME = ['Follow-up 1', 'Follow-up 2', 'Close the chat'];
+    function quietState(t) {
+      var si = t.silence; if (!si || !si.since || !t.chat || !t.chat.open) return null;
+      var mins = Math.max(0, (Date.now() - Date.parse(si.since)) / 60000), due = 0;
+      FU_AT.forEach(function (m, i) { if (mins >= m) due = i + 1; });
+      return { mins: Math.floor(mins), sent: si.sent || 0, due: due > (si.sent || 0) ? due : 0, key: (due > (si.sent || 0) ? due : 0) + ':' + si.lastAgent };
+    }
+    function wantFollowup(t) {
+      var q = quietState(t); if (!q || !q.due || t.fuKey === q.key || t.fuBusy) return;
+      t.fuBusy = true; t.fuKey = q.key; t.fu = null; t.fuErr = '';
+      if (active === t.ref) paintSide();
+      ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/followup', { acct: t.acct || '', id: (t.chat && t.chat.id) || '' })
+        .then(function (j) { t.fu = j.followup; if (j.silence) t.silence = j.silence; })
+        .catch(function (e) { t.fuErr = e.message; }).then(function () { t.fuBusy = false; if (active === t.ref) paintSide(); });
+    }
+    function quietCard(t) {
+      var q = quietState(t); if (!q) return null;
+      var steps = h('ol', { class: 'ax-lc-fusteps', 'aria-label': 'Follow-up steps' }, FU_AT.map(function (m, i) {
+        var n = i + 1, st = n <= q.sent ? 'done' : n === q.due ? 'due' : n < q.due ? 'skip' : 'next';
+        return h('li', { class: 'ax-lc-fus ' + st }, [h('span', { class: 'ax-lc-fun', text: st === 'done' ? '' : String(n) }, st === 'done' ? [icon('check', 'sm')] : null), h('b', { text: FU_NAME[i] }), h('span', { text: st === 'done' ? 'Sent' : st === 'due' ? 'Due now' : m + ' min' })]);
+      }));
+      var kids = [h('div', { class: 'ax-lc-fuhd' }, [icon('clock', 'sm'), h('b', { text: 'Client quiet for ' + (q.mins < 1 ? 'under a minute' : q.mins + ' min') }), h('span', { class: 'ax-muted', text: q.sent ? q.sent + ' follow-up' + (q.sent > 1 ? 's' : '') + ' sent' : '' })]), steps];
+      if (q.due) {
+        if (t.fuBusy && !t.fu) kids.push(h('div', { class: 'ax-lc-skel', 'aria-hidden': 'true' }, [h('i'), h('i')]));
+        else if (t.fuErr) kids.push(h('div', { class: 'gd-note', text: t.fuErr }));
+        else if (t.fu && t.fu.reply) {
+          var f = t.fu, cp = h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide' }, [icon('copy', 'sm'), 'Copy ' + FU_NAME[f.stage - 1].toLowerCase()]);
+          cp.addEventListener('click', function () { copy(f.reply, cp); });
+          kids.push(h('div', { class: 'ax-lc-bub fu' }, [h('div', { class: 'ax-lc-btx' }, [linky(f.reply)])]));
+          if (f.blanks && f.blanks.length) kids.push(h('p', { class: 'ax-lc-hint' }, ['Fill in before sending: ' + f.blanks.join(', ')]));
+          kids.push(cp);
+          kids.push(h('p', { class: 'ax-lc-fusrc' }, [icon(f.source === 'learned' ? 'book' : 'spark', 'sm'), f.source === 'learned' ? 'Your team\'s usual follow-up, learned from past chats and filled in for this client' : (f.note || 'Written by Expert in your team\'s usual style')]));
+        }
+      } else if (q.sent < 3) kids.push(h('p', { class: 'ax-lc-hint', text: FU_NAME[q.sent] + ' is due at ' + FU_AT[q.sent] + ' min if the client stays quiet.' }));
+      return h('div', { class: 'ax-lc-quiet' + (q.due ? ' due' : '') }, kids);
+    }
     function replied(t, basis) { var i = -1; for (var k = 0; k < t.msgs.length; k++) if (t.msgs[k].id === basis) i = k; return i >= 0 && t.msgs.slice(i + 1).some(function (m) { return m.who === 'agent'; }); }
 
     // ── Expert's reply ──
@@ -1004,13 +1041,14 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       side.appendChild(h('div', { class: 'ax-lc-shd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply']),
         state ? h('span', { class: 'ax-lc-pill ' + state[1] }, [state[0] + (s && !t.busy ? ' ' + time(s.at) : ''), t.busy ? h('span', { class: 'ax-lc-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]) : null]) : null]));
       var bodyEl = h('div', { class: 'ax-lc-sbody' }); side.appendChild(bodyEl);
+      var quiet = quietCard(t); if (quiet) bodyEl.appendChild(quiet);
       if (s && (stale || t.busy)) bodyEl.appendChild(h('div', { class: 'ax-lc-stale', role: 'status' }, [icon(t.busy ? 'spark' : 'warn', 'sm'), h('span', { text: t.busy ? 'Reading the whole chat, the screenshots and the account history...' : 'The client wrote again. This reply is for an earlier message.' }),
         !t.busy ? h('button', { type: 'button', class: 'ax-mini', onclick: function () { suggest(t, true); } }, [icon('refresh', 'sm'), 'Write for the latest']) : null]));
       else if (sent) bodyEl.appendChild(h('div', { class: 'ax-lc-stale soft' }, [icon('check', 'sm'), h('span', { text: 'You have replied since. A new reply is written when the client writes again.' })]));
       if (t.sError) bodyEl.appendChild(h('div', { class: 'gd-note', text: t.sError }));
       if (!s) {
         if (t.busy) { bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Reading the whole chat, the screenshots and the account history...' })); bodyEl.appendChild(h('div', { class: 'ax-lc-skel', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')])); }
-        else if (t.last) bodyEl.appendChild(h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide', onclick: function () { suggest(t, true); } }, [icon('spark', 'sm'), 'Write the next reply']));
+        else if (t.last && !quietState(t)) bodyEl.appendChild(h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide', onclick: function () { suggest(t, true); } }, [icon('spark', 'sm'), 'Write the next reply']));
         else bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Expert writes a reply as soon as the client sends a message.' }));
         return;
       }
@@ -1067,10 +1105,12 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '?id=' + encodeURIComponent((t.chat && t.chat.id) || '') + (t.acct ? '&acct=' + encodeURIComponent(t.acct) : '')).then(function (j) {
         t.loaded = true; var was = t.last, before = JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
         t.chat = j.chat; t.msgs = j.messages || []; t.error = ''; lastSync = Date.now();
+        t.silence = j.silence || null;
         t.account = j.account || null; t.similar = j.similar && j.similar.length ? j.similar : t.similar;
         if (j.suggestion && (!t.sugg || t.sugg.basis !== j.suggestion.basis)) { t.sugg = j.suggestion; t.edited = false; t.fresh = true; }
         t.last = j.lastClientId;
         if (t.last && was && t.last !== was && active !== t.ref) t.unread = true;
+        if (t.own || t.ref === active) wantFollowup(t);
         if (t.last && t.chat.open && (t.own || t.ref === active) && !t.busy && t.failed !== t.last && (!t.sugg || t.sugg.basis !== t.last)) suggest(t, false);
         t._changed = was !== t.last || before !== JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
       }).catch(function (e) {
@@ -1112,7 +1152,11 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       tMine = setInterval(loadMine, 10000);
       var tick = 0;
       tChat = setInterval(function () { tick++; tabs.forEach(function (t) { if (t.ref === active ? true : t.own && tick % 3 === 0 && (!t.chat || t.chat.open)) if (!t.loading) { t.loading = true; loadChat(t).then(function () { t.loading = false; }); } }); }, 4000);
-      tTick = setInterval(function () { paintSync(); paintList(); }, 5000);
+      tTick = setInterval(function () {
+        paintSync(); paintList();
+        var t = find(active); if (!t) return; var q = quietState(t), k = q ? q.mins + ':' + q.due : '';
+        if (k !== t.quietKey) { t.quietKey = k; if (!t.edit) paintSide(); wantFollowup(t); }
+      }, 5000);
       document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && active) { var t = find(active); if (t) loadChat(t); } });
     }
     paint(); loadMine().then(function () { tabs.forEach(function (t) { if (!t.chat && !t.error) loadChat(t); }); }); start();

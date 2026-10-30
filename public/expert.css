@@ -706,3 +706,24 @@ html.ax-full .ax-cbar{top:0}
 .ax-lc-tag.who svg{width:11px;height:11px}
 @media (max-width:1180px){.ax-lc-view{margin:0;flex:0 0 auto}}
 @media (prefers-reduced-motion:reduce){.ax-lc-vb{transition:none}}
+/* Batch 223: client gone quiet, follow-ups */
+.ax-lc-quiet{display:flex;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2)}
+.ax-lc-quiet.due{border-color:var(--accent);background:var(--accent-soft)}
+.ax-lc-fuhd{display:flex;align-items:center;gap:8px;font-size:13px}
+.ax-lc-fuhd svg{color:var(--accent);flex:none}
+.ax-lc-fuhd b{font-weight:600}
+.ax-lc-fuhd .ax-muted{margin-left:auto;font-size:12px}
+.ax-lc-fusteps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.ax-lc-fus{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px;border-radius:10px;background:var(--surface);border:1px solid var(--border);font-size:11.5px;color:var(--t3)}
+.ax-lc-fus b{font-size:12px;font-weight:600;color:var(--t2)}
+.ax-lc-fun{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--surface-3);color:var(--t2);font-size:11px;font-weight:700}
+.ax-lc-fun svg{width:11px;height:11px}
+.ax-lc-fus.done .ax-lc-fun{background:var(--ok-soft);color:var(--ok)}
+.ax-lc-fus.done{opacity:.75}
+.ax-lc-fus.due{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.ax-lc-fus.due .ax-lc-fun{background:var(--accent);color:var(--on-accent)}
+.ax-lc-fus.due span:last-child{color:var(--accent-ink);font-weight:600}
+.ax-lc-fus.skip{opacity:.55}
+.ax-lc-bub.fu{background:var(--surface);border:1px solid var(--border)}
+.ax-lc-fusrc{display:flex;align-items:center;gap:6px;margin:0;font-size:11.5px;color:var(--t3)}
+.ax-lc-fusrc svg{flex:none}
