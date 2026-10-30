@@ -23,7 +23,7 @@
     'Training / Coaching': { key: 'aux',   label: 'Training' },
     'QA Session AUX':      { key: 'aux',   label: 'QA session' },
     'Internal Calls':      { key: 'aux',   label: 'Internal call' },
-    'Away (scrin.io)':     { key: 'brb',   label: 'Away in scrin.io' },
+    'Away (scrin.io)':     { key: 'ssmlane', label: 'Away in scrin.io' },
     'Logged Out':          { key: 'off',   label: 'Logged out' },
   };
   // One tile per activity. `out` starts it, `in` ends it.
@@ -248,6 +248,17 @@
     <div class="bx-legend"><span><i style="background:var(--bx-yellow)"></i>Break</span><span><i style="background:var(--bx-orange)"></i>BRB</span><span><i style="background:var(--bx-red)"></i>Over limit</span></div>`;
   }
 
+  // Batch 213: scrin.io tracking next to each person (online = tracking and active)
+  function scrinOf(email) { return liveNow && liveNow.scrinOn && liveNow.data ? ((liveNow.data[String(email || '').toLowerCase()] || {}).scrin || null) : null; }
+  function scrinBadge(r) {
+    if (!isToday() || !liveNow || !liveNow.scrinOn || !r || r.currentStatus === 'Logged Out') return '';
+    const x = scrinOf(r.email);
+    if (!x) return '';
+    const k = x.status === 'online' ? 'on' : x.status === 'away' ? 'idle' : 'off';
+    const word = k === 'on' ? 'Tracking' : k === 'idle' ? 'Idle' : 'Not tracking';
+    return `<span class="bx-ssm bx-ssm-${k}" title="scrin.io: ${e(x.status)}${x.lastActive ? ', last active ' + e(timeOf(Date.parse(x.lastActive))) : ''}"><i aria-hidden="true"></i>scrin.io ${word}</span>`;
+  }
+
   function teamHTML(team) {
     const myEmail = String(g('email', '') || '').toLowerCase();
     const order = { 'Break': 0, 'BRB': 1, 'Training / Coaching': 2, 'QA Session AUX': 2, 'Internal Calls': 2, 'Away (scrin.io)': 0, 'Logged In': 3, 'Logged Out': 4 };
@@ -264,7 +275,7 @@
           const plan = planFor(r.email);
           const isMe = String(r.email).toLowerCase() === myEmail;
           return `<div class="bx-team-row${isMe ? ' bx-team-me' : ''}">
-            <div class="bx-team-name"><b>${e(r.username || r.email)}${isMe ? ' <span class="bx-you">You</span>' : ''}</b><span class="bx-sub">${plan ? 'Break plan ' + e(planLabel(plan)) : 'No break plan'}</span></div>
+            <div class="bx-team-name"><b>${e(r.username || r.email)}${isMe ? ' <span class="bx-you">You</span>' : ''}</b><span class="bx-sub">${plan ? 'Break plan ' + e(planLabel(plan)) : 'No break plan'}</span>${scrinBadge(r)}</div>
             <span class="bx-pill bx-${lane.key}"><span class="bx-dot"></span>${e(lane.label)}</span>
             <span class="bx-mono bx-team-t" data-bx-since="${live ? since : ''}">${live ? clock((Date.now() - since) / 1000) : '-'}</span>
           </div>`;
@@ -286,6 +297,15 @@
     const first = String(g('user', '') || '').split(' ')[0] || 'there';
     const breakSec = laneSecs(me, 'Break', 'breakSeconds'), brbSec = laneSecs(me, 'BRB', 'brbSeconds');
     const flags = me ? overFlags(me) : [];
+    const ssmSec = laneSecs(me, 'Away (scrin.io)', 'ssmAwaySeconds');
+    const myScrin = me ? scrinOf(me.email) : null;
+    const myLive = me && liveNow && liveNow.data ? liveNow.data[String(me.email || '').toLowerCase()] || {} : {};
+    let ssmNote = '';
+    if (today && status === 'Away (scrin.io)') {
+      ssmNote = `<div class="bx-alert bx-ssm-alert" role="status">scrin.io shows you ${myScrin ? e(myScrin.status) : 'away'}, so the tool moved you to Away (scrin.io). Start or resume tracking in scrin.io and you are moved back to Logged In automatically within a minute. <button class="bx-btn bx-btn-s" data-bx-action="SSM_AWAY_IN">I am back</button></div>`;
+    } else if (today && status === 'Logged In' && myScrin && myScrin.status !== 'online' && !myLive.onCall && !(myLive.activeChats > 0)) {
+      ssmNote = `<div class="bx-alert bx-ssm-warn" role="status">scrin.io shows you ${e(myScrin.status === 'away' ? 'idle' : 'not tracking')}. Start tracking in scrin.io, or you will be moved to Away (scrin.io) after 2 minutes.</div>`;
+    }
 
     let tiles;
     if (!today) {
@@ -328,9 +348,10 @@
         ${dateBar()}
       </div>
       ${flags.length ? `<div class="bx-alert" role="alert">⚠ ${flags.map(e).join(' · ')}</div>` : ''}
+      ${ssmNote}
       <div class="bx-hero">
         <section class="bx-card bx-state bx-state-${lane.key}" aria-label="Your status">
-          <div class="bx-row bx-between"><span class="bx-pill bx-${lane.key}"><span class="bx-dot"></span>${e(lane.label)}</span><span class="bx-sub">${since ? 'since ' + e(timeOf(since)) : ''}</span></div>
+          <div class="bx-row bx-between"><span class="bx-row" style="gap:8px"><span class="bx-pill bx-${lane.key}"><span class="bx-dot"></span>${e(lane.label)}</span>${scrinBadge(me)}</span><span class="bx-sub">${since ? 'since ' + e(timeOf(since)) : ''}</span></div>
           <div class="bx-timer bx-mono" data-bx-since="${today && since ? since : ''}">${today && since ? clock((Date.now() - since) / 1000) : '--:--'}</div>
           ${tiles}
           <div class="bx-sub bx-tip">${planLine} ${tip}</div>
@@ -338,6 +359,7 @@
         <section class="bx-card bx-pad" aria-label="Today's budget">
           <div class="bx-strong">Today's budget</div>
           <div class="bx-rings">${ring(breakSec, limits.breakDay, 'var(--bx-yellow)', 'Break')}${ring(brbSec, limits.brbDay, 'var(--bx-orange)', 'BRB')}</div>
+          ${ssmSec >= 60 ? `<div class="bx-sub bx-ssm-today">Away in scrin.io today: <b class="bx-mono">${dur(ssmSec)}</b> (not counted as available)</div>` : ''}
           <div class="bx-strong" style="margin-top:18px">This week</div>
           ${weekChart()}
         </section>
@@ -409,11 +431,14 @@
   function adminHTML() {
     const rows = teamRows();
     const d = g('data', {}) || {};
-    const byLane = { live: [], break: [], away: [], off: [] };
+    const byLane = { live: [], break: [], away: [], ssm: [], off: [] };
     for (const r of rows) {
+      if (r.currentStatus === 'Away (scrin.io)') { byLane.ssm.push(r); continue; }
       const k = (LANES[r.currentStatus] || LANES['Logged Out']).key;
       (k === 'brb' || k === 'aux' ? byLane.away : byLane[k] || byLane.off).push(r);
     }
+    const notTracking = isToday() ? rows.filter(r => { const x = scrinOf(r.email), lv = liveNow && liveNow.data ? liveNow.data[String(r.email || '').toLowerCase()] || {} : {}; return r.currentStatus === 'Logged In' && x && x.status !== 'online' && !lv.onCall && !(lv.activeChats > 0); }) : [];
+    const teamSsm = rows.reduce((a, r) => a + laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds'), 0);
     const overRows = rows.filter(r => overFlags(r).length);
     const teamBreak = rows.reduce((a, r) => a + laneSecs(r, 'Break', 'breakSeconds') + laneSecs(r, 'BRB', 'brbSeconds'), 0);
     const kpi = (l, v, sub) => `<div class="bx-card bx-kpi"><div class="bx-kpi-l">${l}</div><div class="bx-kpi-v bx-mono">${v}</div>${sub ? `<div class="bx-sub">${sub}</div>` : ''}</div>`;
@@ -424,8 +449,8 @@
       return `<div class="bx-chip${flags.length ? ' bx-chip-over' : ''}">
         <div class="bx-row bx-between"><b>${e(r.username || r.email)}</b><span class="bx-mono bx-strong" data-bx-since="${isToday() && since && r.currentStatus !== 'Logged Out' ? since : ''}">${isToday() && since && r.currentStatus !== 'Logged Out' ? clock((Date.now() - since) / 1000) : '-'}</span></div>
         <div class="bx-sub">${wingOf(r.email) === 'chat' ? 'Chat' : 'Call'} wing · ${(LANES[r.currentStatus] || {}).label || ''}</div>
-        <div class="bx-sub">Breaks ${laneCount(r, 'Break')} (${dur(laneSecs(r, 'Break', 'breakSeconds'))}) · BRB ${laneCount(r, 'BRB')} (${dur(laneSecs(r, 'BRB', 'brbSeconds'))})</div>
-        ${isToday() ? liveLine(r) : ''}
+        <div class="bx-sub">Breaks ${laneCount(r, 'Break')} (${dur(laneSecs(r, 'Break', 'breakSeconds'))}) · BRB ${laneCount(r, 'BRB')} (${dur(laneSecs(r, 'BRB', 'brbSeconds'))})${laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds') >= 60 ? ` · scrin.io away ${dur(laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds'))}` : ''}</div>
+        ${isToday() ? liveLine(r) : ''}${scrinBadge(r)}
         ${flags.length ? `<div class="bx-over-line">⚠ ${flags.map(e).join(' · ')}</div>` : ''}
       </div>`;
     };
@@ -440,7 +465,7 @@
     dayEnd = Math.max(dayEnd, dayStart + 2 * 3600e3);
     const span = dayEnd - dayStart;
     const pct = t => ((t - dayStart) / span * 100).toFixed(2) + '%';
-    const col = { 'Break': 'var(--bx-yellow)', 'BRB': 'var(--bx-orange)' };
+    const col = { 'Break': 'var(--bx-yellow)', 'BRB': 'var(--bx-orange)', 'Away (scrin.io)': 'var(--bx-ssm)' };
     const active = rows.filter(r => (r.events || []).length);
     // Away-at-once per 15 minutes, per wing.
     const slots = Math.max(1, Math.ceil(span / 900e3));
@@ -486,15 +511,18 @@
         ${kpi('BRB / AUX', byLane.away.length, byLane.away.map(r => e(String(r.username).split(' ')[0])).join(', '))}
         ${kpi('Over a limit', overRows.length, overRows.map(r => e(String(r.username).split(' ')[0])).join(', '))}
         ${kpi('Team break time', dur(teamBreak))}
+        ${liveNow && liveNow.scrinOn ? kpi('Away in scrin.io', byLane.ssm.length, (byLane.ssm.map(r => e(String(r.username).split(' ')[0])).join(', ') || '') + (teamSsm >= 60 ? ` · ${dur(teamSsm)} today` : '')) : ''}
+        ${liveNow && liveNow.scrinOn && isToday() ? kpi('Not tracking now', notTracking.length, notTracking.length ? notTracking.map(r => e(String(r.username).split(' ')[0])).join(', ') + ' (moved after 2 min)' : 'Everyone logged in is tracking') : ''}
       </div>
       <div class="bx-lanes">
         ${lane('Logged in', 'var(--bx-green)', byLane.live)}
         ${lane('On break', 'var(--bx-yellow)', byLane.break)}
         ${lane('BRB / AUX', 'var(--bx-orange)', byLane.away)}
+        ${byLane.ssm.length || (liveNow && liveNow.scrinOn) ? lane('Away in scrin.io', 'var(--bx-ssm)', byLane.ssm) : ''}
         ${lane('Logged out', 'var(--bx-t4)', byLane.off)}
       </div>
       <section class="bx-card bx-pad" style="margin-top:16px" aria-label="Day timeline">
-        <div class="bx-row bx-between"><div class="bx-strong">Day timeline</div><div class="bx-legend"><span><i style="background:var(--bx-yellow)"></i>Break</span><span><i style="background:var(--bx-orange)"></i>BRB</span><span><i style="background:var(--bx-purple)"></i>AUX</span><span><i class="bx-plan-key"></i>Planned</span>${isToday() ? '<span><i style="background:var(--bx-red)"></i>Now</span>' : ''}</div></div>
+        <div class="bx-row bx-between"><div class="bx-strong">Day timeline</div><div class="bx-legend"><span><i style="background:var(--bx-yellow)"></i>Break</span><span><i style="background:var(--bx-orange)"></i>BRB</span><span><i style="background:var(--bx-purple)"></i>AUX</span><span><i style="background:var(--bx-ssm)"></i>Away in scrin.io</span><span><i class="bx-plan-key"></i>Planned</span>${isToday() ? '<span><i style="background:var(--bx-red)"></i>Now</span>' : ''}</div></div>
         <div class="bx-caps">
           <div><div class="bx-sub">Call wing away at once (red = more than ${MAX_AWAY})</div>${capBar('call')}</div>
           <div><div class="bx-sub">Chat wing away at once</div>${capBar('chat')}</div>
@@ -514,7 +542,7 @@
     const { agent, admin } = roots();
     const view = g('view', 'admin');
     try {
-      if (agent && view === 'agent') agent.innerHTML = agentHTML();
+      if (agent && view === 'agent') { agent.innerHTML = agentHTML(); loadLiveNow(); }
       if (admin && view === 'admin') { admin.innerHTML = adminHTML(); loadLiveNow(); }
     } catch (err) { console.error('breaks-v2 render', err); }
     startTick();
@@ -532,7 +560,7 @@
     }, TICK_MS);
     // Rings, budgets and flags move with time too; redraw once a minute.
     setInterval(() => { if (!document.hidden) render(); }, 60000);
-    setInterval(() => { const ad = roots().admin; if (!document.hidden && ad && ad.offsetParent !== null && g('view', 'admin') === 'admin') loadLiveNow(); }, 20000);
+    setInterval(() => { const r = roots(), v = g('view', 'admin'); const el = v === 'admin' ? r.admin : r.agent; if (!document.hidden && el && el.offsetParent !== null) loadLiveNow(); }, 20000);
   }
 
   document.addEventListener('click', async ev => {

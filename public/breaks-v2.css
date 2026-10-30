@@ -178,3 +178,18 @@ html.dark-mode .rg-dlg .bx-btn.rg-ok{background:#3BB8EA;border-color:#3BB8EA;col
 .bx-live-chat{background:var(--bx-purple-s);color:var(--bx-purple)}
 @keyframes bxLive{0%,100%{opacity:1}50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.bx-live-call i{animation:none}}
+/* Batch 213: scrin.io tracking */
+.bx-root{--bx-ssm:#B8336A;--bx-ssm-s:rgba(184,51,106,.12)}
+html.dark-mode .bx-root{--bx-ssm:#F072A6;--bx-ssm-s:rgba(240,114,166,.14)}
+.bx-ssm{display:inline-flex;align-items:center;gap:5px;margin-top:3px;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;line-height:1.6;width:max-content}
+.bx-ssm i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.bx-ssm-on{color:var(--bx-green);background:var(--bx-green-s)}
+.bx-ssm-idle{color:var(--bx-yellow);background:var(--bx-yellow-s)}
+.bx-ssm-off{color:var(--bx-ssm);background:var(--bx-ssm-s)}
+.bx-chip .bx-ssm{margin-top:6px}
+.bx-ssm-alert,.bx-ssm-warn{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--bx-ssm);background:var(--bx-ssm-s);border-color:var(--bx-ssm)}
+.bx-ssm-warn{color:var(--bx-yellow);background:var(--bx-yellow-s);border-color:var(--bx-yellow)}
+.bx-btn-s{padding:4px 12px;font-size:12px}
+.bx-ssm-today{margin-top:10px}
+.bx-ssmlane{color:var(--bx-ssm);background:var(--bx-ssm-s)}
+.bx-state-ssmlane{border-top-color:var(--bx-ssm)}

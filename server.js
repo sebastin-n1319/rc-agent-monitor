@@ -8493,7 +8493,7 @@ async function activeChatsByEmail() {
 }
 app.get('/api/live-floor/now', requireAuth, async (req, res) => {
   try {
-    const [snap, monitored, chats] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), activeChatsByEmail()]);
+    const [snap, monitored, chats, ssm] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), activeChatsByEmail(), require('./lib/scrin').statusByEmail()]);
     const data = {};
     for (const a of monitored) {
       const email = String(a.email || '').toLowerCase(); if (!email) continue;
@@ -8501,9 +8501,9 @@ app.get('/api/live-floor/now', requireAuth, async (req, res) => {
       const st = String(s.normalizedStatus || '');
       data[email] = { onCall: !!s.isOnCall || /on call|ringing/i.test(st), ringing: /ringing/i.test(st) || String(s.telephonyStatus || '') === 'Ringing',
         status: st || null, direction: s.direction || null, callStartTime: s.isOnCall ? (s.callStartTime || null) : null,
-        activeChats: chats.data[email] || 0 };
+        activeChats: chats.data[email] || 0, scrin: ssm.data[email] || null };
     }
-    res.json({ success: true, data, chatsError: chats.error || null, at: new Date().toISOString() });
+    res.json({ success: true, data, chatsError: chats.error || null, scrinOn: !!ssm.configured, scrinError: ssm.error || null, at: new Date().toISOString() });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -8586,7 +8586,7 @@ async function latestChatStatusByEmail() {
 }
 app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
   try {
-    const [snap, monitored, desk, siq, chatLog, chats] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), chatStatusByEmail(), latestChatStatusByEmail(), activeChatsByEmail()]);
+    const [snap, monitored, desk, siq, chatLog, chats, ssm] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), deskAvailabilityByEmail(), chatStatusByEmail(), latestChatStatusByEmail(), activeChatsByEmail(), require('./lib/scrin').statusByEmail()]);
     const onOff = (v) => v == null || v === '' ? null : (String(v).toUpperCase() === 'ONLINE' ? 'on' : 'off');
     const data = {};
     for (const a of monitored) {
@@ -8607,6 +8607,10 @@ app.get('/api/live-floor/presence', requireAuth, async (req, res) => {
         desk: (() => { if (!d) return { state: null, label: desk.error ? 'Zoho Desk: ' + desk.error : 'Not found in Zoho Desk' }; const on = d.presence === 'ONLINE' && (d.mail || 'ONLINE') === 'ONLINE';
           return { state: on ? 'on' : 'off', label: on ? 'Taking tickets' : d.presence !== 'ONLINE' ? 'Offline in Zoho Desk, not taking tickets' : 'Ticket channel offline' }; })(),
         chat,
+        // Batch 213: scrin.io tracking (online = tracking and active)
+        scrin: (() => { if (!ssm.configured) return { state: null, label: 'scrin.io not connected' }; const x = ssm.data[email];
+          if (!x) return { state: null, label: ssm.error ? 'scrin.io: ' + ssm.error : 'Not in scrin.io' };
+          return { state: x.status === 'online' ? 'on' : 'off', label: x.status === 'online' ? 'Tracking in scrin.io' : x.status === 'away' ? 'Away in scrin.io (idle)' : 'Offline in scrin.io (not tracking)' }; })(),
       };
     }
     const out = { success: true, data, deskError: desk.error || null, chatError: siq.error || null, at: new Date().toISOString() };

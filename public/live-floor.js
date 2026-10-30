@@ -239,7 +239,7 @@
       if (j && j.success) { _pres = j; if (_last) paint(_last); }
     } catch (err) { /* the dots just stay hidden */ }
   }
-  const DOTS = [['avail', 'Availability'], ['rc', 'RC'], ['desk', 'Desk'], ['chat', 'Chat']];
+  const DOTS = [['avail', 'Availability'], ['rc', 'RC'], ['desk', 'Desk'], ['chat', 'Chat'], ['scrin', 'scrin.io']];
   function presenceDots(email) {
     if (!_pres || !_pres.data) return '';
     const p = _pres.data[String(email || '').toLowerCase()];
@@ -322,6 +322,14 @@
       if (r.st.key === 'break' && r.st.label === 'On break' && secs >= BREAK_ALERT_SECONDS) {
         const nb = breaksToday(r.st.tr);
         items.push({ sev: 2, color: 'var(--lf-yellow)', html: `<b>${e(r.op.agent.name)}</b> on break ${e(dur(secs))}`, sub: `Over 15 min${nb ? ` · break ${nb} today` : ''}`, secs });
+      }
+      // Batch 213: logged in here but not tracking in scrin.io (the tool moves them after 2 minutes)
+      const sp = _pres && _pres.data && _pres.data[String(r.op.agent.email || '').toLowerCase()];
+      if (sp && sp.scrin && sp.scrin.state === 'off' && r.st.tr && r.st.tr.currentStatus === 'Logged In' && r.st.key !== 'call') {
+        items.push({ sev: 2, color: 'var(--lf-red)', html: `<b>${e(r.op.agent.name)}</b> ${e(sp.scrin.label)}`, sub: 'Logged in here; moved to Away (scrin.io) after 2 minutes', secs: 0 });
+      }
+      if (r.st.tr && r.st.tr.currentStatus === 'Away (scrin.io)') {
+        items.push({ sev: 2, color: 'var(--lf-red)', html: `<b>${e(r.op.agent.name)}</b> away in scrin.io ${e(dur(secs))}`, sub: 'Back to Logged In automatically when scrin.io shows them online', secs });
       }
       const al = r.st.tr && r.st.tr.alerts;
       if (al && al.hasAlert && Array.isArray(al.alertReasons) && al.alertReasons.length) {
