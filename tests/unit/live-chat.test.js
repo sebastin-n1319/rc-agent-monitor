@@ -20,11 +20,21 @@ const ai = { isAnthropicConfigured: () => true,
 const expert = { searchLocal: async () => [{ src: 'kb', module: 'Engage', title: 'Texting', url: 'https://help.adit.com/portal/en/kb/articles/texting', text: 'How texting works' }], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }], updatesFor: async () => '- Texting fix released' };
 const ended = { id: '904', reference_id: '32300', status: 'Attended Online', chat_status: { status_key: 'closed' }, attender: { email: 'sky@adit.com' }, visitor: { name: 'Old' } };
 const reopened = { id: '905', reference_id: '32346', status: 'Connected', chat_status: { status_key: 'reopen' }, attender: { email: 'sky@adit.com' }, visitor: { name: 'Re' }, start_time: String(now - 120e3) };
-const siq = { fetchConversationsPage: async () => ({ conversations: convs, moreDataAvailable: false }), rawGet: async (p) => /status=closed/.test(p) ? { data: [ended] } : /^conversations\?index/.test(p) ? { data: [reopened] } : msgs };
+// SalesIQ hands back about 5 chats per read and pages by record offset (index=1, 6, 11...).
+const listed = convs.concat([reopened]);
+const page = (p) => { const i = Number((/index=(\d+)/.exec(p) || [])[1] || 1); return listed.slice(i - 1, i - 1 + 2); };
+const siq = { rawGet: async (p) => /status=closed/.test(p) ? { data: /index=1\b/.test(p) ? [ended] : [] }
+  : /^conversations\?/.test(p) ? { data: page(p), more_data_available: true }
+  : /^conversations\/\d+$/.test(p) ? { data: listed.concat([ended]).find((c) => p.endsWith('/' + c.id)) || null }
+  : msgs };
 
 beforeEach(() => { lc._reset(); seen = []; lc.setDeps({ siq, expert, ai }); });
 
 describe('Live chats', () => {
+  it('reads every page of the list by record offset', async () => {
+    const all = await lc.mine('x@adit.com', { all: true });
+    expect(all.map((c) => c.ref).sort()).toEqual(['32346', '32350', '32352']); // spread over 2 reads of 2
+  });
   it('lists only the agent\'s open chats', async () => {
     const m = await lc.mine('sky@adit.com');
     expect(m.map((c) => c.ref).sort()).toEqual(['32346', '32350']);

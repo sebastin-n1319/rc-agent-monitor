@@ -769,7 +769,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       for (var i = t.msgs.length - 1; i >= 0; i--) { var m = t.msgs[i]; if (m.who === 'client') return { client: true, at: m.at, text: m.file ? (m.file.image ? 'Sent a screenshot' : 'Sent a file') : m.text }; if (m.who === 'agent') return { client: false, at: m.at, text: m.file ? 'Sent a file' : m.text }; }
       return null;
     }
-    function imgUrl(t, m) { return '/api/livechat/' + encodeURIComponent(t.ref) + '/image/' + encodeURIComponent(m.id); }
+    function imgUrl(t, m) { return '/api/livechat/' + encodeURIComponent(t.ref) + '/image/' + encodeURIComponent(m.id) + '?id=' + encodeURIComponent((t.chat && t.chat.id) || ''); }
 
     // ── frame ──
     var sync = h('span', { class: 'ax-lc-sync', role: 'status' });
@@ -1064,7 +1064,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     }
 
     function loadChat(t) {
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + (t.acct ? '?acct=' + encodeURIComponent(t.acct) : '')).then(function (j) {
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '?id=' + encodeURIComponent((t.chat && t.chat.id) || '') + (t.acct ? '&acct=' + encodeURIComponent(t.acct) : '')).then(function (j) {
         t.loaded = true; var was = t.last, before = JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
         t.chat = j.chat; t.msgs = j.messages || []; t.error = ''; lastSync = Date.now();
         t.account = j.account || null; t.similar = j.similar && j.similar.length ? j.similar : t.similar;
@@ -1078,13 +1078,13 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function suggest(t, force) {
       if (t.busy && !force) return; t.busy = true; t.sError = ''; if (active === t.ref) { paintSide(); paintConvo(); } paintList();
       var basis = t.last;
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/suggest', { force: !!force, acct: t.acct || '' }).then(function (j) { if (t.sugg && t.sugg.reply) t.prev = t.sugg; t.sugg = j.suggestion; t.edit = false; t.edited = false; t.failed = null; t.fresh = true; })
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/suggest', { force: !!force, acct: t.acct || '', id: (t.chat && t.chat.id) || '' }).then(function (j) { if (t.sugg && t.sugg.reply) t.prev = t.sugg; t.sugg = j.suggestion; t.edit = false; t.edited = false; t.failed = null; t.fresh = true; })
         .catch(function (e) { t.sError = e.message; t.failed = basis; }).then(function () { t.busy = false; if (active === t.ref) { paintSide(); paintConvo(); } paintList(); loadChat(t); });
     }
     function improve(t) {
       var ask = String(t.ask || '').trim(); if (!ask || !t.sugg || t.busy) return;
       t.busy = true; t.sError = ''; paintSide();
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/improve', { instruction: ask, current: t.sugg.reply, acct: t.acct || '' }).then(function (j) { t.prev = t.sugg; t.sugg = j.suggestion; t.ask = ''; t.edited = false; t.fresh = true; ctx.toast('Reply improved'); })
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/improve', { instruction: ask, current: t.sugg.reply, acct: t.acct || '', id: (t.chat && t.chat.id) || '' }).then(function (j) { t.prev = t.sugg; t.sugg = j.suggestion; t.ask = ''; t.edited = false; t.fresh = true; ctx.toast('Reply improved'); })
         .catch(function (e) { t.sError = e.message; }).then(function () { t.busy = false; paintSide(); });
     }
     function loadMine() {

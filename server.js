@@ -2198,7 +2198,8 @@ app.post('/api/guides/expert/my-fixes/:id/done', requireAuth, rateLimit(30, 6000
 const liveChat = () => { const lc = require('./lib/live-chat'); if (!lc._wired) { lc.setDeps({ siq: require('./lib/salesiq-service'), expert: require('./lib/expert'), ai: require('./lib/ai'), kb: (t, o) => escalationWatch.kb(t, o) }); lc._wired = true; } return lc; };
 const chatWho = async (req) => { const email = req.session.email; const admin = await isAdminSession(req).catch(() => false);
   const spoc = admin ? false : await ticketAudits.listSpocs().then((l) => l.some((x) => x.active && String(x.email).toLowerCase() === String(email).toLowerCase())).catch(() => false);
-  return { email, admin, spoc }; };
+  const id = String((req.query && req.query.id) || (req.body && req.body.id) || '').replace(/\D/g, '').slice(0, 24);
+  return { email, admin, spoc, id }; };
 app.get('/api/livechat/mine', requireAuth, rateLimit(60, 60000), async (req, res) => { try { res.setHeader('Cache-Control', 'no-store'); const who = await chatWho(req); res.json({ success: true, chats: await liveChat().mine(req.session.email, { all: !!who.admin }), any: !!(who.admin || who.spoc), all: !!who.admin }); } catch (e) { expertErr(res, e, 'Could not load your chats from SalesIQ'); } });
 app.get('/api/livechat/image-diag', requireAdmin, (req, res) => res.json({ success: true, diag: liveChat().imageDiag() }));
 app.get('/api/livechat/:ref/image/:msg', requireAuth, rateLimit(240, 60000), async (req, res) => { try { const f = await liveChat().image(req.params.ref, await chatWho(req), req.params.msg); res.setHeader('Content-Type', f.mime); res.setHeader('Cache-Control', 'private, max-age=3600'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.end(f.buf); } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : 'Could not load the image' }); } });
@@ -8500,17 +8501,11 @@ async function activeChatsByEmail() {
   if (Date.now() - _activeChats.at < 45000) return _activeChats;
   if (!salesiqService.isConfigured()) return (_activeChats = { at: Date.now(), data: {}, error: 'SalesIQ is not set up' });
   try {
-    const now = Date.now(), from = now - 8 * 3600e3, data = {};
-    for (let index = 1; index <= 3; index++) {
-      const pg = await salesiqService.fetchConversationsPage({ fromTimeMs: from, toTimeMs: now, index, limit: 100 });
-      for (const c of pg.conversations) {
-        const email = c.attender && String(c.attender.email || '').toLowerCase();
-        if (!email || c.end_time) continue;
-        const st = String(c.status || '') + ' ' + String((c.chat_status && (c.chat_status.label || c.chat_status.state_key)) || '');
-        if (/end|close|miss|declin|block|archiv/i.test(st)) continue;
-        data[email] = (data[email] || 0) + 1;
-      }
-      if (!pg.moreDataAvailable) break;
+    // Batch 220: the same open-chat list Live chats uses (read by record offset, so busy hours are not cut off).
+    const data = {};
+    for (const c of await liveChat().openAll()) {
+      const email = c.attender && String(c.attender.email || '').toLowerCase();
+      if (email) data[email] = (data[email] || 0) + 1;
     }
     _activeChats = { at: Date.now(), data, error: null };
   } catch (e) { _activeChats = { at: Date.now(), data: _activeChats.data || {}, error: e.message }; }
