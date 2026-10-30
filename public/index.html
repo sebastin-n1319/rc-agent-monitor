@@ -63,12 +63,12 @@
 <script src="/desk-lifecycle-agent.js?v=2.7.0" defer></script>
 <script src="/desk-lifecycle-verify.js?v=1.6.1" defer></script>
 <link rel="stylesheet" href="/live-floor.css?v=1.6.0">
-<script src="/live-floor.js?v=1.5.1" defer></script>
+<script src="/live-floor.js?v=1.5.2" defer></script>
 <link rel="stylesheet" href="/cf1025.css?v=1.0.0">
 <script src="/cf1025.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="/breaks-v2.css?v=1.3.0">
-<script src="/regularise.js?v=1.0.2" defer></script>
-<script src="/breaks-v2.js?v=1.4.0" defer></script>
+<script src="/regularise.js?v=1.0.3" defer></script>
+<script src="/breaks-v2.js?v=1.4.1" defer></script>
 <link rel="stylesheet" href="/chat-reports.css?v=1.0.1">
 <script src="/chat-reports.js?v=1.0.1" defer></script>
 <link rel="stylesheet" href="/t1-alerts.css?v=1.0.0">
@@ -8710,12 +8710,15 @@ const BREAK_ACTION_META = {
   QA_SESSION_OUT: { label: 'QA Session AUX Out', badge: 'OUT', copy: 'QA AUX session started' },
   QA_SESSION_IN: { label: 'QA Session AUX In', badge: 'IN', copy: 'Returned from QA AUX session' },
   INTERNAL_CALL_OUT: { label: 'Internal Calls Out', badge: 'OUT', copy: 'Internal call or huddle started' },
-  INTERNAL_CALL_IN: { label: 'Internal Calls In', badge: 'IN', copy: 'Returned from internal calls' }
+  INTERNAL_CALL_IN: { label: 'Internal Calls In', badge: 'IN', copy: 'Returned from internal calls' },
+  SSM_AWAY_OUT: { label: 'Away in scrin.io', badge: 'OUT', copy: 'Moved here by the tool: scrin.io shows you away or offline' },
+  SSM_AWAY_IN: { label: 'Back in scrin.io', badge: 'IN', copy: 'Back online in scrin.io' }
 };
 
 const BREAK_ALLOWED_ACTIONS = {
   'Logged Out': ['LOGGED_IN'],
   'Logged In': ['LOGGED_OUT','BRB_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
+  'Away (scrin.io)': ['SSM_AWAY_IN','LOGGED_OUT','BRB_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
   BRB: ['BRB_IN','LOGGED_OUT','BREAK_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
   Break: ['BREAK_IN','LOGGED_OUT','BRB_OUT','TRAINING_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
   'Training / Coaching': ['TRAINING_IN','LOGGED_OUT','BRB_OUT','BREAK_OUT','QA_SESSION_OUT','INTERNAL_CALL_OUT'],
@@ -8735,6 +8738,7 @@ function getBreakActionGuardCopy(currentStatus){
   if(currentStatus === 'Training / Coaching') return 'Training / Coaching AUX is active. Return, close shift, or move into another away lane.';
   if(currentStatus === 'QA Session AUX') return 'QA AUX is active. Return, close shift, or move into another away lane.';
   if(currentStatus === 'Internal Calls') return 'Internal call AUX is active. Return, close shift, or move into another away lane.';
+  if(currentStatus === 'Away (scrin.io)') return 'scrin.io shows you away or offline, so the tool moved you here. Start tracking in scrin.io and you are moved back to Logged In automatically.';
   return 'Use the next valid lane action to continue.';
 }
 
@@ -8758,6 +8762,7 @@ function breakStatusClass(status){
   if(status === 'Training / Coaching') return 'training';
   if(status === 'QA Session AUX') return 'qa';
   if(status === 'Internal Calls') return 'internal';
+  if(status === 'Away (scrin.io)') return 'brb';
   return 'offline';
 }
 
@@ -8769,6 +8774,7 @@ function breakStatusColorClass(status){
   if(status === 'Training / Coaching') return 'p-training';
   if(status === 'QA Session AUX') return 'p-qaaux';
   if(status === 'Internal Calls') return 'p-internal';
+  if(status === 'Away (scrin.io)') return 'p-oncall';
   return 'p-unknown';
 }
 
@@ -8949,6 +8955,7 @@ function buildFlcAgentRow(row, cls){
   if((row.brbSeconds||0)>0) _pctLines.push(`BRB today: ${_FMTS(row.brbSeconds||0)} / 20m limit (${brbPct}%)`);
   if((row.trainingSeconds||0)>0) _pctLines.push(`Training: ${_FMTS(row.trainingSeconds)}`);
   if((row.internalCallSeconds||0)>0) _pctLines.push(`Internal calls: ${_FMTS(row.internalCallSeconds)}`);
+  if((row.ssmAwaySeconds||0)>0) _pctLines.push(`Away in scrin.io: ${_FMTS(row.ssmAwaySeconds)}`);
   if(_isOverBreak) _pctLines.push(`⚠ Break over limit by ${_FMTS((row.breakSeconds||0)-3600)}`);
   if(_isOverBrb)   _pctLines.push(`⚠ BRB over limit by ${_FMTS((row.brbSeconds||0)-1200)}`);
   if(!_isOverBreak && !_isOverBrb) _pctLines.push(`✓ Within limits`);
@@ -9187,6 +9194,7 @@ const BTK_STATUS_COLORS = {
   'Training / Coaching':{ border:'#a855f7', bg:'rgba(168,85,247,.10)', dot:'#a855f7', text:'#a855f7' },
   'QA Session AUX':     { border:'#14b8a6', bg:'rgba(20,184,166,.10)', dot:'#14b8a6', text:'#14b8a6' },
   'Internal Calls':     { border:'#3b82f6', bg:'rgba(59,130,246,.10)', dot:'#3b82f6', text:'#3b82f6' },
+  'Away (scrin.io)':    { border:'#e11d48', bg:'rgba(225,29,72,.10)',  dot:'#e11d48', text:'#e11d48' },
   'Logged Out':         { border:'#475569', bg:'rgba(71,85,105,.06)',  dot:'#6b7280', text:'#94a3b8' },
 };
 
@@ -9290,6 +9298,7 @@ function buildBtkAgentTile(row){
     { label:'Training', val:row.trainingSeconds||0, over:false, color:'#a855f7' },
     { label:'Internal', val:row.internalCallSeconds||0, over:false, color:'#3b82f6' },
     { label:'QA', val:row.qaSeconds||0, over:false, color:'#14b8a6' },
+    { label:'scrin.io away', val:row.ssmAwaySeconds||0, over:false, color:'#e11d48' },
   ].filter(m => m.val > 0);
 
   const chips = auxChips.map(m =>
@@ -9363,7 +9372,7 @@ function renderBreakAdminView(){
   if(chipEl) chipEl.textContent = active.length+' active'+(active.length!==1?'s':'');
   const gridEl = document.getElementById('btk-agent-grid');
   if(gridEl){
-    const statusOrder = {'Break':0,'BRB':1,'Training / Coaching':2,'QA Session AUX':3,'Internal Calls':4,'Logged In':5};
+    const statusOrder = {'Away (scrin.io)':0,'Break':0,'BRB':1,'Training / Coaching':2,'QA Session AUX':3,'Internal Calls':4,'Logged In':5};
     // Apply name filter
     let filtered = [...active];
     if(_btkSearchTerm){
@@ -12010,6 +12019,7 @@ const AUX_LABELS = {
   'TRAINING':      { label:'Training / Coaching',     icon:'▸' },
   'QA_SESSION':    { label:'QA Session AUX',          icon:'◆' },
   'INTERNAL_CALL': { label:'Internal Calls AUX',      icon:'◎' },
+  'SSM_AWAY':      { label:'Away (scrin.io), set by the tool', icon:'◌' },
 };
 
 async function loadBreakThresholds(){
@@ -12676,7 +12686,7 @@ function renderAgentCard(a){
   const statusColor={'ok':'rgba(52,211,153,.2)','warning':'rgba(251,191,36,.2)','exceeded':'rgba(239,68,68,.2)'};
   const statusBorder={'ok':'rgba(52,211,153,.4)','warning':'rgba(251,191,36,.4)','exceeded':'rgba(239,68,68,.4)'};
   const statusIcon={'ok':'✅','warning':'⚠️','exceeded':'🔴'};
-  const AUX_SHORT={BRB:'BRB',BREAK:'Break',TRAINING:'Training',QA_SESSION:'QA',INTERNAL_CALL:'Int. Call'};
+  const AUX_SHORT={BRB:'BRB',BREAK:'Break',TRAINING:'Training',QA_SESSION:'QA',INTERNAL_CALL:'Int. Call',SSM_AWAY:'scrin.io away'};
   const parts=Object.entries(a.compliance).map(([aux,c])=>{
     const pct=c.daily_limit?Math.min(100,Math.round(c.mins/c.daily_limit*100)):null;
     const barColor=c.status==='exceeded'?'#ef4444':c.status==='warning'?'#fbbf24':'#34d399';
@@ -12881,7 +12891,7 @@ function renderBreakTimeline(){
   const SHIFT_START=7*60, SHIFT_END=20*60, TOTAL=SHIFT_END-SHIFT_START;
   const now=new Date();
   const nowMin=now.getHours()*60+now.getMinutes();
-  const colorMap={'BRB':'rgba(251,146,60,.7)','Break':'rgba(239,68,68,.7)','Training / Coaching':'rgba(167,139,250,.7)','QA Session AUX':'rgba(34,211,238,.7)','Internal Calls':'rgba(96,165,250,.7)','Logged Out':'rgba(75,85,99,.7)'};
+  const colorMap={'BRB':'rgba(251,146,60,.7)','Break':'rgba(239,68,68,.7)','Training / Coaching':'rgba(167,139,250,.7)','QA Session AUX':'rgba(34,211,238,.7)','Internal Calls':'rgba(96,165,250,.7)','Away (scrin.io)':'rgba(225,29,72,.7)','Logged Out':'rgba(75,85,99,.7)'};
   const rows=agents.map(a=>{
     const events=a.events||[];
     const bars=[];
@@ -14010,7 +14020,7 @@ async function deleteNote(id){
     return (typeof toDateTime==='function') ? toDateTime(iso) : (typeof toTime==='function' ? toTime(iso) : '--');
   }
   function btkStatusCol(s){
-    const map = {'Logged In':'#2DDC96','Available':'#2DDC96','BRB':'#FBC84B','Break':'#ED666B','Training / Coaching':'#a855f7','QA Session AUX':'#14b8a6','Internal Calls':'#3b82f6','Logged Out':'#475569'};
+    const map = {'Logged In':'#2DDC96','Available':'#2DDC96','BRB':'#FBC84B','Break':'#ED666B','Training / Coaching':'#a855f7','QA Session AUX':'#14b8a6','Internal Calls':'#3b82f6','Away (scrin.io)':'#e11d48','Logged Out':'#475569'};
     return map[s] || '#64748b';
   }
 
@@ -14034,6 +14044,7 @@ async function deleteNote(id){
       { label:'Training',    val:row.trainingSeconds||0,       limit:0, color:'#a855f7', icon:'🎯' },
       { label:'Internal Call',val:row.internalCallSeconds||0,  limit:0, color:'#3b82f6', icon:'📞' },
       { label:'QA Session',  val:row.qaSeconds||0,             limit:0, color:'#14b8a6', icon:'✅' },
+      { label:'Away (scrin.io)', val:row.ssmAwaySeconds||0,    limit:0, color:'#e11d48', icon:'🖥' },
     ].filter(it => it.val > 0 || it.limit > 0);
 
     if(!items.length) return '<div style="color:#475569;font-size:13px;padding:4px 0 8px;">No AUX time recorded yet.</div>';
@@ -16645,7 +16656,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,.nav-tab:focus-vis
       QA_SESSION_OUT:'QA AUX started',
       QA_SESSION_IN:'QA AUX closed',
       INTERNAL_CALL_OUT:'Internal call started',
-      INTERNAL_CALL_IN:'Internal call ended'
+      INTERNAL_CALL_IN:'Internal call ended',
+      SSM_AWAY_IN:'Back to Logged In'
     };
     // Session 47: pass every argument through (the options object was being
     // dropped), and only celebrate once the server actually saved it; this

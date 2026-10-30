@@ -99,12 +99,16 @@ const BREAK_ACTIONS = {
   QA_SESSION_IN: { label: 'QA Session AUX In', status: 'Logged In', type: 'qa' },
   QA_SESSION_OUT: { label: 'QA Session AUX Out', status: 'QA Session AUX', type: 'qa' },
   INTERNAL_CALL_IN: { label: 'Internal Calls In', status: 'Logged In', type: 'internal' },
-  INTERNAL_CALL_OUT: { label: 'Internal Calls Out', status: 'Internal Calls', type: 'internal' }
+  INTERNAL_CALL_OUT: { label: 'Internal Calls Out', status: 'Internal Calls', type: 'internal' },
+  // Batch 212: set by the tool when scrin.io shows the agent away or offline while logged in here
+  SSM_AWAY_IN: { label: 'Back in scrin.io', status: 'Logged In', type: 'ssm' },
+  SSM_AWAY_OUT: { label: 'Away in scrin.io', status: 'Away (scrin.io)', type: 'ssm' }
 };
 
 const BREAK_ALLOWED_ACTIONS = {
   'Logged Out': ['LOGGED_IN'],
-  'Logged In': ['LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
+  'Logged In': ['LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT', 'SSM_AWAY_OUT'],
+  'Away (scrin.io)': ['SSM_AWAY_IN', 'LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
   BRB: ['BRB_IN', 'LOGGED_OUT', 'BREAK_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
   Break: ['BREAK_IN', 'LOGGED_OUT', 'BRB_OUT', 'TRAINING_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
   'Training / Coaching': ['TRAINING_IN', 'LOGGED_OUT', 'BRB_OUT', 'BREAK_OUT', 'QA_SESSION_OUT', 'INTERNAL_CALL_OUT'],
@@ -117,7 +121,8 @@ const BREAK_RETURN_ACTIONS = {
   Break: 'BREAK_IN',
   'Training / Coaching': 'TRAINING_IN',
   'QA Session AUX': 'QA_SESSION_IN',
-  'Internal Calls': 'INTERNAL_CALL_IN'
+  'Internal Calls': 'INTERNAL_CALL_IN',
+  'Away (scrin.io)': 'SSM_AWAY_IN'
 };
 
 function normalizeBreakAction(action){
@@ -175,6 +180,7 @@ function resolveBreakEventStream(events, endAt){
   let trainingSeconds = 0;
   let qaSeconds = 0;
   let internalCallSeconds = 0;
+  let ssmAwaySeconds = 0;
   let loggedInSeconds = 0;
   let maxBrbInstanceSeconds = 0;
   let maxBreakInstanceSeconds = 0;
@@ -199,6 +205,7 @@ function resolveBreakEventStream(events, endAt){
     if(current.current_status === 'Training / Coaching') trainingSeconds += duration;
     if(current.current_status === 'QA Session AUX') qaSeconds += duration;
     if(current.current_status === 'Internal Calls') internalCallSeconds += duration;
+    if(current.current_status === 'Away (scrin.io)') ssmAwaySeconds += duration;
     if(current.current_status !== 'Logged Out') loggedInSeconds += duration;
   }
 
@@ -335,6 +342,7 @@ function resolveBreakEventStream(events, endAt){
     trainingSeconds,
     qaSeconds,
     internalCallSeconds,
+    ssmAwaySeconds,
     loggedInSeconds,
     maxBrbInstanceSeconds,
     maxBreakInstanceSeconds,
@@ -361,6 +369,7 @@ function statusTone(status){
   if(status === 'Training / Coaching') return 'training';
   if(status === 'QA Session AUX') return 'qa';
   if(status === 'Internal Calls') return 'internal';
+  if(status === 'Away (scrin.io)') return 'ssm';
   if(status === 'Logged In') return 'online';
   if(status === 'Logged Out') return 'offline';
   return 'neutral';
@@ -524,6 +533,8 @@ async function initDB() {
         [aux, single, daily]);
     }
   }
+
+  await run(`INSERT OR IGNORE INTO break_thresholds (aux_type, single_limit_minutes, daily_limit_minutes) VALUES ('SSM_AWAY', NULL, NULL)`).catch(() => {});
 
   // ── AI Learning Agent: feedback + discovered patterns ─────────────────────
   await run(`CREATE TABLE IF NOT EXISTS ticket_feedback (
@@ -1590,6 +1601,7 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
       trainingSeconds: resolved.trainingSeconds,
       qaSeconds: resolved.qaSeconds,
       internalCallSeconds: resolved.internalCallSeconds,
+      ssmAwaySeconds: resolved.ssmAwaySeconds || 0,
       loggedInSeconds: resolved.loggedInSeconds,
       currentLaneSeconds: resolved.currentLaneSeconds,
       maxBrbInstanceSeconds: resolved.maxBrbInstanceSeconds,
@@ -1608,6 +1620,7 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
       BRB: 0,
       Break: 1,
       'Internal Calls': 2,
+      'Away (scrin.io)': 2,
       'Training / Coaching': 3,
       'QA Session AUX': 4,
       'Logged In': 5,
@@ -1635,6 +1648,8 @@ async function getBreakTracker(date, timeZone='America/Chicago', email=null){
     brbSeconds: tracker.reduce((sum, row) => sum + row.brbSeconds, 0),
     breakSeconds: tracker.reduce((sum, row) => sum + row.breakSeconds, 0),
     internalCallSeconds: tracker.reduce((sum, row) => sum + row.internalCallSeconds, 0),
+    ssmAwayNow: tracker.filter(row => row.currentStatus === 'Away (scrin.io)').length,
+    ssmAwaySeconds: tracker.reduce((sum, row) => sum + (row.ssmAwaySeconds || 0), 0),
     trainingSeconds: tracker.reduce((sum, row) => sum + row.trainingSeconds, 0),
     qaSeconds: tracker.reduce((sum, row) => sum + row.qaSeconds, 0),
     alertCount: tracker.filter(row => row.alerts?.hasAlert).length
@@ -1858,8 +1873,8 @@ function pruneExpiredSessions(){
 // ── Break report data ────────────────────────────────────────────────────────
 // Returns per-agent break totals across a date range (multi-day aggregation)
 async function getBreakReportData(startDateIso, endDateIso, timeZone='America/Chicago'){
-  const AUX_OUT = { BRB_OUT:'BRB', BREAK_OUT:'BREAK', TRAINING_OUT:'TRAINING', QA_SESSION_OUT:'QA_SESSION', INTERNAL_CALL_OUT:'INTERNAL_CALL' };
-  const AUX_IN  = new Set(['BRB_IN','BREAK_IN','TRAINING_IN','QA_SESSION_IN','INTERNAL_CALL_IN','LOGGED_IN','LOGGED_OUT']);
+  const AUX_OUT = { BRB_OUT:'BRB', BREAK_OUT:'BREAK', TRAINING_OUT:'TRAINING', QA_SESSION_OUT:'QA_SESSION', INTERNAL_CALL_OUT:'INTERNAL_CALL', SSM_AWAY_OUT:'SSM_AWAY' };
+  const AUX_IN  = new Set(['BRB_IN','BREAK_IN','TRAINING_IN','QA_SESSION_IN','INTERNAL_CALL_IN','SSM_AWAY_IN','LOGGED_IN','LOGGED_OUT']);
 
   // Get window across entire range
   const { start } = getDateWindow(startDateIso, timeZone);

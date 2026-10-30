@@ -15,7 +15,7 @@
   const TICK_MS = 1000;
   const DAY_TZ = 'America/Chicago'; // break days follow the Chicago day (Session 48)
   const MAX_AWAY = 2;
-  const AWAY = new Set(['Break', 'BRB', 'Training / Coaching', 'QA Session AUX', 'Internal Calls']);
+  const AWAY = new Set(['Break', 'BRB', 'Training / Coaching', 'QA Session AUX', 'Internal Calls', 'Away (scrin.io)']);
   const LANES = {
     'Logged In':           { key: 'live',  label: 'Logged in' },
     'Break':               { key: 'break', label: 'On break' },
@@ -23,6 +23,7 @@
     'Training / Coaching': { key: 'aux',   label: 'Training' },
     'QA Session AUX':      { key: 'aux',   label: 'QA session' },
     'Internal Calls':      { key: 'aux',   label: 'Internal call' },
+    'Away (scrin.io)':     { key: 'brb',   label: 'Away in scrin.io' },
     'Logged Out':          { key: 'off',   label: 'Logged out' },
   };
   // One tile per activity. `out` starts it, `in` ends it.
@@ -249,7 +250,7 @@
 
   function teamHTML(team) {
     const myEmail = String(g('email', '') || '').toLowerCase();
-    const order = { 'Break': 0, 'BRB': 1, 'Training / Coaching': 2, 'QA Session AUX': 2, 'Internal Calls': 2, 'Logged In': 3, 'Logged Out': 4 };
+    const order = { 'Break': 0, 'BRB': 1, 'Training / Coaching': 2, 'QA Session AUX': 2, 'Internal Calls': 2, 'Away (scrin.io)': 0, 'Logged In': 3, 'Logged Out': 4 };
     const wingBlock = (w, title) => {
       const list = team.filter(r => wingOf(r.email) === w).sort((a, b) => (order[a.currentStatus] ?? 5) - (order[b.currentStatus] ?? 5) || String(a.username).localeCompare(String(b.username)));
       if (!list.length) return '';

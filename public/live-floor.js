@@ -33,7 +33,7 @@
     return CHAT_WING.has(String((op.agent && op.agent.email) || '').toLowerCase()) ? 'chat' : 'call';
   }
 
-  const AWAY_LANES = new Set(['Break', 'BRB', 'Training / Coaching', 'QA Session AUX', 'Internal Calls']);
+  const AWAY_LANES = new Set(['Break', 'BRB', 'Training / Coaching', 'QA Session AUX', 'Internal Calls', 'Away (scrin.io)']);
 
   let _chats = {};           // email -> chats today
   let _chatsFetchedAt = 0;

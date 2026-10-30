@@ -8,7 +8,7 @@
     ['Shift', [['LOGGED_IN', 'Logged In (start of shift)'], ['LOGGED_OUT', 'Logged Out (end of shift)']]],
     ['Break', [['BREAK_OUT', 'Break Out (I left for a break)'], ['BREAK_IN', 'Break In (I came back)']]],
     ['BRB', [['BRB_OUT', 'BRB Out (I stepped away)'], ['BRB_IN', 'BRB In (I came back)']]],
-    ['Other timed statuses', [['TRAINING_OUT', 'Training / Coaching Out'], ['TRAINING_IN', 'Training / Coaching In'], ['QA_SESSION_OUT', 'QA Session AUX Out'], ['QA_SESSION_IN', 'QA Session AUX In'], ['INTERNAL_CALL_OUT', 'Internal Calls Out'], ['INTERNAL_CALL_IN', 'Internal Calls In']]],
+    ['Other timed statuses', [['TRAINING_OUT', 'Training / Coaching Out'], ['TRAINING_IN', 'Training / Coaching In'], ['QA_SESSION_OUT', 'QA Session AUX Out'], ['QA_SESSION_IN', 'QA Session AUX In'], ['SSM_AWAY_IN', 'Back in scrin.io'], ['INTERNAL_CALL_OUT', 'Internal Calls Out'], ['INTERNAL_CALL_IN', 'Internal Calls In']]],
   ];
   function e(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function role() { try { return typeof window.currentRole === 'string' ? window.currentRole : (sessionStorage.getItem('rcRole') || ''); } catch (x) { return ''; } }

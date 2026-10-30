@@ -312,7 +312,9 @@ function getBreakChatMeta(event){
     QA_SESSION_OUT: { lane: 'QA Session AUX', detail: 'QA AUX started', flow: 'out', emoji: '🧪', accent: '🔴' },
     QA_SESSION_IN: { lane: 'Logged In', detail: 'Back from QA AUX', flow: 'in', emoji: '🟢', accent: '🟢' },
     INTERNAL_CALL_OUT: { lane: 'Internal Calls', detail: 'Internal call started', flow: 'out', emoji: '📞', accent: '🔴' },
-    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call', flow: 'in', emoji: '🟢', accent: '🟢' }
+    INTERNAL_CALL_IN: { lane: 'Logged In', detail: 'Back from internal call', flow: 'in', emoji: '🟢', accent: '🟢' },
+    SSM_AWAY_OUT: { lane: 'Away (scrin.io)', detail: 'Auto: away or offline in scrin.io', flow: 'out', emoji: '🖥️', accent: '🔴' },
+    SSM_AWAY_IN: { lane: 'Logged In', detail: 'Auto: back online in scrin.io', flow: 'in', emoji: '🟢', accent: '🟢' }
   };
   return actionMap[event.action] || {
     lane: event.currentStatus || 'Updated',
@@ -455,7 +457,7 @@ function inAlertHours(d = new Date(), win = ALERT_HOURS) {
 }
 
 const BREAK_EVENT_GROUP = { LOGGED_IN: 'shift', LOGGED_OUT: 'shift', BREAK_OUT: 'break', BREAK_IN: 'break', BRB_OUT: 'brb', BRB_IN: 'brb',
-  TRAINING_OUT: 'training', TRAINING_IN: 'training', QA_SESSION_OUT: 'qa', QA_SESSION_IN: 'qa', INTERNAL_CALL_OUT: 'internal', INTERNAL_CALL_IN: 'internal' };
+  TRAINING_OUT: 'training', TRAINING_IN: 'training', QA_SESSION_OUT: 'qa', QA_SESSION_IN: 'qa', INTERNAL_CALL_OUT: 'internal', INTERNAL_CALL_IN: 'internal', SSM_AWAY_OUT: 'ssm', SSM_AWAY_IN: 'ssm' };
 async function sendBreakChatNotification(event, opts){
   if(ALERT_HOOKS.breakLogEnabled === false){
     return { notified: false, status: 'disabled', response: 'Break log alerts are turned off on the Alerts page' };
@@ -758,6 +760,16 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 195: the Roster follows the T1 CS Team Roster Google Sheet: the current and previous month every hour,
     // the last 12 months every night (02:30 Central), and once 2 minutes after start.
     require('./lib/scrin').setDeps({ roster: require('./lib/roster') }); // Batch 212: scrin.io (read only)
+    // Batch 212: Logged In here but away or offline in scrin.io for 2 minutes moves the agent to Away (scrin.io), and back
+    // when scrin.io shows them online. Every minute. SCRIN_AUTO_AUX=off switches it off.
+    { const sa = require('./lib/scrin-aux');
+      sa.setDeps({ scrin: require('./lib/scrin'), getBreakTracker, insertBreakEvent, notices,
+        notify: async (event) => {
+          if (isTestAccount(event.email) || NOTIFICATION_BLOCKLIST.includes(String(event.email || '').toLowerCase().trim())) return;
+          const n = await sendBreakChatNotification(event).catch((e) => ({ notified: false, status: 'failed', response: e.message }));
+          await updateBreakEventNotification(event.id, n.notified, n.status, n.response).catch(() => {});
+        } });
+      setTimeout(() => { setInterval(() => { if (sa.enabled()) sa.tick().catch((e) => console.warn('scrin auto aux:', e.message)); }, 60 * 1000); }, 90 * 1000); }
     { const rs = require('./lib/roster-sheet'); rs.setDeps({ roster: require('./lib/roster') });
       const log = (r) => { if (!r.ok) console.warn('roster sheet sync:', r.error); else if (r.written || r.agentsAdded.length) console.log('roster sheet sync:', r.written, 'day(s) updated', r.agentsAdded.length ? 'added ' + r.agentsAdded.join(', ') : ''); };
       setTimeout(() => rs.sync({ months: 2 }).then(log).catch(() => {}), 2 * 60 * 1000);
@@ -1399,7 +1411,7 @@ app.get('/api/break-history', requireAuth, async (req, res) => {
         date: d,
         breakSeconds: row ? row.breakSeconds || 0 : 0,
         brbSeconds: row ? row.brbSeconds || 0 : 0,
-        auxSeconds: row ? (row.trainingSeconds || 0) + (row.qaSeconds || 0) + (row.internalCallSeconds || 0) : 0,
+        auxSeconds: row ? (row.trainingSeconds || 0) + (row.qaSeconds || 0) + (row.internalCallSeconds || 0) + (row.ssmAwaySeconds || 0) : 0,
         loggedInSeconds: row ? row.loggedInSeconds || 0 : 0,
         breakCount: row ? count('Break') : 0,
         brbCount: row ? count('BRB') : 0,
@@ -1416,7 +1428,8 @@ const VALID_BREAK_ACTIONS = new Set([
   'BREAK_OUT','BREAK_IN',
   'TRAINING_OUT','TRAINING_IN',
   'QA_SESSION_OUT','QA_SESSION_IN',
-  'INTERNAL_CALL_OUT','INTERNAL_CALL_IN'
+  'INTERNAL_CALL_OUT','INTERNAL_CALL_IN',
+  'SSM_AWAY_IN' // Batch 212: an agent may come back from the scrin.io away status; only the tool sets SSM_AWAY_OUT
 ]);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -1920,7 +1933,7 @@ app.get('/api/break-thresholds', requireAuth, async (req, res) => {
 
 app.post('/api/break-thresholds', requireAdmin, async (req, res) => {
   const { aux_type, single_limit_minutes, daily_limit_minutes } = req.body || {};
-  const VALID_AUX = ['BRB','BREAK','TRAINING','QA_SESSION','INTERNAL_CALL'];
+  const VALID_AUX = ['BRB','BREAK','TRAINING','QA_SESSION','INTERNAL_CALL','SSM_AWAY'];
   if(!aux_type || !VALID_AUX.includes(aux_type))
     return res.status(400).json({ success: false, error: 'Invalid aux_type' });
   const single = single_limit_minutes === null || single_limit_minutes === '' ? null : parseInt(single_limit_minutes);
@@ -1938,7 +1951,7 @@ app.post('/api/break-thresholds', requireAdmin, async (req, res) => {
 });
 
 // ── Break Report ─────────────────────────────────────────────────────────────
-const AUX_NAMES = { BRB:'BRB', BREAK:'Break', TRAINING:'Training', QA_SESSION:'QA Session', INTERNAL_CALL:'Internal Call' };
+const AUX_NAMES = { BRB:'BRB', BREAK:'Break', TRAINING:'Training', QA_SESSION:'QA Session', INTERNAL_CALL:'Internal Call', SSM_AWAY:'Away (scrin.io)' };
 
 function fmtMin(m){ const v=Math.round(m||0); return v<60?v+'m':`${Math.floor(v/60)}h ${v%60}m`; }
 
@@ -2147,6 +2160,7 @@ app.get('/api/admin/scrin/status', requireAdmin, rateLimit(10, 60000), async (re
     res.json({ success: true, configured: true, ...(await sc.people({ force: req.query.refresh === '1' })) });
   } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
 });
+app.get('/api/admin/scrin/auto-aux', requireAdmin, (req, res) => res.json({ success: true, ...require('./lib/scrin-aux').status() }));
 // Batch 197: Open T1 ticket review (admins). Suggestions only, nothing is changed in Desk.
 const triageMod = () => require('./lib/ticket-triage');
 app.get('/api/guides/expert/triage', requireAdmin, async (req, res) => {
