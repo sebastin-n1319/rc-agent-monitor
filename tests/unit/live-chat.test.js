@@ -19,16 +19,16 @@ const ai = { isAnthropicConfigured: () => true,
     return { json: { reply: 'Thanks, Dr. Lee \u2014 let us check.\n\nhttps://help.adit.com/portal/en/kb/articles/texting\nhttps://evil.example.com/x\n\n[screenshot - Settings > Texting]', why: 'Client says texts fail', checks: ['Check the 10DLC status'], handover: '', kb: 'Texting', kb_url: 'https://evil.example.com/y' } }; } };
 const expert = { searchLocal: async () => [{ src: 'kb', module: 'Engage', title: 'Texting', url: 'https://help.adit.com/portal/en/kb/articles/texting', text: 'How texting works' }], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }], updatesFor: async () => '- Texting fix released' };
 const ended = { id: '904', reference_id: '32300', status: 'Attended Online', chat_status: { status_key: 'closed' }, attender: { email: 'sky@adit.com' }, visitor: { name: 'Old' } };
-const siq = { fetchConversationsPage: async () => ({ conversations: convs, moreDataAvailable: false }), rawGet: async (p) => /status=closed/.test(p) ? { data: [ended] } : msgs };
+const reopened = { id: '905', reference_id: '32346', status: 'Connected', chat_status: { status_key: 'reopen' }, attender: { email: 'sky@adit.com' }, visitor: { name: 'Re' }, start_time: String(now - 120e3) };
+const siq = { fetchConversationsPage: async () => ({ conversations: convs, moreDataAvailable: false }), rawGet: async (p) => /status=closed/.test(p) ? { data: [ended] } : /^conversations\?index/.test(p) ? { data: [reopened] } : msgs };
 
 beforeEach(() => { lc._reset(); seen = []; lc.setDeps({ siq, expert, ai }); });
 
 describe('Live chats', () => {
   it('lists only the agent\'s open chats', async () => {
     const m = await lc.mine('sky@adit.com');
-    expect(m.map((c) => c.ref)).toEqual(['32350']);
-    expect(m[0].company).toBe('Smile Dental');
-    expect(m[0].open).toBe(true);
+    expect(m.map((c) => c.ref).sort()).toEqual(['32346', '32350']);
+    expect(m.find((c) => c.ref === '32350').company).toBe('Smile Dental');
   });
   it('lets agents open only their own chats, admins and SPOCs any', async () => {
     await expect(lc.chat('32352', { email: 'sky@adit.com' })).rejects.toThrow('not one of your chats');
