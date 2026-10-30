@@ -752,12 +752,13 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
   // account's recent tickets, similar solved cases and the client's screenshots (shown in the chat and read by the AI).
   function LiveChats(panel, ctx) {
     var root = h('div', { class: 'ax-lc' }); panel.appendChild(root);
-    var acFocus = false, drawer = false;
+    var acFocus = false, drawer = false, isAll = false, view = 'all';
+    try { view = localStorage.getItem('axLiveChatsView') || 'all'; } catch (e) {}
     var tabs = [], active = null, any = false, tMine = null, tChat = null, tTick = null, err = '', lastSync = 0;
     var KEY = 'axLiveChats';
     var QUICK = ['Shorter', 'Friendlier', 'Add the steps', 'Add a screenshot spot', 'Add the Help Center link', 'More formal'];
     try { (JSON.parse(localStorage.getItem(KEY) || '[]') || []).forEach(function (r) { if (/^\d{3,8}$/.test(r)) tabs.push(tab(r, true)); }); } catch (e) {}
-    function tab(ref, manual) { return { ref: String(ref), manual: !!manual, acct: '', account: null, similar: [], chat: null, msgs: [], shown: {}, last: null, sugg: null, prev: null, busy: false, unread: false, error: '', edit: false, ask: '', edited: false, fresh: false }; }
+    function tab(ref, manual) { return { ref: String(ref), own: true, manual: !!manual, acct: '', account: null, similar: [], chat: null, msgs: [], shown: {}, last: null, sugg: null, prev: null, busy: false, unread: false, error: '', edit: false, ask: '', edited: false, fresh: false }; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(tabs.filter(function (t) { return t.manual; }).map(function (t) { return t.ref; }))); } catch (e) {} }
     function find(ref) { for (var i = 0; i < tabs.length; i++) if (tabs[i].ref === String(ref)) return tabs[i]; return null; }
     function time(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
@@ -781,7 +782,17 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     addForm.addEventListener('submit', function (e) { e.preventDefault(); var r = numIn.value.replace(/\D/g, ''); if (!r) { numIn.focus(); return; } numIn.value = ''; var t = find(r); if (!t) { t = tab(r, true); tabs.push(t); save(); } select(t.ref); });
     var list = h('div', { class: 'ax-lc-list', role: 'tablist', 'aria-label': 'Chats', 'aria-orientation': 'vertical' });
     var countEl = h('span', { class: 'ax-lc-count' });
-    var rail = h('aside', { class: 'ax-lc-rail' }, [h('div', { class: 'ax-lc-railhd' }, [h('h3', { text: 'Chats' }), countEl]), addForm, list]);
+    var viewEl = h('div', { class: 'ax-lc-view', role: 'group', 'aria-label': 'Which chats', hidden: true });
+    var rail = h('aside', { class: 'ax-lc-rail' }, [h('div', { class: 'ax-lc-railhd' }, [h('h3', { text: 'Chats' }), countEl]), viewEl, addForm, list]);
+    // Admins see every open chat; the filter narrows to their own.
+    function shown(t) { return !isAll || view === 'all' || t.own || t.manual || t.ref === active; }
+    function paintView() {
+      viewEl.hidden = !isAll; if (!isAll) return; clear(viewEl);
+      var openAll = tabs.filter(function (t) { return !t.chat || t.chat.open; }).length, openMine = tabs.filter(function (t) { return t.own && (!t.chat || t.chat.open); }).length;
+      [['all', 'All chats', openAll], ['mine', 'Mine', openMine]].forEach(function (v) {
+        viewEl.appendChild(h('button', { type: 'button', class: 'ax-lc-vb', 'aria-pressed': view === v[0] ? 'true' : 'false', onclick: function () { view = v[0]; try { localStorage.setItem('axLiveChatsView', view); } catch (e) {} paintList(); } }, [v[1], h('b', { text: String(v[2]) })]));
+      });
+    }
     var convo = h('section', { class: 'ax-lc-convo', role: 'tabpanel', 'aria-label': 'Conversation' });
     var side = h('section', { class: 'ax-lc-side', 'aria-label': 'Next reply' });
     var insight = h('aside', { class: 'ax-lc-ins', 'aria-label': 'Account and history' });
@@ -804,31 +815,33 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function paintList() {
       var hadFocus = list.contains(document.activeElement) && document.activeElement.getAttribute('role') === 'tab';
       clear(list);
-      var open = tabs.filter(function (t) { return !t.chat || t.chat.open; }).length;
+      paintView();
+      var open = tabs.filter(function (t) { return shown(t) && (!t.chat || t.chat.open); }).length;
       countEl.textContent = open ? open + ' open' : '';
-      tabs.forEach(function (t) {
+      tabs.filter(shown).forEach(function (t) {
         var c = t.chat, on = active === t.ref, ended = c && !c.open, tn = c ? turn(t) : null, w = tn && tn.client && !ended ? mins(tn.at) : null;
         var b = h('button', { type: 'button', role: 'tab', class: 'ax-lc-item' + (on ? ' on' : '') + (ended ? ' ended' : '') + (t.error ? ' bad' : ''), 'aria-selected': on ? 'true' : 'false', tabindex: on ? '0' : '-1' }, [
           h('span', { class: 'ax-lc-av', 'aria-hidden': 'true', text: c ? initials(c.visitor) : '#' }),
           h('span', { class: 'ax-lc-iv' }, [
             h('span', { class: 'ax-lc-l1' }, [h('b', { text: c ? c.visitor : t.error ? 'Chat #' + t.ref : 'Loading #' + t.ref }), h('time', { text: tn && tn.at ? time(tn.at) : '' })]),
-            h('span', { class: 'ax-lc-l2', text: t.error ? 'Not found' : tn ? (tn.client ? '' : 'You: ') + tn.text : c ? (c.company || 'No messages yet') : '' }),
+            h('span', { class: 'ax-lc-l2', text: t.error ? 'Not found' : tn ? (tn.client ? '' : (t.own ? 'You: ' : (c.agent || 'Agent') + ': ')) + tn.text : c ? (c.question || c.company || 'No messages yet') : '' }),
             h('span', { class: 'ax-lc-l3' }, [h('span', { class: 'ax-lc-ref', text: '#' + t.ref }),
+              isAll && !t.own && c && c.agent ? h('span', { class: 'ax-lc-tag who' }, [icon('user', 'sm'), c.agent]) : null,
               t.account && t.account.found ? h('span', { class: 'ax-lc-ref ax-lc-acn', text: t.account.name }) : null,
               ended ? h('span', { class: 'ax-lc-tag', text: 'Ended' }) : w != null ? h('span', { class: 'ax-lc-tag wait' + (w >= 3 ? ' late' : ''), text: 'Waiting ' + dur(w) }) : null,
               t.busy ? h('span', { class: 'ax-lc-tag ai' }, ['Writing', h('span', { class: 'ax-lc-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')])]) : null])]),
           t.unread ? h('span', { class: 'ax-lc-dot', 'aria-label': 'New message' }) : null]);
         b.addEventListener('click', function () { select(t.ref); });
-        b.addEventListener('keydown', function (e) { var i = tabs.indexOf(t), k = e.key; if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); var n = tabs[(i + (k === 'ArrowDown' || k === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; select(n.ref); var el = list.querySelector('[aria-selected="true"]'); if (el) el.focus(); } });
+        b.addEventListener('keydown', function (e) { var i = tabs.indexOf(t), k = e.key; if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); var vis = tabs.filter(shown); i = vis.indexOf(t); var n = vis[(i + (k === 'ArrowDown' || k === 'ArrowRight' ? 1 : vis.length - 1)) % vis.length]; select(n.ref); var el = list.querySelector('[aria-selected="true"]'); if (el) el.focus(); } });
         var x = (t.manual || ended || t.error) ? h('button', { type: 'button', class: 'ax-lc-x', 'aria-label': 'Close chat ' + t.ref, title: 'Close' }, [icon('x', 'sm')]) : null;
         if (x) x.addEventListener('click', function () { close(t.ref); });
         list.appendChild(h('div', { class: 'ax-lc-itemw' }, [b, x]));
       });
       if (hadFocus) { var f = list.querySelector('[aria-selected="true"]'); if (f) f.focus(); }
-      if (!tabs.length) list.appendChild(h('p', { class: 'ax-lc-none', text: any ? 'No chats assigned to you right now. Open any chat by its number.' : 'No chats assigned to you right now. New chats appear here on their own.' }));
+      if (!tabs.filter(shown).length) list.appendChild(h('p', { class: 'ax-lc-none', text: any ? 'No chats assigned to you right now. Open any chat by its number.' : 'No chats assigned to you right now. New chats appear here on their own.' }));
     }
     function close(ref) { tabs = tabs.filter(function (t) { return t.ref !== ref; }); if (active === ref) active = tabs.length ? tabs[0].ref : null; save(); paint(); }
-    function select(ref) { var changed = active !== String(ref); active = String(ref); var t = find(ref); if (t) t.unread = false; if (changed) { root.classList.remove('swap'); void root.offsetWidth; root.classList.add('swap'); } paint(); if (t && !t.chat) loadChat(t); }
+    function select(ref) { var changed = active !== String(ref); active = String(ref); var t = find(ref); if (t) t.unread = false; if (changed) { root.classList.remove('swap'); void root.offsetWidth; root.classList.add('swap'); } paint(); if (t && !t.loaded) loadChat(t); }
     function paint() { paintSync(); paintNote(); paintList(); paintConvo(); paintSide(); paintInsight(); }
 
     function empty(el, title, text) { el.appendChild(h('div', { class: 'ax-lc-empty' }, [icon('chat'), h('b', { text: title }), text ? h('p', { text: text }) : null])); }
@@ -875,7 +888,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       t.painted = true;
       if (t.busy && c.open) ol.appendChild(h('li', { class: 'ax-lc-m ag ax-lc-typing', 'aria-label': 'Expert is writing' }, [h('span', { class: 'ax-lc-mw', text: 'Adit Expert' }), h('div', { class: 'ax-lc-say' }, [h('span', { class: 'ax-lc-dots' }, [h('i'), h('i'), h('i')])])]));
       convo.appendChild(ol);
-      convo.appendChild(h('div', { class: 'ax-lc-foot' + (w != null && w >= 3 ? ' late' : '') }, w != null ? [icon('warn', 'sm'), 'Client waiting ' + dur(w) + ' for your reply'] : tn && !tn.client && c.open ? [icon('check', 'sm'), 'You replied last, waiting on the client'] : !c.open ? ['This chat has ended'] : ['Waiting for the client to write']));
+      convo.appendChild(h('div', { class: 'ax-lc-foot' + (w != null && w >= 3 ? ' late' : '') }, w != null ? [icon('warn', 'sm'), 'Client waiting ' + dur(w) + ' for ' + (t.own ? 'your' : (c.agent ? c.agent + '\'s' : 'a')) + ' reply'] : tn && !tn.client && c.open ? [icon('check', 'sm'), (t.own ? 'You' : (c.agent || 'The agent')) + ' replied last, waiting on the client'] : !c.open ? ['This chat has ended'] : ['Waiting for the client to write']));
       ol.scrollTop = atEnd ? ol.scrollHeight : top;
     }
     function linky(text) {
@@ -1038,13 +1051,13 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
 
     function loadChat(t) {
       return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + (t.acct ? '?acct=' + encodeURIComponent(t.acct) : '')).then(function (j) {
-        var was = t.last, before = JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
+        t.loaded = true; var was = t.last, before = JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
         t.chat = j.chat; t.msgs = j.messages || []; t.error = ''; lastSync = Date.now();
         t.account = j.account || null; t.similar = j.similar && j.similar.length ? j.similar : t.similar;
         if (j.suggestion && (!t.sugg || t.sugg.basis !== j.suggestion.basis)) { t.sugg = j.suggestion; t.edited = false; t.fresh = true; }
         t.last = j.lastClientId;
         if (t.last && was && t.last !== was && active !== t.ref) t.unread = true;
-        if (t.last && t.chat.open && !t.busy && t.failed !== t.last && (!t.sugg || t.sugg.basis !== t.last)) suggest(t, false);
+        if (t.last && t.chat.open && (t.own || t.ref === active) && !t.busy && t.failed !== t.last && (!t.sugg || t.sugg.basis !== t.last)) suggest(t, false);
         t._changed = was !== t.last || before !== JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
       }).catch(function (e) { t.error = e.message; t._changed = true; }).then(function () { paintList(); paintSync(); if (active === t.ref && t._changed !== false) { paintConvo(); paintInsight(); if (!t.edit) paintSide(); } });
     }
@@ -1062,17 +1075,24 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     }
     function loadMine() {
       return ctx.api('/api/livechat/mine').then(function (j) {
-        err = ''; any = !!j.any; lastSync = Date.now();
-        (j.chats || []).forEach(function (c) { var t = find(c.ref); if (!t) { t = tab(c.ref, false); t.chat = c; tabs.push(t); if (active && active !== c.ref) t.unread = true; loadChat(t); } });
+        err = ''; any = !!j.any; isAll = !!j.all; lastSync = Date.now();
+        var live = {};
+        (j.chats || []).forEach(function (c) {
+          live[c.ref] = 1; var t = find(c.ref);
+          if (!t) { t = tab(c.ref, false); t.own = c.own !== false; t.chat = c; tabs.push(t); if (t.own && active && active !== c.ref) t.unread = true; if (t.own) loadChat(t); }
+          else { t.own = c.own !== false || t.own; if (!t.msgs.length) t.chat = c; }
+        });
+        // Someone else's chat that has ended leaves the list on its own (admins); your own stay until you close them.
+        tabs = tabs.filter(function (t) { return live[t.ref] || t.own || t.manual || t.ref === active || !t.chat; });
         if (!active && tabs.length) select(tabs[0].ref); else { paintSync(); paintNote(); paintList(); }
       }).catch(function (e) { err = e.message; paint(); });
     }
     // Agents keep SalesIQ in another browser tab, so this page keeps listening while it is in the background.
     function start() {
       clearInterval(tMine); clearInterval(tChat); clearInterval(tTick);
-      tMine = setInterval(loadMine, 20000);
+      tMine = setInterval(loadMine, 10000);
       var tick = 0;
-      tChat = setInterval(function () { tick++; tabs.forEach(function (t) { if (t.ref === active ? true : tick % 3 === 0 && (!t.chat || t.chat.open)) if (!t.loading) { t.loading = true; loadChat(t).then(function () { t.loading = false; }); } }); }, 4000);
+      tChat = setInterval(function () { tick++; tabs.forEach(function (t) { if (t.ref === active ? true : t.own && tick % 3 === 0 && (!t.chat || t.chat.open)) if (!t.loading) { t.loading = true; loadChat(t).then(function () { t.loading = false; }); } }); }, 4000);
       tTick = setInterval(function () { paintSync(); paintList(); }, 5000);
       document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && active) { var t = find(active); if (t) loadChat(t); } });
     }

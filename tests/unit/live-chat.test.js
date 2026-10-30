@@ -97,4 +97,10 @@ describe('Live chats', () => {
     expect(seen.slice(-1)[0].user).toContain('Smile Dental Care');
     delete expert.crmContext;
   });
+  it('gives an admin every open chat, marked as theirs or not', async () => {
+    const all = await lc.mine('sky@adit.com', { all: true });
+    expect(all.map((c) => c.ref).sort()).toEqual(['32346', '32350', '32352']);
+    expect(all.find((c) => c.ref === '32352').own).toBe(false);
+    expect(all.find((c) => c.ref === '32350').own).toBe(true);
+  });
 });
