@@ -209,7 +209,7 @@ Replies that paste well into Zoho Desk: responses to clients (Adit Expert emails
 
 Steadier Expert answers: the planner, the answer and the double-check run with the AI's randomness turned down, so the same question with the same sources gives the same answer. Replies to clients never send the client to Adit Support (the agent is Adit Support): when a Help Center article says to contact support for a change, the reply says what we will do or need.
 
-Onboarding owner (OB): the OB shown on ticket reviews, client lookup and Adit Expert comes from the deal's Tech-OB records in Zoho CRM: the newest record that has a stage. A newer Tech-OB record that was never started (no stage) no longer replaces the real owner. The Desk ticket field is only the fallback.
+Onboarding owner (OB): the OB shown on ticket reviews, client lookup and Adit Expert comes from the deal's Tech-OB records in Zoho CRM: the newest record that has a stage. A newer Tech-OB record that was never started (no stage) no longer replaces the real owner. The Desk ticket field is only the fallback. The deal stage and CSM are read live from the CRM deal the same way (30-minute cache) everywhere they are shown: ticket reviews, transfer review hand-offs, escalation watch, client lookup and Adit Expert.
 
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
