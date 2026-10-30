@@ -726,21 +726,26 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
         setTimeout(() => { k(); setInterval(k, 30 * 60 * 1000); }, 30 * 1000); }
       if (require('./lib/aditkb-service').isConfigured()) setTimeout(() => { const t = () => expert.syncCalls().then(r => { if (r.added) console.log('🧠 Expert learned from calls:', JSON.stringify(r)); }).catch(e => console.warn('expert call sync:', e.message)); t(); setInterval(t, 6 * 3600 * 1000); }, 3 * 60 * 1000); }
-    // Batch 197: Open T1 ticket review (admins). The T1 view is read every hour; every night at 3 AM Central the new and
-    // changed tickets are reviewed. Suggestions only: nothing is changed in Zoho Desk.
+    // Batch 197/200: Open T1 ticket review (admins), kept ready on its own. Every 5 minutes: the T1 view is read again
+    // (every 15 minutes), Asana tasks are checked for changes (every 30 minutes), and new, changed or day-old reviews are
+    // redone within an hourly cap. Suggestions only: nothing is changed in Zoho Desk.
     { const tt = require('./lib/ticket-triage'); tt.setDB(db); await tt.initSchema();
-      tt.setDeps({ desk: require('./lib/desk-service'), ticket: require('./lib/expert-ticket'), expert: require('./lib/expert'), ai: require('./lib/ai') });
+      const et = require('./lib/expert-ticket'); et.setCache(tt.cache);
+      tt.setDeps({ desk: require('./lib/desk-service'), ticket: et, expert: require('./lib/expert'), ai: require('./lib/ai') });
       setTimeout(() => {
+        let busy = false;
         const tick = async () => {
+          if (busy) return; busy = true;
           try {
-            if (!require('./lib/desk-service').isConfigured()) return;
-            const last = await tt.getState('listed_at');
-            if (!last || Date.now() - Date.parse(last) > 55 * 60e3) await tt.refreshList();
-            const ct = new Date().toLocaleString('en-CA', { timeZone: 'America/Chicago', hour12: false }); const day = ct.slice(0, 10), hr = Number(ct.slice(12, 14));
-            if (hr === 3 && (await tt.getState('night_day')) !== day) { await tt.setState('night_day', day); await tt.refreshList(); await tt.runAll({ by: 'nightly' }); }
-          } catch (e) { console.warn('ticket triage tick:', e.message); }
+            if (!require('./lib/desk-service').isConfigured() || !require('./lib/ai').anyConfigured()) return;
+            const ago = async (k) => { const v = await tt.getState(k); return v ? Date.now() - Date.parse(v) : Infinity; };
+            if (await ago('listed_at') > 14 * 60e3) await tt.refreshList();
+            if (await ago('asana_checked') > 29 * 60e3) { await tt.setState('asana_checked', new Date().toISOString()); await tt.checkAsana(); }
+            if (await ago('cache_pruned') > 24 * 3600e3) { await tt.setState('cache_pruned', new Date().toISOString()); await tt.cache.prune(); }
+            await tt.runAll({ by: 'auto', auto: true });
+          } catch (e) { console.warn('ticket triage tick:', e.message); } finally { busy = false; }
         };
-        tick(); setInterval(tick, 10 * 60 * 1000);
+        tick(); setInterval(tick, 5 * 60 * 1000);
       }, 4 * 60 * 1000); }
     // Batch 187: 1025 Call Flow & Capacity.
     { const cf = require('./lib/cf1025'); cf.setDB(db); await cf.initSchema(); }

@@ -99,6 +99,15 @@ describe.skipIf(!sqlite3)('open T1 ticket review', () => {
     const c = await tt.feedback('1', { agree: true });
     expect(c.status).toBe('agree');
   });
+  it('keeps a lasting cache and finds what is due', async () => {
+    await tt.cache.set('th:1', { id: '1', content: 'x' });
+    expect(await tt.cache.get('th:1', 0)).toEqual({ id: '1', content: 'x' });
+    expect(await tt.cache.get('th:1', 1)).toEqual({ id: '1', content: 'x' });
+    await new Promise((r) => setTimeout(r, 5));
+    expect(await tt.cache.get('th:1', 1)).toBeNull();
+    const q = await tt.runAll({ auto: true });
+    expect(q.total).toBe(1); // ticket 2 was never reviewed; ticket 1 is fresh
+  });
   it('marks tickets that left the view', async () => {
     deskRows.splice(1, 1);
     await new Promise((r) => setTimeout(r, 5));
