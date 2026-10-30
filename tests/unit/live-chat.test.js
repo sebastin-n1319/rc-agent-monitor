@@ -3,7 +3,7 @@ const lc = require('../../lib/live-chat.js');
 
 const now = Date.now();
 const convs = [
-  { id: '901', reference_id: '32350', status: 'open', chat_status: { label: 'Attended', status_key: 'attended' }, attender: { email: 'Sky@adit.com', name: 'Sky' }, visitor: { name: 'Dr. Lee', company_name: 'Smile Dental' }, question: 'Texts not sending', start_time: String(now - 600e3), department: { name: 'Support' } },
+  { id: '901', reference_id: '32350', status: 'Connected', chat_status: { label: 'Connected', status_key: 'open' }, attender: { email: 'Sky@adit.com', name: 'Sky' }, visitor: { name: 'Dr. Lee', company_name: 'Smile Dental' }, question: 'Texts not sending', start_time: String(now - 600e3), department: { name: 'Support' } },
   { id: '902', reference_id: '32351', status: 'closed', chat_status: { label: 'Ended', status_key: 'ended' }, end_time: String(now), attender: { email: 'sky@adit.com' }, visitor: { name: 'Ann' } },
   { id: '903', reference_id: '32352', status: 'open', chat_status: { label: 'Attended' }, attender: { email: 'lincy@adit.com' }, visitor: { name: 'Bo' } },
 ];
@@ -102,5 +102,10 @@ describe('Live chats', () => {
     expect(all.map((c) => c.ref).sort()).toEqual(['32346', '32350', '32352']);
     expect(all.find((c) => c.ref === '32352').own).toBe(false);
     expect(all.find((c) => c.ref === '32350').own).toBe(true);
+  });
+  it('never lists a missed chat as open', () => {
+    expect(lc._isOpen({ status: 'Tracked in CRM', chat_status: { label: 'Tracked in CRM' } })).toBe(false);
+    expect(lc._isOpen({ status: 'Connected', chat_status: { label: 'Connected', status_key: 'reopen' } })).toBe(true);
+    expect(lc._isOpen({ status: 'Attended Online', chat_status: { label: 'Attended Online', status_key: 'closed', state_key: 'end' } })).toBe(false);
   });
 });
