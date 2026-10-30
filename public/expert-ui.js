@@ -872,15 +872,15 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       var edit = h('button', { type: 'button', class: 'ax-lc-acedit', title: 'Change account number', 'aria-label': 'Change account number' }, [icon('edit', 'sm')]);
       edit.addEventListener('click', function () { t.editAcct = true; paintConvo(); });
       if (!a.found) return h('div', { class: 'ax-lc-acct none' }, [icon('warn', 'sm'), h('span', { class: 'ax-muted', text: a.error || ('Account #' + a.number + ' was not found in the CRM. Check the number with the client.') }), edit]);
-      var an = a.analysis || {}, esc = a.escalation;
+      var an = a.analysis || {}, esc = a.escalation && !/de-?escalat|earlier|past|none|^no\b|resolved|closed/i.test(a.escalation), escPast = a.escalation && !esc ? a.escalation : '';
       var watch = (an.issues || []).filter(function (i) { return !/resolved|closed|fixed/i.test(i.status || ''); }).slice(0, 2).map(function (i) { return i.text + (i.times > 1 ? ' (raised ' + i.times + 'x)' : ''); })
         .concat((an.open || []).slice(0, 1).map(function (o) { return 'Open: ' + o.text; }));
       var card = h('div', { class: 'ax-lc-acct' + (esc ? ' esc' : tone(a.health) === 'bad' ? ' risk' : '') }, [
         h('div', { class: 'ax-lc-ac1' }, [h('span', { class: 'ax-lc-ack', text: 'Account review' }),
           h('b', { text: a.name || 'Account' }), h('span', { class: 'ax-muted', text: ['#' + a.number, a.city, a.ehr, a.locations ? a.locations + ' location' + (a.locations == 1 ? '' : 's') : ''].filter(Boolean).join(' · ') }), edit]),
         h('div', { class: 'ax-lc-acchips' }, [
-          esc ? h('span', { class: 'ax-lc-ac bad strong' }, [icon('warn', 'sm'), h('b', { text: 'Escalated' + (a.escalationOwner ? ', ' + a.escalationOwner : '') })]) : null,
-          chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('CSM', a.csm), chip('Onboarding', a.ob),
+          esc ? h('span', { class: 'ax-lc-ac bad strong' }, [icon('warn', 'sm'), h('b', { text: 'Escalated: ' + a.escalation + (a.escalationOwner ? ', ' + a.escalationOwner : '') })]) : null,
+          chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('Escalation', escPast, 'warn'), chip('CSM', a.csm), chip('Onboarding', a.ob),
           chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), chip('Risk', a.risk, tone(a.risk)),
           chip('Contract ends', a.contractEnd), chip('Tickets', a.tickets), chip('FCR', a.fcr != null ? a.fcr + '%' : null)])]);
       if (watch.length) card.appendChild(h('ul', { class: 'ax-lc-watch', 'aria-label': 'Watch for' }, watch.map(function (w) { return h('li', {}, [icon('bulb', 'sm'), h('span', { text: w })]); })));
