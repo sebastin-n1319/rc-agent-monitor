@@ -58,7 +58,7 @@
   // Batch 182: Adit Expert first, then the Help Center and the two guides; Teach for admins.
   var TABS = [['ask', 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['rules', 'Rule list', 'rule'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
   function renderNav() {
-    var tabs = TABS.concat(S.me && S.me.member ? [['fixes', 'My fixes', 'ticket']] : []).concat(S.me && S.me.admin ? [['triage', 'Open tickets', 'ticket'], ['teach', 'Teach', 'school']] : []);
+    var tabs = TABS.concat(S.me && S.me.admin ? [['triage', 'Open tickets', 'ticket'], ['teach', 'Teach', 'school']] : []);
     nav.replaceChildren.apply(nav, tabs.map(function (t) {
       return h('button', { type: 'button', 'aria-current': S.tab === t[0] ? 'page' : null, onclick: function () { go(t[0]); } }, [icon(IC[t[2]], t[0] === 'ask' ? 'gd-spark' : ''), t[1]]);
     }));
@@ -89,7 +89,7 @@
     var m = /^#(ask|kb|rules|voip|ai|teach|triage|fixes)(?:\/(.+))?$/.exec(location.hash || '');
     var prev = S.tab, next = m ? m[1] : 'ask';
     if ((next === 'teach' || next === 'triage') && !(S.me && S.me.admin)) next = 'ask';
-    if (next === 'fixes' && !(S.me && S.me.member)) next = 'ask';
+    if (next === 'fixes') next = 'ask'; // Batch 205: My fixes moved to My Stats in the tool
     var anchor = m && m[2] ? decodeURIComponent(m[2]) : null;
     if (S.started && prev !== next) scrollAt[prev] = window.scrollY;
     S.tab = next; S.started = true;
@@ -104,7 +104,6 @@
     else if (next === 'kb') showKb(anchor);
     else if (next === 'teach') showTeach();
     else if (next === 'triage') showTriage();
-    else if (next === 'fixes') showFixes();
     else if (next === 'rules') showRules();
     else showAsk(anchor);
     if (!anchor && prev !== next) window.scrollTo(0, scrollAt[next] || 0);
@@ -354,12 +353,6 @@
   function showTriage() {
     if (!window.AditExpert || !window.AditExpert.Triage) return;
     if (!triageView) triageView = window.AditExpert.Triage(panel('triage'), ctx); else triageView.reload();
-  }
-
-  var fixesView = null;
-  function showFixes() {
-    if (!window.AditExpert || !window.AditExpert.MyFixes) return;
-    if (!fixesView) fixesView = window.AditExpert.MyFixes(panel('fixes'), ctx); else fixesView.reload();
   }
 
   // ── start ───────────────────────────────────────────────────────────

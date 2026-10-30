@@ -721,7 +721,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       } }, [icon('refresh', 'sm'), x ? 'Review again' : 'Review now']);
       if (!x) { box.appendChild(h('p', { class: 'ax-muted', text: r.error ? 'The last review failed (' + r.error + ').' : 'Not reviewed yet.' })); box.appendChild(again); return box; }
       if (x.client_message) box.appendChild(h('div', { class: 'ax-tri-cm' }, [h('b', { class: 'ax-tri-callt', text: 'Response to the client' }), h('pre', { class: 'ax-tri-msg', text: x.client_message }), copyBtn(x.client_message, 'Copy response')]));
-      if (x.failure && x.failure.level !== 'low' && r.toAgents && r.toAgents.length) box.appendChild(h('p', { class: 'ax-muted ax-tri-sent', text: 'On the to-fix list of ' + r.toAgents.map(function (e) { return e.split('@')[0]; }).join(', ') + (r.agentDone ? '. Marked handled ' + when(r.agentDone.at) + (r.agentDone.note ? ': ' + r.agentDone.note : '') : '. Not marked handled yet.') }));
+      if (x.failure && x.failure.level !== 'low' && r.toAgents && r.toAgents.length) box.appendChild(h('p', { class: 'ax-muted ax-tri-sent', text: 'On the My fixes list (My Stats) of ' + r.toAgents.map(function (e) { return e.split('@')[0]; }).join(', ') + (r.agentDone ? '. Marked handled ' + when(r.agentDone.at) + (r.agentDone.note ? ': ' + r.agentDone.note : '') : '. Not marked handled yet.') }));
       box.appendChild(callBox(r));
       var more = h('details', { class: 'ax-tri-more' }, [h('summary', { text: 'Full analysis' })]);
       more.appendChild(h('p', { class: 'ax-tri-why', text: x.why }));
@@ -744,49 +744,5 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     return { reload: function () { load(false); } };
   }
 
-  // ── My tickets to fix (Batch 203, every agent: only their own tickets) ──
-  function MyFixes(panel, ctx) {
-    var root = h('div', { class: 'ax-tri ax-fix' }); panel.appendChild(root);
-    function load() {
-      clear(root); root.appendChild(h('p', { class: 'gd-empty', text: 'Loading your tickets...' }));
-      ctx.api('/api/guides/expert/my-fixes').then(function (j) { paint(j.tickets || []); }).catch(function (e) { clear(root); root.appendChild(h('div', { class: 'gd-note', text: e.message })); });
-    }
-    function paint(list) {
-      clear(root);
-      var open = list.filter(function (t) { return !t.waitingRecheck; });
-      root.appendChild(h('div', { class: 'ax-tri-hd' }, [h('h2', { text: 'My tickets to fix' }),
-        h('p', { class: 'ax-muted', text: 'Your open tickets where Adit Expert found a handling problem, such as a client left without a reply or an update that never reached the client. Fix each one in Desk, then press Done. Expert checks the ticket again after you do.' })]));
-      if (!list.length) { root.appendChild(h('div', { class: 'ax-fix-empty' }, [icon('check'), h('p', { text: 'Nothing to fix. Well done.' })])); return; }
-      root.appendChild(h('p', { class: 'ax-muted ax-tri-meta', text: open.length + ' to fix' + (list.length - open.length ? ', ' + (list.length - open.length) + ' waiting for Expert to check again' : '') + '.' }));
-      var ol = h('ol', { class: 'ax-tri-list' });
-      list.forEach(function (t) {
-        var note = h('input', { type: 'text', class: 'ax-tri-q', placeholder: 'What did you do? (optional)', 'aria-label': 'What you did on ticket ' + t.number });
-        var done = h('button', { type: 'button', class: 'gd-btn primary', onclick: function () {
-          done.disabled = true;
-          ctx.api('/api/guides/expert/my-fixes/' + encodeURIComponent(t.id) + '/done', { note: note.value.trim() }).then(function () { ctx.toast('Thanks. Expert will check #' + t.number + ' again shortly.'); load(); })
-            .catch(function (e) { ctx.toast(e.message); done.disabled = false; });
-        } }, [icon('check', 'sm'), 'Done']);
-        var kids = [h('div', { class: 'ax-tri-top' }, [h('div', { class: 'ax-tri-main' }, [
-          h('span', { class: 'ax-tri-pills ax-fix-pills' }, [h('span', { class: 'ax-tri-fu', text: t.level === 'high' ? 'High priority' : 'Needs attention' }), t.followup ? h('span', { class: 'ax-tri-you diff', text: t.followup.text }) : null,
-            t.waitingRecheck ? h('span', { class: 'ax-tri-you', text: 'Done, waiting for the check' }) : t.stillOpen ? h('span', { class: 'ax-tri-you diff', text: 'Still open after your update' }) : null]),
-          h('b', { text: '#' + t.number + ' ' + t.subject }), h('span', { class: 'ax-muted', text: t.status }),
-          h('span', { class: 'ax-tri-fail ' + t.level }, [h('b', { text: 'What went wrong: ' }), t.what]),
-          h('span', { class: 'ax-tri-do', text: 'To do: ' + t.action }),
-          t.asana ? h('span', { class: 'ax-tri-asl' }, [h('b', { text: 'Asana: ' }), t.asana]) : null]),
-          t.url ? h('a', { class: 'ax-mini', href: t.url, target: '_blank', rel: 'noopener', 'aria-label': 'Open ticket ' + t.number + ' in Desk' }, [icon('ext', 'sm'), 'Desk']) : null])];
-        var body = h('div', { class: 'ax-fix-b' });
-        if (t.next && t.next.length) body.appendChild(h('div', { class: 'ax-tri-b' }, [h('h4', { text: 'Steps' }), h('ol', {}, t.next.map(function (s) { return h('li', { text: s }); }))]));
-        if (t.client_message) { var cb = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), 'Copy response']); cb.addEventListener('click', function () { copyRich(t.client_message, cb); });
-          body.appendChild(h('div', { class: 'ax-tri-b' }, [h('h4', { text: 'Response to the client' }), h('pre', { class: 'ax-tri-msg', text: t.client_message }), cb])); }
-        if (!t.waitingRecheck) body.appendChild(h('div', { class: 'ax-row' }, [note, done]));
-        kids.push(body);
-        ol.appendChild(h('li', { class: 'ax-tri-item' }, kids));
-      });
-      root.appendChild(ol);
-    }
-    load();
-    return { reload: load };
-  }
-
-  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules, Triage: Triage, MyFixes: MyFixes };
+  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules, Triage: Triage };
 })();

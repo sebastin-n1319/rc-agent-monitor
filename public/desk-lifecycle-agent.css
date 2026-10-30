@@ -287,3 +287,28 @@
 .mystats-qa-v{margin-top:2px;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
 .mystats-qa-v small{font-size:12px;font-weight:600;margin-left:1px}
 .mystats-qa-n{font-size:11.5px;color:var(--av2-t3)}
+/* Batch 205: My fixes (tickets the review flagged for this agent) */
+.mystats-fix-list{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.mystats-fix{padding:12px 14px;border:1px solid var(--av2-border);border-left:3px solid var(--av2-orange);border-radius:var(--av2-r-md,10px);background:var(--av2-surface-2)}
+.mystats-fix.is-high{border-left-color:var(--av2-red)}
+.mystats-fix-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.mystats-fix-main{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mystats-fix-tags{display:flex;flex-wrap:wrap;gap:6px}
+.mystats-fix-tag{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;background:#C2353C;color:#fff}
+.mystats-fix-tag.med{background:#A9560A}
+.mystats-fix-tag.soft{background:transparent;border:1px solid #C2353C;color:#C2353C}
+html.dark-mode .mystats-fix-tag.soft{border-color:#F27F86;color:#F27F86}
+.mystats-fix-tag.ok{background:transparent;border:1px solid var(--av2-green);color:var(--av2-green)}
+.mystats-fix-title{font-weight:600;font-size:14px;color:var(--av2-t1);overflow-wrap:anywhere}
+.mystats-fix-st{font-weight:500;font-size:12px;color:var(--av2-t3);margin-left:6px}
+.mystats-fix-what,.mystats-fix-do,.mystats-fix-asana{font-size:13px;line-height:1.5;color:var(--av2-t2)}
+.mystats-fix-what b{color:#C2353C}
+html.dark-mode .mystats-fix-what b{color:#F27F86}
+.mystats-fix-do b{color:var(--av2-t1)}
+.mystats-fix-asana b{color:var(--av2-t1)}
+.mystats-fix-steps{margin:8px 0 0;padding-left:20px;font-size:13px;color:var(--av2-t2)}
+.mystats-fix-msg-h{margin:10px 0 4px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--av2-t3)}
+.mystats-fix-msg{margin:0 0 6px;padding:10px 12px;border:1px solid var(--av2-border);border-radius:8px;background:var(--av2-surface);white-space:pre-wrap;font:inherit;font-size:13px;color:var(--av2-t1)}
+.mystats-fix-done{display:flex;gap:8px;margin-top:10px}
+.mystats-fix-note{flex:1;min-width:0;height:32px;padding:0 10px;border:1px solid var(--av2-border-strong);border-radius:8px;background:var(--av2-surface);color:var(--av2-t1);font:inherit;font-size:13px}
+@media (max-width:640px){.mystats-fix-top{flex-direction:column}}

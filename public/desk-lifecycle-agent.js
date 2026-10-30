@@ -679,6 +679,83 @@
     } catch (e) { slot.innerHTML = qaPanel(`<div class="av2-section-meta">QA scores could not be read from Zoho CRM right now (${esc(e.message)}). Try again later.</div>`); }
   }
 
+  // Batch 205: My fixes. The agent's own open tickets where the ticket review found a handling problem (a client left
+  // without a reply, an update never passed on). Each shows what went wrong, what to do and the response to copy;
+  // Done tells the review to check the ticket again.
+  function fixHtmlCopy(text) {
+    const e = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const link = (t) => e(t).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1" target="_blank">$1</a>');
+    return String(text || '').replace(/\r/g, '').trim().split(/\n\s*\n/).map((block) => {
+      let out = '', list = null;
+      block.split('\n').filter((l) => l.trim()).forEach((l) => {
+        const kind = /^\s*\d+[.)]\s+/.test(l) ? 'ol' : /^\s*[-*•]\s+/.test(l) ? 'ul' : null;
+        if (list && list !== kind) { out += `</${list}>`; list = null; }
+        if (kind) { if (!list) { out += `<${kind} style="margin:0 0 0 20px;padding:0">`; list = kind; } out += `<li>${link(l.replace(/^\s*(\d+[.)]|[-*•])\s+/, ''))}</li>`; }
+        else out += `<div>${link(l.trim())}</div>`;
+      });
+      if (list) out += `</${list}>`;
+      return out;
+    }).join('<div><br></div>');
+  }
+  function copyFix(text, btn) {
+    const ok = () => { const o = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = o; }, 1400); };
+    try {
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+        const html = '<div style="direction:ltr;font-size:13px;font-family:Arial,Helvetica,sans-serif">' + fixHtmlCopy(text) + '</div>';
+        navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]).then(ok, () => navigator.clipboard.writeText(text).then(ok));
+      } else navigator.clipboard.writeText(text).then(ok);
+    } catch (e) { /* clipboard blocked */ }
+  }
+  function fixesPanel(body, count) {
+    return panel('My fixes' + (count ? ` (${count})` : ''), 'Your open tickets where the ticket review found a handling problem, such as a client left without a reply or an update that never reached the client. Fix each one in Zoho Desk, then press Done. The ticket is checked again after you do.', body, 'mystats-fixes-section');
+  }
+  let _fixes = null;
+  function fixesHtml(list) {
+    if (!list.length) return fixesPanel(emptyState('Nothing to fix', 'None of your open tickets needs attention right now. Well done.'));
+    const open = list.filter((t) => !t.waitingRecheck).length;
+    const items = list.map((t, i) => `
+      <li class="mystats-fix ${t.level === 'high' ? 'is-high' : ''}">
+        <div class="mystats-fix-top">
+          <div class="mystats-fix-main">
+            <div class="mystats-fix-tags"><span class="mystats-fix-tag${t.level === 'high' ? '' : ' med'}">${t.level === 'high' ? 'High priority' : 'Needs attention'}</span>${t.followup ? `<span class="mystats-fix-tag soft">${esc(t.followup.text)}</span>` : ''}${t.waitingRecheck ? '<span class="mystats-fix-tag ok">Done, being checked</span>' : t.stillOpen ? '<span class="mystats-fix-tag">Still open after your update</span>' : ''}</div>
+            <div class="mystats-fix-title">#${esc(t.number)} ${esc(t.subject)} <span class="mystats-fix-st">${esc(t.status || '')}</span></div>
+            <div class="mystats-fix-what"><b>What went wrong:</b> ${esc(t.what)}</div>
+            <div class="mystats-fix-do"><b>To do:</b> ${esc(t.action)}</div>
+            ${t.asana ? `<div class="mystats-fix-asana"><b>Asana:</b> ${esc(t.asana)}</div>` : ''}
+          </div>
+          ${t.url ? `<a class="av2-btn av2-btn-sm av2-btn-ghost" href="${esc(t.url)}" target="_blank" rel="noopener">Open in Desk</a>` : ''}
+        </div>
+        ${t.next && t.next.length ? `<ol class="mystats-fix-steps">${t.next.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
+        ${t.client_message ? `<div class="mystats-fix-msg-h">Response to the client</div><pre class="mystats-fix-msg">${esc(t.client_message)}</pre>
+          <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-fix-copy" data-i="${i}">Copy response</button>` : ''}
+        ${t.waitingRecheck ? '' : `<div class="mystats-fix-done"><input type="text" class="mystats-fix-note" data-i="${i}" placeholder="What did you do? (optional)" aria-label="What you did on ticket ${esc(t.number)}">
+          <button type="button" class="av2-btn av2-btn-sm av2-btn-primary mystats-fix-btn" data-i="${i}">Done</button></div>`}
+      </li>`).join('');
+    return fixesPanel(`<div class="av2-section-meta">${open} to fix${list.length - open ? `, ${list.length - open} being checked again` : ''}.</div><ol class="mystats-fix-list">${items}</ol>`, open);
+  }
+  function wireFixes(slot, list) {
+    slot.querySelectorAll('.mystats-fix-copy').forEach((b) => b.addEventListener('click', () => copyFix(list[+b.dataset.i].client_message, b)));
+    slot.querySelectorAll('.mystats-fix-btn').forEach((b) => b.addEventListener('click', async () => {
+      const t = list[+b.dataset.i], note = slot.querySelector(`.mystats-fix-note[data-i="${b.dataset.i}"]`);
+      b.disabled = true; b.textContent = 'Saving...';
+      try {
+        const r = await fetch(`/api/guides/expert/my-fixes/${encodeURIComponent(t.id)}/done`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: note ? note.value.trim() : '' }) });
+        const j = await r.json(); if (!j.success) throw new Error(j.error || 'Could not save');
+        _fixes = null; loadFixes(slot.closest('.av2-container') || document);
+      } catch (e) { b.disabled = false; b.textContent = 'Done'; alert(e.message); }
+    }));
+  }
+  async function loadFixes(root) {
+    const slot = root.querySelector('#mystats-fixes-slot'); if (!slot) return;
+    const paint = (list) => { slot.innerHTML = fixesHtml(list); wireFixes(slot, list); };
+    if (_fixes && Date.now() - _fixes.at < 2 * 60e3) return paint(_fixes.list);
+    try {
+      const r = await fetch('/api/guides/expert/my-fixes', { credentials: 'include' });
+      const j = await r.json(); if (!j.success) throw new Error(j.error || 'not available');
+      _fixes = { at: Date.now(), list: j.tickets || [] }; paint(_fixes.list);
+    } catch (e) { slot.innerHTML = ''; }
+  }
+
   function render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus) {
     root.innerHTML = `
       <div class="av2-container">
@@ -713,6 +790,7 @@
           </div>
         </div>
         ${metaBarHtml(summaryJson, syncStatus)}
+        <div id="mystats-fixes-slot"></div>
 
         ${workSection(summaryJson.summary, summaryJson.callStats, summaryJson.chatStats, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
@@ -1066,6 +1144,7 @@
       ]);
       render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus);
       loadQA(root);
+      loadFixes(root);
     } catch (e) {
       root.innerHTML = `
         <div class="av2-container">
