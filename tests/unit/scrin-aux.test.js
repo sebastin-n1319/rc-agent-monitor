@@ -37,6 +37,15 @@ describe('scrin.io auto aux', () => {
     await sa.tick(T0); status = 'online'; await sa.tick(T0 + 60e3); status = 'away'; await sa.tick(T0 + 2 * 60e3);
     expect(events.length).toBe(0);
   });
+  it('never moves an agent who is on a call, and brings them back', async () => {
+    sa.setDeps({ busy: async () => ({ 'lincy@adit.com': { onCall: true } }) });
+    try {
+      await sa.tick(T0); await sa.tick(T0 + 3 * 60e3);
+      expect(events.length).toBe(0);
+      current = 'Away (scrin.io)'; await sa.tick(T0 + 4 * 60e3);
+      expect(events.map((e) => e.action)).toEqual(['SSM_AWAY_IN']);
+    } finally { sa.setDeps({ busy: null }); }
+  });
   it('can be switched off', async () => {
     process.env.SCRIN_AUTO_AUX = 'off';
     expect((await sa.tick(T0)).skipped).toBe(true);

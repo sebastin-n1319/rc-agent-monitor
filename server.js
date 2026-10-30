@@ -764,6 +764,10 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // when scrin.io shows them online. Every minute. SCRIN_AUTO_AUX=off switches it off.
     { const sa = require('./lib/scrin-aux');
       sa.setDeps({ scrin: require('./lib/scrin'), getBreakTracker, insertBreakEvent, notices,
+        // on a call or chat = working, whatever scrin.io says
+        busy: async () => { const [snap, monitored, chats] = await Promise.all([fetchLiveCallStatus().catch(() => ({})), getMonitoredAgents(), activeChatsByEmail().catch(() => ({ data: {} }))]);
+          const out = {}; for (const a of monitored) { const em = String(a.email || '').toLowerCase(); if (!em) continue; const st = (snap && snap[String(a.rc_id)]) || {};
+            out[em] = { onCall: !!st.isOnCall || /on call|ringing/i.test(String(st.normalizedStatus || '')), activeChats: (chats.data || {})[em] || 0 }; } return out; },
         notify: async (event) => {
           if (isTestAccount(event.email) || NOTIFICATION_BLOCKLIST.includes(String(event.email || '').toLowerCase().trim())) return;
           const n = await sendBreakChatNotification(event).catch((e) => ({ notified: false, status: 'failed', response: e.message }));
