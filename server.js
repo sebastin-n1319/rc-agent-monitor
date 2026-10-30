@@ -757,6 +757,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
         roster: require('./lib/roster'), getMonitoredAgents, getAgentCallStatsRange, rc: require('./rc-service'), analytics: require('./lib/analytics-service'), salesiq: require('./lib/salesiq-service') }); }
     // Batch 195: the Roster follows the T1 CS Team Roster Google Sheet: the current and previous month every hour,
     // the last 12 months every night (02:30 Central), and once 2 minutes after start.
+    require('./lib/scrin').setDeps({ roster: require('./lib/roster') }); // Batch 212: scrin.io (read only)
     { const rs = require('./lib/roster-sheet'); rs.setDeps({ roster: require('./lib/roster') });
       const log = (r) => { if (!r.ok) console.warn('roster sheet sync:', r.error); else if (r.written || r.agentsAdded.length) console.log('roster sheet sync:', r.written, 'day(s) updated', r.agentsAdded.length ? 'added ' + r.agentsAdded.join(', ') : ''); };
       setTimeout(() => rs.sync({ months: 2 }).then(log).catch(() => {}), 2 * 60 * 1000);
@@ -2140,6 +2141,12 @@ app.delete('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { t
 app.post('/api/guides/expert/feedback/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await expertMod().handleFeedback(req.params.id, req.body || {}, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
 app.post('/api/guides/expert/kb-sync', requireAdmin, rateLimit(4, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncKb({ force: !!(req.body && req.body.force) })) }); } catch (e) { expertErr(res, e, 'Could not read the Help Center'); } });
 app.post('/api/guides/expert/sync-calls', requireAdmin, rateLimit(3, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncCalls()) }); } catch (e) { expertErr(res, e, 'Could not sync'); } });
+// Batch 212: scrin.io connection check (admins): the company, its people and how they match the Roster. Read only.
+app.get('/api/admin/scrin/status', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const sc = require('./lib/scrin'); if (!sc.configured()) return res.json({ success: true, configured: false });
+    res.json({ success: true, configured: true, ...(await sc.people({ force: req.query.refresh === '1' })) });
+  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+});
 // Batch 197: Open T1 ticket review (admins). Suggestions only, nothing is changed in Desk.
 const triageMod = () => require('./lib/ticket-triage');
 app.get('/api/guides/expert/triage', requireAdmin, async (req, res) => {
