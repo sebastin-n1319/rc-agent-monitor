@@ -75,4 +75,26 @@ describe('Live chats', () => {
     expect(lc._msgText({ message: { file: { name: 'a.png' } } })).toBe('[File: a.png]');
     expect(lc._isOpen({ status: 'missed' })).toBe(false);
   });
+  it('finds the Adit account number the client gives, and not a phone number', () => {
+    const M = (who, text) => ({ who, text });
+    expect(lc._findAcct([M('client', 'Sandra and our Adit account number is 64624 and you can call me at 773-788-9090')])).toBe('64624');
+    expect(lc._findAcct([M('agent', 'Could you share your Adit Account Number?'), M('client', '51234')])).toBe('51234');
+    expect(lc._findAcct([M('client', 'call me at 773-788-9090')])).toBeNull();
+    expect(lc._findAcct([M('client', 'my order was 51234')])).toBeNull();
+  });
+  it('loads the account review for the banner and the reply', async () => {
+    expert.crmContext = async (n, o) => ({ text: 'Account: Smile Dental Care. Escalation: none.', header: { account: 'Smile Dental Care', escalation: 'none' }, account: { name: 'Smile Dental Care', city: 'Chicago, IL', tickets: 4 }, analysis: { headline: 'Stable', issues: [{ text: 'Refunds failing', status: 'open', times: 2 }], open: [] }, facts: { stage: 'CSM', csm: 'Ana', ob: 'Hannah S', escalation: 'none', health: 'Good', fcr: 80 }, _o: o });
+    const c1 = await lc.chat('32350', { email: 'sky@adit.com' }, { acct: '64624' });
+    expect(c1.account.loading).toBe(true);
+    await new Promise((r) => setTimeout(r, 5));
+    const c2 = await lc.chat('32350', { email: 'sky@adit.com' }, { acct: '64624' });
+    expect(c2.account.found).toBe(true);
+    expect(c2.account.csm).toBe('Ana');
+    expect(c2.account.escalation).toBe('');
+    expect(c2.account.text).toBeUndefined();
+    await lc.suggest('32350', { email: 'sky@adit.com' }, { force: true, acct: '64624' });
+    expect(seen.slice(-1)[0].user).toContain('account record (internal');
+    expect(seen.slice(-1)[0].user).toContain('Smile Dental Care');
+    delete expert.crmContext;
+  });
 });

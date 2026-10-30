@@ -745,71 +745,154 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
   }
 
 
-  // Batch 215: Live chats. The agent's open SalesIQ chats as tabs (and any chat added by its number), the live transcript,
+  // Batch 215: Live chats. The agent's open SalesIQ chats (and any chat added by its number), the live transcript,
   // and Expert's next reply with Help Center links and screenshot spots, ready to copy into SalesIQ. Nothing is sent from here.
+  // Batch 216: laid out as a workspace: a chat list (who is waiting and for how long), the conversation, and Expert's reply
+  // shown the way the client will see it, with one main Copy action.
   function LiveChats(panel, ctx) {
     var root = h('div', { class: 'ax-lc' }); panel.appendChild(root);
-    var tabs = [], active = null, any = false, tMine = null, tChat = null, err = '';
+    var acFocus = false;
+    var tabs = [], active = null, any = false, tMine = null, tChat = null, tTick = null, err = '', lastSync = 0;
     var KEY = 'axLiveChats';
     var QUICK = ['Shorter', 'Friendlier', 'Add the steps', 'Add a screenshot spot', 'Add the Help Center link', 'More formal'];
     try { (JSON.parse(localStorage.getItem(KEY) || '[]') || []).forEach(function (r) { if (/^\d{3,8}$/.test(r)) tabs.push(tab(r, true)); }); } catch (e) {}
-    function tab(ref, manual) { return { ref: String(ref), manual: !!manual, chat: null, msgs: [], last: null, sugg: null, prev: null, busy: false, unread: false, error: '', edit: false, ask: '' }; }
+    function tab(ref, manual) { return { ref: String(ref), manual: !!manual, acct: '', account: null, chat: null, msgs: [], last: null, sugg: null, prev: null, busy: false, unread: false, error: '', edit: false, ask: '', edited: false }; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(tabs.filter(function (t) { return t.manual; }).map(function (t) { return t.ref; }))); } catch (e) {} }
     function find(ref) { for (var i = 0; i < tabs.length; i++) if (tabs[i].ref === String(ref)) return tabs[i]; return null; }
     function time(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
-    function visible() { return !panel.hidden && document.visibilityState !== 'hidden'; }
+    function mins(iso) { var t = Date.parse(iso); return isNaN(t) ? null : Math.max(0, Math.floor((Date.now() - t) / 60000)); }
+    function dur(m) { return m == null ? '' : m < 1 ? 'just now' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
+    function initials(n) { var w = String(n || '?').replace(/[^A-Za-z ]/g, ' ').trim().split(/\s+/).filter(function (x) { return !/^(dr|mr|mrs|ms)$/i.test(x); }); return ((w[0] || '?')[0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); }
+    // Agents keep SalesIQ in another browser tab, so this page keeps listening while it is in the background.
+    function visible() { return true; }
+    // Who spoke last: the client waiting on us, or us waiting on the client.
+    function turn(t) {
+      for (var i = t.msgs.length - 1; i >= 0; i--) { var m = t.msgs[i]; if (m.who === 'client') return { client: true, at: m.at, text: m.text }; if (m.who === 'agent') return { client: false, at: m.at, text: m.text }; }
+      return null;
+    }
 
-    var head = h('div', { class: 'ax-lc-hd' }, [h('h2', { text: 'Live chats' }),
-      h('p', { class: 'ax-muted', text: 'Your open SalesIQ chats open here on their own. When the client writes, Adit Expert reads the whole chat and writes your next reply. Copy it into SalesIQ; nothing is sent from here.' })]);
-    var numIn = h('input', { class: 'ax-tri-q ax-lc-num', type: 'text', inputmode: 'numeric', placeholder: 'Chat number, e.g. 32350', 'aria-label': 'Chat number', maxlength: '8' });
-    var addForm = h('form', { class: 'ax-lc-add' }, [numIn, h('button', { type: 'submit', class: 'gd-btn' }, [icon('plus', 'sm'), 'Open chat'])]);
+    // ── frame ──
+    var sync = h('span', { class: 'ax-lc-sync', role: 'status' });
+    root.appendChild(h('header', { class: 'ax-lc-hd' }, [
+      h('div', {}, [h('h2', { text: 'Live chats' }), h('p', { class: 'ax-muted', text: 'Expert reads each chat and writes your next reply when the client writes. Copy it into SalesIQ; nothing is sent from here.' })]),
+      sync]));
+    var note = h('div', { class: 'ax-lc-note' }); root.appendChild(note);
+    var numIn = h('input', { class: 'ax-lc-num', type: 'text', inputmode: 'numeric', placeholder: 'Open chat by number', 'aria-label': 'Chat number', maxlength: '8', autocomplete: 'off' });
+    var addForm = h('form', { class: 'ax-lc-add' }, [icon('search', 'sm'), numIn, h('button', { type: 'submit', class: 'ax-lc-go', 'aria-label': 'Open chat' }, [icon('plus', 'sm')])]);
     addForm.addEventListener('submit', function (e) { e.preventDefault(); var r = numIn.value.replace(/\D/g, ''); if (!r) { numIn.focus(); return; } numIn.value = ''; var t = find(r); if (!t) { t = tab(r, true); tabs.push(t); save(); } select(t.ref); });
-    var bar = h('div', { class: 'ax-lc-tabs', role: 'tablist', 'aria-label': 'Open chats' });
-    var body = h('div', { class: 'ax-lc-body', role: 'tabpanel' });
-    var note = h('div', { class: 'ax-lc-note', role: 'status' });
-    root.appendChild(head); root.appendChild(h('div', { class: 'ax-lc-top' }, [bar, addForm])); root.appendChild(note); root.appendChild(body);
+    var list = h('div', { class: 'ax-lc-list', role: 'tablist', 'aria-label': 'Chats', 'aria-orientation': 'vertical' });
+    var countEl = h('span', { class: 'ax-lc-count' });
+    var rail = h('aside', { class: 'ax-lc-rail' }, [h('div', { class: 'ax-lc-railhd' }, [h('h3', { text: 'Chats' }), countEl]), addForm, list]);
+    var convo = h('section', { class: 'ax-lc-convo', role: 'tabpanel', 'aria-label': 'Conversation' });
+    var side = h('section', { class: 'ax-lc-side', 'aria-label': 'Next reply' });
+    var ws = h('div', { class: 'ax-lc-ws' }, [rail, convo, side]); root.appendChild(ws);
 
-    function paintTabs() {
-      clear(bar);
+    function paintSync() { clear(sync); if (!lastSync) return; var s = Math.round((Date.now() - lastSync) / 1000); sync.appendChild(h('i', { class: 'ax-lc-live' + (s > 45 ? ' stale' : '') })); sync.appendChild(document.createTextNode(s > 45 ? 'Reconnecting' : 'Live, updated ' + (s < 5 ? 'now' : s + ' s ago'))); }
+    function paintNote() { clear(note); if (err) note.appendChild(h('div', { class: 'gd-note', text: err })); }
+    function paintList() {
+      var hadFocus = list.contains(document.activeElement) && document.activeElement.getAttribute('role') === 'tab';
+      clear(list);
+      var open = tabs.filter(function (t) { return !t.chat || t.chat.open; }).length;
+      countEl.textContent = open ? open + ' open' : '';
       tabs.forEach(function (t) {
-        var c = t.chat, on = active === t.ref, ended = c && !c.open;
-        var b = h('button', { type: 'button', role: 'tab', class: 'ax-lc-tab' + (ended ? ' ended' : ''), 'aria-selected': on ? 'true' : 'false', tabindex: on ? '0' : '-1' }, [
-          t.unread ? h('span', { class: 'ax-lc-dot', title: 'New client message' }) : null,
-          h('b', { text: '#' + t.ref }), h('span', { text: c ? c.visitor : (t.error ? 'Not found' : 'Loading') }), ended ? h('em', { text: 'Ended' }) : null]);
+        var c = t.chat, on = active === t.ref, ended = c && !c.open, tn = c ? turn(t) : null, w = tn && tn.client && !ended ? mins(tn.at) : null;
+        var b = h('button', { type: 'button', role: 'tab', class: 'ax-lc-item' + (on ? ' on' : '') + (ended ? ' ended' : '') + (t.error ? ' bad' : ''), 'aria-selected': on ? 'true' : 'false', tabindex: on ? '0' : '-1' }, [
+          h('span', { class: 'ax-lc-av', 'aria-hidden': 'true', text: c ? initials(c.visitor) : '#' }),
+          h('span', { class: 'ax-lc-iv' }, [
+            h('span', { class: 'ax-lc-l1' }, [h('b', { text: c ? c.visitor : t.error ? 'Chat #' + t.ref : 'Loading #' + t.ref }), h('time', { text: tn && tn.at ? time(tn.at) : '' })]),
+            h('span', { class: 'ax-lc-l2', text: t.error ? 'Not found' : tn ? (tn.client ? '' : 'You: ') + tn.text : c ? (c.company || 'No messages yet') : '' }),
+            h('span', { class: 'ax-lc-l3' }, [h('span', { class: 'ax-lc-ref', text: '#' + t.ref }),
+              ended ? h('span', { class: 'ax-lc-tag', text: 'Ended' }) : w != null ? h('span', { class: 'ax-lc-tag wait' + (w >= 3 ? ' late' : ''), text: 'Waiting ' + dur(w) }) : null,
+              t.busy ? h('span', { class: 'ax-lc-tag ai', text: 'Writing' }) : null])]),
+          t.unread ? h('span', { class: 'ax-lc-dot', 'aria-label': 'New message' }) : null]);
         b.addEventListener('click', function () { select(t.ref); });
-        b.addEventListener('keydown', function (e) { var i = tabs.indexOf(t); if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); var n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; select(n.ref); var el = bar.querySelector('[aria-selected="true"]'); if (el) el.focus(); } });
+        b.addEventListener('keydown', function (e) { var i = tabs.indexOf(t), k = e.key; if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); var n = tabs[(i + (k === 'ArrowDown' || k === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; select(n.ref); var el = list.querySelector('[aria-selected="true"]'); if (el) el.focus(); } });
         var x = (t.manual || ended || t.error) ? h('button', { type: 'button', class: 'ax-lc-x', 'aria-label': 'Close chat ' + t.ref, title: 'Close' }, [icon('x', 'sm')]) : null;
         if (x) x.addEventListener('click', function () { close(t.ref); });
-        bar.appendChild(h('div', { class: 'ax-lc-tabw' + (on ? ' on' : '') }, [b, x]));
+        list.appendChild(h('div', { class: 'ax-lc-itemw' }, [b, x]));
       });
-      if (!tabs.length) bar.appendChild(h('span', { class: 'ax-muted ax-lc-none', text: 'No open chats right now.' }));
+      if (hadFocus) { var f = list.querySelector('[aria-selected="true"]'); if (f) f.focus(); }
+      if (!tabs.length) list.appendChild(h('p', { class: 'ax-lc-none', text: any ? 'No chats assigned to you right now. Open any chat by its number.' : 'No chats assigned to you right now. New chats appear here on their own.' }));
     }
-    function paintNote() { clear(note); if (err) note.appendChild(h('div', { class: 'gd-note', text: err })); else if (any) note.appendChild(h('p', { class: 'ax-muted', text: 'You can open any chat by its number.' })); }
     function close(ref) { tabs = tabs.filter(function (t) { return t.ref !== ref; }); if (active === ref) active = tabs.length ? tabs[0].ref : null; save(); paint(); }
     function select(ref) { active = String(ref); var t = find(ref); if (t) t.unread = false; paint(); if (t && !t.chat) loadChat(t); }
+    function paint() { paintSync(); paintNote(); paintList(); paintConvo(); paintSide(); }
+    function paintActive() { paintList(); paintConvo(); paintSide(); }
 
-    function paint() { paintTabs(); paintNote(); paintBody(); }
-    function paintBody() {
-      clear(body);
+    function empty(el, title, text) { el.appendChild(h('div', { class: 'ax-lc-empty' }, [icon('chat'), h('b', { text: title }), text ? h('p', { text: text }) : null])); }
+    // ── the conversation ──
+    function paintConvo() {
+      acFocus = !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('ax-lc-acin'));
+      var keep = convo.querySelector('.ax-lc-tx'), atEnd = !keep || keep.scrollHeight - keep.scrollTop - keep.clientHeight < 60, top = keep ? keep.scrollTop : 0;
+      clear(convo);
       var t = find(active);
-      if (!t) { body.appendChild(h('p', { class: 'gd-empty', text: tabs.length ? 'Pick a chat above.' : 'When a chat is assigned to you in SalesIQ it opens here. You can also open a chat by its number.' })); return; }
-      if (t.error) { body.appendChild(h('div', { class: 'gd-note', text: t.error })); return; }
-      if (!t.chat) { body.appendChild(h('p', { class: 'gd-empty', text: 'Reading chat #' + t.ref + ' from SalesIQ...' })); return; }
-      var c = t.chat;
-      var meta = h('div', { class: 'ax-lc-meta' }, [h('b', { text: c.visitor + (c.company ? ', ' + c.company : '') }),
-        h('span', { class: 'ax-muted', text: [c.status, c.agent ? 'with ' + c.agent : '', c.department, c.start ? 'started ' + time(c.start) : ''].filter(Boolean).join(' · ') })]);
-      body.appendChild(h('div', { class: 'ax-lc-cols' }, [transcript(t, meta), replyCard(t)]));
-      var sc = body.querySelector('.ax-lc-tx'); if (sc) sc.scrollTop = sc.scrollHeight;
-    }
-    function transcript(t, meta) {
-      var list = h('ol', { class: 'ax-lc-tx', 'aria-label': 'Transcript', tabindex: '0' });
-      if (!t.msgs.length) list.appendChild(h('li', { class: 'ax-lc-m sys', text: 'No messages yet.' }));
+      if (!t) return empty(convo, tabs.length ? 'Pick a chat' : 'No open chats', tabs.length ? '' : 'When SalesIQ assigns you a chat it opens here.');
+      if (t.error) return empty(convo, 'Chat #' + t.ref + ' could not be opened', t.error);
+      if (!t.chat) return empty(convo, 'Reading chat #' + t.ref, 'From SalesIQ...');
+      var c = t.chat, tn = turn(t), w = tn && tn.client && c.open ? mins(tn.at) : null;
+      var refBtn = h('button', { type: 'button', class: 'ax-lc-refb', title: 'Copy chat number' }, [h('span', { text: '#' + c.ref })]);
+      refBtn.addEventListener('click', function () { copy(c.ref, refBtn); });
+      convo.appendChild(h('div', { class: 'ax-lc-chd' }, [
+        h('span', { class: 'ax-lc-av lg', 'aria-hidden': 'true', text: initials(c.visitor) }),
+        h('div', { class: 'ax-lc-who2' }, [h('b', { text: c.visitor }), h('span', { class: 'ax-muted', text: [c.company, c.department, c.agent ? 'with ' + c.agent : '', c.start ? 'started ' + time(c.start) : ''].filter(Boolean).join(' · ') })]),
+        h('span', { class: 'ax-lc-state' + (c.open ? ' on' : '') , text: c.open ? 'Live' : 'Ended' }), refBtn]));
+      convo.appendChild(accountBanner(t));
+      var ol = h('ol', { class: 'ax-lc-tx', 'aria-label': 'Transcript', tabindex: '0' });
+      if (c.question) ol.appendChild(h('li', { class: 'ax-lc-m sys' }, [h('div', { class: 'ax-lc-say', text: 'Question: ' + c.question })]));
+      if (!t.msgs.length) ol.appendChild(h('li', { class: 'ax-lc-m sys' }, [h('div', { class: 'ax-lc-say', text: 'No messages yet.' })]));
+      var prev = null;
       t.msgs.forEach(function (m) {
-        list.appendChild(h('li', { class: 'ax-lc-m ' + (m.who === 'client' ? 'cl' : m.who === 'agent' ? 'ag' : m.who === 'bot' ? 'bot' : 'sys') }, [
-          m.who === 'system' ? null : h('span', { class: 'ax-lc-who', text: (m.who === 'client' ? (m.name || 'Client') : m.who === 'bot' ? 'Bot' : (m.name || 'Agent')) + (m.at ? ' · ' + time(m.at) : '') }),
+        var k = m.who === 'client' ? 'cl' : m.who === 'agent' ? 'ag' : m.who === 'bot' ? 'bot' : 'sys';
+        var cont = prev && prev.who === m.who && prev.name === m.name && m.who !== 'system' && Math.abs(Date.parse(m.at) - Date.parse(prev.at)) < 180000;
+        ol.appendChild(h('li', { class: 'ax-lc-m ' + k + (cont ? ' cont' : '') }, [
+          m.who === 'system' || cont ? null : h('span', { class: 'ax-lc-mw', text: (m.who === 'client' ? (m.name || 'Client') : m.who === 'bot' ? 'Bot' : (m.name || 'Agent')) + (m.at ? '  ' + time(m.at) : '') }),
           h('div', { class: 'ax-lc-say' }, [linky(m.text)])]));
+        prev = m;
       });
-      return h('section', { class: 'ax-lc-left' }, [meta, list]);
+      convo.appendChild(ol);
+      convo.appendChild(h('div', { class: 'ax-lc-foot' + (w != null && w >= 3 ? ' late' : '') }, w != null ? [icon('warn', 'sm'), 'Client waiting ' + dur(w) + ' for your reply'] : tn && !tn.client && c.open ? [icon('check', 'sm'), 'You replied last, waiting on the client'] : !c.open ? ['This chat has ended'] : ['Waiting for the client to write']));
+      ol.scrollTop = atEnd ? ol.scrollHeight : top;
+    }
+
+    // ── account review banner (Batch 216) ──
+    function tone(v) { v = String(v || '').toLowerCase(); return /poor|bad|red|critical|at risk|high|angry|frustrat|escalat/.test(v) ? 'bad' : /good|healthy|green|happy|calm|low|positive/.test(v) ? 'ok' : v ? 'warn' : ''; }
+    function chip(label, value, cls) { return value || value === 0 ? h('span', { class: 'ax-lc-ac ' + (cls || '') }, [h('i', { text: label }), h('b', { text: String(value) })]) : null; }
+    function acctForm(t, label) {
+      var inp = h('input', { type: 'text', inputmode: 'numeric', class: 'ax-lc-acin', placeholder: 'Account #', 'aria-label': 'Adit account number', maxlength: '7' }); inp.value = t.acctDraft != null ? t.acctDraft : (t.acct || '');
+      inp.addEventListener('input', function () { t.acctDraft = inp.value; });
+      if (acFocus) setTimeout(function () { inp.focus(); var n = inp.value.length; try { inp.setSelectionRange(n, n); } catch (e) {} }, 0);
+      var f = h('form', { class: 'ax-lc-acf' }, [inp, h('button', { type: 'submit', class: 'ax-mini', text: label || 'Load' })]);
+      f.addEventListener('submit', function (e) { e.preventDefault(); var v = inp.value.replace(/\D/g, ''); t.acct = v; t.acctDraft = null; acFocus = false; t.account = v ? { number: v, loading: true } : null; t.editAcct = false; paintConvo(); loadChat(t); });
+      return f;
+    }
+    function accountBanner(t) {
+      var a = t.account;
+      if (t.editAcct || !a) return h('div', { class: 'ax-lc-acct none' }, [icon('user', 'sm'), h('span', { class: 'ax-muted', text: t.editAcct ? 'Type the Adit account number' : 'No account number in the chat yet. It loads when the client shares it, or type it here.' }), acctForm(t, t.editAcct ? 'Load' : 'Load')]);
+      if (a.loading) return h('div', { class: 'ax-lc-acct none' }, [icon('user', 'sm'), h('span', { class: 'ax-muted', text: 'Loading the account review for #' + a.number + '...' })]);
+      var edit = h('button', { type: 'button', class: 'ax-lc-acedit', title: 'Change account number', 'aria-label': 'Change account number' }, [icon('edit', 'sm')]);
+      edit.addEventListener('click', function () { t.editAcct = true; paintConvo(); });
+      if (!a.found) return h('div', { class: 'ax-lc-acct none' }, [icon('warn', 'sm'), h('span', { class: 'ax-muted', text: a.error || ('Account #' + a.number + ' was not found in the CRM. Check the number with the client.') }), edit]);
+      var an = a.analysis || {}, esc = a.escalation;
+      var watch = (an.issues || []).filter(function (i) { return !/resolved|closed|fixed/i.test(i.status || ''); }).slice(0, 2).map(function (i) { return i.text + (i.times > 1 ? ' (raised ' + i.times + 'x)' : ''); })
+        .concat((an.open || []).slice(0, 1).map(function (o) { return 'Open: ' + o.text; }));
+      var card = h('div', { class: 'ax-lc-acct' + (esc ? ' esc' : tone(a.health) === 'bad' ? ' risk' : '') }, [
+        h('div', { class: 'ax-lc-ac1' }, [h('span', { class: 'ax-lc-ack', text: 'Account review' }),
+          h('b', { text: a.name || 'Account' }), h('span', { class: 'ax-muted', text: ['#' + a.number, a.city, a.ehr, a.locations ? a.locations + ' location' + (a.locations == 1 ? '' : 's') : ''].filter(Boolean).join(' · ') }), edit]),
+        h('div', { class: 'ax-lc-acchips' }, [
+          esc ? h('span', { class: 'ax-lc-ac bad strong' }, [icon('warn', 'sm'), h('b', { text: 'Escalated' + (a.escalationOwner ? ', ' + a.escalationOwner : '') })]) : null,
+          chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('CSM', a.csm), chip('Onboarding', a.ob),
+          chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), chip('Risk', a.risk, tone(a.risk)),
+          chip('Contract ends', a.contractEnd), chip('Tickets', a.tickets), chip('FCR', a.fcr != null ? a.fcr + '%' : null)])]);
+      if (watch.length) card.appendChild(h('ul', { class: 'ax-lc-watch', 'aria-label': 'Watch for' }, watch.map(function (w) { return h('li', {}, [icon('bulb', 'sm'), h('span', { text: w })]); })));
+      if (an.headline) {
+        var d = h('details', { class: 'ax-lc-acmore' }, [h('summary', { text: 'Full review' + (an.at ? ' (' + an.at + ')' : '') }), h('p', { text: an.headline }),
+          an.healthWhy ? h('p', { class: 'ax-muted', text: 'Health: ' + an.healthWhy }) : null, an.moodWhy ? h('p', { class: 'ax-muted', text: 'Mood: ' + an.moodWhy }) : null,
+          (an.issues || []).length > 2 ? h('ul', {}, an.issues.map(function (i) { return h('li', { text: i.text + (i.status ? ' [' + i.status + ']' : '') }); })) : null]);
+        if (t.reviewOpen) d.open = true;
+        d.addEventListener('toggle', function () { t.reviewOpen = d.open; });
+        card.appendChild(d);
+      }
+      return card;
     }
     function linky(text) {
       var frag = document.createDocumentFragment(), re = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])/g, at = 0, m; text = String(text || '');
@@ -832,88 +915,112 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       return out;
     }
     function plain(reply) { return parts(reply).filter(function (p) { return p.text; }).map(function (p) { return p.text; }).join('\n\n'); }
-    function copyBtn(text, label, cls) { var b = h('button', { type: 'button', class: 'ax-mini' + (cls ? ' ' + cls : '') }, [icon('copy', 'sm'), label]); b.addEventListener('click', function () { copy(text, b); }); return b; }
+    function copyIcon(text, label) { var b = h('button', { type: 'button', class: 'ax-lc-cp', 'aria-label': label, title: label }, [icon('copy', 'sm'), h('span', { text: 'Copy' })]); b.addEventListener('click', function () { copy(text, b); }); return b; }
+    function mini(ic, label, fn, dis) { return h('button', { type: 'button', class: 'ax-mini', disabled: dis ? true : null, onclick: fn }, [icon(ic, 'sm'), label]); }
 
-    function replyCard(t) {
-      var s = t.sugg, card = h('section', { class: 'ax-lc-reply', 'aria-label': 'Next reply' });
-      var hd = h('div', { class: 'ax-lc-rhd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply']),
-        h('span', { class: 'ax-muted', text: t.busy ? 'Writing...' : s ? (s.improved ? 'Improved ' : 'Written ') + time(s.at) : '' })]);
-      card.appendChild(hd);
-      if (!t.last && !s) { card.appendChild(h('p', { class: 'ax-muted', text: 'Waiting for the client to write.' })); }
-      if (t.busy && !s) card.appendChild(h('div', { class: 'ax-lc-skel', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]));
-      if (s && s.reply) {
-        if (t.edit) {
-          var ta = h('textarea', { class: 'ax-lc-ta', rows: '8', 'aria-label': 'Edit the reply' }); ta.value = s.reply;
-          card.appendChild(ta);
-          card.appendChild(h('div', { class: 'ax-lc-row' }, [
-            h('button', { type: 'button', class: 'gd-btn primary', text: 'Save', onclick: function () { t.prev = s; t.sugg = Object.assign({}, s, { reply: ta.value.trim(), at: new Date().toISOString() }); t.edit = false; paintBody(); } }),
-            h('button', { type: 'button', class: 'gd-btn', text: 'Cancel', onclick: function () { t.edit = false; paintBody(); } })]));
-        } else {
-          var ps = parts(s.reply), list = h('ol', { class: 'ax-lc-parts' }), n = 0;
-          ps.forEach(function (p) {
-            if (p.shot) list.appendChild(h('li', { class: 'ax-lc-shot' }, [h('span', { class: 'ax-lc-shotk', text: 'Send a screenshot' }), h('span', { text: p.shot })]));
-            else { n++; list.appendChild(h('li', { class: 'ax-lc-part' }, [h('div', { class: 'ax-lc-ptx' }, [linky(p.text)]), copyBtn(p.text, ps.filter(function (x) { return x.text; }).length > 1 ? 'Copy ' + n : 'Copy')])); }
-          });
-          card.appendChild(list);
-          var tools = h('div', { class: 'ax-lc-row' }, [copyBtn(plain(s.reply), 'Copy all', 'strong'),
-            h('button', { type: 'button', class: 'ax-mini', onclick: function () { t.edit = true; paintBody(); } }, [icon('edit', 'sm'), 'Edit']),
-            h('button', { type: 'button', class: 'ax-mini', disabled: t.busy ? true : null, onclick: function () { suggest(t, true); } }, [icon('refresh', 'sm'), 'Write again']),
-            t.prev ? h('button', { type: 'button', class: 'ax-mini', onclick: function () { var x = t.sugg; t.sugg = t.prev; t.prev = x; paintBody(); } }, [icon('refresh', 'sm'), 'Undo']) : null]);
-          card.appendChild(tools);
-        }
-        if (s.why) card.appendChild(h('p', { class: 'ax-lc-why' }, [h('b', { text: 'Why: ' }), s.why]));
-        if (s.checks && s.checks.length) card.appendChild(h('div', { class: 'ax-lc-b' }, [h('h4', { text: 'Check before sending' }), h('ul', {}, s.checks.map(function (x) { return h('li', { text: x }); }))]));
-        if (s.handover) card.appendChild(h('div', { class: 'ax-lc-hand' }, [icon('warn', 'sm'), h('span', { text: s.handover })]));
-        if (s.kbUrl) card.appendChild(h('div', { class: 'ax-lc-row' }, [h('a', { class: 'ax-mini', href: s.kbUrl, target: '_blank', rel: 'noopener' }, [icon('book', 'sm'), s.kb || 'Help Center article']), copyBtn(s.kbUrl, 'Copy link')]));
-        card.appendChild(improveBox(t));
+    // ── Expert's reply ──
+    function paintSide() {
+      var fEl = document.activeElement, keepAsk = fEl && fEl.classList && fEl.classList.contains('ax-lc-ask');
+      clear(side);
+      var t = find(active);
+      if (!t || !t.chat) { side.appendChild(h('div', { class: 'ax-lc-shd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply'])])); side.appendChild(h('p', { class: 'ax-lc-hint', text: 'Open a chat to see Expert’s reply.'.replace('’', "'") })); return; }
+      var s = t.sugg, stale = s && t.last && s.basis !== t.last, sent = s && !stale && replied(t, s.basis);
+      var state = t.busy ? ['Writing', 'ai'] : stale ? ['Out of date', 'warn'] : sent ? ['You replied', ''] : s ? (t.edited ? ['Edited', ''] : s.improved ? ['Improved', 'ok'] : ['Ready', 'ok']) : null;
+      side.appendChild(h('div', { class: 'ax-lc-shd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply']),
+        state ? h('span', { class: 'ax-lc-pill ' + state[1], text: state[0] + (s && !t.busy ? ' ' + time(s.at) : '') }) : null]));
+      var bodyEl = h('div', { class: 'ax-lc-sbody' }); side.appendChild(bodyEl);
+      if (s && (stale || t.busy)) bodyEl.appendChild(h('div', { class: 'ax-lc-stale', role: 'status' }, [icon(t.busy ? 'spark' : 'warn', 'sm'), h('span', { text: t.busy ? 'The client wrote again. Writing a new reply from the whole chat...' : 'The client wrote again. This reply is for an earlier message.' }),
+        !t.busy ? h('button', { type: 'button', class: 'ax-mini', onclick: function () { suggest(t, true); } }, [icon('refresh', 'sm'), 'Write for the latest']) : null]));
+      else if (sent) bodyEl.appendChild(h('div', { class: 'ax-lc-stale soft' }, [icon('check', 'sm'), h('span', { text: 'You have replied since. A new reply is written when the client writes again.' })]));
+      if (t.sError) bodyEl.appendChild(h('div', { class: 'gd-note', text: t.sError }));
+      if (!s) {
+        if (t.busy) bodyEl.appendChild(h('div', { class: 'ax-lc-skel', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]));
+        else if (t.last) bodyEl.appendChild(h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide', onclick: function () { suggest(t, true); } }, [icon('spark', 'sm'), 'Write the next reply']));
+        else bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Expert writes a reply as soon as the client sends a message.' }));
+        return;
       }
-      if (t.sError) card.appendChild(h('div', { class: 'gd-note', text: t.sError }));
-      if (t.last && !s && !t.busy) card.appendChild(h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { suggest(t, true); } }, [icon('spark', 'sm'), 'Write the next reply']));
-      return card;
+      if (t.edit) {
+        var ta = h('textarea', { class: 'ax-lc-ta', rows: '10', 'aria-label': 'Edit the reply' }); ta.value = s.reply;
+        bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Leave a blank line between messages. Keep [Screenshot: ...] on its own line.' }));
+        bodyEl.appendChild(ta);
+        bodyEl.appendChild(h('div', { class: 'ax-lc-row' }, [
+          h('button', { type: 'button', class: 'gd-btn primary', text: 'Save', onclick: function () { t.prev = s; t.sugg = Object.assign({}, s, { reply: ta.value.trim(), at: new Date().toISOString() }); t.edit = false; t.edited = true; paintSide(); } }),
+          h('button', { type: 'button', class: 'gd-btn', text: 'Cancel', onclick: function () { t.edit = false; paintSide(); } })]));
+        setTimeout(function () { ta.focus(); }, 20);
+        return;
+      }
+      var ps = parts(s.reply), texts = ps.filter(function (x) { return x.text; }).length, n = 0;
+      var ol = h('ol', { class: 'ax-lc-out' + (t.busy || stale || sent ? ' dim' : ''), 'aria-label': 'Messages to send, in order' });
+      ps.forEach(function (p) {
+        if (p.shot) ol.appendChild(h('li', { class: 'ax-lc-shot' }, [icon('expand', 'sm'), h('div', {}, [h('b', { text: 'Send a screenshot' }), h('span', { text: p.shot })])]));
+        else { n++; ol.appendChild(h('li', { class: 'ax-lc-bub' }, [texts > 1 ? h('span', { class: 'ax-lc-n', text: String(n) }) : null, h('div', { class: 'ax-lc-btx' }, [linky(p.text)]), copyIcon(p.text, 'Copy message ' + n)])); }
+      });
+      bodyEl.appendChild(ol);
+      var all = h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide' }, [icon('copy', 'sm'), texts > 1 ? 'Copy all ' + texts + ' messages' : 'Copy reply']);
+      all.addEventListener('click', function () { copy(plain(s.reply), all); });
+      bodyEl.appendChild(all);
+      bodyEl.appendChild(h('div', { class: 'ax-lc-row ax-lc-tools' }, [
+        mini('edit', 'Edit', function () { t.edit = true; paintSide(); }),
+        mini('refresh', 'Write again', function () { suggest(t, true); }, t.busy),
+        t.prev ? mini('refresh', 'Undo', function () { var x = t.sugg; t.sugg = t.prev; t.prev = x; t.edited = false; paintSide(); }) : null]));
+      if (s.handover) bodyEl.appendChild(h('div', { class: 'ax-lc-hand' }, [icon('warn', 'sm'), h('div', {}, [h('b', { text: 'Hand over' }), h('span', { text: s.handover })])]));
+      var notes = [];
+      if (s.why) notes.push(h('p', { class: 'ax-lc-why', text: s.why }));
+      if (s.checks && s.checks.length) notes.push(h('ul', { class: 'ax-lc-checks' }, s.checks.map(function (x) { return h('li', {}, [icon('check', 'sm'), h('span', { text: x })]); })));
+      if (s.kbUrl) notes.push(h('div', { class: 'ax-lc-kb' }, [icon('book', 'sm'), h('a', { href: s.kbUrl, target: '_blank', rel: 'noopener', text: s.kb || 'Help Center article' }), copyIcon(s.kbUrl, 'Copy article link')]));
+      if (notes.length) bodyEl.appendChild(h('div', { class: 'ax-lc-notes' }, [h('h4', { text: 'Before you send' })].concat(notes)));
+      side.appendChild(improveBox(t));
+      if (keepAsk) { var a = side.querySelector('.ax-lc-ask'); if (a) a.focus(); }
     }
+    function replied(t, basis) { var i = -1; for (var k = 0; k < t.msgs.length; k++) if (t.msgs[k].id === basis) i = k; return i >= 0 && t.msgs.slice(i + 1).some(function (m) { return m.who === 'agent'; }); }
     function improveBox(t) {
-      var inp = h('input', { type: 'text', class: 'ax-tri-q', placeholder: 'Tell Expert what to change', 'aria-label': 'Tell Expert what to change', maxlength: '400' }); inp.value = t.ask || '';
+      var inp = h('input', { type: 'text', class: 'ax-lc-ask', placeholder: 'Tell Expert what to change', 'aria-label': 'Tell Expert what to change', maxlength: '400' }); inp.value = t.ask || '';
       inp.addEventListener('input', function () { t.ask = inp.value; });
-      var go = h('button', { type: 'submit', class: 'gd-btn', disabled: t.busy ? true : null }, [icon('spark', 'sm'), 'Improve']);
-      var f = h('form', { class: 'ax-lc-imp' }, [h('h4', { text: 'Improve with AI' }),
-        h('div', { class: 'ax-lc-chips' }, QUICK.map(function (q) { return h('button', { type: 'button', class: 'ax-tri-chip', text: q, onclick: function () { inp.value = t.ask = q; improve(t); } }); })),
-        h('div', { class: 'ax-lc-row' }, [inp, go])]);
+      var go = h('button', { type: 'submit', class: 'ax-lc-go', 'aria-label': 'Improve the reply', disabled: t.busy ? true : null }, [icon('send', 'sm')]);
+      var f = h('form', { class: 'ax-lc-imp' }, [h('h4', {}, [icon('spark', 'sm'), 'Improve with AI']),
+        h('div', { class: 'ax-lc-chips' }, QUICK.map(function (q) { return h('button', { type: 'button', class: 'ax-lc-chip', text: q, disabled: t.busy ? true : null, onclick: function () { inp.value = t.ask = q; improve(t); } }); })),
+        h('div', { class: 'ax-lc-askw' }, [inp, go])]);
       f.addEventListener('submit', function (e) { e.preventDefault(); improve(t); });
       return f;
     }
 
     function loadChat(t) {
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref)).then(function (j) {
-        var was = t.last; t.chat = j.chat; t.msgs = j.messages || []; t.error = '';
-        if (j.suggestion && (!t.sugg || t.sugg.basis !== j.suggestion.basis)) t.sugg = j.suggestion; // an edited or improved reply for the same message is kept
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + (t.acct ? '?acct=' + encodeURIComponent(t.acct) : '')).then(function (j) {
+        var was = t.last, n = t.msgs.length, aw = JSON.stringify(t.account); t.chat = j.chat; t.msgs = j.messages || []; t.error = ''; lastSync = Date.now();
+        t.account = j.account || null; var acctChanged = JSON.stringify(t.account) !== aw;
+        if (j.suggestion && (!t.sugg || t.sugg.basis !== j.suggestion.basis)) { t.sugg = j.suggestion; t.edited = false; } // an edited or improved reply for the same message is kept
         t.last = j.lastClientId;
         if (t.last && was && t.last !== was && active !== t.ref) t.unread = true;
         if (t.last && t.chat.open && !t.busy && t.failed !== t.last && (!t.sugg || t.sugg.basis !== t.last)) suggest(t, false);
-      }).catch(function (e) { t.error = e.message; }).then(function () { if (active === t.ref) paintBody(); paintTabs(); });
+        t._changed = t.msgs.length !== n || was !== t.last || acctChanged;
+      }).catch(function (e) { t.error = e.message; t._changed = true; }).then(function () { paintList(); paintSync(); if (active === t.ref && t._changed !== false) { paintConvo(); if (!t.edit) paintSide(); } });
     }
     function suggest(t, force) {
-      if (t.busy && !force) return; t.busy = true; t.sError = ''; if (active === t.ref) paintBody();
+      if (t.busy && !force) return; t.busy = true; t.sError = ''; if (active === t.ref) paintSide(); paintList();
       var basis = t.last;
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/suggest', { force: !!force }).then(function (j) { if (t.sugg && t.sugg.reply) t.prev = t.sugg; t.sugg = j.suggestion; t.edit = false; t.failed = null; })
-        .catch(function (e) { t.sError = e.message; t.failed = basis; }).then(function () { t.busy = false; if (active === t.ref) paintBody(); });
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/suggest', { force: !!force, acct: t.acct || '' }).then(function (j) { if (t.sugg && t.sugg.reply) t.prev = t.sugg; t.sugg = j.suggestion; t.edit = false; t.edited = false; t.failed = null; })
+        .catch(function (e) { t.sError = e.message; t.failed = basis; }).then(function () { t.busy = false; if (active === t.ref) paintSide(); paintList(); });
     }
     function improve(t) {
-      var ask = String(t.ask || '').trim(); if (!ask || !t.sugg) return;
-      t.busy = true; t.sError = ''; paintBody();
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/improve', { instruction: ask, current: t.sugg.reply }).then(function (j) { t.prev = t.sugg; t.sugg = j.suggestion; t.ask = ''; ctx.toast('Reply improved'); })
-        .catch(function (e) { t.sError = e.message; }).then(function () { t.busy = false; paintBody(); });
+      var ask = String(t.ask || '').trim(); if (!ask || !t.sugg || t.busy) return;
+      t.busy = true; t.sError = ''; paintSide();
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/improve', { instruction: ask, current: t.sugg.reply, acct: t.acct || '' }).then(function (j) { t.prev = t.sugg; t.sugg = j.suggestion; t.ask = ''; t.edited = false; ctx.toast('Reply improved'); })
+        .catch(function (e) { t.sError = e.message; }).then(function () { t.busy = false; paintSide(); });
     }
     function loadMine() {
       return ctx.api('/api/livechat/mine').then(function (j) {
-        err = ''; any = !!j.any;
+        err = ''; any = !!j.any; lastSync = Date.now();
         (j.chats || []).forEach(function (c) { var t = find(c.ref); if (!t) { t = tab(c.ref, false); t.chat = c; tabs.push(t); if (active && active !== c.ref) t.unread = true; loadChat(t); } });
-        if (!active && tabs.length) select(tabs[0].ref); else paint();
+        if (!active && tabs.length) select(tabs[0].ref); else { paintSync(); paintNote(); paintList(); }
       }).catch(function (e) { err = e.message; paint(); });
     }
     function start() {
-      clearInterval(tMine); clearInterval(tChat);
+      clearInterval(tMine); clearInterval(tChat); clearInterval(tTick);
       tMine = setInterval(function () { if (visible()) loadMine(); }, 20000);
-      tChat = setInterval(function () { if (!visible()) return; tabs.forEach(function (t) { if (!t.chat || t.chat.open || t.ref === active) loadChat(t); }); }, 10000);
+      var tick = 0;
+      tChat = setInterval(function () { tick++; tabs.forEach(function (t) { if (t.ref === active ? true : tick % 3 === 0 && (!t.chat || t.chat.open)) if (!t.loading) { t.loading = true; loadChat(t).then(function () { t.loading = false; }); } }); }, 4000);
+      document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && active) { var t = find(active); if (t) loadChat(t); } });
+      tTick = setInterval(function () { if (visible()) { paintSync(); paintList(); } }, 5000);
     }
     paint(); loadMine().then(function () { tabs.forEach(function (t) { if (!t.chat && !t.error) loadChat(t); }); }); start();
     return { reload: function () { loadMine(); if (active) { var t = find(active); if (t) loadChat(t); } }, open: function (ref) { var t = find(ref); if (!t) { t = tab(ref, true); tabs.push(t); save(); } select(t.ref); } };
