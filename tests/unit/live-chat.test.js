@@ -118,4 +118,9 @@ describe('Live chats', () => {
     expect(lc._isOpen({ status: 'Connected', chat_status: { label: 'Connected', status_key: 'reopen' } })).toBe(true);
     expect(lc._isOpen({ status: 'Attended Online', chat_status: { label: 'Attended Online', status_key: 'closed', state_key: 'end' } })).toBe(false);
   });
+  it('lets an agent read a chat they took part in before it moved', () => {
+    const c = { attender: { email: 'anold@adit.com' }, owner: { email: 'anold@adit.com' }, participants: [{ email: 'Evan@adit.com' }, 'x'] };
+    expect(lc._canSee(c, { email: 'evan@adit.com' })).toBe(true);
+    expect(lc._canSee(c, { email: 'leo@adit.com' })).toBe(false);
+  });
 });

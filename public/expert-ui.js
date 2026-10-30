@@ -1073,7 +1073,11 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
         if (t.last && was && t.last !== was && active !== t.ref) t.unread = true;
         if (t.last && t.chat.open && (t.own || t.ref === active) && !t.busy && t.failed !== t.last && (!t.sugg || t.sugg.basis !== t.last)) suggest(t, false);
         t._changed = was !== t.last || before !== JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
-      }).catch(function (e) { t.error = e.message; t._changed = true; }).then(function () { paintList(); paintSync(); if (active === t.ref && t._changed !== false) { paintConvo(); paintInsight(); if (!t.edit) paintSide(); } });
+      }).catch(function (e) {
+        t.error = e.message; t._changed = true;
+        // Batch 221: a chat that moved to another agent (offered to you, then given to someone else) leaves your list.
+        if (!t.manual && /not one of your chats/i.test(e.message)) { tabs = tabs.filter(function (x) { return x !== t; }); if (active === t.ref) { active = tabs.length ? tabs[0].ref : null; paint(); } }
+      }).then(function () { paintList(); paintSync(); if (active === t.ref && t._changed !== false) { paintConvo(); paintInsight(); if (!t.edit) paintSide(); } });
     }
     function suggest(t, force) {
       if (t.busy && !force) return; t.busy = true; t.sError = ''; if (active === t.ref) { paintSide(); paintConvo(); } paintList();
@@ -1097,7 +1101,8 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
           else { t.own = c.own !== false || t.own; if (!t.msgs.length) t.chat = c; }
         });
         // Someone else's chat that has ended leaves the list on its own (admins); your own stay until you close them.
-        tabs = tabs.filter(function (t) { return live[t.ref] || t.own || t.manual || t.ref === active || !t.chat; });
+        tabs = tabs.filter(function (t) { return live[t.ref] || t.manual || (t.own && !t.error) || (t.ref === active && !t.error) || (!t.chat && !t.error); });
+        if (active && !find(active)) active = null;
         if (!active && tabs.length) select(tabs[0].ref); else { paintSync(); paintNote(); paintList(); }
       }).catch(function (e) { err = e.message; paint(); });
     }
