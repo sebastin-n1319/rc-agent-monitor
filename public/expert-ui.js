@@ -27,7 +27,7 @@
     user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>', warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.01"/>',
     list: '<path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/>', search: '<circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/>',
     chat: '<path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>', refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>',
-    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>', trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6V17h4v-.5c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/>', image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="M20.5 16l-5-5-8.5 8.5"/>', clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', building: '<path d="M5 20V5.5A1.5 1.5 0 0 1 6.5 4h7A1.5 1.5 0 0 1 15 5.5V20M15 10h3.5a1.5 1.5 0 0 1 1.5 1.5V20M3 20h18M8.5 8h3M8.5 12h3M8.5 16h3"/>', layers: '<path d="M12 4l8.5 4.5L12 13 3.5 8.5z"/><path d="M3.5 12.5L12 17l8.5-4.5M3.5 16.5L12 21l8.5-4.5"/>', expand: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', panel: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>', trash: '<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>', bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.9.7 1.5 1.6 1.5 2.6V17h4v-.5c0-1 .6-1.9 1.5-2.6A6 6 0 0 0 12 3z"/>',
   };
   function icon(n, cls) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'i ' + (cls || '')); s.setAttribute('aria-hidden', 'true'); s.innerHTML = P[n] || ''; return s; }
   function clear(el) { while (el && el.firstChild) el.removeChild(el.firstChild); }
@@ -747,34 +747,33 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
 
   // Batch 215: Live chats. The agent's open SalesIQ chats (and any chat added by its number), the live transcript,
   // and Expert's next reply with Help Center links and screenshot spots, ready to copy into SalesIQ. Nothing is sent from here.
-  // Batch 216: laid out as a workspace: a chat list (who is waiting and for how long), the conversation, and Expert's reply
-  // shown the way the client will see it, with one main Copy action.
+  // Batch 216: a workspace (chat list, conversation, reply) with the client's account review.
+  // Batch 217: full width. A fourth "Insight" column (a slide-over panel on smaller screens) holds the account review, the
+  // account's recent tickets, similar solved cases and the client's screenshots (shown in the chat and read by the AI).
   function LiveChats(panel, ctx) {
     var root = h('div', { class: 'ax-lc' }); panel.appendChild(root);
-    var acFocus = false;
+    var acFocus = false, drawer = false;
     var tabs = [], active = null, any = false, tMine = null, tChat = null, tTick = null, err = '', lastSync = 0;
     var KEY = 'axLiveChats';
     var QUICK = ['Shorter', 'Friendlier', 'Add the steps', 'Add a screenshot spot', 'Add the Help Center link', 'More formal'];
     try { (JSON.parse(localStorage.getItem(KEY) || '[]') || []).forEach(function (r) { if (/^\d{3,8}$/.test(r)) tabs.push(tab(r, true)); }); } catch (e) {}
-    function tab(ref, manual) { return { ref: String(ref), manual: !!manual, acct: '', account: null, chat: null, msgs: [], last: null, sugg: null, prev: null, busy: false, unread: false, error: '', edit: false, ask: '', edited: false }; }
+    function tab(ref, manual) { return { ref: String(ref), manual: !!manual, acct: '', account: null, similar: [], chat: null, msgs: [], shown: {}, last: null, sugg: null, prev: null, busy: false, unread: false, error: '', edit: false, ask: '', edited: false, fresh: false }; }
     function save() { try { localStorage.setItem(KEY, JSON.stringify(tabs.filter(function (t) { return t.manual; }).map(function (t) { return t.ref; }))); } catch (e) {} }
     function find(ref) { for (var i = 0; i < tabs.length; i++) if (tabs[i].ref === String(ref)) return tabs[i]; return null; }
     function time(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }); }
     function mins(iso) { var t = Date.parse(iso); return isNaN(t) ? null : Math.max(0, Math.floor((Date.now() - t) / 60000)); }
     function dur(m) { return m == null ? '' : m < 1 ? 'just now' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
-    function initials(n) { var w = String(n || '?').replace(/[^A-Za-z ]/g, ' ').trim().split(/\s+/).filter(function (x) { return !/^(dr|mr|mrs|ms)$/i.test(x); }); return ((w[0] || '?')[0] + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); }
-    // Agents keep SalesIQ in another browser tab, so this page keeps listening while it is in the background.
-    function visible() { return true; }
-    // Who spoke last: the client waiting on us, or us waiting on the client.
+    function initials(n) { var w = String(n || '?').replace(/[^A-Za-z ]/g, ' ').trim().split(/\s+/).filter(function (x) { return x && !/^(dr|mr|mrs|ms)$/i.test(x); }); return (((w[0] || '?')[0]) + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase(); }
     function turn(t) {
-      for (var i = t.msgs.length - 1; i >= 0; i--) { var m = t.msgs[i]; if (m.who === 'client') return { client: true, at: m.at, text: m.text }; if (m.who === 'agent') return { client: false, at: m.at, text: m.text }; }
+      for (var i = t.msgs.length - 1; i >= 0; i--) { var m = t.msgs[i]; if (m.who === 'client') return { client: true, at: m.at, text: m.file ? (m.file.image ? 'Sent a screenshot' : 'Sent a file') : m.text }; if (m.who === 'agent') return { client: false, at: m.at, text: m.file ? 'Sent a file' : m.text }; }
       return null;
     }
+    function imgUrl(t, m) { return '/api/livechat/' + encodeURIComponent(t.ref) + '/image/' + encodeURIComponent(m.id); }
 
     // ── frame ──
     var sync = h('span', { class: 'ax-lc-sync', role: 'status' });
     root.appendChild(h('header', { class: 'ax-lc-hd' }, [
-      h('div', {}, [h('h2', { text: 'Live chats' }), h('p', { class: 'ax-muted', text: 'Expert reads each chat and writes your next reply when the client writes. Copy it into SalesIQ; nothing is sent from here.' })]),
+      h('div', {}, [h('h2', { text: 'Live chats' }), h('p', { class: 'ax-muted', text: 'Expert reads the chat, the screenshots, the account and its history, and writes your next reply when the client writes. Copy it into SalesIQ; nothing is sent from here.' })]),
       sync]));
     var note = h('div', { class: 'ax-lc-note' }); root.appendChild(note);
     var numIn = h('input', { class: 'ax-lc-num', type: 'text', inputmode: 'numeric', placeholder: 'Open chat by number', 'aria-label': 'Chat number', maxlength: '8', autocomplete: 'off' });
@@ -785,7 +784,20 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     var rail = h('aside', { class: 'ax-lc-rail' }, [h('div', { class: 'ax-lc-railhd' }, [h('h3', { text: 'Chats' }), countEl]), addForm, list]);
     var convo = h('section', { class: 'ax-lc-convo', role: 'tabpanel', 'aria-label': 'Conversation' });
     var side = h('section', { class: 'ax-lc-side', 'aria-label': 'Next reply' });
-    var ws = h('div', { class: 'ax-lc-ws' }, [rail, convo, side]); root.appendChild(ws);
+    var insight = h('aside', { class: 'ax-lc-ins', 'aria-label': 'Account and history' });
+    var scrim = h('div', { class: 'ax-lc-scrim', 'aria-hidden': 'true' }); scrim.addEventListener('click', function () { setDrawer(false); });
+    var ws = h('div', { class: 'ax-lc-ws' }, [rail, convo, side, insight, scrim]); root.appendChild(ws);
+    var lb = null;
+    function setDrawer(on) { drawer = !!on; ws.classList.toggle('drawer', drawer); var b = convo.querySelector('.ax-lc-insb'); if (b) b.setAttribute('aria-expanded', drawer ? 'true' : 'false'); if (drawer) { var x = insight.querySelector('.ax-lc-insx'); if (x) x.focus(); } }
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (lb) closeLb(); else if (drawer) setDrawer(false); } });
+    function openLb(src, alt, caption) {
+      closeLb();
+      var x = h('button', { type: 'button', class: 'ax-lc-lbx', 'aria-label': 'Close' }, [icon('x')]);
+      lb = h('div', { class: 'ax-lc-lb', role: 'dialog', 'aria-modal': 'true', 'aria-label': alt }, [h('figure', {}, [h('img', { src: src, alt: alt }), caption ? h('figcaption', { text: caption }) : null]), x]);
+      lb.addEventListener('click', function (e) { if (e.target === lb || e.target.closest('.ax-lc-lbx')) closeLb(); });
+      document.body.appendChild(lb); requestAnimationFrame(function () { lb.classList.add('on'); }); x.focus();
+    }
+    function closeLb() { if (!lb) return; var el = lb; lb = null; el.classList.remove('on'); setTimeout(function () { el.remove(); }, 180); }
 
     function paintSync() { clear(sync); if (!lastSync) return; var s = Math.round((Date.now() - lastSync) / 1000); sync.appendChild(h('i', { class: 'ax-lc-live' + (s > 45 ? ' stale' : '') })); sync.appendChild(document.createTextNode(s > 45 ? 'Reconnecting' : 'Live, updated ' + (s < 5 ? 'now' : s + ' s ago'))); }
     function paintNote() { clear(note); if (err) note.appendChild(h('div', { class: 'gd-note', text: err })); }
@@ -802,8 +814,9 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
             h('span', { class: 'ax-lc-l1' }, [h('b', { text: c ? c.visitor : t.error ? 'Chat #' + t.ref : 'Loading #' + t.ref }), h('time', { text: tn && tn.at ? time(tn.at) : '' })]),
             h('span', { class: 'ax-lc-l2', text: t.error ? 'Not found' : tn ? (tn.client ? '' : 'You: ') + tn.text : c ? (c.company || 'No messages yet') : '' }),
             h('span', { class: 'ax-lc-l3' }, [h('span', { class: 'ax-lc-ref', text: '#' + t.ref }),
+              t.account && t.account.found ? h('span', { class: 'ax-lc-ref ax-lc-acn', text: t.account.name }) : null,
               ended ? h('span', { class: 'ax-lc-tag', text: 'Ended' }) : w != null ? h('span', { class: 'ax-lc-tag wait' + (w >= 3 ? ' late' : ''), text: 'Waiting ' + dur(w) }) : null,
-              t.busy ? h('span', { class: 'ax-lc-tag ai', text: 'Writing' }) : null])]),
+              t.busy ? h('span', { class: 'ax-lc-tag ai' }, ['Writing', h('span', { class: 'ax-lc-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')])]) : null])]),
           t.unread ? h('span', { class: 'ax-lc-dot', 'aria-label': 'New message' }) : null]);
         b.addEventListener('click', function () { select(t.ref); });
         b.addEventListener('keydown', function (e) { var i = tabs.indexOf(t), k = e.key; if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); var n = tabs[(i + (k === 'ArrowDown' || k === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; select(n.ref); var el = list.querySelector('[aria-selected="true"]'); if (el) el.focus(); } });
@@ -815,101 +828,135 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       if (!tabs.length) list.appendChild(h('p', { class: 'ax-lc-none', text: any ? 'No chats assigned to you right now. Open any chat by its number.' : 'No chats assigned to you right now. New chats appear here on their own.' }));
     }
     function close(ref) { tabs = tabs.filter(function (t) { return t.ref !== ref; }); if (active === ref) active = tabs.length ? tabs[0].ref : null; save(); paint(); }
-    function select(ref) { active = String(ref); var t = find(ref); if (t) t.unread = false; paint(); if (t && !t.chat) loadChat(t); }
-    function paint() { paintSync(); paintNote(); paintList(); paintConvo(); paintSide(); }
-    function paintActive() { paintList(); paintConvo(); paintSide(); }
+    function select(ref) { var changed = active !== String(ref); active = String(ref); var t = find(ref); if (t) t.unread = false; if (changed) { root.classList.remove('swap'); void root.offsetWidth; root.classList.add('swap'); } paint(); if (t && !t.chat) loadChat(t); }
+    function paint() { paintSync(); paintNote(); paintList(); paintConvo(); paintSide(); paintInsight(); }
 
     function empty(el, title, text) { el.appendChild(h('div', { class: 'ax-lc-empty' }, [icon('chat'), h('b', { text: title }), text ? h('p', { text: text }) : null])); }
     // ── the conversation ──
     function paintConvo() {
       acFocus = !!(document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('ax-lc-acin'));
-      var keep = convo.querySelector('.ax-lc-tx'), atEnd = !keep || keep.scrollHeight - keep.scrollTop - keep.clientHeight < 60, top = keep ? keep.scrollTop : 0;
+      var keep = convo.querySelector('.ax-lc-tx'), atEnd = !keep || keep.scrollHeight - keep.scrollTop - keep.clientHeight < 80, top = keep ? keep.scrollTop : 0;
       clear(convo);
       var t = find(active);
       if (!t) return empty(convo, tabs.length ? 'Pick a chat' : 'No open chats', tabs.length ? '' : 'When SalesIQ assigns you a chat it opens here.');
       if (t.error) return empty(convo, 'Chat #' + t.ref + ' could not be opened', t.error);
-      if (!t.chat) return empty(convo, 'Reading chat #' + t.ref, 'From SalesIQ...');
+      if (!t.chat) { convo.appendChild(h('div', { class: 'ax-lc-skelc', 'aria-hidden': 'true' }, [h('i'), h('i', { class: 'r' }), h('i'), h('i', { class: 'r' })])); return; }
       var c = t.chat, tn = turn(t), w = tn && tn.client && c.open ? mins(tn.at) : null;
       var refBtn = h('button', { type: 'button', class: 'ax-lc-refb', title: 'Copy chat number' }, [h('span', { text: '#' + c.ref })]);
       refBtn.addEventListener('click', function () { copy(c.ref, refBtn); });
+      var insB = h('button', { type: 'button', class: 'ax-lc-insb', 'aria-expanded': drawer ? 'true' : 'false', 'aria-controls': 'ax-lc-ins' }, [icon('layers', 'sm'), 'Account & history']);
+      insB.addEventListener('click', function () { setDrawer(!drawer); });
       convo.appendChild(h('div', { class: 'ax-lc-chd' }, [
         h('span', { class: 'ax-lc-av lg', 'aria-hidden': 'true', text: initials(c.visitor) }),
         h('div', { class: 'ax-lc-who2' }, [h('b', { text: c.visitor }), h('span', { class: 'ax-muted', text: [c.company, c.department, c.agent ? 'with ' + c.agent : '', c.start ? 'started ' + time(c.start) : ''].filter(Boolean).join(' · ') })]),
-        h('span', { class: 'ax-lc-state' + (c.open ? ' on' : '') , text: c.open ? 'Live' : 'Ended' }), refBtn]));
-      convo.appendChild(accountBanner(t));
+        h('span', { class: 'ax-lc-state' + (c.open ? ' on' : ''), text: c.open ? 'Live' : 'Ended' }), insB, refBtn]));
+      convo.appendChild(acctStrip(t));
       var ol = h('ol', { class: 'ax-lc-tx', 'aria-label': 'Transcript', tabindex: '0' });
       if (c.question) ol.appendChild(h('li', { class: 'ax-lc-m sys' }, [h('div', { class: 'ax-lc-say', text: 'Question: ' + c.question })]));
       if (!t.msgs.length) ol.appendChild(h('li', { class: 'ax-lc-m sys' }, [h('div', { class: 'ax-lc-say', text: 'No messages yet.' })]));
-      var prev = null;
+      var prev = null, firstPaint = !t.painted;
       t.msgs.forEach(function (m) {
         var k = m.who === 'client' ? 'cl' : m.who === 'agent' ? 'ag' : m.who === 'bot' ? 'bot' : 'sys';
         var cont = prev && prev.who === m.who && prev.name === m.name && m.who !== 'system' && Math.abs(Date.parse(m.at) - Date.parse(prev.at)) < 180000;
-        ol.appendChild(h('li', { class: 'ax-lc-m ' + k + (cont ? ' cont' : '') }, [
-          m.who === 'system' || cont ? null : h('span', { class: 'ax-lc-mw', text: (m.who === 'client' ? (m.name || 'Client') : m.who === 'bot' ? 'Bot' : (m.name || 'Agent')) + (m.at ? '  ' + time(m.at) : '') }),
-          h('div', { class: 'ax-lc-say' }, [linky(m.text)])]));
+        var isNew = !firstPaint && !t.shown[m.id]; t.shown[m.id] = 1;
+        var bubble;
+        if (m.file && m.file.image) {
+          var img = h('img', { src: imgUrl(t, m), alt: 'Screenshot from ' + (m.who === 'client' ? 'the client' : 'the agent') + ': ' + m.file.name, loading: 'lazy' });
+          var fig = h('button', { type: 'button', class: 'ax-lc-img', title: 'Open ' + m.file.name }, [img]);
+          img.addEventListener('error', function () { fig.replaceWith(h('span', { class: 'ax-lc-file bad' }, [icon('image', 'sm'), h('span', { text: m.file.name + ' (could not be loaded from SalesIQ)' })])); });
+          fig.addEventListener('click', function () { openLb(img.src, img.alt, m.seen || ''); });
+          bubble = h('div', { class: 'ax-lc-media' }, [fig, m.seen ? h('p', { class: 'ax-lc-seen' }, [icon('spark', 'sm'), h('span', { text: m.seen })]) : null]);
+        } else if (m.file) bubble = h('span', { class: 'ax-lc-file' }, [icon('book', 'sm'), h('span', { text: m.file.name })]);
+        else bubble = h('div', { class: 'ax-lc-say' }, [linky(m.text)]);
+        ol.appendChild(h('li', { class: 'ax-lc-m ' + k + (cont ? ' cont' : '') + (isNew ? ' new' : '') }, [
+          m.who === 'system' || cont ? null : h('span', { class: 'ax-lc-mw', text: (m.who === 'client' ? (m.name || 'Client') : m.who === 'bot' ? 'Bot' : (m.name || 'Agent')) + (m.at ? '  ' + time(m.at) : '') }), bubble]));
         prev = m;
       });
+      t.painted = true;
+      if (t.busy && c.open) ol.appendChild(h('li', { class: 'ax-lc-m ag ax-lc-typing', 'aria-label': 'Expert is writing' }, [h('span', { class: 'ax-lc-mw', text: 'Adit Expert' }), h('div', { class: 'ax-lc-say' }, [h('span', { class: 'ax-lc-dots' }, [h('i'), h('i'), h('i')])])]));
       convo.appendChild(ol);
       convo.appendChild(h('div', { class: 'ax-lc-foot' + (w != null && w >= 3 ? ' late' : '') }, w != null ? [icon('warn', 'sm'), 'Client waiting ' + dur(w) + ' for your reply'] : tn && !tn.client && c.open ? [icon('check', 'sm'), 'You replied last, waiting on the client'] : !c.open ? ['This chat has ended'] : ['Waiting for the client to write']));
       ol.scrollTop = atEnd ? ol.scrollHeight : top;
-    }
-
-    // ── account review banner (Batch 216) ──
-    function tone(v) { v = String(v || '').toLowerCase(); return /poor|bad|red|critical|at risk|high|angry|frustrat|escalat/.test(v) ? 'bad' : /good|healthy|green|happy|calm|low|positive/.test(v) ? 'ok' : v ? 'warn' : ''; }
-    function chip(label, value, cls) { return value || value === 0 ? h('span', { class: 'ax-lc-ac ' + (cls || '') }, [h('i', { text: label }), h('b', { text: String(value) })]) : null; }
-    function acctForm(t, label) {
-      var inp = h('input', { type: 'text', inputmode: 'numeric', class: 'ax-lc-acin', placeholder: 'Account #', 'aria-label': 'Adit account number', maxlength: '7' }); inp.value = t.acctDraft != null ? t.acctDraft : (t.acct || '');
-      inp.addEventListener('input', function () { t.acctDraft = inp.value; });
-      if (acFocus) setTimeout(function () { inp.focus(); var n = inp.value.length; try { inp.setSelectionRange(n, n); } catch (e) {} }, 0);
-      var f = h('form', { class: 'ax-lc-acf' }, [inp, h('button', { type: 'submit', class: 'ax-mini', text: label || 'Load' })]);
-      f.addEventListener('submit', function (e) { e.preventDefault(); var v = inp.value.replace(/\D/g, ''); t.acct = v; t.acctDraft = null; acFocus = false; t.account = v ? { number: v, loading: true } : null; t.editAcct = false; paintConvo(); loadChat(t); });
-      return f;
-    }
-    function accountBanner(t) {
-      var a = t.account;
-      if (t.editAcct || !a) return h('div', { class: 'ax-lc-acct none' }, [icon('user', 'sm'), h('span', { class: 'ax-muted', text: t.editAcct ? 'Type the Adit account number' : 'No account number in the chat yet. It loads when the client shares it, or type it here.' }), acctForm(t, t.editAcct ? 'Load' : 'Load')]);
-      if (a.loading) return h('div', { class: 'ax-lc-acct none' }, [icon('user', 'sm'), h('span', { class: 'ax-muted', text: 'Loading the account review for #' + a.number + '...' })]);
-      var edit = h('button', { type: 'button', class: 'ax-lc-acedit', title: 'Change account number', 'aria-label': 'Change account number' }, [icon('edit', 'sm')]);
-      edit.addEventListener('click', function () { t.editAcct = true; paintConvo(); });
-      if (!a.found) return h('div', { class: 'ax-lc-acct none' }, [icon('warn', 'sm'), h('span', { class: 'ax-muted', text: a.error || ('Account #' + a.number + ' was not found in the CRM. Check the number with the client.') }), edit]);
-      var an = a.analysis || {}, esc = a.escalation && !/de-?escalat|earlier|past|none|^no\b|resolved|closed/i.test(a.escalation), escPast = a.escalation && !esc ? a.escalation : '';
-      var watch = (an.issues || []).filter(function (i) { return !/resolved|closed|fixed/i.test(i.status || ''); }).slice(0, 2).map(function (i) { return i.text + (i.times > 1 ? ' (raised ' + i.times + 'x)' : ''); })
-        .concat((an.open || []).slice(0, 1).map(function (o) { return 'Open: ' + o.text; }));
-      var card = h('div', { class: 'ax-lc-acct' + (esc ? ' esc' : tone(a.health) === 'bad' ? ' risk' : '') }, [
-        h('div', { class: 'ax-lc-ac1' }, [h('span', { class: 'ax-lc-ack', text: 'Account review' }),
-          h('b', { text: a.name || 'Account' }), h('span', { class: 'ax-muted', text: ['#' + a.number, a.city, a.ehr, a.locations ? a.locations + ' location' + (a.locations == 1 ? '' : 's') : ''].filter(Boolean).join(' · ') }), edit]),
-        h('div', { class: 'ax-lc-acchips' }, [
-          esc ? h('span', { class: 'ax-lc-ac bad strong' }, [icon('warn', 'sm'), h('b', { text: 'Escalated: ' + a.escalation + (a.escalationOwner ? ', ' + a.escalationOwner : '') })]) : null,
-          chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('Escalation', escPast, 'warn'), chip('CSM', a.csm), chip('Onboarding', a.ob),
-          chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), chip('Risk', a.risk, tone(a.risk)),
-          chip('Contract ends', a.contractEnd), chip('Tickets', a.tickets), chip('FCR', a.fcr != null ? a.fcr + '%' : null)])]);
-      if (watch.length) card.appendChild(h('ul', { class: 'ax-lc-watch', 'aria-label': 'Watch for' }, watch.map(function (w) { return h('li', {}, [icon('bulb', 'sm'), h('span', { text: w })]); })));
-      if (an.headline) {
-        var d = h('details', { class: 'ax-lc-acmore' }, [h('summary', { text: 'Full review' + (an.at ? ' (' + an.at + ')' : '') }), h('p', { text: an.headline }),
-          an.healthWhy ? h('p', { class: 'ax-muted', text: 'Health: ' + an.healthWhy }) : null, an.moodWhy ? h('p', { class: 'ax-muted', text: 'Mood: ' + an.moodWhy }) : null,
-          (an.issues || []).length > 2 ? h('ul', {}, an.issues.map(function (i) { return h('li', { text: i.text + (i.status ? ' [' + i.status + ']' : '') }); })) : null]);
-        if (t.reviewOpen) d.open = true;
-        d.addEventListener('toggle', function () { t.reviewOpen = d.open; });
-        card.appendChild(d);
-      }
-      return card;
     }
     function linky(text) {
       var frag = document.createDocumentFragment(), re = /(https?:\/\/[^\s<]+[^\s<.,;:!?)\]])/g, at = 0, m; text = String(text || '');
       while ((m = re.exec(text))) { frag.appendChild(document.createTextNode(text.slice(at, m.index))); frag.appendChild(h('a', { href: m[1], target: '_blank', rel: 'noopener', text: m[1] })); at = m.index + m[1].length; }
       frag.appendChild(document.createTextNode(text.slice(at))); return frag;
     }
+    function tkLink(n, cls) { return n ? h('a', { class: cls || 'ax-lc-tk', href: '/guides/ticket/' + n, target: '_blank', rel: 'noopener', title: 'Open ticket #' + n + ' in Zoho Desk', text: '#' + n }) : null; }
+
+    // ── account (compact strip in the conversation, full review in Insight) ──
+    var ESC_PAST = /never|de-?escalat|earlier|past|none|^no\b|resolved|closed/i;
+    function tone(v) { v = String(v || '').toLowerCase(); return /poor|bad|red|critical|at risk|high|angry|frustrat|escalat|churn/.test(v) ? 'bad' : /good|healthy|green|happy|calm|low|positive/.test(v) ? 'ok' : v ? 'warn' : ''; }
+    function chip(label, value, cls) { return value || value === 0 ? h('span', { class: 'ax-lc-ac ' + (cls || '') }, [h('i', { text: label }), h('b', { text: String(value) })]) : null; }
+    function acctForm(t) {
+      var inp = h('input', { type: 'text', inputmode: 'numeric', class: 'ax-lc-acin', placeholder: 'Account #', 'aria-label': 'Adit account number', maxlength: '7' }); inp.value = t.acctDraft != null ? t.acctDraft : (t.acct || '');
+      inp.addEventListener('input', function () { t.acctDraft = inp.value; });
+      if (acFocus) setTimeout(function () { inp.focus(); var n = inp.value.length; try { inp.setSelectionRange(n, n); } catch (e) {} }, 0);
+      var f = h('form', { class: 'ax-lc-acf' }, [inp, h('button', { type: 'submit', class: 'ax-mini', text: 'Load' })]);
+      f.addEventListener('submit', function (e) { e.preventDefault(); var v = inp.value.replace(/\D/g, ''); t.acct = v; t.acctDraft = null; acFocus = false; t.account = v ? { number: v, loading: true } : null; t.editAcct = false; paintConvo(); paintInsight(); loadChat(t); });
+      return f;
+    }
+    function escOf(a) { var active = !!(a.escalation && !ESC_PAST.test(a.escalation)); return { active: active, past: a.escalation && !active && !/never|none/i.test(a.escalation) ? a.escalation : '' }; }
+    function acctStrip(t) {
+      var a = t.account;
+      if (t.editAcct || !a) return h('div', { class: 'ax-lc-acct none' }, [icon('building', 'sm'), h('span', { class: 'ax-muted', text: t.editAcct ? 'Type the Adit account number' : 'No account number yet. It loads when the client shares it, or type it here.' }), acctForm(t)]);
+      if (a.loading) return h('div', { class: 'ax-lc-acct none' }, [h('span', { class: 'ax-lc-spin', 'aria-hidden': 'true' }), h('span', { class: 'ax-muted', text: 'Reading account #' + a.number + ', its tickets and history...' })]);
+      var edit = h('button', { type: 'button', class: 'ax-lc-acedit', title: 'Change account number', 'aria-label': 'Change account number' }, [icon('edit', 'sm')]);
+      edit.addEventListener('click', function () { t.editAcct = true; paintConvo(); });
+      if (!a.found) return h('div', { class: 'ax-lc-acct none' }, [icon('warn', 'sm'), h('span', { class: 'ax-muted', text: a.error || ('Account #' + a.number + ' was not found in the CRM. Check the number with the client.') }), edit]);
+      var e = escOf(a);
+      return h('div', { class: 'ax-lc-acct strip' + (e.active ? ' esc' : '') }, [icon('building', 'sm'), h('b', { text: a.name }), h('span', { class: 'ax-muted', text: '#' + a.number }),
+        e.active ? h('span', { class: 'ax-lc-ac bad strong' }, [icon('warn', 'sm'), h('b', { text: 'Escalated: ' + a.escalation })]) : null,
+        chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), edit]);
+    }
+
+    // ── Insight: account review, its tickets, similar solved cases, screenshots ──
+    function sec(title, ic, kids, extra) { return h('section', { class: 'ax-lc-is' }, [h('h4', {}, [icon(ic, 'sm'), title, extra || null])].concat(kids)); }
+    function paintInsight() {
+      var keepTop = insight.scrollTop;
+      clear(insight); insight.id = 'ax-lc-ins';
+      var x = h('button', { type: 'button', class: 'ax-lc-insx', 'aria-label': 'Close account and history' }, [icon('x', 'sm')]); x.addEventListener('click', function () { setDrawer(false); });
+      insight.appendChild(h('div', { class: 'ax-lc-inshd' }, [h('h3', {}, [icon('layers', 'sm'), 'Account & history']), x]));
+      var t = find(active), body = h('div', { class: 'ax-lc-insb2' }); insight.appendChild(body);
+      if (!t || !t.chat) { body.appendChild(h('p', { class: 'ax-lc-hint', text: 'Open a chat to see the account and its history.' })); return; }
+      var a = t.account;
+      if (!a || !a.found) body.appendChild(sec('Account review', 'building', [h('p', { class: 'ax-lc-hint', text: a && a.loading ? 'Reading account #' + a.number + '...' : a ? 'Account #' + a.number + ' was not found.' : 'Loads when the client shares their Adit account number, or type it next to the chat header.' })]));
+      else {
+        var an = a.analysis || {}, e = escOf(a);
+        var watch = (an.issues || []).filter(function (i) { return !/resolved|closed|fixed/i.test(i.status || ''); }).slice(0, 3).map(function (i) { return i.text + (i.times > 1 ? ' (raised ' + i.times + 'x)' : ''); })
+          .concat((an.open || []).slice(0, 2).map(function (o) { return 'Open: ' + o.text; }));
+        var kids = [h('div', { class: 'ax-lc-acname' }, [h('b', { text: a.name }), h('span', { class: 'ax-muted', text: ['#' + a.number, a.city, a.ehr, a.locations ? a.locations + ' location' + (a.locations == 1 ? '' : 's') : ''].filter(Boolean).join(' · ') })]),
+          e.active ? h('div', { class: 'ax-lc-escb' }, [icon('warn', 'sm'), h('span', { text: 'Escalated: ' + a.escalation + (a.escalationOwner ? ' (owner ' + a.escalationOwner + ')' : '') + '. Hand anything beyond a Help Center fix to the CSM or escalation manager.' })]) : null,
+          h('div', { class: 'ax-lc-acchips' }, [chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('CSM', a.csm), chip('Onboarding', a.ob), chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), chip('Risk', a.risk, tone(a.risk)), chip('Escalation', e.past, 'warn'), chip('Contract ends', a.contractEnd), chip('Tickets', a.tickets), chip('FCR', a.fcr != null ? a.fcr + '%' : null)])];
+        if (watch.length) kids.push(h('ul', { class: 'ax-lc-watch', 'aria-label': 'Watch for' }, watch.map(function (w) { return h('li', {}, [icon('bulb', 'sm'), h('span', { text: w })]); })));
+        if (an.headline) { var d = h('details', { class: 'ax-lc-acmore' }, [h('summary', { text: 'Full review' + (an.at ? ' (' + an.at + ')' : '') }), h('p', { text: an.headline }), an.healthWhy ? h('p', { class: 'ax-muted', text: 'Health: ' + an.healthWhy }) : null, an.moodWhy ? h('p', { class: 'ax-muted', text: 'Mood: ' + an.moodWhy }) : null]); if (t.reviewOpen) d.open = true; d.addEventListener('toggle', function () { t.reviewOpen = d.open; }); kids.push(d); }
+        body.appendChild(sec('Account review', 'building', kids));
+        var rec = a.recent || [];
+        body.appendChild(sec('Recent tickets', 'clock', rec.length ? [h('ol', { class: 'ax-lc-hist' }, rec.map(function (r) {
+          return h('li', {}, [h('div', { class: 'ax-lc-h1' }, [tkLink(r.number), h('span', { class: 'ax-lc-hs ' + (/closed|resolved/i.test(r.status) ? 'ok' : 'open'), text: r.status || '' }), h('time', { text: r.at })]), h('p', { text: r.subject }), r.fix ? h('p', { class: 'ax-lc-fix', text: 'Fixed by: ' + r.fix }) : null]);
+        }))] : [h('p', { class: 'ax-lc-hint', text: 'No tickets on this account.' })], rec.length ? h('span', { class: 'ax-lc-cnt', text: String(rec.length) }) : null));
+      }
+      var sim = t.similar || [];
+      body.appendChild(sec('Similar solved cases', 'book', sim.length ? [h('ol', { class: 'ax-lc-hist' }, sim.map(function (r) {
+        return h('li', {}, [h('div', { class: 'ax-lc-h1' }, [tkLink(r.number), r.module ? h('span', { class: 'ax-lc-hs', text: r.module }) : null, h('time', { text: r.at || '' })]), h('p', { text: r.title }), r.fix ? h('p', { class: 'ax-lc-fix', text: 'What fixed it: ' + r.fix }) : null]);
+      }))] : [h('p', { class: 'ax-lc-hint', text: t.sugg ? 'No close match in solved tickets and chats.' : 'Found when Expert writes the reply.' })]));
+      var shots = t.msgs.filter(function (m) { return m.file && m.file.image && m.who === 'client'; });
+      if (shots.length) body.appendChild(sec('Screenshots from the client', 'image', [h('div', { class: 'ax-lc-shots' }, shots.map(function (m) {
+        var img = h('img', { src: imgUrl(t, m), alt: m.file.name, loading: 'lazy' }), b = h('button', { type: 'button', class: 'ax-lc-shotb', title: m.file.name }, [img]);
+        img.addEventListener('error', function () { b.classList.add('bad'); b.replaceChildren(icon('image', 'sm'), h('span', { text: 'Not loaded' })); });
+        b.addEventListener('click', function () { if (!b.classList.contains('bad')) openLb(img.src, m.file.name, m.seen || ''); });
+        return h('figure', {}, [b, m.seen ? h('figcaption', { text: m.seen }) : h('figcaption', { class: 'ax-muted', text: m.file.name })]);
+      }))]));
+      insight.scrollTop = keepTop;
+    }
+
     var SHOT = /^\s*\[Screenshot: ([^\]]+)\]\s*$/;
-    // A reply is 1 to 3 messages split by a blank line; screenshot spots are their own step and never copied.
     function parts(reply) {
       var out = [];
       String(reply || '').split(/\n\s*\n/).forEach(function (block) {
         var txt = [];
-        block.split('\n').forEach(function (line) {
-          var s = SHOT.exec(line);
-          if (s) { if (txt.length) { out.push({ text: txt.join('\n').trim() }); txt = []; } out.push({ shot: s[1].trim() }); }
-          else txt.push(line);
-        });
+        block.split('\n').forEach(function (line) { var s = SHOT.exec(line); if (s) { if (txt.length) { out.push({ text: txt.join('\n').trim() }); txt = []; } out.push({ shot: s[1].trim() }); } else txt.push(line); });
         if (txt.join('').trim()) out.push({ text: txt.join('\n').trim() });
       });
       return out;
@@ -917,28 +964,30 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function plain(reply) { return parts(reply).filter(function (p) { return p.text; }).map(function (p) { return p.text; }).join('\n\n'); }
     function copyIcon(text, label) { var b = h('button', { type: 'button', class: 'ax-lc-cp', 'aria-label': label, title: label }, [icon('copy', 'sm'), h('span', { text: 'Copy' })]); b.addEventListener('click', function () { copy(text, b); }); return b; }
     function mini(ic, label, fn, dis) { return h('button', { type: 'button', class: 'ax-mini', disabled: dis ? true : null, onclick: fn }, [icon(ic, 'sm'), label]); }
+    function replied(t, basis) { var i = -1; for (var k = 0; k < t.msgs.length; k++) if (t.msgs[k].id === basis) i = k; return i >= 0 && t.msgs.slice(i + 1).some(function (m) { return m.who === 'agent'; }); }
 
     // ── Expert's reply ──
     function paintSide() {
       var fEl = document.activeElement, keepAsk = fEl && fEl.classList && fEl.classList.contains('ax-lc-ask');
       clear(side);
       var t = find(active);
-      if (!t || !t.chat) { side.appendChild(h('div', { class: 'ax-lc-shd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply'])])); side.appendChild(h('p', { class: 'ax-lc-hint', text: 'Open a chat to see Expert’s reply.'.replace('’', "'") })); return; }
+      if (!t || !t.chat) { side.appendChild(h('div', { class: 'ax-lc-shd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply'])])); side.appendChild(h('p', { class: 'ax-lc-hint pad', text: "Open a chat to see Expert's reply." })); return; }
       var s = t.sugg, stale = s && t.last && s.basis !== t.last, sent = s && !stale && replied(t, s.basis);
       var state = t.busy ? ['Writing', 'ai'] : stale ? ['Out of date', 'warn'] : sent ? ['You replied', ''] : s ? (t.edited ? ['Edited', ''] : s.improved ? ['Improved', 'ok'] : ['Ready', 'ok']) : null;
       side.appendChild(h('div', { class: 'ax-lc-shd' }, [h('h3', {}, [icon('spark', 'sm'), 'Next reply']),
-        state ? h('span', { class: 'ax-lc-pill ' + state[1], text: state[0] + (s && !t.busy ? ' ' + time(s.at) : '') }) : null]));
+        state ? h('span', { class: 'ax-lc-pill ' + state[1] }, [state[0] + (s && !t.busy ? ' ' + time(s.at) : ''), t.busy ? h('span', { class: 'ax-lc-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]) : null]) : null]));
       var bodyEl = h('div', { class: 'ax-lc-sbody' }); side.appendChild(bodyEl);
-      if (s && (stale || t.busy)) bodyEl.appendChild(h('div', { class: 'ax-lc-stale', role: 'status' }, [icon(t.busy ? 'spark' : 'warn', 'sm'), h('span', { text: t.busy ? 'The client wrote again. Writing a new reply from the whole chat...' : 'The client wrote again. This reply is for an earlier message.' }),
+      if (s && (stale || t.busy)) bodyEl.appendChild(h('div', { class: 'ax-lc-stale', role: 'status' }, [icon(t.busy ? 'spark' : 'warn', 'sm'), h('span', { text: t.busy ? 'Reading the whole chat, the screenshots and the account history...' : 'The client wrote again. This reply is for an earlier message.' }),
         !t.busy ? h('button', { type: 'button', class: 'ax-mini', onclick: function () { suggest(t, true); } }, [icon('refresh', 'sm'), 'Write for the latest']) : null]));
       else if (sent) bodyEl.appendChild(h('div', { class: 'ax-lc-stale soft' }, [icon('check', 'sm'), h('span', { text: 'You have replied since. A new reply is written when the client writes again.' })]));
       if (t.sError) bodyEl.appendChild(h('div', { class: 'gd-note', text: t.sError }));
       if (!s) {
-        if (t.busy) bodyEl.appendChild(h('div', { class: 'ax-lc-skel', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]));
+        if (t.busy) { bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Reading the whole chat, the screenshots and the account history...' })); bodyEl.appendChild(h('div', { class: 'ax-lc-skel', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')])); }
         else if (t.last) bodyEl.appendChild(h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide', onclick: function () { suggest(t, true); } }, [icon('spark', 'sm'), 'Write the next reply']));
         else bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Expert writes a reply as soon as the client sends a message.' }));
         return;
       }
+      if (s.situation) bodyEl.appendChild(h('div', { class: 'ax-lc-read' }, [h('b', { text: "Expert's read" }), h('p', { text: s.situation })]));
       if (t.edit) {
         var ta = h('textarea', { class: 'ax-lc-ta', rows: '10', 'aria-label': 'Edit the reply' }); ta.value = s.reply;
         bodyEl.appendChild(h('p', { class: 'ax-lc-hint', text: 'Leave a blank line between messages. Keep [Screenshot: ...] on its own line.' }));
@@ -949,14 +998,17 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
         setTimeout(function () { ta.focus(); }, 20);
         return;
       }
-      var ps = parts(s.reply), texts = ps.filter(function (x) { return x.text; }).length, n = 0;
-      var ol = h('ol', { class: 'ax-lc-out' + (t.busy || stale || sent ? ' dim' : ''), 'aria-label': 'Messages to send, in order' });
-      ps.forEach(function (p) {
-        if (p.shot) ol.appendChild(h('li', { class: 'ax-lc-shot' }, [icon('expand', 'sm'), h('div', {}, [h('b', { text: 'Send a screenshot' }), h('span', { text: p.shot })])]));
-        else { n++; ol.appendChild(h('li', { class: 'ax-lc-bub' }, [texts > 1 ? h('span', { class: 'ax-lc-n', text: String(n) }) : null, h('div', { class: 'ax-lc-btx' }, [linky(p.text)]), copyIcon(p.text, 'Copy message ' + n)])); }
+      var ps = parts(s.reply), texts = ps.filter(function (x) { return x.text; }).length, n = 0, anim = t.fresh;
+      var ol = h('ol', { class: 'ax-lc-out' + (t.busy || stale || sent ? ' dim' : '') + (anim ? ' in' : ''), 'aria-label': 'Messages to send, in order' });
+      ps.forEach(function (p, i) {
+        var li;
+        if (p.shot) li = h('li', { class: 'ax-lc-shot' }, [icon('image', 'sm'), h('div', {}, [h('b', { text: 'Send a screenshot' }), h('span', { text: p.shot })])]);
+        else { n++; li = h('li', { class: 'ax-lc-bub' }, [texts > 1 ? h('span', { class: 'ax-lc-n', text: String(n) }) : null, h('div', { class: 'ax-lc-btx' }, [linky(p.text)]), copyIcon(p.text, 'Copy message ' + n)]); }
+        li.style.setProperty('--i', i); ol.appendChild(li);
       });
+      t.fresh = false;
       bodyEl.appendChild(ol);
-      var all = h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide' }, [icon('copy', 'sm'), texts > 1 ? 'Copy all ' + texts + ' messages' : 'Copy reply']);
+      var all = h('button', { type: 'button', class: 'gd-btn primary ax-lc-wide' }, [icon('copy', 'sm'), h('span', { text: texts > 1 ? 'Copy all ' + texts + ' messages' : 'Copy reply' })]);
       all.addEventListener('click', function () { copy(plain(s.reply), all); });
       bodyEl.appendChild(all);
       bodyEl.appendChild(h('div', { class: 'ax-lc-row ax-lc-tools' }, [
@@ -966,13 +1018,13 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       if (s.handover) bodyEl.appendChild(h('div', { class: 'ax-lc-hand' }, [icon('warn', 'sm'), h('div', {}, [h('b', { text: 'Hand over' }), h('span', { text: s.handover })])]));
       var notes = [];
       if (s.why) notes.push(h('p', { class: 'ax-lc-why', text: s.why }));
+      if (s.cases && s.cases.length) notes.push(h('p', { class: 'ax-lc-used' }, ['Based on '].concat(s.cases.map(function (c, i) { return h('span', {}, [i ? ', ' : '', tkLink(c)]); }))));
       if (s.checks && s.checks.length) notes.push(h('ul', { class: 'ax-lc-checks' }, s.checks.map(function (x) { return h('li', {}, [icon('check', 'sm'), h('span', { text: x })]); })));
       if (s.kbUrl) notes.push(h('div', { class: 'ax-lc-kb' }, [icon('book', 'sm'), h('a', { href: s.kbUrl, target: '_blank', rel: 'noopener', text: s.kb || 'Help Center article' }), copyIcon(s.kbUrl, 'Copy article link')]));
       if (notes.length) bodyEl.appendChild(h('div', { class: 'ax-lc-notes' }, [h('h4', { text: 'Before you send' })].concat(notes)));
       side.appendChild(improveBox(t));
       if (keepAsk) { var a = side.querySelector('.ax-lc-ask'); if (a) a.focus(); }
     }
-    function replied(t, basis) { var i = -1; for (var k = 0; k < t.msgs.length; k++) if (t.msgs[k].id === basis) i = k; return i >= 0 && t.msgs.slice(i + 1).some(function (m) { return m.who === 'agent'; }); }
     function improveBox(t) {
       var inp = h('input', { type: 'text', class: 'ax-lc-ask', placeholder: 'Tell Expert what to change', 'aria-label': 'Tell Expert what to change', maxlength: '400' }); inp.value = t.ask || '';
       inp.addEventListener('input', function () { t.ask = inp.value; });
@@ -986,25 +1038,26 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
 
     function loadChat(t) {
       return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + (t.acct ? '?acct=' + encodeURIComponent(t.acct) : '')).then(function (j) {
-        var was = t.last, n = t.msgs.length, aw = JSON.stringify(t.account); t.chat = j.chat; t.msgs = j.messages || []; t.error = ''; lastSync = Date.now();
-        t.account = j.account || null; var acctChanged = JSON.stringify(t.account) !== aw;
-        if (j.suggestion && (!t.sugg || t.sugg.basis !== j.suggestion.basis)) { t.sugg = j.suggestion; t.edited = false; } // an edited or improved reply for the same message is kept
+        var was = t.last, before = JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
+        t.chat = j.chat; t.msgs = j.messages || []; t.error = ''; lastSync = Date.now();
+        t.account = j.account || null; t.similar = j.similar && j.similar.length ? j.similar : t.similar;
+        if (j.suggestion && (!t.sugg || t.sugg.basis !== j.suggestion.basis)) { t.sugg = j.suggestion; t.edited = false; t.fresh = true; }
         t.last = j.lastClientId;
         if (t.last && was && t.last !== was && active !== t.ref) t.unread = true;
         if (t.last && t.chat.open && !t.busy && t.failed !== t.last && (!t.sugg || t.sugg.basis !== t.last)) suggest(t, false);
-        t._changed = t.msgs.length !== n || was !== t.last || acctChanged;
-      }).catch(function (e) { t.error = e.message; t._changed = true; }).then(function () { paintList(); paintSync(); if (active === t.ref && t._changed !== false) { paintConvo(); if (!t.edit) paintSide(); } });
+        t._changed = was !== t.last || before !== JSON.stringify([t.msgs.length, t.account, t.similar, t.msgs.map(function (m) { return m.seen ? 1 : 0; })]);
+      }).catch(function (e) { t.error = e.message; t._changed = true; }).then(function () { paintList(); paintSync(); if (active === t.ref && t._changed !== false) { paintConvo(); paintInsight(); if (!t.edit) paintSide(); } });
     }
     function suggest(t, force) {
-      if (t.busy && !force) return; t.busy = true; t.sError = ''; if (active === t.ref) paintSide(); paintList();
+      if (t.busy && !force) return; t.busy = true; t.sError = ''; if (active === t.ref) { paintSide(); paintConvo(); } paintList();
       var basis = t.last;
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/suggest', { force: !!force, acct: t.acct || '' }).then(function (j) { if (t.sugg && t.sugg.reply) t.prev = t.sugg; t.sugg = j.suggestion; t.edit = false; t.edited = false; t.failed = null; })
-        .catch(function (e) { t.sError = e.message; t.failed = basis; }).then(function () { t.busy = false; if (active === t.ref) paintSide(); paintList(); });
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/suggest', { force: !!force, acct: t.acct || '' }).then(function (j) { if (t.sugg && t.sugg.reply) t.prev = t.sugg; t.sugg = j.suggestion; t.edit = false; t.edited = false; t.failed = null; t.fresh = true; })
+        .catch(function (e) { t.sError = e.message; t.failed = basis; }).then(function () { t.busy = false; if (active === t.ref) { paintSide(); paintConvo(); } paintList(); loadChat(t); });
     }
     function improve(t) {
       var ask = String(t.ask || '').trim(); if (!ask || !t.sugg || t.busy) return;
       t.busy = true; t.sError = ''; paintSide();
-      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/improve', { instruction: ask, current: t.sugg.reply, acct: t.acct || '' }).then(function (j) { t.prev = t.sugg; t.sugg = j.suggestion; t.ask = ''; t.edited = false; ctx.toast('Reply improved'); })
+      return ctx.api('/api/livechat/' + encodeURIComponent(t.ref) + '/improve', { instruction: ask, current: t.sugg.reply, acct: t.acct || '' }).then(function (j) { t.prev = t.sugg; t.sugg = j.suggestion; t.ask = ''; t.edited = false; t.fresh = true; ctx.toast('Reply improved'); })
         .catch(function (e) { t.sError = e.message; }).then(function () { t.busy = false; paintSide(); });
     }
     function loadMine() {
@@ -1014,13 +1067,14 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
         if (!active && tabs.length) select(tabs[0].ref); else { paintSync(); paintNote(); paintList(); }
       }).catch(function (e) { err = e.message; paint(); });
     }
+    // Agents keep SalesIQ in another browser tab, so this page keeps listening while it is in the background.
     function start() {
       clearInterval(tMine); clearInterval(tChat); clearInterval(tTick);
-      tMine = setInterval(function () { if (visible()) loadMine(); }, 20000);
+      tMine = setInterval(loadMine, 20000);
       var tick = 0;
       tChat = setInterval(function () { tick++; tabs.forEach(function (t) { if (t.ref === active ? true : tick % 3 === 0 && (!t.chat || t.chat.open)) if (!t.loading) { t.loading = true; loadChat(t).then(function () { t.loading = false; }); } }); }, 4000);
+      tTick = setInterval(function () { paintSync(); paintList(); }, 5000);
       document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && active) { var t = find(active); if (t) loadChat(t); } });
-      tTick = setInterval(function () { if (visible()) { paintSync(); paintList(); } }, 5000);
     }
     paint(); loadMine().then(function () { tabs.forEach(function (t) { if (!t.chat && !t.error) loadChat(t); }); }); start();
     return { reload: function () { loadMine(); if (active) { var t = find(active); if (t) loadChat(t); } }, open: function (ref) { var t = find(ref); if (!t) { t = tab(ref, true); tabs.push(t); save(); } select(t.ref); } };
