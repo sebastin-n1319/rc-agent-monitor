@@ -4905,7 +4905,6 @@ FEATURES YOU KNOW:
 - **My Stats**: tickets handled (replied, commented or owned in Zoho Desk), calls and chats for any date range. Every tile is clickable and opens the exact list behind the number (tickets, calls, chats, available/busy periods).
 - **Breaks (Break Bot)**: log in, Break, BRB, Training, QA session, Internal call (needs a reason), log out. Limits: Break 60m per day, BRB 20m per day and 10m per BRB. Each tap posts to Google Chat.
 - **Tickets**: manual ticket logging is available again; type the Zoho ticket number, it auto-fetches the ticket and AI suggests notes.
-- **AI Writer**: rewrite, shorten, formal, empathetic, bullets, subject lines, summaries, call documentation.
 - **Roster**: monthly attendance grid (admin), left-click cycles P, WFH, OFF; right-click for leave codes.
 - **Hall of Fame / Bonus**: team recognition and bonus guide.
 
@@ -4926,7 +4925,7 @@ MORE OF THE TOOL YOU KNOW:
 - **Access** (admin): reviewers, guests, link mode and extra time for agents.`;
 function brainAudiencePrompt(audience) {
   if (audience === 'admin') return `AUDIENCE: ADMIN (a team lead). Answer fully, including team data, assessment status, who has not taken what, and how to administer every page. You can prepare Google Chat announcements (see ACTIONS).`;
-  if (audience === 'agent') return `AUDIENCE: AGENT. Help with their own work: their stats, breaks, tickets, AI Writer, and how to take assessments. Only discuss their own numbers and their own assessments. Never reveal other agents' data, team numbers, scores or who has not taken something. For admin-only features, say briefly that it is an admin feature. You cannot send announcements; if asked, say only admins can.`;
+  if (audience === 'agent') return `AUDIENCE: AGENT. Help with their own work: their stats, breaks, tickets, and how to take assessments. Only discuss their own numbers and their own assessments. Never reveal other agents' data, team numbers, scores or who has not taken something. For admin-only features, say briefly that it is an admin feature. You cannot send announcements; if asked, say only admins can.`;
   return `AUDIENCE: GUEST (someone with access to assessments only). Only help with taking assessments: how they work, timers, the explain-your-answer step, results release, and what to do if something breaks. Do not discuss the rest of the tool, team data or other people. You cannot send announcements.`;
 }
 const BRAIN_ACTIONS = `ACTIONS (admins only). You never send anything yourself. To prepare a Google Chat announcement add an "announce" object; the app then shows the admin a card with your draft, which they can edit and send with one click.

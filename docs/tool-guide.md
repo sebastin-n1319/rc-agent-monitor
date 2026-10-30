@@ -227,6 +227,8 @@ Live chats deeper analysis: Expert first works out the scenario (shown as "Exper
 
 Live chats for admins: admins see every open SalesIQ chat in the list, not only their own, with the attending agent's name on each one, and an All chats / Mine switch. Expert writes replies on its own only for your own chats and for the chat you have open, so watching the whole floor does not use AI on every message. Someone else's chat leaves the list when it ends.
 
+AI Write removed: the AI Write page (AI Writer) is gone from the agent sidebar, the agent page tabs, the dashboard quick actions and Access Control. Old links to it open the dashboard. Adit Expert (Ask and Live chats) is the place to get help writing replies.
+
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
 Message to the agent: the Approved and Needs rework forms include a message box. The tool drafts it from the ticket in the usual reviewer format (tag the agent, a short "Please ..." instruction, then Ticket ID, Subject, Department and URL), using earlier sent messages as style examples. The reviewer edits it and clicks Send to space. Nothing posts until that click. It posts to the Reviewer messages webhook (set by an admin on the Alerts page or in Settings), tags the agent, and works at any hour. If no webhook is set the reviewer sees a message saying so. A reviewer cannot send for a ticket they handled themselves.

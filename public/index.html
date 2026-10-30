@@ -485,7 +485,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           </div>
           <div class="adit-feat-row">
             <div class="adit-feat-dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#072B40" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-            <div class="adit-feat-text">AI Writing Assistant for emails &amp; customer notes</div>
+            <div class="adit-feat-text">Adit Expert answers from the Help Center, past tickets and chats</div>
           </div>
         </div>
         <div class="adit-slide-dots">
@@ -809,11 +809,6 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
        onclick="sbAgent('bonus',this)">
     <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M7 4h10l3.5 5L12 20.5 3.5 9z"/><path d="M7 4h10l3.5 5L12 20.5 3.5 9z"/><path d="M3.5 9h17M9.6 4 8.1 9 12 20.5 15.9 9 14.4 4"/><path class="nx-spark" d="M20.5 15.5l.4 1 1 .4-1 .4-.4 1-.4-1-1-.4 1-.4z"/></svg>
     <span class="sb-label">Bonus</span>
-  </div>
-  <div class="sb-item" id="sb-agent-writer" title="AI Writer"
-       onclick="sbAgent('writer',this)">
-    <svg class="nx-ic nx2" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="du" d="M15.5 4.5l4 4L9 19H5v-4z"/><path d="M15.5 4.5l4 4L9 19H5v-4z"/><path d="M13.5 6.5l4 4M13 20h7"/><path class="nx-spark" d="M5 2.8l.6 1.5 1.5.6-1.5.6L5 7l-.6-1.5-1.5-.6 1.5-.6z"/></svg>
-    <span class="sb-label">AI Write</span>
   </div>
   <div class="sb-item" id="sb-agent-tickets" title="Log Ticket"
        onclick="sbAgent('tickets',this)">
@@ -2480,10 +2475,6 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><circle cx="12" cy="8" r="5"/><path d="M9.5 8l1.5 1.5L14 6"/><path d="M8 13l-2 9 6-3 6 3-2-9"/></svg>
       Bonus Guide
     </button>
-    <button class="agent-shell-btn" id="agent-tab-writer" onclick="switchAgentSection('writer',this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-      AI Writer
-    </button>
     <button class="agent-shell-btn" id="agent-tab-tickets" onclick="switchAgentSection('tickets',this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M15 5v2M15 11v2M15 17v2M5 5h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4V7a2 2 0 0 1 2-2z"/></svg>
       Tickets
@@ -2574,10 +2565,6 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           <button class="asc-quick-btn" onclick="sbAgent('tickets',document.getElementById('sb-agent-tickets'))">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#21AAE0"><path d="M10 3v1.5M10 7.5v1.5M10 12v1.5M3 3h10a1.5 1.5 0 0 1 1.5 1.5v2a1.5 1.5 0 0 0 0 3v2A1.5 1.5 0 0 1 13 13H3a1.5 1.5 0 0 1-1.5-1.5v-2a1.5 1.5 0 0 0 0-3v-2A1.5 1.5 0 0 1 3 3z"/></svg>
             Log a Ticket
-          </button>
-          <button class="asc-quick-btn" onclick="sbAgent('writer',document.getElementById('sb-agent-writer'))">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="width:12px;height:12px;color:#6366f1"><path d="M11 2.5a2.5 2.5 0 0 1 0 3.5L5 12l-3 1 1-3z"/></svg>
-            AI Writer
           </button>
         </div>
       </div>
@@ -2693,7 +2680,7 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </section>
    </div>
   </div>
-  <!-- agentView remains open, breakbot/hall/bonus/writer/tickets are siblings inside it -->
+  <!-- agentView remains open, breakbot/hall/bonus/tickets are siblings inside it -->
   <div class="agent-shell-page" id="agent-section-breakbot">
     <div id="bx-agent-root" class="bx-root"></div><!-- Session 47: Breaks v2 (breaks-v2.js); older markup below is hidden -->
     <!-- Preview banner -->
@@ -2989,273 +2976,6 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </div>
   </div>
 
-  <!-- ── AI Writer Section ───────────────────────────────────────────────── -->
-  <div class="agent-shell-page" id="agent-section-writer">
-  <!-- awv2 styles in adit-theme.css -->
-
-    <div class="awv2-page">
-
-      <!-- Header -->
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
-        <div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:rgba(99,102,241,.35) 0 4px 14px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><path d="M9 14h.01M15 14h.01"/></svg>
-        </div>
-        <div>
-          <div style="font-size:20px;font-weight:800;color:#072B40;letter-spacing:-.01em;">AI Writing Assistant</div>
-          <div style="font-size:12px;color:#6B849A;margin-top:2px;">Specialised for Call, Email &amp; Chat, tone control, variations, readability scoring</div>
-        </div>
-      </div>
-
-      <!-- Step 1: Agent type -->
-      <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">I am a...</div>
-        <div class="awv2-types">
-          <button class="awv2-type-btn active" data-type="email" onclick="awSetType('email',this)" style="--aw-color:#21AAE0">
-            <div class="awv2-type-icon" style="background:rgba(33,170,224,.12);color:#21AAE0;">
-              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </div>
-            <div class="awv2-type-label">Email / Ticket</div>
-            <div class="awv2-type-sub">Replies, follow-ups, resolutions</div>
-          </button>
-          <button class="awv2-type-btn" data-type="call" onclick="awSetType('call',this)" style="--aw-color:#2DDC96">
-            <div class="awv2-type-icon" style="background:rgba(45,220,150,.12);color:#2DDC96;">
-              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </div>
-            <div class="awv2-type-label">Call Agent</div>
-            <div class="awv2-type-sub">Summaries, post-call notes</div>
-          </button>
-          <button class="awv2-type-btn" data-type="chat" onclick="awSetType('chat',this)" style="--aw-color:#9B59B6">
-            <div class="awv2-type-icon" style="background:rgba(155,89,182,.12);color:#9B59B6;">
-              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <div class="awv2-type-label">Chat Agent</div>
-            <div class="awv2-type-sub">Live replies, summaries</div>
-          </button>
-          <button class="awv2-type-btn" data-type="general" onclick="awSetType('general',this)" style="--aw-color:#F4891F">
-            <div class="awv2-type-icon" style="background:rgba(244,137,31,.12);color:#F4891F;">
-              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            </div>
-            <div class="awv2-type-label">General</div>
-            <div class="awv2-type-sub">Any text improvement</div>
-          </button>
-          <button class="awv2-type-btn" data-type="rcnotes" onclick="awSetType('rcnotes',this)" style="--aw-color:#0EA5E9">
-            <div class="awv2-type-icon" style="background:rgba(14,165,233,.12);color:#0EA5E9;">
-              <svg viewBox="0 0 24 24" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            </div>
-            <div class="awv2-type-label">RC Call Notes</div>
-            <div class="awv2-type-sub">Auto-fill ticket documentation</div>
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 2: Task + templates (hidden in RC Notes mode) -->
-      <div id="aw-step2-panel" style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;padding:16px;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#9BAFC0;margin-bottom:12px;">What do you need?</div>
-        <div class="awv2-modes" id="awv2-modes"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgb(222,225,230);">
-          <div style="font-size:10px;font-weight:700;color:#9BAFC0;margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em;">Quick Templates</div>
-          <div class="awv2-templates" id="awv2-templates"></div>
-        </div>
-      </div>
-
-      <!-- RC Call Notes Builder (shown only in rcnotes mode) -->
-      <div id="aw-rcnotes-panel" style="display:none;">
-        <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-          <!-- Header -->
-          <div style="padding:14px 18px;background:linear-gradient(135deg,#0369A1,#0EA5E9);display:flex;align-items:center;gap:10px;">
-            <div style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            </div>
-            <div>
-              <div style="font-size:13px;font-weight:800;color:#fff;">RC Call Notes Builder</div>
-              <div style="font-size:11px;color:rgba(186,230,253,.75);">Enter ticket ID + call notes → AI fills the complete documentation</div>
-            </div>
-          </div>
-
-          <div style="padding:18px;display:flex;flex-direction:column;gap:16px;">
-
-            <!-- Row 1: Ticket ID lookup -->
-            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;">
-              <div>
-                <label style="font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Ticket ID</label>
-                <div style="display:flex;align-items:center;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:9px;overflow:hidden;">
-                  <span style="padding:8px 10px;font-size:13px;font-weight:700;color:#0EA5E9;background:#EFF6FF;border-right:1px solid rgb(222,225,230);">#</span>
-                  <input id="rcn-ticket-id" type="text" inputmode="numeric" placeholder="361898" oninput="this.value=this.value.replace(/[^0-9]/g,'')" onkeydown="if(event.key==='Enter')rcnFetchTicket()" style="flex:1;padding:8px 10px;border:none;background:transparent;font-size:13px;font-weight:700;color:#072B40;font-family:'Poppins',sans-serif;outline:none;">
-                </div>
-              </div>
-              <button onclick="rcnFetchTicket()" id="rcn-fetch-btn" style="padding:9px 16px;background:linear-gradient(135deg,#0369A1,#0EA5E9);border:none;border-radius:9px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:6px;white-space:nowrap;box-shadow:0 2px 8px rgba(14,165,233,.3);">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:12px;height:12px"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/></svg>
-                Fetch from Zoho
-              </button>
-            </div>
-
-            <!-- Zoho status banner -->
-            <div id="rcn-zoho-status" style="display:none;"></div>
-
-            <!-- Row 2: Client details (pre-filled from Zoho, editable) -->
-            <div>
-              <div style="font-size:10px;font-weight:700;color:#9BAFC0;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px;color:#2DDC96"><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-5 6a5 5 0 0 1 10 0"/></svg>
-                Client Details
-                <span id="rcn-zoho-badge" style="display:none;background:rgba(45,220,150,.12);color:#166534;font-size:9px;font-weight:800;padding:1px 7px;border-radius:20px;">Auto-filled from Zoho ✓</span>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                <div>
-                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Client Name</label>
-                  <input id="rcn-client-name" type="text" placeholder="e.g. Erin" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
-                </div>
-                <div>
-                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Practice Name</label>
-                  <input id="rcn-practice" type="text" placeholder="e.g. Lydia Wyatt DDS" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
-                </div>
-                <div>
-                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Account Number</label>
-                  <input id="rcn-account" type="text" placeholder="e.g. 23428" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
-                </div>
-                <div>
-                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Email</label>
-                  <input id="rcn-email" type="email" placeholder="e.g. lw@lydiawyattdds.com" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
-                </div>
-                <div style="grid-column:1/-1;">
-                  <label style="font-size:10px;color:#9BAFC0;font-weight:600;display:block;margin-bottom:3px;">Callback Number</label>
-                  <input id="rcn-callback" type="text" placeholder="e.g. (702) 220-5555" style="width:100%;padding:7px 10px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;box-sizing:border-box;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'">
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 3: Deal Stage -->
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:7px;">Deal Stage</label>
-              <div style="display:flex;gap:7px;">
-                <button class="rcn-stage-btn" data-val="OB"    onclick="rcnSetStage(this)" style="padding:7px 18px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;background:#F7F8F8;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">OB</button>
-                <button class="rcn-stage-btn" data-val="CSM"   onclick="rcnSetStage(this)" style="padding:7px 18px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;background:#F7F8F8;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">CSM</button>
-                <button class="rcn-stage-btn" data-val="Churn" onclick="rcnSetStage(this)" style="padding:7px 18px;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;font-weight:700;background:#F7F8F8;color:#3A5068;cursor:pointer;font-family:'Poppins',sans-serif;transition:all .15s;">Churn</button>
-              </div>
-            </div>
-
-            <!-- Row 4: Call notes -->
-            <div>
-              <label style="font-size:10px;font-weight:700;color:#6B849A;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px;">Your Call Notes / Summary</label>
-              <textarea id="rcn-notes" placeholder="Type what happened on the call, what the client needed, what you did, any follow-up agreed…&#10;&#10;e.g. Erin reached out and requested to have Adit app training for herself and few new staff members. Took down the dates as they'll be available from 2nd June to..." style="width:100%;min-height:110px;padding:10px 12px;border:1px solid rgb(222,225,230);border-radius:9px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;outline:none;resize:vertical;box-sizing:border-box;line-height:1.6;" onfocus="this.style.borderColor='#0EA5E9'" onblur="this.style.borderColor='rgb(222,225,230)'"></textarea>
-            </div>
-
-            <!-- Generate button -->
-            <button onclick="rcnGenerate()" id="rcn-gen-btn" style="width:100%;padding:12px;background:linear-gradient(135deg,#0369A1,#0EA5E9);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 14px rgba(14,165,233,.3);transition:all .2s;">
-              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
-              Generate Documentation
-            </button>
-
-            <!-- Error message -->
-            <div id="rcn-err" style="display:none;padding:9px 12px;background:rgba(237,102,107,.1);border:1px solid rgba(237,102,107,.25);border-radius:8px;font-size:12px;color:#ED666B;"></div>
-
-            <!-- Generated output -->
-            <div id="rcn-output-wrap" style="display:none;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                <div style="font-size:11px;font-weight:700;color:#0EA5E9;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:6px;">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M13 2L3 6l4 2 2 4z"/></svg>
-                  Generated Notes, ready to paste into Zoho
-                </div>
-                <button onclick="rcnCopy()" id="rcn-copy-btn" style="padding:5px 14px;background:rgba(14,165,233,.1);border:1px solid rgba(14,165,233,.25);border-radius:7px;font-size:11px;font-weight:700;color:#0369A1;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s;" onmouseover="this.style.background='rgba(14,165,233,.2)'" onmouseout="this.style.background='rgba(14,165,233,.1)'">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg>
-                  Copy to Clipboard
-                </button>
-              </div>
-              <pre id="rcn-output" style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:10px;padding:14px 16px;font-size:12px;font-family:'Poppins',sans-serif;color:#072B40;white-space:pre-wrap;line-height:1.7;margin:0;"></pre>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- Main workspace: Input + Output side by side -->
-      <div id="aw-workspace" style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:14px;overflow:hidden;box-shadow:rgba(0,0,0,0.04) 0px 1px 8px;">
-        <div class="awv2-grid" style="padding:16px;padding-bottom:0;">
-          <!-- Left: Input -->
-          <div class="awv2-panel">
-            <div class="awv2-panel-hdr">
-              <span class="awv2-panel-label">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M13.5 2.5a2.121 2.121 0 0 1 0 3L5 14l-3.5 1 1-3.5z"/></svg>
-                Your Draft / Notes
-              </span>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span id="aw-readability-in" style="font-size:10px;color:#9BAFC0;"></span>
-                <button class="awv2-btn-ghost" style="padding:4px 10px;font-size:11px;" onclick="awClear()">Clear</button>
-              </div>
-            </div>
-            <textarea class="awv2-textarea" id="aw-input" placeholder="Paste your rough draft, call notes, or customer message here..." oninput="awUpdateCount();awDebounceAnalyze('in')"></textarea>
-            <!-- Channel limit warning for chat -->
-            <div id="aw-chat-warn" style="display:none;font-size:11px;color:#ED666B;margin-top:4px;font-weight:600;"></div>
-          </div>
-          <!-- Right: Output -->
-          <div class="awv2-panel">
-            <div class="awv2-panel-hdr">
-              <span class="awv2-panel-label" style="color:#6366f1;">
-                <svg viewBox="0 0 16 16" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round" style="width:13px;height:13px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
-                AI Output
-              </span>
-              <div style="display:flex;align-items:center;gap:6px;">
-                <span id="aw-readability-out" style="font-size:10px;color:#9BAFC0;"></span>
-                <button class="awv2-btn-ghost" id="aw-copy-btn" onclick="copyAwOutput()" style="display:none;padding:4px 10px;font-size:11px;">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg> Copy
-                </button>
-              </div>
-            </div>
-            <div class="awv2-output empty" id="aw-output">Your AI output will appear here...</div>
-          </div>
-        </div>
-
-        <!-- Quick transform buttons (post-generation) -->
-        <div id="aw-transform-bar" style="display:none;padding:10px 16px;border-top:1px solid rgb(222,225,230);background:#F7F8F8;display:none;flex-wrap:wrap;gap:6px;align-items:center;">
-          <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;margin-right:4px;">Quick Transform:</span>
-          <button class="awv2-tpl" onclick="awTransform('formal')" style="border-color:rgba(7,43,64,.2);color:#072B40;background:rgba(7,43,64,.05);">More Formal</button>
-          <button class="awv2-tpl" onclick="awTransform('empathetic')" style="border-color:rgba(45,220,150,.2);color:#2DDC96;background:rgba(45,220,150,.05);">More Empathetic</button>
-          <button class="awv2-tpl" onclick="awTransform('shorter')" style="border-color:rgba(244,137,31,.2);color:#F4891F;background:rgba(244,137,31,.05);">Shorter</button>
-          <button class="awv2-tpl" onclick="awTransform('simpler')" style="border-color:rgba(33,170,224,.2);color:#21AAE0;background:rgba(33,170,224,.05);">Simpler Language</button>
-          <button class="awv2-tpl" onclick="awTransform('bullets')" style="border-color:rgba(155,89,182,.2);color:#9B59B6;background:rgba(155,89,182,.05);">→ Bullets</button>
-          <button class="awv2-tpl" onclick="awTransform('prose')" style="border-color:rgba(155,89,182,.2);color:#9B59B6;background:rgba(155,89,182,.05);">→ Prose</button>
-          <div style="margin-left:auto;display:flex;gap:6px;">
-            <button class="awv2-tpl" onclick="awGetVariations()" style="border-color:rgba(99,102,241,.3);color:#6366f1;background:rgba(99,102,241,.06);">✦ 3 Variations</button>
-            <button class="awv2-tpl" onclick="awTransform('subject')" style="display:var(--show-subject,none);border-color:rgba(244,137,31,.3);color:#F4891F;background:rgba(244,137,31,.06);" id="aw-subject-btn">Subject Lines</button>
-            <button class="awv2-tpl" onclick="awTransform('summarize')" style="border-color:rgba(33,170,224,.3);color:#21AAE0;background:rgba(33,170,224,.06);">Summarize Thread</button>
-          </div>
-        </div>
-
-        <!-- 3 Variations panel -->
-        <div id="aw-variations-panel" style="display:none;padding:14px 16px;border-top:1px solid rgb(222,225,230);background:#FAFAFA;">
-          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#9BAFC0;margin-bottom:10px;">3 Variations: Choose Your Favourite</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;" id="aw-var-grid">
-            <div class="awv2-var-card" id="aw-var-a"><div class="awv2-var-lbl">A: Formal</div><div class="awv2-var-body"></div><button class="awv2-var-use" onclick="awUseVar('a')">Use This</button></div>
-            <div class="awv2-var-card" id="aw-var-b"><div class="awv2-var-lbl">B: Friendly</div><div class="awv2-var-body"></div><button class="awv2-var-use" onclick="awUseVar('b')">Use This</button></div>
-            <div class="awv2-var-card" id="aw-var-c"><div class="awv2-var-lbl">C: Concise</div><div class="awv2-var-body"></div><button class="awv2-var-use" onclick="awUseVar('c')">Use This</button></div>
-          </div>
-        </div>
-
-        <!-- Action row -->
-        <div style="padding:14px 16px;border-top:1px solid rgb(222,225,230);display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <button class="awv2-submit" id="aw-submit-btn" onclick="sendToAIWriter()">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg>
-            Generate
-          </button>
-          <button class="awv2-btn-ghost" onclick="useAwResult()" id="aw-use-btn" style="display:none;">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><polyline points="10 12 14 8 10 4"/><polyline points="6 4 2 8 6 12"/></svg>
-            Refine
-          </button>
-          <button class="awv2-btn-ghost" onclick="awSummarize()" style="display:flex;align-items:center;gap:5px;">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px"><path d="M2 4h12M2 7h9M2 10h7M2 13h5"/></svg>
-            Summarize Thread
-          </button>
-          <span class="awv2-char" id="aw-char-count">0 / 5000</span>
-        </div>
-      </div>
-
-      <!-- Jargon warning (shows when technical words detected) -->
-      <div id="aw-jargon-warn" style="display:none;padding:10px 14px;background:rgba(251,200,75,.08);border:1px solid rgba(251,200,75,.25);border-radius:10px;font-size:12px;color:#B45309;display:none;align-items:center;gap:8px;">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:13px;height:13px;flex-shrink:0;color:#D97706"><circle cx="8" cy="8" r="6"/><path d="M8 5v3M8 11v.5" stroke-linecap="round"/></svg>
-        <span id="aw-jargon-text"></span>
-      </div>
-
-    </div>
-  </div>
   <!-- Session 51: agent ticket alerts -->
   <div class="agent-shell-page av2" id="agent-section-talerts"><div id="t1-alerts-agent-root"></div></div>
   <div class="agent-shell-page av2" id="agent-section-updates"><div id="pu-agent-root"></div></div>
@@ -4449,7 +4169,7 @@ function breakbotTabEnabled(){
 // Session 58: agent page availability, set on Team > Access Control.
 // Agents only see pages the server allows; admins keep every page in Agent
 // View so they can preview, with pages hidden from agents marked.
-const AGENT_PAGE_KEYS=['breakbot','bonus','writer','tickets','mystats','talerts','assess','hall','guides'];
+const AGENT_PAGE_KEYS=['breakbot','bonus','tickets','mystats','talerts','assess','hall','guides'];
 let agentPagesAllowed=(()=>{ try{ return JSON.parse(localStorage.getItem('rcAgentPages')||'null'); }catch(e){ return null; } })();
 let agentPagesGlobal=null;
 function agentPageOn(p){
@@ -4856,6 +4576,7 @@ function openBreakbotPreview(el){
 }
 
 function switchAgentSection(section,el){
+  if(section==='writer'){ section='dashboard'; el=document.getElementById('agent-tab-dashboard'); } // AI Write was removed; old links land on the dashboard
   if(section!=='breakbot' && !agentPageOn(section)){
     showToast('This page is turned off for your account.','warning');
     section='dashboard';
@@ -4909,7 +4630,6 @@ function switchAgentSection(section,el){
   setTimeout(syncAssessLock, 0);
   // Session 44: populate the agent Dashboard right away when it opens.
   if(section==='dashboard' && currentUser && typeof refresh==='function'){ setTimeout(()=>{ try{ refresh(); }catch(e){} },0); }
-  if(section==='writer')setTimeout(initAIWriter,50);
   // Scroll to top of the agent view content area (below fixed header + sticky nav)
   window.scrollTo({top:0,behavior:'instant'});
   // Save last active section for restore on return
@@ -4949,472 +4669,6 @@ function initEmbeddedFrames(){
     }
     if(frame.contentDocument)setTimeout(()=>resizeHallFrame(frame),30);
   });
-}
-
-// ── AI Writing Assistant v2: Agent-mode aware ───────────────────────────────
-const AW_CONFIG = {
-  email: {
-    color: '#21AAE0',
-    modes: [
-      { id:'email_reply',    label:'Email Reply',      icon:'↩' },
-      { id:'email_followup', label:'Follow-up Email',  icon:'→' },
-      { id:'ticket_note',    label:'Ticket Note',      icon:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M3 4h8M3 7h6M3 10h4"/><rect x="1" y="1" width="12" height="13" rx="2"/></svg>' },
-      { id:'ticket_resolution', label:'Resolution',   icon:'✓'  },
-    ],
-    templates: [
-      { label:'Apology for delay',    text:'sorry for the delay in getting back to you. we were looking into the issue and wanted to make sure we had the right answer before responding.' },
-      { label:'Issue resolved',       text:'the issue has been fixed. i made the changes on my end and it should be working now. let me know if you need anything else.' },
-      { label:'Needs more info',      text:'i need a bit more information to help you with this. can you tell me what exactly is happening and when it started?' },
-      { label:'Escalating ticket',    text:'this needs to go to the next level. the client is having an issue with X and i have tried Y but it is not working.' },
-    ]
-  },
-  call: {
-    color: '#2DDC96',
-    modes: [
-      { id:'call_summary',   label:'Call Summary',     icon:'📝' },
-      { id:'call_followup',  label:'Post-Call Email',  icon:'📧' },
-      { id:'voicemail',      label:'Voicemail Script', icon:'🎙' },
-    ],
-    templates: [
-      { label:'Called about billing',    text:'called about billing issue. client is being charged twice for same month. checked account and confirmed duplicate charge. need to refund one payment.' },
-      { label:'Tech support call',       text:'called about software not loading. tried clearing cache and restarting. did not fix. escalated to tier 2. client will be contacted within 24 hours.' },
-      { label:'Onboarding check-in',     text:'called to check in on onboarding progress. client has completed setup but struggling with insurance verification feature. scheduled training for next week.' },
-      { label:'Voicemail - callback',    text:'hi this is [name] from adit support calling for [client]. please call us back at your convenience regarding [issue].' },
-    ]
-  },
-  chat: {
-    color: '#9B59B6',
-    modes: [
-      { id:'chat_reply',      label:'Chat Reply',      icon:'<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M12 8.5a1 1 0 0 1-1 1H4l-3 3V3a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v5.5z"/></svg>' },
-      { id:'chat_summary',    label:'Chat Summary',    icon:'📄' },
-      { id:'chat_escalation', label:'Escalation Note', icon:'⚠' },
-    ],
-    templates: [
-      { label:'Quick fix reply',     text:'i can help with that. go to settings then billing and click on update. let me know if you see the option.' },
-      { label:'Can\'t solve in chat', text:'this is a bit complex for chat. let me create a ticket and our team will follow up within a few hours.' },
-      { label:'Asking for screenshot', text:'can you take a screenshot of what you are seeing and share it here? that will help me understand better.' },
-      { label:'Warm handoff',        text:'i am going to connect you with a specialist who can help with this. one moment please.' },
-    ]
-  },
-  general: {
-    color: '#F4891F',
-    modes: [
-      { id:'general', label:'Improve Writing', icon:'✏' },
-    ],
-    templates: [
-      { label:'Internal update',    text:'just wanted to give a quick update on the situation.' },
-      { label:'Team message',       text:'hey team, quick heads up about something that came up today.' },
-    ]
-  },
-  rcnotes: {
-    color: '#0EA5E9',
-    modes: [],
-    templates: []
-  }
-};
-
-let awCurrentType = 'email';
-let awCurrentMode = 'email_reply';
-
-function awSetType(type, btn) {
-  awCurrentType = type;
-  // Toggle RC Notes panel vs standard workspace
-  const isRC = (type === 'rcnotes');
-  const rcPanel     = document.getElementById('aw-rcnotes-panel');
-  const step2       = document.getElementById('aw-step2-panel');
-  const workspace   = document.getElementById('aw-workspace');
-  if (rcPanel)   rcPanel.style.display   = isRC ? '' : 'none';
-  if (step2)     step2.style.display     = isRC ? 'none' : '';
-  if (workspace) workspace.style.display = isRC ? 'none' : '';
-  // Always update the active type button highlight
-  document.querySelectorAll('.awv2-type-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.type === type);
-    b.style.setProperty('--aw-color', AW_CONFIG[b.dataset.type]?.color || '#F4891F');
-  });
-  if (isRC) return; // RC panel has its own flow
-
-  const cfg = AW_CONFIG[type];
-  // Update color on page
-  document.querySelectorAll('.awv2-type-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.type === type);
-    b.style.setProperty('--aw-color', AW_CONFIG[b.dataset.type]?.color || '#F4891F');
-  });
-  document.querySelectorAll('.awv2-submit').forEach(b => b.style.setProperty('--aw-color', cfg.color));
-  // Render modes
-  const modesEl = document.getElementById('awv2-modes');
-  if (modesEl) {
-    awCurrentMode = cfg.modes[0].id;
-    modesEl.innerHTML = cfg.modes.map(m =>
-      `<button class="awv2-mode-btn${m.id===awCurrentMode?' active':''}" style="--aw-color:${cfg.color}" onclick="awSetMode('${m.id}',this)">${m.label}</button>`
-    ).join('');
-  }
-  // Render templates, use data-text to avoid JSON-in-onclick double-quote breakage
-  const tplEl = document.getElementById('awv2-templates');
-  if (tplEl) {
-    tplEl.innerHTML = cfg.templates.map(t =>
-      `<button class="awv2-tpl" data-text="${esc(t.text)}" onclick="awLoadTemplate(this)">${esc(t.label)}</button>`
-    ).join('');
-  }
-  // Update submit button color
-  const submitBtn = document.getElementById('aw-submit-btn');
-  if (submitBtn) submitBtn.style.setProperty('--aw-color', cfg.color);
-  // Update placeholder
-  const inp = document.getElementById('aw-input');
-  const placeholders = {
-    email: 'Paste your rough email draft here...\n\nExample: hi the invoice is wrong we got charged twice please fix this',
-    call:  'Paste your call notes here...\n\nExample: client called about integration not syncing called 3 times this week tried restart did not help',
-    chat:  'Paste your chat message here...\n\nExample: hi yes i can help with that go to settings and click on',
-    general: 'Paste any text here to improve...',
-  };
-  if (inp) inp.placeholder = placeholders[type] || placeholders.general;
-}
-
-function awSetMode(mode, btn) {
-  awCurrentMode = mode;
-  document.querySelectorAll('.awv2-mode-btn').forEach(b => b.classList.toggle('active', b===btn));
-}
-
-function awLoadTemplate(btnOrText) {
-  // Accepts either a button element (new data-text pattern) or a raw string
-  const text = (btnOrText && typeof btnOrText === 'object') ? (btnOrText.dataset.text || '') : (btnOrText || '');
-  const inp = document.getElementById('aw-input');
-  if (inp) { inp.value = text; awUpdateCount(); inp.focus(); }
-}
-
-// ── RC Call Notes Builder ─────────────────────────────────────────────────────
-let rcnDealStage = '';
-
-function rcnSetStage(btn) {
-  rcnDealStage = btn.dataset.val || '';
-  document.querySelectorAll('.rcn-stage-btn').forEach(b => {
-    const active = b === btn;
-    b.style.background    = active ? 'rgba(14,165,233,.12)' : '#F7F8F8';
-    b.style.borderColor   = active ? '#0EA5E9' : 'rgb(222,225,230)';
-    b.style.color         = active ? '#0369A1' : '#3A5068';
-    b.style.boxShadow     = active ? '0 0 0 2px rgba(14,165,233,.15)' : '';
-  });
-}
-
-async function rcnFetchTicket() {
-  const id = (document.getElementById('rcn-ticket-id')?.value || '').trim();
-  if (!id) { showToast('Enter a ticket ID first', 'warning'); return; }
-  const btn = document.getElementById('rcn-fetch-btn');
-  const status = document.getElementById('rcn-zoho-status');
-  const badge  = document.getElementById('rcn-zoho-badge');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="awv2-spinner"></div> Fetching…'; }
-  if (status) status.style.display = 'none';
-  try {
-    const res  = await fetch(`/api/zoho/ticket/${encodeURIComponent(id)}`, { credentials:'include' });
-    const data = await res.json();
-    if (!data.success || !data.found) {
-      if (status) {
-        status.innerHTML = `<div style="padding:8px 12px;background:rgba(237,102,107,.07);border:1px solid rgba(237,102,107,.2);border-radius:8px;font-size:12px;color:#ED666B;display:flex;align-items:center;gap:7px;">
-          <svg viewBox="0 0 16 16" fill="none" stroke="#ED666B" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;flex-shrink:0"><circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/></svg>
-          Ticket #${esc(id)} not found, fill in the client details manually.
-        </div>`;
-        status.style.display = '';
-      }
-      return;
-    }
-    const t = data.ticket;
-    // Pre-fill fields, highlight green on auto-fill, fade back after 1.2s
-    const fn = (id, val) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (val) { el.value = val; el.style.borderColor='#2DDC96'; setTimeout(()=>{ el.style.borderColor='rgb(222,225,230)'; },1200); }
-      // Don't clear existing agent-typed values when Zoho has nothing
-    };
-    fn('rcn-client-name', t.contact?.name         || '');
-    fn('rcn-email',       t.contact?.email        || '');
-    fn('rcn-practice',    t.contact?.accountName  || '');
-    fn('rcn-account',     t.contact?.accountNumber|| '');
-    fn('rcn-callback',    t.contact?.phone        || '');
-    if (status) {
-      const filled = [
-        t.contact?.name          && 'Name',
-        t.contact?.accountName   && 'Practice',
-        t.contact?.accountNumber && 'Account #',
-        t.contact?.email         && 'Email',
-        t.contact?.phone         && 'Callback',
-      ].filter(Boolean);
-      const missing = ['Name','Practice','Account #','Email','Callback'].filter(f => !filled.includes(f));
-      status.innerHTML = `<div style="padding:8px 12px;background:rgba(45,220,150,.07);border:1px solid rgba(45,220,150,.2);border-radius:8px;font-size:12px;color:#166534;display:flex;flex-direction:column;gap:4px;">
-        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">
-          <svg viewBox="0 0 16 16" fill="#2DDC96" style="width:12px;height:12px;flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm3.5 5.5-4 4a.75.75 0 0 1-1.06 0l-2-2a.75.75 0 1 1 1.06-1.06L7 8.94l3.47-3.47a.75.75 0 1 1 1.06 1.06z"/></svg>
-          <strong>#${esc(String(t.ticketNumber))}</strong>: ${esc(t.subject||'')}
-        </div>
-        ${filled.length ? `<div style="font-size:11px;">✓ Auto-filled: <strong>${filled.join(', ')}</strong></div>` : ''}
-        ${missing.length ? `<div style="font-size:11px;color:#B45309;">⚠ Fill manually: ${missing.join(', ')}</div>` : ''}
-      </div>`;
-      status.style.display = '';
-    }
-    if (badge) badge.style.display = '';
-    showToast('Ticket details fetched ✓', 'success');
-  } catch(e) {
-    if (status) {
-      status.innerHTML = `<div style="padding:8px 12px;background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:8px;font-size:12px;color:#9BAFC0;">Zoho lookup failed, fill in details manually.</div>`;
-      status.style.display = '';
-    }
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:12px;height:12px"><circle cx="6.5" cy="6.5" r="4"/><path d="M11 11l2.5 2.5"/></svg> Fetch from Zoho'; }
-  }
-}
-
-async function rcnGenerate() {
-  const notes = (document.getElementById('rcn-notes')?.value || '').trim();
-  if (!notes) { showToast('Please enter your call notes first', 'warning'); document.getElementById('rcn-notes')?.focus(); return; }
-  const btn = document.getElementById('rcn-gen-btn');
-  const err = document.getElementById('rcn-err');
-  const outWrap = document.getElementById('rcn-output-wrap');
-  if (err) err.style.display = 'none';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="awv2-spinner"></div> Generating…'; }
-
-  const payload = {
-    ticketId:       (document.getElementById('rcn-ticket-id')?.value || '').trim(),
-    dealStage:      rcnDealStage,
-    callNotes:      notes,
-    clientName:     (document.getElementById('rcn-client-name')?.value || '').trim(),
-    practiceName:   (document.getElementById('rcn-practice')?.value || '').trim(),
-    accountNumber:  (document.getElementById('rcn-account')?.value || '').trim(),
-    email:          (document.getElementById('rcn-email')?.value || '').trim(),
-    callbackNumber: (document.getElementById('rcn-callback')?.value || '').trim(),
-  };
-
-  try {
-    const res  = await fetch('/api/write-call-doc', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Generation failed');
-    const out = document.getElementById('rcn-output');
-    if (out) out.textContent = data.template;
-    if (outWrap) outWrap.style.display = '';
-    // Scroll to output
-    outWrap?.scrollIntoView({ behavior:'smooth', block:'nearest' });
-    showToast('Documentation ready, copy and paste into Zoho ✓', 'success');
-  } catch(e) {
-    if (err) { err.textContent = e.message; err.style.display = ''; }
-    showToast('Failed: ' + e.message, 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:14px;height:14px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg> Generate Documentation'; }
-  }
-}
-
-function rcnCopy() {
-  const out = document.getElementById('rcn-output');
-  if (!out || !out.textContent) return;
-  navigator.clipboard.writeText(out.textContent).then(() => {
-    const btn = document.getElementById('rcn-copy-btn');
-    if (btn) { btn.innerHTML = '✓ Copied!'; setTimeout(() => { btn.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:11px;height:11px"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg> Copy to Clipboard'; }, 2000); }
-    showToast('Copied to clipboard, paste into Zoho private notes', 'success');
-  }).catch(() => showToast('Copy failed, select and copy manually', 'error'));
-}
-
-function awUpdateCount() {
-  const inp = document.getElementById('aw-input');
-  const counter = document.getElementById('aw-char-count');
-  if (!inp || !counter) return;
-  const len = inp.value.length;
-  const words = inp.value.trim().split(/\s+/).filter(Boolean).length;
-  counter.textContent = `${words} words · ${len} / 5000 chars`;
-  counter.classList.toggle('over', len > 5000);
-  // Chat length warning
-  const chatWarn = document.getElementById('aw-chat-warn');
-  if (chatWarn) {
-    if (awCurrentType === 'chat' && words > 100) {
-      chatWarn.style.display = 'block';
-      chatWarn.textContent = `⚠ ${words} words, chat responses should be under 100 words`;
-    } else { chatWarn.style.display = 'none'; }
-  }
-}
-function updateAwCharCount() { awUpdateCount(); }
-
-// ── Readability analysis ──────────────────────────────────────────────────────
-let _awAnalyzeTimer = null;
-function awDebounceAnalyze(side) {
-  clearTimeout(_awAnalyzeTimer);
-  _awAnalyzeTimer = setTimeout(() => awAnalyzeText(side), 800);
-}
-async function awAnalyzeText(side) {
-  const inp = side === 'in' ? document.getElementById('aw-input') : document.getElementById('aw-output');
-  if (!inp) return;
-  const text = (side === 'in' ? inp.value : inp.textContent) || '';
-  if (text.length < 20) return;
-  try {
-    const res  = await fetch('/api/write-analyze', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
-    const data = await res.json();
-    if (!data.success) return;
-    const d = data.data;
-    const el = document.getElementById(side==='in' ? 'aw-readability-in' : 'aw-readability-out');
-    if (el && d.words) {
-      const col = d.gradeLevel <= 8 ? '#2DDC96' : d.gradeLevel <= 12 ? '#FBC84B' : '#ED666B';
-      el.innerHTML = `<span style="color:${col};font-weight:700;">${d.readLevel}</span> · ${d.words}w`;
-    }
-    if (side === 'in' && d.jargon?.length) {
-      const jw = document.getElementById('aw-jargon-warn');
-      const jt = document.getElementById('aw-jargon-text');
-      if (jw && jt) { jt.innerHTML = `Technical terms clients may not understand: <strong>${d.jargon.join(', ')}</strong>`; jw.style.display='flex'; }
-    } else if (side === 'in') { const jw=document.getElementById('aw-jargon-warn'); if(jw) jw.style.display='none'; }
-  } catch(e) {}
-}
-
-// ── Post-generation transforms ────────────────────────────────────────────────
-async function awTransform(transform) {
-  const out = document.getElementById('aw-output');
-  if (!out || out.classList.contains('empty')) { showToast('Generate something first.','warning'); return; }
-  const text = out.textContent;
-  if (!text.trim()) return;
-  const orig = out.textContent;
-  out.textContent = 'Transforming…';
-  try {
-    const res  = await fetch('/api/write-transform', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text,transform}) });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    out.className = 'awv2-output has-result';
-    out.textContent = data.result;
-    awDebounceAnalyze('out');
-    showToast('Done!','success');
-  } catch(e) { out.textContent=orig; showToast('Failed: '+e.message,'error'); }
-}
-
-// ── 3 Variations ──────────────────────────────────────────────────────────────
-async function awGetVariations() {
-  const inp = document.getElementById('aw-input');
-  if (!inp || !inp.value.trim()) { showToast('Paste your draft first.','warning'); return; }
-  const panel = document.getElementById('aw-variations-panel');
-  if (panel) { panel.style.display=''; panel.innerHTML='<div style="text-align:center;padding:20px;color:#9BAFC0;">Generating 3 variations…</div>'; }
-  try {
-    const res  = await fetch('/api/write-variations', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:inp.value.trim(),mode:awCurrentMode}) });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    const vars = data.variations;
-    const mkCard = (k,label) => `<div style="background:#F7F8F8;border:1px solid rgb(222,225,230);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#9BAFC0;">${label}</div>
-      <div style="font-size:12px;color:#072B40;line-height:1.6;flex:1;white-space:pre-wrap;">${vars[k]||''}</div>
-      <button onclick="awUseVarText(this.closest('div').querySelector('div+div').textContent)" style="background:#6366f1;color:#FFF;border:none;border-radius:7px;padding:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;">Use This</button>
-    </div>`;
-    if (panel) panel.innerHTML = `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#9BAFC0;margin-bottom:10px;">Choose the best version</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">${mkCard('formal','A: Formal')}${mkCard('friendly','B: Friendly')}${mkCard('concise','C: Concise')}</div>`;
-  } catch(e) { if(panel) panel.style.display='none'; showToast('Failed: '+e.message,'error'); }
-}
-function awUseVarText(text) {
-  const out=document.getElementById('aw-output');
-  if(out){ out.className='awv2-output has-result'; out.textContent=text; awDebounceAnalyze('out'); }
-  const panel=document.getElementById('aw-variations-panel'); if(panel) panel.style.display='none';
-  const cpBtn=document.getElementById('aw-copy-btn'); if(cpBtn) cpBtn.style.display='inline-flex';
-  const usBtn=document.getElementById('aw-use-btn'); if(usBtn) usBtn.style.display='inline-flex';
-}
-
-// awUseVar(key), used by the static variation card HTML (aw-var-a/b/c)
-function awUseVar(key) {
-  const bodyEl = document.querySelector(`#aw-var-${key} .awv2-var-body`);
-  if (bodyEl) awUseVarText(bodyEl.textContent);
-}
-
-// ── Thread summarizer shortcut ────────────────────────────────────────────────
-async function awSummarize() {
-  const inp=document.getElementById('aw-input');
-  if(!inp||!inp.value.trim()){ showToast('Paste the email thread first.','warning'); return; }
-  const out=document.getElementById('aw-output');
-  if(out){ out.className='awv2-output'; out.textContent='Summarizing…'; }
-  try {
-    const res=await fetch('/api/write-transform',{ method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:inp.value.trim(),transform:'summarize'}) });
-    const data=await res.json();
-    if(!data.success) throw new Error(data.error);
-    if(out){ out.className='awv2-output has-result'; out.textContent=data.result; awDebounceAnalyze('out'); }
-    const cpBtn=document.getElementById('aw-copy-btn'); if(cpBtn) cpBtn.style.display='inline-flex';
-    showToast('Thread summarized!','success');
-  } catch(e){ showToast('Failed: '+e.message,'error'); }
-}
-
-function awClear() {
-  const inp = document.getElementById('aw-input');
-  if (inp) { inp.value = ''; awUpdateCount(); }
-  const out = document.getElementById('aw-output');
-  if (out) { out.className = 'awv2-output empty'; out.textContent = 'Your AI-improved text will appear here...'; }
-  const copyBtn = document.getElementById('aw-copy-btn');
-  const useBtn  = document.getElementById('aw-use-btn');
-  if (copyBtn) copyBtn.style.display = 'none';
-  if (useBtn)  useBtn.style.display  = 'none';
-}
-
-async function sendToAIWriter() {
-  const inp = document.getElementById('aw-input');
-  const out = document.getElementById('aw-output');
-  const btn = document.getElementById('aw-submit-btn');
-  if (!inp || !out || !btn) return;
-
-  const text = inp.value.trim();
-  if (!text) { showToast('Please paste some text first.', 'warning'); inp.focus(); return; }
-  if (text.length > 5000) { showToast('Text too long, max 5000 characters.', 'error'); return; }
-
-  btn.disabled = true;
-  btn.innerHTML = '<div class="awv2-spinner"></div> Generating...';
-  out.className = 'awv2-output';
-  out.innerHTML = '<span style="color:#9BAFC0;font-style:italic;">✨ AI is working on it...</span>';
-  document.getElementById('aw-copy-btn').style.display = 'none';
-  document.getElementById('aw-use-btn').style.display  = 'none';
-
-  try {
-    const res  = await fetch('/api/write-assist', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, mode: awCurrentMode, agentType: awCurrentType })
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'AI request failed');
-
-    out.className = 'awv2-output has-result';
-    out.textContent = data.result;
-    document.getElementById('aw-copy-btn').style.display = 'inline-flex';
-    document.getElementById('aw-use-btn').style.display  = 'inline-flex';
-    // Show transform bar + subject button for email agents
-    const tb = document.getElementById('aw-transform-bar');
-    if (tb) tb.style.display = 'flex';
-    const sb = document.getElementById('aw-subject-btn');
-    if (sb) sb.style.display = awCurrentType === 'email' ? 'inline-flex' : 'none';
-    // Reset variations panel
-    const vp = document.getElementById('aw-variations-panel');
-    if (vp) vp.style.display = 'none';
-    // Analyze output readability
-    awDebounceAnalyze('out');
-    showToast('Done! Use the transform buttons below to refine.', 'success');
-  } catch(e) {
-    out.className = 'awv2-output';
-    out.textContent = '⚠️ ' + e.message;
-    showToast('AI error: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M8 1a3.5 3.5 0 0 1 3.5 3.5c0 1-.4 1.9-1 2.5L8 14 5.5 7A3.5 3.5 0 0 1 8 1z"/></svg> Generate`;
-  }
-}
-
-function copyAwOutput() {
-  const out = document.getElementById('aw-output');
-  const btn = document.getElementById('aw-copy-btn');
-  if (!out || !out.textContent.trim()) return;
-  navigator.clipboard.writeText(out.textContent).then(() => {
-    if (btn) { const o=btn.innerHTML; btn.innerHTML='✓ Copied!'; setTimeout(()=>btn.innerHTML=o,1800); }
-    showToast('Copied to clipboard!', 'success');
-  }).catch(() => showToast('Copy failed, select manually.', 'error'));
-}
-
-function useAwResult() {
-  const inp = document.getElementById('aw-input');
-  const out = document.getElementById('aw-output');
-  if (!inp || !out || !out.textContent.trim()) return;
-  inp.value = out.textContent;
-  awUpdateCount();
-  out.className = 'awv2-output empty';
-  out.textContent = 'Your AI-improved text will appear here...';
-  document.getElementById('aw-copy-btn').style.display = 'none';
-  document.getElementById('aw-use-btn').style.display  = 'none';
-  inp.focus();
-  showToast('Loaded, refine and generate again!', 'info');
-}
-
-// Initialise AI Writer when tab opens
-function initAIWriter() {
-  awSetType('email', document.querySelector('.awv2-type-btn[data-type="email"]'));
 }
 
 // ── Ticket Logger: Agent UI ──────────────────────────────────────────────
@@ -10492,7 +9746,7 @@ function restoreLastAgentSection(){
   try{
     // URL hash takes priority over localStorage, enables shareable deep links
     var hash = (window.location.hash || '').replace('#','').toLowerCase().split('?')[0];
-    var hashMap = {dashboard:'dashboard', breaks:'breakbot', bonus:'bonus', writer:'writer', tickets:'tickets'};
+    var hashMap = {dashboard:'dashboard', breaks:'breakbot', bonus:'bonus', writer:'dashboard', tickets:'tickets'};
     var sectionFromHash = null;
     if(hash === 'hall' || hash.startsWith('hall/')) sectionFromHash = 'hall';
     else if(hashMap[hash]) sectionFromHash = hashMap[hash];
@@ -10530,7 +9784,7 @@ window.addEventListener('message', function(e){
 window.addEventListener('popstate', function(e){
   try{
     var hash = (window.location.hash||'').replace('#','').toLowerCase().split('?')[0];
-    var hashMap = {dashboard:'dashboard', breaks:'breakbot', bonus:'bonus', writer:'writer', tickets:'tickets'};
+    var hashMap = {dashboard:'dashboard', breaks:'breakbot', bonus:'bonus', writer:'dashboard', tickets:'tickets'};
     // Agent sections
     if(hash === 'hall' || hash.startsWith('hall/')){
       var btn = document.getElementById('sb-agent-hall') || document.getElementById('agent-tab-hall');
@@ -11788,7 +11042,6 @@ function deriveRoleName(email=''){
 const ACX_PAGES={
   breakbot:{label:'Breaks',desc:'Break Bot, start and end breaks'},
   bonus:{label:'Bonus',desc:'Bonus guide'},
-  writer:{label:'AI Write',desc:'AI reply writer'},
   tickets:{label:'Tickets',desc:'Log a ticket'},
   mystats:{label:'My Stats',desc:'Personal ticket stats'},
   talerts:{label:'Alerts',desc:'Unassigned and waiting tickets'},
