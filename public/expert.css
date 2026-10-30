@@ -387,3 +387,13 @@ html.ax-full .ax-cbar{top:0}
 .ax-tri-chip.v-fu b{color:var(--bad)}
 .ax-tri-chip.v-fu[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--bg)}
 .ax-tri-chip.v-fu[aria-pressed="true"] b{color:var(--bg)}
+/* Batch 202: handling failures and the Asana line */
+.ax-tri-fail{font-size:13px;line-height:1.45;color:var(--t1);padding:6px 10px;border-radius:8px;background:var(--bad-soft);border-left:3px solid var(--bad);margin:2px 0}
+.ax-tri-fail b{color:var(--bad)}
+.ax-tri-fail.medium{background:var(--accent-soft);border-left-color:var(--accent)}
+.ax-tri-fail.medium b{color:var(--accent-ink)}
+.ax-tri-asl{font-size:12.5px;color:var(--t2)}
+.ax-tri-asl b{color:var(--blue)}
+.ax-tri-chip.v-fail b{color:var(--bad)}
+.ax-tri-chip.v-fail[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+.ax-tri-chip.v-fail[aria-pressed="true"] b{color:var(--bg)}
