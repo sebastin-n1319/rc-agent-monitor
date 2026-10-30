@@ -741,7 +741,7 @@
       try {
         const r = await fetch(`/api/guides/expert/my-fixes/${encodeURIComponent(t.id)}/done`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: note ? note.value.trim() : '' }) });
         const j = await r.json(); if (!j.success) throw new Error(j.error || 'Could not save');
-        _fixes = null; loadFixes(slot.closest('.av2-container') || document);
+        _fixes = null; loadFixes(slot.parentNode || document); if (window.TA && window.TA.policyTab) window.TA.policyTab();
       } catch (e) { b.disabled = false; b.textContent = 'Done'; alert(e.message); }
     }));
   }
@@ -755,6 +755,12 @@
       _fixes = { at: Date.now(), list: j.tickets || [] }; paint(_fixes.list);
     } catch (e) { slot.innerHTML = ''; }
   }
+
+  // Batch 214: My fixes lives on its own sub page of My Stats (tab added in ticket-audits.js)
+  window.MyFixes = {
+    open: (host) => loadFixes(host),
+    count: async () => { const r = await fetch('/api/guides/expert/my-fixes', { credentials: 'include' }); const j = await r.json(); if (!j.success) return 0; _fixes = { at: Date.now(), list: j.tickets || [] }; return _fixes.list.filter((t) => !t.waitingRecheck).length; },
+  };
 
   function render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus) {
     root.innerHTML = `
@@ -790,7 +796,6 @@
           </div>
         </div>
         ${metaBarHtml(summaryJson, syncStatus)}
-        <div id="mystats-fixes-slot"></div>
 
         ${workSection(summaryJson.summary, summaryJson.callStats, summaryJson.chatStats, prevSummaryJson ? prevSummaryJson.summary : null)}
         ${statsSection(summaryJson.summary, prevSummaryJson ? prevSummaryJson.summary : null)}
@@ -1144,7 +1149,6 @@
       ]);
       render(root, summaryJson, ticketsJson, prevSummaryJson, syncStatus);
       loadQA(root);
-      loadFixes(root);
     } catch (e) {
       root.innerHTML = `
         <div class="av2-container">

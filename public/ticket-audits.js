@@ -1058,24 +1058,31 @@
   TA.policyTab = function () {
     var sec = document.getElementById('agent-section-mystats'); if (!sec) return;
     var root = document.getElementById('desk-lifecycle-agent-root');
-    var bar = document.getElementById('tka-mystats-tabs'), pol = document.getElementById('tka-policy-root');
+    var bar = document.getElementById('tka-mystats-tabs'), pol = document.getElementById('tka-policy-root'), fix = document.getElementById('tka-fixes-root');
     if (!bar) {
       pol = h('div', { id: 'tka-policy-root', class: 'tka-page', style: 'display:none' });
+      // Batch 214: My fixes (tickets the review flagged for this agent) is its own sub page
+      fix = h('div', { id: 'tka-fixes-root', class: 'tka-page av2-container', style: 'display:none' }, [h('div', { id: 'mystats-fixes-slot' })]);
       var b1 = h('button', { type: 'button', role: 'tab', class: 'tka-tab on', text: 'Ticket stats', 'aria-selected': 'true' });
+      var b3 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', id: 'tka-fixes-tab', text: 'My fixes', 'aria-selected': 'false' });
       var b2 = h('button', { type: 'button', role: 'tab', class: 'tka-tab', text: 'Transfer policy', 'aria-selected': 'false' });
-      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b2]);
+      bar = h('div', { id: 'tka-mystats-tabs', class: 'tka-tabs tka-page', role: 'tablist' }, [b1, b3, b2]);
       function pick(which) {
-        var p = which === 'policy';
-        b1.classList.toggle('on', !p); b2.classList.toggle('on', p); b1.setAttribute('aria-selected', String(!p)); b2.setAttribute('aria-selected', String(p));
-        if (root) root.style.display = p ? 'none' : ''; pol.style.display = p ? '' : 'none';
-        if (p) drawPolicy(pol);
+        [[b1, 'stats'], [b3, 'fixes'], [b2, 'policy']].forEach(function (x) { var on = x[1] === which; x[0].classList.toggle('on', on); x[0].setAttribute('aria-selected', String(on)); });
+        if (root) root.style.display = which === 'stats' ? '' : 'none';
+        pol.style.display = which === 'policy' ? '' : 'none';
+        fix.style.display = which === 'fixes' ? '' : 'none';
+        if (which === 'policy') drawPolicy(pol);
+        if (which === 'fixes' && window.MyFixes) window.MyFixes.open(fix);
       }
       b1.addEventListener('click', function () { pick('stats'); });
+      b3.addEventListener('click', function () { pick('fixes'); });
       b2.addEventListener('click', function () { pick('policy'); });
-      sec.insertBefore(bar, sec.firstChild); sec.appendChild(pol);
+      sec.insertBefore(bar, sec.firstChild); sec.appendChild(fix); sec.appendChild(pol);
     }
+    // the tab shows how many tickets are waiting to be fixed
+    if (window.MyFixes) window.MyFixes.count().then(function (n) { var t = document.getElementById('tka-fixes-tab'); if (t) t.textContent = n ? 'My fixes (' + n + ')' : 'My fixes'; }).catch(function () {});
   };
-
 
   // ── Tickets and Alerts page (agents): Ticket alerts + Client lookup ──
   TA.alertsTabs = function () {
