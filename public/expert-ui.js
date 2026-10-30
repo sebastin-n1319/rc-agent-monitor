@@ -925,12 +925,12 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function acctStrip(t) {
       var a = t.account;
       if (t.editAcct || !a) return h('div', { class: 'ax-lc-acct none' }, [icon('building', 'sm'), h('span', { class: 'ax-muted', text: t.editAcct ? 'Type the Adit account number' : 'No account number yet. It loads when the client shares it, or type it here.' }), acctForm(t)]);
-      if (a.loading) return h('div', { class: 'ax-lc-acct none' }, [h('span', { class: 'ax-lc-spin', 'aria-hidden': 'true' }), h('span', { class: 'ax-muted', text: 'Reading account #' + a.number + ', its tickets and history...' })]);
+      if (a.loading) return h('div', { class: 'ax-lc-acct none' }, [h('span', { class: 'ax-lc-spin', 'aria-hidden': 'true' }), h('span', { class: 'ax-muted', text: (a.via === 'number' || !a.via ? 'Reading account #' + a.number : 'Finding the account from the client\'s ' + a.via) + ', its tickets and history...' })]);
       var edit = h('button', { type: 'button', class: 'ax-lc-acedit', title: 'Change account number', 'aria-label': 'Change account number' }, [icon('edit', 'sm')]);
       edit.addEventListener('click', function () { t.editAcct = true; paintConvo(); });
-      if (!a.found) return h('div', { class: 'ax-lc-acct none' }, [icon('warn', 'sm'), h('span', { class: 'ax-muted', text: a.error || ('Account #' + a.number + ' was not found in the CRM. Check the number with the client.') }), edit]);
+      if (!a.found) return h('div', { class: 'ax-lc-acct none' }, [icon('warn', 'sm'), h('span', { class: 'ax-muted', text: a.error || (a.number ? 'Account #' + a.number + ' was not found in the CRM. Check the number with the client.' : 'No account matched the client\'s ' + a.via + '. Ask for the account number, or type it here.') }), a.number ? edit : acctForm(t)]);
       var e = escOf(a);
-      return h('div', { class: 'ax-lc-acct strip' + (e.active ? ' esc' : '') }, [icon('building', 'sm'), h('b', { text: a.name }), h('span', { class: 'ax-muted', text: '#' + a.number }),
+      return h('div', { class: 'ax-lc-acct strip' + (e.active ? ' esc' : '') }, [icon('building', 'sm'), h('b', { text: a.name }), h('span', { class: 'ax-muted', text: (a.number ? '#' + a.number : '') + (a.via && a.via !== 'number' ? (a.number ? ' · ' : '') + 'matched by ' + a.via : '') }),
         e.active ? h('span', { class: 'ax-lc-ac bad strong' }, [icon('warn', 'sm'), h('b', { text: 'Escalated: ' + a.escalation })]) : null,
         chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), edit]);
     }
@@ -948,12 +948,12 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       var t = find(active), body = h('div', { class: 'ax-lc-insb2' }); insight.appendChild(body);
       if (!t || !t.chat) { body.appendChild(h('p', { class: 'ax-lc-hint', text: 'Open a chat to see the account and its history.' })); return; }
       var a = t.account;
-      if (!a || !a.found) body.appendChild(sec('Account review', 'building', [h('p', { class: 'ax-lc-hint', text: a && a.loading ? 'Reading account #' + a.number + '...' : a ? 'Account #' + a.number + ' was not found.' : 'Loads when the client shares their Adit account number, or type it next to the chat header.' })]));
+      if (!a || !a.found) body.appendChild(sec('Account review', 'building', [h('p', { class: 'ax-lc-hint', text: a && a.loading ? (a.number ? 'Reading account #' + a.number + '...' : 'Finding the account from the client\'s ' + a.via + '...') : a && !a.number ? 'No account matched the client\'s ' + a.via + '. Ask for the account number, or type it next to the chat header.' : a ? 'Account #' + a.number + ' was not found.' : 'Loads when the client shares their Adit account number, or type it next to the chat header.' })]));
       else {
         var an = a.analysis || {}, e = escOf(a);
         var watch = (an.issues || []).filter(function (i) { return !/resolved|closed|fixed/i.test(i.status || ''); }).slice(0, 3).map(function (i) { return i.text + (i.times > 1 ? ' (raised ' + i.times + 'x)' : ''); })
           .concat((an.open || []).slice(0, 2).map(function (o) { return 'Open: ' + o.text; }));
-        var kids = [h('div', { class: 'ax-lc-acname' }, [h('b', { text: a.name }), h('span', { class: 'ax-muted', text: ['#' + a.number, a.city, a.ehr, a.locations ? a.locations + ' location' + (a.locations == 1 ? '' : 's') : ''].filter(Boolean).join(' · ') })]),
+        var kids = [h('div', { class: 'ax-lc-acname' }, [h('b', { text: a.name }), h('span', { class: 'ax-muted', text: [a.number ? '#' + a.number : '', a.via && a.via !== 'number' ? 'matched by ' + a.via : '', a.city, a.ehr, a.locations ? a.locations + ' location' + (a.locations == 1 ? '' : 's') : ''].filter(Boolean).join(' · ') })]),
           e.active ? h('div', { class: 'ax-lc-escb' }, [icon('warn', 'sm'), h('span', { text: 'Escalated: ' + a.escalation + (a.escalationOwner ? ' (owner ' + a.escalationOwner + ')' : '') + '. Hand anything beyond a Help Center fix to the CSM or escalation manager.' })]) : null,
           h('div', { class: 'ax-lc-acchips' }, [chip('Stage', a.stage, /churn|cancel|escalat/i.test(a.stage || '') ? 'bad' : ''), chip('CSM', a.csm), chip('Onboarding', a.ob), chip('Health', a.health, tone(a.health)), chip('Mood', a.mood, tone(a.mood)), chip('Risk', a.risk, tone(a.risk)), chip('Escalation', e.past, 'warn'), chip('Contract ends', a.contractEnd), chip('Tickets', a.tickets), chip('FCR', a.fcr != null ? a.fcr + '%' : null)])];
         if (watch.length) kids.push(h('ul', { class: 'ax-lc-watch', 'aria-label': 'Watch for' }, watch.map(function (w) { return h('li', {}, [icon('bulb', 'sm'), h('span', { text: w })]); })));

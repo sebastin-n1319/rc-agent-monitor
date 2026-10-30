@@ -123,4 +123,11 @@ describe('Live chats', () => {
     expect(lc._canSee(c, { email: 'evan@adit.com' })).toBe(true);
     expect(lc._canSee(c, { email: 'leo@adit.com' })).toBe(false);
   });
+  it('finds the account from the visitor details when no number is given', () => {
+    expect(lc._acctKey({ visitor: { email: 'Dr@Smile.com' } }, [])).toBe('email:dr@smile.com');
+    expect(lc._acctKey({ visitor: { info: { acct_number: '64624' }, email: 'dr@smile.com' } }, [])).toBe('64624');
+    expect(lc._acctKey({ visitor: { email: 'agent@adit.com' } }, [{ who: 'client', text: 'reach me at 773-788-9090' }])).toBe('phone:7737889090');
+    expect(lc._acctKey({ visitor: {} }, [{ who: 'client', text: 'our account number is 64624' }])).toBe('64624');
+    expect(lc._acctKey({ visitor: {} }, [{ who: 'client', text: 'hello' }])).toBeNull();
+  });
 });
