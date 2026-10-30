@@ -14,7 +14,7 @@ const desk = {
     if (p === '/tickets/9?include=contacts,assignee,team') return { id: '9', ticketNumber: '500001', subject: 'Port out', status: 'Open', channel: 'Email', createdTime: at(5), customFields: { 'Asana Task Link': 'https://app.asana.com/0/1/2' } };
     if (p.startsWith('/tickets/9/threads?')) return { data: [{ id: 't1', direction: 'in', createdTime: at(5), summary: 'see attached', attachmentCount: 2 }] };
     if (p === '/tickets/9/threads/t1') return { id: 't1', direction: 'in', createdTime: at(5), plainText: 'Please port our number, letter attached.', attachments: [{ name: 'loa.pdf', size: 18000, href: '/f/loa.pdf' }, { name: 'call.mp3', size: 900, href: '/f/call.mp3' }] };
-    if (p.startsWith('/tickets/9/comments?')) return { data: [{ id: 'n1', commentedTime: at(4), commenter: { name: 'Lincy' }, content: 'Checked carrier, see notes <img src="/f/inlineImages/shot.png" width="600">', attachments: [{ name: 'carrier-notes.txt', size: 40, href: '/f/notes.txt' }] }] };
+    if (p.startsWith('/tickets/9/comments?')) return { data: [{ id: 'n1', commentedTime: at(4), commenter: { name: 'Lincy' }, content: 'Asana created- <a href="https://app.asana.com/1/715/project/120/task/1218340844303981?focus=true">link</a> Checked carrier, see notes <img src="/f/inlineImages/shot.png" width="600">', attachments: [{ name: 'carrier-notes.txt', size: 40, href: '/f/notes.txt' }] }] };
     if (p.startsWith('/tickets/9/attachments')) return { data: [{ name: 'form.docx', size: 8524, href: '/f/form.docx' }, { name: 'scan.pdf', size: 24, href: '/f/scan.pdf' }, { name: 'loa.pdf', size: 18000, href: '/f/loa.pdf' }] };
     return { data: [] };
   },
@@ -37,5 +37,6 @@ describe.skipIf(!haveLibs)('Expert opens attached files', () => {
     expect(tk.text).toContain('Screenshot 1 in this note: Carrier portal');
     expect(tk.docs.sort()).toEqual(['carrier-notes.txt', 'form.docx', 'loa.pdf', 'scan.pdf']);
     expect(tk.meta.fields.asana).toContain('asana.com');
+    expect(tk.meta.asanaLinks.some((u) => u.includes('1218340844303981'))).toBe(true);
   });
 });

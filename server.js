@@ -2144,6 +2144,8 @@ app.get('/api/guides/expert/triage', requireAdmin, async (req, res) => {
 app.get('/api/guides/expert/triage/status', requireAdmin, (req, res) => res.json({ success: true, queue: triageMod().status() }));
 app.post('/api/guides/expert/triage/run', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, queue: await triageMod().runAll({ all: !!(req.body && req.body.all), by: req.session.email }) }); } catch (e) { expertErr(res, e, 'Could not start'); } });
 app.post('/api/guides/expert/triage/stop', requireAdmin, (req, res) => res.json({ success: true, queue: triageMod().stop() }));
+app.post('/api/guides/expert/triage/lessons/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await triageMod().settle(req.params.id, String((req.body && req.body.action) || ''), req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
+app.post('/api/guides/expert/triage/:id/feedback', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, ...(await triageMod().feedback(req.params.id, { agree: !!b.agree, verdict: b.verdict, comment: b.comment, by: req.session.email })) }); } catch (e) { expertErr(res, e, 'Could not save the feedback'); } });
 app.post('/api/guides/expert/triage/:id/analyse', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { res.json({ success: true, result: await triageMod().analyse(req.params.id, { by: req.session.email }) }); } catch (e) { expertErr(res, e, 'Could not review this ticket'); } });
 app.get('/api/guides/access', requireAdmin, async (req, res) => {
   try { res.json({ success: true, guests: await guides.listGuests() }); }

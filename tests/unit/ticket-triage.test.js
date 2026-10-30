@@ -21,9 +21,9 @@ const desk = {
 };
 const ticket = { load: async (n) => ({ meta: { number: n, subject: 'Texts not sending', status: 'Pending Customer', statusType: 'On Hold', owner: 'Lincy Tabita', created: ago(20), fields: {} }, text: 'Ticket record', lastClient: 'hi', msgCount: 3, commentCount: 1, images: 0,
   timeline: [{ at: ago(20), kind: 'client' }, { at: ago(19), kind: 'agent' }, { at: ago(12), kind: 'agent' }, { at: ago(9), kind: 'agent' }] }) };
-let seenUser = '';
+let seenUser = '', seenFb = '';
 const ai = { anyConfigured: () => true, isAnthropicConfigured: () => true,
-  claudeJSON: async ({ user }) => { seenUser = user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
+  claudeJSON: async ({ system, user }) => { if (/gave feedback/.test(system)) { seenFb = user; return { json: { reviewer_right: /client confirmed/.test(user) ? 'yes' : 'no', reply: 'Checked.', lesson: 'Tickets like this can close.', final_verdict: 'close' } }; } seenUser = user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
 const expert = { crmContext: async () => ({ text: 'Account: Smile Dental', facts: { csm: 'Ana' } }), searchLocal: async () => [], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }] };
 
 beforeAll(async () => {
@@ -36,11 +36,28 @@ beforeAll(async () => {
 describe('open T1 ticket review: Asana links', () => {
   it('finds the task id', () => { expect(tt._asanaGid('https://app.asana.com/0/1201/1209876543210')).toBe('1209876543210'); });
 });
+describe('open T1 ticket review: reading Asana', () => {
+  it('reads the column, the comments and the updates', async () => {
+    const real = global.fetch; process.env.ASANA_ACCESS_TOKEN = 'x';
+    global.fetch = async (u) => ({ ok: true, json: async () => /stories/.test(u)
+      ? { data: [{ type: 'comment', resource_subtype: 'comment_added', text: 'Questions have been added. Please inform the client', created_at: '2026-09-11T17:52:17Z', created_by: { name: 'Siddharth' } }, { type: 'system', resource_subtype: 'section_changed', text: 'moved this task from "To do" to "Completed"', created_at: '2026-09-14T18:09:00Z', created_by: { name: 'Siddharth' } }] }
+      : { data: { name: 'Patient Forms #402758', completed: false, memberships: [{ project: { name: 'Patient Forms' }, section: { name: 'Completed' } }], assignee: { name: 'Sky Gibson' } } } });
+    try {
+      const a = await tt._asanaTask('https://app.asana.com/1/7/project/1/task/1218340844303981?focus=true');
+      expect(a.doneColumn).toBe(true);
+      const t = tt._asanaText(a);
+      expect(t).toContain('DONE');
+      expect(t).toContain('Please inform the client');
+      expect(t).toContain('to "Completed"');
+    } finally { global.fetch = real; delete process.env.ASANA_ACCESS_TOKEN; }
+  });
+});
 describe.skipIf(!sqlite3)('open T1 ticket review', () => {
   it('finds the Asana task id in the usual link shapes', () => {
     expect(tt._asanaGid('https://app.asana.com/0/1201/1209876543210')).toBe('1209876543210');
     expect(tt._asanaGid('https://app.asana.com/0/1201/1209876543210/f')).toBe('1209876543210');
     expect(tt._asanaGid('https://app.asana.com/1/111/project/222/task/1209876543299')).toBe('1209876543299');
+    expect(tt._asanaGid('https://app.asana.com/1/7153196700226/project/1202095993396108/task/1218340844303981?focus=true')).toBe('1218340844303981');
     expect(tt._asanaGid('')).toBeNull();
   });
   it('reads the T1 view with every status except Closed', async () => {
@@ -65,6 +82,22 @@ describe.skipIf(!sqlite3)('open T1 ticket review', () => {
     const row = (await tt.list()).rows.find((x) => x.id === '1');
     expect(row.verdict).toBe('close');
     expect(row.stale).toBe(false);
+  });
+  it('takes the reviewer\'s call, checks it, and learns or disputes', async () => {
+    const a = await tt.feedback('1', { agree: false, verdict: 'wait', comment: 'client confirmed by phone she wants it open', by: 'lead@adit.com' });
+    expect(a.status).toBe('active');
+    expect(seenFb).toContain('says the right call is "wait"');
+    const row = (await tt.list()).rows.find((x) => x.id === '1');
+    expect(row.reviewer.verdict).toBe('wait');
+    expect((await tt.list()).lessons.map((l) => l.lesson)).toContain('Tickets like this can close.');
+    await tt.analyse('1');
+    expect(seenUser).toContain('What reviewers taught you');
+    const b = await tt.feedback('1', { agree: false, verdict: 'handover', comment: 'should go to billing', by: 'lead@adit.com' });
+    expect(b.status).toBe('disputed');
+    await tt.settle(b.id, 'accept_ai');
+    expect((await tt.list()).rows.find((x) => x.id === '1').reviewer).toBeNull();
+    const c = await tt.feedback('1', { agree: true });
+    expect(c.status).toBe('agree');
   });
   it('marks tickets that left the view', async () => {
     deskRows.splice(1, 1);

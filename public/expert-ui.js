@@ -525,7 +525,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
 
   // ── Open tickets (Batch 197, admins) ────────────────────────────────
   // Every ticket in the T1 view of Desk with Adit Expert's suggestion: close, keep open, act now or hand over.
-  var VERD = { close: 'Close', act: 'Act now', handover: 'Hand over', wait: 'Keep open' };
+  var VERD = { act: 'Action needed', wait: 'OK to keep open', close: 'Close', handover: 'Hand over' };
   function Triage(panel, ctx) {
     var root = h('div', { class: 'ax-tri' }); panel.appendChild(root);
     var D = null, F = { v: 'all', q: '', owner: '', status: '', sort: 'idle' }, open = {}, poll = null, lastDone = -1;
@@ -564,10 +564,11 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function rowsShown() {
       var q = F.q.trim().toLowerCase();
       var list = D.rows.filter(function (r) {
-        if (F.v === 'none' ? r.verdict : F.v !== 'all' && r.verdict !== F.v) return false;
+        if (F.v === 'mine') { if (!r.verdict || r.reviewer) return false; }
+        else if (F.v === 'none' ? r.verdict : F.v !== 'all' && r.verdict !== F.v) return false;
         if (F.owner && (r.owner || 'Unassigned') !== F.owner) return false;
         if (F.status && r.status !== F.status) return false;
-        if (q && (r.number + ' ' + r.subject + ' ' + (r.owner || '') + ' ' + ((r.result && r.result.headline) || '')).toLowerCase().indexOf(q) < 0) return false;
+        if (q && (r.number + ' ' + r.subject + ' ' + (r.owner || '') + ' ' + ((r.result && (r.result.action || r.result.headline)) || '')).toLowerCase().indexOf(q) < 0) return false;
         return true;
       });
       var key = { idle: function (r) { return -(r.idle || 0); }, age: function (r) { return -(r.age || 0); }, recent: function (r) { return r.idle || 0; } }[F.sort];
@@ -575,8 +576,8 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     }
     function csv() {
       var rows = rowsShown(), esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-      var out = [['Ticket', 'Subject', 'Status', 'Owner', 'Open days', 'Idle days', 'Suggestion', 'Confidence', 'What to do', 'Why', 'Next steps', 'Asana', 'Desk link'].join(',')];
-      rows.forEach(function (r) { var x = r.result || {}; out.push([r.number, r.subject, r.status, r.owner || 'Unassigned', r.age, r.idle, VERD[r.verdict] || 'Not reviewed', x.confidence || '', x.headline || '', x.why || '', (x.next || []).join(' | '), r.asana, r.url].map(esc).join(',')); });
+      var out = [['Ticket', 'Subject', 'Status', 'Owner', 'Open days', 'Idle days', 'Suggestion', 'Reviewer call', 'Confidence', 'What to do', 'Why', 'Next steps', 'Asana', 'Desk link'].join(',')];
+      rows.forEach(function (r) { var x = r.result || {}; out.push([r.number, r.subject, r.status, r.owner || 'Unassigned', r.age, r.idle, VERD[r.verdict] || 'Not reviewed', r.reviewer ? VERD[r.reviewer.verdict] : '', x.confidence || '', x.action || x.headline || '', x.short || x.why || '', (x.next || []).join(' | '), r.asana, r.url].map(esc).join(',')); });
       var a = h('a', { href: URL.createObjectURL(new Blob([out.join('\n')], { type: 'text/csv' })), download: 'open-t1-tickets-' + new Date().toISOString().slice(0, 10) + '.csv' });
       document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500);
     }
@@ -588,7 +589,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function paint() {
       clear(root);
       var rows = D.rows, n = { all: rows.length, none: 0 }; Object.keys(VERD).forEach(function (k) { n[k] = 0; });
-      rows.forEach(function (r) { if (r.verdict) n[r.verdict] = (n[r.verdict] || 0) + 1; else n.none++; });
+      n.mine = 0; rows.forEach(function (r) { if (r.verdict) n[r.verdict] = (n[r.verdict] || 0) + 1; else n.none++; if (r.verdict && !r.reviewer) n.mine++; });
       var q = D.queue || {}, withAsana = rows.filter(function (r) { return r.asana; }).length;
       root.appendChild(h('div', { class: 'ax-teach-hd ax-tri-hd' }, [
         h('div', {}, [h('h2', { text: 'Open T1 tickets' }), h('p', { class: 'ax-muted', text: 'Every ticket in the T1 view of Zoho Desk (team T1 - Customer Support, status not Closed). Adit Expert reads the whole ticket, the private notes, screenshots and attachments, the client\'s earlier tickets, the CRM, the Help Center and the Asana task, then suggests what to do. Suggestions only: nothing is changed in Desk.' })]),
@@ -603,7 +604,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       if (!D.asana && withAsana) root.appendChild(h('div', { class: 'ax-tri-asana' }, [icon('link', 'sm'), h('span', { text: withAsana + (withAsana === 1 ? ' ticket links' : ' tickets link') + ' an Asana task. Adit Expert sees the Asana owner and due date from Desk, but cannot read the task itself yet. Add an ASANA_ACCESS_TOKEN variable in Railway to let it read task status and comments.' })]));
       progEl = h('div'); root.appendChild(progEl); paintProgress();
       var chips = h('div', { class: 'ax-tri-chips', role: 'group', 'aria-label': 'Filter by suggestion' });
-      [['all', 'All'], ['act', VERD.act], ['close', VERD.close], ['handover', VERD.handover], ['wait', VERD.wait], ['none', 'Not reviewed']].forEach(function (c) {
+      [['all', 'All'], ['act', VERD.act], ['close', VERD.close], ['handover', VERD.handover], ['wait', VERD.wait], ['none', 'Not reviewed'], ['mine', 'Needs your call']].forEach(function (c) {
         chips.appendChild(h('button', { type: 'button', class: 'ax-tri-chip v-' + c[0], 'aria-pressed': F.v === c[0] ? 'true' : 'false', onclick: function () { F.v = c[0]; paint(); } }, [h('span', { text: c[1] }), h('b', { text: String(n[c[0]] || 0) })]));
       });
       root.appendChild(chips);
@@ -615,6 +616,17 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
         sel('Status', F.status, [['', 'All statuses']].concat(Object.keys(stats).sort().map(function (o) { return [o, o]; })), function (v) { F.status = v; paintList(); }),
         sel('Sort', F.sort, [['idle', 'Longest without a change'], ['age', 'Oldest ticket first'], ['recent', 'Changed most recently']], function (v) { F.sort = v; paintList(); })]));
       listEl = h('ol', { class: 'ax-tri-list' }); root.appendChild(listEl); paintList();
+      var L = D.lessons || [];
+      var lp = h('details', { class: 'ax-tri-lessons' }, [h('summary', { text: 'What the review has learned from reviewers (' + L.filter(function (l) { return l.status === 'active'; }).length + ')' })]);
+      if (!L.length) lp.appendChild(h('p', { class: 'ax-muted', text: 'Nothing yet. Agree or disagree with a suggestion and say why; Expert checks your point and keeps the lesson for the next reviews.' }));
+      L.forEach(function (l) {
+        lp.appendChild(h('div', { class: 'ax-tri-lesson' + (l.status === 'disputed' ? ' dispute' : '') }, [h('div', {}, [
+          h('p', { text: l.lesson || l.comment }),
+          h('span', { class: 'ax-muted', text: '#' + l.number + ': Expert said ' + (VERD[l.ai_verdict] || l.ai_verdict) + ', reviewer said ' + (VERD[l.reviewer_verdict] || l.reviewer_verdict) + (l.by_email ? ' (' + l.by_email.split('@')[0] + ')' : '') + (l.status === 'disputed' ? '. Disputed: not used until a reviewer keeps it.' : '') })]),
+          l.status === 'disputed' ? h('button', { type: 'button', class: 'ax-mini', onclick: function () { settle(l.id, 'keep', 'Lesson kept'); } }, ['Keep']) : null,
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { settle(l.id, 'remove', 'Lesson removed'); } }, ['Remove'])]));
+      });
+      root.appendChild(lp);
     }
     function paintList() {
       clear(listEl);
@@ -623,16 +635,60 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       rows.forEach(function (r) { listEl.appendChild(item(r)); });
     }
     function item(r) {
-      var x = r.result, isOpen = !!open[r.id];
+      var x = r.result, isOpen = !!open[r.id], rv = r.reviewer;
       var pill = h('span', { class: 'ax-tri-v v-' + (r.verdict || 'none'), text: VERD[r.verdict] || 'Not reviewed' });
-      var meta = [r.status, r.owner || 'Unassigned', 'open ' + r.age + ' d', 'no change ' + r.idle + ' d', r.asana ? 'Asana' : '', x && x.confidence ? x.confidence + ' confidence' : ''].filter(Boolean).join(' · ');
+      var meta = [r.status, r.owner || 'Unassigned', 'open ' + r.age + ' d', 'no change ' + r.idle + ' d', r.asana ? 'Asana' : ''].filter(Boolean).join(' · ');
+      var tag = rv ? h('span', { class: 'ax-tri-you ' + (rv.verdict === r.verdict ? 'same' : 'diff'), text: rv.verdict === r.verdict ? 'Confirmed' : 'Reviewer: ' + VERD[rv.verdict] }) : null;
       var head = h('button', { type: 'button', class: 'ax-tri-head', 'aria-expanded': isOpen ? 'true' : 'false', onclick: function () { open[r.id] = !open[r.id]; li.replaceWith(item(r)); } }, [
-        pill, h('span', { class: 'ax-tri-main' }, [h('b', { text: '#' + r.number + ' ' + r.subject }), h('span', { class: 'ax-muted', text: meta }),
-          x && x.headline ? h('span', { class: 'ax-tri-hl', text: x.headline }) : r.error ? h('span', { class: 'ax-tri-err', text: 'Review failed: ' + r.error }) : null])]);
+        h('span', { class: 'ax-tri-pills' }, [pill, tag]), h('span', { class: 'ax-tri-main' }, [h('b', { text: '#' + r.number + ' ' + r.subject }), h('span', { class: 'ax-muted', text: meta }),
+          x ? h('span', { class: 'ax-tri-do', text: x.action || x.headline || '' }) : r.error ? h('span', { class: 'ax-tri-err', text: 'Review failed: ' + r.error }) : null,
+          x && x.short ? h('span', { class: 'ax-tri-hl', text: x.short }) : null])]);
       var li = h('li', { class: 'ax-tri-item' + (isOpen ? ' open' : '') }, [h('div', { class: 'ax-tri-top' }, [head, r.url ? h('a', { class: 'ax-mini', href: r.url, target: '_blank', rel: 'noopener', 'aria-label': 'Open ticket ' + r.number + ' in Desk' }, [icon('ext', 'sm'), 'Desk']) : null])]);
       if (isOpen) li.appendChild(detail(r));
       return li;
     }
+    // The reviewer's call: agree, or disagree with the right call and why. Expert checks it and answers.
+    function verdictOpts(sel) { return Object.keys(VERD).map(function (k) { var o = h('option', { value: k, text: VERD[k] }); if (k === sel) o.selected = true; return o; }); }
+    function callBox(r) {
+      var x = r.result, rv = r.reviewer, box = h('div', { class: 'ax-tri-call' });
+      function reply(fb) {
+        if (!fb || !fb.reply) return null;
+        var kids = [h('b', { text: fb.status === 'disputed' ? 'Expert sees it differently' : 'Expert' }), h('p', { text: fb.reply })];
+        if (fb.lesson && fb.status !== 'disputed') kids.push(h('p', { class: 'ax-muted', text: 'Learned: ' + fb.lesson }));
+        if (fb.status === 'disputed') kids.push(h('div', { class: 'ax-row' }, [
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { settle(fb.id, 'keep', 'Kept your call. Expert will follow it next time.'); } }, ['Keep my call']),
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { settle(fb.id, 'accept_ai', 'Expert\'s suggestion stands'); } }, ['Expert is right'])]));
+        return h('div', { class: 'ax-tri-reply' + (fb.status === 'disputed' ? ' dispute' : '') }, kids);
+      }
+      if (rv && !box._edit) {
+        box.appendChild(h('div', { class: 'ax-tri-callhd' }, [h('span', {}, [h('b', { text: rv.verdict === r.verdict ? 'You confirmed: ' : 'Your call: ' }), VERD[rv.verdict] + (rv.comment ? '. ' + rv.comment : '')]),
+          h('button', { type: 'button', class: 'ax-mini', onclick: function () { r.reviewer = null; var nb = callBox(r); box.replaceWith(nb); } }, ['Change'])]));
+        var rp = reply(rv.fb); if (rp) box.appendChild(rp);
+        return box;
+      }
+      var ta = h('textarea', { class: 'ax-tri-ta', rows: '2', placeholder: 'Why? Expert learns from this for the next tickets (optional when you agree)', 'aria-label': 'Reviewer comment' });
+      var sel = h('select', { class: 'ax-tri-sel', 'aria-label': 'The right call' }, verdictOpts(x.verdict === 'act' ? 'wait' : 'act'));
+      var dis = h('div', { class: 'ax-row ax-tri-dis', hidden: true }, [h('label', { class: 'ax-muted', text: 'Right call' }), sel]);
+      var status = h('div', { role: 'status', class: 'ax-muted' });
+      function send(agree) {
+        if (!agree && dis.hidden) { dis.hidden = false; sel.focus(); return; }
+        if (!agree && !ta.value.trim()) { status.textContent = 'Say why, so Expert can learn.'; ta.focus(); return; }
+        bA.disabled = bD.disabled = true; status.textContent = ta.value.trim() ? 'Expert is checking your point against the ticket...' : 'Saving...';
+        ctx.api('/api/guides/expert/triage/' + encodeURIComponent(r.id) + '/feedback', { agree: agree, verdict: agree ? r.verdict : sel.value, comment: ta.value.trim() }).then(function (j) {
+          r.reviewer = { verdict: agree ? r.verdict : sel.value, comment: ta.value.trim(), fb: { id: j.id, status: j.status, reply: j.reply, lesson: j.lesson } };
+          var nb = callBox(r); box.replaceWith(nb); updateCounts();
+        }).catch(function (e) { status.textContent = e.message; bA.disabled = bD.disabled = false; });
+      }
+      var bA = h('button', { type: 'button', class: 'gd-btn', onclick: function () { send(true); } }, [icon('check', 'sm'), 'Agree']);
+      var bD = h('button', { type: 'button', class: 'gd-btn', onclick: function () { send(false); } }, [icon('x', 'sm'), 'Disagree']);
+      box.appendChild(h('b', { class: 'ax-tri-callt', text: 'Your call' }));
+      box.appendChild(ta); box.appendChild(dis); box.appendChild(h('div', { class: 'ax-row' }, [bA, bD])); box.appendChild(status);
+      return box;
+    }
+    function settle(id, action, msg) {
+      ctx.api('/api/guides/expert/triage/lessons/' + id, { action: action }).then(function () { ctx.toast(msg); load(false); }).catch(function (e) { ctx.toast(e.message); });
+    }
+    function updateCounts() { /* counts follow on the next load */ }
     function block(title, kids) { return h('div', { class: 'ax-tri-b' }, [h('h4', { text: title })].concat(kids)); }
     function copyBtn(text, label) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label]); b.addEventListener('click', function () { copy(text, b); }); return b; }
     function detail(r) {
@@ -643,19 +699,21 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
           .catch(function (e) { ctx.toast(e.message); again.disabled = false; again.textContent = 'Review again'; });
       } }, [icon('refresh', 'sm'), x ? 'Review again' : 'Review now']);
       if (!x) { box.appendChild(h('p', { class: 'ax-muted', text: r.error ? 'The last review failed (' + r.error + ').' : 'Not reviewed yet.' })); box.appendChild(again); return box; }
-      box.appendChild(h('p', { class: 'ax-tri-why', text: x.why }));
+      box.appendChild(callBox(r));
+      var more = h('details', { class: 'ax-tri-more' }, [h('summary', { text: 'Full analysis' })]);
+      more.appendChild(h('p', { class: 'ax-tri-why', text: x.why }));
       var cols = h('div', { class: 'ax-tri-cols' });
       var left = h('div'), right = h('div');
       if (x.timeline && x.timeline.length) left.appendChild(block('What happened', [h('ol', { class: 'ax-tri-tl' }, x.timeline.map(function (s) { return h('li', { text: s }); }))]));
       if (x.next && x.next.length) left.appendChild(block('Next steps', [h('ol', {}, x.next.map(function (s) { return h('li', { text: s }); }))]));
       if (x.client_message) left.appendChild(block('Message to the client', [h('pre', { class: 'ax-tri-msg', text: x.client_message }), copyBtn(x.client_message, 'Copy message')]));
       if (x.internal_note) left.appendChild(block('Private note for Desk', [h('p', { text: x.internal_note }), copyBtn(x.internal_note, 'Copy note')]));
-      var kv = [['Waiting on', x.waiting_on], ['Status', /^ok\b/i.test(x.status_now || '') ? 'Correct as it is' : x.status_now], ['Asana', x.asana], ['Risk', x.risk], ['Help Center', x.kb], ['CSM', x.meta && x.meta.csm]].filter(function (p) { return p[1]; });
+      var kv = [['Waiting on', x.waiting_on], ['Status', /^ok\b/i.test(x.status_now || '') ? 'Correct as it is' : x.status_now], ['Asana', (x.meta && x.meta.asanaErr ? 'Could not read the task (' + x.meta.asanaErr + '). ' : '') + (x.asana || '')], ['Risk', x.risk], ['Help Center', x.kb], ['CSM', x.meta && x.meta.csm]].filter(function (p) { return p[1]; });
       if (kv.length) right.appendChild(block('At a glance', [h('dl', { class: 'ax-tri-kv' }, [].concat.apply([], kv.map(function (p) { return [h('dt', { text: p[0] }), h('dd', { text: p[1] })]; })))]));
       if (x.files && x.files.length) right.appendChild(block('Files and screenshots', [h('ul', {}, x.files.map(function (s) { return h('li', { text: s }); }))]));
       if (x.promises && x.promises.length) right.appendChild(block('Promises to the client', [h('ul', {}, x.promises.map(function (s) { return h('li', { text: s }); }))]));
       if (x.evidence && x.evidence.length) right.appendChild(block('Evidence', [h('ul', {}, x.evidence.map(function (s) { return h('li', { text: s }); }))]));
-      cols.appendChild(left); cols.appendChild(right); box.appendChild(cols);
+      cols.appendChild(left); cols.appendChild(right); more.appendChild(cols); box.appendChild(more);
       var m = x.meta || {};
       box.appendChild(h('div', { class: 'ax-tri-foot' }, [h('span', { class: 'ax-muted', text: 'Reviewed ' + when(r.analysedAt) + (r.stale ? '. Changed in Desk since then.' : '.') + ' Read ' + (m.messages || 0) + ((m.messages === 1) ? ' message, ' : ' messages, ') + (m.notes || 0) + (m.notes === 1 ? ' private note' : ' private notes') + (m.images ? ', ' + m.images + (m.images === 1 ? ' screenshot' : ' screenshots') : '') + (m.files ? ', ' + m.files + (m.files === 1 ? ' file' : ' files') : '') + (m.crm ? ', the CRM' : '') + (m.asanaRead ? ', the Asana task' : '') + '.' }), again]));
       return box;
