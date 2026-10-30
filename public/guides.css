@@ -44,7 +44,7 @@ svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .gd-nav button{position:relative;display:flex;align-items:center;gap:8px;border:0;background:none;height:var(--top);padding:0 14px;color:var(--t2);font-weight:500;font-size:13.5px;cursor:pointer;white-space:nowrap}
 .gd-nav button:hover{color:var(--t1)}
 .gd-nav button[aria-current="page"]{color:var(--accent-ink)}
-@media (max-width:1360px){.gd-nav button{padding:0 9px;gap:6px}} /* Batch 197: room for the Open tickets tab */
+@media (max-width:1500px){.gd-nav button{padding:0 8px;gap:6px}} /* Batch 197: room for the Open tickets tab */
 .gd-nav button[aria-current="page"]::after{content:'';position:absolute;left:12px;right:12px;bottom:0;height:2px;border-radius:2px;background:var(--accent)}
 .gd-nav .gd-spark{color:var(--accent)}
 .gd-user{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--t2);min-width:0}

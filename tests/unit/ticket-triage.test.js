@@ -14,7 +14,7 @@ const desk = {
   fetchRaw: async (p) => {
     calls.push(p);
     if (p.startsWith('/organizationFields')) return { data: [{ apiName: 'status', allowedValues: [{ value: 'Open' }, { value: 'Closed' }, { value: 'Pending Customer' }] }] };
-    if (p.startsWith('/agents')) return { data: [{ id: '7', firstName: 'Lincy', lastName: 'Tabita' }] };
+    if (p.startsWith('/agents')) return { data: [{ id: '7', firstName: 'Lincy', lastName: 'Tabita', emailId: 'lincy@adit.com' }, { id: '8', firstName: 'Sky', lastName: 'Gibson', emailId: 'sky@adit.com' }] };
     if (p.startsWith('/tickets?')) return { data: deskRows };
     return { data: [] };
   },
@@ -23,7 +23,7 @@ const ticket = { load: async (n) => ({ meta: { number: n, subject: 'Texts not se
   timeline: [{ at: ago(20), kind: 'client' }, { at: ago(19), kind: 'agent' }, { at: ago(12), kind: 'agent' }, { at: ago(9), kind: 'agent' }] }) };
 let seenUser = '', seenFb = '';
 const ai = { anyConfigured: () => true, isAnthropicConfigured: () => true,
-  claudeJSON: async ({ system, user }) => { if (/gave feedback/.test(system)) { seenFb = user; return { json: { reviewer_right: /client confirmed/.test(user) ? 'yes' : 'no', reply: 'Checked.', lesson: 'Tickets like this can close.', final_verdict: 'close' } }; } seenUser = user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
+  claudeJSON: async ({ system, user }) => { if (/gave feedback/.test(system)) { seenFb = user; return { json: { reviewer_right: /client confirmed/.test(user) ? 'yes' : 'no', reply: 'Checked.', lesson: 'Tickets like this can close.', final_verdict: 'close' } }; } seenUser = user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', failure: { level: 'high', who: 'Sky', what: 'Note only, no reply' }, client_message: 'Hi there,', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
 const expert = { crmContext: async () => ({ text: 'Account: Smile Dental', facts: { csm: 'Ana' } }), searchLocal: async () => [], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }] };
 
 beforeAll(async () => {
@@ -92,6 +92,18 @@ describe.skipIf(!sqlite3)('open T1 ticket review', () => {
     const row = (await tt.list()).rows.find((x) => x.id === '1');
     expect(row.verdict).toBe('close');
     expect(row.stale).toBe(false);
+  });
+  it('puts failure tickets on the responsible agents\' own list only', async () => {
+    const sky = await tt.myFixes('sky@adit.com');
+    expect(sky.map((t) => t.number)).toEqual(['423000']);
+    expect(sky[0].client_message).toBe('Hi there,');
+    expect((await tt.myFixes('lincy@adit.com')).length).toBe(1); // owner
+    expect((await tt.myFixes('someone@adit.com')).length).toBe(0);
+    await expect(tt.fixDone('1', 'someone@adit.com')).rejects.toThrow('Not your ticket');
+    await tt.fixDone('1', 'sky@adit.com', 'Replied to the client');
+    expect((await tt.myFixes('sky@adit.com'))[0].waitingRecheck).toBe(true);
+    await tt.analyse('1');
+    expect((await tt.myFixes('sky@adit.com'))[0].stillOpen).toBe(true);
   });
   it('takes the reviewer\'s call, checks it, and learns or disputes', async () => {
     const a = await tt.feedback('1', { agree: false, verdict: 'wait', comment: 'client confirmed by phone she wants it open', by: 'lead@adit.com' });
