@@ -726,6 +726,22 @@ const deskLifecycle = require('./lib/desk-lifecycle');
       { const k = () => expert.syncKb().then(r => { if (r.ok === false) console.warn('expert KB sync:', r.error); else if (r.fetched || r.removed) console.log('📚 Help Center refreshed:', r.fetched, 'updated,', r.removed, 'removed of', r.total); }).catch(e => console.warn('expert KB sync:', e.message));
         setTimeout(() => { k(); setInterval(k, 30 * 60 * 1000); }, 30 * 1000); }
       if (require('./lib/aditkb-service').isConfigured()) setTimeout(() => { const t = () => expert.syncCalls().then(r => { if (r.added) console.log('🧠 Expert learned from calls:', JSON.stringify(r)); }).catch(e => console.warn('expert call sync:', e.message)); t(); setInterval(t, 6 * 3600 * 1000); }, 3 * 60 * 1000); }
+    // Batch 197: Open T1 ticket review (admins). The T1 view is read every hour; every night at 3 AM Central the new and
+    // changed tickets are reviewed. Suggestions only: nothing is changed in Zoho Desk.
+    { const tt = require('./lib/ticket-triage'); tt.setDB(db); await tt.initSchema();
+      tt.setDeps({ desk: require('./lib/desk-service'), ticket: require('./lib/expert-ticket'), expert: require('./lib/expert'), ai: require('./lib/ai') });
+      setTimeout(() => {
+        const tick = async () => {
+          try {
+            if (!require('./lib/desk-service').isConfigured()) return;
+            const last = await tt.getState('listed_at');
+            if (!last || Date.now() - Date.parse(last) > 55 * 60e3) await tt.refreshList();
+            const ct = new Date().toLocaleString('en-CA', { timeZone: 'America/Chicago', hour12: false }); const day = ct.slice(0, 10), hr = Number(ct.slice(12, 14));
+            if (hr === 3 && (await tt.getState('night_day')) !== day) { await tt.setState('night_day', day); await tt.refreshList(); await tt.runAll({ by: 'nightly' }); }
+          } catch (e) { console.warn('ticket triage tick:', e.message); }
+        };
+        tick(); setInterval(tick, 10 * 60 * 1000);
+      }, 4 * 60 * 1000); }
     // Batch 187: 1025 Call Flow & Capacity.
     { const cf = require('./lib/cf1025'); cf.setDB(db); await cf.initSchema(); }
     // Batch 166: T1 CS bonus calculator (admin, under Bonus).
@@ -2117,6 +2133,18 @@ app.delete('/api/guides/expert/notes/:id', requireAdmin, async (req, res) => { t
 app.post('/api/guides/expert/feedback/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await expertMod().handleFeedback(req.params.id, req.body || {}, req.session.email)) }); } catch (e) { expertErr(res, e, 'Could not save'); } });
 app.post('/api/guides/expert/kb-sync', requireAdmin, rateLimit(4, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncKb({ force: !!(req.body && req.body.force) })) }); } catch (e) { expertErr(res, e, 'Could not read the Help Center'); } });
 app.post('/api/guides/expert/sync-calls', requireAdmin, rateLimit(3, 60000), async (req, res) => { try { res.json({ success: true, ...(await expertMod().syncCalls()) }); } catch (e) { expertErr(res, e, 'Could not sync'); } });
+// Batch 197: Open T1 ticket review (admins). Suggestions only, nothing is changed in Desk.
+const triageMod = () => require('./lib/ticket-triage');
+app.get('/api/guides/expert/triage', requireAdmin, async (req, res) => {
+  try { const T = triageMod(); const last = await T.getState('listed_at');
+    let listErr = null; if (req.query.refresh === '1' || !last || Date.now() - Date.parse(last) > 10 * 60e3) await T.refreshList().catch((e) => { listErr = e.message; });
+    res.json({ success: true, ...(await T.list()), listErr });
+  } catch (e) { expertErr(res, e, 'Could not load the open tickets'); }
+});
+app.get('/api/guides/expert/triage/status', requireAdmin, (req, res) => res.json({ success: true, queue: triageMod().status() }));
+app.post('/api/guides/expert/triage/run', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { res.json({ success: true, queue: await triageMod().runAll({ all: !!(req.body && req.body.all), by: req.session.email }) }); } catch (e) { expertErr(res, e, 'Could not start'); } });
+app.post('/api/guides/expert/triage/stop', requireAdmin, (req, res) => res.json({ success: true, queue: triageMod().stop() }));
+app.post('/api/guides/expert/triage/:id/analyse', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { res.json({ success: true, result: await triageMod().analyse(req.params.id, { by: req.session.email }) }); } catch (e) { expertErr(res, e, 'Could not review this ticket'); } });
 app.get('/api/guides/access', requireAdmin, async (req, res) => {
   try { res.json({ success: true, guests: await guides.listGuests() }); }
   catch (e) { res.status(500).json({ success: false, error: e.message }); }

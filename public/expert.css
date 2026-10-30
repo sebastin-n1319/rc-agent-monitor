@@ -302,3 +302,54 @@ html.ax-full .ax-cbar{top:0}
 /* Batch 192: private note for Zoho Desk and the channel note */
 .ax-note{margin:0 0 8px;padding:12px 14px;border-radius:12px;background:var(--surface-2);border-left:3px solid var(--amber,#d4892a);white-space:pre-wrap;font:inherit;font-size:14px;line-height:1.6;color:var(--t1)}
 .ax-modenote{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:13px;color:var(--t2)}
+
+/* Batch 197: Open T1 tickets (admins) */
+.ax-tri{max-width:1180px;margin:0 auto;padding:24px 24px 64px}
+.ax-tri-hd h2{margin:0 0 4px;font-size:24px;font-weight:600}
+.ax-tri-hd p{margin:0;max-width:720px;font-size:13.5px}
+.ax-tri-meta{margin:14px 0 10px;font-size:12.5px}
+.ax-tri-asana{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;padding:10px 14px;border-radius:10px;background:var(--blue-soft);color:var(--t2);font-size:13px}
+.ax-tri-asana svg{color:var(--blue);margin-top:3px}
+.ax-tri-prog{display:flex;flex-direction:column;gap:6px;margin:0 0 12px;font-size:13px;color:var(--t2)}
+.ax-tri-bar{height:6px;border-radius:999px;background:var(--surface-3);overflow:hidden}
+.ax-tri-bar i{display:block;height:100%;border-radius:999px;background:var(--accent);transition:width .4s ease}
+.ax-tri-chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.ax-tri-chip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--t2);font-size:13px;cursor:pointer}
+.ax-tri-chip b{font-variant-numeric:tabular-nums;color:var(--t1)}
+.ax-tri-chip[aria-pressed="true"]{border-color:var(--t1);background:var(--t1);color:var(--bg)}
+.ax-tri-chip[aria-pressed="true"] b{color:var(--bg)}
+.ax-tri-filters{margin-bottom:12px}
+.ax-tri-q{flex:1 1 240px;min-width:0;height:36px;padding:0 12px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface);color:var(--t1)}
+.ax-tri-sel{height:36px;padding:0 10px;border:1px solid var(--border-strong);border-radius:9px;background:var(--surface);color:var(--t1);font:inherit;font-size:13px;max-width:100%}
+.ax-tri-list{list-style:none;margin:0;padding:0;border:1px solid var(--border);border-radius:14px;background:var(--surface);overflow:hidden}
+.ax-tri-item+.ax-tri-item{border-top:1px solid var(--border)}
+.ax-tri-item.open{background:var(--surface-2)}
+.ax-tri-empty{padding:18px}
+.ax-tri-top{display:flex;align-items:flex-start;gap:10px;padding:12px 14px}
+.ax-tri-head{flex:1;min-width:0;display:flex;align-items:flex-start;gap:12px;border:0;background:none;padding:0;text-align:left;cursor:pointer;color:var(--t1)}
+.ax-tri-main{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ax-tri-main b{font-weight:600;font-size:14px;overflow-wrap:anywhere}
+.ax-tri-main .ax-muted{font-size:12px}
+.ax-tri-hl{font-size:13px;color:var(--t2)}
+.ax-tri-err{font-size:12.5px;color:var(--bad)}
+.ax-tri-v{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:88px;height:24px;padding:0 10px;border-radius:999px;font-size:11.5px;font-weight:600;background:var(--surface-3);color:var(--t2)}
+.ax-tri-v.v-close{background:var(--ok-soft);color:var(--ok)}
+.ax-tri-v.v-act{background:var(--accent-soft);color:var(--accent-ink)}
+.ax-tri-v.v-handover{background:var(--blue-soft);color:var(--blue)}
+.ax-tri-v.v-wait{background:var(--surface-3);color:var(--t2)}
+.ax-tri-v.v-none{background:transparent;border:1px dashed var(--border-strong);color:var(--t3)}
+.ax-tri-d{padding:0 14px 16px 114px}
+.ax-tri-why{margin:0 0 12px;font-size:13.5px;color:var(--t1)}
+.ax-tri-cols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px}
+.ax-tri-b{margin-bottom:12px}
+.ax-tri-b h4{margin:0 0 6px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
+.ax-tri-b ol,.ax-tri-b ul{margin:0;padding-left:20px;font-size:13px;color:var(--t2)}
+.ax-tri-b li+li{margin-top:4px}
+.ax-tri-b p{margin:0 0 6px;font-size:13px;color:var(--t2)}
+.ax-tri-msg{margin:0 0 6px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);white-space:pre-wrap;font:inherit;font-size:13px;color:var(--t1)}
+.ax-tri-kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px}
+.ax-tri-kv dt{color:var(--t3)}
+.ax-tri-kv dd{margin:0;color:var(--t2)}
+.ax-tri-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border);font-size:12px}
+@media (max-width:760px){.ax-tri{padding:16px 16px 48px}.ax-tri-d{padding:0 14px 14px}.ax-tri-cols{grid-template-columns:1fr}.ax-tri-head{flex-direction:column;gap:6px}}
+@media (prefers-reduced-motion:reduce){.ax-tri-bar i{transition:none}}

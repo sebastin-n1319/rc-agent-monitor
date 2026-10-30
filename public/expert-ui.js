@@ -523,5 +523,143 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     return { reload: load };
   }
 
-  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules };
+  // ── Open tickets (Batch 197, admins) ────────────────────────────────
+  // Every ticket in the T1 view of Desk with Adit Expert's suggestion: close, keep open, act now or hand over.
+  var VERD = { close: 'Close', act: 'Act now', handover: 'Hand over', wait: 'Keep open' };
+  function Triage(panel, ctx) {
+    var root = h('div', { class: 'ax-tri' }); panel.appendChild(root);
+    var D = null, F = { v: 'all', q: '', owner: '', status: '', sort: 'idle' }, open = {}, poll = null, lastDone = -1;
+    function ago(iso) { if (!iso) return 'never'; var m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; }
+    function when(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    function load(refresh) {
+      if (!D) { clear(root); root.appendChild(h('p', { class: 'gd-empty', text: 'Reading the T1 view from Zoho Desk...' })); }
+      return ctx.api('/api/guides/expert/triage' + (refresh ? '?refresh=1' : '')).then(function (j) { D = j; paint(); watch(); })
+        .catch(function (e) { clear(root); root.appendChild(h('div', { class: 'gd-note', text: e.message })); });
+    }
+    function watch() {
+      clearInterval(poll); poll = null;
+      if (!D || !D.queue || !D.queue.running) return;
+      lastDone = D.queue.done + D.queue.failed;
+      poll = setInterval(function () {
+        if (panel.hidden) return;
+        ctx.api('/api/guides/expert/triage/status').then(function (j) {
+          var q = j.queue, n = q.done + q.failed; D.queue = q;
+          if (!q.running || n - lastDone >= 3) { lastDone = n; load(false); } else paintProgress();
+        }).catch(function () {});
+      }, 5000);
+    }
+    function act(path, body, msg) {
+      return ctx.api('/api/guides/expert/triage/' + path, body || {}).then(function (j) { if (msg) ctx.toast(msg); if (j.queue) D.queue = j.queue; paint(); watch(); return j; }).catch(function (e) { ctx.toast(e.message); });
+    }
+    var progEl = null;
+    function paintProgress() {
+      if (!progEl) return; clear(progEl);
+      var q = D.queue || {};
+      if (q.running) {
+        var pct = q.total ? Math.round((q.done + q.failed) / q.total * 100) : 0;
+        progEl.appendChild(h('div', { class: 'ax-tri-prog', role: 'status' }, [h('span', { text: 'Reviewing ' + (q.done + q.failed) + ' of ' + q.total + (q.current ? ' (now #' + q.current + ')' : '') + (q.failed ? ', ' + q.failed + ' failed' : '') }),
+          h('div', { class: 'ax-tri-bar', 'aria-hidden': 'true' }, [h('i', { style: 'width:' + pct + '%' })])]));
+      }
+    }
+    function rowsShown() {
+      var q = F.q.trim().toLowerCase();
+      var list = D.rows.filter(function (r) {
+        if (F.v === 'none' ? r.verdict : F.v !== 'all' && r.verdict !== F.v) return false;
+        if (F.owner && (r.owner || 'Unassigned') !== F.owner) return false;
+        if (F.status && r.status !== F.status) return false;
+        if (q && (r.number + ' ' + r.subject + ' ' + (r.owner || '') + ' ' + ((r.result && r.result.headline) || '')).toLowerCase().indexOf(q) < 0) return false;
+        return true;
+      });
+      var key = { idle: function (r) { return -(r.idle || 0); }, age: function (r) { return -(r.age || 0); }, recent: function (r) { return r.idle || 0; } }[F.sort];
+      return list.sort(function (a, b) { return key(a) - key(b); });
+    }
+    function csv() {
+      var rows = rowsShown(), esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+      var out = [['Ticket', 'Subject', 'Status', 'Owner', 'Open days', 'Idle days', 'Suggestion', 'Confidence', 'What to do', 'Why', 'Next steps', 'Asana', 'Desk link'].join(',')];
+      rows.forEach(function (r) { var x = r.result || {}; out.push([r.number, r.subject, r.status, r.owner || 'Unassigned', r.age, r.idle, VERD[r.verdict] || 'Not reviewed', x.confidence || '', x.headline || '', x.why || '', (x.next || []).join(' | '), r.asana, r.url].map(esc).join(',')); });
+      var a = h('a', { href: URL.createObjectURL(new Blob([out.join('\n')], { type: 'text/csv' })), download: 'open-t1-tickets-' + new Date().toISOString().slice(0, 10) + '.csv' });
+      document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500);
+    }
+    function sel(label, val, opts, on) {
+      var s = h('select', { class: 'ax-tri-sel', 'aria-label': label, onchange: function () { on(s.value); } }, opts.map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+      s.value = val; return s;
+    }
+    var listEl = null;
+    function paint() {
+      clear(root);
+      var rows = D.rows, n = { all: rows.length, none: 0 }; Object.keys(VERD).forEach(function (k) { n[k] = 0; });
+      rows.forEach(function (r) { if (r.verdict) n[r.verdict] = (n[r.verdict] || 0) + 1; else n.none++; });
+      var q = D.queue || {}, withAsana = rows.filter(function (r) { return r.asana; }).length;
+      root.appendChild(h('div', { class: 'ax-teach-hd ax-tri-hd' }, [
+        h('div', {}, [h('h2', { text: 'Open T1 tickets' }), h('p', { class: 'ax-muted', text: 'Every ticket in the T1 view of Zoho Desk (team T1 - Customer Support, status not Closed). Adit Expert reads the whole ticket, the private notes, screenshots and attachments, the client\'s earlier tickets, the CRM, the Help Center and the Asana task, then suggests what to do. Suggestions only: nothing is changed in Desk.' })]),
+        h('div', { class: 'ax-row ax-tri-tools' }, [
+          q.running ? h('button', { type: 'button', class: 'gd-btn', onclick: function () { act('stop', {}, 'Stopping after the current ticket'); } }, [icon('x', 'sm'), 'Stop'])
+            : h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { act('run', {}, 'Reviewing new and changed tickets'); } }, [icon('spark', 'sm'), 'Review new and changed']),
+          q.running ? null : h('button', { type: 'button', class: 'gd-btn', onclick: function () { if (confirm('Review all ' + rows.length + ' tickets again? This takes a while.')) act('run', { all: true }, 'Reviewing every ticket'); } }, ['Review all again']),
+          h('button', { type: 'button', class: 'gd-btn', onclick: function () { load(true).then(function () { ctx.toast('List read from Desk'); }); } }, [icon('refresh', 'sm'), 'Refresh list']),
+          h('button', { type: 'button', class: 'gd-btn', onclick: csv }, ['Download CSV'])])]));
+      root.appendChild(h('p', { class: 'ax-muted ax-tri-meta', text: rows.length + ' open tickets. List read from Desk ' + ago(D.listedAt) + '. ' + (rows.length - n.none) + ' reviewed' + (D.runAt ? ', last full run ' + ago(D.runAt) : '') + '. New and changed tickets are reviewed every night at 3 AM Central.' }));
+      if (D.listErr) root.appendChild(h('div', { class: 'gd-note', text: 'Could not read the list from Desk just now (' + D.listErr + '). Showing the last list.' }));
+      if (!D.asana && withAsana) root.appendChild(h('div', { class: 'ax-tri-asana' }, [icon('link', 'sm'), h('span', { text: withAsana + (withAsana === 1 ? ' ticket links' : ' tickets link') + ' an Asana task. Adit Expert sees the Asana owner and due date from Desk, but cannot read the task itself yet. Add an ASANA_ACCESS_TOKEN variable in Railway to let it read task status and comments.' })]));
+      progEl = h('div'); root.appendChild(progEl); paintProgress();
+      var chips = h('div', { class: 'ax-tri-chips', role: 'group', 'aria-label': 'Filter by suggestion' });
+      [['all', 'All'], ['act', VERD.act], ['close', VERD.close], ['handover', VERD.handover], ['wait', VERD.wait], ['none', 'Not reviewed']].forEach(function (c) {
+        chips.appendChild(h('button', { type: 'button', class: 'ax-tri-chip v-' + c[0], 'aria-pressed': F.v === c[0] ? 'true' : 'false', onclick: function () { F.v = c[0]; paint(); } }, [h('span', { text: c[1] }), h('b', { text: String(n[c[0]] || 0) })]));
+      });
+      root.appendChild(chips);
+      var owners = {}, stats = {}; rows.forEach(function (r) { owners[r.owner || 'Unassigned'] = 1; stats[r.status] = 1; });
+      var search = h('input', { type: 'search', class: 'ax-tri-q', placeholder: 'Search ticket, subject, owner', 'aria-label': 'Search tickets', value: F.q });
+      search.addEventListener('input', function () { F.q = search.value; paintList(); });
+      root.appendChild(h('div', { class: 'ax-row ax-tri-filters' }, [search,
+        sel('Owner', F.owner, [['', 'All owners']].concat(Object.keys(owners).sort().map(function (o) { return [o, o]; })), function (v) { F.owner = v; paintList(); }),
+        sel('Status', F.status, [['', 'All statuses']].concat(Object.keys(stats).sort().map(function (o) { return [o, o]; })), function (v) { F.status = v; paintList(); }),
+        sel('Sort', F.sort, [['idle', 'Longest without a change'], ['age', 'Oldest ticket first'], ['recent', 'Changed most recently']], function (v) { F.sort = v; paintList(); })]));
+      listEl = h('ol', { class: 'ax-tri-list' }); root.appendChild(listEl); paintList();
+    }
+    function paintList() {
+      clear(listEl);
+      var rows = rowsShown();
+      if (!rows.length) { listEl.appendChild(h('li', { class: 'ax-muted ax-tri-empty', text: 'No tickets match.' })); return; }
+      rows.forEach(function (r) { listEl.appendChild(item(r)); });
+    }
+    function item(r) {
+      var x = r.result, isOpen = !!open[r.id];
+      var pill = h('span', { class: 'ax-tri-v v-' + (r.verdict || 'none'), text: VERD[r.verdict] || 'Not reviewed' });
+      var meta = [r.status, r.owner || 'Unassigned', 'open ' + r.age + ' d', 'no change ' + r.idle + ' d', r.asana ? 'Asana' : '', x && x.confidence ? x.confidence + ' confidence' : ''].filter(Boolean).join(' · ');
+      var head = h('button', { type: 'button', class: 'ax-tri-head', 'aria-expanded': isOpen ? 'true' : 'false', onclick: function () { open[r.id] = !open[r.id]; li.replaceWith(item(r)); } }, [
+        pill, h('span', { class: 'ax-tri-main' }, [h('b', { text: '#' + r.number + ' ' + r.subject }), h('span', { class: 'ax-muted', text: meta }),
+          x && x.headline ? h('span', { class: 'ax-tri-hl', text: x.headline }) : r.error ? h('span', { class: 'ax-tri-err', text: 'Review failed: ' + r.error }) : null])]);
+      var li = h('li', { class: 'ax-tri-item' + (isOpen ? ' open' : '') }, [h('div', { class: 'ax-tri-top' }, [head, r.url ? h('a', { class: 'ax-mini', href: r.url, target: '_blank', rel: 'noopener', 'aria-label': 'Open ticket ' + r.number + ' in Desk' }, [icon('ext', 'sm'), 'Desk']) : null])]);
+      if (isOpen) li.appendChild(detail(r));
+      return li;
+    }
+    function block(title, kids) { return h('div', { class: 'ax-tri-b' }, [h('h4', { text: title })].concat(kids)); }
+    function copyBtn(text, label) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label]); b.addEventListener('click', function () { copy(text, b); }); return b; }
+    function detail(r) {
+      var x = r.result, box = h('div', { class: 'ax-tri-d' });
+      var again = h('button', { type: 'button', class: 'ax-mini', onclick: function () {
+        again.disabled = true; again.textContent = 'Reviewing...';
+        ctx.api('/api/guides/expert/triage/' + encodeURIComponent(r.id) + '/analyse', {}).then(function (j) { r.result = j.result; r.verdict = j.result.verdict; r.error = null; r.stale = false; r.analysedAt = new Date().toISOString(); ctx.toast('Ticket #' + r.number + ' reviewed'); paint(); })
+          .catch(function (e) { ctx.toast(e.message); again.disabled = false; again.textContent = 'Review again'; });
+      } }, [icon('refresh', 'sm'), x ? 'Review again' : 'Review now']);
+      if (!x) { box.appendChild(h('p', { class: 'ax-muted', text: r.error ? 'The last review failed (' + r.error + ').' : 'Not reviewed yet.' })); box.appendChild(again); return box; }
+      box.appendChild(h('p', { class: 'ax-tri-why', text: x.why }));
+      var cols = h('div', { class: 'ax-tri-cols' });
+      var left = h('div'), right = h('div');
+      if (x.next && x.next.length) left.appendChild(block('Next steps', [h('ol', {}, x.next.map(function (s) { return h('li', { text: s }); }))]));
+      if (x.client_message) left.appendChild(block('Message to the client', [h('pre', { class: 'ax-tri-msg', text: x.client_message }), copyBtn(x.client_message, 'Copy message')]));
+      if (x.internal_note) left.appendChild(block('Private note for Desk', [h('p', { text: x.internal_note }), copyBtn(x.internal_note, 'Copy note')]));
+      var kv = [['Waiting on', x.waiting_on], ['Status', /^ok\b/i.test(x.status_now || '') ? 'Correct as it is' : x.status_now], ['Asana', x.asana], ['Risk', x.risk], ['Help Center', x.kb], ['CSM', x.meta && x.meta.csm]].filter(function (p) { return p[1]; });
+      if (kv.length) right.appendChild(block('At a glance', [h('dl', { class: 'ax-tri-kv' }, [].concat.apply([], kv.map(function (p) { return [h('dt', { text: p[0] }), h('dd', { text: p[1] })]; })))]));
+      if (x.evidence && x.evidence.length) right.appendChild(block('Evidence', [h('ul', {}, x.evidence.map(function (s) { return h('li', { text: s }); }))]));
+      cols.appendChild(left); cols.appendChild(right); box.appendChild(cols);
+      var m = x.meta || {};
+      box.appendChild(h('div', { class: 'ax-tri-foot' }, [h('span', { class: 'ax-muted', text: 'Reviewed ' + when(r.analysedAt) + (r.stale ? '. Changed in Desk since then.' : '.') + ' Read ' + (m.messages || 0) + ((m.messages === 1) ? ' message, ' : ' messages, ') + (m.notes || 0) + (m.notes === 1 ? ' private note' : ' private notes') + (m.images ? ', ' + m.images + (m.images === 1 ? ' screenshot' : ' screenshots') : '') + (m.crm ? ', the CRM' : '') + (m.asanaRead ? ', the Asana task' : '') + '.' }), again]));
+      return box;
+    }
+    load(false);
+    return { reload: function () { load(false); } };
+  }
+
+  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules, Triage: Triage };
 })();
