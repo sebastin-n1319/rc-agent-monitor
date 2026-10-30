@@ -810,9 +810,19 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     }
     function closeLb() { if (!lb) return; var el = lb; lb = null; el.classList.remove('on'); setTimeout(function () { el.remove(); }, 180); }
 
-    function paintSync() { clear(sync); if (!lastSync) return; var s = Math.round((Date.now() - lastSync) / 1000); sync.appendChild(h('i', { class: 'ax-lc-live' + (s > 45 ? ' stale' : '') })); sync.appendChild(document.createTextNode(s > 45 ? 'Reconnecting' : 'Live, updated ' + (s < 5 ? 'now' : s + ' s ago'))); }
+    var syncDot = h('i', { class: 'ax-lc-live' }), syncTxt = document.createTextNode('');
+    function paintSync() {
+      if (!lastSync) return; if (!syncDot.parentNode) { sync.appendChild(syncDot); sync.appendChild(syncTxt); }
+      var s = Math.round((Date.now() - lastSync) / 1000), txt = s > 45 ? 'Reconnecting' : 'Live, updated ' + (s < 10 ? 'now' : Math.round(s / 5) * 5 + ' s ago');
+      syncDot.className = 'ax-lc-live' + (s > 45 ? ' stale' : ''); if (syncTxt.nodeValue !== txt) syncTxt.nodeValue = txt;
+    }
     function paintNote() { clear(note); if (err) note.appendChild(h('div', { class: 'gd-note', text: err })); }
+    var listSig = '';
     function paintList() {
+      // Batch 219: rebuilt only when something on it changed (it used to redraw every few seconds and flash).
+      var sig = JSON.stringify([view, isAll, active, any, tabs.map(function (t) { var c = t.chat, tn = c ? turn(t) : null;
+        return [t.ref, t.own, t.manual, t.unread, t.busy, t.error, c && c.open, c && c.visitor, c && c.agent, c && c.question, t.account && t.account.name, tn && [tn.client, tn.at, tn.text], tn && tn.client ? mins(tn.at) : null]; })]);
+      if (sig === listSig) return; listSig = sig;
       var hadFocus = list.contains(document.activeElement) && document.activeElement.getAttribute('role') === 'tab';
       clear(list);
       paintView();
@@ -830,12 +840,13 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
               t.account && t.account.found ? h('span', { class: 'ax-lc-ref ax-lc-acn', text: t.account.name }) : null,
               ended ? h('span', { class: 'ax-lc-tag', text: 'Ended' }) : w != null ? h('span', { class: 'ax-lc-tag wait' + (w >= 3 ? ' late' : ''), text: 'Waiting ' + dur(w) }) : null,
               t.busy ? h('span', { class: 'ax-lc-tag ai' }, ['Writing', h('span', { class: 'ax-lc-dots', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')])]) : null])]),
-          t.unread ? h('span', { class: 'ax-lc-dot', 'aria-label': 'New message' }) : null]);
+          t.unread ? h('span', { class: 'ax-lc-dot' + (t.dotShown ? '' : ' pop'), 'aria-label': 'New message' }) : null]);
+        t.dotShown = !!t.unread;
         b.addEventListener('click', function () { select(t.ref); });
         b.addEventListener('keydown', function (e) { var i = tabs.indexOf(t), k = e.key; if (k === 'ArrowDown' || k === 'ArrowUp' || k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); var vis = tabs.filter(shown); i = vis.indexOf(t); var n = vis[(i + (k === 'ArrowDown' || k === 'ArrowRight' ? 1 : vis.length - 1)) % vis.length]; select(n.ref); var el = list.querySelector('[aria-selected="true"]'); if (el) el.focus(); } });
         var x = (t.manual || ended || t.error) ? h('button', { type: 'button', class: 'ax-lc-x', 'aria-label': 'Close chat ' + t.ref, title: 'Close' }, [icon('x', 'sm')]) : null;
         if (x) x.addEventListener('click', function () { close(t.ref); });
-        list.appendChild(h('div', { class: 'ax-lc-itemw' }, [b, x]));
+        list.appendChild(h('div', { class: 'ax-lc-itemw' + (t.listed ? '' : ' new') }, [b, x])); t.listed = true;
       });
       if (hadFocus) { var f = list.querySelector('[aria-selected="true"]'); if (f) f.focus(); }
       if (!tabs.filter(shown).length) list.appendChild(h('p', { class: 'ax-lc-none', text: any ? 'No chats assigned to you right now. Open any chat by its number.' : 'No chats assigned to you right now. New chats appear here on their own.' }));
@@ -926,7 +937,10 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
 
     // ── Insight: account review, its tickets, similar solved cases, screenshots ──
     function sec(title, ic, kids, extra) { return h('section', { class: 'ax-lc-is' }, [h('h4', {}, [icon(ic, 'sm'), title, extra || null])].concat(kids)); }
+    var insSig = '';
     function paintInsight() {
+      var tt = find(active), sig = JSON.stringify([active, tt && tt.chat && tt.chat.ref, tt && tt.account, tt && tt.similar, tt && tt.reviewOpen, tt && tt.msgs.filter(function (m) { return m.file; }).map(function (m) { return [m.id, m.seen]; })]);
+      if (sig === insSig) return; insSig = sig;
       var keepTop = insight.scrollTop;
       clear(insight); insight.id = 'ax-lc-ins';
       var x = h('button', { type: 'button', class: 'ax-lc-insx', 'aria-label': 'Close account and history' }, [icon('x', 'sm')]); x.addEventListener('click', function () { setDrawer(false); });
