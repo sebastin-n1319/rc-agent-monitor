@@ -25,7 +25,8 @@
     book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
     rule: '<path d="M6 4h12v16l-6-4-6 4z"/>',
     school: '<path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.5 2.2 3 5 3s5-1.5 5-3v-4.5"/>',
-    ticket: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 5v12" stroke-dasharray="2 2"/>'
+    ticket: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 5v12" stroke-dasharray="2 2"/>',
+    chat: '<path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/>'
   };
   // Six-digit Zoho Desk ticket numbers open the ticket (the server finds it in AditKB).
   function linkTickets(text) {
@@ -58,7 +59,7 @@
   // Batch 182: Adit Expert first, then the Help Center and the two guides; Teach for admins.
   var TABS = [['ask', 'Adit Expert', 'spark'], ['kb', 'Help Center', 'book'], ['rules', 'Rule list', 'rule'], ['voip', 'VoIP guide', 'phone'], ['ai', 'AI runbook', 'bot']];
   function renderNav() {
-    var tabs = TABS.concat(S.me && S.me.admin ? [['triage', 'Open tickets', 'ticket'], ['teach', 'Teach', 'school']] : []);
+    var tabs = TABS.slice(0, 1).concat(S.me && S.me.member ? [['chats', 'Live chats', 'chat']] : [], TABS.slice(1), S.me && S.me.admin ? [['triage', 'Open tickets', 'ticket'], ['teach', 'Teach', 'school']] : []);
     nav.replaceChildren.apply(nav, tabs.map(function (t) {
       return h('button', { type: 'button', 'aria-current': S.tab === t[0] ? 'page' : null, onclick: function () { go(t[0]); } }, [icon(IC[t[2]], t[0] === 'ask' ? 'gd-spark' : ''), t[1]]);
     }));
@@ -86,9 +87,10 @@
     return panels[tab];
   }
   function route() {
-    var m = /^#(ask|kb|rules|voip|ai|teach|triage|fixes)(?:\/(.+))?$/.exec(location.hash || '');
+    var m = /^#(ask|chats|kb|rules|voip|ai|teach|triage|fixes)(?:\/(.+))?$/.exec(location.hash || '');
     var prev = S.tab, next = m ? m[1] : 'ask';
     if ((next === 'teach' || next === 'triage') && !(S.me && S.me.admin)) next = 'ask';
+    if (next === 'chats' && !(S.me && S.me.member)) next = 'ask';
     if (next === 'fixes') next = 'ask'; // Batch 205: My fixes moved to My Stats in the tool
     var anchor = m && m[2] ? decodeURIComponent(m[2]) : null;
     if (S.started && prev !== next) scrollAt[prev] = window.scrollY;
@@ -98,12 +100,13 @@
     panel(next).hidden = false;
     renderNav();
     if (!fabEl && S.ai) { fabEl = h('button', { type: 'button', class: 'gd-fab', onclick: function () { go('ask'); } }, [icon(IC.spark), 'Ask Adit Expert']); document.body.appendChild(fabEl); }
-    if (fabEl) fabEl.hidden = next === 'ask' || next === 'teach' || next === 'triage' || next === 'fixes';
+    if (fabEl) fabEl.hidden = next === 'ask' || next === 'teach' || next === 'triage' || next === 'fixes' || next === 'chats';
     if (next === 'voip') showVoip(anchor);
     else if (next === 'ai') showAi(anchor);
     else if (next === 'kb') showKb(anchor);
     else if (next === 'teach') showTeach();
     else if (next === 'triage') showTriage();
+    else if (next === 'chats') showChats();
     else if (next === 'rules') showRules();
     else showAsk(anchor);
     if (!anchor && prev !== next) window.scrollTo(0, scrollAt[next] || 0);
@@ -353,6 +356,13 @@
   function showTriage() {
     if (!window.AditExpert || !window.AditExpert.Triage) return;
     if (!triageView) triageView = window.AditExpert.Triage(panel('triage'), ctx); else triageView.reload();
+  }
+
+  // Batch 215: Live chats (chat agents: their open SalesIQ chats and Expert's next reply)
+  var chatsView = null;
+  function showChats() {
+    if (!window.AditExpert || !window.AditExpert.LiveChats) return;
+    if (!chatsView) chatsView = window.AditExpert.LiveChats(panel('chats'), ctx); else chatsView.reload();
   }
 
   // ── start ───────────────────────────────────────────────────────────
