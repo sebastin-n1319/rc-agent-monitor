@@ -382,3 +382,8 @@ html.ax-full .ax-cbar{top:0}
 .ax-tri-lesson.dispute p{color:var(--accent-ink)}
 @media (max-width:760px){.ax-tri-d{padding:0 14px 14px}.ax-tri-pills{flex-direction:row;width:auto}.ax-tri-v{width:auto}}
 .ax-tri-dis[hidden]{display:none}
+/* Batch 201: No follow-up tag */
+.ax-tri-fu{display:inline-block;max-width:100%;padding:2px 8px;border-radius:8px;font-size:10.5px;font-weight:700;line-height:1.35;background:var(--bad);color:var(--bg)}
+.ax-tri-chip.v-fu b{color:var(--bad)}
+.ax-tri-chip.v-fu[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--bg)}
+.ax-tri-chip.v-fu[aria-pressed="true"] b{color:var(--bg)}

@@ -36,6 +36,16 @@ beforeAll(async () => {
 describe('open T1 ticket review: Asana links', () => {
   it('finds the task id', () => { expect(tt._asanaGid('https://app.asana.com/0/1201/1209876543210')).toBe('1209876543210'); });
 });
+describe('open T1 ticket review: No follow-up tag', () => {
+  it('flags unanswered clients and agents gone quiet', () => {
+    const n = Date.now(), d = 864e5, iso = (x) => new Date(n - x * d).toISOString();
+    expect(tt._followup({ analysed_at: 'x', last_agent_at: iso(5), last_client_at: iso(6) }).kind).toBe('stale');
+    expect(tt._followup({ analysed_at: 'x', last_agent_at: iso(5), last_client_at: iso(2) }).text).toBe('Client waiting 2 d');
+    expect(tt._followup({ analysed_at: 'x', last_agent_at: iso(1), last_client_at: iso(2) })).toBeNull();
+    expect(tt._followup({ analysed_at: 'x', created: iso(2) }).kind).toBe('none');
+    expect(tt._followup({})).toBeNull();
+  });
+});
 describe('open T1 ticket review: reading Asana', () => {
   it('reads the column, the comments and the updates', async () => {
     const real = global.fetch; process.env.ASANA_ACCESS_TOKEN = 'x';

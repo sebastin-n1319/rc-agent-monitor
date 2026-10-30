@@ -528,7 +528,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
   var VERD = { act: 'Action needed', wait: 'OK to keep open', close: 'Close', handover: 'Hand over' };
   function Triage(panel, ctx) {
     var root = h('div', { class: 'ax-tri' }); panel.appendChild(root);
-    var D = null, F = { v: 'all', q: '', owner: '', status: '', sort: 'idle' }, open = {}, poll = null, lastDone = -1;
+    var D = null, F = { v: 'all', q: '', owner: '', status: '', sort: 'fu' }, open = {}, poll = null, lastDone = -1;
     function ago(iso) { if (!iso) return 'never'; var m = Math.round((Date.now() - Date.parse(iso)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago'; }
     function when(iso) { var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
     function load(refresh) {
@@ -565,19 +565,20 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       var q = F.q.trim().toLowerCase();
       var list = D.rows.filter(function (r) {
         if (F.v === 'mine') { if (!r.verdict || r.reviewer) return false; }
+        else if (F.v === 'fu') { if (!r.followup) return false; }
         else if (F.v === 'none' ? r.verdict : F.v !== 'all' && r.verdict !== F.v) return false;
         if (F.owner && (r.owner || 'Unassigned') !== F.owner) return false;
         if (F.status && r.status !== F.status) return false;
         if (q && (r.number + ' ' + r.subject + ' ' + (r.owner || '') + ' ' + ((r.result && (r.result.action || r.result.headline)) || '')).toLowerCase().indexOf(q) < 0) return false;
         return true;
       });
-      var key = { idle: function (r) { return -(r.idle || 0); }, age: function (r) { return -(r.age || 0); }, recent: function (r) { return r.idle || 0; } }[F.sort];
+      var key = { fu: function (r) { return r.followup ? -(1000 + r.followup.days) : -(r.idle || 0) / 1000; }, idle: function (r) { return -(r.idle || 0); }, age: function (r) { return -(r.age || 0); }, recent: function (r) { return r.idle || 0; } }[F.sort];
       return list.sort(function (a, b) { return key(a) - key(b); });
     }
     function csv() {
       var rows = rowsShown(), esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-      var out = [['Ticket', 'Subject', 'Status', 'Owner', 'Open days', 'Idle days', 'Suggestion', 'Reviewer call', 'Confidence', 'What to do', 'Why', 'Next steps', 'Asana', 'Desk link'].join(',')];
-      rows.forEach(function (r) { var x = r.result || {}; out.push([r.number, r.subject, r.status, r.owner || 'Unassigned', r.age, r.idle, VERD[r.verdict] || 'Not reviewed', r.reviewer ? VERD[r.reviewer.verdict] : '', x.confidence || '', x.action || x.headline || '', x.short || x.why || '', (x.next || []).join(' | '), r.asana, r.url].map(esc).join(',')); });
+      var out = [['Ticket', 'Subject', 'Status', 'Owner', 'Open days', 'Idle days', 'Follow-up', 'Suggestion', 'Reviewer call', 'Confidence', 'What to do', 'Why', 'Next steps', 'Asana', 'Desk link'].join(',')];
+      rows.forEach(function (r) { var x = r.result || {}; out.push([r.number, r.subject, r.status, r.owner || 'Unassigned', r.age, r.idle, r.followup ? r.followup.text : '', VERD[r.verdict] || 'Not reviewed', r.reviewer ? VERD[r.reviewer.verdict] : '', x.confidence || '', x.action || x.headline || '', x.short || x.why || '', (x.next || []).join(' | '), r.asana, r.url].map(esc).join(',')); });
       var a = h('a', { href: URL.createObjectURL(new Blob([out.join('\n')], { type: 'text/csv' })), download: 'open-t1-tickets-' + new Date().toISOString().slice(0, 10) + '.csv' });
       document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500);
     }
@@ -589,7 +590,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function paint() {
       clear(root);
       var rows = D.rows, n = { all: rows.length, none: 0 }; Object.keys(VERD).forEach(function (k) { n[k] = 0; });
-      n.mine = 0; rows.forEach(function (r) { if (r.verdict) n[r.verdict] = (n[r.verdict] || 0) + 1; else n.none++; if (r.verdict && !r.reviewer) n.mine++; });
+      n.mine = 0; n.fu = 0; rows.forEach(function (r) { if (r.followup) n.fu++; if (r.verdict) n[r.verdict] = (n[r.verdict] || 0) + 1; else n.none++; if (r.verdict && !r.reviewer) n.mine++; });
       var q = D.queue || {}, withAsana = rows.filter(function (r) { return r.asana; }).length;
       root.appendChild(h('div', { class: 'ax-teach-hd ax-tri-hd' }, [
         h('div', {}, [h('h2', { text: 'Open T1 tickets' }), h('p', { class: 'ax-muted', text: 'Every ticket in the T1 view of Zoho Desk (team T1 - Customer Support, status not Closed). Adit Expert reads the whole ticket, the private notes, screenshots and attachments, the client\'s earlier tickets, the CRM, the Help Center and the Asana task, then suggests what to do. Suggestions only: nothing is changed in Desk.' })]),
@@ -604,7 +605,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       if (!D.asana && withAsana) root.appendChild(h('div', { class: 'ax-tri-asana' }, [icon('link', 'sm'), h('span', { text: withAsana + (withAsana === 1 ? ' ticket links' : ' tickets link') + ' an Asana task. Adit Expert sees the Asana owner and due date from Desk, but cannot read the task itself yet. Add an ASANA_ACCESS_TOKEN variable in Railway to let it read task status and comments.' })]));
       progEl = h('div'); root.appendChild(progEl); paintProgress();
       var chips = h('div', { class: 'ax-tri-chips', role: 'group', 'aria-label': 'Filter by suggestion' });
-      [['all', 'All'], ['act', VERD.act], ['close', VERD.close], ['handover', VERD.handover], ['wait', VERD.wait], ['none', 'Not reviewed'], ['mine', 'Needs your call']].forEach(function (c) {
+      [['all', 'All'], ['fu', 'No follow-up'], ['act', VERD.act], ['close', VERD.close], ['handover', VERD.handover], ['wait', VERD.wait], ['none', 'Not reviewed'], ['mine', 'Needs your call']].forEach(function (c) {
         chips.appendChild(h('button', { type: 'button', class: 'ax-tri-chip v-' + c[0], 'aria-pressed': F.v === c[0] ? 'true' : 'false', onclick: function () { F.v = c[0]; paint(); } }, [h('span', { text: c[1] }), h('b', { text: String(n[c[0]] || 0) })]));
       });
       root.appendChild(chips);
@@ -614,7 +615,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       root.appendChild(h('div', { class: 'ax-row ax-tri-filters' }, [search,
         sel('Owner', F.owner, [['', 'All owners']].concat(Object.keys(owners).sort().map(function (o) { return [o, o]; })), function (v) { F.owner = v; paintList(); }),
         sel('Status', F.status, [['', 'All statuses']].concat(Object.keys(stats).sort().map(function (o) { return [o, o]; })), function (v) { F.status = v; paintList(); }),
-        sel('Sort', F.sort, [['idle', 'Longest without a change'], ['age', 'Oldest ticket first'], ['recent', 'Changed most recently']], function (v) { F.sort = v; paintList(); })]));
+        sel('Sort', F.sort, [['fu', 'Longest without follow-up'], ['idle', 'Longest without a change'], ['age', 'Oldest ticket first'], ['recent', 'Changed most recently']], function (v) { F.sort = v; paintList(); })]));
       listEl = h('ol', { class: 'ax-tri-list' }); root.appendChild(listEl); paintList();
       var L = D.lessons || [];
       var lp = h('details', { class: 'ax-tri-lessons' }, [h('summary', { text: 'What the review has learned from reviewers (' + L.filter(function (l) { return l.status === 'active'; }).length + ')' })]);
@@ -638,9 +639,10 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       var x = r.result, isOpen = !!open[r.id], rv = r.reviewer;
       var pill = h('span', { class: 'ax-tri-v v-' + (r.verdict || 'none'), text: VERD[r.verdict] || 'Not reviewed' });
       var meta = [r.status, r.owner || 'Unassigned', 'open ' + r.age + ' d', 'no change ' + r.idle + ' d', r.asana ? 'Asana' : ''].filter(Boolean).join(' · ');
+      var fu = r.followup ? h('span', { class: 'ax-tri-fu', title: 'No follow-up from the agent', text: r.followup.text }) : null;
       var tag = rv ? h('span', { class: 'ax-tri-you ' + (rv.verdict === r.verdict ? 'same' : 'diff'), text: rv.verdict === r.verdict ? 'Confirmed' : 'Reviewer: ' + VERD[rv.verdict] }) : null;
       var head = h('button', { type: 'button', class: 'ax-tri-head', 'aria-expanded': isOpen ? 'true' : 'false', onclick: function () { open[r.id] = !open[r.id]; li.replaceWith(item(r)); } }, [
-        h('span', { class: 'ax-tri-pills' }, [pill, tag]), h('span', { class: 'ax-tri-main' }, [h('b', { text: '#' + r.number + ' ' + r.subject }), h('span', { class: 'ax-muted', text: meta }),
+        h('span', { class: 'ax-tri-pills' }, [pill, fu, tag]), h('span', { class: 'ax-tri-main' }, [h('b', { text: '#' + r.number + ' ' + r.subject }), h('span', { class: 'ax-muted', text: meta }),
           x ? h('span', { class: 'ax-tri-do', text: x.action || x.headline || '' }) : r.error ? h('span', { class: 'ax-tri-err', text: 'Review failed: ' + r.error }) : null,
           x && x.short ? h('span', { class: 'ax-tri-hl', text: x.short }) : null])]);
       var li = h('li', { class: 'ax-tri-item' + (isOpen ? ' open' : '') }, [h('div', { class: 'ax-tri-top' }, [head, r.url ? h('a', { class: 'ax-mini', href: r.url, target: '_blank', rel: 'noopener', 'aria-label': 'Open ticket ' + r.number + ' in Desk' }, [icon('ext', 'sm'), 'Desk']) : null])]);
