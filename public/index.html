@@ -49,6 +49,7 @@
 <link rel="stylesheet" href="/roster-admin.css?v=1.19.138" id="roster-admin-link">
 <!-- Session 17: Settings admin (pause controls + admin settings) -->
 <link rel="stylesheet" href="/settings-admin.css?v=1.0.2" id="settings-admin-link">
+<link rel="stylesheet" href="/custom-reports.css?v=1.0.0" id="custom-reports-link">
 <!-- Session 19: Ticket Lifecycle admin (automated Zoho Desk sync) -->
 <link rel="stylesheet" href="/desk-lifecycle-admin.css?v=1.8.2" id="desk-lifecycle-admin-link">
 <link rel="stylesheet" href="/desk-lifecycle-agent.css?v=1.10.0" id="desk-lifecycle-agent-link">
@@ -80,6 +81,7 @@
 <script src="/t1-alerts.js?v=1.0.4" defer></script>
 <script src="/updates.js?v=1.2.0" defer></script>
 <script src="/ticket-audits.js?v=1.40.0" defer></script>
+<script src="/custom-reports.js?v=1.0.0" defer></script>
 <script src="/client-tour.js?v=1.4.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.1.0">
@@ -1706,6 +1708,10 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><rect x="1" y="3" width="14" height="11" rx="2"/><path d="M1 7h14M5 3V1M11 3V1"/></svg>
             Weekend Report
           </button>
+          <button id="tkt-view-rpts" onclick="tktSetView('reports')" style="padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:transparent;color:#6B849A;transition:all .15s;">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><path d="M3 14V8M8 14V3M13 14v-5"/></svg>
+            Reports
+          </button>
         </div>
         <button onclick="loadAdminTickets()" style="background:#F4891F;color:#FFF;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:rgba(244,137,31,.35) 0 4px 12px;display:flex;align-items:center;gap:6px;">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:13px;height:13px"><path d="M13 2.5A6.5 6.5 0 1 1 8 1.5M8 1.5v4M13 2.5h-4"/></svg>
@@ -1844,6 +1850,8 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </div><!-- /#tkt-report-view -->
 
     <!-- ── WEEKEND REPORT VIEW ── -->
+    <!-- Batch 225: scheduled reports -->
+    <div id="tkt-reports-view" style="display:none;"></div>
     <div id="tkt-weekend-view" style="display:none;">
       <!-- Controls row -->
       <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:rgba(0,0,0,0.04) 0 1px 8px;">
@@ -6322,21 +6330,26 @@ let _tktAutoRefresh = null;
 function tktSetView(view) {
   const isDash = view === 'dashboard';
   const isWkd  = view === 'weekend';
+  const isRpts = view === 'reports';
   document.getElementById('tkt-dashboard-view').style.display = isDash ? '' : 'none';
-  document.getElementById('tkt-report-view').style.display    = (!isDash && !isWkd) ? '' : 'none';
+  document.getElementById('tkt-report-view').style.display    = (!isDash && !isWkd && !isRpts) ? '' : 'none';
   document.getElementById('tkt-weekend-view').style.display   = isWkd ? '' : 'none';
+  const rv = document.getElementById('tkt-reports-view'); if (rv) rv.style.display = isRpts ? '' : 'none';
+  const rb = document.getElementById('tkt-view-rpts'); if (rb) { rb.style.background = isRpts ? '#F4891F' : 'transparent'; rb.style.color = isRpts ? '#FFF' : '#6B849A'; }
+  if (isRpts && window.CustomReports) window.CustomReports.mount(rv);
 
   const activeOrange = '#F4891F', inactiveBg = 'transparent', inactiveColor = '#6B849A';
   document.getElementById('tkt-view-dash').style.background = isDash ? activeOrange : inactiveBg;
   document.getElementById('tkt-view-dash').style.color      = isDash ? '#FFF' : inactiveColor;
-  document.getElementById('tkt-view-rpt').style.background  = (!isDash && !isWkd) ? activeOrange : inactiveBg;
-  document.getElementById('tkt-view-rpt').style.color       = (!isDash && !isWkd) ? '#FFF' : inactiveColor;
+  document.getElementById('tkt-view-rpt').style.background  = (!isDash && !isWkd && !isRpts) ? activeOrange : inactiveBg;
+  document.getElementById('tkt-view-rpt').style.color       = (!isDash && !isWkd && !isRpts) ? '#FFF' : inactiveColor;
   document.getElementById('tkt-view-wkd').style.background  = isWkd ? activeOrange : inactiveBg;
   document.getElementById('tkt-view-wkd').style.color       = isWkd ? '#FFF' : inactiveColor;
 
-  const titles = { dashboard:"Today's Dashboard", report:'Ticket Report', weekend:'Weekend Report' };
+  const titles = { dashboard:"Today's Dashboard", report:'Ticket Report', weekend:'Weekend Report', reports:'Reports' };
   document.getElementById('tkt-view-title').textContent = titles[view] || "Today's Dashboard";
   if (view === 'report' && allAdminTickets.length === 0) loadAdminTickets();
+  const sub = document.getElementById('tkt-view-sub'); if (sub) sub.style.display = isRpts ? 'none' : '';
   if (isWkd) wkdInit();
 }
 

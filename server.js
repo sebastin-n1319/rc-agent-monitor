@@ -748,6 +748,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 197/200: Open T1 ticket review (admins), kept ready on its own. Every 5 minutes: the T1 view is read again
     // (every 15 minutes), Asana tasks are checked for changes (every 30 minutes), and new, changed or day-old reviews are
     // redone within an hourly cap. Suggestions only: nothing is changed in Zoho Desk.
+    // Batch 225: scheduled reports (Tickets > Reports): a plain-words request, read-only queries, sent to a Google Chat space.
+    { const cr = require('./lib/custom-reports'); cr.setDB(db); await cr.initSchema();
+      cr.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
     { const tt = require('./lib/ticket-triage'); tt.setDB(db); await tt.initSchema();
       const et = require('./lib/expert-ticket'); et.setCache(tt.cache);
       tt.setDeps({ desk: require('./lib/desk-service'), ticket: et, expert: require('./lib/expert'), ai: require('./lib/ai') });
@@ -2916,6 +2919,16 @@ function cleanReportCfg(b) {
     options: (x.options && typeof x.options === 'object') ? JSON.parse(JSON.stringify(x.options).slice(0, 2000)) : {},
   };
 }
+// Batch 225: scheduled reports
+const creports = () => require('./lib/custom-reports');
+const crErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : (e.message && /query|table|column|select|statement|reading/i.test(e.message) ? e.message.replace(/aditkb/ig, 'data source') : msg) });
+app.get('/api/custom-reports', requireAdmin, async (req, res) => { try { res.json({ success: true, reports: await creports().list(), periods: creports().PERIODS }); } catch (e) { crErr(res, e, 'Could not load the reports'); } });
+app.post('/api/custom-reports/preview', requireAdmin, rateLimit(12, 60000), async (req, res) => { try { res.json({ success: true, ...(await creports().preview(req.body || {}, { rebuild: !!(req.body && req.body.rebuild) })) }); } catch (e) { crErr(res, e, 'Could not build the report'); } });
+app.post('/api/custom-reports', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { const b = req.body || {}; const r = await creports().save(null, b, req.session.email, b.draftPlan); insertAuditLog(req.session.email, 'custom_report_saved', String(r.id), r.name).catch(() => {}); res.json({ success: true, report: r }); } catch (e) { crErr(res, e, 'Could not save'); } });
+app.post('/api/custom-reports/:id', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, report: await creports().save(Number(req.params.id), b, req.session.email, b.draftPlan) }); } catch (e) { crErr(res, e, 'Could not save'); } });
+app.post('/api/custom-reports/:id/toggle', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await creports().toggle(Number(req.params.id), !!(req.body && req.body.enabled))) }); } catch (e) { crErr(res, e, 'Could not change'); } });
+app.post('/api/custom-reports/:id/send', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { const r = await creports().send(Number(req.params.id), req.session.email); insertAuditLog(req.session.email, 'custom_report_sent', req.params.id, r.ok ? 'sent' : r.error).catch(() => {}); res.json({ success: true, ...r }); } catch (e) { crErr(res, e, 'Could not send'); } });
+app.delete('/api/custom-reports/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await creports().remove(Number(req.params.id))) }); } catch (e) { crErr(res, e, 'Could not delete'); } });
 app.get('/api/chat-reports/meta', requireAdmin, (req, res) => {
   const cr = chatReports();
   res.json({ success: true, target: cr.spaceLabel(), configured: cr.isConfigured(), periods: cr.PERIODS, defaultMetrics: cr.DEFAULT_METRICS,
@@ -5303,6 +5316,7 @@ async function startScheduler() {
   });
   // Session 50: scheduled Google Chat reports (checks every minute)
   cron.schedule('* * * * *', () => { chatReports().runDue().catch(e => console.error('❌ chat reports cron:', e.message)); });
+  cron.schedule('* * * * *', () => { require('./lib/custom-reports').runDue().catch(e => console.error('custom reports cron:', e.message)); });
   // Prune expired sessions daily
   cron.schedule('0 20 * * *', async () => { pruneExpiredSessions().catch(e => console.error('❌ pruneExpiredSessions:', e.message)); });
   // Every 2 hours: check volume, archive to Google Sheets if >90%, then prune
