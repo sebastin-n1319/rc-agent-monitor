@@ -913,7 +913,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     function start() {
       clearInterval(tMine); clearInterval(tChat);
       tMine = setInterval(function () { if (visible()) loadMine(); }, 20000);
-      tChat = setInterval(function () { if (!visible()) return; tabs.forEach(function (t) { if (!t.error && (!t.chat || t.chat.open || t.ref === active)) loadChat(t); }); }, 10000);
+      tChat = setInterval(function () { if (!visible()) return; tabs.forEach(function (t) { if (!t.chat || t.chat.open || t.ref === active) loadChat(t); }); }, 10000);
     }
     paint(); loadMine().then(function () { tabs.forEach(function (t) { if (!t.chat && !t.error) loadChat(t); }); }); start();
     return { reload: function () { loadMine(); if (active) { var t = find(active); if (t) loadChat(t); } }, open: function (ref) { var t = find(ref); if (!t) { t = tab(ref, true); tabs.push(t); save(); } select(t.ref); } };
