@@ -38,20 +38,35 @@
   }
   // Batch 192: emails and private notes copy as formatted text too, so they paste into the Zoho Desk editor with
   // their paragraphs and numbered lists (plain text stays on the clipboard for anything else).
+  // Batch 204: shaped like Zoho Desk's own editor (a div per line, an empty line between paragraphs, real lists,
+  // Arial 13px, links clickable) so a pasted reply looks the same as one typed in Desk.
   function toHtml(text) {
     var esc = function (t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
-    return String(text || '').trim().split(/\n\s*\n/).map(function (block) {
-      var lines = block.split('\n').filter(function (l) { return l.trim(); });
-      if (lines.length && lines.every(function (l) { return /^\s*\d+[.)]\s+/.test(l); })) return '<ol>' + lines.map(function (l) { return '<li>' + esc(l.replace(/^\s*\d+[.)]\s+/, '')) + '</li>'; }).join('') + '</ol>';
-      if (lines.length && lines.every(function (l) { return /^\s*[-*•]\s+/.test(l); })) return '<ul>' + lines.map(function (l) { return '<li>' + esc(l.replace(/^\s*[-*•]\s+/, '')) + '</li>'; }).join('') + '</ul>';
-      return '<p>' + lines.map(esc).join('<br>') + '</p>';
-    }).join('');
+    var link = function (t) { return esc(t).replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, '<a href="$1" target="_blank">$1</a>'); };
+    var blocks = String(text || '').replace(/\r/g, '').trim().split(/\n\s*\n/);
+    return blocks.map(function (block) {
+      var out = '', list = null;
+      block.split('\n').filter(function (l) { return l.trim(); }).forEach(function (l) {
+        var num = /^\s*\d+[.)]\s+/.test(l), bul = /^\s*[-*•]\s+/.test(l), kind = num ? 'ol' : bul ? 'ul' : null;
+        if (list && list !== kind) { out += '</' + list + '>'; list = null; }
+        if (kind) { if (!list) { out += '<' + kind + ' style="margin:0 0 0 20px;padding:0">'; list = kind; } out += '<li>' + link(l.replace(/^\s*(\d+[.)]|[-*•])\s+/, '')) + '</li>'; }
+        else out += '<div>' + link(l.trim()) + '</div>';
+      });
+      if (list) out += '</' + list + '>';
+      return out;
+    }).join('<div><br></div>');
+  }
+  // The Help Center link goes before the sign-off, not after it
+  function withHelp(say, url) {
+    var m = /\n*\s*((?:Best regards|Kind regards|Regards|Thanks|Thank you),?)\s*$/i.exec(say || '');
+    var line = 'You can also follow the steps in this Help Center guide: ' + url;
+    return m ? say.slice(0, m.index) + '\n\n' + line + '\n\n' + m[1] : say + '\n\n' + line;
   }
   function copyRich(text, btn) {
     var done = function () { if (!btn) return; var old = btn.getAttribute('data-l') || btn.lastChild.textContent; btn.setAttribute('data-l', old); btn.lastChild.textContent = 'Copied'; btn.classList.add('ok'); setTimeout(function () { btn.lastChild.textContent = old; btn.classList.remove('ok'); }, 1400); };
     try {
       if (!window.ClipboardItem || !navigator.clipboard || !navigator.clipboard.write) return copy(text, btn);
-      var item = new ClipboardItem({ 'text/html': new Blob(['<div style="font-family:Arial,sans-serif;font-size:13px">' + toHtml(text) + '</div>'], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) });
+      var item = new ClipboardItem({ 'text/html': new Blob(['<div style="direction:ltr;font-size:13px;font-family:Arial,Helvetica,sans-serif">' + toHtml(text) + '</div>'], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) });
       navigator.clipboard.write([item]).then(done, function () { copy(text, btn); });
     } catch (e) { copy(text, btn); }
   }
@@ -235,9 +250,9 @@
       if (a.steps && a.steps.length) card.appendChild(section('list', 'Steps', [h('ol', { class: 'ax-ol' }, a.steps.map(function (s) { return h('li', null, [linkTickets(String(s).replace(/^\d+[.)]\s*/, ''))]); })), h('div', { class: 'ax-row' }, [copyBtn(a.steps.map(function (s, i) { return (i + 1) + '. ' + String(s).replace(/^\d+[.)]\s*/, ''); }).join('\n'), 'Copy steps')])]));
       if (a.say) {
         var sl = SAY[j.mode] || ['What to tell the client', 'Copy message'];
-        var withLink = j.share && j.mode !== 'call' ? [copyBtn(j.mode === 'email' ? a.say.replace(/\n*Thanks,?\s*$/i, '') + '\n\nHelp Center guide: ' + j.share.url + '\n\nThanks,' : a.say + '\n\n' + j.share.url, j.mode === 'email' ? 'Copy email with Help Center link' : 'Copy with Help Center link', j.mode === 'email')] : [];
+        var withLink = j.share && j.mode !== 'call' ? [copyBtn(j.mode === 'email' || j.mode === 'reply' ? withHelp(a.say, j.share.url) : a.say + '\n\n' + j.share.url, j.mode === 'email' ? 'Copy email with Help Center link' : 'Copy with Help Center link', j.mode === 'email' || j.mode === 'reply')] : [];
         var other = MODES.filter(function (m) { return m[0] !== j.mode; }).map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Ask again for ' + m[1].toLowerCase(), onclick: function () { if (S.busy) return; S.mode = m[0]; S.lockOnce = true; store.set('mode', S.mode); paintModes(); submit(q); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); });
-        card.appendChild(section(j.mode === 'call' ? 'phone' : 'chat', sl[0], [h('blockquote', { class: 'ax-say' + (j.mode === 'call' ? ' call' : '') }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, sl[1], j.mode === 'email')].concat(withLink).concat([h('span', { class: 'ax-sp' })]).concat(other))], 'say'));
+        card.appendChild(section(j.mode === 'call' ? 'phone' : 'chat', sl[0], [h('blockquote', { class: 'ax-say' + (j.mode === 'call' ? ' call' : '') }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, sl[1], j.mode === 'email' || j.mode === 'reply')].concat(withLink).concat([h('span', { class: 'ax-sp' })]).concat(other))], 'say'));
       }
       if (a.note) card.appendChild(section('edit', 'Private note for Zoho Desk', [h('pre', { class: 'ax-note' }, [a.note]), h('div', { class: 'ax-row' }, [copyBtn(a.note, 'Copy private note', true)])], 'note'));
       if (a.owner) card.appendChild(section('user', 'Who owns it', [h('p', { class: 'ax-owner' }, [h('b', { text: a.owner.who || 'T1' }), a.owner.when ? h('span', { text: ' · ' + a.owner.when }) : null])], 'own'));
@@ -696,7 +711,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     }
     function updateCounts() { /* counts follow on the next load */ }
     function block(title, kids) { return h('div', { class: 'ax-tri-b' }, [h('h4', { text: title })].concat(kids)); }
-    function copyBtn(text, label) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label]); b.addEventListener('click', function () { copy(text, b); }); return b; }
+    function copyBtn(text, label) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label]); b.addEventListener('click', function () { copyRich(text, b); }); return b; }
     function detail(r) {
       var x = r.result, box = h('div', { class: 'ax-tri-d' });
       var again = h('button', { type: 'button', class: 'ax-mini', onclick: function () {
@@ -761,7 +776,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
           t.url ? h('a', { class: 'ax-mini', href: t.url, target: '_blank', rel: 'noopener', 'aria-label': 'Open ticket ' + t.number + ' in Desk' }, [icon('ext', 'sm'), 'Desk']) : null])];
         var body = h('div', { class: 'ax-fix-b' });
         if (t.next && t.next.length) body.appendChild(h('div', { class: 'ax-tri-b' }, [h('h4', { text: 'Steps' }), h('ol', {}, t.next.map(function (s) { return h('li', { text: s }); }))]));
-        if (t.client_message) { var cb = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), 'Copy response']); cb.addEventListener('click', function () { copy(t.client_message, cb); });
+        if (t.client_message) { var cb = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), 'Copy response']); cb.addEventListener('click', function () { copyRich(t.client_message, cb); });
           body.appendChild(h('div', { class: 'ax-tri-b' }, [h('h4', { text: 'Response to the client' }), h('pre', { class: 'ax-tri-msg', text: t.client_message }), cb])); }
         if (!t.waitingRecheck) body.appendChild(h('div', { class: 'ax-row' }, [note, done]));
         kids.push(body);
