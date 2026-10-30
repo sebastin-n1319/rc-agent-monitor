@@ -672,6 +672,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Session 88: transfer review (Pending Review - T1), polled every minute.
     require('./lib/deal-context').setKb(escalationWatch.kbHi);
     require('./lib/client-lookup').setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid) });
+    // Batch 211: every analysis reads the Adit Updates that bear on it (ticket review, transfer review, escalation watch, AI and VoIP reviews)
+    { const upd = (t) => require('./lib/expert').updatesFor(t); transferReview.setDeps({ updates: upd }); escalationWatch.setDeps({ updates: upd }); require('./lib/topic-support').setDeps({ updates: upd }); }
     transferReview.setDB(db);
     await transferReview.initSchema();
     transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),

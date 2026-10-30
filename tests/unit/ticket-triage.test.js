@@ -24,7 +24,7 @@ const ticket = { load: async (n) => ({ meta: { number: n, subject: 'Texts not se
 let seenUser = '', seenFb = '';
 const ai = { anyConfigured: () => true, isAnthropicConfigured: () => true,
   claudeJSON: async ({ system, user }) => { if (/gave feedback/.test(system)) { seenFb = user; return { json: { reviewer_right: /client confirmed/.test(user) ? 'yes' : 'no', reply: 'Checked.', lesson: 'Tickets like this can close.', final_verdict: 'close' } }; } seenUser = user; return { json: { verdict: 'CLOSE', confidence: 'high', headline: 'No reply after 3 follow-ups \u2014 close', failure: { level: 'high', who: 'Sky', what: 'Note only, no reply' }, client_message: 'Hi there,', next: ['Send the closing note'], evidence: ['3 follow-ups'] } }; } };
-const expert = { crmContext: async () => ({ text: 'Account: Smile Dental', facts: { csm: 'Ana' } }), searchLocal: async () => [], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }] };
+const expert = { updatesFor: async () => '- 2026-10-20: Texting fix released (Engage)', crmContext: async () => ({ text: 'Account: Smile Dental', facts: { csm: 'Ana' } }), searchLocal: async () => [], rules: async () => [{ title: 'T1 cannot make outbound calls', body: 'Callbacks go to VoIP.' }] };
 
 beforeAll(async () => {
   if (!sqlite3) return;
@@ -89,6 +89,8 @@ describe.skipIf(!sqlite3)('open T1 ticket review', () => {
     expect(seenUser).toContain('Agent messages since the client\'s last message: 3');
     expect(seenUser).toContain('T1 cannot make outbound calls');
     expect(seenUser).toContain('Smile Dental');
+    expect(seenUser).toContain('[ADIT UPDATES]');
+    expect(seenUser).toContain('Texting fix released');
     const row = (await tt.list()).rows.find((x) => x.id === '1');
     expect(row.verdict).toBe('close');
     expect(row.stale).toBe(false);
