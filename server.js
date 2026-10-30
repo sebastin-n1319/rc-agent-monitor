@@ -458,6 +458,21 @@ function inAlertHours(d = new Date(), win = ALERT_HOURS) {
 
 const BREAK_EVENT_GROUP = { LOGGED_IN: 'shift', LOGGED_OUT: 'shift', BREAK_OUT: 'break', BREAK_IN: 'break', BRB_OUT: 'brb', BRB_IN: 'brb',
   TRAINING_OUT: 'training', TRAINING_IN: 'training', QA_SESSION_OUT: 'qa', QA_SESSION_IN: 'qa', INTERNAL_CALL_OUT: 'internal', INTERNAL_CALL_IN: 'internal', SSM_AWAY_OUT: 'ssm', SSM_AWAY_IN: 'ssm' };
+// Batch 214: scrin.io moves happen often, so they post as one short line, not the full break card (the detail is in the tool).
+async function scrinChatLine(event){
+  const stamp = new Date(String(event.createdAt).replace(' ', 'T') + 'Z');
+  const t = (tz) => stamp.toLocaleTimeString('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit' });
+  const when = `${t('America/Chicago')} CT · ${t('Asia/Kolkata')} IST`;
+  const name = event.username || 'Agent';
+  if (event.action === 'SSM_AWAY_OUT') return { text: `🖥️ *${name}* away in scrin.io · ${when}` };
+  let away = '';
+  try {
+    const dbm = require('./database');
+    const prev = await new Promise((rs) => dbm.db.get(`SELECT created_at FROM break_events WHERE lower(email) = lower(?) AND action = 'SSM_AWAY_OUT' AND datetime(created_at) <= datetime(?) ORDER BY datetime(created_at) DESC LIMIT 1`, [event.email, event.createdAt], (e, r) => rs(e ? null : r)));
+    if (prev) { const m = Math.round((stamp - new Date(String(prev.created_at).replace(' ', 'T') + 'Z')) / 60000); if (m >= 0) away = ` (away ${m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + (m % 60) + 'm'})`; }
+  } catch (e) { /* no duration */ }
+  return { text: `🟢 *${name}* back in scrin.io${away} · ${when}` };
+}
 async function sendBreakChatNotification(event, opts){
   if(ALERT_HOOKS.breakLogEnabled === false){
     return { notified: false, status: 'disabled', response: 'Break log alerts are turned off on the Alerts page' };
@@ -481,7 +496,7 @@ async function sendBreakChatNotification(event, opts){
       return { ok: resp.ok, status: resp.ok ? 'sent' : `http_${resp.status}`, retry: resp.status >= 500 || resp.status === 429, response: (text || resp.statusText || 'ok').slice(0, 500) };
     } catch (e) { return { ok: false, status: 'network', retry: true, response: String(e.message || e).slice(0, 300) }; }
   };
-  const payload = await buildBreakChatPayload(event);
+  const payload = String(event.action || '').startsWith('SSM_AWAY') ? await scrinChatLine(event) : await buildBreakChatPayload(event);
   let r = await post(payload);
   for (const wait of (opts && opts.quick ? [] : [3000, 10000, 30000])) {
     if (r.ok || !r.retry) break;
