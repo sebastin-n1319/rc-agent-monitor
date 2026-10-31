@@ -128,7 +128,7 @@ describe('scheduled reports: tickets CSMs moved to T1', () => {
     const m = cr._csmMoves(rows, new Set(['amelia parks', 'patricia nelson']), period, new Set(['12']), new Set(), new Map([['patricia nelson', 'Patricia Nelson'], ['amelia parks', 'Amelia Parks']]));
     expect(cr._csmMoves(rows, new Set(['amelia parks']), period, new Set()).map((x) => x.ticket_number)).toEqual(['419279']); // only people on the CSM list
     expect(m.map((x) => [x.ticket_number, x.from_csm, x.t1_agent, x.t1_sent_first])).toEqual([['418391', 'Patricia Nelson', 'Audrey Miles', 0], ['419279', 'Amelia Parks', 'Greg Dawson', 1]]);
-    expect(cr._csmMoves(rows, new Set(['amelia parks', 'audrey miles']), period, new Set(), new Set(['audrey miles'])).map((x) => x.ticket_number)).toEqual(['419279']); // T1 agents never count as CSMs
+    expect(cr._csmMoves(rows, new Set(['amelia parks', 'audrey miles']), period, new Set(), new Set(['audrey miles', 'greg dawson'])).map((x) => x.ticket_number)).toEqual(['419279']); // T1 agents never count as CSMs
     expect(cr._csmMoves(rows, new Set(), { from: '2026-10-24T05:00:00.000Z', to: '2026-10-31T05:00:00.000Z' }, new Set())).toEqual([]);
   });
 });
