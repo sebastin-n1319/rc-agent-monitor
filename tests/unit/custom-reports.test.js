@@ -45,6 +45,30 @@ describe.skipIf(!sqlite3)('scheduled reports: build, save, send', () => {
     } } });
     global.fetch = async (u, o) => { posted.push({ u, body: JSON.parse(o.body) }); return { ok: true, status: 200 }; };
   });
+  it('builds the CSM team from Keka with admin edits, and the ticket card', async () => {
+    const q0 = cr._deps().query;
+    cr.setDeps({ query: async (sql) => /hr_employees/.test(sql) ? { rows: [
+      { team: 'Tech CSM', title: 'Tech CSM', real_name: 'Anjali Pal', alias: 'amelia.parks', desk_name: 'Amelia Parks', updated_at: '2026-09-18' },
+      { team: 'Tech CSM', title: 'Tech CSM', real_name: 'Ranjitha Priya', alias: 'julia.whitmore', desk_name: 'Julia Whitmore' },
+      { team: 'Marketing CSM', title: 'CSM', real_name: 'Triveni Pragada', alias: 'tara.james', desk_name: null }] } : { rows: [] } });
+    const g = await cr.getCsms();
+    expect(g.source).toBe('keka');
+    const by = Object.fromEntries(g.people.map((p) => [p.name, p]));
+    expect(by['Amelia Parks'].alt).toBe('Anjali Pal');
+    expect(by['Julia Whitmore'].excluded).toBe(true); // left out by the seed
+    expect(by['Morgan Taylor'].source).toBe('added');
+    await expect(cr.saveCsms({ add: [{ name: 'A' }, { name: 'a' }] }, 'x')).rejects.toThrow('twice');
+    const s2 = await cr.saveCsms({ add: [{ name: ' New  Person ', alt: 'Real P' }], exclude: ['Amelia Parks'] }, 'x@adit.com');
+    expect(s2.people.find((p) => p.name === 'New Person').alt).toBe('Real P');
+    expect(s2.people.find((p) => p.name === 'Amelia Parks').excluded).toBe(true);
+    expect(s2.people.find((p) => p.name === 'Julia Whitmore').excluded).toBeFalsy();
+    const tm = await cr._teamMembersRows();
+    expect(tm.find((x) => x.real_name === 'Triveni Pragada').name).toBe('Tara James'); // Desk name from the work email when Desk has none
+    cr.setDeps({ query: q0 });
+    const card = cr._sheetCard({ name: 'CSM report' }, { label: 'Oct 19 to 25' }, { url: 'https://x/sheet/t', tickets: 3 });
+    expect(card.cardsV2[0].card.sections[0].widgets[1].buttonList.buttons[0].onClick.openLink.url).toBe('https://x/sheet/t');
+    await expect(cr.getSheet('bad')).rejects.toThrow('not found');
+  });
   it('previews, saves the queries, and sends to the space', async () => {
     const prev = await cr.preview({ name: 'CSM report', prompt: 'How many tickets T1 sent to each CSM', period: 'last_7_days' });
     expect(prev.planView.queries[0].rows).toBeGreaterThanOrEqual(0);
@@ -101,9 +125,10 @@ describe('scheduled reports: tickets CSMs moved to T1', () => {
     const period = { from: '2026-10-19T05:00:00.000Z', to: '2026-10-26T05:00:00.000Z' };
     const rows = [{ id: '11', ticket_number: '418391', web_url: 'u', channel: 'Email', cf_owner_change_log: log },
       { id: '12', ticket_number: '419279', web_url: 'u2', channel: 'Phone', cf_owner_change_log: 'Owner changed to Henry P on 2026-10-21 18:44:15 | Role : T1 Support\nOwner changed to Amelia Parks on 2026-10-22 17:04:45 | Role : CEO\nOwner changed to Greg Dawson on 2026-10-23 14:21:28 | Role : T1 Support' }];
-    const m = cr._csmMoves(rows, new Set(['amelia parks']), period, new Set(['12']));
+    const m = cr._csmMoves(rows, new Set(['amelia parks', 'patricia nelson']), period, new Set(['12']), new Set(), new Map([['patricia nelson', 'Patricia Nelson'], ['amelia parks', 'Amelia Parks']]));
+    expect(cr._csmMoves(rows, new Set(['amelia parks']), period, new Set()).map((x) => x.ticket_number)).toEqual(['419279']); // only people on the CSM list
     expect(m.map((x) => [x.ticket_number, x.from_csm, x.t1_agent, x.t1_sent_first])).toEqual([['418391', 'Patricia Nelson', 'Audrey Miles', 0], ['419279', 'Amelia Parks', 'Greg Dawson', 1]]);
-    expect(cr._csmMoves(rows, new Set(['amelia parks']), period, new Set(), new Set(['patricia nelson'])).map((x) => x.ticket_number)).toEqual(['419279']);
+    expect(cr._csmMoves(rows, new Set(['amelia parks', 'audrey miles']), period, new Set(), new Set(['audrey miles'])).map((x) => x.ticket_number)).toEqual(['419279']); // T1 agents never count as CSMs
     expect(cr._csmMoves(rows, new Set(), { from: '2026-10-24T05:00:00.000Z', to: '2026-10-31T05:00:00.000Z' }, new Set())).toEqual([]);
   });
 });

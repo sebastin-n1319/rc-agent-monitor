@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Ticket sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F7F8F8;--card:#FFFFFF;--soft:#F3F6F9;--line:#E3E8EE;--line2:#C8D0DC;--t1:#072B40;--t2:#3E566A;--t3:#6B849A;--acc:#F4891F;--acc-ink:#A6520A;--acc-soft:rgba(244,137,31,.12);--bad:#B4323A;--ok:#0E7C52;--warn:#9A6300}
+@media (prefers-color-scheme:dark){:root{--bg:#061520;--card:#0B1F2E;--soft:#0E2536;--line:#1D3A52;--line2:#2A4D69;--t1:#E8F1F8;--t2:#B4C6D6;--t3:#8AA2B6;--acc:#F59A3C;--acc-ink:#F7A452;--acc-soft:rgba(245,154,60,.14);--bad:#F27F86;--ok:#42CF97;--warn:#E9B65A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--t1);font-family:'Poppins',system-ui,sans-serif;font-size:14px}
+.wrap{max-width:1280px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px}
+h1{margin:0 0 4px;font-size:20px;font-weight:700}
+.sub{margin:0;color:var(--t3);font-size:13px}
+.btn{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:9px;border:1px solid var(--line2);background:var(--card);color:var(--t1);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--acc);color:var(--acc-ink)}
+.btn:focus-visible,.chip:focus-visible,.tab:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tab{padding:7px 12px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--t2);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--t1);border-color:var(--t1);color:var(--card)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.bar input{flex:1 1 240px;max-width:360px;height:36px;padding:0 12px;border:1px solid var(--line2);border-radius:9px;background:var(--card);color:var(--t1);font:inherit;font-size:13px}
+.count{color:var(--t3);font-size:12.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chip{padding:5px 10px;border:1px solid var(--line);border-radius:999px;background:var(--soft);color:var(--t2);font:inherit;font-size:12px;cursor:pointer}
+.chip b{font-weight:600;color:var(--t1);margin-left:4px}
+.chip[aria-pressed="true"]{border-color:var(--acc);background:var(--acc-soft);color:var(--acc-ink)}
+.tbl{border:1px solid var(--line);border-radius:12px;background:var(--card);overflow:auto;max-height:calc(100vh - 260px)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{position:sticky;top:0;z-index:1;background:var(--soft);text-align:left;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--t3);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+th[aria-sort="ascending"]::after{content:' \25B4'}th[aria-sort="descending"]::after{content:' \25BE'}
+td{padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--t2)}
+tr:last-child td{border-bottom:0}
+td.k{color:var(--t1);font-weight:500;white-space:nowrap}
+td a{color:var(--acc-ink);font-weight:600;text-decoration:none}td a:hover{text-decoration:underline}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:500;background:var(--soft);color:var(--t2);white-space:nowrap}
+.tag.ok{color:var(--ok)}.tag.bad{color:var(--bad)}.tag.warn{color:var(--warn)}
+.center{max-width:440px;margin:12vh auto 0;padding:28px;border:1px solid var(--line);border-radius:16px;background:var(--card);text-align:center}
+.center h2{margin:0 0 6px;font-size:18px}.center p{margin:0 0 18px;color:var(--t3);font-size:13px;line-height:1.5}
+#gbtn{display:flex;justify-content:center;min-height:44px}
+.err{color:var(--bad)}
+.empty{padding:28px;text-align:center;color:var(--t3)}
+</style>
+</head>
+<body>
+<main class="wrap" id="app"><p class="sub">Loading the ticket sheet...</p></main>
+<script>
+(function () {
+  var token = location.pathname.split('/').filter(Boolean).pop();
+  var app = document.getElementById('app');
+  var S = { data: null, sec: 0, q: '', pick: '', sort: null, dir: 1 };
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in (attrs || {})) { if (k === 'text') n.textContent = attrs[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]); else n.setAttribute(k, attrs[k]); }
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function when(v) { var d = new Date(v); return isNaN(d) ? v : d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT'; }
+  function tagFor(v) {
+    var s = String(v || '').toLowerCase(), c = '';
+    if (/approved|legit|with the csm|^yes$/.test(s)) c = 'ok'; else if (/returned|needs fix|no csm action|without review/.test(s)) c = 'bad'; else if (/pending|awaiting|came back/.test(s)) c = 'warn';
+    return el('span', { class: 'tag ' + c, text: v });
+  }
+  var TAGS = { path: 1, review_result: 1, audit_result: 1, outcome: 1, bounce: 1, channel: 1 };
+  function signIn(clientId, msg) {
+    app.innerHTML = '';
+    var box = el('div', { class: 'center' }, [el('h2', { text: 'Sign in to see the tickets' }), el('p', { text: 'This sheet is for Adit staff. Sign in with your Adit Google account.' }), el('div', { id: 'gbtn' }), msg ? el('p', { class: 'err', text: msg }) : null]);
+    app.appendChild(box);
+    var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = function () {
+      google.accounts.id.initialize({ client_id: clientId, hd: 'adit.com', callback: function (r) {
+        fetch('/api/report-sheet/' + encodeURIComponent(token) + '/signin', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: r.credential }) })
+          .then(function (x) { return x.json(); }).then(function (j) { if (j.success) load(); else signIn(clientId, j.error || 'Could not sign in.'); });
+      } });
+      google.accounts.id.renderButton(document.getElementById('gbtn'), { theme: 'outline', size: 'large', text: 'signin_with' });
+    };
+    document.head.appendChild(s);
+  }
+  function load() {
+    fetch('/api/report-sheet/' + encodeURIComponent(token), { credentials: 'same-origin' }).then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+      .then(function (x) {
+        if (x.status === 401 && x.j.signIn) return signIn(x.j.clientId);
+        if (!x.j.success) { app.innerHTML = ''; app.appendChild(el('div', { class: 'center' }, [el('h2', { text: 'Sheet not available' }), el('p', { text: x.j.error || 'This sheet could not be opened.' })])); return; }
+        S.data = x.j; render();
+      }).catch(function () { app.innerHTML = ''; app.appendChild(el('div', { class: 'center' }, [el('h2', { text: 'Could not load' }), el('p', { text: 'Check your connection and reload the page.' })])); });
+  }
+  function csv(sec, rows) {
+    var cols = sec.columns, esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var lines = [cols.map(function (c) { return esc(c.label); }).concat(['Link']).join(',')].concat(rows.map(function (r) { return cols.map(function (c) { return esc(r[c.key]); }).concat([esc(r._url || '')]).join(','); }));
+    var a = el('a', { href: URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })), download: (S.data.name || 'tickets').replace(/[^\w]+/g, '-') + '.csv' }); document.body.appendChild(a); a.click(); a.remove();
+  }
+  function render() {
+    var d = S.data, sec = d.sections[S.sec] || { columns: [], rows: [] };
+    var groupKey = sec.columns.length ? sec.columns[0].key : null;
+    var rows = sec.rows.filter(function (r) {
+      if (S.pick && String(r[groupKey]) !== S.pick) return false;
+      if (!S.q) return true;
+      var q = S.q.toLowerCase(); return sec.columns.some(function (c) { return String(r[c.key]).toLowerCase().indexOf(q) >= 0; });
+    });
+    if (S.sort) rows = rows.slice().sort(function (a, b) { var x = String(a[S.sort]), y = String(b[S.sort]); var nx = Number(x), ny = Number(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y) : nx - ny) * S.dir; });
+    app.innerHTML = '';
+    app.appendChild(el('header', {}, [el('div', {}, [el('h1', { text: d.name || 'Ticket sheet' }), el('p', { class: 'sub', text: (d.period || '') + ' . signed in as ' + d.viewer })]),
+      el('button', { class: 'btn', type: 'button', onclick: function () { csv(sec, rows); } }, ['Download CSV'])]));
+    if (d.sections.length > 1) app.appendChild(el('div', { class: 'tabs', role: 'tablist' }, d.sections.map(function (s, i) {
+      return el('button', { class: 'tab', role: 'tab', type: 'button', 'aria-selected': String(i === S.sec), onclick: function () { S.sec = i; S.pick = ''; S.sort = null; render(); } }, [s.title + ' (' + s.rows.length + ')']);
+    })));
+    var search = el('input', { type: 'search', placeholder: 'Search tickets, subjects, agents...', 'aria-label': 'Search', value: S.q });
+    search.addEventListener('input', function () { S.q = search.value; var pos = search.selectionStart; render(); var n = document.querySelector('.bar input'); n.focus(); n.setSelectionRange(pos, pos); });
+    app.appendChild(el('div', { class: 'bar' }, [search, el('span', { class: 'count', text: rows.length + ' of ' + sec.rows.length + ' tickets' })]));
+    if (groupKey) {
+      var counts = {}; sec.rows.forEach(function (r) { var k = String(r[groupKey]); counts[k] = (counts[k] || 0) + 1; });
+      var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); });
+      if (keys.length > 1 && keys.length <= 60) app.appendChild(el('div', { class: 'chips' }, keys.map(function (k) {
+        return el('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.pick === k), onclick: function () { S.pick = S.pick === k ? '' : k; render(); } }, [k || 'None', el('b', { text: String(counts[k]) })]);
+      })));
+    }
+    if (!rows.length) { app.appendChild(el('div', { class: 'tbl' }, [el('div', { class: 'empty', text: 'No tickets match.' })])); return; }
+    var head = el('tr', {}, sec.columns.map(function (c) {
+      return el('th', { scope: 'col', tabindex: '0', 'aria-sort': S.sort === c.key ? (S.dir > 0 ? 'ascending' : 'descending') : 'none', onclick: function () { if (S.sort === c.key) S.dir = -S.dir; else { S.sort = c.key; S.dir = 1; } render(); },
+        onkeydown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); } } }, [c.label]);
+    }));
+    var body = el('tbody', {}, rows.map(function (r) {
+      return el('tr', {}, sec.columns.map(function (c, i) {
+        var v = r[c.key];
+        if (c.key === 'ticket_number') return el('td', { class: 'k' }, [r._url ? el('a', { href: r._url, target: '_blank', rel: 'noopener', text: '#' + v }) : '#' + v]);
+        if (/_at$/.test(c.key)) return el('td', { text: when(v) });
+        if (TAGS[c.key] && v) return el('td', {}, [tagFor(v)]);
+        return el('td', { class: i === 0 ? 'k' : '', text: v });
+      }));
+    }));
+    app.appendChild(el('div', { class: 'tbl' }, [el('table', {}, [el('thead', {}, [head]), body])]));
+  }
+  load();
+})();
+</script>
+</body>
+</html>

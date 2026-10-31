@@ -750,7 +750,9 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // redone within an hourly cap. Suggestions only: nothing is changed in Zoho Desk.
     // Batch 225: scheduled reports (Tickets > Reports): a plain-words request, read-only queries, sent to a Google Chat space.
     { const cr = require('./lib/custom-reports'); cr.setDB(db); await cr.initSchema();
-      cr.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
+      cr.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
+        // T1 agents are the people in the tool's agent list (and the names they go by).
+        t1Names: async () => { const a = await getMonitoredAgents().catch(() => []); return a.map((x) => x.name).concat(...Object.values(AGENT_SHEET_NAMES)).filter(Boolean); } }); }
     { const tt = require('./lib/ticket-triage'); tt.setDB(db); await tt.initSchema();
       const et = require('./lib/expert-ticket'); et.setCache(tt.cache);
       tt.setDeps({ desk: require('./lib/desk-service'), ticket: et, expert: require('./lib/expert'), ai: require('./lib/ai') });
@@ -2925,6 +2927,34 @@ const crErr = (res, e, msg) => res.status(e.status || 500).json({ success: false
 app.get('/api/custom-reports', requireAdmin, async (req, res) => { try { res.json({ success: true, reports: await creports().list(), periods: creports().PERIODS }); } catch (e) { crErr(res, e, 'Could not load the reports'); } });
 app.post('/api/custom-reports/preview', requireAdmin, rateLimit(12, 60000), async (req, res) => { try { res.json({ success: true, ...(await creports().preview(req.body || {}, { rebuild: !!(req.body && req.body.rebuild) })) }); } catch (e) { crErr(res, e, 'Could not build the report'); } });
 app.post('/api/custom-reports', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { const b = req.body || {}; const r = await creports().save(null, b, req.session.email, b.draftPlan); insertAuditLog(req.session.email, 'custom_report_saved', String(r.id), r.name).catch(() => {}); res.json({ success: true, report: r }); } catch (e) { crErr(res, e, 'Could not save'); } });
+app.get('/api/custom-reports/csms', requireAdmin, async (req, res) => { try { res.json({ success: true, csms: await creports().getCsms() }); } catch (e) { crErr(res, e, 'Could not load the CSM list'); } });
+app.post('/api/custom-reports/csms', requireAdmin, rateLimit(10, 60000), async (req, res) => { try { const l = await creports().saveCsms(req.body || {}, req.session.email); insertAuditLog(req.session.email, 'custom_report_csms_saved', String(l.people.length), '').catch(() => {}); res.json({ success: true, csms: l }); } catch (e) { crErr(res, e, 'Could not save the CSM list'); } });
+// Batch 231: ticket sheets linked from the report card in Google Chat. Anyone with an Adit Google account can read them.
+const SHEET_VIEWER_COOKIE = 'rcSheetViewer';
+async function sheetViewer(req) {
+  try { const t = req.cookies[SESSION_COOKIE]; if (t) { const s = await getAppSession(t); if (s && s.email) return s.email; } } catch (e) {}
+  return creports().viewerEmail(req.cookies[SHEET_VIEWER_COOKIE]);
+}
+app.get('/sheet/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'report-sheet.html')));
+app.get('/api/report-sheet/:token', rateLimit(60, 60000), async (req, res) => {
+  try {
+    const email = await sheetViewer(req);
+    if (!email || !String(email).toLowerCase().endsWith('@adit.com')) return res.status(401).json({ success: false, signIn: true, clientId: GOOGLE_CLIENT_ID });
+    const sheet = await creports().getSheet(req.params.token);
+    insertAuditLog(email, 'report_sheet_viewed', String(req.params.token).slice(0, 8), sheet.name || '').catch(() => {});
+    res.set('Cache-Control', 'no-store'); res.json({ success: true, viewer: email, ...sheet });
+  } catch (e) { crErr(res, e, 'Could not open the sheet'); }
+});
+app.post('/api/report-sheet/:token/signin', rateLimit(20, 60000), async (req, res) => {
+  try {
+    const { email } = await verifyGoogleIdentity({ credential: (req.body || {}).credential });
+    if (!String(email).toLowerCase().endsWith('@' + (process.env.ALLOWED_DOMAIN || 'adit.com'))) return res.status(403).json({ success: false, error: 'Sign in with your Adit Google account.' });
+    const t = await creports().createViewer(email);
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+    res.cookie(SHEET_VIEWER_COOKIE, t, { maxAge: 12 * 3600e3, httpOnly: true, secure: !!isProduction, sameSite: 'lax', path: '/api/report-sheet' });
+    res.json({ success: true });
+  } catch (e) { res.status(401).json({ success: false, error: 'Could not verify Google sign-in' }); }
+});
 app.post('/api/custom-reports/:id', requireAdmin, rateLimit(20, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, report: await creports().save(Number(req.params.id), b, req.session.email, b.draftPlan) }); } catch (e) { crErr(res, e, 'Could not save'); } });
 app.post('/api/custom-reports/:id/toggle', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await creports().toggle(Number(req.params.id), !!(req.body && req.body.enabled))) }); } catch (e) { crErr(res, e, 'Could not change'); } });
 app.post('/api/custom-reports/:id/send', requireAdmin, rateLimit(6, 60000), async (req, res) => { try { const r = await creports().send(Number(req.params.id), req.session.email); insertAuditLog(req.session.email, 'custom_report_sent', req.params.id, r.ok ? 'sent' : r.error).catch(() => {}); res.json({ success: true, ...r }); } catch (e) { crErr(res, e, 'Could not send'); } });

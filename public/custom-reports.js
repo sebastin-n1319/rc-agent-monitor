@@ -36,7 +36,7 @@
   function ago(s) { if (!s) return ''; var t = Date.parse(String(s).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(s) ? '' : 'Z')); if (isNaN(t)) return s; return new Date(t).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
 
   function Reports(root) {
-    var S = { list: [], periods: {}, edit: null, busy: false, err: '' };
+    var S = { list: [], periods: {}, edit: null, csm: null, busy: false, err: '' };
     root.classList.add('crp');
     function toast(t) { if (window.showToast) window.showToast(t); }
     function load() {
@@ -47,7 +47,8 @@
       clear(root);
       root.appendChild(h('div', { class: 'crp-hd' }, [
         h('div', {}, [h('h2', { text: 'Scheduled reports' }), h('p', { text: 'Say what the report should show; Expert works out the numbers and posts it to a Google Chat space on your schedule.' })]),
-        h('button', { type: 'button', class: 'crp-btn primary', onclick: function () { openEditor(null); } }, ['+ New report'])]));
+        h('div', { class: 'crp-row' }, [h('button', { type: 'button', class: 'crp-btn', onclick: openCsms }, ['CSM team']),
+          h('button', { type: 'button', class: 'crp-btn primary', onclick: function () { openEditor(null); } }, ['+ New report'])])]));
       if (S.err) root.appendChild(h('div', { class: 'crp-note bad', text: S.err }));
       if (!S.list.length && !S.err) root.appendChild(h('div', { class: 'crp-empty' }, [h('b', { text: 'No reports yet' }),
         h('p', { text: 'For example: every Monday at 9 AM, send Kushal how many tickets T1 sent to each CSM last week.' }),
@@ -57,6 +58,55 @@
       // The editor sits on the page body, so no page layout can clip it.
       var old = document.querySelector('.crp-scrim'); if (old) old.remove();
       if (S.edit) { var ov = editor(); document.body.appendChild(ov); }
+      else if (S.csm) document.body.appendChild(csmPanel());
+    }
+    // The CSM team: the Keka Tech CSM department, plus people the admins add or leave out.
+    function openCsms() {
+      S.csm = { data: null, busy: false, err: '' }; paint();
+      api('/api/custom-reports/csms').then(function (j) { S.csm.data = j.csms; S.csm.people = (j.csms.people || []).map(function (p) { return Object.assign({}, p); }); paint(); })
+        .catch(function (e) { S.csm.err = e.message; paint(); });
+    }
+    function csmPanel() {
+      var C = S.csm;
+      function close() { S.csm = null; paint(); }
+      var body = h('div', { class: 'crp-csm' });
+      if (!C.people) body.appendChild(C.err ? h('div', { class: 'crp-note bad', text: C.err }) : h('div', { class: 'crp-skel', 'aria-hidden': 'true' }, [h('i'), h('i'), h('i')]));
+      else {
+        var D0 = C.data || {};
+        body.appendChild(h('p', { class: 'crp-muted', text: D0.source === 'keka'
+          ? 'Reports count a ticket as sent to a CSM when it went to someone in the Keka "' + D0.team + '" department' + (D0.updated ? ' (copy updated ' + ago(D0.updated) + ')' : '') + '. Add people the copy is missing, or leave someone out. Desk and Keka names count as the same person.'
+          : 'The Keka copy could not be read (' + (D0.error || 'unavailable') + '), so the saved list is used.' }));
+        var grid = h('div', { class: 'crp-csm-grid' }, [h('span', { class: 'crp-csm-h', text: 'Desk name' }), h('span', { class: 'crp-csm-h', text: 'Keka name' }), h('span', { class: 'crp-csm-h', text: 'Role' }), h('span')]);
+        C.people.forEach(function (r, i) {
+          if (r.source === 'added') {
+            var a = h('input', { type: 'text', maxlength: '80', value: r.name || '', 'aria-label': 'Desk name ' + (i + 1), placeholder: 'Name in Desk' }); a.addEventListener('input', function () { r.name = a.value; });
+            var b = h('input', { type: 'text', maxlength: '80', value: r.alt || '', 'aria-label': 'Keka name ' + (i + 1), placeholder: 'Name in Keka' }); b.addEventListener('input', function () { r.alt = b.value; });
+            grid.appendChild(a); grid.appendChild(b); grid.appendChild(h('span', { class: 'crp-tag', text: 'Added' }));
+            grid.appendChild(h('button', { type: 'button', class: 'crp-btn ghost danger', onclick: function () { C.people.splice(i, 1); paint(); } }, ['Remove']));
+          } else {
+            grid.appendChild(h('span', { class: 'crp-csm-n' + (r.excluded ? ' off' : ''), text: r.name }));
+            grid.appendChild(h('span', { class: 'crp-csm-n2' + (r.excluded ? ' off' : ''), text: r.alt || '' }));
+            grid.appendChild(h('span', { class: 'crp-csm-n2', text: r.missing ? 'Not in the Keka copy' : (r.title || '') }));
+            grid.appendChild(h('button', { type: 'button', class: 'crp-btn ghost', 'aria-pressed': String(!r.excluded), onclick: function () { r.excluded = !r.excluded; paint(); } }, [r.excluded ? 'Count again' : 'Leave out']));
+          }
+        });
+        body.appendChild(grid);
+        body.appendChild(h('button', { type: 'button', class: 'crp-btn', onclick: function () { C.people.push({ name: '', alt: '', source: 'added' }); paint(); var ins = document.querySelectorAll('.crp-csm-grid input'); if (ins.length) ins[ins.length - 2].focus(); } }, ['+ Add person']));
+      }
+      var save = h('button', { type: 'button', class: 'crp-btn primary', disabled: !C.people || C.busy }, [C.busy ? 'Saving...' : 'Save']);
+      save.addEventListener('click', function () {
+        C.busy = true; C.err = ''; paint();
+        var add = C.people.filter(function (r) { return r.source === 'added' && String(r.name || '').trim(); }).map(function (r) { return { name: r.name, alt: r.alt }; });
+        var exclude = C.people.filter(function (r) { return r.source !== 'added' && r.excluded; }).map(function (r) { return r.name; });
+        api('/api/custom-reports/csms', { add: add, exclude: exclude })
+          .then(function () { toast('CSM team saved'); S.csm = null; paint(); }).catch(function (e) { C.busy = false; C.err = e.message; paint(); });
+      });
+      var scrim = h('div', { class: 'crp crp-scrim', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'CSM team' }, [h('div', { class: 'crp-ed crp-ed-sm' }, [
+        h('div', { class: 'crp-edhd' }, [h('h3', { text: 'CSM team' }), h('button', { type: 'button', class: 'crp-x', 'aria-label': 'Close', onclick: close }, ['×'])]),
+        h('div', { class: 'crp-edbody crp-edbody-1' }, [body]),
+        h('div', { class: 'crp-edft' }, [h('span', { class: 'crp-edmsg', text: C.err && C.people ? C.err : '' }), h('button', { type: 'button', class: 'crp-btn ghost', onclick: close }, ['Cancel']), save])])]);
+      scrim.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+      return scrim;
     }
     function card(r) {
       var tog = h('button', { type: 'button', class: 'crp-switch', role: 'switch', 'aria-checked': r.enabled ? 'true' : 'false', 'aria-label': (r.enabled ? 'Pause ' : 'Turn on ') + r.name });
@@ -157,6 +207,8 @@
       if (E.preview) {
         var P = E.preview;
         frag.appendChild(h('div', { class: 'crp-msg' }, [h('div', { class: 'crp-msghd', text: 'Google Chat message, ' + P.period + (P.parts > 1 ? ' (sent as ' + P.parts + ' messages, it is long)' : '') }), h('pre', { text: P.text || '(empty)' })]));
+        if (P.sheetUrl) frag.appendChild(h('div', { class: 'crp-card-prev' }, [h('div', {}, [h('b', { text: 'Ticket details' }), h('span', { text: P.sheetTickets + ' ticket' + (P.sheetTickets === 1 ? '' : 's') + ' on a sheet, sent as a card with a button. Anyone with an Adit Google account can open it.' })]),
+          h('a', { class: 'crp-btn', href: P.sheetUrl, target: '_blank', rel: 'noopener' }, ['Open ticket sheet'])]));
         var pv = P.planView || {};
         frag.appendChild(h('details', { class: 'crp-how' }, [h('summary', { text: 'How the numbers were worked out' }),
           pv.notes ? h('p', { text: pv.notes }) : null,
