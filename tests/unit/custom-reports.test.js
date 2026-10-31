@@ -75,14 +75,34 @@ describe.skipIf(!sqlite3)('scheduled reports: the T1 transfers view', () => {
         ('d','4','S4','u4','Chat','Sky','Ana Ruiz','CSM','status','waiting',NULL,NULL,NULL,NULL,'2026-10-29T09:00:00Z',NULL,0),
         ('e','5','S5','u5','Chat','Sky','Billing Queue','Billing','status','done','good',NULL,'Lead','2026-10-29T10:00:00Z','2026-10-29T09:00:00Z',NULL,0);
       INSERT INTO audit_tickets VALUES (1,'a','correct','2026-10-28',0),(2,'b','needs_fix','2026-10-29',3),(3,'c',NULL,NULL,0);`, r));
-    const sql = cr._withView("SELECT path, review_result, audit_result, fatal, ai_flagged, times_sent, COUNT(*) n FROM t1_transfers WHERE to_csm = 1 GROUP BY 1,2,3,4,5,6 ORDER BY 1,2", "'ana ruiz'");
+    const sql = cr._withView("SELECT path, review_result, audit_result, fatal, ai_flagged, times_sent, COUNT(*) n FROM t1_transfers WHERE to_csm = 1 GROUP BY 1,2,3,4,5,6 ORDER BY 1,2", "'ana ruiz'", "'c'");
     const rows = await new Promise((res, rej) => db.all(sql, (e, r) => e ? rej(e) : res(r)));
     expect(rows).toEqual([
       { path: 'moved without review', review_result: 'not reviewed', audit_result: 'needs fix', fatal: 0, ai_flagged: 1, times_sent: 2, n: 1 },
       { path: 'reviewed', review_result: 'approved', audit_result: 'legit', fatal: 0, ai_flagged: 0, times_sent: 1, n: 1 },
-      { path: 'reviewed', review_result: 'returned to T1', audit_result: 'audit pending', fatal: 1, ai_flagged: 0, times_sent: 1, n: 1 }]);
+      { path: 'reviewed', review_result: 'returned to T1', audit_result: 'audit pending', fatal: 1, ai_flagged: 0, times_sent: 1, n: 1 }]); // ticket 3 came back to T1 but still went to the CSM
+    const back = await new Promise((res, rej) => db.all(cr._withView("SELECT ticket_number, to_csm, back_to_t1 FROM t1_transfers WHERE ticket_number = '3'", "'ana ruiz'", "'c'"), (e, r) => e ? rej(e) : res(r)));
+    expect(back).toEqual([{ ticket_number: '3', to_csm: 1, back_to_t1: 1 }]);
+    const handled = await new Promise((res, rej) => db.all(cr._withView("SELECT ticket_number, csm_acted, csm_handled FROM t1_transfers WHERE to_csm = 1 ORDER BY 1", "'ana ruiz'", "'c','b'", "'b'"), (e, r) => e ? rej(e) : res(r)));
+    expect(handled).toEqual([{ ticket_number: '1', csm_acted: 0, csm_handled: 1 }, { ticket_number: '2', csm_acted: 1, csm_handled: 1 }, { ticket_number: '3', csm_acted: 0, csm_handled: 0 }]);
+    const mv = await new Promise((res, rej) => db.all(cr._withView("SELECT from_csm, COUNT(DISTINCT ticket_number) n FROM csm_to_t1 GROUP BY 1", "''", "''", "''", [{ ticket_id: '9', ticket_number: '9', web_url: 'u', channel: 'Email', from_csm: "O'Neil", t1_agent: 'Sky', moved_at: 'x', t1_sent_first: 0 }]), (e, r) => e ? rej(e) : res(r)));
+    expect(mv).toEqual([{ from_csm: "O'Neil", n: 1 }]);
     expect(cr._chatLinks('https://d/x#1 | #420401 Change')).toBe('<https://d/x#1|#420401> Change');
     expect(cr._withView('WITH x AS (SELECT 1) SELECT * FROM t1_transfers, x', "'a'")).toMatch(/^WITH t1_transfers AS \(.*\), x AS/s);
     expect(cr._withView('SELECT 1 FROM tr_reviews', "'a'")).toBe('SELECT 1 FROM tr_reviews');
+  });
+});
+
+describe('scheduled reports: tickets CSMs moved to T1', () => {
+  it('reads the owner change log in Central time and finds CSM to T1 moves in the period', () => {
+    const log = 'Owner changed to Audrey Miles on 2026-10-20 07:06:16 | Role : Tech CSM\nOwner changed to Mimansha Svrankar on 2026-10-23 08:13:35 | Role : Mark CSM\nOwner changed to Patricia Nelson on 2026-10-23 08:16:25 | Role : DSO CSM\nOwner changed to Audrey Miles on 2026-10-23 15:20:59 | Role : T1 Support';
+    const p = cr._parseOwnerLog(log);
+    expect(p[3]).toEqual({ name: 'Audrey Miles', at: '2026-10-23T20:20:59.000Z', role: 'T1 Support' });
+    const period = { from: '2026-10-19T05:00:00.000Z', to: '2026-10-26T05:00:00.000Z' };
+    const rows = [{ id: '11', ticket_number: '418391', web_url: 'u', channel: 'Email', cf_owner_change_log: log },
+      { id: '12', ticket_number: '419279', web_url: 'u2', channel: 'Phone', cf_owner_change_log: 'Owner changed to Henry P on 2026-10-21 18:44:15 | Role : T1 Support\nOwner changed to Amelia Parks on 2026-10-22 17:04:45 | Role : CEO\nOwner changed to Greg Dawson on 2026-10-23 14:21:28 | Role : T1 Support' }];
+    const m = cr._csmMoves(rows, new Set(['amelia parks']), period, new Set(['12']));
+    expect(m.map((x) => [x.ticket_number, x.from_csm, x.t1_agent, x.t1_sent_first])).toEqual([['418391', 'Patricia Nelson', 'Audrey Miles', 0], ['419279', 'Amelia Parks', 'Greg Dawson', 1]]);
+    expect(cr._csmMoves(rows, new Set(), { from: '2026-10-24T05:00:00.000Z', to: '2026-10-31T05:00:00.000Z' }, new Set())).toEqual([]);
   });
 });
