@@ -63,3 +63,25 @@ describe.skipIf(!sqlite3)('scheduled reports: build, save, send', () => {
     expect(l[0].history[0].ok).toBe(1);
   });
 });
+
+describe.skipIf(!sqlite3)('scheduled reports: the T1 transfers view', () => {
+  it('counts each ticket once and splits reviewed, moved without review, returned and audit results', async () => {
+    const db = new sqlite3.Database(':memory:');
+    await new Promise((r) => db.exec(`CREATE TABLE tr_reviews (ticket_id TEXT, ticket_number TEXT, subject TEXT, web_url TEXT, channel TEXT, agent_name TEXT, to_agent TEXT, to_team TEXT, source TEXT, state TEXT, verdict TEXT, severity TEXT, reviewer TEXT, reviewed_at TEXT, entered_at TEXT, left_at TEXT, voided INTEGER);
+      CREATE TABLE audit_tickets (id INTEGER, ticket_id TEXT, verdict TEXT);
+      INSERT INTO tr_reviews VALUES ('a','1','S1','u1','Chat','Sky','Ana Ruiz','CSM','status','done','good',NULL,'Lead','2026-10-27T10:00:00Z','2026-10-27T09:00:00Z',NULL,0),
+        ('b','2','S2','u2','Chat','Sky','Ana Ruiz','CSM','bypass','moved',NULL,NULL,NULL,NULL,'2026-10-28T09:00:00Z',NULL,0),
+        ('c','3','S3','u3','Chat','Sky','Ana Ruiz','CSM','status','done','invalid','fatal','Lead','2026-10-29T10:00:00Z','2026-10-29T09:00:00Z',NULL,0),
+        ('d','4','S4','u4','Chat','Sky','Ana Ruiz','CSM','status','waiting',NULL,NULL,NULL,NULL,'2026-10-29T09:00:00Z',NULL,0),
+        ('e','5','S5','u5','Chat','Sky','Billing Queue','Billing','status','done','good',NULL,'Lead','2026-10-29T10:00:00Z','2026-10-29T09:00:00Z',NULL,0);
+      INSERT INTO audit_tickets VALUES (1,'a','correct'),(2,'b','needs_fix');`, r));
+    const sql = cr._withView("SELECT path, review_result, audit_result, fatal, COUNT(DISTINCT ticket_number) n FROM t1_transfers WHERE to_csm = 1 GROUP BY 1,2,3,4 ORDER BY 1,2", "'ana ruiz'");
+    const rows = await new Promise((res, rej) => db.all(sql, (e, r) => e ? rej(e) : res(r)));
+    expect(rows).toEqual([
+      { path: 'moved without review', review_result: 'not reviewed', audit_result: 'needs fix', fatal: 0, n: 1 },
+      { path: 'reviewed', review_result: 'approved', audit_result: 'legit', fatal: 0, n: 1 },
+      { path: 'reviewed', review_result: 'returned to T1', audit_result: null, fatal: 1, n: 1 }]);
+    expect(cr._withView('WITH x AS (SELECT 1) SELECT * FROM t1_transfers, x', "'a'")).toMatch(/^WITH t1_transfers AS \(.*\), x AS/s);
+    expect(cr._withView('SELECT 1 FROM tr_reviews', "'a'")).toBe('SELECT 1 FROM tr_reviews');
+  });
+});
