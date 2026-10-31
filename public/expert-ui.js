@@ -834,7 +834,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
           h('span', { class: 'ax-lc-av', 'aria-hidden': 'true', text: c ? initials(c.visitor) : '#' }),
           h('span', { class: 'ax-lc-iv' }, [
             h('span', { class: 'ax-lc-l1' }, [h('b', { text: c ? c.visitor : t.error ? 'Chat #' + t.ref : 'Loading #' + t.ref }), h('time', { text: tn && tn.at ? time(tn.at) : '' })]),
-            h('span', { class: 'ax-lc-l2', text: t.error ? 'Not found' : tn ? (tn.client ? '' : (t.own ? 'You: ' : (c.agent || 'Agent') + ': ')) + tn.text : c ? (c.question || c.company || 'No messages yet') : '' }),
+            h('span', { class: 'ax-lc-l2', text: t.error ? (/not found/i.test(t.error) ? 'Not found' : 'Reconnecting...') : tn ? (tn.client ? '' : (t.own ? 'You: ' : (c.agent || 'Agent') + ': ')) + tn.text : c ? (c.question || c.company || 'No messages yet') : '' }),
             h('span', { class: 'ax-lc-l3' }, [h('span', { class: 'ax-lc-ref', text: '#' + t.ref }),
               isAll && !t.own && c && c.agent ? h('span', { class: 'ax-lc-tag who' }, [icon('user', 'sm'), c.agent]) : null,
               t.account && t.account.found ? h('span', { class: 'ax-lc-ref ax-lc-acn', text: t.account.name }) : null,

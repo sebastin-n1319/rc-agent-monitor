@@ -1686,6 +1686,8 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   <!-- TICKET REPORT (Admin) -->
   <!-- Batch 165: AI and VoIP support handled by T1 -->
   <div class="page" id="tab-topic-support"><div id="tsd-root"></div></div>
+  <!-- Batch 225: scheduled reports (Tickets > Reports) -->
+  <div class="page" id="tab-custom-reports"><div id="crp-root" style="padding:20px 24px 40px"></div></div>
   <div class="page" id="tab-tickets">
 
     <!-- ── Dashboard / Report view toggle ── -->
@@ -1707,10 +1709,6 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
           <button id="tkt-view-wkd" onclick="tktSetView('weekend')" style="padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:transparent;color:#6B849A;transition:all .15s;">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><rect x="1" y="3" width="14" height="11" rx="2"/><path d="M1 7h14M5 3V1M11 3V1"/></svg>
             Weekend Report
-          </button>
-          <button id="tkt-view-rpts" onclick="tktSetView('reports')" style="padding:7px 16px;border-radius:7px;border:none;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;background:transparent;color:#6B849A;transition:all .15s;">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="width:12px;height:12px;display:inline;margin-right:4px;"><path d="M3 14V8M8 14V3M13 14v-5"/></svg>
-            Reports
           </button>
         </div>
         <button onclick="loadAdminTickets()" style="background:#F4891F;color:#FFF;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:rgba(244,137,31,.35) 0 4px 12px;display:flex;align-items:center;gap:6px;">
@@ -1850,8 +1848,6 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
     </div><!-- /#tkt-report-view -->
 
     <!-- ── WEEKEND REPORT VIEW ── -->
-    <!-- Batch 225: scheduled reports -->
-    <div id="tkt-reports-view" style="display:none;"></div>
     <div id="tkt-weekend-view" style="display:none;">
       <!-- Controls row -->
       <div style="background:#FFFFFF;border:1px solid rgb(222,225,230);border-radius:12px;padding:16px 18px;margin-bottom:16px;box-shadow:rgba(0,0,0,0.04) 0 1px 8px;">
@@ -9296,6 +9292,7 @@ const ADMIN_TAB_GROUPS = [
       { tab: 'tickets',          label: 'Ticket Report' },
       { tab: 'ticket-lifecycle', label: 'Ticket Lifecycle' },
       { tab: 'topic-support',    label: 'AI & VoIP' },
+      { tab: 'custom-reports',   label: 'Reports' },
   ]},
   { primary: 'alerts', members: [
       { tab: 'alerts',          label: 'Overview' },
@@ -9362,6 +9359,7 @@ function switchTab(tab,el){
   if(tab==='settings') { if(typeof openSettingsAdmin==='function') openSettingsAdmin(); }
   if(tab==='ticket-lifecycle') { if(typeof openDeskLifecycleAdmin==='function') openDeskLifecycleAdmin(); }
   if(tab==='topic-support') { if(typeof openTopicSupport==='function') openTopicSupport(); }
+  if(tab==='custom-reports') { if(window.CustomReports) window.CustomReports.mount(document.getElementById('crp-root')); }
   if(tab==='bonus-calc') { if(typeof openBonusCalc==='function') openBonusCalc(); }
   if(tab==='appraisals') { if(typeof openAppraisals==='function') openAppraisals(); }
   if(tab==='audits'){ if(window.TA) window.TA.open('admin'); }
