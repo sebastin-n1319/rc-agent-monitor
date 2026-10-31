@@ -76,7 +76,9 @@
         body.appendChild(h('p', { class: 'crp-muted', text: D0.source === 'keka'
           ? 'Reports count a ticket as sent to a CSM when it went to someone in the Keka "' + D0.team + '" department' + (D0.updated ? ' (copy updated ' + ago(D0.updated) + ')' : '') + '. Add people the copy is missing, or leave someone out. Desk and Keka names count as the same person.'
           : 'The Keka copy could not be read (' + (D0.error || 'unavailable') + '), so the saved list is used.' }));
-        var grid = h('div', { class: 'crp-csm-grid' }, [h('span', { class: 'crp-csm-h', text: 'Desk name' }), h('span', { class: 'crp-csm-h', text: 'Keka name' }), h('span', { class: 'crp-csm-h', text: 'Role' }), h('span')]);
+        body.appendChild(h('p', { class: 'crp-muted', text: D0.sheet && D0.sheet.ok ? 'Cross checked with the Who Does What sheet: pods and EHR coverage come from it, and anyone listed there is counted too.'
+          : 'Who Does What sheet: ' + ((D0.sheet && D0.sheet.error) || 'not read yet') }));
+        var grid = h('div', { class: 'crp-csm-grid' }, [h('span', { class: 'crp-csm-h', text: 'Desk name' }), h('span', { class: 'crp-csm-h', text: 'Real name' }), h('span', { class: 'crp-csm-h', text: 'Pod and role' }), h('span')]);
         C.people.forEach(function (r, i) {
           if (r.source === 'added') {
             var a = h('input', { type: 'text', maxlength: '80', value: r.name || '', 'aria-label': 'Desk name ' + (i + 1), placeholder: 'Name in Desk' }); a.addEventListener('input', function () { r.name = a.value; });
@@ -86,7 +88,8 @@
           } else {
             grid.appendChild(h('span', { class: 'crp-csm-n' + (r.excluded ? ' off' : ''), text: r.name }));
             grid.appendChild(h('span', { class: 'crp-csm-n2' + (r.excluded ? ' off' : ''), text: r.alt || '' }));
-            grid.appendChild(h('span', { class: 'crp-csm-n2', text: r.missing ? 'Not in the Keka copy' : (r.title || '') }));
+            var info = r.missing ? 'Not in the Keka copy' : [r.pod, r.title, r.source === 'sheet' ? 'only on Who Does What' : (D0.sheet && D0.sheet.ok && !r.onSheet ? 'not on Who Does What' : '')].filter(Boolean).join(' . ');
+            grid.appendChild(h('span', { class: 'crp-csm-n2', text: info }));
             grid.appendChild(h('button', { type: 'button', class: 'crp-btn ghost', 'aria-pressed': String(!r.excluded), onclick: function () { r.excluded = !r.excluded; paint(); } }, [r.excluded ? 'Count again' : 'Leave out']));
           }
         });
