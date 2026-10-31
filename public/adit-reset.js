@@ -30,6 +30,7 @@
     'cf1025.css', // Batch 187
     'breaks-v2.css', // Session 47
     'chat-reports.css', // Session 50
+    'custom-reports.css', // Batch 225: Tickets > Reports
     't1-alerts.css', // Session 51
     'alert-hub.css', // Session 53
     'access-control.css', // Session 58
