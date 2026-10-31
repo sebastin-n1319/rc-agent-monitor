@@ -19,7 +19,7 @@
   }
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var TZS = [['America/Chicago', 'CT'], ['Asia/Kolkata', 'IST'], ['America/New_York', 'ET'], ['America/Los_Angeles', 'PT']];
-  var EXAMPLES = ['Tickets T1 sent to each CSM, highest first, with the total and how many went through review versus moved without review. Under each CSM list the ticket numbers as links, grouped by channel. Then show the tickets that came back to T1 with no CSM action, and the total tickets each CSM moved to T1, with ticket numbers',
+  var EXAMPLES = ['Tickets T1 sent to each CSM, highest first, with the total, and one line for the whole report on how many went through review versus moved without review. Under each CSM list the ticket numbers as links, grouped by channel. Then show the tickets that came back to T1 with no CSM action, and the total tickets each CSM moved to T1, with ticket numbers',
     'How many tickets T1 sent to each CSM, highest first, with the total',
     'Invalid transfers by T1 agent, with fatal and feedback counts',
     'T1 tickets created and closed, by channel',

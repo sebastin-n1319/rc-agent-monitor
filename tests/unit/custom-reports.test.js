@@ -103,6 +103,7 @@ describe('scheduled reports: tickets CSMs moved to T1', () => {
       { id: '12', ticket_number: '419279', web_url: 'u2', channel: 'Phone', cf_owner_change_log: 'Owner changed to Henry P on 2026-10-21 18:44:15 | Role : T1 Support\nOwner changed to Amelia Parks on 2026-10-22 17:04:45 | Role : CEO\nOwner changed to Greg Dawson on 2026-10-23 14:21:28 | Role : T1 Support' }];
     const m = cr._csmMoves(rows, new Set(['amelia parks']), period, new Set(['12']));
     expect(m.map((x) => [x.ticket_number, x.from_csm, x.t1_agent, x.t1_sent_first])).toEqual([['418391', 'Patricia Nelson', 'Audrey Miles', 0], ['419279', 'Amelia Parks', 'Greg Dawson', 1]]);
+    expect(cr._csmMoves(rows, new Set(['amelia parks']), period, new Set(), new Set(['patricia nelson'])).map((x) => x.ticket_number)).toEqual(['419279']);
     expect(cr._csmMoves(rows, new Set(), { from: '2026-10-24T05:00:00.000Z', to: '2026-10-31T05:00:00.000Z' }, new Set())).toEqual([]);
   });
 });
