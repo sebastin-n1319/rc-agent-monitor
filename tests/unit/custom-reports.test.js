@@ -146,7 +146,7 @@ describe('scheduled reports: the built-in CSM transfer report', () => {
     const t = cr._formatCsmReport({ name: 'CSM report' }, { label: 'Oct 26 to Nov 1' }, [{ rows }, { rows: [{ from_csm: 'Bo Li', ticket_number: '3', web_url: 'https://desk/3', channel: 'Chat', t1_sent_first: 1 }] }]);
     expect(t).toContain('*Total sent to CSMs: 4 tickets* (1 went to two CSMs, so the CSM lines add up to 5)');
     expect(t).toContain('Real CSM work: *3* . Still with the CSM, not worked yet: *1* . Not real CSM work: *1*');
-    expect(t).toContain('Transfer check: correct 3, not needed 1');
+    expect(t).toContain('Transfer check: correct 3, wrong CSM 0, not needed 1');
     expect(t).toContain('*Ana Ruiz* 3 (1 not worked yet)');
     expect(t).toContain('Note only: Bo Li <https://desk/3|#3>');
     expect(t).toContain('After CSM action: <https://desk/4|#4>');

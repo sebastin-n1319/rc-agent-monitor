@@ -8,6 +8,16 @@ describe('CSM action audit', () => {
     expect(ca._clean('<div>zsu[@user:852209043]zsu Spoke to Jen&nbsp;at (973) 405-7698, mail a@b.com about zsu[#420109:1:1]zsu</div>'))
       .toBe('@someone Spoke to Jen at [phone], mail [email] about #420109');
   });
+  it('orders owner changes by real time and shows how long each owner held it', () => {
+    expect(ca._parseLog('Owner changed to Gia Evans on 2026-10-26 11:38:44 | Role : CEO')[0].at).toBe('2026-10-26T16:38:44.000Z'); // CST after the clock change
+    const x = { ticket: { ticket_number: '421197', subject: 'Charge', channel: 'Phone', status: 'Open', owner_user_name: 'Morgan Taylor', cf_csm_account_manager: 'Kevin Milagroso',
+      cf_owner_change_log: 'Owner changed to Gia Evans on 2026-10-26 11:38:44 | Role : CEO\nOwner changed to Zeff Austin on 2026-10-26 11:45:21 | Role : T1 Support' },
+      comments: [{ author_name: 'Zeff Austin', created_time: '2026-10-26T16:50:00Z', content: 'Calling back' }], threads: [], calls: [] };
+    const t = ca._timeline(x, (n) => (/gia/i.test(n) ? '[CSM]' : '[T1]'));
+    expect(t).toContain("The account's CSM in Desk: Kevin Milagroso");
+    expect(t).toContain('Owner changed to Gia Evans [CSM] (held it 7 min)');
+    expect(t.indexOf('Owner changed to Zeff')).toBeLessThan(t.indexOf('Note by Zeff'));
+  });
   it('puts CSM phone calls in the timeline under their Desk name', () => {
     const x = { ticket: { ticket_number: '420109', subject: 'Billing', channel: 'Phone', status: 'Closed', owner_user_name: 'Alexis Harris', cf_owner_change_log: '' }, comments: [], threads: [],
       calls: [{ start_at: '2026-10-22T19:42:57Z', duration_seconds: 1227, who: 'alexis.harris' }, { start_at: '2026-10-22T19:36:26Z', duration_seconds: 305, who: 'richard' }] };
