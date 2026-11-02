@@ -152,5 +152,17 @@ describe('scheduled reports: the built-in CSM transfer report', () => {
     expect(t).toContain('After CSM action: <https://desk/4|#4>');
     expect(t).toContain('Bo Li 1: <https://desk/3|#3> (T1 sent it first)');
     expect(t).not.toMatch(/[\u2014\u2013]/);
+    const c = cr._formatCsmReport({ name: 'CSM report' }, { label: 'Oct 26 to Nov 1' }, [{ rows }, { rows: [] }], { tickets: false, summary: false, transfer_check: false, process: false, by_csm: true, by_csm_channels: false, channel_totals: true, not_real: false, not_needed: false, came_back: false, moved_to_t1: false });
+    expect(c).toContain('By channel: Email 2, Chat 1, Phone 1');
+    expect(c).toContain('*Ana Ruiz* 3: Email 2, Phone 1');
+    expect(c).not.toContain('https://');
+    expect(c).not.toMatch(/Came back|Transfer check|Not real/);
+  });
+  it('reads counts only and by channel from plain words even when the AI misreads', async () => {
+    const q0 = cr._deps().ai;
+    cr.setDeps({ ai: { isAnthropicConfigured: () => true, claudeJSON: async () => ({ json: { tickets: true, channel_totals: false, came_back: false } }) } });
+    const o = await cr._csmLayout('Ticket count T1 sent to each CSM, highest first, with the total grouped by channel. No need of ticket links in chat, just count');
+    expect([o.tickets, o.channel_totals, o.came_back]).toEqual([false, true, false]);
+    cr.setDeps({ ai: q0 });
   });
 });
