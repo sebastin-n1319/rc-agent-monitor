@@ -158,11 +158,13 @@ describe('scheduled reports: the built-in CSM transfer report', () => {
     expect(c).not.toContain('https://');
     expect(c).not.toMatch(/Came back|Transfer check|Not real/);
   });
-  it('reads counts only and by channel from plain words even when the AI misreads', async () => {
-    const q0 = cr._deps().ai;
-    cr.setDeps({ ai: { isAnthropicConfigured: () => true, claudeJSON: async () => ({ json: { tickets: true, channel_totals: false, came_back: false } }) } });
-    const o = await cr._csmLayout('Ticket count T1 sent to each CSM, highest first, with the total grouped by channel. No need of ticket links in chat, just count');
-    expect([o.tickets, o.channel_totals, o.came_back]).toEqual([false, true, false]);
-    cr.setDeps({ ai: q0 });
+  it('shows only what the request asks for', async () => {
+    const a = await cr._csmLayout('How many tickets T1 sent to each CSM, highest first, with the total');
+    expect([a.tickets, a.by_csm, a.came_back, a.moved_to_t1, a.transfer_check, a.process, a.not_real]).toEqual([false, true, false, false, false, false, false]);
+    const b = await cr._csmLayout('Ticket count T1 sent to each CSM, highest first, with the total grouped by channel. No need of ticket links in chat, just count');
+    expect([b.tickets, b.channel_totals, b.by_csm_channels, b.came_back]).toEqual([false, true, true, false]);
+    const c = await cr._csmLayout('Tickets T1 sent to each CSM with ticket numbers as links. Then show the tickets that came back to T1 and the total tickets each CSM moved to T1');
+    expect([c.tickets, c.came_back, c.moved_to_t1]).toEqual([true, true, true]);
+    expect((await cr._csmLayout('Full report of CSM transfers')).moved_to_t1).toBe(true);
   });
 });
