@@ -749,6 +749,8 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // (every 15 minutes), Asana tasks are checked for changes (every 30 minutes), and new, changed or day-old reviews are
     // redone within an hourly cap. Suggestions only: nothing is changed in Zoho Desk.
     // Batch 225: scheduled reports (Tickets > Reports): a plain-words request, read-only queries, sent to a Google Chat space.
+    // Batch 233: per ticket check of what the CSM really did on a T1 transfer (used by the reports).
+    { const ca = require('./lib/csm-action-audit'); ca.setDB(db); await ca.initSchema(); ca.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n) }); }
     { const cr = require('./lib/custom-reports'); cr.setDB(db); await cr.initSchema();
       cr.setDeps({ ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n), publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app',
         // T1 agents are the people in the tool's agent list (and the names they go by).

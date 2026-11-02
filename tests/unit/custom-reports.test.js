@@ -112,7 +112,10 @@ describe.skipIf(!sqlite3)('scheduled reports: the T1 transfers view', () => {
     const mv = await new Promise((res, rej) => db.all(cr._withView("SELECT from_csm, COUNT(DISTINCT ticket_number) n FROM csm_to_t1 GROUP BY 1", "''", "''", "''", [{ ticket_id: '9', ticket_number: '9', web_url: 'u', channel: 'Email', from_csm: "O'Neil", t1_agent: 'Sky', moved_at: 'x', t1_sent_first: 0 }]), (e, r) => e ? rej(e) : res(r)));
     expect(mv).toEqual([{ from_csm: "O'Neil", n: 1 }]);
     expect(cr._chatLinks('https://d/x#1 | #420401 Change')).toBe('<https://d/x#1|#420401> Change');
-    expect(cr._withView('WITH x AS (SELECT 1) SELECT * FROM t1_transfers, x', "'a'")).toMatch(/^WITH t1_transfers AS \(.*\), x AS/s);
+    expect(cr._withView('WITH x AS (SELECT 1) SELECT * FROM t1_transfers, x', "'a'")).toMatch(/^WITH csm_audit_v\(.*\),\nt1_transfers AS \(.*\), x AS/s);
+    const audited = await new Promise((res, rej) => db.all(cr._withView("SELECT ticket_number, csm_action, transfer_check, csm_handled FROM t1_transfers WHERE to_csm = 1 ORDER BY 1", "'ana ruiz'", "'c'", "''", [], null, [], null, [{ ticket_id: 'a', csm_key: 'ana ruiz', transfer: 'not needed', csm_action: 'note only', note: 'CSM said T1 can call back' }]), (e, r) => e ? rej(e) : res(r)));
+    expect(audited[0]).toEqual({ ticket_number: '1', csm_action: 'note only', transfer_check: 'not needed', csm_handled: 0 });
+    expect(audited[1]).toMatchObject({ ticket_number: '2', csm_action: 'not checked', csm_handled: 1 });
     expect(cr._withView('SELECT 1 FROM tr_reviews', "'a'")).toBe('SELECT 1 FROM tr_reviews');
   });
 });

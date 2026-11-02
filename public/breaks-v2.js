@@ -542,8 +542,10 @@
     const { agent, admin } = roots();
     const view = g('view', 'admin');
     try {
-      if (agent && view === 'agent') { agent.innerHTML = agentHTML(); loadLiveNow(); }
-      if (admin && view === 'admin') { admin.innerHTML = adminHTML(); loadLiveNow(); }
+      // Batch 234: update in place (dom-morph.js) so the 15 to 60 second refreshes do not rebuild the page and flash.
+      const put = (el, html) => { if (window.morphHTML) window.morphHTML(el, html); else if (el.__last !== html) { el.__last = html; el.innerHTML = html; } };
+      if (agent && view === 'agent') { put(agent, agentHTML()); loadLiveNow(); }
+      if (admin && view === 'admin') { put(admin, adminHTML()); loadLiveNow(); }
     } catch (err) { console.error('breaks-v2 render', err); }
     startTick();
   }
