@@ -70,11 +70,11 @@ describe.skipIf(!sqlite3)('scheduled reports: build, save, send', () => {
     await expect(cr.getSheet('bad')).rejects.toThrow('not found');
   });
   it('previews, saves the queries, and sends to the space', async () => {
-    const prev = await cr.preview({ name: 'CSM report', prompt: 'How many tickets T1 sent to each CSM', period: 'last_7_days' });
+    const prev = await cr.preview({ name: 'CSM report', prompt: 'How many tickets went to each person', period: 'last_7_days' });
     expect(prev.planView.queries[0].rows).toBeGreaterThanOrEqual(0);
     expect(prev.text).toContain('Walter Green');
-    await expect(cr.save(null, { name: 'CSM report', prompt: 'How many tickets T1 sent to each CSM', webhook: 'https://example.com/x' }, 'a@adit.com')).rejects.toThrow('Google Chat webhook');
-    const r = await cr.save(null, { name: 'CSM report', prompt: 'How many tickets T1 sent to each CSM', webhook: 'https://chat.googleapis.com/v1/spaces/AAAA1234/messages?key=k&token=t', freq: 'weekly', weekday: 1, time: '09:00', period: 'last_7_days' }, 'a@adit.com', { prompt: 'How many tickets T1 sent to each CSM', plan: prev.plan });
+    await expect(cr.save(null, { name: 'CSM report', prompt: 'How many tickets went to each person', webhook: 'https://example.com/x' }, 'a@adit.com')).rejects.toThrow('Google Chat webhook');
+    const r = await cr.save(null, { name: 'CSM report', prompt: 'How many tickets went to each person', webhook: 'https://chat.googleapis.com/v1/spaces/AAAA1234/messages?key=k&token=t', freq: 'weekly', weekday: 1, time: '09:00', period: 'last_7_days' }, 'a@adit.com', { prompt: 'How many tickets went to each person', plan: prev.plan });
     expect(r.plan.current).toBe(true);
     expect(r.target).toContain('AAAA12');
     expect(JSON.stringify(r)).not.toContain('token=t');
@@ -133,5 +133,24 @@ describe('scheduled reports: tickets CSMs moved to T1', () => {
     expect(m.map((x) => [x.ticket_number, x.from_csm, x.t1_agent, x.t1_sent_first])).toEqual([['418391', 'Patricia Nelson', 'Audrey Miles', 0], ['419279', 'Amelia Parks', 'Greg Dawson', 1]]);
     expect(cr._csmMoves(rows, new Set(['amelia parks', 'audrey miles']), period, new Set(), new Set(['audrey miles', 'greg dawson'])).map((x) => x.ticket_number)).toEqual(['419279']); // T1 agents never count as CSMs
     expect(cr._csmMoves(rows, new Set(), { from: '2026-10-24T05:00:00.000Z', to: '2026-10-31T05:00:00.000Z' }, new Set())).toEqual([]);
+  });
+});
+
+describe('scheduled reports: the built-in CSM transfer report', () => {
+  it('uses fixed queries for CSM transfer asks and writes every number from the data', () => {
+    expect(cr._builtInPlan('Tickets T1 sent to each CSM, highest first').builtin).toBe('csm_transfers');
+    expect(cr._builtInPlan('Chats handled by each agent')).toBeNull();
+    const T = (csm, n, ch, act, tc, handled, back) => ({ csm, ticket_number: String(n), web_url: 'https://desk/' + n, channel: ch, csm_action: act, transfer_check: tc, csm_handled: handled, back_to_t1: back, path: 'moved without review', review_result: 'not reviewed' });
+    const rows = [T('Ana Ruiz', 1, 'Email', 'real action', 'correct', 1, 0), T('Ana Ruiz', 2, 'Phone', 'pending', 'correct', 1, 0), T('Bo Li', 3, 'Chat', 'note only', 'not needed', 0, 1),
+      T('Bo Li', 4, 'Email', 'real action', 'correct', 1, 1), T('Ana Ruiz', 4, 'Email', 'real action', 'correct', 1, 1)];
+    const t = cr._formatCsmReport({ name: 'CSM report' }, { label: 'Oct 26 to Nov 1' }, [{ rows }, { rows: [{ from_csm: 'Bo Li', ticket_number: '3', web_url: 'https://desk/3', channel: 'Chat', t1_sent_first: 1 }] }]);
+    expect(t).toContain('*Total sent to CSMs: 4 tickets* (1 went to two CSMs, so the CSM lines add up to 5)');
+    expect(t).toContain('Real CSM work: *3* . Still with the CSM, not worked yet: *1* . Not real CSM work: *1*');
+    expect(t).toContain('Transfer check: correct 3, not needed 1');
+    expect(t).toContain('*Ana Ruiz* 3 (1 not worked yet)');
+    expect(t).toContain('Note only: Bo Li <https://desk/3|#3>');
+    expect(t).toContain('After CSM action: <https://desk/4|#4>');
+    expect(t).toContain('Bo Li 1: <https://desk/3|#3> (T1 sent it first)');
+    expect(t).not.toMatch(/[\u2014\u2013]/);
   });
 });

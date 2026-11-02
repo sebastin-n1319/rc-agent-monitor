@@ -459,10 +459,12 @@
       : '<div class="lf-card lf-pad lf-sub">No monitored agents yet.</div>';
 
     const availNote = (mode === 'admin' && _avail && _avail.note) ? `<div class="lf-card lf-pad lf-sub" role="status" style="margin-bottom:10px">${e(_avail.note)}</div>` : '';
-    root.innerHTML = head + availNote
+    const html = head + availNote
       + (mode === 'agent' ? meCard(me) : '')
       + kpiStrip(rows, ctx)
       + `<div class="lf-main"><div class="lf-wings">${grid}</div><aside class="lf-rail">${mode === 'admin' ? adminRail(rows) : agentRail(rows)}</aside></div>`;
+    // Batch 234: update in place so the live refresh does not rebuild the board (no flashing, scroll and hover kept).
+    if (window.morphHTML) window.morphHTML(root, html); else root.innerHTML = html;
   }
 
   function startTicker() {

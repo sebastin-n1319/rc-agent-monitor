@@ -36,6 +36,12 @@
     }
     while (a) { const n = a.nextSibling; from.removeChild(a); a = n; }
   }
+  // Text cut short with "..." shows the full text on hover, on every page.
+  document.addEventListener('mouseover', function (ev) {
+    const el = ev.target && ev.target.closest ? ev.target.closest('*') : null;
+    if (!el || el.title || el.children.length > 2) return;
+    if (el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).textOverflow === 'ellipsis') { el.title = el.textContent.replace(/\s+/g, ' ').trim().slice(0, 300); }
+  }, { passive: true });
   window.morphHTML = function (el, html) {
     if (!el) return false;
     if (el.__morphLast === html) return false;
