@@ -2150,7 +2150,7 @@ app.get('/api/guides/expert/investigate-diag', requireAdmin, async (req, res) =>
     if (!inv.isConfigured()) return res.json({ success: true, configured: false });
     const tools = (await m.tools()).map(t => t.name);
     const q = String(req.query.q || '').slice(0, 600);
-    const out = q ? await inv.investigate({ question: q, budgetMs: 80000 }) : null;
+    const out = q ? await inv.investigate({ question: q, budgetMs: 85000 }) : null;
     res.json({ success: true, configured: true, tools, allowed: tools.filter(n => inv.ALLOW.has(n)), result: out });
   } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }
 });
