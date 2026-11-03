@@ -43,6 +43,12 @@ td a{color:var(--acc-ink);font-weight:600;text-decoration:none}td a:hover{text-d
 .center h2{margin:0 0 6px;font-size:18px}.center p{margin:0 0 18px;color:var(--t3);font-size:13px;line-height:1.5}
 #gbtn{display:flex;justify-content:center;min-height:44px}
 .err{color:var(--bad)}
+.hd-r{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.seg button{border:0;background:var(--card);color:var(--t2);font:inherit;font-size:12.5px;font-weight:600;padding:0 12px;height:34px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--t1);color:var(--card)}
+.seg button:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.note{margin:-6px 0 12px;font-size:12.5px;color:var(--t3)}
 .empty{padding:28px;text-align:center;color:var(--t3)}
 </style>
 </head>
@@ -52,7 +58,11 @@ td a{color:var(--acc-ink);font-weight:600;text-decoration:none}td a:hover{text-d
 (function () {
   var token = location.pathname.split('/').filter(Boolean).pop();
   var app = document.getElementById('app');
-  var S = { data: null, sec: 0, q: '', pick: '', sort: null, dir: 1 };
+  var S = { data: null, sec: 0, q: '', pick: '', sort: null, dir: 1, mode: 'latest', work: 'counted' };
+  // A ticket counts for the CSM when they did real work on it, or it is still with them waiting; the rest reached a CSM but were not their work.
+  function counted(r) { var a = val(r, 'csm_action'); if (a == null || a === '' || a === 'not checked') return true; return a === 'real action' || (a === 'pending' && val(r, 'outcome') !== 'Came back to T1'); }
+  function val(r, k) { return S.mode === 'latest' && r._now && (k in r._now) ? r._now[k] : r[k]; }
+  function histText(r) { return (r._hist || []).map(function (x) { return when(String(x.at).replace(' ', 'T') + (/Z$/.test(x.at) ? '' : 'Z')) + ': ' + x.csm_action + ', ' + x.transfer_check; }).join('\n'); }
   function el(tag, attrs, kids) {
     var n = document.createElement(tag);
     for (var k in (attrs || {})) { if (k === 'text') n.textContent = attrs[k]; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]); else n.setAttribute(k, attrs[k]); }
@@ -90,29 +100,38 @@ td a{color:var(--acc-ink);font-weight:600;text-decoration:none}td a:hover{text-d
   }
   function csv(sec, rows) {
     var cols = sec.columns, esc = function (v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-    var lines = [cols.map(function (c) { return esc(c.label); }).concat(['Link']).join(',')].concat(rows.map(function (r) { return cols.map(function (c) { return esc(r[c.key]); }).concat([esc(r._url || '')]).join(','); }));
-    var a = el('a', { href: URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })), download: (S.data.name || 'tickets').replace(/[^\w]+/g, '-') + '.csv' }); document.body.appendChild(a); a.click(); a.remove();
+    var lines = [cols.map(function (c) { return esc(c.label); }).concat(['Link']).join(',')].concat(rows.map(function (r) { return cols.map(function (c) { return esc(val(r, c.key)); }).concat([esc(r._url || '')]).join(','); }));
+    var a = el('a', { href: URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' })), download: (S.data.name || 'tickets').replace(/[^\w]+/g, '-') + (S.mode === 'sent' ? '-as-sent' : '') + '.csv' }); document.body.appendChild(a); a.click(); a.remove();
   }
   function render() {
     var d = S.data, sec = d.sections[S.sec] || { columns: [], rows: [] };
     var groupKey = sec.columns.length ? sec.columns[0].key : null;
-    var rows = sec.rows.filter(function (r) {
+    var hasCheck = sec.columns.some(function (c) { return c.key === 'csm_action'; });
+    var base = hasCheck && S.work !== 'all' ? sec.rows.filter(function (r) { return S.work === 'counted' ? counted(r) : !counted(r); }) : sec.rows;
+    var rows = base.filter(function (r) {
       if (S.pick && String(r[groupKey]) !== S.pick) return false;
       if (!S.q) return true;
-      var q = S.q.toLowerCase(); return sec.columns.some(function (c) { return String(r[c.key]).toLowerCase().indexOf(q) >= 0; });
+      var q = S.q.toLowerCase(); return sec.columns.some(function (c) { return String(val(r, c.key)).toLowerCase().indexOf(q) >= 0; });
     });
-    if (S.sort) rows = rows.slice().sort(function (a, b) { var x = String(a[S.sort]), y = String(b[S.sort]); var nx = Number(x), ny = Number(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y) : nx - ny) * S.dir; });
+    var changed = 0; d.sections.forEach(function (x) { x.rows.forEach(function (r) { if (r._now) changed++; }); });
+    if (S.sort) rows = rows.slice().sort(function (a, b) { var x = String(val(a, S.sort)), y = String(val(b, S.sort)); var nx = Number(x), ny = Number(y); return (isNaN(nx) || isNaN(ny) ? x.localeCompare(y) : nx - ny) * S.dir; });
     app.innerHTML = '';
     app.appendChild(el('header', {}, [el('div', {}, [el('h1', { text: d.name || 'Ticket sheet' }), el('p', { class: 'sub', text: (d.period || '') + ' . signed in as ' + d.viewer })]),
-      el('button', { class: 'btn', type: 'button', onclick: function () { csv(sec, rows); } }, ['Download CSV'])]));
+      el('div', { class: 'hd-r' }, [changed ? el('div', { class: 'seg', role: 'group', 'aria-label': 'Which check to show' }, [['latest', 'Latest check'], ['sent', 'As sent']].map(function (m) {
+        return el('button', { type: 'button', 'aria-pressed': String(S.mode === m[0]), onclick: function () { S.mode = m[0]; render(); } }, [m[1]]); })) : null,
+        el('button', { class: 'btn', type: 'button', onclick: function () { csv(sec, rows); } }, ['Download CSV'])])]));
+    if (changed) app.appendChild(el('p', { class: 'note' }, [S.mode === 'latest' ? changed + ' ticket' + (changed === 1 ? '' : 's') + ' changed since this was sent (marked Updated; hover to see each earlier check). Switch to As sent to see exactly what went out.' : 'Showing the sheet exactly as it was sent on ' + when(String(d.created_at).replace(' ', 'T') + 'Z') + '.']));
     if (d.sections.length > 1) app.appendChild(el('div', { class: 'tabs', role: 'tablist' }, d.sections.map(function (s, i) {
       return el('button', { class: 'tab', role: 'tab', type: 'button', 'aria-selected': String(i === S.sec), onclick: function () { S.sec = i; S.pick = ''; S.sort = null; render(); } }, [s.title + ' (' + s.rows.length + ')']);
     })));
     var search = el('input', { type: 'search', placeholder: 'Search tickets, subjects, agents...', 'aria-label': 'Search', value: S.q });
     search.addEventListener('input', function () { S.q = search.value; var pos = search.selectionStart; render(); var n = document.querySelector('.bar input'); n.focus(); n.setSelectionRange(pos, pos); });
-    app.appendChild(el('div', { class: 'bar' }, [search, el('span', { class: 'count', text: rows.length + ' of ' + sec.rows.length + ' tickets' })]));
+    var nCount = hasCheck ? sec.rows.filter(counted).length : 0;
+    var workSeg = hasCheck ? el('div', { class: 'seg', role: 'group', 'aria-label': 'Which tickets' }, [['counted', 'Counted for the CSM (' + nCount + ')'], ['not', 'Not CSM work (' + (sec.rows.length - nCount) + ')'], ['all', 'All (' + sec.rows.length + ')']].map(function (m) {
+      return el('button', { type: 'button', 'aria-pressed': String(S.work === m[0]), onclick: function () { S.work = m[0]; S.pick = ''; render(); } }, [m[1]]); })) : null;
+    app.appendChild(el('div', { class: 'bar' }, [search, workSeg, el('span', { class: 'count', text: rows.length + ' of ' + base.length + ' tickets' })]));
     if (groupKey) {
-      var counts = {}; sec.rows.forEach(function (r) { var k = String(r[groupKey]); counts[k] = (counts[k] || 0) + 1; });
+      var counts = {}; base.forEach(function (r) { var k = String(r[groupKey]); counts[k] = (counts[k] || 0) + 1; });
       var keys = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a] || a.localeCompare(b); });
       if (keys.length > 1 && keys.length <= 60) app.appendChild(el('div', { class: 'chips' }, keys.map(function (k) {
         return el('button', { class: 'chip', type: 'button', 'aria-pressed': String(S.pick === k), onclick: function () { S.pick = S.pick === k ? '' : k; render(); } }, [k || 'None', el('b', { text: String(counts[k]) })]);
@@ -125,7 +144,8 @@ td a{color:var(--acc-ink);font-weight:600;text-decoration:none}td a:hover{text-d
     }));
     var body = el('tbody', {}, rows.map(function (r) {
       return el('tr', {}, sec.columns.map(function (c, i) {
-        var v = r[c.key];
+        var v = val(r, c.key);
+        if (c.key === 'csm_action' && r._now && S.mode === 'latest') return el('td', {}, [v, ' ', el('span', { class: 'tag warn', title: (histText(r) || 'Earlier: ' + r.csm_action + ', ' + r.transfer_check) }, ['Updated'])]);
         if (c.key === 'ticket_number') return el('td', { class: 'k' }, [r._url ? el('a', { href: r._url, target: '_blank', rel: 'noopener', text: '#' + v }) : '#' + v]);
         if (/_at$/.test(c.key)) return el('td', { text: when(v) });
         if (TAGS[c.key] && v) return el('td', {}, [tagFor(v)]);

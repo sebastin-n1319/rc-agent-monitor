@@ -168,3 +168,14 @@ describe('scheduled reports: the built-in CSM transfer report', () => {
     expect((await cr._csmLayout('Full report of CSM transfers')).moved_to_t1).toBe(true);
   });
 });
+
+describe('scheduled reports: sheet storage', () => {
+  it('stores sheets compressed and reads both new and old rows', () => {
+    const big = { sections: [{ title: 'T', columns: [{ key: 'csm', label: 'CSM' }], rows: Array.from({ length: 200 }, (_, i) => ({ csm: 'Richard Marshall', ticket_number: String(420000 + i), audit_note: 'The CSM called the client and explained the next step.' })) }] };
+    const z = cr._pack(big);
+    expect(z.startsWith('z:')).toBe(true);
+    expect(z.length).toBeLessThan(JSON.stringify(big).length / 4);
+    expect(cr._unpack(z)).toEqual(big);
+    expect(cr._unpack(JSON.stringify({ sections: [] }))).toEqual({ sections: [] });
+  });
+});
