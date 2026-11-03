@@ -727,3 +727,10 @@ html.ax-full .ax-cbar{top:0}
 .ax-lc-bub.fu{background:var(--surface);border:1px solid var(--border)}
 .ax-lc-fusrc{display:flex;align-items:center;gap:6px;margin:0;font-size:11.5px;color:var(--t3)}
 .ax-lc-fusrc svg{flex:none}
+/* Batch 236: what Expert looked up itself */
+.ax-inv{margin:10px 0;padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.ax-inv summary{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--t2);list-style:none}
+.ax-inv summary::-webkit-details-marker{display:none}
+.ax-inv-sum{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13px;line-height:1.5;color:var(--t1);margin:10px 0 6px}
+.ax-inv-steps{margin:6px 0 2px;padding-left:20px;font-size:12px;color:var(--t3);display:flex;flex-direction:column;gap:2px}
+.ax-inv-steps li.bad{color:var(--t3);opacity:.75}

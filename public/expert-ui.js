@@ -206,7 +206,7 @@
     // progress
     var PHASES = ['Understanding the question', 'Searching the Help Center and guides', 'Checking how the team solved it before', 'Writing the answer', 'Double-checking with a second AI'];
     function progress(q) {
-      var ph = /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i.test(String(q || '').trim()) ? ['Reading the ticket, its history and the client\'s earlier tickets'].concat(PHASES) : PHASES;
+      var ph = /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i.test(String(q || '').trim()) ? ['Reading the ticket, its history and the client\'s earlier tickets', 'Looking up the account, deal and owners in Desk and CRM'].concat(PHASES) : PHASES;
       var list = h('ol', { class: 'ax-steps' }, ph.map(function (p, i) { return h('li', { class: i === 0 ? 'on' : '' }, [h('i'), p]); }));
       var box = h('div', { class: 'ax-card ax-wait' }, [h('div', { class: 'ax-wait-hd' }, [h('span', { class: 'ax-orb' }), h('b', { text: 'Working on it' })]), list]);
       var k = 0, tm = setInterval(function () { var li = list.children; if (k < li.length - 1) { li[k].className = 'done'; k++; li[k].className = 'on'; } }, 2600);
@@ -244,6 +244,7 @@
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
+      if (j.investigation && j.investigation.steps && j.investigation.steps.length) card.appendChild(invBox(j.investigation));
       if (j.modeNote) card.appendChild(h('p', { class: 'ax-modenote' }, [icon('bulb', 'sm'), j.modeNote]));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
@@ -314,6 +315,14 @@
       return out.join('\n');
     }
     var TYPE = { kb: ['Help Center', 'book'], guide: ['Guide', 'book'], case: ['Solved ticket', 'ticket'], call: ['Support call', 'phone'], rule: ['Team rule', 'rule'], note: ['Team note', 'rule'], update: ['Update', 'news'], review: ['Reviewer decision', 'shield'], qa: ['QA rule', 'rule'], learned: ['Answered before', 'spark'] };
+    // Batch 236: what Expert looked up itself, and how, so the agent can trust (and check) the facts.
+    function invBox(inv) {
+      var secs = Math.max(1, Math.round((inv.ms || 0) / 1000));
+      var box = h('details', { class: 'ax-inv' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: 'Expert looked this up in Desk and CRM (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' })])]);
+      if (inv.summary) box.appendChild(h('pre', { class: 'ax-inv-sum' }, [linkTickets(inv.summary)]));
+      box.appendChild(h('ol', { class: 'ax-inv-steps' }, inv.steps.map(function (s) { return h('li', { class: s.ok ? '' : 'bad', text: s.what + (s.ok ? '' : ' (no result)') }); })));
+      return box;
+    }
     function sourcesBox(list) {
       var box = h('details', { class: 'ax-srcs' }, [h('summary', null, [h('span', { text: 'Sources (' + list.length + ')' }), h('span', { class: 'ax-src-types' }, uniq(list.map(function (s) { return s.type; })).map(function (t) { return h('span', { class: 'ax-st t-' + t, text: (TYPE[t] || [t])[0] }); }))])]);
       var ul = h('ul');
@@ -444,7 +453,7 @@
       var kbSub = K.modules + ' product modules, ' + (metaD.kbLive ? 'read live from help.adit.com every 30 minutes' + (metaD.kbSyncedAt ? '. Last read ' + new Date(metaD.kbSyncedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') : 'from the KB export until the first live read finishes');
       root.appendChild(h('section', { class: 'ax-card ax-know' }, [h('h2', { text: 'What it knows' }), h('div', { class: 'ax-know-g' }, [
         kn('book', K.articles + ' Help Center articles', kbSub, kbB), kn('book', 'VoIP guide and AI runbook', 'The support guides on this page'),
-        kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in AditKB for every question' : 'AditKB not connected'),
+        kn('rule', K.notes + ' team rules and notes', 'Rule list and notes; highest authority'), kn('ticket', 'Solved tickets and chats', K.cases === 'live' ? 'Searched live in Desk data for every question' : 'Desk data not connected'),
         kn('phone', K.calls + ' support calls', K.callsLast ? 'Latest ' + String(K.callsLast).slice(0, 10) + '. Learns every 6 hours.' : 'Learns every 6 hours.', syncB), kn('news', (K.updates || 0) + ' product and process updates', 'Every update on the Adit Updates site, plus published QA updates; newest wins'),
         kn('shield', (K.reviews || 0) + ' reviewer decisions', 'Transfer reviews, AI and VoIP audits and reviews, QA audits. New ones are learned within 10 minutes.'), kn('rule', (K.qa || 0) + ' QA rules', 'From Ticket audits'), kn('spark', (K.learned || 0) + ' helpful answers', 'Answers agents marked helpful are reused for the same scenario')])]));
       // feedback

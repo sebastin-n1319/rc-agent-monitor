@@ -2143,6 +2143,17 @@ app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }
 });
+// Batch 236: admin check of Expert's investigator: lists the data tools it can use and, with ?q=, runs one lookup.
+app.get('/api/guides/expert/investigate-diag', requireAdmin, async (req, res) => {
+  try {
+    const inv = require('./lib/expert-investigate'), m = require('./lib/aditkb-mcp');
+    if (!inv.isConfigured()) return res.json({ success: true, configured: false });
+    const tools = (await m.tools()).map(t => t.name);
+    const q = String(req.query.q || '').slice(0, 600);
+    const out = q ? await inv.investigate({ question: q, budgetMs: 80000 }) : null;
+    res.json({ success: true, configured: true, tools, allowed: tools.filter(n => inv.ALLOW.has(n)), result: out });
+  } catch (e) { res.status(500).json({ success: false, error: String(e.message || e).slice(0, 300) }); }
+});
 // Batch 188: share a conversation. A snapshot of the questions and answers is kept under a random id; anyone signed in
 // to the tool (or on the guides guest list) can open it and carry on from there.
 app.post('/api/guides/expert/share', requireAuth, rateLimit(20, 60000), async (req, res) => {
