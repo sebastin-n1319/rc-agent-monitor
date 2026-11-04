@@ -330,6 +330,7 @@
       if (a.cautions && a.cautions.length) card.appendChild(section('warn', 'Heads up', [h('ul', null, a.cautions.map(function (c) { return h('li', { text: c }); }))], 'warn'));
       if (j.share) card.appendChild(h('div', { class: 'ax-share' }, [icon('link'), h('span', null, ['Send the client: ', h('a', { href: j.share.url, target: '_blank', rel: 'noopener', text: j.share.title })]), h('span', { class: 'ax-sp' }), copyBtn(j.share.url, 'Copy link')]));
       if (j.sources && j.sources.length) card.appendChild(sourcesBox(j.sources));
+      if ((j.trace && j.trace.length) || a.basis) card.appendChild(howBox(j, a));
       if (a.follow_ups && a.follow_ups.length) card.appendChild(h('div', { class: 'ax-fu' }, a.follow_ups.map(function (f) { return h('button', { type: 'button', class: 'ax-chip', onclick: function () { input.value = f; submit(); } }, [f]); })));
       card.appendChild(feedbackRow(j, q));
       return card;
@@ -407,6 +408,16 @@
       var box = h('details', { class: 'ax-inv' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: label ? label + ' (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' : inv.reused ? 'Expert used what it looked up earlier in Desk and CRM for this ticket' : 'Expert looked this up in Desk and CRM (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' })])]);
       if (inv.summary) box.appendChild(h('pre', { class: 'ax-inv-sum' }, [linkTickets(inv.summary)]));
       box.appendChild(h('ol', { class: 'ax-inv-steps' }, inv.steps.map(function (s) { return h('li', { class: s.ok ? '' : 'bad', text: s.what + (s.ok ? '' : ' (no result)') }); })));
+      return box;
+    }
+    // Batch 244 (from Aria's reasoning panel): how the answer was worked out: what came straight from the record, what
+    // is Expert's own inference, what it looked for and did not find, and each step it took with its time.
+    function howBox(j, a) {
+      var B = a.basis || {}, secs = function (ms) { return ms >= 1000 ? Math.round(ms / 100) / 10 + 's' : ms ? '<1s' : ''; };
+      var box = h('details', { class: 'ax-how' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: 'How Expert worked it out' + (j.ms ? ' · ' + secs(j.ms) : '') + (a.confidence ? ' · ' + a.confidence + ' confidence' : '') })])]);
+      var grp = function (title, list) { return list && list.length ? h('div', { class: 'ax-how-g' }, [h('h5', { text: title }), h('ul', null, list.map(function (x) { return h('li', null, [linkTickets(x)]); }))]) : null; };
+      [grp('Read straight from the record', B.from_record), grp('Expert\'s own inference', B.inferred), grp('Looked for and did not find', B.checked_empty)].forEach(function (g) { if (g) box.appendChild(g); });
+      if (j.trace && j.trace.length) box.appendChild(h('div', { class: 'ax-how-g' }, [h('h5', { text: 'Steps' }), h('ol', { class: 'ax-how-steps' }, j.trace.map(function (t) { return h('li', null, [h('span', { text: t.step }), t.ms ? h('span', { class: 'ax-muted', text: secs(t.ms) }) : null]); }))]));
       return box;
     }
     function sourcesBox(list) {

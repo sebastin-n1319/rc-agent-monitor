@@ -74,6 +74,22 @@ describe.skipIf(!sqlite3)('analyst-style ticket review (Batch 240)', () => {
     expect(T.findings[0].title).toBe('Part of a cluster');
     expect(T.limits).toEqual(['root cause not confirmed']);
     expect(r.unverified).toEqual(['999999']);
+    expect(r.trace.map(t => t.step).join(' | ')).toMatch(/Read ticket #423761[\s\S]*Checked other practices[\s\S]*Wrote the answer/);
     expect(r.gap).toBe('');
+  });
+});
+
+describe('Aria thesis brief for support (Batch 244)', () => {
+  it('reads who decides, how to approach, next steps and open promises, without refs or contact details', async () => {
+    ex.setDeps({ query: async (sql) => { expect(sql).toMatch(/j_account_id = '1607362002063490840'/); return { rows: [{ saved_at: '2026-11-04T21:51:00Z', ap: { decision_maker: 'Dr. Sean Perry, who signed [C4e04824a@14:03][E:Agreements/X].', how_to_approach: 'Talk to Dr. Sean Perry directly; call 704-873-6451 [C5ba36079@00:00].', posture: 'receptive' },
+      ns: [{ action: 'Work ticket 423716 to completion', urgency: 'now', owner: 'Onboarding', why: 'Pending Customer [E:Porting/PORT-1]' }],
+      pr: [{ what: 'A call in the lunch window', status: 'unclear', promised_by: 'Manny Parker', promised_on: '2026-10-23' }, { what: 'Hardware credit', status: 'kept' }], cm: { level: 'happy', why: 'Engaged [T424775]' }, fr: [] }] }; } });
+    const b = await ex._thesisBrief('1607362002063490840');
+    expect(b).toMatch(/Who decides: Dr\. Sean Perry, who signed\./);
+    expect(b).toMatch(/Talk to Dr\. Sean Perry directly; call \[phone\]\./);
+    expect(b).toMatch(/\[now, Onboarding\] Work ticket 423716/);
+    expect(b).toMatch(/\[unclear\] A call in the lunch window \(Manny Parker, 2026-10-23\)/);
+    expect(b).not.toMatch(/Hardware credit/);
+    expect(b).not.toMatch(/\[C|\[E:|\[T4/);
   });
 });
