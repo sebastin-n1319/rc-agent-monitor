@@ -202,3 +202,27 @@ html.dark-mode .vp .f2{background:#A48BFA;fill:#A48BFA}html.dark-mode .vp .f3{ba
 .vp-flow-lead{margin:0 0 12px;font-size:14px;color:var(--vp-t1);line-height:1.5}
 .vp-flow-lead b{font-size:20px;margin-right:4px}
 .vp-flow{align-items:start}
+/* Batch 255: column charts with data labels and a pointer tooltip */
+.vp{position:relative}
+.vp-chart .vp-hit{fill:transparent}
+.vp-chart .vp-bar:hover .vp-hit,.vp-chart .vp-bar:focus .vp-hit{fill:var(--vp-soft)}
+.vp-chart .vp-bar:focus{outline:none}
+.vp-chart .vp-bar:focus-visible .vp-hit{stroke:var(--vp-acc);stroke-width:2}
+.vp-chart .vp-bar:hover rect:not(.vp-hit),.vp-chart .vp-bar:focus rect:not(.vp-hit){opacity:1}
+.vp-chart .vp-base{stroke:var(--vp-line2);stroke-width:1}
+.vp-chart .vp-in-l{fill:#fff;font:600 10.5px 'Poppins',sans-serif;pointer-events:none}
+.vp-chart .vp-tot{fill:var(--vp-t1);font:600 11px 'Poppins',sans-serif;pointer-events:none}
+.vp-chart .vp-ax{font-size:10.5px}
+.vp-tip{position:absolute;z-index:30;display:none;min-width:180px;max-width:280px;padding:10px 12px;border-radius:10px;background:var(--vp-t1);color:var(--vp-surf);font-size:12.5px;line-height:1.4;box-shadow:0 8px 24px rgba(7,43,64,.22);pointer-events:none}
+.vp-tip>div>b{display:block;margin-bottom:6px}
+.vp-tip-r{display:flex;align-items:center;gap:8px;margin:2px 0}
+.vp-tip-r b{margin-left:auto;font-variant-numeric:tabular-nums}
+.vp-tip-r i{width:10px;height:10px;border-radius:3px;flex:none}
+.vp-tip-r i.c1{background:var(--vp-c1)}.vp-tip-r i.c2{background:var(--vp-c2)}.vp-tip-r i.c3{background:var(--vp-c3)}
+.vp-tip-r i.f1{background:var(--vp-c1)}.vp-tip-r i.f2{background:#7A5AF8}.vp-tip-r i.f3{background:#C98A0B}
+.vp-tip-s{margin-top:6px;opacity:.8;font-size:12px}
+.vp-stack{height:26px;gap:2px}
+.vp-stack span{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden}
+
+.vp-keys{max-width:none;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 24px}
+.vp-keys li{padding:8px 12px;border:1px solid var(--vp-line);border-radius:10px}

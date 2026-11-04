@@ -158,25 +158,18 @@
     function flowCard(D) {
       var F = flowStats(D), M = F.M;
       if (!M.length) return card('T1 workload, month on month', 'Reading six months of tickets, calls and chats; this shows on the next refresh.', []);
-      var wide = (body.clientWidth || 900) > 1000, W = Math.max(320, wide ? (body.clientWidth || 900) / 2 - 70 : (body.clientWidth || 900) - 40), H = 210, pad = 30, max = Math.max.apply(null, M.map(function (m) { return m.perDay || 0; }).concat([1]));
-      var slot = (W - pad) / M.length, bw = Math.min(70, slot * 0.55);
-      var svg = s('svg', { viewBox: '0 0 ' + W + ' ' + (H + 34), class: 'vp-chart', role: 'img', 'aria-label': 'T1 contacts per working day each month: tickets, calls and chats' });
-      [0, 0.5, 1].forEach(function (f) { var y = H - f * (H - 14); svg.appendChild(s('line', { x1: pad, x2: W, y1: y, y2: y, class: 'vp-grid' })); svg.appendChild(s('text', { x: pad - 6, y: y + 4, class: 'vp-ax', 'text-anchor': 'end' }, [String(Math.round(max * f))])); });
-      M.forEach(function (m, i) {
-        var x = pad + i * slot + (slot - bw) / 2, y = H, g = s('g', { class: 'vp-bar', tabindex: '0' });
-        var per = function (v) { return m.workdays ? v / m.workdays : 0; };
-        g.appendChild(s('title', null, [mon(m.month) + (m.partial ? ' (so far)' : '') + ': ' + m.perDay + ' a working day. ' + m.tickets + ' tickets handled, ' + m.calls + ' calls, ' + m.chats + ' chats in ' + m.workdays + ' working days']));
-        [['tickets', 'f1'], ['calls', 'f2'], ['chats', 'f3']].forEach(function (k) { var v = per(m[k[0]] || 0); if (!v) return; var hg = v / max * (H - 14); y -= hg; g.appendChild(s('rect', { x: x, y: y + 1, width: bw, height: Math.max(1, hg - 2), rx: 3, class: k[1] })); });
-        g.appendChild(s('text', { x: x + bw / 2, y: y - 4, class: 'vp-ax vp-axb', 'text-anchor': 'middle' }, [String(Math.round(m.perDay))]));
-        svg.appendChild(g);
-        svg.appendChild(s('text', { x: x + bw / 2, y: H + 16, class: 'vp-ax', 'text-anchor': 'middle' }, [mon(m.month) + (m.partial ? '*' : '')]));
-        if (m.month === D.goLive.slice(0, 7)) svg.appendChild(s('text', { x: x + bw / 2, y: H + 29, class: 'vp-ax vp-axg', 'text-anchor': 'middle' }, ['VoIP go-live']));
-      });
+      var wide = (body.clientWidth || 900) > 1000;
+      var data = M.map(function (m) { var per = function (v) { return m.workdays ? Math.round((v || 0) / m.workdays * 10) / 10 : 0; }; return { m: m, tickets: per(m.tickets), calls: per(m.calls), chats: per(m.chats) }; });
+      var fkeys = [['tickets', 'f1', 'Tickets handled'], ['calls', 'f2', 'Calls'], ['chats', 'f3', 'Chats']];
+      var svg = columns({ data: data, keys: fkeys, H: 250, maxW: 76, width: wide ? (body.clientWidth || 900) / 2 - 70 : null, aria: 'T1 contacts per working day each month: tickets, calls and chats',
+        total: function (d) { return d.m.perDay; }, label: function (d) { return mon(d.m.month) + (d.m.partial ? '*' : ''); }, marker: function (d) { return d.m.month === D.goLive.slice(0, 7) ? 'VoIP go-live' : ''; },
+        title: function (d) { return mon(d.m.month) + (d.m.partial ? ' (so far)' : '') + ': ' + d.m.perDay + ' a working day'; },
+        sub: function (d) { return d.m.tickets + ' tickets, ' + d.m.calls + ' calls, ' + d.m.chats + ' chats in ' + d.m.workdays + ' working days'; } });
       var rows = M.map(function (m, i) { var p = M[i - 1]; return Object.assign({}, m, { label: mon(m.month) + (m.partial ? ' (so far)' : ''), chg: p && p.perDay ? Math.round((m.perDay - p.perDay) / p.perDay * 1000) / 10 : null }); });
       var chg = F.before && F.after ? Math.round((F.after - F.before) / F.before * 1000) / 10 : null;
       var lead = chg != null ? h('p', { class: 'vp-flow-lead' }, [h('b', { text: (chg > 0 ? '+' : '') + chg + '%' }), ' T1 contacts per working day since VoIP support started (' + F.aLabel + ': ' + F.after + ' a day) against ' + F.bLabel + ' (' + F.before + ' a day). That is all T1 work: tickets handled, calls and chats.']) : null;
       return card('T1 workload, month on month', 'All T1 CS work, not only VoIP. Per working day evens out part months (* = month so far).', [lead,
-        h('div', { class: 'vp-grid2 eq vp-flow' }, [h('div', null, [h('div', { class: 'vp-legend' }, [['f1', 'Tickets handled'], ['f2', 'Calls'], ['f3', 'Chats']].map(function (l) { return h('span', null, [h('i', { class: l[0] }), l[1]]); })), h('div', { class: 'vp-tw' }, [svg])]),
+        h('div', { class: 'vp-grid2 eq vp-flow' }, [h('div', null, [legend(fkeys), h('div', { class: 'vp-tw' }, [svg])]),
           table([['Month', 'label'], ['Tickets handled', 'tickets', N_], ['Calls', 'calls', N_], ['Chats', 'chats', N_], ['Total', 'total', N_], ['Working days', 'workdays', N_], ['A working day', 'perDay', N_],
             ['Change', 'chg', { num: true, fmt: function (v) { return v == null ? '-' : (v > 0 ? '+' : '') + v + '%'; } }]], rows)])]);
     }
@@ -340,22 +333,55 @@
       var note = D.range.preset === 'golive' ? 'Before is the same number of days before T1 took basic VoIP support, when T1 sent VoIP tickets on to the VoIP team.' : 'Before is the same number of days just before this range.';
       return card('Before and after', note, [h('div', { class: 'vp-tw' }, [t])]);
     }
-    function dailyCard(daily) {
-      var box = card('Day by day', 'VoIP tickets T1 handled each day, by what happened to them. Hover a bar for the numbers.', []);
-      if (!daily.length) { box.appendChild(h('p', { class: 'vp-empty', text: 'No tickets in this range yet.' })); return box; }
-      var W = Math.max(320, (body.clientWidth || 900) - 40), H = 180, pad = 26, max = Math.max.apply(null, daily.map(function (d) { return d.closedT1 + d.transferred + d.openT1; })) || 1;
-      var bw = Math.max(6, Math.min(30, (W - pad) / daily.length - 6));
-      var svg = s('svg', { viewBox: '0 0 ' + W + ' ' + (H + 30), class: 'vp-chart', role: 'img', 'aria-label': 'Daily VoIP tickets: closed by T1, transferred and open with T1' });
-      [0, 0.5, 1].forEach(function (f) { var y = H - f * (H - 10); svg.appendChild(s('line', { x1: pad, x2: W, y1: y, y2: y, class: 'vp-grid' })); svg.appendChild(s('text', { x: pad - 6, y: y + 4, class: 'vp-ax', 'text-anchor': 'end' }, [String(Math.round(max * f))])); });
-      daily.forEach(function (d, i) {
-        var x = pad + 4 + i * ((W - pad - 4) / daily.length), y = H, g = s('g', { class: 'vp-bar', tabindex: '0' });
-        g.appendChild(s('title', null, [d.day + ': ' + d.closedT1 + ' closed by T1, ' + d.transferred + ' transferred, ' + d.openT1 + ' open with T1']));
-        [['closedT1', 'c1'], ['openT1', 'c3'], ['transferred', 'c2']].forEach(function (k) { var v = d[k[0]]; if (!v) return; var hgt = v / max * (H - 10); y -= hgt; g.appendChild(s('rect', { x: x, y: y + 1, width: bw, height: Math.max(1, hgt - 2), rx: 2, class: k[1] })); });
-        svg.appendChild(g);
-        if (daily.length <= 16 || i % Math.ceil(daily.length / 12) === 0) svg.appendChild(s('text', { x: x + bw / 2, y: H + 16, class: 'vp-ax', 'text-anchor': 'middle' }, [d.day.slice(5).replace('-', '/')]));
+    // Batch 255: one column chart for the daily and monthly views: value labels in each segment that has room, the
+    // total on top of every column, a y axis with round steps, and a tooltip that follows the pointer or keyboard focus.
+    var tipEl = null;
+    function tip(evt, html, el) {
+      if (!tipEl) { tipEl = h('div', { class: 'vp-tip', role: 'tooltip' }); root.appendChild(tipEl); }
+      if (!html) { tipEl.style.display = 'none'; return; }
+      clear(tipEl); tipEl.appendChild(html); tipEl.style.display = 'block';
+      var rr = root.getBoundingClientRect(), bx = evt && evt.clientX != null ? { x: evt.clientX, y: evt.clientY } : (function () { var b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top }; })();
+      var w = tipEl.offsetWidth, left = Math.min(Math.max(8, bx.x - rr.left + 14), rr.width - w - 8);
+      tipEl.style.left = left + 'px'; tipEl.style.top = (bx.y - rr.top - tipEl.offsetHeight - 12 + root.scrollTop) + 'px';
+    }
+    function niceMax(v) { if (v <= 4) return 4; var p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p, st = [1, 1.2, 1.6, 2, 2.4, 3, 4, 5, 6, 8, 10]; for (var i = 0; i < st.length; i++) if (n <= st[i]) return st[i] * p; return 10 * p; }
+    function columns(o) {
+      // o: { data, keys: [[key, cls, label]], label(d), sub(d), title(d), total(d), unit, H, maxW, marker(d) }
+      var data = o.data, W = Math.max(320, o.width || ((body.clientWidth || 900) - 40)), H = o.H || 220, top = 22, left = 36, bottom = o.marker ? 40 : 28;
+      var tot = function (d) { return o.total ? o.total(d) : o.keys.reduce(function (t, k) { return t + (d[k[0]] || 0); }, 0); };
+      var max = niceMax(Math.max.apply(null, data.map(tot).concat([1]))), plotH = H - top;
+      var slot = (W - left) / data.length, bw = Math.max(6, Math.min(o.maxW || 44, slot * 0.68)), labelEvery = Math.max(1, Math.ceil(data.length / Math.max(1, Math.floor((W - left) / 56))));
+      var svg = s('svg', { viewBox: '0 0 ' + W + ' ' + (H + bottom), class: 'vp-chart', role: 'img', 'aria-label': o.aria || '' });
+      for (var g = 0; g <= 4; g++) { var y = H - g / 4 * plotH; svg.appendChild(s('line', { x1: left, x2: W, y1: y, y2: y, class: g ? 'vp-grid' : 'vp-base' })); svg.appendChild(s('text', { x: left - 8, y: y + 4, class: 'vp-ax', 'text-anchor': 'end' }, [String(Math.round(max * g / 4 * 10) / 10)])); }
+      data.forEach(function (d, i) {
+        var cx = left + i * slot + slot / 2, x = cx - bw / 2, y = H, grp = s('g', { class: 'vp-bar', tabindex: '0', 'aria-label': o.title(d) });
+        grp.appendChild(s('rect', { x: left + i * slot, y: top - 4, width: slot, height: plotH + 4, class: 'vp-hit' }));
+        var segs = o.keys.filter(function (k) { return d[k[0]]; });
+        segs.forEach(function (k, n) {
+          var v = d[k[0]], hg = v / max * plotH; y -= hg;
+          var gap = n < segs.length - 1 ? 2 : 0;
+          grp.appendChild(s('rect', { x: x, y: y + gap, width: bw, height: Math.max(1, hg - gap), rx: n === segs.length - 1 ? 4 : 1, class: k[1] }));
+          if (hg >= 16 && bw >= 22) grp.appendChild(s('text', { x: cx, y: y + hg / 2 + 4, class: 'vp-in-l', 'text-anchor': 'middle' }, [String(Math.round(v))]));
+        });
+        grp.appendChild(s('text', { x: cx, y: y - 6, class: 'vp-tot', 'text-anchor': 'middle' }, [String(Math.round(tot(d) * 10) / 10)]));
+        var show = function (e) { var t = h('div', null, [h('b', { text: o.title(d) })].concat(o.keys.map(function (k) { return h('div', { class: 'vp-tip-r' }, [h('i', { class: k[1] }), h('span', { text: k[2] }), h('b', { text: String(Math.round((d[k[0]] || 0) * 10) / 10) })]); })).concat(o.sub ? [h('div', { class: 'vp-tip-s', text: o.sub(d) })] : [])); tip(e, t, grp); };
+        grp.addEventListener('pointermove', show); grp.addEventListener('pointerleave', function () { tip(null, null); }); grp.addEventListener('focus', function () { show(null); }); grp.addEventListener('blur', function () { tip(null, null); });
+        svg.appendChild(grp);
+        if (i % labelEvery === 0 || i === data.length - 1) svg.appendChild(s('text', { x: cx, y: H + 17, class: 'vp-ax', 'text-anchor': 'middle' }, [o.label(d)]));
+        if (o.marker && o.marker(d)) svg.appendChild(s('text', { x: cx, y: H + 32, class: 'vp-ax vp-axg', 'text-anchor': 'middle' }, [o.marker(d)]));
       });
-      box.appendChild(h('div', { class: 'vp-legend' }, [['c1', 'Closed by T1'], ['c2', 'Transferred'], ['c3', 'Open with T1']].map(function (l) { return h('span', null, [h('i', { class: l[0] }), l[1]]); })));
-      box.appendChild(h('div', { class: 'vp-tw' }, [svg]));
+      return svg;
+    }
+    function legend(keys) { return h('div', { class: 'vp-legend' }, keys.map(function (k) { return h('span', null, [h('i', { class: k[1] }), k[2]]); })); }
+    function dailyCard(daily) {
+      var box = card('Day by day', 'VoIP tickets T1 handled each day, by what happened to them. Hover or tab to a day for the numbers.', []);
+      if (!daily.length) { box.appendChild(h('p', { class: 'vp-empty', text: 'No tickets in this range yet.' })); return box; }
+      var keys = [['closedT1', 'c1', 'Closed by T1'], ['openT1', 'c3', 'Open with T1'], ['transferred', 'c2', 'Transferred']];
+      var dn = function (d) { return new Date(d.day + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }); };
+      box.appendChild(legend(keys));
+      box.appendChild(h('div', { class: 'vp-tw' }, [columns({ data: daily, keys: keys, H: 230, maxW: 40, aria: 'Daily VoIP tickets: closed by T1, transferred and open with T1',
+        label: function (d) { return d.day.slice(5).replace('-', '/'); }, title: function (d) { return dn(d); },
+        sub: function (d) { var t = d.closedT1 + d.openT1 + d.transferred; return t ? Math.round(d.closedT1 / t * 100) + '% closed by T1' : ''; } })]));
       return box;
     }
     function deptCard(C, T) {
@@ -367,7 +393,7 @@
     function basicCard(C, T) {
       var applies = T.basicDone + T.basicPartial + T.basicNot, tot = applies + T.basicNotNeeded;
       var parts = [['done', T.basicDone], ['partial', T.basicPartial], ['not_done', T.basicNot], ['not_needed', T.basicNotNeeded]];
-      var bar = h('div', { class: 'vp-stack', role: 'img', 'aria-label': parts.map(function (p) { return BASIC[p[0]][0] + ' ' + p[1]; }).join(', ') }, parts.filter(function (p) { return p[1]; }).map(function (p) { return h('span', { class: 'b-' + p[0], style: 'flex:' + p[1], title: BASIC[p[0]][0] + ': ' + p[1] }); }));
+      var bar = h('div', { class: 'vp-stack', role: 'img', 'aria-label': parts.map(function (p) { return BASIC[p[0]][0] + ' ' + p[1]; }).join(', ') }, parts.filter(function (p) { return p[1]; }).map(function (p) { return h('span', { class: 'b-' + p[0], style: 'flex:' + p[1], title: BASIC[p[0]][0] + ': ' + p[1] }, [tot && p[1] / tot >= 0.05 ? BASIC[p[0]][0] + ': ' + p[1] : (tot && p[1] / tot >= 0.025 ? String(p[1]) : '')]); }));
       var kids = [bar, h('ul', { class: 'vp-keys' }, parts.map(function (p) { return h('li', null, [h('i', { class: 'b-' + p[0] }), h('span', { text: BASIC[p[0]][0] }), h('b', { text: String(p[1]) }), h('span', { class: 'vp-muted', text: p[0] === 'not_needed' ? '' : ' ' + pc(applies ? p[1] / applies * 100 : null) })]); }))];
       kids.push(h('p', { class: 'vp-line' }, ['Right transfers by the guide: ', h('b', { text: pc(T.validPct) }), ' · complete hand-over notes: ', h('b', { text: pc(T.handoffPct) })]));
       if (C.topMissing.length) kids.push(h('div', null, [h('h3', { text: 'Steps most often skipped before a transfer' }), h('ol', { class: 'vp-miss' }, C.topMissing.map(function (m) { return h('li', null, [m.step, h('span', { class: 'vp-muted', text: ' (' + m.n + ')' })]); }))]));
