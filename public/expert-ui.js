@@ -851,7 +851,8 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
           .catch(function (e) { ctx.toast(e.message); again.disabled = false; again.textContent = 'Review again'; });
       } }, [icon('refresh', 'sm'), x ? 'Review again' : 'Review now']);
       if (!x) { box.appendChild(h('p', { class: 'ax-muted', text: r.error ? 'The last review failed (' + r.error + ').' : 'Not reviewed yet.' })); box.appendChild(again); return box; }
-      if (x.client_message) box.appendChild(h('div', { class: 'ax-tri-cm' }, [h('b', { class: 'ax-tri-callt', text: 'Response to the client' }), h('pre', { class: 'ax-tri-msg', text: x.client_message }), copyBtn(x.client_message, 'Copy response')]));
+      if (x.unverified && x.unverified.length) box.appendChild(h('p', { class: 'ax-unv', role: 'note' }, [icon('warn', 'sm'), 'Not found in what the review read, so treat as unverified: ' + x.unverified.map(function (n) { return '#' + n; }).join(', ')]));
+      if (x.client_message) box.appendChild(h('div', { class: 'ax-tri-cm' }, [h('b', { class: 'ax-tri-callt', text: x.reply_to ? 'Response to ' + x.reply_to : 'Response to the client' }), h('pre', { class: 'ax-tri-msg', text: x.client_message }), copyBtn(x.client_message, 'Copy response')]));
       if (x.failure && x.failure.level !== 'low' && r.toAgents && r.toAgents.length) box.appendChild(h('p', { class: 'ax-muted ax-tri-sent', text: 'On the My fixes list (My Stats) of ' + r.toAgents.map(function (e) { return e.split('@')[0]; }).join(', ') + (r.agentDone ? '. Marked handled ' + when(r.agentDone.at) + (r.agentDone.note ? ': ' + r.agentDone.note : '') : '. Not marked handled yet.') }));
       box.appendChild(callBox(r));
       var more = h('details', { class: 'ax-tri-more' }, [h('summary', { text: 'Full analysis' })]);
@@ -866,6 +867,8 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       if (x.files && x.files.length) right.appendChild(block('Files and screenshots', [h('ul', {}, x.files.map(function (s) { return h('li', { text: s }); }))]));
       if (x.promises && x.promises.length) right.appendChild(block('Promises to the client', [h('ul', {}, x.promises.map(function (s) { return h('li', { text: s }); }))]));
       if (x.evidence && x.evidence.length) right.appendChild(block('Evidence', [h('ul', {}, x.evidence.map(function (s) { return h('li', { text: s }); }))]));
+      if (x.inferred && x.inferred.length) right.appendChild(block('The review\'s own inference', [h('ul', {}, x.inferred.map(function (s) { return h('li', { text: s }); }))]));
+      if (x.limits && x.limits.length) right.appendChild(block('What the record could not show', [h('ul', {}, x.limits.map(function (s) { return h('li', { text: s }); }))]));
       cols.appendChild(left); cols.appendChild(right); more.appendChild(cols); box.appendChild(more);
       var m = x.meta || {};
       box.appendChild(h('div', { class: 'ax-tri-foot' }, [h('span', { class: 'ax-muted', text: 'Reviewed ' + when(r.analysedAt) + (r.stale ? '. Changed in Desk since then.' : '.') + ' Read ' + (m.messages || 0) + ((m.messages === 1) ? ' message, ' : ' messages, ') + (m.notes || 0) + (m.notes === 1 ? ' private note' : ' private notes') + (m.images ? ', ' + m.images + (m.images === 1 ? ' screenshot' : ' screenshots') : '') + (m.files ? ', ' + m.files + (m.files === 1 ? ' file' : ' files') : '') + (m.crm ? ', the CRM' : '') + (m.asanaRead ? ', the Asana task' : '') + '.' }), again]));

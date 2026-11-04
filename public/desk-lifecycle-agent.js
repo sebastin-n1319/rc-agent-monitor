@@ -726,7 +726,7 @@
           ${t.url ? `<a class="av2-btn av2-btn-sm av2-btn-ghost" href="${esc(t.url)}" target="_blank" rel="noopener">Open in Desk</a>` : ''}
         </div>
         ${t.next && t.next.length ? `<ol class="mystats-fix-steps">${t.next.map((x) => `<li>${esc(x)}</li>`).join('')}</ol>` : ''}
-        ${t.client_message ? `<div class="mystats-fix-msg-h">Response to the client</div><pre class="mystats-fix-msg">${esc(t.client_message)}</pre>
+        ${t.client_message ? `<div class="mystats-fix-msg-h">${t.reply_to ? 'Response to ' + esc(t.reply_to) : 'Response to the client'}</div><pre class="mystats-fix-msg">${esc(t.client_message)}</pre>
           <button type="button" class="av2-btn av2-btn-sm av2-btn-ghost mystats-fix-copy" data-i="${i}">Copy response</button>` : ''}
         ${t.waitingRecheck ? '' : `<div class="mystats-fix-done"><input type="text" class="mystats-fix-note" data-i="${i}" placeholder="What did you do? (optional)" aria-label="What you did on ticket ${esc(t.number)}">
           <button type="button" class="av2-btn av2-btn-sm av2-btn-primary mystats-fix-btn" data-i="${i}">Done</button></div>`}
