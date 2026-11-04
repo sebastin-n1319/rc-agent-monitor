@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>T1 CS VoIP report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/voip-project.css?v=1.0.0">
+<style>
+body{margin:0;background:#F4F7FA;font-family:'Poppins',system-ui,sans-serif}
+@media (prefers-color-scheme:dark){body{background:#081621}}
+.center{max-width:440px;margin:12vh auto 0;padding:28px;border:1px solid #E2E8EF;border-radius:16px;background:#fff;text-align:center;color:#072B40}
+@media (prefers-color-scheme:dark){.center{background:#0F1E2A;border-color:#22394B;color:#E6EEF5}}
+.center h2{margin:0 0 6px;font-size:18px}.center p{margin:0 0 18px;color:#5F7790;font-size:13px;line-height:1.5}
+#gbtn{display:flex;justify-content:center;min-height:44px}
+.err{color:#B4323A}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script src="/voip-project.js?v=1.0.0"></script>
+<script>
+(function () {
+  var token = location.pathname.split('/').filter(Boolean).pop();
+  var app = document.getElementById('app');
+  function signIn(clientId, retry, msg) {
+    app.className = ''; app.innerHTML = '';
+    var box = document.createElement('div'); box.className = 'center';
+    box.innerHTML = '<h2>Sign in to see the report</h2><p>This report is for Adit staff. Sign in with your Adit Google account.</p><div id="gbtn"></div>';
+    if (msg) { var e = document.createElement('p'); e.className = 'err'; e.textContent = msg; box.appendChild(e); }
+    app.appendChild(box);
+    var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.async = true;
+    s.onload = function () {
+      google.accounts.id.initialize({ client_id: clientId, hd: 'adit.com', callback: function (r) {
+        fetch('/api/voip-share/' + encodeURIComponent(token) + '/signin', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential: r.credential }) })
+          .then(function (x) { return x.json(); }).then(function (j) { if (j.success) start(); else signIn(clientId, retry, j.error || 'Could not sign in.'); });
+      } });
+      google.accounts.id.renderButton(document.getElementById('gbtn'), { theme: 'outline', size: 'large', text: 'signin_with' });
+    };
+    document.head.appendChild(s);
+  }
+  function start() { app.innerHTML = ''; window.VoipProject.mount(app, { mode: 'share', token: token, onSignIn: signIn }); }
+  start();
+})();
+</script>
+</body>
+</html>

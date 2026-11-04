@@ -68,7 +68,7 @@
       S.open = false; draw();
       try {
         if (typeof currentViewMode !== 'undefined' && currentViewMode === 'agent' && typeof applyView === 'function') applyView('admin');
-        if (typeof sbAdmin === 'function') sbAdmin('topic-support');
+        if (typeof sbAdmin === 'function') sbAdmin('voip-project'); // Batch 250: the AI and VoIP tab became T1 CS VoIP
       } catch (e) {}
       return;
     }

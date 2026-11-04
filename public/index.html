@@ -22,7 +22,7 @@
 <!-- Poppins font: Adit design system requires this exclusively -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- Adit design system: disable all conflicting CSS, load clean theme -->
-<script src="/adit-reset.js?v=1.19.125"></script>
+<script src="/adit-reset.js?v=1.19.126"></script>
 <script>
 /* Session 48: staff photos (Google profile images) load only when they are
    actually on screen. They used to all download at startup, including in
@@ -86,11 +86,11 @@
 <script src="/client-tour.js?v=1.4.0" defer></script>
 <link rel="stylesheet" href="/alert-hub.css?v=1.2.0">
 <link rel="stylesheet" href="/notice-center.css?v=1.1.0">
-<script src="/notice-center.js?v=1.3.0" defer></script>
+<script src="/notice-center.js?v=1.3.1" defer></script>
 <script src="/expert-widget.js?v=1.3.0" defer></script>
 <link rel="stylesheet" href="/app-header.css?v=1.4.0">
-<link rel="stylesheet" href="/topic-support.css?v=1.4.0">
-<script src="/topic-support.js?v=1.4.1" defer></script>
+<link rel="stylesheet" href="/voip-project.css?v=1.0.0">
+<script src="/voip-project.js?v=1.0.0" defer></script>
 <link rel="stylesheet" href="/bonus-calc.css?v=1.5.1">
 <script src="/bonus-calc.js?v=1.8.0" defer></script>
 <link rel="stylesheet" href="/appraisal.css?v=1.2.0">
@@ -1685,8 +1685,8 @@ html.app-authenticated.role-admin.boot-agent-view #adit-admin-sidebar{display:no
   </div>
 
   <!-- TICKET REPORT (Admin) -->
-  <!-- Batch 165: AI and VoIP support handled by T1 -->
-  <div class="page" id="tab-topic-support"><div id="tsd-root"></div></div>
+  <!-- Batch 250: T1 CS VoIP (replaces the AI and VoIP tab) -->
+  <div class="page" id="tab-voip-project"><div id="vp-root"></div></div>
   <!-- Batch 225: scheduled reports (Tickets > Reports) -->
   <div class="page" id="tab-custom-reports"><div id="crp-root" style="padding:20px 24px 40px"></div></div>
   <div class="page" id="tab-tickets">
@@ -9292,7 +9292,7 @@ const ADMIN_TAB_GROUPS = [
   { primary: 'tickets', members: [
       { tab: 'tickets',          label: 'Ticket Report' },
       { tab: 'ticket-lifecycle', label: 'Ticket Lifecycle' },
-      { tab: 'topic-support',    label: 'AI & VoIP' },
+      { tab: 'voip-project',     label: 'T1 CS VoIP' },
       { tab: 'custom-reports',   label: 'Reports' },
   ]},
   { primary: 'alerts', members: [
@@ -9359,7 +9359,7 @@ function switchTab(tab,el){
   if(tab==='roster')   { if(typeof openRosterAdmin==='function') openRosterAdmin(); }
   if(tab==='settings') { if(typeof openSettingsAdmin==='function') openSettingsAdmin(); }
   if(tab==='ticket-lifecycle') { if(typeof openDeskLifecycleAdmin==='function') openDeskLifecycleAdmin(); }
-  if(tab==='topic-support') { if(typeof openTopicSupport==='function') openTopicSupport(); }
+  if(tab==='voip-project') { if(window.VoipProject && !window._vpMounted) { window._vpMounted = window.VoipProject.mount(document.getElementById('vp-root'), { mode: 'admin' }); } }
   if(tab==='custom-reports') { if(window.CustomReports) window.CustomReports.mount(document.getElementById('crp-root')); }
   if(tab==='bonus-calc') { if(typeof openBonusCalc==='function') openBonusCalc(); }
   if(tab==='appraisals') { if(typeof openAppraisals==='function') openAppraisals(); }

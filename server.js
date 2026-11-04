@@ -704,7 +704,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     require('./lib/deal-context').setKb(escalationWatch.kbHi);
     require('./lib/client-lookup').setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid) });
     // Batch 211: every analysis reads the Adit Updates that bear on it (ticket review, transfer review, escalation watch, AI and VoIP reviews)
-    { const upd = (t) => require('./lib/expert').updatesFor(t); transferReview.setDeps({ updates: upd }); escalationWatch.setDeps({ updates: upd }); require('./lib/topic-support').setDeps({ updates: upd }); }
+    { const upd = (t) => require('./lib/expert').updatesFor(t); transferReview.setDeps({ updates: upd }); escalationWatch.setDeps({ updates: upd }); }
     transferReview.setDB(db);
     await transferReview.initSchema();
     transferReview.setDeps({ ai: require('./lib/ai'), ticketContext: (tid) => escalationWatch.ticketContext(tid), notices, desk: require('./lib/desk-service'), history: (tid) => fetchTicketHistoryItems(tid),
@@ -735,21 +735,14 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     accessReq.setDB(db);
     await accessReq.initSchema();
     guides.setDB(db); await guides.initSchema(); // Batch 156: Support guides guest list
-    // Batch 165: AI and VoIP support handled by T1 (admin dashboard under Tickets)
-    { const ts = require('./lib/topic-support'); ts.setDB(db); await ts.initSchema();
-      ts.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), guides, aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
-        kb: (t, o) => escalationWatch.kb(t, o), notices,
-        spocs: async () => (await ticketAudits.listSpocs()).filter(x => x.active).map(x => x.email) });
-      // Batch 167: review T1-handled AI and VoIP tickets in the background, and build the weekly report once a week.
+    // Batch 250: T1 CS VoIP (Tickets > T1 CS VoIP). Replaces the AI and VoIP tab. AI reads new VoIP tickets every 2 minutes.
+    { const vp = require('./lib/voip-project'); vp.setDB(db); await vp.initSchema();
+      vp.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
+        roster: () => deskLifecycleAgentRoster(), dayWindow: getDateWindow });
       setTimeout(() => {
-        const tick = async () => {
-          try { const { agentNames } = await deskLifecycleAgentRoster(); const r = await ts.reviewSweep({ agentNames, max: 12 }); if (r && r.reviewed) console.log('⭐ Topic reviews:', JSON.stringify(r));
-            const al = await ts.alertSweep({ agentNames }); if (al && al.sent) console.log('🚩 Topic alerts:', JSON.stringify(al));
-            const w = await ts.buildWeekly({ agentNames }); if (w && w.created) console.log('📰 Weekly AI & VoIP report built for', w.week); }
-          catch (e) { console.warn('topic review sweep failed:', e.message); }
-        };
-        tick(); setInterval(tick, 10 * 60 * 1000);
-      }, 5 * 60 * 1000); }
+        const tick = () => vp.work({ max: 20 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
+        tick(); setInterval(tick, 2 * 60 * 1000);
+      }, 3 * 60 * 1000); }
     // Batch 182: Adit Expert (product and process assistant on the Guides page). Learns from support calls every 6 hours.
     { const expert = require('./lib/expert'); expert.setDB(db);
       { const et = require('./lib/expert-ticket'); et.setDesk(require('./lib/desk-service')); et.setAI(require('./lib/ai')); expert.setDeps({ ticket: et, client: require('./lib/client-lookup'), localAll: (sql, params) => dbAllLocal(sql, params) }); }
@@ -9220,75 +9213,46 @@ app.post('/api/bonus/chat-ratings/reread', requireAdmin, rateLimit(3, 60000), as
   res.json({ success: true, started: true });
 });
 
-app.get('/api/topic-support', requireAdmin, async (req, res) => {
+// Batch 250: T1 CS VoIP report and its share links. The report answers within 45 seconds; a slow read carries on
+// and is ready on the next refresh.
+const vpMod = () => require('./lib/voip-project');
+const vpErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : (msg + (e.message ? ': ' + String(e.message).replace(/aditkb/ig, 'data service').slice(0, 140) : '')) });
+function vpRange(q) { return { preset: String(q.preset || 'golive').slice(0, 10), from: String(q.from || '').slice(0, 10), to: String(q.to || '').slice(0, 10) }; }
+async function vpWithin(p) { p.catch(() => {}); return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Zoho is slow right now. The numbers are still being read, press Refresh in a minute.'), { status: 503 })), 45000))]); }
+app.get('/api/voip-project', requireAdmin, rateLimit(30, 60000), async (req, res) => {
+  try { res.json({ success: true, ...(await vpWithin(vpMod().summary(vpRange(req.query)))) }); } catch (e) { vpErr(res, e, 'Could not build the VoIP report'); }
+});
+app.get('/api/voip-project/shares', requireAdmin, async (req, res) => { try { res.json({ success: true, shares: await vpMod().listShares() }); } catch (e) { vpErr(res, e, 'Could not load the links'); } });
+app.post('/api/voip-project/shares', requireAdmin, rateLimit(10, 60000), async (req, res) => {
+  try { const b = req.body || {}; const r = await vpMod().createShare({ label: b.label, ...vpRange(b) }, req.session.email); insertAuditLog(req.session.email, 'voip_share_created', r.token.slice(0, 8), String(b.label || '')).catch(() => {}); res.json({ success: true, ...r }); }
+  catch (e) { vpErr(res, e, 'Could not create the link'); }
+});
+app.post('/api/voip-project/shares/:token/revoke', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await vpMod().revokeShare(req.params.token)) }); } catch (e) { vpErr(res, e, 'Could not turn the link off'); } });
+// The shared page: anyone signed in with an Adit Google account (no tool account needed).
+const VP_VIEWER_COOKIE = 'rcVoipViewer';
+async function vpViewer(req) {
+  try { const t = req.cookies[SESSION_COOKIE]; if (t) { const s = await getAppSession(t); if (s && s.email) return s.email; } } catch (e) {}
+  return creports().viewerEmail(req.cookies[VP_VIEWER_COOKIE]);
+}
+app.get('/voip-report/:token', (req, res) => res.sendFile(path.join(__dirname, 'public', 'voip-share.html')));
+app.get('/api/voip-share/:token', rateLimit(30, 60000), async (req, res) => {
   try {
-    const ts = require('./lib/topic-support');
-    const to = req.query.to || new Date().toISOString();
-    const from = req.query.from || '2026-09-08T05:00:00.000Z';
-    const { agentNames } = await deskLifecycleAgentRoster();
-    const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
-    const data = {};
-    // Never leave the page spinning: answer within 45 seconds. The read carries on and is kept for the next refresh.
-    const work = Promise.all(topics.map((t) => ts.topicSummary({ topic: t, from, to, agentNames })));
-    work.catch(() => {});
-    const sums = await Promise.race([work, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Zoho is slow right now. The numbers are still being read; press Refresh in a minute.'), { status: 503 })), 45000))]);
-    topics.forEach((t, i) => { data[t] = sums[i]; });
-    res.json({ success: true, from, to, data });
-  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+    const email = await vpViewer(req);
+    if (!email || !String(email).toLowerCase().endsWith('@adit.com')) return res.status(401).json({ success: false, signIn: true, clientId: GOOGLE_CLIENT_ID });
+    const data = await vpWithin(vpMod().openShare(req.params.token, email));
+    insertAuditLog(email, 'voip_share_viewed', String(req.params.token).slice(0, 8), data.shareLabel || '').catch(() => {});
+    res.set('Cache-Control', 'no-store'); res.json({ success: true, ...data });
+  } catch (e) { vpErr(res, e, 'Could not open the report'); }
 });
-app.post('/api/topic-support/review', requireAdmin, rateLimit(20, 60000), async (req, res) => {
+app.post('/api/voip-share/:token/signin', rateLimit(20, 60000), async (req, res) => {
   try {
-    const b = req.body || {}; const ts = require('./lib/topic-support');
-    const items = (Array.isArray(b.items) ? b.items : []).slice(0, 5);
-    if (!items.length) return res.status(400).json({ success: false, error: 'Pick a ticket to review' });
-    const { agentNames } = await deskLifecycleAgentRoster();
-    const results = [];
-    for (const it of items) {
-      try { results.push(await ts.reviewTicket({ ticketId: it.ticketId, topic: String(b.topic || ''), agent: it.agent, outcome: it.outcome, dest: it.dest, agentEmails: Object.keys(agentNames), by: req.session.email })); }
-      catch (e) { results.push({ ticketId: String(it.ticketId), error: e.message }); }
-    }
-    res.json({ success: true, results });
-  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
-});
-app.get('/api/topic-support/export', requireAdmin, async (req, res) => {
-  try {
-    const ts = require('./lib/topic-support');
-    const to = req.query.to || new Date().toISOString(), from = req.query.from || '2026-09-08T05:00:00.000Z';
-    const { agentNames } = await deskLifecycleAgentRoster();
-    const topics = String(req.query.topic || 'ai,voip').split(',').filter(t => ts.TOPICS[t]);
-    const sums = [];
-    for (const t of topics) sums.push(await ts.topicSummary({ topic: t, from, to, agentNames, limit: 20000, skipBaseline: true }));
-    const name = `t1-ai-voip-${String(from).slice(0, 10)}-to-${String(to).slice(0, 10)}.csv`;
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
-    res.send(ts.toCSV(sums));
-  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
-});
-app.get('/api/topic-support/why', requireAdmin, rateLimit(30, 60000), async (req, res) => {
-  try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/topic-support').explainTicket({ number: req.query.ticket, agentNames })) }); }
-  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
-});
-app.get('/api/topic-support/weekly', requireAdmin, async (req, res) => {
-  try { res.json({ success: true, reports: await require('./lib/topic-support').listWeekly() }); }
-  catch (e) { res.status(500).json({ success: false, error: e.message }); }
-});
-app.post('/api/topic-support/weekly/run', requireAdmin, rateLimit(3, 60000), async (req, res) => {
-  try { const { agentNames } = await deskLifecycleAgentRoster(); res.json({ success: true, ...(await require('./lib/topic-support').buildWeekly({ agentNames, force: true, by: req.session.email })) }); }
-  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
-});
-app.post('/api/topic-support/exclude', requireAdmin, rateLimit(30, 60000), async (req, res) => {
-  try { const b = req.body || {}; res.json({ success: true, ...(await require('./lib/topic-support').setExcluded({ ticketId: b.ticketId, exclude: b.exclude !== false, reason: b.reason, by: req.session.email })) }); }
-  catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
-});
-app.post('/api/topic-support/audit', requireAdmin, rateLimit(40, 60000), async (req, res) => {
-  try {
-    const b = req.body || {}; const ts = require('./lib/topic-support');
-    const ids = (Array.isArray(b.ticketIds) ? b.ticketIds : [b.ticketId]).filter(Boolean).map(String).slice(0, 10);
-    if (!ids.length) return res.status(400).json({ success: false, error: 'Pick a ticket to audit' });
-    const results = [];
-    for (const id of ids) { try { results.push(await ts.auditTicket({ topic: String(b.topic || ''), ticketId: id, by: req.session.email })); } catch (e) { results.push({ ticketId: id, error: e.message }); } }
-    res.json({ success: true, results });
-  } catch (e) { res.status(e.status || 500).json({ success: false, error: e.message }); }
+    const { email } = await verifyGoogleIdentity({ credential: (req.body || {}).credential });
+    if (!String(email).toLowerCase().endsWith('@' + (process.env.ALLOWED_DOMAIN || 'adit.com'))) return res.status(403).json({ success: false, error: 'Sign in with your Adit Google account.' });
+    const t = await creports().createViewer(email);
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+    res.cookie(VP_VIEWER_COOKIE, t, { maxAge: 12 * 3600e3, httpOnly: true, secure: !!isProduction, sameSite: 'lax', path: '/api/voip-share' });
+    res.json({ success: true });
+  } catch (e) { res.status(401).json({ success: false, error: 'Could not verify Google sign-in' }); }
 });
 
 // Session 45: drill-downs for the call and chat tiles on My Stats. Always
