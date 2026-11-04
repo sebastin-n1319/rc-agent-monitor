@@ -1192,6 +1192,7 @@ app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) =>
 // (first "Take all calls" starts the clock). Falls back to presence data when RC refuses the Audit Trail.
 const rcAudit = require('./lib/rc-audit');
 const _availCache = new Map();
+let _auditSample = null;
 async function availabilityBody(date, fresh) {
   const tz = 'America/Chicago';
   const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
@@ -1208,6 +1209,9 @@ async function availabilityBody(date, fresh) {
     try {
       const recs = await fetchAuditTrail(new Date(startMs).toISOString(), new Date(toMs).toISOString());
       const events = recs.map(rcAudit.parseRecord).filter(Boolean);
+      // Batch 238: the Audit Trail answered but none of its records read as a status change (RC changed the wording):
+      // use presence data rather than show nothing, and keep two records so an admin can see the new layout.
+      if (!events.length && recs.length) { _auditSample = recs.slice(0, 3); throw Object.assign(new Error('Audit Trail records had no status changes (' + recs.length + ' records)'), { noDnd: true }); }
       const endMs = win.end.getTime ? win.end.getTime() : Date.parse(win.end);
       body = { success: true, source: 'audit', date, timeZone: tz, records: recs.length, dndEvents: events.length,
         data: rcAudit.computeForAgents(events, agents, nowMs, endMs, date === today) };
@@ -1245,7 +1249,7 @@ app.get('/api/live-floor/day', requireAuth, async (req, res) => {
       data[email] = { rc: x ? { availSec: x.availSec || 0, unavailSec: x.unavailSec || 0, started: !!x.started } : null, scrinSec: tr.data && tr.data[email] != null ? tr.data[email] : null };
     }
     const out = { success: true, date: today, data, rcSource: av ? av.source : null, scrinOn: !!tr.configured, scrinError: tr.error || null };
-    if (req.query.debug && await isAdminSession(req)) out.debug = { scrinSample: scrin.trackedSample() };
+    if (req.query.debug && await isAdminSession(req)) out.debug = { scrinSample: scrin.trackedSample(), auditSample: _auditSample };
     res.json(out);
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
@@ -2164,7 +2168,7 @@ app.get('/api/guides/expert/meta', requireAuth, async (req, res) => {
 app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const b = req.body || {}, ai = require('./lib/ai');
-    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : 'call',
+    const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0,
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, email: req.session.email });
     res.json({ success: true, ...out });
   } catch (e) { console.warn('expert ask:', e.message); expertErr(res, e, 'Adit Expert is busy right now, please try again in a moment.'); }

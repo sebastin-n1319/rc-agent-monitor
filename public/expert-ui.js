@@ -94,8 +94,9 @@
   var MODES = [['call', 'Call', 'The client is on the phone: get a talk track to say'], ['email', 'Ticket (email)', 'Replying to a ticket: get a ready to send email'], ['chat', 'Chat', 'Live chat: get short messages to paste']];
   var SAY = { call: ['What to say on the call', 'Copy talk track'], email: ['Email reply', 'Copy email'], chat: ['Chat reply', 'Copy messages'] };
   function Ask(panel, ctx) {
-    var S = { thread: [], busy: false, mode: store.get('mode', 'call'), module: '', useHistory: true, meta: null, items: [] };
-    if (!SAY[S.mode]) S.mode = 'call';
+    // Batch 238: no channel is picked in advance. A ticket number answers on the ticket's own channel; otherwise Expert
+    // asks once (call, email, chat or just the answer) and keeps that channel for the rest of the conversation.
+    var S = { thread: [], busy: false, mode: '', module: '', useHistory: true, meta: null, items: [] };
     var root = h('div', { class: 'ax' }); panel.appendChild(root);
     // rail
     var rail = h('aside', { class: 'ax-rail', 'aria-label': 'Filters and history' });
@@ -152,7 +153,7 @@
     var input = h('textarea', { rows: '3', placeholder: 'What is the client asking? Paste their message or describe the situation.', 'aria-label': 'Question' });
     var send = h('button', { type: 'submit', class: 'gd-btn primary ax-send', 'aria-label': 'Ask' }, [icon('send'), 'Ask']);
     var modeBox = h('div', { class: 'ax-seg', role: 'radiogroup', 'aria-label': 'Where is the client?' });
-    function paintModes() { clear(modeBox); MODES.forEach(function (m) { modeBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.mode === m[0]), title: m[2], onclick: function () { S.mode = m[0]; store.set('mode', S.mode); paintModes(); } }, [m[1]])); }); }
+    function paintModes() { clear(modeBox); MODES.forEach(function (m) { modeBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.mode === m[0]), title: m[2], onclick: function () { S.mode = S.mode === m[0] ? '' : m[0]; paintModes(); } }, [m[1]])); }); }
     paintModes();
     var scopeChip = h('span', { class: 'ax-scope' });
     var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input,
@@ -184,7 +185,7 @@
     }
     function reset(keepFocus) {
       if (S.busy) return;
-      S.thread = []; S.items = []; S.lastQ = null; S.lastCard = null; clear(thread); input.value = '';
+      S.thread = []; S.items = []; S.lastQ = null; S.lastCard = null; S.mode = ''; paintModes(); clear(thread); input.value = '';
       heroPaint(); intro.classList.remove('fade');
       if (keepFocus) { intro.hidden = true; thread.appendChild(h('p', { class: 'ax-newnote', text: 'New conversation. Ask your question below.' })); }
       paintBar(); input.focus();
@@ -205,26 +206,40 @@
     }
     // progress
     var PHASES = ['Understanding the question', 'Searching the Help Center and guides', 'Checking how the team solved it before', 'Writing the answer', 'Double-checking with a second AI'];
-    function progress(q) {
-      var ph = /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i.test(String(q || '').trim()) ? ['Reading the ticket, its history and the client\'s earlier tickets', 'Looking up the account, deal and owners in Desk and CRM'].concat(PHASES) : PHASES;
+    function progress(q, rewrite) {
+      var ph = rewrite ? ['Using what was already found', 'Writing it for the new channel', 'Double-checking with a second AI'] : /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i.test(String(q || '').trim()) ? ['Reading the ticket, its history and the client\'s earlier tickets', 'Looking up the account, deal and owners in Desk and CRM'].concat(PHASES) : PHASES;
       var list = h('ol', { class: 'ax-steps' }, ph.map(function (p, i) { return h('li', { class: i === 0 ? 'on' : '' }, [h('i'), p]); }));
       var box = h('div', { class: 'ax-card ax-wait' }, [h('div', { class: 'ax-wait-hd' }, [h('span', { class: 'ax-orb' }), h('b', { text: 'Working on it' })]), list]);
       var k = 0, tm = setInterval(function () { var li = list.children; if (k < li.length - 1) { li[k].className = 'done'; k++; li[k].className = 'on'; } }, 2600);
       return { el: box, stop: function () { clearInterval(tm); } };
     }
-    function submit(again, fresh) {
+    var TKRE = /(?:#\s?|ticket\s*(?:no\.?|number|id|#)?\s*:?\s*#?)\d{5,7}(?!\d)|^#?\d{5,7}$/i;
+    function askChannel(q) {
+      var old = thread.querySelector('.ax-pick'); if (old) old.remove();
+      intro.hidden = true;
+      var opts = MODES.concat([['answer', 'Just answer me', 'An answer for you, without a client message']]);
+      var box = h('div', { class: 'ax-card ax-pick', role: 'group', 'aria-label': 'Where is the client?' }, [
+        h('p', { class: 'ax-pick-q', text: 'Where is the client, so the reply fits?' }),
+        h('p', { class: 'ax-pick-sub', text: q.length > 140 ? q.slice(0, 140) + '...' : q }),
+        h('div', { class: 'ax-row' }, opts.map(function (m) { return h('button', { type: 'button', class: 'gd-btn' + (m[0] === 'answer' ? '' : ' primary'), title: m[2], onclick: function () { box.remove(); S.mode = m[0] === 'answer' ? 'answer' : m[0]; paintModes(); submit(q); } }, [m[1]]); }))]);
+      thread.appendChild(box); box.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      var first = box.querySelector('button'); if (first) first.focus();
+    }
+    function submit(again, fresh, reuse) {
       var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
+      var hasTicket = TKRE.test(q) || S.items.some(function (it) { return it.j && it.j.ticket && it.j.ticket.meta; });
+      if (!S.mode && !hasTicket && !reuse) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
       var nn = thread.querySelector('.ax-newnote'); if (nn) nn.remove();
       if (!ctx.ai) { ctx.toast && ctx.toast('AI is not set up on the server yet.'); return; }
       S.busy = true; send.disabled = true; intro.hidden = true; S.lastQ = q; paintBar();
       if (store.get('fold', null) === null && !S.folded) setFold(true);
       var rec = store.get('recent', []).filter(function (x) { return x !== q; }); rec.unshift(q); store.set('recent', rec.slice(0, 12)); paintRecent();
-      thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: (MODES.find(function (m) { return m[0] === S.mode; }) || MODES[0])[1] + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
-      var pg = progress(q); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: (reuse ? 'Rewrite for ' : '') + ((MODES.find(function (m) { return m[0] === S.mode; }) || [null, S.mode === 'answer' ? 'Answer' : 'Channel from the ticket'])[1]) + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
+      var pg = progress(q, !!reuse); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
-      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked }).then(function (j) {
+      ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0 }).then(function (j) {
         pg.stop(); j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -245,6 +260,7 @@
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
       if (j.investigation && j.investigation.summary) card.appendChild(invBox(j.investigation));
+      if (j.precedent && j.precedent.summary) card.appendChild(invBox(j.precedent, 'Expert checked how the team solved this before'));
       if (j.modeNote) card.appendChild(h('p', { class: 'ax-modenote' }, [icon('bulb', 'sm'), j.modeNote]));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
@@ -252,9 +268,10 @@
       if (a.say) {
         var sl = SAY[j.mode] || ['What to tell the client', 'Copy message'];
         var withLink = j.share && j.mode !== 'call' ? [copyBtn(j.mode === 'email' || j.mode === 'reply' ? withHelp(a.say, j.share.url) : a.say + '\n\n' + j.share.url, j.mode === 'email' ? 'Copy email with Help Center link' : 'Copy with Help Center link', j.mode === 'email' || j.mode === 'reply')] : [];
-        var other = MODES.filter(function (m) { return m[0] !== j.mode; }).map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Ask again for ' + m[1].toLowerCase(), onclick: function () { if (S.busy) return; S.mode = m[0]; S.lockOnce = true; store.set('mode', S.mode); paintModes(); submit(q); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); });
+        var other = MODES.filter(function (m) { return m[0] !== j.mode; }).map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Ask again for ' + m[1].toLowerCase(), onclick: function () { if (S.busy) return; S.mode = m[0]; S.lockOnce = true; paintModes(); submit(q, false, j.logId || 0); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); });
         card.appendChild(section(j.mode === 'call' ? 'phone' : 'chat', sl[0], [h('blockquote', { class: 'ax-say' + (j.mode === 'call' ? ' call' : '') }, [a.say]), h('div', { class: 'ax-row' }, [copyBtn(a.say, sl[1], j.mode === 'email' || j.mode === 'reply')].concat(withLink).concat([h('span', { class: 'ax-sp' })]).concat(other))], 'say'));
       }
+      if (!a.say && j.found !== false && j.logId) card.appendChild(h('div', { class: 'ax-row ax-rechan' }, [h('span', { class: 'ax-pick-sub', text: 'Need a reply for the client?' })].concat(MODES.map(function (m) { return h('button', { type: 'button', class: 'ax-mini', title: 'Write it for ' + m[1].toLowerCase() + ', from what was already found', onclick: function () { if (S.busy) return; S.mode = m[0]; S.lockOnce = true; paintModes(); submit(q, false, j.logId); } }, [icon('refresh', 'sm'), 'For ' + m[1].toLowerCase()]); }))));
       if (a.note) card.appendChild(section('edit', 'Private note for Zoho Desk', [h('pre', { class: 'ax-note' }, [a.note]), h('div', { class: 'ax-row' }, [copyBtn(a.note, 'Copy private note', true)])], 'note'));
       if (a.owner) card.appendChild(section('user', 'Who owns it', [h('p', { class: 'ax-owner' }, [h('b', { text: a.owner.who || 'T1' }), a.owner.when ? h('span', { text: ' · ' + a.owner.when }) : null])], 'own'));
       if (j.rulesUsed && j.rulesUsed.length) card.appendChild(h('p', { class: 'ax-rules' }, [icon('rule', 'sm'), 'Team rule applied: ' + j.rulesUsed.join('; ')]));
@@ -316,9 +333,9 @@
     }
     var TYPE = { kb: ['Help Center', 'book'], guide: ['Guide', 'book'], case: ['Solved ticket', 'ticket'], call: ['Support call', 'phone'], rule: ['Team rule', 'rule'], note: ['Team note', 'rule'], update: ['Update', 'news'], review: ['Reviewer decision', 'shield'], qa: ['QA rule', 'rule'], learned: ['Answered before', 'spark'] };
     // Batch 236: what Expert looked up itself, and how, so the agent can trust (and check) the facts.
-    function invBox(inv) {
+    function invBox(inv, label) {
       var secs = Math.max(1, Math.round((inv.ms || 0) / 1000));
-      var box = h('details', { class: 'ax-inv' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: inv.reused ? 'Expert used what it looked up earlier in Desk and CRM for this ticket' : 'Expert looked this up in Desk and CRM (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' })])]);
+      var box = h('details', { class: 'ax-inv' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: label ? label + ' (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' : inv.reused ? 'Expert used what it looked up earlier in Desk and CRM for this ticket' : 'Expert looked this up in Desk and CRM (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' })])]);
       if (inv.summary) box.appendChild(h('pre', { class: 'ax-inv-sum' }, [linkTickets(inv.summary)]));
       box.appendChild(h('ol', { class: 'ax-inv-steps' }, inv.steps.map(function (s) { return h('li', { class: s.ok ? '' : 'bad', text: s.what + (s.ok ? '' : ' (no result)') }); })));
       return box;

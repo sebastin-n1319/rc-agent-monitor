@@ -734,3 +734,8 @@ html.ax-full .ax-cbar{top:0}
 .ax-inv-sum{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13px;line-height:1.5;color:var(--t1);margin:10px 0 6px}
 .ax-inv-steps{margin:6px 0 2px;padding-left:20px;font-size:12px;color:var(--t3);display:flex;flex-direction:column;gap:2px}
 .ax-inv-steps li.bad{color:var(--t3);opacity:.75}
+/* Batch 238: Expert asks where the client is before answering */
+.ax-pick{display:flex;flex-direction:column;gap:8px}
+.ax-pick-q{margin:0;font-weight:600;color:var(--t1)}
+.ax-pick-sub{margin:0;font-size:12.5px;color:var(--t3)}
+.ax-rechan{margin-top:10px;align-items:center;flex-wrap:wrap;gap:6px}
