@@ -1223,7 +1223,7 @@ async function availabilityBody(date, fresh) {
   const tz = 'America/Chicago';
   const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
   const hit = _availCache.get(date);
-  if (hit && Date.now() - hit.at < 90000 && !fresh) return hit.body;
+  if (hit && hit.body && Date.now() - hit.at < (hit.ttl || 90000) && !fresh) return hit.body;
   if (hit && hit.p) return hit.p;
   const p = (async () => {
     const agents = await getMonitoredAgents();
@@ -1249,7 +1249,8 @@ async function availabilityBody(date, fresh) {
       body = { success: true, source: 'presence', date, timeZone: tz, data,
         note: denied ? 'RingCentral did not allow the Audit Trail. Add the "Read Audit Trail" permission to the RC app. Showing presence data meanwhile.' : 'Audit Trail was not reachable (' + String(auditErr.message).slice(0, 120) + '). Showing presence data meanwhile.' };
     }
-    _availCache.set(date, { at: Date.now(), body });
+    // Batch 248: a past day read from the Audit Trail does not change, so it is kept for 12 hours (fewer RC calls).
+    _availCache.set(date, { at: Date.now(), body, ttl: body.source === 'audit' && date < today ? 12 * 3600e3 : 90000 });
     return body;
   })();
   _availCache.set(date, Object.assign({}, hit || { at: 0 }, { p }));
@@ -1298,15 +1299,16 @@ async function agentWorkload(agent, period) {
   // RingCentral available / unavailable, one CST day at a time (the Audit Trail is read per day)
   const rcP = (async () => {
     if (period.days > 7) { limits.push('RingCentral available time is shown for up to 7 days; ask for a shorter range to see it.'); return null; }
-    let a = 0, u = 0, any = false, src = null;
+    let a = 0, u = 0, any = false, src = null, busy = false;
     for (let d = period.from; d <= period.to && d <= today; d = W.addDays(d, 1)) {
       const body = await availabilityBody(d).catch(() => null); if (!body || !body.data) continue;
-      src = src || body.source;
+      src = src || body.source; if (/rate/i.test(body.note || '')) busy = true;
       const x = body.data[String(agent.extension || '')] || Object.values(body.data).find(v => v && v.name && String(v.name).toLowerCase() === String(agent.name).toLowerCase());
       if (x) { a += x.availSec || 0; u += x.unavailSec || 0; any = any || !!x.started || (x.availSec || 0) > 0; }
     }
-    if (src === 'presence') limits.push('RingCentral time is from presence data, because the Audit Trail was not available.');
-    return any || src ? { availSec: a, unavailSec: u, source: src } : null;
+    if (src === 'presence') limits.push(busy ? 'RingCentral was busy, so its time is from presence data. Ask again in a minute for the Audit Trail numbers.' : 'RingCentral time is from presence data, because the Audit Trail was not available.');
+    if (!a && !u) { if (src) limits.push('No RingCentral available or unavailable time was recorded for these days.'); return null; }
+    return { availSec: a, unavailSec: u, source: src };
   })();
   const scrinP = (async () => { const t = await require('./lib/scrin').trackedByEmail(Math.floor(new Date(fromIso).getTime() / 1000), Math.floor(new Date(toIso).getTime() / 1000)); return t && t.configured && t.data && t.data[email] != null ? t.data[email] : null; })();
   const deskP = (async () => {
