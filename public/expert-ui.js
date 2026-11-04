@@ -972,7 +972,7 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       if (!tabs.filter(shown).length) list.appendChild(h('p', { class: 'ax-lc-none', text: any ? 'No chats assigned to you right now. Open any chat by its number.' : 'No chats assigned to you right now. New chats appear here on their own.' }));
     }
     function close(ref) { tabs = tabs.filter(function (t) { return t.ref !== ref; }); if (active === ref) active = tabs.length ? tabs[0].ref : null; save(); paint(); }
-    function select(ref) { var changed = active !== String(ref); active = String(ref); var t = find(ref); if (t) t.unread = false; if (changed) { root.classList.remove('swap'); void root.offsetWidth; root.classList.add('swap'); } paint(); if (t && !t.loaded) loadChat(t); }
+    function select(ref) { var prev = active && find(active); if (prev && !prev.manual && prev.endedAt && prev.ref !== String(ref) && Date.now() - prev.endedAt > 2 * 60000) tabs = tabs.filter(function (x) { return x !== prev; }); var changed = active !== String(ref); active = String(ref); var t = find(ref); if (t) t.unread = false; if (changed) { root.classList.remove('swap'); void root.offsetWidth; root.classList.add('swap'); } paint(); if (t && !t.loaded) loadChat(t); }
     function paint() { paintSync(); paintNote(); paintList(); paintConvo(); paintSide(); paintInsight(); }
 
     function empty(el, title, text) { el.appendChild(h('div', { class: 'ax-lc-empty' }, [icon('chat'), h('b', { text: title }), text ? h('p', { text: text }) : null])); }
@@ -1261,7 +1261,12 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
           else { t.own = c.own !== false || t.own; if (!t.msgs.length) t.chat = c; }
         });
         // Someone else's chat that has ended leaves the list on its own (admins); your own stay until you close them.
-        tabs = tabs.filter(function (t) { return live[t.ref] || t.manual || (t.own && !t.error) || (t.ref === active && !t.error) || (!t.chat && !t.error); });
+        // Batch 243: an ended chat leaves the list by itself 2 minutes after it ends (the one you are reading stays until
+        // you move to another chat, or 15 minutes). Chats you added by number stay until you close them.
+        var now = Date.now();
+        tabs.forEach(function (t) { var ended = !live[t.ref] && t.chat && t.chat.open === false; if (ended && !t.endedAt) t.endedAt = now; if (!ended) t.endedAt = 0; });
+        var gone = function (t) { return !t.manual && t.endedAt && now - t.endedAt > (t.ref === active ? 15 * 60000 : 2 * 60000); };
+        tabs = tabs.filter(function (t) { return !gone(t) && (live[t.ref] || t.manual || (t.own && !t.error) || (t.ref === active && !t.error) || (!t.chat && !t.error)); });
         if (active && !find(active)) active = null;
         if (!active && tabs.length) select(tabs[0].ref); else { paintSync(); paintNote(); paintList(); }
       }).catch(function (e) { err = e.message; paint(); });
