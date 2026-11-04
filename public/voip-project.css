@@ -226,3 +226,9 @@ html.dark-mode .vp .f2{background:#A48BFA;fill:#A48BFA}html.dark-mode .vp .f3{ba
 
 .vp-keys{max-width:none;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 24px}
 .vp-keys li{padding:8px 12px;border:1px solid var(--vp-line);border-radius:10px}
+/* Batch 257: outage tickets */
+.vp-okpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:14px}
+.vp-olist{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:320px;overflow:auto}
+.vp-olist li{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;padding:6px 0;border-bottom:1px solid var(--vp-line);font-size:12.5px}
+.vp-olist a{color:var(--vp-acc-ink);font-weight:600;text-decoration:none}
+.vp-olist .vp-subj{flex:1 1 220px;max-width:none;min-width:0}

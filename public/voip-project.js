@@ -96,7 +96,7 @@
         return h('button', { type: 'button', role: 'tab', 'aria-selected': String(S.view === v[0]), onclick: function () { S.view = v[0]; paint(); } }, [v[1]]);
       })));
       var V = S.view;
-      if (V === 'overview') { body.appendChild(hero(D)); body.appendChild(insightsCard(D)); body.appendChild(flowCard(D)); body.appendChild(h('div', { class: 'vp-grid2' }, [shineCard(D), transferMostCard(D)])); body.appendChild(compareStrip(D)); body.appendChild(weeklyCard(D)); body.appendChild(dailyCard(C.daily)); if (C.wins && C.wins.length) body.appendChild(winsCard(D)); }
+      if (V === 'overview') { body.appendChild(hero(D)); body.appendChild(insightsCard(D)); body.appendChild(flowCard(D)); body.appendChild(h('div', { class: 'vp-grid2' }, [shineCard(D), transferMostCard(D)])); body.appendChild(outageCard(D)); body.appendChild(compareStrip(D)); body.appendChild(weeklyCard(D)); body.appendChild(dailyCard(C.daily)); if (C.wins && C.wins.length) body.appendChild(winsCard(D)); }
       else if (V === 'fix') body.appendChild(fixCard(D));
       else if (V === 'categories') body.appendChild(catCard(C, D));
       else if (V === 'agents') body.appendChild(agentCard(C));
@@ -110,7 +110,7 @@
       var T = D.current.totals, P = D.previous.totals, comp = D.current.company;
       var big = h('div', { class: 'vp-hero-main' }, [h('span', { class: 'vp-eyebrow', text: 'T1 CS handled it' }),
         h('p', { class: 'vp-hero-n' }, [h('b', { text: String(T.closedT1) }), ' VoIP ticket' + (T.closedT1 === 1 ? '' : 's') + ' resolved by T1, with no transfer']),
-        h('p', { class: 'vp-hero-sub', text: pc(T.closedT1Pct) + ' of the ' + T.handled + ' VoIP tickets T1 handled' + (P.handled ? ' (' + pc(P.closedT1Pct) + ' in the ' + D.range.days + ' days before).' : '.') + ' The VoIP team did not need to touch them' + (comp && comp.total ? ', ' + pc(comp.t1Pct) + ' of every VoIP ticket at Adit.' : '.') })]);
+        h('p', { class: 'vp-hero-sub', text: pc(T.closedT1Pct) + ' of the ' + T.handled + ' VoIP tickets T1 handled' + (P.handled ? ' (' + pc(P.closedT1Pct) + ' in the ' + D.range.days + ' days before).' : '.') + ' The VoIP team did not need to touch them' + (comp && comp.total ? ', ' + pc(comp.t1Pct) + ' of every VoIP ticket at Adit.' : '.') + (D.current.outages && D.current.outages.count ? ' ' + D.current.outages.count + ' outage ticket' + (D.current.outages.count === 1 ? ' is' : 's are') + ' counted separately below.' : '') })]);
       // Batch 252: fill the left side with how T1 resolved them: by channel, and the issue it resolves most.
       var ch = D.current.byChannel || {}, topCat = D.current.byCategory.filter(function (c) { return c.closedT1 > 0 && c.key !== 'other'; }).sort(function (a, b) { return b.closedT1 - a.closedT1; })[0];
       big.appendChild(h('div', { class: 'vp-hero-split' }, [['call', 'On calls'], ['chat', 'In chats'], ['email', 'By email']].map(function (k) {
@@ -172,6 +172,25 @@
         h('div', { class: 'vp-grid2 eq vp-flow' }, [h('div', null, [legend(fkeys), h('div', { class: 'vp-tw' }, [svg])]),
           table([['Month', 'label'], ['Tickets handled', 'tickets', N_], ['Calls', 'calls', N_], ['Chats', 'chats', N_], ['Total', 'total', N_], ['Working days', 'workdays', N_], ['A working day', 'perDay', N_],
             ['Change', 'chg', { num: true, fmt: function (v) { return v == null ? '-' : (v > 0 ? '+' : '') + v + '%'; } }]], rows)])]);
+    }
+    // Batch 257: outage tickets go to the VoIP team by design; shown on their own, outside T1's rates.
+    function outageCard(D) {
+      var O = D.current.outages || {}, PO = D.previous.outages || {}, list = (D.tickets || []).filter(function (t) { return t.outage; });
+      var box = card('Outage tickets', 'Platform, carrier or Adit-wide phone outages. These always go to the VoIP team, so they are left out of T1\'s closed, transfer, FCR and basic support numbers above.', []);
+      if (!O.count) { box.appendChild(h('p', { class: 'vp-muted', text: 'No outage tickets in this range.' })); return box; }
+      var k = function (label, v, sub) { return h('div', { class: 'vp-kpi' }, [h('span', { class: 'vp-tl', text: label }), h('b', { class: 'vp-tv', text: v }), sub ? h('span', { class: 'vp-muted vp-small', text: sub }) : null]); };
+      box.appendChild(h('div', { class: 'vp-okpis' }, [k('Outage tickets T1 took', String(O.count), PO.count != null ? PO.count + ' in the ' + D.range.days + ' days before' : ''), k('Days with outage tickets', String(O.days), O.parents ? O.parents + ' linked parent incident' + (O.parents === 1 ? '' : 's') : ''),
+        k('Sent to the VoIP team', pc(O.toVoipPct), O.toVoip + ' of ' + O.count), k('Still open', String(O.open), O.closed + ' closed')]));
+      if ((O.byDay || []).length) {
+        var keys = [['transferred', 'c2', 'Sent on'], ['closedT1', 'c1', 'Closed by T1'], ['open', 'c3', 'Open with T1']];
+        var rows = O.byDay.map(function (d) { return Object.assign({}, d, { open: d.open }); });
+        box.appendChild(h('div', { class: 'vp-grid2 eq' }, [h('div', null, [legend(keys), h('div', { class: 'vp-tw' }, [columns({ data: rows, keys: keys, H: 180, maxW: 34, width: (body.clientWidth || 900) > 1000 ? (body.clientWidth || 900) / 2 - 70 : null, aria: 'Outage tickets by day',
+          label: function (d) { return d.day.slice(5).replace('-', '/'); }, title: function (d) { return new Date(d.day + 'T12:00:00Z').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }) + ': ' + d.n + ' outage ticket' + (d.n === 1 ? '' : 's'); } })])]),
+          h('div', null, [h('h3', { text: 'Tickets' }), h('ul', { class: 'vp-olist' }, list.slice(0, 40).map(function (t) { var o = OUT[t.outcome] || [t.outcome, 'muted'];
+            return h('li', null, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : '#' + t.number, h('span', { class: 'vp-subj', text: t.subject }), h('span', { class: 'vp-tag ' + o[1], text: o[0] + (t.dest ? ' \u00b7 ' + t.dest : '') }), h('span', { class: 'vp-muted vp-small', text: day(t.created) + ' \u00b7 ' + t.agent })]); })),
+            list.length > 40 ? h('p', { class: 'vp-muted vp-small', text: (list.length - 40) + ' more in All tickets.' }) : null])]));
+      }
+      return box;
     }
     function transferMostCard(D) {
       var C = D.current, cats = C.byCategory.filter(function (c) { return c.transferred > 0 && c.key !== 'unsorted'; }).sort(function (a, b) { return b.transferred - a.transferred; }).slice(0, 7);
@@ -451,7 +470,7 @@
             t.ai.why ? h('p', { class: 'vp-muted', text: t.ai.why }) : null, t.path && t.path.length ? h('p', { class: 'vp-muted', text: 'Owners: ' + t.path.join(' > ') }) : null]) : null;
           return h('tr', null, [h('td', { class: 'k' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : '#' + t.number]),
             h('td', null, [h('span', { class: 'vp-subj', text: t.subject }), det]), h('td', { text: day(t.created) }), h('td', { text: t.channel }), h('td', { text: t.agent }),
-            h('td', { text: (D.categories[t.category] || {}).label || t.category }), h('td', null, [h('span', { class: 'vp-tag ' + o[1], text: o[0] })]), h('td', { text: t.dest || '' }), h('td', { text: t.owner || '' }),
+            h('td', { text: (D.categories[t.category] || {}).label || t.category }), h('td', null, [h('span', { class: 'vp-tag ' + o[1], text: o[0] }), t.outage ? h('span', { class: 'vp-tag warn', text: 'Outage' }) : null]), h('td', { text: t.dest || '' }), h('td', { text: t.owner || '' }),
             h('td', null, [b ? h('span', { class: 'vp-tag ' + b[1], text: b[0] }) : (t.transferred ? h('span', { class: 'vp-muted', text: 'Not read yet' }) : '')]), h('td', { class: 'vp-muted', text: t.by })]);
         }));
         wrap.appendChild(h('table', { class: 'vp-t' }, [h('thead', null, [h('tr', null, ['Ticket', 'Subject', 'Created', 'Channel', 'T1 agent', 'Category', 'Outcome', 'Went to', 'Owner now', 'Basic support', 'Found by'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb]));
