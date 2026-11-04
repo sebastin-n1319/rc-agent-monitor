@@ -259,7 +259,7 @@ Expert asks where the client is: no channel is picked in advance. A question wit
 
 Expert checks how the team solved it before: when the Help Center and guides do not cover a request (no source, or a low confidence answer), Expert searches resolved Desk tickets and chats for the same request, reads the closest ones and answers from what the team actually did, naming the tickets. The answer shows a folded "Expert checked how the team solved this before" box. When an agent pastes the client's reply as a follow-up, Expert treats it as the client's next message and gives the next step instead of starting over. Questions about pods and which team handles something are looked up too.
 
-Floor day times fall back to RingCentral presence data when the Audit Trail answers without any status changes.
+Floor day times read RingCentral's newer Audit Trail layout (a status change logged as an action with old and new values), and fall back to presence data when the Audit Trail answers without any status changes.
 
 AditKB busy: AditKB shares one small database connection pool with other tools and answers "too many connections" when it is full. Every AditKB read in this app goes through one queue (two at a time, reviewer-facing reads before background scans, three retries with backoff). If it is still busy, the deal history keeps the last good ticket row, or shows "AditKB is busy" and tries again by itself, with a Try again button.
 
