@@ -1280,6 +1280,78 @@ app.get('/api/live-floor/day', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// Batch 248 (from Aria): one agent's workload for a day or a range, from the tool's own records (no AI): RingCentral
+// available and unavailable time (up to 7 days), scrin.io tracked time, Desk tickets, chats, calls and breaks.
+const workloadMod = () => require('./lib/agent-workload');
+async function workloadAgents() {
+  const [monitored, roster] = await Promise.all([getMonitoredAgents(), deskLifecycleAgentRoster().catch(() => ({ byEmail: {} }))]);
+  return monitored.filter(a => a.email).map(a => { const e = String(a.email).toLowerCase(), r = roster.byEmail[e] || {};
+    return { email: e, name: a.name || r.pseudo || e, pseudo: r.pseudo || null, full_name: r.full_name || null, extension: a.extension || a.ext || null, rc_id: a.rc_id || null }; });
+}
+async function agentWorkload(agent, period) {
+  const W = workloadMod(), tz = 'America/Chicago', email = agent.email, limits = [];
+  const today = W.todayCst();
+  const start = getDateWindow(period.from, tz).start, end = getDateWindow(period.to, tz).end;
+  const fromIso = new Date(start).toISOString(), toIso = new Date(Math.min(new Date(end).getTime(), Date.now())).toISOString();
+  const sources = [];
+  const safe = (p, what) => p.catch(e => { limits.push(what + ' could not be read (' + String(e.message || e).slice(0, 80) + ').'); return null; });
+  // RingCentral available / unavailable, one CST day at a time (the Audit Trail is read per day)
+  const rcP = (async () => {
+    if (period.days > 7) { limits.push('RingCentral available time is shown for up to 7 days; ask for a shorter range to see it.'); return null; }
+    let a = 0, u = 0, any = false, src = null;
+    for (let d = period.from; d <= period.to && d <= today; d = W.addDays(d, 1)) {
+      const body = await availabilityBody(d).catch(() => null); if (!body || !body.data) continue;
+      src = src || body.source;
+      const x = body.data[String(agent.extension || '')] || Object.values(body.data).find(v => v && v.name && String(v.name).toLowerCase() === String(agent.name).toLowerCase());
+      if (x) { a += x.availSec || 0; u += x.unavailSec || 0; any = any || !!x.started || (x.availSec || 0) > 0; }
+    }
+    if (src === 'presence') limits.push('RingCentral time is from presence data, because the Audit Trail was not available.');
+    return any || src ? { availSec: a, unavailSec: u, source: src } : null;
+  })();
+  const scrinP = (async () => { const t = await require('./lib/scrin').trackedByEmail(Math.floor(new Date(fromIso).getTime() / 1000), Math.floor(new Date(toIso).getTime() / 1000)); return t && t.configured && t.data && t.data[email] != null ? t.data[email] : null; })();
+  const deskP = (async () => {
+    const roster = await deskLifecycleAgentRoster();
+    const s = (await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, fromIso, toIso)).agentSummary({ from: fromIso, to: toIso, emails: [email], agentNames: { [email]: agent.name }, rosterNames: Object.values(roster.agentNames || {}) }), { from: fromIso, to: toIso, agentNames: roster.agentNames, byEmail: roster.byEmail }))[0];
+    if (!s) return null;
+    if (s.tickets_handled_ready === false) limits.push('Desk ticket activity is still syncing, so tickets handled may be low.');
+    return { handled: s.tickets_handled || 0, newT: s.tickets_handled_new || 0, followup: s.tickets_handled_followup || 0, replied: s.tickets_replied || 0, closed: s.closed_count || 0,
+      transferred: s.transferred || 0, reassigned: s.reassigned || 0, handedOff: s.handed_off_internal || 0, open: s.currently_handling || 0, avgHandleHours: s.avg_handle_hours ?? null, fcr: s.fcr_pct ?? null, csat: s.csat_pct ?? null };
+  })();
+  const callP = (async () => { if (!(agent.rc_id || agent.extension)) return null; const c = await statsAlign.applyMonthCalls(email, fromIso, toIso, await getAgentCallStatsRange({ agentId: agent.rc_id || agent.extension, from: fromIso, to: toIso })); return c ? { total: c.totalCalls || 0, inbound: c.inboundCalls || 0, outbound: c.outboundCalls || 0, missed: c.missedCalls || 0, voicemails: c.voicemails || 0, talkSec: c.totalTalkSeconds || 0, ahtIn: c.ahtInboundSeconds || 0 } : null; })();
+  const chatP = (async () => {
+    if (!salesiqService.isConfigured()) return null;
+    const [c, pr] = await Promise.all([salesiqLifecycle.agentChatStats({ email, from: fromIso, to: toIso }).then(x => statsAlign.applyMonthChats(email, fromIso, toIso, x)), salesiqLifecycle.agentChatPresenceStats({ email, from: fromIso, to: toIso }).catch(() => null)]);
+    return { count: (c && c.chatCount) || 0, avgRespSec: c ? c.avgResponseSeconds : null, availSec: pr ? pr.availSeconds || 0 : 0, busySec: pr ? pr.busySeconds || 0 : 0, awaySec: pr ? pr.awaySeconds || 0 : 0 };
+  })();
+  const breakP = (async () => { const r = await getBreakReportData(period.from, period.to, tz); const a = (r.agents || []).find(x => String(x.email || '').toLowerCase() === email); if (!a) return { totalMin: 0, items: [] };
+    const items = Object.entries(a.totals || {}).map(([type, min]) => ({ type: type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase()), min: Math.round(min), status: a.compliance && a.compliance[type] ? a.compliance[type].status : 'ok' })).filter(b => b.min > 0);
+    return { totalMin: items.reduce((t, b) => t + b.min, 0), items }; })();
+  const reviewP = transferReview.agentReviewStats([email], fromIso, toIso).then(r => r[email] || null);
+  const [rc, scrinSec, desk, calls, chats, breaks, review] = await Promise.all([safe(rcP, 'RingCentral time'), safe(scrinP, 'scrin.io time'), safe(deskP, 'Desk tickets'), safe(callP, 'Calls'), safe(chatP, 'Chats'), safe(breakP, 'Breaks'), safe(reviewP, 'Transfer reviews')]);
+  if (rc) sources.push('RingCentral ' + (rc.source === 'presence' ? 'presence' : 'Audit Trail')); if (scrinSec != null) sources.push('scrin.io'); if (desk) sources.push('Zoho Desk ticket activity'); if (chats) sources.push('Zoho SalesIQ'); if (calls) sources.push('RingCentral call log'); if (breaks) sources.push('Break tracker');
+  if (period.to >= today) limits.push('Today is still running, so the numbers grow through the day.');
+  const out = { agent: { name: agent.name, email }, period, rc, scrinSec, desk, calls, chats, breaks, review, sources, limits };
+  out.headline = W.headline(out); out.text = W.plainText(out);
+  return out;
+}
+app.get('/api/guides/expert/workload/agents', requireAuth, async (req, res) => {
+  try { const admin = await isAdminSession(req).catch(() => false), me = String(req.session.email || '').toLowerCase(), list = await workloadAgents();
+    res.json({ success: true, admin: !!admin, me, agents: (admin ? list : list.filter(a => a.email === me)).map(a => ({ email: a.email, name: a.name })) });
+  } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+/** Expert hook: null when the question is not an agent-workload question. */
+async function expertWorkload(req, question) {
+  const W = workloadMod(), me = String(req.session.email || '').toLowerCase();
+  const list = await workloadAgents().catch(() => []);
+  const hit = W.detect(question, list, me); if (!hit) return null;
+  if (!hit.period) return { workloadError: 'That date is in the future. Ask for today or an earlier day.' };
+  if (hit.choice) return { workloadChoice: hit.choice.slice(0, 8).map(a => ({ label: a.name, detail: a.email })) };
+  if (!hit.agent) return { workloadError: 'Your email is not on the monitored roster, so there is no workload to show.' };
+  const admin = await isAdminSession(req).catch(() => false);
+  if (!admin && hit.agent.email !== me) return { workloadError: 'Only admins can see another agent\'s workload. Ask about your own, for example "my workload yesterday".' };
+  return { workload: await agentWorkload(hit.agent, hit.period) };
+}
+
 app.get('/api/live-status', requireAuth, async (req, res) => {
   try { res.json({ success: true, data: await fetchLiveCallStatus() }); }
   catch(e) { res.status(500).json({ success: false, error: e.message }); }
@@ -2194,6 +2266,7 @@ app.get('/api/guides/expert/meta', requireAuth, async (req, res) => {
 app.post('/api/guides/expert/ask', requireAuth, rateLimit(20, 60000), async (req, res) => {
   try {
     const b = req.body || {}, ai = require('./lib/ai');
+    if (!b.reuse) { const wk = await expertWorkload(req, String(b.question || '')).catch(e => { console.warn('expert workload:', e.message); return null; }); if (wk) return res.json({ success: true, mode: 'workload', found: true, ...wk }); }
     const out = await expertMod().ask({ question: b.question, history: ai.sanitizeHistory(b.history, { maxTurns: 6, maxChars: 900 }), mode: ['call', 'email', 'chat', 'answer', 'reply', 'troubleshoot'].includes(b.mode) ? b.mode : '', reuse: Number(b.reuse) || 0, depth: ['fast', 'thinking', 'auto'].includes(b.depth) ? b.depth : 'auto',
       module: String(b.module || '').slice(0, 80), useHistory: b.useHistory !== false, fresh: !!b.fresh, modeLocked: !!b.modeLocked, email: req.session.email });
     res.json({ success: true, ...out });

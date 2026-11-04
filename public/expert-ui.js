@@ -229,6 +229,7 @@
       var n = S.meta ? S.meta.articles : 369;
       intro.appendChild(h('div', { class: 'ax-hero-tx' }, [h('span', { class: 'ax-eyebrow' }, [icon('spark'), 'Adit Expert']), h('h1', { text: 'Ask anything about Adit, for any client scenario' }),
         h('p', { text: 'Answers come from ' + n + ' Help Center articles, the VoIP and AI guides, your team\'s rules, and how the team solved similar tickets, chats and calls. A second AI double-checks every answer against those sources.' })]));
+      intro.appendChild(workloadPicker());
       intro.appendChild(h('div', { class: 'ax-ex' }, EXAMPLES.map(function (e) { return h('button', { type: 'button', class: 'ax-excard', onclick: function () { input.value = e[0]; submit(); } }, [h('span', { class: 'ax-extag', text: e[1] }), h('span', { text: e[0] })]); })));
     }
     function reset(keepFocus) {
@@ -283,10 +284,14 @@
         h('div', { class: 'ax-row' }, [other, h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { if (other.value.trim()) go(other.value.trim()); } }, ['Continue']), h('button', { type: 'button', class: 'gd-btn', onclick: function () { go(''); } }, ['Answer without choosing'])])]);
       thread.appendChild(box); box.scrollIntoView({ block: 'end', behavior: 'smooth' });
     }
+    // Batch 248 (from Aria): "what was Evan's workload yesterday" is answered from the tool's records, so it skips the channel question.
+    var WKRE = /work\s?load|productivity|how (?:busy|productive)|what did .{2,40}? (?:do|work on|handle)|how (?:much|many) (?:work|tickets?|chats?|calls?)\b|\bactivity (?:of|for)\b|\b(?:day|stats|numbers|performance) (?:of|for)\b|(?:tickets?|chats?|calls?) (?:did|has|have) .{2,40}? (?:handle|close|take|answer|do|reply)|\b(?:rc|ringcentral) (?:avail|time)|available time/i;
     function submit(again, fresh, reuse, depthOnce) {
       var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
       var hasTicket = TKRE.test(q) || S.items.some(function (it) { return it.j && it.j.ticket && it.j.ticket.meta; });
-      if (!S.mode && !hasTicket && !reuse) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
+      var isWork = !reuse && !TKRE.test(q) && WKRE.test(q);
+      if (isWork) { S.dymDone = true; }
+      if (!S.mode && !hasTicket && !reuse && !isWork) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
       // Batch 247 (from Aria): a first name shared by several Adit people is confirmed before answering.
       if (!reuse && !S.dymDone && !hasTicket) {
         S.busy = true;
@@ -303,17 +308,65 @@
       S.busy = true; send.disabled = true; intro.hidden = true; S.lastQ = q; paintBar();
       if (store.get('fold', null) === null && !S.folded) setFold(true);
       var rec = store.get('recent', []).filter(function (x) { return x !== q; }); rec.unshift(q); store.set('recent', rec.slice(0, 12)); paintRecent();
-      thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: (reuse ? 'Rewrite for ' : '') + ((MODES.find(function (m) { return m[0] === S.mode; }) || [null, S.mode === 'answer' ? 'Answer' : 'Channel from the ticket'])[1]) + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
-      var pg = progress(q, !!reuse); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
+      thread.appendChild(h('div', { class: 'ax-me' }, [h('span', { class: 'ax-me-mode', text: isWork ? 'Answer' : (reuse ? 'Rewrite for ' : '') + ((MODES.find(function (m) { return m[0] === S.mode; }) || [null, S.mode === 'answer' ? 'Answer' : 'Channel from the ticket'])[1]) + (S.module ? ' · ' + S.module : '') }), h('p', { text: q })]));
+      var pg = isWork ? progressWork() : progress(q, !!reuse); thread.appendChild(pg.el); pg.el.scrollIntoView({ block: 'end', behavior: 'smooth' });
       if (typeof again !== 'string') input.value = '';
       var history = S.thread.slice(-6);
       var mode = S.mode, locked = !!S.lockOnce; S.lockOnce = false;
       ctx.api('/api/guides/expert/ask', { question: q, history: history, mode: mode, module: S.module, useHistory: S.useHistory, fresh: !!fresh, modeLocked: locked, reuse: reuse || 0, depth: depthOnce || S.depth }).then(function (j) {
-        pg.stop(); j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
+        pg.stop();
+        if (j.mode === 'workload') { var wc = workloadCard(j, q); thread.replaceChild(wc, pg.el); S.lastCard = wc; if (j.workload) { S.items.push({ q: q, mode: 'workload', j: j }); S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: j.workload.text }); } wc.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+        j.mode = j.mode || mode; var card = answerCard(j, q); thread.replaceChild(card, pg.el); S.lastCard = card; S.items.push({ q: q, mode: j.mode, j: j });
         S.thread.push({ role: 'user', content: q }, { role: 'assistant', content: [j.answer.answer].concat(j.answer.steps || []).join('\n') });
         card.scrollIntoView({ block: 'start', behavior: 'smooth' });
       }).catch(function (e) { pg.stop(); thread.replaceChild(h('div', { class: 'ax-card ax-err' }, [icon('warn'), h('span', { text: e.message || 'Something went wrong, try again.' })]), pg.el); })
         .then(function () { S.busy = false; send.disabled = false; paintBar(); input.focus(); });
+    }
+    function progressWork() {
+      var list = h('ol', { class: 'ax-steps' }, ['Finding the agent and the days', 'Reading RingCentral time, tickets, chats, calls and breaks'].map(function (p, i) { return h('li', { class: i === 0 ? 'on' : '' }, [h('i'), p]); }));
+      var box = h('div', { class: 'ax-card ax-wait' }, [h('div', { class: 'ax-wait-hd' }, [h('span', { class: 'ax-orb' }), h('b', { text: 'Working on it' })]), list]);
+      var tm = setTimeout(function () { list.children[0].className = 'done'; list.children[1].className = 'on'; }, 1200);
+      return { el: box, stop: function () { clearTimeout(tm); } };
+    }
+    function hm(sec) { if (sec == null) return '-'; var m = Math.round(sec / 60); return m < 60 ? m + 'm' : Math.floor(m / 60) + 'h ' + ('0' + (m % 60)).slice(-2) + 'm'; }
+    function workloadCard(j, q) {
+      if (j.workloadError) return h('div', { class: 'ax-card ax-err', role: 'note' }, [icon('warn'), h('span', { text: j.workloadError })]);
+      if (j.workloadChoice) {
+        return h('div', { class: 'ax-card ax-pick', role: 'group', 'aria-label': 'Which agent?' }, [h('p', { class: 'ax-pick-q', text: 'Which agent do you mean?' }),
+          h('div', { class: 'ax-row ax-dym' }, j.workloadChoice.map(function (o) { return h('button', { type: 'button', class: 'gd-btn', onclick: function () { if (S.busy) return; submit(q + ' (' + o.label + ')'); } }, [h('b', { text: o.label })]); }))]);
+      }
+      var W = j.workload, D = W.desk, C = W.chats, K = W.calls, R = W.rc, B = W.breaks;
+      var tile = function (label, value, sub) { return h('div', { class: 'ax-wk-t' }, [h('span', { class: 'ax-wk-l', text: label }), h('b', { class: 'ax-wk-v', text: value }), sub ? h('span', { class: 'ax-wk-s', text: sub }) : null]); };
+      var grp = function (title, ic, tiles, note) { tiles = tiles.filter(Boolean); return tiles.length ? h('section', { class: 'ax-wk-g' }, [h('h4', null, [icon(ic, 'sm'), title]), h('div', { class: 'ax-wk-ts' }, tiles), note ? h('p', { class: 'ax-wk-n', text: note }) : null]) : null; };
+      var card = h('article', { class: 'ax-card ax-ans ax-wk' });
+      card.appendChild(h('div', { class: 'ax-ans-hd' }, [h('div', { class: 'ax-badges' }, [h('span', { class: 'ax-badge conf-high', title: 'Counted from the records, not written by AI' }, ['From the records']), h('span', { class: 'ax-badge mod' }, [W.period.label])]), h('span', { class: 'ax-sp' }), copyBtn(W.text, 'Copy all')]));
+      card.appendChild(h('p', { class: 'ax-lead', text: W.headline }));
+      [grp('Time', 'clock', [R ? tile('RingCentral available', hm(R.availSec), R.source === 'presence' ? 'presence data' : 'from first Take all calls') : null, R ? tile('RingCentral unavailable', hm(R.unavailSec)) : null, W.scrinSec != null ? tile('scrin.io tracked', hm(W.scrinSec)) : null, C && C.availSec ? tile('Online in SalesIQ', hm(C.availSec)) : null]),
+        grp('Tickets (Zoho Desk)', 'ticket', D ? [tile('Handled', String(D.handled), D.newT + ' new, ' + D.followup + ' follow-up'), tile('Replied', String(D.replied)), tile('Closed', String(D.closed)), tile('Transferred', String(D.transferred), D.reassigned ? D.reassigned + ' reassigned' : ''), tile('Open now', String(D.open)),
+          D.avgHandleHours != null ? tile('Avg handle', D.avgHandleHours + ' h') : null, D.fcr != null ? tile('FCR', D.fcr + '%') : null, D.csat != null ? tile('CSAT', D.csat + '%') : null] : []),
+        grp('Chats and calls', 'chat', [C ? tile('Chats', String(C.count), C.avgRespSec != null ? 'first reply ' + Math.round(C.avgRespSec) + 's avg' : '') : null, K ? tile('Calls', String(K.total), K.inbound + ' in, ' + K.outbound + ' out') : null, K && K.missed ? tile('Missed calls', String(K.missed)) : null, K && K.talkSec ? tile('Talk time', hm(K.talkSec)) : null]),
+        grp('Breaks', 'pause', B && B.items.length ? B.items.map(function (b) { return tile(b.type, hm(b.min * 60), b.status === 'exceeded' ? 'over the limit' : b.status === 'warning' ? 'near the limit' : ''); }) : [tile('Breaks', B ? 'None logged' : '-')]),
+        W.review && (W.review.review_valid || W.review.review_invalid || W.review.moved_no_review || W.review.review_pending) ? grp('Transfer reviews', 'shield', [tile('Valid', String(W.review.review_valid)), tile('Not valid', String(W.review.review_invalid)), tile('Moved without review', String(W.review.moved_no_review)), tile('Waiting', String(W.review.review_pending))]) : null
+      ].forEach(function (g) { if (g) card.appendChild(g); });
+      if (W.limits && W.limits.length) card.appendChild(h('details', { class: 'ax-lim' }, [h('summary', { text: 'Limits (' + W.limits.length + ')' }), h('ul', null, W.limits.map(function (x) { return h('li', { text: x }); }))]));
+      if (W.sources && W.sources.length) card.appendChild(h('p', { class: 'ax-wk-src', text: 'Counted from: ' + W.sources.join(', ') + '. Days are Central time.' }));
+      var nm = W.agent.name, fu = ['yesterday', 'this week', 'last week', 'this month'].filter(function (p) { return W.period.label.indexOf(p) !== 0; }).slice(0, 3);
+      card.appendChild(h('div', { class: 'ax-fu' }, fu.map(function (p) { var t = 'What was ' + nm + '\'s workload ' + p + '?'; return h('button', { type: 'button', class: 'ax-chip', onclick: function () { if (!S.busy) submit(t); } }, [t]); })));
+      return card;
+    }
+    function workloadPicker() {
+      var box = h('div', { class: 'ax-wkp', hidden: true });
+      ctx.api('/api/guides/expert/workload/agents').then(function (r) {
+        if (!r.agents || !r.agents.length) return;
+        var who = h('select', { class: 'ax-in', 'aria-label': 'Agent' }, r.agents.map(function (a) { return h('option', { value: a.name, text: a.email === r.me ? a.name + ' (me)' : a.name }); }));
+        var per = h('select', { class: 'ax-in', 'aria-label': 'Days' }, [['today', 'Today'], ['yesterday', 'Yesterday'], ['this week', 'This week'], ['last week', 'Last week'], ['this month', 'This month'], ['last month', 'Last month']].map(function (p) { return h('option', { value: p[0], text: p[1] }); }));
+        var go = h('button', { type: 'button', class: 'gd-btn primary' }, ['Show']);
+        go.addEventListener('click', function () { if (S.busy) return; submit('What was ' + who.value + '\'s workload ' + per.value + '?'); });
+        box.appendChild(h('span', { class: 'ax-wkp-l' }, [icon('clock', 'sm'), r.admin ? 'Agent workload' : 'My workload']));
+        if (r.admin) box.appendChild(who); else who.value = r.agents[0].name;
+        box.appendChild(per); box.appendChild(go); box.hidden = false;
+      }).catch(function () {});
+      return box;
     }
     function section(ic, title, kids, cls) { return h('section', { class: 'ax-sec ' + (cls || '') }, [h('h4', null, [icon(ic), title])].concat(kids)); }
     function copyBtn(text, label, rich) { var b = h('button', { type: 'button', class: 'ax-mini' }, [icon('copy', 'sm'), label || 'Copy']); b.addEventListener('click', function () { (rich ? copyRich : copy)(text, b); }); return b; }

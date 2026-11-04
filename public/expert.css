@@ -807,3 +807,16 @@ html.ax-full .ax-cbar{top:0}
 .ax-rs-sec h4{margin:12px 0 4px}
 .ax-rs-act{margin:8px 0;padding-left:8px;border-left:2px solid var(--border)}
 @media (max-width:760px){.ax-rs-grid{grid-template-columns:1fr}}
+/* Batch 248: agent workload (from the records) */
+.ax-wkp{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 14px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.ax-wkp[hidden]{display:none}
+.ax-wkp-l{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--t1);margin-right:4px}
+.ax-wkp select.ax-in{width:auto;min-width:0;max-width:100%;padding:6px 8px}
+.ax-wk-g{margin-top:14px}
+.ax-wk-g h4{display:flex;align-items:center;gap:6px;margin:0 0 8px;font-size:13px;color:var(--t2)}
+.ax-wk-ts{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.ax-wk-t{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.ax-wk-l{font-size:12px;color:var(--t3)}
+.ax-wk-v{font-size:20px;font-weight:650;color:var(--t1);font-variant-numeric:tabular-nums}
+.ax-wk-s{font-size:11.5px;color:var(--t3)}
+.ax-wk-src{margin:12px 0 0;font-size:12px;color:var(--t3)}
