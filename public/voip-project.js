@@ -32,7 +32,7 @@
     try { var saved = JSON.parse(localStorage.getItem('vp.range') || 'null'); if (saved && opts.mode === 'admin') { S.preset = saved.preset || 'golive'; S.from = saved.from || ''; S.to = saved.to || ''; } } catch (e) { /* default range */ }
     root.classList.add('vp'); if (opts.mode === 'share') root.classList.add('vp-share');
     clear(root);
-    var head = h('header', { class: 'vp-head' }), body = h('div', { class: 'vp-body', 'aria-live': 'polite' });
+    var head = h('div', { class: 'vp-head' }), body = h('div', { class: 'vp-body', 'aria-live': 'polite' });
     root.appendChild(head); root.appendChild(body);
 
     function load(fresh) {
@@ -78,6 +78,7 @@
       clear(body);
       var rd = D.reading || {};
       body.appendChild(h('p', { class: 'vp-meta' }, [h('b', { text: D.range.label }), ' (' + D.range.days + ' days) compared with ' + D.range.prevLabel + '. Updated ' + new Date(D.generatedAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' }) + ' CT.',
+        D.refreshing ? h('span', { class: 'vp-pill', text: 'Newer numbers are being read; press Refresh in a minute' }) : null,
         rd.waiting ? h('span', { class: 'vp-pill warn', text: 'AI is still reading ' + rd.waiting + ' ticket' + (rd.waiting === 1 ? '' : 's') + '; the numbers fill in as it goes' }) : h('span', { class: 'vp-pill ok', text: 'Every ticket read' })]));
       // headline tiles
       var comp = C.company, pcomp = P.company;
@@ -146,7 +147,7 @@
       ];
       var fmt = function (v, k) { return k === 'pct' ? pc(v) : num(v); };
       var t = h('table', { class: 'vp-t vp-cmp' }, [h('thead', null, [h('tr', null, [h('th', { scope: 'col', text: 'Measure' }), h('th', { scope: 'col', class: 'n', text: 'Before (' + D.range.prevLabel + ')' }), h('th', { scope: 'col', class: 'n', text: 'Now (' + D.range.label + ')' }), h('th', { scope: 'col', class: 'n', text: 'Change' })])]),
-        h('tbody', null, rows.map(function (r) { return h('tr', null, [h('th', { scope: 'row', text: r[0] }), h('td', { class: 'n', text: fmt(r[1], r[4]) }), h('td', { class: 'n' }, [h('b', { text: fmt(r[2], r[4]) })]), h('td', { class: 'n' }, [r[3] == null || r[4] === 'text' ? h('span', { class: 'vp-d muted', text: '' }) : delta(r[1], r[2], r[3], r[4])])]); }))]);
+        h('tbody', null, rows.map(function (r) { return h('tr', null, [h('td', { class: 'vp-rl', text: r[0] }), h('td', { class: 'n', text: fmt(r[1], r[4]) }), h('td', { class: 'n' }, [h('b', { text: fmt(r[2], r[4]) })]), h('td', { class: 'n' }, [r[3] == null || r[4] === 'text' ? h('span', { class: 'vp-d muted', text: '' }) : delta(r[1], r[2], r[3], r[4])])]); }))]);
       var note = D.range.preset === 'golive' ? 'Before is the same number of days before T1 took basic VoIP support, when T1 sent VoIP tickets on to the VoIP team.' : 'Before is the same number of days just before this range.';
       return card('Before and after', note, [h('div', { class: 'vp-tw' }, [t])]);
     }

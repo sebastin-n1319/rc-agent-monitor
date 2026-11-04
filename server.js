@@ -9216,7 +9216,7 @@ app.post('/api/bonus/chat-ratings/reread', requireAdmin, rateLimit(3, 60000), as
 // Batch 250: T1 CS VoIP report and its share links. The report answers within 45 seconds; a slow read carries on
 // and is ready on the next refresh.
 const vpMod = () => require('./lib/voip-project');
-const vpErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : (msg + (e.message ? ': ' + String(e.message).replace(/aditkb/ig, 'data service').slice(0, 140) : '')) });
+const vpErr = (res, e, msg) => res.status(e.status || 500).json({ success: false, error: e.status && (e.status < 500 || e.status === 503) ? e.message : (msg + (e.message ? ': ' + String(e.message).replace(/aditkb/ig, 'data service').slice(0, 140) : '')) });
 function vpRange(q) { return { preset: String(q.preset || 'golive').slice(0, 10), from: String(q.from || '').slice(0, 10), to: String(q.to || '').slice(0, 10) }; }
 async function vpWithin(p) { p.catch(() => {}); return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(Object.assign(new Error('Zoho is slow right now. The numbers are still being read, press Refresh in a minute.'), { status: 503 })), 45000))]); }
 app.get('/api/voip-project', requireAdmin, rateLimit(30, 60000), async (req, res) => {
