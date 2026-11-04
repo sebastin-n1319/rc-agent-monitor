@@ -1192,13 +1192,13 @@ app.get('/api/rc-search', requireAuth, rateLimit(20, 60000), async (req, res) =>
 // (first "Take all calls" starts the clock). Falls back to presence data when RC refuses the Audit Trail.
 const rcAudit = require('./lib/rc-audit');
 const _availCache = new Map();
-app.get('/api/live-availability', requireAuth, requireAdmin, async (req, res) => {
+async function availabilityBody(date, fresh) {
   const tz = 'America/Chicago';
   const today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : today;
   const hit = _availCache.get(date);
-  if (hit && Date.now() - hit.at < 90000 && !req.query.fresh) return res.json(hit.body);
-  try {
+  if (hit && Date.now() - hit.at < 90000 && !fresh) return hit.body;
+  if (hit && hit.p) return hit.p;
+  const p = (async () => {
     const agents = await getMonitoredAgents();
     const win = getDateWindow(date, tz);
     const nowMs = Date.now();
@@ -1220,7 +1220,33 @@ app.get('/api/live-availability', requireAuth, requireAdmin, async (req, res) =>
         note: denied ? 'RingCentral did not allow the Audit Trail. Add the "Read Audit Trail" permission to the RC app. Showing presence data meanwhile.' : 'Audit Trail was not reachable (' + String(auditErr.message).slice(0, 120) + '). Showing presence data meanwhile.' };
     }
     _availCache.set(date, { at: Date.now(), body });
-    res.json(body);
+    return body;
+  })();
+  _availCache.set(date, Object.assign({}, hit || { at: 0 }, { p }));
+  try { return await p; } finally { const h = _availCache.get(date); if (h && h.p === p) delete h.p; }
+}
+app.get('/api/live-availability', requireAuth, requireAdmin, async (req, res) => {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : today;
+  try { res.json(await availabilityBody(date, !!req.query.fresh)); } catch (e) { res.status(500).json({ success: false, error: e.message }); }
+});
+// Batch 237: each agent's day on one line for the floor tiles: RingCentral available and unavailable time (CST day,
+// from first Take all calls) and scrin.io tracked time. email -> { rc: { availSec, unavailSec, started }, scrinSec }.
+app.get('/api/live-floor/day', requireAuth, async (req, res) => {
+  try {
+    const tz = 'America/Chicago', today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const win = getDateWindow(today, tz), startMs = win.start.getTime ? win.start.getTime() : Date.parse(win.start);
+    const scrin = require('./lib/scrin');
+    const [av, monitored, tr] = await Promise.all([availabilityBody(today).catch(() => null), getMonitoredAgents(), scrin.trackedByEmail(Math.floor(startMs / 1000), Math.floor(Date.now() / 1000))]);
+    const data = {};
+    for (const a of monitored) {
+      const email = String(a.email || '').toLowerCase(); if (!email) continue;
+      const x = av && av.data ? av.data[String(a.extension || a.ext || '')] : null;
+      data[email] = { rc: x ? { availSec: x.availSec || 0, unavailSec: x.unavailSec || 0, started: !!x.started } : null, scrinSec: tr.data && tr.data[email] != null ? tr.data[email] : null };
+    }
+    const out = { success: true, date: today, data, rcSource: av ? av.source : null, scrinOn: !!tr.configured, scrinError: tr.error || null };
+    if (req.query.debug && await isAdminSession(req)) out.debug = { scrinSample: scrin.trackedSample() };
+    res.json(out);
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -2219,6 +2245,7 @@ const chatWho = async (req) => { const email = req.session.email; const admin = 
   const id = String((req.query && req.query.id) || (req.body && req.body.id) || '').replace(/\D/g, '').slice(0, 24);
   return { email, admin, spoc, id }; };
 app.get('/api/livechat/mine', requireAuth, rateLimit(60, 60000), async (req, res) => { try { res.setHeader('Cache-Control', 'no-store'); const who = await chatWho(req); res.json({ success: true, chats: await liveChat().mine(req.session.email, { all: !!who.admin }), any: !!(who.admin || who.spoc), all: !!who.admin }); } catch (e) { expertErr(res, e, 'Could not load your chats from SalesIQ'); } });
+app.get('/api/livechat/list-diag', requireAdmin, async (req, res) => { try { const open = (await liveChat().openAll()).map(c => ({ ref: c.reference_id, agent: c.attender && c.attender.name, status: c.chat_status && c.chat_status.status_key, start: c.start_time ? new Date(Number(c.start_time)).toISOString() : null })); res.json({ success: true, open, ...liveChat().listDiag() }); } catch (e) { expertErr(res, e, 'Could not read'); } });
 app.get('/api/livechat/image-diag', requireAdmin, (req, res) => res.json({ success: true, diag: liveChat().imageDiag() }));
 app.get('/api/livechat/:ref/image/:msg', requireAuth, rateLimit(240, 60000), async (req, res) => { try { const f = await liveChat().image(req.params.ref, await chatWho(req), req.params.msg); res.setHeader('Content-Type', f.mime); res.setHeader('Cache-Control', 'private, max-age=3600'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.end(f.buf); } catch (e) { res.status(e.status || 500).json({ success: false, error: e.status && e.status < 500 ? e.message : 'Could not load the image' }); } });
 app.get('/api/livechat/followup-templates', requireAdmin, async (req, res) => { try { res.json({ success: true, ...(await liveChat().followupTemplates()) }); } catch (e) { expertErr(res, e, 'Could not read the follow-ups'); } });

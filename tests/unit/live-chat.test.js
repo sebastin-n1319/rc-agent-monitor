@@ -143,3 +143,20 @@ describe('Live chats', () => {
     expect(lc._silence([M('client', 10), M('agent', 4), M('agent', 1)]).due).toBe(0); // follow-up 1 already sent, step 2 at 5 min
   });
 });
+
+describe('open chat list keeps open chats (Batch 237)', () => {
+  it('re-reads an open chat the list stopped returning, and drops it once it ends', async () => {
+    const now = Date.now();
+    const a = { id: '901', reference_id: '32522', start_time: now - 600000, last_modified_time: now - 1000, attender: { email: 'anold@adit.com', name: 'Anold' }, chat_status: { status_key: 'open', state_key: 'connected' } };
+    let listRows = [a], single = a;
+    const s2 = { rawGet: async (p) => /conversations\/901$/.test(p) ? { data: single } : /conversations\/\d+\/messages/.test(p) ? { data: [] } : { data: /index=1\b/.test(p) ? listRows : [] } };
+    lc.setDeps({ siq: s2, expert: null, ai: null });
+    expect((await lc.mine('anold@adit.com')).map(c => c.ref)).toEqual(['32522']);
+    lc._expire();
+    listRows = []; // busy hour: the list does not bring it back
+    expect((await lc.mine('anold@adit.com')).map(c => c.ref)).toEqual(['32522']);
+    lc._expire();
+    single = Object.assign({}, a, { end_time: now, chat_status: { status_key: 'closed', state_key: 'end' } });
+    expect(await lc.mine('anold@adit.com')).toEqual([]);
+  });
+});

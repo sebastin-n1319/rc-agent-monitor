@@ -229,6 +229,21 @@
     return `<div class="lf-avt" title="${_avail.source === 'audit' ? 'From the RingCentral Audit Trail, CST day, from first Take all calls' : 'From presence data (Audit Trail not available)'}"><span class="lf-av-g">Avail <b class="lf-mono">${shortDur(a.availSec)}</b></span><span class="lf-sep"></span><span class="lf-av-r">Unavail <b class="lf-mono">${shortDur(a.unavailSec)}</b></span></div>`;
   }
 
+  // Batch 237: each agent's day on the tile, for everyone: RC available and unavailable time and scrin.io tracked time.
+  let _day = null, _dayAt = 0;
+  async function refreshDay() {
+    if (Date.now() - _dayAt < 90000) return;
+    _dayAt = Date.now();
+    try { const j = await fetch('/api/live-floor/day', { credentials: 'include' }).then(r => r.json()); if (j && j.success) { _day = j; if (_last) paint(_last); } } catch (err) { /* line stays hidden */ }
+  }
+  function dayLine(email) {
+    if (!_day || !_day.data) return '';
+    const d = _day.data[String(email || '').toLowerCase()]; if (!d) return '';
+    const rc = d.rc && d.rc.started ? d.rc : null;
+    const rcTip = _day.rcSource === 'audit' ? 'RingCentral, CST day, from the first Take all calls' : 'RingCentral presence, CST day';
+    return `<div class="lf-avt" title="${e(rcTip)}${_day.scrinOn ? ' · scrin.io tracked time today' : ''}"><span class="lf-av-g">Avail <b class="lf-mono">${rc ? shortDur(rc.availSec) : '-'}</b></span><span class="lf-sep"></span><span class="lf-av-r">Unavail <b class="lf-mono">${rc ? shortDur(rc.unavailSec) : '-'}</b></span>${_day.scrinOn ? `<span class="lf-sep"></span><span>scrin.io <b class="lf-mono">${d.scrinSec == null ? '-' : shortDur(d.scrinSec)}</b></span>` : ''}</div>`;
+  }
+
   // Batch 184: Availability, RC, Desk and Chat dots. Green online, red offline, grey when unknown.
   async function refreshPresence() {
     if (Date.now() - _presFetchedAt < 30000) return;
@@ -307,7 +322,7 @@
         ${ch ? `<span>Chats <b class="lf-mono">${ch}</b></span>` : ''}`}
       </div>
       ${breakLine(st.tr)}
-      ${admin ? availLine(op.agent) : ''}
+      ${dayLine(op.agent.email)}
     </article>`;
   }
 
@@ -486,6 +501,7 @@
       startTicker();
       refreshChats();
       refreshPresence();
+      refreshDay();
       if (ctx.mode === 'agent') refreshMine();
       if (ctx.mode === 'admin') refreshAvail();
     } catch (err) {

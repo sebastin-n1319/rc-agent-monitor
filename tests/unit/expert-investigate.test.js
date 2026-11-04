@@ -53,4 +53,20 @@ describe('expert investigator', () => {
     expect(mcp._readReply('{"jsonrpc":"2.0","id":3,"result":{"ok":1}}', 3).result.ok).toBe(1);
     expect(mcp._readReply('event: message\ndata: {"jsonrpc":"2.0","id":4,"result":{"tools":[]}}\n\n', 4).result.tools).toEqual([]);
   });
+  it('keeps the live CRM tools read-only', async () => {
+    expect((await inv._runLocal('crm_query', { coql: 'delete from Deals' })).isError).toBe(true);
+    expect((await inv._runLocal('crm_query', { coql: 'select id from Deals; select id from Accounts' })).isError).toBe(true);
+    expect((await inv._runLocal('crm_deal_people', { deal_id: 'abc' })).isError).toBe(true);
+    expect(inv._describe('crm_deal_people', {})).toMatch(/tech onboarding owner/);
+  });
+  it('offers local tools and runs them through their own runner', async () => {
+    const fakeMcp = { tools: async () => [{ name: 'run_sql', inputSchema: { type: 'object' } }], instructions: async () => '', call: async () => ({ text: 'x' }) };
+    let n = 0, ran = null;
+    const fakeClaude = async (body) => { n++; if (n === 1) { expect(body.tools.map(t => t.name)).toContain('crm_deal_people'); return { stop_reason: 'tool_use', content: [{ type: 'tool_use', id: 'a', name: 'crm_deal_people', input: { deal_id: '1607362002063490842' } }] }; }
+      return { stop_reason: 'end_turn', content: [{ type: 'text', text: 'ACCOUNT: x\nFINDINGS:\n- Tech onboarding owner Tyler Roden [CRM Tech OB]' }] }; };
+    const local = { tools: inv.LOCAL, run: async (name, a) => { ran = [name, a.deal_id]; return { isError: false, text: '{"tech_onboarding_owner":"Tyler Roden"}' }; } };
+    const r = await inv.investigate({ question: 'q', deps: { mcp: fakeMcp, claude: fakeClaude, local } });
+    expect(ran).toEqual(['crm_deal_people', '1607362002063490842']);
+    expect(r.summary).toMatch(/Tyler Roden/);
+  });
 });

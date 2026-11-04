@@ -244,7 +244,7 @@
       card.appendChild(h('div', { class: 'ax-ans-hd' }, [badges, h('span', { class: 'ax-sp' }), copyBtn(plain(a, j), 'Copy all')]));
       if (j.live) card.appendChild(liveBox(j.live));
       if (j.ticket) card.appendChild(ticketBox(j.ticket, a.ticket));
-      if (j.investigation && j.investigation.steps && j.investigation.steps.length) card.appendChild(invBox(j.investigation));
+      if (j.investigation && j.investigation.summary) card.appendChild(invBox(j.investigation));
       if (j.modeNote) card.appendChild(h('p', { class: 'ax-modenote' }, [icon('bulb', 'sm'), j.modeNote]));
       card.appendChild(h('p', { class: 'ax-lead' }, [linkTickets(a.answer || '')]));
       if (a.checks && a.checks.length) card.appendChild(section('search', j.plan && j.plan.intent === 'troubleshoot' ? 'Check first' : 'Check or ask first', [h('ul', { class: 'ax-checks' }, a.checks.map(function (c) { return h('li', null, [linkTickets(c)]); }))]));
@@ -318,7 +318,7 @@
     // Batch 236: what Expert looked up itself, and how, so the agent can trust (and check) the facts.
     function invBox(inv) {
       var secs = Math.max(1, Math.round((inv.ms || 0) / 1000));
-      var box = h('details', { class: 'ax-inv' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: 'Expert looked this up in Desk and CRM (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' })])]);
+      var box = h('details', { class: 'ax-inv' }, [h('summary', null, [icon('search', 'sm'), h('span', { text: inv.reused ? 'Expert used what it looked up earlier in Desk and CRM for this ticket' : 'Expert looked this up in Desk and CRM (' + inv.steps.length + ' lookup' + (inv.steps.length === 1 ? '' : 's') + ', ' + secs + 's)' })])]);
       if (inv.summary) box.appendChild(h('pre', { class: 'ax-inv-sum' }, [linkTickets(inv.summary)]));
       box.appendChild(h('ol', { class: 'ax-inv-steps' }, inv.steps.map(function (s) { return h('li', { class: s.ok ? '' : 'bad', text: s.what + (s.ok ? '' : ' (no result)') }); })));
       return box;

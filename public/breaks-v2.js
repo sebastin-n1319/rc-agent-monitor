@@ -159,6 +159,7 @@
   // Batch 163: live phone state (Call Wing) and open chats (Chat Wing) for the board, every 20 seconds.
   let liveNow = null, liveAt = 0;
   async function loadLiveNow() {
+    if (isToday()) loadFloorExtras();
     if (Date.now() - liveAt < 15000) return;
     liveAt = Date.now();
     try {
@@ -166,6 +167,66 @@
       if (j && j.success) { liveNow = j; render(); }
     } catch (err) { /* the line just stays hidden */ }
   }
+  // Batch 237: RC, Desk and Chat status dots and the day's RC available / unavailable and scrin.io tracked time on each
+  // card; the card opens a panel with everything about the person's day.
+  let presNow = null, presAt = 0, dayNow = null, dayAt = 0;
+  async function loadFloorExtras() {
+    const now = Date.now();
+    if (now - presAt >= 30000) { presAt = now; fetch('/api/live-floor/presence', { credentials: 'include' }).then(r => r.json()).then(j => { if (j && j.success) { presNow = j; render(); } }).catch(() => {}); }
+    if (now - dayAt >= 90000) { dayAt = now; fetch('/api/live-floor/day', { credentials: 'include' }).then(r => r.json()).then(j => { if (j && j.success) { dayNow = j; render(); } }).catch(() => {}); }
+  }
+  const presOf = (email) => (presNow && presNow.data && presNow.data[String(email || '').toLowerCase()]) || null;
+  const dayOf = (email) => (dayNow && dayNow.data && dayNow.data[String(email || '').toLowerCase()]) || null;
+  const TOOLS = [['rc', 'RC'], ['desk', 'Desk'], ['chat', 'Chat']];
+  function toolDots(r) {
+    const p = presOf(r.email); if (!p || r.currentStatus === 'Logged Out') return '';
+    return `<div class="bx-tools" role="list" aria-label="Tools">${TOOLS.map(([k, n]) => { const x = p[k] || {}, st = x.state === 'on' ? 'on' : x.state === 'off' ? 'off' : 'na';
+      return `<span class="bx-tool bx-tool-${st}" role="listitem" title="${e(n + ': ' + (x.label || (st === 'on' ? 'online' : st === 'off' ? 'offline' : 'unknown')))}"><i aria-hidden="true"></i>${n}</span>`; }).join('')}</div>`;
+  }
+  function dayMini(r) {
+    const d = dayOf(r.email); if (!d) return '';
+    const rc = d.rc && d.rc.started ? d.rc : null;
+    if (!rc && d.scrinSec == null) return '';
+    return `<div class="bx-sub bx-daymini">Avail <b class="bx-mono">${rc ? dur(rc.availSec) : '-'}</b> · Unavail <b class="bx-mono">${rc ? dur(rc.unavailSec) : '-'}</b>${dayNow.scrinOn ? ` · scrin.io <b class="bx-mono">${d.scrinSec == null ? '-' : dur(d.scrinSec)}</b>` : ''}</div>`;
+  }
+  function closeAgentPanel() { const o = document.getElementById('bx-agent-pop'); if (o) { o.remove(); if (closeAgentPanel.back) try { closeAgentPanel.back.focus(); } catch (err) { /* gone */ } } }
+  function openAgentPanel(email, from) {
+    closeAgentPanel(); closeAgentPanel.back = from || null;
+    const r = teamRows().find(x => String(x.email || '').toLowerCase() === String(email).toLowerCase()); if (!r) return;
+    const p = presOf(email) || {}, d = dayOf(email) || {}, lv = liveNow && liveNow.data ? liveNow.data[String(email).toLowerCase()] || {} : {}, sc = scrinOf(email);
+    const since = parseTs(r.since), rc = d.rc && d.rc.started ? d.rc : null;
+    const row = (k, v, sub) => `<div class="bx-pop-row"><span>${k}</span><b>${v}</b>${sub ? `<em>${sub}</em>` : ''}</div>`;
+    const tool = (k) => { const x = p[k] || {}; const st = x.state === 'on' ? 'Online' : x.state === 'off' ? 'Offline' : 'Unknown'; return `<span class="bx-tool bx-tool-${x.state === 'on' ? 'on' : x.state === 'off' ? 'off' : 'na'}"><i aria-hidden="true"></i>${st}</span>`; };
+    const flags = overFlags(r);
+    const html = `<div class="bx-pop" role="dialog" aria-modal="true" aria-labelledby="bx-pop-t">
+      <div class="bx-row bx-between"><h3 id="bx-pop-t">${e(r.username || r.email)}</h3><button class="bx-btn bx-btn-s" data-bx-pop-close aria-label="Close">Close</button></div>
+      <div class="bx-sub">${wingOf(r.email) === 'chat' ? 'Chat' : 'Call'} wing · ${e((LANES[r.currentStatus] || {}).label || r.currentStatus || '')}${isToday() && since && r.currentStatus !== 'Logged Out' ? ' since ' + e(timeOf(since)) : ''}</div>
+      ${flags.length ? `<div class="bx-over-line">⚠ ${flags.map(e).join(' · ')}</div>` : ''}
+      <h4>Today</h4>
+      ${row('RC available', rc ? dur(rc.availSec) : '-', rc ? '' : 'starts at the first Take all calls')}
+      ${row('RC unavailable', rc ? dur(rc.unavailSec) : '-')}
+      ${dayNow && dayNow.scrinOn ? row('scrin.io tracked', d.scrinSec == null ? '-' : dur(d.scrinSec)) : ''}
+      ${row('Breaks', `${laneCount(r, 'Break')} (${dur(laneSecs(r, 'Break', 'breakSeconds'))})`)}
+      ${row('BRB', `${laneCount(r, 'BRB')} (${dur(laneSecs(r, 'BRB', 'brbSeconds'))})`)}
+      ${laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds') >= 60 ? row('Away in scrin.io', dur(laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds'))) : ''}
+      <h4>Right now</h4>
+      ${row('RingCentral', tool('rc'), e((p.rc || {}).label || ''))}
+      ${row('Zoho Desk', tool('desk'), e((p.desk || {}).label || ''))}
+      ${row('SalesIQ chat', tool('chat'), e((p.chat || {}).label || ''))}
+      ${row('Desk availability', tool('avail'), e((p.avail || {}).label || ''))}
+      ${sc ? row('scrin.io', e(sc.status === 'online' ? 'Tracking' : sc.status === 'away' ? 'Idle' : 'Not tracking'), sc.lastActive ? 'last active ' + e(timeOf(Date.parse(sc.lastActive))) : '') : ''}
+      ${lv.onCall ? row('Phone', 'On a call', e(lv.direction || '')) : ''}
+      ${lv.activeChats ? row('Open chats', String(lv.activeChats)) : ''}
+    </div>`;
+    const o = document.createElement('div'); o.id = 'bx-agent-pop'; o.className = 'bx-root bx-pop-wrap'; o.innerHTML = html;
+    document.body.appendChild(o);
+    const btn = o.querySelector('[data-bx-pop-close]'); if (btn) btn.focus();
+  }
+  document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && document.getElementById('bx-agent-pop')) { closeAgentPanel(); return; }
+    const c = ev.target && ev.target.closest && ev.target.closest('[data-bx-agent]');
+    if (c && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); openAgentPanel(c.getAttribute('data-bx-agent'), c); }
+  });
   function liveLine(r) {
     if (!liveNow || !liveNow.data || r.currentStatus === 'Logged Out') return '';
     const x = liveNow.data[String(r.email || '').toLowerCase()];
@@ -446,11 +507,12 @@
     const chip = r => {
       const since = parseTs(r.since);
       const flags = overFlags(r);
-      return `<div class="bx-chip${flags.length ? ' bx-chip-over' : ''}">
+      return `<div class="bx-chip bx-chip-click${flags.length ? ' bx-chip-over' : ''}" data-bx-agent="${e(r.email)}" role="button" tabindex="0" aria-label="${e(r.username || r.email)}: open the day's details">
         <div class="bx-row bx-between"><b>${e(r.username || r.email)}</b><span class="bx-mono bx-strong" data-bx-since="${isToday() && since && r.currentStatus !== 'Logged Out' ? since : ''}">${isToday() && since && r.currentStatus !== 'Logged Out' ? clock((Date.now() - since) / 1000) : '-'}</span></div>
         <div class="bx-sub">${wingOf(r.email) === 'chat' ? 'Chat' : 'Call'} wing · ${(LANES[r.currentStatus] || {}).label || ''}</div>
         <div class="bx-sub">Breaks ${laneCount(r, 'Break')} (${dur(laneSecs(r, 'Break', 'breakSeconds'))}) · BRB ${laneCount(r, 'BRB')} (${dur(laneSecs(r, 'BRB', 'brbSeconds'))})${laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds') >= 60 ? ` · scrin.io away ${dur(laneSecs(r, 'Away (scrin.io)', 'ssmAwaySeconds'))}` : ''}</div>
-        ${isToday() ? liveLine(r) : ''}${scrinBadge(r)}
+        ${isToday() ? dayMini(r) : ''}
+        ${isToday() ? liveLine(r) : ''}${scrinBadge(r)}${isToday() ? toolDots(r) : ''}
         ${flags.length ? `<div class="bx-over-line">⚠ ${flags.map(e).join(' · ')}</div>` : ''}
       </div>`;
     };
@@ -566,6 +628,9 @@
   }
 
   document.addEventListener('click', async ev => {
+    if (ev.target.closest('[data-bx-pop-close]') || ev.target.id === 'bx-agent-pop') { closeAgentPanel(); return; }
+    const card = ev.target.closest('[data-bx-agent]');
+    if (card && card.closest('#bx-admin-root')) { openAgentPanel(card.getAttribute('data-bx-agent'), card); return; }
     const act = ev.target.closest('[data-bx-action]');
     if (act && (act.closest('#bx-agent-root') || act.closest('#bx-admin-root'))) {
       ev.preventDefault();
