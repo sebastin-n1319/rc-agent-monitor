@@ -31,3 +31,10 @@ describe.skipIf(!sqlite3)('expert ask: channel and rewrite (Batch 238)', () => {
     expect(b.rewritten).toBe(false);
   });
 });
+
+describe.skipIf(!sqlite3)('expert learns the #422530 lessons (Batch 239)', () => {
+  it('seeds the reply-to, act-first and onboarding rules', async () => {
+    const titles = (await ex.rules()).map(r => r.title);
+    expect(titles).toEqual(expect.arrayContaining(['Reply to the practice, not the person who forwarded it', 'Act first, then reply with what was arranged', 'Onboarding complaints and a change of onboarding specialist']));
+  });
+});

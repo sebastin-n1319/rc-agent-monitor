@@ -297,7 +297,7 @@
       if (T.related && T.related.length) box.appendChild(h('p', { class: 'ax-tk-facts' }, ['Also read: '].concat(T.related.map(function (r, i) { return h('span', null, [i ? ', ' : '', tk(r.number), ' ' + (r.subject || '')]); }))));
       if (R) {
         if (R.summary) box.appendChild(h('p', { class: 'ax-tk-sum', text: R.summary }));
-        var kv = [['Waiting for', R.waiting], ['Stage', R.stage], ['Risk', R.risk]].filter(function (x) { return x[1]; });
+        var kv = [['Reply goes to', R.reply_to], ['Waiting for', R.waiting], ['Stage', R.stage], ['Risk', R.risk]].filter(function (x) { return x[1]; });
         if (kv.length) box.appendChild(h('dl', { class: 'ax-tk-kv' }, kv.map(function (x) { return h('div', null, [h('dt', { text: x[0] }), h('dd', { text: x[1] })]); })));
         var cols = [['Next best steps', R.next, 'list', 'ol'], ['Do better', R.improve, 'warn', 'ul'], ['Went well', R.went_well, 'check', 'ul']].filter(function (x) { return x[1] && x[1].length; });
         if (cols.length) box.appendChild(h('div', { class: 'ax-tk-cols' }, cols.map(function (c) { return h('div', { class: 'ax-tk-col' }, [h('h5', null, [icon(c[2], 'sm'), c[0]]), h(c[3], null, c[1].map(function (x) { return h('li', { text: x }); }))]); })));
