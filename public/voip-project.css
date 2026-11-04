@@ -183,3 +183,11 @@ td>.vp-tag:first-child{margin-left:0}
 .vp-hero-top{margin:10px 0 0;font-size:13px;color:var(--vp-t1)}
 @media (max-width:560px){.vp-hero-split{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .vp-kpis{align-content:stretch}.vp-kpi{justify-content:center}
+/* Batch 253: insights, transfers card */
+.vp-ins{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:8px 18px}
+.vp-ins li{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.45;color:var(--vp-t1)}
+.vp-ins li i{flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:var(--vp-c3)}
+.vp-ins li.ok i{background:var(--vp-ok)}.vp-ins li.warn i{background:#C9940F}
+.vp-bt i.tr{background:var(--vp-c2)}
+.vp-bl .vp-tag{margin-left:6px;font-size:10.5px;padding:1px 6px}
+.vp-grid2.eq{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}@media (max-width:1000px){.vp-grid2.eq{grid-template-columns:minmax(0,1fr)}}

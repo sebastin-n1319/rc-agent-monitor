@@ -49,10 +49,11 @@
     function paintHead() {
       clear(head);
       var D = S.data;
-      head.appendChild(h('div', { class: 'vp-title' }, [h('h1', { text: D && D.shareLabel ? D.shareLabel : 'T1 CS VoIP' }),
-        h('p', { class: 'vp-sub', text: 'Basic VoIP support handled by T1 CS since 12 Oct 2026: what T1 closed, what it transferred and where, whether basic support was done first, and how it compares with the same number of days before.' + (D && D.viewer ? ' Signed in as ' + D.viewer + '.' : '') })]));
+      var FIX = opts.mode === 'fix';
+      head.appendChild(h('div', { class: 'vp-title' }, [h('h1', { text: FIX ? 'VoIP fix list' : D && D.shareLabel ? D.shareLabel : 'T1 CS VoIP' }),
+        h('p', { class: 'vp-sub', text: FIX ? 'VoIP tickets where T1 handling fell short of the T1 VoIP support guide, with what was missing, so each one can be coached or cleared.' : 'Basic VoIP support handled by T1 CS since 12 Oct 2026: what T1 closed, what it transferred and where, whether basic support was done first, and how it compares with the same number of days before.' + (D && D.viewer ? ' Signed in as ' + D.viewer + '.' : '') })]));
       var ctl = h('div', { class: 'vp-ctl' });
-      if (opts.mode === 'admin') {
+      if (opts.mode === 'admin' || opts.mode === 'fix') {
         var seg = h('div', { class: 'vp-seg', role: 'group', 'aria-label': 'Date range' }, PRESETS.map(function (p) {
           return h('button', { type: 'button', 'aria-pressed': String(S.preset === p[0]), onclick: function () { S.preset = p[0]; if (p[0] !== 'custom') { save(); load(); } else paintHead(); } }, [p[1]]);
         }));
@@ -63,7 +64,7 @@
           ctl.appendChild(h('button', { type: 'button', class: 'vp-btn', onclick: function () { S.from = f.value; S.to = t.value; save(); load(); } }, ['Apply']));
         }
         ctl.appendChild(h('button', { type: 'button', class: 'vp-btn', disabled: S.busy, onclick: function () { load(true); } }, [S.busy ? 'Loading...' : 'Refresh']));
-        ctl.appendChild(h('button', { type: 'button', class: 'vp-btn primary', onclick: shareDialog }, ['Share']));
+        if (!FIX) ctl.appendChild(h('button', { type: 'button', class: 'vp-btn primary', onclick: shareDialog }, ['Share']));
       } else if (D) {
         ctl.appendChild(h('span', { class: 'vp-pill', text: D.range.label }));
         ctl.appendChild(h('button', { type: 'button', class: 'vp-btn', onclick: function () { load(true); } }, ['Refresh']));
@@ -87,13 +88,15 @@
           h('div', { class: 'vp-prog-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(rd.total), 'aria-valuenow': String(rd.done), 'aria-label': 'AI review progress' }, [h('i', { style: 'width:' + Math.max(2, pctDone) + '%' })]),
           h('p', { class: 'vp-muted vp-small', text: 'AI reads each ticket\'s conversation to confirm it is a VoIP query, sort the issue and check the basic support before a transfer. Until a ticket is read, only tickets already classified VoIP Support are counted, so closed-by-T1 numbers rise as it goes. About 30 tickets every 90 seconds; press Refresh to update.' })]));
       }
-      var views = [['overview', 'Overview'], ['fix', 'Fix list' + (T.leaks ? ' (' + openLeaks(D).length + ')' : '')], ['categories', 'Issue categories'], ['agents', 'T1 agents'], ['transfers', 'Transfers'], ['tickets', 'All tickets (' + T.handled + ')']];
+      // Batch 253: the fix list is its own page (Tickets > VoIP fix list), not part of the report.
+      if (opts.mode === 'fix') { body.appendChild(h('div', { class: 'vp-grid2 eq' }, [leakCard(D), agentLeakCard(D)])); body.appendChild(fixCard(D)); return; }
+      var views = [['overview', 'Overview'], ['categories', 'Issue categories'], ['agents', 'T1 agents'], ['transfers', 'Transfers'], ['tickets', 'All tickets (' + T.handled + ')']];
       if (!views.some(function (v) { return v[0] === S.view; })) S.view = 'overview';
       body.appendChild(h('div', { class: 'vp-tabs', role: 'tablist', 'aria-label': 'Report sections' }, views.map(function (v) {
-        return h('button', { type: 'button', role: 'tab', 'aria-selected': String(S.view === v[0]), class: v[0] === 'fix' && T.leaks ? 'leak' : '', onclick: function () { S.view = v[0]; paint(); } }, [v[1]]);
+        return h('button', { type: 'button', role: 'tab', 'aria-selected': String(S.view === v[0]), onclick: function () { S.view = v[0]; paint(); } }, [v[1]]);
       })));
       var V = S.view;
-      if (V === 'overview') { body.appendChild(hero(D)); body.appendChild(h('div', { class: 'vp-grid2' }, [shineCard(D), leakCard(D)])); body.appendChild(compareStrip(D)); body.appendChild(dailyCard(C.daily)); if (C.wins && C.wins.length) body.appendChild(winsCard(D)); }
+      if (V === 'overview') { body.appendChild(hero(D)); body.appendChild(insightsCard(D)); body.appendChild(h('div', { class: 'vp-grid2' }, [shineCard(D), transferMostCard(D)])); body.appendChild(compareStrip(D)); body.appendChild(weeklyCard(D)); body.appendChild(dailyCard(C.daily)); if (C.wins && C.wins.length) body.appendChild(winsCard(D)); }
       else if (V === 'fix') body.appendChild(fixCard(D));
       else if (V === 'categories') body.appendChild(catCard(C, D));
       else if (V === 'agents') body.appendChild(agentCard(C));
@@ -123,10 +126,41 @@
         kpi('First contact resolution', pc(T.fcrPct), P.fcrPct, T.fcrPct, true, 'vs ' + pc(P.fcrPct) + ' before'),
         kpi('Transfer rate', pc(T.transferPct), P.transferPct, T.transferPct, false, 'vs ' + pc(P.transferPct) + ' before'),
         kpi('Basic support done before a transfer', pc(T.basicDonePct), P.basicDonePct, T.basicDonePct, true, T.basicDone + ' of ' + (T.basicDone + T.basicPartial + T.basicNot)),
-        kpi('Leaks to fix', String(nLeak), null, null, null, nLeak ? 'Open the fix list' : 'Nothing to fix', nLeak ? function () { S.view = 'fix'; paint(); } : null)])]);
+        kpi('Median time to close', hrs(D.current.speed.t1Median), null, null, null, 'by T1, vs ' + hrs(D.current.speed.deptMedian) + ' when transferred')])]);
+    }
+    function hrs(v) { if (v == null) return '-'; if (v < 1) return Math.max(1, Math.round(v * 60)) + ' min'; if (v < 48) return (Math.round(v * 10) / 10) + ' h'; return Math.round(v / 24 * 10) / 10 + ' days'; }
+    function insightsCard(D) {
+      var C = D.current, T = C.totals, P = D.previous.totals, sp = C.speed || {}, cats = C.byCategory.filter(function (c) { return c.key !== 'unsorted' && c.handled >= 3; }), out = [];
+      var ch = [['call', 'calls'], ['chat', 'chats'], ['email', 'emails']].map(function (k) { return { n: k[1], v: (C.byChannel[k[0]] || {}).closedT1Pct, h: (C.byChannel[k[0]] || {}).handled }; }).filter(function (x) { return x.h >= 3 && x.v != null; }).sort(function (a, b) { return b.v - a.v; });
+      if (P.handled) out.push(['ok', 'T1 closed ' + pc(T.closedT1Pct) + ' of its VoIP tickets without a transfer, against ' + pc(P.closedT1Pct) + ' in the ' + D.range.days + ' days before.']);
+      if (sp.t1Median != null && sp.deptMedian != null) out.push(['ok', 'When T1 resolves a VoIP ticket it closes in a median ' + hrs(sp.t1Median) + '; a transferred one takes ' + hrs(sp.deptMedian) + ' to close.']);
+      if (ch.length) out.push(['ok', 'T1 resolves the most on ' + ch[0].n + ' (' + pc(ch[0].v) + ' closed without a transfer)' + (ch.length > 1 ? ', the least on ' + ch[ch.length - 1].n + ' (' + pc(ch[ch.length - 1].v) + ').' : '.')]);
+      var best = cats.filter(function (c) { return c.closedT1 > 0; }).sort(function (a, b) { return (b.closedT1Pct || 0) - (a.closedT1Pct || 0); })[0];
+      if (best) out.push(['ok', 'Strongest issue: ' + best.label.toLowerCase() + ', ' + pc(best.closedT1Pct) + ' resolved by T1 (' + best.closedT1 + ' of ' + best.handled + ').']);
+      var gap = cats.filter(function (c) { return c.expected === 't1' && c.transferred > 0; }).sort(function (a, b) { return b.transferred - a.transferred; })[0];
+      if (gap) out.push(['warn', gap.label + ' is T1\'s to resolve by the guide, yet ' + gap.transferred + ' of ' + gap.handled + ' (' + pc(gap.transferPct) + ') were transferred.']);
+      var most = cats.slice().sort(function (a, b) { return b.transferred - a.transferred; })[0];
+      if (most && most !== gap && most.transferred) out.push(['muted', 'Most transferred issue: ' + most.label.toLowerCase() + ' (' + most.transferred + ', ' + pc(most.transferPct) + ' of those tickets), which the guide gives to ' + (most.expected === 'team' ? 'the VoIP team.' : 'T1 after its checks.')]);
+      if (T.basicDone + T.basicPartial + T.basicNot) out.push([T.basicDonePct >= 70 ? 'ok' : 'warn', 'Basic support was done before ' + pc(T.basicDonePct) + ' of the transfers where it applies' + (C.topMissing.length ? '; the step most often skipped is ' + C.topMissing[0].step.toLowerCase() + '.' : '.')]);
+      return card('What the numbers say', null, [h('ul', { class: 'vp-ins' }, out.map(function (x) { return h('li', { class: x[0] }, [h('i', { 'aria-hidden': 'true' }), x[1]]); }))]);
+    }
+    function transferMostCard(D) {
+      var C = D.current, cats = C.byCategory.filter(function (c) { return c.transferred > 0 && c.key !== 'unsorted'; }).sort(function (a, b) { return b.transferred - a.transferred; }).slice(0, 7);
+      var max = Math.max.apply(null, cats.map(function (c) { return c.transferred; }).concat([1]));
+      return card('What T1 transfers', 'The issues T1 sends on most, with the share of each that was transferred. Expected owner from the guide.', [
+        cats.length ? h('ul', { class: 'vp-bars' }, cats.map(function (c) { return h('li', null, [h('span', { class: 'vp-bl' }, [c.label, h('span', { class: 'vp-tag ' + (c.expected === 't1' ? 'ok' : c.expected === 'team' ? 'muted' : 'warn'), text: (D.categories[c.key] || {}).expectedLabel })]), h('span', { class: 'vp-bt' }, [h('i', { class: 'tr', style: 'width:' + Math.max(4, c.transferred / max * 100) + '%' })]), h('b', { text: String(c.transferred) }), h('span', { class: 'vp-muted', text: pc(c.transferPct) })]); }))
+          : h('p', { class: 'vp-muted', text: 'No transfers in this range.' }),
+        C.byDept.length ? h('p', { class: 'vp-line' }, [h('b', { text: 'Went to: ' }), C.byDept.slice(0, 4).map(function (d) { return d.dept + ' ' + d.received; }).join(', ') + (C.byDept.length > 4 ? ', and others' : '') + '.']) : null]);
+    }
+    function weeklyCard(D) {
+      var W = D.current.weekly || [];
+      if (W.length < 2) return h('div');
+      return card('Week by week', 'Each week from Monday, so the trend since go-live is easy to read.', [table([
+        ['Week of', 'week', { fmt: function (v) { return day(v + 'T12:00:00Z'); } }], ['VoIP tickets', 'handled', N_], ['Closed by T1', 'closedT1', N_], ['Closed by T1 %', 'closedT1Pct', P_],
+        ['Transfer %', 'transferPct', P_], ['FCR %', 'fcrPct', P_], ['Basic done %', 'basicDonePct', P_]], W)]);
     }
     function shineCard(D) {
-      var C = D.current, cats = C.byCategory.filter(function (c) { return c.closedT1 > 0; }).sort(function (a, b) { return b.closedT1 - a.closedT1; }).slice(0, 7);
+      var C = D.current, cats = C.byCategory.filter(function (c) { return c.closedT1 > 0 && c.key !== 'unsorted'; }).sort(function (a, b) { return b.closedT1 - a.closedT1; }).slice(0, 7);
       var ags = C.byAgent.filter(function (a) { return a.handled >= 3; }).sort(function (a, b) { return (b.closedT1Pct || 0) - (a.closedT1Pct || 0) || b.closedT1 - a.closedT1; }).slice(0, 3);
       var max = Math.max.apply(null, cats.map(function (c) { return c.closedT1; }).concat([1]));
       return card('Where T1 shines', 'Issues T1 now resolves itself, and the agents closing the most without a transfer.', [
@@ -139,12 +173,16 @@
       return card('Where it leaks', n ? n + ' ticket' + (n === 1 ? '' : 's') + ' where T1 handling fell short of the VoIP guide.' : 'No leaks found in this range.', [
         rs.length ? h('ul', { class: 'vp-bars' }, rs.map(function (r) { return h('li', null, [h('button', { type: 'button', class: 'vp-bl link', onclick: function () { S.view = 'fix'; S.fx.reason = r.key; paint(); } }, [r.label]), h('span', { class: 'vp-bt' }, [h('i', { class: 'bad', style: 'width:' + Math.max(4, r.n / max * 100) + '%' })]), h('b', { text: String(r.n) }), h('span', { class: 'vp-muted', title: 'Share of the VoIP tickets T1 handled', text: pc(C.totals.handled ? r.n / C.totals.handled * 100 : null) })]); })) : null,
         C.topMissing.length ? h('p', { class: 'vp-line' }, [h('b', { text: 'Most skipped step: ' }), C.topMissing[0].step + ' (' + C.topMissing[0].n + ')']) : null,
-        n && opts.mode === 'admin' ? h('button', { type: 'button', class: 'vp-btn primary', onclick: function () { S.view = 'fix'; paint(); } }, ['Open the fix list']) : null]);
+      ]);
+    }
+    function agentLeakCard(D) {
+      return card('By T1 agent', 'Leaks out of the VoIP tickets each agent handled.', [table([['Agent', 'name'], ['VoIP tickets', 'handled', N_], ['Leaks', 'leaks', N_], ['Leak %', 'leakPct', P_], ['Basic done %', 'basicDonePct', P_], ['Hand-over notes %', 'handoffPct', P_]],
+        D.current.byAgent.slice().sort(function (a, b) { return b.leaks - a.leaks; }))]);
     }
     function compareStrip(D) {
       var C = D.current.totals, P = D.previous.totals, cc = D.current.company || {}, pp = D.previous.company || {};
       var items = [['VoIP tickets handled', P.handled, C.handled, null, 'count'], ['Closed by T1', P.closedT1Pct, C.closedT1Pct, true, 'pct'], ['Transfer rate', P.transferPct, C.transferPct, false, 'pct'],
-        ['FCR', P.fcrPct, C.fcrPct, true, 'pct'], ['Share of all Adit VoIP tickets closed by T1', pp.t1Pct, cc.t1Pct, true, 'pct'], ['Leak rate', P.leakPct, C.leakPct, false, 'pct']];
+        ['FCR', P.fcrPct, C.fcrPct, true, 'pct'], ['Share of all Adit VoIP tickets closed by T1', pp.t1Pct, cc.t1Pct, true, 'pct'], ['Basic support done before a transfer', P.basicDonePct, C.basicDonePct, true, 'pct']];
       var fmt = function (v, k) { return k === 'pct' ? pc(v) : num(v); };
       var strip = h('div', { class: 'vp-cmps' }, items.map(function (r) { return h('div', { class: 'vp-cmpi' }, [h('span', { class: 'vp-tl', text: r[0] }), h('p', null, [h('span', { class: 'vp-muted', text: fmt(r[1], r[4]) + ' \u2192 ' }), h('b', { text: fmt(r[2], r[4]) })]), r[3] == null ? h('span', { class: 'vp-d muted', text: 'volume' }) : delta(r[1], r[2], r[3], r[4])]); }));
       var all = compareCard(D); all.className = 'vp-cmpall';
@@ -158,7 +196,7 @@
     // ── fix list ──
     function fixCard(D) {
       var fx = S.fx, all = (D.tickets || []).filter(function (t) { return t.leaks && t.leaks.length; }), L = D.leakLabels || {};
-      var box = card('Fix list', 'Every VoIP ticket where T1 handling fell short of the guide, with what was missing. ' + (opts.mode === 'admin' ? 'Copy a coaching note for the agent, mark it coached, or mark it not a leak if the check got it wrong.' : ''), []);
+      var box = card('Tickets to fix', 'Every VoIP ticket where T1 handling fell short of the guide, with what was missing. ' + (opts.mode === 'admin' ? 'Copy a coaching note for the agent, mark it coached, or mark it not a leak if the check got it wrong.' : ''), []);
       var counts = {}; all.forEach(function (t) { if (t.fix && t.fix.status === 'dismissed') return; t.leaks.forEach(function (l) { counts[l] = (counts[l] || 0) + 1; }); });
       box.appendChild(h('div', { class: 'vp-chips' }, [h('button', { type: 'button', class: 'vp-chip', 'aria-pressed': String(!fx.reason), onclick: function () { fx.reason = ''; paint(); } }, ['All reasons'])].concat(Object.keys(L).filter(function (k) { return counts[k]; }).map(function (k) {
         return h('button', { type: 'button', class: 'vp-chip', 'aria-pressed': String(fx.reason === k), onclick: function () { fx.reason = fx.reason === k ? '' : k; paint(); } }, [L[k], h('b', { text: String(counts[k]) })]);
@@ -302,14 +340,14 @@
     function catCard(C, D) {
       return card('Issue categories', 'What clients called about, what T1 solved and what it transferred. Expected owner comes from the T1 VoIP support guide.', [table([
         ['Category', 'label'], ['Expected owner', function (r) { return D.categories[r.key] ? D.categories[r.key].expectedLabel : ''; }, { cell: function (r) { var e = r.expected; return h('span', { class: 'vp-tag ' + (e === 't1' ? 'ok' : e === 'team' ? 'muted' : 'warn'), text: D.categories[r.key] ? D.categories[r.key].expectedLabel : '' }); } }],
-        ['Tickets', 'handled', N_], ['Closed by T1', 'closedT1', N_], ['Transferred', 'transferred', N_], ['Transfer %', 'transferPct', P_], ['FCR %', 'fcrPct', P_], ['Basic done %', 'basicDonePct', P_], ['Leaks', 'leaks', N_]], C.byCategory, {
+        ['Tickets', 'handled', N_], ['Closed by T1', 'closedT1', N_], ['Transferred', 'transferred', N_], ['Transfer %', 'transferPct', P_], ['FCR %', 'fcrPct', P_], ['Basic done %', 'basicDonePct', P_], ['Median close by T1', 't1Hours', { num: true, fmt: hrs }], ['Median close when transferred', 'deptHours', { num: true, fmt: hrs }]], C.byCategory, {
           rowCls: function (r) { return r.expected === 't1' && r.transferPct > 30 ? 'flag' : ''; } }),
         h('p', { class: 'vp-muted vp-small', text: 'Highlighted rows: categories T1 should resolve where more than 30% were transferred.' })]);
     }
     function agentCard(C) {
       return card('T1 agents', 'Each VoIP ticket counts for the T1 agent who last had it before it closed or left T1.', [table([
         ['Agent', 'name'], ['Handled', 'handled', N_], ['Calls', 'call', N_], ['Chats', 'chat', N_], ['Emails', 'email', N_], ['Closed by T1', 'closedT1', N_], ['Closure %', 'closedT1Pct', P_],
-        ['Transferred', 'transferred', N_], ['Transfer %', 'transferPct', P_], ['FCR %', 'fcrPct', P_], ['Basic done %', 'basicDonePct', P_], ['Hand-over notes %', 'handoffPct', P_], ['Leaks', 'leaks', N_], ['Leak %', 'leakPct', P_]], C.byAgent)]);
+        ['Transferred', 'transferred', N_], ['Transfer %', 'transferPct', P_], ['FCR %', 'fcrPct', P_], ['Basic done %', 'basicDonePct', P_], ['Hand-over notes %', 'handoffPct', P_]], C.byAgent)]);
     }
     function receiverCard(C) {
       return card('Who picked up the transfers', 'The person who closed or now holds each ticket T1 transferred, with their department. VoIP team agents are marked.', [table([
@@ -352,9 +390,9 @@
           return h('tr', null, [h('td', { class: 'k' }, [t.url ? h('a', { href: t.url, target: '_blank', rel: 'noopener', text: '#' + t.number }) : '#' + t.number]),
             h('td', null, [h('span', { class: 'vp-subj', text: t.subject }), det]), h('td', { text: day(t.created) }), h('td', { text: t.channel }), h('td', { text: t.agent }),
             h('td', { text: (D.categories[t.category] || {}).label || t.category }), h('td', null, [h('span', { class: 'vp-tag ' + o[1], text: o[0] })]), h('td', { text: t.dest || '' }), h('td', { text: t.owner || '' }),
-            h('td', null, [b ? h('span', { class: 'vp-tag ' + b[1], text: b[0] }) : (t.transferred ? h('span', { class: 'vp-muted', text: 'Not read yet' }) : '')]), h('td', null, t.leaks && t.leaks.length ? [h('span', { class: 'vp-tag ' + (t.fix && t.fix.status === 'dismissed' ? 'muted' : 'bad'), text: t.leaks.length + ' leak' + (t.leaks.length > 1 ? 's' : '') })] : []), h('td', { class: 'vp-muted', text: t.by })]);
+            h('td', null, [b ? h('span', { class: 'vp-tag ' + b[1], text: b[0] }) : (t.transferred ? h('span', { class: 'vp-muted', text: 'Not read yet' }) : '')]), h('td', { class: 'vp-muted', text: t.by })]);
         }));
-        wrap.appendChild(h('table', { class: 'vp-t' }, [h('thead', null, [h('tr', null, ['Ticket', 'Subject', 'Created', 'Channel', 'T1 agent', 'Category', 'Outcome', 'Went to', 'Owner now', 'Basic support', 'Leaks', 'Found by'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb]));
+        wrap.appendChild(h('table', { class: 'vp-t' }, [h('thead', null, [h('tr', null, ['Ticket', 'Subject', 'Created', 'Channel', 'T1 agent', 'Category', 'Outcome', 'Went to', 'Owner now', 'Basic support', 'Found by'].map(function (x) { return h('th', { scope: 'col', text: x }); }))]), tb]));
         if (rs.length > S.show) wrap.appendChild(h('button', { type: 'button', class: 'vp-btn vp-more', onclick: function () { S.show += 300; redraw(); } }, ['Show more (' + (rs.length - S.show) + ' left)']));
       }
       redraw();

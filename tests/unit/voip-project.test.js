@@ -50,10 +50,10 @@ describe('voip project: departments and ranges', () => {
 describe('voip project: leaks', () => {
   const now = new Date().toISOString();
   it('flags a T1-owned issue that was transferred, and missing basic checks', () => {
-    expect(V.leaksOf({ transferred: true, category: 'callflow', created: now, ai: { basic: 'not_done', valid: 0, handoff: 'missing' } })).toEqual(['should_resolve', 'no_basic', 'no_handoff']);
+    expect(V.leaksOf({ transferred: true, category: 'hours_greetings', created: now, ai: { basic: 'not_done', valid: 0, handoff: 'missing' } })).toEqual(['should_resolve', 'no_basic', 'no_handoff']);
   });
   it('a right transfer of a VoIP-team issue is not a leak', () => {
-    expect(V.leaksOf({ transferred: true, category: 'hardware', created: now, ai: { basic: 'not_needed', valid: 1, handoff: 'good' } })).toEqual([]);
+    expect(V.leaksOf({ transferred: true, category: 'orders_returns', created: now, ai: { basic: 'not_needed', valid: 1, handoff: 'good' } })).toEqual([]);
   });
   it('flags reopened and stale T1 tickets', () => {
     expect(V.leaksOf({ outcome: 'closed_t1', reopen: 1, created: now })).toEqual(['reopened']);
