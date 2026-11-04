@@ -96,7 +96,7 @@
         return h('button', { type: 'button', role: 'tab', 'aria-selected': String(S.view === v[0]), onclick: function () { S.view = v[0]; paint(); } }, [v[1]]);
       })));
       var V = S.view;
-      if (V === 'overview') { body.appendChild(hero(D)); body.appendChild(insightsCard(D)); body.appendChild(h('div', { class: 'vp-grid2' }, [shineCard(D), transferMostCard(D)])); body.appendChild(compareStrip(D)); body.appendChild(weeklyCard(D)); body.appendChild(dailyCard(C.daily)); if (C.wins && C.wins.length) body.appendChild(winsCard(D)); }
+      if (V === 'overview') { body.appendChild(hero(D)); body.appendChild(insightsCard(D)); body.appendChild(flowCard(D)); body.appendChild(h('div', { class: 'vp-grid2' }, [shineCard(D), transferMostCard(D)])); body.appendChild(compareStrip(D)); body.appendChild(weeklyCard(D)); body.appendChild(dailyCard(C.daily)); if (C.wins && C.wins.length) body.appendChild(winsCard(D)); }
       else if (V === 'fix') body.appendChild(fixCard(D));
       else if (V === 'categories') body.appendChild(catCard(C, D));
       else if (V === 'agents') body.appendChild(agentCard(C));
@@ -141,8 +141,44 @@
       if (gap) out.push(['warn', gap.label + ' is T1\'s to resolve by the guide, yet ' + gap.transferred + ' of ' + gap.handled + ' (' + pc(gap.transferPct) + ') were transferred.']);
       var most = cats.slice().sort(function (a, b) { return b.transferred - a.transferred; })[0];
       if (most && most !== gap && most.transferred) out.push(['muted', 'Most transferred issue: ' + most.label.toLowerCase() + ' (' + most.transferred + ', ' + pc(most.transferPct) + ' of those tickets), which the guide gives to ' + (most.expected === 'team' ? 'the VoIP team.' : 'T1 after its checks.')]);
+      var F = flowStats(D);
+      if (F.before && F.after) { var fc = Math.round((F.after - F.before) / F.before * 1000) / 10; out.push([fc > 0 ? 'warn' : 'muted', 'T1\'s overall workload ' + (fc > 0 ? 'rose ' + fc + '%' : 'changed ' + fc + '%') + ' per working day since VoIP support started (' + F.after + ' tickets, calls and chats a day against ' + F.before + '), so VoIP transfers sit on top of a heavier load.']); }
       if (T.basicDone + T.basicPartial + T.basicNot) out.push([T.basicDonePct >= 70 ? 'ok' : 'warn', 'Basic support was done before ' + pc(T.basicDonePct) + ' of the transfers where it applies' + (C.topMissing.length ? '; the step most often skipped is ' + C.topMissing[0].step.toLowerCase() + '.' : '.')]);
       return card('What the numbers say', null, [h('ul', { class: 'vp-ins' }, out.map(function (x) { return h('li', { class: x[0] }, [h('i', { 'aria-hidden': 'true' }), x[1]]); }))]);
+    }
+    // Batch 254: T1's whole workload month on month, to read the VoIP transfers against the load.
+    function flowStats(D) {
+      var M = ((D.flow || {}).months || []).filter(function (m) { return m.tickets != null; });
+      M.forEach(function (m) { m.total = (m.tickets || 0) + (m.calls || 0) + (m.chats || 0); m.perDay = m.workdays ? Math.round(m.total / m.workdays * 10) / 10 : null; });
+      var before = M.filter(function (m) { return m.month < D.goLive.slice(0, 7); }), after = M.filter(function (m) { return m.month >= D.goLive.slice(0, 7); });
+      var avg = function (a) { var w = a.reduce(function (t, m) { return t + m.workdays; }, 0); return w ? Math.round(a.reduce(function (t, m) { return t + m.total; }, 0) / w * 10) / 10 : null; };
+      return { M: M, before: avg(before), after: avg(after), bLabel: before.length ? mon(before[0].month) + ' to ' + mon(before[before.length - 1].month) : '', aLabel: after.length ? mon(after[0].month) + (after.length > 1 ? ' to ' + mon(after[after.length - 1].month) : '') : '' };
+    }
+    function mon(ym) { var p = String(ym).split('-'); return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(p[1]) - 1] + " '" + p[0].slice(2); }
+    function flowCard(D) {
+      var F = flowStats(D), M = F.M;
+      if (!M.length) return card('T1 workload, month on month', 'Reading six months of tickets, calls and chats; this shows on the next refresh.', []);
+      var wide = (body.clientWidth || 900) > 1000, W = Math.max(320, wide ? (body.clientWidth || 900) / 2 - 70 : (body.clientWidth || 900) - 40), H = 210, pad = 30, max = Math.max.apply(null, M.map(function (m) { return m.perDay || 0; }).concat([1]));
+      var slot = (W - pad) / M.length, bw = Math.min(70, slot * 0.55);
+      var svg = s('svg', { viewBox: '0 0 ' + W + ' ' + (H + 34), class: 'vp-chart', role: 'img', 'aria-label': 'T1 contacts per working day each month: tickets, calls and chats' });
+      [0, 0.5, 1].forEach(function (f) { var y = H - f * (H - 14); svg.appendChild(s('line', { x1: pad, x2: W, y1: y, y2: y, class: 'vp-grid' })); svg.appendChild(s('text', { x: pad - 6, y: y + 4, class: 'vp-ax', 'text-anchor': 'end' }, [String(Math.round(max * f))])); });
+      M.forEach(function (m, i) {
+        var x = pad + i * slot + (slot - bw) / 2, y = H, g = s('g', { class: 'vp-bar', tabindex: '0' });
+        var per = function (v) { return m.workdays ? v / m.workdays : 0; };
+        g.appendChild(s('title', null, [mon(m.month) + (m.partial ? ' (so far)' : '') + ': ' + m.perDay + ' a working day. ' + m.tickets + ' tickets handled, ' + m.calls + ' calls, ' + m.chats + ' chats in ' + m.workdays + ' working days']));
+        [['tickets', 'f1'], ['calls', 'f2'], ['chats', 'f3']].forEach(function (k) { var v = per(m[k[0]] || 0); if (!v) return; var hg = v / max * (H - 14); y -= hg; g.appendChild(s('rect', { x: x, y: y + 1, width: bw, height: Math.max(1, hg - 2), rx: 3, class: k[1] })); });
+        g.appendChild(s('text', { x: x + bw / 2, y: y - 4, class: 'vp-ax vp-axb', 'text-anchor': 'middle' }, [String(Math.round(m.perDay))]));
+        svg.appendChild(g);
+        svg.appendChild(s('text', { x: x + bw / 2, y: H + 16, class: 'vp-ax', 'text-anchor': 'middle' }, [mon(m.month) + (m.partial ? '*' : '')]));
+        if (m.month === D.goLive.slice(0, 7)) svg.appendChild(s('text', { x: x + bw / 2, y: H + 29, class: 'vp-ax vp-axg', 'text-anchor': 'middle' }, ['VoIP go-live']));
+      });
+      var rows = M.map(function (m, i) { var p = M[i - 1]; return Object.assign({}, m, { label: mon(m.month) + (m.partial ? ' (so far)' : ''), chg: p && p.perDay ? Math.round((m.perDay - p.perDay) / p.perDay * 1000) / 10 : null }); });
+      var chg = F.before && F.after ? Math.round((F.after - F.before) / F.before * 1000) / 10 : null;
+      var lead = chg != null ? h('p', { class: 'vp-flow-lead' }, [h('b', { text: (chg > 0 ? '+' : '') + chg + '%' }), ' T1 contacts per working day since VoIP support started (' + F.aLabel + ': ' + F.after + ' a day) against ' + F.bLabel + ' (' + F.before + ' a day). That is all T1 work: tickets handled, calls and chats.']) : null;
+      return card('T1 workload, month on month', 'All T1 CS work, not only VoIP. Per working day evens out part months (* = month so far).', [lead,
+        h('div', { class: 'vp-grid2 eq vp-flow' }, [h('div', null, [h('div', { class: 'vp-legend' }, [['f1', 'Tickets handled'], ['f2', 'Calls'], ['f3', 'Chats']].map(function (l) { return h('span', null, [h('i', { class: l[0] }), l[1]]); })), h('div', { class: 'vp-tw' }, [svg])]),
+          table([['Month', 'label'], ['Tickets handled', 'tickets', N_], ['Calls', 'calls', N_], ['Chats', 'chats', N_], ['Total', 'total', N_], ['Working days', 'workdays', N_], ['A working day', 'perDay', N_],
+            ['Change', 'chg', { num: true, fmt: function (v) { return v == null ? '-' : (v > 0 ? '+' : '') + v + '%'; } }]], rows)])]);
     }
     function transferMostCard(D) {
       var C = D.current, cats = C.byCategory.filter(function (c) { return c.transferred > 0 && c.key !== 'unsorted'; }).sort(function (a, b) { return b.transferred - a.transferred; }).slice(0, 7);

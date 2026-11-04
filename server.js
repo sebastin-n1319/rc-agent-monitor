@@ -738,7 +738,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
     // Batch 250: T1 CS VoIP (Tickets > T1 CS VoIP). Replaces the AI and VoIP tab. AI reads new VoIP tickets every 2 minutes.
     { const vp = require('./lib/voip-project'); vp.setDB(db); await vp.initSchema();
       vp.setDeps({ deskLifecycle: require('./lib/desk-lifecycle'), ai: require('./lib/ai'), aditkb: require('./lib/aditkb-service'), ticketContext: (tid) => escalationWatch.ticketContext(tid),
-        roster: () => deskLifecycleAgentRoster(), dayWindow: getDateWindow });
+        roster: () => deskLifecycleAgentRoster(), dayWindow: getDateWindow, flow: () => t1MonthlyFlow() });
       setTimeout(() => {
         const tick = () => vp.work({ max: 30 }).then(r => { if (r && r.read) console.log('📞 VoIP project read:', JSON.stringify(r)); }).catch(e => console.warn('voip project work failed:', e.message));
         tick(); setInterval(tick, 90 * 1000);
@@ -8342,6 +8342,43 @@ async function deskLifecycleAgentRoster() {
 // Session 42: RingCentral call stats + SalesIQ chat counts per monitored
 // agent for the same window as the ticket numbers -- the admin view of
 // what each agent's own My Stats page shows.
+// Batch 254: T1's whole workload month on month (tickets handled, calls, chats), for the VoIP report: it shows whether
+// transfers rose with the load. Past months are kept 12 hours, the current month 10 minutes; the first read happens in
+// the background and the report shows it from the next load.
+let _t1Flow = { at: 0, data: null, p: null };
+function t1MonthlyFlow() {
+  const fresh = _t1Flow.data && Date.now() - _t1Flow.at < 10 * 60e3;
+  if (!fresh && !_t1Flow.p) _t1Flow.p = (async () => {
+    const tz = 'America/Chicago', today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    const { emails, agentNames, byEmail } = await deskLifecycleAgentRoster();
+    const old = new Map(((_t1Flow.data && _t1Flow.data.months) || []).map(m => [m.month, m]));
+    const months = [];
+    let y = Number(today.slice(0, 4)), m = Number(today.slice(5, 7));
+    for (let i = 0; i < 6; i++) { months.unshift(y + '-' + String(m).padStart(2, '0')); m--; if (m < 1) { m = 12; y--; } }
+    const out = [];
+    for (const mo of months) {
+      const isCur = today.startsWith(mo);
+      if (!isCur && old.has(mo) && Date.now() - _t1Flow.at < 12 * 3600e3) { out.push(old.get(mo)); continue; }
+      const [yy, mm] = mo.split('-').map(Number), next = mm === 12 ? (yy + 1) + '-01' : yy + '-' + String(mm + 1).padStart(2, '0');
+      const from = new Date(getDateWindow(mo + '-01', tz).start).toISOString(), to = isCur ? new Date().toISOString() : new Date(getDateWindow(next + '-01', tz).start).toISOString();
+      let tickets = null, calls = 0, chats = 0, inbound = 0;
+      try {
+        const sum = await statsAlign.applyToSummary(await (await coldStore.pick(deskLifecycle, from, to)).agentSummary({ from, to, emails, agentNames, rosterNames: Object.values(agentNames) }), { from, to, agentNames, byEmail });
+        tickets = sum.reduce((t, r) => t + (r.tickets_handled || 0), 0);
+      } catch (e) { console.warn('t1 flow tickets:', e.message); }
+      try {
+        const x = await callAndChatStatsForAgents(emails, from, to);
+        for (const e of Object.keys(x)) { const c = x[e].callStats, h = x[e].chatStats; if (c) { calls += c.totalCalls || 0; inbound += c.inboundCalls || 0; } if (h) chats += h.chatCount || 0; }
+      } catch (e) { console.warn('t1 flow calls/chats:', e.message); }
+      // Weekdays in the month (to date for the current month), so a part month compares fairly.
+      let wd = 0; for (let d = new Date(mo + '-01T12:00:00Z'); d.toISOString().slice(0, 7) === mo && d.toISOString().slice(0, 10) <= today; d = new Date(d.getTime() + 864e5)) if (d.getUTCDay() % 6) wd++;
+      out.push({ month: mo, partial: isCur, workdays: wd, tickets, calls, inbound, chats, agents: emails.length });
+    }
+    _t1Flow = { at: Date.now(), data: { months: out, builtAt: new Date().toISOString() }, p: null };
+    return _t1Flow.data;
+  })().catch(e => { console.warn('t1 monthly flow:', e.message); _t1Flow.p = null; return null; });
+  return _t1Flow.data;
+}
 async function callAndChatStatsForAgents(emails, from, to) {
   const out = {};
   const monitored = await getMonitoredAgents();

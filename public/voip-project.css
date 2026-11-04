@@ -2,7 +2,7 @@
 .vp{--vp-bg:transparent;--vp-surf:#fff;--vp-soft:#F5F8FB;--vp-line:#E2E8EF;--vp-line2:#CBD4DE;--vp-t1:#072B40;--vp-t2:#3A5068;--vp-t3:#5F7790;
   --vp-acc:#F4891F;--vp-acc-ink:#A6520A;--vp-c1:#1A7FB0;--vp-c2:#E07B12;--vp-c3:#9AA9B8;--vp-ok:#0E7C52;--vp-ok-soft:rgba(14,124,82,.1);--vp-bad:#B4323A;--vp-bad-soft:rgba(180,50,58,.1);
   --vp-warn:#8A5A00;--vp-warn-soft:rgba(185,127,6,.12);--vp-blue:#145F86;--vp-blue-soft:rgba(26,127,176,.1);
-  font-family:'Poppins',system-ui,sans-serif;color:var(--vp-t1);padding:16px 24px 48px;max-width:1400px;margin:0 auto}
+  font-family:'Poppins',system-ui,sans-serif;color:var(--vp-t1);padding:16px 24px 48px;max-width:none;margin:0}
 html.dark-mode .vp{--vp-surf:#0F1E2A;--vp-soft:#132634;--vp-line:#22394B;--vp-line2:#2E4C63;--vp-t1:#E6EEF5;--vp-t2:#B8C8D6;--vp-t3:#93A9BB;--vp-acc-ink:#F7A452;
   --vp-c1:#4BB3E3;--vp-c2:#F59A3C;--vp-c3:#5E7487;--vp-ok:#45CF98;--vp-ok-soft:rgba(69,207,152,.12);--vp-bad:#F2858C;--vp-bad-soft:rgba(242,133,140,.12);--vp-warn:#EBC062;--vp-warn-soft:rgba(235,192,98,.12);--vp-blue:#7CC8EC;--vp-blue-soft:rgba(75,179,227,.14)}
 @media (prefers-color-scheme:dark){.vp.vp-share{--vp-surf:#0F1E2A;--vp-soft:#132634;--vp-line:#22394B;--vp-line2:#2E4C63;--vp-t1:#E6EEF5;--vp-t2:#B8C8D6;--vp-t3:#93A9BB;--vp-acc-ink:#F7A452;
@@ -191,3 +191,14 @@ td>.vp-tag:first-child{margin-left:0}
 .vp-bt i.tr{background:var(--vp-c2)}
 .vp-bl .vp-tag{margin-left:6px;font-size:10.5px;padding:1px 6px}
 .vp-grid2.eq{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}@media (max-width:1000px){.vp-grid2.eq{grid-template-columns:minmax(0,1fr)}}
+
+/* Batch 254: T1 workload month on month; the report uses the full width */
+.vp-legend .f1,.vp-chart .f1{background:var(--vp-c1);fill:var(--vp-c1)}
+.vp-legend .f2,.vp-chart .f2{background:#7A5AF8;fill:#7A5AF8}
+.vp-legend .f3,.vp-chart .f3{background:#C98A0B;fill:#C98A0B}
+html.dark-mode .vp .f2{background:#A48BFA;fill:#A48BFA}html.dark-mode .vp .f3{background:#E9B44C;fill:#E9B44C}
+.vp-chart .vp-axb{fill:var(--vp-t1);font-weight:600;font-size:11px}
+.vp-chart .vp-axg{fill:var(--vp-acc-ink);font-weight:600}
+.vp-flow-lead{margin:0 0 12px;font-size:14px;color:var(--vp-t1);line-height:1.5}
+.vp-flow-lead b{font-size:20px;margin-right:4px}
+.vp-flow{align-items:start}
