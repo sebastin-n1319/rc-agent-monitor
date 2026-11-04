@@ -8345,8 +8345,18 @@ async function deskLifecycleAgentRoster() {
 // Batch 254: T1's whole workload month on month (tickets handled, calls, chats), for the VoIP report: it shows whether
 // transfers rose with the load. Past months are kept 12 hours, the current month 10 minutes; the first read happens in
 // the background and the report shows it from the next load.
-let _t1Flow = { at: 0, data: null, p: null };
+// Batch 256: kept in the database too, so a restart shows the last numbers at once instead of an empty section.
+let _t1Flow = { at: 0, data: null, p: null }, _t1FlowLoaded = false;
+const flowDb = (sql, p = [], m = 'run') => new Promise((rs) => { try { _sharedDb[m](sql, p, (e, r) => rs(e ? null : (r || true))); } catch (e) { rs(null); } });
+async function t1FlowLoad() {
+  if (_t1FlowLoaded) return; _t1FlowLoaded = true;
+  await flowDb(`CREATE TABLE IF NOT EXISTS kv_cache (k TEXT PRIMARY KEY, v TEXT, at INTEGER)`);
+  const r = await flowDb(`SELECT v, at FROM kv_cache WHERE k = 't1_flow'`, [], 'get');
+  if (r && r.v && !_t1Flow.data) { try { _t1Flow = { at: Number(r.at) || 0, data: JSON.parse(r.v), p: _t1Flow.p }; } catch (e) { /* rebuild */ } }
+}
+setTimeout(() => { t1FlowLoad().then(() => t1MonthlyFlow()).catch(() => {}); }, 45000);
 function t1MonthlyFlow() {
+  if (!_t1FlowLoaded) { t1FlowLoad().catch(() => {}); }
   const fresh = _t1Flow.data && Date.now() - _t1Flow.at < 10 * 60e3;
   if (!fresh && !_t1Flow.p) _t1Flow.p = (async () => {
     const tz = 'America/Chicago', today = new Date().toLocaleDateString('en-CA', { timeZone: tz });
@@ -8375,6 +8385,7 @@ function t1MonthlyFlow() {
       out.push({ month: mo, partial: isCur, workdays: wd, tickets, calls, inbound, chats, agents: emails.length });
     }
     _t1Flow = { at: Date.now(), data: { months: out, builtAt: new Date().toISOString() }, p: null };
+    flowDb(`INSERT OR REPLACE INTO kv_cache (k, v, at) VALUES ('t1_flow', ?, ?)`, [JSON.stringify(_t1Flow.data), _t1Flow.at]).catch(() => {});
     return _t1Flow.data;
   })().catch(e => { console.warn('t1 monthly flow:', e.message); _t1Flow.p = null; return null; });
   return _t1Flow.data;

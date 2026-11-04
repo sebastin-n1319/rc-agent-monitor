@@ -157,7 +157,7 @@
     function mon(ym) { var p = String(ym).split('-'); return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(p[1]) - 1] + " '" + p[0].slice(2); }
     function flowCard(D) {
       var F = flowStats(D), M = F.M;
-      if (!M.length) return card('T1 workload, month on month', 'Reading six months of tickets, calls and chats; this shows on the next refresh.', []);
+      if (!M.length) return card('T1 workload, month on month', null, [h('div', { class: 'vp-wait' }, [h('span', { class: 'vp-spin', 'aria-hidden': 'true' }), 'Reading six months of T1 tickets, calls and chats. Press Refresh in a minute.'])]);
       var wide = (body.clientWidth || 900) > 1000;
       var data = M.map(function (m) { var per = function (v) { return m.workdays ? Math.round((v || 0) / m.workdays * 10) / 10 : 0; }; return { m: m, tickets: per(m.tickets), calls: per(m.calls), chats: per(m.chats) }; });
       var fkeys = [['tickets', 'f1', 'Tickets handled'], ['calls', 'f2', 'Calls'], ['chats', 'f3', 'Chats']];
