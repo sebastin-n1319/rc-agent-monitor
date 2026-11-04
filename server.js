@@ -763,6 +763,7 @@ const deskLifecycle = require('./lib/desk-lifecycle');
           admins: () => new Promise((rs) => db.all(`SELECT email FROM app_roles WHERE role = 'admin'`, [], (e, r) => rs(e ? [] : (r || []).map(x => String(x.email).toLowerCase())))) }, deps));
         sq.setDB(db); sq.setDeps(deps);
         await gf.initSchema(); await sq.initSchema();
+        { const rs = require('./lib/expert-research'); rs.setDB(db); await rs.initSchema(); }
         expert.setDeps({ onGap: (g) => { gf.enqueue(g).catch(e => console.warn('expert gap queue:', e.message)); } });
         setInterval(() => { gf.work().catch(e => console.warn('expert gap fix:', e.message)); }, 5 * 60 * 1000);
         setInterval(() => { sq.runDue().catch(e => console.warn('expert schedule:', e.message)); }, 60 * 1000); }
@@ -2215,8 +2216,9 @@ app.get('/api/admin/busy', requireAdmin, async (req, res) => {
     const by = {}; slow.forEach(x => { by[x.key] = (by[x.key] || 0) + 1; });
     const assess = await new Promise((rs) => _sharedDb.get(`SELECT COUNT(*) AS n FROM assess_attempts WHERE status = 'in_progress' AND COALESCE(preview,0) = 0 AND datetime(COALESCE(current_served_at, started_at)) >= datetime('now', '-30 minutes')`, [], (e, r) => rs(e ? null : (r ? r.n : 0))));
     const chats = await liveChat().openAll().then(l => l.length).catch(() => null);
-    const busy = slow.length > 0 || (assess || 0) > 0;
-    res.json({ success: true, busy, longRequests: by, assessmentsInProgress: assess, openChats: chats, ctNow: new Date().toLocaleTimeString('en-US', { timeZone: 'America/Chicago' }) });
+    let research = 0; try { research = require('./lib/expert-research').running(); } catch (e) { /* not loaded */ }
+    const busy = slow.length > 0 || (assess || 0) > 0 || research > 0;
+    res.json({ success: true, busy, longRequests: by, researchRunning: research, assessmentsInProgress: assess, openChats: chats, ctNow: new Date().toLocaleTimeString('en-US', { timeZone: 'America/Chicago' }) });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 // Batch 242: one place that saves a shared Expert conversation (used by Share, scheduled questions and gap fixes).
@@ -2262,6 +2264,25 @@ app.get('/api/guides/expert/panel', requireAuth, rateLimit(30, 60000), async (re
     res.json({ success: true, number, cached: false, at: new Date().toISOString(), review: v });
   } catch (e) { expertErr(res, e, 'Expert could not review this ticket right now'); }
 });
+// Batch 247 (from Aria): the Glossary chat, "Did you mean?", dictation, Deep research and Strategise.
+const glossMod = () => { const g = require('./lib/expert-glossary'); if (!g._wired) { g.setDeps({ expert: expertMod(), ai: require('./lib/ai'), query: (sql, n) => require('./lib/aditkb-service').query(sql, n),
+  whoDoesWhat: () => require('./lib/who-does-what').people(), agents: () => getMonitoredAgents().then(l => l.map(a => ({ name: a.name, email: a.email }))) }); g._wired = true; } return g; };
+const researchMod = () => { const r = require('./lib/expert-research'); if (!r._wired) { const dmMod = require('./lib/gchat-dm'); r.setDeps({ ai: require('./lib/ai'), investigate: require('./lib/expert-investigate'),
+  dm: dmMod.available() ? (o) => dmMod.sendBotDM(o) : null, publicUrl: process.env.PUBLIC_BASE_URL || 'https://rc-t1cs-monitor.up.railway.app' }); r._wired = true; } return r; };
+app.post('/api/guides/expert/glossary', requireAuth, rateLimit(20, 60000), async (req, res) => { try { res.json({ success: true, ...(await glossMod().ask((req.body || {}).question)) }); } catch (e) { expertErr(res, e, 'Could not answer from the rules right now'); } });
+app.post('/api/guides/expert/did-you-mean', requireAuth, rateLimit(60, 60000), async (req, res) => { try { res.json({ success: true, choice: await glossMod().didYouMean((req.body || {}).question) }); } catch (e) { res.json({ success: true, choice: null }); } });
+app.post('/api/guides/expert/transcribe', requireAuth, rateLimit(30, 60000), express.raw({ type: () => true, limit: '12mb' }), async (req, res) => {
+  try {
+    if (!Buffer.isBuffer(req.body) || req.body.length < 800) return res.status(400).json({ success: false, error: 'Nothing was recorded' });
+    const text = await require('./lib/ai').transcribe({ buf: req.body, mime: String(req.headers['content-type'] || 'audio/webm').split(';')[0], prompt: 'Adit, Zoho Desk, SalesIQ, RingCentral, Pending Review - T1, CSM, Tech OB, VoIP, eFax, Engage, Pozative, Adit Pay, AI Front Desk, Call Intelligence, Dentrix, Eaglesoft, Open Dental, port-out.' });
+    res.json({ success: true, text });
+  } catch (e) { expertErr(res, e, 'Dictation is busy right now, please type instead.'); }
+});
+app.get('/api/guides/expert/research', requireAdmin, async (req, res) => { try { res.json({ success: true, runs: await researchMod().list(req.session.email) }); } catch (e) { expertErr(res, e, 'Could not load'); } });
+app.get('/api/guides/expert/research/:id', requireAdmin, async (req, res) => { try { res.json({ success: true, run: await researchMod().get(req.session.email, req.params.id) }); } catch (e) { expertErr(res, e, 'Could not load'); } });
+app.post('/api/guides/expert/research/plan', requireAdmin, rateLimit(10, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, run: await researchMod().plan(req.session.email, { question: b.question, kind: b.kind }) }); } catch (e) { expertErr(res, e, 'Could not plan it right now'); } });
+app.post('/api/guides/expert/research/:id/run', requireAdmin, rateLimit(10, 60000), async (req, res) => { try { const b = req.body || {}; res.json({ success: true, run: await researchMod().start(req.session.email, req.params.id, { on: Array.isArray(b.on) ? b.on.map(Number) : null, notify: !!b.notify, note: b.note }) }); } catch (e) { expertErr(res, e, 'Could not start it'); } });
+app.post('/api/guides/expert/research/:id/stop', requireAdmin, async (req, res) => { try { res.json({ success: true, run: await researchMod().stop(req.session.email, req.params.id) }); } catch (e) { expertErr(res, e, 'Could not stop it'); } });
 // Batch 188: share a conversation. A snapshot of the questions and answers is kept under a random id; anyone signed in
 // to the tool (or on the guides guest list) can open it and carry on from there.
 app.post('/api/guides/expert/share', requireAuth, rateLimit(20, 60000), async (req, res) => {

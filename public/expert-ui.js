@@ -14,7 +14,7 @@
   }
   var P = {
     spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
-    send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>', mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7"/>', flask: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/>', copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', shield: '<path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/><path d="M8.8 12.2l2.2 2.2 4.2-4.4"/>',
     book: '<path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z"/>',
     ticket: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 5v12" stroke-dasharray="2 2"/>',
@@ -205,7 +205,7 @@
     paintDepth();
     var scopeChip = h('span', { class: 'ax-scope' });
     var form = h('form', { class: 'ax-comp', onsubmit: function (ev) { ev.preventDefault(); submit(); } }, [input,
-      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, depthBox, scopeChip, h('span', { class: 'ax-sp' }), send])]);
+      h('div', { class: 'ax-comp-bar' }, [h('span', { class: 'ax-comp-l', text: 'Client is on' }), modeBox, depthBox, scopeChip, h('span', { class: 'ax-sp' }), micButton(ctx, input), send])]);
     col.appendChild(form);
     input.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); submit(); } });
     // As soon as the agent types, the side bar folds and the suggestions fade, so the page is about the conversation.
@@ -273,10 +273,31 @@
       thread.appendChild(box); box.scrollIntoView({ block: 'end', behavior: 'smooth' });
       var first = box.querySelector('button'); if (first) first.focus();
     }
+    function didYouMean(q, c) {
+      var old = thread.querySelector('.ax-pick'); if (old) old.remove(); intro.hidden = true;
+      var other = h('input', { class: 'ax-in', type: 'text', placeholder: 'Something else? Type the full name', 'aria-label': 'Someone else' });
+      var go = function (name) { box.remove(); S.dymDone = true; submit(name ? q + ' (' + c.term + ' means ' + name + ')' : q); };
+      var box = h('div', { class: 'ax-card ax-pick', role: 'group', 'aria-label': 'Did you mean?' }, [
+        h('p', { class: 'ax-pick-q', text: 'Did you mean? Several people are called ' + c.term + '.' }),
+        h('div', { class: 'ax-row ax-dym' }, c.options.map(function (o) { return h('button', { type: 'button', class: 'gd-btn', onclick: function () { go(o.label + (o.detail ? ', ' + o.detail : '')); } }, [h('b', { text: o.label }), o.detail ? h('span', { class: 'ax-muted', text: ' ' + o.detail }) : null]); })),
+        h('div', { class: 'ax-row' }, [other, h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { if (other.value.trim()) go(other.value.trim()); } }, ['Continue']), h('button', { type: 'button', class: 'gd-btn', onclick: function () { go(''); } }, ['Answer without choosing'])])]);
+      thread.appendChild(box); box.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    }
     function submit(again, fresh, reuse, depthOnce) {
       var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
       var hasTicket = TKRE.test(q) || S.items.some(function (it) { return it.j && it.j.ticket && it.j.ticket.meta; });
       if (!S.mode && !hasTicket && !reuse) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
+      // Batch 247 (from Aria): a first name shared by several Adit people is confirmed before answering.
+      if (!reuse && !S.dymDone && !hasTicket) {
+        S.busy = true;
+        ctx.api('/api/guides/expert/did-you-mean', { question: q }).then(function (r) {
+          S.busy = false;
+          if (r.choice && r.choice.options && r.choice.options.length > 1) { if (typeof again !== 'string') input.value = ''; return didYouMean(q, r.choice); }
+          S.dymDone = true; submit(q, fresh, reuse, depthOnce);
+        }).catch(function () { S.busy = false; S.dymDone = true; submit(q, fresh, reuse, depthOnce); });
+        return;
+      }
+      S.dymDone = false;
       var nn = thread.querySelector('.ax-newnote'); if (nn) nn.remove();
       if (!ctx.ai) { ctx.toast && ctx.toast('AI is not set up on the server yet.'); return; }
       S.busy = true; send.disabled = true; intro.hidden = true; S.lastQ = q; paintBar();
@@ -614,6 +635,34 @@
   }
 
   function dlab(t, el) { return h('label', { class: 'ax-lab' }, [h('span', { text: t }), el]); }
+  // Batch 247 (from Aria): dictate instead of typing. Click to start, click again to stop; the words go into the box.
+  // The audio goes to the transcription service and only the text comes back; nothing is kept.
+  function micButton(ctx, target) {
+    var rec = null, chunks = [], stream = null, timer = null;
+    var b = h('button', { type: 'button', class: 'ax-mic', 'aria-pressed': 'false', 'aria-label': 'Dictate instead of typing', title: 'Dictate instead of typing' }, [icon('mic', 'sm')]);
+    if (!(navigator.mediaDevices && window.MediaRecorder)) { b.hidden = true; return b; }
+    function stopAll() { clearTimeout(timer); try { if (rec && rec.state !== 'inactive') rec.stop(); } catch (e) {} }
+    b.addEventListener('click', function () {
+      if (rec && rec.state === 'recording') { stopAll(); return; }
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+        stream = st; chunks = [];
+        rec = new MediaRecorder(st);
+        rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function () {
+          stream.getTracks().forEach(function (t) { t.stop(); });
+          b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); b.classList.add('busy'); b.title = 'Writing it down...';
+          var blob = new Blob(chunks, { type: rec.mimeType || 'audio/webm' });
+          fetch('/api/guides/expert/transcribe', { method: 'POST', credentials: 'include', headers: { 'Content-Type': blob.type }, body: blob }).then(function (r) { return r.json(); }).then(function (j) {
+            if (!j.success) throw new Error(j.error || 'Dictation failed');
+            if (j.text) { target.value = (target.value ? target.value.replace(/\s+$/, '') + ' ' : '') + j.text; target.dispatchEvent(new Event('input', { bubbles: true })); target.focus(); }
+          }).catch(function (e) { ctx.toast && ctx.toast(e.message); }).then(function () { b.classList.remove('busy'); b.title = 'Dictate instead of typing'; });
+        };
+        rec.start(); b.classList.add('on'); b.setAttribute('aria-pressed', 'true'); b.title = 'Listening. Click to stop';
+        timer = setTimeout(stopAll, 10 * 60000);
+      }).catch(function () { ctx.toast && ctx.toast('Allow the microphone in the browser to dictate.'); });
+    });
+    return b;
+  }
 function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     var d = n || pre || {};
     var title = h('input', { class: 'ax-in', value: d.title || '', maxlength: '160', placeholder: 'e.g. Callback requests go to VoIP' });
@@ -653,6 +702,17 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
       root.appendChild(h('div', { class: 'ax-teach-hd' }, [h('div', null, [h('h1', { text: 'Rule list' }),
         h('p', { class: 'ax-muted', text: 'Adit Expert follows every active rule in every answer, ahead of the Help Center, the guides and past tickets. ' + (admin ? 'Add, edit or switch off a rule here; the next question uses the change.' : 'Only admins can change them; ask your lead if a rule looks wrong.') })]),
         admin ? h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { noteDialog(ctx, modules, load, null, { kind: 'rule', module: 'Process' }); } }, [icon('plus', 'sm'), 'Add rule']) : null]));
+      // Batch 247 (from Aria's Glossary): ask what Expert knows, answered only from what the team has written down.
+      var gq = h('input', { class: 'ax-in', type: 'text', placeholder: 'For example: who handles port-outs? What counts as a valid transfer?', 'aria-label': 'Ask what Expert knows' });
+      var gout = h('div', { class: 'ax-gl-out', 'aria-live': 'polite' }), gb = h('button', { type: 'submit', class: 'gd-btn primary' }, ['Ask']);
+      var KN = { knows: ['Knows it', 'conf-high'], partly: ['Partly knows it', 'conf-medium'], 'no context': ['No context written down', 'conf-low'] };
+      root.appendChild(h('section', { class: 'ax-card ax-gl' }, [h('h2', { text: 'Ask what Expert knows' }), h('p', { class: 'ax-muted', text: 'Answers only from the team rules and notes, the Who Does What sheet and the support guides, never from customer records. It says when something is not written down, so a lead can add it.' }),
+        h('form', { class: 'ax-row ax-gl-f', onsubmit: function (ev) { ev.preventDefault(); var q = gq.value.trim(); if (!q) return; gb.disabled = true; clear(gout); gout.appendChild(h('p', { class: 'ax-muted', text: 'Reading the rules...' }));
+          ctx.api('/api/guides/expert/glossary', { question: q }).then(function (r) { clear(gout); var k = KN[r.knows] || KN.partly;
+            gout.appendChild(h('p', null, [h('span', { class: 'ax-badge ' + k[1], text: k[0] }), ' ', r.answer]));
+            if (r.used && r.used.length) gout.appendChild(h('p', { class: 'ax-muted', text: 'From: ' + r.used.map(function (u) { return u.title; }).join('; ') }));
+            if (r.add) gout.appendChild(h('p', { class: 'ax-gl-add' }, [h('b', { text: 'What a lead should add: ' }), r.add, admin ? ' ' : null, admin ? h('button', { type: 'button', class: 'ax-mini', onclick: function () { noteDialog(ctx, modules, load, null, { title: q.slice(0, 120), body: '', kind: 'note' }); } }, [icon('plus', 'sm'), 'Write it down']) : null]));
+          }).catch(function (e) { clear(gout); gout.appendChild(h('p', { class: 'ax-muted', text: e.message })); }).then(function () { gb.disabled = false; }); } }, [gq, micButton(ctx, gq), gb]), gout]));
       var card = h('section', { class: 'ax-card' }, [h('h2', { text: act + ' active rule' + (act === 1 ? '' : 's') })]);
       if (!d.rules.length) card.appendChild(h('p', { class: 'ax-muted', text: 'No rules yet.' }));
       var ol = h('ol', { class: 'ax-rlist' });
@@ -1302,5 +1362,94 @@ function noteDialog(ctx, modules, done, n, pre, feedbackId) {
     return { reload: function () { loadMine(); if (active) { var t = find(active); if (t) loadChat(t); } }, open: function (ref) { var t = find(ref); if (!t) { t = tab(ref, true); tabs.push(t); save(); } select(t.ref); } };
   }
 
-  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules, Triage: Triage, LiveChats: LiveChats };
+  // Batch 247 (from Aria's Deep research and Strategise): admins plan a bigger question, check the plan, run it in the
+  // background and read the report (or get a Google Chat message when it is ready).
+  function Research(panel, ctx) {
+    var root = h('div', { class: 'ax-teach ax-rs' }); panel.appendChild(root);
+    var S = { kind: 'deep', runs: [], cur: null, poll: null };
+    var listBox = h('div', { class: 'ax-rs-list' }), main = h('div', { class: 'ax-rs-main' });
+    var q = h('textarea', { class: 'ax-in', rows: '3', 'aria-label': 'What do you want researched?' });
+    var kindBox = h('div', { class: 'ax-seg', role: 'radiogroup', 'aria-label': 'Kind' });
+    var KINDS = [['deep', 'Deep research', 'A bigger question answered in parts, with a report'], ['strategy', 'Strategise', 'A goal turned into levers, causes and ranked actions']];
+    function paintKind() { clear(kindBox); KINDS.forEach(function (k) { kindBox.appendChild(h('button', { type: 'button', role: 'radio', 'aria-checked': String(S.kind === k[0]), title: k[2], onclick: function () { S.kind = k[0]; paintKind(); q.placeholder = S.kind === 'deep' ? 'For example: why did T1 transfers to VoIP rise in October, by reason and by agent?' : 'For example: how can T1 cut transfers that were not needed by 30% by the end of the quarter?'; } }, [k[1]])); }); }
+    paintKind(); q.placeholder = 'For example: why did T1 transfers to VoIP rise in October, by reason and by agent?';
+    var planB = h('button', { type: 'submit', class: 'gd-btn primary' }, ['Plan it']), msg = h('p', { class: 'ax-err-t', role: 'status' });
+    root.appendChild(h('div', { class: 'ax-teach-hd' }, [h('div', null, [h('h1', { text: 'Research' }), h('p', { class: 'ax-muted', text: 'For questions that need several analyses. Expert plans the parts first; you check the plan, then it researches each part from the Desk, CRM, call and Aria data and writes a report with its confidence and what it could not answer. Usually 5 to 15 minutes; you can leave the page.' })])]));
+    root.appendChild(h('form', { class: 'ax-card ax-rs-new', onsubmit: function (ev) { ev.preventDefault(); var t = q.value.trim(); if (t.length < 10) { msg.textContent = 'Write the question you want researched.'; return; }
+      planB.disabled = true; planB.textContent = 'Planning...'; msg.textContent = '';
+      ctx.api('/api/guides/expert/research/plan', { question: t, kind: S.kind }).then(function (r) { q.value = ''; openRun(r.run); loadList(); }).catch(function (e) { msg.textContent = e.message; }).then(function () { planB.disabled = false; planB.textContent = 'Plan it'; }); } },
+      [kindBox, q, h('div', { class: 'ax-row' }, [micButton(ctx, q), h('span', { class: 'ax-sp' }), planB]), msg]));
+    root.appendChild(h('div', { class: 'ax-rs-grid' }, [h('aside', null, [h('h3', { text: 'Your runs' }), listBox]), main]));
+    var ST = { planned: 'Plan ready', running: 'Running', done: 'Report ready', failed: 'Failed', stopped: 'Stopped' };
+    function loadList() {
+      ctx.api('/api/guides/expert/research').then(function (r) { S.runs = r.runs || []; clear(listBox);
+        if (!S.runs.length) listBox.appendChild(h('p', { class: 'ax-muted', text: 'None yet.' }));
+        S.runs.forEach(function (x) { listBox.appendChild(h('button', { type: 'button', class: 'ax-rs-item' + (S.cur && S.cur.id === x.id ? ' on' : ''), onclick: function () { load(x.id); } }, [h('b', { text: x.title || x.question.slice(0, 70) }), h('span', { class: 'ax-muted', text: (x.kind === 'strategy' ? 'Strategise' : 'Deep research') + ' · ' + (ST[x.status] || x.status) })])); });
+      }).catch(function () {});
+    }
+    function load(id) { ctx.api('/api/guides/expert/research/' + id).then(function (r) { openRun(r.run); }).catch(function (e) { ctx.toast && ctx.toast(e.message); }); }
+    function openRun(x) {
+      S.cur = x; clearTimeout(S.poll); clear(main);
+      try { if (location.hash !== '#research/' + x.id) history.replaceState(null, '', '#research/' + x.id); } catch (e) {}
+      var P = x.plan || {};
+      main.appendChild(h('div', { class: 'ax-rs-hd' }, [h('h2', { text: P.title || x.question }), h('span', { class: 'ax-badge mod', text: (x.kind === 'strategy' ? 'Strategise' : 'Deep research') + ' · ' + (ST[x.status] || x.status) })]));
+      main.appendChild(h('p', { class: 'ax-muted', text: x.question }));
+      if (P.goal) main.appendChild(h('p', null, [h('b', { text: 'Goal: ' }), P.goal]));
+      if (P.assumptions && P.assumptions.length) main.appendChild(h('details', { class: 'ax-lim', open: x.status === 'planned' ? 'open' : null }, [h('summary', { text: 'Assumptions (' + P.assumptions.length + ')' }), h('ul', null, P.assumptions.map(function (a) { return h('li', { text: a }); }))]));
+      if (P.levers && P.levers.length) main.appendChild(h('details', { class: 'ax-lim', open: x.status === 'planned' ? 'open' : null }, [h('summary', { text: 'Driver tree (' + P.levers.length + ' levers)' }), h('ul', null, P.levers.map(function (l) { return h('li', null, [h('b', { text: l.lever }), ': ' + l.how + (l.measure ? ' (' + l.measure + ')' : '')]); }))]));
+      var boxes = [];
+      var partsEl = h('ol', { class: 'ax-rs-parts' }, x.parts.map(function (p) {
+        var cb = h('input', { type: 'checkbox', checked: p.on ? 'checked' : null, disabled: x.status === 'running' || x.status === 'done' ? 'disabled' : null, 'aria-label': 'Include ' + p.title }); boxes.push(cb);
+        var st = p.status === 'done' ? 'Answered' + (p.lookups ? ', ' + p.lookups + ' lookups' : '') + (p.ms ? ', ' + Math.round(p.ms / 1000) + 's' : '') : p.status === 'running' ? 'Researching...' : p.status === 'failed' ? 'Could not answer' + (p.error ? ': ' + p.error : '') : '';
+        return h('li', { class: 'ax-rs-part ' + (p.status || '') }, [h('label', { class: 'ax-row' }, [cb, h('b', { text: p.title })]), h('p', { class: 'ax-muted', text: p.question }), p.limits ? h('p', { class: 'ax-rs-lim', text: 'Known limits: ' + p.limits }) : null, st ? h('p', { class: 'ax-rs-st', text: st }) : null,
+          p.answer ? h('details', null, [h('summary', { text: 'What this part found' }), h('pre', { class: 'ax-inv-sum' }, [linkTickets(p.answer)])]) : null]);
+      }));
+      main.appendChild(h('h3', { text: 'Parts' })); main.appendChild(partsEl);
+      var note = h('input', { class: 'ax-in', type: 'text', placeholder: 'Anything to steer it (optional), for example: ignore October 1 to 3, the outage week', value: x.note || '' });
+      var on = function () { return boxes.map(function (b, i) { return b.checked ? i : -1; }).filter(function (i) { return i >= 0; }); };
+      var act = function (notify) { ctx.api('/api/guides/expert/research/' + x.id + '/run', { on: on(), notify: notify, note: note.value }).then(function (r) { openRun(r.run); loadList(); }).catch(function (e) { ctx.toast && ctx.toast(e.message); }); };
+      if (x.status === 'planned' || x.status === 'stopped' || x.status === 'failed') {
+        main.appendChild(dlab('Steer it', note));
+        main.appendChild(h('div', { class: 'ax-row' }, [h('button', { type: 'button', class: 'gd-btn primary', onclick: function () { act(false); } }, [x.status === 'planned' ? 'Run' : 'Resume']),
+          h('button', { type: 'button', class: 'gd-btn', onclick: function () { act(true); } }, [(x.status === 'planned' ? 'Run' : 'Resume') + ' and message me when done']),
+          h('button', { type: 'button', class: 'gd-btn', onclick: function () { q.value = x.question; S.kind = x.kind; paintKind(); q.focus(); } }, ['Edit question'])]));
+        if (x.error) main.appendChild(h('p', { class: 'ax-muted', text: x.error }));
+      }
+      if (x.status === 'running') {
+        main.appendChild(h('div', { class: 'ax-row' }, [h('span', { class: 'ax-muted', text: 'Working on it. You can leave this page.' }), h('button', { type: 'button', class: 'gd-btn', onclick: function () { ctx.api('/api/guides/expert/research/' + x.id + '/stop', {}).then(function (r) { openRun(r.run); loadList(); }); } }, ['Stop'])]));
+        S.poll = setTimeout(function () { if (S.cur && S.cur.id === x.id && !panel.hidden) load(x.id); }, 6000);
+      }
+      if (x.status === 'done' && x.report) main.appendChild(report(x));
+    }
+    function report(x) {
+      var R = x.report || {}, box = h('section', { class: 'ax-card ax-rs-rep' });
+      var TAG = { Strength: 'conf-high', Problem: 'conf-low', Watch: 'conf-medium', Mixed: 'mod' };
+      if (x.kind === 'strategy') {
+        if (R.goal) box.appendChild(h('p', null, [h('b', { text: 'Goal: ' }), R.goal]));
+        box.appendChild(h('h3', { text: 'Recommendations' }));
+        (R.recommendations || []).forEach(function (rc, i) {
+          var sec = h('section', { class: 'ax-fd' }, [h('h5', null, [h('span', { class: 'ax-fd-n', text: String(i + 1) }), rc.title, rc.confidence ? h('span', { class: 'ax-badge conf-' + rc.confidence, text: rc.confidence + ' confidence' }) : null])]);
+          if (rc.impact) sec.appendChild(h('p', null, [h('b', { text: 'Impact: ' }), rc.impact]));
+          if (rc.where) sec.appendChild(h('p', null, [h('b', { text: 'Where: ' }), linkTickets(rc.where)]));
+          if (rc.why && rc.why.length) sec.appendChild(h('div', null, [h('b', { text: 'Why' }), h('ul', null, rc.why.map(function (w) { return h('li', null, [linkTickets(w)]); }))]));
+          (rc.actions || []).forEach(function (a) { sec.appendChild(h('div', { class: 'ax-rs-act' }, [h('p', null, [h('span', { class: 'ax-badge ' + (a.when === 'Now' ? 'conf-high' : a.when === 'Next quarter' ? 'conf-medium' : 'mod'), text: a.when || '' }), ' ', h('b', { text: a.text })]),
+            h('p', { class: 'ax-muted', text: [a.owner ? 'Owner: ' + a.owner : '', a.deadline ? 'By: ' + a.deadline : '', a.lift ? 'Lift: ' + a.lift : ''].filter(Boolean).join(' · ') }),
+            a.steps && a.steps.length ? h('ol', null, a.steps.map(function (st) { return h('li', { text: st }); })) : null])); });
+          box.appendChild(sec);
+        });
+        if (R.levers && R.levers.length) box.appendChild(h('details', { class: 'ax-lim' }, [h('summary', { text: 'Levers: today and realistic' }), h('ul', null, R.levers.map(function (l) { return h('li', null, [h('b', { text: l.lever + ': ' }), (l.today || '') + ' → ' + (l.realistic || '') + (l.kept === false ? ' (ruled out: ' + (l.why || '') + ')' : l.why ? ' (' + l.why + ')' : '')]); }))]));
+        [['Options considered', R.options_considered], ['Risks', R.risks]].forEach(function (g) { if (g[1] && g[1].length) box.appendChild(h('details', { class: 'ax-lim' }, [h('summary', { text: g[0] }), h('ul', null, g[1].map(function (t) { return h('li', { text: t }); }))])); });
+      } else {
+        box.appendChild(h('h3', { text: 'Summary' }));
+        box.appendChild(h('ul', { class: 'ax-rs-sum' }, (R.summary || []).map(function (p) { return h('li', null, [h('span', { class: 'ax-badge ' + (TAG[p.tag] || 'mod'), text: p.tag || '' }), ' ', linkTickets(p.point || ''), p.do ? h('p', { class: 'ax-muted' }, [h('b', { text: 'What to do: ' }), p.do]) : null]); })));
+        (R.sections || []).forEach(function (sc) { box.appendChild(h('section', { class: 'ax-rs-sec' }, [h('h4', { text: sc.title }), h('pre', { class: 'ax-inv-sum' }, [linkTickets(sc.body || '')])])); });
+      }
+      box.appendChild(h('p', { class: 'ax-muted' }, [h('b', { text: 'Confidence: ' }), (R.confidence || '') + (R.confidence_why ? '. ' + R.confidence_why : '') + (R.figures ? '. Figures traced to a part: ' + R.figures : '')]));
+      if (R.could_not_answer && R.could_not_answer.length) box.appendChild(h('details', { class: 'ax-lim', open: 'open' }, [h('summary', { text: 'What this could not answer' }), h('ul', null, R.could_not_answer.map(function (t) { return h('li', { text: t }); }))]));
+      return box;
+    }
+    loadList();
+    return { open: function (id) { if (id) load(id); }, reload: function () { loadList(); if (S.cur) load(S.cur.id); } };
+  }
+  window.AditExpert = { Ask: Ask, Kb: Kb, Teach: Teach, Rules: Rules, Triage: Triage, LiveChats: LiveChats, Research: Research };
 })();

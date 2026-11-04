@@ -776,3 +776,34 @@ html.ax-full .ax-cbar{top:0}
 .ax-how-g h5{margin:0 0 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--t3)}
 .ax-how-g ul,.ax-how-g ol{margin:0;padding-left:18px;font-size:12.5px;color:var(--t2);display:flex;flex-direction:column;gap:3px}
 .ax-how-steps li{display:flex;justify-content:space-between;gap:12px}
+/* Batch 247: dictation, glossary chat, did you mean, research */
+.ax-mic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--t2);cursor:pointer}
+.ax-mic:hover{border-color:var(--t3)}
+.ax-mic.on{background:#E5555B;border-color:#E5555B;color:#fff;animation:axMic 1.4s ease-in-out infinite}
+.ax-mic.busy{opacity:.6;cursor:progress}
+.ax-mic:focus-visible{outline:2px solid var(--t2);outline-offset:2px}
+@keyframes axMic{50%{box-shadow:0 0 0 6px rgba(229,85,91,.18)}}
+@media (prefers-reduced-motion:reduce){.ax-mic.on{animation:none}}
+.ax-gl-f{gap:8px;align-items:center;flex-wrap:nowrap}
+.ax-gl-f .ax-in{flex:1;min-width:0}
+.ax-gl-out p{margin:10px 0 0;line-height:1.5}
+.ax-gl-add{padding:8px 10px;border-radius:8px;background:var(--surface-2)}
+.ax-dym .gd-btn{display:inline-flex;gap:6px;align-items:baseline}
+.ax-rs-new{display:flex;flex-direction:column;gap:10px}
+.ax-rs-grid{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;margin-top:14px}
+.ax-rs-list{display:flex;flex-direction:column;gap:6px}
+.ax-rs-item{display:flex;flex-direction:column;gap:2px;text-align:left;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--t1);font:inherit;font-size:12.5px;cursor:pointer}
+.ax-rs-item.on{border-color:var(--t2)}
+.ax-rs-hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ax-rs-hd h2{margin:0;font-size:17px}
+.ax-rs-parts{display:flex;flex-direction:column;gap:8px;padding-left:20px}
+.ax-rs-part p{margin:4px 0}
+.ax-rs-lim{font-size:12px;color:var(--t3)}
+.ax-rs-st{font-size:12px;font-weight:600;color:var(--t2)}
+.ax-rs-part.running .ax-rs-st{color:#C98F06}
+.ax-rs-part.failed .ax-rs-st{color:#D9464D}
+.ax-rs-rep{margin-top:14px}
+.ax-rs-sum{list-style:none;padding:0;display:flex;flex-direction:column;gap:8px}
+.ax-rs-sec h4{margin:12px 0 4px}
+.ax-rs-act{margin:8px 0;padding-left:8px;border-left:2px solid var(--border)}
+@media (max-width:760px){.ax-rs-grid{grid-template-columns:1fr}}
