@@ -289,7 +289,7 @@
     function submit(again, fresh, reuse, depthOnce) {
       var q = typeof again === 'string' ? again : input.value.trim(); if (!q || S.busy) return;
       var hasTicket = TKRE.test(q) || S.items.some(function (it) { return it.j && it.j.ticket && it.j.ticket.meta; });
-      var isWork = !reuse && !TKRE.test(q) && WKRE.test(q);
+      var isWork = !!S.wkAdmin && !reuse && !TKRE.test(q) && WKRE.test(q);
       if (isWork) { S.dymDone = true; }
       if (!S.mode && !hasTicket && !reuse && !isWork) { if (typeof again !== 'string') input.value = ''; askChannel(q); return; }
       // Batch 247 (from Aria): a first name shared by several Adit people is confirmed before answering.
@@ -357,13 +357,13 @@
     function workloadPicker() {
       var box = h('div', { class: 'ax-wkp', hidden: true });
       ctx.api('/api/guides/expert/workload/agents').then(function (r) {
-        if (!r.agents || !r.agents.length) return;
+        S.wkAdmin = !!r.admin; if (!r.admin || !r.agents || !r.agents.length) return;
         var who = h('select', { class: 'ax-in', 'aria-label': 'Agent' }, r.agents.map(function (a) { return h('option', { value: a.name, text: a.email === r.me ? a.name + ' (me)' : a.name }); }));
         var per = h('select', { class: 'ax-in', 'aria-label': 'Days' }, [['today', 'Today'], ['yesterday', 'Yesterday'], ['this week', 'This week'], ['last week', 'Last week'], ['this month', 'This month'], ['last month', 'Last month']].map(function (p) { return h('option', { value: p[0], text: p[1] }); }));
         var go = h('button', { type: 'button', class: 'gd-btn primary' }, ['Show']);
         go.addEventListener('click', function () { if (S.busy) return; submit('What was ' + who.value + '\'s workload ' + per.value + '?'); });
-        box.appendChild(h('span', { class: 'ax-wkp-l' }, [icon('clock', 'sm'), r.admin ? 'Agent workload' : 'My workload']));
-        if (r.admin) box.appendChild(who); else who.value = r.agents[0].name;
+        box.appendChild(h('span', { class: 'ax-wkp-l' }, [icon('clock', 'sm'), 'Agent workload']));
+        box.appendChild(who);
         box.appendChild(per); box.appendChild(go); box.hidden = false;
       }).catch(function () {});
       return box;

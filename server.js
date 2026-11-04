@@ -1338,7 +1338,7 @@ async function agentWorkload(agent, period) {
 }
 app.get('/api/guides/expert/workload/agents', requireAuth, async (req, res) => {
   try { const admin = await isAdminSession(req).catch(() => false), me = String(req.session.email || '').toLowerCase(), list = await workloadAgents();
-    res.json({ success: true, admin: !!admin, me, agents: (admin ? list : list.filter(a => a.email === me)).map(a => ({ email: a.email, name: a.name })) });
+    res.json({ success: true, admin: !!admin, me, agents: admin ? list.map(a => ({ email: a.email, name: a.name })) : [] });
   } catch (e) { res.status(500).json({ success: false, error: e.message }); }
 });
 /** Expert hook: null when the question is not an agent-workload question. */
@@ -1346,11 +1346,11 @@ async function expertWorkload(req, question) {
   const W = workloadMod(), me = String(req.session.email || '').toLowerCase();
   const list = await workloadAgents().catch(() => []);
   const hit = W.detect(question, list, me); if (!hit) return null;
+  // Batch 249: workload is for admins only (agents cannot see their own or anyone else's here).
+  if (!(await isAdminSession(req).catch(() => false))) return { workloadError: 'Agent workload is available to admins only.' };
   if (!hit.period) return { workloadError: 'That date is in the future. Ask for today or an earlier day.' };
   if (hit.choice) return { workloadChoice: hit.choice.slice(0, 8).map(a => ({ label: a.name, detail: a.email })) };
   if (!hit.agent) return { workloadError: 'Your email is not on the monitored roster, so there is no workload to show.' };
-  const admin = await isAdminSession(req).catch(() => false);
-  if (!admin && hit.agent.email !== me) return { workloadError: 'Only admins can see another agent\'s workload. Ask about your own, for example "my workload yesterday".' };
   return { workload: await agentWorkload(hit.agent, hit.period) };
 }
 
